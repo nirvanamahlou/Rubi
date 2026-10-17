@@ -3,6 +3,7 @@ import type {
   IntegrationCatalogueConfigV1,
   IntegrationLifecycle,
   IntegrationRegistryWriteV1,
+  IntegrationSiteSetupV1,
 } from '@nora/contracts';
 
 const uuid =
@@ -60,6 +61,96 @@ function unique(values: readonly string[]) {
     throw new BadRequestException('شناسه یا کد تکراری مجاز نیست.');
 }
 
+/** Public metadata only. No DNS lookup or outbound request is performed here. */
+export function integrationPublicUrl(value: unknown): string {
+  const invalid = () =>
+    new BadRequestException(
+      'نشانی باید HTTPS عمومی و بدون اطلاعات ورود، پارامتر یا بخش خصوصی باشد.',
+    );
+  if (
+    typeof value !== 'string' ||
+    value.length > 512 ||
+    /\s/.test(value) ||
+    Array.from(value).some(
+      (character) =>
+        character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
+    )
+  )
+    throw invalid();
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw invalid();
+  }
+  const host = url.hostname.toLowerCase();
+  if (
+    url.protocol !== 'https:' ||
+    url.username ||
+    url.password ||
+    value.includes('?') ||
+    value.includes('#') ||
+    (url.port && url.port !== '443') ||
+    !host.includes('.') ||
+    /[[\]:]|^[\d.]+$/.test(host) ||
+    /(^|\.)(localhost|local|internal|test|invalid)$/.test(host) ||
+    host.endsWith('.') ||
+    host
+      .split('.')
+      .some((label) => !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label)) ||
+    /(?:token|password|secret|authorization|api[_-]?key)/i.test(
+      decodeURIComponentSafe(url.pathname),
+    )
+  )
+    throw invalid();
+  return url.toString().replace(/\/$/, '');
+}
+
+function decodeURIComponentSafe(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function siteSetup(value: unknown): IntegrationSiteSetupV1 {
+  const row = record(value, [
+    'websiteUrl',
+    'apiBaseUrl',
+    'documentationUrl',
+    'environment',
+    'protocol',
+    'authentication',
+  ]);
+  if (
+    typeof row.environment !== 'string' ||
+    !['SANDBOX', 'PRODUCTION'].includes(row.environment) ||
+    typeof row.protocol !== 'string' ||
+    !['UNDECIDED', 'REST', 'WEBHOOK', 'MANUAL'].includes(row.protocol) ||
+    typeof row.authentication !== 'string' ||
+    !['UNDECIDED', 'API_KEY', 'OAUTH2', 'HMAC', 'NONE'].includes(
+      row.authentication,
+    )
+  )
+    throw new BadRequestException('روش یا محیط اتصال معتبر نیست.');
+  return {
+    environment: row.environment as IntegrationSiteSetupV1['environment'],
+    protocol: row.protocol as IntegrationSiteSetupV1['protocol'],
+    authentication:
+      row.authentication as IntegrationSiteSetupV1['authentication'],
+    ...(row.websiteUrl !== undefined
+      ? { websiteUrl: integrationPublicUrl(row.websiteUrl) }
+      : {}),
+    ...(row.apiBaseUrl !== undefined
+      ? { apiBaseUrl: integrationPublicUrl(row.apiBaseUrl) }
+      : {}),
+    ...(row.documentationUrl !== undefined
+      ? { documentationUrl: integrationPublicUrl(row.documentationUrl) }
+      : {}),
+  };
+}
+
 export function validateIntegrationCatalogue(
   value: unknown,
 ): IntegrationCatalogueConfigV1 {
@@ -98,6 +189,7 @@ export function validateIntegrationCatalogue(
       'businessDomain',
       'lifecycle',
       'capabilityCodes',
+      'setup',
     ]);
     const capabilityCodes = list(row.capabilityCodes, 50).map((value) =>
       text(value, 'کد قابلیت', code),
@@ -127,6 +219,7 @@ export function validateIntegrationCatalogue(
       businessDomain: row.businessDomain as 'TRAVEL' | 'EDUCATION' | 'OTHER',
       lifecycle: lifecycle(row.lifecycle),
       capabilityCodes,
+      ...(row.setup !== undefined ? { setup: siteSetup(row.setup) } : {}),
     };
   });
   unique(brands.map((row) => row.id));
@@ -134,6 +227,11 @@ export function validateIntegrationCatalogue(
   unique(systems.map((row) => row.id));
   unique(systems.map((row) => row.code));
   unique(capabilities.map((row) => row.code));
+  unique(
+    systems.flatMap((row) =>
+      row.setup?.websiteUrl ? [row.setup.websiteUrl] : [],
+    ),
+  );
   return { schemaVersion: 1, brands, systems, capabilities };
 }
 
