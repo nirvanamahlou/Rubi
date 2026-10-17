@@ -1,11 +1,20 @@
 import { hotelRoomCapacityCombinations } from '@nora/contracts';
 import { hotelRateBrokerId } from './hotel-rate-broker-reference';
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Optional,
+} from '@nestjs/common';
 import type {
+  HotelRegisteredPeriodsQueryV1,
+  HotelRegisteredPeriodsPageV1,
   HotelRoomRateV1,
   HotelOccupancyRateV1,
   PackageTourHotelPurchaseBatchV1,
 } from '@nora/contracts';
+import { MasterTravelDirectory } from '../master-data/master-travel-directory';
+import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 
 const dateOnly = (value: Date) => value.toISOString().slice(0, 10);
@@ -15,7 +24,89 @@ const dateOnly = (value: Date) => value.toISOString().slice(0, 10);
 export class HotelPurchaseRatesPublicService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Optional()
+    @Inject(MasterTravelDirectory)
+    private readonly directory?: MasterTravelDirectory,
   ) {}
+
+  async registeredPeriods(
+    branchIds: readonly string[],
+    query: HotelRegisteredPeriodsQueryV1,
+  ): Promise<HotelRegisteredPeriodsPageV1> {
+    const page = query.page ?? 1;
+    if (!branchIds.length)
+      return { version: 1, data: [], total: 0, page, pageSize: 50 };
+    const cityIds =
+      await this.database.client.reservationHotelRatePack.findMany({
+        where: {
+          branchId: { in: [...branchIds] },
+          archivedAt: null,
+          ...(query.from ? { checkOut: { gt: new Date(query.from) } } : {}),
+          ...(query.to ? { checkIn: { lte: new Date(query.to) } } : {}),
+        },
+        select: { cityId: true },
+        distinct: ['cityId'],
+        take: 501,
+      });
+    if (cityIds.length > 500)
+      throw new BadRequestException(
+        'برای نمایش بازه‌ها، شعبه یا تاریخ را محدودتر کنید.',
+      );
+    if (cityIds.length && !this.directory)
+      throw new BadRequestException('سرویس اطلاعات شهر در دسترس نیست.');
+    const cities = cityIds.length
+      ? await this.directory!.hotelRatePeriodCityNames(
+          cityIds.map((row) => row.cityId),
+        )
+      : [];
+    const cityNames = new Map(cities.map((city) => [city.id, city.name]));
+    const search = (query.search ?? '').trim();
+    const predicates = [
+      Prisma.sql`p."branchId" IN (${Prisma.join(branchIds.map((id) => Prisma.sql`${id}::uuid`))})`,
+      Prisma.sql`p."archivedAt" IS NULL`,
+    ];
+    if (query.from)
+      predicates.push(Prisma.sql`b."checkOut" > ${query.from}::date`);
+    if (query.to) predicates.push(Prisma.sql`b."checkIn" <= ${query.to}::date`);
+    const cityMatches = cities
+      .filter((city) =>
+        [city.name, city.englishName].some((name) =>
+          name.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
+        ),
+      )
+      .map((city) => city.id);
+    if (search)
+      predicates.push(
+        Prisma.sql`(strpos(lower(r."hotelName"),lower(${search}))>0 OR strpos(lower(r."brokerName"),lower(${search}))>0 OR ${cityMatches.length ? Prisma.sql`p."cityId" IN (${Prisma.join(cityMatches.map((id) => Prisma.sql`${id}::uuid`))})` : Prisma.sql`FALSE`})`,
+      );
+    const result = await this.database.client.$queryRaw<
+      { total: number; data: HotelRegisteredPeriodsPageV1['data'] }[]
+    >(Prisma.sql`
+      WITH filtered AS (
+        SELECT r.id AS "hotelRateId", p.id AS "packId", b.id AS "batchId", p."branchId",p."cityId",
+          r."hotelId",r."hotelName",r."brokerName",r.currency AS "currencyCode",
+          to_char(b."checkIn",'YYYY-MM-DD') AS "checkIn",to_char(b."checkOut",'YYYY-MM-DD') AS "checkOut",b.version,
+          b."tourDepartureId", EXISTS(SELECT 1 FROM reservation_hotel_rate_pack_sources s WHERE s."packId"=p.id) AS "sharedPeriod"
+        FROM reservation_hotel_rate_packs p
+        JOIN reservation_hotel_rate_batches b ON b."packId"=p.id AND b.version=p."currentVersion" AND b."branchId"=p."branchId" AND b."cityId"=p."cityId"
+        JOIN reservation_hotel_group_rates r ON r."batchId"=b.id
+        WHERE ${Prisma.join(predicates, ' AND ')}
+      )
+      SELECT count(*)::int AS total,coalesce((SELECT json_agg(rows) FROM (
+        SELECT * FROM filtered ORDER BY "checkIn" DESC,"checkOut" DESC,"hotelName","hotelRateId" LIMIT 50 OFFSET ${(page - 1) * 50}
+      ) rows),'[]'::json) AS data FROM filtered
+    `);
+    return {
+      version: 1,
+      data: (result[0]?.data ?? []).map((row) => ({
+        ...row,
+        cityName: cityNames.get(row.cityId) ?? row.cityId,
+      })),
+      total: result[0]?.total ?? 0,
+      page,
+      pageSize: 50,
+    };
+  }
 
   async forTour(
     branchId: string,

@@ -1,3 +1,41 @@
+## PARTNER-360-IMPORT-1017 — PC-B — PARTIAL / FINANCE CONTRACT HANDOFF
+
+Published: PR https://github.com/nirvanamahlou/Rubi/pull/912 targets develop.
+User now authorizes merge of the completed slice after final-head CI; the full
+360 request remains unfinished. Stale SSR geography-absence expectations were
+updated and strengthened;23 focused form/import tests pass. The Finance producer
+handoff request is registered for PC-A in PR912 comment6232679806.
+
+Supplier Provider ID is removed from the visible table; broker table already
+omits it. Supplier country/city now use scoped Master Data references beside the
+address. Meal/service creation hides its code and omits a blank code so the
+existing API generates it; stored edit/view codes are preserved. Both partner
+tabs now have Excel template/preview/import. Country/city share one cell and
+resolve to real active geography FKs. Opt-in partner writes atomically create
+or update the canonical organization, encrypted office/mobile/email contacts
+and primary address; retries skip existing imported identities without overwrite.
+Untouched contact edits retain their encrypted values. No schema/dependency change.
+
+All requested Agency360 commercial/financial features remain unimplemented:
+the role-safe storage already exists but public B2B paths allow only customer
+roles, and existing Finance preview is a Sales/customer projection, not supplier
+payables. User confirmed COUNTERPARTY_TO_US credit. The missing Finance-owned
+supplier/broker payable/payment/exposure public projection needs producer/consumer
+coordination with PC-A before implementing the complete dossier. No cosmetic 360
+or customer receivable data is substituted. This remains a partial delivery.
+
+Hotel logo reproduced through the authenticated UI on the explicitly local demo
+hotel: upload/attachment succeeds, preview stays quarantined because Linux cannot
+run the Windows Defender adapter. A standalone Windows host scan companion reuses
+the existing processor, encrypted storage and real Defender; the two hotel files
+became CLEAN through audited scan commands (no direct status edit). Preview now
+visibly renders the logo. Worker PID19688 runs for this Windows session; no API/Web
+container replacement or automatic reboot service installed. Details and evidence:
+docs/tasks/PARTNER-360-IMPORT-1017.md. Eight Web suites (86 tests), 52 policy/meal
+tests, 4 persistence tests, 7 antivirus/storage tests, 6 isolated PostgreSQL tests
+and 3 translation-coverage tests pass. Web/API types, API production build,
+scoped lint and formatting pass. No merge yet.
+
 ## FINANCE-PROFIT-LAYOUT-1017 — PC-A — READY_FOR_CI
 
 Receipt-verification contract-profit view is framed and spaced with RTL table headers, isolated LTR amounts, explicit currency codes, contained horizontal overflow, separate missing-cost warning and purchase evidence cards. Existing protected Sales profit read and all financial calculations remain unchanged; null profit is never displayed as zero.13 focused presentation, inbox, Sales-exclusion and English-coverage tests pass. Scoped lint/type and exact-head full CI gate user-authorized develop merge; no API/schema/dependency/data or local3100 changes.
@@ -6230,3 +6268,7 @@ HOTEL-SALES-PACKAGE-PREVIEW-1017 delivery:40 focused tests, scoped lint, full AP
 ## DELETE-BUTTON-OUTLINE-1017 — PC-A — REVIEW_CANDIDATE
 
 Changed the shared destructive Button variant to a transparent background, red border/text and a subtle hover fill in both themes. Removed HR's solid-red override and switched Documents delete confirmation from hard-coded red fill to the shared variant. Delete icons and accessible names, disabled/loading/focus behavior and all command/permission/confirmation logic remain unchanged. Five focused render/interaction tests pass, including all four pricing-field delete buttons from the user's image. Scoped lint/typecheck and exact-head full CI/build gate the user-authorized develop merge. User explicitly limits this merge to delete styling; package-sale PR910 remains draft/unmerged. No schema/API/migration/dependency or operational data changes. Source scopes frozen and released with candidate.
+
+## HOTEL-REGISTERED-PERIODS-1017 — PC-A — REVIEW_CANDIDATE
+
+Added a read-only registered-hotel-period directory only in package building, available before choosing a tour. It shows hotel, authorized branch, city, broker, check-in/check-out, currency, pack type and saved version, with literal substring search, optional overlap dates, stable50-row pagination and refresh. Reservations public projection returns only latest active pack versions, including ordinary/departure/shared packs; no prices or passenger/contact data. City names resolve through the public Master Data reference and preserve inactive history. Package Pricing read permission and actor branch scope are enforced before querying. Targeted API/Web/permission tests, scoped lint and typechecks passed; real compiled SQL passed read-only PostgreSQL checks on the isolated preview clone, including current-version/archive exclusion, literal search and empty-page totals. API production build passed; full Web build and exact-head CI gate merge. No schema, migration, dependency or business-data writes. User authorizes only this new directory to merge; PR910 sale controls remain draft. Source/contracts frozen and released with candidate.3200 integration follows merge;3100 untouched.

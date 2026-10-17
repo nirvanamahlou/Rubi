@@ -348,9 +348,9 @@ export function hasRequiredOrganizationColumns(normalized: readonly string[]) {
   return normalized.includes('legalName');
 }
 
-export async function parseOrganizationXlsx(
+export async function readOrganizationWorkbookRows(
   file: File,
-): Promise<OrganizationImportRow[]> {
+): Promise<string[][]> {
   if (file.size > maxFileBytes || !file.name.toLowerCase().endsWith('.xlsx'))
     throw new Error('فقط فایل XLSX تا ۵ مگابایت مجاز است.');
   const files = await unzipWorkbook(await file.arrayBuffer());
@@ -424,7 +424,13 @@ export async function parseOrganizationXlsx(
     }
     return values;
   });
-  const [headers = [], ...data] = rows;
+  return rows;
+}
+
+export async function parseOrganizationXlsx(
+  file: File,
+): Promise<OrganizationImportRow[]> {
+  const [headers = [], ...data] = await readOrganizationWorkbookRows(file);
   // Excel retains styled empty template rows. They are not agency records.
   const populatedRows = data.filter((row) => row.some(Boolean));
   if (populatedRows.length > organizationImportLimit)
