@@ -4825,14 +4825,6 @@
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
   "version برای ویرایش الزامی است.": "version is required for editing.",
-  "دلیل باید بین ۵ تا ۱۲۰ نویسه باشد.": "The reason must be between 5 and 120 characters.",
-  "دلیل تغییر الزامی است.": "The reason for the change is mandatory.",
-  "دلیل تغییر باید بین ۵ تا ۱۰۰۰ نویسه باشد.": "The reason for the change must be between 5 and 1000 characters.",
-  "دلیل صدور مجدد باید بین ۳ تا ۵۰۰ نویسه معنادار باشد.": "The reason for reissue must be between 3 and 500 meaningful characters.",
   "روش یا محیط اتصال معتبر نیست.": "Invalid connection method or environment.",
-  "شماره بلیط چارتر ظرفیت شرکت خودکار است.": "The charter ticket number is automatic.",
-  "شماره بلیط شناور را با ۶ رقم انگلیسی وارد کنید.": "Enter the floating ticket number with 6 English digits.",
-  "شماره قبلاً ثبت شده است.": "The number is already registered.",
-  "شماره قبلاً ثبت شده و قابل جایگزینی نیست.": "The number is already registered and cannot be replaced.",
   "نشانی باید HTTPS عمومی و بدون اطلاعات ورود، پارامتر یا بخش خصوصی باشد.": "Use a public HTTPS URL without credentials, query parameters or fragments."
 }
