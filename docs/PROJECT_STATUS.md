@@ -6458,3 +6458,7 @@ Added «دریافت اطلاعات» beside the new-contract heading. It reload
 ## 2026-10-18 — PC-A — Reservation inbox manual refresh
 
 Added دریافت اطلاعات to the Reservations inbox through the existing authenticated queue reader. Manual refresh preserves filters, selection and mounted operational forms, coalesces overlapping intake requests, refreshes hotel/city/meal reference labels and retains the last successful same-scope queue on transient failure. Authentication/authorization failures clear the queue. No schema, migration, API contract, dependency or runtime changes. Foundation tests: 8 files / 79 tests passed; Web lint/typecheck/build verification recorded in the task PR before merge.
+
+## PASSENGER-HOTEL-FOREIGN-SHARE-1018 — PC-A
+
+For new hotel/flight contracts, the passenger foreign column displays the existing exact room-price share instead of a second editable flight amount. One adult receives the full room price; two adults receive half each, with precise residual allocation from the shared roomPriceShares helper. Stable selected hotel adult order matches contract print. Room amount is counted once; stale foreign flight drafts are excluded from both displayed totals and submitted flight metadata. Standalone flight currency support and already persisted contracts remain unchanged. No schema/migration/API/dependency/runtime changes.28 focused tests cover single/double room display, stale draft exclusion, submitted totals/metadata validation and printed hotel shares. Local quality/build and full exact-head CI gate user-authorized develop merge.

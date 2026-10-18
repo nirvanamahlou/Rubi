@@ -8,7 +8,10 @@ import {
   SalesCurrencySelect,
   type SalesCurrency,
 } from './sales-currency-select';
-import type { SalesFormState } from '../model/sales-form';
+import {
+  passengerFlightSalePrices,
+  type SalesFormState,
+} from '../model/sales-form';
 
 export function ContractTotalPrices({
   state,
@@ -30,12 +33,7 @@ export function ContractTotalPrices({
   let calculated: SalesMoney[] = [];
   try {
     calculated = flightRoomTotals(
-      Object.fromEntries(
-        state.passengers.map((p) => [
-          p.customerId,
-          state.passengerFlightPrices?.[p.customerId] ?? [],
-        ]),
-      ),
+      passengerFlightSalePrices(state),
       state.serviceKinds.includes('HOTEL') ? (state.hotel.rooms ?? []) : [],
     );
   } catch {
