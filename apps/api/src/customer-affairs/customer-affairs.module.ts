@@ -6,6 +6,8 @@ import { CustomerContactCrypto } from '../customers/customer-contact.crypto';
 import { HrDirectoryModule } from '../hr/hr-directory.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { IamModule } from '../iam/iam.module';
+import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
+import { HrWorkbenchRequestUnits } from '../hr/hr-workbench-request-units';
 import { AuthGuard } from '../iam/auth.guard';
 import { PermissionGuard } from '../iam/permission.guard';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -52,6 +54,8 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     CustomerAffairsMarketingIntakeController,
   ],
   providers: [
+    IamWorkbenchRequestDirectory,
+    HrWorkbenchRequestUnits,
     AuthGuard,
     PermissionGuard,
     CustomerAffairsRepository,

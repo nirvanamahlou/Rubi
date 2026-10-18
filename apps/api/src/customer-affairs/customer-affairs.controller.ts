@@ -48,6 +48,7 @@ import {
   TicketMutationDto,
   TicketTransitionDto,
   TimelineDto,
+  WorkbenchRequestDto,
 } from './customer-affairs.dto';
 import { CustomerAffairsService } from './customer-affairs.service';
 import { customerAffairsXlsx } from './customer-affairs-xlsx';
@@ -470,19 +471,27 @@ export class CustomerAffairsController {
 
   @Post('workbench/requests')
   createWorkbenchRequest(
-    @Body() dto: TicketMutationDto,
+    @Body() dto: WorkbenchRequestDto,
     @Req() req: AuthenticatedRequest,
     @Headers('x-branch-id') branchId?: string,
     @Headers('idempotency-key') key?: string,
     @Headers('x-request-id') traceId?: string,
   ) {
     return this.service.createWorkbenchRequest(
-      dto as CustomerAffairsTicketInput,
+      dto,
       req.actor,
       branchId,
       key,
       traceId,
     );
+  }
+  @Get('workbench/request-options')
+  @Header('Cache-Control', 'private, no-store')
+  workbenchRequestOptions(
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+  ) {
+    return this.service.workbenchRequestOptions(req.actor, branchId);
   }
   @Get('workbench/requests')
   @Header('Cache-Control', 'private, no-store')
