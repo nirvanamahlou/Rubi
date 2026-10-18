@@ -1,5 +1,5 @@
 import type { MasterDataRecord } from '@nora/contracts';
-import { masterDataApi } from '@/modules/master-data/api/client';
+import { salesApi } from './client';
 
 /** Load the complete active reference list; a partial list is not a fallback. */
 export async function loadPaymentCurrencies(): Promise<
@@ -7,7 +7,7 @@ export async function loadPaymentCurrencies(): Promise<
 > {
   const currencies: MasterDataRecord[] = [];
   for (let page = 1; page <= 100; page++) {
-    const response = await masterDataApi.list('currencies', {
+    const response = await salesApi.listReferences('currencies', {
       search: '',
       status: 'active',
       sortBy: 'name',

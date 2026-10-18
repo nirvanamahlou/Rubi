@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { MasterSalesDirectory } from './master-sales-directory';
 import { PartnerDossierController } from './partner-dossier.controller';
 import { MasterHrDirectory } from './master-hr-directory';
 import { MasterProcurementDirectory } from './master-procurement-directory';
@@ -38,6 +39,7 @@ import {
     OrganizationAddressController,
   ],
   providers: [
+    MasterSalesDirectory,
     MasterProcurementDirectory,
     AuthGuard,
     PermissionGuard,
@@ -53,6 +55,7 @@ import {
     MasterHotelBaseRatePublicService,
   ],
   exports: [
+    MasterSalesDirectory,
     MasterProcurementDirectory,
     MasterDataService,
     MasterOrganizationDirectory,
