@@ -77,10 +77,21 @@ export function reservationPdfHtml(
       [
         [voucher ? 'BOOKING NO.' : 'REQUEST NO.', data.request],
         ['SUPPLIER', data.supplier],
+        ...(!voucher
+          ? [
+              [
+                'PROPOSED PURCHASE PRICE',
+                reservationFormPriceText(
+                  settings?.hotelPurchasePrices ?? [],
+                  'code',
+                ) || '-',
+              ],
+            ]
+          : []),
         [voucher ? 'BOOKING DATE' : 'DATE OF ISSUE', data.issueDate],
         ['SERVICES', data.services],
       ],
-      'meta',
+      voucher ? 'meta' : 'meta metaWithPrice',
     )}
     <section class="bookingSection">${heading('01', 'BOOKING SUMMARY', 'Reservation details')}${fields(
       [
@@ -97,7 +108,6 @@ export function reservationPdfHtml(
       'summary',
     )}
     </section>${heading('02', 'FLIGHT INFORMATION', 'Departure & return · Tehran time')}${table(['AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'], data.flights.length ? data.flights.map((f) => [f.airline, f.number, f.date, f.time]) : [['-', '-', '-', '-']])}
-    ${!voucher && settings?.hotelPurchasePrices?.length ? `<div dir="ltr" style="padding:8px 10px;border:1px solid #c5d5e6;text-align:center;background:#eef4fa;font-weight:700"><strong>HOTEL TOTAL: </strong>${escape(reservationFormPriceText(settings.hotelPurchasePrices))}</div>` : ''}
     ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
       [
         'HOTEL',

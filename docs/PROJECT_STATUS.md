@@ -29,6 +29,9 @@ image and local startup health override. No other Docker project was stopped. Gl
 no API/public catalogue changes included. User now explicitly authorizes push, hosted CI, PR to develop and merge after all checks and review pass. Candidate synchronized with develop@091f1fd5; no gate or runtime change.
 See [navigation and connection readiness](tasks/INTEGRATIONS-NAVIGATION-1018.md).
 
+## RESERVATION-HEADER-PURCHASE-PRICE-1018 — PC-A
+
+Move the saved proposed hotel purchase price to a fifth supplier-form metadata field, PROPOSED PURCHASE PRICE, between SUPPLIER and DATE OF ISSUE. Preview and server PDF share exact Decimal-string formatting with English ISO currency codes, no conversion or cross-currency sum. Keep zero values and show a dash when unset; remove the former HOTEL TOTAL block. Voucher stays four columns and never includes the internal purchase price.33 focused tests and scoped lint pass; real Chrome one-A4 PDF visually checked with IRR/EUR/USD values. Sent-snapshot PDF behavior retained. Full exact-head hosted checks gate user-authorized develop merge; no schema/API/dependency or runtime/data changes.
 ## CONTRACT-HOTEL-COMPACT-1018 — PC-A
 
 New-contract hotel selector and room count share one aligned responsive row. Room count width is bounded (96px on small screens, 144px otherwise); hotel retains remaining space. Existing room composition, child allocation, validation and persistence remain unchanged. No API/schema/migration/dependency change. Six ServiceParties tests, scoped ESLint, formatting and diff checks pass. Exact-head hosted quality, tests, typecheck/build and migration checks gate user-authorized develop merge.

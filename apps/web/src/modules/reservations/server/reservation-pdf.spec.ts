@@ -75,7 +75,7 @@ describe('reservation PDF route', () => {
       sent.hotelPurchasePrices,
     );
   });
-  it('prints the exact supplier hotel totals beside hotel information and never leaks them to vouchers', () => {
+  it('prints exact proposed purchase prices in the English supplier header and never leaks them to vouchers', () => {
     const settings = {
       ...intake.workflow.supplierFormSettings!,
       hotelPurchasePrices: [
@@ -97,19 +97,24 @@ describe('reservation PDF route', () => {
       'data:image/png;base64,c2FmZQ==',
       '',
     );
-    expect(html).toContain('9,007,199,254,740,993.25 € · 100.50 $');
-    expect(html.indexOf('HOTEL TOTAL')).toBeLessThan(
-      html.indexOf('HOTEL INFORMATION'),
+    expect(html).toContain('9,007,199,254,740,993.25 EUR · 100.50 USD');
+    expect(html.indexOf('PROPOSED PURCHASE PRICE')).toBeGreaterThan(
+      html.indexOf('<span>SUPPLIER</span>'),
     );
-    expect(
-      reservationPdfHtml(
-        priced,
-        {},
-        'data:image/png;base64,c2FmZQ==',
-        '',
-        true,
-      ),
-    ).not.toContain('HOTEL TOTAL');
+    expect(html.indexOf('PROPOSED PURCHASE PRICE')).toBeLessThan(
+      html.indexOf('<span>DATE OF ISSUE</span>'),
+    );
+    expect(html).not.toContain('HOTEL TOTAL');
+    const voucherHtml = reservationPdfHtml(
+      priced,
+      {},
+      'data:image/png;base64,c2FmZQ==',
+      '',
+      true,
+    );
+    expect(voucherHtml).not.toContain('PROPOSED PURCHASE PRICE');
+    expect(voucherHtml).not.toContain('9,007,199,254,740,993.25');
+    expect(voucherHtml).not.toContain('100.50');
   });
   it('stops before rendering or references when workflow read is forbidden', async () => {
     const fetcher = vi

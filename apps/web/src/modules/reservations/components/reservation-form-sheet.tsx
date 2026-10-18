@@ -213,10 +213,23 @@ export function ReservationFormSheet({
                 )}
               </div>
             </header>
-            <div className={styles.meta}>
+            <div
+              className={`${styles.meta} ${!voucher ? styles.metaWithPrice : ''}`}
+            >
               {[
                 [voucher ? 'BOOKING NO.' : 'REQUEST NO.', data.request],
                 ['SUPPLIER', data.supplier],
+                ...(!voucher
+                  ? [
+                      [
+                        'PROPOSED PURCHASE PRICE',
+                        reservationFormPriceText(
+                          settings?.hotelPurchasePrices ?? [],
+                          'code',
+                        ) || '-',
+                      ],
+                    ]
+                  : []),
                 [voucher ? 'BOOKING DATE' : 'DATE OF ISSUE', data.issueDate],
                 ['SERVICES', data.services],
               ].map(([label, value]) => (
@@ -289,21 +302,6 @@ export function ReservationFormSheet({
                 ))}
               </tbody>
             </table>
-            {!voucher && !!settings?.hotelPurchasePrices?.length && (
-              <div
-                dir="ltr"
-                style={{
-                  padding: '8px 10px',
-                  border: '1px solid #c5d5e6',
-                  textAlign: 'center',
-                  background: '#eef4fa',
-                  fontWeight: 700,
-                }}
-              >
-                <strong>HOTEL TOTAL: </strong>
-                {reservationFormPriceText(settings.hotelPurchasePrices)}
-              </div>
-            )}
             {(!settings || settings.flags.hotel) && (
               <>
                 <Heading

@@ -96,6 +96,9 @@
   gap: 7px;
   align-content: start;
 }
+.metaWithPrice {
+  grid-template-columns: 1fr 1fr 1.3fr 1.08fr 1.08fr;
+}
 .meta > div:last-child {
   border-right: 0;
 }
