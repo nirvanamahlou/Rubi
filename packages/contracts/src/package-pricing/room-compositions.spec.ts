@@ -11,6 +11,7 @@ import {
 import type {
   PackageTourHotelPurchaseRowV1,
   PackagePublishedSaleV1,
+  PackageTourCostGridV1,
 } from './index';
 const rate = {
   adults: 2,
@@ -140,7 +141,7 @@ it('keeps exact rows from every matching period and retains legacy single-batch 
     other = { id: 'other', branchId: 'other', rows: [{ id: 'private' }] };
   const grid = {
     purchaseBatches: [a, b, other],
-  } as unknown as import('./index').PackageTourCostGridV1;
+  } as unknown as PackageTourCostGridV1;
   const selected = packageTourSelectionBatch(grid, 'a');
   expect(selected?.id).toBe('a');
   expect(selected?.rows.map((r) => [r.id, r.batchId])).toEqual([
