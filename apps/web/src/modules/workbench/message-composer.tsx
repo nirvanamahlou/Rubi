@@ -502,10 +502,6 @@ export function MessageComposer({
                     </Button>
                   ))}
               </div>
-              <p className="rounded-xl border border-primary/15 bg-surface/75 p-3 text-xs leading-6 text-muted-foreground">
-                واحد و قالب را انتخاب کنید؛ مقصد واقعی پیام را از مخاطبان یا
-                گروه‌ها برگزینید.
-              </p>
             </>
           ) : sidebarMode === 'contacts' ? (
             <>
@@ -753,22 +749,6 @@ export function MessageComposer({
                   </p>
                 )}
               </section>
-              <div
-                className="flex flex-wrap gap-2"
-                aria-label="انتخاب قالب واحد"
-              >
-                {messageUnits.map((item) => (
-                  <Button
-                    key={item.id}
-                    size="sm"
-                    variant={unitId === item.id ? 'primary' : 'outline'}
-                    onClick={() => setUnitId(item.id)}
-                  >
-                    <MessageUnitIcon id={item.id} />
-                    {item.label}
-                  </Button>
-                ))}
-              </div>
               <section
                 aria-label={`قالب‌های پیام به ${unit.label}`}
                 className="space-y-3 rounded-2xl border border-violet-200/70 bg-gradient-to-l from-violet-100/70 to-sky-100/70 p-4 dark:border-violet-800/60 dark:from-violet-950/30 dark:to-sky-950/30"

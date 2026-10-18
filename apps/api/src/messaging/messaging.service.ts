@@ -128,7 +128,8 @@ export class MessagingService {
     const row = await this.repository.createMessage({
       conversationId,
       senderUserId: actor.userId,
-      body: input.body,
+      // The database requires a non-empty body, including attachment-only messages.
+      body: input.body || 'فایل پیوست',
       clientRequestId: input.clientRequestId,
       attachments: attachments.map(({ id, title }) => ({
         documentId: id,
