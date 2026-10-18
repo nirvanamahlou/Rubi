@@ -1,3 +1,7 @@
+## USER-HR-UNIT-1018 — PC-B
+
+Add optional HR-backed unit selection on new accounts and existing-user details. HR-owned minimal scoped directory, real nullable profile FK/index, atomic creation/details validation and explicit clear/retain semantics; preserve grants, roles, phone/photo and personnel records. Existing records are not backfilled. Protect branch removal and stale writes.98 Web tests, API/HR regression suites, types/lint and Prisma validation plus final-head hosted build/quality/PostgreSQL unit-migration proof gate owner-authorized push/develop merge. No operational DB/runtime mutation. See docs/tasks/USER-HR-UNIT-1018.md.
+
 ## USER-ROLE-PICKER-REDESIGN-1018 — PC-B
 
 Remove the manual-access heading and both requested explanations. Redesign existing-user role selection as a themed responsive card with shared searchable saved-role selector, labeled job-title input and explicit disabled/empty states. Reuse existing role-ID draft callbacks and unchanged manual-access save/delegation/CAS logic; no grants/data/API/runtime mutation. Focused tests and exact-head quality/type/test/build gates required before owner-authorized push/develop merge.

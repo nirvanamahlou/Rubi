@@ -21,6 +21,7 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { AccessGroupCard } from './access-group-card';
 import { ManualAccessEditor } from './manual-access-editor';
 import { UserDetailsEditor } from './user-details-editor';
+import { UserUnitSelect, type UserUnitOption } from './user-unit-select';
 import { sectionAccess } from './section-access';
 import { IamDeleteDialog, type DeleteTarget } from './iam-delete-dialog';
 import { deleteUserAndReload, deleteRoleAndReload } from './deletion-actions';
@@ -50,6 +51,7 @@ interface UserRow {
   status: string;
   accessRevision: string;
   detailsRevision: string;
+  organizationUnitId: string | null;
   roles: Array<{
     role: {
       id: string;
@@ -226,6 +228,8 @@ export function UserManagement() {
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true);
+  const [units, setUnits] = useState<UserUnitOption[]>([]);
+  const [organizationUnitId, setOrganizationUnitId] = useState('');
   const [proposalOpen, setProposalOpen] = useState(false);
   const [accessControlSearch, setAccessControlSearch] = useState('');
   const accessGrid = useRef<HTMLDivElement>(null);
@@ -296,8 +300,10 @@ export function UserManagement() {
         request('/iam/users/access-options'),
         request('/iam/auth/access'),
       ]);
-      if (access.permissions.includes('iam.users.manage'))
+      if (access.permissions.includes('iam.users.manage')) {
         setTemplates(await request('/iam/access-options/templates'));
+        setUnits(await request('/iam/users/organization-units'));
+      }
       setUsers(rows);
       setSelected((current) =>
         current
@@ -405,6 +411,7 @@ export function UserManagement() {
       ).map((control) => control.id),
     );
     setBranchIds(user?.branches.map((b) => b.branch.id) ?? []);
+    setOrganizationUnitId('');
     if (user && !codes.includes('ui.profile'))
       setMessage(
         'این حساب از نقش‌های مشترک/قدیمی استفاده می‌کند. مجوزهای مثبت فقط خواندنی‌اند؛ محدودیت صریح و شعبه را می‌توانید بدون تبدیل یا حذف عضویت نقش ذخیره کنید.',
@@ -486,6 +493,7 @@ export function UserManagement() {
                   ...access,
                   manualAccessV3: true,
                   displayName: fields.get('displayName'),
+                  ...(organizationUnitId ? { organizationUnitId } : {}),
                   username: fields.get('username'),
                   ...(fields.get('email')
                     ? { email: fields.get('email') }
@@ -855,12 +863,32 @@ export function UserManagement() {
                       key={branch.id}
                       label={branch.name}
                       checked={branchIds.includes(branch.id)}
-                      onChange={(v) =>
-                        setBranchIds(change(branchIds, [branch.id], v))
-                      }
+                      onChange={(v) => {
+                        const next = change(branchIds, [branch.id], v);
+                        setBranchIds(next);
+                        if (
+                          !selected &&
+                          organizationUnitId &&
+                          !units.some(
+                            (unit) =>
+                              unit.id === organizationUnitId &&
+                              next.includes(unit.branchId),
+                          )
+                        )
+                          setOrganizationUnitId('');
+                      }}
                     />
                   ))}
                 </fieldset>
+                {!selected && !templateMode && (
+                  <UserUnitSelect
+                    value={organizationUnitId}
+                    units={units}
+                    branchIds={branchIds}
+                    disabled={!canManage || busy}
+                    onChange={setOrganizationUnitId}
+                  />
+                )}
                 {!selected && (
                   <>
                     <div className={styles.accessHeading}>
@@ -1071,6 +1099,8 @@ export function UserManagement() {
                   <UserDetailsEditor
                     key={`${selected.id}:${selected.detailsRevision}`}
                     user={selected}
+                    units={units}
+                    branchIds={selected.branches.map((item) => item.branch.id)}
                     canManage={canManage}
                     request={request}
                     onSaved={load}
