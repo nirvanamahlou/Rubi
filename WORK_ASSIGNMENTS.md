@@ -1,6 +1,10 @@
-## BROKER-CONTACT-SAVE-1018 — PC-B — IN_PROGRESS
+## BROKER-CONTACT-SAVE-1018 — PC-B — READY_FOR_CI
 
 COMPUTER_ID=PC-B; branch codex/pc-b-broker-contact-save-1018 from origin/develop@6f6e480a. User confirms identical office/mobile numbers cause unexpected broker-save error and requests uppercase email acceptance, tests, push and develop merge. Reserve bounded partner-contact transaction helper/projection, broker email input and targeted unit/disposable PostgreSQL regressions plus own notes. Reuse one encrypted phone contact for shared office/mobile roles; preserve uniqueness, role ownership, explicit clears, masking, audit and transaction rollback. No schema/migration/dependency, IAM grant or runtime change. Exact-head full CI gates authorized merge; no3100 deployment inferred.
+
+## USER-SAVE-BUTTON-1018 — PC-B — READY_FOR_CI
+
+Owner authorizes restoring the user-details Save button appearance after save, push and develop merge. Only user-details-editor.tsx and focused state/lifecycle tests plus own coordination/status entries on codex/pc-b-user-save-button-1018 from origin/develop@cc279d83. Keep idle button normal blue even without edits, disable/show busy only during submission or read-only access; guard unchanged submissions without issuing redundant writes. Preserve account revisions, unit/name payloads and all grants. Ten focused tests pass. No API/schema/dependency/runtime changes. Earlier user-editor scopes released; bounded locks released with frozen candidate. Exact-head CI gates merge.
 
 ## PASSENGER-PRICE-NAMES-1018 — PC-A — READY_FOR_CI
 
