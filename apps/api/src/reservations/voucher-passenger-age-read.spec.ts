@@ -23,13 +23,11 @@ it('enriches missing historical child bands from the scoped Sales reader without
   const client = {
     reservationIntake: { findFirst: vi.fn().mockResolvedValue(row) },
     salesContract: {
-      findFirst: vi
-        .fn()
-        .mockResolvedValue({
-          version: 1,
-          departureDate: new Date('2026-10-01'),
-          passengers: [{ customerId: 'c', birthDate: new Date('2018-10-01') }],
-        }),
+      findFirst: vi.fn().mockResolvedValue({
+        version: 1,
+        departureDate: new Date('2026-10-01'),
+        passengers: [{ customerId: 'c', birthDate: new Date('2018-10-01') }],
+      }),
     },
   };
   const service = new TravelWorkflowService(
