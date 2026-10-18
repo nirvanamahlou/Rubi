@@ -1,4 +1,5 @@
 import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
+import { reservationOutputPassengers } from './reservation-passenger-output';
 import {
   BrokerPurchaseHistory,
   BrokerPurchaseHistoryController,
@@ -371,8 +372,16 @@ export class ReservationRequestsController {
   ) {
     if (!req.actor.permissions.includes('reservations.read'))
       throw new ForbiddenException();
+    const intake = await this.workflow.detail(id, req.actor.branchIds);
     return {
-      data: await this.workflow.detail(id, req.actor.branchIds),
+      data: {
+        ...intake,
+        outputPassengers: await reservationOutputPassengers(
+          intake.snapshot,
+          this.customers,
+          req.actor,
+        ),
+      },
       delivery: await this.delivery.read(id),
     };
   }

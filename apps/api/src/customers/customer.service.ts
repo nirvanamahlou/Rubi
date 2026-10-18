@@ -1,4 +1,4 @@
-import { isOptionalOperationReason } from '@nora/contracts';
+import { hotelAgeOn, isOptionalOperationReason } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -642,6 +642,35 @@ export class CustomerService {
         message: 'مشتری یافت نشد.',
       });
     return { data: toCustomerDetail(row, false) };
+  }
+
+  /** Request-scoped Reservations output; never exposes raw DOB or document numbers. */
+  async reservationOutputIdentity(
+    id: string,
+    travelDate: string | undefined,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    const row = await this.repository.find(id, actor.branchIds);
+    if (!row) throw new NotFoundException('مشتری یافت نشد.');
+    const first = row.passportFirstName?.trim();
+    const last = row.passportLastName?.trim();
+    const age =
+      row.birthDate && travelDate
+        ? hotelAgeOn(row.birthDate.toISOString().slice(0, 10), travelDate)
+        : null;
+    const hotelChildAgeBand =
+      age !== null && age >= 2 && age < 6
+        ? ('CHD_2_TO_6' as const)
+        : age !== null && age >= 6 && age < 12
+          ? ('CHD_6_TO_12' as const)
+          : null;
+    return {
+      customerId: id,
+      passportName: first && last ? `${last} / ${first}` : null,
+      hotelChildAgeBand,
+    };
   }
 
   /** Internal Sales reference: caller supplies buyers from its authorized contracts. */
