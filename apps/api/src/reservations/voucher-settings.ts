@@ -31,6 +31,28 @@ export function validateVoucherSettings(
         v.hotelPurchasePrices.length)
   )
     return fail();
+  if (
+    v.rooms !== undefined &&
+    (!Array.isArray(v.rooms) ||
+      v.rooms.length > 50 ||
+      v.rooms.some(
+        (room, index) =>
+          !room ||
+          room.ordinal !== index + 1 ||
+          typeof room.roomTypeNameSnapshot !== 'string' ||
+          !room.roomTypeNameSnapshot.trim() ||
+          room.roomTypeNameSnapshot.length > 200 ||
+          !Number.isInteger(room.adults) ||
+          room.adults < 1 ||
+          room.adults > 20 ||
+          !Array.isArray(room.childAges) ||
+          room.childAges.length > 20 ||
+          room.childAges.some(
+            (age) => !Number.isInteger(age) || age < 0 || age >= 15,
+          ),
+      ))
+  )
+    return fail();
   if (!v.text || !v.numbers || !v.flags || !Array.isArray(v.passengers))
     return fail();
   const uuid =
@@ -131,6 +153,16 @@ export function validateVoucherSettings(
       return fail();
   }
   return {
+    ...(v.rooms !== undefined
+      ? {
+          rooms: v.rooms.map((room) => ({
+            ordinal: room.ordinal,
+            roomTypeNameSnapshot: room.roomTypeNameSnapshot.trim(),
+            adults: room.adults,
+            childAges: [...room.childAges],
+          })),
+        }
+      : {}),
     ...(v.hotelPurchasePrices !== undefined
       ? {
           hotelPurchasePrices: v.hotelPurchasePrices.map((p) => ({

@@ -390,11 +390,6 @@ export function TravelWorkflowForm({
             }}
           />
         )}
-      {settingsDirty && (
-        <p role="status">
-          تنظیمات تغییر کرده؛ قبل از ارسال یا صدور ذخیره کنید.
-        </p>
-      )}
       {(action === 'واچر' || action === 'Confirmation') &&
         !closed &&
         !hasSentReservationForm(state) && (
@@ -471,18 +466,16 @@ export function TravelWorkflowForm({
               />
             </label>
           )}
-          <label>
-            {action === 'رزرواسیون'
-              ? 'توضیحات ارسال (اختیاری)'
-              : action === 'Confirmation'
-                ? 'یادداشت'
-                : 'توضیح / دلیل عملیات'}
-            <Textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              maxLength={500}
-            />
-          </label>
+          {action !== 'رزرواسیون' && (
+            <label>
+              {action === 'Confirmation' ? 'یادداشت' : 'توضیح / دلیل عملیات'}
+              <Textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                maxLength={500}
+              />
+            </label>
+          )}
           {(action === 'واچر' || action === 'Confirmation') &&
             !state.insuranceIssued && (
               <label className="rounded border border-amber-500 p-3">

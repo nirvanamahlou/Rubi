@@ -75,6 +75,8 @@ export function ReservationSalesAmendment({
       'hotels',
       'room-types',
       'meal-services',
+      'currencies',
+      'currencies',
     ];
     void Promise.all(
       resources.map(async (resource) => {
@@ -494,6 +496,73 @@ export function ReservationSalesAmendment({
         )}
         {section === 'PRICES' && (
           <>
+            {hotel?.rooms?.map((room, index) => (
+              <div
+                key={room.ordinal}
+                className="grid gap-2 rounded-xl border p-3 sm:grid-cols-2"
+              >
+                <strong>
+                  {room.ordinal} · {room.roomTypeNameSnapshot}
+                </strong>
+                <label>
+                  قیمت اتاق
+                  <Input
+                    dir="ltr"
+                    inputMode="decimal"
+                    value={room.agreedPrice?.amount ?? ''}
+                    onChange={(e) =>
+                      changeHotel({
+                        rooms: hotel.rooms!.map((r, i) =>
+                          i === index
+                            ? {
+                                ...r,
+                                agreedPrice: {
+                                  amount: e.target.value,
+                                  currencyCode:
+                                    r.agreedPrice?.currencyCode ?? '',
+                                },
+                              }
+                            : r,
+                        ),
+                      })
+                    }
+                  />
+                </label>
+                <div>
+                  <SearchableReference
+                    label="ارز اتاق"
+                    value={
+                      refs.currencies?.find(
+                        (c) => c.code === room.agreedPrice?.currencyCode,
+                      )?.id ?? ''
+                    }
+                    options={(refs.currencies ?? []).filter(
+                      (c) => c.code !== 'IRR',
+                    )}
+                    onChange={(id) => {
+                      const code = refs.currencies?.find(
+                        (c) => c.id === id,
+                      )?.code;
+                      if (code)
+                        changeHotel({
+                          rooms: hotel.rooms!.map((r, i) =>
+                            i === index
+                              ? {
+                                  ...r,
+                                  agreedPrice: {
+                                    amount: r.agreedPrice?.amount ?? '0',
+                                    currencyCode: code,
+                                  },
+                                }
+                              : r,
+                          ),
+                        });
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+
             {draft.services.some(
               (s) =>
                 s.pricing?.length &&

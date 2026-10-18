@@ -176,3 +176,32 @@ it('keeps supplier-only hotel, passenger and NOTICE changes independent of contr
   expect(intake.snapshot).toEqual(before);
   expect(intake.workflow.note).toBe('VOUCHER NOTICE');
 });
+it('keeps room composition in the saved supplier revision and output without changing the contract', () => {
+  const intake = {
+    receivedAt: '2026-10-01T00:00:00Z',
+    snapshot: {
+      contractNumber: 'SYNTHETIC',
+      passengerIds: ['p'],
+      passengerAssignments: [],
+      serviceSelections: [],
+      hotelSelection: { hotelNameSnapshot: 'Hotel', roomCount: 1 },
+    },
+    workflow: { roomOrder: [], ageOverrides: {}, note: '' },
+  } as unknown as ReservationFormIntake;
+  const settings = defaultVoucherSettings(intake, {});
+  settings.rooms = [
+    {
+      ordinal: 1,
+      roomTypeNameSnapshot: 'Family Suite',
+      adults: 2,
+      childAges: [4, 10],
+    },
+  ];
+  intake.workflow.supplierFormSettings = settings;
+  const output = supplierFormData(intake, {});
+  expect(output.rooms).toBe(1);
+  expect(output.roomBreakdown).toEqual([
+    { ordinal: 1, roomType: 'Family Suite', adults: 2, childAges: [4, 10] },
+  ]);
+  expect(intake.snapshot.hotelSelection?.roomCount).toBe(1);
+});
