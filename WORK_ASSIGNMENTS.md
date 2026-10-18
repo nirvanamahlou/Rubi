@@ -8216,3 +8216,5 @@ Owner-requested self-service password exception, 4–200 characters including nu
 Validation: 34 API password-policy/DTO tests and 6 Web consumer tests passed; scoped ESLint passed. Shared translation catalogue changes are limited to the two new help/error messages plus generated API catalogue. No migration or account mutation.
 
 Owner reaffirms the exact Workbench self-service 4-character/numeric-only policy and explicitly authorizes push/develop merge on2026-10-18. Re-reserve the existing bounded DTO/service/form consumer and isolated password-change PostgreSQL regression; keep creation/reset/bootstrap, hashing, throttling and session revocation intact. Reuse PR950 rather than duplicate the work; synchronize current develop preserving all peer code/docs/translations. No migration, dependency or operational password change.
+
+Final local validation: 40 focused unit/consumer tests plus all 11 opt-in isolated PostgreSQL tests passed. Synthetic database/container removed; no real user mutation. Exact-head hosted CI remains the merge gate.

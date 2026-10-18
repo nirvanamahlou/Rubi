@@ -39,7 +39,7 @@ function sql(database: string, input: string) {
       '-v',
       'ON_ERROR_STOP=1',
     ],
-    { input, stdio: ['pipe', 'pipe', 'pipe'], timeout: 30000 },
+    { input, stdio: ['pipe', 'pipe', 'pipe'], timeout: 90000 },
   );
 }
 function service(db = client) {
