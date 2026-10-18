@@ -88,17 +88,7 @@ describe('shared partner office/mobile phone persistence', () => {
         }),
       }),
     );
-    expect(h.contacts.updateMany).toHaveBeenCalledWith({
-      where: { organizationId: 'org', id: { in: ['old'] } },
-      data: {
-        phoneEncrypted: null,
-        phoneEncryptionIv: null,
-        phoneEncryptionAuthTag: null,
-        phoneEncryptionKeyVersion: null,
-        phoneMasked: null,
-        phoneFingerprint: null,
-      },
-    });
+    expect(h.contacts.updateMany).not.toHaveBeenCalled();
   });
   it('clears one shared role without clearing the other', async () => {
     const h = harness([stored('old', 'PARTNER_OFFICE+PARTNER_MOBILE', 'a')]);
@@ -113,7 +103,7 @@ describe('shared partner office/mobile phone persistence', () => {
       }),
     );
   });
-  it('merges two role contacts and clears the redundant fingerprint without deleting history', async () => {
+  it('merges two role contacts and deactivates the redundant contact without deleting history', async () => {
     const h = harness([
       stored('office', 'PARTNER_OFFICE', 'a'),
       stored('mobile', 'PARTNER_MOBILE', 'b'),
@@ -132,8 +122,6 @@ describe('shared partner office/mobile phone persistence', () => {
       expect.objectContaining({
         where: { id: 'mobile' },
         data: expect.objectContaining({
-          phoneFingerprint: null,
-          phoneEncrypted: null,
           isActive: false,
         }),
       }),

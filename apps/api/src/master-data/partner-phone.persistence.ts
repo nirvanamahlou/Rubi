@@ -90,13 +90,8 @@ export async function persistPartnerPhones(
       used.add(match.id);
     }
   }
-  // Release only our own slots inside the transaction before merge/split/swap.
-  // Unrelated organization contacts and their fingerprints are never touched.
-  if (existing.length)
-    await tx.masterOrganizationContact.updateMany({
-      where: { organizationId, id: { in: existing.map((row) => row.id) } },
-      data: fields(null),
-    });
+  // Every desired fingerprint already in use keeps its owning row. New values
+  // cannot collide with those rows, so no temporary invalid/empty tuple is needed.
   for (const group of groups.values()) {
     const data = {
       ...fields(group.value),
@@ -130,7 +125,6 @@ export async function persistPartnerPhones(
     await tx.masterOrganizationContact.update({
       where: { id: row.id },
       data: {
-        ...fields(null),
         isActive: false,
         updatedByUserId: actorUserId,
         version: { increment: 1 },

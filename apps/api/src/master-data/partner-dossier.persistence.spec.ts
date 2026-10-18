@@ -101,8 +101,6 @@ describe('partner identity persistence', () => {
     expect(tx.masterOrganizationContact.update).toHaveBeenCalledWith({
       where: { id: 'existing-contact' },
       data: expect.objectContaining({
-        phoneEncrypted: null,
-        phoneFingerprint: null,
         isActive: false,
       }),
     });
