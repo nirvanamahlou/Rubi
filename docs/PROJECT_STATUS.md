@@ -1,3 +1,26 @@
+## ISSUED-FORM-LEGACY-VIEW-1018 — PC-A
+
+Local read-only status aggregates reveal historical REQUESTED forms with positive sentSupplierFormVersion and no sentSupplierFormSettings. The view checked only the new snapshot or voucher flag, reopening settings despite recorded issuance. Recognize positive safe-integer sent version for the compact Download/Edit view only; unissued drafts and strict voucher readiness remain unchanged. Preserve sent snapshot preference and legacy download behavior without inventing or migrating historical snapshots. Focused regressions include legacy issued forms and zero/negative/fractional/absent draft versions. No API/schema/dependency/business-data mutation. Validation and final-head checks recorded in PR.
+
+## RESERVATION-CURRENCY-ROOM-OUTPUT-1018 — PC-A
+
+Root cause: localized option elements carrying aria-label were discarded by the native-select option extractor, leaving only the empty currency choice although Master Data loaded successfully. Reservations now passes typed options directly to the shared searchable picker with names, symbols and canonical codes; no hardcoded fallback. Preserve saved inactive currency and clear selection. Preview and PDF remove aggregate DBL/SGL/EXT counts, title the separated per-room table ROOM QUANTITIES BY TYPE and omit hotel-wide type when detailed rooms exist; the corresponding generic editor field is hidden while per-room editing remains. Legacy roomless type is retained.356 Reservations tests pass (two existing skips), scoped lint and one-page synthetic A4 PDF visual QA pass. Final exact-head CI gates authorized develop merge. No schema/API/dependency/runtime or operational-data changes.
+
+## INTEGRATIONS-NAVIGATION-1018 — PC-D — READY_FOR_CI
+
+Replace the nine equal-level section links with four plain-language navigation
+areas and contextual secondary links; all nine sections and their drill-downs
+remain accessible. Add a three-step website connection guide distinguishing
+saved setup metadata from actual connectivity. Existing API/IAM/branch controls,
+adapters and registry data are unchanged.24 Integrations tests, focused lint,
+formatting and the62-route Web production build including TypeScript passed.
+Interactive desktop/mobile navigation and the existing registration dialog were
+verified without writes. Local Web-only image1018-navigation is healthy; the
+existing API remains healthy on1017-access-v2. The launcher includes the new
+image and local startup health override. No other Docker project was stopped. Global i18n sync reports pre-existing unrelated generated-catalogue drift;
+no API/public catalogue changes included. User now explicitly authorizes push, hosted CI, PR to develop and merge after all checks and review pass. Candidate synchronized with develop@091f1fd5; no gate or runtime change.
+See [navigation and connection readiness](tasks/INTEGRATIONS-NAVIGATION-1018.md).
+
 ## CONTRACT-HOTEL-COMPACT-1018 — PC-A
 
 New-contract hotel selector and room count share one aligned responsive row. Room count width is bounded (96px on small screens, 144px otherwise); hotel retains remaining space. Existing room composition, child allocation, validation and persistence remain unchanged. No API/schema/migration/dependency change. Six ServiceParties tests, scoped ESLint, formatting and diff checks pass. Exact-head hosted quality, tests, typecheck/build and migration checks gate user-authorized develop merge.
@@ -6458,6 +6481,22 @@ Added «دریافت اطلاعات» beside the new-contract heading. It reload
 ## 2026-10-18 — PC-A — Reservation inbox manual refresh
 
 Added دریافت اطلاعات to the Reservations inbox through the existing authenticated queue reader. Manual refresh preserves filters, selection and mounted operational forms, coalesces overlapping intake requests, refreshes hotel/city/meal reference labels and retains the last successful same-scope queue on transient failure. Authentication/authorization failures clear the queue. No schema, migration, API contract, dependency or runtime changes. Foundation tests: 8 files / 79 tests passed; Web lint/typecheck/build verification recorded in the task PR before merge.
+## INTERNAL-CORRESPONDENCE-1018 — PC-A — READY_FOR_CI
+
+Internal correspondence now has Send and Receive cards. Send/edit/view reuse the
+existing company-letterhead composer and PNG/PDF output. Additive authenticated
+`correspondence/v1/internal` routes provide private recipient inboxes, four real
+KPIs, server pagination/search/status/company/unread filters, read tracking,
+optimistic edits, idempotent sends, status forwarding and audited global hard
+deletion. The public IAM directory exposes active internal user IDs/names only.
+Shared v1 DTOs and API/Web consumers ship together; outgoing numbering and incoming
+Documents uploads remain compatible. Additive migration creates only two new
+System-owned tables and User FKs; apply before API/Web rollout. No live migration,
+business data, grant or source-system write performed. Unit/HTTP/isolated real
+PostgreSQL and Web rendering/i18n checks pass (12 API,11 Web,3 PostgreSQL cases).
+API/Web typechecks, scoped lint and both production builds pass (64 Web pages).
+PR946 is awaiting final-head hosted checks and authorized develop merge.
+
 
 ## PASSENGER-HOTEL-FOREIGN-SHARE-1018 — PC-A
 
@@ -6466,3 +6505,9 @@ For new hotel/flight contracts, the passenger foreign column displays the existi
 ## 2026-10-18 — DAILY-PACKAGE-SUBMIT-1018 — PC-B
 
 Generator confirmation invokes a guarded direct multipart upload with visible pending state, duplicate suppression, branch/title validation and bounded timeout; errors retain the dialog and success acknowledges only server completion. LAN HTTP bridge UUID failure reproduced and corrected with cryptographic fallback.19 affected Web test files/68 tests and synthetic real-browser confirmation pass. No authenticated operational upload or runtime mutation. See tasks/DAILY-PACKAGE-SUBMIT-1018.md for exact verification limits; final quality gates in PR.
+
+## HOTEL-ROOM-COEFFICIENT-LAYOUT-1018 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-hotel-room-coefficient-layout-1018 from origin/develop091f1fd5. User authorizes compact independent coefficient tables beside each room-type purchase table and develop merge. Reserve Reservations manual-hotel-panel, bounded manual-tables styles and focused render/interaction tests, optional additive labels/catalogues and own docs. Prior hotel-rate display scopes released; no overlapping active target lock found. Each room restores its own existing occupancy metadata; edits must not rewrite other room coefficients or sale adjustments. Preserve base × coefficient exact arithmetic, validation, immutable pack version save and imported-rate guard. No API/schema/dependency/migration/live data/runtime change. Hosted final-head checks gate merge.
+
+HOTEL-ROOM-COEFFICIENT-LAYOUT-1018 candidate: each room renders one wide purchase table and its own compact coefficient editor (desktop ratio2.4:1, narrow screens stacked). Coefficients, compositions and child ranges restore from each room's own saved metadata; changing/adding/removing a row never edits another room, newly linked room types remain editable.117 hotel-rate tests pass, including restore/reopen, independent edits, new room types, invalid ages/duplicates, retained sale metadata and imported-rate guard. Synthetic server-rendered desktop/mobile visual fixture has no horizontal page overflow at1500/390; source controls render with mocked directory choices only, no authenticated operational save. Scoped lint and offline translation checks pass; final types/build/hosted checks gate merge. No schema/API/dependency/data/runtime changes. Bounded source locks released with candidate.

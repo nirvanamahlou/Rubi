@@ -37,13 +37,14 @@ import { integrationsApi, IntegrationsApiError } from '../api/client';
 import {
   catalogueSystems,
   domainLabels,
-  integrationSections,
   lifecycleLabels,
   systemSalesState,
   type IntegrationSection,
 } from '../model';
 import { CatalogueEditor, type CatalogueEdit } from './catalogue-editor';
 import { BrandsDashboard } from './brands-dashboard';
+import { IntegrationNavigation } from './integration-navigation';
+import { ConnectionReadiness } from './connection-readiness';
 import { SiteRegistrationDialog } from './site-registration-dialog';
 import {
   authenticationLabels,
@@ -247,23 +248,11 @@ export function IntegrationWorkspaceBody({
       <p className="text-sm leading-7 text-muted-foreground">
         مرکز برندها، سامانه‌ها و اتصال‌های بیرونی مجموعه
       </p>
-      <nav
-        aria-label="بخش‌های یکپارچه‌سازی"
-        className="flex flex-wrap gap-1 rounded-2xl border border-border bg-surface p-2"
-      >
-        {integrationSections.map((item) => (
-          <button
-            type="button"
-            key={item.id}
-            aria-current={section === item.id ? 'page' : undefined}
-            disabled={!!edit || busy}
-            onClick={() => changeSection(item.id)}
-            className={`rounded-xl px-3 py-2.5 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50 ${section === item.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
-          >
-            {item.title}
-          </button>
-        ))}
-      </nav>
+      <IntegrationNavigation
+        section={section}
+        disabled={!!edit || !!siteForm || busy}
+        onChange={changeSection}
+      />
       {error ? (
         <Alert title="عملیات کامل نشد" description={error} tone="error" />
       ) : null}
@@ -566,10 +555,8 @@ export function IntegrationWorkspaceBody({
               ) : null}
               {section === 'connections' ? (
                 <>
-                  <Alert
-                    title="اتصال بیرونی تنظیم نشده است"
-                    description="لینک‌ها و دسترسی اتصال در مرحله بعد اضافه می‌شوند."
-                  />
+                  <ConnectionReadiness />
+                  <h2 className="text-lg font-bold">مسیرهای تخصصی موجود</h2>
                   <div className="grid gap-4 md:grid-cols-2">
                     {adapters.map((adapter) => (
                       <Card key={adapter.code} className="p-5">

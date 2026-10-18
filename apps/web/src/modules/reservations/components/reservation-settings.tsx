@@ -758,7 +758,9 @@ export function ReservationSettingsForm({
           <div className={styles.sectionCard}>
             <h4>تاریخ هتل و نوع اتاق</h4>
             <div className="grid gap-3 sm:grid-cols-3">
-              {primaryTextKeys.map(textField)}
+              {primaryTextKeys
+                .filter((key) => key !== 'roomType' || !draft.rooms?.length)
+                .map(textField)}
             </div>
           </div>
           <div className={styles.sectionCard}>

@@ -30,6 +30,9 @@ enum AuditOutcome {
 }
 
 model User {
+  internalLettersAuthored                          CorrespondenceLetter[]                    @relation("CorrespondenceAuthor")
+  internalLettersSent                              CorrespondenceDelivery[]                  @relation("CorrespondenceSender")
+  internalLettersReceived                          CorrespondenceDelivery[]                  @relation("CorrespondenceRecipient")
   purchaseFxSnapshots                              FinancePurchaseFxSnapshot[]
   accountingFxMade                                 AccountingFxSnapshot[]                    @relation("AccountingFxMaker")
   accountingFxApproved                             AccountingFxSnapshot[]                    @relation("AccountingFxApprover")
@@ -7566,4 +7569,40 @@ model FinancePurchaseFxSnapshot {
 
   @@index([branchId, baselineAt])
   @@map("finance_purchase_fx_snapshots")
+}
+
+model CorrespondenceLetter {
+  id         String                   @id @default(uuid()) @db.Uuid
+  authorId   String                   @db.Uuid
+  author     User                     @relation("CorrespondenceAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  number     String                   @unique @db.VarChar(100)
+  dateISO    String                   @db.VarChar(10)
+  content    Json
+  version    Int                      @default(1)
+  createdAt  DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime                 @updatedAt @db.Timestamptz(3)
+  deliveries CorrespondenceDelivery[]
+
+  @@index([authorId, createdAt])
+  @@map("correspondence_letters")
+}
+
+model CorrespondenceDelivery {
+  id          String               @id @default(uuid()) @db.Uuid
+  letterId    String               @db.Uuid
+  letter      CorrespondenceLetter @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  senderId    String               @db.Uuid
+  sender      User                 @relation("CorrespondenceSender", fields: [senderId], references: [id], onDelete: Restrict)
+  recipientId String               @db.Uuid
+  recipient   User                 @relation("CorrespondenceRecipient", fields: [recipientId], references: [id], onDelete: Restrict)
+  status      String               @db.VarChar(24)
+  requestKey  String               @db.Uuid
+  readAt      DateTime?            @db.Timestamptz(3)
+  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
+
+  @@unique([senderId, requestKey])
+  @@unique([letterId, recipientId])
+  @@index([recipientId, createdAt])
+  @@index([letterId, recipientId])
+  @@map("correspondence_deliveries")
 }

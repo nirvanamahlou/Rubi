@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { travelRequest } from './travel-workflow-form';
-import { NativeSearchSelect } from '@/components/ui/native-search-select';
+import { SearchCombobox } from '@/components/ui/search-combobox';
 import { currencySymbol } from '@/lib/currency-symbol';
 
 export async function loadReservationCurrencies(requestId: string) {
@@ -63,21 +63,24 @@ export function ReservationCurrencySelect({
   label: string;
 }) {
   return (
-    <NativeSearchSelect
-      aria-label={label}
+    <SearchCombobox
+      label={label}
       value={value}
       disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="">انتخاب ارز</option>
-      {value && !currencies.some((c) => c.code === value) && (
-        <option value={value}>{currencySymbol(value)}</option>
-      )}
-      {currencies.map((c) => (
-        <option key={c.code} value={c.code} aria-label={`${c.name} ${c.code}`}>
-          {c.name} � {c.code} ({currencySymbol(c.code)})
-        </option>
-      ))}
-    </NativeSearchSelect>
+      placeholder="انتخاب ارز"
+      optionLimit={currencies.length + 2}
+      onValueChange={onChange}
+      options={[
+        { value: '', label: 'انتخاب ارز' },
+        ...(value && !currencies.some((c) => c.code === value)
+          ? [{ value, label: currencySymbol(value) }]
+          : []),
+        ...currencies.map((c) => ({
+          value: c.code,
+          label: `${c.name} · ${c.code} (${currencySymbol(c.code)})`,
+          searchText: `${c.name} ${c.code}`,
+        })),
+      ]}
+    />
   );
 }

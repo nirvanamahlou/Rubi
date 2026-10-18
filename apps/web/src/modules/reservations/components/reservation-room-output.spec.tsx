@@ -24,12 +24,26 @@ it('prints the edited room composition and child ages from the saved supplier re
       adults: 2,
       childAges: [4, 10],
     },
+    {
+      ordinal: 2,
+      roomTypeNameSnapshot: 'Sea Double',
+      adults: 2,
+      childAges: [],
+    },
   ];
   intake.workflow.supplierFormSettings = settings;
   const html = renderToStaticMarkup(
     <ReservationFormSheet intake={intake} logo="/logo.png" />,
   );
   expect(html).toContain('Family Suite');
+  expect(html).toContain('Sea Double');
+  expect(html).toContain('<caption>ROOM QUANTITIES BY TYPE</caption>');
+  expect(html).not.toContain('DBL · DOUBLE');
+  const hotelTable = html.slice(
+    html.indexOf('HOTEL INFORMATION'),
+    html.indexOf('ROOM QUANTITIES BY TYPE'),
+  );
+  expect(hotelTable).not.toContain('ROOM TYPE');
   expect(html).toContain('4, 10');
   expect(html).toContain('ROOM TYPE');
   expect(html).not.toContain('undefined');
