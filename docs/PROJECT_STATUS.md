@@ -6473,6 +6473,22 @@ Added «دریافت اطلاعات» beside the new-contract heading. It reload
 ## 2026-10-18 — PC-A — Reservation inbox manual refresh
 
 Added دریافت اطلاعات to the Reservations inbox through the existing authenticated queue reader. Manual refresh preserves filters, selection and mounted operational forms, coalesces overlapping intake requests, refreshes hotel/city/meal reference labels and retains the last successful same-scope queue on transient failure. Authentication/authorization failures clear the queue. No schema, migration, API contract, dependency or runtime changes. Foundation tests: 8 files / 79 tests passed; Web lint/typecheck/build verification recorded in the task PR before merge.
+## INTERNAL-CORRESPONDENCE-1018 — PC-A — READY_FOR_CI
+
+Internal correspondence now has Send and Receive cards. Send/edit/view reuse the
+existing company-letterhead composer and PNG/PDF output. Additive authenticated
+`correspondence/v1/internal` routes provide private recipient inboxes, four real
+KPIs, server pagination/search/status/company/unread filters, read tracking,
+optimistic edits, idempotent sends, status forwarding and audited global hard
+deletion. The public IAM directory exposes active internal user IDs/names only.
+Shared v1 DTOs and API/Web consumers ship together; outgoing numbering and incoming
+Documents uploads remain compatible. Additive migration creates only two new
+System-owned tables and User FKs; apply before API/Web rollout. No live migration,
+business data, grant or source-system write performed. Unit/HTTP/isolated real
+PostgreSQL and Web rendering/i18n checks pass (12 API,11 Web,3 PostgreSQL cases).
+API/Web typechecks, scoped lint and both production builds pass (64 Web pages).
+PR946 is awaiting final-head hosted checks and authorized develop merge.
+
 
 ## PASSENGER-HOTEL-FOREIGN-SHARE-1018 — PC-A
 

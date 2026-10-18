@@ -857,3 +857,15 @@ FinancePurchaseFxSnapshot stores one immutable Decimal(24,8) IRR-per-foreign-uni
 ## 2026-10-18 — Package composition sale snapshots
 
 PACKAGE-SALE-FLOW-1018 adds nullable PackagePricingTourDraft.selectedRoomKeys JSON. Existing drafts/publications keep legacy behavior until explicitly edited. Published roomCode is widened to TEXT and v2 codes encode exact room-type ID, adult count, sorted child age bands and board; legacy codes remain readable. Each publication freezes only selected composition rows and retains the real hotel-rate FK. Purchase bases and source occupancy history are unchanged. Sales stores the canonical sale-only publication references and per-currency price snapshot in existing service metadata; negotiated totals remain separate and a positive difference is a DISCOUNT component. Create and changed-room updates validate through the Package Pricing public producer. Unchanged saved quote/room selections on amendments retain their immutable reference, with discount amounts checked against the stored canonical baseline. No live migration or data rewrite is part of implementation.
+## Internal correspondence — 2026-10-18
+
+System Management owns `correspondence_letters` and `correspondence_deliveries`.
+Letters persist the exact editable letter content, stable issued number, ISO letter
+date, UTC timestamps, author User FK and optimistic version. Deliveries have real
+sender/recipient User FKs, status, read time and sender-scoped UUID retry keys.
+One delivery per letter/recipient is maintained; forwarding back to an existing
+recipient updates that inbox entry and marks it unread. System audit retains
+send/edit/forward/delete metadata without letter bodies. A participant-authorized,
+version-checked hard delete removes the letter and all deliveries by cascade.
+No existing documents, accounting, business records or user grants are migrated.
+Only active internal IAM account labels are exposed through its public directory.
