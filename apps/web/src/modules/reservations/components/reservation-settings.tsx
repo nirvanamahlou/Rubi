@@ -6,7 +6,6 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import {
   voucherTextKeys,
-  voucherNumberKeys,
   voucherFlagKeys,
   type TravelWorkflowStateV1,
   type VoucherSettingsV1,
@@ -29,7 +28,6 @@ import {
 import {
   defaultVoucherSettings,
   voucherTextLabels,
-  voucherNumberLabels,
   voucherFlagLabels,
   type VoucherTextFieldKey,
 } from '../model/voucher-settings';
@@ -764,29 +762,135 @@ export function ReservationSettingsForm({
             </div>
           </div>
           <div className={styles.sectionCard}>
-            <h4>تعداد اتاق‌ها</h4>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {voucherNumberKeys.map((key) => (
-                <label key={key}>
-                  {voucherNumberLabels[key]}
+            <h4>اتاق‌ها و ترکیب مسافران</h4>
+            {(draft.rooms ?? []).map((room, index) => (
+              <div key={room.ordinal} className="grid gap-2 sm:grid-cols-3">
+                <label>
+                  نوع اتاق {room.ordinal}
                   <Input
-                    type="number"
-                    min={0}
-                    max={1000}
-                    value={draft.numbers[key]}
-                    onChange={(event) =>
+                    value={room.roomTypeNameSnapshot}
+                    onChange={(e) =>
                       update({
                         ...draft,
-                        numbers: {
-                          ...draft.numbers,
-                          [key]: Number(event.target.value),
-                        },
+                        rooms: draft.rooms!.map((r, i) =>
+                          i === index
+                            ? { ...r, roomTypeNameSnapshot: e.target.value }
+                            : r,
+                        ),
                       })
                     }
                   />
                 </label>
-              ))}
-            </div>
+                <label>
+                  بزرگسال
+                  <Input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={room.adults}
+                    onChange={(e) =>
+                      update({
+                        ...draft,
+                        rooms: draft.rooms!.map((r, i) =>
+                          i === index
+                            ? { ...r, adults: Number(e.target.value) }
+                            : r,
+                        ),
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  تعداد کودک
+                  <Input
+                    type="number"
+                    min={0}
+                    max={20}
+                    value={room.childAges.length}
+                    onChange={(e) =>
+                      update({
+                        ...draft,
+                        rooms: draft.rooms!.map((r, i) =>
+                          i === index
+                            ? {
+                                ...r,
+                                childAges: Array.from(
+                                  {
+                                    length: Math.max(
+                                      0,
+                                      Math.min(20, Number(e.target.value)),
+                                    ),
+                                  },
+                                  (_, n) => r.childAges[n] ?? 2,
+                                ),
+                              }
+                            : r,
+                        ),
+                      })
+                    }
+                  />
+                </label>
+                {room.childAges.map((age, child) => (
+                  <label key={child}>
+                    سن کودک {child + 1}
+                    <Input
+                      type="number"
+                      min={0}
+                      max={14}
+                      value={age}
+                      onChange={(e) =>
+                        update({
+                          ...draft,
+                          rooms: draft.rooms!.map((r, i) =>
+                            i === index
+                              ? {
+                                  ...r,
+                                  childAges: r.childAges.map((v, n) =>
+                                    n === child ? Number(e.target.value) : v,
+                                  ),
+                                }
+                              : r,
+                          ),
+                        })
+                      }
+                    />
+                  </label>
+                ))}
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    update({
+                      ...draft,
+                      rooms: draft
+                        .rooms!.filter((_, i) => i !== index)
+                        .map((r, i) => ({ ...r, ordinal: i + 1 })),
+                    })
+                  }
+                >
+                  حذف اتاق
+                </Button>
+              </div>
+            ))}
+            <Button
+              variant="outline"
+              disabled={(draft.rooms?.length ?? 0) >= 50}
+              onClick={() =>
+                update({
+                  ...draft,
+                  rooms: [
+                    ...(draft.rooms ?? []),
+                    {
+                      ordinal: (draft.rooms?.length ?? 0) + 1,
+                      roomTypeNameSnapshot: draft.text.roomType || 'Standard',
+                      adults: 1,
+                      childAges: [],
+                    },
+                  ],
+                })
+              }
+            >
+              افزودن اتاق
+            </Button>
           </div>
         </div>
         <div

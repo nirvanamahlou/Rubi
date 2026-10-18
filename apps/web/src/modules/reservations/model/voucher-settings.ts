@@ -1,3 +1,4 @@
+import { salesHotelRoomSummary } from '@nora/contracts';
 import type { voucherNumberKeys, voucherFlagKeys } from '@nora/contracts';
 import { voucherTextKeys, type VoucherSettingsV1 } from '@nora/contracts';
 import {
@@ -44,6 +45,16 @@ export function defaultVoucherSettings(
       text[`${prefix}Time`] = f.time;
     }
   const defaults: VoucherSettingsV1 = {
+    ...(h?.rooms?.length
+      ? {
+          rooms: h.rooms.map((room) => ({
+            ordinal: room.ordinal,
+            roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+            adults: room.adults,
+            childAges: [...room.childAges],
+          })),
+        }
+      : {}),
     text,
     numbers: {
       singleRooms: Number(d.single) || 0,
@@ -74,6 +85,16 @@ export function defaultVoucherSettings(
   };
   if (!saved) return defaults;
   return {
+    ...(saved.rooms !== undefined
+      ? {
+          rooms: saved.rooms.map((room) => ({
+            ...room,
+            childAges: [...room.childAges],
+          })),
+        }
+      : defaults.rooms
+        ? { rooms: defaults.rooms }
+        : {}),
     ...(saved.hotelPurchasePrices !== undefined
       ? {
           hotelPurchasePrices: saved.hotelPurchasePrices.map((p) => ({ ...p })),
@@ -187,10 +208,21 @@ export function voucherFormData(
               : '-',
       };
     });
+  const roomSummary = v.rooms ? salesHotelRoomSummary(v.rooms) : undefined;
   const nights =
     (Date.parse(v.text.checkOut) - Date.parse(v.text.checkIn)) / 86400000;
   return {
     ...d,
+    ...(v.rooms !== undefined
+      ? {
+          roomBreakdown: v.rooms.map((room) => ({
+            ordinal: room.ordinal,
+            roomType: room.roomTypeNameSnapshot,
+            adults: room.adults,
+            childAges: [...room.childAges],
+          })),
+        }
+      : {}),
     supplier: '0',
     hotel: v.text.hotel || '-',
     destination: v.text.city || '-',
@@ -199,12 +231,23 @@ export function voucherFormData(
     roomType: v.text.roomType || '-',
     checkIn: voucherDate(v.text.checkIn),
     checkOut: voucherDate(v.text.checkOut),
-    rooms: d.roomBreakdown.length
-      ? d.rooms
-      : v.numbers.singleRooms + v.numbers.doubleRooms + v.numbers.customRooms,
-    double: d.roomBreakdown.length ? d.double : v.numbers.doubleRooms,
-    single: d.roomBreakdown.length ? d.single : v.numbers.singleRooms,
-    extra: d.roomBreakdown.length ? d.extra : v.numbers.extraBeds,
+    rooms:
+      v.rooms !== undefined
+        ? v.rooms.length
+        : d.roomBreakdown.length
+          ? d.rooms
+          : v.numbers.singleRooms +
+            v.numbers.doubleRooms +
+            v.numbers.customRooms,
+    double:
+      roomSummary?.doubleRoomCount ??
+      (d.roomBreakdown.length ? d.double : v.numbers.doubleRooms),
+    single:
+      roomSummary?.singleRoomCount ??
+      (d.roomBreakdown.length ? d.single : v.numbers.singleRooms),
+    extra:
+      roomSummary?.extraBedCount ??
+      (d.roomBreakdown.length ? d.extra : v.numbers.extraBeds),
     nights: Number.isInteger(nights) && nights > 0 ? nights : '-',
     leader: v.flags.tourLeader
       ? [v.text.leaderName, v.text.leaderPhone].filter(Boolean).join(' / ') ||
