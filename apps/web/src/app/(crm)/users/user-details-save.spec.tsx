@@ -77,8 +77,8 @@ describe('user details save button lifecycle', () => {
   });
   it('restores normal appearance after the save and refresh settle, blocks duplicate clicks', async () => {
     let finish!: () => void;
-    const request = vi.fn(
-      (_path: string, _init?: RequestInit) =>
+    const request = vi.fn<(path: string, init?: RequestInit) => Promise<void>>(
+      () =>
         new Promise<void>((resolve) => {
           finish = resolve;
         }),
