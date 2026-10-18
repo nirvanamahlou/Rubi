@@ -16,7 +16,7 @@ import { CorrespondenceNumberingService } from '../src/system-management/corresp
 const url = process.env.CORRESPONDENCE_TEST_DATABASE_URL;
 describe.skipIf(!url)(
   'internal correspondence isolated real PostgreSQL',
-  { timeout: 30000, hookTimeout: 60000 },
+  { timeout: 30000 },
   () => {
     let db: DatabaseClient,
       service: InternalCorrespondenceService,
