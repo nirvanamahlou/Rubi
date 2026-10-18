@@ -4,6 +4,7 @@ import type {
   MessagingContactV1,
   MessagingConversationV1,
   MessagingMessageV1,
+  MessagingReactionEmojiV1,
 } from '@nora/contracts';
 import {
   Forward,
@@ -47,6 +48,7 @@ import { MessageUnitIcon } from './message-unit-icon';
 import { canAddGroupMember } from './group-members';
 import { messagingApi, messagingRequestId } from './messaging-api';
 import { messageUnits } from './message-templates';
+import { MessageReactionMenu, reactionNames } from './message-reaction-menu';
 
 type SidebarMode = 'units' | 'contacts' | 'groups' | 'conversations';
 const initials = (name: string) => name.trim().slice(0, 2) || 'ر';
@@ -102,6 +104,52 @@ export function MessageComposer({
   const input = useRef<HTMLTextAreaElement>(null);
   const selection = useRef({ start: 0, end: 0 });
   const messageSubmissionId = useRef('');
+  const [replying, setReplying] = useState<MessagingMessageV1 | null>(null);
+  const [messageMenu, setMessageMenu] = useState<{
+    message: MessagingMessageV1;
+    position: { x: number; y: number };
+  } | null>(null);
+  const [reactionPending, setReactionPending] = useState(false);
+  const reactionLock = useRef(false);
+  const touchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function clearTouchTimer() {
+    if (touchTimer.current) clearTimeout(touchTimer.current);
+    touchTimer.current = null;
+  }
+  useEffect(() => clearTouchTimer, []);
+  function replyTo(message: MessagingMessageV1) {
+    setReplying(message);
+    setMessageMenu(null);
+    requestAnimationFrame(() => input.current?.focus());
+  }
+  async function reactTo(
+    message: MessagingMessageV1,
+    emoji: MessagingReactionEmojiV1 | null,
+  ) {
+    if (!active || reactionLock.current) return;
+    const conversationId = active.id;
+    reactionLock.current = true;
+    setReactionPending(true);
+    setMessageMenu(null);
+    try {
+      const response = await messagingApi.react(conversationId, message.id, {
+        emoji,
+      });
+      setMessages((current) =>
+        current.map((item) =>
+          item.id === response.data.id ? response.data : item,
+        ),
+      );
+    } catch (reason) {
+      if (previousConversationId.current === conversationId)
+        setError(
+          reason instanceof Error ? reason.message : 'ثبت واکنش انجام نشد.',
+        );
+    } finally {
+      reactionLock.current = false;
+      setReactionPending(false);
+    }
+  }
   const initialConversationIdRef = useRef(initialConversationId);
   const openedFromLink = useRef<string | null>(null);
   const previousConversationId = useRef<string | null>(null);
@@ -115,6 +163,9 @@ export function MessageComposer({
     setPicker(false);
     setError('');
     setForwarding(null);
+    setReplying(null);
+    setMessageMenu(null);
+    clearTouchTimer();
     messageSubmissionId.current = '';
     selection.current = { start: 0, end: 0 };
   }, [activeId]);
@@ -335,9 +386,11 @@ export function MessageComposer({
         body: text,
         clientRequestId,
         attachmentDocumentIds,
+        ...(replying ? { replyToMessageId: replying.id } : {}),
       });
       setMessages((current) => [...current, response.data]);
       setText('');
+      setReplying(null);
       setAttachments([]);
       messageSubmissionId.current = '';
       await reloadConversations(active.id);
@@ -686,8 +739,58 @@ export function MessageComposer({
                   return (
                     <article
                       key={message.id}
+                      id={`chat-message-${message.id}`}
+                      tabIndex={0}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        clearTouchTimer();
+                        setMessageMenu({
+                          message,
+                          position: { x: event.clientX, y: event.clientY },
+                        });
+                      }}
+                      onKeyDown={(event) => {
+                        if (
+                          event.key === 'ContextMenu' ||
+                          (event.shiftKey && event.key === 'F10')
+                        ) {
+                          event.preventDefault();
+                          const box =
+                            event.currentTarget.getBoundingClientRect();
+                          setMessageMenu({
+                            message,
+                            position: { x: box.right - 12, y: box.top + 12 },
+                          });
+                        }
+                      }}
+                      onPointerDown={(event) => {
+                        if (
+                          event.pointerType !== 'touch' ||
+                          (event.target as HTMLElement).closest('button,a')
+                        )
+                          return;
+                        clearTouchTimer();
+                        const position = { x: event.clientX, y: event.clientY };
+                        touchTimer.current = setTimeout(
+                          () => setMessageMenu({ message, position }),
+                          500,
+                        );
+                      }}
+                      onPointerUp={clearTouchTimer}
+                      onPointerCancel={clearTouchTimer}
+                      onPointerMove={clearTouchTimer}
                       className={`relative box-border w-full min-w-0 shrink-0 overflow-hidden rounded-2xl p-3 shadow-sm sm:w-auto sm:max-w-[75%] ${mine ? 'self-start bg-primary text-primary-foreground' : 'self-end bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-50'}`}
                     >
+                      {message.replyTo && (
+                        <blockquote className="mb-2 min-w-0 overflow-hidden rounded-lg border-s-2 border-current bg-black/5 px-3 py-2 text-xs dark:bg-white/5">
+                          <strong className="block truncate">
+                            {message.replyTo.sender.displayName}
+                          </strong>
+                          <p className="mt-1 line-clamp-2 whitespace-pre-wrap [overflow-wrap:anywhere]">
+                            {message.replyTo.body}
+                          </p>
+                        </blockquote>
+                      )}
                       <div className="flex min-w-0 items-center justify-between gap-4 text-xs opacity-80">
                         <strong className="truncate">
                           {message.sender.displayName}
@@ -731,15 +834,43 @@ export function MessageComposer({
                           ))}
                         </ul>
                       ) : null}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="mt-2 text-current hover:bg-white/15"
-                        onClick={() => setForwarding(message)}
-                      >
-                        <Forward className="size-4" aria-hidden="true" />
-                        فوروارد
-                      </Button>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="size-9 min-h-9 text-current hover:bg-black/5 hover:text-current dark:hover:bg-white/15"
+                          aria-label="فوروارد پیام"
+                          title="فوروارد پیام"
+                          onClick={() => setForwarding(message)}
+                        >
+                          <Forward className="size-4" aria-hidden="true" />
+                        </Button>
+                        {(message.reactions ?? []).map((reaction) => (
+                          <button
+                            type="button"
+                            key={reaction.emoji}
+                            disabled={reactionPending}
+                            aria-label={reactionNames[reaction.emoji]}
+                            aria-pressed={reaction.userIds.includes(
+                              currentUserId,
+                            )}
+                            className="inline-flex min-h-9 items-center gap-1 rounded-full border border-current/20 bg-black/5 px-3 text-sm aria-pressed:ring-2 aria-pressed:ring-current disabled:opacity-50 dark:bg-white/10"
+                            onClick={() =>
+                              void reactTo(
+                                message,
+                                reaction.userIds.includes(currentUserId)
+                                  ? null
+                                  : reaction.emoji,
+                              )
+                            }
+                          >
+                            <span>{reaction.emoji}</span>
+                            <span>
+                              {reaction.count.toLocaleString('fa-IR')}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
                     </article>
                   );
                 })}
@@ -790,6 +921,31 @@ export function MessageComposer({
                 >
                   متن پیام
                 </label>
+                {replying && (
+                  <div
+                    className="flex min-w-0 items-start gap-2 rounded-xl border-s-4 border-primary bg-primary/5 p-3 text-sm"
+                    role="status"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <strong className="block truncate">
+                        پاسخ به {replying.sender.displayName}
+                      </strong>
+                      <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-muted-foreground [overflow-wrap:anywhere]">
+                        {replying.body}
+                      </p>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label="لغو پاسخ"
+                      title="لغو پاسخ"
+                      disabled={busy}
+                      onClick={() => setReplying(null)}
+                    >
+                      <X className="size-4" aria-hidden="true" />
+                    </Button>
+                  </div>
+                )}
                 <Textarea
                   ref={input}
                   id="workbench-message-text"
@@ -1026,6 +1182,17 @@ export function MessageComposer({
           </div>
         </DialogContent>
       </Dialog>
+      {messageMenu && (
+        <MessageReactionMenu
+          message={messageMenu.message}
+          position={messageMenu.position}
+          currentUserId={currentUserId}
+          disabled={busy || reactionPending}
+          onClose={() => setMessageMenu(null)}
+          onReply={replyTo}
+          onReact={(message, emoji) => void reactTo(message, emoji)}
+        />
+      )}
     </Card>
   );
 }

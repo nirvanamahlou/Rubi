@@ -48,6 +48,8 @@ describe('MessagingService', () => {
       createGroup: vi.fn(),
       messages: vi.fn(),
       createMessage: vi.fn(),
+      replyTarget: vi.fn(),
+      setReaction: vi.fn(),
       sourceMessage: vi.fn(),
       attachmentReference: vi.fn(),
       unreadCount: vi.fn().mockResolvedValue(0),
@@ -377,5 +379,106 @@ describe('MessagingService', () => {
       ),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(repository.createMessage).not.toHaveBeenCalled();
+  });
+  it('persists a reply only to a message in the selected conversation', async () => {
+    repository.replyTarget!.mockResolvedValue({ id: messageId });
+    documents.assertWorkbenchOwnedAttachments!.mockResolvedValue([]);
+    repository.createMessage!.mockResolvedValue({
+      id: 'reply',
+      conversationId,
+      senderUserId: actor.userId,
+      body: 'پاسخ',
+      createdAt: now,
+      forwardedFrom: null,
+      attachments: [],
+      replyTo: { id: messageId, body: 'متن مبدأ', senderUserId: recipientId },
+      reactions: [],
+    });
+    const response = await service.send(
+      conversationId,
+      {
+        body: 'پاسخ',
+        clientRequestId: 'message:reply-0001',
+        replyToMessageId: messageId,
+      },
+      actor,
+    );
+    expect(repository.replyTarget).toHaveBeenCalledWith(
+      conversationId,
+      messageId,
+    );
+    expect(repository.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ replyToMessageId: messageId }),
+    );
+    expect(response.data.replyTo?.sender.id).toBe(recipientId);
+    repository.replyTarget!.mockResolvedValue(null);
+    await expect(
+      service.send(
+        conversationId,
+        {
+          body: 'پاسخ',
+          clientRequestId: 'message:reply-0002',
+          replyToMessageId: messageId,
+        },
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(repository.createMessage).toHaveBeenCalledOnce();
+  });
+  it.each(['👍', '❤️', '😂', '😮', '🙏', null])(
+    'sets or removes a supported reaction %s and returns shared counts',
+    async (emoji) => {
+      repository.setReaction!.mockResolvedValue({
+        id: messageId,
+        conversationId,
+        senderUserId: recipientId,
+        body: 'متن',
+        createdAt: now,
+        forwardedFrom: null,
+        attachments: [],
+        reactions: emoji
+          ? [
+              { emoji, userId: actor.userId },
+              { emoji, userId: recipientId },
+            ]
+          : [],
+      });
+      const response = await service.setReaction(
+        conversationId,
+        messageId,
+        { emoji },
+        actor,
+      );
+      expect(repository.setReaction).toHaveBeenCalledWith(
+        conversationId,
+        messageId,
+        actor.userId,
+        emoji,
+      );
+      expect(response.data.reactions).toEqual(
+        emoji
+          ? [{ emoji, count: 2, userIds: [actor.userId, recipientId] }]
+          : [],
+      );
+    },
+  );
+  it('rejects unsupported reaction payloads before writing', async () => {
+    for (const payload of [
+      { emoji: '<script>' },
+      { emoji: '😡' },
+      {},
+      { emoji: '👍', userId: recipientId },
+    ])
+      await expect(
+        service.setReaction(conversationId, messageId, payload, actor),
+      ).rejects.toThrow();
+    expect(repository.setReaction).not.toHaveBeenCalled();
+  });
+  it('does not react to a conversation the current actor cannot access', async () => {
+    repository.conversation!.mockResolvedValue(null);
+    await expect(
+      service.setReaction(conversationId, messageId, { emoji: '👍' }, actor),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.setReaction).not.toHaveBeenCalled();
   });
 });

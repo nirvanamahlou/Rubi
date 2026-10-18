@@ -5039,5 +5039,8 @@
   "وضعیت نامه معتبر نیست.": "The letter status is invalid.",
   "ویرایش نامه داخلی": "Edit internal letter",
   "فیلتر نامه معتبر نیست.": "The letter filter is invalid.",
-  "تاریخ و شماره نامه مطابقت ندارند.": "The letter date and number do not match."
+  "تاریخ و شماره نامه مطابقت ندارند.": "The letter date and number do not match.",
+  "پیام پاسخ در این گفت‌وگو پیدا نشد.": "The reply target was not found in this conversation.",
+  "پیام پیدا نشد.": "Message not found.",
+  "واکنش پیام معتبر نیست.": "Invalid message reaction."
 }

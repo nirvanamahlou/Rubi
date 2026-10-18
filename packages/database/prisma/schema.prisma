@@ -141,6 +141,7 @@ model User {
   messagingConversationsCreated                    MessagingConversation[]                   @relation("MessagingConversationCreator")
   messagingMemberships                             MessagingMember[]
   messagingMessagesSent                            MessagingMessage[]                        @relation("MessagingMessageSender")
+  messagingReactions                               MessagingMessageReaction[]
   workbenchFeedbackSubmitted                       WorkbenchFeedback[]                       @relation("WorkbenchFeedbackSubmitter")
   workbenchNotes                                   WorkbenchNote[]
   workbenchNoteFolders                             WorkbenchNoteFolder[]
@@ -607,18 +608,38 @@ model MessagingMessage {
   senderUserId           String                       @db.Uuid
   body                   String                       @db.VarChar(4000)
   forwardedFromMessageId String?                      @db.Uuid
+  replyToMessageId       String?                      @db.Uuid
   clientRequestId        String                       @db.VarChar(80)
   createdAt              DateTime                     @default(now()) @db.Timestamptz(3)
   conversation           MessagingConversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender                 User                         @relation("MessagingMessageSender", fields: [senderUserId], references: [id], onDelete: Restrict)
   forwardedFrom          MessagingMessage?            @relation("MessagingMessageForward", fields: [forwardedFromMessageId], references: [id], onDelete: SetNull)
   forwards               MessagingMessage[]           @relation("MessagingMessageForward")
+  replyTo                MessagingMessage?            @relation("MessagingMessageReply", fields: [replyToMessageId, conversationId], references: [id, conversationId], onDelete: NoAction, onUpdate: NoAction)
+  replies                MessagingMessage[]           @relation("MessagingMessageReply")
+  reactions              MessagingMessageReaction[]
   attachments            MessagingMessageAttachment[]
 
   @@unique([conversationId, senderUserId, clientRequestId])
+  @@unique([id, conversationId])
   @@index([conversationId, createdAt, id])
   @@index([forwardedFromMessageId])
+  @@index([replyToMessageId, conversationId])
   @@map("messaging_messages")
+}
+
+model MessagingMessageReaction {
+  messageId String           @db.Uuid
+  userId    String           @db.Uuid
+  emoji     String           @db.VarChar(8)
+  createdAt DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime         @updatedAt @db.Timestamptz(3)
+  message   MessagingMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([messageId, userId])
+  @@index([messageId, emoji])
+  @@map("messaging_message_reactions")
 }
 
 model MessagingMessageAttachment {
