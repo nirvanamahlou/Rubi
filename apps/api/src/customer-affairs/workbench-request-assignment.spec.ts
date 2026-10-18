@@ -152,14 +152,12 @@ describe('Workbench request assignment and delivery', () => {
   function setup() {
     const tx = {
       customerAffairsTicket: {
-        create: vi
-          .fn()
-          .mockImplementation(({ data }) => ({
-            ...data,
-            id: 'request',
-            status: 'NEW',
-            version: 1,
-          })),
+        create: vi.fn().mockImplementation(({ data }) => ({
+          ...data,
+          id: 'request',
+          status: 'NEW',
+          version: 1,
+        })),
       },
       customerAffairsTimeline: { create: vi.fn() },
       customerAffairsCommand: { create: vi.fn() },
@@ -172,12 +170,10 @@ describe('Workbench request assignment and delivery', () => {
     };
     const notifications = { createWithinTransaction: vi.fn() };
     const directory = {
-      resolve: vi
-        .fn()
-        .mockResolvedValue({
-          unit: { id: unitId, name: 'رزرواسیون' },
-          recipient: member,
-        }),
+      resolve: vi.fn().mockResolvedValue({
+        unit: { id: unitId, name: 'رزرواسیون' },
+        recipient: member,
+      }),
       options: vi.fn(),
     };
     const service = new CustomerAffairsService(
