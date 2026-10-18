@@ -2,6 +2,17 @@ import { createHash } from 'node:crypto';
 import { MANUAL_ACCESS_ROLE_PREFIX } from '@nora/contracts';
 
 export const ROLE_TEMPLATE_PREFIX = 'personal-access-template-job-';
+export const reusableRoleWhere = {
+  OR: [
+    { code: { startsWith: ROLE_TEMPLATE_PREFIX } },
+    {
+      NOT: [
+        { code: { startsWith: 'personal-access-' } },
+        { code: { startsWith: MANUAL_ACCESS_ROLE_PREFIX } },
+      ],
+    },
+  ],
+};
 export function isPrivateUserRole(code: string) {
   return (
     code.startsWith(MANUAL_ACCESS_ROLE_PREFIX) ||
