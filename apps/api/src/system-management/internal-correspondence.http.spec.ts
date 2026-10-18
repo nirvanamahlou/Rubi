@@ -69,6 +69,7 @@ describe('internal correspondence HTTP access', () => {
     await request(app.getHttpServer())
       .get('/correspondence/v1/internal?actorUserId=victim')
       .set('Cookie', 'nora_access=allowed')
+      .expect('Cache-Control', 'private, no-store')
       .expect(200);
     await request(app.getHttpServer())
       .post('/correspondence/v1/internal')

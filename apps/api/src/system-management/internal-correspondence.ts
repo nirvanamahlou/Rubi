@@ -5,6 +5,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Inject,
   Injectable,
   NotFoundException,
@@ -480,10 +481,10 @@ export class InternalCorrespondenceController {
     @Inject(InternalCorrespondenceService)
     private readonly service: InternalCorrespondenceService,
   ) {}
-  @Get('users') users() {
+  @Get('users') @Header('Cache-Control', 'private, no-store') users() {
     return this.service.users();
   }
-  @Get() list(
+  @Get() @Header('Cache-Control', 'private, no-store') list(
     @Req() req: AuthenticatedRequest,
     @Query() query: Record<string, string | undefined>,
   ) {
@@ -492,7 +493,7 @@ export class InternalCorrespondenceController {
   @Post() send(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
     return this.service.send(req.actor.userId, body);
   }
-  @Get(':id') detail(
+  @Get(':id') @Header('Cache-Control', 'private, no-store') detail(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
   ) {
