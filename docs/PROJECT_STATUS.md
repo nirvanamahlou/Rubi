@@ -1,3 +1,7 @@
+## EXISTING-USER-EDIT-1018 — PC-B — READY_FOR_CI
+
+Add prefilled full-name editing for existing users with separate revision-protected, audited name-only save. Connect existing/new-user role choices to active reusable saved roles and normalized effective/explicit selection; role IDs disambiguate choices and selecting a role changes no account until explicit save. Preserve old grants, shared definitions and all manual-access safeguards.88 Web/access/i18n tests and scoped lint pass; remaining type/API/build exact-head gates required before owner-authorized develop merge. No schema/migration/dependency/real-data/runtime changes. See docs/tasks/EXISTING-USER-EDIT-1018.md.
+
 ## LOGIN-SPLIT-BACKGROUND-1018 — PC-A — VALIDATING
 
 Restore the pre8e70e5d2 login card/form presentation (surface card, blue brand panel, regular field labels, primary submit and normal locale switcher), changing only the outer page to a hard50/50 physical left-blue/right-white background independent of RTL/LTR. No background video or decorative media reintroduced. Authentication, logos, controls and error handling remain unchanged. Focused layout/form/logo tests and exact-head full CI gate explicit user-authorized develop merge and backed-up server rollout. No migration/schema/dependency or business-data change; retain existing server-only encrypted backups and all persistent volumes.

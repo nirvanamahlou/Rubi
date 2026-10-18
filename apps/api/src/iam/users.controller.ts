@@ -31,6 +31,7 @@ import { ManualUserAccessService } from './manual-user-access.service';
 // ValidationPipe needs the runtime class metadata.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { ManualUserAccessDto } from './dto/manual-user-access.dto';
+import { UpdateUserDetailsDto } from './dto/update-user-details.dto';
 
 @ApiTags('IAM / Users')
 @ApiCookieAuth('nora_access')
@@ -43,6 +44,16 @@ export class UsersController {
     @Inject(ManualUserAccessService)
     private readonly manual?: ManualUserAccessService,
   ) {}
+  @Patch(':id/details')
+  @RequirePermissions('iam.users.manage')
+  @ApiBody({ type: UpdateUserDetailsDto })
+  details(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateUserDetailsDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.iam.updateUserDetails(id, dto, req.actor);
+  }
   @Delete(':id')
   @RequirePermissions('iam.users.manage')
   delete(

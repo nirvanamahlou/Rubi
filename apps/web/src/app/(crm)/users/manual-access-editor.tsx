@@ -27,6 +27,7 @@ interface Props {
   templates?: Array<{
     id: string;
     name: string;
+    selection?: ManualAccessSelection;
     permissions: Array<{ permission: { code: string } }>;
   }>;
   userId: string;
@@ -154,11 +155,11 @@ export function ManualAccessEditor({
             aria-label="انتخاب نقش کاربر"
             value={
               templates.some((r) => r.name === snapshot.title)
-                ? snapshot.title
+                ? templates.find((r) => r.name === snapshot.title)!.id
                 : ''
             }
             onChange={(event) => {
-              const role = templates.find((r) => r.name === event.target.value);
+              const role = templates.find((r) => r.id === event.target.value);
               if (!role) return;
               const codes = role.permissions.map((p) => p.permission.code);
               const replace = (
@@ -185,25 +186,28 @@ export function ManualAccessEditor({
                   permissionCodes: replace(
                     selection.permissionCodes,
                     native,
-                    codes.filter((c) => !c.startsWith('ui.')),
+                    role.selection?.permissionCodes ??
+                      codes.filter((c) => !c.startsWith('ui.')),
                   ),
                   screenIds: replace(
                     selection.screenIds,
                     screens,
-                    USER_ACCESS_SCREENS.filter((s) =>
-                      codes.includes(screenPermission(s.id)),
-                    ).map((s) => s.id),
+                    role.selection?.screenIds ??
+                      USER_ACCESS_SCREENS.filter((s) =>
+                        codes.includes(screenPermission(s.id)),
+                      ).map((s) => s.id),
                   ),
                   allowedControlIds: replace(
                     selection.allowedControlIds,
                     controls,
-                    USER_ACCESS_DENY_CONTROLS.filter(
-                      (c) =>
-                        !codes.includes(denyPermission(c.id)) &&
-                        (c.kind === 'field' ||
-                          c.id.startsWith('master-data.resource.') ||
-                          codes.includes(screenPermission(c.id))),
-                    ).map((c) => c.id),
+                    role.selection?.allowedControlIds ??
+                      USER_ACCESS_DENY_CONTROLS.filter(
+                        (c) =>
+                          !codes.includes(denyPermission(c.id)) &&
+                          (c.kind === 'field' ||
+                            c.id.startsWith('master-data.resource.') ||
+                            codes.includes(screenPermission(c.id))),
+                      ).map((c) => c.id),
                   ),
                 },
               });
@@ -211,7 +215,7 @@ export function ManualAccessEditor({
           >
             <option value="">دسترسی اختصاصی / انتخاب نقش</option>
             {templates.map((role) => (
-              <option key={role.id} value={role.name}>
+              <option key={role.id} value={role.id}>
                 {role.name}
               </option>
             ))}
