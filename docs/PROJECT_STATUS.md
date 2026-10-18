@@ -1,3 +1,7 @@
+## USERS-COPY-CLEANUP-1018 — PC-B
+
+Remove only the owner-specified users-page introductory and role-protection explanatory paragraphs. Keep role-deletion protections, section cascade and all account/access functionality unchanged. Focused Web tests and final-head quality/type/test/build gates required before authorized push/develop merge. No API/schema/dependency/data/runtime changes.
+
 ## EXISTING-USER-EDIT-1018 — PC-B — READY_FOR_CI
 
 Add prefilled full-name editing for existing users with separate revision-protected, audited name-only save. Connect existing/new-user role choices to active reusable saved roles and normalized effective/explicit selection; role IDs disambiguate choices and selecting a role changes no account until explicit save. Preserve old grants, shared definitions and all manual-access safeguards.88 Web/access/i18n tests and scoped lint pass; remaining type/API/build exact-head gates required before owner-authorized develop merge. No schema/migration/dependency/real-data/runtime changes. See docs/tasks/EXISTING-USER-EDIT-1018.md.
