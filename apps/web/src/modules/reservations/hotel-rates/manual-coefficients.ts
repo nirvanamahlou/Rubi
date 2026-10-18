@@ -16,7 +16,7 @@ export const defaultCombinations = (): Combination[] => [
   { id: 'single', label: 'سینگل', adults: 1, childAges: [], coefficient: '' },
   {
     id: 'child-bed',
-    label: 'کودک با تخت',
+    label: 'دبل با کودک با تخت',
     adults: 2,
     childAges: [{ min: 2, maxExclusive: 15 }],
     coefficient: '',
@@ -36,7 +36,10 @@ export function combinationsFromRates(rates: readonly HotelOccupancyRateV1[]) {
   if (!manual.length) return defaultCombinations();
   const restored = manual.map((rate, index) => ({
     id: `saved-${index}`,
-    label: rate.composition,
+    label:
+      rate.composition === 'کودک با تخت'
+        ? 'دبل با کودک با تخت'
+        : rate.composition,
     adults: rate.adults,
     childAges: rate.childAges.map((a) => ({ ...a })),
     coefficient: rate.manualPricing!.coefficient,

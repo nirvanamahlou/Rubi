@@ -114,6 +114,20 @@ export interface SalesFormState {
   priceEntryMode?: 'PASSENGER_TOTAL' | 'CONTRACT_TOTAL';
   contractPrices?: SalesMoney[];
   insuranceExtraToman?: Record<string, string>;
+  publishedPackageHotelIds?: string[] | undefined;
+  packageSaleAvailable?: boolean | undefined;
+  packageSaleQuote?:
+    | {
+        tourDepartureId: string;
+        selectionKey: string;
+        items: {
+          publicationId: string;
+          roomCode: string;
+          prices?: SalesMoney[];
+        }[];
+        prices: SalesMoney[];
+      }
+    | undefined;
   tour?: TourDepartureV1 | undefined;
   insurancePlan?: SalesInsuranceSelection | undefined;
   contractFlights?: Partial<Record<SalesTicketDirection, ContractFlightDraft>>;
@@ -211,7 +225,10 @@ export function contractSaleComponents(
   state: SalesFormState,
   extras: readonly { customerId: string }[] = [],
 ): SalesPriceComponentInput[] {
+  if (state.tour && state.packageSaleAvailable && !state.packageSaleQuote)
+    throw Error('برای ترکیب انتخاب‌شده قیمت منتشرشده موجود نیست.');
   const automatic =
+    !state.packageSaleQuote &&
     state.automaticComponentPricing &&
     state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'HOTEL');
   if (
@@ -255,17 +272,47 @@ export function contractSaleComponents(
           insuranceExtraRials(state.insuranceExtraToman![person.customerId]!),
         ),
     );
+  const reference = new Map(
+    (state.packageSaleQuote?.prices ?? []).map((p) => [
+      p.currencyCode,
+      moneyUnits(p.amount),
+    ]),
+  );
+  for (const person of extras)
+    reference.set(
+      'IRR',
+      (reference.get('IRR') ?? 0n) +
+        moneyUnits(
+          insuranceExtraRials(state.insuranceExtraToman![person.customerId]!),
+        ),
+    );
   return [...totals]
     .filter(([, value]) => value > 0n)
-    .map(([currencyCode, value]) => {
-      const amount = moneyDecimal(value);
-      moneyUnits(amount);
-      return {
-        type: 'BASE' as const,
-        title: 'مبلغ کل قرارداد',
-        currencyCode,
-        amount,
-      };
+    .flatMap(([currencyCode, value]): SalesPriceComponentInput[] => {
+      const base = reference.get(currencyCode) ?? value;
+      if (base <= value)
+        return [
+          {
+            type: 'BASE',
+            title: 'مبلغ کل قرارداد',
+            currencyCode,
+            amount: moneyDecimal(value),
+          },
+        ];
+      return [
+        {
+          type: 'BASE',
+          title: 'قیمت منتشرشده پکیج',
+          currencyCode,
+          amount: moneyDecimal(base),
+        },
+        {
+          type: 'DISCOUNT',
+          title: 'تخفیف فروشنده',
+          currencyCode,
+          amount: moneyDecimal(base - value),
+        },
+      ];
     });
 }
 
@@ -906,17 +953,21 @@ export function withSalesHotelDates(
   next: SalesFormState,
 ): SalesFormState {
   const suggestion = (state: SalesFormState, field: 'checkIn' | 'checkOut') =>
-    salesHotelDate(
-      salesDirections(state, 'FLIGHT').includes(
-        field === 'checkIn' ? 'OUTBOUND' : 'RETURN',
-      )
-        ? salesFlightSelection(
-            state,
+    state.tour && state.packageSaleAvailable
+      ? field === 'checkIn'
+        ? state.tour.startsOn
+        : state.tour.endsOn
+      : salesHotelDate(
+          salesDirections(state, 'FLIGHT').includes(
             field === 'checkIn' ? 'OUTBOUND' : 'RETURN',
-          )?.departureAt
-        : undefined,
-      field === 'checkIn' ? 1 : -1,
-    );
+          )
+            ? salesFlightSelection(
+                state,
+                field === 'checkIn' ? 'OUTBOUND' : 'RETURN',
+              )?.departureAt
+            : undefined,
+          field === 'checkIn' ? 1 : -1,
+        );
   const hotel = { ...next.hotel };
   for (const field of ['checkIn', 'checkOut'] as const) {
     const manualKey = field === 'checkIn' ? 'checkInManual' : 'checkOutManual';
@@ -1040,6 +1091,7 @@ export function salesPayload(
   if (
     state.serviceKinds.includes('HOTEL') &&
     state.priceEntryMode === 'CONTRACT_TOTAL' &&
+    !state.packageSaleQuote &&
     state.hotel.rooms?.some((r) => !r.agreedPrice)
   )
     throw new Error('مبلغ توافق‌شدهٔ همهٔ اتاق‌ها را وارد کنید.');
@@ -1169,6 +1221,11 @@ export function salesPayload(
       ...contractFlightMetadata({ ...flight, version: 1 }),
     };
   }
+  if (state.packageSaleQuote && services[0])
+    services[0].metadata = {
+      ...services[0].metadata,
+      packagePublishedSale: JSON.stringify(state.packageSaleQuote),
+    };
   if (state.servicePricing && !state.priceEntryMode)
     for (const service of services) {
       if (service.kind === 'TRANSFER') {
@@ -1218,6 +1275,7 @@ export function salesPayload(
       ),
     };
   if (
+    !state.packageSaleQuote &&
     state.automaticComponentPricing &&
     services.some((s) => s.kind === 'FLIGHT' || s.kind === 'HOTEL')
   )

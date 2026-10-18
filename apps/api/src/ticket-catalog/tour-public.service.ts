@@ -157,6 +157,7 @@ export class TourPublicService {
   async assertSalesSelection(
     input: SalesContractCreateRequest,
     branchId: string,
+    validatedPublishedHotelId?: string,
   ) {
     const links = input.services.filter(
       (service) => service.metadata?.tourDepartureId !== undefined,
@@ -203,7 +204,8 @@ export class TourPublicService {
     if (
       tour.package.hotelIds.length &&
       (!input.hotelSelection ||
-        !tour.package.hotelIds.includes(input.hotelSelection.hotelId))
+        (!tour.package.hotelIds.includes(input.hotelSelection.hotelId) &&
+          validatedPublishedHotelId !== input.hotelSelection.hotelId))
     )
       throw new BadRequestException('هتل را از هتل‌های همین تور انتخاب کنید.');
     if (

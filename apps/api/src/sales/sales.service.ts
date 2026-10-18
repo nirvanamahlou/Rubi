@@ -1,3 +1,4 @@
+import { PackageTourPricingService } from '../package-pricing/package-tour-pricing.service';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
 import type { DisplayLanguage } from '../common/i18n/language';
@@ -427,6 +428,9 @@ export class SalesService {
     @Optional()
     @Inject(IamFinanceDirectory)
     private readonly identities?: IamFinanceDirectory,
+    @Optional()
+    @Inject(PackageTourPricingService)
+    private readonly packageQuotes?: PackageTourPricingService,
   ) {}
 
   async availableHotelRoomRates(
@@ -589,6 +593,7 @@ export class SalesService {
   private async assertTour(
     input: SalesContractCreateRequest,
     branchId: string,
+    validatedPublishedHotelId?: string,
   ) {
     if (
       !input.services.some(
@@ -597,7 +602,11 @@ export class SalesService {
     )
       return;
     if (!this.tours) throw new BadRequestException('سرویس تور در دسترس نیست.');
-    await this.tours.assertSalesSelection(input, branchId);
+    await this.tours.assertSalesSelection(
+      input,
+      branchId,
+      validatedPublishedHotelId,
+    );
   }
 
   private assertRead(row: SalesContractRow, actor: AuthenticatedActor): void {
@@ -1021,7 +1030,19 @@ export class SalesService {
     // Preserve recorded legacy idempotent replays; enforce terms for new cheque sales.
     domainCall(() => validateSalesContract(input, true));
     const branchId = branch(actor, requestedBranch);
-    await this.assertTour(input, branchId);
+    let validatedPublishedHotelId: string | undefined;
+    if (
+      this.packageQuotes &&
+      input.services.some((s) => s.metadata?.tourDepartureId)
+    ) {
+      validatedPublishedHotelId = await this.packageQuotes.assertContractSale(
+        input,
+        actor,
+        branchId,
+      );
+    } else if (input.services.some((s) => s.metadata?.packagePublishedSale))
+      throw new BadRequestException('قیمت فروش معتبر نیست.');
+    await this.assertTour(input, branchId, validatedPublishedHotelId);
     await this.assertHotelRoomCapacity(input, branchId);
     const customer = await this.customers.resolveSnapshot(
       input.customerId,
@@ -1133,7 +1154,58 @@ export class SalesService {
     if (input.paymentTerms)
       input = { ...input, payments: row.payments.map(paymentInput) };
     domainCall(() => validateSalesContract(input, false, categories));
-    await this.assertTour(input, row.branchId);
+    let validatedPublishedHotelId: string | undefined;
+    if (input.services.some((s) => s.metadata?.packagePublishedSale)) {
+      if (!this.packageQuotes)
+        throw new BadRequestException('قیمت فروش معتبر نیست.');
+      const savedQuote = row.services.find(
+        (s) =>
+          (s.metadata as Record<string, unknown> | null)?.packagePublishedSale,
+      )?.metadata as Record<string, unknown> | undefined;
+      const nextQuote = input.services.find(
+        (s) => s.metadata?.packagePublishedSale,
+      )?.metadata?.packagePublishedSale;
+      const oldHotel = row.hotelSelection,
+        nextHotel = input.hotelSelection;
+      const unchanged =
+        oldHotel &&
+        nextHotel &&
+        savedQuote?.packagePublishedSale === nextQuote &&
+        (
+          row.services.find(
+            (s) =>
+              (s.metadata as Record<string, unknown> | null)?.tourDepartureId,
+          )?.metadata as Record<string, unknown> | undefined
+        )?.tourDepartureId ===
+          input.services.find((s) => s.metadata?.tourDepartureId)?.metadata
+            ?.tourDepartureId &&
+        oldHotel.hotelId === nextHotel.hotelId &&
+        oldHotel.checkInDate.toISOString().slice(0, 10) ===
+          nextHotel.checkInDate &&
+        oldHotel.checkOutDate.toISOString().slice(0, 10) ===
+          nextHotel.checkOutDate &&
+        oldHotel.rooms.length === nextHotel.rooms?.length &&
+        oldHotel.rooms.every(
+          (r, j) =>
+            r.roomTypeId === nextHotel.rooms![j]?.roomTypeId &&
+            r.adults === nextHotel.rooms![j]?.adults &&
+            JSON.stringify(r.childAges) ===
+              JSON.stringify(nextHotel.rooms![j]?.childAges),
+        );
+      if (unchanged && typeof nextQuote === 'string')
+        this.packageQuotes.validateContractAmounts(
+          input,
+          JSON.parse(nextQuote).prices,
+        );
+      validatedPublishedHotelId = unchanged
+        ? oldHotel.hotelId
+        : await this.packageQuotes.validateContractSale(
+            input,
+            actor,
+            row.branchId,
+          );
+    }
+    await this.assertTour(input, row.branchId, validatedPublishedHotelId);
     await this.assertHotelRoomCapacity(input, row.branchId);
     for (const passenger of row.passengers) {
       const next = input.passengers.find(
