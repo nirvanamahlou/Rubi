@@ -1,3 +1,7 @@
+## USERS-COPY-CLEANUP-1018 — PC-B
+
+Remove only the owner-specified users-page introductory and role-protection explanatory paragraphs. Keep role-deletion protections, section cascade and all account/access functionality unchanged. Focused Web tests and final-head quality/type/test/build gates required before authorized push/develop merge. No API/schema/dependency/data/runtime changes.
+
 ## LOGIN-DIVIDER-ALIGN-1018 — PC-A — VALIDATING
 
 Align only the outer login background seam to the unchanged1.1:1 desktop card divider rather than the viewport midpoint. CSS accounts for the card width cap, page padding and borders, with mirrored divider offset for LTR and50/50 mobile fallback. Authentication, logos and form sizes/styles remain unchanged. Focused responsive/direction geometry tests and exact-head full CI gate the continued user-authorized develop merge and backed-up server rollout. No schema/migration/dependency or operational data change; all backups remain on the server.

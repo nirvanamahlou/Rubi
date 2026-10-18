@@ -568,10 +568,6 @@ export function UserManagement() {
     <div className={styles.workspace}>
       <header className={styles.pageHeader}>
         <h1 className="text-2xl font-black">مدیریت کاربران</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          تعریف حساب، نقش و دسترسی مستقل هر کاربر؛ تیک هر بخش همهٔ زیربخش‌ها را
-          انتخاب می‌کند و می‌توانید هر مورد را جداگانه بردارید.
-        </p>
       </header>
       {message && (
         <p role="alert" className="rounded-xl border p-3">
@@ -687,10 +683,6 @@ export function UserManagement() {
                 aria-label="نقش‌های تعریف‌شده"
               >
                 <h2 className="text-xl font-bold">نقش‌های تعریف‌شده</h2>
-                <p className="text-sm text-muted-foreground">
-                  برای حفظ دسترسی کاربران، نقش سیستمی و نقش متصل به کاربر حذف
-                  نمی‌شود.
-                </p>
                 <Button
                   type="button"
                   variant="outline"

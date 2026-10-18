@@ -8011,6 +8011,10 @@ Owner reports silent user-delete no-op and requests existing-role directory plus
 
 PR864-INTEGRATION-1018 — PC-A: user authorizes conflict resolution, testing and develop merge. Preserve saved-flight empty-search behavior together with current calendar selection, all existing fare/seat guards and concurrent develop documentation/translations. No migration/dependency/runtime change. Final-head CI gates merge.
 
+## USERS-COPY-CLEANUP-1018 — PC-B — READY_FOR_CI
+
+Owner authorizes removing only the two explanatory paragraphs on the users page, push and develop merge. Only user-management.tsx and own status/reservation entries change. Existing role deletion protections, permission cascade and account data remain unchanged.88 Web/access/i18n tests and formatting pass; scoped lint and final-head type/test/build gates required before merge. No API/schema/dependency/runtime change. Direct execution without Worker Orchestrator; source locks released at frozen candidate.
+
 ## EXISTING-USER-EDIT-1018 — PC-B — READY_FOR_CI
 
 Owner authorizes full-name editing and saved-role redefinition for existing accounts, push and develop merge. Direct execution without Worker Orchestrator. Implemented revision-protected name-only update, reusable-role selection projection and Web editors; no schema/backfill. Name saves never touch roles/grants/branches/credentials. Role selection remains a draft until explicit manual-access save and retains delegation/CAS/last-manager safeguards.183 IAM tests pass (four pre-existing isolated-DB skips),88 Web/access/i18n tests, both typechecks and scoped lint pass. Exact-head hosted build/CI gates merge. No operational data/runtime mutation. Source locks released at frozen candidate; see docs/tasks/EXISTING-USER-EDIT-1018.md.
