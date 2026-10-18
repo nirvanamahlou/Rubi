@@ -221,6 +221,21 @@ export interface ContractFlightDraft {
   cabinClassCode: 'ECONOMY' | 'BUSINESS' | 'FIRST';
 }
 
+/** Foreign room shares are a presentation of the hotel price, never a second flight charge. */
+export function passengerFlightSalePrices(
+  state: SalesFormState,
+): Record<string, SalesMoney[]> {
+  return Object.fromEntries(
+    state.passengers.map((p) => [
+      p.customerId,
+      (state.passengerFlightPrices?.[p.customerId] ?? []).filter(
+        (price) =>
+          !state.serviceKinds.includes('HOTEL') || price.currencyCode === 'IRR',
+      ),
+    ]),
+  );
+}
+
 export function contractSaleComponents(
   state: SalesFormState,
   extras: readonly { customerId: string }[] = [],
@@ -239,12 +254,7 @@ export function contractSaleComponents(
     throw Error('قیمت هر اتاق را وارد کنید.');
   const prices = automatic
     ? flightRoomTotals(
-        Object.fromEntries(
-          state.passengers.map((p) => [
-            p.customerId,
-            state.passengerFlightPrices?.[p.customerId] ?? [],
-          ]),
-        ),
+        passengerFlightSalePrices(state),
         state.serviceKinds.includes('HOTEL') ? (state.hotel.rooms ?? []) : [],
       )
     : (state.contractPrices ?? []);
@@ -1259,6 +1269,7 @@ export function salesPayload(
     };
   }
   readAgencyCommission(services);
+  const flightPrices = passengerFlightSalePrices(state);
   const flightPriceService = services.find((s) => s.kind === 'FLIGHT');
   if (flightPriceService && state.passengerFlightPrices !== undefined)
     flightPriceService.metadata = {
@@ -1267,7 +1278,7 @@ export function salesPayload(
         Object.fromEntries(
           state.passengers.map((p) => [
             p.customerId,
-            (state.passengerFlightPrices?.[p.customerId] ?? []).filter(
+            (flightPrices[p.customerId] ?? []).filter(
               (price) => price.amount.trim() !== '',
             ),
           ]),
