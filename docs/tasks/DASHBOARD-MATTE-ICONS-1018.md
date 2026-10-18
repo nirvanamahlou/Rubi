@@ -23,3 +23,7 @@ Generated with built-in image_gen from the human-approved concept2 board. Prompt
 ## Rollback
 
 Revert this bounded presentation commit and rebuild Web. No data rollback is needed. Existing production runtime stays available until its replacement build is ready.
+
+## Verified delivery candidate
+
+30 focused Dashboard tests pass (one existing skip); scoped ESLint/formatting, Contracts build and both source/compatible-runtime production Web builds with TypeScript pass. All eight branch/PR CI checks passed on c45dff61; a missing blank line between concurrent work records was corrected. Authenticated Amin verification on Web3000 confirms9 semantic icons on Commercial Performance,48px bounds, transparency in light/dark, fa/en direction, no horizontal overflow at390px and1440px, and working KPI/chart detail drawers. Screenshot remains local at assistant-floating-runtime-1015/dashboard-matte-icons-1018.jpg. Ports3000/4000/4300/4301 return200. Runtime uses branch codex/pc-c-dashboard-matte-runtime-1018, commit abf8cc0e and build .next-matte-icons. Old build .next-expand-chat is preserved for rollback. Final documentation-head CI and postmerge CI gate completion.
