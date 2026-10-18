@@ -17,6 +17,10 @@ it('prints the edited room composition and child ages from the saved supplier re
     workflow: { roomOrder: [], ageOverrides: {}, note: '' },
   } as unknown as ReservationFormIntake;
   const settings = defaultVoucherSettings(intake, {});
+  settings.hotelPurchasePrices = [
+    { amount: '2500000', currencyCode: 'IRR' },
+    { amount: '123.50', currencyCode: 'EUR' },
+  ];
   settings.rooms = [
     {
       ordinal: 1,
@@ -47,4 +51,19 @@ it('prints the edited room composition and child ages from the saved supplier re
   expect(html).toContain('4, 10');
   expect(html).toContain('ROOM TYPE');
   expect(html).not.toContain('undefined');
+  expect(html).toContain('2,500,000 IRR · 123.50 EUR');
+  expect(html.indexOf('PROPOSED PURCHASE PRICE')).toBeGreaterThan(
+    html.indexOf('SUPPLIER'),
+  );
+  expect(html.indexOf('PROPOSED PURCHASE PRICE')).toBeLessThan(
+    html.indexOf('DATE OF ISSUE'),
+  );
+  expect(html).not.toContain('HOTEL TOTAL');
+  intake.workflow.voucherSettings = settings;
+  const voucherHtml = renderToStaticMarkup(
+    <ReservationFormSheet intake={intake} logo="/logo.png" voucher />,
+  );
+  expect(voucherHtml).not.toContain('PROPOSED PURCHASE PRICE');
+  expect(voucherHtml).not.toContain('2,500,000');
+  expect(voucherHtml).not.toContain('123.50');
 });
