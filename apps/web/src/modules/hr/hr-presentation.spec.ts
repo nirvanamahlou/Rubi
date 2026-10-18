@@ -5,8 +5,36 @@ import { persianDateToIso } from './hr-dates';
 import { hrStatusText, hrStatusTone } from './hr-presentation';
 import { HrStatus } from './hr-controls';
 import { sourceForRecord } from './hr-record-source';
+import { jsx } from '@/i18n/jsx-runtime';
+import { createElement } from 'react';
+import { DisplayLocaleContext } from '@/i18n/locale-context';
 
 describe('HR presentation boundaries', () => {
+  it.each([
+    ['فعال', 'success'],
+    ['غیرفعال', 'danger'],
+    ['در انتظار تأیید', 'warning'],
+    ['پیش‌نویس', 'neutral'],
+  ] as const)(
+    'preserves localized %s status in every HR badge',
+    (status, tone) => {
+      const badge = jsx(HrStatus, { children: status });
+      for (const language of ['fa', 'en'] as const) {
+        const html = renderToStaticMarkup(
+          createElement(
+            DisplayLocaleContext.Provider,
+            { value: language },
+            badge,
+          ),
+        );
+        expect(html).toContain(`data-tone="${tone}"`);
+        expect(html).not.toContain('نامشخص');
+        if (language === 'fa') expect(html).toContain(status);
+        else expect(html).not.toMatch(/[\u0600-\u06ff]/);
+      }
+    },
+  );
+
   it('does not label an inactive or pending record as successful', () => {
     expect(hrStatusTone('غیرفعال')).toBe('danger');
     expect(hrStatusTone('غیر فعال')).toBe('danger');
