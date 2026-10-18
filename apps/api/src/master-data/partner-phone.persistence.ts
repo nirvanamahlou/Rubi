@@ -95,7 +95,7 @@ export async function persistPartnerPhones(
   if (existing.length)
     await tx.masterOrganizationContact.updateMany({
       where: { organizationId, id: { in: existing.map((row) => row.id) } },
-      data: { phoneFingerprint: null },
+      data: fields(null),
     });
   for (const group of groups.values()) {
     const data = {

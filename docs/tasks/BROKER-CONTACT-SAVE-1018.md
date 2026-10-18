@@ -8,6 +8,8 @@ Equal normalized office and mobile numbers previously created two organization c
 
 The broker email input uses native email semantics and LTR direction, without rewriting typed case. Existing backend case-insensitive normalization and encrypted storage remain unchanged.
 
+Database verification caught that releasing only the fingerprint violates the existing all-or-none encryption check. Slot release now clears the entire phone crypto tuple together, keeping encrypted snapshots in memory for restoration within the same transaction. Constraints remain enabled throughout; any failed write rolls back the complete operation.
+
 ## Verification
 
 44 focused API/Web tests pass, including shared numbers, split/merge/clear, rollback propagation and uppercase email payload. Scoped lint passes. Disposable PostgreSQL regression exercises actual broker creation, uppercase email normalization and repeated role transitions. Hosted exact-head checks must pass before merge; local Docker engine is unavailable. Browser verification is not claimed. No schema, migration, dependency or account grant changes.

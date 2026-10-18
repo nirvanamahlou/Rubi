@@ -90,7 +90,14 @@ describe('shared partner office/mobile phone persistence', () => {
     );
     expect(h.contacts.updateMany).toHaveBeenCalledWith({
       where: { organizationId: 'org', id: { in: ['old'] } },
-      data: { phoneFingerprint: null },
+      data: {
+        phoneEncrypted: null,
+        phoneEncryptionIv: null,
+        phoneEncryptionAuthTag: null,
+        phoneEncryptionKeyVersion: null,
+        phoneMasked: null,
+        phoneFingerprint: null,
+      },
     });
   });
   it('clears one shared role without clearing the other', async () => {
