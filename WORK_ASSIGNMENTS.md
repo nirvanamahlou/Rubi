@@ -1,3 +1,7 @@
+## PARTNER-DOSSIER-SESSION-LOOP-1018 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-partner-dossier-session-loop-1018 from origin/develop@c52e41b3. Reserve Organizations dossier session hook/provider, partner dossier and documents/finance help text plus focused lifecycle regressions. Share one live actor/branch session throughout each partner dossier so mounting child panels cannot rotate credentials and restart ancestors. Preserve permission/actor/branch invalidation and disclosure masking. No schema, Finance calculation, IAM contract or dependency changes. Explicit user authorizes push and develop merge after exact-head CI; no worker-orchestrator.
+
 ## LOGIN-DIVIDER-ALIGN-1018 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-login-divider-align-1018 from origin/develop@f29fbe34. User continues the login correction and explicitly requests fixing the server: align the outer background color seam to the actual1.1:1 desktop card divider, retaining card/form dimensions and physical left-blue/right-white colors. Reserve only login page CSS/layout regression and own docs. Preserve mobile50/50 fallback and RTL/LTR behavior. No authentication, schema/migration/dependency or business-data changes. Full exact-head CI gates develop merge; backed-up rollout of pinned merged develop retains server-only encrypted backups, private configuration and all volumes. Previous login source reservation is merged/released.
