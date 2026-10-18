@@ -1,4 +1,4 @@
-## INTEGRATIONS-NAVIGATION-1018 — PC-D — LOCAL_COMPLETE
+## INTEGRATIONS-NAVIGATION-1018 — PC-D — READY_FOR_CI
 
 Replace the nine equal-level section links with four plain-language navigation
 areas and contextual secondary links; all nine sections and their drill-downs
@@ -10,7 +10,7 @@ Interactive desktop/mobile navigation and the existing registration dialog were
 verified without writes. Local Web-only image1018-navigation is healthy; the
 existing API remains healthy on1017-access-v2. The launcher includes the new
 image and local startup health override. No other Docker project was stopped. Global i18n sync reports pre-existing unrelated generated-catalogue drift;
-no API/public catalogue changes included. No new GitHub publication authorized.
+no API/public catalogue changes included. User now explicitly authorizes push, hosted CI, PR to develop and merge after all checks and review pass. Candidate synchronized with develop@091f1fd5; no gate or runtime change.
 See [navigation and connection readiness](tasks/INTEGRATIONS-NAVIGATION-1018.md).
 
 ## CONTRACT-HOTEL-COMPACT-1018 — PC-A

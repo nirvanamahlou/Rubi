@@ -84,3 +84,13 @@ on `1017-access-v2`. The local start.ps1 now references the new image and health
 override. Windows free memory was 519MB of 8113MB at final verification; no
 Ghestiroo container was stopped. Browser login and the new navigation were
 verified again after successful activation.
+
+## Authorized develop delivery
+
+The subsequent explicit user instruction authorizes commit, push, hosted CI, a
+PR to develop and merge after successful checks and review. This supersedes
+the earlier local-only publication scope for this unit. Synchronize with
+origin/develop@091f1fd5; resolve only coordination-file insertion conflicts by
+preserving both histories. Use ehsandni (60431015). Existing hosted quality,
+test, migration and build gates remain intact; no additional dispatch is needed.
+Local Docker and operational databases are unchanged during publication.
