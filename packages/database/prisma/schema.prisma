@@ -5331,6 +5331,7 @@ model ReservationHotelRoomRate {
 }
 
 model PackagePricingTourDraft {
+  roomSaleOverrides           Json?
   selectedHotelRateIds        Json?
   priceFields                 Json?
   familyAdults                Int?

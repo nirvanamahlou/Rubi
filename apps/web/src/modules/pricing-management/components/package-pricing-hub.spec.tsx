@@ -8,7 +8,7 @@ describe('package pricing hub', () => {
     const html = renderToStaticMarkup(<PackagePricingHub />);
 
     expect(html).toContain('مدیریت پکیج');
-    expect(html).toContain('مدیریت قیمت');
+    expect(html).toContain('بستن پکیج');
     expect(html).toContain('پک جنریتور');
     expect(html).toContain('href="/sales/pricing/management"');
     expect(html).toContain('href="/sales/pricing/generator"');
