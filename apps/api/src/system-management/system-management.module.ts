@@ -1,4 +1,8 @@
 import { Module } from '@nestjs/common';
+import {
+  InternalCorrespondenceController,
+  InternalCorrespondenceService,
+} from './internal-correspondence';
 
 import { DocumentsModule } from '../documents/documents.module';
 import { IamModule } from '../iam/iam.module';
@@ -12,8 +16,16 @@ import {
 
 @Module({
   imports: [IamModule, DocumentsModule, ReportingModule],
-  controllers: [SystemManagementController, CorrespondenceNumberingController],
-  providers: [SystemManagementService, CorrespondenceNumberingService],
+  controllers: [
+    SystemManagementController,
+    CorrespondenceNumberingController,
+    InternalCorrespondenceController,
+  ],
+  providers: [
+    SystemManagementService,
+    CorrespondenceNumberingService,
+    InternalCorrespondenceService,
+  ],
   exports: [SystemManagementService],
 })
 export class SystemManagementModule {}

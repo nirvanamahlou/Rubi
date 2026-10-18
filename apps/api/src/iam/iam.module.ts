@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { IamCorrespondenceDirectory } from './iam-correspondence-directory';
 import { HrUserUnitDirectoryModule } from '../hr/hr-user-unit-directory';
 import { IamReservationsDirectory } from './iam-reservations-directory';
 import { ConfigService } from '@nestjs/config';
@@ -38,6 +39,7 @@ import { ManualAccessVersionController } from './manual-access-version.controlle
     AuditController,
   ],
   providers: [
+    IamCorrespondenceDirectory,
     IamReservationsDirectory,
     ManualUserAccessService,
     IamProcurementDirectory,
@@ -49,6 +51,7 @@ import { ManualAccessVersionController } from './manual-access-version.controlle
     { provide: IAM_STEP_UP_PORT, useExisting: IamService },
   ],
   exports: [
+    IamCorrespondenceDirectory,
     IamReservationsDirectory,
     IamService,
     IAM_STEP_UP_PORT,

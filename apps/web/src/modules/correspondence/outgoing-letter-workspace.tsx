@@ -3,10 +3,19 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FileImage, FileText, WandSparkles, Mail } from 'lucide-react';
+import {
+  FileImage,
+  FileText,
+  WandSparkles,
+  Mail,
+  Send,
+  Save,
+} from 'lucide-react';
+import type { InternalLetterRecord } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui';
-import { issueLetterNumber } from './api';
+import { issueLetterNumber, internalLetters } from './api';
+import { LetterRecipientDialog } from './internal-controls';
 import {
   companies,
   composeLetter,
@@ -16,42 +25,83 @@ import {
 } from './letter';
 import { letterDownloads, renderLetterPages } from './letter-export';
 
-export function OutgoingLetterWorkspace() {
+export function OutgoingLetterWorkspace({
+  internal = false,
+  initialRecord,
+  readOnly = false,
+  onSaved,
+}: {
+  internal?: boolean;
+  initialRecord?: InternalLetterRecord;
+  readOnly?: boolean;
+  onSaved?: () => void;
+}) {
+  const [sendOpen, setSendOpen] = useState(false);
+  const sendKey = useRef<string | null>(null);
+  const [savedVersion, setSavedVersion] = useState(initialRecord?.version);
+  const [notice, setNotice] = useState('');
+  const [sent, setSent] = useState(false);
   const requestKey = useRef<string | null>(null);
   const [templateId, setTemplateId] = useState<string>('general');
-  const [letterDate, setLetterDate] = useState(() =>
-    new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Tehran',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(new Date()),
+  const [letterDate, setLetterDate] = useState(
+    () =>
+      initialRecord?.dateISO ??
+      new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Tehran',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date()),
   );
-  const [letter, setLetter] = useState<Letter>({
-    company: companies[0].title,
-    recipient: '',
-    recipientTitle: '',
-    sender: '',
-    subject: '',
-    date: new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran' }).format(
-      new Date(),
-    ),
-    number: '',
-    attachment: '',
-    signer: '',
-    text: '',
-    template: initialTemplate,
-  });
+  const [letter, setLetter] = useState<Letter>(
+    initialRecord?.letter ?? {
+      company: companies[0].title,
+      recipient: '',
+      recipientTitle: '',
+      sender: '',
+      subject: '',
+      date: new Intl.DateTimeFormat('fa-IR', {
+        timeZone: 'Asia/Tehran',
+      }).format(new Date()),
+      number: '',
+      attachment: '',
+      signer: '',
+      text: '',
+      template: initialTemplate,
+    },
+  );
   const [preview, setPreview] = useState<string[]>([]);
   const [body, setBody] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [files, setFiles] = useState<{ url: string; name: string }[]>([]);
+  useEffect(() => {
+    if (!initialRecord) return;
+    let live = true;
+    const text = composeLetter(initialRecord.letter);
+    void renderLetterPages(initialRecord.letter, text)
+      .then((pages) => {
+        if (live) {
+          setBody(text);
+          setPreview(pages.map((page) => page.toDataURL('image/png')));
+        }
+      })
+      .catch((cause) => {
+        if (live)
+          setError(
+            cause instanceof Error ? cause.message : 'تولید نامه ناموفق بود.',
+          );
+      });
+    return () => {
+      live = false;
+    };
+  }, [initialRecord]);
   useEffect(
     () => () => files.forEach((file) => URL.revokeObjectURL(file.url)),
     [files],
   );
   const update = (key: keyof Letter, value: string) => {
+    setNotice('');
     if (key === 'company') requestKey.current = null;
     setLetter({
       ...letter,
@@ -136,16 +186,24 @@ export function OutgoingLetterWorkspace() {
           <Mail />
         </span>
         <div>
-          <h1 className="text-2xl font-bold">نامه‌های خروجی</h1>
+          <h1 className="text-2xl font-bold">
+            {internal
+              ? readOnly
+                ? 'مشاهده نامه داخلی'
+                : initialRecord
+                  ? 'ویرایش نامه داخلی'
+                  : 'ارسال نامه داخلی'
+              : 'نامه‌های خروجی'}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             تولید نامه از قالب و متن شما، با خروجی عکس و PDF
           </p>
         </div>
         <Link
-          href="/correspondence"
+          href={internal ? '/correspondence/internal' : '/correspondence'}
           className="ms-auto text-sm text-primary underline"
         >
-          بازگشت به مکاتبات
+          {internal ? 'بازگشت به مکاتبات داخلی' : 'بازگشت به مکاتبات'}
         </Link>
       </header>
       <div className="grid gap-6 xl:grid-cols-[minmax(340px,0.85fr)_minmax(0,1.15fr)]">
@@ -153,172 +211,209 @@ export function OutgoingLetterWorkspace() {
           onSubmit={(event) => void generate(event)}
           className="space-y-5 rounded-2xl border bg-surface p-5 shadow-sm"
         >
-          <h2 className="font-bold">اطلاعات نامه</h2>
-          <label className="block text-sm font-medium">
-            قالب آماده
-            <select
-              className={inputClass}
-              value={templateId}
-              disabled={busy}
-              onChange={(event) => {
-                setTemplateId(event.target.value);
-                update(
-                  'template',
-                  letterTemplates.find(
-                    (item) => item.id === event.target.value,
-                  )!.body,
-                );
-              }}
-            >
-              {letterTemplates.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.title}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm font-medium">
-            شرکت
-            <select
-              className={inputClass}
-              value={letter.company}
-              disabled={busy}
-              onChange={(event) => update('company', event.target.value)}
-            >
-              {companies.map((company) => (
-                <option key={company.id} value={company.title}>
-                  {company.title}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {(
-              [
-                'recipient',
-                'recipientTitle',
-                'sender',
-                'subject',
-                'attachment',
-                'signer',
-              ] as const
-            ).map((key) => (
-              <label
-                key={key}
-                className={`block text-sm font-medium ${key === 'subject' ? 'sm:col-span-2' : ''}`}
+          <fieldset
+            disabled={readOnly || busy || sent}
+            className="space-y-5 min-w-0"
+          >
+            <h2 className="font-bold">اطلاعات نامه</h2>
+            <label className="block text-sm font-medium">
+              قالب آماده
+              <select
+                className={inputClass}
+                value={templateId}
+                disabled={busy || readOnly || sent}
+                onChange={(event) => {
+                  setTemplateId(event.target.value);
+                  update(
+                    'template',
+                    letterTemplates.find(
+                      (item) => item.id === event.target.value,
+                    )!.body,
+                  );
+                }}
               >
-                {
+                {letterTemplates.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm font-medium">
+              شرکت
+              <select
+                className={inputClass}
+                value={letter.company}
+                disabled={busy || readOnly || sent || !!initialRecord}
+                onChange={(event) => update('company', event.target.value)}
+              >
+                {companies.map((company) => (
+                  <option key={company.id} value={company.title}>
+                    {company.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {(
+                [
+                  'recipient',
+                  'recipientTitle',
+                  'sender',
+                  'subject',
+                  'attachment',
+                  'signer',
+                ] as const
+              ).map((key) => (
+                <label
+                  key={key}
+                  className={`block text-sm font-medium ${key === 'subject' ? 'sm:col-span-2' : ''}`}
+                >
                   {
-                    recipient: 'گیرنده',
-                    recipientTitle: 'عنوان گیرنده',
-                    sender: 'فرستنده',
-                    subject: 'موضوع',
-                    attachment: 'پیوست',
-                    signer: 'نام و سمت امضاکننده',
-                  }[key]
-                }
-                <input
-                  className={inputClass}
-                  value={letter[key] ?? ''}
-                  required={
-                    key === 'recipient' || key === 'subject' || key === 'sender'
+                    {
+                      recipient: 'گیرنده',
+                      recipientTitle: 'عنوان گیرنده',
+                      sender: 'فرستنده',
+                      subject: 'موضوع',
+                      attachment: 'پیوست',
+                      signer: 'نام و سمت امضاکننده',
+                    }[key]
                   }
-                  maxLength={
-                    key === 'subject' || key === 'recipient' ? 160 : 80
-                  }
-                  disabled={busy}
-                  onChange={(event) => update(key, event.target.value)}
+                  <input
+                    className={inputClass}
+                    value={letter[key] ?? ''}
+                    required={
+                      key === 'recipient' ||
+                      key === 'subject' ||
+                      key === 'sender'
+                    }
+                    maxLength={
+                      key === 'subject' || key === 'recipient' ? 160 : 80
+                    }
+                    disabled={busy || readOnly || sent}
+                    onChange={(event) => update(key, event.target.value)}
+                  />
+                </label>
+              ))}
+              <label className="block text-sm font-medium">
+                تاریخ نامه
+                <DatePicker
+                  aria-label="تاریخ نامه"
+                  value={letterDate}
+                  disabled={busy || readOnly || sent || !!initialRecord}
+                  onChange={(value) => {
+                    if (!value) return;
+                    requestKey.current = null;
+                    setLetterDate(value);
+                    update(
+                      'date',
+                      new Intl.DateTimeFormat('fa-IR', {
+                        timeZone: 'Asia/Tehran',
+                      }).format(new Date(`${value}T12:00:00+03:30`)),
+                    );
+                    setLetter((current) => ({ ...current, number: '' }));
+                  }}
                 />
               </label>
-            ))}
+            </div>
+            {letter.number && (
+              <p role="status" className="rounded-xl bg-primary/5 p-3 text-sm">
+                شماره نامه: <b dir="ltr">{letter.number}</b>
+              </p>
+            )}
             <label className="block text-sm font-medium">
-              تاریخ نامه
-              <DatePicker
-                aria-label="تاریخ نامه"
-                value={letterDate}
-                disabled={busy}
-                onChange={(value) => {
-                  if (!value) return;
-                  requestKey.current = null;
-                  setLetterDate(value);
-                  update(
-                    'date',
-                    new Intl.DateTimeFormat('fa-IR', {
-                      timeZone: 'Asia/Tehran',
-                    }).format(new Date(`${value}T12:00:00+03:30`)),
-                  );
-                  setLetter((current) => ({ ...current, number: '' }));
-                }}
+              متن ورودی
+              <textarea
+                className={inputClass}
+                rows={7}
+                required
+                maxLength={20000}
+                value={letter.text}
+                disabled={busy || readOnly || sent}
+                onChange={(event) => update('text', event.target.value)}
+                placeholder="متن اصلی نامه را وارد کنید…"
               />
             </label>
-          </div>
-          {letter.number && (
+            <details className="rounded-xl border p-4">
+              <summary className="cursor-pointer text-sm font-semibold">
+                ویرایش قالب نامه
+              </summary>
+              <p className="mt-3 text-xs leading-6 text-muted-foreground">
+                متغیرهای قالب:{' '}
+                {
+                  '{{متن}}، {{امضا}}، {{شرکت}}، {{گیرنده}}، {{مخاطب}}، {{فرستنده}}، {{موضوع}}، {{تاریخ}}، {{شماره}} و {{پیوست}}'
+                }
+              </p>
+              <textarea
+                aria-label="قالب نامه"
+                className={inputClass}
+                rows={8}
+                value={letter.template}
+                maxLength={10000}
+                disabled={busy || readOnly || sent}
+                onChange={(event) => update('template', event.target.value)}
+              />
+            </details>
+            {!readOnly && (
+              <Button type="submit" disabled={busy || sent}>
+                <WandSparkles className="size-4" />
+                {busy ? 'در حال آماده‌سازی…' : 'تولید نامه'}
+              </Button>
+            )}
+            {!readOnly && !initialRecord && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={() => {
+                  requestKey.current = null;
+                  sendKey.current = null;
+                  setSent(false);
+                  setNotice('');
+                  setLetter((current) => ({
+                    ...current,
+                    number: '',
+                    recipient: '',
+                    recipientTitle: '',
+                    sender: '',
+                    subject: '',
+                    text: '',
+                    signer: '',
+                    attachment: '',
+                  }));
+                  setPreview([]);
+                  setFiles([]);
+                  setBody('');
+                  setError('');
+                }}
+              >
+                نامه جدید
+              </Button>
+            )}
+          </fieldset>
+          {sent && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                sendKey.current = null;
+                requestKey.current = null;
+                setSent(false);
+                setNotice('');
+                setLetter((current) => ({ ...current, number: '' }));
+                setBody('');
+                setPreview([]);
+                setFiles([]);
+              }}
+            >
+              نامه جدید
+            </Button>
+          )}
+          {notice && (
             <p role="status" className="rounded-xl bg-primary/5 p-3 text-sm">
-              شماره نامه: <b dir="ltr">{letter.number}</b>
+              {notice}
             </p>
           )}
-          <label className="block text-sm font-medium">
-            متن ورودی
-            <textarea
-              className={inputClass}
-              rows={7}
-              required
-              maxLength={20000}
-              value={letter.text}
-              disabled={busy}
-              onChange={(event) => update('text', event.target.value)}
-              placeholder="متن اصلی نامه را وارد کنید…"
-            />
-          </label>
-          <details className="rounded-xl border p-4">
-            <summary className="cursor-pointer text-sm font-semibold">
-              ویرایش قالب نامه
-            </summary>
-            <p className="mt-3 text-xs leading-6 text-muted-foreground">
-              متغیرهای قالب:{' '}
-              {
-                '{{متن}}، {{امضا}}، {{شرکت}}، {{گیرنده}}، {{مخاطب}}، {{فرستنده}}، {{موضوع}}، {{تاریخ}}، {{شماره}} و {{پیوست}}'
-              }
-            </p>
-            <textarea
-              aria-label="قالب نامه"
-              className={inputClass}
-              rows={8}
-              value={letter.template}
-              maxLength={10000}
-              disabled={busy}
-              onChange={(event) => update('template', event.target.value)}
-            />
-          </details>
-          <Button type="submit" disabled={busy}>
-            <WandSparkles className="size-4" />
-            {busy ? 'در حال آماده‌سازی…' : 'تولید نامه'}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={busy}
-            onClick={() => {
-              requestKey.current = null;
-              setLetter((current) => ({
-                ...current,
-                number: '',
-                recipient: '',
-                recipientTitle: '',
-                sender: '',
-                subject: '',
-                text: '',
-                signer: '',
-                attachment: '',
-              }));
-              setPreview([]);
-              setFiles([]);
-              setBody('');
-              setError('');
-            }}
-          >
-            نامه جدید
-          </Button>
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}
@@ -347,6 +442,45 @@ export function OutgoingLetterWorkspace() {
                 <FileText className="size-4" />
                 خروجی PDF
               </Button>
+              {internal &&
+                !readOnly &&
+                (initialRecord ? (
+                  <Button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      setBusy(true);
+                      setError('');
+                      void internalLetters
+                        .edit(initialRecord.id, savedVersion!, letter)
+                        .then((result) => {
+                          setSavedVersion(result.version);
+                          setNotice('تغییرات نامه ذخیره شد.');
+                          onSaved?.();
+                        })
+                        .catch((cause) =>
+                          setError(
+                            cause instanceof Error
+                              ? cause.message
+                              : 'ذخیره نامه ناموفق بود.',
+                          ),
+                        )
+                        .finally(() => setBusy(false));
+                    }}
+                  >
+                    <Save className="size-4" />
+                    ذخیره تغییرات
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    disabled={!body || busy || sent}
+                    onClick={() => setSendOpen(true)}
+                  >
+                    <Send className="size-4" />
+                    ارسال
+                  </Button>
+                ))}
             </div>
           </div>
           {files.length > 0 && (
@@ -395,6 +529,23 @@ export function OutgoingLetterWorkspace() {
           )}
         </div>
       </div>
+      {internal && !initialRecord && (
+        <LetterRecipientDialog
+          open={sendOpen}
+          onOpenChange={setSendOpen}
+          onSubmit={async (recipientId) => {
+            sendKey.current ??= crypto.randomUUID();
+            await internalLetters.send(
+              letter,
+              letterDate,
+              recipientId,
+              sendKey.current,
+            );
+            setSent(true);
+            setNotice('نامه به دریافتی کاربر مقصد ارسال شد.');
+          }}
+        />
+      )}
     </section>
   );
 }
