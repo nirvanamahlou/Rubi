@@ -6406,3 +6406,6 @@ Branch codex/pc-a-agency-passenger-commission-1018 stacked on a8295b67 (pending 
 
 AGENCY-PASSENGER-COMMISSION-1018 verification:97 focused tests passed (6 shared Contracts,52 Sales API,39 Web); affected lint, API/Web typechecks and production builds passed (Web62 static pages). Fixed IRR adult/child commission snapshots persist once, reject invalid money and do not alter totals; agency output assigns each age category correctly, personal customers submit no stale commission and infants show no assigned amount. No migration/dependency/data/runtime changes. Source locks released with candidate. GitHub authentication restored on2026-10-18; user authorizes develop merge via PR931. Integrated develop preserving all peer scopes; final-head hosted CI gates merge.
 
+
+RESERVATION-ROOM-SETTINGS-1018 follow-up: actual supplier-sheet HTML regression verifies edited room type and child ages; precise multicurrency amendment test verifies edited room totals without double charging. Existing contract sale payment/fee validations remain. Initial CI failure was missing new English display labels and is corrected; local English inventory tests hit host I/O timeout, so exact-head hosted full suite is mandatory. No migration or operational data changes.
+

@@ -1,11 +1,6 @@
 'use client';
-import {
-  PASSENGER_FLIGHT_PRICES,
-  readPassengerFlightPrices,
-  flightRoomTotals,
-  insuranceExtraRials,
-  type SalesMoney,
-} from '@nora/contracts';
+import { PASSENGER_FLIGHT_PRICES, type SalesMoney } from '@nora/contracts';
+import { amendmentPriceComponents } from './amendment-price-components';
 import { isOptionalOperationReason } from '@nora/contracts';
 
 import { ReservationPassengers } from '../passenger-files/passengers';
@@ -27,7 +22,6 @@ import {
   moneyUnits,
   moneyDecimal,
   SALES_CHEQUE_FEE,
-  servicePriceComponents,
   salesChequeComponents,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
@@ -125,7 +119,26 @@ export function ReservationSalesAmendment({
     ? JSON.parse(String(flightPriceService.metadata![PASSENGER_FLIGHT_PRICES]))
     : {};
   const patch = (v: Partial<SalesContractAmendmentV1>) =>
-    setDraft((d) => ({ ...d, ...v }));
+    setDraft((d) => {
+      const next = { ...d, ...v };
+      if (
+        next.services.some(
+          (s) => s.metadata?.automaticFlightRoomTotalV1 === true,
+        )
+      ) {
+        try {
+          const components = amendmentPriceComponents(next);
+          if (components)
+            next.priceComponents = salesChequeComponents(
+              components,
+              next.paymentTerms,
+            );
+        } catch {
+          /* Keep incomplete price input editable until submission. */
+        }
+      }
+      return next;
+    });
   const international = [draft.originId, draft.destinationId].some((id) => {
     const city = refs.cities?.find((c) => c.id === id);
     const country = refs.countries?.find(
@@ -168,26 +181,7 @@ export function ReservationSalesAmendment({
           ),
         ),
       );
-      const derived = automaticPricing
-        ? flightRoomTotals(
-            {
-              ...readPassengerFlightPrices(corrected.services),
-              insuranceExtras: corrected.services
-                .filter((s) => s.metadata?.insuranceAgeSurcharge === true)
-                .map((s) => ({
-                  amount: insuranceExtraRials(String(s.metadata!.extraToman)),
-                  currencyCode: 'IRR',
-                })),
-            },
-            corrected.hotelSelection?.rooms ?? [],
-          )
-            .filter((p) => moneyUnits(p.amount) > 0n)
-            .map((p) => ({
-              ...p,
-              type: 'BASE' as const,
-              title: 'مبلغ کل قرارداد',
-            }))
-        : servicePriceComponents(corrected.services, corrected.hotelSelection);
+      const derived = amendmentPriceComponents(corrected);
       await salesApi.amend(
         contract.id,
         derived

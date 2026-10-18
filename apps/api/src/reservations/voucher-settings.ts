@@ -41,7 +41,7 @@ export function validateVoucherSettings(
           room.ordinal !== index + 1 ||
           typeof room.roomTypeNameSnapshot !== 'string' ||
           !room.roomTypeNameSnapshot.trim() ||
-          room.roomTypeNameSnapshot.length > 200 ||
+          room.roomTypeNameSnapshot.length > 240 ||
           !Number.isInteger(room.adults) ||
           room.adults < 1 ||
           room.adults > 20 ||
