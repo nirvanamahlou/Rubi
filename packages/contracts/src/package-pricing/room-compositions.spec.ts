@@ -1,3 +1,4 @@
+import { packageTourSelectionBatch } from './selection-batch';
 import { expect, it } from 'vitest';
 import {
   buildHotelPackageCompositions,
@@ -134,8 +135,7 @@ it('sums publication prices exactly and keeps currencies separate', () => {
   ]);
 });
 
-it('keeps exact rows from every matching period and retains legacy single-batch scope on demand', async () => {
-  const { packageTourSelectionBatch } = await import('./selection-batch');
+it('keeps exact rows from every matching period and retains legacy single-batch scope on demand', () => {
   const a = { id: 'a', branchId: 'branch', rows: [{ id: 'ra', batchId: 'a' }] },
     b = { id: 'b', branchId: 'branch', rows: [{ id: 'rb', batchId: 'b' }] },
     other = { id: 'other', branchId: 'other', rows: [{ id: 'private' }] };
