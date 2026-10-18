@@ -32,6 +32,62 @@ const row = {
 };
 
 describe('MasterDataService', () => {
+  it('stores a per-unit toman rate for USD without imposing the old USD self-rate rule', async () => {
+    const repository = {
+      update: vi.fn().mockResolvedValue({
+        ...row,
+        code: 'USD',
+        tomanPerUnit: '270000.1234567890',
+      }),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    await service.update(
+      'currencies',
+      row.id,
+      { tomanPerUnit: '270000.1234567890' },
+      1,
+      actor,
+    );
+    expect(repository.update).toHaveBeenCalledWith(
+      'currencies',
+      row.id,
+      { tomanPerUnit: '270000.1234567890' },
+      1,
+      actor.userId,
+      actor.branchIds[0],
+    );
+    await service.update('currencies', row.id, { tomanPerUnit: '' }, 1, actor);
+    expect(repository.update).toHaveBeenLastCalledWith(
+      'currencies',
+      row.id,
+      { tomanPerUnit: null },
+      1,
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it.each([
+    '0',
+    '-1',
+    'NaN',
+    'Infinity',
+    '1e5',
+    '100000000000000',
+    '1.12345678901',
+  ])('rejects invalid toman reference %s before persistence', async (rate) => {
+    const repository = { update: vi.fn() } as unknown as MasterDataRepository;
+    await expect(
+      new MasterDataService(repository).update(
+        'currencies',
+        row.id,
+        { tomanPerUnit: rate },
+        1,
+        actor,
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(repository.update).not.toHaveBeenCalled();
+  });
   it('checks unchecked manual fields on updates without requiring legacy deny tokens', async () => {
     const repository = {
       find: vi.fn().mockResolvedValue(row),

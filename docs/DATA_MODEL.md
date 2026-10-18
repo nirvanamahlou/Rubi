@@ -1,3 +1,11 @@
+## Manual per-unit toman reference — 2026-10-18
+
+MasterCurrency.tomanPerUnit is an independent nullable Decimal(24,10):1 unit of
+the row currency=N tomans. Positive finite decimal string; blank clears to NULL.
+The new form/table uses this value only. Legacy unitsPerUsd remains unchanged
+with its original meaning and is never automatically converted/backfilled.
+This reference does not alter purchase FX, settlements or ledger balances.
+
 ## Partner360 and manual USD reference rate — 2026-10-17
 
 MasterCurrency.unitsPerUsd is nullable Decimal(24,10), exposed as a decimal string

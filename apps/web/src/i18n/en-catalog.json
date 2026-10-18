@@ -1,4 +1,8 @@
 {
+  "نرخ تومان باید مثبت، حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار باشد.": "The toman rate must be positive, with at most 14 integer digits and 10 decimal places.",
+  "قیمت هر واحد ارز به تومان": "Price per currency unit in tomans",
+  "قیمت هر واحد به تومان": "Price per unit in tomans",
+  "مثال برای دلار: 270000": "USD example: 270000",
   "نرخ مرجع فعلی؛ نرخ زمان خرید ذخیره نشده است.": "Current reference rate; the rate at the time of purchase was not saved.",
   "شرکت نامه معتبر نیست.": "The letter company is invalid.",
   "بارگذاری سربرگ شرکت ناموفق بود. دوباره تلاش کنید.": "Unable to load the company letterhead. Please try again.",

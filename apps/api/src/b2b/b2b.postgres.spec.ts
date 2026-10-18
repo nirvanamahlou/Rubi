@@ -562,6 +562,64 @@ describe.skipIf(!enabled)(
       ).toBe(false);
     });
 
+    it('persists independent per-unit toman metadata without reinterpreting legacy USD rates', async () => {
+      const currency = await client.masterCurrency.findUniqueOrThrow({
+        where: { code: 'USD' },
+      });
+      const service = new MasterDataService(
+        new MasterDataRepository({ client } as DatabaseService),
+      );
+      const actor = {
+        userId: actorUserId,
+        branchIds: [branchId],
+        permissions: ['master_data.read', 'master_data.update'],
+      } as AuthenticatedActor;
+      const saved = await service.update(
+        'currencies',
+        currency.id,
+        { tomanPerUnit: '270000.1234567890' },
+        currency.version,
+        actor,
+      );
+      expect(saved.data.attributes.tomanPerUnit).toBe('270000.123456789');
+      const persisted = await client.masterCurrency.findUniqueOrThrow({
+        where: { id: currency.id },
+      });
+      expect(persisted.unitsPerUsd?.toString() ?? null).toBe(
+        currency.unitsPerUsd?.toString() ?? null,
+      );
+      for (const rate of ['0', '-1', 'NaN', 'Infinity'])
+        await expect(
+          client.masterCurrency.update({
+            where: { id: currency.id },
+            data: { tomanPerUnit: rate },
+          }),
+        ).rejects.toThrow();
+      await expect(
+        service.update(
+          'currencies',
+          currency.id,
+          { tomanPerUnit: '280000' },
+          currency.version,
+          actor,
+        ),
+      ).rejects.toThrow();
+      await service.update(
+        'currencies',
+        currency.id,
+        { tomanPerUnit: '' },
+        saved.data.version,
+        actor,
+      );
+      expect(
+        (
+          await client.masterCurrency.findUniqueOrThrow({
+            where: { id: currency.id },
+          })
+        ).tomanPerUnit,
+      ).toBeNull();
+    });
+
     it('persists exact manual USD currency metadata with CAS and database constraints', async () => {
       const currency = await client.masterCurrency.findUniqueOrThrow({
         where: { code: 'IRR' },
