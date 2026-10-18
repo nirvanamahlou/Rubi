@@ -1,6 +1,6 @@
-## PARTNER-DOSSIER-READY-1018 — PC-B — IN_PROGRESS
+## PARTNER-DOSSIER-READY-1018 — PC-B — READY_FOR_CI
 
-Fix the reproduced code-level child-session-refresh/remount cycle in supplier/broker360; preserve actor/permission/branch invalidation. Remove manual dossier creation, prepare old rows in bounded authorized/audited POST batches and always establish canonical dossiers for new partners and legacy edits. No Finance/schema/migration/dependency change.13 Web lifecycle/client/session and22 API persistence/directory/repository tests pass; full gates and deployment pending. See docs/tasks/PARTNER-DOSSIER-READY-1018.md.
+Fix the reproduced code-level child-session-refresh/remount cycle in supplier/broker360; preserve actor/permission/branch invalidation. Remove manual dossier creation, prepare old rows in bounded authorized/audited POST batches and always establish canonical dossiers for new partners and legacy edits. No Finance/schema/migration/dependency change.32 Web and22 API focused tests, Web/API types and scoped lint pass; full gates and deployment pending. Docker Engine returns HTTP500 and both local health routes time out; user authorizes non-destructive Desktop restart. Final rollout evidence belongs on PR926. See docs/tasks/PARTNER-DOSSIER-READY-1018.md.
 
 ## PARTNER-360-COMPLETE-1017 — PC-B — READY_FOR_CI
 
