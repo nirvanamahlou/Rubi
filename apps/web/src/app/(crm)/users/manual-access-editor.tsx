@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/form-controls';
 import styles from './user-management.module.css';
 import { sectionAccess, changeSectionAccess } from './section-access';
 import { permissionInSection, permissionLabel } from './access-permissions';
+import { UserRolePicker } from './user-role-picker';
 
 interface Snapshot {
   revision: string;
@@ -131,17 +132,66 @@ export function ManualAccessEditor({
       .includes(search.trim().toLocaleLowerCase('fa'));
   return (
     <section aria-label="مدیریت دستی دسترسی کاربر" className="grid gap-4">
-      <h2 className="text-xl font-bold">تیک‌های اختصاصی این کاربر</h2>
-      <p>
-        عنوان شغلی مجوز نمی‌دهد. مشاهده، عملیات و ویرایش فیلدها مستقل هستند.
-        برداشتن تیک، دسترسی همان کاربر را لغو می‌کند.
-      </p>
-      {!snapshot.alreadyManual && (
-        <p>
-          تیک‌ها از دسترسی قبلی این کاربر استخراج شده‌اند. ذخیره، آن‌ها را بدون
-          تغییر نقش‌های مشترک به دسترسی دستی تبدیل می‌کند.
-        </p>
-      )}
+      <UserRolePicker
+        roles={templates}
+        title={snapshot.title}
+        disabled={!canManage || busy}
+        onTitleChange={(title) => setSnapshot({ ...snapshot, title })}
+        onRoleChange={(id) => {
+          const role = templates.find((r) => r.id === id);
+          if (!role) return;
+          const codes = role.permissions.map((p) => p.permission.code);
+          const replace = (
+            current: string[],
+            available: string[],
+            wanted: string[],
+          ) => [
+            ...new Set([
+              ...current.filter((id) => !available.includes(id)),
+              ...wanted.filter((id) => available.includes(id)),
+            ]),
+          ];
+          const native = options.permissions.map((p) => p.code);
+          const screens = options.canAssignAll
+            ? USER_ACCESS_SCREENS.map((s) => s.id)
+            : options.assignableScreenIds;
+          const controls = options.canAssignAll
+            ? USER_ACCESS_DENY_CONTROLS.map((c) => c.id)
+            : options.assignableControlIds;
+          setSnapshot({
+            ...snapshot,
+            title: role.name,
+            selection: {
+              permissionCodes: replace(
+                selection.permissionCodes,
+                native,
+                role.selection?.permissionCodes ??
+                  codes.filter((c) => !c.startsWith('ui.')),
+              ),
+              screenIds: replace(
+                selection.screenIds,
+                screens,
+                role.selection?.screenIds ??
+                  USER_ACCESS_SCREENS.filter((s) =>
+                    codes.includes(screenPermission(s.id)),
+                  ).map((s) => s.id),
+              ),
+              allowedControlIds: replace(
+                selection.allowedControlIds,
+                controls,
+                role.selection?.allowedControlIds ??
+                  USER_ACCESS_DENY_CONTROLS.filter(
+                    (c) =>
+                      !codes.includes(denyPermission(c.id)) &&
+                      (c.kind === 'field' ||
+                        c.id.startsWith('master-data.resource.') ||
+                        codes.includes(screenPermission(c.id))),
+                  ).map((c) => c.id),
+              ),
+            },
+          });
+        }}
+      />
       <Input
         aria-label="جست‌وجوی دسترسی دستی"
         value={search}
@@ -149,88 +199,6 @@ export function ManualAccessEditor({
         placeholder="نام بخش، عملیات یا فیلد"
       />
       <fieldset disabled={!canManage || busy} className="grid gap-3">
-        <label>
-          انتخاب نقش
-          <select
-            aria-label="انتخاب نقش کاربر"
-            value={
-              templates.some((r) => r.name === snapshot.title)
-                ? templates.find((r) => r.name === snapshot.title)!.id
-                : ''
-            }
-            onChange={(event) => {
-              const role = templates.find((r) => r.id === event.target.value);
-              if (!role) return;
-              const codes = role.permissions.map((p) => p.permission.code);
-              const replace = (
-                current: string[],
-                available: string[],
-                wanted: string[],
-              ) => [
-                ...new Set([
-                  ...current.filter((id) => !available.includes(id)),
-                  ...wanted.filter((id) => available.includes(id)),
-                ]),
-              ];
-              const native = options.permissions.map((p) => p.code);
-              const screens = options.canAssignAll
-                ? USER_ACCESS_SCREENS.map((s) => s.id)
-                : options.assignableScreenIds;
-              const controls = options.canAssignAll
-                ? USER_ACCESS_DENY_CONTROLS.map((c) => c.id)
-                : options.assignableControlIds;
-              setSnapshot({
-                ...snapshot,
-                title: role.name,
-                selection: {
-                  permissionCodes: replace(
-                    selection.permissionCodes,
-                    native,
-                    role.selection?.permissionCodes ??
-                      codes.filter((c) => !c.startsWith('ui.')),
-                  ),
-                  screenIds: replace(
-                    selection.screenIds,
-                    screens,
-                    role.selection?.screenIds ??
-                      USER_ACCESS_SCREENS.filter((s) =>
-                        codes.includes(screenPermission(s.id)),
-                      ).map((s) => s.id),
-                  ),
-                  allowedControlIds: replace(
-                    selection.allowedControlIds,
-                    controls,
-                    role.selection?.allowedControlIds ??
-                      USER_ACCESS_DENY_CONTROLS.filter(
-                        (c) =>
-                          !codes.includes(denyPermission(c.id)) &&
-                          (c.kind === 'field' ||
-                            c.id.startsWith('master-data.resource.') ||
-                            codes.includes(screenPermission(c.id))),
-                      ).map((c) => c.id),
-                  ),
-                },
-              });
-            }}
-          >
-            <option value="">دسترسی اختصاصی / انتخاب نقش</option>
-            {templates.map((role) => (
-              <option key={role.id} value={role.id}>
-                {role.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          عنوان شغلی
-          <Input
-            value={snapshot.title}
-            maxLength={80}
-            onChange={(event) =>
-              setSnapshot({ ...snapshot, title: event.target.value })
-            }
-          />
-        </label>
         {MANUAL_ACCESS_SECTIONS.map(([id, title]) => {
           const sectionMatch = match(title);
           const screens = USER_ACCESS_SCREENS.filter(

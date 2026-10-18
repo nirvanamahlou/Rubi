@@ -1,3 +1,7 @@
+## USER-ROLE-PICKER-REDESIGN-1018 — PC-B
+
+Remove the manual-access heading and both requested explanations. Redesign existing-user role selection as a themed responsive card with shared searchable saved-role selector, labeled job-title input and explicit disabled/empty states. Reuse existing role-ID draft callbacks and unchanged manual-access save/delegation/CAS logic; no grants/data/API/runtime mutation. Focused tests and exact-head quality/type/test/build gates required before owner-authorized push/develop merge.
+
 ## USERS-COPY-CLEANUP-1018 — PC-B
 
 Remove only the owner-specified users-page introductory and role-protection explanatory paragraphs. Keep role-deletion protections, section cascade and all account/access functionality unchanged. Focused Web tests and final-head quality/type/test/build gates required before authorized push/develop merge. No API/schema/dependency/data/runtime changes.
