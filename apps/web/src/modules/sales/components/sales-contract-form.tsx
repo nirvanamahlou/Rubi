@@ -1,4 +1,5 @@
 'use client';
+import { PublishedPackageSale } from './published-package-sale';
 import { AgencyCommission } from './agency-commission';
 import { PassengerPackagePrices } from './passenger-package-prices';
 import { validatePassengerFlightPrices } from '@nora/contracts';
@@ -302,7 +303,10 @@ export function SalesContractForm() {
     const hotelsAtDestination = references.hotels.filter(
       (hotel) =>
         hotel.attributes.cityId === state.destinationId &&
-        (!state.tour || state.tour.package.hotelIds.includes(hotel.id)),
+        (!state.tour ||
+          (
+            state.publishedPackageHotelIds ?? state.tour.package.hotelIds
+          ).includes(hotel.id)),
     );
     return [...hotelsAtDestination].sort((left, right) =>
       salesReferenceDisplayName(left, true).localeCompare(
@@ -310,7 +314,12 @@ export function SalesContractForm() {
         'en',
       ),
     );
-  }, [references.hotels, state.destinationId, state.tour]);
+  }, [
+    references.hotels,
+    state.destinationId,
+    state.tour,
+    state.publishedPackageHotelIds,
+  ]);
   const patchState = (
     update:
       | Partial<SalesFormState>
@@ -947,6 +956,7 @@ export function SalesContractForm() {
             }}
           />
         ) : null}
+        <PublishedPackageSale state={state} onChange={setState} />
         {step === 0 ? (
           <div className="grid gap-5">
             <h2 className="text-sm font-bold">مسیر سفر</h2>

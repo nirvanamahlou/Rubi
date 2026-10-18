@@ -5331,6 +5331,7 @@ model ReservationHotelRoomRate {
 }
 
 model PackagePricingTourDraft {
+  selectedRoomKeys            Json?
   roomSaleOverrides           Json?
   selectedHotelRateIds        Json?
   priceFields                 Json?
@@ -5429,7 +5430,7 @@ model PackagePricingTourPublishedRoomPrice {
   id                   String                             @id @default(uuid()) @db.Uuid
   publicationId        String                             @db.Uuid
   hotelRateId          String                             @db.Uuid
-  roomCode             String                             @db.VarChar(32)
+  roomCode             String                             @db.Text
   hotelPurchase        Decimal                            @db.Decimal(24, 4)
   hotelSale            Decimal                            @db.Decimal(24, 4)
   packagePurchase      Decimal?                           @db.Decimal(24, 4)

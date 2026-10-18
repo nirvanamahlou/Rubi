@@ -1,3 +1,5 @@
+import { Optional } from '@nestjs/common';
+import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { createHash } from 'node:crypto';
 import {
@@ -168,6 +170,9 @@ export class PackagePricingService {
     private readonly hotelPurchases: HotelPurchaseRatesPublicService,
     @Inject(FinanceTicketCostService)
     private readonly flightCosts: FinanceTicketCostService,
+    @Optional()
+    @Inject(MasterTravelDirectory)
+    private readonly directory?: MasterTravelDirectory,
   ) {}
 
   async hotelRegisteredPeriods(
@@ -225,6 +230,7 @@ export class PackagePricingService {
         tour.endsOn,
         tour.id,
         tour.package.destinationId,
+        true,
       ),
       this.flightCosts.paidCostsForOffers(offerIds, tour.branchId),
     ]);
@@ -237,6 +243,16 @@ export class PackagePricingService {
       tour,
       nights,
       purchaseBatches,
+      ...(this.directory
+        ? {
+            destinationName:
+              (
+                await this.directory.hotelRatePeriodCityNames([
+                  tour.package.destinationId,
+                ])
+              )[0]?.name ?? tour.package.name,
+          }
+        : {}),
       flightPurchaseCosts,
       missingFlightOfferIds: offerIds.filter(
         (id) =>

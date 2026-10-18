@@ -24,6 +24,7 @@ export function ContractTotalPrices({
   ) => void;
 }) {
   const automatic =
+    !state.packageSaleQuote &&
     state.automaticComponentPricing &&
     state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'HOTEL');
   let calculated: SalesMoney[] = [];
