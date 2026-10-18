@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { PartnerDossierController } from './partner-dossier.controller';
 import { MasterHrDirectory } from './master-hr-directory';
 import { MasterProcurementDirectory } from './master-procurement-directory';
 
@@ -28,6 +29,7 @@ import {
 @Module({
   imports: [IamModule],
   controllers: [
+    PartnerDossierController,
     CurrencyRateController,
     MasterDataAuditController,
     HotelImportController,

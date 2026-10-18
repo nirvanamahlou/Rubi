@@ -41,6 +41,7 @@ import {
 
 export function SalesPeopleSheet({
   state,
+  refreshRevision = 0,
   draft: savedDraft,
   onDraftChange,
   onConfirmed,
@@ -49,6 +50,7 @@ export function SalesPeopleSheet({
   onTravelDateChange,
   busy = false,
 }: {
+  refreshRevision?: number;
   state: SalesFormState;
   draft: SalesPeopleDraft | null;
   onDraftChange: (draft: SalesPeopleDraft) => void;
@@ -74,7 +76,10 @@ export function SalesPeopleSheet({
     let active = true;
     loadSalesAcquaintanceMethods()
       .then((items) => {
-        if (active) setAcquaintanceMethods(items);
+        if (active) {
+          setAcquaintanceMethods(items);
+          setMethodsError('');
+        }
       })
       .catch(() => {
         if (active) setMethodsError('دریافت فهرست نحوه آشنایی ناموفق بود.');
@@ -85,7 +90,7 @@ export function SalesPeopleSheet({
     return () => {
       active = false;
     };
-  }, [methodsRetry]);
+  }, [methodsRetry, refreshRevision]);
   const [error, setError] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const inFlight = useRef(false);
@@ -472,6 +477,7 @@ export function SalesPeopleSheet({
           </div>
         ) : (
           <SalesOrganizationCustomer
+            refreshRevision={refreshRevision}
             disabled={busy}
             selectedOrganizationId=""
             onClear={() => change({ ...draft, organization: null })}

@@ -1,5 +1,7 @@
 import {
   Body,
+  Delete,
+  Headers,
   Controller,
   Get,
   ForbiddenException,
@@ -29,6 +31,8 @@ import { ManualUserAccessService } from './manual-user-access.service';
 // ValidationPipe needs the runtime class metadata.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { ManualUserAccessDto } from './dto/manual-user-access.dto';
+import { UpdateUserDetailsDto } from './dto/update-user-details.dto';
+import { HrUserUnitDirectory } from '../hr/hr-user-unit-directory';
 
 @ApiTags('IAM / Users')
 @ApiCookieAuth('nora_access')
@@ -40,7 +44,34 @@ export class UsersController {
     @Optional()
     @Inject(ManualUserAccessService)
     private readonly manual?: ManualUserAccessService,
+    @Optional()
+    @Inject(HrUserUnitDirectory)
+    private readonly units?: HrUserUnitDirectory,
   ) {}
+  @Get('organization-units')
+  @RequirePermissions('iam.users.manage')
+  organizationUnits(@Req() req: AuthenticatedRequest) {
+    return this.units!.list(req.actor);
+  }
+  @Patch(':id/details')
+  @RequirePermissions('iam.users.manage')
+  @ApiBody({ type: UpdateUserDetailsDto })
+  details(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateUserDetailsDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.iam.updateUserDetails(id, dto, req.actor);
+  }
+  @Delete(':id')
+  @RequirePermissions('iam.users.manage')
+  delete(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Headers('if-match') revision: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.manual!.delete(id, revision, req.actor);
+  }
   @Get(':id/manual-access')
   @RequirePermissions('iam.users.read')
   manualAccess(@Param('id', new ParseUUIDPipe()) id: string) {

@@ -1,4 +1,5 @@
 'use client';
+import { flightRoomTotals } from '@nora/contracts';
 import type { SalesMoney } from '@nora/contracts';
 import { MoneyInput } from '@/components/ui/money-input';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,10 @@ import {
   SalesCurrencySelect,
   type SalesCurrency,
 } from './sales-currency-select';
-import type { SalesFormState } from '../model/sales-form';
+import {
+  passengerFlightSalePrices,
+  type SalesFormState,
+} from '../model/sales-form';
 
 export function ContractTotalPrices({
   state,
@@ -22,6 +26,19 @@ export function ContractTotalPrices({
     rooms: NonNullable<SalesFormState['hotel']['rooms']>,
   ) => void;
 }) {
+  const automatic =
+    !state.packageSaleQuote &&
+    state.automaticComponentPricing &&
+    state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'HOTEL');
+  let calculated: SalesMoney[] = [];
+  try {
+    calculated = flightRoomTotals(
+      passengerFlightSalePrices(state),
+      state.serviceKinds.includes('HOTEL') ? (state.hotel.rooms ?? []) : [],
+    );
+  } catch {
+    /* Invalid input is reported by final-step validation. */
+  }
   const rows = state.contractPrices?.length
     ? state.contractPrices
     : [{ currencyCode: 'IRR', amount: '' }];
@@ -90,59 +107,76 @@ export function ContractTotalPrices({
             اضافه‌بیمه بالای ۶۰ سال جداگانه به جمع ریالی افزوده می‌شود.
           </p>
         )}
-      {rows.map((row, index) => (
-        <div key={index} className="flex flex-wrap items-end gap-3">
-          <SalesCurrencySelect
-            label="ارز مبلغ قرارداد"
-            currencies={currencies.filter(
-              (c) =>
-                c.code === row.currencyCode ||
-                !rows.some((r) => r.currencyCode === c.code),
-            )}
-            value={row.currencyCode}
-            onChange={(currencyCode) => update(index, { currencyCode })}
-          />
-          <label className="grid flex-1 gap-1">
-            مبلغ کل ({currencySymbol(row.currencyCode)})
-            <MoneyInput
-              aria-label={`مبلغ کل قرارداد ${row.currencyCode}`}
-              value={row.amount}
-              onValueChange={(amount) => update(index, { amount })}
-            />
-          </label>
-          {rows.length > 1 && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onChange(rows.filter((_, i) => i !== index))}
-            >
-              حذف مبلغ
-            </Button>
-          )}
+      {automatic ? (
+        <div
+          className="flex flex-wrap gap-4 rounded-lg bg-muted p-3"
+          aria-label="جمع خودکار قرارداد"
+        >
+          {calculated.map((p) => (
+            <span key={p.currencyCode}>
+              <bdi>
+                {p.amount} {currencySymbol(p.currencyCode)}
+              </bdi>
+            </span>
+          ))}
         </div>
-      ))}
-      <Button
-        type="button"
-        variant="outline"
-        disabled={
-          !currencies.some(
-            (c) =>
-              c.status === 'active' &&
-              !rows.some((r) => r.currencyCode === c.code),
-          )
-        }
-        onClick={() => {
-          const next = currencies.find(
-            (c) =>
-              c.status === 'active' &&
-              !rows.some((r) => r.currencyCode === c.code),
-          );
-          if (next)
-            onChange([...rows, { currencyCode: next.code, amount: '' }]);
-        }}
-      >
-        افزودن مبلغ با ارز دیگر
-      </Button>
+      ) : (
+        rows.map((row, index) => (
+          <div key={index} className="flex flex-wrap items-end gap-3">
+            <SalesCurrencySelect
+              label="ارز مبلغ قرارداد"
+              currencies={currencies.filter(
+                (c) =>
+                  c.code === row.currencyCode ||
+                  !rows.some((r) => r.currencyCode === c.code),
+              )}
+              value={row.currencyCode}
+              onChange={(currencyCode) => update(index, { currencyCode })}
+            />
+            <label className="grid flex-1 gap-1">
+              مبلغ کل ({currencySymbol(row.currencyCode)})
+              <MoneyInput
+                aria-label={`مبلغ کل قرارداد ${row.currencyCode}`}
+                value={row.amount}
+                onValueChange={(amount) => update(index, { amount })}
+              />
+            </label>
+            {rows.length > 1 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onChange(rows.filter((_, i) => i !== index))}
+              >
+                حذف مبلغ
+              </Button>
+            )}
+          </div>
+        ))
+      )}
+      {!automatic && (
+        <Button
+          type="button"
+          variant="outline"
+          disabled={
+            !currencies.some(
+              (c) =>
+                c.status === 'active' &&
+                !rows.some((r) => r.currencyCode === c.code),
+            )
+          }
+          onClick={() => {
+            const next = currencies.find(
+              (c) =>
+                c.status === 'active' &&
+                !rows.some((r) => r.currencyCode === c.code),
+            );
+            if (next)
+              onChange([...rows, { currencyCode: next.code, amount: '' }]);
+          }}
+        >
+          افزودن مبلغ با ارز دیگر
+        </Button>
+      )}
     </section>
   );
 }

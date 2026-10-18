@@ -19,7 +19,7 @@ describe('manual hotel combinations', () => {
     expect(defaultCombinations().map((c) => c.label)).toEqual([
       'دبل',
       'سینگل',
-      'کودک با تخت',
+      'دبل با کودک با تخت',
     ]);
     expect(build()?.map((r) => r.amount)).toEqual(['200.00']);
     expect(build()?.[0]?.manualPricing?.baseAmount).toBe('100');

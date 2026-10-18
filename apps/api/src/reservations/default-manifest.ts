@@ -114,7 +114,7 @@ export function buildDefaultManifest(
         `<row r="${i + 1}">${values
           .map(
             (value, j) =>
-              `<c r="${String.fromCharCode(65 + j)}${i + 1}" s="${i === 0 ? 1 : 0}" t="inlineStr"><is><t xml:space="preserve">${escapeXml(value)}</t></is></c>`,
+              `<c r="${String.fromCharCode(65 + j)}${i + 1}" s="${i === 0 ? 1 : 0}" t="inlineStr"><is><t xml:space="preserve">${escapeXml(value.toUpperCase())}</t></is></c>`,
           )
           .join('')}</row>`,
     )

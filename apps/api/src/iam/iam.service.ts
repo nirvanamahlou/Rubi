@@ -1,4 +1,15 @@
 import { isOptionalOperationReason } from '@nora/contracts';
+import { HrUserUnitDirectory } from '../hr/hr-user-unit-directory';
+import type { Prisma } from '@nora/database';
+import { userDetailsRevision } from './user-details';
+import type { UpdateUserDetailsDto } from './dto/update-user-details.dto';
+import { roleOptionSelection } from './role-access-option';
+import { reusableRoleWhere } from './role-directory';
+import {
+  isPrivateUserRole,
+  roleDirectoryRevision,
+  ROLE_TEMPLATE_PREFIX,
+} from './role-directory';
 import {
   USER_JOB_TITLES,
   USER_ACCESS_SCREENS,
@@ -29,6 +40,7 @@ import {
   HttpStatus,
   Inject,
   Injectable,
+  Optional,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -88,6 +100,11 @@ export class IamService implements IamStepUpPort {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(JwtService) private readonly jwt: JwtService,
     @Inject(MfaTotpService) private readonly mfaTotp: MfaTotpService,
+    @Optional()
+    @Inject(HrUserUnitDirectory)
+    private readonly units: HrUserUnitDirectory = new HrUserUnitDirectory(
+      database,
+    ),
   ) {}
 
   async login(
@@ -472,6 +489,8 @@ export class IamService implements IamStepUpPort {
         displayName: true,
         status: true,
         lastLoginAt: true,
+        updatedAt: true,
+        profile: { select: { organizationUnitId: true } },
         roles: {
           select: {
             role: {
@@ -495,6 +514,8 @@ export class IamService implements IamStepUpPort {
     return users.map((user) => ({
       ...user,
       accessRevision: this.accessRevision(user),
+      detailsRevision: userDetailsRevision(user),
+      organizationUnitId: user.profile?.organizationUnitId ?? null,
     }));
   }
 
@@ -1093,14 +1114,214 @@ export class IamService implements IamStepUpPort {
     );
   }
 
-  listRoleTemplates() {
-    return this.database.client.role.findMany({
-      where: {
-        code: { startsWith: 'personal-access-template-job-' },
-        isActive: true,
-      },
+  async listRoleTemplates() {
+    const roles = await this.database.client.role.findMany({
+      where: { ...reusableRoleWhere, isActive: true },
       include: { permissions: { include: { permission: true } } },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
     });
+    return roles
+      .sort(
+        (a, b) =>
+          Number(b.code.startsWith(ROLE_TEMPLATE_PREFIX)) -
+          Number(a.code.startsWith(ROLE_TEMPLATE_PREFIX)),
+      )
+      .map((role) => ({ ...role, selection: roleOptionSelection(role) }));
+  }
+  async updateUserDetails(
+    userId: string,
+    dto: UpdateUserDetailsDto,
+    actor: AuthenticatedActor,
+  ) {
+    const displayName = dto.displayName.trim();
+    if (
+      displayName.length < 2 ||
+      displayName.length > 160 ||
+      !/^[a-f0-9]{64}$/.test(dto.revision)
+    )
+      throw new BadRequestException(
+        'نام و نام خانوادگی یا نسخهٔ اطلاعات معتبر نیست.',
+      );
+    return this.database.client.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))::text`;
+        await tx.$queryRaw`SELECT id FROM iam_users WHERE id IN (${actor.userId}::uuid, ${userId}::uuid) ORDER BY id FOR UPDATE`;
+        const operator = await tx.user.findUnique({
+          where: { id: actor.userId },
+          include: manualUserInclude,
+        });
+        if (
+          operator?.status !== UserStatus.ACTIVE ||
+          !authenticatedPermissionCodes(operator.roles).includes(
+            'iam.users.manage',
+          )
+        )
+          throw new ForbiddenException();
+        const target = await tx.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            updatedAt: true,
+            profile: { select: { organizationUnitId: true } },
+            branches: { select: { branchId: true } },
+          },
+        });
+        if (!target) throw new NotFoundException('کاربر پیدا نشد.');
+        if (userDetailsRevision(target) !== dto.revision)
+          throw new ConflictException(
+            'اطلاعات کاربر تغییر کرده است؛ دوباره بارگذاری کنید.',
+          );
+        const oldUnitId = target.profile?.organizationUnitId ?? null;
+        const unitChanged =
+          dto.organizationUnitId !== undefined &&
+          dto.organizationUnitId !== oldUnitId;
+        if (unitChanged && dto.organizationUnitId) {
+          await this.units.assertAssignable(
+            tx,
+            dto.organizationUnitId,
+            {
+              ...actor,
+              permissions: authenticatedPermissionCodes(operator.roles),
+              branchIds: operator.branches.map((branch) => branch.branchId),
+            },
+            target.branches.map((branch) => branch.branchId),
+          );
+        }
+        if (target.displayName === displayName && !unitChanged)
+          return { ...target, detailsRevision: userDetailsRevision(target) };
+        if (unitChanged)
+          await tx.iamUserProfile.upsert({
+            where: { userId },
+            create: {
+              userId,
+              organizationUnitId: dto.organizationUnitId ?? null,
+            },
+            update: { organizationUnitId: dto.organizationUnitId ?? null },
+          });
+        const updated = await tx.user.update({
+          where: { id: userId },
+          data: { displayName },
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            updatedAt: true,
+            profile: { select: { organizationUnitId: true } },
+          },
+        });
+        await tx.auditEvent.create({
+          data: {
+            actorUserId: actor.userId,
+            action: 'iam.user.details.update',
+            entityType: 'User',
+            entityId: userId,
+            outcome: AuditOutcome.SUCCESS,
+          },
+        });
+        return {
+          ...updated,
+          organizationUnitId: updated.profile?.organizationUnitId ?? null,
+          detailsRevision: userDetailsRevision(updated),
+        };
+      },
+      { timeout: 30_000 },
+    );
+  }
+  async listRoleDirectory(actor: AuthenticatedActor) {
+    if (!(await this.isSystemAdministrator(actor)))
+      throw new ForbiddenException();
+    const roles = await this.database.client.role.findMany({
+      where: reusableRoleWhere,
+      include: {
+        users: { select: { userId: true } },
+        permissions: { select: { permissionId: true } },
+      },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    });
+    return roles.map((role) => ({
+      id: role.id,
+      name: role.name,
+      code: role.code,
+      isActive: role.isActive,
+      isSystem: role.isSystem || role.code === 'administrator',
+      userCount: role.users.length,
+      isTemplate: role.code.startsWith(ROLE_TEMPLATE_PREFIX),
+      revision: roleDirectoryRevision(role),
+      canDelete:
+        !role.isSystem &&
+        role.code !== 'administrator' &&
+        !isPrivateUserRole(role.code) &&
+        role.users.length === 0,
+    }));
+  }
+  async deleteRole(
+    roleId: string,
+    revision: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (typeof revision !== 'string' || !/^[a-f0-9]{64}$/.test(revision))
+      throw new BadRequestException('نسخهٔ معتبر نقش برای حذف لازم است.');
+    return this.database.client.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))::text`;
+        await tx.$queryRaw`SELECT id FROM iam_users WHERE id = ${actor.userId}::uuid FOR UPDATE`;
+        const operator = await tx.user.findUnique({
+          where: { id: actor.userId },
+          include: manualUserInclude,
+        });
+        if (
+          operator?.status !== UserStatus.ACTIVE ||
+          !operator.roles.some(
+            ({ role }) => role.isActive && role.code === 'administrator',
+          ) ||
+          !authenticatedPermissionCodes(operator.roles).includes(
+            'iam.users.manage',
+          )
+        )
+          throw new ForbiddenException(
+            'حذف نقش فقط برای مدیر سامانه مجاز است.',
+          );
+        await tx.$queryRaw`SELECT id FROM iam_roles WHERE id = ${roleId}::uuid FOR UPDATE`;
+        const role = await tx.role.findUnique({
+          where: { id: roleId },
+          include: {
+            users: { select: { userId: true } },
+            permissions: { select: { permissionId: true } },
+          },
+        });
+        if (!role) throw new NotFoundException('نقش پیدا نشد.');
+        if (
+          role.isSystem ||
+          role.code === 'administrator' ||
+          isPrivateUserRole(role.code)
+        )
+          throw new ConflictException(
+            'نقش سیستمی یا اختصاصی کاربر قابل حذف نیست.',
+          );
+        if (role.users.length)
+          throw new ConflictException(
+            'این نقش به کاربر متصل است؛ ابتدا نقش کاربران را تغییر دهید.',
+          );
+        if (roleDirectoryRevision(role) !== revision)
+          throw new ConflictException(
+            'نقش تغییر کرده است؛ فهرست را دوباره بارگذاری کنید.',
+          );
+        await tx.role.delete({ where: { id: roleId } });
+        await tx.auditEvent.create({
+          data: {
+            actorUserId: actor.userId,
+            action: 'iam.role.delete',
+            entityType: 'Role',
+            entityId: roleId,
+            outcome: AuditOutcome.SUCCESS,
+          },
+        });
+        return { success: true };
+      },
+      { timeout: 30_000 },
+    );
   }
   async saveRoleTemplate(
     dto: {
@@ -1117,7 +1338,13 @@ export class IamService implements IamStepUpPort {
         'Only system administrators can configure role defaults.',
       );
     const profile = await this.managedAccess(
-      { ...dto, manualAccessV3: true },
+      {
+        ...dto,
+        ...(dto.accessTitle !== undefined
+          ? { accessTitle: dto.accessTitle.trim() }
+          : {}),
+        manualAccessV3: true,
+      },
       actor,
     );
     if (!profile || !Array.isArray(dto.deniedControlIds))
@@ -1126,16 +1353,25 @@ export class IamService implements IamStepUpPort {
       );
     const key =
       'template-job-' +
-      USER_JOB_TITLES.indexOf(
+      (USER_JOB_TITLES.includes(
         profile.title as (typeof USER_JOB_TITLES)[number],
-      );
-    const id = await this.database.client.$transaction(async (tx) =>
-      this.personalAccessRole(
-        tx,
-        key,
-        { ...profile, deniedControlIds: dto.deniedControlIds! },
-        actor,
-      ),
+      )
+        ? USER_JOB_TITLES.indexOf(
+            profile.title as (typeof USER_JOB_TITLES)[number],
+          )
+        : createHash('sha256')
+            .update(profile.title)
+            .digest('hex')
+            .slice(0, 32));
+    const id = await this.database.client.$transaction(
+      async (tx) =>
+        this.personalAccessRole(
+          tx,
+          key,
+          { ...profile, deniedControlIds: dto.deniedControlIds! },
+          actor,
+        ),
+      { timeout: 60_000 },
     );
     await this.audit(
       actor.userId,
@@ -1343,12 +1579,32 @@ export class IamService implements IamStepUpPort {
       parallelism: 1,
     });
     const managedUserId = randomUUID();
-    const create = async (
-      transaction: Pick<
-        DatabaseService['client'],
-        'user' | 'permission' | 'role' | 'rolePermission' | 'userRole'
-      >,
-    ) => {
+    const create = async (transaction: Prisma.TransactionClient) => {
+      if (dto.organizationUnitId) {
+        await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))::text`;
+        await transaction.$queryRaw`SELECT id FROM iam_users WHERE id = ${actor.userId}::uuid FOR UPDATE`;
+        const operator = await transaction.user.findUnique({
+          where: { id: actor.userId },
+          include: manualUserInclude,
+        });
+        if (
+          operator?.status !== UserStatus.ACTIVE ||
+          !authenticatedPermissionCodes(operator.roles).includes(
+            'iam.users.manage',
+          )
+        )
+          throw new ForbiddenException();
+        await this.units.assertAssignable(
+          transaction,
+          dto.organizationUnitId,
+          {
+            ...actor,
+            permissions: authenticatedPermissionCodes(operator.roles),
+            branchIds: operator.branches.map((branch) => branch.branchId),
+          },
+          dto.branchIds,
+        );
+      }
       const assignedRoleIds = dto.manualAccessV3
         ? []
         : profile
@@ -1371,6 +1627,13 @@ export class IamService implements IamStepUpPort {
           email,
           displayName: dto.displayName.trim(),
           passwordHash,
+          ...(dto.organizationUnitId
+            ? {
+                profile: {
+                  create: { organizationUnitId: dto.organizationUnitId },
+                },
+              }
+            : {}),
           roles: { create: assignedRoleIds.map((roleId) => ({ roleId })) },
           branches: {
             create: dto.branchIds.map((branchId, index) => ({
@@ -1402,9 +1665,10 @@ export class IamService implements IamStepUpPort {
       }
       return created;
     };
-    const user = profile
-      ? await this.database.client.$transaction(create, { timeout: 60000 })
-      : await create(this.database.client);
+    const user =
+      profile || dto.organizationUnitId
+        ? await this.database.client.$transaction(create, { timeout: 60000 })
+        : await create(this.database.client);
     await this.audit(
       actor.userId,
       'iam.user.create',
@@ -1431,6 +1695,7 @@ export class IamService implements IamStepUpPort {
           where: { id: userId },
           select: {
             status: true,
+            profile: { select: { organizationUnitId: true } },
             roles: {
               select: {
                 roleId: true,
@@ -1610,6 +1875,12 @@ export class IamService implements IamStepUpPort {
           });
       }
       if (dto.branchIds) {
+        if (target.profile?.organizationUnitId)
+          await this.units.assertRetainedBranch(
+            transaction,
+            target.profile.organizationUnitId,
+            dto.branchIds,
+          );
         await transaction.userBranch.deleteMany({ where: { userId } });
         if (dto.branchIds.length)
           await transaction.userBranch.createMany({
@@ -1983,9 +2254,12 @@ export class IamService implements IamStepUpPort {
     }
     if (
       !dto.accessTitle ||
-      !USER_JOB_TITLES.includes(
-        dto.accessTitle as (typeof USER_JOB_TITLES)[number],
-      ) ||
+      (!dto.manualAccessV3 &&
+        !USER_JOB_TITLES.includes(
+          dto.accessTitle as (typeof USER_JOB_TITLES)[number],
+        )) ||
+      !dto.accessTitle.trim() ||
+      dto.accessTitle.length > 80 ||
       !Array.isArray(dto.permissionIds) ||
       !Array.isArray(dto.screenIds) ||
       (dto.roleIds?.length ?? 0)

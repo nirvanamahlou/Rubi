@@ -8,11 +8,15 @@ import {
   USER_ACCESS_DENY_CONTROLS,
   manualSectionForScreen,
   type ManualAccessSelection,
+  screenPermission,
+  denyPermission,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import styles from './user-management.module.css';
+import { sectionAccess, changeSectionAccess } from './section-access';
 import { permissionInSection, permissionLabel } from './access-permissions';
+import { UserRolePicker } from './user-role-picker';
 
 interface Snapshot {
   revision: string;
@@ -21,6 +25,12 @@ interface Snapshot {
   selection: ManualAccessSelection;
 }
 interface Props {
+  templates?: Array<{
+    id: string;
+    name: string;
+    selection?: ManualAccessSelection;
+    permissions: Array<{ permission: { code: string } }>;
+  }>;
   userId: string;
   canManage: boolean;
   options: {
@@ -41,6 +51,7 @@ export function ManualAccessEditor({
   controlLabel,
   request,
   onSaved,
+  templates = [],
 }: Props) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [search, setSearch] = useState('');
@@ -121,17 +132,66 @@ export function ManualAccessEditor({
       .includes(search.trim().toLocaleLowerCase('fa'));
   return (
     <section aria-label="مدیریت دستی دسترسی کاربر" className="grid gap-4">
-      <h2 className="text-xl font-bold">تیک‌های اختصاصی این کاربر</h2>
-      <p>
-        عنوان شغلی مجوز نمی‌دهد. مشاهده، عملیات و ویرایش فیلدها مستقل هستند.
-        برداشتن تیک، دسترسی همان کاربر را لغو می‌کند.
-      </p>
-      {!snapshot.alreadyManual && (
-        <p>
-          تیک‌ها از دسترسی قبلی این کاربر استخراج شده‌اند. ذخیره، آن‌ها را بدون
-          تغییر نقش‌های مشترک به دسترسی دستی تبدیل می‌کند.
-        </p>
-      )}
+      <UserRolePicker
+        roles={templates}
+        title={snapshot.title}
+        disabled={!canManage || busy}
+        onTitleChange={(title) => setSnapshot({ ...snapshot, title })}
+        onRoleChange={(id) => {
+          const role = templates.find((r) => r.id === id);
+          if (!role) return;
+          const codes = role.permissions.map((p) => p.permission.code);
+          const replace = (
+            current: string[],
+            available: string[],
+            wanted: string[],
+          ) => [
+            ...new Set([
+              ...current.filter((id) => !available.includes(id)),
+              ...wanted.filter((id) => available.includes(id)),
+            ]),
+          ];
+          const native = options.permissions.map((p) => p.code);
+          const screens = options.canAssignAll
+            ? USER_ACCESS_SCREENS.map((s) => s.id)
+            : options.assignableScreenIds;
+          const controls = options.canAssignAll
+            ? USER_ACCESS_DENY_CONTROLS.map((c) => c.id)
+            : options.assignableControlIds;
+          setSnapshot({
+            ...snapshot,
+            title: role.name,
+            selection: {
+              permissionCodes: replace(
+                selection.permissionCodes,
+                native,
+                role.selection?.permissionCodes ??
+                  codes.filter((c) => !c.startsWith('ui.')),
+              ),
+              screenIds: replace(
+                selection.screenIds,
+                screens,
+                role.selection?.screenIds ??
+                  USER_ACCESS_SCREENS.filter((s) =>
+                    codes.includes(screenPermission(s.id)),
+                  ).map((s) => s.id),
+              ),
+              allowedControlIds: replace(
+                selection.allowedControlIds,
+                controls,
+                role.selection?.allowedControlIds ??
+                  USER_ACCESS_DENY_CONTROLS.filter(
+                    (c) =>
+                      !codes.includes(denyPermission(c.id)) &&
+                      (c.kind === 'field' ||
+                        c.id.startsWith('master-data.resource.') ||
+                        codes.includes(screenPermission(c.id))),
+                  ).map((c) => c.id),
+              ),
+            },
+          });
+        }}
+      />
       <Input
         aria-label="جست‌وجوی دسترسی دستی"
         value={search}
@@ -139,16 +199,6 @@ export function ManualAccessEditor({
         placeholder="نام بخش، عملیات یا فیلد"
       />
       <fieldset disabled={!canManage || busy} className="grid gap-3">
-        <label>
-          عنوان شغلی
-          <Input
-            value={snapshot.title}
-            maxLength={80}
-            onChange={(event) =>
-              setSnapshot({ ...snapshot, title: event.target.value })
-            }
-          />
-        </label>
         {MANUAL_ACCESS_SECTIONS.map(([id, title]) => {
           const sectionMatch = match(title);
           const screens = USER_ACCESS_SCREENS.filter(
@@ -199,6 +249,34 @@ export function ManualAccessEditor({
               })),
             },
           ];
+          // Parent selection is deliberately independent of the search filter.
+          const section = sectionAccess(id, options);
+          const {
+            screenIds: allScreens,
+            permissionCodes: allPermissions,
+            allowedControlIds: allControls,
+          } = section;
+          const total =
+            allScreens.length + allPermissions.length + allControls.length;
+          const count =
+            allScreens.filter((x) => selection.screenIds.includes(x)).length +
+            allPermissions.filter((x) => selection.permissionCodes.includes(x))
+              .length +
+            allControls.filter((x) => selection.allowedControlIds.includes(x))
+              .length;
+          function toggleSection(checked: boolean) {
+            setSnapshot((current) => {
+              if (!current) return current;
+              return {
+                ...current,
+                selection: changeSectionAccess(
+                  current.selection,
+                  section,
+                  checked,
+                ),
+              };
+            });
+          }
           return (
             <details
               key={id}
@@ -206,6 +284,20 @@ export function ManualAccessEditor({
               open={search.trim() ? true : undefined}
             >
               <summary className="cursor-pointer p-4 font-bold">
+                <input
+                  type="checkbox"
+                  aria-label={'انتخاب کل بخش ' + title}
+                  checked={total > 0 && count === total}
+                  aria-checked={
+                    count > 0 && count < total ? 'mixed' : count === total
+                  }
+                  disabled={!total}
+                  ref={(node) => {
+                    if (node) node.indeterminate = count > 0 && count < total;
+                  }}
+                  onClick={(event) => event.stopPropagation()}
+                  onChange={(event) => toggleSection(event.target.checked)}
+                />{' '}
                 {title}
               </summary>
               <div className="grid gap-4 p-4">

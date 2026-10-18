@@ -415,11 +415,15 @@ export class CustomerAffairsRepository {
   workbenchRequests(userId: string, branchIds: string[]) {
     return this.database.client.customerAffairsTicket.findMany({
       where: {
-        createdByUserId: userId,
+        OR: [{ createdByUserId: userId }, { executionOwnerUserId: userId }],
         branchId: { in: branchIds },
         category: { startsWith: 'WORKBENCH_' },
       },
-      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      include: {
+        createdBy: { select: { displayName: true } },
+        executionOwner: { select: { displayName: true } },
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       take: 100,
     });
   }
@@ -428,7 +432,7 @@ export class CustomerAffairsRepository {
     return this.database.client.customerAffairsTicket.findMany({
       where: {
         branchId: { in: branchIds },
-        category: { startsWith: 'WORKBENCH_' },
+        category: { startsWith: 'WORKBENCH_', not: 'WORKBENCH_INTERNAL' },
         executionUnit: { in: ['منابع انسانی', 'سرمایه انسانی', 'اداری'] },
       },
       orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],

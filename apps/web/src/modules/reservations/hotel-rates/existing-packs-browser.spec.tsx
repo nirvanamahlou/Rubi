@@ -92,7 +92,7 @@ it('requires an explicit preview click instead of reading immediately on file se
   expect(html).not.toContain('پیش‌نمایش ردیف');
 });
 
-it('shows saved manual purchase and sale without permitting inconsistent direct amount edits', () => {
+it('shows saved manual purchase without sale controls without permitting inconsistent direct amount edits', () => {
   const pack = structuredClone(savedPack());
   const rate = pack.rows[0]!.roomRates[0]!.occupancyRates![0]!;
   Object.assign(rate, {
@@ -115,7 +115,7 @@ it('shows saved manual purchase and sale without permitting inconsistent direct 
   );
   expect(html).toContain('قیمت‌های دستی ذخیره‌شده');
   expect(html).toContain('200.00');
-  expect(html).toContain('220.00');
+  expect(html).not.toContain('220.00');
   expect(html).toContain('باز کردن پنل ضرایب و قیمت پایه');
   expect(html).not.toContain('<input');
 });

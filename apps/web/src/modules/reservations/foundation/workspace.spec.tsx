@@ -477,3 +477,34 @@ it('keeps correction history but restores status colors after a reservation oper
   expect(html).toContain('data-corrected="false"');
   expect(html).not.toContain('data-corrected="true"');
 });
+
+it('shows an in-place inbox refresh action and retains the queue during a refresh error', () => {
+  const html = renderToStaticMarkup(
+    <ReservationOperationsWorkspace
+      state="SUCCESS"
+      rows={[row()]}
+      access={access}
+      now={now}
+      initialSection="inbox"
+      onRefresh={() => undefined}
+      refreshError="Refresh failed"
+    />,
+  );
+  expect(html).toContain('دریافت اطلاعات');
+  expect(html).toContain('Refresh failed');
+  expect(html).toContain('TEST-test-request');
+  expect(html).not.toContain('window.location.reload');
+  const busy = renderToStaticMarkup(
+    <ReservationOperationsWorkspace
+      state="SUCCESS"
+      rows={[row()]}
+      access={access}
+      now={now}
+      initialSection="inbox"
+      onRefresh={() => undefined}
+      refreshing
+    />,
+  );
+  expect(busy).toContain('در حال دریافت اطلاعات…');
+  expect(busy).toMatch(/<button[^>]*disabled=""[^>]*>/);
+});

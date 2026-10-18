@@ -12,6 +12,7 @@ import {
   denyPermission,
   screenPermission,
   type AuthenticatedActor,
+  type ManualAccessSelection,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
@@ -19,6 +20,11 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { AccessGroupCard } from './access-group-card';
 import { ManualAccessEditor } from './manual-access-editor';
+import { UserDetailsEditor } from './user-details-editor';
+import { UserUnitSelect, type UserUnitOption } from './user-unit-select';
+import { sectionAccess } from './section-access';
+import { IamDeleteDialog, type DeleteTarget } from './iam-delete-dialog';
+import { deleteUserAndReload, deleteRoleAndReload } from './deletion-actions';
 import { permissionInSection, permissionLabel } from './access-permissions';
 import styles from './user-management.module.css';
 
@@ -44,12 +50,15 @@ interface UserRow {
   email: string | null;
   status: string;
   accessRevision: string;
+  detailsRevision: string;
+  organizationUnitId: string | null;
   roles: Array<{
     role: {
       id: string;
       name: string;
       code: string;
       isActive: boolean;
+      selection?: ManualAccessSelection;
       permissions: Array<{ permission: { id: string; code: string } }>;
     };
   }>;
@@ -61,6 +70,17 @@ interface Options {
   assignableScreenIds: string[];
   assignableControlIds: string[];
   canAssignAll: boolean;
+}
+interface RoleDirectoryRow {
+  id: string;
+  name: string;
+  code: string;
+  isActive: boolean;
+  isSystem: boolean;
+  isTemplate: boolean;
+  userCount: number;
+  revision: string;
+  canDelete: boolean;
 }
 const customerFieldLabels: Record<string, string> = {
   kind: 'نوع مشتری',
@@ -178,6 +198,11 @@ function Check({
   );
 }
 export function UserManagement() {
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [roleDirectory, setRoleDirectory] = useState<RoleDirectoryRow[]>([]);
+  const [directoryMessage, setDirectoryMessage] = useState('');
+  const [directoryLoading, setDirectoryLoading] = useState(false);
   const [templateMode, setTemplateMode] = useState(false);
   const [templates, setTemplates] = useState<
     UserRow['roles'][number]['role'][]
@@ -203,10 +228,13 @@ export function UserManagement() {
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true);
+  const [units, setUnits] = useState<UserUnitOption[]>([]);
+  const [organizationUnitId, setOrganizationUnitId] = useState('');
   const [proposalOpen, setProposalOpen] = useState(false);
   const [accessControlSearch, setAccessControlSearch] = useState('');
   const accessGrid = useRef<HTMLDivElement>(null);
   function applyTemplate(nextTitle: string, rows = templates) {
+    const savedSelection = rows.find((r) => r.name === nextTitle)?.selection;
     const codes =
       rows
         .find((r) => r.name === nextTitle)
@@ -215,7 +243,8 @@ export function UserManagement() {
       options.permissions
         .filter(
           (p) =>
-            codes.includes(p.code) &&
+            (savedSelection?.permissionCodes.includes(p.code) ??
+              codes.includes(p.code)) &&
             (options.canAssignAll ||
               actor?.permissions.includes(p.code as never)),
         )
@@ -224,7 +253,8 @@ export function UserManagement() {
     setScreenIds(
       USER_ACCESS_SCREENS.filter(
         (s) =>
-          codes.includes(screenPermission(s.id)) &&
+          (savedSelection?.screenIds.includes(s.id) ??
+            codes.includes(screenPermission(s.id))) &&
           (options.canAssignAll || options.assignableScreenIds.includes(s.id)),
       ).map((s) => s.id),
     );
@@ -232,7 +262,9 @@ export function UserManagement() {
       USER_ACCESS_DENY_CONTROLS.filter(
         (c) =>
           !rows.some((r) => r.name === nextTitle) ||
-          codes.includes(denyPermission(c.id)) ||
+          (savedSelection
+            ? !savedSelection.allowedControlIds.includes(c.id)
+            : codes.includes(denyPermission(c.id))) ||
           (!options.canAssignAll &&
             !options.assignableControlIds.includes(c.id)),
       ).map((c) => c.id),
@@ -268,8 +300,10 @@ export function UserManagement() {
         request('/iam/users/access-options'),
         request('/iam/auth/access'),
       ]);
-      if (access.permissions.includes('iam.users.manage'))
+      if (access.permissions.includes('iam.users.manage')) {
         setTemplates(await request('/iam/access-options/templates'));
+        setUnits(await request('/iam/users/organization-units'));
+      }
       setUsers(rows);
       setSelected((current) =>
         current
@@ -292,6 +326,29 @@ export function UserManagement() {
     return () => window.clearTimeout(timer);
   }, [load]);
   const canManage = actor?.permissions.includes('iam.users.manage') ?? false;
+  const loadRoles = useCallback(async () => {
+    setDirectoryLoading(true);
+    setDirectoryMessage('');
+    try {
+      const [rows, definitions] = await Promise.all([
+        request('/iam/access-options/roles'),
+        request('/iam/access-options/templates'),
+      ]);
+      setRoleDirectory(rows);
+      setTemplates(definitions);
+    } catch (error) {
+      setDirectoryMessage(
+        error instanceof Error ? error.message : 'دریافت نقش‌ها انجام نشد.',
+      );
+    } finally {
+      setDirectoryLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    if (!templateMode || !options.canAssignAll) return;
+    const timer = window.setTimeout(() => void loadRoles(), 0);
+    return () => window.clearTimeout(timer);
+  }, [templateMode, options.canAssignAll, loadRoles]);
   const selectedActiveRoles =
     selected?.roles.filter((item) => item.role.isActive) ?? [];
   const editingLegacy = Boolean(
@@ -354,6 +411,7 @@ export function UserManagement() {
       ).map((control) => control.id),
     );
     setBranchIds(user?.branches.map((b) => b.branch.id) ?? []);
+    setOrganizationUnitId('');
     if (user && !codes.includes('ui.profile'))
       setMessage(
         'این حساب از نقش‌های مشترک/قدیمی استفاده می‌کند. مجوزهای مثبت فقط خواندنی‌اند؛ محدودیت صریح و شعبه را می‌توانید بدون تبدیل یا حذف عضویت نقش ذخیره کنید.',
@@ -381,6 +439,7 @@ export function UserManagement() {
           }),
         });
         setTemplates(await request('/iam/access-options/templates'));
+        await loadRoles();
         setMessage('دسترسی نقش ذخیره شد.');
       } catch (error) {
         setMessage(error instanceof Error ? error.message : 'Save failed.');
@@ -434,6 +493,7 @@ export function UserManagement() {
                   ...access,
                   manualAccessV3: true,
                   displayName: fields.get('displayName'),
+                  ...(organizationUnitId ? { organizationUnitId } : {}),
                   username: fields.get('username'),
                   ...(fields.get('email')
                     ? { email: fields.get('email') }
@@ -475,14 +535,47 @@ export function UserManagement() {
       saving.current = false;
     }
   }
+  async function confirmDelete() {
+    if (saving.current || !canManage || !options.canAssignAll) return;
+    if (!deleteTarget) return;
+    const target = deleteTarget;
+    saving.current = true;
+    setBusy(true);
+    setDeleteError('');
+    try {
+      if (target.kind === 'user') {
+        const rows = await deleteUserAndReload<UserRow>(target.id, request);
+        setUsers(rows);
+        if (selected?.id === target.id) edit(null);
+        setMessage('کاربر حذف شد.');
+      } else {
+        const rows = await deleteRoleAndReload<RoleDirectoryRow>(
+          target.id,
+          target.revision!,
+          request,
+        );
+        setRoleDirectory(rows);
+        setTemplates((current) =>
+          current.filter((role) => role.id !== target.id),
+        );
+        if (templateMode && title === target.name) {
+          edit(null);
+          setTemplateMode(true);
+        }
+        setMessage('نقش برای همیشه حذف شد.');
+      }
+      setDeleteTarget(null);
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : 'حذف انجام نشد.');
+    } finally {
+      saving.current = false;
+      setBusy(false);
+    }
+  }
   return (
     <div className={styles.workspace}>
       <header className={styles.pageHeader}>
         <h1 className="text-2xl font-black">مدیریت کاربران</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          تعریف حساب، نقش و دسترسی مستقل هر کاربر؛ تیک هر بخش همهٔ زیربخش‌ها را
-          انتخاب می‌کند و می‌توانید هر مورد را جداگانه بردارید.
-        </p>
       </header>
       {message && (
         <p role="alert" className="rounded-xl border p-3">
@@ -494,17 +587,6 @@ export function UserManagement() {
       ) : (
         <div className={styles.layout}>
           <aside className={styles.userList}>
-            {options.canAssignAll && (
-              <Button
-                type="button"
-                onClick={() => {
-                  edit(null);
-                  setTemplateMode(true);
-                }}
-              >
-                تنظیم دسترسی نقش‌ها
-              </Button>
-            )}
             <Input
               aria-label="جست‌وجوی کاربران"
               placeholder="نام، نام کاربری یا نقش"
@@ -520,6 +602,18 @@ export function UserManagement() {
                 }}
               >
                 تعریف کاربر جدید
+              </Button>
+            )}
+            {options.canAssignAll && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  edit(null);
+                  setTemplateMode(true);
+                }}
+              >
+                تعریف نقش جدید
               </Button>
             )}
             {users
@@ -569,10 +663,98 @@ export function UserManagement() {
                       {user.status === 'ACTIVE' ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
                     </Button>
                   )}
+                  {canManage && options.canAssignAll && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      type="button"
+                      disabled={busy || user.id === actor?.userId}
+                      onClick={() => {
+                        setDeleteError('');
+                        setDeleteTarget({
+                          id: user.id,
+                          name: user.displayName,
+                          kind: 'user',
+                        });
+                      }}
+                    >
+                      حذف
+                    </Button>
+                  )}
                 </div>
               ))}
           </aside>
           <div className={styles.editor}>
+            {templateMode && options.canAssignAll && (
+              <section
+                className="mb-5 grid gap-3 rounded-xl border p-4"
+                aria-label="نقش‌های تعریف‌شده"
+              >
+                <h2 className="text-xl font-bold">نقش‌های تعریف‌شده</h2>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy || directoryLoading}
+                  onClick={() => void loadRoles()}
+                >
+                  تازه‌سازی نقش‌ها
+                </Button>
+                {directoryLoading && <p role="status">در حال دریافت نقش‌ها…</p>}
+                {directoryMessage && <p role="alert">{directoryMessage}</p>}
+                {!directoryLoading &&
+                  !directoryMessage &&
+                  !roleDirectory.length && <p>هنوز نقشی تعریف نشده است.</p>}
+                {roleDirectory.map((role) => (
+                  <div
+                    key={role.id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
+                  >
+                    <div>
+                      <strong>{role.name}</strong>
+                      <p className="text-sm text-muted-foreground">
+                        {role.isSystem
+                          ? 'نقش سیستمی'
+                          : role.isTemplate
+                            ? 'الگوی دسترسی'
+                            : 'نقش مشترک'}{' '}
+                        · {role.userCount} کاربر متصل
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {role.isTemplate && role.isActive && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => {
+                            setTitle(role.name);
+                            applyTemplate(role.name);
+                          }}
+                        >
+                          ویرایش تیک‌های نقش
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        disabled={busy || directoryLoading || !role.canDelete}
+                        onClick={() => {
+                          setDeleteError('');
+                          setDeleteTarget({
+                            id: role.id,
+                            name: role.name,
+                            kind: 'role',
+                            revision: role.revision,
+                          });
+                        }}
+                      >
+                        حذف دائمی نقش
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </section>
+            )}
             <form ref={form} onSubmit={save} className="grid gap-4">
               <h2 className={styles.editorTitle}>
                 {selected
@@ -619,24 +801,40 @@ export function UserManagement() {
                 )}
                 {!selected && (
                   <label className="grid gap-2">
-                    عنوان شغلی
-                    <NativeSearchSelect
-                      disabled={editingLegacy}
-                      value={title}
-                      optionLimit={USER_JOB_TITLES.length + 1}
-                      onChange={(e) => {
-                        setTitle(e.target.value);
-                        applyTemplate(e.target.value);
-                      }}
-                      className={styles.roleSelect}
-                    >
-                      <option value="">انتخاب نقش</option>
-                      {USER_JOB_TITLES.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </NativeSearchSelect>
+                    {templateMode ? 'نام نقش' : 'انتخاب نقش'}
+                    {templateMode ? (
+                      <Input
+                        required
+                        maxLength={80}
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                      />
+                    ) : (
+                      <NativeSearchSelect
+                        disabled={editingLegacy}
+                        value={title}
+                        optionLimit={
+                          USER_JOB_TITLES.length + templates.length + 1
+                        }
+                        onChange={(e) => {
+                          setTitle(e.target.value);
+                          applyTemplate(e.target.value);
+                        }}
+                        className={styles.roleSelect}
+                      >
+                        <option value="">انتخاب نقش</option>
+                        {[
+                          ...new Set([
+                            ...USER_JOB_TITLES,
+                            ...templates.map((r) => r.name),
+                          ]),
+                        ].map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </NativeSearchSelect>
+                    )}
                   </label>
                 )}
                 {canManage &&
@@ -665,12 +863,32 @@ export function UserManagement() {
                       key={branch.id}
                       label={branch.name}
                       checked={branchIds.includes(branch.id)}
-                      onChange={(v) =>
-                        setBranchIds(change(branchIds, [branch.id], v))
-                      }
+                      onChange={(v) => {
+                        const next = change(branchIds, [branch.id], v);
+                        setBranchIds(next);
+                        if (
+                          !selected &&
+                          organizationUnitId &&
+                          !units.some(
+                            (unit) =>
+                              unit.id === organizationUnitId &&
+                              next.includes(unit.branchId),
+                          )
+                        )
+                          setOrganizationUnitId('');
+                      }}
                     />
                   ))}
                 </fieldset>
+                {!selected && !templateMode && (
+                  <UserUnitSelect
+                    value={organizationUnitId}
+                    units={units}
+                    branchIds={branchIds}
+                    disabled={!canManage || busy}
+                    onChange={setOrganizationUnitId}
+                  />
+                )}
                 {!selected && (
                   <>
                     <div className={styles.accessHeading}>
@@ -714,13 +932,33 @@ export function UserManagement() {
                         const permissions = options.permissions.filter((p) =>
                           permissionInSection(p.code, group.id),
                         );
-                        const allowedScreens = screens.filter((s) =>
-                          options.assignableScreenIds.includes(s.id),
+                        const allowedScreens = screens.filter(
+                          (s) =>
+                            options.canAssignAll ||
+                            options.assignableScreenIds.includes(s.id),
                         );
-                        const total = allowedScreens.length;
-                        const count = allowedScreens.filter((s) =>
-                          screenIds.includes(s.id),
-                        ).length;
+                        const section = sectionAccess(group.id, options);
+                        const allControls = USER_ACCESS_DENY_CONTROLS.filter(
+                          (c) => section.allowedControlIds.includes(c.id),
+                        );
+                        const allowedPermissions = permissions.filter(
+                          (p) =>
+                            options.canAssignAll ||
+                            actor?.permissions.includes(p.code as never),
+                        );
+                        const total =
+                          allowedScreens.length +
+                          allControls.length +
+                          allowedPermissions.length;
+                        const count =
+                          allControls.filter(
+                            (c) => !deniedControlIds.includes(c.id),
+                          ).length +
+                          allowedPermissions.filter((p) =>
+                            permissionIds.includes(p.id),
+                          ).length +
+                          allowedScreens.filter((s) => screenIds.includes(s.id))
+                            .length;
                         return (
                           <AccessGroupCard
                             key={group.id}
@@ -730,6 +968,13 @@ export function UserManagement() {
                             total={total}
                             onChange={(v) => {
                               if (editingLegacy) return;
+                              setPermissionIds(
+                                change(
+                                  permissionIds,
+                                  allowedPermissions.map((p) => p.id),
+                                  v,
+                                ),
+                              );
                               setScreenIds(
                                 change(
                                   screenIds,
@@ -740,13 +985,7 @@ export function UserManagement() {
                               setDeniedControlIds(
                                 change(
                                   deniedControlIds,
-                                  allowedScreens
-                                    .map((s) => s.id)
-                                    .filter((id) =>
-                                      USER_ACCESS_DENY_CONTROLS.some(
-                                        (c) => c.id === id,
-                                      ),
-                                    ),
+                                  allControls.map((c) => c.id),
                                   !v,
                                 ),
                               );
@@ -857,6 +1096,17 @@ export function UserManagement() {
                   </>
                 )}
                 {selected && (
+                  <UserDetailsEditor
+                    key={`${selected.id}:${selected.detailsRevision}`}
+                    user={selected}
+                    units={units}
+                    branchIds={selected.branches.map((item) => item.branch.id)}
+                    canManage={canManage}
+                    request={request}
+                    onSaved={load}
+                  />
+                )}
+                {selected && (
                   <ManualAccessEditor
                     key={selected.id}
                     userId={selected.id}
@@ -865,6 +1115,7 @@ export function UserManagement() {
                     controlLabel={accessControlLabel}
                     request={request}
                     onSaved={load}
+                    templates={templates}
                   />
                 )}
                 {proposalOpen && !selected && !editingLegacy && (
@@ -913,6 +1164,18 @@ export function UserManagement() {
           </div>
         </div>
       )}
+      <IamDeleteDialog
+        target={deleteTarget}
+        busy={busy}
+        error={deleteError}
+        onCancel={() => {
+          if (!busy) {
+            setDeleteTarget(null);
+            setDeleteError('');
+          }
+        }}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   );
 }

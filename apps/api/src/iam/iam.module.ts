@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { HrUserUnitDirectoryModule } from '../hr/hr-user-unit-directory';
 import { IamReservationsDirectory } from './iam-reservations-directory';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
@@ -19,6 +20,7 @@ import { ManualAccessVersionController } from './manual-access-version.controlle
 
 @Module({
   imports: [
+    HrUserUnitDirectoryModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

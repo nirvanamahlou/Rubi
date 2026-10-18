@@ -1,3 +1,21 @@
+## Partner360 and manual USD reference rate — 2026-10-17
+
+MasterCurrency.unitsPerUsd is nullable Decimal(24,10), exposed as a decimal string
+through existing Master Data v1 attributes. It means1USD=N record-currency units;
+IRR is rials, not tomans. Positive finite values only; USD itself must equal1.
+Omission preserves, blank clears, CAS/audit remains mandatory. No automatic FX
+snapshot, financial approval, existing transaction or historical rate is changed.
+
+Existing B2B organization/branch/role unique identity now accepts SUPPLIER and
+BROKER separately from AGENCY/CORPORATE_CUSTOMER. Credit flows COUNTERPARTY_TO_US.
+New Finance requests may reference actual MasterOrganization plus its supported
+role through restrictive FKs and a pair CHECK. Legacy free-text parties remain
+unlinked; never backfill by name. The composite lookup starts with organization,
+role and branch. Existing role rows survive identity edits; referenced roles
+cannot be removed. Immutable payment revisions stay in Finance; purchases are
+read through Reservations/Procurement public producers, with per-currency Decimal
+totals, invoice-version ownership and fail-closed reconciliation.
+
 ## Flight total purchase allocation (FLIGHT-TOTAL-CONTRACT-COST-1013)
 
 No storage change: the existing invoiceAmount stores the exact whole-flight purchase; unitCost is its four-decimal per-seat display equivalent. The additive totalCost command is mutually exclusive with unitCost; existing unit commands remain valid. Finance's public recorded-cost projection adds seatCount and invoiceAmount. Sales uses exact invoice × assigned seat count / purchased seat count, rounded once per contract/flight; legacy age-specific records retain prior behavior. Total and unit command retries use the existing canonical invoice/seat fingerprint, CAS and payment lock. Settled-cost publication policy is unchanged.
@@ -831,3 +849,11 @@ Sales room rows optionally store agreed_price JSON with a Decimal amount string 
 ### Finance purchase currency baseline — PURCHASE-FX-PROFIT-1017
 
 FinancePurchaseFxSnapshot stores one immutable Decimal(24,8) IRR-per-foreign-unit rate and Decimal(24,4) original purchase amount, currency, source, UTC baseline/capture times and real actor/branch FKs. Exactly one unique FK points to a ReservationServicePurchase, FinanceTicketPurchaseCostRevision or FinanceProcurementInvoiceRevision. PostgreSQL checks finite positive amounts/rates, finite baseline time, non-IRR code and one source; a trigger rejects updates/deletes. There is no historical backfill. Realized operational FX gain = baseline value of foreign units actually paid minus sum of persisted rial payment evidence; unpaid balances never generate realized gain. Currency groups stay separate and null means unknown. These operational rates are not approved accounting posting snapshots and do not create journals.
+
+## HOTEL-SALES-PACKAGE-PREVIEW-1017 — independent package sale snapshots
+
+`PackagePricingTourDraft.roomSaleOverrides` is optional JSON metadata keyed by purchase-row reference, advertised room composition and currency. Amounts use validated canonical decimal strings (IRR integer; other currencies two decimals), following the existing price-field snapshot convention. Values are final per-person package sales, not supplier hotel costs. The server validates batch membership and currency context, preserves omitted legacy fields, uses the existing draft CAS/branch/permission checks, and rejects stale composition overrides at publication. Published currency amounts, commissions and profit are persisted in the existing immutable publication rows; purchase tariffs/history are unchanged. Migration `20261017140000_package_room_sale_overrides` only adds a nullable column. Applied only to an isolated local preview database until user review and later merge/deployment approval.
+
+## 2026-10-18 — Package composition sale snapshots
+
+PACKAGE-SALE-FLOW-1018 adds nullable PackagePricingTourDraft.selectedRoomKeys JSON. Existing drafts/publications keep legacy behavior until explicitly edited. Published roomCode is widened to TEXT and v2 codes encode exact room-type ID, adult count, sorted child age bands and board; legacy codes remain readable. Each publication freezes only selected composition rows and retains the real hotel-rate FK. Purchase bases and source occupancy history are unchanged. Sales stores the canonical sale-only publication references and per-currency price snapshot in existing service metadata; negotiated totals remain separate and a positive difference is a DISCOUNT component. Create and changed-room updates validate through the Package Pricing public producer. Unchanged saved quote/room selections on amendments retain their immutable reference, with discount amounts checked against the stored canonical baseline. No live migration or data rewrite is part of implementation.

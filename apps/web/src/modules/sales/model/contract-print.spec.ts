@@ -225,10 +225,8 @@ describe('Saved contract print output', () => {
       hotelWebsite: 'https://hotel.example',
     });
     expect(html).toContain('9,007,199,254,740,995.37');
-    expect(html).toContain('50.25 €');
-    expect(html).toContain(
-      '<td class="contract-total"><div><bdi class="money">2.25</bdi></div></td><td></td>',
-    );
+    expect(html).toContain('>50.25</bdi>');
+    expect(html).toContain('<td class="contract-total">ثبت نشده</td><td></td>');
     expect(html).not.toContain('کودک بدون تخت');
     expect(html).not.toContain('DBL');
     expect(html).toContain('SAMPLE HOTEL');
@@ -249,9 +247,7 @@ describe('Saved contract print output', () => {
       hotelLatinName: '<script>',
       hotelWebsite: '<img>',
     });
-    expect(html).toContain(
-      '<td class="contract-total"></td><td><div><bdi class="money">100 $',
-    );
+    expect(html).toContain('<td class="contract-total">ثبت نشده</td><td></td>');
     expect(html).toContain('&lt;script&gt;');
     expect(html).not.toContain('<img>');
   });
@@ -266,8 +262,10 @@ describe('Saved contract print output', () => {
       }),
     );
     const html = contractPrintHtml(output, printReferences);
-    expect(html).toContain('100,000,000');
-    expect(html).toContain('23,456,789.25');
+    expect(html).toContain('123,456,789.25');
+    expect(
+      html.split('PASSENGERS & PRICING')[1]!.split('</table>')[0],
+    ).not.toContain('23,456,789.25');
     expect(html).toContain('font-family:Arial,sans-serif!important');
     expect(html).not.toContain('قیمت تفکیکی مسافر ثبت نشده');
   });
@@ -317,7 +315,7 @@ describe('Saved contract print output', () => {
     expect(html).not.toContain('localhost');
     expect(html).toContain('نام و امضای مسافر / نماینده');
     expect(html).toContain('نام و امضای مسئول فروش');
-    expect(html).toContain('قیمت تفکیکی مسافر ثبت نشده');
+    expect(html).toContain('مبلغ پرواز هر مسافر جزئی از مبلغ کل قرارداد است.');
     expect((html.match(/<section/g) || []).length).toBe(6);
   });
   it('formats large decimals without floating point loss', () => {

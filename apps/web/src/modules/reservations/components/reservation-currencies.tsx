@@ -75,7 +75,7 @@ export function ReservationCurrencySelect({
       )}
       {currencies.map((c) => (
         <option key={c.code} value={c.code} aria-label={`${c.name} ${c.code}`}>
-          {currencySymbol(c.code)}
+          {c.name} � {c.code} ({currencySymbol(c.code)})
         </option>
       ))}
     </NativeSearchSelect>

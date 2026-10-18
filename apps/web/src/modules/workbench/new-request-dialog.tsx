@@ -1,15 +1,9 @@
 'use client';
 import { WorkbenchSelect } from './workbench-select';
 
-import { useState } from 'react';
-import {
-  Building2,
-  ClipboardList,
-  FileText,
-  Flag,
-  Link2,
-  Send,
-} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import type { WorkbenchRequestOptionsV1 } from '@nora/contracts';
+import { ClipboardList, FileText, Flag, Link2, Send } from 'lucide-react';
 import {
   Alert,
   Button,
@@ -20,30 +14,90 @@ import {
   Input,
   Textarea,
 } from '@/components/ui';
-import { messageUnits } from './message-templates';
+import { RequestRecipientFields } from './request-recipient-fields';
 import { customerAffairsApi } from '@/modules/customer-affairs/api/customer-affairs-client';
 
-export function NewRequestDialog({
-  open,
-  onOpenChange,
-  branchId,
-  onCreated,
-}: {
+type NewRequestDialogProps = {
   open: boolean;
   onOpenChange: (value: boolean) => void;
   branchId?: string;
   onCreated?: () => void;
-}) {
+};
+
+export function NewRequestDialog(props: NewRequestDialogProps) {
+  return props.open ? <NewRequestForm {...props} /> : null;
+}
+
+function NewRequestForm({
+  open,
+  onOpenChange,
+  branchId,
+  onCreated,
+}: NewRequestDialogProps) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [unit, setUnit] = useState('sales');
+  const [unit, setUnit] = useState('');
+  const [recipient, setRecipient] = useState('');
+  const [optionsVersion, setOptionsVersion] = useState(0);
+  const [options, setOptions] = useState<{
+    branchId: string;
+    version: number;
+    units: WorkbenchRequestOptionsV1['units'];
+    error: string;
+  } | null>(null);
+  const optionsMatch =
+    options?.branchId === branchId && options?.version === optionsVersion;
+  const units = optionsMatch ? options!.units : [];
+  const optionsLoading = Boolean(open && branchId && !optionsMatch);
+  const optionsError = optionsMatch ? options!.error : '';
   const [priority, setPriority] = useState('normal');
   const [reference, setReference] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const submitting = useRef(false);
+  const key = useRef<string | null>(null);
+  useEffect(() => {
+    key.current = null;
+  }, [title, body, unit, recipient, priority, reference]);
+  useEffect(() => {
+    if (!open || !branchId) return;
+    let active = true;
+    void customerAffairsApi
+      .workbenchRequestOptions(branchId)
+      .then(({ data }) => {
+        if (active) {
+          setOptions({
+            branchId,
+            version: optionsVersion,
+            units: data.units,
+            error: '',
+          });
+          setUnit('');
+          setRecipient('');
+        }
+      })
+      .catch((reason) => {
+        if (active)
+          setOptions({
+            branchId,
+            version: optionsVersion,
+            units: [],
+            error:
+              reason instanceof Error
+                ? reason.message
+                : 'فهرست واحدها و کاربران دریافت نشد.',
+          });
+      });
+    return () => {
+      active = false;
+    };
+  }, [open, branchId, optionsVersion]);
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => !submitting.current && onOpenChange(value)}
+    >
       <DialogContent
         dir="rtl"
         className="max-h-[90dvh] max-w-3xl overflow-y-auto p-0"
@@ -56,8 +110,8 @@ export function NewRequestDialog({
             <div className="space-y-1">
               <DialogTitle>درخواست جدید</DialogTitle>
               <DialogDescription>
-                درخواست خود را برای واحد مقصد ثبت کنید؛ پیگیری آن از کارتابل
-                درخواست‌های میزکار انجام می‌شود.
+                واحد و کاربر گیرنده را انتخاب کنید؛ درخواست در کارتابل میزکار
+                همان کاربر دریافت می‌شود.
               </DialogDescription>
             </div>
           </div>
@@ -66,47 +120,48 @@ export function NewRequestDialog({
           className="grid gap-5 bg-muted/20 p-6 sm:grid-cols-2"
           onSubmit={(event) => {
             event.preventDefault();
-            if (!branchId || pending) return;
+            if (!branchId || submitting.current) return;
+            const member = units
+              .find((item) => item.id === unit)
+              ?.users.find((item) => item.id === recipient);
+            if (!member) {
+              setError('واحد مقصد و کاربر گیرنده را انتخاب کنید.');
+              return;
+            }
+            if (
+              `${body.trim()}${reference.trim() ? `\n\nمرجع پرونده: ${reference.trim()}` : ''}`
+                .length > 2000
+            ) {
+              setError('شرح درخواست همراه مرجع پرونده حداکثر ۲۰۰۰ نویسه است.');
+              return;
+            }
+            submitting.current = true;
             setPending(true);
             setError('');
             setSuccess('');
-            const unitLabel =
-              messageUnits.find((item) => item.id === unit)?.label ?? unit;
-            const nextActionAt = new Date(
-              Date.now() + 24 * 60 * 60 * 1000,
-            ).toISOString();
+            key.current ??= crypto.randomUUID();
             void customerAffairsApi
               .createWorkbenchRequest(
                 {
                   subject: title.trim(),
-                  description: `${body.trim()}${reference.trim() ? `\n\nمرجع پرونده: ${reference.trim()}` : ''}`,
-                  channel: 'CHAT',
-                  contactOccurredAt: new Date().toISOString(),
-                  category: `WORKBENCH_${unit.toUpperCase()}`,
-                  serviceType: 'INTERNAL_REQUEST',
-                  impact: priority === 'normal' ? 'NORMAL' : 'HIGH',
-                  urgency:
-                    priority === 'urgent'
-                      ? 'HIGH'
-                      : priority === 'high'
-                        ? 'NORMAL'
-                        : 'LOW',
+                  description: body.trim(),
+                  reference: reference.trim(),
+                  organizationUnitId: unit,
+                  executionOwnerUserId: recipient,
                   priority: priority.toUpperCase() as
                     'NORMAL' | 'HIGH' | 'URGENT',
-                  executionUnit: unitLabel,
-                  references: [],
-                  nextAction: `بررسی توسط واحد ${unitLabel}`,
-                  nextActionAt,
                 },
                 branchId,
+                key.current,
               )
               .then((response) => {
-                setSuccess(
-                  `درخواست ثبت شد. کد پیگیری: ${response.data.trackingNumber}`,
-                );
                 setTitle('');
                 setBody('');
                 setReference('');
+                key.current = null;
+                setSuccess(
+                  `درخواست برای ${member.displayName} ارسال شد. کد پیگیری: ${response.data.trackingNumber}`,
+                );
                 onCreated?.();
               })
               .catch((reason) =>
@@ -116,7 +171,10 @@ export function NewRequestDialog({
                     : 'ثبت درخواست انجام نشد.',
                 ),
               )
-              .finally(() => setPending(false));
+              .finally(() => {
+                submitting.current = false;
+                setPending(false);
+              });
           }}
         >
           <label className="space-y-2 text-sm font-semibold">
@@ -126,27 +184,46 @@ export function NewRequestDialog({
             </span>
             <Input
               required
+              minLength={3}
+              disabled={pending}
               maxLength={200}
               placeholder="مثلاً: بررسی وضعیت پرونده ویزا"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </label>
-          <label className="space-y-2 text-sm font-semibold">
-            <span className="flex items-center gap-2">
-              <Building2 className="size-4 text-primary" aria-hidden="true" />
-              واحد مقصد *
-            </span>
-            <WorkbenchSelect
-              label="واحد مقصد"
-              value={unit}
-              onValueChange={setUnit}
-              required
-              options={messageUnits
-                .filter((item) => item.id !== 'ai')
-                .map((item) => ({ value: item.id, label: item.label }))}
+          <div className="sm:col-span-2 grid gap-5 sm:grid-cols-2">
+            <RequestRecipientFields
+              units={units}
+              unitId={unit}
+              recipientId={recipient}
+              disabled={pending || optionsLoading}
+              onUnitChange={setUnit}
+              onRecipientChange={setRecipient}
             />
-          </label>
+            {optionsLoading ? (
+              <p role="status" className="text-sm text-muted-foreground">
+                در حال دریافت واحدها و کاربران…
+              </p>
+            ) : null}
+            {optionsError ? (
+              <div className="sm:col-span-2">
+                <Alert tone="error" title={optionsError} />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOptionsVersion((value) => value + 1)}
+                >
+                  دریافت دوباره فهرست
+                </Button>
+              </div>
+            ) : null}
+            {!optionsLoading && !optionsError && !units.length ? (
+              <p className="sm:col-span-2 text-sm text-muted-foreground">
+                واحد سازمانی فعالی در این شعبه ثبت نشده است.
+              </p>
+            ) : null}
+          </div>
           <label className="space-y-2 text-sm font-semibold sm:col-span-2">
             <span className="flex items-center gap-2">
               <ClipboardList
@@ -157,8 +234,10 @@ export function NewRequestDialog({
             </span>
             <Textarea
               required
+              minLength={3}
+              disabled={pending}
               rows={5}
-              maxLength={10000}
+              maxLength={2000}
               placeholder="جزئیات مورد نیاز، زمان‌بندی و اطلاعات لازم برای رسیدگی را بنویسید."
               value={body}
               onChange={(e) => setBody(e.target.value)}
@@ -171,6 +250,7 @@ export function NewRequestDialog({
             </span>
             <WorkbenchSelect
               label="اولویت"
+              disabled={pending}
               value={priority}
               onValueChange={setPriority}
               options={[
@@ -186,6 +266,7 @@ export function NewRequestDialog({
               مرجع پرونده مرتبط
             </span>
             <Input
+              disabled={pending}
               maxLength={200}
               placeholder="اختیاری؛ شماره پرونده یا قرارداد"
               value={reference}
@@ -207,7 +288,12 @@ export function NewRequestDialog({
               پس از ثبت، کد پیگیری در همین میزکار نمایش داده می‌شود.
             </p>
             <div className="flex gap-3">
-              <Button type="submit" disabled={pending || !branchId}>
+              <Button
+                type="submit"
+                disabled={
+                  pending || optionsLoading || !branchId || !recipient || !unit
+                }
+              >
                 <Send className="size-4" aria-hidden="true" />
                 {pending ? 'در حال ثبت…' : 'ثبت و پیگیری درخواست'}
               </Button>

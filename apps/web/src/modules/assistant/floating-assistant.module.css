@@ -23,6 +23,22 @@
   background: linear-gradient(135deg, #155eab, #0e7490);
   box-shadow: 0 8px 28px #07152e55;
   cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.widget[data-dragging='true'] .launcher {
+  cursor: grabbing;
+}
+.moveHint {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .launcher:hover {
   filter: brightness(1.12);
@@ -46,6 +62,10 @@
   color: #edf5ff;
   background: #0d2445;
   box-shadow: 0 14px 48px #07152e55;
+}
+.panel[data-expanded='true'] {
+  width: min(640px, calc(100vw - 40px));
+  height: min(680px, calc(100dvh - 120px));
 }
 .panel[hidden] {
   display: none;
@@ -122,5 +142,9 @@
     width: calc(100vw - 24px);
     bottom: 68px;
     height: min(420px, calc(100dvh - 104px));
+  }
+  .panel[data-expanded='true'] {
+    width: calc(100vw - 24px);
+    height: calc(100dvh - 104px);
   }
 }

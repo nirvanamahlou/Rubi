@@ -1,3 +1,5 @@
+import type { PackageRoomSaleOverrideV1 } from './room-sale-overrides';
+export * from './room-sale-overrides';
 export * from './hotel-registered-periods';
 import type { TourDepartureV1 } from '../travel/tours';
 import type { FinancePaidTicketCostV1 } from '../finance';
@@ -341,6 +343,7 @@ export interface PackageTourHotelPurchaseBatchV1 {
 }
 
 export interface PackageTourCostGridV1 {
+  destinationName?: string;
   version: 1;
   tour: TourDepartureV1;
   nights: number;
@@ -359,6 +362,8 @@ export interface PackageTourDraftAdjustmentV1 {
 }
 
 export interface PackageTourDraftSaveV1 {
+  selectedRoomKeys?: readonly string[];
+  roomSaleOverrides?: readonly PackageRoomSaleOverrideV1[];
   selectedHotelRateIds?: readonly string[];
   priceFields?: readonly PackageTourPriceFieldV1[];
   familyAdults?: number;
@@ -493,3 +498,29 @@ export {
 
 export { buildHotelPackageTable } from './hotel-package-table';
 export type { HotelPackageTablePrice } from './hotel-package-table';
+
+export {
+  buildHotelPackageCompositions,
+  packageRoomCode,
+  packageRoomIdentity,
+  packageRoomTitle,
+} from './room-compositions';
+export type { PackageRoomIdentity } from './room-compositions';
+
+export interface PackagePublishedSaleV1 {
+  publicationId: string;
+  hotelId: string;
+  hotelName: string;
+  roomTypeName: string;
+  roomCode: string;
+  checkIn: string;
+  checkOut: string;
+  prices: readonly { currencyCode: string; amount: string }[];
+}
+
+export {
+  matchingPublishedRooms,
+  publishedSaleTotals,
+} from './published-sale-quote';
+
+export { packageTourSelectionBatch } from './selection-batch';

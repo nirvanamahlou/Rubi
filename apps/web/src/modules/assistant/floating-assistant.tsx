@@ -9,12 +9,13 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { MessageCircle, Sparkles, X } from 'lucide-react';
+import { Maximize2, Minimize2, MessageCircle, Sparkles, X } from 'lucide-react';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { useSystemPreferences } from '@/components/system-preferences-provider';
 import { useAccessActor } from '@/modules/iam/access-context';
 import { assistantCopy as c } from '@/i18n/assistant-copy';
 import styles from './floating-assistant.module.css';
+import { useFloatingDrag } from './use-floating-drag';
 
 const PreparedChat = dynamic(
   () =>
@@ -50,23 +51,34 @@ function AssistantSession() {
   const english = language === 'en';
   const t = (text: readonly [string, string]) => text[english ? 1 : 0];
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const launcher = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   const id = useId();
+  const drag = useFloatingDrag({ launcher, panel, open, expanded, english });
   useEffect(() => {
     if (open) closeButton.current?.focus();
   }, [open]);
   const close = () => {
     setOpen(false);
+    setExpanded(false);
     launcher.current?.focus();
   };
   return (
-    <div className={styles.widget} dir={english ? 'ltr' : 'rtl'}>
+    <div
+      className={styles.widget}
+      dir={english ? 'ltr' : 'rtl'}
+      style={drag.widgetStyle}
+      data-dragging={drag.dragging || undefined}
+    >
       {hasOpened && (
         <section
+          ref={panel}
           id={id}
           className={styles.panel}
+          data-expanded={expanded}
           hidden={!open}
           role="dialog"
           aria-modal={false}
@@ -86,6 +98,21 @@ function AssistantSession() {
               <h2 id={id + '-title'}>{t(c.widgetTitle)}</h2>
               <p>{t(c.widgetSubtitle)}</p>
             </div>
+            <button
+              type="button"
+              className={styles.headerButton}
+              onClick={() => setExpanded((value) => !value)}
+              aria-label={t(expanded ? c.widgetRestore : c.widgetExpand)}
+              title={t(expanded ? c.widgetRestore : c.widgetExpand)}
+              aria-pressed={expanded}
+              aria-controls={id}
+            >
+              {expanded ? (
+                <Minimize2 size={18} aria-hidden="true" />
+              ) : (
+                <Maximize2 size={18} aria-hidden="true" />
+              )}
+            </button>
             <button
               ref={closeButton}
               type="button"
@@ -115,10 +142,13 @@ function AssistantSession() {
         type="button"
         className={styles.launcher}
         aria-label={t(open ? c.widgetClose : c.widgetOpen)}
-        title={t(open ? c.widgetClose : c.widgetOpen)}
+        title={`${t(open ? c.widgetClose : c.widgetOpen)} — ${t(c.widgetMoveHint)}`}
+        aria-describedby={id + '-move-hint'}
         aria-expanded={open}
         aria-controls={hasOpened ? id : undefined}
-        onClick={() => {
+        {...drag.launcherEvents}
+        onClick={(event) => {
+          if (drag.consumeClick(event.detail)) return;
           if (open) close();
           else {
             setHasOpened(true);
@@ -132,6 +162,9 @@ function AssistantSession() {
           <MessageCircle size={28} aria-hidden="true" />
         )}
       </button>
+      <span id={id + '-move-hint'} className={styles.moveHint}>
+        {t(c.widgetMoveHint)}
+      </span>
     </div>
   );
 }

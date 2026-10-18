@@ -25,6 +25,66 @@ function setup(admin = true) {
   return { service, tx };
 }
 describe('job role defaults', () => {
+  it('validates custom manual names without granting privileges from their title', async () => {
+    const service = Object.create(IamService.prototype);
+    service.isSystemAdministrator = vi.fn(async () => true);
+    service.database = {
+      client: { permission: { findMany: vi.fn(async () => []) } },
+    };
+    const profile = await service.managedAccess(
+      {
+        accessTitle: 'نقش سفارشی',
+        manualAccessV3: true,
+        permissionIds: [],
+        screenIds: [],
+        deniedControlIds: [],
+      },
+      { userId: 'actor' },
+    );
+    expect(profile.title).toBe('نقش سفارشی');
+    expect(profile.permissionCodes).toEqual([]);
+    expect(profile.screenIds).toEqual([]);
+    await expect(
+      service.managedAccess(
+        {
+          accessTitle: ' '.repeat(5),
+          manualAccessV3: true,
+          permissionIds: [],
+          screenIds: [],
+        },
+        {},
+      ),
+    ).rejects.toThrow();
+  });
+  it('uses distinct bounded keys for custom role names rather than index minus one', async () => {
+    const { service } = setup();
+    for (const title of ['کارشناس فروش ویژه', 'مدیر پشتیبانی شعبه']) {
+      service.managedAccess.mockResolvedValue({
+        title,
+        permissionIds: [],
+        permissionCodes: [],
+        screenIds: [],
+        deniedControlIds: [],
+        managed: true,
+        canAssignAll: true,
+      });
+      await service.saveRoleTemplate(
+        {
+          accessTitle: title,
+          permissionIds: [],
+          screenIds: [],
+          deniedControlIds: [],
+        },
+        { userId: 'actor' },
+        {},
+      );
+    }
+    const keys = service.personalAccessRole.mock.calls.map(
+      (call: unknown[]) => call[1],
+    );
+    expect(keys[0]).not.toBe(keys[1]);
+    for (const key of keys) expect(key).toMatch(/^template-job-[a-f0-9]{32}$/);
+  });
   it('rejects nonadministrators before changing any grants', async () => {
     const { service } = setup(false);
     await expect(service.saveRoleTemplate({}, {}, {})).rejects.toThrow();

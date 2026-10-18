@@ -2,6 +2,12 @@ export type AssistantText = readonly [string, string];
 export const assistantCopy = {
   widgetOpen: ['بازکردن دستیار هوشمند', 'Open smart assistant'],
   widgetClose: ['بستن دستیار هوشمند', 'Close smart assistant'],
+  widgetExpand: ['بزرگ‌کردن پنجره چت', 'Expand chat window'],
+  widgetRestore: ['بازگشت به اندازه عادی', 'Restore chat window'],
+  widgetMoveHint: [
+    'برای جابه‌جایی بکشید؛ با Alt و کلیدهای جهت حرکت دهید و با Alt+Home به جای پیش‌فرض برگردید.',
+    'Drag to reposition; use Alt+arrow keys to move and Alt+Home to restore the default position.',
+  ],
   widgetTitle: ['دستیار هوشمند نورا', 'Noura smart assistant'],
   widgetSubtitle: [
     'از همین صفحه درخواستتان را اجرا کنید',

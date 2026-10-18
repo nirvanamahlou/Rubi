@@ -1,0 +1,17 @@
+# PACKAGE-SALE-FLOW-1018
+
+PC-A; `codex/pc-a-package-sale-flow-1018`, based on develop containing PR910. Owner authorizes implementation and merge to develop.
+
+Hotel purchase entry keeps room bases, room addition and composition coefficients. The default and restored Persian child-with-bed composition display is now «دبل با کودک با تخت» without rewriting stored history.
+
+Package management consumes exact occupancy tariffs for the selected tour/flight period. Matching active rate-batch rows are combined read-only, preserving every row ID and actual source batch. Each hotel/broker/room/board/composition stays independently selectable. Group percentage/fixed increase/decrease and direct sale entry use current exact sale amounts, without changing purchase rates. Publication freezes only chosen rows and retains maker/checker, branch, concurrency and settled-flight-cost controls.
+
+Version2 room codes carry room type, adults, sorted child age bands and board. Every night and every advertised age boundary must have an exact consistent tariff. Legacy codes and existing publication math remain readable. New draft selection uses nullable `selectedRoomKeys`; the published roomCode column widens to TEXT. Migration `20261018100000_package_room_compositions` adds storage and widens text only; no backfill or business data deletion.
+
+Sales reads a branch-scoped sale-only owner projection and resolves exact hotel/stay/room/guest composition. Ambiguous alternatives require selection. Proposed whole-package totals and foreign room amounts fill automatically while negotiated values remain independent. Lower negotiated totals create canonical BASE plus salesperson DISCOUNT components. Server checks publication references, actual hotel/room/ages and baseline amounts before new or changed selections persist. Unchanged saved quote/room snapshots on amendments retain their original reference and still validate discount amounts. A validated published hotel alternative may extend the original Tour hotel list; ticket identity/version/capacity and included-service validation remain unchanged.
+
+After publication the generator opens with hotel/room/board groups and published one-/two-adult prices. Exact two-adult room totals are divided using the existing upward minor-unit rounding policy for per-person banner display. Missing alternatives remain blank. Destination name is resolved through Master Data's public name reader; supported city templates are selected automatically. Existing description/documents/refund/installment notes and services feed the banner. Only sale values cross the frame boundary; purchase and profit never do. The v2 bridge retains strict legacy v1 behavior.
+
+Validation: broad Web289 and API282 tests passed before final source refinements. Final focused Contracts21, Web8 and API source/publication/quote tests cover refinements; exact final-head quality/test/build/PostgreSQL CI gates merge. No authenticated business submission, live migration, production deployment or localhost3100 restart is claimed.
+
+Final booking-path regression fixes keep hotel/composition controls accessible within selected tours, permit continuation from pinned tour offers without an unrelated flight-search calendar, synchronize only automatic hotel dates with the published period, and reject omitted canonical quotes for new published-package contracts.22 Web and209 API Sales/quote regressions pass; manual dates and legacy unpriced tours remain compatible. Refreshed final-head full CI gates merge.

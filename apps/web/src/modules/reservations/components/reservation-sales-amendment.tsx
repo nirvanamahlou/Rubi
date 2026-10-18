@@ -1,4 +1,6 @@
 'use client';
+import { PASSENGER_FLIGHT_PRICES, type SalesMoney } from '@nora/contracts';
+import { amendmentPriceComponents } from './amendment-price-components';
 import { isOptionalOperationReason } from '@nora/contracts';
 
 import { ReservationPassengers } from '../passenger-files/passengers';
@@ -20,7 +22,6 @@ import {
   moneyUnits,
   moneyDecimal,
   SALES_CHEQUE_FEE,
-  servicePriceComponents,
   salesChequeComponents,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,10 @@ import { ContractFlightEditor } from '@/modules/sales/components/contract-flight
 import { exactFlightQuery } from '@/modules/sales/model/exact-flight-dates';
 import { TicketOfferPicker } from '@/modules/sales/components/ticket-offer-picker';
 import { SalesDatePicker } from '@/modules/sales/components/sales-date-picker';
+import {
+  amendmentFlightDay,
+  matchesSavedAmendmentFlight,
+} from './amendment-flight-search';
 import {
   amendmentFromContract,
   manualAmendmentFlights,
@@ -61,7 +66,7 @@ export function ReservationSalesAmendment({
   const [saved, setSaved] = useState(false);
   const [direction, setDirection] = useState<SalesTicketDirection>('OUTBOUND');
   const [airline, setAirline] = useState('');
-  const [day, setDay] = useState(contract.departureDate.slice(0, 10));
+  const [day, setDay] = useState(() => amendmentFlightDay(draft, 'OUTBOUND'));
   useEffect(() => {
     let live = true;
     const resources: MasterDataResource[] = [
@@ -71,6 +76,7 @@ export function ReservationSalesAmendment({
       'hotels',
       'room-types',
       'meal-services',
+      'currencies',
     ];
     void Promise.all(
       resources.map(async (resource) => {
@@ -103,8 +109,36 @@ export function ReservationSalesAmendment({
       live = false;
     };
   }, []);
+  const automaticPricing = draft.services.some(
+    (s) => s.metadata?.automaticFlightRoomTotalV1 === true,
+  );
+  const flightPriceService = draft.services.find(
+    (s) => s.metadata?.[PASSENGER_FLIGHT_PRICES] !== undefined,
+  );
+  const flightPrices: Record<string, SalesMoney[]> = flightPriceService
+    ? JSON.parse(String(flightPriceService.metadata![PASSENGER_FLIGHT_PRICES]))
+    : {};
   const patch = (v: Partial<SalesContractAmendmentV1>) =>
-    setDraft((d) => ({ ...d, ...v }));
+    setDraft((d) => {
+      const next = { ...d, ...v };
+      if (
+        next.services.some(
+          (s) => s.metadata?.automaticFlightRoomTotalV1 === true,
+        )
+      ) {
+        try {
+          const components = amendmentPriceComponents(next);
+          if (components)
+            next.priceComponents = salesChequeComponents(
+              components,
+              next.paymentTerms,
+            );
+        } catch {
+          /* Keep incomplete price input editable until submission. */
+        }
+      }
+      return next;
+    });
   const international = [draft.originId, draft.destinationId].some((id) => {
     const city = refs.cities?.find((c) => c.id === id);
     const country = refs.countries?.find(
@@ -147,10 +181,7 @@ export function ReservationSalesAmendment({
           ),
         ),
       );
-      const derived = servicePriceComponents(
-        corrected.services,
-        corrected.hotelSelection,
-      );
+      const derived = amendmentPriceComponents(corrected);
       await salesApi.amend(
         contract.id,
         derived
@@ -257,11 +288,7 @@ export function ReservationSalesAmendment({
                     variant={direction === d ? 'primary' : 'outline'}
                     onClick={() => {
                       setDirection(d);
-                      setDay(
-                        draft.ticketSelections
-                          ?.find((t) => t.direction === d)
-                          ?.departureAt.slice(0, 10) ?? day,
-                      );
+                      setDay(amendmentFlightDay(draft, d));
                     }}
                   >
                     {d === 'OUTBOUND' ? 'رفت' : 'برگشت'}
@@ -299,6 +326,17 @@ export function ReservationSalesAmendment({
               onChange={setAirline}
             />
             <TicketOfferPicker
+              enabled={!!day}
+              emptyMessage={
+                matchesSavedAmendmentFlight(
+                  draft,
+                  direction,
+                  day,
+                  refs.airlines?.find((r) => r.id === airline)?.name,
+                )
+                  ? 'بلیت جایگزینی برای این مسیر و تاریخ پیدا نشد؛ بلیت فعلی قرارداد حفظ شده است.'
+                  : undefined
+              }
               carrierName={refs.airlines?.find((r) => r.id === airline)?.name}
               exactDay={day}
               query={{
@@ -483,6 +521,116 @@ export function ReservationSalesAmendment({
         )}
         {section === 'PRICES' && (
           <>
+            {Object.entries(flightPrices).map(([id, prices]) => (
+              <div key={id} className="grid gap-2 rounded-xl border p-3">
+                <strong>
+                  {
+                    draft.passengers.find((p) => p.customerId === id)
+                      ?.displayNameSnapshot
+                  }
+                </strong>
+                {prices.map((price, index) => (
+                  <label key={price.currencyCode}>
+                    قیمت پرواز · {currencySymbol(price.currencyCode)}
+                    <Input
+                      dir="ltr"
+                      inputMode="decimal"
+                      value={price.amount}
+                      onChange={(e) =>
+                        patch({
+                          services: draft.services.map((service) =>
+                            service === flightPriceService
+                              ? {
+                                  ...service,
+                                  metadata: {
+                                    ...service.metadata,
+                                    [PASSENGER_FLIGHT_PRICES]: JSON.stringify({
+                                      ...flightPrices,
+                                      [id]: prices.map((p, i) =>
+                                        i === index
+                                          ? { ...p, amount: e.target.value }
+                                          : p,
+                                      ),
+                                    }),
+                                  },
+                                }
+                              : service,
+                          ),
+                        })
+                      }
+                    />
+                  </label>
+                ))}
+              </div>
+            ))}
+
+            {hotel?.rooms?.map((room, index) => (
+              <div
+                key={room.ordinal}
+                className="grid gap-2 rounded-xl border p-3 sm:grid-cols-2"
+              >
+                <strong>
+                  {room.ordinal} · {room.roomTypeNameSnapshot}
+                </strong>
+                <label>
+                  قیمت اتاق
+                  <Input
+                    dir="ltr"
+                    inputMode="decimal"
+                    value={room.agreedPrice?.amount ?? ''}
+                    onChange={(e) =>
+                      changeHotel({
+                        rooms: hotel.rooms!.map((r, i) =>
+                          i === index
+                            ? {
+                                ...r,
+                                agreedPrice: {
+                                  amount: e.target.value,
+                                  currencyCode:
+                                    r.agreedPrice?.currencyCode ?? '',
+                                },
+                              }
+                            : r,
+                        ),
+                      })
+                    }
+                  />
+                </label>
+                <div>
+                  <SearchableReference
+                    label="ارز اتاق"
+                    value={
+                      refs.currencies?.find(
+                        (c) => c.code === room.agreedPrice?.currencyCode,
+                      )?.id ?? ''
+                    }
+                    options={(refs.currencies ?? []).filter(
+                      (c) => c.code !== 'IRR',
+                    )}
+                    onChange={(id) => {
+                      const code = refs.currencies?.find(
+                        (c) => c.id === id,
+                      )?.code;
+                      if (code)
+                        changeHotel({
+                          rooms: hotel.rooms!.map((r, i) =>
+                            i === index
+                              ? {
+                                  ...r,
+                                  agreedPrice: {
+                                    amount: r.agreedPrice?.amount ?? '0',
+                                    currencyCode: code,
+                                  },
+                                }
+                              : r,
+                          ),
+                        });
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+
             {draft.services.some(
               (s) =>
                 s.pricing?.length &&
@@ -563,6 +711,7 @@ export function ReservationSalesAmendment({
                         dir="ltr"
                         inputMode="decimal"
                         value={p.amount}
+                        readOnly={automaticPricing}
                         onChange={(e) =>
                           patch({
                             priceComponents: draft.priceComponents.map(

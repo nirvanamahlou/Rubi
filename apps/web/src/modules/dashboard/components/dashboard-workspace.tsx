@@ -6,7 +6,6 @@ import { currencySymbol, currencySymbols } from '@/lib/currency-symbol';
 
 import { useQuery } from '@tanstack/react-query';
 import {
-  AlertTriangle,
   ArrowLeft,
   ArrowDownRight,
   ArrowUpRight,
@@ -31,22 +30,19 @@ import {
   Info,
   LayoutDashboard,
   Lightbulb,
-  LineChart,
-  ListFilter,
   LockKeyhole,
   Megaphone,
   Minus,
   PhoneCall,
-  PieChart,
   Plane,
   RefreshCw,
   RotateCcw,
   Search,
   ShieldAlert,
+  Sparkles,
   Ticket,
   UserRoundCog,
   UserCheck,
-  UserPlus,
   UsersRound,
   WalletCards,
   X,
@@ -121,6 +117,8 @@ import {
   type DashboardVisualKind,
 } from '../model/registry';
 import { trendAxisLabelIndexes } from '../model/trend-axis';
+import { dashboardChartArtwork, dashboardKpiArtwork } from '../model/artwork';
+import { DashboardArtworkIcon } from './dashboard-artwork-icon';
 
 const rangeOptions: readonly [DashboardRange, string][] = [
   ['today', 'امروز'],
@@ -413,16 +411,6 @@ function filterCopyForPage(pageId: string, key: DashboardFilterKey) {
   };
 }
 
-const visualIcons: Record<DashboardVisualKind, typeof BarChart3> = {
-  line: LineChart,
-  bar: BarChart3,
-  donut: PieChart,
-  'stacked-bar': BarChart3,
-  funnel: ListFilter,
-  table: ListFilter,
-  queue: AlertTriangle,
-};
-
 const visualLabels: Record<DashboardVisualKind, string> = {
   line: 'نمودار روند',
   bar: 'نمودار مقایسه‌ای',
@@ -437,230 +425,8 @@ const dashboardPageById = new Map(
   dashboardPages.map((page) => [page.id, page] as const),
 );
 
-type KpiVisual = {
-  icon: LucideIcon;
-  label: string;
-  className: string;
-};
-
-const kpiVisualMatchers: readonly [RegExp, KpiVisual][] = [
-  [
-    /cancel|refund|failure|breach|overdue|risk|debt|payables|receivables|due|blocker|guarantee/i,
-    {
-      icon: ShieldAlert,
-      label: 'ریسک و استثنا',
-      className:
-        'bg-rose-50 text-rose-700 ring-rose-100 dark:bg-rose-950/50 dark:text-rose-200 dark:ring-rose-900',
-    },
-  ],
-  [
-    /lead|customer|crm|followup|satisfaction|consent|ticket|employee|response-time/i,
-    {
-      icon: UsersRound,
-      label: 'مشتری و ارتباط',
-      className:
-        'bg-blue-50 text-blue-700 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-200 dark:ring-blue-900',
-    },
-  ],
-  [
-    /tour|hotel|airline|ticket|route|reservation|order|issue|capacity|offer|stay|awaiting-payment|delivery/i,
-    {
-      icon: Plane,
-      label: 'عملیات سفر و محصول',
-      className:
-        'bg-sky-50 text-sky-700 ring-sky-100 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-900',
-    },
-  ],
-  [
-    /campaign|marketing|advertising|attributed/i,
-    {
-      icon: Megaphone,
-      label: 'بازاریابی و رشد',
-      className:
-        'bg-violet-50 text-violet-700 ring-violet-100 dark:bg-violet-950/50 dark:text-violet-200 dark:ring-violet-900',
-    },
-  ],
-  [
-    /workday|leave|overtime|hr|performance/i,
-    {
-      icon: BriefcaseBusiness,
-      label: 'سرمایه انسانی',
-      className:
-        'bg-indigo-50 text-indigo-700 ring-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-200 dark:ring-indigo-900',
-    },
-  ],
-  [
-    /supplier|provider|spend|purchase|inventory|remaining|sell-through/i,
-    {
-      icon: Building2,
-      label: 'تأمین و ظرفیت',
-      className:
-        'bg-orange-50 text-orange-700 ring-orange-100 dark:bg-orange-950/50 dark:text-orange-200 dark:ring-orange-900',
-    },
-  ],
-  [
-    /sales|revenue|profit|income|amount|price|discount|commission|balance|collection|collected|payment|expense|roas/i,
-    {
-      icon: BadgeDollarSign,
-      label: 'فروش و مالی',
-      className:
-        'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-900',
-    },
-  ],
-  [
-    /rate|ratio|growth|conversion|average|count|number|volume|age/i,
-    {
-      icon: ChartNoAxesCombined,
-      label: 'روند و عملکرد',
-      className:
-        'bg-cyan-50 text-cyan-700 ring-cyan-100 dark:bg-cyan-950/50 dark:text-cyan-200 dark:ring-cyan-900',
-    },
-  ],
-];
-
 const adverseKpiIdPattern =
   /refund|cancel|discount|expense|commission|overdue|awaiting|pending|failure|breach|debt|payable|risk|complaint|escalation|expired|blocked|shortage/i;
-
-const kpiVisualOverrides: Readonly<Record<string, KpiVisual>> = {
-  'gross-sales': {
-    icon: Banknote,
-    label: 'مبلغ فروش',
-    className:
-      'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-900',
-  },
-  'net-sales': {
-    icon: BadgeDollarSign,
-    label: 'فروش خالص',
-    className:
-      'bg-teal-50 text-teal-700 ring-teal-100 dark:bg-teal-950/50 dark:text-teal-200 dark:ring-teal-900',
-  },
-  'new-customers': {
-    icon: UserPlus,
-    label: 'مشتری جدید',
-    className:
-      'bg-blue-50 text-blue-700 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-200 dark:ring-blue-900',
-  },
-  'returning-customers': {
-    icon: UserCheck,
-    label: 'مشتری بازگشتی',
-    className:
-      'bg-violet-50 text-violet-700 ring-violet-100 dark:bg-violet-950/50 dark:text-violet-200 dark:ring-violet-900',
-  },
-  'new-leads': {
-    icon: UserPlus,
-    label: 'لید جدید',
-    className:
-      'bg-sky-50 text-sky-700 ring-sky-100 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-900',
-  },
-  'lead-volume': {
-    icon: UsersRound,
-    label: 'حجم لید',
-    className:
-      'bg-sky-50 text-sky-700 ring-sky-100 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-900',
-  },
-  'employee-call-count': {
-    icon: PhoneCall,
-    label: 'تماس ثبت‌شده',
-    className:
-      'bg-cyan-50 text-cyan-700 ring-cyan-100 dark:bg-cyan-950/50 dark:text-cyan-200 dark:ring-cyan-900',
-  },
-  'employee-lead-count': {
-    icon: UserPlus,
-    label: 'لیدهای ثبت‌شده',
-    className:
-      'bg-sky-50 text-sky-700 ring-sky-100 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-900',
-  },
-  'employee-finalized-sales-count': {
-    icon: BadgeDollarSign,
-    label: 'فروش نهایی کارشناس',
-    className:
-      'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-900',
-  },
-  'employee-sales-amount': {
-    icon: Banknote,
-    label: 'مبلغ فروش کارشناس',
-    className:
-      'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-900',
-  },
-  'employee-lead-conversion': {
-    icon: ChartNoAxesCombined,
-    label: 'نرخ تبدیل کارشناس',
-    className:
-      'bg-violet-50 text-violet-700 ring-violet-100 dark:bg-violet-950/50 dark:text-violet-200 dark:ring-violet-900',
-  },
-  'employee-average-sale': {
-    icon: BadgeDollarSign,
-    label: 'میانگین فروش کارشناس',
-    className:
-      'bg-teal-50 text-teal-700 ring-teal-100 dark:bg-teal-950/50 dark:text-teal-200 dark:ring-teal-900',
-  },
-  'employee-contract-count': {
-    icon: BriefcaseBusiness,
-    label: 'قراردادهای کارشناس',
-    className:
-      'bg-indigo-50 text-indigo-700 ring-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-200 dark:ring-indigo-900',
-  },
-  'employee-followup-count': {
-    icon: CalendarCheck,
-    label: 'پیگیری فروش',
-    className:
-      'bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-950/50 dark:text-amber-200 dark:ring-amber-900',
-  },
-  'employee-sales-rank': {
-    icon: Gauge,
-    label: 'رتبه عملکرد',
-    className:
-      'bg-indigo-50 text-indigo-700 ring-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-200 dark:ring-indigo-900',
-  },
-  'tour-reservations': {
-    icon: Ticket,
-    label: 'رزرو تور',
-    className:
-      'bg-orange-50 text-orange-700 ring-orange-100 dark:bg-orange-950/50 dark:text-orange-200 dark:ring-orange-900',
-  },
-  'hotel-reservations': {
-    icon: Hotel,
-    label: 'رزرو هتل',
-    className:
-      'bg-sky-50 text-sky-700 ring-sky-100 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-900',
-  },
-  'average-ticket-price': {
-    icon: Ticket,
-    label: 'متوسط قیمت بلیت',
-    className:
-      'bg-blue-50 text-blue-700 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-200 dark:ring-blue-900',
-  },
-  'remaining-capacity': {
-    icon: Gauge,
-    label: 'ظرفیت باقی‌مانده',
-    className:
-      'bg-orange-50 text-orange-700 ring-orange-100 dark:bg-orange-950/50 dark:text-orange-200 dark:ring-orange-900',
-  },
-  'collection-rate': {
-    icon: CircleCheckBig,
-    label: 'نرخ وصول',
-    className:
-      'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-900',
-  },
-  'lead-conversion-rate': {
-    icon: ChartNoAxesCombined,
-    label: 'نرخ تبدیل لید',
-    className:
-      'bg-violet-50 text-violet-700 ring-violet-100 dark:bg-violet-950/50 dark:text-violet-200 dark:ring-violet-900',
-  },
-};
-
-function kpiVisualFor(definition: DashboardKpiDefinition): KpiVisual {
-  return (
-    kpiVisualOverrides[definition.id] ??
-    kpiVisualMatchers.find(([pattern]) => pattern.test(definition.id))?.[1] ?? {
-      icon: CircleDollarSign,
-      label: 'شاخص عملکرد',
-      className:
-        'bg-slate-100 text-slate-700 ring-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700',
-    }
-  );
-}
 
 const comparisonRankPalette = [
   '#172554',
@@ -854,6 +620,7 @@ function dashboardVisualIsWide(
 }
 
 const navigationIcons: Record<string, LucideIcon> = {
+  assistant: Sparkles,
   'executive-overview': LayoutDashboard,
   'executive-growth-risk': Gauge,
   'commercial-performance': BriefcaseBusiness,
@@ -1526,8 +1293,6 @@ function KpiCard({
   featured?: boolean;
   metric?: DashboardMetricSnapshot | undefined;
 }) {
-  const visual = kpiVisualFor(definition);
-  const Icon = visual.icon;
   return (
     <button
       data-dashboard-kpi
@@ -1553,17 +1318,7 @@ function KpiCard({
       />
       <span className="relative flex min-w-0 items-center gap-2.5">
         <span className="flex min-w-0 items-center gap-2.5">
-          <span
-            aria-label={visual.label}
-            className={cn(
-              'grid size-9 shrink-0 place-items-center rounded-xl shadow-sm ring-1',
-              visual.className,
-            )}
-            title={visual.label}
-            role="img"
-          >
-            <Icon aria-hidden="true" className="size-[18px]" />
-          </span>
+          <DashboardArtworkIcon name={dashboardKpiArtwork(definition.id)} />
           <span
             className="min-w-0 truncate text-sm font-black text-foreground"
             title={definition.title}
@@ -3211,7 +2966,7 @@ function ProjectionSlot({
   const isEmployeeComparison =
     visualId.startsWith('employee-') &&
     (resolvedKind === 'bar' || resolvedKind === 'stacked-bar');
-  const Icon = isEmployeeComparison ? UsersRound : visualIcons[resolvedKind];
+
   const visualLabel = isEmployeeComparison
     ? 'مقایسه عملکرد تیم'
     : visualLabels[resolvedKind];
@@ -3235,9 +2990,9 @@ function ProjectionSlot({
       >
         <div className="flex items-start justify-between gap-3 border-b border-border/70 bg-gradient-to-l from-blue-50/70 via-surface to-surface p-3.5 dark:from-blue-950/20">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-900">
-              <Icon aria-hidden="true" className="size-5" />
-            </span>
+            <DashboardArtworkIcon
+              name={dashboardChartArtwork(visualId, resolvedKind)}
+            />
             <div className="min-w-0">
               <h3 className="font-black text-foreground">{title}</h3>
               <p className="mt-1 text-xs leading-6 text-muted-foreground">

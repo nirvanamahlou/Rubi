@@ -1,4 +1,10 @@
 'use client';
+import {
+  hotelChildChoices,
+  syncHotelChildSelections,
+  selectHotelChild,
+} from '../model/hotel-child-selection';
+import { SalesThemedSelect } from './sales-themed-select';
 import { salesHotelRoomSummary } from '@nora/contracts';
 import { PassengerAgeField } from './passenger-age-field';
 import {
@@ -9,9 +15,9 @@ import { SearchableReference } from './searchable-reference';
 import { Input } from '@/components/ui/form-controls';
 import type { MasterDataRecord, HotelRoomRateV1 } from '@nora/contracts';
 import type { SalesFormState } from '../model/sales-form';
-import { salesPassengerCounts } from '../model/sales-form';
+import { salesPassengerCounts, salesTravelDate } from '../model/sales-form';
 export function ServiceParties({
-  state,
+  state: sourceState,
   patch,
   hotels,
   roomTypes,
@@ -24,11 +30,16 @@ export function ServiceParties({
     Partial<MasterDataRecord>)[];
   rates: readonly HotelRoomRateV1[];
 }) {
+  const state = syncHotelChildSelections(
+    sourceState,
+    salesTravelDate(sourceState),
+  );
+  const childChoices = hotelChildChoices(state, salesTravelDate(state));
   const rooms = state.hotel.rooms ?? [];
   const limited = state.serviceKinds.includes('FLIGHT');
   const party = salesPassengerCounts(state);
   const partyError = salesRoomPartyError(state);
-  const used = roomPartyUsage(rooms);
+  const used = roomPartyUsage(rooms, state.hotelChildAssignments);
   const maxRooms = limited
     ? Math.min(
         50,
@@ -51,10 +62,15 @@ export function ServiceParties({
       children: ages.filter((a) => a !== null && a >= 2 && a < 12).length,
       infants: ages.filter((a) => a !== null && a < 2).length,
     };
+    const linked = syncHotelChildSelections(
+      { ...state, hotel: { ...state.hotel, rooms: next } },
+      salesTravelDate(state),
+    );
     patch({
+      hotelChildAssignments: linked.hotelChildAssignments,
       hotel: {
-        ...state.hotel,
-        rooms: next,
+        ...linked.hotel,
+        rooms: linked.hotel.rooms ?? next,
         ...salesHotelRoomSummary(next),
         roomTypeId: next[0]?.roomTypeId ?? '',
       },
@@ -182,55 +198,60 @@ export function ServiceParties({
       {state.serviceKinds.includes('HOTEL') && (
         <section className="grid gap-3 rounded-xl border p-4">
           <h3 className="font-bold">هتل و ترکیب هر اتاق</h3>
-          <SearchableReference
-            label="هتل"
-            value={state.hotel.hotelId}
-            options={hotels}
-            showAllOptionsOnOpen
-            preferEnglishName
-            onChange={(hotelId) =>
-              patch({
-                hotel: {
-                  ...state.hotel,
-                  hotelId,
-                  name: hotels.find((h) => h.id === hotelId)?.name ?? '',
-                  rooms: [],
-                  roomTypeId: '',
-                  guestCustomerIds: undefined,
-                },
-              })
-            }
-          />
-          <label>
-            تعداد اتاق
-            <Input
-              type="number"
-              min={1}
-              max={maxRooms}
-              value={rooms.length || ''}
-              disabled={!state.hotel.hotelId}
-              onChange={(e) =>
-                changeRooms(
-                  Array.from(
-                    {
-                      length: Math.max(
-                        1,
-                        Math.min(maxRooms, Number(e.target.value) || 1),
-                      ),
+          <div className="grid grid-cols-[minmax(0,1fr)_6rem] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_9rem]">
+            <div className="min-w-0">
+              <SearchableReference
+                label="هتل"
+                value={state.hotel.hotelId}
+                options={hotels}
+                showAllOptionsOnOpen
+                preferEnglishName
+                onChange={(hotelId) =>
+                  patch({
+                    hotelChildAssignments: {},
+                    hotel: {
+                      ...state.hotel,
+                      hotelId,
+                      name: hotels.find((h) => h.id === hotelId)?.name ?? '',
+                      rooms: [],
+                      roomTypeId: '',
+                      guestCustomerIds: undefined,
                     },
-                    (_, i) =>
-                      rooms[i] ?? {
-                        ordinal: i + 1,
-                        roomTypeId: '',
-                        roomTypeNameSnapshot: '',
-                        adults: 1,
-                        childAges: [],
+                  })
+                }
+              />
+            </div>
+            <label className="grid min-w-0 gap-1">
+              تعداد اتاق
+              <Input
+                type="number"
+                min={1}
+                max={maxRooms}
+                value={rooms.length || ''}
+                disabled={!state.hotel.hotelId}
+                onChange={(e) =>
+                  changeRooms(
+                    Array.from(
+                      {
+                        length: Math.max(
+                          1,
+                          Math.min(maxRooms, Number(e.target.value) || 1),
+                        ),
                       },
-                  ),
-                )
-              }
-            />
-          </label>
+                      (_, i) =>
+                        rooms[i] ?? {
+                          ordinal: i + 1,
+                          roomTypeId: '',
+                          roomTypeNameSnapshot: '',
+                          adults: 1,
+                          childAges: [],
+                        },
+                    ),
+                  )
+                }
+              />
+            </label>
+          </div>
           {partyError ? (
             <p role="alert" className="text-sm text-destructive">
               {partyError}
@@ -243,7 +264,10 @@ export function ServiceParties({
                   rooms.map((v, j) => (j === i ? { ...v, ...value } : v)),
                 );
               const others = rooms.filter((_, j) => j !== i);
-              const othersUsed = roomPartyUsage(others);
+              const othersUsed = roomPartyUsage(
+                others,
+                state.hotelChildAssignments,
+              );
               const maxAdults = limited
                 ? Math.max(
                     1,
@@ -253,8 +277,9 @@ export function ServiceParties({
                         party.total - othersUsed.total - r.childAges.length,
                         party.adults -
                           othersUsed.adults -
-                          r.childAges.filter((a) => a !== null && a >= 12)
-                            .length,
+                          (roomPartyUsage([r], state.hotelChildAssignments)
+                            .adults -
+                            r.adults),
                       ),
                     ),
                   )
@@ -344,46 +369,96 @@ export function ServiceParties({
                       />
                     </label>
                   </div>
-                  {r.childAges.map((age, j) => (
-                    <PassengerAgeField
-                      key={j}
-                      label={`سن کودک ${j + 1}`}
-                      value={age}
-                      includeInfants
-                      allowedAges={
-                        limited
-                          ? Array.from({ length: 15 }, (_, age) => age).filter(
-                              (age) => {
-                                const usage = roomPartyUsage(
-                                  rooms.map((room, ri) =>
-                                    ri === i
-                                      ? {
-                                          ...room,
-                                          childAges: room.childAges.filter(
-                                            (_, ci) => ci !== j,
-                                          ),
-                                        }
-                                      : room,
-                                  ),
-                                );
-                                return age >= 12
-                                  ? usage.adults < party.adults
-                                  : age < 2
-                                    ? usage.infants < party.infants
-                                    : usage.children < party.children;
-                              },
-                            )
-                          : undefined
-                      }
-                      onChange={(age) =>
-                        update({
-                          childAges: r.childAges.map((v, k) =>
-                            k === j ? age : v,
+                  {r.childAges.map((age, j) => {
+                    const selected =
+                      state.hotelChildAssignments?.[String(r.ordinal)]?.[j] ??
+                      '';
+                    const unavailable = new Set(
+                      Object.entries(state.hotelChildAssignments ?? {}).flatMap(
+                        ([ordinal, keys]) =>
+                          keys.filter(
+                            (_, index) =>
+                              Number(ordinal) !== r.ordinal || index !== j,
                           ),
-                        })
-                      }
-                    />
-                  ))}
+                      ),
+                    );
+                    return limited ? (
+                      <div key={j} className="space-y-2">
+                        <label className="text-sm">کودک اتاق {j + 1}</label>
+                        <SalesThemedSelect
+                          label={'کودک اتاق ' + r.ordinal + ' - ' + (j + 1)}
+                          value={selected}
+                          options={[
+                            { value: '', label: 'انتخاب کودک از مسافران' },
+                            ...childChoices
+                              .filter(
+                                (c) =>
+                                  !unavailable.has(c.key) &&
+                                  c.age !== null &&
+                                  c.age < 15,
+                              )
+                              .map((c) => ({ value: c.key, label: c.label })),
+                            ...(selected === 'adult' ||
+                            used.adults < party.adults
+                              ? [
+                                  {
+                                    value: 'adult',
+                                    label: 'کودک هتل با ردهٔ بزرگسال پرواز',
+                                  },
+                                ]
+                              : []),
+                          ]}
+                          onValueChange={(key) => {
+                            const next = selectHotelChild(
+                              state,
+                              salesTravelDate(state),
+                              r.ordinal,
+                              j,
+                              key,
+                            );
+                            patch({
+                              hotel: next.hotel,
+                              hotelChildAssignments: next.hotelChildAssignments,
+                            });
+                          }}
+                        />
+                        {selected === 'adult' && (
+                          <PassengerAgeField
+                            label={'سن کودک هتل ' + (j + 1)}
+                            value={age}
+                            allowedAges={[12, 13, 14]}
+                            onChange={(value) =>
+                              update({
+                                childAges: r.childAges.map((a, index) =>
+                                  index === j ? value : a,
+                                ),
+                              })
+                            }
+                          />
+                        )}
+                        {!childChoices.some((c) => c.age !== null) &&
+                          selected !== 'adult' && (
+                            <p className="text-xs text-muted-foreground">
+                              ابتدا سن کودک را در تعداد مسافران انتخاب کنید.
+                            </p>
+                          )}
+                      </div>
+                    ) : (
+                      <PassengerAgeField
+                        key={j}
+                        label={'سن کودک ' + (j + 1)}
+                        value={age}
+                        includeInfants
+                        onChange={(value) =>
+                          update({
+                            childAges: r.childAges.map((a, index) =>
+                              index === j ? value : a,
+                            ),
+                          })
+                        }
+                      />
+                    );
+                  })}
                 </div>
               );
             })}

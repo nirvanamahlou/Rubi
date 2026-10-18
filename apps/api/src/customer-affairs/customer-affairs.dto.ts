@@ -132,6 +132,15 @@ export class TicketReferenceDto {
   @IsOptional() @IsString() @MaxLength(240) label?: string;
 }
 
+export class WorkbenchRequestDto {
+  @IsString() @Length(3, 200) subject!: string;
+  @IsString() @Length(3, 2000) description!: string;
+  @IsIn(['NORMAL', 'HIGH', 'URGENT']) priority!: 'NORMAL' | 'HIGH' | 'URGENT';
+  @IsUUID() organizationUnitId!: string;
+  @IsUUID() executionOwnerUserId!: string;
+  @IsOptional() @IsString() @MaxLength(200) reference?: string;
+}
+
 export class TicketMutationDto {
   @IsString() @Length(3, 200) subject!: string;
   @IsString() @Length(3, 2000) description!: string;
