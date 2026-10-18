@@ -527,3 +527,15 @@ Owner explicitly approves this rule: floating flights are purchased against the 
 ## PACKAGE-SALE-FLOW-1018 — 2026-10-18
 
 Owner requests per-room base purchase rates, package-only sale adjustments, exact composition sale defaults, salesperson discount and automatic single/double banner handoff; develop merge authorized. Preserve legacy/imported data and maker/checker. New package publication uses exact room/composition/board/date identity rather than a cheapest-room substitution. Missing nights or conflicting age-band tariffs do not invent a sale price. Purchase rates stay immutable. Sales consumes only sale amounts through Package Pricing's branch-scoped public projection; approved publication validation may authorize a hotel alternative outside the original Tour definition while all flight identity/capacity/service guards remain. Banner data is derived from the same selected immutable publication, grouped by hotel/room/board; only one/two-adult, no-child combinations appear and missing tariffs remain blank. Sale-only frame v2 supports missing single/double alternatives, preserving strict legacy v1 payloads. Currency arithmetic uses decimal strings/BigInt/Prisma Decimal; no cross-currency sum.
+
+## CALL-CENTER-1018 — explicit navigation extension (2026-10-18)
+
+The owner's current request adds Call Center as the last Sales/Customer Relations
+sidebar destination, superseding the original fixed seventeen-item baseline for
+this frontend slice. Route /customer-affairs/call-center remains inside Customer
+Affairs access and data ownership. PC-C is delegated only this frontend task;
+existing module ownership, IAM grants and provider contracts do not change.
+Displayed data and mutations are explicitly synthetic and memory-only. Provider
+integration, durable storage and global realtime delivery require a later backend
+unit. Unknown response/answer metrics are never fabricated from telephone/time/
+direction/recording data.

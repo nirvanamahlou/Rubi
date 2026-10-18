@@ -24,6 +24,10 @@ export const englishNavigation: Record<
   NavigationHref,
   { description: string; title: string }
 > = {
+  '/customer-affairs/call-center': {
+    title: 'Call center',
+    description: 'Calls and traveler follow-ups',
+  },
   '/workbench': { title: 'My workspace', description: 'My tasks and files' },
   '/dashboard': { title: 'Dashboard', description: 'Performance overview' },
   '/customers': {

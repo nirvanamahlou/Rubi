@@ -253,18 +253,24 @@ function Navigation({
     );
   }
   function renderGroupEntries(group: (typeof groupedNavigationItems)[number]) {
-    const entries = group.items.flatMap((item) => [
-      renderItem(item),
-      ...(group.id === 'sales' && item.href === '/sales'
-        ? salesSubsections
-            .slice(0, -1)
-            .map((section) => renderItem({ ...section, secondary: true }))
-        : []),
-    ]);
+    const entries = group.items
+      .filter((item) => item.href !== '/customer-affairs/call-center')
+      .flatMap((item) => [
+        renderItem(item),
+        ...(group.id === 'sales' && item.href === '/sales'
+          ? salesSubsections
+              .slice(0, -1)
+              .map((section) => renderItem({ ...section, secondary: true }))
+          : []),
+      ]);
     if (group.id === 'sales') {
       const finalSection = salesSubsections.at(-1);
       if (finalSection)
         entries.push(renderItem({ ...finalSection, secondary: true }));
+      const callCenter = group.items.find(
+        (item) => item.href === '/customer-affairs/call-center',
+      );
+      if (callCenter) entries.push(renderItem(callCenter));
     }
     return entries;
   }
