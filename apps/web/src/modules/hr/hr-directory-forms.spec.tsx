@@ -126,7 +126,8 @@ describe('cross-module form reference values', () => {
       />,
     );
     expect(html).toContain('value="canonical-user" selected=""');
-    expect(html).not.toContain('other-user');
+    expect(html).toContain('value="other-user" disabled=""');
+    expect(html).toContain('خارج از شعبه انتخاب‌شده');
   });
   it('keeps a document source exclusive and supports an employee before the first archive relation exists', () => {
     const values = {
