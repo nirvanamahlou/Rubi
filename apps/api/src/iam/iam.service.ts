@@ -40,6 +40,7 @@ import {
   HttpStatus,
   Inject,
   Injectable,
+  Optional,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -99,6 +100,7 @@ export class IamService implements IamStepUpPort {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(JwtService) private readonly jwt: JwtService,
     @Inject(MfaTotpService) private readonly mfaTotp: MfaTotpService,
+    @Optional()
     @Inject(HrUserUnitDirectory)
     private readonly units: HrUserUnitDirectory = new HrUserUnitDirectory(
       database,
