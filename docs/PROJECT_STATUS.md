@@ -1,3 +1,7 @@
+## USER-SAVE-BUTTON-1018 — PC-B
+
+User-details Save remains normal blue when idle, including after a successful save and refresh. Only pending submission or read-only authority disables the button; the shared loading prop exposes the actual busy state. Unchanged name/unit submissions are safely ignored before any request. Existing revision/unit/name payloads and account grants remain unchanged. Focused lifecycle tests cover idle, success/refresh, double clicks, error/retry, invalid names and read-only access. No API/schema/dependency/runtime changes; exact-head hosted CI gates authorized develop merge.
+
 ## 2026-10-18 — PASSENGER-PRICE-NAMES-1018 — PC-A
 
 International Sales passenger snapshots now use each saved row passport first/last name instead of potentially repeated CRM display titles. Domestic names, customer identity, person IDs and price keys remain unchanged.43 focused regressions pass, including three distinct passengers sharing one CRM title. No migration or live3100 update. Hosted exact-head checks gate authorized develop merge.
