@@ -1,3 +1,4 @@
+import { recordFinancialEvent } from '../accounting/financial-event.public';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { createHash } from 'node:crypto';
 import { paymentSource } from '../payments/payment-source';
@@ -277,6 +278,14 @@ export class FinancePayrollService {
               validate.text(input.paymentReference, 'شماره رسید', 160, true) ||
               null,
           },
+        });
+        if (action === 'PAY' && paidAmount && transferAt) await recordFinancialEvent(tx, {
+          source: 'OPERATIONAL', recordId: operationId, requestId: id,
+          kind: `${current.kind}_PAYMENT`, branchId: current.branchId, actorId: actor.userId,
+          occurredAt: transferAt, amount: paidAmount.toString(), currency: current.currencyCode,
+          settlementAccountId: accountId,
+          partyId: `${current.payrollEmployeeId ?? current.counterpartyOrganizationId ?? current.refundReceiptId ?? id}:${payingSupplierId ?? ''}`,
+          reference: validate.text(input.paymentReference, 'شماره رسید', 160, true) || null,
         });
       });
     } catch (error) {

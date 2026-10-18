@@ -1,3 +1,4 @@
+import { recordFinancialEvent } from '../finance/accounting/financial-event.public';
 import { salesHotelRoomSummary } from '@nora/contracts';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import {
@@ -1025,7 +1026,7 @@ export class SalesRepository {
       async (tx) => {
         const payment = await tx.salesContractPaymentEntry.findFirst({
           where: { id: event.paymentId, contractId: event.contractId },
-          include: { contract: { select: { branchId: true } } },
+          include: { contract: { select: { branchId: true, customerId: true } } },
         });
         if (!payment) return 'not-found';
         if (payment.financeConfirmedByRef) return 'replayed';
@@ -1102,6 +1103,14 @@ export class SalesRepository {
               },
             },
           });
+        await recordFinancialEvent(tx, {
+          source: 'SALES', recordId: payment.id, requestId: payment.contractId,
+          kind: 'CUSTOMER_RECEIPT', branchId: payment.contract.branchId,
+          actorId: event.reviewedByUserId ?? payment.createdByUserId,
+          occurredAt: new Date(event.confirmedAt), amount: payment.amount.toString(),
+          currency: payment.currencyCode, settlementAccountId: event.receiptAccountId,
+          partyId: payment.contract.customerId, reference: payment.paymentReference,
+        });
         return 'confirmed';
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },

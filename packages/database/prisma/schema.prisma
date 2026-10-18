@@ -30,6 +30,7 @@ enum AuditOutcome {
 }
 
 model User {
+  accountingSourceEvents FinanceAccountingEvent[] @relation("FinancialEventActor")
   purchaseFxSnapshots                              FinancePurchaseFxSnapshot[]
   accountingFxMade                                 AccountingFxSnapshot[]                    @relation("AccountingFxMaker")
   accountingFxApproved                             AccountingFxSnapshot[]                    @relation("AccountingFxApprover")
@@ -245,6 +246,7 @@ model RolePermission {
 }
 
 model Branch {
+  accountingEvents FinanceAccountingEvent[]
   purchaseFxSnapshots                 FinancePurchaseFxSnapshot[]
   accountingBooks                     AccountingBook[]
   financeOperationalRequests          FinanceOperationalRequest[]
@@ -4574,6 +4576,7 @@ enum FinanceSupplierPaymentStatus {
 }
 
 model FinanceSettlementAccount {
+  accountingEvents FinanceAccountingEvent[]
   financeOperationalPayments FinanceOperationalRevision[]
   id                         String                                 @id @default(uuid()) @db.Uuid
   branchId                   String                                 @db.Uuid
@@ -7106,6 +7109,7 @@ model AccountingDetail {
 }
 
 model AccountingJournal {
+  financialEvent FinanceAccountingEvent?
   id                    String                           @id @default(uuid()) @db.Uuid
   bookId                String                           @db.Uuid
   book                  AccountingBook                   @relation(fields: [bookId], references: [id], onDelete: Restrict)
@@ -7561,4 +7565,34 @@ model FinancePurchaseFxSnapshot {
 
   @@index([branchId, baselineAt])
   @@map("finance_purchase_fx_snapshots")
+}
+
+// Immutable confirmed financial sources. Journal association is assigned atomically.
+model FinanceAccountingEvent {
+  id String @id @default(uuid()) @db.Uuid
+  sourceKey String @unique @db.VarChar(200)
+  fingerprint String @db.VarChar(64)
+  source String @db.VarChar(24)
+  recordId String @db.Uuid
+  requestId String @db.Uuid
+  kind String @db.VarChar(48)
+  branchId String @db.Uuid
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  actorId String @db.Uuid
+  actor User @relation("FinancialEventActor", fields: [actorId], references: [id], onDelete: Restrict)
+  occurredAt DateTime @db.Timestamptz(3)
+  amount Decimal @db.Decimal(24,4)
+  currency String @db.VarChar(3)
+  settlementAccountId String? @db.Uuid
+  settlementAccount FinanceSettlementAccount? @relation(fields: [settlementAccountId], references: [id], onDelete: Restrict)
+  partyId String? @db.VarChar(160)
+  reference String? @db.VarChar(160)
+  journalId String? @unique @db.Uuid
+  journal AccountingJournal? @relation(fields: [journalId], references: [id], onDelete: Restrict)
+  lastError String? @db.VarChar(1000)
+  attemptedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([branchId, journalId, createdAt])
+  @@map("finance_accounting_events")
 }

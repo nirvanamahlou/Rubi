@@ -1,4 +1,5 @@
 'use client';
+import { AccountingFinancialEvents } from './accounting-financial-events';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
@@ -82,6 +83,7 @@ export function AccountingSourceWorkspace({
   };
   return (
     <section className="space-y-5">
+      <AccountingFinancialEvents book={book} run={run} busy={busy} />
       <h2 className="text-lg font-black">دریافت و پرداخت و سند مرتبط</h2>
       <div className="flex flex-wrap gap-3">
         <FormField label="از تاریخ">

@@ -1,3 +1,4 @@
+import { recordFinancialEvent } from '../accounting/financial-event.public';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { hotelPurchaseSavingsEvidence } from '@nora/contracts';
 import { paymentSource } from '../payments/payment-source';
@@ -348,6 +349,13 @@ export class FinanceDeliveryService {
           reason: command.reason?.trim() || '',
           actorUserId,
         },
+      });
+      if (paid && paidAmount && transferAt) await recordFinancialEvent(tx, {
+        source: 'RESERVATIONS', recordId: row.id, requestId: purchaseId, kind: 'RESERVATION_PAYMENT',
+        branchId: purchase.intake.branchId, actorId: actorUserId, occurredAt: transferAt,
+        amount: paidAmount.toString(), currency: purchase.currencyCode, settlementAccountId: account?.id ?? null,
+        partyId: `${purchase.supplierBrokerId ?? purchase.supplierOrganizationId ?? purchaseId}:${payingSupplierId ?? ''}`,
+        reference: row.paymentReference,
       });
       return {
         version: row.version,

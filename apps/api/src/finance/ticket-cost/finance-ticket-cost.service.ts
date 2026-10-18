@@ -1,3 +1,4 @@
+import { recordFinancialEvent } from '../accounting/financial-event.public';
 import { PurchaseFxService } from '../purchase-fx/purchase-fx.service';
 import { TicketPublicService } from '../../ticket-catalog/ticket-public.service';
 import { moneyUnits, moneyDecimal } from '@nora/contracts';
@@ -510,6 +511,12 @@ export class FinanceTicketCostService {
           reason: '',
           actorUserId: actor.userId,
         },
+      });
+      await recordFinancialEvent(tx, {
+        source: 'TICKET', recordId: row.id, requestId, kind: 'TICKET_PAYMENT',
+        branchId: request.branchId, actorId: actor.userId, occurredAt: transferAt,
+        amount: amount.toString(), currency: cost.currencyCode, settlementAccountId: account?.id ?? null,
+        partyId: `${requestId}:${payingSupplierId ?? ''}`, reference: row.paymentReference,
       });
       if (remaining.isZero())
         await this.procurement.markFinancePaid(

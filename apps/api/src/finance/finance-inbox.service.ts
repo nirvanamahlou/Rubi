@@ -1,3 +1,4 @@
+import { recordFinancialEvent } from './accounting/financial-event.public';
 import { PurchaseFxService } from './purchase-fx/purchase-fx.service';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { randomUUID } from 'node:crypto';
@@ -1104,6 +1105,13 @@ export class FinanceInboxService {
             reason,
             actorUserId: actor.userId,
           },
+        });
+        await recordFinancialEvent(tx, {
+          source: 'INVOICE', recordId: row.id, requestId: sourceId, kind: 'SUPPLIER_PAYMENT',
+          branchId: source.branchId, actorId: actor.userId, occurredAt: transferAt,
+          amount: paidAmount.toString(), currency: source.currencyCode,
+          settlementAccountId: account?.id ?? null, partyId: `${sourceId}:${payingSupplierId ?? ''}`,
+          reference: row.paymentReference,
         });
         const applied = await this.procurement.applyFinanceResult(
           {
