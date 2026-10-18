@@ -1,3 +1,7 @@
+## MERGE-PR910-1018 — PC-A — IN_PROGRESS
+
+User explicitly authorizes merging PR910 to develop on2026-10-18, superseding its preview-only restriction. Reuse clean PR head codex/pc-a-hotel-sales-package-preview-1017@d75bc832. Reserve only develop integration, conflict resolution preserving both source histories, existing task/status notes and bounded regressions if needed. Preserve the existing additive roomSaleOverrides migration unchanged; no new migration/dependency lock or operational database/runtime change. Current develop partner360 migration and IAM work remain intact. All exact-final-head CI gates must pass before merge; no server or3100 rollout is authorized by this request.
+
 ## PARTNER-360-IMPORT-1017 — PC-B — IN_PROGRESS
 
 2026-10-17 continuation: human explicitly authorizes merge of PR912 and connection coordination. Reserve the stale SSR partner-form expectation leaf test: supplier geography/contact controls must now be present, as requested. Preserve all gates; synchronize latest develop and merge only after final-head CI succeeds. PC-A is not an accessible local Codex thread; request the Finance public producer handoff on the repository PR instead of editing another owner's active source without coordination.
