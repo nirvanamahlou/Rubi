@@ -20,13 +20,40 @@ describe('login background', () => {
       'utf8',
     );
     expect(source).toContain('${styles.page}');
-    expect(styles).toContain(
-      'linear-gradient(to right, #123f8c 0 50%, #fff 50% 100%)',
+    expect(styles.replace(/\s+/g, ' ')).toContain(
+      'to right, #123f8c 0 var(--login-split), #fff var(--login-split) 100%',
     );
     expect(styles).not.toContain('[dir=');
     expect(styles).not.toContain('animation');
     expect(source).not.toContain('LoginBackgroundStory');
     expect(source).not.toContain('bg-sky-100');
+  });
+
+  it('aligns the background to the unchanged desktop card divider in either direction', () => {
+    const styles = fs.readFileSync(
+      path.resolve(__dirname, 'page.module.css'),
+      'utf8',
+    );
+    expect(source).toContain('lg:grid-cols-[1.1fr_1fr]');
+    expect(source).toContain('max-w-5xl');
+    expect(source).toContain('px-4');
+    expect(styles).toContain('@media (min-width: 64rem)');
+    expect(styles).toContain('calc(100% - 2rem - 2px)');
+    expect(styles).toContain('calc(64rem - 2px)');
+    expect(styles).toContain('--login-split: 50%');
+    expect(styles).toContain('calc(50% - var(--login-card-inner-width) / 42)');
+    expect(styles).toContain('.page:dir(ltr)');
+    expect(styles).toContain('calc(50% + var(--login-card-inner-width) / 42)');
+    for (const width of [1024, 1100, 1280, 1440, 1920]) {
+      const cardWidth = Math.min(width - 32, 1024);
+      const inner = cardWidth - 2;
+      const cardLeft = (width - cardWidth) / 2 + 1;
+      expect(width / 2 - inner / 42).toBeCloseTo(cardLeft + inner / 2.1, 8);
+      expect(width / 2 + inner / 42).toBeCloseTo(
+        cardLeft + (inner * 1.1) / 2.1,
+        8,
+      );
+    }
   });
 
   it('restores the prior surface card, blue brand panel and standard form styling', () => {

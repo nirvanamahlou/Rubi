@@ -1,3 +1,7 @@
+## LOGIN-DIVIDER-ALIGN-1018 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-login-divider-align-1018 from origin/develop@f29fbe34. User continues the login correction and explicitly requests fixing the server: align the outer background color seam to the actual1.1:1 desktop card divider, retaining card/form dimensions and physical left-blue/right-white colors. Reserve only login page CSS/layout regression and own docs. Preserve mobile50/50 fallback and RTL/LTR behavior. No authentication, schema/migration/dependency or business-data changes. Full exact-head CI gates develop merge; backed-up rollout of pinned merged develop retains server-only encrypted backups, private configuration and all volumes. Previous login source reservation is merged/released.
+
 ## LOGIN-SPLIT-BACKGROUND-1018 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-login-split-background-1018 from origin/develop@1e27e225. User clarifies physical left page background solid blue, physical right white, restoring the login card/form styling before8e70e5d2; explicitly authorizes develop merge and backed-up server rollout. Reserve login page/form presentation, isolated page CSS and focused layout regressions plus own status entries. Preserve authentication, error handling, logos, locale switching and password visibility. No shared switcher change, schema/migration/dependency or operational business writes. Full exact-head CI gates merge; deploy pinned merged develop after encrypted server-only backup, retaining private configuration and all data volumes.
