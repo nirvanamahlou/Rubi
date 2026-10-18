@@ -37,4 +37,3 @@ sidebar branding, runtime and other worktrees remain intact.
 ## Verification
 
 Validation: 23 focused tests pass; scoped ESLint, Web TypeScript, Prettier and production Web build pass (65 generated pages). Production-browser QA with synthetic intercepted IAM/API responses verifies final sidebar position, incoming popup, repeat-call save, new-contact save, empty search/reset, source filter, notes, pagination and desktop/mobile/dark rendering. Mobile document width equals viewport390px. Screenshots inspected; no live backend integration asserted. No Migration. Scoped source locks released with review candidate; other PCs can fetch the branch and review before any integration.
-
