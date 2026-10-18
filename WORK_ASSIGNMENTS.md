@@ -1,4 +1,4 @@
-## INTEGRATIONS-NAVIGATION-1018 — PC-D — IN_PROGRESS
+## INTEGRATIONS-NAVIGATION-1018 — PC-D — LOCAL_COMPLETE
 
 COMPUTER_ID=PC-D. User delegates simplifying the Integrations section navigation while retaining every existing capability and explaining actual connection readiness. Branch codex/pc-d-integrations-navigation-1018 starts from origin/PC-D-Integration and fast-forwards the already delivered PR909 candidate as the deployed source prerequisite. Reserve only Integrations navigation metadata/component/styles/tests, workspace consumer and connection-readiness copy, bounded English translations, and own task/status documentation. No IAM, API contracts, schema, migration, dependency or other-module changes. Preserve existing adapters and permission/branch/CAS guards. Local Web-only overlay on the existing Rubi image is authorized by this ongoing local preview workflow; preserve API, data and other containers. No new GitHub publication or merge is authorized.
 

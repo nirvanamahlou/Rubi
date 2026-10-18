@@ -76,3 +76,11 @@ startup health deadline and automatically restored the old image. The second
 attempt uses a local Compose override: same HTTP health test, 30s request timeout
 and180s startup grace, with a600s deployment wait. This preserves health gating
 under cold development compilation; no application/security permission changes.
+
+
+The second activation completed successfully. Web is healthy on image
+`rubi-integrations-local:1018-navigation` and the existing API remains healthy
+on `1017-access-v2`. The local start.ps1 now references the new image and health
+override. Windows free memory was 519MB of 8113MB at final verification; no
+Ghestiroo container was stopped. Browser login and the new navigation were
+verified again after successful activation.

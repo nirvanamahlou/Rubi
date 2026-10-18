@@ -1,4 +1,4 @@
-## INTEGRATIONS-NAVIGATION-1018 — PC-D — LOCAL_VALIDATED
+## INTEGRATIONS-NAVIGATION-1018 — PC-D — LOCAL_COMPLETE
 
 Replace the nine equal-level section links with four plain-language navigation
 areas and contextual secondary links; all nine sections and their drill-downs
@@ -7,9 +7,9 @@ saved setup metadata from actual connectivity. Existing API/IAM/branch controls,
 adapters and registry data are unchanged.24 Integrations tests, focused lint,
 formatting and the62-route Web production build including TypeScript passed.
 Interactive desktop/mobile navigation and the existing registration dialog were
-verified without writes. Local Web-only image1018-navigation is built; cold dev
-startup health is being stabilized with the same HTTP test and longer startup
-grace. Global i18n sync reports pre-existing unrelated generated-catalogue drift;
+verified without writes. Local Web-only image1018-navigation is healthy; the
+existing API remains healthy on1017-access-v2. The launcher includes the new
+image and local startup health override. No other Docker project was stopped. Global i18n sync reports pre-existing unrelated generated-catalogue drift;
 no API/public catalogue changes included. No new GitHub publication authorized.
 See [navigation and connection readiness](tasks/INTEGRATIONS-NAVIGATION-1018.md).
 
