@@ -85,6 +85,9 @@ export function SalesTourPicker({
         withSalesHotelDates(state, {
           ...state,
           tour,
+          packageSaleQuote: undefined,
+          packageSaleAvailable: undefined,
+          publishedPackageHotelIds: undefined,
           originId: tour.package.originId,
           destinationId: tour.package.destinationId,
           originCountryId,

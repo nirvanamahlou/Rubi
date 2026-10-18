@@ -37,6 +37,23 @@ export function PublishedPackageSale({
               ? {
                   ...current,
                   packageSaleAvailable: r.data.length > 0,
+                  serviceKinds:
+                    r.data.length && !current.serviceKinds.includes('HOTEL')
+                      ? [...current.serviceKinds, 'HOTEL']
+                      : current.serviceKinds,
+                  ...(r.data[0]
+                    ? {
+                        hotel: {
+                          ...current.hotel,
+                          ...(current.hotel.checkInManual === false
+                            ? { checkIn: r.data[0].checkIn }
+                            : {}),
+                          ...(current.hotel.checkOutManual === false
+                            ? { checkOut: r.data[0].checkOut }
+                            : {}),
+                        },
+                      }
+                    : {}),
                   publishedPackageHotelIds: r.data.length
                     ? [...new Set(r.data.map((p) => p.hotelId))]
                     : undefined,

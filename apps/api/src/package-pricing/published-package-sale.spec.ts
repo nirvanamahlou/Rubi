@@ -169,3 +169,17 @@ describe('published package sale projection', () => {
     ).rejects.toThrow();
   });
 });
+
+it('requires a canonical quote for a published tour but retains legacy unpriced tours', async () => {
+  const { service, findMany } = fixture();
+  const request = {
+    services: [{ metadata: { tourDepartureId: 'tour' } }],
+  } as unknown as SalesContractCreateRequest;
+  await expect(
+    service.assertContractSale(request, actor, 'branch'),
+  ).rejects.toThrow();
+  findMany.mockResolvedValue([]);
+  await expect(
+    service.assertContractSale(request, actor, 'branch'),
+  ).resolves.toBeUndefined();
+});

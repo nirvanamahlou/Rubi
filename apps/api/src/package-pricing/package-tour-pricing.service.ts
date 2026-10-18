@@ -71,6 +71,24 @@ export class PackageTourPricingService {
     private readonly pricing: PackagePricingService,
   ) {}
 
+  async assertContractSale(
+    input: SalesContractCreateRequest,
+    actor: AuthenticatedActor,
+    branchId: string,
+  ) {
+    if (input.services.some((s) => s.metadata?.packagePublishedSale))
+      return this.validateContractSale(input, actor, branchId);
+    const tourId = input.services.find(
+      (s) => typeof s.metadata?.tourDepartureId === 'string',
+    )?.metadata?.tourDepartureId;
+    if (
+      typeof tourId === 'string' &&
+      (await this.saleCatalog(tourId, actor, branchId)).data.length
+    )
+      throw new BadRequestException('قیمت فروش معتبر نیست.');
+    return undefined;
+  }
+
   async validateContractSale(
     input: SalesContractCreateRequest,
     actor: AuthenticatedActor,

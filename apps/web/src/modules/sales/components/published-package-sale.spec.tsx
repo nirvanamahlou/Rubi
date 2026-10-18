@@ -78,8 +78,10 @@ beforeEach(() => {
     hotel: {
       ...emptySalesForm.hotel,
       hotelId: 'hotel',
-      checkIn: price.checkIn,
-      checkOut: price.checkOut,
+      checkIn: '2026-10-02',
+      checkOut: '2026-10-02',
+      checkInManual: false,
+      checkOutManual: false,
       rooms: [
         {
           ordinal: 1,
@@ -97,6 +99,8 @@ it('fills the exact published composition, keeps later negotiated amounts, and r
   await Promise.resolve();
   render();
   render();
+  expect(state.hotel.checkIn).toBe(price.checkIn);
+  expect(state.hotel.checkOut).toBe(price.checkOut);
   expect(state.packageSaleQuote?.items[0]?.publicationId).toBe('pub');
   expect(state.contractPrices).toEqual([
     { currencyCode: 'EUR', amount: '200.00' },
@@ -123,4 +127,17 @@ it('fills the exact published composition, keeps later negotiated amounts, and r
   render();
   expect(state.packageSaleQuote).toBeUndefined();
   expect(state.contractPrices?.[0]?.amount).toBe('180.00');
+});
+
+it('preserves explicitly manual hotel dates instead of silently quoting a different stay', async () => {
+  state = {
+    ...state,
+    hotel: { ...state.hotel, checkInManual: true, checkOutManual: true },
+  };
+  render();
+  await Promise.resolve();
+  render();
+  render();
+  expect(state.hotel.checkIn).toBe('2026-10-02');
+  expect(state.packageSaleQuote).toBeUndefined();
 });

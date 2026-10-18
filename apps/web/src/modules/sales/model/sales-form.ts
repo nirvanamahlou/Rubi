@@ -950,17 +950,21 @@ export function withSalesHotelDates(
   next: SalesFormState,
 ): SalesFormState {
   const suggestion = (state: SalesFormState, field: 'checkIn' | 'checkOut') =>
-    salesHotelDate(
-      salesDirections(state, 'FLIGHT').includes(
-        field === 'checkIn' ? 'OUTBOUND' : 'RETURN',
-      )
-        ? salesFlightSelection(
-            state,
+    state.tour && state.packageSaleAvailable
+      ? field === 'checkIn'
+        ? state.tour.startsOn
+        : state.tour.endsOn
+      : salesHotelDate(
+          salesDirections(state, 'FLIGHT').includes(
             field === 'checkIn' ? 'OUTBOUND' : 'RETURN',
-          )?.departureAt
-        : undefined,
-      field === 'checkIn' ? 1 : -1,
-    );
+          )
+            ? salesFlightSelection(
+                state,
+                field === 'checkIn' ? 'OUTBOUND' : 'RETURN',
+              )?.departureAt
+            : undefined,
+          field === 'checkIn' ? 1 : -1,
+        );
   const hotel = { ...next.hotel };
   for (const field of ['checkIn', 'checkOut'] as const) {
     const manualKey = field === 'checkIn' ? 'checkInManual' : 'checkOutManual';

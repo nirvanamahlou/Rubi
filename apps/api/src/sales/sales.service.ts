@@ -1031,15 +1031,17 @@ export class SalesService {
     domainCall(() => validateSalesContract(input, true));
     const branchId = branch(actor, requestedBranch);
     let validatedPublishedHotelId: string | undefined;
-    if (input.services.some((s) => s.metadata?.packagePublishedSale)) {
-      if (!this.packageQuotes)
-        throw new BadRequestException('قیمت فروش معتبر نیست.');
-      validatedPublishedHotelId = await this.packageQuotes.validateContractSale(
+    if (
+      this.packageQuotes &&
+      input.services.some((s) => s.metadata?.tourDepartureId)
+    ) {
+      validatedPublishedHotelId = await this.packageQuotes.assertContractSale(
         input,
         actor,
         branchId,
       );
-    }
+    } else if (input.services.some((s) => s.metadata?.packagePublishedSale))
+      throw new BadRequestException('قیمت فروش معتبر نیست.');
     await this.assertTour(input, branchId, validatedPublishedHotelId);
     await this.assertHotelRoomCapacity(input, branchId);
     const customer = await this.customers.resolveSnapshot(

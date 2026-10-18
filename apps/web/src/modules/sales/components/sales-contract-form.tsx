@@ -782,11 +782,19 @@ export function SalesContractForm() {
               (age) => age !== null,
             ))) &&
         (!state.serviceKinds.includes('FLIGHT') ||
-          (passengerCounts.seated > 0 && flightDatesReady)) &&
+          (passengerCounts.seated > 0 && (state.tour || flightDatesReady))) &&
         (passengerCounts.infants === 0 || passengerCounts.adults > 0),
       );
     if (step === 1) {
-      if (activeDetail === 'TOUR') return false;
+      if (activeDetail === 'TOUR')
+        return Boolean(
+          state.tour &&
+          state.tour.startsOn >= salesFlightToday() &&
+          salesFlightsValid(state) &&
+          (!state.serviceKinds.includes('HOTEL') ||
+            (salesHotelValid(state) && !hotelCapacityError)) &&
+          (!state.packageSaleAvailable || state.packageSaleQuote),
+        );
       if (activeDetail === 'FLIGHT')
         return (
           flightDatesReady &&
@@ -1240,7 +1248,7 @@ export function SalesContractForm() {
             rates={hotelRoomRates}
           />
         )}
-        {step === 0 && state.serviceKinds.includes('FLIGHT') ? (
+        {step === 0 && !state.tour && state.serviceKinds.includes('FLIGHT') ? (
           <section
             aria-label="انتخاب تاریخ بلیط رفت و برگشت"
             className="mt-5 border-t border-border pt-4"
@@ -1313,6 +1321,15 @@ export function SalesContractForm() {
                   حذف تور
                 </Button>
               </div>
+            )}
+            {activeDetail === 'TOUR' && state.tour && (
+              <ServiceParties
+                state={state}
+                patch={patchState}
+                hotels={selectableHotels}
+                roomTypes={selectableHotelRoomTypes}
+                rates={hotelRoomRates}
+              />
             )}
             {activeDetail === 'TOUR' && (
               <SalesTourPicker
@@ -1572,6 +1589,7 @@ export function SalesContractForm() {
               </section>
             ) : null}
             {activeDetail === 'HOTEL' ||
+            (activeDetail === 'TOUR' && state.serviceKinds.includes('HOTEL')) ||
             (activeDetail === 'FLIGHT' &&
               state.serviceKinds.includes('HOTEL')) ? (
               <section className="grid gap-4 rounded-xl border p-4">
