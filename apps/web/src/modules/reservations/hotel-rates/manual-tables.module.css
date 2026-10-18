@@ -336,3 +336,95 @@
 .panel table.priceTable td {
   padding: 4px 7px;
 }
+
+.roomPairs {
+  display: grid;
+  gap: 12px;
+}
+.roomPair {
+  display: grid;
+  grid-template-columns: minmax(0, 2.4fr) minmax(320px, 1fr);
+  align-items: start;
+  gap: 10px;
+  min-width: 0;
+}
+.panel .roomCoefficients {
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.roomCoefficients h4 {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--muted) 30%, var(--surface));
+}
+.panel table.roomCoefficientTable {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  font-size: 12px;
+}
+.panel table.roomCoefficientTable th,
+.panel table.roomCoefficientTable td {
+  min-width: 0;
+  padding: 5px 7px;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.panel table.roomCoefficientTable th:nth-child(2) {
+  width: 76px;
+}
+.panel table.roomCoefficientTable th:nth-child(3) {
+  width: 64px;
+}
+.roomCoefficientTable input {
+  width: 100%;
+  min-width: 0;
+  min-height: 30px;
+  padding: 4px 6px;
+  direction: ltr;
+  font-variant-numeric: tabular-nums;
+}
+.roomCoefficientTable button {
+  min-height: 30px;
+  padding: 4px 6px;
+  font-size: 11px;
+}
+.panel .compositionDetails {
+  margin-bottom: 0;
+  margin-top: 4px;
+  font-size: 11px;
+}
+.panel .compositionDetails summary {
+  padding: 3px 0;
+  cursor: pointer;
+  color: var(--primary);
+}
+.compositionDetails label {
+  display: grid;
+  grid-template-columns: 1fr minmax(60px, 85px);
+  align-items: center;
+  gap: 4px;
+  margin: 6px 0;
+}
+.compositionDetails .childRange {
+  grid-template-columns: auto minmax(60px, 85px);
+  gap: 4px;
+  font-size: 11px;
+}
+.roomPair table.priceTable th:first-child,
+.roomPair table.priceTable td:first-child {
+  width: auto;
+  min-width: 0;
+}
+@media (max-width: 1100px) {
+  .roomPair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
