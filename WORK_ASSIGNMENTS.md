@@ -1,3 +1,7 @@
+## LOGIN-SPLIT-BACKGROUND-1018 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-login-split-background-1018 from origin/develop@1e27e225. User clarifies physical left page background solid blue, physical right white, restoring the login card/form styling before8e70e5d2; explicitly authorizes develop merge and backed-up server rollout. Reserve login page/form presentation, isolated page CSS and focused layout regressions plus own status entries. Preserve authentication, error handling, logos, locale switching and password visibility. No shared switcher change, schema/migration/dependency or operational business writes. Full exact-head CI gates merge; deploy pinned merged develop after encrypted server-only backup, retaining private configuration and all data volumes.
+
 ## MERGE-PR910-1018 — PC-A — IN_PROGRESS
 
 User explicitly authorizes merging PR910 to develop on2026-10-18, superseding its preview-only restriction. Reuse clean PR head codex/pc-a-hotel-sales-package-preview-1017@d75bc832. Reserve only develop integration, conflict resolution preserving both source histories, existing task/status notes and bounded regressions if needed. Preserve the existing additive roomSaleOverrides migration unchanged; no new migration/dependency lock or operational database/runtime change. Current develop partner360 migration and IAM work remain intact. All exact-final-head CI gates must pass before merge; no server or3100 rollout is authorized by this request.

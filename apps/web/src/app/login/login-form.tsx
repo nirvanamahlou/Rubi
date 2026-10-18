@@ -59,12 +59,7 @@ export function LoginForm() {
   }
   return (
     <form className="mt-8 grid gap-5" method="post" onSubmit={submit}>
-      <FormField
-        id="username"
-        label="نام کاربری"
-        labelClassName="text-white"
-        required
-      >
+      <FormField id="username" label="نام کاربری" required>
         <Input
           autoComplete="username"
           dir="ltr"
@@ -75,12 +70,7 @@ export function LoginForm() {
           required
         />
       </FormField>
-      <FormField
-        id="password"
-        label="رمز عبور"
-        labelClassName="text-white"
-        required
-      >
+      <FormField id="password" label="رمز عبور" required>
         <div className="relative">
           <Input
             autoComplete="current-password"
@@ -94,7 +84,7 @@ export function LoginForm() {
           <button
             aria-label={showPassword ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور'}
             aria-pressed={showPassword}
-            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-blue-700 transition hover:text-blue-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-muted-foreground transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
             onClick={() => setShowPassword((visible) => !visible)}
             type="button"
           >
@@ -115,12 +105,7 @@ export function LoginForm() {
           {error}
         </p>
       ) : null}
-      <Button
-        className="w-full bg-white text-blue-950 hover:bg-blue-50"
-        loading={loading}
-        size="lg"
-        type="submit"
-      >
+      <Button className="w-full" loading={loading} size="lg" type="submit">
         ورود امن
       </Button>
     </form>
