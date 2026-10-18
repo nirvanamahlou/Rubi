@@ -95,7 +95,14 @@ export function reservationFormData(
       id,
       name: text(person?.displayNameSnapshot),
       sex: '-',
-      hotelChildAgeBand: undefined,
+      hotelChildAgeBand:
+        age === 'CHILD'
+          ? person?.childAgeBand === 'AGE_2_6'
+            ? 'CHD_2_TO_6'
+            : person?.childAgeBand === 'AGE_6_12'
+              ? 'CHD_6_TO_12'
+              : undefined
+          : undefined,
       age:
         !person && !workflow.ageOverrides[id]
           ? '-'

@@ -1,3 +1,4 @@
+import { reservationChildAgeBand } from './sales-reservation-age';
 import {
   Module,
   Injectable,
@@ -34,6 +35,34 @@ export class SalesOperationalAmendmentService {
     });
     if (!row) throw new ForbiddenException('قرارداد در دسترس نیست.');
     return row.version;
+  }
+  async hotelChildAgeBandsFor(
+    tx: Pick<Prisma.TransactionClient, 'salesContract'>,
+    id: string,
+    branchIds: readonly string[],
+    on: string | undefined,
+    passengerIds: readonly string[],
+  ) {
+    const row = await tx.salesContract.findFirst({
+      where: { id, branchId: { in: [...branchIds] } },
+      select: {
+        departureDate: true,
+        passengers: {
+          where: { customerId: { in: [...passengerIds] } },
+          select: { customerId: true, birthDate: true },
+        },
+      },
+    });
+    if (!row) throw new ForbiddenException('قرارداد در دسترس نیست.');
+    return Object.fromEntries(
+      row.passengers.map((p) => [
+        p.customerId,
+        reservationChildAgeBand(
+          p.birthDate.toISOString().slice(0, 10),
+          on ?? row.departureDate.toISOString().slice(0, 10),
+        ),
+      ]),
+    );
   }
   async apply(
     tx: Prisma.TransactionClient,

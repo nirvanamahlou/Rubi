@@ -80,7 +80,11 @@ export function defaultVoucherSettings(
       selected: true,
       roomType: text.roomType,
       age: p.age === 'CHD' ? 'CHD' : p.age === 'INF' ? 'INF' : 'ADL',
-      hotelChildAgeBand: '',
+      hotelChildAgeBand:
+        p.age === 'CHD'
+          ? ((p.hotelChildAgeBand as VoucherSettingsV1['passengers'][number]['hotelChildAgeBand']) ??
+            '')
+          : '',
     })),
   };
   if (!saved) return defaults;
@@ -122,10 +126,21 @@ export function defaultVoucherSettings(
         (key) => [key, saved.flags?.[key] ?? defaults.flags[key]],
       ),
     ) as VoucherSettingsV1['flags'],
-    passengers: defaults.passengers.map((passenger) => ({
-      ...passenger,
-      ...saved.passengers?.find((item) => item.id === passenger.id),
-    })),
+    passengers: defaults.passengers.map((passenger) => {
+      const previous = saved.passengers?.find(
+        (item) => item.id === passenger.id,
+      );
+      const merged = { ...passenger, ...previous };
+      return {
+        ...merged,
+        hotelChildAgeBand:
+          merged.age === 'CHD'
+            ? merged.hotelChildAgeBand ||
+              (passenger.age === 'CHD' ? passenger.hotelChildAgeBand : '') ||
+              ''
+            : '',
+      };
+    }),
   };
 }
 export type VoucherTextFieldKey =
