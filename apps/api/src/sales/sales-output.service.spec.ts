@@ -184,3 +184,30 @@ describe('Sales saved output authorization', () => {
     expect(t.customers.maskedDetail).toHaveBeenCalledWith('buyer', actor);
   });
 });
+
+it('uses passport Latin names for contract output without mutating the saved contract', async () => {
+  const t = setup();
+  t.contract.passengersDetail = [
+    {
+      id: 'p',
+      customerId: 'passenger',
+      displayNameSnapshot: 'Wrong display name',
+    },
+  ] as never;
+  t.customers.maskedDetail.mockImplementation(
+    async (id: string) =>
+      ({
+        data:
+          id === 'passenger'
+            ? { passportFirstName: 'PASSPORT', passportLastName: 'SURNAME' }
+            : { kind: 'person', addresses: [] },
+      }) as never,
+  );
+  const result = await t.service.prepare('contract', actor);
+  expect(result.data.contract.passengersDetail[0]?.displayNameSnapshot).toBe(
+    'PASSPORT SURNAME',
+  );
+  expect(t.contract.passengersDetail[0]?.displayNameSnapshot).toBe(
+    'Wrong display name',
+  );
+});
