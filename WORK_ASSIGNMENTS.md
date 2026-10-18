@@ -8125,3 +8125,9 @@ COMPUTER_ID=PC-A; codex/pc-a-reservation-inbox-refresh-1018 from origin/develop.
 COMPUTER_ID=PC-A; codex/pc-a-passenger-hotel-foreign-share-1018 from origin/develop80566b37. User authorizes hotel-only foreign passenger shares, no flight-plus-hotel duplicate, tests and develop merge. Reserve Sales passenger pricing UI/form totals/payload and focused tests; bounded labels/catalogues and own docs. Use existing precise roomPriceShares in stable adult hotel-passenger order; hotel totals counted once, combined hotel/flight entry stores only rial flight amounts, stale foreign flight draft excluded. Preserve legacy persisted metadata and standalone flight currencies. No schema/migration/dependency/API or runtime changes; prior overlapping source scopes merged/released.
 
 PASSENGER-HOTEL-FOREIGN-SHARE-1018 validation:28 focused Web/model/print tests pass, including serialized flight metadata without room foreign duplication and shared validator acceptance. Existing print already uses room-only foreign shares and remains unchanged. Scoped source locks RELEASED with candidate; final type/build/CI gates authorized develop merge. No live data or runtime changes.
+
+## WORKBENCH-PASSWORD-MINIMUM-1018 — PC-B — READY_FOR_REVIEW
+
+Owner-requested self-service password exception, 4–200 characters including numeric-only passwords. Scope: change-password DTO/service, Workbench validation/help and focused tests. IAM ownership exception is limited to this explicit request; no migration, dependency, reset/bootstrap policy or account-data changes. Branch: codex/pc-b-workbench-password-minimum-1018.
+
+Validation: 34 API password-policy/DTO tests and 6 Web consumer tests passed; scoped ESLint passed. Shared translation catalogue changes are limited to the two new help/error messages plus generated API catalogue. No migration or account mutation.

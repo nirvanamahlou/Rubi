@@ -527,3 +527,8 @@ Owner explicitly approves this rule: floating flights are purchased against the 
 ## PACKAGE-SALE-FLOW-1018 — 2026-10-18
 
 Owner requests per-room base purchase rates, package-only sale adjustments, exact composition sale defaults, salesperson discount and automatic single/double banner handoff; develop merge authorized. Preserve legacy/imported data and maker/checker. New package publication uses exact room/composition/board/date identity rather than a cheapest-room substitution. Missing nights or conflicting age-band tariffs do not invent a sale price. Purchase rates stay immutable. Sales consumes only sale amounts through Package Pricing's branch-scoped public projection; approved publication validation may authorize a hotel alternative outside the original Tour definition while all flight identity/capacity/service guards remain. Banner data is derived from the same selected immutable publication, grouped by hotel/room/board; only one/two-adult, no-child combinations appear and missing tariffs remain blank. Sale-only frame v2 supports missing single/double alternatives, preserving strict legacy v1 payloads. Currency arithmetic uses decimal strings/BigInt/Prisma Decimal; no cross-currency sum.
+
+
+## Owner-approved self-service password exception — 2026-10-18
+
+The owner extends the simple-password policy to authenticated self-service password changes: 4–200 characters, including numeric-only passwords, without mandatory character classes. This supersedes the earlier creation-only limitation for self-service changes only. Administrator reset and bootstrap policies remain unchanged. Current-password verification, session revocation, hashing and throttling remain intact. No existing credentials are rewritten.

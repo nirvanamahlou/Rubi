@@ -17357,5 +17357,7 @@
   "دریافت اطلاعات": "Refresh data",
   "اطلاعات موردنیاز فرم به‌روز شد.": "Form reference data refreshed.",
   "بخشی از اطلاعات دریافت نشد؛ برای تلاش مجدد، دریافت اطلاعات را بزنید.": "Some data could not be loaded. Select Refresh data to try again.",
-  "دریافت اطلاعات ناموفق بود؛ دوباره تلاش کنید.": "Data could not be refreshed. Please try again."
+  "دریافت اطلاعات ناموفق بود؛ دوباره تلاش کنید.": "Data could not be refreshed. Please try again.",
+  "رمز جدید باید ۴ تا ۲۰۰ نویسه باشد؛ رمز کاملاً عددی هم پذیرفته می‌شود.": "The new password must be 4–200 characters. Numeric-only passwords are accepted.",
+  "۴ تا ۲۰۰ نویسه؛ رمز کاملاً عددی هم پذیرفته می‌شود.": "4–200 characters; numeric-only passwords are accepted."
 }

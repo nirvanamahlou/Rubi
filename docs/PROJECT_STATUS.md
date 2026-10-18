@@ -6462,3 +6462,8 @@ Added دریافت اطلاعات to the Reservations inbox through the existing
 ## PASSENGER-HOTEL-FOREIGN-SHARE-1018 — PC-A
 
 For new hotel/flight contracts, the passenger foreign column displays the existing exact room-price share instead of a second editable flight amount. One adult receives the full room price; two adults receive half each, with precise residual allocation from the shared roomPriceShares helper. Stable selected hotel adult order matches contract print. Room amount is counted once; stale foreign flight drafts are excluded from both displayed totals and submitted flight metadata. Standalone flight currency support and already persisted contracts remain unchanged. No schema/migration/API/dependency/runtime changes.28 focused tests cover single/double room display, stale draft exclusion, submitted totals/metadata validation and printed hotel shares. Local quality/build and full exact-head CI gate user-authorized develop merge.
+
+
+## WORKBENCH-PASSWORD-MINIMUM-1018 — 2026-10-18
+
+Self-service password change now accepts 4–200 characters, including numeric-only values, at both DTO/service and Workbench form validation. Current-password verification and revocation remain intact. Owner exception documented in DECISIONS; no data migration or automatic password changes. 40 focused tests and scoped lint passed.
