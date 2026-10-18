@@ -30,3 +30,32 @@ describe('Passenger whole-package price entry', () => {
     expect(html).toContain('value=""');
   });
 });
+
+it('offers independent rial and optional foreign flight amounts for each passenger', () => {
+  const html = renderToStaticMarkup(
+    <PassengerPackagePrices
+      flight
+      state={{
+        ...emptySalesForm,
+        passengers: [
+          {
+            customerId: 'p',
+            displayName: 'PASSPORT NAME',
+            birthDate: '1990-01-01',
+          },
+        ],
+        passengerPrices: {
+          p: [
+            { amount: '100', currencyCode: 'IRR' },
+            { amount: '', currencyCode: 'USD' },
+          ],
+        },
+      }}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(html).toContain('قیمت پرواز هر مسافر');
+  expect(html).toContain('قیمت ریالی PASSPORT NAME');
+  expect(html).toContain('قیمت ارزی PASSPORT NAME');
+  expect(html).not.toContain('مبلغ معتبر با حداکثر');
+});

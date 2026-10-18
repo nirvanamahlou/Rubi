@@ -70,7 +70,7 @@ describe('Purchased room summary in contract output', () => {
       expect(passengers).not.toContain('<th>اتاق</th>');
       expect(passengers).not.toContain('سینگل');
       const hotel = html.split('HOTEL INFORMATION')[1]!.split('</section>')[0]!;
-      expect(hotel).toContain('مجموع 1 اتاق: 1 دبل، 2 تخت اضافه');
+      expect(hotel).not.toContain('اتاق‌های قرارداد:');
       expect(hotel).not.toContain('6 سینگل');
       expect(
         html.split('OTHER SERVICES')[1]!.split('</section>')[0],

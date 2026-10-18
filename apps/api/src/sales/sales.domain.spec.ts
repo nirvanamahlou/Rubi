@@ -797,3 +797,43 @@ describe('room agreed sale prices', () => {
     expect(() => validateSalesContract(priced('10', 'IRR'))).toThrow();
   });
 });
+
+it('verifies automatic flight-plus-room totals rather than trusting a submitted grand total', () => {
+  const input = structuredClone(draft),
+    id = input.passengers[0]!.customerId;
+  input.services[0]!.metadata = {
+    automaticFlightRoomTotalV1: true,
+    passengerFlightPricesV1: JSON.stringify({
+      [id]: [{ amount: '200.50', currencyCode: 'USD' }],
+    }),
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.priceComponents = [
+    { type: 'BASE', title: 'Total', amount: '201', currencyCode: 'USD' },
+  ];
+  expect(() => validateSalesContract(input)).toThrow(
+    'مبلغ کل قرارداد باید برابر',
+  );
+  input.services[0]!.metadata = { automaticFlightRoomTotalV1: true };
+  expect(() => validateSalesContract(input)).toThrow('قیمت پرواز هر مسافر');
+});
+
+it('rejects invalid agency commission snapshots at the server boundary', () => {
+  const input = structuredClone(draft);
+  input.services[0]!.metadata = {
+    agencyCommissionV1: JSON.stringify({ adult: '-1', child: '100' }),
+  };
+  expect(() => validateSalesContract(input)).toThrow(
+    'کمیسیون آژانس معتبر نیست.',
+  );
+});
+
+it('accepts fixed agency commission without altering the submitted financial components', () => {
+  const input = structuredClone(draft),
+    before = structuredClone(input.priceComponents);
+  input.services[0]!.metadata = {
+    agencyCommissionV1: JSON.stringify({ adult: '125000', child: '45000' }),
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  expect(input.priceComponents).toEqual(before);
+});
