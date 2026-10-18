@@ -32,6 +32,136 @@ const row = {
 };
 
 describe('MasterDataService', () => {
+  it('creates a broker with allowed data fields without requiring a hidden dossierVersion grant', async () => {
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      fieldExists: vi.fn().mockResolvedValue(false),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const scoped = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'ui.manual.v3',
+        'ui.allow.master-data.resource.brokers',
+        'ui.allow.field.master-data.brokers.name',
+      ],
+    } as AuthenticatedActor;
+    await expect(
+      new MasterDataService(repository).create(
+        'brokers',
+        { name: 'Synthetic broker', dossierVersion: '1' },
+        scoped,
+      ),
+    ).resolves.toBeDefined();
+    expect(repository.create).toHaveBeenCalledWith(
+      'brokers',
+      expect.objectContaining({ name: 'Synthetic broker', partnerDossier: {} }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it.each([
+    'name',
+    'dossierEmail',
+    'dossierMobile',
+    'dossierAddress',
+    'organizationId',
+    'leaderDrafts',
+  ])(
+    'still denies actual broker data %s without its field grant',
+    async (key) => {
+      const repository = { create: vi.fn() } as unknown as MasterDataRepository;
+      const scoped = {
+        ...actor,
+        permissions: [
+          ...actor.permissions,
+          'ui.manual.v3',
+          'ui.allow.master-data.resource.brokers',
+          ...(key === 'name'
+            ? []
+            : ['ui.allow.field.master-data.brokers.name']),
+        ],
+      } as AuthenticatedActor;
+      await expect(
+        new MasterDataService(repository).create(
+          'brokers',
+          { name: 'Synthetic broker', dossierVersion: '1', [key]: 'value' },
+          scoped,
+        ),
+      ).rejects.toMatchObject({
+        response: {
+          code: 'MASTER_DATA_FIELDS_RESTRICTED',
+          controlIds: [`field.master-data.brokers.${key}`],
+        },
+      });
+      expect(repository.create).not.toHaveBeenCalled();
+    },
+  );
+  it('stores a per-unit toman rate for USD without imposing the old USD self-rate rule', async () => {
+    const repository = {
+      update: vi.fn().mockResolvedValue({
+        ...row,
+        code: 'USD',
+        tomanPerUnit: '270000.1234567890',
+      }),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    await service.update(
+      'currencies',
+      row.id,
+      { tomanPerUnit: '270000.1234567890' },
+      1,
+      actor,
+    );
+    expect(repository.update).toHaveBeenCalledWith(
+      'currencies',
+      row.id,
+      { tomanPerUnit: '270000.1234567890' },
+      1,
+      actor.userId,
+      actor.branchIds[0],
+    );
+    await service.update('currencies', row.id, { tomanPerUnit: '' }, 1, actor);
+    expect(repository.update).toHaveBeenLastCalledWith(
+      'currencies',
+      row.id,
+      { tomanPerUnit: null },
+      1,
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it.each([
+    '0',
+    '-1',
+    'NaN',
+    'Infinity',
+    '1e5',
+    '100000000000000',
+    '1.12345678901',
+  ])('rejects invalid toman reference %s before persistence', async (rate) => {
+    const repository = { update: vi.fn() } as unknown as MasterDataRepository;
+    await expect(
+      new MasterDataService(repository).update(
+        'currencies',
+        row.id,
+        { tomanPerUnit: rate },
+        1,
+        actor,
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(repository.update).not.toHaveBeenCalled();
+  });
   it('checks unchecked manual fields on updates without requiring legacy deny tokens', async () => {
     const repository = {
       find: vi.fn().mockResolvedValue(row),

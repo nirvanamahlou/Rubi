@@ -61,6 +61,10 @@ export function brokerMutationValues(
     dossierVersion: '1',
   };
   if (record && !phoneTouched) delete result.primaryPhone;
+  if (!record)
+    for (const key of Object.keys(result))
+      if (!result[key]?.trim()) delete result[key];
+  if (!record && !leaders.length) return result;
   result.leaderDrafts = JSON.stringify({
     items: leaders.map((l) => ({
       ...(l.id ? { id: l.id, version: l.version } : {}),

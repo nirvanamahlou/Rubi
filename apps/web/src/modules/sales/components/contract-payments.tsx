@@ -22,7 +22,6 @@ import {
   DialogDescription,
   DialogTrigger,
 } from '@/components/ui/overlays';
-import { masterDataApi } from '@/modules/master-data/api/client';
 import { salesApi } from '../api/client';
 import { loadPaymentCurrencies } from '../api/payment-currencies';
 import {
@@ -229,8 +228,8 @@ export function ContractPayments({
       .catch(() => {
         if (active) setError('دریافت پرداخت‌ها ناموفق بود.');
       });
-    void masterDataApi
-      .list('banks', {
+    void salesApi
+      .listReferences('banks', {
         search: '',
         status: 'active',
         sortBy: 'name',

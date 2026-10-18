@@ -38,6 +38,45 @@ const record = {
   },
 } as unknown as MasterDataRecord;
 describe('broker form', () => {
+  it('accepts Caps Lock email text without changing its case in the payload', () => {
+    expect(
+      brokerMutationValues(
+        { name: 'Test', dossierEmail: 'Caps.LOCK@EXAMPLE.TEST' },
+        [],
+      ).dossierEmail,
+    ).toBe('Caps.LOCK@EXAMPLE.TEST');
+    const html = renderToStaticMarkup(
+      createElement(MasterDataBrokerForm, {
+        mode: 'create',
+        onOpenChange: () => undefined,
+        onPersist: async () => undefined,
+      }),
+    );
+    const input = html.match(
+      /<input[^>]*id="live-brokers-dossierEmail"[^>]*>/,
+    )?.[0];
+    expect(input).toContain('type="email"');
+    expect(input).toContain('dir="ltr"');
+    expect(input).not.toContain('pattern=');
+  });
+  it('omits blank new optional dossier fields but preserves explicit edit clears', () => {
+    const fresh = brokerMutationValues(brokerFormValues(), []);
+    for (const key of ['dossierMobile', 'dossierEmail', 'dossierAddress'])
+      expect(fresh).not.toHaveProperty(key);
+    expect(fresh.dossierVersion).toBe('1');
+    expect(fresh).not.toHaveProperty('leaderDrafts');
+    expect(fresh).not.toHaveProperty('englishName');
+    expect(fresh).not.toHaveProperty('boardText');
+    const edited = brokerMutationValues(brokerFormValues(record), [], record);
+    expect(edited.dossierMobile).toBe('');
+    expect(edited.dossierEmail).toBe('');
+    expect(
+      brokerMutationValues(
+        { ...brokerFormValues(), dossierEmail: 'qa@example.test' },
+        [],
+      ).dossierEmail,
+    ).toBe('qa@example.test');
+  });
   it('keeps legacy city and airport Board, without putting masked contacts in input values', () => {
     expect(brokerFormValues(record)).toMatchObject({
       cityIds: 'old-city',

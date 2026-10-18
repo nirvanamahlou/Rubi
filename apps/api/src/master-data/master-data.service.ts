@@ -1,6 +1,9 @@
 import type { DisplayLanguage } from '../common/i18n/language';
 import { randomUUID } from 'node:crypto';
-import { preparePartnerDossier } from './partner-dossier.policy';
+import {
+  preparePartnerDossier,
+  partnerDossierAccessValues,
+} from './partner-dossier.policy';
 import { brokerCityIds, brokerLeaderDrafts } from './broker-form.policy';
 import { columnFilterWhere } from './catalog-filters';
 import {
@@ -324,6 +327,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'symbol',
     'decimalDigits',
     'unitsPerUsd',
+    'tomanPerUnit',
     'displayPolicy',
   ],
   'exchange-rates': [
@@ -2610,6 +2614,18 @@ export class MasterDataService {
         data[field] = String(data[field]).trim();
       }
     }
+    if (resource === 'currencies' && Object.hasOwn(data, 'tomanPerUnit')) {
+      const rate =
+        data.tomanPerUnit === null ? '' : String(data.tomanPerUnit).trim();
+      if (!rate) data.tomanPerUnit = null;
+      else {
+        if (!/^\d{1,14}(\.\d{1,10})?$/.test(rate) || !/[1-9]/.test(rate))
+          throw new BadRequestException(
+            'نرخ تومان باید مثبت، حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار باشد.',
+          );
+        data.tomanPerUnit = rate;
+      }
+    }
     if (resource === 'currencies' && Object.hasOwn(data, 'unitsPerUsd')) {
       const rate =
         data.unitsPerUsd === null ? '' : String(data.unitsPerUsd).trim();
@@ -3725,7 +3741,7 @@ export class MasterDataService {
         ? Object.fromEntries(
             Object.entries(values).filter(([key]) => key !== 'transportStatus'),
           )
-        : values,
+        : partnerDossierAccessValues(resource, values),
       current,
     );
     if (denied.length)

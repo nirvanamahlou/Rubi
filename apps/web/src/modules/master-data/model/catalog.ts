@@ -399,10 +399,10 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
       { key: 'symbol', label: 'نماد نمایشی', type: 'text', placeholder: '﷼' },
       {
-        key: 'unitsPerUsd',
-        label: 'نرخ دستی هر ۱ دلار (واحد همین ارز)',
+        key: 'tomanPerUnit',
+        label: 'قیمت هر واحد ارز به تومان',
         type: 'number',
-        placeholder: 'مثال برای ریال: 2700000',
+        placeholder: 'مثال برای دلار: 270000',
       },
       {
         key: 'decimalDigits',

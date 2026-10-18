@@ -1,3 +1,11 @@
+## Manual per-unit toman reference — 2026-10-18
+
+MasterCurrency.tomanPerUnit is an independent nullable Decimal(24,10):1 unit of
+the row currency=N tomans. Positive finite decimal string; blank clears to NULL.
+The new form/table uses this value only. Legacy unitsPerUsd remains unchanged
+with its original meaning and is never automatically converted/backfilled.
+This reference does not alter purchase FX, settlements or ledger balances.
+
 ## Partner360 and manual USD reference rate — 2026-10-17
 
 MasterCurrency.unitsPerUsd is nullable Decimal(24,10), exposed as a decimal string
@@ -857,3 +865,20 @@ FinancePurchaseFxSnapshot stores one immutable Decimal(24,8) IRR-per-foreign-uni
 ## 2026-10-18 — Package composition sale snapshots
 
 PACKAGE-SALE-FLOW-1018 adds nullable PackagePricingTourDraft.selectedRoomKeys JSON. Existing drafts/publications keep legacy behavior until explicitly edited. Published roomCode is widened to TEXT and v2 codes encode exact room-type ID, adult count, sorted child age bands and board; legacy codes remain readable. Each publication freezes only selected composition rows and retains the real hotel-rate FK. Purchase bases and source occupancy history are unchanged. Sales stores the canonical sale-only publication references and per-currency price snapshot in existing service metadata; negotiated totals remain separate and a positive difference is a DISCOUNT component. Create and changed-room updates validate through the Package Pricing public producer. Unchanged saved quote/room selections on amendments retain their immutable reference, with discount amounts checked against the stored canonical baseline. No live migration or data rewrite is part of implementation.
+## Internal correspondence — 2026-10-18
+
+System Management owns `correspondence_letters` and `correspondence_deliveries`.
+Letters persist the exact editable letter content, stable issued number, ISO letter
+date, UTC timestamps, author User FK and optimistic version. Deliveries have real
+sender/recipient User FKs, status, read time and sender-scoped UUID retry keys.
+One delivery per letter/recipient is maintained; forwarding back to an existing
+recipient updates that inbox entry and marks it unread. System audit retains
+send/edit/forward/delete metadata without letter bodies. A participant-authorized,
+version-checked hard delete removes the letter and all deliveries by cascade.
+No existing documents, accounting, business records or user grants are migrated.
+Only active internal IAM account labels are exposed through its public directory.
+
+
+## MESSAGING-REPLIES-REACTIONS-1018 — 2026-10-18
+
+MessagingMessage has a nullable replyToMessageId; composite FK (replyToMessageId, conversationId) references (id, conversationId) on MessagingMessage, preventing cross-conversation replies at database level. Existing rows remain NULL; no backfill. MessagingMessageReaction is owned by Messaging with real message/user FKs, one row per (messageId,userId), one allowed emoji (👍 ❤️ 😂 😮 🙏), and UTC created/updated timestamps. Explicit set/remove is idempotent and can only affect the authenticated member’s own reaction. The compatible v1 response adds optional replyTo (240-character preview plus minimum sender identity) and grouped reaction counts/member IDs. The producer validates membership/branch before every command or read. Forwarding does not copy source replies or reactions. Migration20261018190000 is additive and must precede API rollout. No other module accesses reaction tables directly.

@@ -1,5 +1,5 @@
 import type { MasterDataRecord, SalesServiceInput } from '@nora/contracts';
-import { masterDataApi } from '@/modules/master-data/api/client';
+import { salesApi } from '../api/client';
 
 export interface SalesInsuranceSelection {
   id: string;
@@ -30,7 +30,7 @@ export function selectSalesInsurance(
   };
 }
 
-export async function loadSalesInsurancePlans(list = masterDataApi.list) {
+export async function loadSalesInsurancePlans(list = salesApi.listReferences) {
   const records: MasterDataRecord[] = [];
   for (let page = 1; ; page++) {
     const response = await list('insurance-plans', {

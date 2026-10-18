@@ -30,6 +30,9 @@ enum AuditOutcome {
 }
 
 model User {
+  internalLettersAuthored                          CorrespondenceLetter[]                    @relation("CorrespondenceAuthor")
+  internalLettersSent                              CorrespondenceDelivery[]                  @relation("CorrespondenceSender")
+  internalLettersReceived                          CorrespondenceDelivery[]                  @relation("CorrespondenceRecipient")
   purchaseFxSnapshots                              FinancePurchaseFxSnapshot[]
   accountingFxMade                                 AccountingFxSnapshot[]                    @relation("AccountingFxMaker")
   accountingFxApproved                             AccountingFxSnapshot[]                    @relation("AccountingFxApprover")
@@ -138,6 +141,7 @@ model User {
   messagingConversationsCreated                    MessagingConversation[]                   @relation("MessagingConversationCreator")
   messagingMemberships                             MessagingMember[]
   messagingMessagesSent                            MessagingMessage[]                        @relation("MessagingMessageSender")
+  messagingReactions                               MessagingMessageReaction[]
   workbenchFeedbackSubmitted                       WorkbenchFeedback[]                       @relation("WorkbenchFeedbackSubmitter")
   workbenchNotes                                   WorkbenchNote[]
   workbenchNoteFolders                             WorkbenchNoteFolder[]
@@ -604,18 +608,38 @@ model MessagingMessage {
   senderUserId           String                       @db.Uuid
   body                   String                       @db.VarChar(4000)
   forwardedFromMessageId String?                      @db.Uuid
+  replyToMessageId       String?                      @db.Uuid
   clientRequestId        String                       @db.VarChar(80)
   createdAt              DateTime                     @default(now()) @db.Timestamptz(3)
   conversation           MessagingConversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender                 User                         @relation("MessagingMessageSender", fields: [senderUserId], references: [id], onDelete: Restrict)
   forwardedFrom          MessagingMessage?            @relation("MessagingMessageForward", fields: [forwardedFromMessageId], references: [id], onDelete: SetNull)
   forwards               MessagingMessage[]           @relation("MessagingMessageForward")
+  replyTo                MessagingMessage?            @relation("MessagingMessageReply", fields: [replyToMessageId, conversationId], references: [id, conversationId], onDelete: NoAction, onUpdate: NoAction)
+  replies                MessagingMessage[]           @relation("MessagingMessageReply")
+  reactions              MessagingMessageReaction[]
   attachments            MessagingMessageAttachment[]
 
   @@unique([conversationId, senderUserId, clientRequestId])
+  @@unique([id, conversationId])
   @@index([conversationId, createdAt, id])
   @@index([forwardedFromMessageId])
+  @@index([replyToMessageId, conversationId])
   @@map("messaging_messages")
+}
+
+model MessagingMessageReaction {
+  messageId String           @db.Uuid
+  userId    String           @db.Uuid
+  emoji     String           @db.VarChar(8)
+  createdAt DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime         @updatedAt @db.Timestamptz(3)
+  message   MessagingMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([messageId, userId])
+  @@index([messageId, emoji])
+  @@map("messaging_message_reactions")
 }
 
 model MessagingMessageAttachment {
@@ -1166,6 +1190,7 @@ model MasterCurrency {
   symbol                               String?                     @db.VarChar(16)
   decimalDigits                        Int                         @default(2)
   unitsPerUsd                          Decimal?                    @db.Decimal(24, 10)
+  tomanPerUnit                         Decimal?                    @db.Decimal(24, 10)
   displayPolicy                        MasterCurrencyDisplayPolicy @default(CODE_AFTER)
   displayOrder                         Int                         @default(0)
   isActive                             Boolean                     @default(true)
@@ -7566,4 +7591,40 @@ model FinancePurchaseFxSnapshot {
 
   @@index([branchId, baselineAt])
   @@map("finance_purchase_fx_snapshots")
+}
+
+model CorrespondenceLetter {
+  id         String                   @id @default(uuid()) @db.Uuid
+  authorId   String                   @db.Uuid
+  author     User                     @relation("CorrespondenceAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  number     String                   @unique @db.VarChar(100)
+  dateISO    String                   @db.VarChar(10)
+  content    Json
+  version    Int                      @default(1)
+  createdAt  DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime                 @updatedAt @db.Timestamptz(3)
+  deliveries CorrespondenceDelivery[]
+
+  @@index([authorId, createdAt])
+  @@map("correspondence_letters")
+}
+
+model CorrespondenceDelivery {
+  id          String               @id @default(uuid()) @db.Uuid
+  letterId    String               @db.Uuid
+  letter      CorrespondenceLetter @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  senderId    String               @db.Uuid
+  sender      User                 @relation("CorrespondenceSender", fields: [senderId], references: [id], onDelete: Restrict)
+  recipientId String               @db.Uuid
+  recipient   User                 @relation("CorrespondenceRecipient", fields: [recipientId], references: [id], onDelete: Restrict)
+  status      String               @db.VarChar(24)
+  requestKey  String               @db.Uuid
+  readAt      DateTime?            @db.Timestamptz(3)
+  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
+
+  @@unique([senderId, requestKey])
+  @@unique([letterId, recipientId])
+  @@index([recipientId, createdAt])
+  @@index([letterId, recipientId])
+  @@map("correspondence_deliveries")
 }

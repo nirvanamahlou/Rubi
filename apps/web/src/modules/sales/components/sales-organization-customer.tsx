@@ -5,7 +5,7 @@ import type { CustomerSummary, MasterDataRecord } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/surfaces';
 import { customersApi } from '@/modules/customers/api/client';
-import { masterDataApi } from '@/modules/master-data/api/client';
+import { salesApi } from '../api/client';
 import { SearchableReference } from './searchable-reference';
 
 export async function loadOrganizationCustomers(
@@ -91,7 +91,7 @@ export function SalesOrganizationCustomer({
       void (async () => {
         const records: MasterDataRecord[] = [];
         for (let page = 1; ; page++) {
-          const response = await masterDataApi.list('organizations', {
+          const response = await salesApi.listReferences('organizations', {
             search: '',
             status: 'active',
             sortBy: 'name',

@@ -67,6 +67,12 @@ describe('manual hotel coefficient tables', () => {
       'ردهٔ سنی هر کودک',
     ])
       expect(html).toContain(text);
+    expect(html.match(/data-room-type=/g)).toHaveLength(2);
+    for (const room of ['Land View', 'Sea View']) {
+      expect(html).toContain('aria-label="جدول ضرایب هتل ' + room + '"');
+      expect(html).toContain('aria-label="قیمت ترکیب‌های ' + room + '"');
+    }
+    expect(html).not.toContain('جدول ضرایب مشترک هتل');
     expect(html).not.toContain('قیمت فروش');
     expect(html).not.toContain('تغییر گروهی فروش');
     expect(html).toContain('role="combobox"');

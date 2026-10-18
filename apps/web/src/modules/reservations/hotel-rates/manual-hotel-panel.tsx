@@ -183,12 +183,18 @@ export function HotelCoefficients({
         maxInfants: '0',
       },
   );
-  const first = row.roomRates.find((r) =>
-    r.occupancyRates?.some((p) => p.manualPricing),
+  const [roomCombinations, setRoomCombinations] = useState<
+    Record<string, Combination[]>
+  >(() =>
+    Object.fromEntries(
+      allRooms.map((room) => [
+        room.roomTypeId,
+        combinationsFromRates(room.occupancyRates ?? []),
+      ]),
+    ),
   );
-  const [combinations, setCombinations] = useState(() =>
-    combinationsFromRates(first?.occupancyRates ?? []),
-  );
+  const combinationsFor = (roomId: string, values = roomCombinations) =>
+    values[roomId] ?? combinationsFromRates([]);
   const [bases, setBases] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       row.roomRates.map((r) => [
@@ -222,7 +228,7 @@ export function HotelCoefficients({
     r.occupancyRates?.some((p) => !p.manualPricing),
   );
   function update(
-    nextCombinations = combinations,
+    nextCombinations = roomCombinations,
     nextBases = bases,
     nextAdjustments = adjustments,
   ) {
@@ -231,7 +237,7 @@ export function HotelCoefficients({
     for (const room of allRooms) {
       if (!nextBases[room.roomTypeId]) continue;
       const rates = buildManualRates(
-        nextCombinations,
+        combinationsFor(room.roomTypeId, nextCombinations),
         nextBases[room.roomTypeId]!,
         row.currency,
         checkIn,
@@ -270,8 +276,12 @@ export function HotelCoefficients({
       active = false;
     };
   }, [checkIn, checkOut, row.currency]);
-  function changeCombination(index: number, patch: Partial<Combination>) {
-    const next = combinations.map((c, i) =>
+  function changeCombination(
+    roomId: string,
+    index: number,
+    patch: Partial<Combination>,
+  ) {
+    const next = combinationsFor(roomId).map((c, i) =>
       i === index
         ? {
             ...c,
@@ -282,8 +292,9 @@ export function HotelCoefficients({
           }
         : c,
     );
-    setCombinations(next);
-    update(next);
+    const values = { ...roomCombinations, [roomId]: next };
+    setRoomCombinations(values);
+    update(values);
   }
   const countOptions = (max: number, min = 0) =>
     Array.from({ length: max - min + 1 }, (_, i) => ({
@@ -368,162 +379,9 @@ export function HotelCoefficients({
           ]}
         />
       </div>
-      <details className={styles.coefficients}>
-        <summary>جدول ضرایب هتل</summary>
-        <p>این جدول برای همهٔ نوع اتاق‌های همین هتل اعمال می‌شود.</p>
-        <div className={styles.tableScroll}>
-          <table
-            className={styles.coefficientTable}
-            aria-label="جدول ضرایب مشترک هتل"
-          >
-            <thead>
-              <tr>
-                <th>ترکیب اتاق</th>
-                <th>بزرگسال</th>
-                <th>کودک</th>
-                <th>ردهٔ سنی هر کودک</th>
-                <th>ضریب</th>
-                <th>عملیات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {combinations.map((combination, index) => (
-                <tr key={combination.id}>
-                  <td>
-                    <bdi
-                      dir={
-                        /[A-Za-z]/.test(combinationName(combination))
-                          ? 'ltr'
-                          : 'rtl'
-                      }
-                      className={
-                        /[A-Za-z]/.test(combinationName(combination))
-                          ? styles.ltrComposition
-                          : undefined
-                      }
-                    >
-                      {combinationName(combination)}
-                    </bdi>
-                  </td>
-                  <td>
-                    <Choice
-                      label="تعداد بزرگسال ترکیب"
-                      value={String(combination.adults)}
-                      onChange={(n) =>
-                        changeCombination(index, { adults: Number(n) })
-                      }
-                      options={countOptions(20, 1)}
-                    />
-                  </td>
-                  <td>
-                    <Choice
-                      label="تعداد کودک ترکیب"
-                      value={String(combination.childAges.length)}
-                      onChange={(n) =>
-                        changeCombination(index, {
-                          childAges: Array.from(
-                            { length: Number(n) },
-                            (_, i) =>
-                              combination.childAges[i] ?? {
-                                min: 2,
-                                maxExclusive: 15,
-                              },
-                          ),
-                        })
-                      }
-                      options={countOptions(10)}
-                    />
-                  </td>
-                  <td>
-                    {combination.childAges.map((age, i) => (
-                      <div key={i} className={styles.childRange}>
-                        <span>کودک {i + 1}</span>
-                        <Choice
-                          label="حداقل سن کودک"
-                          value={String(age.min)}
-                          options={countOptions(14)}
-                          onChange={(n) =>
-                            changeCombination(index, {
-                              childAges: combination.childAges.map((a, j) =>
-                                j === i ? { ...a, min: Number(n) } : a,
-                              ),
-                            })
-                          }
-                        />
-                        <span>تا کمتر از</span>
-                        <Choice
-                          label="حد بالای سن کودک"
-                          value={String(age.maxExclusive)}
-                          options={countOptions(15, 1)}
-                          onChange={(n) =>
-                            changeCombination(index, {
-                              childAges: combination.childAges.map((a, j) =>
-                                j === i ? { ...a, maxExclusive: Number(n) } : a,
-                              ),
-                            })
-                          }
-                        />
-                      </div>
-                    ))}
-                  </td>
-                  <td>
-                    <input
-                      aria-label="ضریب ترکیب اتاق"
-                      inputMode="decimal"
-                      value={combination.coefficient}
-                      onChange={(e) =>
-                        changeCombination(index, {
-                          coefficient: e.target.value,
-                        })
-                      }
-                    />
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = combinations.filter((_, i) => i !== index);
-                        setCombinations(next);
-                        update(next);
-                      }}
-                    >
-                      حذف ردیف
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan={6}>
-                  <button
-                    type="button"
-                    disabled={combinations.length >= 100}
-                    onClick={() => {
-                      const next = [
-                        ...combinations,
-                        {
-                          id: crypto.randomUUID(),
-                          label: '',
-                          adults: 2,
-                          childAges: [],
-                          coefficient: '',
-                        },
-                      ];
-                      setCombinations(next);
-                      update(next);
-                    }}
-                  >
-                    افزودن ردیف
-                  </button>
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </details>
-      <div className={styles.roomGrid}>
+      <div className={styles.roomPairs}>
         {allRooms.map((room) => {
+          const combinations = combinationsFor(room.roomTypeId);
           const rates = buildManualRates(
             combinations,
             bases[room.roomTypeId] ?? '',
@@ -533,50 +391,115 @@ export function HotelCoefficients({
             adjustments[room.roomTypeId],
           );
           return (
-            <section key={room.roomTypeId} className={styles.roomCard}>
-              <div className={styles.roomHeader}>
-                <h3>{room.roomTypeName}</h3>
-                <label className={styles.baseField}>
-                  قیمت پایهٔ اتاق / هر شب
-                  <input
-                    aria-label={`قیمت پایه ${room.roomTypeName}`}
-                    inputMode="decimal"
-                    value={bases[room.roomTypeId] ?? ''}
-                    onChange={(e) => {
-                      const next = {
-                        ...bases,
-                        [room.roomTypeId]: e.target.value,
-                      };
-                      setBases(next);
-                      update(combinations, next);
-                    }}
-                  />
-                </label>
-              </div>
-              <div className={styles.tableScroll}>
-                <table
-                  className={styles.priceTable}
-                  aria-label={`قیمت ترکیب‌های ${room.roomTypeName}`}
-                >
-                  <thead>
-                    <tr>
-                      <th>ترکیب</th>
-                      <th>قیمت خرید</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {combinations.map((combination) => {
-                      const key = `${room.roomTypeId}:${combination.id}`;
-                      const calculated = calculateManualHotelPrices(
-                        bases[room.roomTypeId] ?? '',
-                        combination.coefficient,
-                        row.currency,
-                        adjustments[room.roomTypeId]?.[
-                          combinationKey(combination)
-                        ] ?? { kind: 'AMOUNT', value: '0' },
-                      );
-                      return (
-                        <tr key={key}>
+            <div
+              key={room.roomTypeId}
+              className={styles.roomPair}
+              data-room-type={room.roomTypeId}
+            >
+              <section className={styles.roomCard}>
+                <div className={styles.roomHeader}>
+                  <h3>{room.roomTypeName}</h3>
+                  <label className={styles.baseField}>
+                    قیمت پایهٔ اتاق / هر شب
+                    <input
+                      aria-label={`قیمت پایه ${room.roomTypeName}`}
+                      inputMode="decimal"
+                      value={bases[room.roomTypeId] ?? ''}
+                      onChange={(e) => {
+                        const next = {
+                          ...bases,
+                          [room.roomTypeId]: e.target.value,
+                        };
+                        setBases(next);
+                        update(roomCombinations, next);
+                      }}
+                    />
+                  </label>
+                </div>
+                <div className={styles.tableScroll}>
+                  <table
+                    className={styles.priceTable}
+                    aria-label={`قیمت ترکیب‌های ${room.roomTypeName}`}
+                  >
+                    <thead>
+                      <tr>
+                        <th>ترکیب</th>
+                        <th>قیمت خرید</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {combinations.map((combination) => {
+                        const key = `${room.roomTypeId}:${combination.id}`;
+                        const calculated = calculateManualHotelPrices(
+                          bases[room.roomTypeId] ?? '',
+                          combination.coefficient,
+                          row.currency,
+                          adjustments[room.roomTypeId]?.[
+                            combinationKey(combination)
+                          ] ?? { kind: 'AMOUNT', value: '0' },
+                        );
+                        return (
+                          <tr key={key}>
+                            <td>
+                              <bdi
+                                dir={
+                                  /[A-Za-z]/.test(combinationName(combination))
+                                    ? 'ltr'
+                                    : 'rtl'
+                                }
+                                className={
+                                  /[A-Za-z]/.test(combinationName(combination))
+                                    ? styles.ltrComposition
+                                    : undefined
+                                }
+                              >
+                                {combinationName(combination)}
+                              </bdi>
+                              {combination.childAges.map((a, i) => (
+                                <small key={i}>
+                                  {' '}
+                                  / {a.min} تا کمتر از {a.maxExclusive}
+                                </small>
+                              ))}
+                            </td>
+                            <td dir="ltr">
+                              {calculated?.purchase ?? '—'}{' '}
+                              <small>{row.currency}</small>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {bases[room.roomTypeId] && checkIn && checkOut && !rates && (
+                  <p role="alert">
+                    قیمت پایه، ضریب، ردهٔ سنی یا بازهٔ اقامت این اتاق معتبر
+                    نیست؛ ثبت بسته تا اصلاح آن انجام نمی‌شود.
+                  </p>
+                )}
+              </section>
+              <section className={styles.roomCoefficients}>
+                <h4>
+                  <span>جدول ضرایب هتل</span>
+                  {' · '}
+                  {room.roomTypeName}
+                </h4>
+                <div className={styles.tableScroll}>
+                  <table
+                    className={styles.roomCoefficientTable}
+                    aria-label={`جدول ضرایب هتل ${room.roomTypeName}`}
+                  >
+                    <thead>
+                      <tr>
+                        <th>ترکیب اتاق</th>
+                        <th>ضریب</th>
+                        <th>عملیات</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {combinations.map((combination, index) => (
+                        <tr key={combination.id}>
                           <td>
                             <bdi
                               dir={
@@ -592,30 +515,158 @@ export function HotelCoefficients({
                             >
                               {combinationName(combination)}
                             </bdi>
-                            {combination.childAges.map((a, i) => (
-                              <small key={i}>
-                                {' '}
-                                / {a.min} تا کمتر از {a.maxExclusive}
-                              </small>
-                            ))}
+                            <details className={styles.compositionDetails}>
+                              <summary>ترکیب اتاق</summary>
+                              <label>
+                                بزرگسال
+                                <Choice
+                                  label="تعداد بزرگسال ترکیب"
+                                  value={String(combination.adults)}
+                                  onChange={(n) =>
+                                    changeCombination(room.roomTypeId, index, {
+                                      adults: Number(n),
+                                    })
+                                  }
+                                  options={countOptions(20, 1)}
+                                />
+                              </label>
+                              <label>
+                                کودک
+                                <Choice
+                                  label="تعداد کودک ترکیب"
+                                  value={String(combination.childAges.length)}
+                                  onChange={(n) =>
+                                    changeCombination(room.roomTypeId, index, {
+                                      childAges: Array.from(
+                                        { length: Number(n) },
+                                        (_, i) =>
+                                          combination.childAges[i] ?? {
+                                            min: 2,
+                                            maxExclusive: 15,
+                                          },
+                                      ),
+                                    })
+                                  }
+                                  options={countOptions(10)}
+                                />
+                              </label>
+                              <span>ردهٔ سنی هر کودک</span>
+                              {combination.childAges.map((age, i) => (
+                                <div key={i} className={styles.childRange}>
+                                  <span>کودک {i + 1}</span>
+                                  <Choice
+                                    label="حداقل سن کودک"
+                                    value={String(age.min)}
+                                    options={countOptions(14)}
+                                    onChange={(n) =>
+                                      changeCombination(
+                                        room.roomTypeId,
+                                        index,
+                                        {
+                                          childAges: combination.childAges.map(
+                                            (a, j) =>
+                                              j === i
+                                                ? { ...a, min: Number(n) }
+                                                : a,
+                                          ),
+                                        },
+                                      )
+                                    }
+                                  />
+                                  <span>تا کمتر از</span>
+                                  <Choice
+                                    label="حد بالای سن کودک"
+                                    value={String(age.maxExclusive)}
+                                    options={countOptions(15, 1)}
+                                    onChange={(n) =>
+                                      changeCombination(
+                                        room.roomTypeId,
+                                        index,
+                                        {
+                                          childAges: combination.childAges.map(
+                                            (a, j) =>
+                                              j === i
+                                                ? {
+                                                    ...a,
+                                                    maxExclusive: Number(n),
+                                                  }
+                                                : a,
+                                          ),
+                                        },
+                                      )
+                                    }
+                                  />
+                                </div>
+                              ))}
+                            </details>
                           </td>
-                          <td dir="ltr">
-                            {calculated?.purchase ?? '—'}{' '}
-                            <small>{row.currency}</small>
+                          <td>
+                            <input
+                              aria-label="ضریب ترکیب اتاق"
+                              inputMode="decimal"
+                              value={combination.coefficient}
+                              onChange={(e) =>
+                                changeCombination(room.roomTypeId, index, {
+                                  coefficient: e.target.value,
+                                })
+                              }
+                            />
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = combinations.filter(
+                                  (_, i) => i !== index,
+                                );
+                                const values = {
+                                  ...roomCombinations,
+                                  [room.roomTypeId]: next,
+                                };
+                                setRoomCombinations(values);
+                                update(values);
+                              }}
+                            >
+                              حذف ردیف
+                            </button>
                           </td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              {bases[room.roomTypeId] && checkIn && checkOut && !rates && (
-                <p role="alert">
-                  قیمت پایه، ضریب، ردهٔ سنی یا بازهٔ اقامت این اتاق معتبر نیست؛
-                  ثبت بسته تا اصلاح آن انجام نمی‌شود.
-                </p>
-              )}
-            </section>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan={3}>
+                          <button
+                            type="button"
+                            disabled={combinations.length >= 100}
+                            onClick={() => {
+                              const next = [
+                                ...combinations,
+                                {
+                                  id: crypto.randomUUID(),
+                                  label: '',
+                                  adults: 2,
+                                  childAges: [],
+                                  coefficient: '',
+                                },
+                              ];
+                              const values = {
+                                ...roomCombinations,
+                                [room.roomTypeId]: next,
+                              };
+                              setRoomCombinations(values);
+                              update(values);
+                            }}
+                          >
+                            افزودن ردیف
+                          </button>
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </section>
+            </div>
           );
         })}
       </div>

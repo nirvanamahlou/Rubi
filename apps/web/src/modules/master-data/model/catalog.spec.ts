@@ -90,7 +90,7 @@ describe('master data catalog', () => {
       'name',
       'englishName',
       'symbol',
-      'unitsPerUsd',
+      'tomanPerUnit',
       'decimalDigits',
     ]);
     expect(

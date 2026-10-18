@@ -1,3 +1,56 @@
+## 2026-10-18 — BROKER-CONTACT-SAVE-1018 — PC-B
+
+Repair equal office/mobile broker save by persisting one encrypted contact with both reserved partner roles. Preserve unique fingerprints, atomic rollback, masking, audit and independent edit/clear semantics. Broker email input accepts uppercase without rewriting typed case; backend canonical normalization remains unchanged.44 focused tests and scoped lint pass. Actual PostgreSQL regression added for hosted CI because local Docker engine is unavailable. No migration, grants or runtime update. See tasks/BROKER-CONTACT-SAVE-1018.md; exact-head CI gates authorized develop merge.
+
+## USER-SAVE-BUTTON-1018 — PC-B
+
+User-details Save remains normal blue when idle, including after a successful save and refresh. Only pending submission or read-only authority disables the button; the shared loading prop exposes the actual busy state. Unchanged name/unit submissions are safely ignored before any request. Existing revision/unit/name payloads and account grants remain unchanged. Focused lifecycle tests cover idle, success/refresh, double clicks, error/retry, invalid names and read-only access. No API/schema/dependency/runtime changes; exact-head hosted CI gates authorized develop merge.
+
+## 2026-10-18 — PASSENGER-PRICE-NAMES-1018 — PC-A
+
+International Sales passenger snapshots now use each saved row passport first/last name instead of potentially repeated CRM display titles. Domestic names, customer identity, person IDs and price keys remain unchanged.43 focused regressions pass, including three distinct passengers sharing one CRM title. No migration or live3100 update. Hosted exact-head checks gate authorized develop merge.
+
+## BROKER-FIELD-ACCESS-1018 — PC-B — READY_FOR_REVIEW
+
+Final local validation:77 API/Web/Contracts focused tests, scoped lint/format, Contracts/Database/API builds and full API/Web typechecks pass after refreshing stale ignored Prisma artifacts. Source frozen for review; task branch/PR publication only. No user grants, operational database change,3100 rollout or automatic develop merge.
+
+Reproduced false broker-create field denial from internal dossierVersion under manual access; project only real editable partner data, map supplier address alias to the existing address authority and expose missing contact controls. Omit blank optional broker-create fields/empty leaders; preserve explicit edit clears and actual denied fields.64 API and10 Web focused regressions pass. No grants, migration, operational data/runtime or merge change. See tasks/BROKER-FIELD-ACCESS-1018.md.
+
+## SALES-REFERENCE-ACCESS-1018 — PC-B
+
+Contract creation, insurance/tour selection, acquaintance methods and organization pickers now consume a Sales-authorized active reference projection rather than the Master Data administration API. The public Master Data adapter allowlists eleven resources and minimal attributes; sensitive contacts, accounts, arbitrary resources, inactive options and writes are excluded. Native Master Data read/write/export/unmask guards and existing account grants are unchanged. Payment bank/currency pickers share the bounded directory with payment-only authority restricted to those two resources. Actual HTTP AuthGuard/PermissionGuard tests prove create-only manual access with Master Data denied, legacy/edit/payment compatibility, revoked/denied/unauthenticated denial, input limits and safe projections. No schema/migration/dependency or runtime changes. Exact-head hosted quality/test/build/PostgreSQL checks gate user-authorized push/develop merge.
+
+## ISSUED-FORM-LEGACY-VIEW-1018 — PC-A
+
+Local read-only status aggregates reveal historical REQUESTED forms with positive sentSupplierFormVersion and no sentSupplierFormSettings. The view checked only the new snapshot or voucher flag, reopening settings despite recorded issuance. Recognize positive safe-integer sent version for the compact Download/Edit view only; unissued drafts and strict voucher readiness remain unchanged. Preserve sent snapshot preference and legacy download behavior without inventing or migrating historical snapshots. Focused regressions include legacy issued forms and zero/negative/fractional/absent draft versions. No API/schema/dependency/business-data mutation. Validation and final-head checks recorded in PR.
+
+## RESERVATION-CURRENCY-ROOM-OUTPUT-1018 — PC-A
+
+Root cause: localized option elements carrying aria-label were discarded by the native-select option extractor, leaving only the empty currency choice although Master Data loaded successfully. Reservations now passes typed options directly to the shared searchable picker with names, symbols and canonical codes; no hardcoded fallback. Preserve saved inactive currency and clear selection. Preview and PDF remove aggregate DBL/SGL/EXT counts, title the separated per-room table ROOM QUANTITIES BY TYPE and omit hotel-wide type when detailed rooms exist; the corresponding generic editor field is hidden while per-room editing remains. Legacy roomless type is retained.356 Reservations tests pass (two existing skips), scoped lint and one-page synthetic A4 PDF visual QA pass. Final exact-head CI gates authorized develop merge. No schema/API/dependency/runtime or operational-data changes.
+
+## INTEGRATIONS-NAVIGATION-1018 — PC-D — READY_FOR_CI
+
+Replace the nine equal-level section links with four plain-language navigation
+areas and contextual secondary links; all nine sections and their drill-downs
+remain accessible. Add a three-step website connection guide distinguishing
+saved setup metadata from actual connectivity. Existing API/IAM/branch controls,
+adapters and registry data are unchanged.24 Integrations tests, focused lint,
+formatting and the62-route Web production build including TypeScript passed.
+Interactive desktop/mobile navigation and the existing registration dialog were
+verified without writes. Local Web-only image1018-navigation is healthy; the
+existing API remains healthy on1017-access-v2. The launcher includes the new
+image and local startup health override. No other Docker project was stopped. Global i18n sync reports pre-existing unrelated generated-catalogue drift;
+no API/public catalogue changes included. User now explicitly authorizes push, hosted CI, PR to develop and merge after all checks and review pass. Candidate synchronized with develop@091f1fd5; no gate or runtime change.
+See [navigation and connection readiness](tasks/INTEGRATIONS-NAVIGATION-1018.md).
+
+## RESERVATION-HEADER-PURCHASE-PRICE-1018 — PC-A
+
+Move the saved proposed hotel purchase price to a fifth supplier-form metadata field, PROPOSED PURCHASE PRICE, between SUPPLIER and DATE OF ISSUE. Preview and server PDF share exact Decimal-string formatting with English ISO currency codes, no conversion or cross-currency sum. Keep zero values and show a dash when unset; remove the former HOTEL TOTAL block. Voucher stays four columns and never includes the internal purchase price.33 focused tests and scoped lint pass; real Chrome one-A4 PDF visually checked with IRR/EUR/USD values. Sent-snapshot PDF behavior retained. Full exact-head hosted checks gate user-authorized develop merge; no schema/API/dependency or runtime/data changes.
+## RESERVATION-PASSPORT-CHILD-BANDS-1018 — PC-A
+
+Reservations workflow detail now adds optional outputPassengers through a Customer-owned minimal public identity reader after request/branch authorization. Return complete passport surname/first-name and derived hotel child band only; never expose raw birth date or document numbers. Native Reservations read and scoped customer membership remain required. Age is evaluated on outbound Tehran departure day, or hotel check-in for hotel-only travel; boundaries are2<=age<6 and6<=age<12. Preview/PDF share the identity projection, auto-fill child bands in defaults, repair old empty-band output and synchronize summary counts. Legacy clients/absent identity data retain snapshot names/bands without fabricating passports or changing inventory age categories. No stored snapshots, customer records, schema or grants are changed.
+
+Validation:367 Web tests pass (two existing skips),23 focused API authorization/age/output tests, Web/API typechecks and scoped lint pass. A synthetic one-A4 form was visually checked after rendering HTML in isolated Chrome. Two initial production-renderer local attempts timed out on Chrome exit despite producing PDF under concurrent compilation; no production timeout or test gate changed. Full exact-head hosted checks gate the user-authorized develop merge; no runtime rollout or operational data writes.
 ## CONTRACT-HOTEL-COMPACT-1018 — PC-A
 
 New-contract hotel selector and room count share one aligned responsive row. Room count width is bounded (96px on small screens, 144px otherwise); hotel retains remaining space. Existing room composition, child allocation, validation and persistence remain unchanged. No API/schema/migration/dependency change. Six ServiceParties tests, scoped ESLint, formatting and diff checks pass. Exact-head hosted quality, tests, typecheck/build and migration checks gate user-authorized develop merge.
@@ -9,6 +62,12 @@ New-contract hotel selector and room count share one aligned responsive row. Roo
 Exact room/occupancy/board/date sale tables now consume matching hotel rate periods in Package Management, with grouped/manual sale adjustment and immutable selected publication. Purchase bases remain in Hotel Rates; child-with-bed label is explicit double+child. Sales consumes the canonical sale-only publication, preserves negotiated amounts and records lower selling amounts as salesperson discount; server rechecks room identity and reference totals. Published one/two-adult room alternatives populate the city banner/template and descriptive notes automatically. Legacy drafts/publications remain readable; additive nullable selectedRoomKeys plus non-truncating roomCode TEXT migration required before deployment. Broad Web289/API282 tests and final focused regression suites passed; local lint/types/build and exact-head full CI are delivery gates. No live data, migration or3100 runtime mutation; task detail in docs/tasks/PACKAGE-SALE-FLOW-1018.md.
 
 Add optional HR-backed unit selection on new accounts and existing-user details. HR-owned minimal scoped directory, real nullable profile FK/index, atomic creation/details validation and explicit clear/retain semantics; preserve grants, roles, phone/photo and personnel records. Existing records are not backfilled. Protect branch removal and stale writes.98 Web tests, API/HR regression suites, types/lint and Prisma validation plus final-head hosted build/quality/PostgreSQL unit-migration proof gate owner-authorized push/develop merge. No operational DB/runtime mutation. See docs/tasks/USER-HR-UNIT-1018.md.
+
+## CURRENCY-TOMAN-RATE-1018 — PC-B — VALIDATING
+
+User explicitly authorizes correction of the already-pushed, never-operationally-applied migration after CI detected the wrong physical table name. Target mapped master_currencies, make DDL atomic and add a mapping/non-destructive regression. Re-run all exact-head PostgreSQL/test/quality/build gates before authorized develop merge; no live database or3100 change.
+
+Manual currency reference is now1 unit=N tomans in form/table and optional Master Data mutation. New nullable Decimal tomanPerUnit is isolated from unchanged legacy unitsPerUsd; no reinterpretation/backfill or transaction FX change.25 Web and46 API focused tests pass; isolated PostgreSQL regressions added but not yet run (Docker unavailable). Additive migration has not been applied operationally; no push/merge/3100 rollout claimed. See tasks/CURRENCY-TOMAN-RATE-1018.md.
 
 ## DASHBOARD-MATTE-ICONS-1018 — PC-C — READY_FOR_CI
 
@@ -6458,12 +6517,51 @@ Added «دریافت اطلاعات» beside the new-contract heading. It reload
 ## 2026-10-18 — PC-A — Reservation inbox manual refresh
 
 Added دریافت اطلاعات to the Reservations inbox through the existing authenticated queue reader. Manual refresh preserves filters, selection and mounted operational forms, coalesces overlapping intake requests, refreshes hotel/city/meal reference labels and retains the last successful same-scope queue on transient failure. Authentication/authorization failures clear the queue. No schema, migration, API contract, dependency or runtime changes. Foundation tests: 8 files / 79 tests passed; Web lint/typecheck/build verification recorded in the task PR before merge.
+## INTERNAL-CORRESPONDENCE-1018 — PC-A — READY_FOR_CI
+
+Internal correspondence now has Send and Receive cards. Send/edit/view reuse the
+existing company-letterhead composer and PNG/PDF output. Additive authenticated
+`correspondence/v1/internal` routes provide private recipient inboxes, four real
+KPIs, server pagination/search/status/company/unread filters, read tracking,
+optimistic edits, idempotent sends, status forwarding and audited global hard
+deletion. The public IAM directory exposes active internal user IDs/names only.
+Shared v1 DTOs and API/Web consumers ship together; outgoing numbering and incoming
+Documents uploads remain compatible. Additive migration creates only two new
+System-owned tables and User FKs; apply before API/Web rollout. No live migration,
+business data, grant or source-system write performed. Unit/HTTP/isolated real
+PostgreSQL and Web rendering/i18n checks pass (12 API,11 Web,3 PostgreSQL cases).
+API/Web typechecks, scoped lint and both production builds pass (64 Web pages).
+PR946 is awaiting final-head hosted checks and authorized develop merge.
+
 
 ## PASSENGER-HOTEL-FOREIGN-SHARE-1018 — PC-A
 
 For new hotel/flight contracts, the passenger foreign column displays the existing exact room-price share instead of a second editable flight amount. One adult receives the full room price; two adults receive half each, with precise residual allocation from the shared roomPriceShares helper. Stable selected hotel adult order matches contract print. Room amount is counted once; stale foreign flight drafts are excluded from both displayed totals and submitted flight metadata. Standalone flight currency support and already persisted contracts remain unchanged. No schema/migration/API/dependency/runtime changes.28 focused tests cover single/double room display, stale draft exclusion, submitted totals/metadata validation and printed hotel shares. Local quality/build and full exact-head CI gate user-authorized develop merge.
 
+## 2026-10-18 — DAILY-PACKAGE-SUBMIT-1018 — PC-B
+
+Generator confirmation invokes a guarded direct multipart upload with visible pending state, duplicate suppression, branch/title validation and bounded timeout; errors retain the dialog and success acknowledges only server completion. LAN HTTP bridge UUID failure reproduced and corrected with cryptographic fallback.19 affected Web test files/68 tests and synthetic real-browser confirmation pass. No authenticated operational upload or runtime mutation. See tasks/DAILY-PACKAGE-SUBMIT-1018.md for exact verification limits; final quality gates in PR.
+
+## HOTEL-ROOM-COEFFICIENT-LAYOUT-1018 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-hotel-room-coefficient-layout-1018 from origin/develop091f1fd5. User authorizes compact independent coefficient tables beside each room-type purchase table and develop merge. Reserve Reservations manual-hotel-panel, bounded manual-tables styles and focused render/interaction tests, optional additive labels/catalogues and own docs. Prior hotel-rate display scopes released; no overlapping active target lock found. Each room restores its own existing occupancy metadata; edits must not rewrite other room coefficients or sale adjustments. Preserve base × coefficient exact arithmetic, validation, immutable pack version save and imported-rate guard. No API/schema/dependency/migration/live data/runtime change. Hosted final-head checks gate merge.
+
+HOTEL-ROOM-COEFFICIENT-LAYOUT-1018 candidate: each room renders one wide purchase table and its own compact coefficient editor (desktop ratio2.4:1, narrow screens stacked). Coefficients, compositions and child ranges restore from each room's own saved metadata; changing/adding/removing a row never edits another room, newly linked room types remain editable.117 hotel-rate tests pass, including restore/reopen, independent edits, new room types, invalid ages/duplicates, retained sale metadata and imported-rate guard. Synthetic server-rendered desktop/mobile visual fixture has no horizontal page overflow at1500/390; source controls render with mocked directory choices only, no authenticated operational save. Scoped lint and offline translation checks pass; final types/build/hosted checks gate merge. No schema/API/dependency/data/runtime changes. Bounded source locks released with candidate.
+
+
+## WORKBENCH-MESSENGER-FILES-1018 — 2026-10-18
+
+Fixed attachment-only chat HTTP500 caused by the existing non-empty body database constraint; server stores «فایل پیوست» after verifying owned attachments. Direct/group multipart persistence and recipient byte-for-byte download verified with isolated synthetic PostgreSQL users; retry and access-boundary cases pass. Removed the screenshot-marked duplicate inline unit selector and sidebar explanatory text, retaining sidebar units and message templates. Owner follow-up permits immediate Messaging attachment delivery without waiting for a scan verdict; infected/quarantined files stay blocked. General archive rules are unchanged. 29 API tests (including isolated multipart/real PostgreSQL direct/group delivery without a scan verdict) and7 Web tests pass. No migration, runtime change or real messages.
+
+
+## MESSAGING-REPLIES-REACTIONS-1018 — 2026-10-18
+
+Message footer forwarding is icon-only with an accessible label. Right-click/keyboard/long-press opens five reaction choices (👍 ❤️ 😂 😮 🙏) and Reply. Reply preview can be cancelled; quotes and reactions are stored server-side and returned to all authorized participants. Each user may set/change/remove one reaction per message; counts refresh through existing message polling. Composite reply FK prevents references to another chat; reaction writes are membership-scoped and idempotent. Additive migration20261018190000; no production data/permission changes.27 API tests including real PostgreSQL and9 Web/menu tests pass; final hosted CI/merge pending.
+
+Browser fixture acceptance also passed for right-click, reaction set/remove, keyboard invocation/dismissal/focus, and quoted reply send/display using real UI components and synthetic transport; backend persistence is separately verified against PostgreSQL. Mobile device touch acceptance is not claimed.
 
 ## WORKBENCH-PASSWORD-MINIMUM-1018 — 2026-10-18
 
 Self-service password change now accepts 4–200 characters, including numeric-only values, at both DTO/service and Workbench form validation. Current-password verification and revocation remain intact. Owner exception documented in DECISIONS; no data migration or automatic password changes. 40 focused tests and scoped lint passed.
+
+WORKBENCH-PASSWORD-MINIMUM-1018 follow-up: the prior fix remained in open PR950, explaining why develop still enforced the old rule. Owner now explicitly requests merge; candidate reconciled with current develop preserving peer code/translations. Workbench form, API DTO and service accept4–200 characters and numeric-only values.40 focused API/Web tests and scoped lint pass. An opt-in isolated PostgreSQL regression covers4-digit Latin/Persian passwords, login with the new credential and revocation of the original session; old short-password rejection is adjusted to3 characters. No actual account password is changed.

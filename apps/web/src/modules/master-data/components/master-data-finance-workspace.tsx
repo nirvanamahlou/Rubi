@@ -1175,7 +1175,7 @@ export function MasterDataFinanceWorkspace() {
                   <th className="p-4 text-start">نام انگلیسی / مرجع</th>
                   <th className="p-4 text-start">جزئیات</th>
                   {tab === 'currencies' && (
-                    <th className="p-4 text-center">نرخ دستی هر ۱ دلار</th>
+                    <th className="p-4 text-center">قیمت هر واحد به تومان</th>
                   )}
                   <th className="p-4 text-start">وضعیت</th>
                   <th className="p-4 text-center">عملیات</th>
@@ -1220,8 +1220,8 @@ export function MasterDataFinanceWorkspace() {
                     </td>
                     {tab === 'currencies' && (
                       <td className="p-4 text-center" dir="ltr">
-                        {record.attributes.unitsPerUsd
-                          ? `${formatMasterDataNumber(String(record.attributes.unitsPerUsd))} ${record.code}`
+                        {record.attributes.tomanPerUnit
+                          ? `${formatMasterDataNumber(String(record.attributes.tomanPerUnit))} تومان`
                           : '—'}
                       </td>
                     )}
