@@ -2,7 +2,8 @@
 import { currencySymbol } from '@/lib/currency-symbol';
 import { Button } from '@/components/ui/button';
 import { insuranceExtraRials, passengerOverSixty } from '@nora/contracts';
-import { salesTravelDate } from '../model/sales-form';
+import { salesTravelDate, salesHotelGuestIds } from '../model/sales-form';
+import { roomPriceShares, hotelAgeOn } from '@nora/contracts';
 import { moneyDecimal, moneyUnits, type SalesMoney } from '@nora/contracts';
 import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
 import {
@@ -22,11 +23,34 @@ export function PassengerPackagePrices({
   currencies?: readonly SalesCurrency[];
   onChange: (prices: Record<string, SalesMoney[]>) => void;
 }) {
+  const hotelShares = flight && state.serviceKinds.includes('HOTEL');
+  let shares: Record<string, SalesMoney[]> = {};
+  if (hotelShares) {
+    const guests = new Set(salesHotelGuestIds(state));
+    try {
+      shares = roomPriceShares(
+        state.hotel.rooms ?? [],
+        state.passengers
+          .filter(
+            (p) =>
+              guests.has(p.customerId) &&
+              (hotelAgeOn(p.birthDate, state.hotel.checkIn) ?? 0) >= 15,
+          )
+          .map((p) => p.customerId),
+      );
+    } catch {
+      /* Incomplete room composition is validated by the contract form. */
+    }
+  }
   const totals = new Map<string, bigint>();
   let invalid = false;
   for (const passenger of state.passengers)
     for (const price of state.passengerPrices?.[passenger.customerId] ?? []) {
-      if (flight && !price.amount.trim()) continue;
+      if (
+        flight &&
+        (!price.amount.trim() || (hotelShares && price.currencyCode !== 'IRR'))
+      )
+        continue;
       try {
         totals.set(
           price.currencyCode,
@@ -74,7 +98,11 @@ export function PassengerPackagePrices({
   return (
     <section className="space-y-3 rounded-xl border p-4">
       <h3 className="font-bold">
-        {flight ? 'قیمت پرواز هر مسافر' : 'قیمت کل خدمات هر مسافر'}
+        {hotelShares
+          ? 'قیمت پرواز و سهم هتل هر مسافر'
+          : flight
+            ? 'قیمت پرواز هر مسافر'
+            : 'قیمت کل خدمات هر مسافر'}
       </h3>
 
       {state.serviceKinds.includes('INSURANCE') &&
@@ -92,8 +120,10 @@ export function PassengerPackagePrices({
             <tr className="bg-muted">
               <th className="p-2 text-right">مسافر</th>
               <th className="p-2">قیمت ریالی (IRR)</th>
-              <th className="p-2">ارز</th>
-              <th className="p-2">قیمت ارزی</th>
+              {!hotelShares && <th className="p-2">ارز</th>}
+              <th className="p-2">
+                {hotelShares ? 'سهم ارزی اتاق' : 'قیمت ارزی'}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -113,40 +143,57 @@ export function PassengerPackagePrices({
                       onValueChange={(value) => set(p.customerId, 'IRR', value)}
                     />
                   </td>
-                  <td className="min-w-44 p-2">
-                    <SalesCurrencySelect
-                      label={'ارز ' + p.displayName}
-                      currencies={currencies.filter((r) => r.code !== 'IRR')}
-                      value={foreign?.currencyCode ?? ''}
-                      onChange={(code) =>
-                        set(p.customerId, code, foreign?.amount ?? '', true)
-                      }
-                    />
-                    {foreign && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="mt-1 text-xs"
-                        onClick={() => set(p.customerId, '', '', true)}
-                      >
-                        حذف مبلغ ارزی
-                      </Button>
-                    )}
-                  </td>
+                  {!hotelShares && (
+                    <td className="min-w-44 p-2">
+                      <SalesCurrencySelect
+                        label={'ارز ' + p.displayName}
+                        currencies={currencies.filter((r) => r.code !== 'IRR')}
+                        value={foreign?.currencyCode ?? ''}
+                        onChange={(code) =>
+                          set(p.customerId, code, foreign?.amount ?? '', true)
+                        }
+                      />
+                      {foreign && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="mt-1 text-xs"
+                          onClick={() => set(p.customerId, '', '', true)}
+                        >
+                          حذف مبلغ ارزی
+                        </Button>
+                      )}
+                    </td>
+                  )}
                   <td className="min-w-40 p-2">
-                    <MoneyInput
-                      aria-label={'قیمت ارزی ' + p.displayName}
-                      disabled={!foreign?.currencyCode}
-                      value={foreign?.amount ?? ''}
-                      onValueChange={(value) =>
-                        set(
-                          p.customerId,
-                          foreign?.currencyCode ?? '',
-                          value,
-                          true,
-                        )
-                      }
-                    />
+                    {hotelShares ? (
+                      <div aria-label={'سهم ارزی اتاق ' + p.displayName}>
+                        {shares[p.customerId]?.length
+                          ? shares[p.customerId]!.map((price) => (
+                              <div key={price.currencyCode}>
+                                <bdi>
+                                  {formatSalesMoney(price.amount)}{' '}
+                                  {currencySymbol(price.currencyCode)}
+                                </bdi>
+                              </div>
+                            ))
+                          : '—'}
+                      </div>
+                    ) : (
+                      <MoneyInput
+                        aria-label={'قیمت ارزی ' + p.displayName}
+                        disabled={!foreign?.currencyCode}
+                        value={foreign?.amount ?? ''}
+                        onValueChange={(value) =>
+                          set(
+                            p.customerId,
+                            foreign?.currencyCode ?? '',
+                            value,
+                            true,
+                          )
+                        }
+                      />
+                    )}
                   </td>
                 </tr>
               );

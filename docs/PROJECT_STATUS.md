@@ -6473,3 +6473,8 @@ business data, grant or source-system write performed. Unit/HTTP/isolated real
 PostgreSQL and Web rendering/i18n checks pass (12 API,11 Web,3 PostgreSQL cases).
 API/Web typechecks, scoped lint and both production builds pass (64 Web pages).
 PR946 is awaiting final-head hosted checks and authorized develop merge.
+
+
+## PASSENGER-HOTEL-FOREIGN-SHARE-1018 — PC-A
+
+For new hotel/flight contracts, the passenger foreign column displays the existing exact room-price share instead of a second editable flight amount. One adult receives the full room price; two adults receive half each, with precise residual allocation from the shared roomPriceShares helper. Stable selected hotel adult order matches contract print. Room amount is counted once; stale foreign flight drafts are excluded from both displayed totals and submitted flight metadata. Standalone flight currency support and already persisted contracts remain unchanged. No schema/migration/API/dependency/runtime changes.28 focused tests cover single/double room display, stale draft exclusion, submitted totals/metadata validation and printed hotel shares. Local quality/build and full exact-head CI gate user-authorized develop merge.
