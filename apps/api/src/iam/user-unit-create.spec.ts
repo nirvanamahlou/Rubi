@@ -23,7 +23,9 @@ function setup() {
         ],
       })),
       findFirst: vi.fn(async () => null),
-      create: vi.fn(async () => ({ id: 'new-user' })),
+      create: vi.fn<(input: unknown) => Promise<{ id: string }>>(async () => ({
+        id: 'new-user',
+      })),
     },
     $transaction: vi.fn(),
   };
