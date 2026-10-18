@@ -1,4 +1,11 @@
-'use client';
+import {
+  PASSENGER_FLIGHT_PRICES,
+  readPassengerFlightPrices,
+  flightRoomTotals,
+  insuranceExtraRials,
+  type SalesMoney,
+} from '@nora/contracts';
+('use client');
 import { isOptionalOperationReason } from '@nora/contracts';
 
 import { ReservationPassengers } from '../passenger-files/passengers';
@@ -109,6 +116,15 @@ export function ReservationSalesAmendment({
       live = false;
     };
   }, []);
+  const automaticPricing = draft.services.some(
+    (s) => s.metadata?.automaticFlightRoomTotalV1 === true,
+  );
+  const flightPriceService = draft.services.find(
+    (s) => s.metadata?.[PASSENGER_FLIGHT_PRICES] !== undefined,
+  );
+  const flightPrices: Record<string, SalesMoney[]> = flightPriceService
+    ? JSON.parse(String(flightPriceService.metadata![PASSENGER_FLIGHT_PRICES]))
+    : {};
   const patch = (v: Partial<SalesContractAmendmentV1>) =>
     setDraft((d) => ({ ...d, ...v }));
   const international = [draft.originId, draft.destinationId].some((id) => {
@@ -153,10 +169,26 @@ export function ReservationSalesAmendment({
           ),
         ),
       );
-      const derived = servicePriceComponents(
-        corrected.services,
-        corrected.hotelSelection,
-      );
+      const derived = automaticPricing
+        ? flightRoomTotals(
+            {
+              ...readPassengerFlightPrices(corrected.services),
+              insuranceExtras: corrected.services
+                .filter((s) => s.metadata?.insuranceAgeSurcharge === true)
+                .map((s) => ({
+                  amount: insuranceExtraRials(String(s.metadata!.extraToman)),
+                  currencyCode: 'IRR',
+                })),
+            },
+            corrected.hotelSelection?.rooms ?? [],
+          )
+            .filter((p) => moneyUnits(p.amount) > 0n)
+            .map((p) => ({
+              ...p,
+              type: 'BASE' as const,
+              title: 'مبلغ کل قرارداد',
+            }))
+        : servicePriceComponents(corrected.services, corrected.hotelSelection);
       await salesApi.amend(
         contract.id,
         derived
@@ -496,6 +528,49 @@ export function ReservationSalesAmendment({
         )}
         {section === 'PRICES' && (
           <>
+            {Object.entries(flightPrices).map(([id, prices]) => (
+              <div key={id} className="grid gap-2 rounded-xl border p-3">
+                <strong>
+                  {
+                    draft.passengers.find((p) => p.customerId === id)
+                      ?.displayNameSnapshot
+                  }
+                </strong>
+                {prices.map((price, index) => (
+                  <label key={price.currencyCode}>
+                    قیمت پرواز · {currencySymbol(price.currencyCode)}
+                    <Input
+                      dir="ltr"
+                      inputMode="decimal"
+                      value={price.amount}
+                      onChange={(e) =>
+                        patch({
+                          services: draft.services.map((service) =>
+                            service === flightPriceService
+                              ? {
+                                  ...service,
+                                  metadata: {
+                                    ...service.metadata,
+                                    [PASSENGER_FLIGHT_PRICES]: JSON.stringify({
+                                      ...flightPrices,
+                                      [id]: prices.map((p, i) =>
+                                        i === index
+                                          ? { ...p, amount: e.target.value }
+                                          : p,
+                                      ),
+                                    }),
+                                  },
+                                }
+                              : service,
+                          ),
+                        })
+                      }
+                    />
+                  </label>
+                ))}
+              </div>
+            ))}
+
             {hotel?.rooms?.map((room, index) => (
               <div
                 key={room.ordinal}
@@ -643,6 +718,7 @@ export function ReservationSalesAmendment({
                         dir="ltr"
                         inputMode="decimal"
                         value={p.amount}
+                        readOnly={automaticPricing}
                         onChange={(e) =>
                           patch({
                             priceComponents: draft.priceComponents.map(
