@@ -12,7 +12,7 @@ const resources = {
   airlines: 'airlines',
 } as const satisfies Record<string, MasterDataResource>;
 export type SalesReferences = {
-  [K in keyof typeof resources]: readonly MasterDataRecord[];
+  -readonly [K in keyof typeof resources]: readonly MasterDataRecord[];
 };
 
 /** Publish each resource only after all its pages arrive; failed lists retain their previous value. */
