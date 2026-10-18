@@ -1,5 +1,10 @@
 import { isOptionalOperationReason } from '@nora/contracts';
 import {
+  isPrivateUserRole,
+  roleDirectoryRevision,
+  ROLE_TEMPLATE_PREFIX,
+} from './role-directory';
+import {
   USER_JOB_TITLES,
   USER_ACCESS_SCREENS,
   USER_ACCESS_PROFILE_PERMISSION,
@@ -1101,6 +1106,110 @@ export class IamService implements IamStepUpPort {
       },
       include: { permissions: { include: { permission: true } } },
     });
+  }
+  async listRoleDirectory(actor: AuthenticatedActor) {
+    if (!(await this.isSystemAdministrator(actor)))
+      throw new ForbiddenException();
+    const roles = await this.database.client.role.findMany({
+      where: {
+        OR: [
+          { code: { startsWith: ROLE_TEMPLATE_PREFIX } },
+          {
+            NOT: [
+              { code: { startsWith: 'personal-access-' } },
+              { code: { startsWith: MANUAL_ACCESS_ROLE_PREFIX } },
+            ],
+          },
+        ],
+      },
+      include: {
+        users: { select: { userId: true } },
+        permissions: { select: { permissionId: true } },
+      },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    });
+    return roles.map((role) => ({
+      id: role.id,
+      name: role.name,
+      code: role.code,
+      isActive: role.isActive,
+      isSystem: role.isSystem || role.code === 'administrator',
+      userCount: role.users.length,
+      isTemplate: role.code.startsWith(ROLE_TEMPLATE_PREFIX),
+      revision: roleDirectoryRevision(role),
+      canDelete:
+        !role.isSystem &&
+        role.code !== 'administrator' &&
+        !isPrivateUserRole(role.code) &&
+        role.users.length === 0,
+    }));
+  }
+  async deleteRole(
+    roleId: string,
+    revision: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (typeof revision !== 'string' || !/^[a-f0-9]{64}$/.test(revision))
+      throw new BadRequestException('نسخهٔ معتبر نقش برای حذف لازم است.');
+    return this.database.client.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))::text`;
+        await tx.$queryRaw`SELECT id FROM iam_users WHERE id = ${actor.userId}::uuid FOR UPDATE`;
+        const operator = await tx.user.findUnique({
+          where: { id: actor.userId },
+          include: manualUserInclude,
+        });
+        if (
+          operator?.status !== UserStatus.ACTIVE ||
+          !operator.roles.some(
+            ({ role }) => role.isActive && role.code === 'administrator',
+          ) ||
+          !authenticatedPermissionCodes(operator.roles).includes(
+            'iam.users.manage',
+          )
+        )
+          throw new ForbiddenException(
+            'حذف نقش فقط برای مدیر سامانه مجاز است.',
+          );
+        await tx.$queryRaw`SELECT id FROM iam_roles WHERE id = ${roleId}::uuid FOR UPDATE`;
+        const role = await tx.role.findUnique({
+          where: { id: roleId },
+          include: {
+            users: { select: { userId: true } },
+            permissions: { select: { permissionId: true } },
+          },
+        });
+        if (!role) throw new NotFoundException('نقش پیدا نشد.');
+        if (
+          role.isSystem ||
+          role.code === 'administrator' ||
+          isPrivateUserRole(role.code)
+        )
+          throw new ConflictException(
+            'نقش سیستمی یا اختصاصی کاربر قابل حذف نیست.',
+          );
+        if (role.users.length)
+          throw new ConflictException(
+            'این نقش به کاربر متصل است؛ ابتدا نقش کاربران را تغییر دهید.',
+          );
+        if (roleDirectoryRevision(role) !== revision)
+          throw new ConflictException(
+            'نقش تغییر کرده است؛ فهرست را دوباره بارگذاری کنید.',
+          );
+        await tx.role.delete({ where: { id: roleId } });
+        await tx.auditEvent.create({
+          data: {
+            actorUserId: actor.userId,
+            action: 'iam.role.delete',
+            entityType: 'Role',
+            entityId: roleId,
+            outcome: AuditOutcome.SUCCESS,
+          },
+        });
+        return { success: true };
+      },
+      { timeout: 30_000 },
+    );
   }
   async saveRoleTemplate(
     dto: {
