@@ -95,10 +95,45 @@ function addressRecord(row: {
 
 @Injectable()
 export class MasterOrganizationDirectory {
-  async ensurePartnerDossier(
+  async preparePartnerDossiers(
     resource: 'suppliers' | 'brokers',
-    id: string,
-    version: number,
+    branch: string,
+    actor: AuthenticatedActor,
+  ) {
+    this.assertPartnerPreparationAccess(resource, branch, actor);
+    const query = {
+      where: { organizationId: null },
+      select: { id: true, version: true },
+      orderBy: { id: 'asc' },
+      take: 50,
+    } as const;
+    const pending =
+      resource === 'suppliers'
+        ? await this.database.client.masterSupplier.findMany(query)
+        : await this.database.client.masterBroker.findMany(query);
+    for (const item of pending)
+      await this.ensurePartnerDossier(
+        resource,
+        item.id,
+        item.version,
+        branch,
+        actor,
+      );
+    return {
+      prepared: pending.length,
+      remaining:
+        resource === 'suppliers'
+          ? await this.database.client.masterSupplier.count({
+              where: { organizationId: null },
+            })
+          : await this.database.client.masterBroker.count({
+              where: { organizationId: null },
+            }),
+    };
+  }
+
+  private assertPartnerPreparationAccess(
+    resource: 'suppliers' | 'brokers',
     branch: string,
     actor: AuthenticatedActor,
   ) {
@@ -120,6 +155,16 @@ export class MasterOrganizationDirectory {
       throw new ForbiddenException(
         'عملیات این بخش اطلاعات پایه محدود شده است.',
       );
+  }
+
+  async ensurePartnerDossier(
+    resource: 'suppliers' | 'brokers',
+    id: string,
+    version: number,
+    branch: string,
+    actor: AuthenticatedActor,
+  ) {
+    this.assertPartnerPreparationAccess(resource, branch, actor);
     return this.database.client.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`partner-dossier:${resource}:${id}`},0))::text`;
       const before =
