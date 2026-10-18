@@ -6391,6 +6391,9 @@ PR864-INTEGRATION-1018 — PC-A: user authorizes conflict resolution, testing an
 ## RESERVATION-ROOM-SETTINGS-1018 — PC-A
 Supplier-form settings retain immutable optional per-room composition (type, adults, child ages), project currency names/codes are visible, legacy SGL/DBL controls and redundant submission copy are removed, room sale amounts/currencies are editable alongside contract prices. Legacy snapshots remain readable. Focused Web8/API9 tests pass; final build and exact-head CI gate merge. No schema/migration/dependency or operational data changes.
 
+## HR-ACTIVE-STATUS-1018 — PC-B
+
+The prior crash guard treated JSX-localized Persian state children as unknown. HR status presentation now reads the canonical text through the existing public sourceUiText boundary before choosing a tone. All HR badge consumers (tables, employees, profiles, details and dashboard) inherit the correction; active/inactive/pending/draft rendering is proved through the actual custom JSX runtime in Persian and English. No persisted status changes, API/schema/migration/dependency changes.111 HR tests plus localization regressions, scoped lint, Web typecheck and production build pass; exact-head CI gates merge. Owner explicitly cancels server rollout: merge only, no remote operational changes.
 ## CONTRACT-PASSENGER-FLIGHT-PRICES-1018 — PC-A — IN_PROGRESS
 
 User authorizes passport Latin names in contract output, removal of room-summary sentence, mixed-room header suppression, currency symbols, per-passenger combined round-trip sale-flight amounts and develop merge. Reserve Sales form/state/pricing/output/domain and focused tests, existing public Customer masked reader consumer, pure Contracts flight-price metadata helper/export and bounded translations. Store a versioned Decimal-string passenger flight-price breakdown in the first FLIGHT service metadata; preserve existing total accounting, no double charge or changes to passenger all-service agreedPrices. API validates exact allocated passenger membership, money/currency and bounds against contract totals; legacy absent metadata remains compatible. No schema/migration/dependency/runtime changes. Existing public Customers contract is unchanged. Preserve branch/permission/audit and issued output history. No overlapping active source reservation found. Final-head CI gates merge.
@@ -6408,4 +6411,3 @@ AGENCY-PASSENGER-COMMISSION-1018 verification:97 focused tests passed (6 shared 
 
 
 RESERVATION-ROOM-SETTINGS-1018 follow-up: actual supplier-sheet HTML regression verifies edited room type and child ages; precise multicurrency amendment test verifies edited room totals without double charging. Existing contract sale payment/fee validations remain. Initial CI failure was missing new English display labels and is corrected; local English inventory tests hit host I/O timeout, so exact-head hosted full suite is mandatory. No migration or operational data changes.
-

@@ -1,7 +1,11 @@
+import { isValidElement } from 'react';
+import { sourceUiText } from '@/i18n/source-text';
+
 export type HrStatusTone = 'neutral' | 'success' | 'warning' | 'danger';
 
 export function hrStatusText(status: unknown): string {
   if (typeof status === 'string') return status;
+  if (isValidElement(status)) return sourceUiText(status) ?? 'نامشخص';
   if (typeof status === 'number' && Number.isFinite(status))
     return String(status);
   if (status && typeof status === 'object' && 'label' in status) {
