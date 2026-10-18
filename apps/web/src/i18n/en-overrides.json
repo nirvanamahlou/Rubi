@@ -1,4 +1,13 @@
 {
+  "واحد سازمانی کاربر": "User organizational unit",
+  "بدون واحد سازمانی": "No organizational unit",
+  "واحد فعلی (غیرفعال یا خارج از شعب مجاز)": "Current unit (inactive or outside authorized branches)",
+  "واحد فعالی برای شعب انتخاب‌شده موجود نیست.": "No active units are available for the selected branches.",
+  "ویرایش مشخصات کاربر": "Edit user details",
+  "ذخیره مشخصات کاربر": "Save user details",
+  "مشخصات کاربر ذخیره شد.": "User details saved.",
+  "واحد سازمانی فعال در شعب مجاز کاربر پیدا نشد.": "No active organizational unit was found in the user's authorized branches.",
+  "پیش از حذف شعبه، واحد سازمانی کاربر را تغییر دهید یا پاک کنید.": "Change or clear the user's organizational unit before removing its branch.",
   "ویرایش نام کاربر": "Edit user name",
   "ذخیره نام و نام خانوادگی": "Save full name",
   "نام و نام خانوادگی باید بین ۲ تا ۱۶۰ نویسه باشد.": "Full name must contain between 2 and 160 characters.",
