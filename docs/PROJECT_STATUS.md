@@ -2,6 +2,12 @@
 
 International Sales passenger snapshots now use each saved row passport first/last name instead of potentially repeated CRM display titles. Domestic names, customer identity, person IDs and price keys remain unchanged.43 focused regressions pass, including three distinct passengers sharing one CRM title. No migration or live3100 update. Hosted exact-head checks gate authorized develop merge.
 
+## BROKER-FIELD-ACCESS-1018 — PC-B — READY_FOR_REVIEW
+
+Final local validation:77 API/Web/Contracts focused tests, scoped lint/format, Contracts/Database/API builds and full API/Web typechecks pass after refreshing stale ignored Prisma artifacts. Source frozen for review; task branch/PR publication only. No user grants, operational database change,3100 rollout or automatic develop merge.
+
+Reproduced false broker-create field denial from internal dossierVersion under manual access; project only real editable partner data, map supplier address alias to the existing address authority and expose missing contact controls. Omit blank optional broker-create fields/empty leaders; preserve explicit edit clears and actual denied fields.64 API and10 Web focused regressions pass. No grants, migration, operational data/runtime or merge change. See tasks/BROKER-FIELD-ACCESS-1018.md.
+
 ## SALES-REFERENCE-ACCESS-1018 — PC-B
 
 Contract creation, insurance/tour selection, acquaintance methods and organization pickers now consume a Sales-authorized active reference projection rather than the Master Data administration API. The public Master Data adapter allowlists eleven resources and minimal attributes; sensitive contacts, accounts, arbitrary resources, inactive options and writes are excluded. Native Master Data read/write/export/unmask guards and existing account grants are unchanged. Payment bank/currency pickers share the bounded directory with payment-only authority restricted to those two resources. Actual HTTP AuthGuard/PermissionGuard tests prove create-only manual access with Master Data denied, legacy/edit/payment compatibility, revoked/denied/unauthenticated denial, input limits and safe projections. No schema/migration/dependency or runtime changes. Exact-head hosted quality/test/build/PostgreSQL checks gate user-authorized push/develop merge.

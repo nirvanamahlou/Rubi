@@ -1,6 +1,22 @@
 import { BadRequestException } from '@nestjs/common';
 import type { MasterDataContactCrypto } from './master-data-contact.crypto';
 
+export function partnerDossierAccessValues(
+  resource: string,
+  values: Record<string, string | number | readonly string[] | null>,
+) {
+  if (resource !== 'suppliers' && resource !== 'brokers') return values;
+  const fields = { ...values };
+  // Protocol markers are validated by preparePartnerDossier, not editable data.
+  delete fields.dossierVersion;
+  delete fields.dossierImport;
+  if (resource === 'suppliers' && Object.hasOwn(fields, 'dossierAddress')) {
+    fields.address = fields.dossierAddress ?? null;
+    delete fields.dossierAddress;
+  }
+  return fields;
+}
+
 export function preparePartnerDossier(
   values: Record<string, unknown>,
   crypto: MasterDataContactCrypto,

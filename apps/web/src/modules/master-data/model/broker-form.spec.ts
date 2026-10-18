@@ -38,6 +38,24 @@ const record = {
   },
 } as unknown as MasterDataRecord;
 describe('broker form', () => {
+  it('omits blank new optional dossier fields but preserves explicit edit clears', () => {
+    const fresh = brokerMutationValues(brokerFormValues(), []);
+    for (const key of ['dossierMobile', 'dossierEmail', 'dossierAddress'])
+      expect(fresh).not.toHaveProperty(key);
+    expect(fresh.dossierVersion).toBe('1');
+    expect(fresh).not.toHaveProperty('leaderDrafts');
+    expect(fresh).not.toHaveProperty('englishName');
+    expect(fresh).not.toHaveProperty('boardText');
+    const edited = brokerMutationValues(brokerFormValues(record), [], record);
+    expect(edited.dossierMobile).toBe('');
+    expect(edited.dossierEmail).toBe('');
+    expect(
+      brokerMutationValues(
+        { ...brokerFormValues(), dossierEmail: 'qa@example.test' },
+        [],
+      ).dossierEmail,
+    ).toBe('qa@example.test');
+  });
   it('keeps legacy city and airport Board, without putting masked contacts in input values', () => {
     expect(brokerFormValues(record)).toMatchObject({
       cityIds: 'old-city',

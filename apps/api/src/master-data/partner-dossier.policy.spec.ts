@@ -1,6 +1,50 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MasterDataContactCrypto } from './master-data-contact.crypto';
-import { preparePartnerDossier } from './partner-dossier.policy';
+import {
+  preparePartnerDossier,
+  partnerDossierAccessValues,
+} from './partner-dossier.policy';
+import { changedDeniedFields } from '@nora/contracts';
+
+describe('partner dossier editable-field projection', () => {
+  it('removes only validated protocol markers and retains real broker fields', () => {
+    expect(
+      partnerDossierAccessValues('brokers', {
+        dossierVersion: '1',
+        dossierImport: 'true',
+        name: 'Broker',
+        dossierEmail: 'qa@example.test',
+        dossierMobile: '',
+        dossierAddress: 'Office',
+        leaderDrafts: '{}',
+      }),
+    ).toEqual({
+      name: 'Broker',
+      dossierEmail: 'qa@example.test',
+      dossierMobile: '',
+      dossierAddress: 'Office',
+      leaderDrafts: '{}',
+    });
+  });
+  it('cannot bypass denied supplier address using its dossier alias', () => {
+    const projected = partnerDossierAccessValues('suppliers', {
+      dossierVersion: '1',
+      dossierAddress: 'Office',
+    });
+    expect(projected).toEqual({ address: 'Office' });
+    expect(
+      changedDeniedFields(
+        ['ui.deny.field.master-data.suppliers.address'],
+        'field.master-data.suppliers',
+        projected,
+      ),
+    ).toEqual(['address']);
+  });
+  it('does not special-case protocol-like keys on other resources', () => {
+    const input = { dossierVersion: '1', dossierImport: 'true' };
+    expect(partnerDossierAccessValues('countries', input)).toBe(input);
+  });
+});
 
 describe('partner dossier opt-in policy', () => {
   const protectedValue = { encrypted: 'cipher', masked: '***12' };
