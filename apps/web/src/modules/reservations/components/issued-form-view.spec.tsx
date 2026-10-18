@@ -91,3 +91,51 @@ it('historical form viewing has no mutation controls', () => {
   expect(tree[0]?.type).toBe(TravelDocument);
   expect(tree.some((n) => n.props.onClick || n.props.onChange)).toBe(false);
 });
+
+it.each([2, 9])(
+  'opens legacy issued form version %s without requiring the newer sent snapshot field',
+  (version) => {
+    const intake = state.values[3] as {
+      workflow: {
+        voucherIssued: boolean;
+        supplierStatus: string;
+        sentSupplierFormSettings?: unknown;
+        sentSupplierFormVersion?: number;
+      };
+    };
+    intake.workflow.voucherIssued = false;
+    intake.workflow.supplierStatus = 'REQUESTED';
+    delete intake.workflow.sentSupplierFormSettings;
+    intake.workflow.sentSupplierFormVersion = version;
+    const tree = nodes(
+      TravelWorkflowForm({ id: 'request', action: 'رزرواسیون' }),
+    );
+    expect(tree.some((node) => node.type === ReservationSettings)).toBe(false);
+    expect(
+      tree.find((node) => node.type === TravelDocument)?.props.downloadLabel,
+    ).toBe('دانلود');
+    expect(tree.filter((node) => node.type === Button)).toHaveLength(1);
+  },
+);
+
+it.each([undefined, 0, -1, 1.5])(
+  'does not treat a saved draft with invalid issuance version %s as issued',
+  (version) => {
+    const intake = state.values[3] as {
+      workflow: {
+        voucherIssued: boolean;
+        supplierStatus: string;
+        sentSupplierFormSettings?: unknown;
+        sentSupplierFormVersion?: number | undefined;
+      };
+    };
+    intake.workflow.voucherIssued = false;
+    intake.workflow.supplierStatus = 'NEW';
+    delete intake.workflow.sentSupplierFormSettings;
+    intake.workflow.sentSupplierFormVersion = version;
+    const tree = nodes(
+      TravelWorkflowForm({ id: 'request', action: 'رزرواسیون' }),
+    );
+    expect(tree.some((node) => node.type === ReservationSettings)).toBe(true);
+  },
+);
