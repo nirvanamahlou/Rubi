@@ -213,9 +213,15 @@ export class ManualUserAccessService {
         ),
       }),
       title:
-        user.roles.find(({ role }) =>
-          role.code.startsWith(MANUAL_ACCESS_ROLE_PREFIX),
-        )?.role.name ?? 'دسترسی دستی',
+        user.roles.find(
+          ({ role }) =>
+            role.isActive && role.code.startsWith(MANUAL_ACCESS_ROLE_PREFIX),
+        )?.role.name ??
+        user.roles.find(
+          ({ role }) =>
+            role.isActive && !role.code.startsWith('personal-access-'),
+        )?.role.name ??
+        'دسترسی دستی',
     };
   }
 

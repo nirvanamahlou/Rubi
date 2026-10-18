@@ -1,4 +1,8 @@
 import { isOptionalOperationReason } from '@nora/contracts';
+import { userDetailsRevision } from './user-details';
+import type { UpdateUserDetailsDto } from './dto/update-user-details.dto';
+import { roleOptionSelection } from './role-access-option';
+import { reusableRoleWhere } from './role-directory';
 import {
   isPrivateUserRole,
   roleDirectoryRevision,
@@ -477,6 +481,7 @@ export class IamService implements IamStepUpPort {
         displayName: true,
         status: true,
         lastLoginAt: true,
+        updatedAt: true,
         roles: {
           select: {
             role: {
@@ -500,6 +505,7 @@ export class IamService implements IamStepUpPort {
     return users.map((user) => ({
       ...user,
       accessRevision: this.accessRevision(user),
+      detailsRevision: userDetailsRevision(user),
     }));
   }
 
@@ -1098,30 +1104,94 @@ export class IamService implements IamStepUpPort {
     );
   }
 
-  listRoleTemplates() {
-    return this.database.client.role.findMany({
-      where: {
-        code: { startsWith: 'personal-access-template-job-' },
-        isActive: true,
-      },
+  async listRoleTemplates() {
+    const roles = await this.database.client.role.findMany({
+      where: { ...reusableRoleWhere, isActive: true },
       include: { permissions: { include: { permission: true } } },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
     });
+    return roles
+      .sort(
+        (a, b) =>
+          Number(b.code.startsWith(ROLE_TEMPLATE_PREFIX)) -
+          Number(a.code.startsWith(ROLE_TEMPLATE_PREFIX)),
+      )
+      .map((role) => ({ ...role, selection: roleOptionSelection(role) }));
+  }
+  async updateUserDetails(
+    userId: string,
+    dto: UpdateUserDetailsDto,
+    actor: AuthenticatedActor,
+  ) {
+    const displayName = dto.displayName.trim();
+    if (
+      displayName.length < 2 ||
+      displayName.length > 160 ||
+      !/^[a-f0-9]{64}$/.test(dto.revision)
+    )
+      throw new BadRequestException(
+        'نام و نام خانوادگی یا نسخهٔ اطلاعات معتبر نیست.',
+      );
+    return this.database.client.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))::text`;
+        await tx.$queryRaw`SELECT id FROM iam_users WHERE id IN (${actor.userId}::uuid, ${userId}::uuid) ORDER BY id FOR UPDATE`;
+        const operator = await tx.user.findUnique({
+          where: { id: actor.userId },
+          include: manualUserInclude,
+        });
+        if (
+          operator?.status !== UserStatus.ACTIVE ||
+          !authenticatedPermissionCodes(operator.roles).includes(
+            'iam.users.manage',
+          )
+        )
+          throw new ForbiddenException();
+        const target = await tx.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            updatedAt: true,
+          },
+        });
+        if (!target) throw new NotFoundException('کاربر پیدا نشد.');
+        if (userDetailsRevision(target) !== dto.revision)
+          throw new ConflictException(
+            'اطلاعات کاربر تغییر کرده است؛ دوباره بارگذاری کنید.',
+          );
+        if (target.displayName === displayName)
+          return { ...target, detailsRevision: userDetailsRevision(target) };
+        const updated = await tx.user.update({
+          where: { id: userId },
+          data: { displayName },
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            updatedAt: true,
+          },
+        });
+        await tx.auditEvent.create({
+          data: {
+            actorUserId: actor.userId,
+            action: 'iam.user.details.update',
+            entityType: 'User',
+            entityId: userId,
+            outcome: AuditOutcome.SUCCESS,
+          },
+        });
+        return { ...updated, detailsRevision: userDetailsRevision(updated) };
+      },
+      { timeout: 30_000 },
+    );
   }
   async listRoleDirectory(actor: AuthenticatedActor) {
     if (!(await this.isSystemAdministrator(actor)))
       throw new ForbiddenException();
     const roles = await this.database.client.role.findMany({
-      where: {
-        OR: [
-          { code: { startsWith: ROLE_TEMPLATE_PREFIX } },
-          {
-            NOT: [
-              { code: { startsWith: 'personal-access-' } },
-              { code: { startsWith: MANUAL_ACCESS_ROLE_PREFIX } },
-            ],
-          },
-        ],
-      },
+      where: reusableRoleWhere,
       include: {
         users: { select: { userId: true } },
         permissions: { select: { permissionId: true } },
