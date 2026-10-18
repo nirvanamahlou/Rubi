@@ -1849,9 +1849,11 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       });
       const createdEmployee = await service.createEmployee(input, key(), admin);
       const after = await directory.formReferences(admin);
-      expect(after.users.some((u) => u.id === account.actor.userId)).toBe(
-        false,
-      );
+      expect(
+        after.users.find((u) => u.id === account.actor.userId),
+      ).toMatchObject({
+        unavailableReason: 'LINKED',
+      });
       expect(
         (await directory.formReferences(admin, createdEmployee.id)).users.some(
           (u) => u.id === account.actor.userId,

@@ -1,4 +1,5 @@
 'use client';
+import { syncHotelChildSelections } from '../model/hotel-child-selection';
 import { AgencyCommission } from './agency-commission';
 import { PassengerPackagePrices } from './passenger-package-prices';
 import { validatePassengerFlightPrices } from '@nora/contracts';
@@ -29,17 +30,18 @@ import { PassengerCountField } from './passenger-count-field';
 import { PassengerAgeField } from './passenger-age-field';
 import { ContractOutputButton } from './contract-output';
 
-import { AlertTriangle, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  AlertTriangle,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from '@/i18n/link';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
-import type {
-  HotelRoomRateV1,
-  MasterDataRecord,
-  MasterDataResource,
-  SalesServiceKind,
-} from '@nora/contracts';
+import type { HotelRoomRateV1, SalesServiceKind } from '@nora/contracts';
 
 import { validateSalesCurrencySelection } from './sales-currency-select';
 import {
@@ -55,7 +57,10 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { Alert, Badge, Card } from '@/components/ui/surfaces';
-import { masterDataApi } from '@/modules/master-data/api/client';
+import {
+  loadSalesReferences,
+  type SalesReferences,
+} from '../api/reference-refresh';
 import { salesApi } from '../api/client';
 import {
   prepareTicketSearch,
@@ -189,21 +194,24 @@ export function SalesContractForm() {
         automaticComponentPricing: true,
         priceEntryMode: 'CONTRACT_TOTAL',
       });
-    return {
-      ...draftState,
-      automaticComponentPricing: true,
-      priceEntryMode: 'CONTRACT_TOTAL',
-      servicePricing: draftState.servicePricing ?? {},
-      catalogSalePricing:
-        !draftState.tour &&
-        !draftState.serviceKinds.includes('HOTEL') &&
-        !draftState.serviceKinds.includes('TOUR')
-          ? repriceStandaloneTicketSelections(
-              { ...draftState, servicePricing: {} },
-              salesPassengerCounts(draftState).seated,
-            )
-          : {},
-    };
+    return syncHotelChildSelections(
+      {
+        ...draftState,
+        automaticComponentPricing: true,
+        priceEntryMode: 'CONTRACT_TOTAL',
+        servicePricing: draftState.servicePricing ?? {},
+        catalogSalePricing:
+          !draftState.tour &&
+          !draftState.serviceKinds.includes('HOTEL') &&
+          !draftState.serviceKinds.includes('TOUR')
+            ? repriceStandaloneTicketSelections(
+                { ...draftState, servicePricing: {} },
+                salesPassengerCounts(draftState).seated,
+              )
+            : {},
+      },
+      salesTravelDate(draftState),
+    );
   }, [draftState]);
   const [peopleDraft, setPeopleDraft] = useState<SalesPeopleDraft | null>(null);
   const [peopleDirty, setPeopleDirty] = useState(false);
@@ -222,16 +230,12 @@ export function SalesContractForm() {
       hotelRateSnapshot.key === hotelRateKey ? hotelRateSnapshot.data : [],
     [hotelRateSnapshot, hotelRateKey],
   );
-  const [references, setReferences] = useState<{
-    airlines: readonly MasterDataRecord[];
-    countries: readonly MasterDataRecord[];
-    cities: readonly MasterDataRecord[];
-    hotels: readonly MasterDataRecord[];
-    roomTypes: readonly MasterDataRecord[];
-    visaServices: readonly MasterDataRecord[];
-    banks: readonly MasterDataRecord[];
-    currencies: readonly MasterDataRecord[];
-  }>({
+  const [referenceRefresh, setReferenceRefresh] = useState({
+    revision: 0,
+    busy: true,
+    message: '',
+  });
+  const [references, setReferences] = useState<SalesReferences>({
     airlines: [],
     countries: [],
     cities: [],
@@ -420,68 +424,44 @@ export function SalesContractForm() {
           }
         }, 0)
       : undefined;
-    const query = {
-      search: '',
-      status: 'active' as const,
-      sortBy: 'name' as const,
-      sortDirection: 'asc' as const,
-      page: 1,
-      pageSize: 100,
-    };
-    const loadReferences = async (resource: MasterDataResource) => {
-      const data: MasterDataRecord[] = [];
-      for (let page = 1; ; page++) {
-        const response = await masterDataApi.list(resource, { ...query, page });
-        data.push(...response.data);
-        if (!response.data.length || data.length >= response.meta.total)
-          return { data };
-      }
-    };
-    void Promise.allSettled([
-      loadReferences('countries'),
-      loadReferences('cities'),
-      loadReferences('hotels'),
-      loadReferences('room-types'),
-      loadReferences('visa-services'),
-      loadReferences('banks'),
-      loadReferences('currencies'),
-      loadReferences('airlines'),
-    ]).then((results) => {
-      const dataAt = (index: number): readonly MasterDataRecord[] => {
-        const result = results[index];
-        if (result?.status === 'fulfilled') return result.value.data ?? [];
-        return [];
-      };
-      const [
-        countries = [],
-        cities = [],
-        hotels = [],
-        roomTypes = [],
-        visaServices = [],
-        banks = [],
-        currencies = [],
-        airlines = [],
-      ] = [0, 1, 2, 3, 4, 5, 6, 7].map(dataAt);
-      setReferences({
-        airlines,
-        countries,
-        cities,
-        hotels,
-        roomTypes,
-        visaServices,
-        banks,
-        currencies,
-      });
-      setState((current) => withSalesRouteDefaults(current, countries, cities));
-      if (results.some((result) => result.status === 'rejected'))
-        setError(
-          'بخشی از اطلاعات پایه دریافت نشد؛ گزینه‌های دریافت‌شده، از جمله هتل‌های فعال، همچنان قابل استفاده‌اند.',
-        );
-    });
     return () => {
       if (restoreTimer !== undefined) globalThis.clearTimeout(restoreTimer);
     };
   }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadSalesReferences(undefined, controller.signal)
+      .then(({ references: loaded, failed }) => {
+        if (controller.signal.aborted) return;
+        setReferences((current) => ({ ...current, ...loaded }));
+        if (referenceRefresh.revision === 0)
+          setState((current) =>
+            withSalesRouteDefaults(
+              current,
+              loaded.countries ?? [],
+              loaded.cities ?? [],
+            ),
+          );
+        setReferenceRefresh((current) => ({
+          ...current,
+          busy: false,
+          message: failed.length
+            ? 'بخشی از اطلاعات دریافت نشد؛ برای تلاش مجدد، دریافت اطلاعات را بزنید.'
+            : referenceRefresh.revision
+              ? 'اطلاعات موردنیاز فرم به‌روز شد.'
+              : '',
+        }));
+      })
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setReferenceRefresh((current) => ({
+            ...current,
+            busy: false,
+            message: 'دریافت اطلاعات ناموفق بود؛ دوباره تلاش کنید.',
+          }));
+      });
+    return () => controller.abort();
+  }, [referenceRefresh.revision]);
   useEffect(() => {
     globalThis.localStorage?.setItem(
       'nora.sales.contract.draft.v1',
@@ -525,6 +505,7 @@ export function SalesContractForm() {
     state.hotel.checkIn,
     state.hotel.checkOut,
     hotelRateKey,
+    referenceRefresh.revision,
   ]);
   const toggleService = (kind: SalesServiceKind) => {
     setDetailStep(0);
@@ -893,7 +874,37 @@ export function SalesContractForm() {
     >
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-black">قرارداد جدید</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-xl font-black">قرارداد جدید</h1>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={referenceRefresh.busy || busy}
+              onClick={() =>
+                setReferenceRefresh((current) => ({
+                  revision: current.revision + 1,
+                  busy: true,
+                  message: '',
+                }))
+              }
+            >
+              <RefreshCw
+                aria-hidden="true"
+                className={
+                  referenceRefresh.busy ? 'size-4 animate-spin' : 'size-4'
+                }
+              />
+              {referenceRefresh.busy
+                ? 'در حال دریافت اطلاعات…'
+                : 'دریافت اطلاعات'}
+            </Button>
+          </div>
+          {referenceRefresh.message && (
+            <p role="status" className="mt-1 text-xs text-muted-foreground">
+              {referenceRefresh.message}
+            </p>
+          )}
           <p className="mt-1 text-xs text-muted-foreground">
             مرحله {step + 1} از {salesSteps.length} · {salesSteps[step]}
           </p>
@@ -926,6 +937,7 @@ export function SalesContractForm() {
       <Card className="min-w-0 p-4 sm:p-5">
         {step === 2 ? (
           <SalesPeopleSheet
+            refreshRevision={referenceRefresh.revision}
             state={state}
             draft={peopleDraft}
             busy={busy}
@@ -1174,6 +1186,11 @@ export function SalesContractForm() {
                     <PassengerAgeField
                       key={`child-${index}`}
                       label={`سن کودک ${index + 1}`}
+                      allowedAges={
+                        state.serviceKinds.includes('FLIGHT')
+                          ? Array.from({ length: 10 }, (_, i) => i + 2)
+                          : undefined
+                      }
                       value={state.childAges?.[index] ?? null}
                       onChange={(age) =>
                         patchState({
@@ -1306,6 +1323,7 @@ export function SalesContractForm() {
             )}
             {activeDetail === 'TOUR' && (
               <SalesTourPicker
+                refreshRevision={referenceRefresh.revision}
                 state={state}
                 countries={references.countries}
                 cities={references.cities}
@@ -1363,6 +1381,7 @@ export function SalesContractForm() {
                       {!state.contractFlights?.OUTBOUND ? (
                         <>
                           <TicketOfferPicker
+                            refreshRevision={referenceRefresh.revision}
                             calendarSystem={
                               salesInternationalTravel(state)
                                 ? 'gregorian'
@@ -1442,6 +1461,7 @@ export function SalesContractForm() {
                           {!flightDirections.includes('OUTBOUND') ||
                           salesFlightSelection(state, 'OUTBOUND') ? (
                             <TicketOfferPicker
+                              refreshRevision={referenceRefresh.revision}
                               calendarSystem={
                                 salesInternationalTravel(state)
                                   ? 'gregorian'
@@ -1537,6 +1557,7 @@ export function SalesContractForm() {
             ) : null}
             {activeDetail === 'INSURANCE' ? (
               <SalesInsurancePicker
+                refreshRevision={referenceRefresh.revision}
                 value={state.insurancePlan}
                 onChange={(insurancePlan) => patchState({ insurancePlan })}
                 onReady={setInsuranceReady}

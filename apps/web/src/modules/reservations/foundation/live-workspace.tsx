@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { LoginResponse } from '@nora/contracts';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -20,6 +20,10 @@ const emptyAccess: ViewAccess = {
 };
 /** Reads the existing public inbox; no mutations or duplicate intake. */
 export function LiveReservationQueue() {
+  const refreshRequest = useRef<(() => void) | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState('');
+  const [refreshRevision, setRefreshRevision] = useState(0);
   const [view, setView] = useState<{
     state: ViewState;
     rows: RequestView[];
@@ -37,6 +41,16 @@ export function LiveReservationQueue() {
   useEffect(() => {
     let disposed = false;
     let running = false;
+    let queuedRefresh = false;
+    const identityOf = (value: LoginResponse | null) =>
+      value
+        ? value.user.id +
+          ':' +
+          value.user.branches
+            .map((b) => b.id)
+            .sort()
+            .join(',')
+        : '';
     let timer: ReturnType<typeof setTimeout> | undefined;
     let session: LoginResponse | null = null;
     let tracker = new ReservationArrivalTracker();
@@ -70,10 +84,8 @@ export function LiveReservationQueue() {
           rows = await loadIntake(baseUrl, session, controller.signal);
         }
         if (disposed) return;
-        const nextIdentity = `${session!.user.id}:${session!.user.branches
-          .map((b) => b.id)
-          .sort()
-          .join(',')}`;
+        const nextIdentity = identityOf(session);
+        setRefreshError('');
         const changedScope = nextIdentity !== scopeIdentity;
         if (changedScope) {
           tracker = new ReservationArrivalTracker();
@@ -91,19 +103,39 @@ export function LiveReservationQueue() {
         if (disposed) return;
         const state =
           error instanceof ReservationFeedError ? error.state : 'ERROR';
-        setView((current) => ({
-          ...current,
-          rows: [],
-          state,
-          newCount: 0,
-          access: session ? accessFromSession(session) : emptyAccess,
-        }));
+        setRefreshError(
+          state === 'ERROR'
+            ? 'دریافت اطلاعات ناموفق بود؛ دوباره تلاش کنید.'
+            : '',
+        );
+        setView((current) => {
+          if (
+            state === 'ERROR' &&
+            current.state === 'SUCCESS' &&
+            scopeIdentity === identityOf(session)
+          )
+            return current;
+          return {
+            ...current,
+            rows: [],
+            state,
+            newCount: 0,
+            access: session ? accessFromSession(session) : emptyAccess,
+          };
+        });
       } finally {
         running = false;
-        if (!disposed)
-          timer = setTimeout(() => {
+        if (!disposed) {
+          if (queuedRefresh) {
+            queuedRefresh = false;
             void update();
-          }, 30_000);
+          } else {
+            setRefreshing(false);
+            timer = setTimeout(() => {
+              void update();
+            }, 30_000);
+          }
+        }
       }
     }
     const resume = () => {
@@ -116,9 +148,17 @@ export function LiveReservationQueue() {
     window.addEventListener('focus', resume);
     document.addEventListener('visibilitychange', resume);
     window.addEventListener('reservation-workflow-changed', resume);
+    refreshRequest.current = () => {
+      if (disposed) return;
+      setRefreshing(true);
+      setRefreshError('');
+      if (running) queuedRefresh = true;
+      else void update();
+    };
     void update();
     return () => {
       disposed = true;
+      refreshRequest.current = null;
       controller.abort();
       if (timer) clearTimeout(timer);
       window.removeEventListener('storage', priceChanged);
@@ -130,6 +170,13 @@ export function LiveReservationQueue() {
   return (
     <>
       <ReservationOperationsWorkspace
+        onRefresh={() => {
+          setRefreshRevision((value) => value + 1);
+          refreshRequest.current?.();
+        }}
+        refreshing={refreshing}
+        refreshError={view.state === 'SUCCESS' ? refreshError : ''}
+        refreshRevision={refreshRevision}
         state={view.state}
         rows={view.rows}
         access={view.access}

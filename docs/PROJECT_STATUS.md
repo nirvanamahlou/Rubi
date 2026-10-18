@@ -22,6 +22,10 @@ Align only the outer login background seam to the unchanged1.1:1 desktop card di
 
 Add prefilled full-name editing for existing users with separate revision-protected, audited name-only save. Connect existing/new-user role choices to active reusable saved roles and normalized effective/explicit selection; role IDs disambiguate choices and selecting a role changes no account until explicit save. Preserve old grants, shared definitions and all manual-access safeguards.88 Web/access/i18n tests and scoped lint pass; remaining type/API/build exact-head gates required before owner-authorized develop merge. No schema/migration/dependency/real-data/runtime changes. See docs/tasks/EXISTING-USER-EDIT-1018.md.
 
+## PARTNER-DOSSIER-SESSION-LOOP-1018 — PC-B — VALIDATING
+
+Repair remaining nested-session refreshes after PR926 using a single live partner dossier session provider; document queries no longer rotate credentials. Remove requested archive/credit help text without changing Finance semantics. Hook regressions cover25 mounted consumers, owner cleanup and revoked actor/branch/grants. No schema/dependency/API change. Exact-head CI gates explicitly authorized develop merge; authenticated visual QA is still not claimed. See tasks/PARTNER-DOSSIER-SESSION-LOOP-1018.md.
+
 ## LOGIN-SPLIT-BACKGROUND-1018 — PC-A — VALIDATING
 
 Restore the pre8e70e5d2 login card/form presentation (surface card, blue brand panel, regular field labels, primary submit and normal locale switcher), changing only the outer page to a hard50/50 physical left-blue/right-white background independent of RTL/LTR. No background video or decorative media reintroduced. Authentication, logos, controls and error handling remain unchanged. Focused layout/form/logo tests and exact-head full CI gate explicit user-authorized develop merge and backed-up server rollout. No migration/schema/dependency or business-data change; retain existing server-only encrypted backups and all persistent volumes.
@@ -6417,8 +6421,28 @@ Branch codex/pc-a-agency-passenger-commission-1018 stacked on a8295b67 (pending 
 
 AGENCY-PASSENGER-COMMISSION-1018 verification:97 focused tests passed (6 shared Contracts,52 Sales API,39 Web); affected lint, API/Web typechecks and production builds passed (Web62 static pages). Fixed IRR adult/child commission snapshots persist once, reject invalid money and do not alter totals; agency output assigns each age category correctly, personal customers submit no stale commission and infants show no assigned amount. No migration/dependency/data/runtime changes. Source locks released with candidate. GitHub authentication restored on2026-10-18; user authorizes develop merge via PR931. Integrated develop preserving all peer scopes; final-head hosted CI gates merge.
 
+## HR-USER-DIRECTORY-1018 — PC-B
+
+Employee account selection reads the live public IAM user directory through HR's existing protected form references. All accounts within authorized branch scope are listed; inactive/already-linked accounts expose an additive unavailableReason and remain disabled, while accounts from a different selected company scope stay visible with a reason. The field now explicitly shows the complete directory rather than the shared selector's default first five options. Current employee ownership is exempted for edit; cross-branch and duplicate-account save guards are preserved. Added focused API/actual-form regressions and updated PostgreSQL expectations. No schema/migration/dependency or operational-data changes; validation/CI gate user-authorized push and develop merge. No server rollout.
 
 RESERVATION-ROOM-SETTINGS-1018 follow-up: actual supplier-sheet HTML regression verifies edited room type and child ages; precise multicurrency amendment test verifies edited room totals without double charging. Existing contract sale payment/fee validations remain. Initial CI failure was missing new English display labels and is corrected; local English inventory tests hit host I/O timeout, so exact-head hosted full suite is mandatory. No migration or operational data changes.
 ## 2026-10-18 — WORKBENCH-UNIT-ASSIGNEE-1018 — READY_FOR_CI
 
 Direct PC-B execution: Workbench request forms now select actual IAM users by their saved HR organization unit; the server validates live same-branch membership in the request transaction, persists the existing executor FK and atomically notifies the recipient with a Workbench link. Personal inboxes include created/received requests with direction and sender/recipient names; unrelated accounts and the legacy HR department reader do not receive personalized requests. No new schema/migration/dependency; PR933 is the paired deployment prerequisite. Isolated PostgreSQL/HTTP synthetic sender/recipient, replay, inactive/stale-member and branch-isolation verification passes; exact-head lint/type/test/build and hosted CI gate the owner-authorized develop merge and local3100 rollout. Details: docs/tasks/WORKBENCH-UNIT-ASSIGNEE-1018.md.
+
+
+
+## HOTEL-CHILD-SELECTION-1018 — PC-A — IN_PROGRESS
+
+User authorizes fixing guest/room age mismatch, selecting each hotel child from the flight children with inherited age, proving contract creation and develop merge after tests. Branch codex/pc-a-hotel-child-selection-1018 from origin/develop@fc8a5927. Reserve Sales room editor/helper, composition/passenger alignment and targeted API create/capacity tests, bounded translations and own docs. Preserve actual birthday/capacity/under15 hotel versus under12 airline categories, no duplicate child allocation across rooms, service-subset selections and stale-draft compatibility. Other Reservations room-settings candidate scope is released and its amendment/output work is preserved. No schema/migration/dependency/live-data/runtime mutation; actual create proof must use synthetic isolated fixtures.
+
+HOTEL-CHILD-SELECTION-1018 verification:420 Sales Web tests pass (one existing skip), final focused child-picker regressions10 pass; Web typecheck and scoped lint pass. Real SalesService/Repository create against a separately migrated synthetic PostgreSQL database persisted four passengers in two rooms with inherited ages6/8; idempotent replay and invalid-age rejection passed. Proof uses synthetic public-directory adapters and test-only60s transaction timeout for slow host; not authenticated browser E2E. Owned test database removed; operational rubi untouched. No schema/dependency/live rollout. Source locks released with candidate; exact-head hosted CI/build gates user-authorized develop merge.
+
+## CONTRACT-REFERENCE-REFRESH-1018 — PC-A
+
+Added «دریافت اطلاعات» beside the new-contract heading. It reloads all active paginated reference lists and dependent hotel rates, tickets, tours, insurance, organizations and acquaintance methods without navigation/remounting the draft. Keep current inputs, step and selected snapshots; ignore cancelled responses and retain each last complete list when its refresh fails.26 focused regressions pass, including direct button interaction and cancellation/partial-page failure. Existing permissions/public APIs remain unchanged. Build and exact-head hosted quality/test/migration checks gate the explicitly authorized develop merge. No migration/dependency or operational data/runtime changes.
+
+
+## 2026-10-18 — PC-A — Reservation inbox manual refresh
+
+Added دریافت اطلاعات to the Reservations inbox through the existing authenticated queue reader. Manual refresh preserves filters, selection and mounted operational forms, coalesces overlapping intake requests, refreshes hotel/city/meal reference labels and retains the last successful same-scope queue on transient failure. Authentication/authorization failures clear the queue. No schema, migration, API contract, dependency or runtime changes. Foundation tests: 8 files / 79 tests passed; Web lint/typecheck/build verification recorded in the task PR before merge.
