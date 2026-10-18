@@ -1,6 +1,8 @@
 import { expect, it } from 'vitest';
 import {
   PASSENGER_FLIGHT_PRICES,
+  flightRoomTotals,
+  roomPriceShares,
   readPassengerFlightPrices,
   validatePassengerFlightPrices,
 } from '../src';
@@ -79,8 +81,7 @@ it('supports independent optional foreign amount and applies discounts to the up
   ).toThrow();
 });
 
-it('calculates contract totals by currency and splits rooms across adults without rounding loss', async () => {
-  const { flightRoomTotals, roomPriceShares } = await import('../src');
+it('calculates contract totals by currency and splits rooms across adults without rounding loss', () => {
   const rooms = [
     { adults: 2, agreedPrice: { amount: '100.0001', currencyCode: 'USD' } },
   ];
