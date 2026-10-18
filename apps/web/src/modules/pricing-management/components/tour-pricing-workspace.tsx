@@ -36,7 +36,10 @@ import {
 } from '@/components/ui/surfaces';
 import { packagePricingApi } from '../api/client';
 import { TourPriceFields } from './tour-price-fields';
-import { PackageRoomSales } from './package-room-sales';
+import {
+  PackageCompositionSales,
+  compositionSelectionKey,
+} from './package-composition-sales';
 import {
   applyPackageRoomSales,
   type PackageRoomSaleOverrideV1,
@@ -59,7 +62,9 @@ import { packageGeneratorData } from '../model/package-generator-data';
 import { packageBannerHref } from '../model/package-banner';
 import { PackagePricingBreadcrumbs } from './package-pricing-breadcrumbs';
 import {
-  buildHotelPackageTable,
+  buildHotelPackageCompositions,
+  packageRoomTitle,
+  packageTourSelectionBatch,
   type TourRoomCurrencyAmount,
 } from '@nora/contracts';
 
@@ -124,6 +129,7 @@ export function TourPricingWorkspace() {
   const [roomSaleOverrides, setRoomSaleOverrides] = useState<
     PackageRoomSaleOverrideV1[]
   >([]);
+  const [selectedRoomKeys, setSelectedRoomKeys] = useState<string[]>([]);
   const [showPeriods, setShowPeriods] = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
   const [familyAdults, setFamilyAdults] = useState('2');
@@ -194,6 +200,7 @@ export function TourPricingWorkspace() {
 
   function applyDraft(value: PackageTourDraftV1 | null) {
     setDraft(value);
+    setSelectedRoomKeys([...(value?.selectedRoomKeys ?? [])]);
     setRoomSaleOverrides([...(value?.roomSaleOverrides ?? [])]);
     setSelectedHotelRateIds([...(value?.selectedHotelRateIds ?? [])]);
     setShowGenerator(false);
@@ -319,8 +326,10 @@ export function TourPricingWorkspace() {
     (item) => item.package.id === tourPackageId,
   );
 
-  const batch: PackageTourHotelPurchaseBatchV1 | undefined =
-    grid?.purchaseBatches.find((item) => item.id === batchId);
+  const batch: PackageTourHotelPurchaseBatchV1 | undefined = useMemo(
+    () => (grid ? packageTourSelectionBatch(grid, batchId) : undefined),
+    [grid, batchId],
+  );
   const activeRoomColumns = useMemo(() => {
     const columns = new Map<string, string>();
     for (const row of batch?.rows ?? []) {
@@ -341,7 +350,7 @@ export function TourPricingWorkspace() {
   ) => {
     if (!batch || !grid) return [];
     try {
-      const prices = buildHotelPackageTable({
+      const prices = buildHotelPackageCompositions({
         row,
         checkIn: grid.tour.startsOn,
         checkOut: grid.tour.endsOn,
@@ -382,7 +391,11 @@ export function TourPricingWorkspace() {
         ? prices.map((price) =>
             applyPackageRoomSales(
               price,
-              roomSaleOverrides,
+              roomSaleOverrides.filter((sale) =>
+                selectedRoomKeys.includes(
+                  compositionSelectionKey(sale.hotelRateId, sale.roomCode),
+                ),
+              ),
               commissionMode,
               commissionMode === 'percent' ? commission || '0' : '0',
             ),
@@ -402,19 +415,34 @@ export function TourPricingWorkspace() {
   })();
   const invalidSale =
     invalidFields ||
+    !selectedRoomKeys.length ||
     selectedHotelRateIds.some(
       (id) => !batch?.rows.some((row) => row.id === id),
     ) ||
     !!batch?.rows
       .filter((row) => selectedHotelRateIds.includes(row.id))
-      .some((row) => tablePrices(row).length !== 3);
-  const tableColumns = [
+      .some((row) => !tablePrices(row).length);
+  const legacyTableColumns = [
     ['single', 'سینگل · هر نفر'],
     ['double', 'دبل · هر نفر'],
     ['doubleChild', 'کودک با تخت'],
   ] as const;
   const publication =
     publications.find((item) => item.id === publicationId) ?? publications[0];
+  const tableColumns: readonly (readonly [string, string])[] =
+    publication?.roomPrices.some((p) => p.roomCode.startsWith('[2,'))
+      ? [
+          ...new Map(
+            publication.roomPrices.map((p) => [
+              p.roomCode,
+              [
+                p.roomCode,
+                (p.roomTypeName ?? '') + ' · ' + packageRoomTitle(p.roomCode),
+              ] as const,
+            ]),
+          ).values(),
+        ]
+      : legacyTableColumns;
   const generatorData = useMemo(() => {
     if (!grid || !batch || !publication?.selectedHotelRateIds) return null;
     try {
@@ -434,6 +462,8 @@ export function TourPricingWorkspace() {
   })();
   const unsaved =
     !draft ||
+    JSON.stringify(selectedRoomKeys) !==
+      JSON.stringify(draft.selectedRoomKeys ?? []) ||
     JSON.stringify(roomSaleOverrides) !==
       JSON.stringify(draft.roomSaleOverrides ?? []) ||
     JSON.stringify([...selectedHotelRateIds].sort()) !==
@@ -482,9 +512,22 @@ export function TourPricingWorkspace() {
           expectedVersion: draft?.draftVersion ?? 0,
           priceFields,
           selectedHotelRateIds,
+          selectedRoomKeys: selectedRoomKeys.filter((key) =>
+            batch.rows.some(
+              (row) =>
+                selectedHotelRateIds.includes(row.id) &&
+                tablePrices(row, false).some(
+                  (price) =>
+                    compositionSelectionKey(row.id, price.roomCode) === key,
+                ),
+            ),
+          ),
           roomSaleOverrides: roomSaleOverrides.filter(
             (item) =>
               selectedHotelRateIds.includes(item.hotelRateId) &&
+              selectedRoomKeys.includes(
+                compositionSelectionKey(item.hotelRateId, item.roomCode),
+              ) &&
               batch.rows.some(
                 (row) =>
                   row.id === item.hotelRateId &&
@@ -563,6 +606,7 @@ export function TourPricingWorkspace() {
       );
       setPublications((current) => [published, ...current]);
       setPublicationId(published.id);
+      setShowGenerator(true);
       setPublishReason('');
       setNotice('نسخهٔ ' + published.priceVersion + ' قیمت پکیج منتشر شد.');
     } catch (cause) {
@@ -785,7 +829,7 @@ export function TourPricingWorkspace() {
                 </label>
               ))}
             </div>
-            <PackageRoomSales
+            <PackageCompositionSales
               rows={batch.rows
                 .filter((row) => selectedHotelRateIds.includes(row.id))
                 .map((row) => ({
@@ -794,6 +838,8 @@ export function TourPricingWorkspace() {
                   brokerName: row.brokerName,
                   prices: tablePrices(row, false),
                 }))}
+              selectedRoomKeys={selectedRoomKeys}
+              onSelect={setSelectedRoomKeys}
               overrides={roomSaleOverrides}
               onChange={setRoomSaleOverrides}
               disabled={

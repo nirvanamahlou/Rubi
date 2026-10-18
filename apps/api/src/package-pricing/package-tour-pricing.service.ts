@@ -12,6 +12,8 @@ import {
 import type {
   AuthenticatedActor,
   PackageTourDraftAdjustmentV1,
+  PackagePublishedSaleV1,
+  SalesContractCreateRequest,
   PackageTourDraftSaveV1,
   PackageTourDraftV1,
   PackageTourPublicationV1,
@@ -23,6 +25,11 @@ import {
   validatePackageRoomSales,
   calculateTourRoom,
   buildHotelPackageTable,
+  buildHotelPackageCompositions,
+  packageRoomIdentity,
+  packageTourSelectionBatch,
+  matchingPublishedRooms,
+  publishedSaleTotals,
   validateTourPriceFields,
   tourPriceFields,
   tourPriceFieldValues,
@@ -63,6 +70,177 @@ export class PackageTourPricingService {
     @Inject(PackagePricingService)
     private readonly pricing: PackagePricingService,
   ) {}
+
+  async assertContractSale(
+    input: SalesContractCreateRequest,
+    actor: AuthenticatedActor,
+    branchId: string,
+  ) {
+    if (input.services.some((s) => s.metadata?.packagePublishedSale))
+      return this.validateContractSale(input, actor, branchId);
+    const tourId = input.services.find(
+      (s) => typeof s.metadata?.tourDepartureId === 'string',
+    )?.metadata?.tourDepartureId;
+    if (
+      typeof tourId === 'string' &&
+      (await this.saleCatalog(tourId, actor, branchId)).data.length
+    )
+      throw new BadRequestException('قیمت فروش معتبر نیست.');
+    return undefined;
+  }
+
+  async validateContractSale(
+    input: SalesContractCreateRequest,
+    actor: AuthenticatedActor,
+    branchId?: string,
+  ) {
+    const values = input.services
+      .map((s) => s.metadata?.packagePublishedSale)
+      .filter(Boolean);
+    const hotel = input.hotelSelection;
+    if (
+      values.length !== 1 ||
+      typeof values[0] !== 'string' ||
+      values[0].length > 100000 ||
+      !hotel?.rooms?.length
+    )
+      throw new BadRequestException('قیمت فروش معتبر نیست.');
+    let quote: {
+      tourDepartureId: string;
+      items: { publicationId: string; roomCode: string }[];
+      prices: { currencyCode: string; amount: string }[];
+    };
+    try {
+      quote = JSON.parse(values[0]);
+    } catch {
+      throw new BadRequestException('قیمت فروش معتبر نیست.');
+    }
+    const tourId = input.services.find((s) => s.metadata?.tourDepartureId)
+      ?.metadata?.tourDepartureId;
+    if (
+      !quote ||
+      typeof tourId !== 'string' ||
+      quote.tourDepartureId !== tourId ||
+      !Array.isArray(quote.items) ||
+      quote.items.length !== hotel.rooms.length
+    )
+      throw new BadRequestException('قیمت فروش معتبر نیست.');
+    const catalog = await this.saleCatalog(tourId, actor, branchId);
+    const selected = hotel.rooms.map((room, index) =>
+      matchingPublishedRooms(catalog.data, {
+        ...room,
+        hotelId: hotel.hotelId,
+        checkIn: hotel.checkInDate,
+        checkOut: hotel.checkOutDate,
+      }).find(
+        (p) =>
+          p.publicationId === quote.items[index]?.publicationId &&
+          p.roomCode === quote.items[index]?.roomCode,
+      ),
+    );
+    if (selected.some((p) => !p))
+      throw new BadRequestException('قیمت فروش معتبر نیست.');
+    if (
+      JSON.stringify(
+        publishedSaleTotals(selected as PackagePublishedSaleV1[]),
+      ) !== JSON.stringify(quote.prices)
+    )
+      throw new BadRequestException('قیمت فروش معتبر نیست.');
+    this.validateContractAmounts(input, quote.prices);
+    return hotel.hotelId;
+  }
+
+  validateContractAmounts(
+    input: SalesContractCreateRequest,
+    prices: readonly { currencyCode: string; amount: string }[],
+  ) {
+    if (Array.isArray(input.priceComponents)) {
+      const baseline = new Map(
+        prices.map((p) => [p.currencyCode, new Prisma.Decimal(p.amount)]),
+      );
+      for (const service of input.services.filter(
+        (s) => s.metadata?.insuranceAgeSurcharge === true,
+      )) {
+        const extra = String(service.metadata!.extraToman ?? '0');
+        if (!/^\d{1,15}$/.test(extra))
+          throw new BadRequestException('قیمت فروش معتبر نیست.');
+        baseline.set(
+          'IRR',
+          (baseline.get('IRR') ?? new Prisma.Decimal(0)).add(
+            new Prisma.Decimal(extra).mul(10),
+          ),
+        );
+      }
+      const currencies = new Set([
+        ...baseline.keys(),
+        ...input.priceComponents.map((p) => p.currencyCode),
+      ]);
+      for (const code of currencies) {
+        const parts = input.priceComponents.filter(
+          (p) => p.currencyCode === code,
+        );
+        const base = parts
+          .filter((p) => p.type === 'BASE')
+          .reduce((n, p) => n.add(p.amount), new Prisma.Decimal(0));
+        const discount = parts
+          .filter((p) => p.type === 'DISCOUNT')
+          .reduce((n, p) => n.add(p.amount), new Prisma.Decimal(0));
+        const reference = baseline.get(code) ?? new Prisma.Decimal(0);
+        if (base.lt(reference) || (discount.gt(0) && !base.eq(reference)))
+          throw new BadRequestException('قیمت فروش معتبر نیست.');
+      }
+    }
+  }
+
+  async saleCatalog(
+    tourId: string,
+    actor: AuthenticatedActor,
+    branchId?: string,
+  ): Promise<{ data: PackagePublishedSaleV1[] }> {
+    if (!actor.permissions.includes('sales.contracts.create'))
+      throw new ForbiddenException('مجوز ایجاد قرارداد وجود ندارد.');
+    const grid = await this.pricing.tourCostGrid(tourId, actor);
+    if (branchId && grid.tour.branchId !== branchId)
+      throw new ForbiddenException('مجوز ایجاد قرارداد وجود ندارد.');
+    const drafts = await this.database.client.packagePricingTourDraft.findMany({
+      where: { tourDepartureId: tourId, branchId: grid.tour.branchId },
+      include: {
+        publications: {
+          where: { tourVersion: grid.tour.version },
+          orderBy: { version: 'desc' },
+          take: 1,
+          include: { roomPrices: true },
+        },
+      },
+    });
+    const data: PackagePublishedSaleV1[] = [];
+    for (const draft of drafts) {
+      const batch = packageTourSelectionBatch(grid, draft.batchId);
+      const publication = draft.publications[0];
+      if (!batch || !publication) continue;
+      for (const price of publication.roomPrices) {
+        const row = batch.rows.find((r) => r.id === price.hotelRateId);
+        if (!row || !packageRoomIdentity(price.roomCode)) continue;
+        const amounts =
+          price.currencyAmounts as unknown as TourRoomCurrencyAmount[];
+        if (!Array.isArray(amounts)) continue;
+        data.push({
+          publicationId: publication.id,
+          hotelId: row.hotelId,
+          hotelName: row.hotelName,
+          roomTypeName: price.roomTypeName ?? '',
+          roomCode: price.roomCode,
+          checkIn: grid.tour.startsOn,
+          checkOut: grid.tour.endsOn,
+          prices: amounts.map((p) => ({
+            currencyCode: p.currencyCode,
+            amount: p.sale,
+          })),
+        });
+      }
+    }
+    return { data };
+  }
 
   async get(
     tourId: string,
@@ -116,8 +294,10 @@ export class PackageTourPricingService {
     )
       throw new BadRequestException('پیش‌نویس قیمت معتبر نیست.');
     const grid = await this.pricing.tourCostGrid(input.tourDepartureId, actor);
-    const batch = grid.purchaseBatches.find(
-      (item) => item.id === input.batchId,
+    const batch = packageTourSelectionBatch(
+      grid,
+      input.batchId,
+      Array.isArray(input.selectedRoomKeys),
     );
     if (!batch || input.currencyCode !== batch.currencyCode)
       throw new BadRequestException('بازه خرید و ارز همان نوبت تور لازم است.');
@@ -135,6 +315,17 @@ export class PackageTourPricingService {
       throw new BadRequestException(
         'هتل‌های منتخب باید متعلق به همین بازه باشند.',
       );
+    if (
+      input.selectedRoomKeys !== undefined &&
+      (!Array.isArray(input.selectedRoomKeys) ||
+        input.selectedRoomKeys.length > 1500 ||
+        new Set(input.selectedRoomKeys).size !==
+          input.selectedRoomKeys.length ||
+        input.selectedRoomKeys.some(
+          (k) => typeof k !== 'string' || k.length > 2000,
+        ))
+    )
+      throw new BadRequestException('قیمت فروش معتبر نیست.');
     let roomSaleOverrides;
     try {
       roomSaleOverrides =
@@ -265,6 +456,13 @@ export class PackageTourPricingService {
         input.selectedHotelRateIds === undefined
           ? {}
           : {
+              ...(input.selectedRoomKeys === undefined
+                ? {}
+                : {
+                    selectedRoomKeys: [
+                      ...input.selectedRoomKeys,
+                    ] as Prisma.InputJsonValue,
+                  }),
               selectedHotelRateIds: [
                 ...input.selectedHotelRateIds,
               ] as Prisma.InputJsonValue,
@@ -376,8 +574,10 @@ export class PackageTourPricingService {
         'تأییدکننده انتشار باید غیر از آخرین ویرایشگر قیمت باشد.',
       );
     const grid = await this.pricing.tourCostGrid(draft.tourDepartureId, actor);
-    const batch = grid.purchaseBatches.find(
-      (item) => item.id === draft.batchId,
+    const batch = packageTourSelectionBatch(
+      grid,
+      draft.batchId,
+      Array.isArray(draft.selectedRoomKeys),
     );
     if (
       !batch ||
@@ -539,7 +739,11 @@ export class PackageTourPricingService {
               const adjustment = byRow.get(row.id);
               const calculated = (() => {
                 try {
-                  return buildHotelPackageTable({
+                  return (
+                    Array.isArray(draft.selectedRoomKeys)
+                      ? buildHotelPackageCompositions
+                      : buildHotelPackageTable
+                  )({
                     row,
                     checkIn: grid.tour.startsOn,
                     checkOut: grid.tour.endsOn,
@@ -594,39 +798,58 @@ export class PackageTourPricingService {
                   );
                 }
               })();
-              if (calculated.length !== 3)
+              if (
+                !calculated.length ||
+                (!Array.isArray(draft.selectedRoomKeys) &&
+                  calculated.length !== 3)
+              )
                 throw new UnprocessableEntityException(
                   'تعرفه سینگل، دبل و کودک با تخت برای تمام شب‌ها لازم است.',
                 );
               const overrides = Array.isArray(draft.roomSaleOverrides)
                 ? validatePackageRoomSales(draft.roomSaleOverrides)
                 : [];
-              return calculated.map((raw) => {
-                const item = applyPackageRoomSales(
-                  raw,
-                  overrides,
-                  (draft.commissionMode ?? 'percent') as 'percent' | 'fixed',
-                  draft.commissionPercent.toString(),
-                );
-                const single =
-                  item.currencyAmounts.length === 1
-                    ? item.currencyAmounts[0]
-                    : undefined;
-                return {
-                  ...item,
-                  hotelPurchase: new Prisma.Decimal(item.hotelPurchase),
-                  hotelSale: new Prisma.Decimal(item.hotelSale),
-                  packagePurchase: single?.purchase ?? null,
-                  packageSale: single?.sale ?? null,
-                  commissionAmount: single?.commission ?? null,
-                  netProfit: single?.profit ?? null,
-                  currencyAmounts:
-                    item.currencyAmounts as unknown as Prisma.InputJsonValue,
-                };
-              });
+              return calculated
+                .filter(
+                  (raw) =>
+                    !Array.isArray(draft.selectedRoomKeys) ||
+                    draft.selectedRoomKeys.includes(
+                      JSON.stringify([row.id, raw.roomCode]),
+                    ),
+                )
+                .map((raw) => {
+                  const item = applyPackageRoomSales(
+                    raw,
+                    overrides,
+                    (draft.commissionMode ?? 'percent') as 'percent' | 'fixed',
+                    draft.commissionPercent.toString(),
+                  );
+                  const single =
+                    item.currencyAmounts.length === 1
+                      ? item.currencyAmounts[0]
+                      : undefined;
+                  return {
+                    ...item,
+                    hotelPurchase: new Prisma.Decimal(item.hotelPurchase),
+                    hotelSale: new Prisma.Decimal(item.hotelSale),
+                    packagePurchase: single?.purchase ?? null,
+                    packageSale: single?.sale ?? null,
+                    commissionAmount: single?.commission ?? null,
+                    netProfit: single?.profit ?? null,
+                    currencyAmounts:
+                      item.currencyAmounts as unknown as Prisma.InputJsonValue,
+                  };
+                });
             });
         })()
       : legacyPrices();
+    if (
+      Array.isArray(draft.selectedRoomKeys) &&
+      (prices.length !== draft.selectedRoomKeys.length || !prices.length)
+    )
+      throw new UnprocessableEntityException('قیمت فروش معتبر نیست.');
+    if (!prices.length)
+      throw new UnprocessableEntityException('قیمت فروش معتبر نیست.');
     const frozenSales = Array.isArray(draft.roomSaleOverrides)
       ? validatePackageRoomSales(draft.roomSaleOverrides)
       : [];
@@ -658,6 +881,7 @@ export class PackageTourPricingService {
       draftVersion: draft.version,
       adjustments: draft.adjustments,
       roomSaleOverrides: draft.roomSaleOverrides,
+      selectedRoomKeys: draft.selectedRoomKeys,
       priceFields: draft.priceFields,
       selectedHotelRateIds: draft.selectedHotelRateIds,
       prices: prices.map((item) => ({
@@ -770,6 +994,9 @@ export class PackageTourPricingService {
       batchId: row.batchId,
       ...(Array.isArray(row.priceFields)
         ? { priceFields: validateTourPriceFields(row.priceFields) }
+        : {}),
+      ...(Array.isArray(row.selectedRoomKeys)
+        ? { selectedRoomKeys: row.selectedRoomKeys as string[] }
         : {}),
       ...(Array.isArray(row.selectedHotelRateIds)
         ? { selectedHotelRateIds: row.selectedHotelRateIds as string[] }

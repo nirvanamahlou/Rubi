@@ -1,10 +1,18 @@
 ## USER-HR-UNIT-1018 — PC-B
 
+## 2026-10-18 — PACKAGE-SALE-FLOW-1018 — PC-A
+
+Exact room/occupancy/board/date sale tables now consume matching hotel rate periods in Package Management, with grouped/manual sale adjustment and immutable selected publication. Purchase bases remain in Hotel Rates; child-with-bed label is explicit double+child. Sales consumes the canonical sale-only publication, preserves negotiated amounts and records lower selling amounts as salesperson discount; server rechecks room identity and reference totals. Published one/two-adult room alternatives populate the city banner/template and descriptive notes automatically. Legacy drafts/publications remain readable; additive nullable selectedRoomKeys plus non-truncating roomCode TEXT migration required before deployment. Broad Web289/API282 tests and final focused regression suites passed; local lint/types/build and exact-head full CI are delivery gates. No live data, migration or3100 runtime mutation; task detail in docs/tasks/PACKAGE-SALE-FLOW-1018.md.
+
 Add optional HR-backed unit selection on new accounts and existing-user details. HR-owned minimal scoped directory, real nullable profile FK/index, atomic creation/details validation and explicit clear/retain semantics; preserve grants, roles, phone/photo and personnel records. Existing records are not backfilled. Protect branch removal and stale writes.98 Web tests, API/HR regression suites, types/lint and Prisma validation plus final-head hosted build/quality/PostgreSQL unit-migration proof gate owner-authorized push/develop merge. No operational DB/runtime mutation. See docs/tasks/USER-HR-UNIT-1018.md.
 
 ## DASHBOARD-MATTE-ICONS-1018 — PC-C — READY_FOR_CI
 
 User selected the matte navy/teal 3D concept for Dashboard KPI cards and chart headings. A transparent24-symbol local atlas and Dashboard-only stable-ID resolver replace broad category/type icons across all84 KPIs and registered charts. Navigation/actions, values, filtering, scopes and permissions remain unchanged. Focused30 tests pass (one existing skip); scoped lint/formatting, Contracts build and the62-route Web production build with TypeScript pass. All four initial-head CI gates passed. Latest develop documentation conflict is reconciled preserving both records. All eight branch/PR checks passed on c45dff61 after repairing one missing Markdown separator. Compatible runtime build/TypeScript pass; authenticated Amin visual checks pass for light/dark, fa/en, desktop and390px mobile, with working KPI/chart details and no horizontal overflow. Web3000 and API4000/4300/4301 are healthy. Final documentation-head CI gates authorized develop merge. No API/schema/migration/dependency changes. See [scope and assets](tasks/DASHBOARD-MATTE-ICONS-1018.md).
+
+## ASSISTANT-DRAGGABLE-LAUNCHER-1018 — PC-C — VALIDATING
+
+Adds pointer-captured mouse/touch/pen movement to the fixed global assistant launcher, with a6px drag threshold and suppressed post-drag click. Viewport bounds/resize and compact/expanded panel placement keep controls visible; Alt+arrows moves and Alt+Home resets. Persian-left/English-right defaults remain, locale changes reset the location, and positions remain only in the authenticated UI session. Existing chat, quick actions, drafts and permissions are retained.73 Assistant tests, scoped lint/formatting, Contracts build and the62-route Web production build with TypeScript pass; authenticated visual verification and exact-head CI remain pending. No API/schema/dependency changes. See [scope](tasks/ASSISTANT-DRAGGABLE-LAUNCHER-1018.md).
 
 ## USER-ROLE-PICKER-REDESIGN-1018 — PC-B
 

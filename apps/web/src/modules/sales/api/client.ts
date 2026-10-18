@@ -4,6 +4,7 @@ import { localizedFetch } from '@/i18n/localized-fetch';
 
 import type {
   HotelRoomRateV1,
+  PackagePublishedSaleV1,
   SalesContractCreateRequest,
   SalesContractAmendmentV1,
   SalesContractPartyCorrectionV1,
@@ -197,6 +198,10 @@ export const salesApi = {
   receivables: (query: SalesReceivablesQuery = {}) =>
     request<SalesReceivables>(
       `/receivables?${new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined && value !== '')).toString()}`,
+    ),
+  publishedPackageSales: (tourDepartureId: string) =>
+    request<{ data: PackagePublishedSaleV1[] }>(
+      `/pricing/tour-drafts/sale-catalog?${new URLSearchParams({ tourDepartureId })}`,
     ),
   availableHotelRoomRates: (input: {
     hotelId: string;

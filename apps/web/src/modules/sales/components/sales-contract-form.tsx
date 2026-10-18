@@ -1,4 +1,5 @@
 'use client';
+import { PublishedPackageSale } from './published-package-sale';
 import { syncHotelChildSelections } from '../model/hotel-child-selection';
 import { AgencyCommission } from './agency-commission';
 import { PassengerPackagePrices } from './passenger-package-prices';
@@ -306,7 +307,10 @@ export function SalesContractForm() {
     const hotelsAtDestination = references.hotels.filter(
       (hotel) =>
         hotel.attributes.cityId === state.destinationId &&
-        (!state.tour || state.tour.package.hotelIds.includes(hotel.id)),
+        (!state.tour ||
+          (
+            state.publishedPackageHotelIds ?? state.tour.package.hotelIds
+          ).includes(hotel.id)),
     );
     return [...hotelsAtDestination].sort((left, right) =>
       salesReferenceDisplayName(left, true).localeCompare(
@@ -314,7 +318,12 @@ export function SalesContractForm() {
         'en',
       ),
     );
-  }, [references.hotels, state.destinationId, state.tour]);
+  }, [
+    references.hotels,
+    state.destinationId,
+    state.tour,
+    state.publishedPackageHotelIds,
+  ]);
   const patchState = (
     update:
       | Partial<SalesFormState>
@@ -754,11 +763,19 @@ export function SalesContractForm() {
               (age) => age !== null,
             ))) &&
         (!state.serviceKinds.includes('FLIGHT') ||
-          (passengerCounts.seated > 0 && flightDatesReady)) &&
+          (passengerCounts.seated > 0 && (state.tour || flightDatesReady))) &&
         (passengerCounts.infants === 0 || passengerCounts.adults > 0),
       );
     if (step === 1) {
-      if (activeDetail === 'TOUR') return false;
+      if (activeDetail === 'TOUR')
+        return Boolean(
+          state.tour &&
+          state.tour.startsOn >= salesFlightToday() &&
+          salesFlightsValid(state) &&
+          (!state.serviceKinds.includes('HOTEL') ||
+            (salesHotelValid(state) && !hotelCapacityError)) &&
+          (!state.packageSaleAvailable || state.packageSaleQuote),
+        );
       if (activeDetail === 'FLIGHT')
         return (
           flightDatesReady &&
@@ -959,6 +976,7 @@ export function SalesContractForm() {
             }}
           />
         ) : null}
+        <PublishedPackageSale state={state} onChange={setState} />
         {step === 0 ? (
           <div className="grid gap-5">
             <h2 className="text-sm font-bold">مسیر سفر</h2>
@@ -1247,7 +1265,7 @@ export function SalesContractForm() {
             rates={hotelRoomRates}
           />
         )}
-        {step === 0 && state.serviceKinds.includes('FLIGHT') ? (
+        {step === 0 && !state.tour && state.serviceKinds.includes('FLIGHT') ? (
           <section
             aria-label="انتخاب تاریخ بلیط رفت و برگشت"
             className="mt-5 border-t border-border pt-4"
@@ -1320,6 +1338,15 @@ export function SalesContractForm() {
                   حذف تور
                 </Button>
               </div>
+            )}
+            {activeDetail === 'TOUR' && state.tour && (
+              <ServiceParties
+                state={state}
+                patch={patchState}
+                hotels={selectableHotels}
+                roomTypes={selectableHotelRoomTypes}
+                rates={hotelRoomRates}
+              />
             )}
             {activeDetail === 'TOUR' && (
               <SalesTourPicker
@@ -1583,6 +1610,7 @@ export function SalesContractForm() {
               </section>
             ) : null}
             {activeDetail === 'HOTEL' ||
+            (activeDetail === 'TOUR' && state.serviceKinds.includes('HOTEL')) ||
             (activeDetail === 'FLIGHT' &&
               state.serviceKinds.includes('HOTEL')) ? (
               <section className="grid gap-4 rounded-xl border p-4">
