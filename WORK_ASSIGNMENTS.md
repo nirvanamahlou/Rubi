@@ -1,3 +1,7 @@
+## BROKER-CONTACT-SAVE-1018 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-broker-contact-save-1018 from origin/develop@6f6e480a. User confirms identical office/mobile numbers cause unexpected broker-save error and requests uppercase email acceptance, tests, push and develop merge. Reserve bounded partner-contact transaction helper/projection, broker email input and targeted unit/disposable PostgreSQL regressions plus own notes. Reuse one encrypted phone contact for shared office/mobile roles; preserve uniqueness, role ownership, explicit clears, masking, audit and transaction rollback. No schema/migration/dependency, IAM grant or runtime change. Exact-head full CI gates authorized merge; no3100 deployment inferred.
+
 ## PASSENGER-PRICE-NAMES-1018 — PC-A — READY_FOR_CI
 
 Branch codex/pc-a-passenger-price-names-1018 from origin/develop@73c52e30. Reserve Sales people-sheet passenger name projection and focused tests, own status notes. Use each passenger passport identity for international contract display with domestic name compatibility. No schema/API/dependency/runtime/data mutation. User authorizes develop merge. Prior Sales scopes released.43 focused people-sheet and passenger-price tests pass; source locks released with frozen candidate. Exact-head quality/type/build/test checks gate merge.

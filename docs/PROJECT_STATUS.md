@@ -1,3 +1,7 @@
+## 2026-10-18 — BROKER-CONTACT-SAVE-1018 — PC-B
+
+Repair equal office/mobile broker save by persisting one encrypted contact with both reserved partner roles. Preserve unique fingerprints, atomic rollback, masking, audit and independent edit/clear semantics. Broker email input accepts uppercase without rewriting typed case; backend canonical normalization remains unchanged.44 focused tests and scoped lint pass. Actual PostgreSQL regression added for hosted CI because local Docker engine is unavailable. No migration, grants or runtime update. See tasks/BROKER-CONTACT-SAVE-1018.md; exact-head CI gates authorized develop merge.
+
 ## 2026-10-18 — PASSENGER-PRICE-NAMES-1018 — PC-A
 
 International Sales passenger snapshots now use each saved row passport first/last name instead of potentially repeated CRM display titles. Domestic names, customer identity, person IDs and price keys remain unchanged.43 focused regressions pass, including three distinct passengers sharing one CRM title. No migration or live3100 update. Hosted exact-head checks gate authorized develop merge.

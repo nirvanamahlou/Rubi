@@ -9,6 +9,8 @@ function harness() {
       update: vi.fn().mockResolvedValue({ id: 'organization' }),
     },
     masterOrganizationContact: {
+      findMany: vi.fn().mockResolvedValue([]),
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
       findFirst: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue({ id: 'contact' }),
       update: vi.fn().mockResolvedValue({ id: 'contact' }),
@@ -79,9 +81,13 @@ describe('partner identity persistence', () => {
   );
   it('keeps untouched contact records intact while explicitly clearing only requested values', async () => {
     const { tx, client } = harness();
-    tx.masterOrganizationContact.findFirst.mockResolvedValue({
-      id: 'existing-contact',
-    } as never);
+    tx.masterOrganizationContact.findMany.mockResolvedValue([
+      {
+        id: 'existing-contact',
+        jobTitle: 'PARTNER_MOBILE',
+        isActive: true,
+      },
+    ] as never);
     await persistPartnerDossier(
       client,
       'suppliers',

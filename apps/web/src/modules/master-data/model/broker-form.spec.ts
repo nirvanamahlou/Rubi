@@ -38,6 +38,27 @@ const record = {
   },
 } as unknown as MasterDataRecord;
 describe('broker form', () => {
+  it('accepts Caps Lock email text without changing its case in the payload', () => {
+    expect(
+      brokerMutationValues(
+        { name: 'Test', dossierEmail: 'Caps.LOCK@EXAMPLE.TEST' },
+        [],
+      ).dossierEmail,
+    ).toBe('Caps.LOCK@EXAMPLE.TEST');
+    const html = renderToStaticMarkup(
+      createElement(MasterDataBrokerForm, {
+        mode: 'create',
+        onOpenChange: () => undefined,
+        onPersist: async () => undefined,
+      }),
+    );
+    const input = html.match(
+      /<input[^>]*id="live-brokers-dossierEmail"[^>]*>/,
+    )?.[0];
+    expect(input).toContain('type="email"');
+    expect(input).toContain('dir="ltr"');
+    expect(input).not.toContain('pattern=');
+  });
   it('omits blank new optional dossier fields but preserves explicit edit clears', () => {
     const fresh = brokerMutationValues(brokerFormValues(), []);
     for (const key of ['dossierMobile', 'dossierEmail', 'dossierAddress'])

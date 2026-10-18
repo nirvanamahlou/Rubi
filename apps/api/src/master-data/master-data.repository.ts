@@ -1,5 +1,6 @@
 import type { Prisma } from '@nora/database';
 import { persistPartnerDossier } from './partner-dossier.persistence';
+import { hasPartnerPhoneRole } from './partner-phone.persistence';
 import { columnFilterWhere } from './catalog-filters';
 import {
   ConflictException,
@@ -748,7 +749,10 @@ export function toMasterDataRecord(
       unknown
     >[];
     attributes.dossierMobileMasked = String(
-      contacts.find((c) => c.jobTitle === 'PARTNER_MOBILE')?.phoneMasked ?? '',
+      contacts.find(
+        (c) =>
+          c.isActive !== false && hasPartnerPhoneRole(c.jobTitle, 'mobile'),
+      )?.phoneMasked ?? '',
     );
     attributes.dossierEmailMasked = String(
       contacts.find((c) => c.jobTitle === 'PARTNER_EMAIL')?.emailMasked ?? '',
