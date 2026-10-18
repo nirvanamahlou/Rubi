@@ -142,8 +142,15 @@ export function MasterDataBrokerForm({
               <Input
                 id={`live-brokers-${key}`}
                 disabled={disabled}
+                type={key === 'dossierEmail' ? 'email' : 'text'}
+                autoCapitalize={key === 'dossierEmail' ? 'off' : undefined}
+                autoCorrect={key === 'dossierEmail' ? 'off' : undefined}
+                spellCheck={key === 'dossierEmail' ? false : undefined}
                 dir={
-                  key === 'primaryPhone' || key === 'englishName'
+                  key === 'primaryPhone' ||
+                  key === 'englishName' ||
+                  key === 'dossierEmail' ||
+                  key === 'dossierMobile'
                     ? 'ltr'
                     : undefined
                 }
