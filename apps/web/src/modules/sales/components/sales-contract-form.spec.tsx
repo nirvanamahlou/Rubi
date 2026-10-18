@@ -156,6 +156,9 @@ describe('compact sales contract form', () => {
     fixture.flight = true;
     const html = renderToStaticMarkup(<SalesContractForm />);
     fixture.flight = false;
+    expect(html.match(/type="number"/g)).toHaveLength(3);
+    for (const label of ['بزرگسال', 'کودک', 'نوزاد'])
+      expect(html).toContain(`aria-label="تعداد ${label}"`);
     expect(html).not.toContain('انتخاب تاریخ بلیط رفت و بلیط برگشت');
     expect(html).toContain('تاریخ بلیط رفت');
     expect(html).toContain('نقطهٔ قرمز');
@@ -175,15 +178,8 @@ describe('compact sales contract form', () => {
     expect(html).toContain('داشبورد قراردادها');
     expect(html).toContain('مراحل ثبت قرارداد');
     expect(html).toContain('مسیر سفر');
-    expect(html).toContain('تعداد مسافران');
-    expect(html).toContain('بزرگسال');
-    expect(html).toContain('کودک');
-    expect(html).toContain('نوزاد');
-    expect(html.match(/type="number"/g)).toHaveLength(3);
-    for (const label of ['بزرگسال', 'کودک', 'نوزاد']) {
-      expect(html).toContain(`aria-label="تعداد ${label}"`);
-    }
-    expect(html).toContain('نوزاد لازم نیست در تعداد صندلی بلیط شمرده شود');
+    expect(html).not.toContain('تعداد مسافران');
+    expect(html).not.toContain('type="number"');
     expect(html).toContain('aria-label="مبدأ سفر"');
     expect(html).toContain('aria-label="مقصد سفر"');
     expect(html).toMatch(
@@ -230,6 +226,48 @@ it('does not block hotel details while the date rate request is still pending', 
     expect(html).toContain('نوع اتاق');
   } finally {
     fixture.firstDetail = false;
+    fixture.step = 0;
+    fixture.ticketDraft = null;
+  }
+});
+it('allows the next passenger step with a valid flight service despite stale hotel draft fields', () => {
+  fixture.step = 2;
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    customerId: 'person',
+    departureDate: '2099-10-01',
+    serviceKinds: ['FLIGHT'],
+    passengers: [
+      {
+        customerId: 'person',
+        displayName: 'Synthetic',
+        birthDate: '1990-01-01',
+      },
+    ],
+    hotel: {
+      ...emptySalesForm.hotel,
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: 'old',
+          roomTypeNameSnapshot: 'Old',
+          adults: 1,
+          childAges: [null],
+        },
+      ],
+    },
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    expect(html).not.toContain(
+      'هر مسافر باید حداقل یک خدمت انتخاب‌شده داشته باشد.',
+    );
+    const next = html.match(
+      /<button\b[^>]*>(?:(?!<\/button>)[\s\S])*?بعدی(?:(?!<\/button>)[\s\S])*?<\/button>/,
+    )?.[0];
+    expect(next).toBeDefined();
+    expect(next).not.toMatch(/\sdisabled(?:=|>|\s)/);
+  } finally {
     fixture.step = 0;
     fixture.ticketDraft = null;
   }

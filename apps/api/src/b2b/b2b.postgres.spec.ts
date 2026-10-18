@@ -20,6 +20,11 @@ import { B2bAgreementWorkflowRepository } from './b2b-agreement-workflow.reposit
 import { agreementTestTerms } from './agreement-test-fixtures';
 import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
 import type { AuthenticatedActor } from '@nora/contracts';
+import { FinancePartnerService } from '../finance/partner-finance.module';
+import { ReservationsPublicService } from '../reservations/reservations-public.service';
+import { ProcurementPublicService } from '../procurement/procurement-public.service';
+import { MasterDataService } from '../master-data/master-data.service';
+import { MasterDataRepository } from '../master-data/master-data.repository';
 
 const enabled = process.env.NORA_RUN_B2B_POSTGRES_TESTS === '1';
 const container = `nora-test-b2b-${randomUUID().slice(0, 8)}`;
@@ -172,6 +177,59 @@ describe.skipIf(!enabled)(
       if (client) await client.$disconnect();
       if (started) docker(['stop', container]);
     }, 30000);
+
+    it('isolates supplier, broker and agency profiles on the same real organization FK', async () => {
+      const created = await Promise.all(
+        (['SUPPLIER', 'BROKER'] as const).map((role) =>
+          repository.upsertProfile({
+            organizationId,
+            branchId,
+            role,
+            actorUserId,
+            status: 'UNDER_REVIEW',
+            displayOrder: 0,
+          }),
+        ),
+      );
+      expect(new Set([...created.map((row) => row.id), profileId]).size).toBe(
+        3,
+      );
+      expect((await repository.findProfile(organizationId, branchId))?.id).toBe(
+        profileId,
+      );
+      for (const row of created) {
+        expect(
+          (
+            await repository.findProfile(
+              organizationId,
+              branchId,
+              row.role as 'SUPPLIER' | 'BROKER',
+            )
+          )?.id,
+        ).toBe(row.id);
+        const reads = await Promise.all(
+          Array.from({ length: 25 }, () =>
+            repository.findProfile(
+              organizationId,
+              branchId,
+              row.role as 'SUPPLIER' | 'BROKER',
+            ),
+          ),
+        );
+        expect(reads.every((value) => value?.id === row.id)).toBe(true);
+      }
+      await expect(
+        client.agencyOperationalProfile.create({
+          data: {
+            organizationId,
+            branchId,
+            role: 'AIRLINE',
+            createdByUserId: actorUserId,
+            updatedByUserId: actorUserId,
+          },
+        }),
+      ).rejects.toThrow();
+    });
 
     it('projects dated activity across owners, preserves deleted history and enforces scope with stable pages', async () => {
       const db = { client } as DatabaseService;
@@ -503,6 +561,342 @@ describe.skipIf(!enabled)(
         }),
       ).toBe(false);
     });
+
+    it('persists exact manual USD currency metadata with CAS and database constraints', async () => {
+      const currency = await client.masterCurrency.findUniqueOrThrow({
+        where: { code: 'IRR' },
+      });
+      const service = new MasterDataService(
+        new MasterDataRepository({ client } as DatabaseService),
+      );
+      const actor = {
+        userId: actorUserId,
+        branchIds: [branchId],
+        permissions: ['master_data.read', 'master_data.update'],
+      } as AuthenticatedActor;
+      const saved = await service.update(
+        'currencies',
+        currency.id,
+        { unitsPerUsd: '2700000.1234567890' },
+        currency.version,
+        actor,
+      );
+      expect(saved.data.attributes.unitsPerUsd).toBe('2700000.123456789');
+      await expect(
+        service.update(
+          'currencies',
+          currency.id,
+          { unitsPerUsd: '3' },
+          currency.version,
+          actor,
+        ),
+      ).rejects.toThrow();
+      for (const rate of ['0', '-1', 'NaN', 'Infinity']) {
+        await expect(
+          client.masterCurrency.update({
+            where: { id: currency.id },
+            data: { unitsPerUsd: rate },
+          }),
+        ).rejects.toThrow();
+      }
+      await service.update(
+        'currencies',
+        currency.id,
+        { unitsPerUsd: '' },
+        saved.data.version,
+        actor,
+      );
+      expect(
+        (
+          await client.masterCurrency.findUniqueOrThrow({
+            where: { id: currency.id },
+          })
+        ).unitsPerUsd,
+      ).toBeNull();
+    });
+
+    it('retains role FK evidence when editing an organization with a financial request', async () => {
+      const linked = await client.masterOrganization.create({
+        data: {
+          code: 'QA-ROLE-FK',
+          legalName: 'Synthetic party',
+          displayName: 'Synthetic party',
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+          roles: {
+            create: { roleCode: 'SUPPLIER', assignedByUserId: actorUserId },
+          },
+        },
+      });
+      const base = {
+        id: randomUUID(),
+        branchId,
+        requesterId: actorUserId,
+        kind: 'CHECK',
+        title: 'Synthetic check',
+        party: 'Synthetic party',
+        description: '',
+        reference: 'QA',
+        amount: '5',
+        currencyCode: 'IRR',
+        dueAt: new Date(),
+        createFingerprint: 'f'.repeat(64),
+        counterpartyOrganizationId: linked.id,
+        counterpartyRole: 'SUPPLIER' as const,
+      };
+      await client.financeOperationalRequest.create({ data: base });
+      const service = new MasterDataService(
+        new MasterDataRepository({ client } as DatabaseService),
+      );
+      const actor = {
+        userId: actorUserId,
+        branchIds: [branchId],
+        permissions: ['master_data.read', 'master_data.update'],
+      } as AuthenticatedActor;
+      await service.update(
+        'organizations',
+        linked.id,
+        { legalName: 'Updated synthetic party', roleCodes: 'SUPPLIER,BROKER' },
+        linked.version,
+        actor,
+      );
+      expect(
+        await client.masterOrganizationRole.count({
+          where: { organizationId: linked.id },
+        }),
+      ).toBe(2);
+      await expect(
+        client.masterOrganizationRole.delete({
+          where: {
+            organizationId_roleCode: {
+              organizationId: linked.id,
+              roleCode: 'SUPPLIER',
+            },
+          },
+        }),
+      ).rejects.toThrow();
+      await expect(
+        client.financeOperationalRequest.create({
+          data: { ...base, id: randomUUID(), counterpartyRole: 'AIRLINE' },
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('links a legacy partner exactly once under25 concurrent retries without an agency role', async () => {
+      const directory = new MasterOrganizationDirectory({
+        client,
+      } as DatabaseService);
+      const actor = {
+        userId: actorUserId,
+        branchIds: [branchId],
+        permissions: ['master_data.create', 'master_data.update'],
+      } as AuthenticatedActor;
+      const legacy = await client.masterSupplier.create({
+        data: {
+          code: 'QA-LEGACY-PARTNER',
+          name: 'Synthetic legacy supplier',
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+        },
+      });
+      const results = await Promise.all(
+        Array.from({ length: 25 }, () =>
+          directory.ensurePartnerDossier(
+            'suppliers',
+            legacy.id,
+            legacy.version,
+            branchId,
+            actor,
+          ),
+        ),
+      );
+      expect(new Set(results.map((result) => result.organizationId)).size).toBe(
+        1,
+      );
+      const linked = await client.masterSupplier.findUniqueOrThrow({
+        where: { id: legacy.id },
+        include: { organization: { include: { roles: true } } },
+      });
+      expect(linked.version).toBe(2);
+      expect(linked.organization?.roles.map((row) => row.roleCode)).toEqual([
+        'SUPPLIER',
+      ]);
+      await expect(
+        directory.ensurePartnerDossier(
+          'suppliers',
+          legacy.id,
+          legacy.version,
+          randomUUID(),
+          actor,
+        ),
+      ).rejects.toThrow();
+    }, 30000);
+
+    it('projects real purchases/payments by role and flags superseded paid obligations', async () => {
+      const db = { client } as DatabaseService;
+      await client.masterOrganizationRole.createMany({
+        data: (['SUPPLIER', 'BROKER'] as const).map((roleCode) => ({
+          organizationId,
+          roleCode,
+          assignedByUserId: actorUserId,
+        })),
+        skipDuplicates: true,
+      });
+      await client.masterSupplier.create({
+        data: {
+          organizationId,
+          code: 'QA-FINANCE-SUPPLIER',
+          name: 'Synthetic supplier',
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+        },
+      });
+      const broker = await client.masterBroker.create({
+        data: {
+          organizationId,
+          code: 'QA-FINANCE-BROKER',
+          name: 'Synthetic broker',
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+        },
+      });
+      const intake = await client.reservationIntake.create({
+        data: {
+          requestId: randomUUID(),
+          contractId: randomUUID(),
+          contractVersion: 1,
+          branchId,
+          fingerprint: '1'.repeat(64),
+          snapshot: { contractNumber: 'QA-SYNTHETIC-PARTNER' },
+        },
+      });
+      const base = {
+        intakeId: intake.id,
+        serviceKind: 'HOTEL',
+        serviceTitleSnapshot: 'Synthetic hotel',
+        supplierNameSnapshot: 'Synthetic party',
+        actorUserId,
+        fingerprint: '2'.repeat(64),
+      };
+      const purchase = await client.reservationServicePurchase.create({
+        data: {
+          ...base,
+          serviceClientKey: 'hotel-qa',
+          version: 1,
+          amount: '100',
+          currencyCode: 'IRR',
+          supplierOrganizationId: organizationId,
+          idempotencyKey: randomUUID(),
+        },
+      });
+      await client.reservationServicePurchase.create({
+        data: {
+          ...base,
+          serviceClientKey: 'transfer-qa',
+          version: 2,
+          amount: '50',
+          currencyCode: 'USD',
+          supplierBrokerId: broker.id,
+          idempotencyKey: randomUUID(),
+        },
+      });
+      const account = await client.financeSettlementAccount.create({
+        data: {
+          branchId,
+          title: 'Synthetic payable account',
+          kind: 'BANK',
+          currencyCode: 'IRR',
+          createdByUserId: actorUserId,
+        },
+      });
+      const method = await client.masterPaymentMethod.create({
+        data: {
+          code: 'QA-PARTNER-PAYMENT',
+          name: 'Synthetic transfer',
+          channel: 'BANK_TRANSFER',
+          direction: 'PAYMENT',
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+        },
+      });
+      await client.financeSupplierPaymentRevision.create({
+        data: {
+          purchaseId: purchase.id,
+          version: 1,
+          status: 'PARTIALLY_PAID',
+          paidAmount: '20',
+          cumulativePaid: '20',
+          remainingAmount: '80',
+          exchangeRateToIrr: '1',
+          rialEquivalent: '20',
+          accountId: account.id,
+          paymentMethodId: method.id,
+          transferAt: new Date(),
+          reason: '',
+          actorUserId,
+        },
+      });
+      const service = new FinancePartnerService(
+        db,
+        new MasterOrganizationDirectory(db),
+        new ReservationsPublicService(db),
+        new ProcurementPublicService(db),
+      );
+      const actor = {
+        userId: actorUserId,
+        branchIds: [branchId],
+        permissions: ['finance.read', 'b2b.agency.read'],
+      } as AuthenticatedActor;
+      const supplier = await service.read(
+        organizationId,
+        'SUPPLIER',
+        branchId,
+        actor,
+      );
+      expect(supplier.totals).toEqual([
+        { currencyCode: 'IRR', purchases: '100', paid: '20', balance: '80' },
+      ]);
+      expect(supplier.creditDirection).toBe('COUNTERPARTY_TO_US');
+      const concurrentReads = await Promise.all(
+        Array.from({ length: 25 }, () =>
+          service.read(organizationId, 'SUPPLIER', branchId, actor),
+        ),
+      );
+      expect(
+        concurrentReads.every((row) => row.totals[0]?.balance === '80'),
+      ).toBe(true);
+      const brokerCase = await service.read(
+        organizationId,
+        'BROKER',
+        branchId,
+        actor,
+      );
+      expect(brokerCase.totals).toEqual([
+        { currencyCode: 'USD', purchases: '50', paid: '0', balance: '50' },
+      ]);
+      await client.reservationServicePurchase.create({
+        data: {
+          ...base,
+          serviceClientKey: 'hotel-qa',
+          version: 3,
+          amount: '110',
+          currencyCode: 'IRR',
+          supplierBrokerId: broker.id,
+          idempotencyKey: randomUUID(),
+        },
+      });
+      const replaced = await service.read(
+        organizationId,
+        'SUPPLIER',
+        branchId,
+        actor,
+      );
+      expect(replaced.reconciliationRequired).toEqual([purchase.id]);
+      expect(replaced.totals[0]?.balance).toBe('-20');
+      await expect(
+        service.read(organizationId, 'SUPPLIER', randomUUID(), actor),
+      ).rejects.toThrow();
+    }, 30000);
 
     it('persists scoped organization-user grants with optimistic concurrency and atomic audit', async () => {
       const users = new B2bOrganizationUserRepository({

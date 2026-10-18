@@ -1,3 +1,4 @@
+import { salesHotelRoomSummary } from '@nora/contracts';
 import { hotelAgeOn, type SalesReservationRequestV1 } from '@nora/contracts';
 import { Inject, Injectable, Module } from '@nestjs/common';
 import type {
@@ -51,24 +52,53 @@ export class SalesReservationTableService {
         status: { not: 'CANCELLED' },
       },
       include: {
-        hotelSelection: true,
+        hotelSelection: { include: { rooms: { orderBy: { ordinal: 'asc' } } } },
         passengers: {
           include: { allocations: { include: { service: true } } },
         },
       },
     });
     const current = row?.hotelSelection;
+    const currentCounts = current?.rooms?.length
+      ? salesHotelRoomSummary(
+          current.rooms.map((r) => ({
+            adults: r.adults,
+            childAges: r.childAges as number[],
+          })),
+        )
+      : current;
+    const snapshotCounts = hotel.rooms?.length
+      ? salesHotelRoomSummary(hotel.rooms)
+      : hotel;
     if (
       !row ||
       !current ||
       current.hotelId !== hotel.hotelId ||
       current.roomTypeId !== hotel.roomTypeId ||
-      current.roomCount !== hotel.roomCount ||
+      currentCounts?.roomCount !== snapshotCounts.roomCount ||
+      JSON.stringify(
+        (current.rooms ?? []).map((r) => ({
+          ordinal: r.ordinal,
+          roomTypeId: r.roomTypeId,
+          adults: r.adults,
+          childAges: r.childAges,
+        })),
+      ) !==
+        JSON.stringify(
+          (hotel.rooms ?? []).map((r) => ({
+            ordinal: r.ordinal,
+            roomTypeId: r.roomTypeId,
+            adults: r.adults,
+            childAges: r.childAges,
+          })),
+        ) ||
       current.mealServiceId !== (hotel.mealServiceId ?? null) ||
-      (current.singleRoomCount ?? 0) !== (hotel.singleRoomCount ?? 0) ||
-      (current.doubleRoomCount ?? hotel.roomCount) !==
-        (hotel.doubleRoomCount ?? hotel.roomCount) ||
-      (current.extraBedCount ?? 0) !== (hotel.extraBedCount ?? 0) ||
+      (currentCounts?.singleRoomCount ?? 0) !==
+        (snapshotCounts.singleRoomCount ?? 0) ||
+      (currentCounts?.doubleRoomCount ?? snapshotCounts.roomCount) !==
+        (snapshotCounts.doubleRoomCount ?? snapshotCounts.roomCount) ||
+      (currentCounts?.extraBedCount ?? 0) !==
+        (snapshotCounts.extraBedCount ?? 0) ||
       current.checkInDate.toISOString().slice(0, 10) !== hotel.checkInDate ||
       current.checkOutDate.toISOString().slice(0, 10) !== hotel.checkOutDate
     )

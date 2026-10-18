@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import {
   MasterDataDateRangeFilter,
@@ -86,6 +88,7 @@ import {
   MasterDataProfileIdentity,
 } from './master-data-profile-details';
 import { MasterDataCurrencyForm } from './master-data-currency-form';
+import { formatMasterDataNumber } from './master-data-number-input';
 import { MasterDataBankProfile } from './master-data-bank-profile';
 
 type FinanceTab = 'currencies' | 'approvals' | 'banks' | 'payments';
@@ -584,13 +587,13 @@ export function MasterDataFinanceWorkspace() {
     const reason = window.prompt(
       action === 'approve' ? 'دلیل تأیید نرخ:' : 'دلیل رد نرخ:',
     );
-    if (!reason?.trim()) return;
+    if (!isOptionalOperationReason(reason)) return;
     try {
       await masterDataApi.decideCurrencyRate(
         row.id,
         action,
         row.version,
-        reason.trim(),
+        (reason ?? '').trim(),
       );
       setNotice(action === 'approve' ? 'نرخ تأیید شد.' : 'نرخ رد شد.');
       await load();
@@ -1171,6 +1174,9 @@ export function MasterDataFinanceWorkspace() {
                   <th className="p-4 text-start">نام فارسی</th>
                   <th className="p-4 text-start">نام انگلیسی / مرجع</th>
                   <th className="p-4 text-start">جزئیات</th>
+                  {tab === 'currencies' && (
+                    <th className="p-4 text-center">نرخ دستی هر ۱ دلار</th>
+                  )}
                   <th className="p-4 text-start">وضعیت</th>
                   <th className="p-4 text-center">عملیات</th>
                 </tr>
@@ -1212,6 +1218,13 @@ export function MasterDataFinanceWorkspace() {
                           ? `${String(record.attributes.countryName ?? '—')} · ${Number(record.attributes.branchCount ?? 0).toLocaleString('fa-IR')} شعبه`
                           : `${String(record.attributes.cityName ?? '—')} · ${String(record.attributes.phone ?? 'بدون تلفن')}`}
                     </td>
+                    {tab === 'currencies' && (
+                      <td className="p-4 text-center" dir="ltr">
+                        {record.attributes.unitsPerUsd
+                          ? `${formatMasterDataNumber(String(record.attributes.unitsPerUsd))} ${record.code}`
+                          : '—'}
+                      </td>
+                    )}
                     <td className="p-4">
                       <Badge>
                         {record.status === 'active' ? 'فعال' : 'غیرفعال'}

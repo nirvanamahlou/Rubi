@@ -1711,6 +1711,14 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
     tab: 'notes',
   },
   {
+    id: 'workbench.tab.daily-packages',
+    group: 'workbench',
+    title: 'پکیج‌های روز',
+    route: '/workbench',
+    tab: 'daily-packages',
+    inheritFrom: 'workbench.home',
+  },
+  {
     id: 'workbench.tab.calendar',
     group: 'workbench',
     title: 'تقویم من',
@@ -2302,7 +2310,7 @@ export function canViewScreen(
   if (!screen || !hasGroupPermission(permissions, screen.group)) return false;
   if (!hasAccessControl(permissions, id)) return false;
   // New controls inherit the actual old route decision, not a newly required grant.
-  if (id.startsWith('system.module.'))
+  if (id.startsWith('system.module.') && screen.group === 'system')
     return USER_ACCESS_SCREENS.some(
       (candidate) =>
         candidate.group === 'system' &&
@@ -2423,7 +2431,11 @@ export function canViewRoute(
   try {
     for (const item of search.split('#')[0]!.split('&').filter(Boolean)) {
       const [key, value = ''] = item.split('=');
-      query[decodeURIComponent(key!)] = decodeURIComponent(value);
+      const decodedKey = decodeURIComponent(key!);
+      // Match the single page consumed by Web; duplicate page selectors are ambiguous.
+      if (decodedKey === 'page' && Object.hasOwn(query, decodedKey))
+        return false;
+      query[decodedKey] = decodeURIComponent(value);
     }
   } catch {
     return false;
@@ -2438,6 +2450,15 @@ export function canViewRoute(
       has: (key: string) => Object.hasOwn(query, key),
     },
   };
+  if (
+    url.pathname === '/dashboard' &&
+    (url.searchParams.get('page') === 'assistant' ||
+      ['overview', 'sales', 'finance', 'news', 'scenarios', 'advisor'].some(
+        (view) => url.searchParams.get('page') === 'assistant-' + view,
+      ))
+  ) {
+    return canViewScreen(permissions, 'assistant.executive');
+  }
   const group = accessGroupForRoute(url.pathname);
   if (!group) return true;
   if (!hasGroupPermission(permissions, group.id)) return false;

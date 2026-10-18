@@ -39,6 +39,27 @@ function row(id = 'test-request'): RequestView {
   };
 }
 describe('reservations workspace access and states', () => {
+  it('does not show a standalone bottom history button for a selected contract', () => {
+    const html = renderToStaticMarkup(
+      <ReservationOperationsWorkspace
+        state="SUCCESS"
+        rows={[
+          { ...row(), contractId: '10000000-0000-4000-8000-000000000001' },
+        ]}
+        access={access}
+        now={now}
+        initialSection="inbox"
+      />,
+    );
+    expect(html).not.toContain('سوابق اصلاح قرارداد');
+    expect(html).toContain('توضیحات');
+    const source = readFileSync(
+      new URL('./workspace.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(source).toContain('<ContractCorrectionDeepLink />');
+    expect(source).not.toContain('ContractCorrectionHistoryButton');
+  });
   it('marks corrected contracts with text and purple light/dark queue styling', () => {
     const html = renderToStaticMarkup(
       <ReservationOperationsWorkspace
@@ -415,6 +436,18 @@ describe('reservation search submission and filter combinations', () => {
 });
 
 it('marks only the second cell of noted requests, including the initially selected row', () => {
+  const css = readFileSync(
+    new URL('./workspace.module.css', import.meta.url),
+    'utf8',
+  );
+  const ordinary = css.match(/\.requestTable td \{([^}]+)\}/)![1]!;
+  const noted = css.match(
+    /\.requestTable tbody tr td\[data-has-note='true'\] \{([^}]+)\}/,
+  )![1]!;
+  expect(ordinary).toContain('height: 32px');
+  expect(ordinary).toContain('line-height: 20px');
+  expect(ordinary).toContain('white-space: nowrap');
+  expect(noted).not.toMatch(/(?:height|line-height|padding|white-space):/);
   const html = renderToStaticMarkup(
     <ReservationOperationsWorkspace
       state="SUCCESS"

@@ -651,3 +651,67 @@ it.each([
     ).toBe(expected);
   },
 );
+
+import { salesTransferCount } from './sales-form';
+it('defaults transfer quantity to adults plus children and bounds a manual reduction', () => {
+  const state = {
+    ...emptySalesForm,
+    passengerComposition: { adults: 2, children: 1, infants: 1 },
+  };
+  expect(salesTransferCount(state)).toBe(3);
+  expect(salesTransferCount({ ...state, transferPassengerCount: 2 })).toBe(2);
+  expect(salesTransferCount({ ...state, transferPassengerCount: 99 })).toBe(3);
+  expect(salesTransferCount({ ...state, transferPassengerCount: -1 })).toBe(0);
+});
+
+it('persists the reduced transfer count separately for each selected direction', () => {
+  const input = salesPayload({
+    ...emptySalesForm,
+    tripType: 'ROUND_TRIP',
+    serviceKinds: ['TRANSFER'],
+    serviceDirections: { TRANSFER: ['OUTBOUND', 'RETURN'] },
+    passengerComposition: { adults: 2, children: 1, infants: 1 },
+    transferPassengerCount: 2,
+  });
+  expect(
+    input.services
+      .filter((s) => s.kind === 'TRANSFER')
+      .map((s) => s.metadata?.passengerCount),
+  ).toEqual([2, 2]);
+});
+
+describe('explicit visa applicants', () => {
+  const state = {
+    ...emptySalesForm,
+    departureDate: '2026-10-01',
+    serviceKinds: ['VISA' as const],
+    visaComposition: { adults: 1, children: 1 },
+    visaChildAges: [6],
+    visaApplicantIds: ['a', 'c'],
+    passengers: [
+      { customerId: 'a', displayName: 'A', birthDate: '1990-01-01' },
+      { customerId: 'b', displayName: 'B', birthDate: '1991-01-01' },
+      { customerId: 'c', displayName: 'C', birthDate: '2020-01-01' },
+    ],
+  };
+  it('assigns visas only to selected identities', () => {
+    const payload = salesPayload(state);
+    expect(payload.passengers.map((p) => p.serviceClientKeys)).toEqual([
+      ['visa'],
+      [],
+      ['visa'],
+    ]);
+    expect(payload.services[0]?.metadata).toMatchObject({
+      applicantAdults: 1,
+      applicantChildren: 1,
+      applicantChildAges: '6',
+    });
+  });
+  it('rejects wrong counts, ages and infants instead of assigning arbitrary people', () => {
+    expect(() =>
+      salesPayload({ ...state, visaApplicantIds: ['a', 'b'] }),
+    ).toThrow();
+    expect(() => salesPayload({ ...state, visaChildAges: [5] })).toThrow();
+    expect(() => salesPayload({ ...state, visaApplicantIds: [] })).toThrow();
+  });
+});

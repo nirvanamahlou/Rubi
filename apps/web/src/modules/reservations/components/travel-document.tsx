@@ -4,7 +4,6 @@ import {
   useReservationFormReferences,
 } from './reservation-form-sheet';
 import { useEffect, useState } from 'react';
-import { createPortal, flushSync } from 'react-dom';
 import type {
   ReservationIntakeV1,
   TravelBrandingV1,
@@ -66,15 +65,16 @@ export function TravelDocument({
   historical = false,
   previewSettings,
   dirty = false,
+  downloadLabel,
 }: {
   intake: ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
   voucher?: boolean;
   historical?: boolean;
   previewSettings?: VoucherSettingsV1 | undefined;
   dirty?: boolean;
+  downloadLabel?: string;
 }) {
   const { logo, error } = useTravelLogo(intake.workflow.branding);
-  const [printing, setPrinting] = useState(false);
   const [printError, setPrintError] = useState('');
   const [downloading, setDownloading] = useState(false);
   const state = intake.workflow;
@@ -111,40 +111,6 @@ export function TravelDocument({
       voucher={voucher}
     />
   );
-  async function print() {
-    if (
-      printing ||
-      !enabled ||
-      !supplierReady ||
-      dirty ||
-      !formReferences.ready
-    )
-      return;
-    setPrintError('');
-    const previousTitle = document.title;
-    document.title = `${voucher ? 'voucher' : 'reservation-form'}-${intake.snapshot.contractNumber}-v${state.version}`;
-    flushSync(() => setPrinting(true));
-    try {
-      await document.fonts.ready;
-      await Promise.all(
-        Array.from(
-          document.querySelectorAll<HTMLImageElement>(
-            '[data-travel-document] img',
-          ),
-        ).map((img) => {
-          // Off-screen pages must load their logos before opening print/PDF.
-          img.loading = 'eager';
-          return img.decode();
-        }),
-      );
-      window.print();
-    } catch {
-      setPrintError('چاپ آماده نشد؛ دریافت لوگو را بررسی کنید.');
-    } finally {
-      setPrinting(false);
-      document.title = previousTitle;
-    }
-  }
   async function downloadPdf() {
     if (downloading || !enabled || !supplierReady || dirty) return;
     setDownloading(true);
@@ -196,27 +162,10 @@ export function TravelDocument({
         >
           {downloading
             ? 'در حال آماده‌سازی PDF…'
-            : voucher
-              ? 'دانلود واچر'
-              : 'دانلود مستقیم PDF فرم رزرواسیون'}
+            : (downloadLabel ??
+              (voucher ? 'دانلود واچر' : 'دانلود مستقیم PDF فرم رزرواسیون'))}
         </Button>
       )}
-      <Button
-        disabled={
-          printing ||
-          !enabled ||
-          !supplierReady ||
-          dirty ||
-          !formReferences.ready
-        }
-        onClick={() => void print()}
-      >
-        چاپ / ذخیره PDF {voucher ? 'واچر' : 'فرم رزرواسیون'}
-      </Button>
-      <p className="text-sm text-muted-foreground">
-        برای خروجی PDF، در پنجرهٔ چاپ مقصد «Save as PDF» را انتخاب کنید.
-        پیش‌نمایش متناسب با پنجره است؛ خروجی در اندازهٔ کامل A4 ذخیره می‌شود.
-      </p>
       {formReferences.failed && (
         <p role="status">
           برخی اطلاعات تکمیلی مرجع دریافت نشد؛ فیلدهای خالی را پیش از ارسال
@@ -224,16 +173,6 @@ export function TravelDocument({
         </p>
       )}
       {enabled && supplierReady && <DocumentPreview>{sheet}</DocumentPreview>}
-      {printing &&
-        createPortal(
-          <div data-travel-document style={{ display: 'none' }}>
-            <style media="print">
-              {`@page{size:A4;margin:0}body>:not([data-travel-document]){display:none!important}html,body{overflow:visible!important;height:auto!important;margin:0!important} [data-travel-document]{display:block!important;width:100%!important;zoom:1!important}`}
-            </style>
-            {sheet}
-          </div>,
-          document.body,
-        )}
     </div>
   );
 }

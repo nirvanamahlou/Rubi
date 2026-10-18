@@ -1,5 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import {
+  ReservationCurrencySelect,
+  useReservationCurrencies,
+} from './reservation-currencies';
+import { useEffect, useRef, useState } from 'react';
 import {
   voucherTextKeys,
   voucherNumberKeys,
@@ -11,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import {
   Input,
+  Textarea,
   Select,
   SelectContent,
   SelectItem,
@@ -184,6 +189,7 @@ export function ReservationSettingsForm({
       settings.text.contractPartyName = partyName;
     return settings;
   });
+  const currencyDirectory = useReservationCurrencies(intake.id);
   const [directory, setDirectory] = useState<{
     key: string;
     options: Partial<
@@ -201,6 +207,43 @@ export function ReservationSettingsForm({
   const [past, setPast] = useState<TravelWorkflowStateV1>();
   const [previewDirty, setPreviewDirty] = useState(false);
   const [showFiles, setShowFiles] = useState(false);
+  const priceSource = useRef(
+    draft.hotelPurchasePrices !== undefined ? draft.brokerId : undefined,
+  );
+  const [priceLoading, setPriceLoading] = useState(
+    Boolean(draft.brokerId && draft.hotelPurchasePrices === undefined),
+  );
+  const [priceError, setPriceError] = useState('');
+  useEffect(() => {
+    const brokerId = draft.brokerId;
+    if (!brokerId || priceSource.current === brokerId) return;
+    let live = true;
+    void travelRequest<{
+      data: NonNullable<VoucherSettingsV1['hotelPurchasePrices']>;
+    }>(
+      `reservations/hotel-savings/supplier-form/${intake.id}?brokerId=${encodeURIComponent(brokerId)}`,
+    )
+      .then((response) => {
+        if (!live) return;
+        priceSource.current = brokerId;
+        setDraft((previous) =>
+          previous.brokerId === brokerId
+            ? { ...previous, hotelPurchasePrices: response.data }
+            : previous,
+        );
+        setPreviewDirty(true);
+        setPriceLoading(false);
+        setPriceError('');
+      })
+      .catch(() => {
+        if (!live) return;
+        setPriceLoading(false);
+        setPriceError('دریافت نرخ خرید هتل انجام نشد؛ مبلغ را دستی وارد کنید.');
+      });
+    return () => {
+      live = false;
+    };
+  }, [draft.brokerId, intake.id]);
   const referenceKeys = referenceKeysBySection[section];
   const referenceResourceKey = [
     ...new Set(
@@ -288,7 +331,7 @@ export function ReservationSettingsForm({
     };
   }, [intake.id, intake.workflow.version]);
   async function save() {
-    if (busy) return;
+    if (busy || priceLoading) return;
     if (activeDirectory.loading || activeDirectory.error) {
       setError(
         activeDirectory.error ||
@@ -323,21 +366,50 @@ export function ReservationSettingsForm({
       );
       return;
     }
+    if (showDocument && !draft.brokerId) {
+      setError('پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.');
+      return;
+    }
     setBusy(true);
     setError('');
     setMessage('');
+    let savedWorkflow: TravelWorkflowStateV1 | undefined;
     try {
+      let currentVersion = intake.workflow.version;
+      if (showDocument && !intake.workflow.branding) {
+        const branded = await travelRequest<{ data: TravelWorkflowStateV1 }>(
+          `reservations/requests/${intake.id}/workflow`,
+          {
+            action: 'BRANDING',
+            expectedVersion: currentVersion,
+            note: 'انتخاب سربرگ خروجی',
+            branding: { kind: 'OWN' },
+          },
+        );
+        currentVersion = branded.data.version;
+        savedWorkflow = branded.data;
+      }
       const r = await travelRequest<{ data: TravelWorkflowStateV1 }>(
         `reservations/requests/${intake.id}/workflow`,
         {
           action: 'SUPPLIER_FORM_SETTINGS',
           applyToContractAndVoucher: false,
-          expectedVersion: intake.workflow.version,
-          note: sectionLabels[section] + ' در فرم رزواسیون و مبنای خرید',
+          expectedVersion: currentVersion,
+          note: sectionLabels[section] + ' فقط در فرم رزواسیون',
           voucherSettings: {
             ...draft,
             text: {
               ...draft.text,
+              arrivalAirline:
+                findReservationEditReference(
+                  draft.text.arrivalAirline ?? '',
+                  activeDirectory.options.airlines ?? [],
+                )?.label ?? draft.text.arrivalAirline,
+              departureAirline:
+                findReservationEditReference(
+                  draft.text.departureAirline ?? '',
+                  activeDirectory.options.airlines ?? [],
+                )?.label ?? draft.text.departureAirline,
               broker:
                 findReservationEditReference(
                   draft.text.broker ?? '',
@@ -349,10 +421,15 @@ export function ReservationSettingsForm({
           },
         },
       );
-      onSaved(r.data);
+      savedWorkflow = r.data;
+      const result = showDocument
+        ? await sendSavedReservationForm(intake.id, r.data)
+        : r;
+      onSaved(result.data);
       setMessage('نسخهٔ جدید با موفقیت ثبت شد.');
       window.dispatchEvent(new Event('reservation-workflow-changed'));
     } catch (e) {
+      if (savedWorkflow) onSaved(savedWorkflow);
       setError(e instanceof Error ? e.message : 'ذخیره انجام نشد.');
     } finally {
       setBusy(false);
@@ -450,6 +527,10 @@ export function ReservationSettingsForm({
                   ...(referenceKey === 'broker' ? { brokerId: option.id } : {}),
                 };
                 if (referenceKey === 'broker' && draft.brokerId !== option.id) {
+                  priceSource.current = undefined;
+                  next.hotelPurchasePrices = [];
+                  setPriceLoading(true);
+                  setPriceError('');
                   delete next.leaderId;
                   next.text.leaderName = '';
                   next.text.leaderPhone = '';
@@ -506,9 +587,19 @@ export function ReservationSettingsForm({
   const saveButton = (
     <Button
       onClick={() => void save()}
-      disabled={busy || activeDirectory.loading || !selected.length}
+      disabled={
+        busy ||
+        priceLoading ||
+        activeDirectory.loading ||
+        !selected.length ||
+        (showDocument && !draft.brokerId)
+      }
     >
-      {busy ? 'در حال ذخیره…' : 'ثبت نسخهٔ جدید فرم رزرواسیون'}
+      {busy
+        ? 'در حال ذخیره…'
+        : showDocument
+          ? 'ارسال به کارگزار'
+          : 'ثبت نسخهٔ جدید فرم رزرواسیون'}
     </Button>
   );
   return (
@@ -521,6 +612,88 @@ export function ReservationSettingsForm({
           رزواسیون می‌سازد؛ ردهٔ کودک هتل در فرم ارسالی کارگزار چاپ می‌شود.
         </p>
       </header>
+      {(section === 'ALL' || section === 'HOTEL') && (
+        <div className={styles.sectionCard}>
+          <h4>مبلغ هتل در فرم رزواسیون</h4>
+          <p>
+            نرخ خرید کارگزار انتخاب‌شده برای کل اقامت؛ قابل ویرایش پیش از صدور.
+          </p>
+          {priceLoading && <p>در حال دریافت نرخ خرید…</p>}
+          {priceError && <p role="alert">{priceError}</p>}
+          {currencyDirectory.error && (
+            <p role="alert">{currencyDirectory.error}</p>
+          )}
+          {(draft.hotelPurchasePrices?.length
+            ? draft.hotelPurchasePrices
+            : [{ amount: '', currencyCode: '' }]
+          ).map((price, index) => (
+            <div className="grid grid-cols-2 gap-2" key={index}>
+              <label>
+                مبلغ
+                <Input
+                  aria-label={`مبلغ هتل ${index + 1}`}
+                  dir="ltr"
+                  inputMode="decimal"
+                  value={price.amount}
+                  disabled={priceLoading}
+                  onChange={(event) => {
+                    const prices = [
+                      ...(draft.hotelPurchasePrices?.length
+                        ? draft.hotelPurchasePrices
+                        : [{ amount: '', currencyCode: '' }]),
+                    ];
+                    prices[index] = { ...price, amount: event.target.value };
+                    update({ ...draft, hotelPurchasePrices: prices });
+                  }}
+                />
+              </label>
+              <label>
+                ارز
+                <ReservationCurrencySelect
+                  label={`ارز هتل ${index + 1}`}
+                  value={price.currencyCode}
+                  currencies={currencyDirectory.currencies}
+                  disabled={priceLoading || currencyDirectory.loading}
+                  onChange={(currencyCode) => {
+                    const prices = [
+                      ...(draft.hotelPurchasePrices?.length
+                        ? draft.hotelPurchasePrices
+                        : [{ amount: '', currencyCode: '' }]),
+                    ];
+                    prices[index] = {
+                      ...price,
+                      currencyCode,
+                    };
+                    update({ ...draft, hotelPurchasePrices: prices });
+                  }}
+                />
+              </label>
+            </div>
+          ))}
+          <Button
+            variant="outline"
+            disabled={priceLoading}
+            onClick={() =>
+              update({
+                ...draft,
+                hotelPurchasePrices: [
+                  ...(draft.hotelPurchasePrices ?? []),
+                  { amount: '', currencyCode: '' },
+                ],
+              })
+            }
+          >
+            افزودن ارز
+          </Button>
+          <Button
+            variant="outline"
+            disabled={priceLoading}
+            onClick={() => update({ ...draft, hotelPurchasePrices: [] })}
+          >
+            پاک‌کردن مبلغ فرم
+          </Button>
+        </div>
+      )}
       <p
         className={`${styles.hotelSummary} ${
           section === 'ALL' || section === 'HOTEL' ? '' : 'hidden'
@@ -549,6 +722,21 @@ export function ReservationSettingsForm({
         {(section === 'ALL' || section === 'OTHER') && textField('broker')}
         {showDocument && draft.brokerId && (
           <div className="grid gap-3">
+            {
+              <label className="grid gap-2">
+                یادداشت فرم رزرواسیون (NOTICE)
+                <Textarea
+                  value={draft.text.remarks || ''}
+                  maxLength={500}
+                  onChange={(event) =>
+                    update({
+                      ...draft,
+                      text: { ...draft.text, remarks: event.target.value },
+                    })
+                  }
+                />
+              </label>
+            }
             {saveButton}
             {past && (
               <Button variant="outline" onClick={() => setPast(undefined)}>
@@ -785,12 +973,14 @@ export function ReservationSettingsForm({
               ))}
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {sectionTextKeys.filter((key) => key !== 'broker').map(textField)}
+            {sectionTextKeys
+              .filter((key) => key !== 'broker' && key !== 'remarks')
+              .map(textField)}
           </div>
         </details>
         <p className={styles.operationalNotice}>
-          این اصلاح فقط در فرم رزواسیون و مبنای خرید ثبت می‌شود و قرارداد فروش
-          را تغییر نمی‌دهد.
+          این اصلاح فقط در فرم رزواسیون ثبت می‌شود و قرارداد فروش را تغییر
+          نمی‌دهد.
         </p>
         {!showDocument && saveButton}
       </fieldset>
@@ -860,5 +1050,23 @@ export function ReservationSettings(props: {
     <ReservationSettingsForm {...props} refs={refs.references} />
   ) : (
     <p>در حال دریافت تنظیمات…</p>
+  );
+}
+
+export async function sendSavedReservationForm(
+  id: string,
+  state: TravelWorkflowStateV1,
+) {
+  if (!state.supplierFormSettings?.brokerId)
+    throw new Error(
+      'پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.',
+    );
+  return travelRequest<{ data: TravelWorkflowStateV1 }>(
+    `reservations/requests/${id}/workflow`,
+    {
+      action: 'REQUEST_SUPPLIER',
+      expectedVersion: state.version,
+      note: 'ثبت ارسال فرم رزرواسیون به کارگزار',
+    },
   );
 }

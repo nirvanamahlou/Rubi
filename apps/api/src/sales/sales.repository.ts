@@ -1,3 +1,4 @@
+import { salesHotelRoomSummary } from '@nora/contracts';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import {
   Inject,
@@ -29,7 +30,7 @@ export const salesDetailInclude = {
   },
   services: { orderBy: { createdAt: 'asc' } },
   ticketSelections: { orderBy: { departureAt: 'asc' } },
-  hotelSelection: true,
+  hotelSelection: { include: { rooms: { orderBy: { ordinal: 'asc' } } } },
   priceComponents: { orderBy: { createdAt: 'asc' } },
   payments: { orderBy: { createdAt: 'asc' } },
   reservationRequests: { orderBy: { createdAt: 'desc' } },
@@ -482,6 +483,7 @@ export class SalesRepository {
               contractId: contract.id,
               customerId: passenger.customerId,
               accommodationKind: passenger.accommodationKind ?? null,
+              childAgeBand: passenger.childAgeBand ?? null,
               agreedPrices: { create: [...(passenger.agreedPrices ?? [])] },
               displayNameSnapshot: passenger.displayNameSnapshot,
               birthDate: startOfDay(passenger.birthDate),
@@ -532,7 +534,26 @@ export class SalesRepository {
               singleRoomCount: hotel.singleRoomCount ?? 0,
               doubleRoomCount: hotel.doubleRoomCount ?? hotel.roomCount,
               extraBedCount: hotel.extraBedCount ?? 0,
+              ...(hotel.rooms?.length
+                ? salesHotelRoomSummary(hotel.rooms)
+                : {}),
               roomTypeId: hotel.roomTypeId,
+              ...(hotel.rooms?.length
+                ? {
+                    rooms: {
+                      create: hotel.rooms.map((room) => ({
+                        ordinal: room.ordinal,
+                        roomTypeId: room.roomTypeId,
+                        roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                        adults: room.adults,
+                        childAges: [...room.childAges],
+                        ...(room.agreedPrice
+                          ? { agreedPrice: { ...room.agreedPrice } }
+                          : {}),
+                      })),
+                    },
+                  }
+                : {}),
               mealServiceId: hotel.mealServiceId ?? null,
               occupancy: hotel.occupancy,
               inventoryStatus: hotel.inventoryStatus,
@@ -713,6 +734,7 @@ export class SalesRepository {
               contractId: id,
               customerId: passenger.customerId,
               accommodationKind: passenger.accommodationKind ?? null,
+              childAgeBand: passenger.childAgeBand ?? null,
               agreedPrices: { create: [...(passenger.agreedPrices ?? [])] },
               displayNameSnapshot: passenger.displayNameSnapshot,
               birthDate: startOfDay(passenger.birthDate),
@@ -762,7 +784,26 @@ export class SalesRepository {
               singleRoomCount: hotel.singleRoomCount ?? 0,
               doubleRoomCount: hotel.doubleRoomCount ?? hotel.roomCount,
               extraBedCount: hotel.extraBedCount ?? 0,
+              ...(hotel.rooms?.length
+                ? salesHotelRoomSummary(hotel.rooms)
+                : {}),
               roomTypeId: hotel.roomTypeId,
+              ...(hotel.rooms?.length
+                ? {
+                    rooms: {
+                      create: hotel.rooms.map((room) => ({
+                        ordinal: room.ordinal,
+                        roomTypeId: room.roomTypeId,
+                        roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                        adults: room.adults,
+                        childAges: [...room.childAges],
+                        ...(room.agreedPrice
+                          ? { agreedPrice: { ...room.agreedPrice } }
+                          : {}),
+                      })),
+                    },
+                  }
+                : {}),
               mealServiceId: hotel.mealServiceId ?? null,
               occupancy: hotel.occupancy,
               inventoryStatus: hotel.inventoryStatus,
@@ -1089,7 +1130,7 @@ export class SalesRepository {
         where: { id: payment.id },
         data: {
           status: 'FINANCE_REJECTED',
-          financeDecisionReason: event.reason.trim(),
+          financeDecisionReason: (event.reason ?? '').trim(),
           financeReviewedByUserId: event.reviewedByUserId,
           financeReviewedAt: new Date(event.reviewedAt),
         },
@@ -1101,7 +1142,7 @@ export class SalesRepository {
           actorBranchId: event.branchId,
           action: 'sales.payment.finance_correction_required',
           outcome: 'SUCCESS',
-          reason: event.reason.trim(),
+          reason: (event.reason ?? '').trim(),
           afterSnapshot: {
             paymentId: event.paymentId,
             status: 'FINANCE_REJECTED',

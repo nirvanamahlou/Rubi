@@ -84,7 +84,7 @@ export class B2bAgreementTermsDto implements B2bAgreementTermsV1 {
   @IsString() @MaxLength(2000) cancellationTerms!: string;
   @IsString() @MaxLength(2000) refundTerms!: string;
   @IsString() @MaxLength(2000) notes!: string;
-  @IsString() @MaxLength(500) changeReason!: string;
+  @IsString() @MaxLength(500) changeReason = '';
   @ValidateIf(nullable) @IsUUID() documentId!: string | null;
   @ValidateIf((_o, v) => v !== undefined && v !== null)
   @IsUUID()
@@ -106,8 +106,8 @@ export class B2bReferenceGrantDto {
 }
 export class SaveB2bAgreementDto {
   @IsUUID() branchId!: string;
-  @IsIn(['AGENCY', 'CORPORATE_CUSTOMER']) role:
-    'AGENCY' | 'CORPORATE_CUSTOMER' = 'AGENCY';
+  @IsIn(['AGENCY', 'CORPORATE_CUSTOMER', 'SUPPLIER', 'BROKER']) role:
+    'AGENCY' | 'CORPORATE_CUSTOMER' | 'SUPPLIER' | 'BROKER' = 'AGENCY';
   @IsUUID() requestId!: string;
   @ValidateIf(optional) @IsInt() @Min(1) version?: number;
   @IsDefined()
@@ -125,11 +125,11 @@ export class SaveB2bAgreementDto {
 }
 export class B2bAgreementActionDto {
   @IsUUID() branchId!: string;
-  @IsIn(['AGENCY', 'CORPORATE_CUSTOMER']) role:
-    'AGENCY' | 'CORPORATE_CUSTOMER' = 'AGENCY';
+  @IsIn(['AGENCY', 'CORPORATE_CUSTOMER', 'SUPPLIER', 'BROKER']) role:
+    'AGENCY' | 'CORPORATE_CUSTOMER' | 'SUPPLIER' | 'BROKER' = 'AGENCY';
   @IsUUID() requestId!: string;
   @IsInt() @Min(1) version!: number;
-  @IsString() @MinLength(3) @MaxLength(500) reason!: string;
+  @IsString() @MaxLength(500) reason = '';
   @ValidateIf(optional) @IsIn(['APPROVE', 'REJECT']) decision?:
     'APPROVE' | 'REJECT';
   @ValidateIf(optional)

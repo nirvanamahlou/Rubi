@@ -373,6 +373,7 @@ export interface FinanceInboxSourceStateV1 {
 }
 
 export interface FinanceInboxItemV1 {
+  purchaseFx?: readonly FinancePurchaseFxV1[];
   version: 1;
   id: string;
   source: FinanceInboxSource;
@@ -433,6 +434,7 @@ export interface FinanceInboxItemV1 {
 
 /** Finance owns these confirmed purchase figures; a catalog estimate is never a cost. */
 export interface FinanceTicketCostCommandV1 {
+  purchaseRateToIrr?: string;
   version: 1;
   operationId?: string;
   expectedCostVersion?: number;
@@ -768,4 +770,20 @@ export interface FinanceExportSnapshotV1 {
   /** Currency totals are never combined or implicitly converted. */
   totals: readonly { currencyCode: string; amount: string }[];
   warnings: readonly string[];
+}
+
+export interface FinancePurchaseFxV1 {
+  referenceId: string;
+  currencyCode: string;
+  foreignAmount: string;
+  rateToIrr: string | null;
+  source: string | null;
+  baselineAt: string;
+  baselineEquivalent: string | null;
+  paidForeignAmount: string;
+  paidBaselineEquivalent: string | null;
+  actualPaidEquivalent: string | null;
+  realizedGainLoss: string | null;
+  averagePaidRateToIrr?: string | null;
+  gainLossPerUnit?: string | null;
 }

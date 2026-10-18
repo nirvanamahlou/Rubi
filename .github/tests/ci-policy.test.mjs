@@ -29,11 +29,17 @@ const computerBranches = ['a', 'b', 'c', 'd'].flatMap((id) => [
 for (const event of ['push', 'pull_request']) {
   test(`${event} covers all four computers and future IDs without removing existing bases`, () => {
     const patterns = branchFilters(event);
-    assert.deepEqual(patterns, ['main', 'develop', 'codex/pc-*']);
+    assert.deepEqual(patterns, [
+      'main',
+      'develop',
+      'PC-D-Integration',
+      'codex/pc-*',
+    ]);
     // Only literal names and a single '*' are supported by this policy check.
     for (const branch of [
       'main',
       'develop',
+      'PC-D-Integration',
       ...computerBranches,
       'codex/pc-e-future-task',
     ]) {

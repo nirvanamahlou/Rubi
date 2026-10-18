@@ -213,8 +213,8 @@ it.each([false, true, 'split'])(
                 state: {
                   sentSupplierFormSettings: {
                     text: {
-                      checkIn: '2026-10-01',
-                      checkOut: formula ? '2026-10-10' : '2026-10-04',
+                      checkIn: '2026-10-02',
+                      checkOut: '2026-10-10',
                     },
                   },
                 },
@@ -374,6 +374,7 @@ it.each([false, true, 'split'])(
       '450',
     );
     expect(hotel.batchId).toBe(transfer.batchId);
+    expect(hotel.amount).toBe('450');
     expect(hotel.serviceTitleSnapshot).toBe('Royal Wings');
     expect(transfer.serviceTitleSnapshot).toBe(
       formula === 'split' ? 'Outbound' : 'ترانسفر رفت‌وبرگشت',
@@ -605,4 +606,179 @@ it('records insurance actual cost through the same authorized, scoped CAS and id
       'bad',
     ),
   ).rejects.toThrow();
+});
+
+it('records floating actual cost through the same authorized, scoped CAS and idempotency purchase path', async () => {
+  const create = vi.fn().mockResolvedValue({ id: 'floating-cost', version: 1 });
+  const updateMany = vi.fn().mockResolvedValue({ count: 1 });
+  const db = {
+    client: {
+      reservationIntake: {
+        findUnique: vi.fn().mockResolvedValue({
+          branchId: 'branch',
+          snapshot: {
+            serviceSelections: [
+              {
+                clientKey: 'floating',
+                kind: 'FLIGHT',
+                metadata: { contractFlightVersion: 1 },
+                titleSnapshot: 'Policy',
+              },
+            ],
+          },
+          workflowRevisions: [],
+        }),
+      },
+      reservationServicePurchase: {
+        findUnique: vi.fn().mockResolvedValue(null),
+      },
+      $transaction: vi.fn(async (run: (tx: unknown) => Promise<unknown>) =>
+        run({
+          $queryRaw: vi.fn(),
+          reservationIntake: { updateMany },
+          reservationServicePurchase: { create },
+        }),
+      ),
+    },
+  };
+  const directory = {
+    brokerReference: vi.fn().mockResolvedValue({
+      id: valid.supplierOrganizationId,
+      source: 'BROKER',
+      name: 'Insurer broker',
+    }),
+    currencyReference: vi.fn(),
+  };
+  const service = new ReservationServicePurchaseService(
+    db as never,
+    directory as never,
+  );
+  const actor = {
+    userId: 'actor',
+    branchIds: ['branch'],
+    permissions: ['reservations.read', 'reservations.hotel_purchase.write'],
+  } as never;
+  await expect(
+    service.record(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      { ...valid, serviceClientKey: 'floating' },
+      actor,
+      'floating-cost-key',
+    ),
+  ).resolves.toMatchObject({ data: { id: 'floating-cost' } });
+  expect(create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        serviceKind: 'FLIGHT',
+        amount: '1250000',
+        currencyCode: 'IRR',
+        supplierBrokerId: valid.supplierOrganizationId,
+      }),
+    }),
+  );
+  expect(updateMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: expect.objectContaining({
+        purchaseVersion: 0,
+        branchId: { in: ['branch'] },
+      }),
+    }),
+  );
+  await expect(
+    service.record(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      {
+        ...valid,
+        serviceClientKey: 'floating',
+        passengerPrices: [
+          { customerId: valid.supplierOrganizationId, nightlyAmount: '1' },
+        ],
+      },
+      actor,
+      'bad',
+    ),
+  ).rejects.toThrow();
+});
+
+it('single hotel purchase uses contractual nights even after different form-only dates are sent', async () => {
+  const guest = '11111111-1111-4111-8111-111111111111';
+  const create = vi.fn().mockResolvedValue({ id: 'purchase', version: 1 });
+  const snapshot = {
+    passengerIds: [guest],
+    serviceSelections: [
+      { clientKey: 'hotel-1', kind: 'HOTEL', titleSnapshot: 'Hotel' },
+    ],
+    hotelSelection: {
+      serviceClientKey: 'hotel-1',
+      checkInDate: '2026-10-01',
+      checkOutDate: '2026-10-04',
+    },
+  };
+  const db = {
+    client: {
+      reservationIntake: {
+        findUnique: vi.fn().mockResolvedValue({
+          branchId: 'branch-1',
+          snapshot,
+          workflowRevisions: [
+            {
+              state: {
+                sentSupplierFormSettings: {
+                  text: { checkIn: '2026-10-02', checkOut: '2026-10-10' },
+                },
+              },
+            },
+          ],
+        }),
+      },
+      reservationServicePurchase: {
+        findUnique: vi.fn().mockResolvedValue(null),
+      },
+      $transaction: vi.fn(async (fn: (tx: unknown) => unknown) =>
+        fn({
+          $queryRaw: vi.fn(),
+          reservationIntake: {
+            updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+          },
+          reservationServicePurchase: { create },
+        }),
+      ),
+    },
+  };
+  const directory = {
+    brokerReference: vi.fn().mockResolvedValue({
+      id: valid.supplierOrganizationId,
+      name: 'Synthetic broker',
+    }),
+    currencyReference: vi.fn().mockResolvedValue({ code: 'IRR' }),
+  };
+  const service = new ReservationServicePurchaseService(
+    db as never,
+    directory as never,
+  );
+  await service.record(
+    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    {
+      ...valid,
+      amount: '300',
+      passengerPrices: [{ customerId: guest, nightlyAmount: '100' }],
+    },
+    {
+      userId: 'user',
+      branchIds: ['branch-1'],
+      permissions: ['reservations.read', 'reservations.hotel_purchase.write'],
+    } as never,
+    'isolated-form',
+  );
+  expect(create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        amount: '300',
+        passengerPrices: expect.arrayContaining([
+          expect.objectContaining({ nights: 3, totalAmount: '300' }),
+        ]),
+      }),
+    }),
+  );
+  expect(snapshot.hotelSelection.checkInDate).toBe('2026-10-01');
 });

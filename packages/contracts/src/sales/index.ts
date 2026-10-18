@@ -1,3 +1,5 @@
+export * from './hotel-rooms';
+import type { SalesHotelRoomV1 } from './hotel-rooms';
 import type { SalesServicePricingV1 } from './pricing';
 import type { LegalEntityCode } from '../legal-entities';
 export const SALES_CONTRACT_VERSION = 1 as const;
@@ -104,6 +106,8 @@ export interface SalesServiceInput {
 export * from './passenger-correction';
 
 export interface SalesPassengerInput {
+  /** Contract child classification; independent from the person's real birth date. */
+  childAgeBand?: 'AGE_2_6' | 'AGE_6_12' | null;
   accommodationKind?: SalesAccommodationKind;
   /** Explicit agreed total of all services for this person; absent on legacy contracts. */
   agreedPrices?: readonly SalesMoney[];
@@ -149,6 +153,7 @@ export interface SalesTicketSelectionInput {
 }
 
 export interface SalesHotelSelectionInput {
+  rooms?: readonly SalesHotelRoomV1[];
   serviceClientKey: string;
   hotelId: string;
   hotelNameSnapshot: string;
@@ -388,6 +393,7 @@ export interface SalesReceivables {
 
 export interface SalesReservationRequestV1 {
   passengerAssignments?: readonly {
+    childAgeBand?: SalesPassengerInput['childAgeBand'];
     customerId: string;
     displayNameSnapshot?: string;
     ageCategory: SalesPassengerAgeCategory;

@@ -4,6 +4,9 @@ import type { ReservationIntakeV1 } from '@nora/contracts';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { canonicalTestTree } from '@/i18n/test-tree';
 import { ReservationHotelPurchase } from './reservation-hotel-purchase';
+vi.mock('@/modules/iam/access-context', () => ({
+  useAccessPermissions: () => [],
+}));
 const state = vi.hoisted(() => ({
   index: 0,
   values: [] as unknown[],
@@ -11,6 +14,9 @@ const state = vi.hoisted(() => ({
 }));
 vi.mock('react', async (original) => ({
   ...(await original<typeof ReactModule>()),
+  useCallback(callback: unknown) {
+    return callback;
+  },
   useState(initial: unknown) {
     const index = state.index++;
     if (!(index in state.values))

@@ -1,3 +1,6 @@
+import { PurchaseFxService } from '../purchase-fx/purchase-fx.service';
+import { TicketPublicService } from '../../ticket-catalog/ticket-public.service';
+import { moneyUnits, moneyDecimal } from '@nora/contracts';
 import { createHash, randomUUID } from 'node:crypto';
 import { paymentSource } from '../payments/payment-source';
 import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
@@ -39,6 +42,12 @@ export class FinanceTicketCostService {
     @Optional()
     @Inject(MasterProcurementDirectory)
     private readonly supplierDirectory?: MasterProcurementDirectory,
+    @Optional()
+    @Inject(TicketPublicService)
+    private readonly tickets?: TicketPublicService,
+    @Optional()
+    @Inject(PurchaseFxService)
+    private readonly purchaseFx?: PurchaseFxService,
   ) {}
 
   async recordCost(
@@ -110,6 +119,24 @@ export class FinanceTicketCostService {
         unitCost = money(input.unitCost);
         invoice = unitCost.mul(seatCount).toDecimalPlaces(4);
       }
+      if (request.offerId && this.tickets) {
+        const type = await this.tickets.documentSupply(
+          request.offerId,
+          actor.branchIds,
+        );
+        if (type === 'FLOATING')
+          throw new BadRequestException(
+            'خرید پرواز شناور را برای قرارداد مربوط ثبت کنید.',
+          );
+        if (
+          type === 'COMPANY' &&
+          request.seatCount !== null &&
+          seatCount !== request.seatCount
+        )
+          throw new BadRequestException(
+            'خرید ظرفیت شرکت باید برای تمام صندلی‌های همان خرید ثبت شود.',
+          );
+      }
       adult = unitCost;
       child = new Prisma.Decimal(0);
       money(invoice.toString());
@@ -139,6 +166,9 @@ export class FinanceTicketCostService {
               invoice: invoice.toString(),
               currencyCode: input.currencyCode,
               expectedCostVersion: input.expectedCostVersion,
+              ...(input.purchaseRateToIrr !== undefined
+                ? { purchaseRateToIrr: input.purchaseRateToIrr }
+                : {}),
             }),
           )
           .digest('hex')
@@ -198,6 +228,17 @@ export class FinanceTicketCostService {
           actorUserId: actor.userId,
         },
       });
+      await this.purchaseFx?.capture(tx, {
+        ticketCostId: row.id,
+        branchId: row.branchId,
+        actorUserId: actor.userId,
+        currencyCode: row.currencyCode,
+        amount: row.invoiceAmount.toString(),
+        ...(input.purchaseRateToIrr
+          ? { rateToIrr: input.purchaseRateToIrr }
+          : {}),
+        baselineAt: row.createdAt,
+      });
       return this.costSnapshot(row);
     });
   }
@@ -232,32 +273,74 @@ export class FinanceTicketCostService {
   }> {
     const requests = await this.procurement.listTicketPurchaseInbox(actor);
     const states = await this.queueStates(requests.map((r) => r.id));
+    const inventory = await this.tickets?.purchaseCapacityInventory(
+      actor.branchIds,
+    );
+    const now = Date.now();
     return {
       meta: {
         canPrice: actor.permissions.includes('procurement.quote.manage'),
       },
-      data: requests.map((request) => {
-        const state = states.get(request.id);
-        return {
-          request,
-          cost: state
-            ? {
-                id: state.costRevisionId,
-                createdAt: state.createdAt,
-                version: state.costVersion,
-                seatCount: state.seatCount,
-                unitCost: state.unitCost,
-                invoiceAmount: state.invoiceAmount,
-                currencyCode: state.currencyCode,
-                paidAmount: state.paidAmount,
-                remainingAmount: state.remainingAmount,
-                paymentCount: state.paymentCount,
-              }
-            : null,
-          stage:
-            request.status === 'PAID' ? 'PAID' : (state?.status ?? 'UNPRICED'),
-        };
-      }),
+      data: requests
+        .filter(
+          (request) =>
+            !inventory?.some(
+              (offer) =>
+                offer.id === request.offerId && offer.supplyType === 'FLOATING',
+            ),
+        )
+        .map((request) => {
+          const state = states.get(request.id);
+          const offer = inventory?.find((item) => item.id === request.offerId);
+          const purchasedSeats = state?.seatCount;
+          const unsoldSeats =
+            purchasedSeats && offer
+              ? purchasedSeats - offer.allocatedCapacity
+              : -1;
+          const capacityCost =
+            state &&
+            offer?.supplyType === 'COMPANY' &&
+            purchasedSeats &&
+            unsoldSeats >= 0
+              ? {
+                  purchasedSeats,
+                  allocatedSeats: offer.allocatedCapacity,
+                  unsoldSeats,
+                  amount: moneyDecimal(
+                    (moneyUnits(state.invoiceAmount) * BigInt(unsoldSeats) +
+                      BigInt(purchasedSeats) / 2n) /
+                      BigInt(purchasedSeats),
+                  ),
+                  currencyCode: state.currencyCode,
+                  status:
+                    offer.arrivalAt.getTime() <= now
+                      ? ('FINAL_LOSS' as const)
+                      : ('REMAINING_CAPACITY' as const),
+                }
+              : null;
+          return {
+            request,
+            capacityCost,
+            cost: state
+              ? {
+                  id: state.costRevisionId,
+                  createdAt: state.createdAt,
+                  version: state.costVersion,
+                  seatCount: state.seatCount,
+                  unitCost: state.unitCost,
+                  invoiceAmount: state.invoiceAmount,
+                  currencyCode: state.currencyCode,
+                  paidAmount: state.paidAmount,
+                  remainingAmount: state.remainingAmount,
+                  paymentCount: state.paymentCount,
+                }
+              : null,
+            stage:
+              request.status === 'PAID'
+                ? 'PAID'
+                : (state?.status ?? 'UNPRICED'),
+          };
+        }),
     };
   }
 
@@ -447,6 +530,18 @@ export class FinanceTicketCostService {
   }
 
   /** Recorded actual cost, independent of settlement; never a catalog sale quote. */
+  async companyCapacityOfferIds(offerIds: readonly string[], branchId: string) {
+    const inventory = await this.tickets?.purchaseCapacityInventory([branchId]);
+    return (
+      inventory
+        ?.filter(
+          (offer) =>
+            offer.supplyType === 'COMPANY' && offerIds.includes(offer.id),
+        )
+        .map((offer) => offer.id) ?? []
+    );
+  }
+
   async recordedCostsForOffers(offerIds: readonly string[], branchId: string) {
     if (!offerIds.length) return [];
     const rows =
@@ -464,13 +559,19 @@ export class FinanceTicketCostService {
           invoiceAmount: true,
         },
       });
+    const inventory = await this.tickets?.purchaseCapacityInventory([branchId]);
     const seen = new Set<string>();
     return rows.flatMap((row) => {
-      if (!row.offerId || seen.has(row.offerId)) return [];
+      const type = inventory?.find(
+        (offer) => offer.id === row.offerId,
+      )?.supplyType;
+      if (!row.offerId || seen.has(row.offerId) || type === 'FLOATING')
+        return [];
       seen.add(row.offerId);
       return [
         {
           id: row.id,
+          supplyType: type,
           offerId: row.offerId,
           currencyCode: row.currencyCode,
           adultUnitCost: row.adultUnitCost.toString(),

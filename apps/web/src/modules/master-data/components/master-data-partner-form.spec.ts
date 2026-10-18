@@ -73,8 +73,16 @@ describe('real partner form fields', () => {
       if (resource === 'suppliers') {
         expect(html).toContain('id="live-suppliers-name"');
         expect(html).not.toContain('id="live-suppliers-englishName"');
-        expect(html).not.toContain('id="live-suppliers-countryId"');
-        expect(html).not.toContain('id="live-suppliers-cityId"');
+        expect(html).toContain('id="live-suppliers-countryId"');
+        expect(html).toContain('id="live-suppliers-cityId"');
+        expect(html.indexOf('id="live-suppliers-countryId"')).toBeLessThan(
+          html.indexOf('id="live-suppliers-cityId"'),
+        );
+        expect(html.indexOf('id="live-suppliers-cityId"')).toBeLessThan(
+          html.indexOf('id="live-suppliers-address"'),
+        );
+        expect(html).toContain('id="live-suppliers-dossierMobile"');
+        expect(html).toContain('id="live-suppliers-dossierEmail"');
       } else {
         expect(html).toContain('id="live-brokers-englishName"');
         expect(html).toContain('Board');

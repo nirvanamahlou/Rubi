@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { ReservationPassengers } from '../passenger-files/passengers';
 import { ReservationPartyEditor } from './reservation-party-editor';
 import { TravelWorkflowForm } from './travel-workflow-form';
@@ -60,7 +62,7 @@ function WorkflowCommand({
   const available = action === 'CANCEL' ? !cancelled : cancelled;
 
   async function submit() {
-    if (!reason.trim()) {
+    if (!isOptionalOperationReason(reason)) {
       setError('دلیل عملیات را وارد کنید.');
       return;
     }
@@ -73,7 +75,7 @@ function WorkflowCommand({
         {
           action,
           expectedVersion: intake.workflow.version,
-          note: reason.trim(),
+          note: (reason ?? '').trim(),
         },
       );
       onSaved(response.data);
@@ -276,6 +278,7 @@ export function ReservationContractEditor({
             <ReservationSalesAmendment
               key={active + contract.version}
               contract={contract}
+              requestId={requestId}
               section={
                 active === 'ویرایش مسافران'
                   ? 'CORRECTION'
@@ -286,7 +289,7 @@ export function ReservationContractEditor({
               onSaved={() => setRevision((v) => v + 1)}
             />
           )}
-        {active === 'ویرایش مسافران' && (
+        {active === 'ویرایش مسافران' && !contract && (
           <ReservationPassengers key={requestId} id={requestId} />
         )}
         {active === 'سوابق' && (

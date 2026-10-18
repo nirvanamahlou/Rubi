@@ -1,4 +1,8 @@
 'use client';
+import { reservationFormPriceText } from '../model/reservation-form-price';
+import { loadOutputReferences } from '../model/output-references';
+import { getPublicApiBaseUrl } from '@/lib/environment';
+
 import { reservationFormFooterHtml } from '../model/reservation-form-footer';
 import Image from '@/i18n/image';
 import { voucherFormData, supplierFormData } from '../model/voucher-settings';
@@ -8,6 +12,7 @@ import { salesContractFlights } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import {
   reservationPassengerPages,
+  reservationRoomAppendices,
   type ReservationFormIntake,
   type ReservationFormReferences,
 } from '../model/reservation-form';
@@ -34,41 +39,69 @@ export function useReservationFormReferences(
         : null,
     hotel ? ['hotels', hotel.hotelId] : null,
     hotel?.roomTypeId ? ['room-types', hotel.roomTypeId] : null,
+    ...(hotel?.rooms ?? []).map((r) => ['room-types', r.roomTypeId]),
     hotel?.mealServiceId ? ['meal-services', hotel.mealServiceId] : null,
+    ...flights.map((f) => ['airline-name', f.carrierNameSnapshot]),
   ].filter((entry): entry is string[] => !!entry);
-  const key = JSON.stringify(entries);
+  const key = JSON.stringify({ entries, requestId: intake.id });
   useEffect(() => {
     if (!active) return;
     let live = true;
-    const requested = JSON.parse(key) as [MasterDataResource, string][];
+    const requested = (
+      JSON.parse(key) as { entries: [MasterDataResource, string][] }
+    ).entries;
     void Promise.all(
       requested.map(async ([resource, id]) => {
         try {
+          if (resource === ('airline-name' as MasterDataResource)) {
+            const result = await masterDataApi.list('airlines', {
+              search: id,
+              status: 'all',
+              sortBy: 'name',
+              sortDirection: 'asc',
+              page: 1,
+              pageSize: 100,
+            });
+            const data = result.data.find((record) =>
+              [record.name, record.attributes.englishName].includes(id),
+            );
+            return { id, data };
+          }
           const { data } = await masterDataApi.detail(resource, id);
           return { id, data };
         } catch {
           return { id, data: undefined };
         }
       }),
-    ).then((results) => {
+    ).then(async (results) => {
+      const extra = await loadOutputReferences(async (path) => {
+        const response = await fetch(getPublicApiBaseUrl() + path, {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        return response.ok ? response.json() : {};
+      }, intake.id).catch(() => ({}));
       if (live)
         setLoaded({
           key,
-          references: Object.fromEntries(
-            results.flatMap((result) =>
-              result.data ? [[result.id, result.data]] : [],
+          references: {
+            ...extra,
+            ...Object.fromEntries(
+              results.flatMap((result) =>
+                result.data ? [[result.id, result.data]] : [],
+              ),
             ),
-          ),
+          },
           failed: results.some((result) => !result.data),
         });
     });
     return () => {
       live = false;
     };
-  }, [key, active]);
+  }, [key, active, intake.id]);
   return {
     references: loaded?.key === key ? loaded.references : {},
-    ready: !active || !entries.length || loaded?.key === key,
+    ready: !active || loaded?.key === key,
     failed: loaded?.key === key && loaded.failed,
   };
 }
@@ -125,6 +158,11 @@ export function ReservationFormSheet({
           : 10,
       )
     : [data.passengers];
+  const roomAppendices =
+    !settings || settings.flags.hotel
+      ? reservationRoomAppendices(data.roomBreakdown)
+      : [];
+  const pageCount = pages.length + roomAppendices.length;
   return (
     <div className={styles.document}>
       {pages.map((people, page) => {
@@ -251,6 +289,21 @@ export function ReservationFormSheet({
                 ))}
               </tbody>
             </table>
+            {!voucher && !!settings?.hotelPurchasePrices?.length && (
+              <div
+                dir="ltr"
+                style={{
+                  padding: '8px 10px',
+                  border: '1px solid #c5d5e6',
+                  textAlign: 'center',
+                  background: '#eef4fa',
+                  fontWeight: 700,
+                }}
+              >
+                <strong>HOTEL TOTAL: </strong>
+                {reservationFormPriceText(settings.hotelPurchasePrices)}
+              </div>
+            )}
             {(!settings || settings.flags.hotel) && (
               <>
                 <Heading
@@ -285,6 +338,34 @@ export function ReservationFormSheet({
                     </tr>
                   </tbody>
                 </table>
+                {data.roomBreakdown.length ? (
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        {[
+                          'ROOM',
+                          'ROOM TYPE',
+                          'ADULTS',
+                          'CHILD AGES',
+                          'GUESTS',
+                        ].map((t) => (
+                          <th key={t}>{t}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.roomBreakdown.slice(0, 4).map((r) => (
+                        <tr key={r.ordinal}>
+                          <td>{r.ordinal}</td>
+                          <td dir="auto">{r.roomType}</td>
+                          <td>{r.adults}</td>
+                          <td>{r.childAges.join(', ') || '-'}</td>
+                          <td>{r.adults + r.childAges.length}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : null}
                 <div className={styles.accommodationBreakdown}>
                   <table className={styles.table}>
                     <caption>STAY DATES</caption>
@@ -319,15 +400,6 @@ export function ReservationFormSheet({
                     </tbody>
                   </table>
                 </div>
-                {settings && (
-                  <p className={styles.voucherDetails}>
-                    Country: {settings.text.country || '-'} · Website:{' '}
-                    {settings.text.website || '-'} · CUSTOM:{' '}
-                    {settings.numbers.customRooms} · Special room:{' '}
-                    {settings.flags.specialRoom ? 'YES' : 'NO'}
-                    {!voucher && <> · Broker: {settings.text.broker || '-'}</>}
-                  </p>
-                )}
               </>
             )}
             <Heading
@@ -338,43 +410,27 @@ export function ReservationFormSheet({
             <table className={styles.table}>
               <thead>
                 <tr>
-                  {voucher && <th>TRANSFER</th>}
+                  <th>TRANSFER</th>
                   <th>TOUR LEADER</th>
                   <th>EXCURSION</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  {voucher && (
-                    <td>
-                      Board: {settings?.text.transferBoard?.trim() || '-'}
-                    </td>
-                  )}
+                  <td>
+                    {data.transfer}
+                    {voucher && (
+                      <>
+                        {' '}
+                        · Board: {settings?.text.transferBoard?.trim() || '-'}
+                      </>
+                    )}
+                  </td>
                   <td dir="auto">{data.leader}</td>
                   <td dir="auto">{data.excursion}</td>
                 </tr>
               </tbody>
             </table>
-            {settings && (
-              <p className={styles.voucherDetails}>
-                Transfer:{' '}
-                {settings.flags.transfer
-                  ? [
-                      settings.text.transferKind,
-                      settings.text.transferBoard,
-                      settings.text.transferPhone,
-                    ]
-                      .filter(Boolean)
-                      .join(' / ') || '-'
-                  : '-'}{' '}
-                · Guide:{' '}
-                {settings.flags.tourLeader
-                  ? [settings.text.leaderLanguage, settings.text.leaderPhone]
-                      .filter(Boolean)
-                      .join(' / ') || '-'
-                  : '-'}
-              </p>
-            )}
             <Heading number="05" title="PASSENGERS" note="Passenger MANIFEST" />
             <table className={`${styles.table} ${styles.passengers}`}>
               <colgroup>
@@ -412,7 +468,7 @@ export function ReservationFormSheet({
             <div className={voucher ? styles.voucherClosing : undefined}>
               <div className={styles.notice}>
                 <span>SPECIAL REQUESTS / REMARKS</span>
-                <p dir="auto">{voucher ? '\u00a0' : data.notes || '\u00a0'}</p>
+                <p dir="auto">{data.notes || '\u00a0'}</p>
                 <div />
               </div>
               {voucher && (
@@ -422,7 +478,7 @@ export function ReservationFormSheet({
               )}
             </div>
             <footer className={styles.footer}>
-              {!voucher && (
+              {
                 <div
                   data-reservation-footer
                   dangerouslySetInnerHTML={{
@@ -434,21 +490,59 @@ export function ReservationFormSheet({
                     ),
                   }}
                 />
-              )}
+              }
               <div>
-                <span>
-                  {voucher
-                    ? 'Hotel voucher - present at check-in.'
-                    : 'Reservation request - subject to supplier confirmation.'}
-                </span>
+                <span>{''}</span>
               </div>
               <b>
-                {page + 1} / {pages.length}
+                {page + 1} / {pageCount}
               </b>
             </footer>
           </article>
         );
       })}
+      {roomAppendices.map((rooms, index) => (
+        <article
+          className={styles.page}
+          key={`rooms-${index}`}
+          dir="ltr"
+          data-reservation-form-page
+        >
+          <header className={styles.header}>
+            <h1>ROOM DETAILS</h1>
+          </header>
+          <p>
+            {data.request} · {data.hotel} · {data.checkIn} / {data.checkOut}
+          </p>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                {['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'].map(
+                  (t) => (
+                    <th key={t}>{t}</th>
+                  ),
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {rooms.map((r) => (
+                <tr key={r.ordinal}>
+                  <td>{r.ordinal}</td>
+                  <td dir="auto">{r.roomType}</td>
+                  <td>{r.adults}</td>
+                  <td>{r.childAges.join(', ') || '-'}</td>
+                  <td>{r.adults + r.childAges.length}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <footer className={styles.footer}>
+            <b>
+              {pages.length + index + 1} / {pageCount}
+            </b>
+          </footer>
+        </article>
+      ))}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 'use client';
+import { BrokerPurchases } from '@/modules/finance/components/broker-purchases';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import {
   MasterDataDateRangeFilter,
@@ -82,6 +83,8 @@ import {
   MasterDataProfileIdentity,
 } from './master-data-profile-details';
 import { MasterDataLogoCell } from './master-data-logo-cell';
+import { PartnerExcelDialog } from './partner-excel-dialog';
+import { PartnerDossier } from '@/modules/organizations/components/partner-dossier';
 
 type SupplierTab = 'suppliers' | 'brokers' | 'collaboration';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
@@ -239,6 +242,7 @@ export function MasterDataSuppliersWorkspace() {
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [excelOpen, setExcelOpen] = useState(false);
 
   useEffect(() => {
     const fallback = visibleTabs[0];
@@ -626,6 +630,9 @@ export function MasterDataSuppliersWorkspace() {
             ))}
           </MasterDataDetailSection>
         ) : null}
+        {kind === 'broker' && (
+          <BrokerPurchases key={record.id} id={record.id} />
+        )}
         <MasterDataDetailSection title="خلاصه همکاری">
           <MasterDataDetailItem
             label="وضعیت همکاری"
@@ -681,7 +688,19 @@ export function MasterDataSuppliersWorkspace() {
               />
               <ProfileData
                 label="ایمیل اصلی"
-                value={text(record, 'primaryEmailMasked')}
+                value={text(
+                  record,
+                  'dossierEmailMasked',
+                  text(record, 'primaryEmailMasked'),
+                )}
+              />
+              <ProfileData
+                label="شماره همراه"
+                value={text(record, 'dossierMobileMasked')}
+              />
+              <ProfileData
+                label="نشانی"
+                value={text(record, 'dossierAddress', text(record, 'address'))}
               />
               <ProfileData
                 label="سازمان"
@@ -745,7 +764,6 @@ export function MasterDataSuppliersWorkspace() {
                   'تأمین‌کننده',
                   'کشور / شهر',
                   'خدمات قابل ارائه',
-                  'Provider ID',
                   'وضعیت همکاری',
                   'عملیات',
                 ].map((head) => (
@@ -787,9 +805,6 @@ export function MasterDataSuppliersWorkspace() {
                   </td>
                   <td className="p-4">
                     <ServiceChips value={text(record, 'serviceNames', '')} />
-                  </td>
-                  <td className="p-4 font-mono" dir="ltr">
-                    {text(record, 'externalProviderReference')}
                   </td>
                   <td className="p-4">
                     <CollaborationBadge
@@ -1038,6 +1053,23 @@ export function MasterDataSuppliersWorkspace() {
     );
   }
 
+  if (
+    profileOpen &&
+    selected &&
+    (selected.resource === 'suppliers' || selected.resource === 'brokers')
+  )
+    return (
+      <PartnerDossier
+        key={`${selected.resource}:${selected.id}`}
+        partner={selected}
+        onClose={() => {
+          setProfileOpen(false);
+          void load();
+          void loadSummary();
+        }}
+      />
+    );
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -1054,6 +1086,9 @@ export function MasterDataSuppliersWorkspace() {
       <div className="flex w-full flex-wrap justify-end gap-2">
         {tab !== 'collaboration' ? (
           <>
+            <Button variant="outline" onClick={() => setExcelOpen(true)}>
+              <FileSpreadsheet className="size-4" /> ورود اطلاعات از اکسل
+            </Button>
             <Button
               loading={exporting}
               onClick={() => void requestExcel()}
@@ -1177,6 +1212,16 @@ export function MasterDataSuppliersWorkspace() {
           </Button>
         </div>
       </div>
+      {excelOpen && tab !== 'collaboration' ? (
+        <PartnerExcelDialog
+          resource={tab}
+          onClose={() => setExcelOpen(false)}
+          onImported={() => {
+            void load();
+            void loadSummary();
+          }}
+        />
+      ) : null}
       {formMode && tab !== 'collaboration' ? (
         <MasterDataLiveForm
           definition={formDefinition}

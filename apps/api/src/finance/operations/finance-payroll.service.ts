@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import { createHash } from 'node:crypto';
 import { paymentSource } from '../payments/payment-source';
 import {
@@ -17,6 +18,7 @@ import * as validate from '../../hr/hr.validation';
 import { SalesService } from '../../sales/sales.service';
 import { DocumentsService } from '../../documents/documents.service';
 import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
+import { MasterOrganizationDirectory } from '../../master-data/master-organization-directory';
 
 @Injectable()
 export class FinancePayrollService {
@@ -31,6 +33,9 @@ export class FinancePayrollService {
     @Optional()
     @Inject(MasterProcurementDirectory)
     private readonly master?: MasterProcurementDirectory,
+    @Optional()
+    @Inject(MasterOrganizationDirectory)
+    private readonly partners?: MasterOrganizationDirectory,
   ) {}
   async detail(id: string, actor: AuthenticatedActor) {
     if (!actor.permissions.includes('finance.read'))
@@ -105,7 +110,7 @@ export class FinancePayrollService {
     if (
       !transition ||
       (['CORRECTION_REQUIRED', 'REJECT', 'RESUBMIT'].includes(action) &&
-        !reason)
+        !isOptionalOperationReason(reason))
     )
       throw new BadRequestException('عملیات یا علت معتبر نیست.');
     if (
@@ -310,6 +315,8 @@ export class FinancePayrollService {
       'dueAt',
       'refundReceiptId',
       'documentId',
+      'counterpartyOrganizationId',
+      'counterpartyRole',
     ]);
     const id = validate.uuid(input.operationId),
       branchId = validate.uuid(input.branchId),
@@ -320,8 +327,35 @@ export class FinancePayrollService {
       throw new BadRequestException(
         'نوع درخواست عملیاتی معتبر نیست؛ حقوق فقط از منابع انسانی ارسال می‌شود.',
       );
+    const counterpartyOrganizationId = input.counterpartyOrganizationId
+      ? validate.uuid(input.counterpartyOrganizationId)
+      : null;
+    const counterpartyRole = input.counterpartyRole;
+    let canonicalParty: string | null = null;
+    if (Boolean(counterpartyOrganizationId) !== Boolean(counterpartyRole))
+      throw new BadRequestException(
+        'شناسه و نقش طرف همکاری باید با هم ثبت شوند.',
+      );
+    if (counterpartyOrganizationId) {
+      if (
+        kind === 'REFUND' ||
+        (counterpartyRole !== 'SUPPLIER' && counterpartyRole !== 'BROKER')
+      )
+        throw new BadRequestException(
+          'نوع درخواست یا نقش طرف همکاری معتبر نیست.',
+        );
+      const partner = await this.partners?.cooperationReference(
+        counterpartyOrganizationId,
+        counterpartyRole,
+      );
+      if (!partner?.isActive)
+        throw new BadRequestException(
+          'طرف همکاری فعال با نقش انتخاب‌شده یافت نشد.',
+        );
+      canonicalParty = partner.legalName;
+    }
     const title = validate.text(input.title, 'عنوان', 200),
-      party = validate.text(input.party, 'ذی‌نفع', 200),
+      party = canonicalParty ?? validate.text(input.party, 'ذی‌نفع', 200),
       description = validate.text(input.description, 'توضیحات', 2000, true),
       reference = validate.text(
         input.reference,
@@ -329,6 +363,8 @@ export class FinancePayrollService {
         160,
         true,
       );
+    if (counterpartyOrganizationId && kind === 'CHECK' && !reference.trim())
+      throw new BadRequestException('شماره چک طرف همکاری الزامی است.');
     const text = validate.text(input.amount, 'مبلغ', 30),
       currencyCode = validate.text(input.currencyCode, 'ارز', 3);
     if (
@@ -369,6 +405,16 @@ export class FinancePayrollService {
       ? validate.uuid(input.documentId)
       : null;
     if (documentId) {
+      if (counterpartyOrganizationId)
+        await this.documents?.assertOrganizationProofReference(
+          {
+            documentId,
+            organizationId: counterpartyOrganizationId,
+            branchId,
+            allowPendingScan: false,
+          },
+          actor,
+        );
       const document = await this.documents?.detail(
         documentId,
         { ...actor, branchIds: [branchId] },
@@ -436,6 +482,12 @@ export class FinancePayrollService {
             dueAt,
             createFingerprint: fingerprint,
             sourceVersion: 1,
+            ...(counterpartyOrganizationId
+              ? {
+                  counterpartyOrganizationId,
+                  counterpartyRole: counterpartyRole as 'SUPPLIER' | 'BROKER',
+                }
+              : {}),
             refundReceiptId,
             documentId,
           },
@@ -457,6 +509,12 @@ export class FinancePayrollService {
               reference,
               documentId,
               refundReceiptId,
+              ...(counterpartyOrganizationId
+                ? {
+                    counterpartyOrganizationId,
+                    counterpartyRole: String(counterpartyRole),
+                  }
+                : {}),
             },
             remainingAmount: amount,
           },

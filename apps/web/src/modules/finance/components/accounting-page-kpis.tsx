@@ -5,6 +5,7 @@ import { BarChart3, CheckCircle2, Clock3, Layers3 } from 'lucide-react';
 import { accountingApi } from '../api/accounting-api';
 import { accountingTaxApi } from '../api/accounting-tax-api';
 import { accountingTaxpayerApi } from '../api/accounting-taxpayer-api';
+import type { TaxpayerDraftKind } from '@nora/contracts';
 import { accountingTaxRoute } from '../accounting-tax-model';
 import {
   accountingSnapshotKpis,
@@ -64,6 +65,19 @@ export function AccountingPageKpis({ pathname }: { pathname: string }) {
     queryFn: () => accountingTaxpayerApi.seller(bookId),
     enabled: !!snapshot.data && sellerPage,
     retry: false,
+  });
+  const draftKind: TaxpayerDraftKind | undefined = route.includes('settings')
+    ? 'settings'
+    : route.includes('schedule')
+      ? 'schedules'
+      : route.includes('cancellation')
+        ? 'cancellations'
+        : undefined;
+  const drafts = useQuery({
+    queryKey: ['accounting-taxpayer-drafts', bookId, draftKind, 'kpi'],
+    enabled: !!snapshot.data && taxpayer && !!draftKind,
+    retry: false,
+    queryFn: () => accountingTaxpayerApi.drafts(bookId, draftKind!, {}),
   });
   let items: AccountingPageKpi[] = accountingSnapshotKpis(
     route,
@@ -149,9 +163,17 @@ export function AccountingPageKpis({ pathname }: { pathname: string }) {
               values?.fvwMain_txtEconomicID.trim() ? 1 : 0,
               values?.fvwMain_txtCivilParticipationID.trim() ? 1 : 0,
             ][i] ?? null)
-          : null,
+          : draftKind &&
+              !drafts.isError &&
+              drafts.data &&
+              (i === 0 || (draftKind !== 'schedules' && i === 2))
+            ? drafts.data.total
+            : null,
     }));
-    loading = loading || (sellerPage && seller.isPending && !!snapshot.data);
+    loading =
+      loading ||
+      (sellerPage && seller.isPending && !!snapshot.data) ||
+      (!!draftKind && drafts.isPending && !!snapshot.data);
   }
   return (
     <section

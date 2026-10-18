@@ -1,4 +1,8 @@
 import {
+  hotelRateBrokerFields,
+  hotelRateBrokerId,
+} from './hotel-rate-broker-reference';
+import {
   BadRequestException,
   Body,
   ConflictException,
@@ -79,15 +83,23 @@ export class HotelRatesService {
       where,
     });
     if (prior) return replay(prior);
-    const rows: ((typeof input.rows)[number] & {
-      hotelName: string;
-      brokerName: string;
-    })[] = [];
-    for (const row of input.rows)
+    const rows: (Omit<(typeof input.rows)[number], 'brokerId'> &
+      ReturnType<typeof hotelRateBrokerFields> & {
+        hotelName: string;
+        brokerName: string;
+      })[] = [];
+    for (const row of input.rows) {
+      const reference = await this.directory.hotelRateReference(
+        row.hotelId,
+        row.brokerId,
+      );
       rows.push({
         ...row,
-        ...(await this.directory.hotelRateReference(row.hotelId, row.brokerId)),
+        ...hotelRateBrokerFields(row.brokerId, reference.brokerSource),
+        hotelName: reference.hotelName,
+        brokerName: reference.brokerName,
       });
+    }
     try {
       return await this.db.client.$transaction(async (tx) => {
         const batch = await tx.reservationHotelRateBatch.create({
@@ -165,6 +177,7 @@ export class HotelRatesService {
     return {
       data: records.map((r) => ({
         ...r,
+        brokerId: hotelRateBrokerId(r),
         base: r.base.toString(),
         prices: roomPrices(
           r.base.toString(),

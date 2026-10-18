@@ -5,11 +5,13 @@ on:
     branches:
       - main
       - develop
+      - PC-D-Integration
       - 'codex/pc-*'
   pull_request:
     branches:
       - main
       - develop
+      - PC-D-Integration
       - 'codex/pc-*'
   workflow_dispatch:
 
@@ -200,6 +202,16 @@ jobs:
           pnpm --filter @nora/database db:seed
           pnpm --filter @nora/database db:seed
 
+      - name: Prove immutable purchase FX snapshots
+        env:
+          PURCHASE_FX_TEST: '1'
+        run: pnpm --filter @nora/database exec vitest run test/purchase-fx-postgres.spec.ts
+
+      - name: Prove hotel rate broker compatibility and foreign keys
+        env:
+          HOTEL_RATE_BROKER_TEST: '1'
+        run: pnpm --filter @nora/database exec vitest run test/hotel-rate-broker-postgres.spec.ts
+
       - name: Prove Marketing CAS, replay and rollback atomicity
         env:
           NORA_RUN_MARKETING_POSTGRES_TESTS: '1'
@@ -214,6 +226,13 @@ jobs:
         run: |
           pnpm --filter @nora/config build
           pnpm --filter @nora/api exec vitest run src/assistant-read/assistant-read.postgres.spec.ts
+
+      - name: Prove partner360 role isolation and manual USD rate persistence
+        env:
+          NORA_RUN_B2B_POSTGRES_TESTS: '1'
+        run: |
+          docker pull postgres:18.1-alpine
+          pnpm --filter @nora/api exec vitest run src/b2b/b2b.postgres.spec.ts --maxWorkers=1
 
   build:
     name: Full production build

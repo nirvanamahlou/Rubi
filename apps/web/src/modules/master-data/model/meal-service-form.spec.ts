@@ -29,6 +29,11 @@ const record: MasterDataRecord = {
   },
 };
 describe('meal/service form state and payload', () => {
+  it('lets the server generate a code when creating from name and category', () => {
+    const values = { ...mealServiceFormValues(), name: 'سرویس آزمون' };
+    expect(validateMealServiceForm(values, false).success).toBe(true);
+    expect(mealServiceMutationValues(values)).not.toHaveProperty('code');
+  });
   it('preserves current fields, standard code and review status', () => {
     expect(mealServiceFormValues(record)).toEqual({
       code: 'BB',

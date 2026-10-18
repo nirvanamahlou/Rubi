@@ -52,6 +52,15 @@ export function validateCurrencyForm(
       result.errors[key] = 'حداکثر ۱۶۰ نویسه مجاز است.';
   if ((result.values.symbol?.length ?? 0) > 16)
     result.errors.symbol = 'نماد حداکثر ۱۶ نویسه است.';
+  const usdRate = result.values.unitsPerUsd ?? '';
+  if (
+    usdRate &&
+    (!/^\d{1,14}(\.\d{1,10})?$/.test(usdRate) || !/[1-9]/.test(usdRate))
+  )
+    result.errors.unitsPerUsd =
+      'نرخ مثبت با حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار وارد کنید.';
+  if (usdRate && result.values.code === 'USD' && Number(usdRate) !== 1)
+    result.errors.unitsPerUsd = 'نرخ دلار نسبت به خودش باید یک باشد.';
   if (
     !/^\d$/.test(result.values.decimalDigits ?? '') ||
     Number(result.values.decimalDigits) > 6

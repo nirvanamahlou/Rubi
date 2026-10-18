@@ -109,7 +109,6 @@ describe('organizations and suppliers workspace', () => {
       'تأمین‌کننده',
       'کشور / شهر',
       'خدمات قابل ارائه',
-      'Provider ID',
       'وضعیت همکاری',
       'عملیات',
     ]);

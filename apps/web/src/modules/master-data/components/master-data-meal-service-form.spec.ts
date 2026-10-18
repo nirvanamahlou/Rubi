@@ -47,6 +47,12 @@ function render(mode: 'create' | 'edit' | 'view') {
   );
 }
 describe('meal/service popup through the shared form entry point', () => {
+  it('omits service code from creation while preserving existing edit and view values', () => {
+    const html = render('create');
+    expect(html).not.toContain('id="meal-code"');
+    expect(html).not.toContain('meal-standard-codes');
+    expect(render('edit')).toContain('id="meal-code"');
+  });
   it('renders every requested field and standard-code suggestions', () => {
     const html = render('edit');
     for (const label of [

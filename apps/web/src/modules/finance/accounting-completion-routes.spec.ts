@@ -30,6 +30,8 @@ describe('completion route integration boundary', () => {
     for (const route of [
       'general-ledger/year-end/closing',
       'general-ledger/year-end/opening',
+      'general-ledger/year-end/final',
+      'general-ledger/year-end/nature-adjustment',
       'taxpayer-system/settings',
       'taxpayer-system/execute',
       'tax-accounting/vat/filing',
@@ -37,9 +39,6 @@ describe('completion route integration boundary', () => {
       'general-ledger/documents/journals',
     ])
       expect(accountingCompletionRoute(route)).toBeUndefined();
-    expect(accountingCompletionRoute('general-ledger/year-end/final')).toBe(
-      'readiness',
-    );
   });
   it('preserves exact book and journal context in drilldown', () => {
     const url = new URL(

@@ -23,7 +23,8 @@ export const buttonVariants = cva(
           'bg-secondary text-secondary-foreground hover:bg-secondary/75',
         outline: 'border border-border bg-surface hover:bg-muted',
         ghost: 'hover:bg-muted hover:text-foreground',
-        destructive: 'bg-destructive text-white hover:bg-destructive/90',
+        destructive:
+          'border border-destructive/30 bg-transparent text-destructive hover:bg-destructive/10 hover:text-destructive',
       },
       size: {
         sm: 'min-h-9 rounded-lg px-3 text-xs',

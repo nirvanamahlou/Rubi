@@ -44,6 +44,73 @@ beforeEach(() => {
   vi.unstubAllGlobals();
 });
 describe('reservation PDF route', () => {
+  it('downloads the sent price snapshot even if an unsent edit has different amounts', async () => {
+    const sent = {
+      ...intake.workflow.supplierFormSettings!,
+      hotelPurchasePrices: [{ amount: '123.50', currencyCode: 'EUR' }],
+    };
+    const draft = {
+      ...sent,
+      hotelPurchasePrices: [{ amount: '999', currencyCode: 'USD' }],
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json({
+          data: {
+            ...intake,
+            workflow: {
+              ...intake.workflow,
+              supplierFormSettings: draft,
+              sentSupplierFormSettings: sent,
+            },
+          },
+        }),
+      ),
+    );
+    const result = await GET(request(), { params: Promise.resolve({ id }) });
+    expect(result.status).toBe(200);
+    expect(renderer.mock.calls[0]?.[0]).toHaveProperty(
+      'workflow.supplierFormSettings.hotelPurchasePrices',
+      sent.hotelPurchasePrices,
+    );
+  });
+  it('prints the exact supplier hotel totals beside hotel information and never leaks them to vouchers', () => {
+    const settings = {
+      ...intake.workflow.supplierFormSettings!,
+      hotelPurchasePrices: [
+        { amount: '9007199254740993.25', currencyCode: 'EUR' },
+        { amount: '100.50', currencyCode: 'USD' },
+      ],
+    };
+    const priced = {
+      ...intake,
+      workflow: {
+        ...intake.workflow,
+        supplierFormSettings: settings,
+        voucherSettings: settings,
+      },
+    };
+    const html = reservationPdfHtml(
+      priced,
+      {},
+      'data:image/png;base64,c2FmZQ==',
+      '',
+    );
+    expect(html).toContain('9,007,199,254,740,993.25 € · 100.50 $');
+    expect(html.indexOf('HOTEL TOTAL')).toBeLessThan(
+      html.indexOf('HOTEL INFORMATION'),
+    );
+    expect(
+      reservationPdfHtml(
+        priced,
+        {},
+        'data:image/png;base64,c2FmZQ==',
+        '',
+        true,
+      ),
+    ).not.toContain('HOTEL TOTAL');
+  });
   it('stops before rendering or references when workflow read is forbidden', async () => {
     const fetcher = vi
       .fn()
@@ -215,6 +282,7 @@ it('renders voucher booking references and a separated summary without letterhea
     },
   };
   value.workflow.voucherSettings = defaultVoucherSettings(value, {});
+  value.workflow.note = 'SYNTHETIC VOUCHER NOTICE';
   value.workflow.voucherSettings.flags.withLetterhead = false;
   value.workflow.voucherSettings.text.broker = 'SYNTHETIC BROKER';
   value.workflow.voucherSettings.text.transferBoard = 'BROKER BOARD';
@@ -227,7 +295,13 @@ it('renders voucher booking references and a separated summary without letterhea
   expect(html).not.toContain('SYNTHETIC BROKER');
   expect(html).toContain('<section class="bookingSection">');
   expect(html).toContain('ROOM TYPE');
+  expect(html).toContain('TRANSFER');
   expect(html).toContain('Board: BROKER BOARD');
+  expect(html).toContain('SYNTHETIC VOUCHER NOTICE');
+  expect(html).toContain('Reservation@niyayehseir.com');
+  expect(html).not.toContain('Country:');
+  expect(html).not.toContain('Guide:');
+  expect(html).not.toContain('Hotel voucher - present at check-in.');
   expect(html).toContain('SYNTHETIC LEADER / +989000000000');
   expect(html).not.toContain('<th>LEG</th>');
   expect(html).not.toContain(

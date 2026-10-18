@@ -1,4 +1,5 @@
 export * from './hotel-savings';
+export * from './ticket-flight-output';
 import type { HotelPurchaseSavingsV1 } from './hotel-savings';
 import type { SalesReservationRequestV1 } from '../sales';
 
@@ -356,6 +357,7 @@ export interface ReservationPassengerPurchasePriceV1 {
 }
 
 export interface ReservationServicePurchaseInputV1 {
+  purchaseRateToIrr?: string;
   pricingCalculation?: {
     baseAmount: string;
     factor: string;
@@ -512,6 +514,8 @@ export interface TravelWorkflowStateV1 {
   appliedContractVersion?: number;
   voucherSettings?: VoucherSettingsV1;
   reservationNotes?: string[];
+  /** Output-only overrides keyed by reservationFlightOutputKey. */
+  ticketFlightNumbers?: Record<string, string>;
   note: string;
   updatedAt: string | null;
   updatedByUserId: string | null;
@@ -529,6 +533,7 @@ export interface TravelWorkflowCommandV1 {
     | 'ISSUE_VOUCHER'
     | 'ARRANGEMENT'
     | 'NOTE'
+    | 'TICKET_FLIGHT_NUMBERS'
     | 'VOUCHER_SETTINGS'
     | 'SUPPLIER_FORM_SETTINGS';
   note: string;
@@ -537,6 +542,7 @@ export interface TravelWorkflowCommandV1 {
   applyToContractAndVoucher?: boolean;
   expectedContractVersion?: number;
   voucherSettings?: VoucherSettingsV1;
+  ticketFlightNumbers?: Record<string, string>;
   supplierReference?: string;
   insuranceReference?: string;
   acknowledgeMissingInsurance?: boolean;
@@ -597,6 +603,8 @@ export const voucherFlagKeys = [
   'specialRoom',
 ] as const;
 export interface VoucherSettingsV1 {
+  /** Supplier-form display only; never posts a purchase or changes sale totals. */
+  hotelPurchasePrices?: { amount: string; currencyCode: string }[];
   /** Registered supplier and leader used for this immutable output revision. */
   brokerId?: string;
   leaderId?: string;

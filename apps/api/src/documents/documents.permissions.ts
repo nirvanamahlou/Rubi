@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import type { ConfidentialityLevel } from './documents.contracts';
 
 export const documentPermissionCodes = [
@@ -100,7 +101,7 @@ export function authorizeDocumentAction(
     }
     if (
       (request.action === 'READ' || request.action === 'DOWNLOAD') &&
-      (request.reason?.trim().length ?? 0) < 5
+      !isOptionalOperationReason(request.reason)
     ) {
       return {
         allowed: false,

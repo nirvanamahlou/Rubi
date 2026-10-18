@@ -26,6 +26,9 @@ export type AccountingParityImplementation =
   | 'revaluation'
   | 'year-end-closing'
   | 'year-end-opening'
+  | 'year-end-final'
+  | 'year-end-nature-adjustment'
+  | 'statement-list'
   | 'trial-balance'
   | 'turnover-report'
   | 'analytical-report'
@@ -97,6 +100,10 @@ const implementationByRoute: Readonly<
   'general-ledger/year-end/closing': 'year-end-closing',
   'general-ledger/year-end/closing-templates': 'template-list',
   'general-ledger/year-end/opening': 'year-end-opening',
+  'general-ledger/year-end/final': 'year-end-final',
+  'general-ledger/year-end/nature-adjustment': 'year-end-nature-adjustment',
+  'general-ledger/reports/journal-browser': 'journal-list',
+  'general-ledger/reports/debit-credit-notices': 'statement-list',
   'general-ledger/reports/account-browser': 'turnover-report',
   'general-ledger/reports/trial-balance': 'trial-balance',
   'general-ledger/reports/dormant-accounts': 'analytical-report',
@@ -374,7 +381,10 @@ for (const capture of [
     implementationByRoute[capture.route] ?? 'evidence-only';
   definitions.set(capture.route, {
     route: capture.route,
-    title: capture.title === 'خطا' ? capture.stage : capture.title,
+    title:
+      capture.title === 'خطا' || capture.stage === 'خطا'
+        ? capture.sourcePath.split('/').at(-1)!.trim()
+        : capture.title,
     sourcePath: capture.sourcePath,
     sourcePages: unique([
       ...(current?.sourcePages ?? []),

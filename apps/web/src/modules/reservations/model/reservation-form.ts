@@ -1,3 +1,20 @@
+import { salesHotelRoomSummary } from '@nora/contracts';
+export function englishOutputName(
+  value: string,
+  references: ReservationFormReferences,
+) {
+  const name = value.trim();
+  const match = Object.values(references).find((r) =>
+    [r.name, r.attributes.englishName, r.code].some(
+      (v) =>
+        typeof v === 'string' && v.trim().toLowerCase() === name.toLowerCase(),
+    ),
+  );
+  return typeof match?.attributes.englishName === 'string' &&
+    match.attributes.englishName.trim()
+    ? match.attributes.englishName.trim()
+    : value;
+}
 import { salesContractFlights } from '@nora/contracts';
 import type {
   MasterDataRecord,
@@ -38,6 +55,9 @@ export function reservationFormData(
 ) {
   const { snapshot, workflow } = intake;
   const hotel = snapshot.hotelSelection;
+  const roomSummary = hotel?.rooms?.length
+    ? salesHotelRoomSummary(hotel.rooms)
+    : undefined;
   const services = snapshot.serviceSelections;
   const flights = salesContractFlights(
     services,
@@ -101,6 +121,39 @@ export function reservationFormData(
     OTHER: 'OTHER',
   };
   return {
+    transfer: (() => {
+      const legs = services
+        .filter((s) => s.kind === 'TRANSFER')
+        .map((s) => {
+          const eligible = snapshot.passengerAssignments?.filter(
+            (p) =>
+              p.ageCategory !== 'INF' &&
+              p.serviceClientKeys.includes(s.clientKey),
+          ).length;
+          const saved = s.metadata?.passengerCount;
+          const count =
+            typeof saved === 'number' && Number.isFinite(saved)
+              ? Math.max(0, Math.min(eligible ?? saved, Math.trunc(saved)))
+              : (eligible ?? 0);
+          return {
+            direction:
+              s.metadata?.direction === 'RETURN'
+                ? 'RETURN ONLY'
+                : 'OUTBOUND ONLY',
+            count,
+          };
+        });
+      if (
+        legs.length === 2 &&
+        legs[0]!.direction !== legs[1]!.direction &&
+        legs[0]!.count === legs[1]!.count
+      )
+        return 'ROUND TRIP · ' + legs[0]!.count + ' PAX';
+      return (
+        legs.map((l) => l.direction + ' · ' + l.count + ' PAX').join(' / ') ||
+        '-'
+      );
+    })(),
     request: snapshot.contractNumber,
     issueDate: reservationFormDate(
       workflow.updatedAt ?? intake.receivedAt,
@@ -125,7 +178,11 @@ export function reservationFormData(
     children6To12: 0,
     childrenUnclassified: passengers.filter((p) => p.age === 'CHD').length,
     infants: passengers.filter((p) => p.age === 'INF').length,
-    rooms: intake.arrangement?.roomCount ?? hotel?.roomCount ?? '-',
+    rooms:
+      roomSummary?.roomCount ??
+      intake.arrangement?.roomCount ??
+      hotel?.roomCount ??
+      '-',
     nights: Number.isInteger(nights) && nights > 0 ? nights : '-',
     leader: text(
       services.find((s) => typeof s.metadata?.tourLeader === 'string')?.metadata
@@ -137,7 +194,7 @@ export function reservationFormData(
     ),
     flights: flights.map((f) => ({
       leg: f.direction,
-      airline: f.carrierNameSnapshot,
+      airline: englishOutputName(f.carrierNameSnapshot, references),
       number: f.serviceNumberSnapshot,
       date: reservationFormDate(f.departureAt, 'Asia/Tehran'),
       time: new Intl.DateTimeFormat('en-GB-u-ca-gregory', {
@@ -163,14 +220,32 @@ export function reservationFormData(
           hotelRecord?.attributes.mealServiceCodes ||
             hotelRecord?.attributes.mealServiceNames,
         ),
+    roomBreakdown: (hotel?.rooms ?? []).map((r) => ({
+      ordinal: r.ordinal,
+      roomType: references[r.roomTypeId]
+        ? name(references[r.roomTypeId])
+        : r.roomTypeNameSnapshot,
+      adults: r.adults,
+      childAges: [...r.childAges],
+    })),
     roomType: hotel?.roomTypeId ? name(references[hotel.roomTypeId]) : '-',
     checkIn: reservationFormDate(hotel?.checkInDate),
     checkOut: reservationFormDate(hotel?.checkOutDate),
     double:
-      intake.arrangement?.doubleRoomCount ?? hotel?.doubleRoomCount ?? '-',
+      roomSummary?.doubleRoomCount ??
+      intake.arrangement?.doubleRoomCount ??
+      hotel?.doubleRoomCount ??
+      '-',
     single:
-      intake.arrangement?.singleRoomCount ?? hotel?.singleRoomCount ?? '-',
-    extra: intake.arrangement?.extraBedCount ?? hotel?.extraBedCount ?? '-',
+      roomSummary?.singleRoomCount ??
+      intake.arrangement?.singleRoomCount ??
+      hotel?.singleRoomCount ??
+      '-',
+    extra:
+      roomSummary?.extraBedCount ??
+      intake.arrangement?.extraBedCount ??
+      hotel?.extraBedCount ??
+      '-',
     passengers,
     notes: workflow.note || '',
     brand:
@@ -197,4 +272,13 @@ export function reservationPassengerPages(
     used += units;
   }
   return pages;
+}
+
+export function reservationRoomAppendices(
+  rooms: ReturnType<typeof reservationFormData>['roomBreakdown'],
+) {
+  return Array.from(
+    { length: Math.ceil(Math.max(0, rooms.length - 4) / 12) },
+    (_, i) => rooms.slice(4 + i * 12, 4 + (i + 1) * 12),
+  );
 }

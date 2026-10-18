@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
@@ -810,23 +812,18 @@ export function OrganizationSignatoriesPanel({
           destructive
           onClose={close}
           onSave={async () => {
-            if (reason.trim().length < 5)
-              throw new B2bApiError(
-                'دلیل حذف را با حداقل ۵ نویسه وارد کنید.',
-                400,
-              );
+            if (!isOptionalOperationReason(reason))
+              throw new B2bApiError('دلیل حذف معتبر نیست.', 400);
             await agencyClient.deleteSignatory(organizationId, deleting.id, {
               branchId,
               version: deleting.version,
-              reason: reason.trim(),
+              reason: (reason ?? '').trim(),
             });
           }}
         >
           <label className="field sm:col-span-2">
             دلیل حذف
             <Textarea
-              required
-              minLength={5}
               maxLength={500}
               value={reason}
               onChange={(event) => setReason(event.target.value)}

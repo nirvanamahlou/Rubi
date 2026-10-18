@@ -175,6 +175,23 @@ export const accountingNavigationGroups: readonly AccountingNavigationGroup[] =
         },
       ],
     },
+    {
+      id: 'dashboard',
+      title: 'داشبورد حسابداری',
+      icon: Gauge,
+      sections: [
+        {
+          title: 'داشبورد',
+          items: [
+            {
+              title: 'داشبورد حسابداری',
+              href: '/finance/accounting/dashboard',
+              icon: Gauge,
+            },
+          ],
+        },
+      ],
+    },
   ];
 
 const accountingTabItems = Array.from(
@@ -578,7 +595,9 @@ function AccountingNavigationWorkspaceContent() {
             )}
           >
             <Suspense fallback={<p role="status">در حال بارگذاری…</p>}>
-              <AccountingPageKpis pathname={pathname} />
+              {pathname !== '/finance/accounting/dashboard' && (
+                <AccountingPageKpis pathname={pathname} />
+              )}
               <AccountingWorkspace key={pathname} pathname={pathname} />
             </Suspense>
           </div>

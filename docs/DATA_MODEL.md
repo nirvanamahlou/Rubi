@@ -1,3 +1,21 @@
+## Partner360 and manual USD reference rate — 2026-10-17
+
+MasterCurrency.unitsPerUsd is nullable Decimal(24,10), exposed as a decimal string
+through existing Master Data v1 attributes. It means1USD=N record-currency units;
+IRR is rials, not tomans. Positive finite values only; USD itself must equal1.
+Omission preserves, blank clears, CAS/audit remains mandatory. No automatic FX
+snapshot, financial approval, existing transaction or historical rate is changed.
+
+Existing B2B organization/branch/role unique identity now accepts SUPPLIER and
+BROKER separately from AGENCY/CORPORATE_CUSTOMER. Credit flows COUNTERPARTY_TO_US.
+New Finance requests may reference actual MasterOrganization plus its supported
+role through restrictive FKs and a pair CHECK. Legacy free-text parties remain
+unlinked; never backfill by name. The composite lookup starts with organization,
+role and branch. Existing role rows survive identity edits; referenced roles
+cannot be removed. Immutable payment revisions stay in Finance; purchases are
+read through Reservations/Procurement public producers, with per-currency Decimal
+totals, invoice-version ownership and fail-closed reconciliation.
+
 ## Flight total purchase allocation (FLIGHT-TOTAL-CONTRACT-COST-1013)
 
 No storage change: the existing invoiceAmount stores the exact whole-flight purchase; unitCost is its four-decimal per-seat display equivalent. The additive totalCost command is mutually exclusive with unitCost; existing unit commands remain valid. Finance's public recorded-cost projection adds seatCount and invoiceAmount. Sales uses exact invoice × assigned seat count / purchased seat count, rounded once per contract/flight; legacy age-specific records retain prior behavior. Total and unit command retries use the existing canonical invoice/seat fingerprint, CAS and payment lock. Settled-cost publication policy is unchanged.
@@ -815,3 +833,23 @@ omitted from typed fields, while the base organization is registered and remains
 editable. A successful registration edit removes only keys whose replacement
 passes the normal field validation; an unresolved key keeps the review marker.
 Unsafe formulas, invalid or duplicate organization identities still block import.
+
+## RESERVATION-PASSENGER-AGE-TABLE-1014 — Contract child age bands
+
+SalesContractPassenger.childAgeBand is a nullable contract classification, AGE_2_6 or AGE_6_12, permitted only for CHD passengers. It is independent from the actual birthDate in the customer identity and Sales snapshot. The additive migration adds no default/backfill and a CHECK constraint protects the allowed category/value combination. Legacy NULL rows remain valid. Sales amendments retain branch/version/audit/inventory guards and publish a new operational snapshot for category or band changes. Existing exact birth-date rate/insurance validations remain authoritative.
+
+### 2026-10-14 — Sales hotel room breakdown
+
+Optional SalesHotelSelectionInput.rooms carries ordered room products with canonical room-type UUID, name snapshot, adult count and child ages. Normalized sales_contract_hotel_rooms rows belong to Sales hotel selection, with a real room-type FK, unique(parent, ordinal), parent cascade and room-type delete restriction. Existing hotel summary fields remain for compatibility; selections without room rows retain legacy behavior. Room totals and actual ages must match the selected hotel guest identities. Independent visa counts/child ages use scalar service metadata and explicit passenger-service allocations.
+
+### 2026-10-15 — Room agreed sale allocation
+
+Sales room rows optionally store agreed_price JSON with a Decimal amount string and foreign currency code for the whole room stay. Legacy rows remain NULL. When room prices are present, all rooms must be priced; each currency subtotal must fit within the contract net total and is never added as a second price component. New Contract adjusts totals by the room-price delta, preserving amounts allocated to other services. Typed/restored room occupancy is bounded by the flight party and existing age bands; server guest identities must be selected from the flight party, and room composition must match actual hotel guest ages.
+
+### Finance purchase currency baseline — PURCHASE-FX-PROFIT-1017
+
+FinancePurchaseFxSnapshot stores one immutable Decimal(24,8) IRR-per-foreign-unit rate and Decimal(24,4) original purchase amount, currency, source, UTC baseline/capture times and real actor/branch FKs. Exactly one unique FK points to a ReservationServicePurchase, FinanceTicketPurchaseCostRevision or FinanceProcurementInvoiceRevision. PostgreSQL checks finite positive amounts/rates, finite baseline time, non-IRR code and one source; a trigger rejects updates/deletes. There is no historical backfill. Realized operational FX gain = baseline value of foreign units actually paid minus sum of persisted rial payment evidence; unpaid balances never generate realized gain. Currency groups stay separate and null means unknown. These operational rates are not approved accounting posting snapshots and do not create journals.
+
+## HOTEL-SALES-PACKAGE-PREVIEW-1017 — independent package sale snapshots
+
+`PackagePricingTourDraft.roomSaleOverrides` is optional JSON metadata keyed by purchase-row reference, advertised room composition and currency. Amounts use validated canonical decimal strings (IRR integer; other currencies two decimals), following the existing price-field snapshot convention. Values are final per-person package sales, not supplier hotel costs. The server validates batch membership and currency context, preserves omitted legacy fields, uses the existing draft CAS/branch/permission checks, and rejects stale composition overrides at publication. Published currency amounts, commissions and profit are persisted in the existing immutable publication rows; purchase tariffs/history are unchanged. Migration `20261017140000_package_room_sale_overrides` only adds a nullable column. Applied only to an isolated local preview database until user review and later merge/deployment approval.

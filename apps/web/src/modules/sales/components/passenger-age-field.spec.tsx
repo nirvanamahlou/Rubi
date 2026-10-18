@@ -66,3 +66,21 @@ describe('themed passenger age field', () => {
     ]);
   });
 });
+
+it('uses the same dropdown for room children including an explicit infant age zero', () => {
+  expect(passengerAgeOptions(false, true).map((o) => o.value)).toEqual([
+    '',
+    ...Array.from({ length: 15 }, (_, i) => String(i)),
+  ]);
+  const html = renderToStaticMarkup(
+    <PassengerAgeField
+      label="سن کودک اتاق"
+      value={0}
+      includeInfants
+      onChange={() => {}}
+    />,
+  );
+  expect(html).toContain('role="combobox"');
+  expect(html).toContain('کمتر از ۱ سال');
+  expect(html).not.toContain('type="number"');
+});

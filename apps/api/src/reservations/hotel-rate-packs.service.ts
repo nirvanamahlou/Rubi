@@ -1,5 +1,9 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
+  hotelRateBrokerFields,
+  hotelRateBrokerId,
+} from './hotel-rate-broker-reference';
+import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
@@ -90,6 +94,7 @@ export class HotelRatePacksService {
         const { roomRates, ...rate } = row;
         return {
           ...rate,
+          ...hotelRateBrokerFields(row.brokerId, reference.brokerSource),
           hotelName: reference.hotelName,
           brokerName: reference.brokerName,
           roomRates: {
@@ -297,7 +302,7 @@ export class HotelRatePacksService {
         rows: batch.rows.map((row) => ({
           hotelId: row.hotelId,
           hotelName: row.hotelName,
-          brokerId: row.brokerId,
+          brokerId: hotelRateBrokerId(row),
           brokerName: row.brokerName,
           currency: row.currency,
           roomRates: row.roomRates.map((room) => ({
@@ -696,7 +701,7 @@ export class HotelRatePacksService {
         id: row.id,
         hotelId: row.hotelId,
         hotelName: row.hotelName,
-        brokerId: row.brokerId,
+        brokerId: hotelRateBrokerId(row),
         brokerName: row.brokerName,
         base: row.base.toString(),
         currency: row.currency,

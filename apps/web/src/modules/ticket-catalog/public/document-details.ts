@@ -56,12 +56,19 @@ export async function readTicketDocumentFacts(
             data?: {
               code: string;
               name: string;
-              attributes: { cityId?: string; englishName?: string };
+              attributes: {
+                cityId?: string;
+                englishName?: string;
+                iataCode?: string;
+              };
             };
           };
           if (!item || item.attributes.cityId !== cityId) return undefined;
+          const iata = (item.attributes.iataCode || item.code)
+            .trim()
+            .toUpperCase();
           return {
-            code: /^[A-Z]{3}$/.test(item.code) ? item.code : '—',
+            code: /^[A-Z]{3}$/.test(iata) ? iata : '—',
             name: item.attributes.englishName || item.name,
           };
         };

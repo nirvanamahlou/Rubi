@@ -8,6 +8,7 @@ describe('tour package pricing workspace', () => {
   it('shows real draft and publication actions under Sales, disabled until a tour is selected', () => {
     const html = renderToStaticMarkup(<TourPricingWorkspace />);
     expect(html).toContain('فروش و ارتباط با مشتری · ماژول مدیریت قیمت');
+    expect(html).toContain('بازه‌های ثبت‌شدهٔ هتل‌ها');
     expect(html).toContain('نوبت تور');
     expect(html).toContain('قیمت خرید هتل‌های تور');
     expect(html).toContain('افزودن فیلد قیمت');

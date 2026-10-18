@@ -39,6 +39,51 @@ afterEach(() => {
 });
 
 describe('ticket list before and after date selection', () => {
+  it('retains Gregorian card dates after filtering offers for the selected airline', () => {
+    states.push(
+      [
+        {
+          id: 'saved',
+          version: 1,
+          branchId: 'test',
+          originId: 'a',
+          destinationId: 'b',
+          departureAt: '2026-09-10T20:00:00Z',
+          arrivalAt: '2026-09-10T23:15:00Z',
+          carrierName: 'Selected Air',
+          serviceNumber: 'TEST-1',
+          cabinClassCode: 'ECONOMY',
+          totalCapacity: 20,
+          remainingCapacity: 12,
+          status: 'ACTIVE',
+        },
+      ],
+      { filters: '', page: 1 },
+      false,
+      false,
+      '',
+    );
+    const html = renderToStaticMarkup(
+      <TicketOfferPicker
+        query={{
+          originId: 'a',
+          destinationId: 'b',
+          departureFrom: '2026-09-10',
+        }}
+        carrierName="Selected Air"
+        calendarSystem="gregorian"
+        emptyMessage="Saved ticket retained"
+        selectedId="saved"
+        requiredSeats={1}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(html).toContain('Selected Air');
+    expect(html).toContain('۲۰۲۶');
+    expect(html).not.toContain('۱۴۰۵');
+    expect(html).not.toContain('Saved ticket retained');
+  });
+
   it('explains an empty replacement search without reporting the saved ticket as missing', () => {
     states.push([], { filters: '', page: 1 }, false, false, '');
     const html = renderToStaticMarkup(

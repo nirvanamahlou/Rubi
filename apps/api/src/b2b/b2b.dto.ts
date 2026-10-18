@@ -1,4 +1,5 @@
 import { Transform } from 'class-transformer';
+import type { B2bCooperationRole } from '@nora/contracts';
 import {
   IsBoolean,
   IsDateString,
@@ -20,7 +21,13 @@ const rateDecimalPattern = /^\d{1,16}(?:\.\d{1,4})?$/;
 const creditDecimalPattern = /^\d{1,18}(?:\.\d{1,2})?$/;
 const provided = (_object: unknown, value: unknown) => value !== undefined;
 
-export class UpsertAgencyProfileDto {
+class CooperationRoleDto {
+  @IsOptional()
+  @IsIn(['AGENCY', 'CORPORATE_CUSTOMER', 'SUPPLIER', 'BROKER'])
+  role?: B2bCooperationRole = 'AGENCY';
+}
+
+export class UpsertAgencyProfileDto extends CooperationRoleDto {
   @IsUUID()
   branchId!: string;
 
@@ -44,7 +51,7 @@ export class UpsertAgencyProfileDto {
   version?: number;
 }
 
-export class CreateAgencyAgreementDto {
+export class CreateAgencyAgreementDto extends CooperationRoleDto {
   @IsUUID()
   branchId!: string;
 
@@ -77,7 +84,7 @@ export class CreateAgencyAgreementDto {
   notes?: string | null;
 }
 
-export class UpsertAgencyCreditPolicyDto {
+export class UpsertAgencyCreditPolicyDto extends CooperationRoleDto {
   @IsUUID()
   branchId!: string;
 
@@ -110,7 +117,7 @@ export class UpsertAgencyCreditPolicyDto {
   version?: number;
 }
 
-export class CreateAgencyAgreedRateDto {
+export class CreateAgencyAgreedRateDto extends CooperationRoleDto {
   @IsUUID()
   branchId!: string;
 
@@ -162,7 +169,7 @@ export class UpdateAgencyAgreedRateDto extends CreateAgencyAgreedRateDto {
   version!: number;
 }
 
-export class DeleteB2bRecordDto {
+export class DeleteB2bRecordDto extends CooperationRoleDto {
   @IsUUID()
   branchId!: string;
 
@@ -172,7 +179,6 @@ export class DeleteB2bRecordDto {
 
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
-  @MinLength(5)
   @MaxLength(500)
-  reason!: string;
+  reason = '';
 }

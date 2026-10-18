@@ -16,6 +16,19 @@ function productionSources(excludeComposition = false) {
 }
 
 describe('finance foundation boundary', () => {
+  it('keeps the partner producer in an owner adapter consuming only public foreign APIs', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/finance/partners/partner-finance.module.ts'),
+      'utf8',
+    );
+    expect(source).toContain('ReservationsPublicService');
+    expect(source).toContain('ProcurementPublicService');
+    expect(source).toContain('MasterOrganizationDirectory');
+    expect(source).not.toMatch(
+      /\b(?:client|tx|db)\.(?:master\w*|reservation\w*|procurement\w*|sales\w*|user|hr\w*)\b/i,
+    );
+    expect(source).not.toMatch(/\.repository|Repository/);
+  });
   it('contains domain/application ports and scoped finance inbox commands', () => {
     // Operational inbox composition may consume only these public owner APIs.
     // All remaining private Master Data imports stay forbidden below.

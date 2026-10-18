@@ -1,5 +1,6 @@
 import type { DisplayLanguage } from '../common/i18n/language';
 import { randomUUID } from 'node:crypto';
+import { preparePartnerDossier } from './partner-dossier.policy';
 import { brokerCityIds, brokerLeaderDrafts } from './broker-form.policy';
 import { columnFilterWhere } from './catalog-filters';
 import {
@@ -322,6 +323,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'englishName',
     'symbol',
     'decimalDigits',
+    'unitsPerUsd',
     'displayPolicy',
   ],
   'exchange-rates': [
@@ -532,6 +534,11 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'logoFileReference',
   ],
   suppliers: [
+    'dossierVersion',
+    'dossierEmail',
+    'dossierMobile',
+    'dossierAddress',
+    'dossierImport',
     'name',
     'englishName',
     'address',
@@ -546,6 +553,11 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'logoFileReference',
   ],
   brokers: [
+    'dossierVersion',
+    'dossierEmail',
+    'dossierMobile',
+    'dossierAddress',
+    'dossierImport',
     'cityIds',
     'boardText',
     'primaryPhone',
@@ -2598,6 +2610,25 @@ export class MasterDataService {
         data[field] = String(data[field]).trim();
       }
     }
+    if (resource === 'currencies' && Object.hasOwn(data, 'unitsPerUsd')) {
+      const rate =
+        data.unitsPerUsd === null ? '' : String(data.unitsPerUsd).trim();
+      if (!rate) data.unitsPerUsd = null;
+      else {
+        if (!/^\d{1,14}(\.\d{1,10})?$/.test(rate) || !/[1-9]/.test(rate))
+          throw new BadRequestException(
+            'نرخ هر دلار باید مثبت، حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار باشد.',
+          );
+        const code =
+          data.code ??
+          (partial && entityId
+            ? (await this.repository.find('currencies', entityId))?.code
+            : undefined);
+        if (code === 'USD' && Number(rate) !== 1)
+          throw new BadRequestException('نرخ دلار نسبت به خودش باید یک باشد.');
+        data.unitsPerUsd = rate;
+      }
+    }
     if (resource === 'currencies' && data.decimalDigits !== undefined) {
       const digits = Number(data.decimalDigits);
       if (!Number.isInteger(digits) || digits < 0 || digits > 6)
@@ -3239,10 +3270,12 @@ export class MasterDataService {
       delete data.roleCodes;
       data.roles = partial
         ? {
-            deleteMany: {},
-            create: roleCodes.map((roleCode) => ({
-              roleCode,
-              assignedByUserId: actorUserId,
+            deleteMany: { roleCode: { notIn: roleCodes } },
+            connectOrCreate: [...new Set(roleCodes)].map((roleCode) => ({
+              where: {
+                organizationId_roleCode: { organizationId: entityId, roleCode },
+              },
+              create: { roleCode, assignedByUserId: actorUserId },
             })),
           }
         : {
@@ -3661,6 +3694,18 @@ export class MasterDataService {
         delete data.leaderDrafts;
       }
     }
+    if (resource === 'suppliers' || resource === 'brokers') {
+      const dossier = preparePartnerDossier(values, this.contactCrypto);
+      for (const key of [
+        'dossierVersion',
+        'dossierEmail',
+        'dossierMobile',
+        'dossierAddress',
+        'dossierImport',
+      ])
+        delete data[key];
+      if (dossier) data.partnerDossier = dossier;
+    }
     return data;
   }
 
@@ -3674,7 +3719,13 @@ export class MasterDataService {
     const denied = changedDeniedFields(
       actor.permissions,
       `field.master-data.${resource}`,
-      values,
+      // Transport status has its own validator and status-management permission.
+      // It is not an editable-field control in the IAM field catalogue.
+      isMasterTransportFormResource(resource)
+        ? Object.fromEntries(
+            Object.entries(values).filter(([key]) => key !== 'transportStatus'),
+          )
+        : values,
       current,
     );
     if (denied.length)

@@ -15,6 +15,22 @@ export function validateVoucherSettings(
   };
   if (!value || typeof value !== 'object') return fail();
   const v = value as VoucherSettingsV1;
+  if (
+    v.hotelPurchasePrices !== undefined &&
+    (!Array.isArray(v.hotelPurchasePrices) ||
+      v.hotelPurchasePrices.length > 20 ||
+      v.hotelPurchasePrices.some(
+        (p) =>
+          !p ||
+          typeof p.amount !== 'string' ||
+          !/^\d{1,18}(?:\.\d{1,4})?$/.test(p.amount) ||
+          typeof p.currencyCode !== 'string' ||
+          !/^[A-Z]{3}$/.test(p.currencyCode),
+      ) ||
+      new Set(v.hotelPurchasePrices.map((p) => p.currencyCode)).size !==
+        v.hotelPurchasePrices.length)
+  )
+    return fail();
   if (!v.text || !v.numbers || !v.flags || !Array.isArray(v.passengers))
     return fail();
   const uuid =
@@ -115,6 +131,14 @@ export function validateVoucherSettings(
       return fail();
   }
   return {
+    ...(v.hotelPurchasePrices !== undefined
+      ? {
+          hotelPurchasePrices: v.hotelPurchasePrices.map((p) => ({
+            amount: p.amount,
+            currencyCode: p.currencyCode,
+          })),
+        }
+      : {}),
     ...(v.brokerId ? { brokerId: v.brokerId } : {}),
     ...(v.leaderId ? { leaderId: v.leaderId } : {}),
     text: {

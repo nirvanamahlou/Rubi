@@ -1,3 +1,7 @@
+import { salesHotelRoomSummary } from '@nora/contracts';
+import { salesRoomPartyError, roomAgreedTotals } from './sales-room-prices';
+import type { SalesHotelRoomV1 } from '@nora/contracts';
+import { validSalesHotelRooms } from '@nora/contracts';
 import { passengerSaleTotals } from './passenger-sale-totals';
 import { salesChequeComponents } from '@nora/contracts';
 import type { SalesPaymentTerms } from '@nora/contracts';
@@ -94,6 +98,9 @@ export const salesSteps = [
 ] as const;
 
 export interface SalesFormState {
+  visaComposition?: { adults: number; children: number };
+  visaChildAges?: (number | null)[];
+  visaApplicantIds?: string[];
   childAges?: (number | null)[];
   infantAges?: (number | null)[];
   priceEntryMode?: 'PASSENGER_TOTAL' | 'CONTRACT_TOTAL';
@@ -108,6 +115,7 @@ export interface SalesFormState {
   customerOrganizationId?: string;
   firstPassengerIsCustomer?: boolean;
   businessOutput?: boolean;
+  transferPassengerCount?: number;
   passengerComposition: { adults: number; children: number; infants: number };
   outboundOffer?: TicketOfferV1 | undefined;
   returnOffer?: TicketOfferV1 | undefined;
@@ -147,6 +155,9 @@ export interface SalesFormState {
     currencyCode: string;
   };
   hotel: {
+    rooms?: Array<
+      Omit<SalesHotelRoomV1, 'childAges'> & { childAges: (number | null)[] }
+    >;
     checkInManual?: boolean;
     checkOutManual?: boolean;
     hotelId: string;
@@ -159,7 +170,7 @@ export interface SalesFormState {
     doubleRoomCount: number;
     extraBedCount: number;
     occupancy: number;
-    guestCustomerIds?: string[];
+    guestCustomerIds?: string[] | undefined;
   };
   visaReferenceId: string;
   passengers: Array<{
@@ -199,6 +210,12 @@ export function contractSaleComponents(
       throw new Error('ارز مبلغ قرارداد باید معتبر و یکتا باشد.');
     totals.set(price.currencyCode, moneyUnits(price.amount));
   }
+  if (state.serviceKinds.includes('HOTEL'))
+    for (const price of roomAgreedTotals(state.hotel.rooms))
+      if (moneyUnits(price.amount) > (totals.get(price.currencyCode) ?? 0n))
+        throw new Error(
+          'جمع مبالغ اتاق‌ها نباید از مبلغ کل قرارداد در همان ارز بیشتر باشد.',
+        );
   for (const person of extras)
     totals.set(
       'IRR',
@@ -419,6 +436,51 @@ export function salesHotelCapacityError(
   state: SalesFormState,
   roomRates: readonly HotelRoomRateV1[],
 ): string | null {
+  if (!state.serviceKinds.includes('HOTEL')) return null;
+  if (state.hotel.rooms?.length) {
+    for (const r of state.hotel.rooms) {
+      const rate = roomRates.find((v) => v.roomTypeId === r.roomTypeId);
+      if (r.childAges.some((a) => a === null))
+        return 'سن کودکان هر اتاق را تکمیل کنید.';
+      // A dated tariff is optional for a manually negotiated room price.
+      if (!rate) continue;
+      if (
+        rate.occupancyRates
+          ? !quoteHotelOccupancy(rate.occupancyRates, {
+              adults: r.adults,
+              childAges: r.childAges as number[],
+              rooms: 1,
+              checkIn: state.hotel.checkIn,
+              checkOut: state.hotel.checkOut,
+            })
+          : r.adults > rate.maxAdults ||
+            r.childAges.filter((a) => a !== null && a < 2).length >
+              (rate.maxInfants ?? 0) ||
+            r.childAges.filter((a) => a !== null && a >= 2 && a < 6).length >
+              (rate.maxChildren2To6 ?? rate.maxChildren) ||
+            r.childAges.filter((a) => a !== null && a >= 6).length >
+              (rate.maxChildren6To12 ?? 0)
+      )
+        return 'ظرفیت یا نرخ یکی از اتاق‌ها با ترکیب مهمانان هماهنگ نیست.';
+    }
+    if (state.passengers.length) {
+      const ids = new Set(salesHotelGuestIds(state));
+      const actual = state.passengers
+        .filter((p) => ids.has(p.customerId))
+        .map((p) => hotelAgeOn(p.birthDate, state.hotel.checkIn))
+        .map((a) => (a !== null && a >= 15 ? 15 : a))
+        .sort((a, b) => (a ?? -1) - (b ?? -1));
+      const expected = state.hotel.rooms
+        .flatMap((r) => [...Array(r.adults).fill(15), ...r.childAges])
+        .sort((a, b) => (a ?? -1) - (b ?? -1));
+      if (
+        actual.length !== expected.length ||
+        actual.some((a, i) => a !== expected[i])
+      )
+        return 'تعداد و سن مهمانان انتخاب‌شده را با ترکیب اتاق‌ها هماهنگ کنید.';
+    }
+    return null;
+  }
   if (!state.hotel.roomTypeId) return null;
   const roomRate = roomRates.find(
     ({ roomTypeId }) => roomTypeId === state.hotel.roomTypeId,
@@ -448,7 +510,33 @@ export function salesHotelCapacityError(
 export function salesHotelOccupancyQuote(
   state: SalesFormState,
   room: HotelRoomRateV1,
+  rates: readonly HotelRoomRateV1[] = [room],
 ) {
+  if (state.hotel.rooms?.length) {
+    const quotes = state.hotel.rooms.map((r) => {
+      const rate = rates.find((v) => v.roomTypeId === r.roomTypeId);
+      return rate?.occupancyRates && r.childAges.every((a) => a !== null)
+        ? quoteHotelOccupancy(rate.occupancyRates, {
+            priceBasis: 'SALE',
+            adults: r.adults,
+            childAges: r.childAges as number[],
+            rooms: 1,
+            checkIn: state.hotel.checkIn,
+            checkOut: state.hotel.checkOut,
+          })
+        : null;
+    });
+    const first = quotes[0];
+    return first &&
+      quotes.every((q) => q && q.currencyCode === first.currencyCode)
+      ? {
+          currencyCode: first.currencyCode,
+          amount: moneyDecimal(
+            quotes.reduce((n, q) => n + moneyUnits(q!.amount), 0n),
+          ),
+        }
+      : null;
+  }
   if (!room.occupancyRates) return null;
   const counts = salesPassengerCounts(state);
   const guestIds = new Set(salesHotelGuestIds(state));
@@ -485,6 +573,7 @@ export function salesHotelOccupancyQuote(
 export function hotelOccupancySaleDefaults(
   state: SalesFormState,
   room?: HotelRoomRateV1,
+  rates: readonly HotelRoomRateV1[] = room ? [room] : [],
 ): SalesFormState {
   if (
     !state.serviceKinds.includes('HOTEL') ||
@@ -492,7 +581,7 @@ export function hotelOccupancySaleDefaults(
     state.tour
   )
     return state;
-  const quote = salesHotelOccupancyQuote(state, room);
+  const quote = salesHotelOccupancyQuote(state, room, rates);
   if (!quote) return state;
   const previous = state.servicePricing?.hotel?.find(
     (p) => p.currencyCode === quote.currencyCode,
@@ -913,6 +1002,61 @@ export function salesPayload(
   state: SalesFormState,
 ): SalesContractCreateRequest {
   state = withFirstPassengerCustomer(state);
+  const roomPartyError = salesRoomPartyError(state);
+  if (roomPartyError) throw new Error(roomPartyError);
+  if (
+    state.serviceKinds.includes('HOTEL') &&
+    state.priceEntryMode === 'CONTRACT_TOTAL' &&
+    state.hotel.rooms?.some((r) => !r.agreedPrice)
+  )
+    throw new Error('مبلغ توافق‌شدهٔ همهٔ اتاق‌ها را وارد کنید.');
+  if (
+    state.serviceKinds.includes('HOTEL') &&
+    state.hotel.rooms &&
+    !validSalesHotelRooms(
+      state.hotel.rooms as SalesHotelRoomV1[],
+      state.hotel.rooms.length,
+    )
+  )
+    throw new Error('مشخصات و سن کودکان همهٔ اتاق‌ها را تکمیل کنید.');
+  if (state.serviceKinds.includes('VISA') && state.visaComposition) {
+    const selected = state.passengers.filter((p) =>
+      state.visaApplicantIds?.includes(p.customerId),
+    );
+    const adults = selected.filter(
+      (p) =>
+        salesPassengerAgeLabel(p.birthDate, salesTravelDate(state)) ===
+        'بزرگسال',
+    ).length;
+    const children = selected.filter(
+      (p) =>
+        salesPassengerAgeLabel(p.birthDate, salesTravelDate(state)) === 'کودک',
+    ).length;
+    const wantedAges = [...(state.visaChildAges ?? [])].sort(
+      (a, b) => (a ?? -1) - (b ?? -1),
+    );
+    const actualAges = selected
+      .filter(
+        (p) =>
+          salesPassengerAgeLabel(p.birthDate, salesTravelDate(state)) ===
+          'کودک',
+      )
+      .map((p) => hotelAgeOn(p.birthDate, salesTravelDate(state)))
+      .sort((a, b) => (a ?? -1) - (b ?? -1));
+    if (
+      wantedAges.length !== children ||
+      actualAges.some((a, i) => a !== wantedAges[i])
+    )
+      throw new Error('سن متقاضیان کودک ویزا با سن‌های واردشده هماهنگ نیست.');
+    if (
+      adults !== state.visaComposition.adults ||
+      children !== state.visaComposition.children ||
+      selected.length !== adults + children
+    )
+      throw new Error(
+        'افراد متقاضی ویزا را مطابق تعداد بزرگسال و کودک انتخاب کنید.',
+      );
+  }
   const utc = (value: string) => new Date(value).toISOString();
   const services: SalesServiceInput[] = state.serviceKinds.flatMap(
     (kind): SalesServiceInput[] =>
@@ -935,6 +1079,9 @@ export function salesPayload(
               ...(kind === 'FLIGHT'
                 ? state.serviceDetails?.[`${kind}-${direction}`]
                 : {}),
+              ...(kind === 'TRANSFER'
+                ? { passengerCount: salesTransferCount(state) }
+                : {}),
               direction,
               originId:
                 direction === 'OUTBOUND' ? state.originId : state.destinationId,
@@ -948,7 +1095,18 @@ export function salesPayload(
               {
                 clientKey: kind.toLowerCase(),
                 kind,
-                metadata: { ...state.serviceDetails?.[kind] },
+                metadata: {
+                  ...state.serviceDetails?.[kind],
+                  ...(kind === 'VISA' && state.visaComposition
+                    ? {
+                        applicantAdults: state.visaComposition.adults,
+                        applicantChildren: state.visaComposition.children,
+                        applicantChildAges: (state.visaChildAges ?? []).join(
+                          ',',
+                        ),
+                      }
+                    : {}),
+                },
                 titleSnapshot:
                   (
                     {
@@ -1223,8 +1381,10 @@ export function salesPayload(
         .filter(({ clientKey, metadata }) =>
           metadata?.insuranceAgeSurcharge === true
             ? metadata.passengerId === item.customerId
-            : clientKey !== 'hotel' ||
-              salesHotelGuestIds(state).includes(item.customerId),
+            : clientKey === 'visa' && state.visaComposition
+              ? Boolean(state.visaApplicantIds?.includes(item.customerId))
+              : clientKey !== 'hotel' ||
+                salesHotelGuestIds(state).includes(item.customerId),
         )
         .map(({ clientKey }) => clientKey),
     })),
@@ -1238,11 +1398,18 @@ export function salesPayload(
             cityId: state.destinationId,
             checkInDate: state.hotel.checkIn,
             checkOutDate: state.hotel.checkOut,
-            roomCount: state.hotel.roomCount,
+            roomCount: state.hotel.rooms?.length ?? state.hotel.roomCount,
+            ...(state.hotel.rooms
+              ? { rooms: state.hotel.rooms as SalesHotelRoomV1[] }
+              : {}),
             singleRoomCount: state.hotel.singleRoomCount,
             doubleRoomCount: state.hotel.doubleRoomCount,
             extraBedCount: state.hotel.extraBedCount,
-            roomTypeId: state.hotel.roomTypeId,
+            ...(state.hotel.rooms?.length
+              ? salesHotelRoomSummary(state.hotel.rooms)
+              : {}),
+            roomTypeId:
+              state.hotel.rooms?.[0]?.roomTypeId || state.hotel.roomTypeId,
             occupancy: salesHotelGuestIds(state).length,
             inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
           }
@@ -1272,4 +1439,12 @@ export function salesPayload(
     })),
     pricingNotes: state.pricingNotes || null,
   };
+}
+
+export function salesTransferCount(state: SalesFormState) {
+  const c = salesPassengerCounts(state);
+  const max = c.adults + c.children;
+  return state.transferPassengerCount === undefined
+    ? max
+    : Math.max(0, Math.min(max, Math.trunc(state.transferPassengerCount || 0)));
 }

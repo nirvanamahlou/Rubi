@@ -519,6 +519,7 @@
 .requestTable td {
   padding: 3px 6px;
   height: 32px;
+  line-height: 20px;
   text-align: center;
   border-bottom: 1px solid var(--border);
   border-inline-end: 1px solid var(--border);
@@ -611,9 +612,6 @@
 
 /* Keep the notes marker visible when the request is selected. */
 .requestTable tbody tr td[data-has-note='true'] {
-  height: 32px;
-  line-height: 20px;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   background: #ffe082;

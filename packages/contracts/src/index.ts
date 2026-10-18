@@ -22,9 +22,14 @@ export * from './workbench';
 export * from './customer-affairs';
 export * from './procurement';
 export * from './system-management';
+export * from './integrations';
 
 export * from './accounting';
 export * from './accounting-tax';
 
 export * from './package-pricing/hotel-shared-period';
 export type { AccountingTaxpayerSeller } from './accounting-taxpayer';
+export * from './accounting-taxpayer-catalog';
+export * from './accounting-taxpayer-draft';
+
+export * from './operation-reason';

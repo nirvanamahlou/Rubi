@@ -151,3 +151,24 @@ describe('readable sales ticket card', () => {
     expect(html).toContain('برای ۳ صندلی کافی نیست');
   });
 });
+
+it('shows Gregorian dates on both ends of international flight cards, including an overnight arrival', () => {
+  const html = renderToStaticMarkup(
+    <TicketOfferCard
+      offer={offer}
+      selected
+      onSelect={vi.fn()}
+      calendarSystem="gregorian"
+    />,
+  );
+  for (const value of [offer.departureAt, offer.arrivalAt]) {
+    expect(html).toContain(ticketDisplayTime(value, 'gregorian').date);
+    expect(html).not.toContain(ticketDisplayTime(value, 'persian').date);
+    expect(ticketDisplayTime(value, 'gregorian').time).toBe(
+      ticketDisplayTime(value, 'persian').time,
+    );
+  }
+  expect(ticketDisplayTime(offer.departureAt, 'gregorian').date).not.toBe(
+    ticketDisplayTime(offer.arrivalAt, 'gregorian').date,
+  );
+});

@@ -1,3 +1,5 @@
+import { isOptionalOperationReason } from '@nora/contracts';
+import { salesHotelRoomSummary } from '@nora/contracts';
 import type { DisplayLanguage } from '../common/i18n/language';
 import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { expectedTicketSale } from './sales-ticket-quote';
@@ -51,6 +53,7 @@ import {
 import {
   calculateSalesBalances,
   passengerAgeYears,
+  passengerAgeCategory,
   SalesDomainError,
   salesFingerprint,
   sumSalesDecimals,
@@ -254,6 +257,10 @@ export function presentSalesContract(
       displayNameSnapshot: passenger.displayNameSnapshot,
       birthDate: passenger.birthDate.toISOString().slice(0, 10),
       ageCategory: passenger.ageCategory,
+      ...(passenger.childAgeBand === 'AGE_2_6' ||
+      passenger.childAgeBand === 'AGE_6_12'
+        ? { childAgeBand: passenger.childAgeBand }
+        : {}),
       ...(passenger.accommodationKind
         ? {
             accommodationKind:
@@ -317,7 +324,34 @@ export function presentSalesContract(
           ...(row.hotelSelection.extraBedCount == null
             ? {}
             : { extraBedCount: row.hotelSelection.extraBedCount }),
+          ...(row.hotelSelection.rooms?.length
+            ? salesHotelRoomSummary(
+                row.hotelSelection.rooms.map((room) => ({
+                  adults: room.adults,
+                  childAges: room.childAges as number[],
+                })),
+              )
+            : {}),
           roomTypeId: row.hotelSelection.roomTypeId,
+          ...(row.hotelSelection.rooms?.length
+            ? {
+                rooms: row.hotelSelection.rooms.map((room) => ({
+                  ordinal: room.ordinal,
+                  roomTypeId: room.roomTypeId,
+                  roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                  adults: room.adults,
+                  childAges: room.childAges as number[],
+                  ...(room.agreedPrice
+                    ? {
+                        agreedPrice: room.agreedPrice as {
+                          amount: string;
+                          currencyCode: string;
+                        },
+                      }
+                    : {}),
+                })),
+              }
+            : {}),
           mealServiceId: row.hotelSelection.mealServiceId,
           occupancy: row.hotelSelection.occupancy,
           inventoryStatus: row.hotelSelection.inventoryStatus as
@@ -408,6 +442,44 @@ export class SalesService {
       data: await this.hotelRates.availableRoomRates({ branchId, ...input }),
     };
   }
+  private async assertIndividualHotelRooms(
+    hotel: NonNullable<SalesContractCreateRequest['hotelSelection']>,
+    branchId: string,
+  ): Promise<void> {
+    for (const room of hotel.rooms ?? []) {
+      const rate = await this.hotelRates!.roomAvailability({
+        branchId,
+        hotelId: hotel.hotelId,
+        roomTypeId: room.roomTypeId,
+        checkIn: hotel.checkInDate,
+        checkOut: hotel.checkOutDate,
+      });
+      // Match legacy selections: missing tariffs do not prohibit agreed prices.
+      if (!rate) continue;
+      if (rate.occupancyRates) {
+        if (
+          !quoteHotelOccupancy(rate.occupancyRates, {
+            adults: room.adults,
+            childAges: room.childAges,
+            rooms: 1,
+            checkIn: hotel.checkInDate,
+            checkOut: hotel.checkOutDate,
+          })
+        )
+          throw new BadRequestException(
+            'نرخ یا ظرفیت یکی از اتاق‌ها با ترکیب مهمانان سازگار نیست.',
+          );
+      } else if (
+        room.adults > rate.maxAdults ||
+        room.childAges.filter((a) => a < 2).length > (rate.maxInfants ?? 0) ||
+        room.childAges.filter((a) => a >= 2 && a < 6).length >
+          (rate.maxChildren2To6 ?? rate.maxChildren) ||
+        room.childAges.filter((a) => a >= 6).length >
+          (rate.maxChildren6To12 ?? 0)
+      )
+        throw new BadRequestException('ظرفیت یکی از اتاق‌ها کافی نیست.');
+    }
+  }
   private async assertHotelRoomCapacity(
     input: SalesContractCreateRequest,
     branchId: string,
@@ -416,6 +488,8 @@ export class SalesService {
     if (!hotel) return;
     if (!this.hotelRates)
       throw new BadRequestException('سرویس نرخ اتاق هتل در دسترس نیست.');
+    if (hotel.rooms?.length)
+      return this.assertIndividualHotelRooms(hotel, branchId);
     const roomRate = await this.hotelRates.roomAvailability({
       branchId,
       hotelId: hotel.hotelId,
@@ -467,6 +541,8 @@ export class SalesService {
     if (!hotel) return;
     if (!this.hotelRates)
       throw new BadRequestException('سرویس نرخ اتاق هتل در دسترس نیست.');
+    if (hotel.rooms?.length)
+      return this.assertIndividualHotelRooms(hotel, contract.branchId);
     const roomRate = await this.hotelRates.roomAvailability({
       branchId: contract.branchId,
       hotelId: hotel.hotelId,
@@ -993,9 +1069,9 @@ export class SalesService {
       )
         throw new ForbiddenException('مجوز تأیید و ارسال رزرو وجود ندارد.');
       if (
-        typeof input.reason !== 'string' ||
-        !input.reason.trim() ||
-        input.reason.length > 500
+        !isOptionalOperationReason(input.reason) ||
+        !isOptionalOperationReason(input.reason) ||
+        (input.reason ?? '').length > 500
       )
         throw new BadRequestException('دلیل اصلاح قرارداد الزامی است.');
       if (
@@ -1033,6 +1109,20 @@ export class SalesService {
       );
     input = {
       ...input,
+      passengers: input.passengers.map((passenger) => {
+        if (passenger.childAgeBand !== undefined) return passenger;
+        const before = row.passengers.find(
+          (p) => p.customerId === passenger.customerId,
+        );
+        const age =
+          categories?.[passenger.customerId] ??
+          passengerAgeCategory(passenger.birthDate, input.departureDate);
+        return age === 'CHD' &&
+          (before?.childAgeBand === 'AGE_2_6' ||
+            before?.childAgeBand === 'AGE_6_12')
+          ? { ...passenger, childAgeBand: before.childAgeBand }
+          : passenger;
+      }),
       paymentTerms:
         input.paymentTerms === undefined
           ? ((row.paymentTerms as unknown as SalesContractDetail['paymentTerms']) ??
@@ -1111,6 +1201,10 @@ export class SalesService {
         tickets: c.ticketSelections ?? [],
         hotel: c.hotelSelection ?? null,
         ages,
+        childAgeBands: c.passengers.map((p) => [
+          p.customerId,
+          p.childAgeBand ?? null,
+        ]),
         services: c.services.map((s) => ({
           clientKey: s.clientKey,
           kind: s.kind,
@@ -1133,6 +1227,7 @@ export class SalesService {
             services: previous.servicesDetail,
             ticketSelections: previous.ticketSelections,
             hotelSelection: previous.hotelSelection,
+            passengers: previous.passengersDetail,
           },
           Object.fromEntries(
             previous.passengersDetail.map((p) => [p.customerId, p.ageCategory]),
@@ -1153,6 +1248,7 @@ export class SalesService {
               customerId: p.customerId,
               displayNameSnapshot: p.displayNameSnapshot,
               ageCategory: categories[p.customerId]!,
+              ...(p.childAgeBand ? { childAgeBand: p.childAgeBand } : {}),
               serviceClientKeys: p.serviceClientKeys,
             })),
             serviceSelections: input.services,
@@ -1186,6 +1282,7 @@ export class SalesService {
                 categories: row.passengers.map((p) => ({
                   customerId: p.customerId,
                   ageCategory: p.ageCategory,
+                  childAgeBand: p.childAgeBand,
                 })),
               }),
             ) as Prisma.InputJsonValue,
@@ -1345,6 +1442,9 @@ export class SalesService {
         customerId: passenger.customerId,
         displayNameSnapshot: passenger.displayNameSnapshot,
         ageCategory: passenger.ageCategory,
+        ...(passenger.childAgeBand
+          ? { childAgeBand: passenger.childAgeBand }
+          : {}),
         serviceClientKeys: passenger.serviceClientKeys,
       })),
       ticketSelections: presented.ticketSelections,
@@ -1415,7 +1515,8 @@ export class SalesService {
   ) {
     if (!has(actor, 'sales.contracts.cancel'))
       throw new ForbiddenException('مجوز لغو قرارداد وجود ندارد.');
-    if (!reason?.trim()) throw new BadRequestException('دلیل لغو الزامی است.');
+    if (!isOptionalOperationReason(reason))
+      throw new BadRequestException('دلیل لغو الزامی است.');
     if (!Number.isInteger(version) || version < 1)
       throw new BadRequestException('نسخه معتبر قرارداد الزامی است.');
     const row = await this.repository.findById(id);
@@ -1430,7 +1531,7 @@ export class SalesService {
       version,
       ['DRAFT', 'PENDING_CONFIRMATION', 'CONFIRMED', 'SENT_TO_RESERVATIONS'],
       'CANCELLED',
-      reason.trim(),
+      (reason ?? '').trim(),
       this.context(actor, row.branchId, traceId),
     );
     if (!changed)

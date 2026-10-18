@@ -36,9 +36,70 @@ export function hotelReferencePurchase(
   ages: readonly number[],
   currencyCode: string,
   board?: string,
-) {
+): { amount: string; batchId: string; brokerName: string } | null {
   const hotel = snapshot.hotelSelection;
   if (!hotel || !ages.length) return null;
+  if (hotel.rooms?.length) {
+    const expected = hotel.rooms
+      .flatMap((r) => [...Array(r.adults).fill(15), ...r.childAges])
+      .sort((a, b) => a - b);
+    const actual = ages.map((a) => (a >= 15 ? 15 : a)).sort((a, b) => a - b);
+    if (
+      expected.length !== actual.length ||
+      expected.some((a, i) => a !== actual[i])
+    )
+      return null;
+    const summary = { ...hotel };
+    delete summary.rooms;
+    delete summary.singleRoomCount;
+    delete summary.doubleRoomCount;
+    const candidates = batches.flatMap((batch) =>
+      [...new Set(batch.rows.map((r) => r.brokerName))].flatMap(
+        (brokerName) => {
+          const quotes = hotel.rooms!.map((room) =>
+            hotelReferencePurchase(
+              [
+                {
+                  ...batch,
+                  rows: batch.rows.filter((r) => r.brokerName === brokerName),
+                },
+              ],
+              {
+                ...snapshot,
+                hotelSelection: {
+                  ...summary,
+                  roomTypeId: room.roomTypeId,
+                  roomCount: 1,
+                  extraBedCount: 0,
+                },
+              },
+              [...Array(room.adults).fill(15), ...room.childAges],
+              currencyCode,
+              board,
+            ),
+          );
+          return quotes.every((q) => q !== null)
+            ? [
+                {
+                  amount: quotes
+                    .reduce((n, q) => n.add(q!.amount), new Prisma.Decimal(0))
+                    .toFixed(),
+                  batchId: batch.id,
+                  brokerName,
+                },
+              ]
+            : [];
+        },
+      ),
+    );
+    return (
+      candidates.sort(
+        (a, b) =>
+          new Prisma.Decimal(a.amount).cmp(b.amount) ||
+          a.batchId.localeCompare(b.batchId),
+      )[0] ?? null
+    );
+  }
   // Extra-bed placement is not captured per room; do not invent an allocation.
   if (hotel.extraBedCount) return null;
   const roomAdults =
@@ -112,6 +173,40 @@ export function hotelReferencePurchase(
   );
 }
 
+export function supplierHotelPurchasePrices(
+  batches: readonly PackageTourHotelPurchaseBatchV1[],
+  snapshot: SalesReservationRequestV1,
+  ages: readonly number[],
+  brokerId: string,
+  board?: string,
+) {
+  const selected = batches.map((batch) => ({
+    ...batch,
+    rows: batch.rows.filter((row) => row.brokerId === brokerId),
+  }));
+  const currencies = new Set(
+    selected.flatMap((batch) =>
+      batch.rows.flatMap((row) => [
+        row.currencyCode,
+        ...row.roomRates.flatMap(
+          (room) => room.occupancyRates?.map((rate) => rate.currencyCode) ?? [],
+        ),
+      ]),
+    ),
+  );
+  return [...currencies].flatMap((currencyCode) => {
+    if (!currencyCode) return [];
+    const quote = hotelReferencePurchase(
+      selected,
+      snapshot,
+      ages,
+      currencyCode,
+      board,
+    );
+    return quote ? [{ amount: quote.amount, currencyCode }] : [];
+  });
+}
+
 @Injectable()
 export class ReservationHotelSavingsService {
   constructor(
@@ -122,6 +217,51 @@ export class ReservationHotelSavingsService {
     private readonly sales: SalesReservationTableService,
     @Inject(MasterDataService) private readonly master: MasterDataService,
   ) {}
+  async supplierFormPrices(
+    id: string,
+    brokerId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    const intake = await this.db.client.reservationIntake.findFirst({
+      where: { id, branchId: { in: [...actor.branchIds] } },
+    });
+    if (!intake) throw new NotFoundException();
+    const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
+    const hotel = snapshot.hotelSelection;
+    if (!hotel) return { data: [] };
+    const ages = await this.sales.hotelGuestAges(snapshot, actor);
+    if (!ages) return { data: [] };
+    let board: string | undefined;
+    if (hotel.mealServiceId) {
+      const meal = await this.master.detail(
+        'meal-services',
+        hotel.mealServiceId,
+      );
+      board = meal.data.code;
+      if (!board) return { data: [] };
+    }
+    const batches = await this.rates.forTour(
+      intake.branchId,
+      [hotel.hotelId],
+      hotel.checkInDate,
+      hotel.checkOutDate,
+      undefined,
+      undefined,
+      true,
+      true,
+    );
+    return {
+      data: supplierHotelPurchasePrices(
+        batches,
+        snapshot,
+        ages,
+        brokerId,
+        board,
+      ),
+    };
+  }
   async quote(
     snapshot: SalesReservationRequestV1,
     branchId: string,
@@ -402,6 +542,15 @@ export class ReservationHotelSavingsController {
     @Inject(ReservationHotelSavingsService)
     private readonly service: ReservationHotelSavingsService,
   ) {}
+  @Get('supplier-form/:id')
+  @Header('Cache-Control', 'private, no-store')
+  supplierFormPrices(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('brokerId', ParseUUIDPipe) brokerId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.supplierFormPrices(id, brokerId, req.actor);
+  }
   @Get('summary')
   @Header('Cache-Control', 'private, no-store')
   summary(

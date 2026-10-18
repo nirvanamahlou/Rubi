@@ -51,3 +51,23 @@ it('displays passenger facts without any editable control even with identity per
     ),
   ).toBe(false);
 });
+it('places contract category controls inside the existing editable passenger row, never in read-only output', () => {
+  const editor = vi.fn(() => <span>inline-contract-age</span>);
+  const tree = nodes(
+    ReservationPassengers({ id: 'request', ageEditor: editor }),
+  );
+  expect(editor).toHaveBeenCalledWith('person');
+  expect(
+    tree.some(
+      (n) =>
+        n.type === 'td' &&
+        nodes(n.props.children as ReactNode).some(
+          (child) => child.props.children === 'inline-contract-age',
+        ),
+    ),
+  ).toBe(true);
+  state.index = 0;
+  editor.mockClear();
+  ReservationPassengers({ id: 'request', ageEditor: editor, readOnly: true });
+  expect(editor).not.toHaveBeenCalled();
+});

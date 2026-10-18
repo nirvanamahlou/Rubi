@@ -2,6 +2,7 @@ import type { voucherNumberKeys, voucherFlagKeys } from '@nora/contracts';
 import { voucherTextKeys, type VoucherSettingsV1 } from '@nora/contracts';
 import {
   reservationFormData,
+  englishOutputName,
   reservationFormDate,
   reservationPassengerAgeLabel,
   type ReservationFormIntake,
@@ -73,6 +74,11 @@ export function defaultVoucherSettings(
   };
   if (!saved) return defaults;
   return {
+    ...(saved.hotelPurchasePrices !== undefined
+      ? {
+          hotelPurchasePrices: saved.hotelPurchasePrices.map((p) => ({ ...p })),
+        }
+      : {}),
     ...(saved.brokerId ? { brokerId: saved.brokerId } : {}),
     ...(saved.leaderId ? { leaderId: saved.leaderId } : {}),
     text: {
@@ -83,11 +89,13 @@ export function defaultVoucherSettings(
         saved.text.contractPartyName ?? text.contractPartyName ?? '',
       leaderLanguage: saved.text.leaderLanguage || 'Persian',
     },
-    numbers: Object.fromEntries(
-      (Object.keys(defaults.numbers) as (keyof typeof defaults.numbers)[]).map(
-        (key) => [key, saved.numbers?.[key] ?? defaults.numbers[key]],
-      ),
-    ) as VoucherSettingsV1['numbers'],
+    numbers: h?.rooms?.length
+      ? defaults.numbers
+      : (Object.fromEntries(
+          (
+            Object.keys(defaults.numbers) as (keyof typeof defaults.numbers)[]
+          ).map((key) => [key, saved.numbers?.[key] ?? defaults.numbers[key]]),
+        ) as VoucherSettingsV1['numbers']),
     flags: Object.fromEntries(
       (Object.keys(defaults.flags) as (keyof typeof defaults.flags)[]).map(
         (key) => [key, saved.flags?.[key] ?? defaults.flags[key]],
@@ -159,11 +167,7 @@ export function voucherFormData(
 ) {
   const d = reservationFormData(intake, refs),
     v = intake.workflow.voucherSettings;
-  if (!v)
-    return {
-      ...d,
-      supplier: '0',
-    };
+  if (!v) return { ...d, supplier: '0' };
   const passengers = d.passengers
     .filter((p) => v.passengers.some((s) => s.id === p.id && s.selected))
     .map((p) => {
@@ -195,18 +199,21 @@ export function voucherFormData(
     roomType: v.text.roomType || '-',
     checkIn: voucherDate(v.text.checkIn),
     checkOut: voucherDate(v.text.checkOut),
-    rooms:
-      v.numbers.singleRooms + v.numbers.doubleRooms + v.numbers.customRooms,
-    double: v.numbers.doubleRooms,
-    single: v.numbers.singleRooms,
-    extra: v.numbers.extraBeds,
+    rooms: d.roomBreakdown.length
+      ? d.rooms
+      : v.numbers.singleRooms + v.numbers.doubleRooms + v.numbers.customRooms,
+    double: d.roomBreakdown.length ? d.double : v.numbers.doubleRooms,
+    single: d.roomBreakdown.length ? d.single : v.numbers.singleRooms,
+    extra: d.roomBreakdown.length ? d.extra : v.numbers.extraBeds,
     nights: Number.isInteger(nights) && nights > 0 ? nights : '-',
     leader: v.flags.tourLeader
       ? [v.text.leaderName, v.text.leaderPhone].filter(Boolean).join(' / ') ||
         '-'
       : '-',
     excursion: v.flags.excursion ? v.text.excursionDescription || '-' : '-',
-    notes: [v.text.stayNotes, v.text.remarks].filter(Boolean).join('\n'),
+    notes: intake.workflow.voucherIssued
+      ? intake.workflow.note
+      : [v.text.stayNotes, v.text.remarks].filter(Boolean).join('\n'),
     services: [
       v.flags.hotel ? 'HOTEL' : '',
       v.flags.transfer ? 'TRANSFER' : '',
@@ -232,7 +239,7 @@ export function voucherFormData(
     infants: passengers.filter((p) => p.age === 'INF').length,
     flights: (['arrival', 'departure'] as const).map((prefix) => ({
       leg: prefix === 'arrival' ? 'OUTBOUND' : 'RETURN',
-      airline: v.text[`${prefix}Airline`] || '-',
+      airline: englishOutputName(v.text[`${prefix}Airline`] || '-', refs),
       number: v.text[`${prefix}Flight`] || '-',
       date: voucherDate(v.text[`${prefix}Date`]),
       time: v.text[`${prefix}Time`] || '-',
@@ -254,7 +261,10 @@ export function supplierFormData(
           },
           refs,
         ),
-        supplier: settings.text.broker?.trim() || '-',
+        notes: [settings.text.stayNotes, settings.text.remarks]
+          .filter(Boolean)
+          .join('\n'),
+        supplier: englishOutputName(settings.text.broker?.trim() || '-', refs),
         leader: settings.text.leaderLanguage?.trim() || 'Persian',
       }
     : { ...reservationFormData(intake, refs), leader: 'Persian' };

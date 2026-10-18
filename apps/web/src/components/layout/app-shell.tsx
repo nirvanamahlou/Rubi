@@ -1,4 +1,6 @@
 'use client';
+import { assistantDashboardHref } from '@/modules/assistant/dashboard-location';
+import { FloatingAssistant } from '@/modules/assistant/floating-assistant';
 
 import {
   AccessProvider,
@@ -140,7 +142,11 @@ function Navigation({
   const visibleGroups = groupedNavigationItems
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => canNavigate(item.href)),
+      items: group.items.filter(
+        (item) =>
+          canNavigate(item.href) ||
+          (item.href === '/dashboard' && canNavigate(assistantDashboardHref())),
+      ),
     }))
     .filter((group) => group.items.length > 0);
   const groupId = useId();
@@ -180,7 +186,11 @@ function Navigation({
     title: string;
     secondary?: boolean;
   }) {
-    if (!canNavigate(href)) return null;
+    const destination =
+      href === '/dashboard' && !canNavigate(href)
+        ? assistantDashboardHref()
+        : href;
+    if (!canNavigate(destination)) return null;
     const displayTitle = english ? englishNavigationTitle(href, title) : title;
     const active = secondary
       ? pathname === href || pathname.startsWith(`${href}/`)
@@ -208,7 +218,7 @@ function Navigation({
               : 'text-blue-50/75 hover:bg-white/10 hover:text-white',
           compact && 'justify-center px-0',
         )}
-        href={href}
+        href={destination}
         title={!compact ? displayTitle : undefined}
       >
         <Icon
@@ -276,65 +286,61 @@ function Navigation({
     >
       {compact
         ? visibleGroups.flatMap(renderGroupEntries)
-        : visibleGroups.map((group) =>
-            group.id === 'assistant' ? (
-              renderItem(group.items[0]!)
-            ) : (
-              <section
-                key={group.id}
-                aria-label={
-                  english
-                    ? (englishNavigationGroups[group.id] ?? group.title)
-                    : group.title
-                }
-                className="min-w-0"
-              >
-                <h2>
-                  <button
-                    type="button"
-                    aria-expanded={!isGroupClosed(group.id)}
-                    aria-controls={groupId + group.id}
-                    onClick={() => toggleGroup(group.id)}
-                    className={cn(
-                      'mb-1 flex w-full items-center gap-2 rounded-lg text-start outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-[9px] pb-[5px] pt-[9px] text-sm font-semibold leading-6',
-                      mobile ? 'text-muted-foreground' : 'text-blue-200',
-                    )}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        'size-2 shrink-0 rounded-full ring-1 ring-black/10',
-                        group.dotClass,
-                      )}
-                    />
-                    {english
-                      ? (englishNavigationGroups[group.id] ?? group.title)
-                      : group.title}
-                    {isGroupClosed(group.id) ? (
-                      <ChevronLeft
-                        aria-hidden="true"
-                        className="ms-auto size-3.5 shrink-0"
-                      />
-                    ) : (
-                      <ChevronDown
-                        aria-hidden="true"
-                        className="ms-auto size-3.5 shrink-0"
-                      />
-                    )}
-                  </button>
-                </h2>
-                <div
-                  id={groupId + group.id}
-                  hidden={isGroupClosed(group.id)}
-                  className={
-                    isGroupClosed(group.id) ? 'hidden' : 'grid gap-[3px]'
-                  }
+        : visibleGroups.map((group) => (
+            <section
+              key={group.id}
+              aria-label={
+                english
+                  ? (englishNavigationGroups[group.id] ?? group.title)
+                  : group.title
+              }
+              className="min-w-0"
+            >
+              <h2>
+                <button
+                  type="button"
+                  aria-expanded={!isGroupClosed(group.id)}
+                  aria-controls={groupId + group.id}
+                  onClick={() => toggleGroup(group.id)}
+                  className={cn(
+                    'mb-1 flex w-full items-center gap-2 rounded-lg text-start outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-[9px] pb-[5px] pt-[9px] text-sm font-semibold leading-6',
+                    mobile ? 'text-muted-foreground' : 'text-blue-200',
+                  )}
                 >
-                  {renderGroupEntries(group)}
-                </div>
-              </section>
-            ),
-          )}
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'size-2 shrink-0 rounded-full ring-1 ring-black/10',
+                      group.dotClass,
+                    )}
+                  />
+                  {english
+                    ? (englishNavigationGroups[group.id] ?? group.title)
+                    : group.title}
+                  {isGroupClosed(group.id) ? (
+                    <ChevronLeft
+                      aria-hidden="true"
+                      className="ms-auto size-3.5 shrink-0"
+                    />
+                  ) : (
+                    <ChevronDown
+                      aria-hidden="true"
+                      className="ms-auto size-3.5 shrink-0"
+                    />
+                  )}
+                </button>
+              </h2>
+              <div
+                id={groupId + group.id}
+                hidden={isGroupClosed(group.id)}
+                className={
+                  isGroupClosed(group.id) ? 'hidden' : 'grid gap-[3px]'
+                }
+              >
+                {renderGroupEntries(group)}
+              </div>
+            </section>
+          ))}
     </nav>
   );
 }
@@ -730,6 +736,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <LegalEntityProvider>
         <PageBreadcrumbProvider>
           <AppShellContent>{children}</AppShellContent>
+          <FloatingAssistant />
         </PageBreadcrumbProvider>
       </LegalEntityProvider>
     </AccessProvider>

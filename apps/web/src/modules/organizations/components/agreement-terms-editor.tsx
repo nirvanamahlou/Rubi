@@ -309,8 +309,11 @@ export function AgreementTermsEditor({
             {select(
               'نوع قرارداد',
               value.agreementType,
-              Object.entries(B2B_AGREEMENT_TYPES).filter(([key]) =>
-                role === 'AGENCY' ? key !== 'CORPORATE' : key !== 'AGENCY',
+              Object.entries(B2B_AGREEMENT_TYPES).filter(
+                ([key]) =>
+                  (key !== 'AGENCY' && key !== 'CORPORATE') ||
+                  (role === 'AGENCY' && key === 'AGENCY') ||
+                  (role === 'CORPORATE_CUSTOMER' && key === 'CORPORATE'),
               ) as [keyof typeof B2B_AGREEMENT_TYPES, string][],
               (v) => set('agreementType', v),
             )}
@@ -585,7 +588,9 @@ export function AgreementTermsEditor({
                   <span>
                     {focus === 'temporary'
                       ? 'سقف موقت (مبلغ کل) *'
-                      : 'سقف اعتبار *'}
+                      : role === 'SUPPLIER' || role === 'BROKER'
+                        ? 'سقف اعتبار دریافتی از طرف همکاری *'
+                        : 'سقف اعتبار *'}
                   </span>
                   <input
                     className="input"
@@ -671,7 +676,11 @@ export function AgreementTermsEditor({
           <div className="agreement-section-title">
             <ShieldCheck size={20} />
             <div>
-              <h4>تضمین‌ها و اسناد پشتیبان</h4>
+              <h4>
+                {role === 'SUPPLIER' || role === 'BROKER'
+                  ? 'تضمین‌های تحویلی ما به طرف همکاری'
+                  : 'تضمین‌ها و اسناد پشتیبان'}
+              </h4>
             </div>
             <button
               type="button"
@@ -795,9 +804,21 @@ export function AgreementTermsEditor({
                     'وضعیت تضمین',
                     guarantee.status,
                     [
-                      ['REQUIRED', 'موردنیاز / در انتظار دریافت'],
+                      [
+                        'REQUIRED',
+                        role === 'SUPPLIER' || role === 'BROKER'
+                          ? 'در انتظار تحویل ما'
+                          : 'موردنیاز / در انتظار دریافت',
+                      ],
                       ...(guarantee.kind !== 'DEPOSIT_REQUIREMENT'
-                        ? [['RECEIVED', 'دریافت‌شده با سند'] as const]
+                        ? [
+                            [
+                              'RECEIVED',
+                              role === 'SUPPLIER' || role === 'BROKER'
+                                ? 'تحویل‌شده به طرف همکاری با سند'
+                                : 'دریافت‌شده با سند',
+                            ] as const,
+                          ]
                         : []),
                     ],
                     (v) => update({ status: v }),

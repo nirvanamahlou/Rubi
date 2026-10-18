@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   BadRequestException,
@@ -18,6 +19,8 @@ import type {
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import {
+  applyPackageRoomSales,
+  validatePackageRoomSales,
   calculateTourRoom,
   buildHotelPackageTable,
   validateTourPriceFields,
@@ -132,6 +135,31 @@ export class PackageTourPricingService {
       throw new BadRequestException(
         'هتل‌های منتخب باید متعلق به همین بازه باشند.',
       );
+    let roomSaleOverrides;
+    try {
+      roomSaleOverrides =
+        input.roomSaleOverrides === undefined
+          ? undefined
+          : validatePackageRoomSales(input.roomSaleOverrides);
+      for (const item of roomSaleOverrides ?? []) {
+        const row = batch.rows.find((row) => row.id === item.hotelRateId);
+        if (!row) throw Error('قیمت فروش باید متعلق به همین بازه باشد.');
+        const allowed = new Set([
+          row.currencyCode ?? batch.currencyCode,
+          adultCurrency,
+          childCurrency,
+          businessCurrency,
+          commissionCurrency,
+          ...(priceFields ?? []).map((field) => field.currencyCode),
+        ]);
+        if (!allowed.has(item.currencyCode))
+          throw Error('ارز قیمت فروش متعلق به این پکیج نیست.');
+      }
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'قیمت فروش معتبر نیست.',
+      );
+    }
     const adult = amount(
       input.adultFlightSale,
       adultCurrency === 'IRR' ? 0 : 2,
@@ -241,6 +269,13 @@ export class PackageTourPricingService {
                 ...input.selectedHotelRateIds,
               ] as Prisma.InputJsonValue,
             };
+      const roomSalesData =
+        roomSaleOverrides === undefined
+          ? {}
+          : {
+              roomSaleOverrides:
+                roomSaleOverrides as unknown as Prisma.InputJsonValue,
+            };
       const now = new Date();
       const draft = existing
         ? await tx.packagePricingTourDraft.update({
@@ -261,6 +296,7 @@ export class PackageTourPricingService {
               familyAdults: input.familyAdults ?? null,
               familyChildren: input.familyChildren ?? null,
               ...fieldsData,
+              ...roomSalesData,
               ...selectedData,
               updatedByUserId: actor.userId,
               updatedAt: now,
@@ -286,6 +322,7 @@ export class PackageTourPricingService {
               familyAdults: input.familyAdults ?? null,
               familyChildren: input.familyChildren ?? null,
               ...fieldsData,
+              ...roomSalesData,
               ...selectedData,
               createdByUserId: actor.userId,
               updatedByUserId: actor.userId,
@@ -321,8 +358,8 @@ export class PackageTourPricingService {
       input?.version !== 1 ||
       !Number.isSafeInteger(input.expectedDraftVersion) ||
       input.expectedDraftVersion < 1 ||
-      !input.reason?.trim() ||
-      input.reason.trim().length > 500
+      !isOptionalOperationReason(input.reason) ||
+      (input.reason ?? '').trim().length > 500
     )
       throw new BadRequestException(
         'دلیل و نسخه پیش‌نویس برای انتشار لازم است.',
@@ -561,7 +598,16 @@ export class PackageTourPricingService {
                 throw new UnprocessableEntityException(
                   'تعرفه سینگل، دبل و کودک با تخت برای تمام شب‌ها لازم است.',
                 );
-              return calculated.map((item) => {
+              const overrides = Array.isArray(draft.roomSaleOverrides)
+                ? validatePackageRoomSales(draft.roomSaleOverrides)
+                : [];
+              return calculated.map((raw) => {
+                const item = applyPackageRoomSales(
+                  raw,
+                  overrides,
+                  (draft.commissionMode ?? 'percent') as 'percent' | 'fixed',
+                  draft.commissionPercent.toString(),
+                );
                 const single =
                   item.currencyAmounts.length === 1
                     ? item.currencyAmounts[0]
@@ -581,12 +627,37 @@ export class PackageTourPricingService {
             });
         })()
       : legacyPrices();
+    const frozenSales = Array.isArray(draft.roomSaleOverrides)
+      ? validatePackageRoomSales(draft.roomSaleOverrides)
+      : [];
+    for (const sale of frozenSales) {
+      const price = prices.find(
+        (item) =>
+          item.hotelRateId === sale.hotelRateId &&
+          item.roomCode === sale.roomCode,
+      );
+      if (
+        !price ||
+        !Array.isArray(price.currencyAmounts) ||
+        !price.currencyAmounts.some(
+          (part) =>
+            part &&
+            typeof part === 'object' &&
+            'currencyCode' in part &&
+            part.currencyCode === sale.currencyCode,
+        )
+      )
+        throw new UnprocessableEntityException(
+          'قیمت دستی با ترکیب‌های فعلی پکیج سازگار نیست؛ پیش‌نویس را دوباره ذخیره کنید.',
+        );
+    }
     const fingerprint = sourceHash({
       tour: grid.tour,
       batch,
       costs: grid.flightPurchaseCosts,
       draftVersion: draft.version,
       adjustments: draft.adjustments,
+      roomSaleOverrides: draft.roomSaleOverrides,
       priceFields: draft.priceFields,
       selectedHotelRateIds: draft.selectedHotelRateIds,
       prices: prices.map((item) => ({
@@ -626,7 +697,7 @@ export class PackageTourPricingService {
           draftVersion: draft.version,
           tourVersion: grid.tour.version,
           sourceFingerprint: fingerprint,
-          reason: input.reason.trim(),
+          reason: (input.reason ?? '').trim(),
           outboundCostRevisionId: outbound.costRevisionId,
           returnCostRevisionId: returning?.costRevisionId ?? null,
           adultFlightSale: draft.adultFlightSale,
@@ -693,6 +764,9 @@ export class PackageTourPricingService {
       draftVersion: row.version,
       lastEditorUserId: row.updatedByUserId,
       tourDepartureId: row.tourDepartureId,
+      ...(Array.isArray(row.roomSaleOverrides)
+        ? { roomSaleOverrides: validatePackageRoomSales(row.roomSaleOverrides) }
+        : {}),
       batchId: row.batchId,
       ...(Array.isArray(row.priceFields)
         ? { priceFields: validateTourPriceFields(row.priceFields) }

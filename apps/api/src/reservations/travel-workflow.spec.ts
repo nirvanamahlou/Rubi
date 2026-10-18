@@ -157,11 +157,11 @@ describe('travel workflow', () => {
       ).voucherIssued,
     ).toBe(true);
   });
-  it('requires cancellation reason and disallows stale/concurrent commands', () => {
+  it('accepts optional cancellation reason and disallows stale/concurrent commands', () => {
     const state = initialTravelWorkflow();
     expect(() =>
       transition(state, command(state, 'CANCEL', { note: '' }), ['p']),
-    ).toThrow();
+    ).not.toThrow();
     const cancelled = transition(state, command(state, 'CANCEL'), ['p']);
     expect(() =>
       transition(cancelled, command(state, 'REQUEST_SUPPLIER'), ['p']),

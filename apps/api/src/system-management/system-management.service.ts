@@ -1233,7 +1233,7 @@ export class SystemManagementService {
         entityType: input.entityType,
         entityId: input.entityId,
         outcome: 'SUCCESS',
-        reason: input.reason,
+        reason: input.reason ?? '',
         before:
           input.before === null
             ? Prisma.JsonNull

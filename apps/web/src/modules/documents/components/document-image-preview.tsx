@@ -1,4 +1,5 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
 
 import type { DocumentDetailV1 } from '@nora/contracts';
 import {
@@ -113,8 +114,7 @@ export function DocumentImagePreview({
     clean &&
     previewable &&
     approvedReason !== null &&
-    accessGrantToken !== null &&
-    (!sensitive || approvedReason.length >= 5);
+    accessGrantToken !== null;
 
   useEffect(() => {
     if (!readyToLoad) return;
@@ -205,7 +205,7 @@ export function DocumentImagePreview({
         </span>
         <h3 className="mt-4 text-lg font-black">تصویر محرمانه است</h3>
         <p className="mt-2 text-sm leading-7 text-muted-foreground">
-          برای ثبت صحیح سابقه دسترسی، دلیل مشاهده را وارد کنید.
+          دلیل مشاهده را در صورت نیاز وارد کنید.
         </p>
         <div className="mt-5 space-y-3 text-start">
           <Input
@@ -216,10 +216,10 @@ export function DocumentImagePreview({
           />
           <Button
             className="w-full"
-            disabled={reason.trim().length < 5}
+            disabled={!isOptionalOperationReason(reason)}
             onClick={() => {
               setPreviewState({ status: 'loading' });
-              setApprovedReason(reason.trim());
+              setApprovedReason((reason ?? '').trim());
               setRequestVersion((value) => value + 1);
             }}
             type="button"

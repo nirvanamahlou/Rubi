@@ -229,12 +229,12 @@ describe('default ticket manifest', () => {
       'نمونه',
       '2026-10-01',
       'TEST-1',
-      'Synthetic Air',
+      'SYNTHETIC AIR',
       'بزرگسال',
       'IRN',
       '1990-01-01',
-      'mr',
-      'destination',
+      'MR',
+      'DESTINATION',
       'BUSINESS',
       '0012345678',
     ]) {
@@ -288,7 +288,7 @@ describe('default ticket manifest', () => {
       });
       const result = await f.service.exportTicket('offer', range, 'key', actor);
       expect(sheet(result.bytes)).toContain(age === 'CHD' ? 'کودک' : 'نوزاد');
-      expect(sheet(result.bytes)).toContain('>mrs<');
+      expect(sheet(result.bytes)).toContain('>MRS<');
     },
   );
 
@@ -356,9 +356,9 @@ describe('default ticket manifest', () => {
         'شیراز',
         'تاریخ حرکت',
         'GROUND-1',
-        'Synthetic Operator',
+        'SYNTHETIC OPERATOR',
         'کودک',
-        'mr',
+        'MR',
         '0012345678',
       ])
         expect(xml).toContain(value);
@@ -594,8 +594,12 @@ describe('default ticket manifest', () => {
     );
     expect(xml).toContain('A1:M101');
     expect(xml).toContain('0012345678');
+    expect(xml).toContain('SYNTHETIC DESTINATION');
+    expect(xml).toContain('SYNTHETIC');
+    expect(xml).toContain('ECONOMY');
+    expect(xml).toContain('IRN');
     expect(xml).toContain('&lt;&amp;&gt;');
-    expect(xml).toContain('=HYPERLINK(&quot;x&quot;)');
+    expect(xml).toContain('=HYPERLINK(&quot;X&quot;)');
     expect(xml).not.toContain('<f>');
     expect(() => buildDefaultManifest([], false)).toThrow('مسافری');
   });

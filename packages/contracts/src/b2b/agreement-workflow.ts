@@ -1,4 +1,19 @@
-export type B2bCooperationRole = 'AGENCY' | 'CORPORATE_CUSTOMER';
+export type B2bCooperationRole =
+  'AGENCY' | 'CORPORATE_CUSTOMER' | 'SUPPLIER' | 'BROKER';
+
+/** The role is part of the persisted profile key; never infer direction from a name. */
+export function b2bCreditDirection(role: B2bCooperationRole) {
+  return role === 'SUPPLIER' || role === 'BROKER'
+    ? ('COUNTERPARTY_TO_US' as const)
+    : ('US_TO_COUNTERPARTY' as const);
+}
+
+export const B2B_COOPERATION_LABELS: Record<B2bCooperationRole, string> = {
+  AGENCY: 'آژانس',
+  CORPORATE_CUSTOMER: 'مشتری سازمانی',
+  SUPPLIER: 'تأمین‌کننده',
+  BROKER: 'کارگزار',
+};
 export type B2bReviewStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED';
 export const B2B_AGREEMENT_TYPES = {
   FRAMEWORK: 'قرارداد چارچوب',
