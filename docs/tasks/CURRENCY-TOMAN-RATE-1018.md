@@ -1,6 +1,7 @@
 # CURRENCY-TOMAN-RATE-1018
 
-PC-B. User corrects the manual reference: one unit of each currency equals N
+PC-B. Follow-up explicitly authorizes push and develop merge after final-head
+CI; not operational migration or3100 rollout. User corrects the manual reference: one unit of each currency equals N
 tomans. USD270000 means one dollar costs270000 tomans; IRR0.1 may be entered
 explicitly. Values are positive exact Decimal(24,10) strings, optional/editable,
 and displayed with the toman unit. This is reference metadata, not an FX trade,

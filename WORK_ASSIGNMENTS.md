@@ -38,7 +38,9 @@ PACKAGE-SALE-FLOW-1018 final booking-path regression verification:22 Web tests a
 
 COMPUTER_ID=PC-B; branch codex/pc-b-partner-dossier-session-loop-1018 from origin/develop@c52e41b3. Reserve Organizations dossier session hook/provider, partner dossier and documents/finance help text plus focused lifecycle regressions. Share one live actor/branch session throughout each partner dossier so mounting child panels cannot rotate credentials and restart ancestors. Preserve permission/actor/branch invalidation and disclosure masking. No schema, Finance calculation, IAM contract or dependency changes. Explicit user authorizes push and develop merge after exact-head CI; no worker-orchestrator.
 
-## CURRENCY-TOMAN-RATE-1018 — PC-B — IN_PROGRESS
+## CURRENCY-TOMAN-RATE-1018 — PC-B — READY_FOR_CI
+
+Continuation: user explicitly authorizes push and develop merge after final-head checks. Operational migration and3100 rollout are not included.71 focused Web/API tests, both scoped lint checks and Prisma validation/generation passed; hosted full quality/types/build/tests and isolated PostgreSQL migration/persistence remain merge gates. Source/schema reservation frozen for review and released on merge.
 
 COMPUTER_ID=PC-B; branch codex/pc-b-currency-toman-rate-1018 from origin/develop@73e60ef1. User corrects manual currency reference: one unit of each currency equals N tomans, not one USD equals N currency units. Reserve Master Data currency API/form/table and regressions, additive MasterCurrency.tomanPerUnit Decimal(24,10) schema/migration and bounded data/status documentation. Sole Migration Owner for this one nullable column/check; previous merged PARTNER-360 migration reservation released. Producer Master Data and consumer Web add optional tomanPerUnit; retain unitsPerUsd unchanged for older clients and historical data, never relabel/backfill its values. No transaction FX, Finance settlement, dependency or operational database change. No new push/merge/deployment authorization inferred from this correction.
 
