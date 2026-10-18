@@ -1,5 +1,13 @@
 # CURRENCY-TOMAN-RATE-1018
 
+Owner explicitly approves the narrow post-push migration correction on2026-10-18.
+Initial CI failed with42P01 before operational application: SQL used model name
+MasterCurrency instead of mapped table master_currencies. Correct only this new
+migration and make both DDL statements atomic; add mapping/non-destructive tests.
+No live recovery/checksum edit or other migration rewrite. Re-run final-head
+PostgreSQL rehearsal, complete tests, quality/types and production builds before
+the authorized develop merge. Operational migration/3100 remain out of scope.
+
 PC-B. Follow-up explicitly authorizes push and develop merge after final-head
 CI; not operational migration or3100 rollout. User corrects the manual reference: one unit of each currency equals N
 tomans. USD270000 means one dollar costs270000 tomans; IRR0.1 may be entered

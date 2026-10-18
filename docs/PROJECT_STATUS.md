@@ -35,6 +35,8 @@ Add optional HR-backed unit selection on new accounts and existing-user details.
 
 ## CURRENCY-TOMAN-RATE-1018 — PC-B — VALIDATING
 
+User explicitly authorizes correction of the already-pushed, never-operationally-applied migration after CI detected the wrong physical table name. Target mapped master_currencies, make DDL atomic and add a mapping/non-destructive regression. Re-run all exact-head PostgreSQL/test/quality/build gates before authorized develop merge; no live database or3100 change.
+
 Manual currency reference is now1 unit=N tomans in form/table and optional Master Data mutation. New nullable Decimal tomanPerUnit is isolated from unchanged legacy unitsPerUsd; no reinterpretation/backfill or transaction FX change.25 Web and46 API focused tests pass; isolated PostgreSQL regressions added but not yet run (Docker unavailable). Additive migration has not been applied operationally; no push/merge/3100 rollout claimed. See tasks/CURRENCY-TOMAN-RATE-1018.md.
 
 ## DASHBOARD-MATTE-ICONS-1018 — PC-C — READY_FOR_CI
