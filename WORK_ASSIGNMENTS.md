@@ -1,3 +1,7 @@
+## INTEGRATIONS-NAVIGATION-1018 — PC-D — IN_PROGRESS
+
+COMPUTER_ID=PC-D. User delegates simplifying the Integrations section navigation while retaining every existing capability and explaining actual connection readiness. Branch codex/pc-d-integrations-navigation-1018 starts from origin/PC-D-Integration and fast-forwards the already delivered PR909 candidate as the deployed source prerequisite. Reserve only Integrations navigation metadata/component/styles/tests, workspace consumer and connection-readiness copy, bounded English translations, and own task/status documentation. No IAM, API contracts, schema, migration, dependency or other-module changes. Preserve existing adapters and permission/branch/CAS guards. Local Web-only overlay on the existing Rubi image is authorized by this ongoing local preview workflow; preserve API, data and other containers. No new GitHub publication or merge is authorized.
+
 ## INTEGRATIONS-DEVELOP-DELIVERY-1017 — PC-D — VALIDATING
 
 User explicitly requests these existing site-onboarding and IAM access changes on latest develop, hosted CI and merge after all checks pass. This latest instruction authorizes develop as the delivery target for PR909. Merge origin/develop@c025c16e into the task branch, preserving concurrent sources and both coordination histories. Integrations add/add conflicts are the already merged PR889 foundation plus the bounded onboarding additions; preserve new setup metadata, permission catalogue and both translation sets. No operational database or runtime change. Branch protections remain required.
