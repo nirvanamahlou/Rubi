@@ -82,7 +82,7 @@ it.skipIf(process.env.IAM_USER_UNIT_TEST !== '1')(
       ).rejects.toMatchObject({ code: '23503' });
       await expect(
         db.query('DELETE FROM hr_records WHERE id=$1', [unitId]),
-      ).rejects.toMatchObject({ code: '23503' });
+    ).rejects.toMatchObject({ code: '23001' });
       await db.query('UPDATE hr_records SET name=$1 WHERE id=$2', [
         'Renamed Department',
         unitId,
