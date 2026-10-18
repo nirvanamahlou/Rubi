@@ -1,3 +1,4 @@
+import { syncHotelChildSelections } from './hotel-child-selection';
 import {
   readAgencyCommission,
   AGENCY_COMMISSION,
@@ -161,6 +162,7 @@ export interface SalesFormState {
     amount: string;
     currencyCode: string;
   };
+  hotelChildAssignments?: Record<string, (string | null)[]> | undefined;
   hotel: {
     rooms?: Array<
       Omit<SalesHotelRoomV1, 'childAges'> & { childAges: (number | null)[] }
@@ -465,6 +467,7 @@ export function salesHotelCapacityError(
   state: SalesFormState,
   roomRates: readonly HotelRoomRateV1[],
 ): string | null {
+  state = syncHotelChildSelections(state, salesTravelDate(state));
   if (!state.serviceKinds.includes('HOTEL')) return null;
   if (state.hotel.rooms?.length) {
     for (const r of state.hotel.rooms) {
@@ -1030,6 +1033,7 @@ export function salesTravelDate(state: SalesFormState): string {
 export function salesPayload(
   state: SalesFormState,
 ): SalesContractCreateRequest {
+  state = syncHotelChildSelections(state, salesTravelDate(state));
   state = withFirstPassengerCustomer(state);
   const roomPartyError = salesRoomPartyError(state);
   if (roomPartyError) throw new Error(roomPartyError);

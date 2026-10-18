@@ -6415,3 +6415,10 @@ AGENCY-PASSENGER-COMMISSION-1018 verification:97 focused tests passed (6 shared 
 
 
 RESERVATION-ROOM-SETTINGS-1018 follow-up: actual supplier-sheet HTML regression verifies edited room type and child ages; precise multicurrency amendment test verifies edited room totals without double charging. Existing contract sale payment/fee validations remain. Initial CI failure was missing new English display labels and is corrected; local English inventory tests hit host I/O timeout, so exact-head hosted full suite is mandatory. No migration or operational data changes.
+
+
+## HOTEL-CHILD-SELECTION-1018 — PC-A — IN_PROGRESS
+
+User authorizes fixing guest/room age mismatch, selecting each hotel child from the flight children with inherited age, proving contract creation and develop merge after tests. Branch codex/pc-a-hotel-child-selection-1018 from origin/develop@fc8a5927. Reserve Sales room editor/helper, composition/passenger alignment and targeted API create/capacity tests, bounded translations and own docs. Preserve actual birthday/capacity/under15 hotel versus under12 airline categories, no duplicate child allocation across rooms, service-subset selections and stale-draft compatibility. Other Reservations room-settings candidate scope is released and its amendment/output work is preserved. No schema/migration/dependency/live-data/runtime mutation; actual create proof must use synthetic isolated fixtures.
+
+HOTEL-CHILD-SELECTION-1018 verification:420 Sales Web tests pass (one existing skip), final focused child-picker regressions10 pass; Web typecheck and scoped lint pass. Real SalesService/Repository create against a separately migrated synthetic PostgreSQL database persisted four passengers in two rooms with inherited ages6/8; idempotent replay and invalid-age rejection passed. Proof uses synthetic public-directory adapters and test-only60s transaction timeout for slow host; not authenticated browser E2E. Owned test database removed; operational rubi untouched. No schema/dependency/live rollout. Source locks released with candidate; exact-head hosted CI/build gates user-authorized develop merge.
