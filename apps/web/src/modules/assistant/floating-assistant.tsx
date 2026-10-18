@@ -78,7 +78,6 @@ function AssistantSession() {
           ref={panel}
           id={id}
           className={styles.panel}
-          style={drag.panelStyle}
           data-expanded={expanded}
           hidden={!open}
           role="dialog"

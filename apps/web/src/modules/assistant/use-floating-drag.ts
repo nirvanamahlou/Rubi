@@ -37,9 +37,17 @@ export function useFloatingDrag({
   expanded: boolean;
   english: boolean;
 }) {
-  const [position, setPosition] = useState<FloatingPoint | null>(null);
-  const [panelStyle, setPanelStyle] = useState<CSSProperties>();
+  const [placement, setPlacement] = useState<{
+    english: boolean;
+    point: FloatingPoint | null;
+  }>({ english, point: null });
   const [dragging, setDragging] = useState(false);
+  // Reset only placement when locale changes; keep the mounted chat/draft intact.
+  if (placement.english !== english) {
+    setPlacement({ english, point: null });
+    setDragging(false);
+  }
+  const position = placement.english === english ? placement.point : null;
   const [viewportRevision, setViewportRevision] = useState(0);
   const gesture = useRef<Gesture | null>(null);
   const suppressClick = useRef(false);
@@ -52,11 +60,16 @@ export function useFloatingDrag({
     const resize = () => {
       const button = launcher.current;
       if (button)
-        setPosition((point) =>
-          point
-            ? boundLauncher(point, button.getBoundingClientRect(), viewport())
+        setPlacement((current) => ({
+          ...current,
+          point: current.point
+            ? boundLauncher(
+                current.point,
+                button.getBoundingClientRect(),
+                viewport(),
+              )
             : null,
-        );
+        }));
       setViewportRevision((value) => value + 1);
     };
     window.addEventListener('resize', resize);
@@ -68,27 +81,31 @@ export function useFloatingDrag({
   }, [launcher]);
 
   useEffect(() => {
-    setPosition(null);
     gesture.current = null;
-    setDragging(false);
+    suppressClick.current = false;
   }, [english]);
 
   useLayoutEffect(() => {
-    if (!position || !open || !panel.current || !launcher.current) {
-      setPanelStyle(undefined);
+    const element = panel.current;
+    if (!element) return;
+    if (!position || !open || !launcher.current) {
+      for (const property of ['position', 'left', 'top', 'right', 'bottom']) {
+        element.style.removeProperty(property);
+      }
       return;
     }
     const point = placeFloatingPanel(
       position,
       launcher.current.getBoundingClientRect(),
-      panel.current.getBoundingClientRect(),
+      element.getBoundingClientRect(),
       viewport(),
       english,
     );
-    setPanelStyle({
+    // Synchronize measured geometry directly, without an extra React render.
+    Object.assign(element.style, {
       position: 'fixed',
-      left: point.x,
-      top: point.y,
+      left: `${point.x}px`,
+      top: `${point.y}px`,
       right: 'auto',
       bottom: 'auto',
     });
@@ -97,9 +114,10 @@ export function useFloatingDrag({
   const move = (point: FloatingPoint) => {
     const button = launcher.current;
     if (button)
-      setPosition(
-        boundLauncher(point, button.getBoundingClientRect(), viewport()),
-      );
+      setPlacement({
+        english,
+        point: boundLauncher(point, button.getBoundingClientRect(), viewport()),
+      });
   };
 
   const pointerDown = (event: PointerEvent<HTMLButtonElement>) => {
@@ -142,7 +160,7 @@ export function useFloatingDrag({
     if (!event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.key === 'Home') {
       event.preventDefault();
-      setPosition(null);
+      setPlacement({ english, point: null });
       return;
     }
     const delta: Record<string, FloatingPoint> = {
@@ -168,7 +186,6 @@ export function useFloatingDrag({
           bottom: 'auto',
         } satisfies CSSProperties)
       : undefined,
-    panelStyle,
     consumeClick(detail: number) {
       const suppressed = suppressClick.current && detail !== 0;
       suppressClick.current = false;
