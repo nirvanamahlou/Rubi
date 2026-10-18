@@ -7,6 +7,9 @@ import type {
   CustomerAffairsTicketInput,
   CustomerAffairsTicketView,
   CustomerAffairsTimelineInput,
+  WorkbenchRequestInputV1,
+  WorkbenchRequestItemV1,
+  WorkbenchRequestOptionsV1,
 } from '@nora/contracts';
 
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -145,31 +148,24 @@ export const customerAffairsApi = {
       'customer-tickets.xlsx',
     ),
   createWorkbenchRequest: (
-    input: CustomerAffairsTicketInput,
+    input: WorkbenchRequestInputV1,
     branchId: string,
+    idempotencyKey = crypto.randomUUID(),
   ) =>
     request<{ data: CustomerAffairsTicketView }>('/workbench/requests', {
       method: 'POST',
       headers: {
-        'idempotency-key': crypto.randomUUID(),
+        'idempotency-key': idempotencyKey,
         'x-branch-id': branchId,
       },
       body: JSON.stringify(input),
     }),
+  workbenchRequestOptions: (branchId: string) =>
+    request<{ data: WorkbenchRequestOptionsV1 }>('/workbench/request-options', {
+      headers: { 'x-branch-id': branchId },
+    }),
   workbenchRequests: () =>
-    request<{
-      data: Array<{
-        id: string;
-        trackingNumber: string;
-        subject: string;
-        description: string;
-        destinationUnit: string | null;
-        status: string;
-        priority: string;
-        nextActionAt: string;
-        updatedAt: string;
-      }>;
-    }>('/workbench/requests'),
+    request<{ data: WorkbenchRequestItemV1[] }>('/workbench/requests'),
   hrWorkbenchRequests: () =>
     request<{
       data: Array<{
