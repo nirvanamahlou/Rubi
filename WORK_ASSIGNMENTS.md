@@ -1,3 +1,7 @@
+## USER-SAVE-BUTTON-1018 — PC-B — READY_FOR_CI
+
+Owner authorizes restoring the user-details Save button appearance after save, push and develop merge. Only user-details-editor.tsx and focused state/lifecycle tests plus own coordination/status entries on codex/pc-b-user-save-button-1018 from origin/develop@cc279d83. Keep idle button normal blue even without edits, disable/show busy only during submission or read-only access; guard unchanged submissions without issuing redundant writes. Preserve account revisions, unit/name payloads and all grants. Ten focused tests pass. No API/schema/dependency/runtime changes. Earlier user-editor scopes released; bounded locks released with frozen candidate. Exact-head CI gates merge.
+
 ## PASSENGER-PRICE-NAMES-1018 — PC-A — READY_FOR_CI
 
 Branch codex/pc-a-passenger-price-names-1018 from origin/develop@73c52e30. Reserve Sales people-sheet passenger name projection and focused tests, own status notes. Use each passenger passport identity for international contract display with domestic name compatibility. No schema/API/dependency/runtime/data mutation. User authorizes develop merge. Prior Sales scopes released.43 focused people-sheet and passenger-price tests pass; source locks released with frozen candidate. Exact-head quality/type/build/test checks gate merge.

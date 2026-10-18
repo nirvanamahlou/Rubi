@@ -34,6 +34,7 @@ export function UserDetailsEditor({
   async function save() {
     if (saving.current || !canManage) return;
     const displayName = name.trim();
+    if (displayName === user.displayName && !unitChanged) return;
     if (displayName.length < 2 || displayName.length > 160) {
       setMessage('نام و نام خانوادگی باید بین ۲ تا ۱۶۰ نویسه باشد.');
       return;
@@ -78,15 +79,7 @@ export function UserDetailsEditor({
         disabled={!canManage || busy}
         onChange={setUnitId}
       />
-      <Button
-        type="button"
-        disabled={
-          !canManage ||
-          busy ||
-          (name.trim() === user.displayName && !unitChanged)
-        }
-        onClick={save}
-      >
+      <Button type="button" disabled={!canManage} loading={busy} onClick={save}>
         ذخیره مشخصات کاربر
       </Button>
       {message && <p role="status">{message}</p>}
