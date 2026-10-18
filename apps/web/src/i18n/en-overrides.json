@@ -2722,5 +2722,21 @@
   "همهٔ شعب مجاز": "All authorized branches",
   "برای نمایش بازه‌ها، شعبه یا تاریخ را محدودتر کنید.": "Narrow the branch or dates to view periods.",
   "سرویس اطلاعات شهر در دسترس نیست.": "The city reference service is unavailable.",
-  "بلیت جایگزینی برای این مسیر و تاریخ پیدا نشد؛ بلیت فعلی قرارداد حفظ شده است.": "No replacement ticket was found for this route and date. The contract's current ticket is retained."
+  "بلیت جایگزینی برای این مسیر و تاریخ پیدا نشد؛ بلیت فعلی قرارداد حفظ شده است.": "No replacement ticket was found for this route and date. The contract's current ticket is retained.",
+  "تعداد بزرگسالان اتاق‌ها با مسافران هتل هماهنگ نیست.": "Room adult counts do not match the hotel guests.",
+  "جمع خودکار قرارداد": "Automatic contract total",
+  "جمع قیمت پرواز مسافران نباید از مبلغ قرارداد بیشتر باشد.": "The passenger flight total cannot exceed the contract total.",
+  "جمع قیمت پرواز:": "Flight price total:",
+  "سهم ارزی اتاق": "Room share in foreign currency",
+  "قیمت پرواز مسافران معتبر نیست.": "The passenger flight prices are invalid.",
+  "قیمت پرواز هر مسافر": "Flight price per passenger",
+  "قیمت پرواز هر مسافر را وارد کنید.": "Enter the flight price for every passenger.",
+  "قیمت هر اتاق را وارد کنید.": "Enter the price of every room.",
+  "مبلغ پرواز هر مسافر جزئی از مبلغ کل قرارداد است.": "Each passenger flight amount is part of the total contract price.",
+  "مبلغ کل قرارداد باید برابر جمع قیمت پروازها و اتاق‌ها باشد.": "The contract total must equal the sum of flight and room prices.",
+  "کمیسیون هر بزرگسال (ریال)": "Commission per adult (IRR)",
+  "کمیسیون هر کودک (ریال)": "Commission per child (IRR)",
+  "کمیسیون آژانس": "Agency commission",
+  "کمیسیون آژانس معتبر نیست.": "Invalid agency commission.",
+  "کمیسیون در ستون هر مسافر نمایش داده می‌شود و از مبلغ کل قرارداد کسر نمی‌شود.": "Commission is shown for each passenger and is not deducted from the contract total."
 }

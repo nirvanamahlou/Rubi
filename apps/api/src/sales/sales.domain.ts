@@ -1,3 +1,10 @@
+import { readAgencyCommission } from '@nora/contracts';
+import {
+  flightRoomTotals,
+  readPassengerFlightPrices,
+  insuranceExtraRials,
+} from '@nora/contracts';
+import { validatePassengerFlightPrices } from '@nora/contracts';
 import {
   moneyUnits,
   validSalesHotelRooms,
@@ -257,6 +264,74 @@ export function validateSalesContract(
       'SALES_PASSENGER_DUPLICATE',
       'یک مسافر نمی‌تواند دوبار به قرارداد اضافه شود.',
     );
+  try {
+    readAgencyCommission(input.services);
+  } catch {
+    throw new SalesDomainError(
+      'SALES_AGENCY_COMMISSION_INVALID',
+      'کمیسیون آژانس معتبر نیست.',
+    );
+  }
+  try {
+    validatePassengerFlightPrices(
+      input.services,
+      input.passengers,
+      input.priceComponents,
+    );
+  } catch (error) {
+    throw new SalesDomainError(
+      'SALES_FLIGHT_PASSENGER_PRICE_INVALID',
+      error instanceof Error ? error.message : 'قیمت پرواز مسافران معتبر نیست.',
+    );
+  }
+  if (
+    input.services.some((s) => s.metadata?.automaticFlightRoomTotalV1 === true)
+  ) {
+    try {
+      if (
+        input.services.some((s) => s.kind === 'FLIGHT') &&
+        !readPassengerFlightPrices(input.services)
+      )
+        throw Error('قیمت پرواز هر مسافر را وارد کنید.');
+      if (input.hotelSelection?.rooms?.some((r) => !r.agreedPrice))
+        throw Error('قیمت هر اتاق را وارد کنید.');
+      const extra = input.services
+        .filter((s) => s.metadata?.insuranceAgeSurcharge === true)
+        .map((s) => ({
+          amount: insuranceExtraRials(String(s.metadata!.extraToman)),
+          currencyCode: 'IRR',
+        }));
+      const expected = flightRoomTotals(
+        {
+          ...readPassengerFlightPrices(input.services),
+          insuranceExtras: extra,
+        },
+        input.hotelSelection?.rooms ?? [],
+      );
+      const actual = new Map<string, bigint>();
+      for (const p of input.priceComponents.filter(
+        (p) => p.title !== SALES_CHEQUE_FEE,
+      ))
+        actual.set(
+          p.currencyCode,
+          (actual.get(p.currencyCode) ?? 0n) +
+            moneyUnits(p.amount) * (p.type === 'DISCOUNT' ? -1n : 1n),
+        );
+      const wanted = expected.filter((p) => moneyUnits(p.amount) > 0n);
+      if (
+        actual.size !== wanted.length ||
+        wanted.some((p) => actual.get(p.currencyCode) !== moneyUnits(p.amount))
+      )
+        throw Error(
+          'مبلغ کل قرارداد باید برابر جمع قیمت پروازها و اتاق‌ها باشد.',
+        );
+    } catch (error) {
+      throw new SalesDomainError(
+        'SALES_COMPONENT_TOTAL_INVALID',
+        error instanceof Error ? error.message : 'مبلغ قرارداد معتبر نیست.',
+      );
+    }
+  }
   for (const passenger of input.passengers) {
     if (
       !UUID.test(passenger.customerId) ||
