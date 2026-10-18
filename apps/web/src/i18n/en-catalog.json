@@ -9238,7 +9238,7 @@
   "سمت فعلی": "Current position",
   "سمت و رده شغلی «": "Position and job category",
   "سمیرا نادری": "Samira Naderi",
-  "سن کودک": "Age of the child",
+  "سن کودک": "Child age",
   "سن کودک (حد بالا غیرشامل)": "Child's age (excludes upper limit)",
   "سن کودکان (با ویرگول جدا کنید)": "Children's ages (separate with commas)",
   "سن نوزاد": "Baby's age",
@@ -17345,5 +17345,13 @@
   "نوع درخواست یا نقش طرف همکاری معتبر نیست.": "Invalid request type or partner role.",
   "نوع طرف همکاری معتبر نیست.": "Invalid partner type.",
   "و لیدرهای کارگزار": "and broker leaders",
-  "ویرایش اطلاعات اصلی": "Edit primary details"
+  "ویرایش اطلاعات اصلی": "Edit primary details",
+  "اتاق‌ها و ترکیب مسافران": "Rooms and guest composition",
+  "تعداد کودک": "Number of children",
+  "حذف اتاق": "Remove room",
+  "افزودن اتاق": "Add room",
+  "قیمت اتاق": "Room price",
+  "ارز اتاق": "Room currency",
+  "قیمت پرواز": "Flight price",
+  "قیمت پرواز ·": "Flight price ·"
 }
