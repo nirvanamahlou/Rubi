@@ -313,19 +313,29 @@ export function ReservationFormSheet({
                 />
                 <table className={styles.table}>
                   <colgroup>
-                    <col style={{ width: '34%' }} />
+                    <col
+                      style={{
+                        width: data.roomBreakdown.length ? '54%' : '34%',
+                      }}
+                    />
                     <col style={{ width: '19%' }} />
                     <col style={{ width: '12%' }} />
                     <col style={{ width: '15%' }} />
-                    <col style={{ width: '20%' }} />
+                    {!data.roomBreakdown.length && (
+                      <col style={{ width: '20%' }} />
+                    )}
                   </colgroup>
                   <thead>
                     <tr>
-                      {['HOTEL', 'CITY', 'STAR', 'SERVICE', 'ROOM TYPE'].map(
-                        (t) => (
-                          <th key={t}>{t}</th>
-                        ),
-                      )}
+                      {[
+                        'HOTEL',
+                        'CITY',
+                        'STAR',
+                        'SERVICE',
+                        ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
+                      ].map((t) => (
+                        <th key={t}>{t}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
@@ -334,12 +344,15 @@ export function ReservationFormSheet({
                       <td dir="auto">{data.destination}</td>
                       <td>{data.stars}</td>
                       <td dir="auto">{data.meal}</td>
-                      <td dir="auto">{data.roomType}</td>
+                      {!data.roomBreakdown.length && (
+                        <td dir="auto">{data.roomType}</td>
+                      )}
                     </tr>
                   </tbody>
                 </table>
                 {data.roomBreakdown.length ? (
-                  <table className={styles.table}>
+                  <table className={`${styles.table} ${styles.roomBreakdown}`}>
+                    <caption>ROOM QUANTITIES BY TYPE</caption>
                     <thead>
                       <tr>
                         {[
@@ -379,23 +392,6 @@ export function ReservationFormSheet({
                       <tr>
                         <td>{data.checkIn}</td>
                         <td>{data.checkOut}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                  <table className={`${styles.table} ${styles.roomCounts}`}>
-                    <caption>ROOM QUANTITIES BY TYPE</caption>
-                    <thead>
-                      <tr>
-                        <th>DBL · DOUBLE</th>
-                        <th>SGL · SINGLE</th>
-                        <th>EXT · EXTRA BED</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>{data.double}</td>
-                        <td>{data.single}</td>
-                        <td>{data.extra}</td>
                       </tr>
                     </tbody>
                   </table>

@@ -1,3 +1,7 @@
+## RESERVATION-CURRENCY-ROOM-OUTPUT-1018 — PC-A
+
+Root cause: localized option elements carrying aria-label were discarded by the native-select option extractor, leaving only the empty currency choice although Master Data loaded successfully. Reservations now passes typed options directly to the shared searchable picker with names, symbols and canonical codes; no hardcoded fallback. Preserve saved inactive currency and clear selection. Preview and PDF remove aggregate DBL/SGL/EXT counts, title the separated per-room table ROOM QUANTITIES BY TYPE and omit hotel-wide type when detailed rooms exist; the corresponding generic editor field is hidden while per-room editing remains. Legacy roomless type is retained.356 Reservations tests pass (two existing skips), scoped lint and one-page synthetic A4 PDF visual QA pass. Final exact-head CI gates authorized develop merge. No schema/API/dependency/runtime or operational-data changes.
+
 ## CONTRACT-HOTEL-COMPACT-1018 — PC-A
 
 New-contract hotel selector and room count share one aligned responsive row. Room count width is bounded (96px on small screens, 144px otherwise); hotel retains remaining space. Existing room composition, child allocation, validation and persistence remain unchanged. No API/schema/migration/dependency change. Six ServiceParties tests, scoped ESLint, formatting and diff checks pass. Exact-head hosted quality, tests, typecheck/build and migration checks gate user-authorized develop merge.

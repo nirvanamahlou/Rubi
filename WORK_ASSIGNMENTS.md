@@ -1,3 +1,7 @@
+## RESERVATION-CURRENCY-ROOM-OUTPUT-1018 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; codex/pc-a-reservation-currency-room-output-1018 from origin/develop. Reserve Reservations currency selector/tests, settings room-type display, shared form projection, preview/CSS/PDF HTML and focused output tests plus own docs. Prior Reservations scopes released; no overlapping active target lock. User authorizes master-data currency visibility, removal of legacy aggregate room-count table, detached titled room breakdown and no misleading hotel-wide type for mixed rooms, followed by develop merge. Preserve immutable sent snapshots, exact currency codes/money, branch permissions and legacy roomless output. No schema/migration/dependency or operational data/runtime changes. Validation:356 Reservations tests pass (two existing skips), scoped lint and exact PDF A4 render inspection pass. Persian-label currency options now reach SearchCombobox directly, preserving saved inactive choices and canonical codes. Source locks released with frozen candidate; exact-head hosted type/build/test gates merge.
+
 ## CONTRACT-HOTEL-COMPACT-1018 — PC-A — READY_FOR_CI
 
 Branch codex/pc-a-contract-hotel-compact-1018 from origin/develop. Reserve only Sales service-parties.tsx layout and own coordination notes. User authorizes same-row hotel/count controls and develop merge. Prior related source locks released; no API/schema/dependency/data changes. Six ServiceParties tests, scoped ESLint and formatting pass. Source scope released with frozen candidate; exact-head full hosted checks gate merge.
