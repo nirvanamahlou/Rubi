@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
@@ -10,6 +10,11 @@ const messageSelection = {
   senderUserId: true,
   body: true,
   createdAt: true,
+  replyTo: { select: { id: true, body: true, senderUserId: true } },
+  reactions: {
+    select: { emoji: true, userId: true },
+    orderBy: { userId: 'asc' },
+  },
   forwardedFrom: { select: { id: true, senderUserId: true } },
   attachments: {
     select: { documentId: true, title: true },
@@ -156,6 +161,7 @@ export class MessagingRepository {
     body: string;
     clientRequestId: string;
     forwardedFromMessageId?: string;
+    replyToMessageId?: string;
     attachments?: Array<{ documentId: string; title: string }>;
     recipientUserIds: string[];
   }) {
@@ -185,6 +191,9 @@ export class MessagingRepository {
           senderUserId: input.senderUserId,
           body: input.body,
           clientRequestId: input.clientRequestId,
+          ...(input.replyToMessageId
+            ? { replyToMessageId: input.replyToMessageId }
+            : {}),
           ...(input.forwardedFromMessageId
             ? { forwardedFromMessageId: input.forwardedFromMessageId }
             : {}),
@@ -218,6 +227,47 @@ export class MessagingRepository {
       });
       return transaction.messagingMessage.findUniqueOrThrow({
         where: { id: message.id },
+        select: messageSelection,
+      });
+    });
+  }
+
+  replyTarget(conversationId: string, messageId: string) {
+    return this.database.client.messagingMessage.findFirst({
+      where: { id: messageId, conversationId },
+      select: { id: true },
+    });
+  }
+
+  setReaction(
+    conversationId: string,
+    messageId: string,
+    userId: string,
+    emoji: string | null,
+  ) {
+    return this.database.client.$transaction(async (tx) => {
+      const message = await tx.messagingMessage.findFirst({
+        where: {
+          id: messageId,
+          conversationId,
+          conversation: { members: { some: { userId } } },
+        },
+        select: { id: true },
+      });
+      if (!message) throw new NotFoundException('پیام پیدا نشد.');
+      if (emoji === null) {
+        await tx.messagingMessageReaction.deleteMany({
+          where: { messageId, userId },
+        });
+      } else {
+        await tx.messagingMessageReaction.upsert({
+          where: { messageId_userId: { messageId, userId } },
+          create: { messageId, userId, emoji },
+          update: { emoji },
+        });
+      }
+      return tx.messagingMessage.findUniqueOrThrow({
+        where: { id: messageId },
         select: messageSelection,
       });
     });

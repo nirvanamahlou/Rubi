@@ -226,5 +226,109 @@ describe.skipIf(!enabled)(
       },
       30000,
     );
+    it.each(['direct', 'group'])(
+      'persists replies and per-user reactions for %s recipients',
+      async (kind) => {
+        const http = app.getHttpServer();
+        const chatId = kind === 'direct' ? conversationId : groupId;
+        const original = await request(http)
+          .post(`/messaging/conversations/${chatId}/messages`)
+          .set('x-test-actor', senderId)
+          .send({
+            body: 'Original synthetic message',
+            clientRequestId: `message:${randomUUID()}`,
+          })
+          .expect(201);
+        const targetId = original.body.data.id;
+        const reply = await request(http)
+          .post(`/messaging/conversations/${chatId}/messages`)
+          .set('x-test-actor', recipientId)
+          .send({
+            body: 'Synthetic reply',
+            replyToMessageId: targetId,
+            clientRequestId: `message:${randomUUID()}`,
+          })
+          .expect(201);
+        expect(reply.body.data.replyTo.id).toBe(targetId);
+        expect(reply.body.data.replyTo.sender.id).toBe(senderId);
+        const reaction = (actor: string, emoji: string | null) =>
+          request(http)
+            .put(
+              `/messaging/conversations/${chatId}/messages/${targetId}/reaction`,
+            )
+            .set('x-test-actor', actor)
+            .send({ emoji });
+        await Promise.all([
+          reaction(senderId, '👍').expect(200),
+          reaction(senderId, '👍').expect(200),
+        ]);
+        const liked = await reaction(recipientId, '👍').expect(200);
+        expect(liked.body.data.reactions).toEqual([
+          {
+            emoji: '👍',
+            count: 2,
+            userIds: expect.arrayContaining([senderId, recipientId]),
+          },
+        ]);
+        const changed = await reaction(senderId, '❤️').expect(200);
+        expect(
+          changed.body.data.reactions.map(
+            (r: { emoji: string; count: number }) => [r.emoji, r.count],
+          ),
+        ).toEqual([
+          ['👍', 1],
+          ['❤️', 1],
+        ]);
+        const removed = await reaction(senderId, null).expect(200);
+        expect(removed.body.data.reactions).toEqual([
+          { emoji: '👍', count: 1, userIds: [recipientId] },
+        ]);
+        await reaction(senderId, null).expect(200);
+        await reaction(outsiderId, '👍').expect(403);
+        await reaction(senderId, '😡').expect(400);
+        const otherChat = kind === 'direct' ? groupId : conversationId;
+        await request(http)
+          .put(
+            `/messaging/conversations/${otherChat}/messages/${targetId}/reaction`,
+          )
+          .set('x-test-actor', senderId)
+          .send({ emoji: '👍' })
+          .expect(404);
+        await request(http)
+          .post(`/messaging/conversations/${otherChat}/messages`)
+          .set('x-test-actor', senderId)
+          .send({
+            body: 'Cross-chat reply',
+            replyToMessageId: targetId,
+            clientRequestId: `message:${randomUUID()}`,
+          })
+          .expect(404);
+        await expect(
+          client.messagingMessage.create({
+            data: {
+              conversationId: otherChat,
+              senderUserId: senderId,
+              body: 'Invalid FK',
+              replyToMessageId: targetId,
+              clientRequestId: `message:${randomUUID()}`,
+            },
+          }),
+        ).rejects.toThrow();
+        const inbox = await request(http)
+          .get(`/messaging/conversations/${chatId}/messages`)
+          .set('x-test-actor', senderId)
+          .expect(200);
+        expect(
+          inbox.body.data.find(
+            (m: { id: string }) => m.id === reply.body.data.id,
+          ).replyTo.id,
+        ).toBe(targetId);
+        expect(
+          inbox.body.data.find((m: { id: string }) => m.id === targetId)
+            .reactions[0].count,
+        ).toBe(1);
+      },
+      30000,
+    );
   },
 );

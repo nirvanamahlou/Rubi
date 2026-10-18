@@ -877,3 +877,8 @@ send/edit/forward/delete metadata without letter bodies. A participant-authorize
 version-checked hard delete removes the letter and all deliveries by cascade.
 No existing documents, accounting, business records or user grants are migrated.
 Only active internal IAM account labels are exposed through its public directory.
+
+
+## MESSAGING-REPLIES-REACTIONS-1018 — 2026-10-18
+
+MessagingMessage has a nullable replyToMessageId; composite FK (replyToMessageId, conversationId) references (id, conversationId) on MessagingMessage, preventing cross-conversation replies at database level. Existing rows remain NULL; no backfill. MessagingMessageReaction is owned by Messaging with real message/user FKs, one row per (messageId,userId), one allowed emoji (👍 ❤️ 😂 😮 🙏), and UTC created/updated timestamps. Explicit set/remove is idempotent and can only affect the authenticated member’s own reaction. The compatible v1 response adds optional replyTo (240-character preview plus minimum sender identity) and grouped reaction counts/member IDs. The producer validates membership/branch before every command or read. Forwarding does not copy source replies or reactions. Migration20261018190000 is additive and must precede API rollout. No other module accesses reaction tables directly.

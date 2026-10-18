@@ -6539,3 +6539,10 @@ HOTEL-ROOM-COEFFICIENT-LAYOUT-1018 candidate: each room renders one wide purchas
 ## WORKBENCH-MESSENGER-FILES-1018 — 2026-10-18
 
 Fixed attachment-only chat HTTP500 caused by the existing non-empty body database constraint; server stores «فایل پیوست» after verifying owned attachments. Direct/group multipart persistence and recipient byte-for-byte download verified with isolated synthetic PostgreSQL users; retry and access-boundary cases pass. Removed the screenshot-marked duplicate inline unit selector and sidebar explanatory text, retaining sidebar units and message templates. Owner follow-up permits immediate Messaging attachment delivery without waiting for a scan verdict; infected/quarantined files stay blocked. General archive rules are unchanged. 29 API tests (including isolated multipart/real PostgreSQL direct/group delivery without a scan verdict) and7 Web tests pass. No migration, runtime change or real messages.
+
+
+## MESSAGING-REPLIES-REACTIONS-1018 — 2026-10-18
+
+Message footer forwarding is icon-only with an accessible label. Right-click/keyboard/long-press opens five reaction choices (👍 ❤️ 😂 😮 🙏) and Reply. Reply preview can be cancelled; quotes and reactions are stored server-side and returned to all authorized participants. Each user may set/change/remove one reaction per message; counts refresh through existing message polling. Composite reply FK prevents references to another chat; reaction writes are membership-scoped and idempotent. Additive migration20261018190000; no production data/permission changes.27 API tests including real PostgreSQL and9 Web/menu tests pass; final hosted CI/merge pending.
+
+Browser fixture acceptance also passed for right-click, reaction set/remove, keyboard invocation/dismissal/focus, and quoted reply send/display using real UI components and synthetic transport; backend persistence is separately verified against PostgreSQL. Mobile device touch acceptance is not claimed.

@@ -1,4 +1,8 @@
 import {
+  messagingReactionEmojisV1,
+  type MessagingMessageReactionV1,
+} from '@nora/contracts';
+import {
   ForbiddenException,
   Inject,
   Injectable,
@@ -118,6 +122,14 @@ export class MessagingService {
     const conversationId = validate.uuid(id, 'گفت‌وگو');
     const conversation = await this.assertConversation(conversationId, actor);
     const input = validate.message(body);
+    if (
+      input.replyToMessageId &&
+      !(await this.repository.replyTarget(
+        conversationId,
+        input.replyToMessageId,
+      ))
+    )
+      throw new NotFoundException('پیام پاسخ در این گفت‌وگو پیدا نشد.');
     const attachments = await this.documents.assertWorkbenchOwnedAttachments(
       input.attachmentDocumentIds ?? [],
       'MessagingMessage',
@@ -130,6 +142,9 @@ export class MessagingService {
       senderUserId: actor.userId,
       // The database requires a non-empty body, including attachment-only messages.
       body: input.body || 'فایل پیوست',
+      ...(input.replyToMessageId
+        ? { replyToMessageId: input.replyToMessageId }
+        : {}),
       clientRequestId: input.clientRequestId,
       attachments: attachments.map(({ id, title }) => ({
         documentId: id,
@@ -139,6 +154,25 @@ export class MessagingService {
         .map((member) => member.userId)
         .filter((userId) => userId !== actor.userId),
     });
+    return { data: await this.mapMessage(row) };
+  }
+
+  async setReaction(
+    id: string,
+    messageId: string,
+    body: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    const conversationId = validate.uuid(id, 'گفت‌وگو');
+    const targetId = validate.uuid(messageId, 'پیام');
+    await this.assertConversation(conversationId, actor);
+    const input = validate.reaction(body);
+    const row = await this.repository.setReaction(
+      conversationId,
+      targetId,
+      actor.userId,
+      input.emoji,
+    );
     return { data: await this.mapMessage(row) };
   }
 
@@ -246,12 +280,15 @@ export class MessagingService {
       createdAt: Date;
       forwardedFrom: { id: string; senderUserId: string } | null;
       attachments: Array<{ documentId: string; title: string }>;
+      replyTo?: { id: string; body: string; senderUserId: string } | null;
+      reactions?: Array<{ emoji: string; userId: string }>;
     }>,
   ): Promise<MessagingMessageV1[]> {
     const names = await this.descriptions(
       rows.flatMap((row) => [
         row.senderUserId,
         ...(row.forwardedFrom ? [row.forwardedFrom.senderUserId] : []),
+        ...(row.replyTo ? [row.replyTo.senderUserId] : []),
       ]),
     );
     return rows.map((row) => {
@@ -275,6 +312,25 @@ export class MessagingService {
             : null,
         createdAt: row.createdAt.toISOString(),
         attachments: row.attachments,
+        replyTo: row.replyTo
+          ? {
+              id: row.replyTo.id,
+              body: row.replyTo.body.slice(0, 240),
+              sender:
+                names.get(row.replyTo.senderUserId) ??
+                this.fallback(row.replyTo.senderUserId),
+            }
+          : null,
+        reactions: messagingReactionEmojisV1.flatMap(
+          (emoji): MessagingMessageReactionV1[] => {
+            const userIds = (row.reactions ?? [])
+              .filter((reaction) => reaction.emoji === emoji)
+              .map(({ userId }) => userId);
+            return userIds.length
+              ? [{ emoji, count: userIds.length, userIds }]
+              : [];
+          },
+        ),
       };
     });
   }

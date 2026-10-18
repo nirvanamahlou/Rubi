@@ -17410,5 +17410,17 @@
   "وضعیت نامه معتبر نیست.": "The letter status is invalid.",
   "ویرایش نامه داخلی": "Edit internal letter",
   "فیلتر نامه معتبر نیست.": "The letter filter is invalid.",
-  "تاریخ و شماره نامه مطابقت ندارند.": "The letter date and number do not match."
+  "تاریخ و شماره نامه مطابقت ندارند.": "The letter date and number do not match.",
+  "پاسخ به": "Reply to",
+  "پاسخ به پیام": "Reply to message",
+  "پسندیدن": "Like",
+  "پیام پاسخ در این گفت‌وگو پیدا نشد.": "The reply target was not found in this conversation.",
+  "پیام پیدا نشد.": "Message not found.",
+  "ثبت واکنش انجام نشد.": "Unable to save the reaction.",
+  "حذف واکنش": "Remove reaction",
+  "سپاس": "Thanks",
+  "لغو پاسخ": "Cancel reply",
+  "واکنش پیام معتبر نیست.": "Invalid message reaction.",
+  "واکنش و پاسخ به پیام": "Message reactions and reply",
+  "واکنش‌های پیام": "Message reactions"
 }
