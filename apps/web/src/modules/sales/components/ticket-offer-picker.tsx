@@ -15,6 +15,7 @@ import { flightDay } from '../model/exact-flight-dates';
 export function TicketOfferPicker({
   query,
   carrierName,
+  emptyMessage,
   calendarSystem = 'persian',
   prepared,
   exactDay,
@@ -31,6 +32,7 @@ export function TicketOfferPicker({
 }: {
   query: TicketOfferSearchV1;
   carrierName?: string | undefined;
+  emptyMessage?: string | undefined;
   calendarSystem?: 'persian' | 'gregorian';
   prepared?: PreparedTicketSearch | undefined;
   exactDay?: string | undefined;
@@ -105,6 +107,9 @@ export function TicketOfferPicker({
         ابتدا تاریخ بلیط را انتخاب کنید تا پروازهای همان روز نمایش داده شوند.
       </p>
     );
+  const visibleOffers = offers.filter(
+    (offer) => !carrierName || offer.carrierName === carrierName,
+  );
   return (
     <div className="grid gap-3">
       {roundTripOutbound &&
@@ -119,33 +124,29 @@ export function TicketOfferPicker({
         <p>در حال جست‌وجوی بلیط…</p>
       ) : error ? (
         <Alert tone="error" title={error} />
-      ) : !offers.length ? (
-        <p>بلیطی برای این مسیر و تاریخ پیدا نشد.</p>
+      ) : !visibleOffers.length ? (
+        <p>{emptyMessage ?? 'بلیطی برای این مسیر و تاریخ پیدا نشد.'}</p>
       ) : (
-        offers
-          .filter((offer) => !carrierName || offer.carrierName === carrierName)
-          .map((offer) => (
-            <TicketOfferCard
-              key={offer.id}
-              offer={offer}
-              calendarSystem={calendarSystem}
-              selected={selectedId === offer.id}
-              requiredSeats={requiredSeats}
-              requireStandaloneFare={
-                requireStandaloneFare &&
-                !(
-                  acceptAnyRoundTripFare && offer.roundTripSalePrices?.length
-                ) &&
-                !roundTripOutbound?.roundTripSalePrices?.some(
-                  (price) => price.returnOfferId === offer.id,
-                )
-              }
-              {...(roundTripOutbound ? { roundTripOutbound } : {})}
-              onSelect={onSelect}
-              {...(originLabel ? { originLabel } : {})}
-              {...(destinationLabel ? { destinationLabel } : {})}
-            />
-          ))
+        visibleOffers.map((offer) => (
+          <TicketOfferCard
+            key={offer.id}
+            offer={offer}
+            calendarSystem={calendarSystem}
+            selected={selectedId === offer.id}
+            requiredSeats={requiredSeats}
+            requireStandaloneFare={
+              requireStandaloneFare &&
+              !(acceptAnyRoundTripFare && offer.roundTripSalePrices?.length) &&
+              !roundTripOutbound?.roundTripSalePrices?.some(
+                (price) => price.returnOfferId === offer.id,
+              )
+            }
+            {...(roundTripOutbound ? { roundTripOutbound } : {})}
+            onSelect={onSelect}
+            {...(originLabel ? { originLabel } : {})}
+            {...(destinationLabel ? { destinationLabel } : {})}
+          />
+        ))
       )}
       <div className="flex gap-2">
         {page > 1 ? (

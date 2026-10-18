@@ -4888,5 +4888,6 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "بلیت جایگزینی برای این مسیر و تاریخ پیدا نشد؛ بلیت فعلی قرارداد حفظ شده است.": "No replacement ticket was found for this route and date. The contract's current ticket is retained."
 }
