@@ -12,11 +12,13 @@ import { withSalesHotelDates, type SalesFormState } from '../model/sales-form';
 
 export function SalesTourPicker({
   state,
+  refreshRevision = 0,
   countries,
   cities,
   hotels,
   onChange,
 }: {
+  refreshRevision?: number;
   state: SalesFormState;
   countries: readonly MasterDataRecord[];
   cities: readonly MasterDataRecord[];
@@ -34,11 +36,13 @@ export function SalesTourPicker({
     void toursApi
       .departures()
       .then(({ data }) => {
-        if (alive) setRows(data);
+        if (alive) {
+          setRows(data);
+          setError('');
+        }
       })
       .catch((reason: unknown) => {
         if (alive) {
-          setRows([]);
           setError(
             reason instanceof Error ? reason.message : 'دریافت تور ناموفق بود.',
           );
@@ -50,7 +54,7 @@ export function SalesTourPicker({
     return () => {
       alive = false;
     };
-  }, [open]);
+  }, [open, refreshRevision]);
   const options = salesTourOptions(
     rows,
     state.passengerComposition.adults + state.passengerComposition.children,

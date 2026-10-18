@@ -272,10 +272,6 @@ export function PartnerFinancePanel({
         </Button>
       </header>
       <div className="panel-body space-y-4">
-        <p className="boundary-note">
-          جهت اعتبار: طرف همکاری به ما اعتبار می‌دهد. مبالغ از خرید و پرداخت
-          واقعی خوانده می‌شوند؛ مانده دفتر حسابداری یا دریافت مشتری نیستند.
-        </p>
         {sessionError || current?.error ? (
           <p role="alert" className="form-error">
             {sessionError || current?.error}

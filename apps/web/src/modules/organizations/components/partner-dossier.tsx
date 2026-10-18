@@ -17,7 +17,7 @@ import { OrganizationSignatoriesPanel } from './organization-signatories-panel';
 import { OrganizationDocumentsPanel } from './organization-documents-panel';
 import { OrganizationLogo } from './organization-logo';
 import { PartnerFinancePanel } from './partner-finance-panel';
-import { useDossierBranch } from './use-dossier-branch';
+import { DossierBranchProvider, useDossierBranch } from './use-dossier-branch';
 import { agencyClient } from '../api/agency-client';
 import { partnerClient } from '../api/partner-client';
 import { BrokerPurchases } from '@/modules/finance/components/broker-purchases';
@@ -30,7 +30,19 @@ import {
 } from '../model/partner-dossier-loading';
 const emptyContacts: readonly MasterDataRecord[] = [];
 
-export function PartnerDossier({
+export function PartnerDossier(props: {
+  partner: MasterDataRecord;
+  onClose: () => void;
+}) {
+  const session = useDossierBranch();
+  return (
+    <DossierBranchProvider value={session}>
+      <PartnerDossierContent {...props} />
+    </DossierBranchProvider>
+  );
+}
+
+function PartnerDossierContent({
   partner,
   onClose,
 }: {
@@ -213,11 +225,6 @@ export function PartnerDossier({
               ویرایش اطلاعات اصلی{' '}
               {role === 'BROKER' ? 'و لیدرهای کارگزار' : 'تأمین‌کننده'}
             </Button>
-            <p className="boundary-note">
-              اعتبار این پرونده از{' '}
-              {role === 'BROKER' ? 'کارگزار' : 'تأمین‌کننده'} به شرکت ما اعطا
-              می‌شود.
-            </p>
             <OrganizationDocumentsPanel organization={organization} />
             {resource === 'brokers' ? (
               <BrokerPurchases id={partner.id} />

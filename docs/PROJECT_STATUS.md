@@ -1,3 +1,7 @@
+## USER-HR-UNIT-1018 — PC-B
+
+Add optional HR-backed unit selection on new accounts and existing-user details. HR-owned minimal scoped directory, real nullable profile FK/index, atomic creation/details validation and explicit clear/retain semantics; preserve grants, roles, phone/photo and personnel records. Existing records are not backfilled. Protect branch removal and stale writes.98 Web tests, API/HR regression suites, types/lint and Prisma validation plus final-head hosted build/quality/PostgreSQL unit-migration proof gate owner-authorized push/develop merge. No operational DB/runtime mutation. See docs/tasks/USER-HR-UNIT-1018.md.
+
 ## DASHBOARD-MATTE-ICONS-1018 — PC-C — READY_FOR_CI
 
 User selected the matte navy/teal 3D concept for Dashboard KPI cards and chart headings. A transparent24-symbol local atlas and Dashboard-only stable-ID resolver replace broad category/type icons across all84 KPIs and registered charts. Navigation/actions, values, filtering, scopes and permissions remain unchanged. Focused30 tests pass (one existing skip); scoped lint/formatting, Contracts build and the62-route Web production build with TypeScript pass. All four initial-head CI gates passed. Latest develop documentation conflict is reconciled preserving both records. All eight branch/PR checks passed on c45dff61 after repairing one missing Markdown separator. Compatible runtime build/TypeScript pass; authenticated Amin visual checks pass for light/dark, fa/en, desktop and390px mobile, with working KPI/chart details and no horizontal overflow. Web3000 and API4000/4300/4301 are healthy. Final documentation-head CI gates authorized develop merge. No API/schema/migration/dependency changes. See [scope and assets](tasks/DASHBOARD-MATTE-ICONS-1018.md).
@@ -17,6 +21,10 @@ Align only the outer login background seam to the unchanged1.1:1 desktop card di
 ## EXISTING-USER-EDIT-1018 — PC-B — READY_FOR_CI
 
 Add prefilled full-name editing for existing users with separate revision-protected, audited name-only save. Connect existing/new-user role choices to active reusable saved roles and normalized effective/explicit selection; role IDs disambiguate choices and selecting a role changes no account until explicit save. Preserve old grants, shared definitions and all manual-access safeguards.88 Web/access/i18n tests and scoped lint pass; remaining type/API/build exact-head gates required before owner-authorized develop merge. No schema/migration/dependency/real-data/runtime changes. See docs/tasks/EXISTING-USER-EDIT-1018.md.
+
+## PARTNER-DOSSIER-SESSION-LOOP-1018 — PC-B — VALIDATING
+
+Repair remaining nested-session refreshes after PR926 using a single live partner dossier session provider; document queries no longer rotate credentials. Remove requested archive/credit help text without changing Finance semantics. Hook regressions cover25 mounted consumers, owner cleanup and revoked actor/branch/grants. No schema/dependency/API change. Exact-head CI gates explicitly authorized develop merge; authenticated visual QA is still not claimed. See tasks/PARTNER-DOSSIER-SESSION-LOOP-1018.md.
 
 ## LOGIN-SPLIT-BACKGROUND-1018 — PC-A — VALIDATING
 
@@ -6418,3 +6426,8 @@ AGENCY-PASSENGER-COMMISSION-1018 verification:97 focused tests passed (6 shared 
 Employee account selection reads the live public IAM user directory through HR's existing protected form references. All accounts within authorized branch scope are listed; inactive/already-linked accounts expose an additive unavailableReason and remain disabled, while accounts from a different selected company scope stay visible with a reason. The field now explicitly shows the complete directory rather than the shared selector's default first five options. Current employee ownership is exempted for edit; cross-branch and duplicate-account save guards are preserved. Added focused API/actual-form regressions and updated PostgreSQL expectations. No schema/migration/dependency or operational-data changes; validation/CI gate user-authorized push and develop merge. No server rollout.
 
 RESERVATION-ROOM-SETTINGS-1018 follow-up: actual supplier-sheet HTML regression verifies edited room type and child ages; precise multicurrency amendment test verifies edited room totals without double charging. Existing contract sale payment/fee validations remain. Initial CI failure was missing new English display labels and is corrected; local English inventory tests hit host I/O timeout, so exact-head hosted full suite is mandatory. No migration or operational data changes.
+
+## CONTRACT-REFERENCE-REFRESH-1018 — PC-A
+
+Added «دریافت اطلاعات» beside the new-contract heading. It reloads all active paginated reference lists and dependent hotel rates, tickets, tours, insurance, organizations and acquaintance methods without navigation/remounting the draft. Keep current inputs, step and selected snapshots; ignore cancelled responses and retain each last complete list when its refresh fails.26 focused regressions pass, including direct button interaction and cancellation/partial-page failure. Existing permissions/public APIs remain unchanged. Build and exact-head hosted quality/test/migration checks gate the explicitly authorized develop merge. No migration/dependency or operational data/runtime changes.
+
