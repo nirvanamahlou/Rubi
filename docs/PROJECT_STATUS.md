@@ -1,3 +1,7 @@
+## LOGIN-SPLIT-BACKGROUND-1018 — PC-A — VALIDATING
+
+Restore the pre8e70e5d2 login card/form presentation (surface card, blue brand panel, regular field labels, primary submit and normal locale switcher), changing only the outer page to a hard50/50 physical left-blue/right-white background independent of RTL/LTR. No background video or decorative media reintroduced. Authentication, logos, controls and error handling remain unchanged. Focused layout/form/logo tests and exact-head full CI gate explicit user-authorized develop merge and backed-up server rollout. No migration/schema/dependency or business-data change; retain existing server-only encrypted backups and all persistent volumes.
+
 ## RESERVATION-EDIT-TICKET-1014 — PC-A — READY_FOR_REVIEW
 
 Fix misleading no-ticket output while amending existing contract flights: retain saved ticket evidence, initialize both directions from the actual Tehran flight day, and distinguish an empty replacement list from a missing selection. Airline-filtered empty results and genuine search failures remain explicit. Sixteen focused tests, scoped lint, full Web typecheck, formatting, offline English sync and production build (62 routes) pass. Source locks released for review; CI pending. No migration, dependency, runtime or operational-data changes. See [task](tasks/RESERVATION-EDIT-TICKET-1014.md).
