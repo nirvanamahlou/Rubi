@@ -1,16 +1,24 @@
 import { moneyUnits, moneyDecimal } from '@nora/contracts';
 import type { SalesMoney } from '@nora/contracts';
 import type { SalesFormState } from './sales-form';
-export function roomPartyUsage(rooms: SalesFormState['hotel']['rooms']) {
-  const ages = (rooms ?? []).flatMap((r) => r.childAges);
-  return {
-    adults:
-      (rooms ?? []).reduce((n, r) => n + r.adults, 0) +
-      ages.filter((a) => a !== null && a >= 12).length,
-    children: ages.filter((a) => a !== null && a >= 2 && a < 12).length,
-    infants: ages.filter((a) => a !== null && a < 2).length,
-    total: (rooms ?? []).reduce((n, r) => n + r.adults + r.childAges.length, 0),
-  };
+export function roomPartyUsage(
+  rooms: SalesFormState['hotel']['rooms'],
+  assignments?: SalesFormState['hotelChildAssignments'],
+) {
+  const result = { adults: 0, children: 0, infants: 0, total: 0 };
+  for (const room of rooms ?? []) {
+    result.adults += room.adults;
+    result.total += room.adults + room.childAges.length;
+    room.childAges.forEach((age, index) => {
+      const key = assignments?.[String(room.ordinal)]?.[index];
+      if (key?.startsWith('child:')) result.children++;
+      else if (key?.startsWith('infant:')) result.infants++;
+      else if (key === 'adult' || (age !== null && age >= 12)) result.adults++;
+      else if (age !== null && age >= 2) result.children++;
+      else if (age !== null) result.infants++;
+    });
+  }
+  return result;
 }
 export function salesRoomPartyError(state: SalesFormState): string | null {
   if (
@@ -18,7 +26,7 @@ export function salesRoomPartyError(state: SalesFormState): string | null {
     !state.serviceKinds.includes('FLIGHT')
   )
     return null;
-  const used = roomPartyUsage(state.hotel.rooms);
+  const used = roomPartyUsage(state.hotel.rooms, state.hotelChildAssignments);
   const p = state.passengerComposition;
   return used.adults > p.adults ||
     used.children > p.children ||

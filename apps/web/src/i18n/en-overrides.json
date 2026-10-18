@@ -2508,7 +2508,7 @@
   "هتل و ترکیب هر اتاق": "Hotel and room occupancy",
   "انتخاب متقاضیان ویزا": "Select visa applicants",
   "بزرگسال اتاق": "Room adults",
-  "کودک اتاق": "Room children",
+  "کودک اتاق": "Room child",
   "تعداد انتخاب‌شده:": "Selected applicants:",
   "سن متقاضیان کودک ویزا با سن‌های واردشده هماهنگ نیست.": "The selected visa applicants do not match the entered child ages.",
   "افراد متقاضی ویزا را مطابق تعداد بزرگسال و کودک انتخاب کنید.": "Select visa applicants matching the requested adult and child counts.",
@@ -2750,5 +2750,9 @@
   "کمیسیون در ستون هر مسافر نمایش داده می‌شود و از مبلغ کل قرارداد کسر نمی‌شود.": "Commission is shown for each passenger and is not deducted from the contract total.",
   "· مرتبط با کارمند دیگر": " · Linked to another employee",
   "· غیرفعال": " · Inactive",
-  "· خارج از شعبه انتخاب‌شده": " · Outside the selected branch"
+  "· خارج از شعبه انتخاب‌شده": " · Outside the selected branch",
+  "انتخاب کودک از مسافران": "Select a child from the passengers",
+  "کودک هتل با ردهٔ بزرگسال پرواز": "Hotel child with adult flight category",
+  "ابتدا سن کودک را در تعداد مسافران انتخاب کنید.": "Select the child age in the passenger counts first.",
+  "سن کودک هتل": "Hotel child age"
 }
