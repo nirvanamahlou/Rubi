@@ -121,14 +121,10 @@ describe.skipIf(!enabled)(
           ),
         }),
       );
-      // This isolated fixture simulates a successful external antivirus verdict; production scanning is never bypassed.
+      // No antivirus verdict: exercise the owner-approved immediate chat delivery policy.
       const processor = {
-        async processVersion(id: string) {
-          await client.documentVersion.update({
-            where: { id },
-            data: { scanStatus: 'CLEAN' },
-          });
-          return true;
+        async processVersion() {
+          return false;
         },
       };
       const documents = new DocumentsService(
@@ -186,6 +182,9 @@ describe.skipIf(!enabled)(
           })
           .expect(201);
         const id = uploaded.body.data.id;
+        expect(uploaded.body.data.scanStatus).toBe(
+          'AWAITING_ANTIVIRUS_ADAPTER',
+        );
         expect(id).toBeTruthy();
         const sent = await request(http)
           .post(`/messaging/conversations/${chatId}/messages`)

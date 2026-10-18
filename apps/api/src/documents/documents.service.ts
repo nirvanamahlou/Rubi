@@ -744,7 +744,11 @@ export class DocumentsService {
     };
   }
 
-  /** Messaging verifies conversation membership and message linkage before this narrow read. */
+  /**
+   * Messaging verifies conversation membership and message linkage first. The owner
+   * permits delivery without waiting for antivirus; known infected/quarantined
+   * files remain blocked. This exception never changes general archive access.
+   */
   async downloadMessagingAttachment(
     documentId: string,
     branchId: string,
@@ -766,7 +770,12 @@ export class DocumentsService {
       row.archiveStatus === 'ACTIVE' &&
       row.deletedAt === null &&
       !row.requiresStepUpVerification &&
-      row.currentVersion.scanStatus === 'CLEAN';
+      [
+        'CLEAN',
+        'PENDING_SCAN',
+        'AWAITING_ANTIVIRUS_ADAPTER',
+        'SCAN_FAILED',
+      ].includes(row.currentVersion.scanStatus);
     await this.repository.appendAudit({
       documentId: row.id,
       versionId: row.currentVersion.id,
@@ -778,13 +787,7 @@ export class DocumentsService {
       ipSummary: summarizeIp(metadata.ipAddress),
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
-    if (!allowed) {
-      if (row.currentVersion.scanStatus !== 'CLEAN')
-        throw new ConflictException(
-          'فایل تا پایان اسکن امنیتی قابل دریافت نیست.',
-        );
-      throw new ForbiddenException('دریافت این پیوست مجاز نیست.');
-    }
+    if (!allowed) throw new ForbiddenException('دریافت این پیوست مجاز نیست.');
     return {
       stream: await this.storage.openQuarantined(
         row.currentVersion.storageObjectKey,
