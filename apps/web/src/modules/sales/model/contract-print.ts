@@ -1,3 +1,5 @@
+import { roomPriceShares, hotelAgeOn } from '@nora/contracts';
+import { readPassengerFlightPrices } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
 import { currencySymbol } from '@/lib/currency-symbol';
 import {
@@ -157,7 +159,22 @@ export function contractPrintHtml(
   const contractPartyName = c.customerNameSnapshot;
   const hotel = c.hotelSelection;
   // Hotel room product is a Master Data reference, not a passenger bed/age category.
-  const room = hotel ? name(hotel.roomTypeId) : '—';
+  const mixedRoomTypes =
+    !!hotel?.rooms?.length &&
+    new Set(hotel.rooms.map((r) => r.roomTypeId)).size > 1;
+  const room = hotel
+    ? name(hotel.rooms?.[0]?.roomTypeId ?? hotel.roomTypeId)
+    : '—';
+  const flightPrices = readPassengerFlightPrices(c.servicesDetail);
+  const hotelGuestIds = c.passengersDetail
+    .filter(
+      (p) =>
+        p.serviceClientKeys.includes(hotel?.serviceClientKey ?? 'hotel') &&
+        (hotelAgeOn(p.birthDate, hotel?.checkInDate ?? c.departureDate) ?? 0) >=
+          15,
+    )
+    .map((p) => p.customerId);
+  const shares = roomPriceShares(hotel?.rooms ?? [], hotelGuestIds);
   const rows = c.passengersDetail
     .map((p, i) => {
       const ageLabel = {
@@ -169,7 +186,10 @@ export function contractPrintHtml(
         p.serviceClientKeys.includes(s.clientKey),
       );
       const renderPrices = (foreign: boolean) =>
-        (p.agreedPrices ?? [])
+        (foreign
+          ? (shares[p.customerId] ?? [])
+          : (flightPrices?.[p.customerId] ?? [])
+        )
           .filter((price) => (price.currencyCode !== 'IRR') === foreign)
           .map(
             (price) =>
@@ -179,7 +199,7 @@ export function contractPrintHtml(
               '</bdi></div>',
           )
           .join('');
-      return `<tr><td>${i + 1}</td><td>${e(p.displayNameSnapshot)}</td><td>${ageLabel}</td><td>${allocated.some((s) => s.kind === 'VISA') ? 'دارد' : '—'}</td><td class="contract-total">${p.agreedPrices?.length ? renderPrices(false) : 'ثبت نشده'}</td><td>${renderPrices(true)}</td>${agency ? '<td>ثبت نشده</td>' : ''}<td>—</td></tr>`;
+      return `<tr><td>${i + 1}</td><td>${e(p.displayNameSnapshot)}</td><td>${ageLabel}</td><td>${allocated.some((s) => s.kind === 'VISA') ? 'دارد' : '—'}</td><td class="contract-total">${flightPrices?.[p.customerId]?.length ? renderPrices(false) : 'ثبت نشده'}</td><td>${renderPrices(true)}</td>${agency ? '<td>ثبت نشده</td>' : ''}<td>—</td></tr>`;
     })
     .join('');
   const flights = salesContractFlights(c.servicesDetail, c.ticketSelections)
@@ -274,9 +294,9 @@ export function contractPrintHtml(
   ${c.status === 'CANCELLED' ? '<div class="cancelled">این قرارداد لغو شده است</div>' : ''}
   <div class="meta"><div>شماره قرارداد<strong><bdi>${e(c.contractNumber)}</bdi></strong></div><div>تاریخ ثبت<strong>${e(date(c.createdAt))}</strong></div><div>ساعت<strong>${e(time(c.createdAt))}</strong></div><div>مسئول فروش<strong>${e(output.ownerName)}</strong></div></div>
   <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(contractPartyName)}</b></div><div>شماره مشتری: <bdi>${e(output.customer.phone)}</bdi></div><div class="wide">نشانی: ${e(output.customer.address)}</div><div>کد پستی: <bdi>${e(output.customer.postalCode)}</bdi></div><div>مقصد: ${e(name(c.destinationId))}</div><div>تعداد: ${c.passengersDetail.length} نفر</div><div>درخواست‌کننده: ${e(contractPartyName)}</div><div>خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
-<section class="passengers">${heading(2, 'PASSENGERS & PRICING', 'مسافران و قیمت')}<table><colgroup>${passengerColumns}</colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>ویزا</th><th>مبلغ فروش</th><th>ارز</th>${agency ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th></tr></thead><tbody>${rows}</tbody></table><div class="financial-summary"><p class="note">${c.passengersDetail.every((p) => p.agreedPrices?.length) ? 'مبلغ فروش هر مسافر، کل خدمات توافق‌شده همان نفر است.' : 'برای ردیف‌های قدیمی قیمت تفکیکی مسافر ثبت نشده؛ مبلغ حدسی درج نمی‌شود.'}</p><div class="summary-grid"><div class="summary-card"><b>قیمت توافق‌شده قرارداد</b><div class="summary-value">${c.paymentTerms?.mode === 'CHECK' ? moneyRows('amount') : (agreementTotal ?? moneyRows('amount'))}</div></div></div>${chequeTerms}${agency ? '<p class="note">کمیسیون آژانس در این قرارداد ثبت نشده؛ هیچ مبلغی بابت آن از جمع قرارداد کسر نشده است.</p>' : ''}</div></section>
+<section class="passengers">${heading(2, 'PASSENGERS & PRICING', 'مسافران و قیمت')}<table><colgroup>${passengerColumns}</colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>ویزا</th><th>مبلغ پرواز</th><th>سهم ارزی اتاق</th>${agency ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th></tr></thead><tbody>${rows}</tbody></table><div class="financial-summary"><p class="note">مبلغ پرواز هر مسافر جزئی از مبلغ کل قرارداد است.</p><div class="summary-grid"><div class="summary-card"><b>قیمت توافق‌شده قرارداد</b><div class="summary-value">${c.paymentTerms?.mode === 'CHECK' || c.servicesDetail.some((s) => s.metadata?.automaticFlightRoomTotalV1 === true) ? moneyRows('amount') : (agreementTotal ?? moneyRows('amount'))}</div></div></div>${chequeTerms}${agency ? '<p class="note">کمیسیون آژانس در این قرارداد ثبت نشده؛ هیچ مبلغی بابت آن از جمع قرارداد کسر نشده است.</p>' : ''}</div></section>
   <section>${heading(3, 'FLIGHT INFORMATION', 'اطلاعات پرواز')}<table><thead><tr><th>مسیر</th><th>ایرلاین</th><th>شماره</th><th>تاریخ</th><th>ساعت</th><th>کلاس</th></tr></thead><tbody>${flights || '<tr><td colspan="6">پرواز در این قرارداد انتخاب نشده است.</td></tr>'}</tbody></table></section>
-  <section>${heading(4, 'HOTEL INFORMATION', 'اطلاعات هتل')}${hotel ? `<table><thead><tr><th style="width:30%">نام هتل</th><th>درجه</th><th>خدمات</th><th>ورود</th><th>خروج</th><th>نوع اتاق</th></tr></thead><tbody><tr><td><bdi>${e(refs.hotelLatinName ?? 'ثبت نشده')}</bdi><small><bdi>${e(refs.hotelWebsite ?? 'وب‌سایت ثبت نشده')}</bdi></small></td><td>${e(refs.hotelGrade)}</td><td>${e(name(hotel.mealServiceId))}</td><td>${e(date(hotel.checkInDate))}</td><td>${e(date(hotel.checkOutDate))}</td><td>${e(room)}</td></tr></tbody></table><p class="note"><b>اتاق‌های قرارداد: ${e(contractRoomSummary(hotel))}</b></p>${hotel.rooms?.length ? `<table><thead><tr><th>اتاق</th><th>نوع اتاق</th><th>بزرگسال</th><th>سن کودکان</th><th>تعداد نفرات</th><th>مبلغ توافق‌شدهٔ اتاق</th></tr></thead><tbody>${hotel.rooms.map((r) => `<tr><td>${e(r.ordinal)}</td><td>${e(r.roomTypeNameSnapshot)}</td><td>${e(r.adults)}</td><td>${e(r.childAges.join(', ') || '—')}</td><td>${e(r.adults + r.childAges.length)}</td><td>${r.agreedPrice ? e(r.agreedPrice.amount) + ' ' + e(r.agreedPrice.currencyCode) : '—'}</td></tr>`).join('')}</tbody></table>` : ''}` : 'هتل در این قرارداد انتخاب نشده است.'}</section>
+  <section>${heading(4, 'HOTEL INFORMATION', 'اطلاعات هتل')}${hotel ? `<table><thead><tr><th style="width:30%">نام هتل</th><th>درجه</th><th>خدمات</th><th>ورود</th><th>خروج</th>${mixedRoomTypes ? '' : '<th>نوع اتاق</th>'}</tr></thead><tbody><tr><td><bdi>${e(refs.hotelLatinName ?? 'ثبت نشده')}</bdi><small><bdi>${e(refs.hotelWebsite ?? 'وب‌سایت ثبت نشده')}</bdi></small></td><td>${e(refs.hotelGrade)}</td><td>${e(name(hotel.mealServiceId))}</td><td>${e(date(hotel.checkInDate))}</td><td>${e(date(hotel.checkOutDate))}</td>${mixedRoomTypes ? '' : `<td>${e(room)}</td>`}</tr></tbody></table>${hotel.rooms?.length ? `<table><thead><tr><th>اتاق</th><th>نوع اتاق</th><th>بزرگسال</th><th>سن کودکان</th><th>تعداد نفرات</th><th>مبلغ توافق‌شدهٔ اتاق</th></tr></thead><tbody>${hotel.rooms.map((r) => `<tr><td>${e(r.ordinal)}</td><td>${e(r.roomTypeNameSnapshot)}</td><td>${e(r.adults)}</td><td>${e(r.childAges.join(', ') || '—')}</td><td>${e(r.adults + r.childAges.length)}</td><td>${r.agreedPrice ? '<bdi class="money">' + contractMoney(r.agreedPrice.amount) + ' ' + e(currencySymbol(r.agreedPrice.currencyCode)) + '</bdi>' : '—'}</td></tr>`).join('')}</tbody></table>` : ''}` : 'هتل در این قرارداد انتخاب نشده است.'}</section>
   <section>${heading(5, 'OTHER SERVICES', 'سایر خدمات')}<div class="fields"><div>ترانسفر: ${e(transfers || 'ندارد')}</div><div>گشت شهری: ${e(
     c.servicesDetail
       .filter((s) => s.kind === 'TOUR')

@@ -14,9 +14,11 @@ import { type SalesFormState } from '../model/sales-form';
 export function PassengerPackagePrices({
   state,
   currencies = [],
+  flight = false,
   onChange,
 }: {
   state: SalesFormState;
+  flight?: boolean;
   currencies?: readonly SalesCurrency[];
   onChange: (prices: Record<string, SalesMoney[]>) => void;
 }) {
@@ -24,6 +26,7 @@ export function PassengerPackagePrices({
   let invalid = false;
   for (const passenger of state.passengers)
     for (const price of state.passengerPrices?.[passenger.customerId] ?? []) {
+      if (flight && !price.amount.trim()) continue;
       try {
         totals.set(
           price.currencyCode,
@@ -33,7 +36,7 @@ export function PassengerPackagePrices({
         invalid = true;
       }
     }
-  if (state.serviceKinds.includes('INSURANCE'))
+  if (!flight && state.serviceKinds.includes('INSURANCE'))
     for (const passenger of state.passengers) {
       const extra = state.insuranceExtraToman?.[passenger.customerId];
       if (
@@ -70,7 +73,9 @@ export function PassengerPackagePrices({
   };
   return (
     <section className="space-y-3 rounded-xl border p-4">
-      <h3 className="font-bold">قیمت کل خدمات هر مسافر</h3>
+      <h3 className="font-bold">
+        {flight ? 'قیمت پرواز هر مسافر' : 'قیمت کل خدمات هر مسافر'}
+      </h3>
 
       {state.serviceKinds.includes('INSURANCE') &&
         Object.values(state.insuranceExtraToman ?? {}).some(
@@ -150,7 +155,7 @@ export function PassengerPackagePrices({
         </table>
       </div>
       <div className="flex flex-wrap gap-4 border-t pt-3">
-        <strong>جمع قرارداد:</strong>
+        <strong>{flight ? 'جمع قیمت پرواز:' : 'جمع قرارداد:'}</strong>
         {[...totals].map(([code, amount]) => (
           <span key={code}>
             <bdi>

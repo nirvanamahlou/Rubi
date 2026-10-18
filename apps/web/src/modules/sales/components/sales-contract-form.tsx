@@ -1,4 +1,6 @@
 'use client';
+import { PassengerPackagePrices } from './passenger-package-prices';
+import { validatePassengerFlightPrices } from '@nora/contracts';
 import {
   salesRoomPartyError,
   withRoomPriceTotals,
@@ -175,6 +177,7 @@ export function SalesContractForm() {
   const [futureFrom, setFutureFrom] = useState(() => new Date().toISOString());
   const [draftState, setState] = useState<SalesFormState>({
     ...emptySalesForm,
+    automaticComponentPricing: true,
     servicePricing: {},
     priceEntryMode: 'CONTRACT_TOTAL',
   });
@@ -182,10 +185,12 @@ export function SalesContractForm() {
     if (isTicketOnlyContract(draftState))
       return ticketOnlySaleDefaults({
         ...draftState,
+        automaticComponentPricing: true,
         priceEntryMode: 'CONTRACT_TOTAL',
       });
     return {
       ...draftState,
+      automaticComponentPricing: true,
       priceEntryMode: 'CONTRACT_TOTAL',
       servicePricing: draftState.servicePricing ?? {},
       catalogSalePricing:
@@ -697,6 +702,16 @@ export function SalesContractForm() {
         servicePricing: pricedState.servicePricing ?? {},
       });
       validateSalesCurrencySelection(payload, references.currencies);
+      if (
+        state.serviceKinds.includes('FLIGHT') &&
+        state.passengerFlightPrices === undefined
+      )
+        throw Error('قیمت پرواز هر مسافر را وارد کنید.');
+      validatePassengerFlightPrices(
+        payload.services,
+        payload.passengers,
+        payload.priceComponents,
+      );
       validateSalesChequePayments(
         payload.priceComponents,
         payload.payments ?? [],
@@ -2035,6 +2050,20 @@ export function SalesContractForm() {
                 }
                 onChange={(contractPrices) => patchState({ contractPrices })}
               />
+              {state.serviceKinds.includes('FLIGHT') && (
+                <PassengerPackagePrices
+                  flight
+                  state={{
+                    ...state,
+                    passengerPrices: state.passengerFlightPrices ?? {},
+                    insuranceExtraToman: {},
+                  }}
+                  currencies={references.currencies}
+                  onChange={(passengerFlightPrices) =>
+                    patchState({ passengerFlightPrices })
+                  }
+                />
+              )}
               <InsuranceExtraSummary state={state} />
               <SalesChequeCalculator
                 state={pricedState}

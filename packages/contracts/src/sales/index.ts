@@ -508,3 +508,5 @@ export interface SalesContractPartyCorrectionV1 {
 export interface SalesContractAmendmentV1 extends SalesContractUpdateRequest {
   passengerCategories: Readonly<Record<string, SalesPassengerAgeCategory>>;
 }
+
+export * from './passenger-flight-prices';
