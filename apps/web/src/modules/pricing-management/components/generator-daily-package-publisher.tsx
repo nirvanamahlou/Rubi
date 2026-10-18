@@ -102,7 +102,19 @@ export function GeneratorDailyPackagePublisher({
     setPending(null);
   }
   async function publish() {
-    if (!pending || !branchId || !title.trim() || savingRef.current) return;
+    if (savingRef.current) return;
+    if (
+      !pending ||
+      loading ||
+      !branches.some((branch) => branch.id === branchId)
+    ) {
+      setError('یک شعبه مجاز برای ارسال انتخاب کنید.');
+      return;
+    }
+    if (!title.trim() || title.trim().length > 200) {
+      setError('عنوان پکیج باید بین ۱ تا ۲۰۰ نویسه باشد.');
+      return;
+    }
     savingRef.current = true;
     setSaving(true);
     setError('');
@@ -113,12 +125,17 @@ export function GeneratorDailyPackagePublisher({
         file: new File([pending.blob], 'daily-package.pdf', {
           type: 'application/pdf',
         }),
+        signal: AbortSignal.timeout(120_000),
       });
       finish(true);
       setSent(true);
     } catch (reason) {
       setError(
-        reason instanceof Error ? reason.message : 'ارسال پکیج انجام نشد.',
+        reason instanceof Error && reason.name === 'TimeoutError'
+          ? 'پاسخ ارسال دریافت نشد؛ پیش از ارسال دوباره، پکیج‌های روز را بررسی کنید.'
+          : reason instanceof Error
+            ? reason.message
+            : 'ارسال پکیج انجام نشد.',
       );
     } finally {
       savingRef.current = false;
@@ -151,6 +168,7 @@ export function GeneratorDailyPackagePublisher({
           </DialogDescription>
           <form
             className="space-y-4"
+            noValidate
             onSubmit={(event) => {
               event.preventDefault();
               void publish();
@@ -175,6 +193,7 @@ export function GeneratorDailyPackagePublisher({
                 label: branch.name,
               }))}
               required
+              disabled={loading || saving}
             />
             {error && (
               <Alert
@@ -198,10 +217,12 @@ export function GeneratorDailyPackagePublisher({
                 انصراف
               </Button>
               <Button
-                type="submit"
+                type="button"
+                onClick={() => void publish()}
+                loading={saving}
                 disabled={loading || saving || !branchId || !title.trim()}
               >
-                ارسال پکیج
+                {saving ? 'در حال ارسال پکیج…' : 'ارسال پکیج'}
               </Button>
             </div>
           </form>

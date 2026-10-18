@@ -8159,6 +8159,10 @@ COMPUTER_ID=PC-A; codex/pc-a-passenger-hotel-foreign-share-1018 from origin/deve
 
 PASSENGER-HOTEL-FOREIGN-SHARE-1018 validation:28 focused Web/model/print tests pass, including serialized flight metadata without room foreign duplication and shared validator acceptance. Existing print already uses room-only foreign shares and remains unchanged. Scoped source locks RELEASED with candidate; final type/build/CI gates authorized develop merge. No live data or runtime changes.
 
+## DAILY-PACKAGE-SUBMIT-1018 — PC-B — READY_FOR_REVIEW
+
+Reserve generator daily publish bridge and host interaction tests, bounded own docs. Investigate unresponsive submit using existing authorized Workbench/Documents APIs; preserve same-origin/frame and branch access checks. No schema/contracts/dependency/IAM changes. Previous generator/day-package locks released with candidate; no overlapping active writer found. Branch codex/pc-b-daily-package-submit-1018 from origin/develop091f1fd5. No orchestrator or delegated work.
+
 ## HOTEL-ROOM-COEFFICIENT-LAYOUT-1018 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-room-coefficient-layout-1018 from origin/develop091f1fd5. User authorizes compact independent coefficient tables beside each room-type purchase table and develop merge. Reserve Reservations manual-hotel-panel, bounded manual-tables styles and focused render/interaction tests, optional additive labels/catalogues and own docs. Prior hotel-rate display scopes released; no overlapping active target lock found. Each room restores its own existing occupancy metadata; edits must not rewrite other room coefficients or sale adjustments. Preserve base × coefficient exact arithmetic, validation, immutable pack version save and imported-rate guard. No API/schema/dependency/migration/live data/runtime change. Hosted final-head checks gate merge.
