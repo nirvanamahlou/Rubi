@@ -216,3 +216,19 @@ it('allows a versioned reservation-form correction after voucher issuance', () =
   expect(next.voucherSettings?.numbers.singleRooms).toBe(0);
   expect(state.voucherSettings.text.checkIn).toBe('');
 });
+it('preserves modern room composition and rejects invalid child ages', () => {
+  const value = settings();
+  value.rooms = [
+    {
+      ordinal: 1,
+      roomTypeNameSnapshot: 'Family',
+      adults: 2,
+      childAges: [4, 10],
+    },
+  ];
+  const result = validateVoucherSettings(value, ['p']);
+  expect(result.rooms).toEqual(value.rooms);
+  value.rooms[0]!.childAges[0] = 15;
+  expect(result.rooms![0]!.childAges[0]).toBe(4);
+  expect(() => validateVoucherSettings(value, ['p'])).toThrow();
+});
