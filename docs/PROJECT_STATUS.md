@@ -1,3 +1,7 @@
+## DASHBOARD-MATTE-ICONS-1018 — PC-C — VALIDATING
+
+User selected the matte navy/teal 3D concept for Dashboard KPI cards and chart headings. A transparent24-symbol local atlas and Dashboard-only stable-ID resolver replace broad category/type icons across all84 KPIs and registered charts. Navigation/actions, values, filtering, scopes and permissions remain unchanged. Focused30 tests pass (one existing skip); scoped lint passes. Production build, visual verification and exact-head CI are pending. No API/schema/migration/dependency changes. See [scope and assets](tasks/DASHBOARD-MATTE-ICONS-1018.md).
+
 ## USER-ROLE-PICKER-REDESIGN-1018 — PC-B
 
 Remove the manual-access heading and both requested explanations. Redesign existing-user role selection as a themed responsive card with shared searchable saved-role selector, labeled job-title input and explicit disabled/empty states. Reuse existing role-ID draft callbacks and unchanged manual-access save/delegation/CAS logic; no grants/data/API/runtime mutation. Focused tests and exact-head quality/type/test/build gates required before owner-authorized push/develop merge.
