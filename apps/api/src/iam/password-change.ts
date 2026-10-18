@@ -14,7 +14,6 @@ import {
 } from '@nora/database';
 import { hash, verify } from 'argon2';
 import { LOCK_MINUTES, MAX_LOGIN_ATTEMPTS } from './iam.constants';
-import { passwordPolicyErrors } from './password-policy';
 import type { RequestMetadata } from './iam.types';
 
 // Shared order: user row, then session rows. Login/refresh use this same lock so
@@ -40,12 +39,12 @@ export async function changeIamPassword(
     currentPassword.length > 200 ||
     typeof newPassword !== 'string' ||
     newPassword.length > 200 ||
-    passwordPolicyErrors(newPassword).length
+    newPassword.length < 4
   ) {
     throw new BadRequestException({
       code: 'IAM_PASSWORD_POLICY',
       message:
-        'رمز جدید باید ۱۰ تا ۲۰۰ نویسه و شامل حرف بزرگ و کوچک لاتین، عدد و نویسه ویژه باشد.',
+        'رمز جدید باید ۴ تا ۲۰۰ نویسه باشد؛ رمز کاملاً عددی هم پذیرفته می‌شود.',
     });
   }
   if (currentPassword === newPassword)

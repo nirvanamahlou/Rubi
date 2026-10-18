@@ -202,15 +202,14 @@ export function PasswordChange({
                     name="newPassword"
                     label="رمز عبور جدید"
                     autoComplete="new-password"
-                    minLength={10}
+                    minLength={4}
                     describedBy="workbench-password-policy"
                   />
                   <p
                     id="workbench-password-policy"
                     className="text-xs leading-6 text-muted-foreground"
                   >
-                    ۱۰ تا ۲۰۰ نویسه، شامل حرف بزرگ و کوچک لاتین، عدد و نویسهٔ
-                    ویژه.
+                    ۴ تا ۲۰۰ نویسه؛ رمز کاملاً عددی هم پذیرفته می‌شود.
                   </p>
                 </div>
                 <PasswordField

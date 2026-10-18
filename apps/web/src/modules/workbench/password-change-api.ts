@@ -36,15 +36,8 @@ export function passwordChangeError(
 ): string | null {
   if (!current || current.length > 200)
     return 'رمز فعلی را وارد کنید (حداکثر ۲۰۰ نویسه).';
-  if (
-    next.length < 10 ||
-    next.length > 200 ||
-    !/[a-z]/.test(next) ||
-    !/[A-Z]/.test(next) ||
-    !/\d/.test(next) ||
-    !/[^A-Za-z0-9]/.test(next)
-  )
-    return 'رمز جدید باید ۱۰ تا ۲۰۰ نویسه و شامل حرف بزرگ و کوچک لاتین، عدد و نویسه ویژه باشد.';
+  if (next.length < 4 || next.length > 200)
+    return 'رمز جدید باید ۴ تا ۲۰۰ نویسه باشد؛ رمز کاملاً عددی هم پذیرفته می‌شود.';
   if (current === next) return 'رمز جدید باید با رمز فعلی متفاوت باشد.';
   if (next !== confirmation) return 'تکرار رمز جدید با آن یکسان نیست.';
   return null;
