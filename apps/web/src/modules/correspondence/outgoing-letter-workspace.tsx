@@ -42,6 +42,7 @@ export function OutgoingLetterWorkspace({
   const [notice, setNotice] = useState('');
   const [sent, setSent] = useState(false);
   const requestKey = useRef<string | null>(null);
+  const previewRevision = useRef(0);
   const [templateId, setTemplateId] = useState<string>('general');
   const [letterDate, setLetterDate] = useState(
     () =>
@@ -78,10 +79,11 @@ export function OutgoingLetterWorkspace({
   useEffect(() => {
     if (!initialRecord) return;
     let live = true;
+    const revision = previewRevision.current;
     const text = composeLetter(initialRecord.letter);
     void renderLetterPages(initialRecord.letter, text)
       .then((pages) => {
-        if (live) {
+        if (live && revision === previewRevision.current) {
           setBody(text);
           setPreview(pages.map((page) => page.toDataURL('image/png')));
         }
@@ -101,6 +103,7 @@ export function OutgoingLetterWorkspace({
     [files],
   );
   const update = (key: keyof Letter, value: string) => {
+    previewRevision.current += 1;
     setNotice('');
     if (key === 'company') requestKey.current = null;
     setLetter({

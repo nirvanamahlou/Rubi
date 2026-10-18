@@ -1,6 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
-import { beforeAll, afterAll, describe, expect, it } from 'vitest';
+import {
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+  describe,
+  expect,
+  it,
+} from 'vitest';
 import type { DatabaseService } from '../src/database/database.service';
 import { IamCorrespondenceDirectory } from '../src/iam/iam-correspondence-directory';
 import { InternalCorrespondenceService } from '../src/system-management/internal-correspondence';
@@ -8,11 +16,12 @@ import { CorrespondenceNumberingService } from '../src/system-management/corresp
 const url = process.env.CORRESPONDENCE_TEST_DATABASE_URL;
 describe.skipIf(!url)(
   'internal correspondence isolated real PostgreSQL',
+  { timeout: 30000, hookTimeout: 60000 },
   () => {
     let db: DatabaseClient,
       service: InternalCorrespondenceService,
       numbering: CorrespondenceNumberingService;
-    const ids = [randomUUID(), randomUUID(), randomUUID(), randomUUID()];
+    let ids: string[] = [];
     beforeAll(async () => {
       const target = new URL(url!);
       if (
@@ -28,6 +37,9 @@ describe.skipIf(!url)(
         new IamCorrespondenceDirectory(database),
       );
       numbering = new CorrespondenceNumberingService(database);
+    }, 60000);
+    beforeEach(async () => {
+      ids = [randomUUID(), randomUUID(), randomUUID(), randomUUID()];
       for (const [index, id] of ids.entries())
         await db.user.create({
           data: {
@@ -39,12 +51,14 @@ describe.skipIf(!url)(
           },
         });
     }, 60000);
-    afterAll(async () => {
+    afterEach(async () => {
       await db.correspondenceLetter.deleteMany({
         where: { authorId: { in: ids } },
       });
       await db.user.deleteMany({ where: { id: { in: ids } } });
-      await db.$disconnect();
+    }, 60000);
+    afterAll(async () => {
+      await db?.$disconnect();
     }, 60000);
     async function payload() {
       const number = await numbering.issue(
@@ -87,7 +101,8 @@ describe.skipIf(!url)(
       expect((await service.list(ids[1]!, {})).kpis.unread).toBe(0);
     });
     it('supports recipient editing, conflicts, forwarding statuses, filtering and global hard deletion', async () => {
-      const row = (await service.list(ids[1]!, {})).items[0]!;
+      const created = await service.send(ids[0]!, await payload());
+      const row = await service.detail(ids[1]!, created.id);
       const letter = {
         ...(row.letter as object),
         subject: 'Edited by recipient',
