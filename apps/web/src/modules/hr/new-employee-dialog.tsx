@@ -133,7 +133,12 @@ function FieldError({
 
 interface NewEmployeeFormProps {
   userOptions?:
-    | readonly { id: string; label: string; branches: readonly string[] }[]
+    | readonly {
+        id: string;
+        label: string;
+        branches: readonly string[];
+        unavailableReason?: 'INACTIVE' | 'LINKED';
+      }[]
     | undefined;
   userOptionsError?: string | undefined;
   existingPersonnelCodes: readonly string[];
@@ -530,26 +535,37 @@ export function NewEmployeeForm({
           <NativeSearchSelect
             className={styles.control}
             id="hr-employee-user"
+            optionLimit={(userOptions?.length ?? 0) + 2}
             disabled={!userOptions}
             value={value.userId ?? ''}
             onChange={(e) => update('userId', e.target.value)}
           >
             <option value="">بدون حساب کاربری مرتبط</option>
             {value.userId &&
-            !userOptions?.some(
-              (u) => u.id === value.userId && u.branches.includes(value.branch),
-            ) ? (
+            !userOptions?.some((u) => u.id === value.userId) ? (
               <option value={value.userId} disabled>
                 حساب فعلی · {value.userId}
               </option>
             ) : null}
-            {userOptions
-              ?.filter((u) => u.branches.includes(value.branch))
-              .map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.label}
-                </option>
-              ))}
+            {userOptions?.map((u) => (
+              <option
+                key={u.id}
+                value={u.id}
+                disabled={
+                  Boolean(u.unavailableReason) ||
+                  !u.branches.includes(value.branch)
+                }
+              >
+                {u.label}
+                {u.unavailableReason === 'LINKED'
+                  ? ' · مرتبط با کارمند دیگر'
+                  : u.unavailableReason === 'INACTIVE'
+                    ? ' · غیرفعال'
+                    : !u.branches.includes(value.branch)
+                      ? ' · خارج از شعبه انتخاب‌شده'
+                      : ''}
+              </option>
+            ))}
           </NativeSearchSelect>
           {userOptionsError ? (
             <small role="alert">{userOptionsError}</small>

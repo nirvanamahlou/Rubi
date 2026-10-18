@@ -3,19 +3,31 @@
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
+import { UserUnitSelect, type UserUnitOption } from './user-unit-select';
 
 export function UserDetailsEditor({
   user,
   canManage,
   request,
   onSaved,
+  units = [],
+  branchIds = [],
 }: {
-  user: { id: string; displayName: string; detailsRevision: string };
+  user: {
+    id: string;
+    displayName: string;
+    detailsRevision: string;
+    organizationUnitId?: string | null;
+  };
+  units?: UserUnitOption[];
+  branchIds?: string[];
   canManage: boolean;
   request: (path: string, init?: RequestInit) => Promise<unknown>;
   onSaved: () => Promise<void>;
 }) {
   const [name, setName] = useState(user.displayName);
+  const [unitId, setUnitId] = useState(user.organizationUnitId ?? '');
+  const unitChanged = unitId !== (user.organizationUnitId ?? '');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const saving = useRef(false);
@@ -33,10 +45,14 @@ export function UserDetailsEditor({
       await request(`/iam/users/${user.id}/details`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName, revision: user.detailsRevision }),
+        body: JSON.stringify({
+          displayName,
+          revision: user.detailsRevision,
+          ...(unitChanged ? { organizationUnitId: unitId || null } : {}),
+        }),
       });
       await onSaved();
-      setMessage('نام و نام خانوادگی ذخیره شد.');
+      setMessage('مشخصات کاربر ذخیره شد.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'ذخیره انجام نشد.');
     } finally {
@@ -45,7 +61,7 @@ export function UserDetailsEditor({
     }
   }
   return (
-    <section className="grid gap-3" aria-label="ویرایش نام کاربر">
+    <section className="grid gap-3" aria-label="ویرایش مشخصات کاربر">
       <label>
         نام و نام خانوادگی
         <Input
@@ -55,12 +71,23 @@ export function UserDetailsEditor({
           onChange={(event) => setName(event.target.value)}
         />
       </label>
+      <UserUnitSelect
+        value={unitId}
+        units={units}
+        branchIds={branchIds}
+        disabled={!canManage || busy}
+        onChange={setUnitId}
+      />
       <Button
         type="button"
-        disabled={!canManage || busy || name.trim() === user.displayName}
+        disabled={
+          !canManage ||
+          busy ||
+          (name.trim() === user.displayName && !unitChanged)
+        }
         onClick={save}
       >
-        ذخیره نام و نام خانوادگی
+        ذخیره مشخصات کاربر
       </Button>
       {message && <p role="status">{message}</p>}
     </section>

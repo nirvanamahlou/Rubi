@@ -1,5 +1,12 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import type {
   BranchReference,
   IamPermissionCode,
@@ -9,7 +16,17 @@ import { AUTH_SESSION_RECOVERED_EVENT } from '@/lib/auth-session';
 import { agencyClient } from '../api/agency-client';
 import { dossierSessionProjection } from '../model/dossier-session';
 
-export function useDossierBranch() {
+const DossierBranchContext = createContext<DossierBranchSession | null>(null);
+export const DossierBranchProvider = DossierBranchContext.Provider;
+type DossierBranchSession = ReturnType<typeof useLocalDossierBranch>;
+
+export function useDossierBranch(): DossierBranchSession {
+  const shared = useContext(DossierBranchContext);
+  const local = useLocalDossierBranch(Boolean(shared));
+  return shared ?? local;
+}
+
+function useLocalDossierBranch(shared: boolean) {
   const [branches, setBranches] = useState<readonly BranchReference[]>([]);
   const [branchId, setBranchId] = useState('');
   const [permissions, setPermissions] = useState<readonly IamPermissionCode[]>(
@@ -72,6 +89,7 @@ export function useDossierBranch() {
     ++request.current;
   }, []);
   useEffect(() => {
+    if (shared) return;
     const recovered = (event: Event) => {
       const current = invalidate();
       applyUser((event as CustomEvent<LoginResponse>).detail.user, current);
@@ -85,7 +103,7 @@ export function useDossierBranch() {
       window.removeEventListener('focus', reload);
       window.removeEventListener(AUTH_SESSION_RECOVERED_EVENT, recovered);
     };
-  }, [applyUser, cancelPending, invalidate, reload]);
+  }, [applyUser, cancelPending, invalidate, reload, shared]);
   return {
     branches,
     branchId,
