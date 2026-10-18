@@ -219,7 +219,7 @@ export function InternalLetterInbox() {
               setFilters(emptyFilters);
               setLoading(true);
               setError('');
-              setApplied(emptyFilters);
+              setApplied({ ...emptyFilters });
               setPage(1);
             }}
           >
