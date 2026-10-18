@@ -1,3 +1,7 @@
+## LOGIN-SPLIT-BACKGROUND-1018 — PC-A — VALIDATING
+
+Restore the pre8e70e5d2 login card/form presentation (surface card, blue brand panel, regular field labels, primary submit and normal locale switcher), changing only the outer page to a hard50/50 physical left-blue/right-white background independent of RTL/LTR. No background video or decorative media reintroduced. Authentication, logos, controls and error handling remain unchanged. Focused layout/form/logo tests and exact-head full CI gate explicit user-authorized develop merge and backed-up server rollout. No migration/schema/dependency or business-data change; retain existing server-only encrypted backups and all persistent volumes.
+
 ## PARTNER-DOSSIER-READY-1018 — PC-B — READY_FOR_CI
 
 Fix the reproduced code-level child-session-refresh/remount cycle in supplier/broker360; preserve actor/permission/branch invalidation. Remove manual dossier creation, prepare old rows in bounded authorized/audited POST batches and always establish canonical dossiers for new partners and legacy edits. No Finance/schema/migration/dependency change.32 Web and22 API focused tests, Web/API types and scoped lint pass; full gates and deployment pending. Docker Engine returns HTTP500 and both local health routes time out; user authorizes non-destructive Desktop restart. Final rollout evidence belongs on PR926. See docs/tasks/PARTNER-DOSSIER-READY-1018.md.
@@ -6361,5 +6365,9 @@ Dashboard assistant uses the same Lucide outline rendering path as peer pages, w
 ## USER-ROLE-CASCADE-DELETE-1017 — PC-B
 
 Direct owner-requested implementation without Worker Orchestrator: full section selection includes operations and explicit field/resource controls; reusable named role templates populate editable new/existing-user ticks on explicit selection. Existing accounts are not backfilled or altered by template saves. Administrator Delete sits beside activation and enforces current revision, self/last-manager protection, transactional audit/row locks and rejection of all dependent history.155 IAM API tests pass (four existing isolated-DB skips), plus focused section regressions; complete Web/type/lint/final-head CI remain delivery gates. No schema/dependency/operational-data/runtime changes. See docs/tasks/USER-ROLE-CASCADE-DELETE-1017.md.
+
+## USER-ROLE-DELETE-FIX-1018 — PC-B
+
+Replace native browser confirmation's silent no-request path with in-app named confirmation, pending state and inline server errors. Verify actual absence in the server user list before announcing deletion; retain every existing dependency/history/self/last-manager guard. New-role page now lists existing reusable/shared/system roles with assignment counts and template editing. Add revision-protected permanent deletion of only unassigned non-system/non-private definitions, with fresh canonical authority, locks and atomic audit; no account grants changed.171 IAM API tests (four existing opt-in skips),86 Web/access/i18n tests and scoped lint pass. Types/build/full exact-head CI gate the owner-authorized push/develop merge. No schema/dependency/real-data/runtime mutation. Details: docs/tasks/USER-ROLE-DELETE-FIX-1018.md.
 
 PR864-INTEGRATION-1018 — PC-A: user authorizes conflict resolution, testing and develop merge. Preserve saved-flight empty-search behavior together with current calendar selection, all existing fare/seat guards and concurrent develop documentation/translations. No migration/dependency/runtime change. Final-head CI gates merge.

@@ -1,0 +1,4 @@
+.page {
+  /* Physical sides stay fixed when the interface switches between RTL and LTR. */
+  background: linear-gradient(to right, #123f8c 0 50%, #fff 50% 100%);
+}

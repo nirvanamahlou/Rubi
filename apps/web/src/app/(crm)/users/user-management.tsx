@@ -20,7 +20,8 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { AccessGroupCard } from './access-group-card';
 import { ManualAccessEditor } from './manual-access-editor';
 import { sectionAccess } from './section-access';
-import { useUiTranslation } from '@/i18n/locale-context';
+import { IamDeleteDialog, type DeleteTarget } from './iam-delete-dialog';
+import { deleteUserAndReload, deleteRoleAndReload } from './deletion-actions';
 import { permissionInSection, permissionLabel } from './access-permissions';
 import styles from './user-management.module.css';
 
@@ -63,6 +64,17 @@ interface Options {
   assignableScreenIds: string[];
   assignableControlIds: string[];
   canAssignAll: boolean;
+}
+interface RoleDirectoryRow {
+  id: string;
+  name: string;
+  code: string;
+  isActive: boolean;
+  isSystem: boolean;
+  isTemplate: boolean;
+  userCount: number;
+  revision: string;
+  canDelete: boolean;
 }
 const customerFieldLabels: Record<string, string> = {
   kind: 'نوع مشتری',
@@ -180,7 +192,11 @@ function Check({
   );
 }
 export function UserManagement() {
-  const t = useUiTranslation();
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [roleDirectory, setRoleDirectory] = useState<RoleDirectoryRow[]>([]);
+  const [directoryMessage, setDirectoryMessage] = useState('');
+  const [directoryLoading, setDirectoryLoading] = useState(false);
   const [templateMode, setTemplateMode] = useState(false);
   const [templates, setTemplates] = useState<
     UserRow['roles'][number]['role'][]
@@ -295,6 +311,29 @@ export function UserManagement() {
     return () => window.clearTimeout(timer);
   }, [load]);
   const canManage = actor?.permissions.includes('iam.users.manage') ?? false;
+  const loadRoles = useCallback(async () => {
+    setDirectoryLoading(true);
+    setDirectoryMessage('');
+    try {
+      const [rows, definitions] = await Promise.all([
+        request('/iam/access-options/roles'),
+        request('/iam/access-options/templates'),
+      ]);
+      setRoleDirectory(rows);
+      setTemplates(definitions);
+    } catch (error) {
+      setDirectoryMessage(
+        error instanceof Error ? error.message : 'دریافت نقش‌ها انجام نشد.',
+      );
+    } finally {
+      setDirectoryLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    if (!templateMode || !options.canAssignAll) return;
+    const timer = window.setTimeout(() => void loadRoles(), 0);
+    return () => window.clearTimeout(timer);
+  }, [templateMode, options.canAssignAll, loadRoles]);
   const selectedActiveRoles =
     selected?.roles.filter((item) => item.role.isActive) ?? [];
   const editingLegacy = Boolean(
@@ -384,6 +423,7 @@ export function UserManagement() {
           }),
         });
         setTemplates(await request('/iam/access-options/templates'));
+        await loadRoles();
         setMessage('دسترسی نقش ذخیره شد.');
       } catch (error) {
         setMessage(error instanceof Error ? error.message : 'Save failed.');
@@ -478,31 +518,38 @@ export function UserManagement() {
       saving.current = false;
     }
   }
-  async function remove(user: UserRow) {
+  async function confirmDelete() {
     if (saving.current || !canManage || !options.canAssignAll) return;
-    if (
-      !window.confirm(
-        t(
-          'این حساب برای همیشه حذف شود؟ این کار قابل بازگشت نیست. حساب دارای سابقه قابل حذف نیست.',
-        ) +
-          '\n' +
-          user.displayName,
-      )
-    )
-      return;
+    if (!deleteTarget) return;
+    const target = deleteTarget;
     saving.current = true;
     setBusy(true);
+    setDeleteError('');
     try {
-      const snapshot = await request(`/iam/users/${user.id}/manual-access`);
-      await request(`/iam/users/${user.id}`, {
-        method: 'DELETE',
-        headers: { 'If-Match': snapshot.revision },
-      });
-      if (selected?.id === user.id) edit(null);
-      await load();
-      setMessage('کاربر حذف شد.');
+      if (target.kind === 'user') {
+        const rows = await deleteUserAndReload<UserRow>(target.id, request);
+        setUsers(rows);
+        if (selected?.id === target.id) edit(null);
+        setMessage('کاربر حذف شد.');
+      } else {
+        const rows = await deleteRoleAndReload<RoleDirectoryRow>(
+          target.id,
+          target.revision!,
+          request,
+        );
+        setRoleDirectory(rows);
+        setTemplates((current) =>
+          current.filter((role) => role.id !== target.id),
+        );
+        if (templateMode && title === target.name) {
+          edit(null);
+          setTemplateMode(true);
+        }
+        setMessage('نقش برای همیشه حذف شد.');
+      }
+      setDeleteTarget(null);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'حذف انجام نشد.');
+      setDeleteError(error instanceof Error ? error.message : 'حذف انجام نشد.');
     } finally {
       saving.current = false;
       setBusy(false);
@@ -609,7 +656,14 @@ export function UserManagement() {
                       variant="outline"
                       type="button"
                       disabled={busy || user.id === actor?.userId}
-                      onClick={() => void remove(user)}
+                      onClick={() => {
+                        setDeleteError('');
+                        setDeleteTarget({
+                          id: user.id,
+                          name: user.displayName,
+                          kind: 'user',
+                        });
+                      }}
                     >
                       حذف
                     </Button>
@@ -618,6 +672,80 @@ export function UserManagement() {
               ))}
           </aside>
           <div className={styles.editor}>
+            {templateMode && options.canAssignAll && (
+              <section
+                className="mb-5 grid gap-3 rounded-xl border p-4"
+                aria-label="نقش‌های تعریف‌شده"
+              >
+                <h2 className="text-xl font-bold">نقش‌های تعریف‌شده</h2>
+                <p className="text-sm text-muted-foreground">
+                  برای حفظ دسترسی کاربران، نقش سیستمی و نقش متصل به کاربر حذف
+                  نمی‌شود.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy || directoryLoading}
+                  onClick={() => void loadRoles()}
+                >
+                  تازه‌سازی نقش‌ها
+                </Button>
+                {directoryLoading && <p role="status">در حال دریافت نقش‌ها…</p>}
+                {directoryMessage && <p role="alert">{directoryMessage}</p>}
+                {!directoryLoading &&
+                  !directoryMessage &&
+                  !roleDirectory.length && <p>هنوز نقشی تعریف نشده است.</p>}
+                {roleDirectory.map((role) => (
+                  <div
+                    key={role.id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
+                  >
+                    <div>
+                      <strong>{role.name}</strong>
+                      <p className="text-sm text-muted-foreground">
+                        {role.isSystem
+                          ? 'نقش سیستمی'
+                          : role.isTemplate
+                            ? 'الگوی دسترسی'
+                            : 'نقش مشترک'}{' '}
+                        · {role.userCount} کاربر متصل
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {role.isTemplate && role.isActive && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => {
+                            setTitle(role.name);
+                            applyTemplate(role.name);
+                          }}
+                        >
+                          ویرایش تیک‌های نقش
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        disabled={busy || directoryLoading || !role.canDelete}
+                        onClick={() => {
+                          setDeleteError('');
+                          setDeleteTarget({
+                            id: role.id,
+                            name: role.name,
+                            kind: 'role',
+                            revision: role.revision,
+                          });
+                        }}
+                      >
+                        حذف دائمی نقش
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </section>
+            )}
             <form ref={form} onSubmit={save} className="grid gap-4">
               <h2 className={styles.editorTitle}>
                 {selected
@@ -996,6 +1124,18 @@ export function UserManagement() {
           </div>
         </div>
       )}
+      <IamDeleteDialog
+        target={deleteTarget}
+        busy={busy}
+        error={deleteError}
+        onCancel={() => {
+          if (!busy) {
+            setDeleteTarget(null);
+            setDeleteError('');
+          }
+        }}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   );
 }
