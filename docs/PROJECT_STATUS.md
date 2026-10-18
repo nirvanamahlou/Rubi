@@ -1,3 +1,7 @@
+## CONTRACT-HOTEL-COMPACT-1018 — PC-A
+
+New-contract hotel selector and room count share one aligned responsive row. Room count width is bounded (96px on small screens, 144px otherwise); hotel retains remaining space. Existing room composition, child allocation, validation and persistence remain unchanged. No API/schema/migration/dependency change. Targeted checks and exact-head hosted CI gate user-authorized develop merge.
+
 ## USER-HR-UNIT-1018 — PC-B
 
 Add optional HR-backed unit selection on new accounts and existing-user details. HR-owned minimal scoped directory, real nullable profile FK/index, atomic creation/details validation and explicit clear/retain semantics; preserve grants, roles, phone/photo and personnel records. Existing records are not backfilled. Protect branch removal and stale writes.98 Web tests, API/HR regression suites, types/lint and Prisma validation plus final-head hosted build/quality/PostgreSQL unit-migration proof gate owner-authorized push/develop merge. No operational DB/runtime mutation. See docs/tasks/USER-HR-UNIT-1018.md.

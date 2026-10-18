@@ -1,3 +1,7 @@
+## CONTRACT-HOTEL-COMPACT-1018 — PC-A — IN_PROGRESS
+
+Branch codex/pc-a-contract-hotel-compact-1018 from origin/develop. Reserve only Sales service-parties.tsx layout and own coordination notes. User authorizes same-row hotel/count controls and develop merge. Prior related source locks released; no API/schema/dependency/data changes.
+
 ## PARTNER-DOSSIER-SESSION-LOOP-1018 — PC-B — IN_PROGRESS
 
 COMPUTER_ID=PC-B; branch codex/pc-b-partner-dossier-session-loop-1018 from origin/develop@c52e41b3. Reserve Organizations dossier session hook/provider, partner dossier and documents/finance help text plus focused lifecycle regressions. Share one live actor/branch session throughout each partner dossier so mounting child panels cannot rotate credentials and restart ancestors. Preserve permission/actor/branch invalidation and disclosure masking. No schema, Finance calculation, IAM contract or dependency changes. Explicit user authorizes push and develop merge after exact-head CI; no worker-orchestrator.
