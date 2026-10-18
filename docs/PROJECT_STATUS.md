@@ -6,6 +6,10 @@ Add prefilled full-name editing for existing users with separate revision-protec
 
 Restore the pre8e70e5d2 login card/form presentation (surface card, blue brand panel, regular field labels, primary submit and normal locale switcher), changing only the outer page to a hard50/50 physical left-blue/right-white background independent of RTL/LTR. No background video or decorative media reintroduced. Authentication, logos, controls and error handling remain unchanged. Focused layout/form/logo tests and exact-head full CI gate explicit user-authorized develop merge and backed-up server rollout. No migration/schema/dependency or business-data change; retain existing server-only encrypted backups and all persistent volumes.
 
+## PARTNER-DOSSIER-READY-1018 — PC-B — READY_FOR_CI
+
+Fix the reproduced code-level child-session-refresh/remount cycle in supplier/broker360; preserve actor/permission/branch invalidation. Remove manual dossier creation, prepare old rows in bounded authorized/audited POST batches and always establish canonical dossiers for new partners and legacy edits. No Finance/schema/migration/dependency change.32 Web and22 API focused tests, Web/API types and scoped lint pass; full gates and deployment pending. Docker Engine returns HTTP500 and both local health routes time out; user authorizes non-destructive Desktop restart. Final rollout evidence belongs on PR926. See docs/tasks/PARTNER-DOSSIER-READY-1018.md.
+
 ## RESERVATION-EDIT-TICKET-1014 — PC-A — READY_FOR_REVIEW
 
 Fix misleading no-ticket output while amending existing contract flights: retain saved ticket evidence, initialize both directions from the actual Tehran flight day, and distinguish an empty replacement list from a missing selection. Airline-filtered empty results and genuine search failures remain explicit. Sixteen focused tests, scoped lint, full Web typecheck, formatting, offline English sync and production build (62 routes) pass. Source locks released for review; CI pending. No migration, dependency, runtime or operational-data changes. See [task](tasks/RESERVATION-EDIT-TICKET-1014.md).

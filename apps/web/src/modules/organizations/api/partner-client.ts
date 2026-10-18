@@ -43,6 +43,14 @@ async function request<T>(
   return response.json() as Promise<T>;
 }
 export const partnerClient = {
+  prepare(resource: 'suppliers' | 'brokers', branchId: string) {
+    return request<{ prepared: number; remaining: number }>(
+      `/master-data/partner-dossiers/${resource}/prepare`,
+      branchId,
+      undefined,
+      {},
+    );
+  },
   createFinanceRequest(
     organizationId: string,
     role: PartnerRoleV1,
