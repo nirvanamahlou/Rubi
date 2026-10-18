@@ -1,3 +1,4 @@
+'use client';
 import {
   PASSENGER_FLIGHT_PRICES,
   readPassengerFlightPrices,
@@ -5,7 +6,6 @@ import {
   insuranceExtraRials,
   type SalesMoney,
 } from '@nora/contracts';
-('use client');
 import { isOptionalOperationReason } from '@nora/contracts';
 
 import { ReservationPassengers } from '../passenger-files/passengers';
@@ -82,7 +82,6 @@ export function ReservationSalesAmendment({
       'hotels',
       'room-types',
       'meal-services',
-      'currencies',
       'currencies',
     ];
     void Promise.all(
