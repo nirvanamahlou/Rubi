@@ -19,6 +19,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type {
+  PartnerPurchaseSourceV1,
   ReservationArrangementUpdateV1,
   ReservationIntakeV1,
   ReservationServicePurchaseCalculationV1,
@@ -405,6 +406,39 @@ export class ReservationsPublicService {
       },
     };
   }
+  /** Branch-scoped descriptors, including replaced purchases with payment evidence. */
+  async partnerFinanceSources(
+    branchId: string,
+    organizationId: string | null,
+    brokerId: string | null,
+  ) {
+    // Determine current revision before filtering party, including reassignment.
+    const rows = await this.database.client.$queryRaw<
+      PartnerPurchaseSourceV1[]
+    >(Prisma.sql`
+      SELECT p.id, 'RESERVATIONS'::text AS source, p.version AS "sourceVersion",
+        p."serviceTitleSnapshot" AS title, COALESCE(i.snapshot->>'contractNumber','') AS reference,
+        p.amount::text AS amount, p."currencyCode",
+        to_char(p."createdAt" AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "createdAt",
+        NULL::text AS "dueAt",
+        NOT EXISTS (SELECT 1 FROM "ReservationServicePurchase" newer
+          WHERE newer."intakeId"=p."intakeId" AND newer.version>p.version
+            AND (newer."serviceClientKey"=p."serviceClientKey"
+              OR newer."coveredServiceClientKeys" ? p."serviceClientKey"
+              OR p."coveredServiceClientKeys" ? newer."serviceClientKey")) AS current
+      FROM "ReservationServicePurchase" p JOIN "ReservationIntake" i ON i.id=p."intakeId"
+      WHERE i."branchId"=${branchId}::uuid
+        AND (p."supplierOrganizationId"=${organizationId}::uuid
+          OR (${brokerId}::uuid IS NOT NULL AND p."supplierBrokerId"=${brokerId}::uuid))
+      ORDER BY p."createdAt" DESC, p.id DESC LIMIT 10001
+    `);
+    if (rows.length > 10000)
+      throw new ConflictException(
+        'تعداد خریدها نیازمند گزارش صفحه‌بندی‌شده است؛ مانده ناقص نمایش داده نمی‌شود.',
+      );
+    return rows;
+  }
+
   /** Branch-scoped descriptors, including replaced purchases with payment evidence. */
   async financeHistoryPurchases(
     branchIds: readonly string[],

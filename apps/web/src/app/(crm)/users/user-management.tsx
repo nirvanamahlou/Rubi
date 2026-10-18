@@ -4,7 +4,6 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   MANUAL_ACCESS_SECTIONS,
-  manualSectionForPermission,
   manualSectionForScreen,
   USER_ACCESS_SCREENS,
   USER_ACCESS_DENY_CONTROLS,
@@ -20,6 +19,9 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { AccessGroupCard } from './access-group-card';
 import { ManualAccessEditor } from './manual-access-editor';
+import { sectionAccess } from './section-access';
+import { useUiTranslation } from '@/i18n/locale-context';
+import { permissionInSection, permissionLabel } from './access-permissions';
 import styles from './user-management.module.css';
 
 import { RoleAccessProposal } from './role-access-proposal';
@@ -82,6 +84,9 @@ const customerFieldLabels: Record<string, string> = {
   acquaintanceMethodId: 'نحوه آشنایی',
 };
 function accessControlLabel(control: { id: string; title: string }) {
+  if (control.id === 'field.system-settings.integrations.registry')
+    return 'ویرایش برندها، سامانه‌ها و مشخصات سایت';
+  if (control.id === 'system.module.integrations') return control.title;
   if (control.id.startsWith('field.customers.')) {
     const field = control.id.slice('field.customers.'.length);
     return `مشتری · ${customerFieldLabels[field] ?? field}`;
@@ -175,6 +180,7 @@ function Check({
   );
 }
 export function UserManagement() {
+  const t = useUiTranslation();
   const [templateMode, setTemplateMode] = useState(false);
   const [templates, setTemplates] = useState<
     UserRow['roles'][number]['role'][]
@@ -472,6 +478,36 @@ export function UserManagement() {
       saving.current = false;
     }
   }
+  async function remove(user: UserRow) {
+    if (saving.current || !canManage || !options.canAssignAll) return;
+    if (
+      !window.confirm(
+        t(
+          'این حساب برای همیشه حذف شود؟ این کار قابل بازگشت نیست. حساب دارای سابقه قابل حذف نیست.',
+        ) +
+          '\n' +
+          user.displayName,
+      )
+    )
+      return;
+    saving.current = true;
+    setBusy(true);
+    try {
+      const snapshot = await request(`/iam/users/${user.id}/manual-access`);
+      await request(`/iam/users/${user.id}`, {
+        method: 'DELETE',
+        headers: { 'If-Match': snapshot.revision },
+      });
+      if (selected?.id === user.id) edit(null);
+      await load();
+      setMessage('کاربر حذف شد.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'حذف انجام نشد.');
+    } finally {
+      saving.current = false;
+      setBusy(false);
+    }
+  }
   return (
     <div className={styles.workspace}>
       <header className={styles.pageHeader}>
@@ -491,17 +527,6 @@ export function UserManagement() {
       ) : (
         <div className={styles.layout}>
           <aside className={styles.userList}>
-            {options.canAssignAll && (
-              <Button
-                type="button"
-                onClick={() => {
-                  edit(null);
-                  setTemplateMode(true);
-                }}
-              >
-                تنظیم دسترسی نقش‌ها
-              </Button>
-            )}
             <Input
               aria-label="جست‌وجوی کاربران"
               placeholder="نام، نام کاربری یا نقش"
@@ -517,6 +542,18 @@ export function UserManagement() {
                 }}
               >
                 تعریف کاربر جدید
+              </Button>
+            )}
+            {options.canAssignAll && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  edit(null);
+                  setTemplateMode(true);
+                }}
+              >
+                تعریف نقش جدید
               </Button>
             )}
             {users
@@ -564,6 +601,17 @@ export function UserManagement() {
                       onClick={() => void status(user)}
                     >
                       {user.status === 'ACTIVE' ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
+                    </Button>
+                  )}
+                  {canManage && options.canAssignAll && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      type="button"
+                      disabled={busy || user.id === actor?.userId}
+                      onClick={() => void remove(user)}
+                    >
+                      حذف
                     </Button>
                   )}
                 </div>
@@ -616,24 +664,40 @@ export function UserManagement() {
                 )}
                 {!selected && (
                   <label className="grid gap-2">
-                    عنوان شغلی
-                    <NativeSearchSelect
-                      disabled={editingLegacy}
-                      value={title}
-                      optionLimit={USER_JOB_TITLES.length + 1}
-                      onChange={(e) => {
-                        setTitle(e.target.value);
-                        applyTemplate(e.target.value);
-                      }}
-                      className={styles.roleSelect}
-                    >
-                      <option value="">انتخاب نقش</option>
-                      {USER_JOB_TITLES.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </NativeSearchSelect>
+                    {templateMode ? 'نام نقش' : 'انتخاب نقش'}
+                    {templateMode ? (
+                      <Input
+                        required
+                        maxLength={80}
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                      />
+                    ) : (
+                      <NativeSearchSelect
+                        disabled={editingLegacy}
+                        value={title}
+                        optionLimit={
+                          USER_JOB_TITLES.length + templates.length + 1
+                        }
+                        onChange={(e) => {
+                          setTitle(e.target.value);
+                          applyTemplate(e.target.value);
+                        }}
+                        className={styles.roleSelect}
+                      >
+                        <option value="">انتخاب نقش</option>
+                        {[
+                          ...new Set([
+                            ...USER_JOB_TITLES,
+                            ...templates.map((r) => r.name),
+                          ]),
+                        ].map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </NativeSearchSelect>
+                    )}
                   </label>
                 )}
                 {canManage &&
@@ -708,17 +772,36 @@ export function UserManagement() {
                                   .toLocaleLowerCase('fa'),
                               ),
                         );
-                        const permissions = options.permissions.filter(
+                        const permissions = options.permissions.filter((p) =>
+                          permissionInSection(p.code, group.id),
+                        );
+                        const allowedScreens = screens.filter(
+                          (s) =>
+                            options.canAssignAll ||
+                            options.assignableScreenIds.includes(s.id),
+                        );
+                        const section = sectionAccess(group.id, options);
+                        const allControls = USER_ACCESS_DENY_CONTROLS.filter(
+                          (c) => section.allowedControlIds.includes(c.id),
+                        );
+                        const allowedPermissions = permissions.filter(
                           (p) =>
-                            manualSectionForPermission(p.code) === group.id,
+                            options.canAssignAll ||
+                            actor?.permissions.includes(p.code as never),
                         );
-                        const allowedScreens = screens.filter((s) =>
-                          options.assignableScreenIds.includes(s.id),
-                        );
-                        const total = allowedScreens.length;
-                        const count = allowedScreens.filter((s) =>
-                          screenIds.includes(s.id),
-                        ).length;
+                        const total =
+                          allowedScreens.length +
+                          allControls.length +
+                          allowedPermissions.length;
+                        const count =
+                          allControls.filter(
+                            (c) => !deniedControlIds.includes(c.id),
+                          ).length +
+                          allowedPermissions.filter((p) =>
+                            permissionIds.includes(p.id),
+                          ).length +
+                          allowedScreens.filter((s) => screenIds.includes(s.id))
+                            .length;
                         return (
                           <AccessGroupCard
                             key={group.id}
@@ -728,6 +811,13 @@ export function UserManagement() {
                             total={total}
                             onChange={(v) => {
                               if (editingLegacy) return;
+                              setPermissionIds(
+                                change(
+                                  permissionIds,
+                                  allowedPermissions.map((p) => p.id),
+                                  v,
+                                ),
+                              );
                               setScreenIds(
                                 change(
                                   screenIds,
@@ -738,13 +828,7 @@ export function UserManagement() {
                               setDeniedControlIds(
                                 change(
                                   deniedControlIds,
-                                  allowedScreens
-                                    .map((s) => s.id)
-                                    .filter((id) =>
-                                      USER_ACCESS_DENY_CONTROLS.some(
-                                        (c) => c.id === id,
-                                      ),
-                                    ),
+                                  allControls.map((c) => c.id),
                                   !v,
                                 ),
                               );
@@ -830,7 +914,7 @@ export function UserManagement() {
                               {permissions.map((p) => (
                                 <Check
                                   key={p.id}
-                                  label={`${p.name}${inheritedCodes.includes(p.code) ? ' — ارث‌رسیده از نقش' : ''}`}
+                                  label={`${permissionLabel(p, group.id)}${inheritedCodes.includes(p.code) ? ' — ارث‌رسیده از نقش' : ''}`}
                                   checked={permissionIds.includes(p.id)}
                                   disabled={
                                     editingLegacy ||
@@ -863,6 +947,7 @@ export function UserManagement() {
                     controlLabel={accessControlLabel}
                     request={request}
                     onSaved={load}
+                    templates={templates}
                   />
                 )}
                 {proposalOpen && !selected && !editingLegacy && (

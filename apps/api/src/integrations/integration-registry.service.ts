@@ -137,11 +137,18 @@ export class IntegrationRegistryService {
       throw new ConflictException(
         'فهرست هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
       );
-    if (current)
-      retainIntegrationIdentities(
-        validateIntegrationCatalogue(current.value),
-        config,
-      );
+    if (current) {
+      const previous = validateIntegrationCatalogue(current.value);
+      retainIntegrationIdentities(previous, config);
+      // Older v1 consumers do not know setup metadata; omission preserves it.
+      config.systems = config.systems.map((system) => {
+        const prior = previous.systems.find((row) => row.id === system.id);
+        return system.setup === undefined && prior?.setup
+          ? { ...system, setup: prior.setup }
+          : system;
+      });
+      validateIntegrationCatalogue(config);
+    }
     const setting = await this.settings.writeSetting(
       {
         namespace: 'integrations',

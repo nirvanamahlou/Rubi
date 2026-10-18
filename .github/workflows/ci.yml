@@ -5,11 +5,13 @@ on:
     branches:
       - main
       - develop
+      - PC-D-Integration
       - 'codex/pc-*'
   pull_request:
     branches:
       - main
       - develop
+      - PC-D-Integration
       - 'codex/pc-*'
   workflow_dispatch:
 
@@ -224,6 +226,13 @@ jobs:
         run: |
           pnpm --filter @nora/config build
           pnpm --filter @nora/api exec vitest run src/assistant-read/assistant-read.postgres.spec.ts
+
+      - name: Prove partner360 role isolation and manual USD rate persistence
+        env:
+          NORA_RUN_B2B_POSTGRES_TESTS: '1'
+        run: |
+          docker pull postgres:18.1-alpine
+          pnpm --filter @nora/api exec vitest run src/b2b/b2b.postgres.spec.ts --maxWorkers=1
 
   build:
     name: Full production build

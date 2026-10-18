@@ -13,25 +13,19 @@ describe('login background', () => {
     path.resolve(__dirname, 'login-background-story.module.css'),
     'utf8',
   );
-  const asset = path.resolve(
-    __dirname,
-    '../../../public/brand/login-airline-b2.png',
-  );
 
-  it('keeps the selected B2 aviation image as a fixed page background', () => {
-    expect(source).toContain("src: '/brand/login-noora.mp4?v=engine-vapor-2'");
-    expect(source).toContain(
-      "poster: '/brand/login-noora-poster.png?v=engine-vapor-2'",
-    );
-    expect(backgroundStyles).toContain(
-      "background-image: url('/brand/login-airline-b2.png')",
-    );
-    expect(backgroundStyles).toContain('background-size: cover');
-    expect(backgroundStyles).toContain('inset: -3%');
-    expect(backgroundStyles).not.toContain('@keyframes');
-    expect(backgroundStyles).not.toContain('animation:');
-    expect(fs.existsSync(asset)).toBe(true);
-    expect(fs.statSync(asset).size).toBeGreaterThan(100_000);
+  it('uses a white page canvas without mounting decorative media', () => {
+    expect(source).toContain('bg-white');
+    expect(source).not.toContain('LoginBackgroundStory');
+    expect(source).not.toContain('bg-sky-100');
+  });
+
+  it('uses the same continuous blue brand background behind both login panels', () => {
+    expect(source).toContain('bg-[linear-gradient(145deg,#123f8c,#092354)]');
+    expect(source).toContain('<LanguageSwitcher tone="inverse" />');
+    expect(
+      fs.readFileSync(path.resolve(__dirname, 'login-form.tsx'), 'utf8'),
+    ).toContain('bg-white text-blue-950 hover:bg-blue-50');
   });
 
   it('does not render the NOORA cloud or decorative wind layers', () => {

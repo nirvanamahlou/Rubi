@@ -1162,6 +1162,7 @@ model MasterCurrency {
   englishName                          String?                     @db.VarChar(160)
   symbol                               String?                     @db.VarChar(16)
   decimalDigits                        Int                         @default(2)
+  unitsPerUsd                          Decimal?                    @db.Decimal(24, 10)
   displayPolicy                        MasterCurrencyDisplayPolicy @default(CODE_AFTER)
   displayOrder                         Int                         @default(0)
   isActive                             Boolean                     @default(true)
@@ -1297,6 +1298,7 @@ model MasterPaymentMethod {
 }
 
 model MasterOrganization {
+  partnerFinanceRequests      FinanceOperationalRequest[]
   marketingPromotions         MarketingAsset[]             @relation("MarketingPromotionAgency")
   b2bOrganizationUsers        B2bOrganizationUser[]
   hotelGroupRates             ReservationHotelGroupRate[]
@@ -1339,11 +1341,12 @@ model MasterOrganization {
 }
 
 model MasterOrganizationRole {
-  organizationId   String                     @db.Uuid
-  roleCode         MasterOrganizationRoleCode
-  assignedAt       DateTime                   @default(now()) @db.Timestamptz(3)
-  assignedByUserId String                     @db.Uuid
-  organization     MasterOrganization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  partnerFinanceRequests FinanceOperationalRequest[]
+  organizationId         String                      @db.Uuid
+  roleCode               MasterOrganizationRoleCode
+  assignedAt             DateTime                    @default(now()) @db.Timestamptz(3)
+  assignedByUserId       String                      @db.Uuid
+  organization           MasterOrganization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   @@id([organizationId, roleCode])
   @@index([roleCode])
@@ -4598,38 +4601,43 @@ model FinanceSettlementAccount {
 }
 
 model FinanceOperationalRequest {
-  id                String                       @id @db.Uuid
-  branchId          String                       @db.Uuid
-  requesterId       String                       @db.Uuid
-  kind              String                       @db.VarChar(24)
-  title             String                       @db.VarChar(200)
-  party             String                       @db.VarChar(200)
-  description       String                       @db.VarChar(2000)
-  reference         String                       @db.VarChar(160)
-  amount            Decimal                      @db.Decimal(24, 4)
-  currencyCode      String                       @db.VarChar(3)
-  dueAt             DateTime                     @db.Timestamptz(3)
-  status            String                       @default("NEW") @db.VarChar(24)
-  version           Int                          @default(1)
-  createFingerprint String                       @db.VarChar(64)
-  hrRecordId        String?                      @unique @db.Uuid
-  payrollEmployeeId String?                      @db.Uuid
-  payrollPeriod     String?                      @db.VarChar(20)
-  sourceVersion     Int?
-  refundReceiptId   String?                      @db.Uuid
-  documentId        String?                      @db.Uuid
-  createdAt         DateTime                     @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime                     @updatedAt @db.Timestamptz(3)
-  branch            Branch                       @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  requester         User                         @relation("FinanceRequestCreator", fields: [requesterId], references: [id], onDelete: Restrict)
-  payroll           HrRecord?                    @relation(fields: [hrRecordId], references: [id], onDelete: Restrict)
-  payrollEmployee   HrEmployee?                  @relation(fields: [payrollEmployeeId], references: [id], onDelete: Restrict)
-  refundReceipt     SalesContractPaymentEntry?   @relation(fields: [refundReceiptId], references: [id], onDelete: Restrict)
-  document          Document?                    @relation(fields: [documentId], references: [id], onDelete: Restrict)
-  revisions         FinanceOperationalRevision[]
-  reminders         FinanceReminderDelivery[]
+  counterpartyOrganizationId String?                      @db.Uuid
+  counterpartyRole           MasterOrganizationRoleCode?
+  counterpartyOrganization   MasterOrganization?          @relation(fields: [counterpartyOrganizationId], references: [id], onDelete: Restrict, map: "finance_partner_request_organization_fk")
+  counterpartyMembership     MasterOrganizationRole?      @relation(fields: [counterpartyOrganizationId, counterpartyRole], references: [organizationId, roleCode], onDelete: Restrict, map: "finance_partner_request_role_fk")
+  id                         String                       @id @db.Uuid
+  branchId                   String                       @db.Uuid
+  requesterId                String                       @db.Uuid
+  kind                       String                       @db.VarChar(24)
+  title                      String                       @db.VarChar(200)
+  party                      String                       @db.VarChar(200)
+  description                String                       @db.VarChar(2000)
+  reference                  String                       @db.VarChar(160)
+  amount                     Decimal                      @db.Decimal(24, 4)
+  currencyCode               String                       @db.VarChar(3)
+  dueAt                      DateTime                     @db.Timestamptz(3)
+  status                     String                       @default("NEW") @db.VarChar(24)
+  version                    Int                          @default(1)
+  createFingerprint          String                       @db.VarChar(64)
+  hrRecordId                 String?                      @unique @db.Uuid
+  payrollEmployeeId          String?                      @db.Uuid
+  payrollPeriod              String?                      @db.VarChar(20)
+  sourceVersion              Int?
+  refundReceiptId            String?                      @db.Uuid
+  documentId                 String?                      @db.Uuid
+  createdAt                  DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt                  DateTime                     @updatedAt @db.Timestamptz(3)
+  branch                     Branch                       @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  requester                  User                         @relation("FinanceRequestCreator", fields: [requesterId], references: [id], onDelete: Restrict)
+  payroll                    HrRecord?                    @relation(fields: [hrRecordId], references: [id], onDelete: Restrict)
+  payrollEmployee            HrEmployee?                  @relation(fields: [payrollEmployeeId], references: [id], onDelete: Restrict)
+  refundReceipt              SalesContractPaymentEntry?   @relation(fields: [refundReceiptId], references: [id], onDelete: Restrict)
+  document                   Document?                    @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  revisions                  FinanceOperationalRevision[]
+  reminders                  FinanceReminderDelivery[]
 
   @@unique([payrollEmployeeId, payrollPeriod])
+  @@index([counterpartyOrganizationId, counterpartyRole, branchId, dueAt], map: "finance_partner_request_lookup")
   @@index([branchId, status, dueAt])
   @@index([refundReceiptId, status])
   @@map("finance_operational_requests")

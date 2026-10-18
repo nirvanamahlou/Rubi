@@ -230,3 +230,45 @@ it('does not block hotel details while the date rate request is still pending', 
     fixture.ticketDraft = null;
   }
 });
+it('allows the next passenger step with a valid flight service despite stale hotel draft fields', () => {
+  fixture.step = 2;
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    customerId: 'person',
+    departureDate: '2099-10-01',
+    serviceKinds: ['FLIGHT'],
+    passengers: [
+      {
+        customerId: 'person',
+        displayName: 'Synthetic',
+        birthDate: '1990-01-01',
+      },
+    ],
+    hotel: {
+      ...emptySalesForm.hotel,
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: 'old',
+          roomTypeNameSnapshot: 'Old',
+          adults: 1,
+          childAges: [null],
+        },
+      ],
+    },
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    expect(html).not.toContain(
+      'هر مسافر باید حداقل یک خدمت انتخاب‌شده داشته باشد.',
+    );
+    const next = html.match(
+      /<button\b[^>]*>(?:(?!<\/button>)[\s\S])*?بعدی(?:(?!<\/button>)[\s\S])*?<\/button>/,
+    )?.[0];
+    expect(next).toBeDefined();
+    expect(next).not.toMatch(/\sdisabled(?:=|>|\s)/);
+  } finally {
+    fixture.step = 0;
+    fixture.ticketDraft = null;
+  }
+});
