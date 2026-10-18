@@ -13,13 +13,11 @@ describe('profile photo save request', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('sends a daily package as multipart with its title, branch and cancellation signal', async () => {
-    const fetchImpl = vi
-      .fn()
-      .mockResolvedValue({
-        ok: true,
-        status: 201,
-        text: async () => JSON.stringify({ data: { id: 'saved' } }),
-      });
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      text: async () => JSON.stringify({ data: { id: 'saved' } }),
+    });
     vi.stubGlobal('fetch', fetchImpl);
     const file = new File(['%PDF-1.4'], 'daily-package.pdf', {
       type: 'application/pdf',
