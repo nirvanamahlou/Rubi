@@ -6415,3 +6415,8 @@ AGENCY-PASSENGER-COMMISSION-1018 verification:97 focused tests passed (6 shared 
 
 
 RESERVATION-ROOM-SETTINGS-1018 follow-up: actual supplier-sheet HTML regression verifies edited room type and child ages; precise multicurrency amendment test verifies edited room totals without double charging. Existing contract sale payment/fee validations remain. Initial CI failure was missing new English display labels and is corrected; local English inventory tests hit host I/O timeout, so exact-head hosted full suite is mandatory. No migration or operational data changes.
+
+## CONTRACT-REFERENCE-REFRESH-1018 — PC-A
+
+Added «دریافت اطلاعات» beside the new-contract heading. It reloads all active paginated reference lists and dependent hotel rates, tickets, tours, insurance, organizations and acquaintance methods without navigation/remounting the draft. Keep current inputs, step and selected snapshots; ignore cancelled responses and retain each last complete list when its refresh fails.26 focused regressions pass, including direct button interaction and cancellation/partial-page failure. Existing permissions/public APIs remain unchanged. Build and exact-head hosted quality/test/migration checks gate the explicitly authorized develop merge. No migration/dependency or operational data/runtime changes.
+
