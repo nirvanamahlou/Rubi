@@ -32,10 +32,15 @@ describe('authenticated floating assistant', () => {
     const html = renderToStaticMarkup(<FloatingAssistant />);
     expect(html).toContain(c.widgetOpen[0]);
     expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain(c.widgetMoveHint[0]);
+    expect(html).toContain('aria-describedby=');
     expect(html).not.toContain('role="dialog"');
     state.language = 'en';
     expect(renderToStaticMarkup(<FloatingAssistant />)).toContain(
       c.widgetOpen[1],
+    );
+    expect(renderToStaticMarkup(<FloatingAssistant />)).toContain(
+      c.widgetMoveHint[1],
     );
   });
   it('preserves chat through token refresh and ordering changes, but isolates identity and access changes', () => {
