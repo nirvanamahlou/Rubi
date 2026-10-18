@@ -125,7 +125,11 @@ describe('compact sales contract form', () => {
       fixture.ticketDraft = null;
     }
     expect(html).toContain('مبلغ کل قرارداد');
-    expect(html).toContain('افزودن مبلغ با ارز دیگر');
+    expect(html).toContain('جمع خودکار قرارداد');
+    expect(html).toContain('قیمت پرواز هر مسافر');
+    expect(html).toContain('قیمت ریالی Sample');
+    expect(html).toContain('قیمت ارزی Sample');
+    expect(html).not.toContain('افزودن مبلغ با ارز دیگر');
     expect(html).not.toContain('قیمت روز فروش بلیط');
     expect(html).not.toContain('مبلغ توافق‌شده با مشتری بلیط');
   });

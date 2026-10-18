@@ -1,3 +1,10 @@
+import {
+  readAgencyCommission,
+  AGENCY_COMMISSION,
+  type AgencyCommissionV1,
+} from '@nora/contracts';
+import { flightRoomTotals } from '@nora/contracts';
+import { PASSENGER_FLIGHT_PRICES } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
 import { salesRoomPartyError, roomAgreedTotals } from './sales-room-prices';
 import type { SalesHotelRoomV1 } from '@nora/contracts';
@@ -184,6 +191,9 @@ export interface SalesFormState {
   paymentTerms?: SalesPaymentTerms | null;
   reservationNote?: string;
   passengerPrices?: Record<string, SalesMoney[]>;
+  agencyCommission?: AgencyCommissionV1;
+  passengerFlightPrices?: Record<string, SalesMoney[]>;
+  automaticComponentPricing?: boolean;
   passengerAccommodations?: Record<string, SalesAccommodationKind>;
 }
 
@@ -199,7 +209,26 @@ export function contractSaleComponents(
   state: SalesFormState,
   extras: readonly { customerId: string }[] = [],
 ): SalesPriceComponentInput[] {
-  const prices = state.contractPrices ?? [];
+  const automatic =
+    state.automaticComponentPricing &&
+    state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'HOTEL');
+  if (
+    automatic &&
+    state.serviceKinds.includes('HOTEL') &&
+    state.hotel.rooms?.some((r) => !r.agreedPrice?.amount.trim())
+  )
+    throw Error('قیمت هر اتاق را وارد کنید.');
+  const prices = automatic
+    ? flightRoomTotals(
+        Object.fromEntries(
+          state.passengers.map((p) => [
+            p.customerId,
+            state.passengerFlightPrices?.[p.customerId] ?? [],
+          ]),
+        ),
+        state.serviceKinds.includes('HOTEL') ? (state.hotel.rooms ?? []) : [],
+      )
+    : (state.contractPrices ?? []);
   if (!prices.length) throw new Error('مبلغ کل قرارداد را وارد کنید.');
   const totals = new Map<string, bigint>();
   for (const price of prices) {
@@ -1153,6 +1182,45 @@ export function salesPayload(
           };
       }
     }
+  if (
+    state.customerKind === 'organization' &&
+    state.agencyCommission &&
+    (state.agencyCommission.adult.trim() ||
+      state.agencyCommission.child.trim()) &&
+    services[0]
+  ) {
+    services[0].metadata = {
+      ...services[0].metadata,
+      [AGENCY_COMMISSION]: JSON.stringify({
+        adult: state.agencyCommission.adult.trim() || '0',
+        child: state.agencyCommission.child.trim() || '0',
+      }),
+    };
+  }
+  readAgencyCommission(services);
+  const flightPriceService = services.find((s) => s.kind === 'FLIGHT');
+  if (flightPriceService && state.passengerFlightPrices !== undefined)
+    flightPriceService.metadata = {
+      ...flightPriceService.metadata,
+      [PASSENGER_FLIGHT_PRICES]: JSON.stringify(
+        Object.fromEntries(
+          state.passengers.map((p) => [
+            p.customerId,
+            (state.passengerFlightPrices?.[p.customerId] ?? []).filter(
+              (price) => price.amount.trim() !== '',
+            ),
+          ]),
+        ),
+      ),
+    };
+  if (
+    state.automaticComponentPricing &&
+    services.some((s) => s.kind === 'FLIGHT' || s.kind === 'HOTEL')
+  )
+    services[0]!.metadata = {
+      ...services[0]!.metadata,
+      automaticFlightRoomTotalV1: true,
+    };
   const extras = state.serviceKinds.includes('INSURANCE')
     ? state.passengers.filter(
         (p) =>
