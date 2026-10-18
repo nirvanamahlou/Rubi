@@ -14,6 +14,7 @@ import { flightDay } from '../model/exact-flight-dates';
 
 export function TicketOfferPicker({
   query,
+  refreshRevision = 0,
   carrierName,
   emptyMessage,
   calendarSystem = 'persian',
@@ -30,6 +31,7 @@ export function TicketOfferPicker({
   roundTripOutbound,
   acceptAnyRoundTripFare = false,
 }: {
+  refreshRevision?: number;
   query: TicketOfferSearchV1;
   carrierName?: string | undefined;
   emptyMessage?: string | undefined;
@@ -68,12 +70,13 @@ export function TicketOfferPicker({
         page,
       } as TicketOfferSearchV1;
       void (async () => {
-        const result = await (readyTicketSearch(searchQuery, prepared)?.catch(
-          () => {
-            controller.signal.throwIfAborted();
-            return searchTickets(searchQuery, controller.signal);
-          },
-        ) ?? searchTickets(searchQuery, controller.signal));
+        const result = await ((refreshRevision === 0
+          ? readyTicketSearch(searchQuery, prepared)
+          : undefined
+        )?.catch(() => {
+          controller.signal.throwIfAborted();
+          return searchTickets(searchQuery, controller.signal);
+        }) ?? searchTickets(searchQuery, controller.signal));
         if (controller.signal.aborted) return;
         setOffers(
           result.data.filter(
@@ -100,7 +103,15 @@ export function TicketOfferPicker({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [filters, page, enabled, prepared, exactDay, allowedOfferIds]);
+  }, [
+    filters,
+    page,
+    enabled,
+    prepared,
+    exactDay,
+    allowedOfferIds,
+    refreshRevision,
+  ]);
   if (!enabled)
     return (
       <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
