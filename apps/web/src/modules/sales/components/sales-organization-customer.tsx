@@ -62,11 +62,13 @@ export async function resolveOrganizationCustomer(
 
 export function SalesOrganizationCustomer({
   onSelected,
+  refreshRevision = 0,
   onBusyChange,
   disabled = false,
   selectedOrganizationId = '',
   onClear,
 }: {
+  refreshRevision?: number;
   selectedOrganizationId?: string;
   onClear?: () => void;
   disabled?: boolean;
@@ -123,7 +125,7 @@ export function SalesOrganizationCustomer({
       active = false;
       clearTimeout(timer);
     };
-  }, [retry]);
+  }, [retry, refreshRevision]);
   const select = async () => {
     if (inFlight.current || disabled) return;
     const organization = organizations.find(

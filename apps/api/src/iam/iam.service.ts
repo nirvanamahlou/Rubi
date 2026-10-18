@@ -1,4 +1,6 @@
 import { isOptionalOperationReason } from '@nora/contracts';
+import { HrUserUnitDirectory } from '../hr/hr-user-unit-directory';
+import type { Prisma } from '@nora/database';
 import { userDetailsRevision } from './user-details';
 import type { UpdateUserDetailsDto } from './dto/update-user-details.dto';
 import { roleOptionSelection } from './role-access-option';
@@ -38,6 +40,7 @@ import {
   HttpStatus,
   Inject,
   Injectable,
+  Optional,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -97,6 +100,11 @@ export class IamService implements IamStepUpPort {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(JwtService) private readonly jwt: JwtService,
     @Inject(MfaTotpService) private readonly mfaTotp: MfaTotpService,
+    @Optional()
+    @Inject(HrUserUnitDirectory)
+    private readonly units: HrUserUnitDirectory = new HrUserUnitDirectory(
+      database,
+    ),
   ) {}
 
   async login(
@@ -482,6 +490,7 @@ export class IamService implements IamStepUpPort {
         status: true,
         lastLoginAt: true,
         updatedAt: true,
+        profile: { select: { organizationUnitId: true } },
         roles: {
           select: {
             role: {
@@ -506,6 +515,7 @@ export class IamService implements IamStepUpPort {
       ...user,
       accessRevision: this.accessRevision(user),
       detailsRevision: userDetailsRevision(user),
+      organizationUnitId: user.profile?.organizationUnitId ?? null,
     }));
   }
 
@@ -1154,6 +1164,8 @@ export class IamService implements IamStepUpPort {
             username: true,
             displayName: true,
             updatedAt: true,
+            profile: { select: { organizationUnitId: true } },
+            branches: { select: { branchId: true } },
           },
         });
         if (!target) throw new NotFoundException('کاربر پیدا نشد.');
@@ -1161,8 +1173,33 @@ export class IamService implements IamStepUpPort {
           throw new ConflictException(
             'اطلاعات کاربر تغییر کرده است؛ دوباره بارگذاری کنید.',
           );
-        if (target.displayName === displayName)
+        const oldUnitId = target.profile?.organizationUnitId ?? null;
+        const unitChanged =
+          dto.organizationUnitId !== undefined &&
+          dto.organizationUnitId !== oldUnitId;
+        if (unitChanged && dto.organizationUnitId) {
+          await this.units.assertAssignable(
+            tx,
+            dto.organizationUnitId,
+            {
+              ...actor,
+              permissions: authenticatedPermissionCodes(operator.roles),
+              branchIds: operator.branches.map((branch) => branch.branchId),
+            },
+            target.branches.map((branch) => branch.branchId),
+          );
+        }
+        if (target.displayName === displayName && !unitChanged)
           return { ...target, detailsRevision: userDetailsRevision(target) };
+        if (unitChanged)
+          await tx.iamUserProfile.upsert({
+            where: { userId },
+            create: {
+              userId,
+              organizationUnitId: dto.organizationUnitId ?? null,
+            },
+            update: { organizationUnitId: dto.organizationUnitId ?? null },
+          });
         const updated = await tx.user.update({
           where: { id: userId },
           data: { displayName },
@@ -1171,6 +1208,7 @@ export class IamService implements IamStepUpPort {
             username: true,
             displayName: true,
             updatedAt: true,
+            profile: { select: { organizationUnitId: true } },
           },
         });
         await tx.auditEvent.create({
@@ -1182,7 +1220,11 @@ export class IamService implements IamStepUpPort {
             outcome: AuditOutcome.SUCCESS,
           },
         });
-        return { ...updated, detailsRevision: userDetailsRevision(updated) };
+        return {
+          ...updated,
+          organizationUnitId: updated.profile?.organizationUnitId ?? null,
+          detailsRevision: userDetailsRevision(updated),
+        };
       },
       { timeout: 30_000 },
     );
@@ -1537,12 +1579,32 @@ export class IamService implements IamStepUpPort {
       parallelism: 1,
     });
     const managedUserId = randomUUID();
-    const create = async (
-      transaction: Pick<
-        DatabaseService['client'],
-        'user' | 'permission' | 'role' | 'rolePermission' | 'userRole'
-      >,
-    ) => {
+    const create = async (transaction: Prisma.TransactionClient) => {
+      if (dto.organizationUnitId) {
+        await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))::text`;
+        await transaction.$queryRaw`SELECT id FROM iam_users WHERE id = ${actor.userId}::uuid FOR UPDATE`;
+        const operator = await transaction.user.findUnique({
+          where: { id: actor.userId },
+          include: manualUserInclude,
+        });
+        if (
+          operator?.status !== UserStatus.ACTIVE ||
+          !authenticatedPermissionCodes(operator.roles).includes(
+            'iam.users.manage',
+          )
+        )
+          throw new ForbiddenException();
+        await this.units.assertAssignable(
+          transaction,
+          dto.organizationUnitId,
+          {
+            ...actor,
+            permissions: authenticatedPermissionCodes(operator.roles),
+            branchIds: operator.branches.map((branch) => branch.branchId),
+          },
+          dto.branchIds,
+        );
+      }
       const assignedRoleIds = dto.manualAccessV3
         ? []
         : profile
@@ -1565,6 +1627,13 @@ export class IamService implements IamStepUpPort {
           email,
           displayName: dto.displayName.trim(),
           passwordHash,
+          ...(dto.organizationUnitId
+            ? {
+                profile: {
+                  create: { organizationUnitId: dto.organizationUnitId },
+                },
+              }
+            : {}),
           roles: { create: assignedRoleIds.map((roleId) => ({ roleId })) },
           branches: {
             create: dto.branchIds.map((branchId, index) => ({
@@ -1596,9 +1665,10 @@ export class IamService implements IamStepUpPort {
       }
       return created;
     };
-    const user = profile
-      ? await this.database.client.$transaction(create, { timeout: 60000 })
-      : await create(this.database.client);
+    const user =
+      profile || dto.organizationUnitId
+        ? await this.database.client.$transaction(create, { timeout: 60000 })
+        : await create(this.database.client);
     await this.audit(
       actor.userId,
       'iam.user.create',
@@ -1625,6 +1695,7 @@ export class IamService implements IamStepUpPort {
           where: { id: userId },
           select: {
             status: true,
+            profile: { select: { organizationUnitId: true } },
             roles: {
               select: {
                 roleId: true,
@@ -1804,6 +1875,12 @@ export class IamService implements IamStepUpPort {
           });
       }
       if (dto.branchIds) {
+        if (target.profile?.organizationUnitId)
+          await this.units.assertRetainedBranch(
+            transaction,
+            target.profile.organizationUnitId,
+            dto.branchIds,
+          );
         await transaction.userBranch.deleteMany({ where: { userId } });
         if (dto.branchIds.length)
           await transaction.userBranch.createMany({
