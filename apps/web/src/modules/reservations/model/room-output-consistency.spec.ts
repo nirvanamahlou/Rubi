@@ -107,9 +107,11 @@ it('keeps mixed room occupancies consistent in reservation, voucher and customer
     expect(html.replaceAll(' dir="auto"', '')).toContain(
       '<td>Sea Double</td><td>1</td><td>7</td><td>2</td>',
     );
-    expect(html.replaceAll(' dir="auto"', '')).toContain(
-      '<td>2</td><td>1</td><td>2</td>',
-    );
+    expect(html).toContain('<caption>ROOM QUANTITIES BY TYPE</caption>');
+    expect(html).not.toContain('DBL · DOUBLE');
+    expect(html).not.toContain('SGL · SINGLE');
+    expect(html).not.toContain('<th>SERVICE</th><th>ROOM TYPE</th>');
+    expect(html).toContain('<th>SERVICE</th></tr>');
   }
   expect(contractRoomSummary(output.contract.hotelSelection)).toBe(
     'مجموع 3 اتاق: 1 سینگل، 2 دبل، 2 تخت اضافه',
