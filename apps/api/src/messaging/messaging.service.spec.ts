@@ -174,6 +174,51 @@ describe('MessagingService', () => {
     );
   });
 
+  it.each(['', '   '])(
+    'stores a non-empty attachment caption for a file-only message',
+    async (body) => {
+      const documentId = '88888888-8888-4888-8888-888888888888';
+      documents.assertWorkbenchOwnedAttachments!.mockResolvedValue([
+        { id: documentId, title: 'receipt.png' },
+      ]);
+      repository.createMessage!.mockResolvedValue({
+        id: messageId,
+        conversationId,
+        senderUserId: actor.userId,
+        body: 'فایل پیوست',
+        createdAt: now,
+        forwardedFrom: null,
+        attachments: [{ documentId, title: 'receipt.png' }],
+      });
+      await service.send(
+        conversationId,
+        {
+          body,
+          clientRequestId: 'message:file-only-0001',
+          attachmentDocumentIds: [documentId],
+        },
+        actor,
+      );
+      expect(repository.createMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: 'فایل پیوست',
+          attachments: [{ documentId, title: 'receipt.png' }],
+        }),
+      );
+    },
+  );
+
+  it('still rejects a message without either text or attachments', async () => {
+    await expect(
+      service.send(
+        conversationId,
+        { body: '  ', clientRequestId: 'message:empty-0001' },
+        actor,
+      ),
+    ).rejects.toThrow('متن یا پیوست پیام الزامی است.');
+    expect(repository.createMessage).not.toHaveBeenCalled();
+  });
+
   it('uploads an attachment only after confirming conversation membership', async () => {
     const file = {
       buffer: Buffer.from([137, 80, 78, 71]),
