@@ -8019,7 +8019,6 @@ CONTRACT-PASSENGER-FLIGHT-PRICES-1018 clarification: total is automatically deri
 
 CONTRACT-PASSENGER-FLIGHT-PRICES-1018 validation: public passport-name output and automatic-total tamper guards passed in66 targeted API tests;82 focused Web tests cover financial rendering/state/components (last legacy manual-total assertion updated for the requested automatic mode), and4 pure precision/validation tests pass. API/Web typechecks and scoped lint pass. Synthetic single-A4 PDF visually verified for Latin names, rial flights, room-only dollar shares, mixed-room header omission and detailed room prices. Hotel adult shares use stable passenger order without creating named room assignments. No migration/dependency or local rollout. Final exact-head CI gates authorized merge; source scope released with candidate.
 
-
 ## AGENCY-PASSENGER-COMMISSION-1018 — PC-A — IN_PROGRESS
 
 Branch codex/pc-a-agency-passenger-commission-1018 stacked on a8295b67 (pending prior flight/room pricing integration). Reserve Sales agency pricing component/state/payload, domain metadata validation, contract print and focused tests; additive Contracts commission helper/export, bilingual catalogues and own status entries. User confirms fixed IRR per adult/child, displayed per passenger in agency contract commission column. Informational snapshot only: no deduction from total, Finance posting or B2B policy mutation. Optional versioned metadata on first service, absent legacy compatible, no schema/migration/dependency/runtime changes. Prior overlapping Sales candidate scope released.
