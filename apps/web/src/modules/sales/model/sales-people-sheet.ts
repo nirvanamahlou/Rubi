@@ -888,7 +888,12 @@ export async function saveSalesPeopleDraft(
     const row = peopleRow(current, key);
     return {
       customerId: row.person!.id,
-      displayName: row.person!.displayName,
+      displayName:
+        passportIdentity &&
+        row.values.passportFirstName.trim() &&
+        row.values.passportLastName.trim()
+          ? `${row.values.passportFirstName.trim()} ${row.values.passportLastName.trim()}`.toUpperCase()
+          : row.person!.displayName,
       birthDate: row.values.birthDate,
     };
   });
