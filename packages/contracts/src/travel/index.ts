@@ -603,6 +603,13 @@ export const voucherFlagKeys = [
   'specialRoom',
 ] as const;
 export interface VoucherSettingsV1 {
+  /** Immutable room composition for this output revision; legacy revisions omit it. */
+  rooms?: {
+    ordinal: number;
+    roomTypeNameSnapshot: string;
+    adults: number;
+    childAges: number[];
+  }[];
   /** Supplier-form display only; never posts a purchase or changes sale totals. */
   hotelPurchasePrices?: { amount: string; currencyCode: string }[];
   /** Registered supplier and leader used for this immutable output revision. */
