@@ -1,5 +1,5 @@
 import type { MasterDataRecord, MasterDataResource } from '@nora/contracts';
-import { masterDataApi } from '@/modules/master-data/api/client';
+import { salesApi } from './client';
 
 const resources = {
   countries: 'countries',
@@ -17,7 +17,9 @@ export type SalesReferences = {
 
 /** Publish each resource only after all its pages arrive; failed lists retain their previous value. */
 export async function loadSalesReferences(
-  api: Pick<typeof masterDataApi, 'list'> = masterDataApi,
+  api: { list: typeof salesApi.listReferences } = {
+    list: salesApi.listReferences,
+  },
   signal?: AbortSignal,
 ) {
   signal?.throwIfAborted();
