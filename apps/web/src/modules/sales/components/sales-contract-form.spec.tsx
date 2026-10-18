@@ -343,7 +343,21 @@ it('lets a complete selected tour continue without an unrelated standalone fligh
       outboundOfferId: 'offer',
       outbound: offer,
       remainingCapacity: 10,
-      package: { id: 'package', name: 'Synthetic package', hotelIds: [] },
+      packageId: 'package',
+      packageVersion: 1,
+      package: {
+        id: 'package',
+        name: 'Synthetic package',
+        hotelIds: [],
+        version: 1,
+        branchId: 'branch',
+        createdAt: '2099-09-01T00:00:00Z',
+        originId: 'origin',
+        destinationId: 'destination',
+        transferOutbound: false,
+        transferReturn: false,
+        visa: false,
+      },
     } as SalesFormState['tour'],
   };
   try {
