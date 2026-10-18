@@ -20,6 +20,10 @@ vi.mock('../api/agency-client', () => ({
 
 import { useDossierBranch } from './use-dossier-branch';
 
+function PanelProbe() {
+  return useDossierBranch();
+}
+
 afterEach(() => {
   harness.shared = null;
   harness.effects = [];
@@ -39,7 +43,7 @@ describe('dossier session ownership', () => {
     const timer = vi.fn();
     const listen = vi.fn();
     vi.stubGlobal('window', { setTimeout: timer, addEventListener: listen });
-    for (let i = 0; i < 25; i++) expect(useDossierBranch()).toBe(session);
+    for (let i = 0; i < 25; i++) expect(PanelProbe()).toBe(session);
     for (const effect of harness.effects) effect();
     expect(timer).not.toHaveBeenCalled();
     expect(listen).not.toHaveBeenCalled();
@@ -58,7 +62,9 @@ describe('dossier session ownership', () => {
       removeEventListener: remove,
     });
     useDossierBranch();
-    const cleanup = harness.effects[0]();
+    const effect = harness.effects[0];
+    if (!effect) throw new Error('Owner session effect was not registered');
+    const cleanup = effect();
     expect(timer).toHaveBeenCalledTimes(1);
     expect(listen.mock.calls.map(([event]) => event)).toEqual([
       'focus',
