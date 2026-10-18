@@ -1,5 +1,6 @@
 'use client';
 import { PublishedPackageSale } from './published-package-sale';
+import { syncHotelChildSelections } from '../model/hotel-child-selection';
 import { AgencyCommission } from './agency-commission';
 import { PassengerPackagePrices } from './passenger-package-prices';
 import { validatePassengerFlightPrices } from '@nora/contracts';
@@ -194,21 +195,24 @@ export function SalesContractForm() {
         automaticComponentPricing: true,
         priceEntryMode: 'CONTRACT_TOTAL',
       });
-    return {
-      ...draftState,
-      automaticComponentPricing: true,
-      priceEntryMode: 'CONTRACT_TOTAL',
-      servicePricing: draftState.servicePricing ?? {},
-      catalogSalePricing:
-        !draftState.tour &&
-        !draftState.serviceKinds.includes('HOTEL') &&
-        !draftState.serviceKinds.includes('TOUR')
-          ? repriceStandaloneTicketSelections(
-              { ...draftState, servicePricing: {} },
-              salesPassengerCounts(draftState).seated,
-            )
-          : {},
-    };
+    return syncHotelChildSelections(
+      {
+        ...draftState,
+        automaticComponentPricing: true,
+        priceEntryMode: 'CONTRACT_TOTAL',
+        servicePricing: draftState.servicePricing ?? {},
+        catalogSalePricing:
+          !draftState.tour &&
+          !draftState.serviceKinds.includes('HOTEL') &&
+          !draftState.serviceKinds.includes('TOUR')
+            ? repriceStandaloneTicketSelections(
+                { ...draftState, servicePricing: {} },
+                salesPassengerCounts(draftState).seated,
+              )
+            : {},
+      },
+      salesTravelDate(draftState),
+    );
   }, [draftState]);
   const [peopleDraft, setPeopleDraft] = useState<SalesPeopleDraft | null>(null);
   const [peopleDirty, setPeopleDirty] = useState(false);
@@ -1200,6 +1204,11 @@ export function SalesContractForm() {
                     <PassengerAgeField
                       key={`child-${index}`}
                       label={`سن کودک ${index + 1}`}
+                      allowedAges={
+                        state.serviceKinds.includes('FLIGHT')
+                          ? Array.from({ length: 10 }, (_, i) => i + 2)
+                          : undefined
+                      }
                       value={state.childAges?.[index] ?? null}
                       onChange={(age) =>
                         patchState({
