@@ -324,6 +324,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'symbol',
     'decimalDigits',
     'unitsPerUsd',
+    'tomanPerUnit',
     'displayPolicy',
   ],
   'exchange-rates': [
@@ -2608,6 +2609,18 @@ export class MasterDataService {
         )
           throw new BadRequestException(`${field} خارج از بازه مجاز است.`);
         data[field] = String(data[field]).trim();
+      }
+    }
+    if (resource === 'currencies' && Object.hasOwn(data, 'tomanPerUnit')) {
+      const rate =
+        data.tomanPerUnit === null ? '' : String(data.tomanPerUnit).trim();
+      if (!rate) data.tomanPerUnit = null;
+      else {
+        if (!/^\d{1,14}(\.\d{1,10})?$/.test(rate) || !/[1-9]/.test(rate))
+          throw new BadRequestException(
+            'نرخ تومان باید مثبت، حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار باشد.',
+          );
+        data.tomanPerUnit = rate;
       }
     }
     if (resource === 'currencies' && Object.hasOwn(data, 'unitsPerUsd')) {

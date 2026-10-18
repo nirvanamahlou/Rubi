@@ -1,4 +1,5 @@
 {
+  "نرخ تومان باید مثبت، حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار باشد.": "The toman rate must be positive, with at most 14 integer digits and 10 decimal places.",
   "— تاریخ:": "— Date:",
   "· تعداد رکوردها:": "· Record count:",
   "آخرین بررسی کننده": "Last reviewer",

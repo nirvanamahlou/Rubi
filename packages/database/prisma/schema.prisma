@@ -1169,6 +1169,7 @@ model MasterCurrency {
   symbol                               String?                     @db.VarChar(16)
   decimalDigits                        Int                         @default(2)
   unitsPerUsd                          Decimal?                    @db.Decimal(24, 10)
+  tomanPerUnit                         Decimal?                    @db.Decimal(24, 10)
   displayPolicy                        MasterCurrencyDisplayPolicy @default(CODE_AFTER)
   displayOrder                         Int                         @default(0)
   isActive                             Boolean                     @default(true)
