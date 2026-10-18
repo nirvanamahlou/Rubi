@@ -1,3 +1,8 @@
+import {
+  readAgencyCommission,
+  AGENCY_COMMISSION,
+  type AgencyCommissionV1,
+} from '@nora/contracts';
 import { flightRoomTotals } from '@nora/contracts';
 import { PASSENGER_FLIGHT_PRICES } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
@@ -186,6 +191,7 @@ export interface SalesFormState {
   paymentTerms?: SalesPaymentTerms | null;
   reservationNote?: string;
   passengerPrices?: Record<string, SalesMoney[]>;
+  agencyCommission?: AgencyCommissionV1;
   passengerFlightPrices?: Record<string, SalesMoney[]>;
   automaticComponentPricing?: boolean;
   passengerAccommodations?: Record<string, SalesAccommodationKind>;
@@ -1176,6 +1182,22 @@ export function salesPayload(
           };
       }
     }
+  if (
+    state.customerKind === 'organization' &&
+    state.agencyCommission &&
+    (state.agencyCommission.adult.trim() ||
+      state.agencyCommission.child.trim()) &&
+    services[0]
+  ) {
+    services[0].metadata = {
+      ...services[0].metadata,
+      [AGENCY_COMMISSION]: JSON.stringify({
+        adult: state.agencyCommission.adult.trim() || '0',
+        child: state.agencyCommission.child.trim() || '0',
+      }),
+    };
+  }
+  readAgencyCommission(services);
   const flightPriceService = services.find((s) => s.kind === 'FLIGHT');
   if (flightPriceService && state.passengerFlightPrices !== undefined)
     flightPriceService.metadata = {

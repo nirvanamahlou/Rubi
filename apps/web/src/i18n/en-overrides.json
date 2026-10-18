@@ -2727,5 +2727,10 @@
   "قیمت پرواز هر مسافر را وارد کنید.": "Enter the flight price for every passenger.",
   "قیمت هر اتاق را وارد کنید.": "Enter the price of every room.",
   "مبلغ پرواز هر مسافر جزئی از مبلغ کل قرارداد است.": "Each passenger flight amount is part of the total contract price.",
-  "مبلغ کل قرارداد باید برابر جمع قیمت پروازها و اتاق‌ها باشد.": "The contract total must equal the sum of flight and room prices."
+  "مبلغ کل قرارداد باید برابر جمع قیمت پروازها و اتاق‌ها باشد.": "The contract total must equal the sum of flight and room prices.",
+  "کمیسیون هر بزرگسال (ریال)": "Commission per adult (IRR)",
+  "کمیسیون هر کودک (ریال)": "Commission per child (IRR)",
+  "کمیسیون آژانس": "Agency commission",
+  "کمیسیون آژانس معتبر نیست.": "Invalid agency commission.",
+  "کمیسیون در ستون هر مسافر نمایش داده می‌شود و از مبلغ کل قرارداد کسر نمی‌شود.": "Commission is shown for each passenger and is not deducted from the contract total."
 }

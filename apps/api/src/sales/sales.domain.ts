@@ -1,3 +1,4 @@
+import { readAgencyCommission } from '@nora/contracts';
 import {
   flightRoomTotals,
   readPassengerFlightPrices,
@@ -263,6 +264,14 @@ export function validateSalesContract(
       'SALES_PASSENGER_DUPLICATE',
       'یک مسافر نمی‌تواند دوبار به قرارداد اضافه شود.',
     );
+  try {
+    readAgencyCommission(input.services);
+  } catch {
+    throw new SalesDomainError(
+      'SALES_AGENCY_COMMISSION_INVALID',
+      'کمیسیون آژانس معتبر نیست.',
+    );
+  }
   try {
     validatePassengerFlightPrices(
       input.services,

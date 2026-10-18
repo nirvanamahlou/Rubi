@@ -1,4 +1,5 @@
 'use client';
+import { AgencyCommission } from './agency-commission';
 import { PassengerPackagePrices } from './passenger-package-prices';
 import { validatePassengerFlightPrices } from '@nora/contracts';
 import {
@@ -2064,6 +2065,12 @@ export function SalesContractForm() {
                   }
                 />
               )}
+              <AgencyCommission
+                state={state}
+                onChange={(agencyCommission) =>
+                  patchState({ agencyCommission })
+                }
+              />
               <InsuranceExtraSummary state={state} />
               <SalesChequeCalculator
                 state={pricedState}

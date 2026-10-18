@@ -817,3 +817,23 @@ it('verifies automatic flight-plus-room totals rather than trusting a submitted 
   input.services[0]!.metadata = { automaticFlightRoomTotalV1: true };
   expect(() => validateSalesContract(input)).toThrow('قیمت پرواز هر مسافر');
 });
+
+it('rejects invalid agency commission snapshots at the server boundary', () => {
+  const input = structuredClone(draft);
+  input.services[0]!.metadata = {
+    agencyCommissionV1: JSON.stringify({ adult: '-1', child: '100' }),
+  };
+  expect(() => validateSalesContract(input)).toThrow(
+    'کمیسیون آژانس معتبر نیست.',
+  );
+});
+
+it('accepts fixed agency commission without altering the submitted financial components', () => {
+  const input = structuredClone(draft),
+    before = structuredClone(input.priceComponents);
+  input.services[0]!.metadata = {
+    agencyCommissionV1: JSON.stringify({ adult: '125000', child: '45000' }),
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  expect(input.priceComponents).toEqual(before);
+});
