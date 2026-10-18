@@ -12,6 +12,39 @@ import { workbenchPersonalApi } from './workbench-personal-api';
 describe('profile photo save request', () => {
   afterEach(() => vi.unstubAllGlobals());
 
+  it('sends a daily package as multipart with its title, branch and cancellation signal', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue({
+        ok: true,
+        status: 201,
+        text: async () => JSON.stringify({ data: { id: 'saved' } }),
+      });
+    vi.stubGlobal('fetch', fetchImpl);
+    const file = new File(['%PDF-1.4'], 'daily-package.pdf', {
+      type: 'application/pdf',
+    });
+    const signal = new AbortController().signal;
+    await workbenchPersonalApi.publishDailyPackage({
+      branchId: 'branch',
+      title: 'پکیج روز',
+      file,
+      signal,
+    });
+    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('http://api.local/api/v1/workbench/daily-packages');
+    expect(init).toMatchObject({
+      method: 'POST',
+      credentials: 'include',
+      signal,
+    });
+    const body = init.body as FormData;
+    expect(body.get('branchId')).toBe('branch');
+    expect(body.get('title')).toBe('پکیج روز');
+    expect(body.get('file')).toBe(file);
+    expect(new Headers(init.headers).has('content-type')).toBe(false);
+  });
+
   it('sends the photo and edited profile together to the owner endpoint', async () => {
     const saved = {
       displayName: 'کاربر آزمون',

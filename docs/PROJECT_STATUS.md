@@ -6462,3 +6462,7 @@ Added دریافت اطلاعات to the Reservations inbox through the existing
 ## PASSENGER-HOTEL-FOREIGN-SHARE-1018 — PC-A
 
 For new hotel/flight contracts, the passenger foreign column displays the existing exact room-price share instead of a second editable flight amount. One adult receives the full room price; two adults receive half each, with precise residual allocation from the shared roomPriceShares helper. Stable selected hotel adult order matches contract print. Room amount is counted once; stale foreign flight drafts are excluded from both displayed totals and submitted flight metadata. Standalone flight currency support and already persisted contracts remain unchanged. No schema/migration/API/dependency/runtime changes.28 focused tests cover single/double room display, stale draft exclusion, submitted totals/metadata validation and printed hotel shares. Local quality/build and full exact-head CI gate user-authorized develop merge.
+
+## 2026-10-18 — DAILY-PACKAGE-SUBMIT-1018 — PC-B
+
+Generator confirmation invokes a guarded direct multipart upload with visible pending state, duplicate suppression, branch/title validation and bounded timeout; errors retain the dialog and success acknowledges only server completion. LAN HTTP bridge UUID failure reproduced and corrected with cryptographic fallback.19 affected Web test files/68 tests and synthetic real-browser confirmation pass. No authenticated operational upload or runtime mutation. See tasks/DAILY-PACKAGE-SUBMIT-1018.md for exact verification limits; final quality gates in PR.
