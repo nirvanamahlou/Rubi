@@ -58,7 +58,8 @@ export class SalesReferencesController {
     const paymentAccess =
       ['banks', 'currencies'].includes(resource) &&
       canViewRoute(permissions, '/sales') &&
-      permissions.includes('sales.payments.create');
+      (permissions.includes('sales.payments.create') ||
+        permissions.includes('sales.payments.read'));
     if (!branchIds.length || (!contractAccess && !paymentAccess))
       throw new ForbiddenException();
   }

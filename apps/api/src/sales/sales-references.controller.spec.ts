@@ -264,6 +264,9 @@ describe('contract references without Master Data administration', () => {
     actor.permissions = ['sales.contracts.read.own', 'sales.payments.create'];
     await get('/sales/form-references/currencies').expect(200);
     await get('/sales/form-references/hotels').expect(403);
+    actor.permissions = ['sales.contracts.read.own', 'sales.payments.read'];
+    await get('/sales/form-references/banks').expect(200);
+    await get('/sales/form-references/organizations').expect(403);
     actor.permissions = ['master_data.read', 'sales.contracts.read.own'];
     await get('/sales/form-references/hotels').expect(403);
   });
