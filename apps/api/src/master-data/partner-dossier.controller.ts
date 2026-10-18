@@ -26,6 +26,15 @@ export class PartnerDossierController {
     @Inject(MasterOrganizationDirectory)
     private readonly directory: MasterOrganizationDirectory,
   ) {}
+  @Post(':resource/prepare')
+  @RequirePermissions('master_data.update', 'master_data.create')
+  prepare(
+    @Param('resource') resource: 'suppliers' | 'brokers',
+    @Headers('x-branch-id') branch: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.directory.preparePartnerDossiers(resource, branch, req.actor);
+  }
   @Post(':resource/:id')
   @RequirePermissions('master_data.update', 'master_data.create')
   ensure(

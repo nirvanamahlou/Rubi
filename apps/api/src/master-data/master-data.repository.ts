@@ -1266,8 +1266,8 @@ export class MasterDataRepository {
       const dossier = createData.partnerDossier as
         Record<string, unknown> | undefined;
       delete createData.partnerDossier;
-      if (dossier && (resource === 'suppliers' || resource === 'brokers')) {
-        if (dossier.import === true) {
+      if (resource === 'suppliers' || resource === 'brokers') {
+        if (dossier?.import === true) {
           // Serialize retries of the same import identity without overwriting existing data.
           const identity = `${resource}:${String(createData.name).normalize('NFKC').trim().toLowerCase()}:${createData.countryId}:${createData.cityId}`;
           await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${identity}, 0))::text`;
@@ -1285,7 +1285,7 @@ export class MasterDataRepository {
           transaction,
           resource,
           createData,
-          dossier,
+          dossier ?? {},
           actorUserId,
           actorBranchId,
         );
@@ -1367,12 +1367,15 @@ export class MasterDataRepository {
       });
       if (claimed.count !== 1) return null;
 
-      if (dossier && (resource === 'suppliers' || resource === 'brokers')) {
+      if (
+        (resource === 'suppliers' || resource === 'brokers') &&
+        (dossier || !before.organizationId)
+      ) {
         writeData.organizationId = await persistPartnerDossier(
           transaction,
           resource,
           { ...before, ...writeData },
-          dossier,
+          dossier ?? {},
           actorUserId,
           actorBranchId,
         );

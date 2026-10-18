@@ -1,3 +1,7 @@
+## PARTNER-DOSSIER-READY-1018 — PC-B — IN_PROGRESS
+
+Fix the reproduced code-level child-session-refresh/remount cycle in supplier/broker360; preserve actor/permission/branch invalidation. Remove manual dossier creation, prepare old rows in bounded authorized/audited POST batches and always establish canonical dossiers for new partners and legacy edits. No Finance/schema/migration/dependency change.13 Web lifecycle/client/session and22 API persistence/directory/repository tests pass; full gates and deployment pending. See docs/tasks/PARTNER-DOSSIER-READY-1018.md.
+
 ## PARTNER-360-COMPLETE-1017 — PC-B — READY_FOR_CI
 
 Product owner delegates the bounded supplier/broker360 Finance producer to PC-B, with COUNTERPARTY_TO_US credit and25 concurrent staff. PR922 implements role-safe dossier sections and actual payable/payment/request projections plus optional editable unitsPerUsd reference metadata (1USD=N units, not transaction FX). Hosted full quality/types/build and24 disposable PostgreSQL scenarios pass on c2aadf46;30 final focused Web regressions pass after fixing English coverage and the changed currency catalogue assertion. Full final-head CI, authorized merge and rollout remain pending. Browser tool access is policy-blocked; user accepts manual final visual verification. Fresh database/runtime backup is verified outside Git; no operational migration or deployment has occurred. See docs/tasks/PARTNER-360-COMPLETE-1017.md; other Finance ownership is unchanged.
