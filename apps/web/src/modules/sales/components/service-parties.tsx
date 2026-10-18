@@ -198,56 +198,60 @@ export function ServiceParties({
       {state.serviceKinds.includes('HOTEL') && (
         <section className="grid gap-3 rounded-xl border p-4">
           <h3 className="font-bold">هتل و ترکیب هر اتاق</h3>
-          <SearchableReference
-            label="هتل"
-            value={state.hotel.hotelId}
-            options={hotels}
-            showAllOptionsOnOpen
-            preferEnglishName
-            onChange={(hotelId) =>
-              patch({
-                hotelChildAssignments: {},
-                hotel: {
-                  ...state.hotel,
-                  hotelId,
-                  name: hotels.find((h) => h.id === hotelId)?.name ?? '',
-                  rooms: [],
-                  roomTypeId: '',
-                  guestCustomerIds: undefined,
-                },
-              })
-            }
-          />
-          <label>
-            تعداد اتاق
-            <Input
-              type="number"
-              min={1}
-              max={maxRooms}
-              value={rooms.length || ''}
-              disabled={!state.hotel.hotelId}
-              onChange={(e) =>
-                changeRooms(
-                  Array.from(
-                    {
-                      length: Math.max(
-                        1,
-                        Math.min(maxRooms, Number(e.target.value) || 1),
-                      ),
+          <div className="grid grid-cols-[minmax(0,1fr)_6rem] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_9rem]">
+            <div className="min-w-0">
+              <SearchableReference
+                label="هتل"
+                value={state.hotel.hotelId}
+                options={hotels}
+                showAllOptionsOnOpen
+                preferEnglishName
+                onChange={(hotelId) =>
+                  patch({
+                    hotelChildAssignments: {},
+                    hotel: {
+                      ...state.hotel,
+                      hotelId,
+                      name: hotels.find((h) => h.id === hotelId)?.name ?? '',
+                      rooms: [],
+                      roomTypeId: '',
+                      guestCustomerIds: undefined,
                     },
-                    (_, i) =>
-                      rooms[i] ?? {
-                        ordinal: i + 1,
-                        roomTypeId: '',
-                        roomTypeNameSnapshot: '',
-                        adults: 1,
-                        childAges: [],
+                  })
+                }
+              />
+            </div>
+            <label className="grid min-w-0 gap-1">
+              تعداد اتاق
+              <Input
+                type="number"
+                min={1}
+                max={maxRooms}
+                value={rooms.length || ''}
+                disabled={!state.hotel.hotelId}
+                onChange={(e) =>
+                  changeRooms(
+                    Array.from(
+                      {
+                        length: Math.max(
+                          1,
+                          Math.min(maxRooms, Number(e.target.value) || 1),
+                        ),
                       },
-                  ),
-                )
-              }
-            />
-          </label>
+                      (_, i) =>
+                        rooms[i] ?? {
+                          ordinal: i + 1,
+                          roomTypeId: '',
+                          roomTypeNameSnapshot: '',
+                          adults: 1,
+                          childAges: [],
+                        },
+                    ),
+                  )
+                }
+              />
+            </label>
+          </div>
           {partyError ? (
             <p role="alert" className="text-sm text-destructive">
               {partyError}
