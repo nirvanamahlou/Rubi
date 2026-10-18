@@ -2955,6 +2955,7 @@
   "همهٔ شعب مجاز": "All authorized branches",
   "برای نمایش بازه‌ها، شعبه یا تاریخ را محدودتر کنید.": "Narrow the branch or dates to view periods.",
   "سرویس اطلاعات شهر در دسترس نیست.": "The city reference service is unavailable.",
+  "بلیت جایگزینی برای این مسیر و تاریخ پیدا نشد؛ بلیت فعلی قرارداد حفظ شده است.": "No replacement ticket was found for this route and date. The contract's current ticket is retained.",
   "،": ",",
   "؛": ";",
   ": پرونده را بررسی کنید.": ": Check the file.",
