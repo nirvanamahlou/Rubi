@@ -12,6 +12,7 @@ import {
   denyPermission,
   screenPermission,
   type AuthenticatedActor,
+  type ManualAccessSelection,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
@@ -19,6 +20,7 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { AccessGroupCard } from './access-group-card';
 import { ManualAccessEditor } from './manual-access-editor';
+import { UserDetailsEditor } from './user-details-editor';
 import { sectionAccess } from './section-access';
 import { IamDeleteDialog, type DeleteTarget } from './iam-delete-dialog';
 import { deleteUserAndReload, deleteRoleAndReload } from './deletion-actions';
@@ -47,12 +49,14 @@ interface UserRow {
   email: string | null;
   status: string;
   accessRevision: string;
+  detailsRevision: string;
   roles: Array<{
     role: {
       id: string;
       name: string;
       code: string;
       isActive: boolean;
+      selection?: ManualAccessSelection;
       permissions: Array<{ permission: { id: string; code: string } }>;
     };
   }>;
@@ -226,6 +230,7 @@ export function UserManagement() {
   const [accessControlSearch, setAccessControlSearch] = useState('');
   const accessGrid = useRef<HTMLDivElement>(null);
   function applyTemplate(nextTitle: string, rows = templates) {
+    const savedSelection = rows.find((r) => r.name === nextTitle)?.selection;
     const codes =
       rows
         .find((r) => r.name === nextTitle)
@@ -234,7 +239,8 @@ export function UserManagement() {
       options.permissions
         .filter(
           (p) =>
-            codes.includes(p.code) &&
+            (savedSelection?.permissionCodes.includes(p.code) ??
+              codes.includes(p.code)) &&
             (options.canAssignAll ||
               actor?.permissions.includes(p.code as never)),
         )
@@ -243,7 +249,8 @@ export function UserManagement() {
     setScreenIds(
       USER_ACCESS_SCREENS.filter(
         (s) =>
-          codes.includes(screenPermission(s.id)) &&
+          (savedSelection?.screenIds.includes(s.id) ??
+            codes.includes(screenPermission(s.id))) &&
           (options.canAssignAll || options.assignableScreenIds.includes(s.id)),
       ).map((s) => s.id),
     );
@@ -251,7 +258,9 @@ export function UserManagement() {
       USER_ACCESS_DENY_CONTROLS.filter(
         (c) =>
           !rows.some((r) => r.name === nextTitle) ||
-          codes.includes(denyPermission(c.id)) ||
+          (savedSelection
+            ? !savedSelection.allowedControlIds.includes(c.id)
+            : codes.includes(denyPermission(c.id))) ||
           (!options.canAssignAll &&
             !options.assignableControlIds.includes(c.id)),
       ).map((c) => c.id),
@@ -559,10 +568,6 @@ export function UserManagement() {
     <div className={styles.workspace}>
       <header className={styles.pageHeader}>
         <h1 className="text-2xl font-black">مدیریت کاربران</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          تعریف حساب، نقش و دسترسی مستقل هر کاربر؛ تیک هر بخش همهٔ زیربخش‌ها را
-          انتخاب می‌کند و می‌توانید هر مورد را جداگانه بردارید.
-        </p>
       </header>
       {message && (
         <p role="alert" className="rounded-xl border p-3">
@@ -678,10 +683,6 @@ export function UserManagement() {
                 aria-label="نقش‌های تعریف‌شده"
               >
                 <h2 className="text-xl font-bold">نقش‌های تعریف‌شده</h2>
-                <p className="text-sm text-muted-foreground">
-                  برای حفظ دسترسی کاربران، نقش سیستمی و نقش متصل به کاربر حذف
-                  نمی‌شود.
-                </p>
                 <Button
                   type="button"
                   variant="outline"
@@ -1065,6 +1066,15 @@ export function UserManagement() {
                       })}
                     </div>
                   </>
+                )}
+                {selected && (
+                  <UserDetailsEditor
+                    key={`${selected.id}:${selected.detailsRevision}`}
+                    user={selected}
+                    canManage={canManage}
+                    request={request}
+                    onSaved={load}
+                  />
                 )}
                 {selected && (
                   <ManualAccessEditor

@@ -1,4 +1,10 @@
 {
+  "ویرایش نام کاربر": "Edit user name",
+  "ذخیره نام و نام خانوادگی": "Save full name",
+  "نام و نام خانوادگی باید بین ۲ تا ۱۶۰ نویسه باشد.": "Full name must contain between 2 and 160 characters.",
+  "نام و نام خانوادگی ذخیره شد.": "Full name saved.",
+  "نام و نام خانوادگی یا نسخهٔ اطلاعات معتبر نیست.": "Invalid full name or details revision.",
+  "اطلاعات کاربر تغییر کرده است؛ دوباره بارگذاری کنید.": "User details have changed; reload and try again.",
   "نقش پیدا نشد.": "Role not found.",
   "برای حفظ دسترسی کاربران، نقش سیستمی و نقش متصل به کاربر حذف نمی‌شود.": "System roles and roles assigned to users cannot be deleted, to preserve existing access.",
   "نسخهٔ معتبر نقش برای حذف لازم است.": "A valid role revision is required for deletion.",

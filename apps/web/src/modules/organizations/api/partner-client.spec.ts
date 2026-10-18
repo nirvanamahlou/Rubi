@@ -8,6 +8,26 @@ vi.mock('@/lib/auth-session', () => ({
 }));
 afterEach(() => vi.restoreAllMocks());
 describe('role-scoped partner dossier public client', () => {
+  it('prepares legacy records with an authenticated explicit POST, not a read mutation', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify({ prepared: 2, remaining: 0 })),
+      );
+    expect(await partnerClient.prepare('brokers', 'branch')).toEqual({
+      prepared: 2,
+      remaining: 0,
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:4999/api/v1/master-data/partner-dossiers/brokers/prepare',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        headers: expect.objectContaining({ 'x-branch-id': 'branch' }),
+        body: '{}',
+      }),
+    );
+  });
   it('loads exact role and branch with no-store authenticated transport', async () => {
     const fetch = vi
       .spyOn(globalThis, 'fetch')

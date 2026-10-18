@@ -24,6 +24,10 @@ import { BrokerPurchases } from '@/modules/finance/components/broker-purchases';
 import { useOrganizationContactDisclosures } from './use-organization-contact-disclosures';
 import { MasterDataLogoCell } from '@/modules/master-data/components/master-data-logo-cell';
 import './corporate-design.css';
+import {
+  partnerDossierScope,
+  resolvePartnerOrganization,
+} from '../model/partner-dossier-loading';
 const emptyContacts: readonly MasterDataRecord[] = [];
 
 export function PartnerDossier({
@@ -35,11 +39,19 @@ export function PartnerDossier({
 }) {
   const resource = partner.resource === 'brokers' ? 'brokers' : 'suppliers';
   const role: PartnerRoleV1 = resource === 'brokers' ? 'BROKER' : 'SUPPLIER';
-  const { permissions, branchId, sessionContextKey, sessionError } =
-    useDossierBranch();
-  const [organizationId, setOrganizationId] = useState(
-    String(partner.attributes.organizationId ?? ''),
-  );
+  const {
+    permissions,
+    branchId,
+    sessionContextKey,
+    sessionError,
+    actorUserId,
+  } = useDossierBranch();
+  const sessionScope = partnerDossierScope({
+    ready: Boolean(sessionContextKey),
+    actorUserId,
+    branchId,
+    permissions,
+  });
   const [refresh, setRefresh] = useState(0);
   const [partnerRecord, setPartnerRecord] = useState(partner);
   const [notice, setNotice] = useState('');
@@ -50,24 +62,41 @@ export function PartnerDossier({
     total?: number;
     error?: string;
   }>({ key: '' });
-  const [busy, setBusy] = useState(false);
-  const [connectError, setConnectError] = useState('');
   const [contactPage, setContactPage] = useState(1);
   const [editor, setEditor] = useState<{
     kind: 'identity' | 'contact' | 'partner';
     record?: MasterDataRecord;
   }>();
-  const key = `${organizationId}:${sessionContextKey}:${contactPage}:${refresh}`;
+  const key = `${resource}:${partner.id}:${sessionScope}:${contactPage}:${refresh}`;
   const reload = useCallback(() => setRefresh((value) => value + 1), []);
   useEffect(() => {
-    if (!organizationId || !sessionContextKey) return;
     let active = true;
-    void Promise.all([
-      masterDataApi.detail('organizations', organizationId),
-      agencyClient.contacts(organizationId, contactPage),
-      masterDataApi.detail(resource, partner.id),
-    ])
-      .then(([identity, contacts, source]) => {
+    const timeout = window.setTimeout(() => {
+      if (!active) return;
+      active = false;
+      setState({ key, error: 'دریافت پرونده ناموفق بود.' });
+    }, 30000);
+    if (!sessionScope) return () => window.clearTimeout(timeout);
+    void (async () => {
+      let source = await masterDataApi.detail(resource, partner.id);
+      if (!active) return;
+      const alreadyLinked = Boolean(source.data.attributes.organizationId);
+      const organizationId = await resolvePartnerOrganization(
+        source.data,
+        branchId,
+        partnerClient.connect,
+      );
+      if (!alreadyLinked)
+        source = await masterDataApi.detail(resource, partner.id);
+      const [identity, contacts] = await Promise.all([
+        masterDataApi.detail('organizations', organizationId),
+        agencyClient.contacts(organizationId, contactPage),
+      ]);
+      return [identity, contacts, source] as const;
+    })()
+      .then((result) => {
+        if (!active || !result) return;
+        const [identity, contacts, source] = result;
         if (
           !String(identity.data.attributes.roleCodes ?? '')
             .split(',')
@@ -92,21 +121,16 @@ export function PartnerDossier({
                 ? error.message
                 : 'دریافت پرونده ناموفق بود.',
           });
-      });
+      })
+      .finally(() => window.clearTimeout(timeout));
     return () => {
       active = false;
+      window.clearTimeout(timeout);
     };
-  }, [
-    organizationId,
-    sessionContextKey,
-    contactPage,
-    role,
-    resource,
-    partner.id,
-    key,
-  ]);
+  }, [sessionScope, branchId, contactPage, role, resource, partner.id, key]);
   const current = state.key === key ? state : undefined;
   const organization = current?.organization;
+  const organizationId = organization?.id ?? '';
   const contacts = current?.contacts ?? emptyContacts;
   const contactDisclosures = useOrganizationContactDisclosures({
     active: Boolean(organization),
@@ -144,52 +168,6 @@ export function PartnerDossier({
     setEditor(undefined);
     reload();
   }
-  if (!organizationId)
-    return (
-      <section className="space-y-4 rounded-xl border p-5">
-        <h1 className="text-xl font-bold">پرونده ۳۶۰ درجه {partner.name}</h1>
-        <p>
-          برای این رکورد قدیمی، پروندهٔ سازمانی متصل هنوز ایجاد نشده است. اتصال
-          زیر اطلاعات فعلی را حفظ می‌کند و نقش آژانس اضافه نمی‌کند.
-        </p>
-        {sessionError || connectError ? (
-          <p role="alert">{sessionError || connectError}</p>
-        ) : null}
-        <Button
-          disabled={
-            busy ||
-            !branchId ||
-            !permissions.includes('master_data.create') ||
-            !permissions.includes('master_data.update')
-          }
-          onClick={async () => {
-            if (busy) return;
-            setBusy(true);
-            setConnectError('');
-            try {
-              const result = await partnerClient.connect(
-                resource,
-                partner.id,
-                partner.version,
-                branchId,
-              );
-              setOrganizationId(result.organizationId);
-            } catch (error) {
-              setConnectError(
-                error instanceof Error ? error.message : 'اتصال ناموفق بود.',
-              );
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          {busy ? 'در حال اتصال…' : 'ایجاد پرونده متصل با اطلاعات فعلی'}
-        </Button>
-        <Button variant="outline" onClick={onClose}>
-          بازگشت
-        </Button>
-      </section>
-    );
   if (sessionError || current?.error)
     return (
       <section className="space-y-4">

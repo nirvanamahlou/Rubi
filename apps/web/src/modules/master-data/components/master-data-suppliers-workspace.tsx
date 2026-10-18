@@ -85,6 +85,8 @@ import {
 import { MasterDataLogoCell } from './master-data-logo-cell';
 import { PartnerExcelDialog } from './partner-excel-dialog';
 import { PartnerDossier } from '@/modules/organizations/components/partner-dossier';
+import { partnerClient } from '@/modules/organizations/api/partner-client';
+import { agencyClient } from '@/modules/organizations/api/agency-client';
 
 type SupplierTab = 'suppliers' | 'brokers' | 'collaboration';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
@@ -209,6 +211,8 @@ function partnerPersonType(record: MasterDataRecord) {
 
 export function MasterDataSuppliersWorkspace() {
   const canUseResource = useMasterDataResourceAccess();
+  const prepareSuppliersAllowed = canUseResource('suppliers');
+  const prepareBrokersAllowed = canUseResource('brokers');
   const visibleTabs = useMemo(
     () =>
       tabs.filter((item) =>
@@ -243,6 +247,42 @@ export function MasterDataSuppliersWorkspace() {
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [excelOpen, setExcelOpen] = useState(false);
+  const [preparationRevision, setPreparationRevision] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const user = await agencyClient.session();
+      const branchId = user.branches[0]?.id;
+      if (
+        !branchId ||
+        !user.permissions.includes('master_data.create') ||
+        !user.permissions.includes('master_data.update')
+      )
+        return;
+      for (const partnerResource of ['suppliers', 'brokers'] as const) {
+        if (
+          !(partnerResource === 'suppliers'
+            ? prepareSuppliersAllowed
+            : prepareBrokersAllowed)
+        )
+          continue;
+        for (let batch = 0; batch < 200 && active; batch += 1) {
+          const result = await partnerClient.prepare(partnerResource, branchId);
+          if (!result.remaining) break;
+          if (!result.prepared || batch === 199)
+            throw new Error('اتصال ناموفق بود.');
+        }
+      }
+      if (active) setPreparationRevision((value) => value + 1);
+    })().catch((error: unknown) => {
+      if (active)
+        setNotice(error instanceof Error ? error.message : 'اتصال ناموفق بود.');
+    });
+    return () => {
+      active = false;
+    };
+  }, [prepareSuppliersAllowed, prepareBrokersAllowed]);
 
   useEffect(() => {
     const fallback = visibleTabs[0];
@@ -376,7 +416,7 @@ export function MasterDataSuppliersWorkspace() {
       window.clearTimeout(timer);
       loadSequence.current += 1;
     };
-  }, [load]);
+  }, [load, preparationRevision]);
 
   const kpis = useMemo(() => {
     if (tab === 'suppliers')

@@ -1,6 +1,26 @@
+## USER-ROLE-PICKER-REDESIGN-1018 — PC-B
+
+Remove the manual-access heading and both requested explanations. Redesign existing-user role selection as a themed responsive card with shared searchable saved-role selector, labeled job-title input and explicit disabled/empty states. Reuse existing role-ID draft callbacks and unchanged manual-access save/delegation/CAS logic; no grants/data/API/runtime mutation. Focused tests and exact-head quality/type/test/build gates required before owner-authorized push/develop merge.
+
+## USERS-COPY-CLEANUP-1018 — PC-B
+
+Remove only the owner-specified users-page introductory and role-protection explanatory paragraphs. Keep role-deletion protections, section cascade and all account/access functionality unchanged. Focused Web tests and final-head quality/type/test/build gates required before authorized push/develop merge. No API/schema/dependency/data/runtime changes.
+
+## LOGIN-DIVIDER-ALIGN-1018 — PC-A — VALIDATING
+
+Align only the outer login background seam to the unchanged1.1:1 desktop card divider rather than the viewport midpoint. CSS accounts for the card width cap, page padding and borders, with mirrored divider offset for LTR and50/50 mobile fallback. Authentication, logos and form sizes/styles remain unchanged. Focused responsive/direction geometry tests and exact-head full CI gate the continued user-authorized develop merge and backed-up server rollout. No schema/migration/dependency or operational data change; all backups remain on the server.
+
+## EXISTING-USER-EDIT-1018 — PC-B — READY_FOR_CI
+
+Add prefilled full-name editing for existing users with separate revision-protected, audited name-only save. Connect existing/new-user role choices to active reusable saved roles and normalized effective/explicit selection; role IDs disambiguate choices and selecting a role changes no account until explicit save. Preserve old grants, shared definitions and all manual-access safeguards.88 Web/access/i18n tests and scoped lint pass; remaining type/API/build exact-head gates required before owner-authorized develop merge. No schema/migration/dependency/real-data/runtime changes. See docs/tasks/EXISTING-USER-EDIT-1018.md.
+
 ## LOGIN-SPLIT-BACKGROUND-1018 — PC-A — VALIDATING
 
 Restore the pre8e70e5d2 login card/form presentation (surface card, blue brand panel, regular field labels, primary submit and normal locale switcher), changing only the outer page to a hard50/50 physical left-blue/right-white background independent of RTL/LTR. No background video or decorative media reintroduced. Authentication, logos, controls and error handling remain unchanged. Focused layout/form/logo tests and exact-head full CI gate explicit user-authorized develop merge and backed-up server rollout. No migration/schema/dependency or business-data change; retain existing server-only encrypted backups and all persistent volumes.
+
+## PARTNER-DOSSIER-READY-1018 — PC-B — READY_FOR_CI
+
+Fix the reproduced code-level child-session-refresh/remount cycle in supplier/broker360; preserve actor/permission/branch invalidation. Remove manual dossier creation, prepare old rows in bounded authorized/audited POST batches and always establish canonical dossiers for new partners and legacy edits. No Finance/schema/migration/dependency change.32 Web and22 API focused tests, Web/API types and scoped lint pass; full gates and deployment pending. Docker Engine returns HTTP500 and both local health routes time out; user authorizes non-destructive Desktop restart. Final rollout evidence belongs on PR926. See docs/tasks/PARTNER-DOSSIER-READY-1018.md.
 
 ## RESERVATION-EDIT-TICKET-1014 — PC-A — READY_FOR_REVIEW
 
@@ -6381,4 +6401,4 @@ CONTRACT-PASSENGER-FLIGHT-PRICES-1018 validation: public passport-name output an
 
 Branch codex/pc-a-agency-passenger-commission-1018 stacked on a8295b67 (pending prior flight/room pricing integration). Reserve Sales agency pricing component/state/payload, domain metadata validation, contract print and focused tests; additive Contracts commission helper/export, bilingual catalogues and own status entries. User confirms fixed IRR per adult/child, displayed per passenger in agency contract commission column. Informational snapshot only: no deduction from total, Finance posting or B2B policy mutation. Optional versioned metadata on first service, absent legacy compatible, no schema/migration/dependency/runtime changes. Prior overlapping Sales candidate scope released.
 
-AGENCY-PASSENGER-COMMISSION-1018 verification:97 focused tests passed (6 shared Contracts,52 Sales API,39 Web); affected lint, API/Web typechecks and production builds passed (Web62 static pages). Fixed IRR adult/child commission snapshots persist once, reject invalid money and do not alter totals; agency output assigns each age category correctly, personal customers submit no stale commission and infants show no assigned amount. No migration/dependency/data/runtime changes. Source locks released with candidate. GitHub account ramtinghashghaie remains invalid (HTTP401); PR/full hosted CI/develop merge remain blocked pending restored authentication.
+AGENCY-PASSENGER-COMMISSION-1018 verification:97 focused tests passed (6 shared Contracts,52 Sales API,39 Web); affected lint, API/Web typechecks and production builds passed (Web62 static pages). Fixed IRR adult/child commission snapshots persist once, reject invalid money and do not alter totals; agency output assigns each age category correctly, personal customers submit no stale commission and infants show no assigned amount. No migration/dependency/data/runtime changes. Source locks released with candidate. GitHub authentication restored on2026-10-18; user authorizes develop merge via PR931. Integrated develop preserving all peer scopes; final-head hosted CI gates merge.

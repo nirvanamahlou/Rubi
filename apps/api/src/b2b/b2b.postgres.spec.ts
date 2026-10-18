@@ -682,6 +682,27 @@ describe.skipIf(!enabled)(
       ).rejects.toThrow();
     });
 
+    it.each(['suppliers', 'brokers'] as const)(
+      'automatically persists a canonical dossier for %s without an opt-in payload',
+      async (resource) => {
+        const master = new MasterDataRepository({ client } as DatabaseService);
+        const row = await master.create(
+          resource,
+          { code: `QA-AUTO-${resource}`, name: `Synthetic ${resource}` },
+          actorUserId,
+          branchId,
+        );
+        const org = await client.masterOrganization.findUniqueOrThrow({
+          where: { id: String(row.organizationId) },
+          include: { roles: true },
+        });
+        expect(org.legalName).toBe(`Synthetic ${resource}`);
+        expect(org.roles.map((item) => item.roleCode)).toEqual([
+          resource === 'suppliers' ? 'SUPPLIER' : 'BROKER',
+        ]);
+      },
+    );
+
     it('links a legacy partner exactly once under25 concurrent retries without an agency role', async () => {
       const directory = new MasterOrganizationDirectory({
         client,
@@ -730,6 +751,19 @@ describe.skipIf(!enabled)(
           actor,
         ),
       ).rejects.toThrow();
+      for (const resource of ['suppliers', 'brokers'] as const) {
+        let batch;
+        do {
+          batch = await directory.preparePartnerDossiers(
+            resource,
+            branchId,
+            actor,
+          );
+        } while (batch.remaining > 0);
+        expect(
+          await directory.preparePartnerDossiers(resource, branchId, actor),
+        ).toEqual({ prepared: 0, remaining: 0 });
+      }
     }, 30000);
 
     it('projects real purchases/payments by role and flags superseded paid obligations', async () => {
