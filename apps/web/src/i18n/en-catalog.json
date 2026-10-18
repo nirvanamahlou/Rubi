@@ -17353,5 +17353,9 @@
   "قیمت اتاق": "Room price",
   "ارز اتاق": "Room currency",
   "قیمت پرواز": "Flight price",
-  "قیمت پرواز ·": "Flight price ·"
+  "قیمت پرواز ·": "Flight price ·",
+  "دریافت اطلاعات": "Refresh data",
+  "اطلاعات موردنیاز فرم به‌روز شد.": "Form reference data refreshed.",
+  "بخشی از اطلاعات دریافت نشد؛ برای تلاش مجدد، دریافت اطلاعات را بزنید.": "Some data could not be loaded. Select Refresh data to try again.",
+  "دریافت اطلاعات ناموفق بود؛ دوباره تلاش کنید.": "Data could not be refreshed. Please try again."
 }

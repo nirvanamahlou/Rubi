@@ -16,6 +16,10 @@ import {
 import { INITIAL_PASSWORD_MIN_LENGTH } from '../password-policy';
 
 export class CreateUserDto {
+  @ApiProperty({ required: false, nullable: true })
+  @IsOptional()
+  @IsUUID('4')
+  organizationUnitId?: string | null;
   @IsOptional()
   @IsBoolean()
   manualAccessV3?: boolean;

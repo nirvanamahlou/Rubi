@@ -32,6 +32,7 @@ import { ManualUserAccessService } from './manual-user-access.service';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { ManualUserAccessDto } from './dto/manual-user-access.dto';
 import { UpdateUserDetailsDto } from './dto/update-user-details.dto';
+import { HrUserUnitDirectory } from '../hr/hr-user-unit-directory';
 
 @ApiTags('IAM / Users')
 @ApiCookieAuth('nora_access')
@@ -43,7 +44,15 @@ export class UsersController {
     @Optional()
     @Inject(ManualUserAccessService)
     private readonly manual?: ManualUserAccessService,
+    @Optional()
+    @Inject(HrUserUnitDirectory)
+    private readonly units?: HrUserUnitDirectory,
   ) {}
+  @Get('organization-units')
+  @RequirePermissions('iam.users.manage')
+  organizationUnits(@Req() req: AuthenticatedRequest) {
+    return this.units!.list(req.actor);
+  }
   @Patch(':id/details')
   @RequirePermissions('iam.users.manage')
   @ApiBody({ type: UpdateUserDetailsDto })
