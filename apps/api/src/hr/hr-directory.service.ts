@@ -146,7 +146,7 @@ export class HrDirectoryService {
       throw new NotFoundException('کارمند در محدوده دسترسی پیدا نشد.');
     const [users, linked] = await Promise.all([
       this.iam.listUsers(),
-      // userId is globally unique, including archived personnel. Do not offer a claimed account.
+      // Account ownership includes archived personnel; expose availability, never reassign it.
       this.database.client.hrEmployee.findMany({
         where: {
           userId: { not: null },
@@ -159,15 +159,17 @@ export class HrDirectoryService {
     return {
       currencies,
       users: users
-        .filter(
-          (u) =>
-            u.status === 'ACTIVE' &&
-            !claimed.has(u.id) &&
-            u.branches.some((b) => actor.branchIds.includes(b.branch.id)),
+        .filter((u) =>
+          u.branches.some((b) => actor.branchIds.includes(b.branch.id)),
         )
         .map((u) => ({
           id: u.id,
           label: `${u.displayName} · ${u.username}`,
+          ...(claimed.has(u.id)
+            ? { unavailableReason: 'LINKED' as const }
+            : u.status !== 'ACTIVE'
+              ? { unavailableReason: 'INACTIVE' as const }
+              : {}),
           branchIds: u.branches
             .map((b) => b.branch.id)
             .filter((id) => actor.branchIds.includes(id)),
