@@ -1,3 +1,18 @@
+## INTEGRATIONS-NAVIGATION-1018 — PC-D — READY_FOR_CI
+
+Replace the nine equal-level section links with four plain-language navigation
+areas and contextual secondary links; all nine sections and their drill-downs
+remain accessible. Add a three-step website connection guide distinguishing
+saved setup metadata from actual connectivity. Existing API/IAM/branch controls,
+adapters and registry data are unchanged.24 Integrations tests, focused lint,
+formatting and the62-route Web production build including TypeScript passed.
+Interactive desktop/mobile navigation and the existing registration dialog were
+verified without writes. Local Web-only image1018-navigation is healthy; the
+existing API remains healthy on1017-access-v2. The launcher includes the new
+image and local startup health override. No other Docker project was stopped. Global i18n sync reports pre-existing unrelated generated-catalogue drift;
+no API/public catalogue changes included. User now explicitly authorizes push, hosted CI, PR to develop and merge after all checks and review pass. Candidate synchronized with develop@091f1fd5; no gate or runtime change.
+See [navigation and connection readiness](tasks/INTEGRATIONS-NAVIGATION-1018.md).
+
 ## CONTRACT-HOTEL-COMPACT-1018 — PC-A
 
 New-contract hotel selector and room count share one aligned responsive row. Room count width is bounded (96px on small screens, 144px otherwise); hotel retains remaining space. Existing room composition, child allocation, validation and persistence remain unchanged. No API/schema/migration/dependency change. Six ServiceParties tests, scoped ESLint, formatting and diff checks pass. Exact-head hosted quality, tests, typecheck/build and migration checks gate user-authorized develop merge.
