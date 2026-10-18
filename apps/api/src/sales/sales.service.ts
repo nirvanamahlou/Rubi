@@ -1,3 +1,4 @@
+import { reservationChildBandFields } from './sales-reservation-age';
 import { PackageTourPricingService } from '../package-pricing/package-tour-pricing.service';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
@@ -1320,7 +1321,10 @@ export class SalesService {
               customerId: p.customerId,
               displayNameSnapshot: p.displayNameSnapshot,
               ageCategory: categories[p.customerId]!,
-              ...(p.childAgeBand ? { childAgeBand: p.childAgeBand } : {}),
+              ...reservationChildBandFields(
+                { ...p, ageCategory: categories[p.customerId]! },
+                input.hotelSelection?.checkInDate ?? input.departureDate,
+              ),
               serviceClientKeys: p.serviceClientKeys,
             })),
             serviceSelections: input.services,
@@ -1514,9 +1518,10 @@ export class SalesService {
         customerId: passenger.customerId,
         displayNameSnapshot: passenger.displayNameSnapshot,
         ageCategory: passenger.ageCategory,
-        ...(passenger.childAgeBand
-          ? { childAgeBand: passenger.childAgeBand }
-          : {}),
+        ...reservationChildBandFields(
+          passenger,
+          presented.hotelSelection?.checkInDate ?? presented.departureDate,
+        ),
         serviceClientKeys: passenger.serviceClientKeys,
       })),
       ticketSelections: presented.ticketSelections,

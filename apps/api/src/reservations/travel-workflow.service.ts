@@ -54,6 +54,32 @@ export class TravelWorkflowService {
     const workflow = row.workflowRevisions[0]?.state as unknown as
       TravelWorkflowStateV1 | undefined;
     const arrangement = row.arrangements[0];
+    const originalSnapshot =
+      row.snapshot as unknown as SalesReservationRequestV1;
+    const missingBands =
+      originalSnapshot.passengerAssignments?.filter(
+        (p) => p.ageCategory === 'CHD' && !p.childAgeBand,
+      ) ?? [];
+    const bands = missingBands.length
+      ? await this.amendments.hotelChildAgeBandsFor(
+          this.database.client,
+          row.contractId,
+          branchIds,
+          originalSnapshot.hotelSelection?.checkInDate,
+          missingBands.map((p) => p.customerId),
+        )
+      : {};
+    const snapshot = missingBands.length
+      ? {
+          ...originalSnapshot,
+          passengerAssignments: originalSnapshot.passengerAssignments!.map(
+            (p) =>
+              !p.childAgeBand && bands[p.customerId]
+                ? { ...p, childAgeBand: bands[p.customerId]! }
+                : p,
+          ),
+        }
+      : originalSnapshot;
     return {
       ticketDocuments: (row.ticketDocuments ?? []).map((doc) => ({
         customerId: doc.customerId,
@@ -74,7 +100,7 @@ export class TravelWorkflowService {
       branchId: row.branchId,
       status: 'QUEUED' as const,
       receivedAt: row.receivedAt.toISOString(),
-      snapshot: row.snapshot as unknown as SalesReservationRequestV1,
+      snapshot,
       arrangement: arrangement
         ? {
             version: arrangement.version,
