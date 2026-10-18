@@ -8,7 +8,7 @@ import {
 type Calculation = ReturnType<typeof calculateTourRoom>;
 export interface HotelPackageTablePrice extends Calculation {
   hotelRateId: string;
-  roomCode: 'single' | 'double' | 'doubleChild';
+  roomCode: string;
   roomTypeName: string;
   board: string;
   currencyCode: string;

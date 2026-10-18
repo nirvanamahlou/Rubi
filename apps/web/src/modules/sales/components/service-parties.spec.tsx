@@ -4,6 +4,12 @@ import type { ComponentProps } from 'react';
 import { ServiceParties } from './service-parties';
 import { emptySalesForm, type SalesFormState } from '../model/sales-form';
 const fixture = vi.hoisted(() => ({
+  childSelects: [] as {
+    label: string;
+    value: string;
+    options: { value: string; label: string }[];
+    onValueChange: (key: string) => void;
+  }[],
   inputs: [] as {
     value: unknown;
     onChange: (event: { target: { value: string } }) => void;
@@ -17,6 +23,17 @@ vi.mock('@/components/ui/form-controls', () => ({
   }) => {
     fixture.inputs.push(props);
     return <input value={String(props.value ?? '')} readOnly />;
+  },
+}));
+vi.mock('./sales-themed-select', () => ({
+  SalesThemedSelect: (props: {
+    label: string;
+    value: string;
+    options: { value: string; label: string }[];
+    onValueChange: (key: string) => void;
+  }) => {
+    fixture.childSelects.push(props);
+    return <span>{props.label}</span>;
   },
 }));
 vi.mock('./passenger-age-field', () => ({
@@ -40,6 +57,7 @@ vi.mock('./searchable-reference', () => ({
   },
 }));
 beforeEach(() => {
+  fixture.childSelects = [];
   fixture.inputs = [];
   fixture.selects = [];
 });
@@ -47,6 +65,7 @@ const state: SalesFormState = {
   ...emptySalesForm,
   passengerComposition: { adults: 4, children: 2, infants: 0 },
   serviceKinds: ['FLIGHT', 'HOTEL', 'VISA'],
+  childAges: [5, 7],
   visaComposition: { adults: 2, children: 1 },
   visaChildAges: [6],
   visaApplicantIds: ['old'],
@@ -141,4 +160,42 @@ it('caps each room at the remaining adults and children in the flight party', ()
   expect(patch.mock.calls[0]![0].hotel.rooms[1].adults).toBe(2);
   fixture.inputs[7]!.onChange({ target: { value: '9' } });
   expect(patch.mock.calls[1]![0].hotel.rooms[1].childAges).toEqual([7]);
+});
+
+it('offers only unused flight children and inherits their age instead of asking for it again', () => {
+  const patch = vi.fn();
+  const value = {
+    ...state,
+    hotel: {
+      ...state.hotel,
+      rooms: [
+        state.hotel.rooms![0]!,
+        { ...state.hotel.rooms![1]!, childAges: [7] },
+      ],
+    },
+  };
+  renderToStaticMarkup(
+    <ServiceParties {...props} state={value} patch={patch} />,
+  );
+  expect(fixture.childSelects[0]!.value).toBe('child:0');
+  expect(
+    fixture.childSelects[0]!.options.some((o) => o.value === 'child:1'),
+  ).toBe(false);
+  expect(fixture.childSelects[1]!.value).toBe('child:1');
+  expect(
+    fixture.childSelects[1]!.options.some((o) => o.value === 'child:0'),
+  ).toBe(false);
+  fixture.childSelects[0]!.onValueChange('');
+  expect(patch.mock.calls[0]![0].hotel.rooms[0].childAges).toEqual([null]);
+  fixture.childSelects = [];
+  renderToStaticMarkup(
+    <ServiceParties
+      {...props}
+      state={{ ...value, childAges: [6, 7] }}
+      patch={patch}
+    />,
+  );
+  expect(
+    fixture.childSelects[0]!.options.some((o) => o.label === 'کودک 1 · 6 سال'),
+  ).toBe(true);
 });

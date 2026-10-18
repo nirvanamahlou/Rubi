@@ -1,3 +1,4 @@
+import { PackagePricingModule } from '../package-pricing/package-pricing.module';
 import { SalesPartyCorrectionService } from './sales-party-correction.service';
 import { PassengerCorrectionModule } from './corrections/passenger-correction.module';
 import { SalesProfitService } from './sales-profit.service';
@@ -27,6 +28,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
 
 @Module({
   imports: [
+    PackagePricingModule,
     PassengerCorrectionModule,
     FinanceTicketCostModule,
     MasterDataModule,

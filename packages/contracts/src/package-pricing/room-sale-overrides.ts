@@ -1,3 +1,4 @@
+import { packageRoomIdentity } from './room-compositions';
 import type { TourRoomCurrencyAmount } from './tour-calculation';
 
 /** Final per-person package sale, independent of the immutable hotel purchase. */
@@ -42,7 +43,8 @@ export function validatePackageRoomSales(
       typeof item !== 'object' ||
       typeof item.hotelRateId !== 'string' ||
       !item.hotelRateId ||
-      !['single', 'double', 'doubleChild'].includes(item.roomCode) ||
+      (!['single', 'double', 'doubleChild'].includes(item.roomCode) &&
+        !packageRoomIdentity(item.roomCode)) ||
       !/^[A-Z]{3}$/.test(item.currencyCode ?? '') ||
       typeof item.amount !== 'string'
     )

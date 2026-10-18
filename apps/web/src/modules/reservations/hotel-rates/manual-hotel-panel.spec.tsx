@@ -59,7 +59,7 @@ describe('manual hotel coefficient tables', () => {
       'جدول ضرایب هتل',
       'دبل',
       'سینگل',
-      'کودک با تخت',
+      'دبل با کودک با تخت',
       'افزودن ردیف',
       'Land View',
       'Sea View',

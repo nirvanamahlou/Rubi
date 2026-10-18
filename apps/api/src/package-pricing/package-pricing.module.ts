@@ -40,6 +40,6 @@ import {
       useExisting: VersionedPackagePricingSourceAdapter,
     },
   ],
-  exports: [PackagePricingService],
+  exports: [PackagePricingService, PackageTourPricingService],
 })
 export class PackagePricingModule {}

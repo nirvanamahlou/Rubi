@@ -740,14 +740,17 @@ model WorkbenchCalendarEvent {
 }
 
 model IamUserProfile {
-  userId          String    @id @map("user_id") @db.Uuid
-  phone           String?   @db.VarChar(32)
-  photoDocumentId String?   @map("photo_document_id") @db.Uuid
-  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  photoDocument   Document? @relation("IamProfilePhoto", fields: [photoDocumentId], references: [id], onDelete: Restrict)
+  organizationUnitId String?   @map("organization_unit_id") @db.Uuid
+  organizationUnit   HrRecord? @relation("IamUserOrganizationUnit", fields: [organizationUnitId], references: [id], onDelete: Restrict)
+  userId             String    @id @map("user_id") @db.Uuid
+  phone              String?   @db.VarChar(32)
+  photoDocumentId    String?   @map("photo_document_id") @db.Uuid
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photoDocument      Document? @relation("IamProfilePhoto", fields: [photoDocumentId], references: [id], onDelete: Restrict)
 
   @@index([photoDocumentId])
+  @@index([organizationUnitId])
   @@map("iam_user_profiles")
 }
 
@@ -3584,6 +3587,7 @@ model HrEmployee {
 }
 
 model HrRecord {
+  userProfiles              IamUserProfile[]           @relation("IamUserOrganizationUnit")
   financeOperationalRequest FinanceOperationalRequest?
   organizationEmployees     HrEmployee[]               @relation("HrEmployeeOrganizationBranch")
   searchText                String                     @default("") @map("search_text") @db.VarChar(12000)
@@ -5334,6 +5338,7 @@ model ReservationHotelRoomRate {
 }
 
 model PackagePricingTourDraft {
+  selectedRoomKeys            Json?
   roomSaleOverrides           Json?
   selectedHotelRateIds        Json?
   priceFields                 Json?
@@ -5432,7 +5437,7 @@ model PackagePricingTourPublishedRoomPrice {
   id                   String                             @id @default(uuid()) @db.Uuid
   publicationId        String                             @db.Uuid
   hotelRateId          String                             @db.Uuid
-  roomCode             String                             @db.VarChar(32)
+  roomCode             String                             @db.Text
   hotelPurchase        Decimal                            @db.Decimal(24, 4)
   hotelSale            Decimal                            @db.Decimal(24, 4)
   packagePurchase      Decimal?                           @db.Decimal(24, 4)

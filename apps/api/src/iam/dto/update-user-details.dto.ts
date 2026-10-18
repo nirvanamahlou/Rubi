@@ -1,6 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, Length, MaxLength, MinLength } from 'class-validator';
+import {
+  IsString,
+  Length,
+  MaxLength,
+  MinLength,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
 export class UpdateUserDetailsDto {
+  @ApiProperty({ required: false, nullable: true })
+  @IsOptional()
+  @IsUUID('4')
+  organizationUnitId?: string | null;
   @ApiProperty()
   @IsString()
   @MinLength(2)

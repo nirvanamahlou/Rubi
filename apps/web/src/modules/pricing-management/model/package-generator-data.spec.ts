@@ -149,3 +149,84 @@ describe('published package generator transfer', () => {
     expect(() => window.PackagePricingBridge!.normalize(data)).toThrow();
   });
 });
+
+it('hands off separate selected room types and exact one/two adult prices to the banner bridge without a fabricated child price', () => {
+  const code = (roomTypeId: string, adults: number) =>
+    JSON.stringify([2, roomTypeId, adults, [], 'BB']);
+  const current = {
+    ...publication,
+    roomPrices: [
+      {
+        ...publication.roomPrices[0]!,
+        roomCode: code('standard', 1),
+        roomTypeName: 'Standard',
+        currencyAmounts: [
+          {
+            currencyCode: 'EUR',
+            sale: '100.00',
+            purchase: 'secret',
+            commission: '0',
+            profit: 'secret',
+          },
+        ],
+      },
+      {
+        ...publication.roomPrices[0]!,
+        roomCode: code('standard', 2),
+        roomTypeName: 'Standard',
+        currencyAmounts: [
+          {
+            currencyCode: 'EUR',
+            sale: '180.00',
+            purchase: 'secret',
+            commission: '0',
+            profit: 'secret',
+          },
+        ],
+      },
+      {
+        ...publication.roomPrices[0]!,
+        roomCode: code('deluxe', 2),
+        roomTypeName: 'Deluxe',
+        currencyAmounts: [
+          {
+            currencyCode: 'EUR',
+            sale: '300.00',
+            purchase: 'secret',
+            commission: '0',
+            profit: 'secret',
+          },
+        ],
+      },
+    ],
+  } as PackageTourPublicationV1;
+  const data = packageGeneratorData(
+    {
+      ...grid,
+      destinationName: 'آنتالیا',
+      tour: {
+        ...grid.tour,
+        package: {
+          ...grid.tour.package,
+          details: { version: 1, description: 'Published services' },
+        },
+      },
+    },
+    batch,
+    current,
+  );
+  expect(data.title).toBe('آنتالیا');
+  expect('template' in data && data.template).toBe('antalya');
+  expect(data.groups).toHaveLength(2);
+  expect(data.groups[0]?.prices.double?.parts[0]?.amount).toBe('90.00');
+  expect(data.groups[1]?.prices.double?.parts[0]?.amount).toBe('150.00');
+  const window: { PackagePricingBridge?: Bridge } = {};
+  runInNewContext(
+    readFileSync(resolve('public/package-generator/pricing-bridge.js'), 'utf8'),
+    { window, console },
+  );
+  const normalized = window.PackagePricingBridge!.normalize(data);
+  expect(Array.from(normalized.priceKeys)).toEqual(['double', 'single']);
+  expect(JSON.stringify(normalized)).not.toContain('secret');
+  expect(JSON.stringify(normalized)).not.toContain('child');
+});

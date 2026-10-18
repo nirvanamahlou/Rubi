@@ -276,3 +276,99 @@ it('allows the next passenger step with a valid flight service despite stale hot
     fixture.ticketDraft = null;
   }
 });
+
+it('keeps hotel room and composition selection available inside a selected tour', () => {
+  fixture.step = 1;
+  fixture.firstDetail = true;
+  fixture.zeroIndex = 0;
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    serviceKinds: ['FLIGHT', 'HOTEL'],
+    tour: {
+      id: 'tour',
+      startsOn: '2099-10-01',
+      endsOn: '2099-10-04',
+      package: {
+        id: 'package',
+        name: 'Synthetic package',
+        hotelIds: ['hotel'],
+      },
+    } as SalesFormState['tour'],
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    expect(html).toContain('جست‌وجو و انتخاب تور');
+    expect(html).toContain('ورود (چک‌این)');
+    expect(html).toContain('خروج (چک‌اوت)');
+  } finally {
+    fixture.step = 0;
+    fixture.firstDetail = false;
+    fixture.zeroIndex = 0;
+    fixture.ticketDraft = null;
+  }
+});
+
+it('lets a complete selected tour continue without an unrelated standalone flight search calendar', () => {
+  fixture.step = 1;
+  fixture.firstDetail = true;
+  fixture.zeroIndex = 0;
+  const offer = {
+    id: 'offer',
+    version: 1,
+    branchId: 'branch',
+    originId: 'origin',
+    destinationId: 'destination',
+    departureAt: '2099-10-01T10:00:00Z',
+    arrivalAt: '2099-10-01T12:00:00Z',
+    carrierName: 'Synthetic',
+    serviceNumber: 'S1',
+    cabinClassCode: 'ECONOMY' as const,
+    totalCapacity: 10,
+    remainingCapacity: 10,
+    status: 'ACTIVE' as const,
+  };
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    serviceKinds: ['FLIGHT'],
+    originId: 'origin',
+    destinationId: 'destination',
+    departureDate: '2099-10-01',
+    outboundOffer: offer,
+    tour: {
+      id: 'tour',
+      version: 1,
+      branchId: 'branch',
+      startsOn: '2099-10-01',
+      endsOn: '2099-10-04',
+      outboundOfferId: 'offer',
+      outbound: offer,
+      remainingCapacity: 10,
+      packageId: 'package',
+      packageVersion: 1,
+      package: {
+        id: 'package',
+        name: 'Synthetic package',
+        hotelIds: [],
+        version: 1,
+        branchId: 'branch',
+        createdAt: '2099-09-01T00:00:00Z',
+        originId: 'origin',
+        destinationId: 'destination',
+        transferOutbound: false,
+        transferReturn: false,
+        visa: false,
+      },
+    } as SalesFormState['tour'],
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    const next = html.match(/<button[^>]*>بعدی/)?.[0];
+    expect(next).toBeDefined();
+    expect(next).not.toMatch(/\sdisabled(?:=|\s|>)/);
+  } finally {
+    fixture.step = 0;
+    fixture.firstDetail = false;
+    fixture.zeroIndex = 0;
+    fixture.ticketDraft = null;
+  }
+});
