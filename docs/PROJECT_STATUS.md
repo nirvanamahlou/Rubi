@@ -1,3 +1,7 @@
+## RATE-ACTIONS-CHART-1019 — PC-B
+
+Registered reference rates gain dedicated amount/source edits and logical deletion with native/manual access, quote-write authority, branch, CAS and transactional before/after audit. Active history/current exclude removed rows; original pair/type/status/time and non-authoritative nature stay unchanged. Charts gain real date spacing and visible date/amount axes; the technical flag badge is removed only from UI. Broad API623 passed/one optional local skip, focused Web60 passed and updated permissions/mutations21 passed; real PostgreSQL correction/concurrency/delete/rollback proof and final-head hosted gates precede authorized push/develop merge. No migration/dependency, operational data, server or3100 rollout. Details: [RATE-ACTIONS-CHART-1019](tasks/RATE-ACTIONS-CHART-1019.md).
+
 ## BANK-CODE-OPTIONAL-1019 — PC-B
 
 Bank manual code is optional in form/API; blank creation generates a unique internal code and blank editing preserves the saved identity. Required bank name/country and explicit-code validation remain. Owner's added payment-card request hides only list-card code/avatar; View retains them and actions are unchanged.58 focused API and38 Web tests pass; disposable PostgreSQL regression and final-head full gates precede authorized push/develop merge. No migration/dependency, operational data or server rollout. Details: [BANK-CODE-OPTIONAL-1019](tasks/BANK-CODE-OPTIONAL-1019.md).

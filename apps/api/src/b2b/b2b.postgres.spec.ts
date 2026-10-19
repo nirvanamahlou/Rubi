@@ -619,6 +619,146 @@ describe.skipIf(!enabled)(
       expect(audit).toBe(2);
     });
 
+    it('edits/deletes real reference quotes atomically, excludes removed rows and retains audit evidence', async () => {
+      const service = new CurrencyRateService({ client } as DatabaseService);
+      const actor: AuthenticatedActor = {
+        userId: actorUserId,
+        sessionId: randomUUID(),
+        branchIds: [branchId],
+        permissions: [
+          'master_data.create',
+          'master_data.currency_rate.create',
+          'master_data.update',
+          'master_data.delete',
+        ],
+      };
+      const created = (
+        await service.createQuote(
+          { fromCurrencyCode: 'USD', toCurrencyCode: 'IRR', buyRate: '270000' },
+          actor,
+        )
+      ).data[0]!;
+      await service.mutate(
+        created.id,
+        { expectedVersion: 1, rate: '280000.1234567890', source: 'corrected' },
+        'update',
+        actor,
+      );
+      expect(
+        (
+          await service.current(
+            created.fromCurrencyId,
+            created.toCurrencyId,
+            'BUY',
+          )
+        ).data,
+      ).toMatchObject({
+        id: created.id,
+        rate: '280000.123456789',
+        status: 'APPROVED',
+        version: 2,
+      });
+      const concurrent = await Promise.allSettled([
+        service.mutate(
+          created.id,
+          { expectedVersion: 2, rate: '290000' },
+          'update',
+          actor,
+        ),
+        service.mutate(
+          created.id,
+          { expectedVersion: 2, rate: '300000' },
+          'update',
+          actor,
+        ),
+      ]);
+      expect(
+        concurrent.filter((row) => row.status === 'fulfilled'),
+      ).toHaveLength(1);
+      expect(
+        concurrent.filter((row) => row.status === 'rejected'),
+      ).toHaveLength(1);
+      await service.mutate(created.id, { expectedVersion: 3 }, 'delete', actor);
+      expect(
+        await client.masterDraftExchangeRate.findUniqueOrThrow({
+          where: { id: created.id },
+        }),
+      ).toMatchObject({
+        isActive: false,
+        isAuthoritative: false,
+        version: 4,
+        deactivatedByUserId: actorUserId,
+      });
+      expect(
+        (
+          await service.current(
+            created.fromCurrencyId,
+            created.toCurrencyId,
+            'BUY',
+          )
+        ).data?.id,
+      ).not.toBe(created.id);
+      expect(
+        (
+          await service.history({
+            page: 1,
+            pageSize: 100,
+            fromCurrencyId: created.fromCurrencyId,
+          })
+        ).data.map((row) => row.id),
+      ).not.toContain(created.id);
+      expect(
+        await client.masterDataAuditEvent.count({
+          where: { entityId: created.id, resource: 'exchange-rates' },
+        }),
+      ).toBe(4);
+      await expect(
+        service.mutate(
+          created.id,
+          { expectedVersion: 4, rate: '1' },
+          'update',
+          actor,
+        ),
+      ).rejects.toMatchObject({ status: 404 });
+      const retained = (
+        await service.createQuote(
+          { fromCurrencyCode: 'USD', toCurrencyCode: 'IRR', buyRate: '400000' },
+          actor,
+        )
+      ).data[0]!;
+      const failing = new CurrencyRateService({
+        client: client.$extends({
+          query: {
+            masterDataAuditEvent: {
+              create() {
+                return Promise.reject(new Error('Synthetic audit failure'));
+              },
+            },
+          },
+        }),
+      } as unknown as DatabaseService);
+      await expect(
+        failing.mutate(
+          retained.id,
+          { expectedVersion: 1, rate: '500000' },
+          'update',
+          actor,
+        ),
+      ).rejects.toThrow('Synthetic audit failure');
+      await expect(
+        failing.mutate(retained.id, { expectedVersion: 1 }, 'delete', actor),
+      ).rejects.toThrow('Synthetic audit failure');
+      expect(
+        await client.masterDraftExchangeRate.findUniqueOrThrow({
+          where: { id: retained.id },
+        }),
+      ).toMatchObject({
+        rate: new Prisma.Decimal('400000'),
+        isActive: true,
+        version: 1,
+      });
+    });
+
     it('registers reference quotes without checker authority and immediately reads exact current/history values', async () => {
       const service = new CurrencyRateService({ client } as DatabaseService);
       const actor: AuthenticatedActor = {

@@ -1,3 +1,9 @@
+## RATE-ACTIONS-CHART-1019 — PC-B — READY_FOR_CI
+
+Bounded localization outputs: existing offline i18n-sync API and standalone catalogues generated only from the related override keys; preserve peer labels. Test expectation updates cover active-only history and dedicated audited rate commands, not removal of security gates.
+
+COMPUTER_ID=PC-B; branch codex/pc-b-rate-actions-chart-1019 from origin/develop@35941c03. User authorizes edit/delete reference-rate actions, date/amount chart axes, removal of visible isAuthoritative=false copy, tests, push/develop merge. Reserve bounded currency-rate service/controller/DTO/client, dedicated Web rate actions/chart and tests, disposable PostgreSQL regression, own task/status/decision notes and only related English override keys. Additive producer PATCH/DELETE currency-rates/:id accepts expectedVersion; PATCH changes rate/source only, retains pair/type/validity/status, DELETE logically deactivates with version/actor/time and audit. Active history/current exclude deleted rows; legacy decisions cannot resurrect deleted drafts. Keep non-authoritative flag, exact Decimal, native permissions/manual field/resource access, branch and CAS/audit transaction. No schema/migration/dependency, operational data or deployment changes; previous own rate/bank scopes merged/released. All final-head hosted gates precede merge.
+
 ## BANK-CODE-OPTIONAL-1019 — PC-B — READY_FOR_CI
 
 Owner adds screenshot753: hide internal payment-method code and adjacent logo/initial avatar only on list cards, retaining them in View. Extend bounded reservation to Finance workspace payment-card header and focused visual regression; shared profile identity, stored data and all actions stay intact. Deliver with this finance-reference unit.

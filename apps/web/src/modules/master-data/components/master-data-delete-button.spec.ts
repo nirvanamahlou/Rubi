@@ -56,7 +56,7 @@ describe('Master Data safe deletion UI', () => {
     expect(workspace).toContain('<MasterDataDeleteButton');
     expect(workspace).toContain('afterDelete');
   });
-  it('preserves the read-only collaboration view and rate history restrictions', () => {
+  it('preserves the read-only collaboration view and dedicated rate management actions', () => {
     const suppliers = source('master-data-suppliers-workspace.tsx');
     const actions = suppliers.slice(
       suppliers.indexOf('const rowActions'),
@@ -66,8 +66,9 @@ describe('Master Data safe deletion UI', () => {
       actions.indexOf("tab !== 'collaboration'"),
     );
     const finance = source('master-data-finance-workspace.tsx');
-    expect(finance).toMatch(
-      /row.status === 'DRAFT' \? \(\s*(?:<>\s*)?<MasterDataDeleteButton/,
+    expect(finance).toContain('<CurrencyRateActions');
+    expect(finance).not.toMatch(
+      /<MasterDataDeleteButton\s+record=\{rateRecord/,
     );
   });
 });
