@@ -182,7 +182,7 @@ describe('Saved contract print output', () => {
       const cols = [...html.matchAll(/<col style="width:(\d+)%">/g)].map(
         (match) => Number(match[1]),
       );
-      expect(cols).toHaveLength(kind === 'person' ? 7 : 8);
+      expect(cols).toHaveLength(7);
       expect(cols.reduce((sum, width) => sum + width, 0)).toBe(100);
       expect(html).toContain('overflow-wrap:anywhere');
     },
@@ -282,7 +282,7 @@ describe('Saved contract print output', () => {
     expect(html).toContain('ترانسفر رفت');
     expect(html).not.toContain('<th>کمیسیون</th>');
   });
-  it('shows unrecorded commission only for agency customers without inventing a deduction', () => {
+  it('omits unrecorded commission for agency customers without inventing a deduction', () => {
     const html = contractPrintHtml(
       {
         ...printFixture,
@@ -290,7 +290,7 @@ describe('Saved contract print output', () => {
       },
       printReferences,
     );
-    expect(html).toContain('<th>کمیسیون</th>');
+    expect(html).not.toContain('<th>کمیسیون</th>');
     expect(html).toContain('هیچ مبلغی بابت آن');
     expect(html).toContain('123,456,789.25');
   });

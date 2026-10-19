@@ -3,8 +3,8 @@ import type { TicketOfferV1 } from '@nora/contracts';
 import { PublishedPackageSale } from './published-package-sale';
 import { readPassengerHotelPrices } from '@nora/contracts';
 import { syncHotelChildSelections } from '../model/hotel-child-selection';
-import { AgencyCommission } from './agency-commission';
-import { PassengerPackagePrices } from './passenger-package-prices';
+
+import { PassengerServicePrices } from './passenger-service-prices';
 import { validatePassengerFlightPrices } from '@nora/contracts';
 import {
   salesRoomPartyError,
@@ -2198,39 +2198,10 @@ export function SalesContractForm() {
                 currencies={references.currencies}
                 onChange={(contractPrices) => patchState({ contractPrices })}
               />
-              {state.serviceKinds.includes('FLIGHT') && (
-                <PassengerPackagePrices
-                  flight
-                  state={{
-                    ...state,
-                    passengerPrices: state.passengerFlightPrices ?? {},
-                    insuranceExtraToman: {},
-                  }}
-                  currencies={references.currencies}
-                  onChange={(passengerFlightPrices) =>
-                    patchState({ passengerFlightPrices })
-                  }
-                />
-              )}
-              {state.serviceKinds.includes('HOTEL') && (
-                <PassengerPackagePrices
-                  hotel
-                  state={{
-                    ...state,
-                    passengerPrices: state.passengerHotelPrices ?? {},
-                    insuranceExtraToman: {},
-                  }}
-                  currencies={references.currencies}
-                  onChange={(passengerHotelPrices) =>
-                    patchState({ passengerHotelPrices })
-                  }
-                />
-              )}
-              <AgencyCommission
+              <PassengerServicePrices
                 state={state}
-                onChange={(agencyCommission) =>
-                  patchState({ agencyCommission })
-                }
+                currencies={references.currencies}
+                onChange={patchState}
               />
               <InsuranceExtraSummary state={state} />
               <SalesChequeCalculator
@@ -2350,9 +2321,6 @@ export function SalesContractForm() {
             <ContractTotalPrices
               state={state}
               currencies={references.currencies}
-              onRoomPricesChange={(rooms) =>
-                patchState({ hotel: { ...state.hotel, rooms } })
-              }
               onChange={(contractPrices) => patchState({ contractPrices })}
             />
             {state.serviceKinds.includes('FLIGHT') ? (
