@@ -1,3 +1,7 @@
+## BANK-CODE-OPTIONAL-1019 — PC-B
+
+Bank manual code is optional in form/API; blank creation generates a unique internal code and blank editing preserves the saved identity. Required bank name/country and explicit-code validation remain. Owner's added payment-card request hides only list-card code/avatar; View retains them and actions are unchanged.58 focused API and38 Web tests pass; disposable PostgreSQL regression and final-head full gates precede authorized push/develop merge. No migration/dependency, operational data or server rollout. Details: [BANK-CODE-OPTIONAL-1019](tasks/BANK-CODE-OPTIONAL-1019.md).
+
 ## PAIRED-RETURN-DATE-1019 — PC-A
 
 Sales fills a unique eligible registered return date after choosing the outbound day, using saved pair IDs or the defined load group and return window. Manual/floating return dates remain editable; an existing explicit date is retained when selecting the actual outbound offer. Search exposes only optional loadGroupId, preserving authorized route/branch filters and omitting audit/internal keys.26 Web and 18 API tests, Web typecheck and scoped lint pass; final-head full CI gates owner-authorized develop merge. No schema/migration/dependency/runtime changes.
