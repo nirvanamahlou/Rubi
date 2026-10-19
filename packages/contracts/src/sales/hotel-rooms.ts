@@ -28,8 +28,7 @@ export function validSalesHotelRooms(rooms: unknown, count: number) {
             typeof room.agreedPrice === 'object' &&
             typeof room.agreedPrice.amount === 'string' &&
             /^\d{1,18}(?:\.\d{1,4})?$/.test(room.agreedPrice.amount) &&
-            /^[A-Z]{3}$/.test(room.agreedPrice.currencyCode) &&
-            room.agreedPrice.currencyCode !== 'IRR')) &&
+            /^[A-Z]{3}$/.test(room.agreedPrice.currencyCode))) &&
         Number.isInteger(room.adults) &&
         room.adults >= 1 &&
         room.adults <= 20 &&

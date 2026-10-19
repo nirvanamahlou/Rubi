@@ -3,18 +3,23 @@ import type { MasterDataRecord } from '@nora/contracts';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
-import { SalesDatePicker } from './sales-date-picker';
+import { TimePicker } from '@/components/ui/time-picker';
+import {
+  floatingFlightClock,
+  floatingFlightTimes,
+} from '../model/floating-flight-times';
 import { SalesThemedSelect } from './sales-themed-select';
 import type { ContractFlightDraft } from '../model/sales-form';
 
 export function ContractFlightEditor({
   value,
-  international = false,
+  flightDate = '',
   airlines = [],
   onChange,
 }: {
   value: ContractFlightDraft | undefined;
   international?: boolean;
+  flightDate?: string;
   airlines?: readonly MasterDataRecord[];
   onChange: (value: ContractFlightDraft | undefined) => void;
 }) {
@@ -91,26 +96,32 @@ export function ContractFlightEditor({
             onChange={(e) => patch({ serviceNumber: e.target.value })}
           />
         </FormField>
-        <FormField label="تاریخ و ساعت حرکت" required>
-          <SalesDatePicker
-            key={international ? 'foreign' : 'local'}
-            {...(international
-              ? { defaultCalendarSystem: 'gregorian' as const }
-              : {})}
-            includeTime
-            value={value.departureAt}
-            onChange={(departureAt) => patch({ departureAt })}
+        <FormField label="ساعت حرکت" required>
+          <TimePicker
+            aria-label="ساعت حرکت بلیط شناور"
+            disabled={!flightDate}
+            value={floatingFlightClock(value.departureAt)}
+            onChange={(e) =>
+              onChange(
+                floatingFlightTimes(flightDate, value, {
+                  departure: e.target.value,
+                }),
+              )
+            }
           />
         </FormField>
-        <FormField label="تاریخ و ساعت رسیدن" required>
-          <SalesDatePicker
-            key={international ? 'foreign' : 'local'}
-            {...(international
-              ? { defaultCalendarSystem: 'gregorian' as const }
-              : {})}
-            includeTime
-            value={value.arrivalAt}
-            onChange={(arrivalAt) => patch({ arrivalAt })}
+        <FormField label="ساعت رسیدن" required>
+          <TimePicker
+            aria-label="ساعت رسیدن بلیط شناور"
+            disabled={!flightDate}
+            value={floatingFlightClock(value.arrivalAt)}
+            onChange={(e) =>
+              onChange(
+                floatingFlightTimes(flightDate, value, {
+                  arrival: e.target.value,
+                }),
+              )
+            }
           />
         </FormField>
         <FormField label="کلاس پرواز" required>

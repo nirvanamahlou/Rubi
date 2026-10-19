@@ -59,9 +59,7 @@ export function ContractTotalPrices({
             const price = room.agreedPrice ?? {
               amount: '',
               currencyCode:
-                currencies.find(
-                  (c) => c.status === 'active' && c.code !== 'IRR',
-                )?.code ?? '',
+                currencies.find((c) => c.status === 'active')?.code ?? '',
             };
             const update = (patch: Partial<SalesMoney>) =>
               onRoomPricesChange(
@@ -81,7 +79,7 @@ export function ContractTotalPrices({
                 </span>
                 <SalesCurrencySelect
                   label="ارز اتاق"
-                  currencies={currencies.filter((c) => c.code !== 'IRR')}
+                  currencies={currencies}
                   value={price.currencyCode}
                   onChange={(currencyCode) => update({ currencyCode })}
                 />

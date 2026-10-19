@@ -1301,7 +1301,10 @@ export function SalesContractForm() {
                 setFlightRangeRoute(flightRouteKey);
                 setFlightRange(range);
                 setFutureFrom(new Date().toISOString());
-                patchState(resetSalesTicketRange(state));
+                patchState({
+                  ...resetSalesTicketRange(state),
+                  contractFlights: {},
+                });
               }}
             />
           </section>
@@ -1395,6 +1398,7 @@ export function SalesContractForm() {
                     <section className="grid gap-3 min-w-0">
                       <h3 className="font-bold">بلیط رفت</h3>
                       <ContractFlightEditor
+                        flightDate={flightRange.from}
                         international={salesInternationalTravel(state)}
                         airlines={references.airlines}
                         value={state.contractFlights?.OUTBOUND}
@@ -1473,6 +1477,7 @@ export function SalesContractForm() {
                   {flightDirections.includes('RETURN') ? (
                     <section className="grid gap-3 min-w-0">
                       <ContractFlightEditor
+                        flightDate={flightRange.to}
                         international={salesInternationalTravel(state)}
                         airlines={references.airlines}
                         value={state.contractFlights?.RETURN}

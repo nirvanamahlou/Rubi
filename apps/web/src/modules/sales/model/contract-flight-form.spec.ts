@@ -116,7 +116,8 @@ describe('Contract-only flight form and consumers', () => {
       }),
     );
     expect(html).toContain('ایرلاین بلیط شناور');
-    expect(html).toContain('تاریخ و ساعت حرکت');
+    expect(html).toContain('ساعت حرکت');
+    expect(html).not.toContain('تاریخ و ساعت حرکت');
     expect(html).toContain('role="combobox"');
     expect(html).toContain('aria-hidden="true"');
     expect(html).not.toContain('type="number"');
