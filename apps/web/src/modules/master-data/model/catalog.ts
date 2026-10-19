@@ -493,7 +493,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'کد بانک',
         type: 'text',
         placeholder: 'MELLAT',
-        required: true,
       },
       nameField,
       {

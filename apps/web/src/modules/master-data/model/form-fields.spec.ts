@@ -13,6 +13,36 @@ import { getMasterDataFormFields } from './form-fields';
 import { validateMasterDataDraft } from './validation';
 
 describe('payment-method form fields', () => {
+  it('keeps bank code optional in create/edit while retaining required name and country', () => {
+    const definition = getMasterDataDefinition('banks');
+    for (const mode of ['create', 'edit'] as const) {
+      expect(
+        getMasterDataFormFields(definition, mode).find(
+          (field) => field.key === 'code',
+        )?.required,
+      ).not.toBe(true);
+    }
+    for (const code of [undefined, '', '  ']) {
+      expect(
+        validateMasterDataDraft('banks', {
+          name: 'بانک تست',
+          countryId: 'country-ir',
+          ...(code === undefined ? {} : { code }),
+        }).success,
+      ).toBe(true);
+    }
+    expect(
+      validateMasterDataDraft('banks', {
+        name: 'بانک تست',
+        countryId: 'country-ir',
+        code: 'bad code!',
+      }).errors.code,
+    ).toBeDefined();
+    expect(validateMasterDataDraft('banks', {}).errors).toMatchObject({
+      name: expect.any(String),
+      countryId: expect.any(String),
+    });
+  });
   it('hydrates an inactive rail terminal without defaulting it back to active', () => {
     const record: MasterDataRecord = {
       id: '11111111-1111-4111-8111-111111111111',

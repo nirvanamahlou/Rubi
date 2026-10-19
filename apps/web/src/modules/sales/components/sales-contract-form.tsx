@@ -35,6 +35,7 @@ import { moneyDecimal, moneyUnits, passengerOverSixty } from '@nora/contracts';
 import { PassengerCountField } from './passenger-count-field';
 import { PassengerAgeField } from './passenger-age-field';
 import { ContractOutputButton } from './contract-output';
+import { ContractReviewPreview } from './contract-review-preview';
 
 import {
   AlertTriangle,
@@ -2313,12 +2314,13 @@ export function SalesContractForm() {
               </Card>
             </div>
             <InsuranceExtraSummary state={state} />
+            <ContractReviewPreview
+              state={pricedState}
+              references={references}
+            />
             <ContractTotalPrices
               state={state}
               currencies={references.currencies}
-              onRoomPricesChange={(rooms) =>
-                patchState({ hotel: { ...state.hotel, rooms } })
-              }
               onChange={(contractPrices) => patchState({ contractPrices })}
             />
             {state.serviceKinds.includes('FLIGHT') ? (

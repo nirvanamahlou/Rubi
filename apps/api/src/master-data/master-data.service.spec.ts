@@ -1053,6 +1053,94 @@ describe('MasterDataService', () => {
     );
   });
 
+  it.each([undefined, null, '', '   '])(
+    'creates a bank with optional code %s',
+    async (code) => {
+      const repository = {
+        codeExists: vi
+          .fn()
+          .mockResolvedValueOnce(true)
+          .mockResolvedValue(false),
+        fieldExists: vi.fn().mockResolvedValue(false),
+        find: vi.fn().mockResolvedValue({ isActive: true }),
+        create: vi
+          .fn()
+          .mockImplementation(async (_resource, data) => ({ ...row, ...data })),
+      } as unknown as MasterDataRepository;
+      const response = await new MasterDataService(repository).create(
+        'banks',
+        {
+          name: 'Synthetic bank',
+          countryId: '55555555-5555-4555-8555-555555555555',
+          ...(code === undefined ? {} : { code }),
+        },
+        actor,
+      );
+      expect(response.data.code).toMatch(/^BANK_[A-Z0-9]{12}$/);
+      expect(repository.codeExists).toHaveBeenCalledTimes(2);
+      expect(repository.create).toHaveBeenCalledWith(
+        'banks',
+        expect.objectContaining({ code: response.data.code }),
+        actor.userId,
+        actor.branchIds[0],
+      );
+    },
+  );
+
+  it('preserves saved bank code on blank edits and retains supplied-code validation', async () => {
+    const repository = {
+      codeExists: vi.fn(),
+      fieldExists: vi.fn().mockResolvedValue(false),
+      update: vi.fn().mockResolvedValue({ ...row, code: 'SAVED_BANK' }),
+      find: vi.fn().mockResolvedValue({ isActive: true }),
+      create: vi
+        .fn()
+        .mockImplementation(async (_resource, data) => ({ ...row, ...data })),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    for (const code of ['', '  ', null]) {
+      await service.update(
+        'banks',
+        row.id,
+        { code, name: 'Renamed bank' },
+        1,
+        actor,
+      );
+      expect(repository.update).toHaveBeenLastCalledWith(
+        'banks',
+        row.id,
+        { name: 'Renamed bank' },
+        1,
+        actor.userId,
+        actor.branchIds[0],
+      );
+    }
+    expect(repository.codeExists).not.toHaveBeenCalled();
+    const base = {
+      name: 'Synthetic bank',
+      countryId: '55555555-5555-4555-8555-555555555555',
+    };
+    expect(
+      (await service.create('banks', { ...base, code: ' manual_01 ' }, actor))
+        .data.code,
+    ).toBe('MANUAL_01');
+    await expect(
+      service.create('banks', { ...base, code: 'bad code!' }, actor),
+    ).rejects.toMatchObject({ status: 400 });
+    vi.mocked(repository.fieldExists).mockResolvedValue(true);
+    await expect(
+      service.create('banks', { ...base, code: 'DUPLICATE' }, actor),
+    ).rejects.toMatchObject({ status: 409 });
+    for (const invalid of [
+      { name: 'Only name' },
+      { countryId: base.countryId },
+    ]) {
+      await expect(
+        service.create('banks', invalid, actor),
+      ).rejects.toMatchObject({ status: 400 });
+    }
+  });
+
   it('creates a bank branch only from active bank/city references', async () => {
     const bankId = '55555555-5555-4555-8555-555555555555';
     const cityId = '66666666-6666-4666-8666-666666666666';
