@@ -423,6 +423,28 @@ async function seed(): Promise<void> {
           },
           update: { isPrimary: true },
         });
+        const companyBranches = await transaction.branch.findMany({
+          where: {
+            isActive: true,
+            code: {
+              in: [
+                'NIYAYESH_SEIR_SAHAR',
+                'JAHAN_BASTAN',
+                'GHESATI_RO',
+                'JAHAN_ACADEMIA',
+              ],
+            },
+          },
+          select: { id: true },
+        });
+        await transaction.userBranch.createMany({
+          data: companyBranches.map((branch) => ({
+            userId: fixtureUser.id,
+            branchId: branch.id,
+            isPrimary: false,
+          })),
+          skipDuplicates: true,
+        });
         const initialLegalEntities = [
           {
             id: '20000000-0000-4000-8000-000000000001',

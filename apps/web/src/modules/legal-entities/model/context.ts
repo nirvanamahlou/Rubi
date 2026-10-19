@@ -39,6 +39,7 @@ const activeSelectorCodes: LegalEntitySelection[] = [
   'GHESATI_RO',
   'NIYAYESH_SEIR_SAHAR',
   'JAHAN_BASTAN',
+  'JAHAN_ACADEMIA',
 ];
 
 const placeholderBrand = (name: string): LegalEntityBrand => ({
@@ -53,7 +54,7 @@ export function legalEntityBrand(
   selection: LegalEntitySelection | null | undefined,
 ): LegalEntityBrand {
   if (selection === 'JAHAN_BASTAN') return jahanBastanBrand;
-  if (selection === 'JAHAN_ACADEMIA') return placeholderBrand('جهان آکادمیا');
+  if (selection === 'JAHAN_ACADEMIA') return placeholderBrand('جهان آکادمی');
   if (selection === 'GHESATI_RO') return placeholderBrand('قسطی رو');
   return niyayeshSeirBrand;
 }
@@ -64,7 +65,9 @@ export function legalEntityChoices(
 ): LegalEntityChoice[] {
   return [
     ...entities
-      .filter(({ code }) => activeSelectorCodes.includes(code))
+      .filter(
+        ({ code, isActive }) => isActive && activeSelectorCodes.includes(code),
+      )
       .sort(
         (left, right) =>
           activeSelectorCodes.indexOf(left.code) -

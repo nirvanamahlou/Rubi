@@ -202,10 +202,10 @@ jobs:
           pnpm --filter @nora/database db:seed
           pnpm --filter @nora/database db:seed
 
-      - name: Prove optional IAM user unit migration and HR foreign keys
+      - name: Prove IAM user unit and company branch data upgrades
         env:
           IAM_USER_UNIT_TEST: '1'
-        run: pnpm --filter @nora/database exec vitest run test/iam-user-unit-postgres.spec.ts
+        run: pnpm --filter @nora/database exec vitest run test/iam-user-unit-postgres.spec.ts test/five-company-branches-postgres.spec.ts
 
       - name: Prove immutable purchase FX snapshots
         env:
