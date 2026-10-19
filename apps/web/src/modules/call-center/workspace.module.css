@@ -820,3 +820,37 @@
 .search input::-webkit-search-decoration {
   appearance: none;
 }
+
+.workspace .filters {
+  flex-wrap: wrap;
+}
+.workspace .filters > label {
+  min-width: 145px;
+  flex: 1 1 145px;
+}
+.workspace input[type='date'] {
+  appearance: none;
+  min-height: 40px;
+  width: 100%;
+  border: 1px solid var(--cc-border);
+  border-radius: 8px;
+  padding: 6px;
+  background: var(--background);
+}
+.workspace details {
+  margin-block: 8px;
+  overflow-wrap: anywhere;
+}
+.workspace summary {
+  cursor: pointer;
+  padding-block: 6px;
+}
+.workspace .history {
+  max-height: calc(100dvh - 100px);
+  overflow-y: auto;
+}
+@media (max-width: 900px) {
+  .workspace .history {
+    max-height: none;
+  }
+}

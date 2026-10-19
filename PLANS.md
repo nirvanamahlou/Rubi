@@ -539,3 +539,15 @@ Gated conversation preparation: shared prepared actions, strict bounded planner 
 - [ ] Packages two through four: full call search/reporting, Customer/Sales linkage, telephony readiness and actual Issabel/recording integration.
 
 Details and compatibility/runtime handoff: docs/tasks/CALL-CENTER-PACKAGE-ONE-1019.md.
+
+## CALL-CENTER-PACKAGE-TWO-1019
+
+- [x] Bounded contact summaries and separate call/note/request/action loading.
+- [x] Whole-data authorized search/filter, secure exact-phone and whole-word indexes, page-change conflict detection.
+- [x] Explicit Customers-owned candidate lookup/request association and replay-safe authorized referrals.
+- [x] Server reports with explicit scope/time/denominator and no fictional phone KPIs.
+- [x] Shared controls, empty/error/stale states, responsive keyboard/focus checks, tests and builds.
+- [ ] Owner authenticated review of localhost3000; independent PR/merge authorization.
+- [ ] Issabel API, real incoming call routing, recording ingestion, approved sales-conversion definition and optional audited Reporting exports remain subsequent scope.
+
+Evidence and compatibility: docs/tasks/CALL-CENTER-PACKAGE-TWO-1019.md.

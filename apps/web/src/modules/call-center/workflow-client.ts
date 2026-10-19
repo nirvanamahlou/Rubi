@@ -23,6 +23,7 @@ export interface FollowUp {
   }[];
 }
 export interface RequestCase {
+  customerId?: string | null;
   privateHistory: {
     at: string;
     actorId: string;
@@ -71,9 +72,18 @@ export const workflowApi = {
     ),
   operators: (branch: string) =>
     callCenterRequest<{ data: Operator[] }>('/operators', branch),
-  list: (branch: string, contact: string, signal?: AbortSignal) =>
-    callCenterRequest<{ data: RequestCase[] }>(
-      `/contacts/${contact}/requests`,
+  list: (
+    branch: string,
+    contact: string,
+    signal?: AbortSignal,
+    page = 1,
+    taskPage = 1,
+  ) =>
+    callCenterRequest<{
+      data: RequestCase[];
+      meta?: { total: number; hasMoreTasks: boolean };
+    }>(
+      `/contacts/${contact}/requests?page=${page}&taskPage=${taskPage}`,
       branch,
       signal ? { signal } : {},
     ),

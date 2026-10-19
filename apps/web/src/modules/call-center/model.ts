@@ -59,6 +59,8 @@ export function normalizePhone(value: string) {
     .replace(/[\s()-]/g, '');
   if (phone.startsWith('0098')) phone = '0' + phone.slice(4);
   if (phone.startsWith('+98')) phone = '0' + phone.slice(3);
+  if (/^98\d{10}$/.test(phone)) phone = '0' + phone.slice(2);
+  if (/^9\d{9}$/.test(phone)) phone = '0' + phone;
   return phone;
 }
 export function validPhone(value: string) {

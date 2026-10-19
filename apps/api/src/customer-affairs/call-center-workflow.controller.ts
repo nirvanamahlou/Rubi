@@ -23,6 +23,8 @@ import {
   CallCenterFollowUpDto,
   CallCenterRequestDto,
   CallCenterQueueDto,
+  CallCenterRequestPageDto,
+  CallCenterReferralDto,
   CallCenterLinkDto,
 } from './call-center-workflow.dto';
 
@@ -33,6 +35,17 @@ export class CallCenterWorkflowController {
     @Inject(CallCenterWorkflowService)
     private readonly service: CallCenterWorkflowService,
   ) {}
+  @Post('requests/:id/referrals')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('customer_affairs.call_center.workflow.manage')
+  refer(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() input: CallCenterReferralDto,
+    @Headers('x-branch-id') branch?: string,
+  ) {
+    return this.service.refer(req.actor, branch, id, input);
+  }
   @Post('calls/:id/request')
   @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('customer_affairs.call_center.workflow.manage')
@@ -68,10 +81,11 @@ export class CallCenterWorkflowController {
   @RequirePermissions('customer_affairs.call_center.read')
   list(
     @Req() req: AuthenticatedRequest,
+    @Query() query: CallCenterRequestPageDto,
     @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-branch-id') branch?: string,
   ) {
-    return this.service.list(req.actor, branch, id);
+    return this.service.list(req.actor, branch, id, query.page, query.taskPage);
   }
   @Post('contacts/:id/requests')
   @Header('Cache-Control', 'private, no-store')

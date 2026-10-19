@@ -1,3 +1,7 @@
+import { CallCenterCustomerController } from './call-center-customer.controller';
+import { CallCenterCustomerService } from './call-center-customer.service';
+import { CallCenterReadController } from './call-center-read.controller';
+import { CallCenterReadService } from './call-center-read.service';
 import { TasksModule } from '../tasks/tasks.module';
 import { CallCenterWorkflowService } from './call-center-workflow.service';
 import { CallCenterWorkflowController } from './call-center-workflow.controller';
@@ -52,6 +56,8 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     SettingsModule,
   ],
   controllers: [
+    CallCenterCustomerController,
+    CallCenterReadController,
     CallCenterWorkflowController,
     CallCenterController,
     CustomerAffairsAssistantController,
@@ -63,6 +69,8 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     CustomerAffairsMarketingIntakeController,
   ],
   providers: [
+    CallCenterCustomerService,
+    CallCenterReadService,
     CallCenterWorkflowService,
     CallCenterService,
     CallCenterCrypto,

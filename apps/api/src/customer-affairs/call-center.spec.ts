@@ -160,11 +160,9 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         pageSize: 50,
       });
       expect(result.data).toHaveLength(1);
-      expect(result.data[0]!.calls).toHaveLength(3);
+      expect(result.data[0]!.calls).toHaveLength(1);
       expect(result.data[0]!.calls.map((call) => call.occurredAt)).toEqual([
         '2026-10-19T10:00:00.000Z',
-        '2026-10-18T10:00:00.000Z',
-        '2026-10-17T10:00:00.000Z',
       ]);
       await service.create(
         { ...original, id: randomUUID() },
@@ -199,10 +197,14 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         ).encryptedPayload,
       ).not.toContain(input.text);
       const fresh = new CallCenterService({ client } as never, crypto);
+      const row = await client.callCenterNote.findUniqueOrThrow({
+        where: { id: input.id },
+      });
+      expect(fresh.presentNote(row).text).toBe(input.text);
       expect(
         (await fresh.list(actor, branchId, { page: 1, pageSize: 50 })).data[0]!
-          .notes[0]!.text,
-      ).toBe(input.text);
+          .notes,
+      ).toEqual([]);
       await expect(
         service.note(contactId, { ...input, text: 'Changed' }, actor, branchId),
       ).rejects.toMatchObject({ status: 409 });
@@ -247,7 +249,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         }),
       ).rejects.toMatchObject({ status: 403 });
     });
-    it('paginates complete contact histories without duplicating rows', async () => {
+    it('paginates bounded contact summaries without duplicating rows', async () => {
       await service.create(
         { ...original, id: randomUUID(), phone: '09120000002' },
         actor,
@@ -263,7 +265,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       });
       expect(first.meta.total).toBe(2);
       expect(first.data[0]!.id).not.toBe(second.data[0]!.id);
-      expect(first.data[0]!.calls).toHaveLength(3);
+      expect(first.data[0]!.calls).toHaveLength(1);
     });
   },
 );

@@ -1,4 +1,7 @@
 'use client';
+import { RequestReferral } from './request-referral';
+import { RequestCustomer } from './request-customer';
+import { useDialogReturnFocus } from './use-dialog-focus';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
@@ -79,6 +82,9 @@ export function WorkflowPanel({
   calls?: Call[];
   onLinked?: (id: string, ticketId: string) => void;
 }) {
+  const [requestPage, setRequestPage] = useState(1),
+    [taskPage, setTaskPage] = useState(1);
+  const [pageMeta, setPageMeta] = useState({ total: 0, hasMoreTasks: false });
   const [requests, setRequests] = useState<RequestCase[]>([]);
   const [operators, setOperators] = useState<Operator[]>([]);
   const [error, setError] = useState('');
@@ -93,12 +99,21 @@ export function WorkflowPanel({
   useEffect(() => {
     const controller = new AbortController();
     Promise.all([
-      workflowApi.list(branchId, contactId, controller.signal),
+      workflowApi.list(
+        branchId,
+        contactId,
+        controller.signal,
+        requestPage,
+        taskPage,
+      ),
       workflowApi.operators(branchId),
     ])
       .then(([result, options]) => {
         if (!controller.signal.aborted) {
           setRequests(result.data);
+          setPageMeta(
+            result.meta ?? { total: result.data.length, hasMoreTasks: false },
+          );
           setOperators(options.data);
           setLoading(false);
         }
@@ -114,7 +129,7 @@ export function WorkflowPanel({
         }
       });
     return () => controller.abort();
-  }, [branchId, contactId, revision]);
+  }, [branchId, contactId, revision, requestPage, taskPage]);
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Tehran',
   }).format(new Date());
@@ -151,6 +166,49 @@ export function WorkflowPanel({
         </button>
       </header>
       <p>تماس‌های یک شماره می‌توانند مربوط به درخواست‌های متفاوت باشند.</p>
+      <nav aria-label="صفحه‌بندی درخواست و اقدام">
+        <button
+          disabled={loading || requestPage === 1}
+          onClick={() => {
+            setLoading(true);
+            setRequestPage((v) => v - 1);
+            setTaskPage(1);
+          }}
+        >
+          درخواست‌های قبلی
+        </button>
+        <span>
+          {requestPage} / {Math.max(1, Math.ceil(pageMeta.total / 10))}
+        </span>
+        <button
+          disabled={loading || requestPage * 10 >= pageMeta.total}
+          onClick={() => {
+            setLoading(true);
+            setRequestPage((v) => v + 1);
+            setTaskPage(1);
+          }}
+        >
+          درخواست‌های بعدی
+        </button>
+        <button
+          disabled={loading || taskPage === 1}
+          onClick={() => {
+            setLoading(true);
+            setTaskPage((v) => v - 1);
+          }}
+        >
+          اقدام‌های جدیدتر
+        </button>
+        <button
+          disabled={loading || !pageMeta.hasMoreTasks}
+          onClick={() => {
+            setLoading(true);
+            setTaskPage((v) => v + 1);
+          }}
+        >
+          اقدام‌های قدیمی‌تر
+        </button>
+      </nav>
       <NativeSearchSelect
         aria-label="نمای پیگیری‌های این مخاطب"
         value={view}
@@ -201,6 +259,23 @@ export function WorkflowPanel({
         visible.map((request) => (
           <article key={request.id} className={styles.card}>
             <strong>{request.title}</strong>
+            <RequestReferral
+              branch={branchId}
+              request={request}
+              operators={operators}
+              disabled={!canManage}
+              onChanged={() => onChanged?.()}
+            />
+            <RequestCustomer
+              key={request.id + ':' + request.version}
+              branch={branchId}
+              contact={contactId}
+              request={request}
+              onChanged={() => {
+                setLoading(true);
+                setRevision((v) => v + 1);
+              }}
+            />
             <p>
               {requestLabels[request.status]} ·{' '}
               {request.ownerName ?? 'بدون مسئول'} ·{' '}
@@ -285,7 +360,11 @@ export function WorkflowPanel({
                     ? 'ایجاد درخواست'
                     : entry.action === 'REQUEST_UPDATED'
                       ? 'تغییر درخواست'
-                      : 'ثبت اقدام پیگیری'}{' '}
+                      : entry.action === 'CUSTOMER_LINKED'
+                        ? 'اصلاح ارتباط مشتری'
+                        : entry.action === 'REFERRED'
+                          ? 'ارجاع درخواست'
+                          : 'ثبت اقدام پیگیری'}{' '}
                   ·{' '}
                   {operators.find((user) => user.id === entry.actorId)
                     ?.displayName ?? entry.actorId}
@@ -302,8 +381,9 @@ export function WorkflowPanel({
           branchId={branchId}
           contactId={contactId}
           onClose={() => setEditor(null)}
-          onSaved={(data) => {
-            setRequests(data);
+          onSaved={() => {
+            setLoading(true);
+            setRevision((value) => value + 1);
             setEditor(null);
             onChanged?.();
           }}
@@ -392,6 +472,7 @@ export function WorkQueue({
   actorId: string;
   canManage: boolean;
 }) {
+  const queueTrigger = useRef<HTMLButtonElement | null>(null);
   const [view, setView] = useState('MINE'),
     [page, setPage] = useState(1),
     [revision, setRevision] = useState(0);
@@ -465,7 +546,10 @@ export function WorkQueue({
             <button
               key={item.id}
               type="button"
-              onClick={() => setSelected(item.contactId)}
+              onClick={(event) => {
+                queueTrigger.current = event.currentTarget;
+                setSelected(item.contactId);
+              }}
             >
               {item.title} · {item.ownerName ?? 'بدون مسئول'} ·{' '}
               {requestLabels[item.status]}
@@ -506,6 +590,10 @@ export function WorkQueue({
           }}
         >
           <DialogContent
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              queueTrigger.current?.focus();
+            }}
             dir="rtl"
             className="max-h-[90dvh] max-w-2xl overflow-y-auto"
           >
@@ -548,6 +636,7 @@ function WorkflowEditor({
   onClose: () => void;
   onSaved: (data: RequestCase[]) => void;
 }) {
+  const restoreFocus = useDialogReturnFocus();
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [dirty, setDirty] = useState(false);
@@ -632,7 +721,11 @@ function WorkflowEditor({
         if (!open) close();
       }}
     >
-      <DialogContent dir="rtl" className="max-h-[90dvh] overflow-y-auto">
+      <DialogContent
+        onCloseAutoFocus={restoreFocus}
+        dir="rtl"
+        className="max-h-[90dvh] overflow-y-auto"
+      >
         <DialogTitle>
           {editor.kind === 'request'
             ? 'درخواست و مسئول رسیدگی'

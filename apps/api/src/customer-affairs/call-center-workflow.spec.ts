@@ -436,5 +436,63 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         data: { status: 'CANCELLED' },
       });
     });
+    it('requires destination permission and keeps referrals replay-safe without duplicate cases', async () => {
+      const item = {
+        ...request,
+        id: randomUUID(),
+        commandId: randomUUID(),
+        title: 'Synthetic referral',
+      };
+      await workflow.saveRequest(actor, branchId, contactId, item);
+      const input = {
+        commandId: randomUUID(),
+        expectedVersion: 1,
+        ownerId: userId,
+        destination: 'SUPPORT' as const,
+        dueAt: '2026-11-01T10:00:00Z',
+      };
+      await expect(
+        workflow.refer(actor, branchId, item.id, input),
+      ).rejects.toThrow();
+      const role = await db.userRole.findFirstOrThrow({ where: { userId } });
+      const permission = await db.permission.upsert({
+        where: { code: 'customer_affairs.ticket.read' },
+        update: {},
+        create: {
+          code: 'customer_affairs.ticket.read',
+          module: 'customer_affairs',
+          name: 'Synthetic support read',
+        },
+      });
+      await db.rolePermission.upsert({
+        where: {
+          roleId_permissionId: {
+            roleId: role.roleId,
+            permissionId: permission.id,
+          },
+        },
+        update: {},
+        create: { roleId: role.roleId, permissionId: permission.id },
+      });
+      await Promise.all(
+        Array.from({ length: 5 }, () =>
+          workflow.refer(actor, branchId, item.id, input),
+        ),
+      );
+      expect(
+        await db.customerAffairsReferral.count({
+          where: { ticketId: item.id },
+        }),
+      ).toBe(1);
+      await expect(
+        workflow.refer(actor, branchId, item.id, {
+          ...input,
+          commandId: randomUUID(),
+        }),
+      ).rejects.toMatchObject({ status: 409 });
+      expect(
+        await db.customerAffairsTicket.count({ where: { id: item.id } }),
+      ).toBe(1);
+    });
   },
 );

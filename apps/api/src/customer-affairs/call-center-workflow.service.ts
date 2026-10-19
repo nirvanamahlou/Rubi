@@ -19,6 +19,7 @@ import type {
   CallCenterFollowUpDto,
   CallCenterRequestDto,
   CallCenterLinkDto,
+  CallCenterReferralDto,
 } from './call-center-workflow.dto';
 
 const CATEGORY = 'CALL_CENTER_REQUEST';
@@ -120,6 +121,84 @@ export class CallCenterWorkflowService
       },
     });
     return true;
+  }
+  async refer(
+    actor: AuthenticatedActor,
+    branch: string | undefined,
+    id: string,
+    input: CallCenterReferralDto,
+  ) {
+    const branchId = this.scope(actor, branch, true);
+    return this.db.client.$transaction(async (tx) => {
+      await this.lock(tx, id);
+      const row = await tx.customerAffairsTicket.findFirst({
+        where: { id, branchId, category: CATEGORY },
+      });
+      if (!row) throw new NotFoundException();
+      await this.directory.referral(
+        tx,
+        branchId,
+        input.ownerId,
+        input.destination,
+      );
+      if (
+        !(await this.command(tx, actor, branchId, input.commandId, id, input))
+      )
+        return { data: { id } };
+      if (row.version !== input.expectedVersion)
+        throw new ConflictException(
+          'درخواست تغییر کرده است؛ اطلاعات را تازه‌سازی کنید.',
+        );
+      if (row.status === 'CLOSED')
+        throw new BadRequestException('درخواست بسته را نمی‌توان ارجاع داد.');
+      const existing = await tx.customerAffairsReferral.findFirst({
+        where: {
+          ticketId: id,
+          destinationModule: input.destination,
+          assignedUserId: input.ownerId,
+          status: 'OPEN',
+        },
+      });
+      if (existing)
+        throw new ConflictException(
+          'ارجاع باز برای این گیرنده و مقصد وجود دارد.',
+        );
+      const referral = await tx.customerAffairsReferral.create({
+        data: {
+          ticketId: id,
+          destinationModule: input.destination,
+          assignedUserId: input.ownerId,
+          title: 'ارجاع درخواست کال سنتر',
+          description:
+            'شرح درخواست فقط در پرونده مجاز کال سنتر قابل مشاهده است.',
+          dueAt: new Date(input.dueAt),
+          idempotencyKey: input.commandId,
+          requestFingerprint: this.crypto.fingerprint(JSON.stringify(input)),
+          createdByUserId: actor.userId,
+        },
+      });
+      await this.audit(
+        tx,
+        actor.userId,
+        branchId,
+        id,
+        'REFERRED',
+        row.version,
+        {
+          referralId: referral.id,
+          destination: input.destination,
+          ownerId: input.ownerId,
+        },
+      );
+      await this.notify(
+        tx,
+        input.ownerId,
+        actor.userId,
+        id,
+        'درخواست کال سنتر برای بررسی ارجاع شد',
+      );
+      return { data: { id, referralId: referral.id } };
+    });
   }
   async options(actor: AuthenticatedActor, branch?: string) {
     return { data: await this.directory.list(this.scope(actor, branch)) };
@@ -247,6 +326,8 @@ export class CallCenterWorkflowService
     actor: AuthenticatedActor,
     branch: string | undefined,
     contactId: string,
+    page = 1,
+    taskPage = 1,
   ) {
     const branchId = this.scope(actor, branch);
     return this.db.client.$transaction(async (tx) => {
@@ -255,12 +336,19 @@ export class CallCenterWorkflowService
         where: { branchId, callCenterContactId: contactId, category: CATEGORY },
         include: { executionOwner: { select: { displayName: true } } },
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: (page - 1) * 10,
+        take: 10,
       });
-      const tasks = await this.tasks.list(
+      const taskResult = await this.tasks.pages(
         tx,
         branchId,
         rows.map((row) => row.id),
+        taskPage,
       );
+      const tasks = taskResult.rows;
+      const total = await tx.customerAffairsTicket.count({
+        where: { branchId, callCenterContactId: contactId, category: CATEGORY },
+      });
       const history = await tx.customerAffairsAuditEvent.findMany({
         where: {
           branchId,
@@ -271,9 +359,13 @@ export class CallCenterWorkflowService
         take: 100,
       });
       return {
+        meta: { page, taskPage, total, hasMoreTasks: taskResult.hasMore },
         data: rows.map((row) => ({
           id: row.id,
           version: row.version,
+          customerId: actor.permissions.includes('customers.read')
+            ? row.customerId
+            : null,
           title: this.crypto.decrypt<{ title: string; reason: string }>(
             row.callCenterPayload!,
             row.callCenterKeyVersion!,

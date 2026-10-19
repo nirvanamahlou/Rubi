@@ -13,6 +13,15 @@ export interface CallCenterPage {
   data: { id: string; calls: Call[]; notes: CallNote[] }[];
   meta: { branchId: string; total: number; page: number; pageSize: number };
 }
+export class CallCenterHttpError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = 'CallCenterHttpError';
+  }
+}
 export async function callCenterRequest<T>(
   path: string,
   branchId: string,
@@ -38,10 +47,11 @@ export async function callCenterRequest<T>(
       message?: string;
       error?: { message?: string };
     } | null;
-    throw new Error(
+    throw new CallCenterHttpError(
       body?.error?.message ??
         body?.message ??
         'ارتباط با کال سنتر برقرار نشد. دوباره تلاش کنید.',
+      response.status,
     );
   }
   return response.json() as Promise<T>;

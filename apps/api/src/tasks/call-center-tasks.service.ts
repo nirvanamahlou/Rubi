@@ -39,6 +39,31 @@ export class CallCenterTasksService {
       orderBy: [{ dueAt: 'asc' }, { id: 'asc' }],
     });
   }
+  async pages(
+    tx: Prisma.TransactionClient,
+    branchId: string,
+    ticketIds: string[],
+    page: number,
+  ) {
+    const pages = await Promise.all(
+      ticketIds.map((id) =>
+        tx.automationTask.findMany({
+          where: {
+            sourceModule: 'CALL_CENTER',
+            branchId,
+            callCenterTicketId: id,
+          },
+          orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+          skip: (page - 1) * 20,
+          take: 21,
+        }),
+      ),
+    );
+    return {
+      rows: pages.flatMap((rows) => rows.slice(0, 20)),
+      hasMore: pages.some((rows) => rows.length > 20),
+    };
+  }
   async save(
     tx: Prisma.TransactionClient,
     input: {

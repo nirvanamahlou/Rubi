@@ -456,6 +456,46 @@ export class CustomerService {
     return { ...detail, contacts, nationalId, passportNumber };
   }
 
+  /** Explicit identity suggestions only; a shared phone never proves identity. */
+  async callCenterCandidates(
+    phone: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !actor.permissions.includes('customers.read') ||
+      !actor.branchIds.includes(branchId)
+    )
+      throw new ForbiddenException();
+    const values = phone.startsWith('0')
+      ? [
+          phone,
+          '+98' + phone.slice(1),
+          '0098' + phone.slice(1),
+          '98' + phone.slice(1),
+        ]
+      : [phone];
+    const rows = await this.repository.callCenterCandidates(
+      branchId,
+      values.map((v) => this.contactCrypto.fingerprint(v)),
+    );
+    return { data: rows.slice(0, 50), meta: { hasMore: rows.length > 50 } };
+  }
+  async callCenterReference(
+    tx: Prisma.TransactionClient,
+    id: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !actor.permissions.includes('customers.read') ||
+      !actor.branchIds.includes(branchId)
+    )
+      throw new ForbiddenException();
+    const row = await this.repository.callCenterReference(tx, id, branchId);
+    if (!row) throw new NotFoundException('مشتری یافت نشد.');
+    return row;
+  }
   async list(query: CustomerListQuery, actor: AuthenticatedActor) {
     validateDateRange(
       query.createdFrom ?? null,

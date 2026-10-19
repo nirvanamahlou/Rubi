@@ -39,6 +39,22 @@ export class IamCallCenterDirectory {
       })
       .map(({ id, displayName }) => ({ id, displayName }));
   }
+  async referral(
+    tx: Prisma.TransactionClient,
+    branchId: string,
+    id: string,
+    destination: 'SALES' | 'SUPPORT',
+  ) {
+    await this.resolve(tx, branchId, id);
+    const row = (await this.rows(branchId, tx)).find((user) => user.id === id);
+    const permissions = row ? authenticatedPermissionCodes(row.roles) : [];
+    const allowed =
+      destination === 'SALES'
+        ? permissions.some((p) => p.startsWith('sales.contracts.read.'))
+        : permissions.includes('customer_affairs.ticket.read');
+    if (!allowed)
+      throw new BadRequestException('گیرنده مجوز ماژول مقصد را ندارد.');
+  }
   async resolve(tx: Prisma.TransactionClient, branchId: string, id: string) {
     await tx.$queryRaw`SELECT id FROM iam_users WHERE id = ${id}::uuid FOR SHARE`;
     await tx.$queryRaw`SELECT "userId" FROM iam_user_branches WHERE "userId" = ${id}::uuid AND "branchId" = ${branchId}::uuid FOR SHARE`;

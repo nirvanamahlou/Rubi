@@ -46,3 +46,16 @@ export class CallCenterFollowUpDto {
   @IsIn(['OPEN', 'COMPLETED', 'CANCELLED']) status!: string;
   @IsString() @Length(0, 1000) result!: string;
 }
+export class CallCenterRequestPageDto {
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100000) page = 1;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100000) taskPage = 1;
+}
+export class CallCenterReferralDto {
+  @IsUUID('4') commandId!: string;
+  @IsInt() @Min(1) expectedVersion!: number;
+  @IsUUID() ownerId!: string;
+  @IsIn(['SALES', 'SUPPORT']) destination!: 'SALES' | 'SUPPORT';
+  @IsISO8601({ strict: true })
+  @Matches(/(?:Z|[+-]\d{2}:\d{2})$/)
+  dueAt!: string;
+}

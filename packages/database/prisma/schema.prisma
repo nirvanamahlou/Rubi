@@ -7660,6 +7660,11 @@ model CallCenterContact {
 }
 
 model CallCenterCall {
+  searchTokens String[] @default([]) @map("search_tokens")
+  sourceToken String? @map("source_token") @db.Char(64)
+  unitToken String? @map("unit_token") @db.Char(64)
+  needsCompletion Boolean? @map("needs_completion")
+  searchVersion Int @default(0) @map("search_version")
   ticketId           String?                @map("ticket_id") @db.Uuid
   ticket             CustomerAffairsTicket? @relation(fields: [ticketId], references: [id], onDelete: Restrict, map: "cc_call_ticket_fk")
   outcome            String?                @db.VarChar(32)
@@ -7679,6 +7684,9 @@ model CallCenterCall {
 
   @@index([contactId, occurredAt, id], map: "call_contact_calls_idx")
   @@index([ticketId], map: "cc_call_ticket_idx")
+  @@index([searchTokens], type: Gin, map: "cc_search_tokens_idx")
+  @@index([createdAt, id], map: "cc_call_registered_idx")
+  @@index([occurredAt, direction, outcome], map: "cc_call_report_idx")
   @@map("customer_affairs_calls")
 }
 

@@ -1,3 +1,4 @@
+import { callSearchMetadata } from './call-center-search';
 import {
   BadRequestException,
   ConflictException,
@@ -28,6 +29,8 @@ export function normalizedCallPhone(value: string) {
     .replace(/[\s()-]/g, '');
   if (phone.startsWith('0098')) phone = '0' + phone.slice(4);
   if (phone.startsWith('+98')) phone = '0' + phone.slice(3);
+  if (/^98\d{10}$/.test(phone)) phone = '0' + phone.slice(2);
+  if (/^9\d{9}$/.test(phone)) phone = '0' + phone;
   if (!/^(?:0\d{10}|\+[1-9]\d{7,14})$/.test(phone))
     throw new BadRequestException('شماره تماس معتبر نیست.');
   return phone;
@@ -61,7 +64,7 @@ export class CallCenterService {
       throw new ForbiddenException('شعبه خارج از دامنه دسترسی است.');
     return branch;
   }
-  private presentCall(row: StoredCall) {
+  presentCall(row: StoredCall) {
     return {
       ...this.crypto.decrypt<PrivateCall>(
         row.encryptedPayload,
@@ -81,7 +84,25 @@ export class CallCenterService {
       recordings: [],
     };
   }
-  private presentNote(row: StoredNote) {
+  presentSummary(row: StoredCall) {
+    const call = this.presentCall(row);
+    return {
+      id: call.id,
+      contactId: call.contactId,
+      name: call.name,
+      phone: call.phone,
+      subject: call.subject,
+      source: call.source,
+      operator: call.operator,
+      direction: call.direction,
+      status: call.status,
+      outcome: call.outcome,
+      origin: call.origin,
+      occurredAt: call.occurredAt,
+      ticketId: call.ticketId,
+    };
+  }
+  presentNote(row: StoredNote) {
     return {
       id: row.id,
       contactId: row.contactId,
@@ -115,8 +136,11 @@ export class CallCenterService {
           skip: (page - 1) * pageSize,
           take: pageSize,
           include: {
-            calls: { orderBy: [{ occurredAt: 'desc' }, { id: 'asc' }] },
-            notes: { orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] },
+            calls: {
+              orderBy: [{ occurredAt: 'desc' }, { id: 'asc' }],
+              take: 1,
+            },
+            _count: { select: { calls: true, notes: true } },
           },
         }),
       ],
@@ -126,7 +150,9 @@ export class CallCenterService {
       data: contacts.map((contact) => ({
         id: contact.id,
         calls: contact.calls.map((call) => this.presentCall(call)),
-        notes: contact.notes.map((note) => this.presentNote(note)),
+        notes: [],
+        callCount: contact._count.calls,
+        noteCount: contact._count.notes,
       })),
       meta: { branchId, total, page, pageSize },
     };
@@ -221,6 +247,7 @@ export class CallCenterService {
       const call = await tx.callCenterCall.create({
         data: {
           id: input.id,
+          ...callSearchMetadata(this.crypto, branchId, payload, input.outcome),
           ticketId: input.ticketId ?? null,
           outcome: input.outcome ?? null,
           origin: 'MANUAL',
