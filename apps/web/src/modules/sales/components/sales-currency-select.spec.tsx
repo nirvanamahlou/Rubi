@@ -19,7 +19,7 @@ describe('registered currencies and themed Sales selectors', () => {
       salesCurrencyOptions([...currencies, currencies[0]!]).map(
         (item) => item.id,
       ),
-    ).toEqual(['USD', 'IRR']);
+    ).toEqual(['IRR', 'USD']);
     expect(defaultSalesCurrency(currencies)).toBe('IRR');
     expect(defaultSalesCurrency([currencies[0]!])).toBe('USD');
     expect(defaultSalesCurrency([])).toBe('');

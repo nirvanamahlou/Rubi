@@ -1,4 +1,9 @@
 'use client';
+import {
+  pricingCityCountries,
+  pricingFlightDate,
+  rialFirst,
+} from '../model/ticket-pricing-display';
 import { loadTicketPricingOffers } from '../api/ticket-pricing-offers';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -257,12 +262,6 @@ function TierEditor({
   );
 }
 const DIRECT_TARGET = '__DIRECT__';
-const faDay = new Intl.DateTimeFormat('fa-IR', {
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'Asia/Tehran',
-});
 const faTime = new Intl.DateTimeFormat('fa-IR', {
   hourCycle: 'h23',
   hour: '2-digit',
@@ -303,13 +302,18 @@ export function TicketPricesWorkspace() {
   const [saving, setSaving] = useState('');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const [cityCountries, setCityCountries] = useState<Record<string, string>>(
+    {},
+  );
   const load = useCallback(async () => {
     setBusy(true);
     setError('');
     try {
       const [offerResult, currencyRows, targetResult] = await Promise.all([
         loadTicketPricingOffers(),
-        listActiveCurrencyReferences(),
+        listActiveCurrencyReferences().then((rows) =>
+          rialFirst(rows, (r) => r.code ?? ''),
+        ),
         toursApi.salePriceTargets(),
       ]);
       const cityRows = [];
@@ -318,6 +322,13 @@ export function TicketPricesWorkspace() {
         cityRows.push(...result.data);
         if (page * result.meta.pageSize >= result.meta.total) break;
       }
+      const countryRows = [];
+      for (let page = 1; page <= 100; page++) {
+        const result = await listReferences('countries', '', page);
+        countryRows.push(...result.data);
+        if (page * result.meta.pageSize >= result.meta.total) break;
+      }
+      setCityCountries(pricingCityCountries(cityRows, countryRows));
       setOffers(offerResult.data);
       setTargets(targetResult.data);
       setCurrencies(currencyRows.map((row) => row.code!).filter(Boolean));
@@ -359,10 +370,10 @@ export function TicketPricesWorkspace() {
           '\u2069 ← \u2068' +
           (cities[offer.destinationId] ?? offer.destinationId) +
           '\u2069\u2069',
-        faDay.format(new Date(offer.departureAt)),
+        pricingFlightDate(offer, cityCountries),
         faTime.format(new Date(offer.departureAt)),
       ].join(' · '),
-    [cities],
+    [cities, cityCountries],
   );
   const rows = useMemo(() => ticketPriceRows(offers), [offers]);
   const filtered = useMemo(
@@ -609,7 +620,12 @@ export function TicketPricesWorkspace() {
     setExporting(true);
     setError('');
     try {
-      const exportRows = ticketPriceExportRows(filtered, targets, cities);
+      const exportRows = ticketPriceExportRows(
+        filtered,
+        targets,
+        cities,
+        cityCountries,
+      );
       const { createTicketPricesXlsx } =
         await import('../model/ticket-prices-xlsx');
       const bytes = createTicketPricesXlsx(exportRows);
@@ -1096,11 +1112,15 @@ export function TicketPricesWorkspace() {
                             </div>
                             <div className="grid gap-1">
                               <FlightSummary
+                                cityCountries={cityCountries}
+
                                 offer={row.offer}
                                 direction={row.returnOfferId ? 'رفت' : 'پرواز'}
                               />
                               {row.returnOfferId ? (
                                 <FlightSummary
+                                  cityCountries={cityCountries}
+
                                   offer={row.returning}
                                   direction="برگشت"
                                 />
@@ -1345,10 +1365,12 @@ export function TicketPricesWorkspace() {
     </div>
   );
 }
-function FlightSummary({
+export function FlightSummary({
+  cityCountries = {},
   offer,
   direction,
 }: {
+  cityCountries?: Record<string, string>;
   offer?: TicketOfferV1 | undefined;
   direction: string;
 }) {
@@ -1363,7 +1385,7 @@ function FlightSummary({
             {ticketCabinLabel(offer.cabinClassCode)}
           </p>
           <p className="text-sm">
-            <bdi>{faDay.format(new Date(offer.departureAt))}</bdi> ·{' '}
+            <bdi>{pricingFlightDate(offer, cityCountries)}</bdi> ·{' '}
             <bdi>{faTime.format(new Date(offer.departureAt))}</bdi>
           </p>
           <p className="text-xs text-muted-foreground">

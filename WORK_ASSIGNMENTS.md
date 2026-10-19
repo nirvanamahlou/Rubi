@@ -1,3 +1,7 @@
+## TICKET-CALENDAR-RIAL-FIRST-1019 — PC-A — READY_FOR_CI
+
+Branch codex/pc-a-ticket-calendar-rial-first-1019 from origin/develop@94002c33. Reserve Sales ticket-prices display/export geography calendar helper, currency options/default ordering and targeted tests plus own docs. User authorizes develop merge and online rollout. Resolve international when either endpoint belongs to a known non-Iran country; use Gregorian display while preserving Tehran timezone and stored timestamps. IRR first among active canonical currencies without replacing existing saved amounts/codes. No schema/API/dependency or data changes. Prior relevant source locks released. Bounded generated API/legacy catalog sync reserved: three existing partner-contact translations only, required by offline sync gate. 13 focused Web tests, Web typecheck and scoped lint pass. Locks released with frozen candidate; final-head hosted checks gate merge.
+
 ## PARTNER-CONTACT-ROUNDTRIP-1019 — PC-B — READY_FOR_CI
 
 Bounded central localization reservation: only three new saved-contact status messages in apps/web/src/i18n/en-overrides.json; prior localization candidates are merged/frozen. No unrelated translations or catalogue generator changes. Freeze/release with the corrected candidate after coverage test passes.

@@ -4,11 +4,12 @@ import type {
   MasterDataRecord,
   SalesContractCreateRequest,
 } from '@nora/contracts';
+import { rialFirst } from '../model/ticket-pricing-display';
 import { SearchableReference } from './searchable-reference';
 
 export type SalesCurrency = Pick<MasterDataRecord, 'code' | 'name' | 'status'>;
 export const salesCurrencyOptions = (currencies: readonly SalesCurrency[]) =>
-  currencies
+  rialFirst(currencies, (currency) => currency.code)
     .filter(
       (currency) =>
         currency.status === 'active' && /^[A-Z]{3}$/.test(currency.code),

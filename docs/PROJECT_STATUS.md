@@ -1,3 +1,7 @@
+## 2026-10-19 — TICKET-CALENDAR-RIAL-FIRST-1019 — PC-A
+
+Ticket pricing cards, selection labels and Excel now share geography-aware Gregorian dates for either foreign endpoint, preserving Tehran timezone and domestic Persian calendar. Active currency options show IRR first with stable remaining order and saved prices unchanged.13 focused Web tests, Web types and scoped lint pass. Refresh existing partner-contact generated translations to satisfy offline sync. No schema, migration, dependency or data change. Authorized develop merge and online rollout follow exact-head hosted gates.
+
 ## 2026-10-19 — PARTNER-CONTACT-ROUNDTRIP-1019 — PC-B
 
 Repair supplier canonical-address rehydration and preserve canonical office/address through unrelated partner edits. Explicitly display saved masked phones/mobile/email and deliberate clear state; broker profile now includes mobile/email/address. Email clear preserves valid encrypted inactive history rather than creating an invalid empty contact.38 API and30 Web focused tests pass; both-resource PostgreSQL round-trip regressions added. No schema, account grants or operational server rollout; exact-head hosted gates precede authorized develop merge. See tasks/PARTNER-CONTACT-ROUNDTRIP-1019.md.
