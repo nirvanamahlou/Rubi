@@ -38,6 +38,7 @@ export function useQueueNames(
           const { data } = await masterDataApi.detail(
             resource as 'hotels' | 'cities' | 'meal-services',
             id!,
+            'reservations',
           );
           const english = data.attributes.englishName;
           if (resource === 'hotels') {

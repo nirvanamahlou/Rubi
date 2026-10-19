@@ -54,20 +54,28 @@ export function useReservationFormReferences(
       requested.map(async ([resource, id]) => {
         try {
           if (resource === ('airline-name' as MasterDataResource)) {
-            const result = await masterDataApi.list('airlines', {
-              search: id,
-              status: 'all',
-              sortBy: 'name',
-              sortDirection: 'asc',
-              page: 1,
-              pageSize: 100,
-            });
+            const result = await masterDataApi.list(
+              'airlines',
+              {
+                search: id,
+                status: 'all',
+                sortBy: 'name',
+                sortDirection: 'asc',
+                page: 1,
+                pageSize: 100,
+              },
+              'reservations',
+            );
             const data = result.data.find((record) =>
               [record.name, record.attributes.englishName].includes(id),
             );
             return { id, data };
           }
-          const { data } = await masterDataApi.detail(resource, id);
+          const { data } = await masterDataApi.detail(
+            resource,
+            id,
+            'reservations',
+          );
           return { id, data };
         } catch {
           return { id, data: undefined };

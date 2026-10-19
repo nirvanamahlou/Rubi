@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { canSelectForWorkflow } from '../common/workflow-selection.policy';
 import { assertUniqueTicketIdentity } from './ticket-offer-identity';
 import {
   BadRequestException,
@@ -584,7 +585,12 @@ export class TicketPublicService {
   }
 
   async search(input: TicketOfferSearchV1, actor: AuthenticatedActor) {
-    this.require(actor, 'ticket_catalog.read');
+    if (
+      !actor.permissions.includes('ticket_catalog.read') &&
+      !canSelectForWorkflow(actor, 'sales') &&
+      !canSelectForWorkflow(actor, 'reservations')
+    )
+      throw new ForbiddenException('مجوز بلیت وجود ندارد.');
     const result = Joi.object({
       outboundOfferId: uuid.optional(),
       originId: uuid.required(),

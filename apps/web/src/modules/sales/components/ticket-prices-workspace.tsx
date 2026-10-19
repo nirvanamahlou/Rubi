@@ -311,20 +311,34 @@ export function TicketPricesWorkspace() {
     try {
       const [offerResult, currencyRows, targetResult] = await Promise.all([
         loadTicketPricingOffers(),
-        listActiveCurrencyReferences().then((rows) =>
+        listActiveCurrencyReferences('sales').then((rows) =>
           rialFirst(rows, (r) => r.code ?? ''),
         ),
         toursApi.salePriceTargets(),
       ]);
       const cityRows = [];
       for (let page = 1; page <= 100; page++) {
-        const result = await listReferences('cities', '', page);
+        const result = await listReferences(
+          'cities',
+          '',
+          page,
+          undefined,
+          {},
+          'sales',
+        );
         cityRows.push(...result.data);
         if (page * result.meta.pageSize >= result.meta.total) break;
       }
       const countryRows = [];
       for (let page = 1; page <= 100; page++) {
-        const result = await listReferences('countries', '', page);
+        const result = await listReferences(
+          'countries',
+          '',
+          page,
+          undefined,
+          {},
+          'sales',
+        );
         countryRows.push(...result.data);
         if (page * result.meta.pageSize >= result.meta.total) break;
       }

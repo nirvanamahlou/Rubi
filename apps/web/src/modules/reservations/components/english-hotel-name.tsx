@@ -15,7 +15,7 @@ export function EnglishHotelName({
     if (!hotelId) return;
     let active = true;
     void masterDataApi
-      .detail('hotels', hotelId)
+      .detail('hotels', hotelId, 'reservations')
       .then(({ data }) => {
         const name = data.attributes.englishName;
         if (active && typeof name === 'string' && name.trim())

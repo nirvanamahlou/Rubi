@@ -102,14 +102,18 @@ export async function loadReservationEditReferences(
   }
   const records = [];
   for (let page = 1; ; page++) {
-    const response = await masterDataApi.list(resource, {
-      search: '',
-      status: 'active',
-      sortBy: 'name',
-      sortDirection: 'asc',
-      page,
-      pageSize: 100,
-    });
+    const response = await masterDataApi.list(
+      resource,
+      {
+        search: '',
+        status: 'active',
+        sortBy: 'name',
+        sortDirection: 'asc',
+        page,
+        pageSize: 100,
+      },
+      'reservations',
+    );
     records.push(...response.data);
     if (!response.data.length || records.length >= response.meta.total)
       return records.map((record) =>

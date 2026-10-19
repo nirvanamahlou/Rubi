@@ -204,7 +204,11 @@ export function ReservationTickets({
     void Promise.all(
       ids.map(async (id) => {
         try {
-          const { data } = await masterDataApi.detail('cities', id);
+          const { data } = await masterDataApi.detail(
+            'cities',
+            id,
+            'reservations',
+          );
           return [
             id,
             String(data.attributes.englishName || data.name),

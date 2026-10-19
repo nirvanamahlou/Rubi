@@ -194,14 +194,18 @@ async function listMasterData(
   retriedAfterRefresh = false,
 ) {
   try {
-    return await masterDataApi.list(resource, {
-      search: '',
-      status: 'active',
-      sortBy: 'name',
-      sortDirection: 'asc',
-      page: 1,
-      pageSize: 100,
-    });
+    return await masterDataApi.list(
+      resource,
+      {
+        search: '',
+        status: 'active',
+        sortBy: 'name',
+        sortDirection: 'asc',
+        page: 1,
+        pageSize: 100,
+      },
+      'customers',
+    );
   } catch (error) {
     const apiBaseUrl = getPublicApiBaseUrl();
     if (

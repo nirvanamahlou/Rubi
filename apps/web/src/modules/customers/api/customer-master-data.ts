@@ -11,14 +11,18 @@ type CustomerMasterResource =
 
 async function active(resource: CustomerMasterResource) {
   return (
-    await masterDataApi.list(resource, {
-      search: '',
-      status: 'active',
-      sortBy: 'name',
-      sortDirection: 'asc',
-      page: 1,
-      pageSize: 100,
-    })
+    await masterDataApi.list(
+      resource,
+      {
+        search: '',
+        status: 'active',
+        sortBy: 'name',
+        sortDirection: 'asc',
+        page: 1,
+        pageSize: 100,
+      },
+      'customers',
+    )
   ).data;
 }
 
@@ -33,7 +37,7 @@ async function appendReferenced(
       async (id) => {
         if (byId.has(id)) return;
         try {
-          const detail = await masterDataApi.detail(resource, id);
+          const detail = await masterDataApi.detail(resource, id, 'customers');
           byId.set(detail.data.id, detail.data);
         } catch {
           // A missing or forbidden reference remains unresolved; never invent it.

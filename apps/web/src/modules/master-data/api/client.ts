@@ -77,6 +77,15 @@ export interface MasterDataNotification {
 }
 
 export const MASTER_DATA_CHANGED_EVENT = 'nora:master-data-changed';
+export type WorkflowSelectionContext =
+  | 'sales'
+  | 'reservations'
+  | 'customers'
+  | 'organizations'
+  | 'accounting'
+  | 'marketing'
+  | 'procurement'
+  | 'ticket-catalog';
 
 const UNSAVED_SOURCE_ID = /^(?:draft|temp|preview)(?:-|$)/i;
 
@@ -576,9 +585,14 @@ export const masterDataApi = {
       },
     );
   },
-  list(resource: MasterDataResource, query: MasterDataListQuery) {
+  list(
+    resource: MasterDataResource,
+    query: MasterDataListQuery,
+    workflow?: WorkflowSelectionContext,
+  ) {
     return request<MasterDataListResponse>(
-      `/${resource}?${serializeMasterDataListQuery(query)}`,
+      `${workflow ? `/selections/${workflow}` : ''}/${resource}?${serializeMasterDataListQuery(query)}`,
+      { cache: 'no-store' },
     );
   },
   listSummary(
@@ -588,9 +602,14 @@ export const masterDataApi = {
     // KPI totals still use the list endpoint and must obey its 10–100 limit.
     return masterDataApi.list(resource, { ...query, page: 1, pageSize: 10 });
   },
-  detail(resource: MasterDataResource, id: string) {
+  detail(
+    resource: MasterDataResource,
+    id: string,
+    workflow?: WorkflowSelectionContext,
+  ) {
     return request<{ data: MasterDataRecord }>(
-      `/${resource}/${encodeURIComponent(id)}`,
+      `${workflow ? `/selections/${workflow}` : ''}/${resource}/${encodeURIComponent(id)}`,
+      { cache: 'no-store' },
     );
   },
   create(resource: MasterDataResource, body: MasterDataMutationRequest) {

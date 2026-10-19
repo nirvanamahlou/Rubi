@@ -7,7 +7,6 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { customersApi } from '@/modules/customers/api/client';
 import { masterDataApi } from '@/modules/master-data/api/client';
-import { useAccessPermissions } from '@/modules/iam/access-context';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type {
@@ -86,7 +85,6 @@ export function AccountingDetailEditor({
     value: (typeof draft)[K],
   ) => setDraft((old) => ({ ...old, [key]: value }));
   const type = types.find((row) => row.id === draft.typeId);
-  const permissions = useAccessPermissions() ?? [];
   const [ownerSearch, setOwnerSearch] = useState('');
   const linkedTitle =
     !isType &&
@@ -114,7 +112,7 @@ export function AccountingDetailEditor({
       ownerSearch,
     ],
     queryFn: () =>
-      customersApi.list({
+      customersApi.selections('accounting', {
         search: ownerSearch,
         kind: type?.title === 'شرکت' ? 'organization' : 'person',
         status: 'active',
@@ -125,23 +123,24 @@ export function AccountingDetailEditor({
         page: 1,
         pageSize: 30,
       }),
-    enabled: personTitle && permissions.includes('customers.read'),
+    enabled: personTitle,
   });
   const salesChannels = useQuery({
     queryKey: ['accounting', 'detail-sales-channels', ownerSearch],
     queryFn: () =>
-      masterDataApi.list('sales-channels', {
-        search: ownerSearch,
-        status: 'active',
-        sortBy: 'name',
-        sortDirection: 'asc',
-        page: 1,
-        pageSize: 30,
-      }),
-    enabled:
-      linkedTitle &&
-      type?.title === 'کانال فروش' &&
-      permissions.includes('master_data.read'),
+      masterDataApi.list(
+        'sales-channels',
+        {
+          search: ownerSearch,
+          status: 'active',
+          sortBy: 'name',
+          sortDirection: 'asc',
+          page: 1,
+          pageSize: 30,
+        },
+        'accounting',
+      ),
+    enabled: linkedTitle && type?.title === 'کانال فروش',
   });
   const ownerOptions = personTitle
     ? (people.data?.data ?? []).map((row) => ({
@@ -156,26 +155,26 @@ export function AccountingDetailEditor({
         label: row.name,
       }));
   const ownerError = personTitle
-    ? permissions.includes('customers.read')
-      ? people.error?.message
-      : 'دسترسی مشاهده اشخاص و شرکت‌ها لازم است.'
+    ? people.error?.message
     : type?.title === 'کانال فروش'
-      ? permissions.includes('master_data.read')
-        ? salesChannels.error?.message
-        : 'دسترسی مشاهده اطلاعات پایه لازم است.'
+      ? salesChannels.error?.message
       : 'فهرست موجودیت‌های این نوع تفصیلی هنوز به روبی متصل نشده است.';
   const currencies = useQuery({
     queryKey: ['accounting', 'currencies'],
     queryFn: () =>
-      masterDataApi.list('currencies', {
-        search: '',
-        status: 'active',
-        sortBy: 'name',
-        sortDirection: 'asc',
-        page: 1,
-        pageSize: 100,
-      }),
-    enabled: !isType && permissions.includes('master_data.read'),
+      masterDataApi.list(
+        'currencies',
+        {
+          search: '',
+          status: 'active',
+          sortBy: 'name',
+          sortDirection: 'asc',
+          page: 1,
+          pageSize: 100,
+        },
+        'accounting',
+      ),
+    enabled: !isType,
   });
   const currencyOptions = currencies.data?.data.map((row) => ({
     value: row.code,
