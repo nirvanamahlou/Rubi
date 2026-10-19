@@ -1,3 +1,7 @@
+## FIVE-BRANCH-COMPANY-1019 — PC-B
+
+Owner-authorized all-user access to the five named branches: add an atomic, idempotent data-only migration that preserves existing branch IDs/primary scopes/extra memberships, logs added memberships, provisions missing issuer companies and preserves existing official names/branding. Restore Jahan Academy in the active-company selector; new-user UI drafts default to actual five-branch IDs, while existing-account editing preserves stored values. Native permissions and later administrator edits remain independent. Push/PR only; not merged or deployed. The database upgrade must run on the intended server before these records are available there. See tasks/FIVE-BRANCH-COMPANY-1019.md.
+
 ## PASSENGER-DIRECTIONS-1019 — PC-A
 
 Sales people entry now appears below route/services in step1; former people step is skipped. Per-person outbound/return choices default selected and flow through canonical service assignments, directional capacity reserve/amend and existing manifest membership. Hotel-only guests are allowed. Combined flight price appears only for selected flight people with direction and age labels; hotel amounts are entered manually per guest, exact totals exclude old room agreements. Same-day check-in defaults with explicit next-day arrival; checkout policy/manual overrides retained.88 API tests plus47 related Web tests, Web types and scoped lint pass; hosted full checks gate merge. No schema/migration/dependency or production runtime changes.
