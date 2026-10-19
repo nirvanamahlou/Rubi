@@ -1,3 +1,7 @@
+## VOUCHER-SUPPLIER-HANDOFF-1018 — PC-A
+
+First voucher defaults now inherit immutable sent supplier settings when no saved voucher exists, retaining passenger selections, child bands, dates and rooms. Saved voucher precedence, current passenger ID reconciliation and strict API validation remain intact.14 focused tests pass, including a real API validator regression for selected and excluded children and source immutability. No migration, permission or runtime change. Hosted final-head gates required before authorized develop merge.
+
 ## 2026-10-18 — BROKER-CONTACT-SAVE-1018 — PC-B
 
 Repair equal office/mobile broker save by persisting one encrypted contact with both reserved partner roles. Preserve unique fingerprints, atomic rollback, masking, audit and independent edit/clear semantics. Broker email input accepts uppercase without rewriting typed case; backend canonical normalization remains unchanged.44 focused tests and scoped lint pass. Actual PostgreSQL regression added for hosted CI because local Docker engine is unavailable. No migration, grants or runtime update. See tasks/BROKER-CONTACT-SAVE-1018.md; exact-head CI gates authorized develop merge.
