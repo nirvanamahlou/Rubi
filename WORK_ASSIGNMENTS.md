@@ -8269,3 +8269,9 @@ COMPUTER_ID=PC-C; branch codex/pc-c-remove-call-center-banner-1019 from origin/d
 COMPUTER_ID=PC-C; branch codex/pc-c-call-center-controls-1019 from origin/develop. Reserve Call Center workspace JSX/CSS and own notes only. Replace all browser-native dropdowns with the existing ERP searchable selection component; preserve FormData, defaults, filters and busy guards. Unify search/control dimensions and focus styling. Local Web preview authorized by ongoing request. No shared component, API, database, permission or migration changes.
 
 Validation: eight existing shared selection tests, scoped ESLint, formatting and optimized local Web build including TypeScript pass. All eight visible selectors reuse the ERP searchable component with accessible labels and preserved native FormData. Search/select surfaces use40px height,8px corners and common focus treatment. No physical cross-browser matrix performed; authenticated browser acceptance awaits user login. Source reservation released at publication.
+
+## CALL-CENTER-RESET-BUTTON-1019 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; codex/pc-c-call-center-reset-button-1019 from origin/develop. Reserve only Call Center reset-button JSX/CSS and own notes. User requests a visible button surface with refresh icon; preserve existing reset/page behavior. Local preview included; no API/data/migration changes.
+
+Scoped ESLint, formatting, production Web build and TypeScript pass. Reset remains setFilters(emptyFilters) plus page1. Local Web refreshed; no additional tests for this styling/icon-only change. Source lock released at publication.

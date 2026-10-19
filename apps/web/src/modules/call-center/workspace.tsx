@@ -19,7 +19,7 @@ import {
   ClipboardList,
   Clock3,
   Eye,
-  Filter,
+  RotateCcw,
   Headset,
   MessageCircle,
   Pencil,
@@ -391,13 +391,14 @@ function CallCenterContent({
           options={statuses.map((s) => [s, s])}
         />
         <button
+          type="button"
           className={styles.clear}
           onClick={() => {
             setFilters(emptyFilters);
             setPage(1);
           }}
         >
-          <Filter size={17} /> پاک کردن فیلترها
+          <RotateCcw size={17} aria-hidden="true" /> پاک کردن فیلترها
         </button>
       </div>
       <div role="status" className={styles.feedback}>

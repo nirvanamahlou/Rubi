@@ -6601,3 +6601,7 @@ Removed the promotional travel-message card and airplane icon from the Call Cent
 ## 2026-10-19 — CALL-CENTER-CONTROLS-1019 — PC-C
 
 Call Center toolbar filters and registration-dialog selectors now use the existing searchable ERP selection component instead of browser-native visible menus. Selection values/defaults, FormData and busy protection remain intact. Search and dropdown fields share40px height,8px corners, typography and focus styling; browser-specific search decorations are suppressed. Eight shared selection tests, scoped lint and optimized Web build/TypeScript pass. No API, database or permission changes; local Web preview refreshed. Browser is at login, so no authenticated or physical cross-browser visual acceptance is claimed.
+
+## 2026-10-19 — CALL-CENTER-RESET-BUTTON-1019 — PC-C
+
+Call Center filter reset is now a40px outlined blue button with8px corners, hover/pressed surfaces and a decorative RotateCcw icon. Explicit type=button preserves reset-only behavior. Scoped lint, format and optimized Web build/TypeScript pass; local preview refreshed. No API, data or migration changes.
