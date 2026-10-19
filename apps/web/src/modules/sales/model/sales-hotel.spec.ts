@@ -269,3 +269,37 @@ describe('combined flight and hotel details', () => {
     ).toBeNull();
   });
 });
+
+it('derives floating hotel dates from selected calendar days before flight identity is complete', () => {
+  const next = withSalesHotelDates(base, {
+    ...base,
+    departureDate: '2026-10-12',
+    returnDate: '2026-10-20',
+    contractFlights: {
+      OUTBOUND: {
+        departureAt: '',
+        arrivalAt: '',
+        carrierName: '',
+        serviceNumber: '',
+        cabinClassCode: 'ECONOMY',
+      },
+    },
+  });
+  expect(next.hotel).toMatchObject({
+    checkIn: '2026-10-13',
+    checkOut: '2026-10-19',
+  });
+  const changed = withSalesHotelDates(next, {
+    ...next,
+    departureDate: '2026-10-14',
+    returnDate: '2026-10-22',
+  });
+  expect(changed.hotel).toMatchObject({
+    checkIn: '2026-10-15',
+    checkOut: '2026-10-21',
+  });
+  expect(
+    withSalesHotelDates(changed, { ...changed, tripType: 'ONE_WAY' }).hotel
+      .checkOut,
+  ).toBe('');
+});

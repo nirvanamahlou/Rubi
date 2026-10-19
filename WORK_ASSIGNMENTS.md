@@ -1,3 +1,7 @@
+## FLOATING-HOTEL-PEOPLE-1019 — PC-A — READY_FOR_CI
+
+Branch codex/pc-a-floating-hotel-dates-1019 from origin/develop@d6c63af6. Reserve bounded Sales automatic hotel date derivation/range handoff and passenger identity editing guards/tests, own docs. User authorizes develop merge and production rollout. Floating flights use previously selected days with the same existing hotel offsets as catalog tickets; preserve manual hotel overrides, passenger persistence/validation and authorization. No schema/migration/dependency change. Previous overlapping reservations released.74 focused tests, scoped lint and offline translation synchronization pass; bounded source locks released with frozen candidate. Final-head hosted gates precede merge/deploy.
+
 ## ROLE-LABEL-1019 — PC-B — READY_FOR_CI
 
 Owner requests removing Demo from the full-access role title, push and develop merge. Branch codex/pc-b-role-label-1019 from origin/develop@d6c63af6. User-management and role-picker presentation, narrow role-label helper/tests and own status entries only. Normalize only the legacy full-access Demo display label; retain canonical role IDs, selection values, role membership, permissions and Demo account identity.16 focused tests pass. No API/schema/migration/dependency/data/runtime changes. Previous user-management source scopes released; bounded locks released with frozen candidate. Exact-head CI gates merge.
