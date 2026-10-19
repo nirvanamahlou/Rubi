@@ -1,3 +1,7 @@
+## VOUCHER-SUPPLIER-HANDOFF-1018 — PC-A
+
+First voucher defaults now inherit immutable sent supplier settings when no saved voucher exists, retaining passenger selections, child bands, dates and rooms. Saved voucher precedence, current passenger ID reconciliation and strict API validation remain intact.14 focused tests pass, including a real API validator regression for selected and excluded children and source immutability. No migration, permission or runtime change. Hosted final-head gates required before authorized develop merge.
+
 ## 2026-10-18 — PASSENGER-PRICE-NAMES-1018 — PC-A
 
 International Sales passenger snapshots now use each saved row passport first/last name instead of potentially repeated CRM display titles. Domestic names, customer identity, person IDs and price keys remain unchanged.43 focused regressions pass, including three distinct passengers sharing one CRM title. No migration or live3100 update. Hosted exact-head checks gate authorized develop merge.
