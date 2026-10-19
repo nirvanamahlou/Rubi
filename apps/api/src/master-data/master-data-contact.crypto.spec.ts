@@ -91,7 +91,9 @@ describe('MasterDataContactCrypto', () => {
       if (expected.length <= 4) expect(phone.masked).not.toMatch(/[0-9]/);
       const equivalent = service.protectTravelPhone(expected);
       expect(equivalent.fingerprint).toBe(phone.fingerprint);
-      expect(equivalent.encrypted).not.toBe(phone.encrypted);
+      // One-byte ciphertext can legitimately collide (1/256); nonce reuse cannot.
+      expect(equivalent.encryptionIv).not.toBe(phone.encryptionIv);
+      expect(service.decrypt('phone', equivalent)).toBe(expected);
     },
   );
 
