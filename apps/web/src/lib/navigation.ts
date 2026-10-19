@@ -8,6 +8,7 @@ import {
   FileCheck2,
   Gauge,
   Headphones,
+  Headset,
   Handshake,
   HeartHandshake,
   House,
@@ -38,6 +39,7 @@ export interface HrBreadcrumbLocation {
 }
 
 const iconByHref: Record<NavigationHref, LucideIcon> = {
+  '/customer-affairs/call-center': Headset,
   '/workbench': House,
   '/dashboard': Gauge,
   '/customers': UsersRound,
@@ -85,6 +87,7 @@ export const navigationGroups = [
       '/customer-affairs',
       '/organizations',
       '/marketing',
+      '/customer-affairs/call-center',
     ],
   },
   {

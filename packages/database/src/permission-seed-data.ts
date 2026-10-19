@@ -1,6 +1,17 @@
 import { PROCUREMENT_PERMISSION_SEED_DATA } from './procurement-permission-seed-data';
 
 export const PERMISSION_SEED_DATA = [
+  ['customer_affairs.call_center.read', 'customer-affairs', 'مشاهده کال سنتر'],
+  [
+    'customer_affairs.call_center.calls.create',
+    'customer-affairs',
+    'ثبت تماس کال سنتر',
+  ],
+  [
+    'customer_affairs.call_center.notes.create',
+    'customer-affairs',
+    'ثبت یادداشت کال سنتر',
+  ],
   ...PROCUREMENT_PERMISSION_SEED_DATA,
   ['marketing.read', 'marketing', 'مشاهده مرکز مارکتینگ'],
   ['marketing.process.read', 'marketing', 'مشاهده فرایند یکپارچه مارکتینگ'],

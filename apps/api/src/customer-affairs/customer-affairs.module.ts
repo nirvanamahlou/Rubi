@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { CallCenterController } from './call-center.controller';
+import { CallCenterService } from './call-center.service';
+import { CallCenterCrypto } from './call-center.crypto';
 import { CustomerAffairsAssistantController } from './customer-affairs-assistant.controller';
 
 import { CustomersModule } from '../customers/customers.module';
@@ -45,6 +48,7 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     SettingsModule,
   ],
   controllers: [
+    CallCenterController,
     CustomerAffairsAssistantController,
     CustomerAffairsController,
     CustomerAffairsPublicController,
@@ -54,6 +58,8 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     CustomerAffairsMarketingIntakeController,
   ],
   providers: [
+    CallCenterService,
+    CallCenterCrypto,
     IamWorkbenchRequestDirectory,
     HrWorkbenchRequestUnits,
     AuthGuard,
