@@ -565,6 +565,60 @@ describe.skipIf(!enabled)(
       ).toBe(false);
     });
 
+    it('persists a bank without manual code and preserves its identity on blank-code edits', async () => {
+      const service = new MasterDataService(
+        new MasterDataRepository({ client } as DatabaseService),
+      );
+      const country = await client.masterCountry.findFirstOrThrow({
+        where: { isActive: true },
+      });
+      const actor: AuthenticatedActor = {
+        userId: actorUserId,
+        sessionId: randomUUID(),
+        branchIds: [branchId],
+        permissions: [
+          'master_data.create',
+          'master_data.update',
+          'master_data.read',
+        ],
+      };
+      const first = (
+        await service.create(
+          'banks',
+          { name: 'Synthetic optional bank', countryId: country.id, code: '' },
+          actor,
+        )
+      ).data;
+      const second = (
+        await service.create(
+          'banks',
+          { name: 'Synthetic optional bank', countryId: country.id },
+          actor,
+        )
+      ).data;
+      expect(first.code).toMatch(/^BANK_[A-Z0-9]{12}$/);
+      expect(second.code).not.toBe(first.code);
+      await service.update(
+        'banks',
+        first.id,
+        { name: 'Renamed optional bank', code: ' ' },
+        first.version,
+        actor,
+      );
+      expect(
+        await client.masterBank.findUniqueOrThrow({ where: { id: first.id } }),
+      ).toMatchObject({
+        code: first.code,
+        name: 'Renamed optional bank',
+        countryId: country.id,
+        version: first.version + 1,
+      });
+      const audit = await client.masterDataAuditEvent.count({
+        where: { resource: 'banks', entityId: first.id, actorUserId },
+      });
+      expect(audit).toBe(2);
+    });
+
     it('registers reference quotes without checker authority and immediately reads exact current/history values', async () => {
       const service = new CurrencyRateService({ client } as DatabaseService);
       const actor: AuthenticatedActor = {

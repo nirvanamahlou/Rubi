@@ -1111,13 +1111,7 @@ export function MasterDataFinanceWorkspace() {
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {records.map((record) => (
               <Card className="p-5" key={record.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs" dir="ltr">
-                      {record.code}
-                    </span>
-                    <MasterDataLogoCell asCell={false} record={record} />
-                  </div>
+                <div className="flex justify-end">
                   <Badge>
                     {record.status === 'active' ? 'فعال' : 'غیرفعال'}
                   </Badge>

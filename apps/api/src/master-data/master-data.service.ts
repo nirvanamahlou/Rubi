@@ -675,7 +675,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   'rail-terminals': ['name'],
   currencies: ['code', 'name'],
   'exchange-rates': ['fromCurrencyCode', 'toCurrencyCode', 'rate'],
-  banks: ['code', 'name', 'countryId'],
+  banks: ['name', 'countryId'],
   'bank-branches': ['code', 'name', 'bankId', 'cityId'],
   'payment-methods': ['name', 'channel', 'direction'],
   insurers: ['name', 'countryId'],
@@ -1977,6 +1977,16 @@ export class MasterDataService {
           'ترتیب کشور باید عدد صحیح بین صفر و ۱۰۰٬۰۰۰ باشد.',
         );
       data.displayOrder = order;
+    }
+    if (
+      resource === 'banks' &&
+      (data.code === undefined ||
+        data.code === null ||
+        (typeof data.code === 'string' && !data.code.trim()))
+    ) {
+      // Manual bank codes are optional; retain a stable unique internal identity.
+      if (partial) delete data.code;
+      else data.code = await this.generateAutoCode(resource, values);
     }
     const usesGeneratedCode =
       resource !== 'exchange-rates' &&
