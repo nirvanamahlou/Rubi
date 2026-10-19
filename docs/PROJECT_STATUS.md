@@ -2,6 +2,10 @@
 
 The final Call Center panel now uses authenticated branch-scoped APIs and three additive PostgreSQL tables for calls, follow-ups and notes. Private content is encrypted; stable command IDs prevent duplicate retries and audit metadata commits atomically. Independent IAM contract14 permissions separate Call Center access from Lead access. The user approved only the three Call Center grants for amin. The backed-up local ERP was activated and a complete browser refresh retained the synthetic contact's inbound call, outbound follow-up and note. Focused database/HTTP/IAM/Web tests and production builds passed; details and migration handoff are in docs/tasks/CALL-CENTER-PERSISTENCE-1018.md. The user authorizes push, PR to develop and merge only after all final-head CI/CD checks pass. Candidate branch: codex/pc-c-call-center-persistence-1018. No unrelated local migration is applied.
 
+## VOUCHER-SUPPLIER-HANDOFF-1018 — PC-A
+
+First voucher defaults now inherit immutable sent supplier settings when no saved voucher exists, retaining passenger selections, child bands, dates and rooms. Saved voucher precedence, current passenger ID reconciliation and strict API validation remain intact.14 focused tests pass, including a real API validator regression for selected and excluded children and source immutability. No migration, permission or runtime change. Hosted final-head gates required before authorized develop merge.
+
 ## 2026-10-18 — BROKER-CONTACT-SAVE-1018 — PC-B
 
 Repair equal office/mobile broker save by persisting one encrypted contact with both reserved partner roles. Preserve unique fingerprints, atomic rollback, masking, audit and independent edit/clear semantics. Broker email input accepts uppercase without rewriting typed case; backend canonical normalization remains unchanged.44 focused tests and scoped lint pass. Actual PostgreSQL regression added for hosted CI because local Docker engine is unavailable. No migration, grants or runtime update. See tasks/BROKER-CONTACT-SAVE-1018.md; exact-head CI gates authorized develop merge.

@@ -13,7 +13,8 @@ export function defaultVoucherSettings(
   intake: ReservationFormIntake,
   refs: ReservationFormReferences,
 ): VoucherSettingsV1 {
-  const saved = intake.workflow.voucherSettings;
+  const saved =
+    intake.workflow.voucherSettings ?? intake.workflow.sentSupplierFormSettings;
   const d = reservationFormData(intake, refs),
     h = intake.snapshot.hotelSelection;
   const text = Object.fromEntries(
