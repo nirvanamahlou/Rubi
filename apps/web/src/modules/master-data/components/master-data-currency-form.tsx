@@ -39,10 +39,15 @@ export function MasterDataCurrencyForm({
   record,
   onOpenChange,
   onSaved,
+  onQuoteSaved,
 }: {
   record?: MasterDataRecord;
   onOpenChange: (open: boolean) => void;
   onSaved: (record: MasterDataRecord) => void;
+  onQuoteSaved: (
+    record: MasterDataRecord,
+    rates: readonly MasterCurrencyRateRecord[],
+  ) => void;
 }) {
   const [saved, setSaved] = useState(record);
   const [values, setValues] = useState(() => currencyFormValues(record));
@@ -106,9 +111,9 @@ export function MasterDataCurrencyForm({
         correctionReason: '',
       }));
       setNotice(
-        'نرخ‌ها به‌صورت پیش‌نویس جدید در تاریخچه ثبت شدند و برای تأیید ارسال می‌شوند.',
+        'نرخ‌ها ثبت شدند و بدون تأیید جداگانه در تاریخچه و نمودار نمایش داده می‌شوند.',
       );
-      onSaved(saved);
+      onQuoteSaved(saved, response.data);
     } catch (error) {
       setRateErrors({
         form: error instanceof Error ? error.message : 'ثبت نرخ ناموفق بود.',
@@ -355,7 +360,7 @@ export function MasterDataCurrencyForm({
                   <Input
                     id="quote-status"
                     readOnly
-                    value="پیش‌نویس — در انتظار تأیید"
+                    value="ثبت مستقیم — بدون تأیید جداگانه"
                   />
                 </FormField>
                 <FormField
@@ -427,7 +432,11 @@ export function MasterDataCurrencyForm({
                           {rate.createdByUserId}
                         </td>
                         <td className="p-2">
-                          <Badge>پیش‌نویس</Badge>
+                          <Badge>
+                            {rate.status === 'APPROVED'
+                              ? 'ثبت‌شده'
+                              : rate.status}
+                          </Badge>
                         </td>
                       </tr>
                     ))}

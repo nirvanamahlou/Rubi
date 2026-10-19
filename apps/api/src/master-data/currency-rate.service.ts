@@ -24,7 +24,9 @@ function branchOf(actor: AuthenticatedActor, requested?: string): string {
   return branchId;
 }
 
-function redactedRate(row: Record<string, unknown>) {
+function redactedRate(
+  row: Prisma.MasterDraftExchangeRateGetPayload<Record<string, never>>,
+) {
   return {
     id: row.id,
     fromCurrencyId: row.fromCurrencyId,
@@ -195,7 +197,11 @@ export class CurrencyRateService {
             validFrom,
             validTo,
             correctionReason,
-            status: 'DRAFT',
+            // New reference quotes are final on registration, not pending a checker.
+            // Keep the existing finalized-state representation and DB evidence.
+            status: 'APPROVED',
+            approvedByUserId: actor.userId,
+            approvedAt: new Date(),
             isAuthoritative: false,
             createdByUserId: actor.userId,
             updatedByUserId: actor.userId,
@@ -221,8 +227,8 @@ export class CurrencyRateService {
           fromCurrencyCode: from.code,
           toCurrencyCode: to.code,
           createdByUserId: row.createdByUserId,
-          approvedByUserId: null,
-          approvedAt: null,
+          approvedByUserId: row.approvedByUserId,
+          approvedAt: row.approvedAt?.toISOString() ?? null,
         });
       }
       return { data: rows };

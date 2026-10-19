@@ -1,3 +1,7 @@
+## DIRECT-CURRENCY-RATES-1019 — PC-B
+
+New manual reference quotes finalize during their existing transactional registration without a separate checker. Creation authority, branch/Decimal/active-currency checks, audit and non-authoritative status remain intact. Existing legacy drafts and Finance rates are unchanged. Web returns to the profile, reloads the newly registered pair/type and displays its chart without waiting-for-approval copy.32 focused API and22 focused Web tests pass; disposable PostgreSQL and exact-head hosted gates precede authorized push/develop merge. No migration, dependency, operational data or server deployment. Details: [DIRECT-CURRENCY-RATES-1019](tasks/DIRECT-CURRENCY-RATES-1019.md).
+
 ## USER-ROLE-SAVE-1019 — PC-B
 
 Selected-user final Save now submits pending role/manual access through the existing guarded endpoint instead of saving branches only. A second near-picker Save and visible status/error avoid the former silent-looking flow. Unchanged legacy snapshots do not convert or rewrite grants. Branch changes follow only successful role saves and use a freshly loaded revision, preserving CAS/conflict handling. Account summaries show the effective manual snapshot label rather than implying retained administrator membership still controls access. No backend authorization rules, existing memberships, schema, dependency or operational account changes. Focused lifecycle/workflow tests and final-head full CI gate owner-authorized push/develop merge.

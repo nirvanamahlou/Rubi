@@ -27,6 +27,7 @@ import { MasterDataService } from '../master-data/master-data.service';
 import { MasterDataRepository } from '../master-data/master-data.repository';
 import { ConfigService } from '@nestjs/config';
 import { MasterDataContactCrypto } from '../master-data/master-data-contact.crypto';
+import { CurrencyRateService } from '../master-data/currency-rate.service';
 
 const enabled = process.env.NORA_RUN_B2B_POSTGRES_TESTS === '1';
 const container = `nora-test-b2b-${randomUUID().slice(0, 8)}`;
@@ -562,6 +563,85 @@ describe.skipIf(!enabled)(
           documentTitle: document.title,
         }),
       ).toBe(false);
+    });
+
+    it('registers reference quotes without checker authority and immediately reads exact current/history values', async () => {
+      const service = new CurrencyRateService({ client } as DatabaseService);
+      const actor: AuthenticatedActor = {
+        userId: actorUserId,
+        sessionId: randomUUID(),
+        branchIds: [branchId],
+        permissions: ['master_data.create', 'master_data.currency_rate.create'],
+      };
+      const result = await service.createQuote(
+        {
+          fromCurrencyCode: 'USD',
+          toCurrencyCode: 'IRR',
+          buyRate: '270000.1234567890',
+          sellRate: '280000.9876543210',
+        },
+        actor,
+      );
+      expect(result.data).toHaveLength(2);
+      const buy = result.data[0]!;
+      for (const row of result.data) {
+        expect(row).toMatchObject({
+          status: 'APPROVED',
+          createdByUserId: actorUserId,
+          approvedByUserId: actorUserId,
+          isAuthoritative: false,
+        });
+        expect(row.approvedAt).not.toBeNull();
+        const audit = await client.masterDataAuditEvent.findFirstOrThrow({
+          where: { entityId: row.id },
+        });
+        expect(audit).toMatchObject({
+          actorUserId,
+          actorBranchId: branchId,
+          action: 'master_data.create',
+        });
+      }
+      expect(
+        (await service.current(buy.fromCurrencyId, buy.toCurrencyId, 'BUY'))
+          .data,
+      ).toMatchObject({
+        id: buy.id,
+        rate: '270000.123456789',
+        status: 'APPROVED',
+      });
+      expect(
+        (await service.current(buy.fromCurrencyId, buy.toCurrencyId, 'SELL'))
+          .data,
+      ).toMatchObject({ id: result.data[1]!.id, rate: '280000.987654321' });
+      const history = await service.history({
+        page: 1,
+        pageSize: 100,
+        fromCurrencyId: buy.fromCurrencyId,
+        toCurrencyId: buy.toCurrencyId,
+      });
+      expect(history.data.map((row) => row.id)).toContain(buy.id);
+      const next = await service.createQuote(
+        { fromCurrencyCode: 'USD', toCurrencyCode: 'IRR', buyRate: '290000' },
+        actor,
+      );
+      expect(
+        (await service.current(buy.fromCurrencyId, buy.toCurrencyId, 'BUY'))
+          .data?.id,
+      ).toBe(next.data[0]!.id);
+      // A real FK failure during audit must roll back both rate writes.
+      const before = await client.masterDraftExchangeRate.count();
+      await expect(
+        service.createQuote(
+          {
+            fromCurrencyCode: 'USD',
+            toCurrencyCode: 'IRR',
+            buyRate: '300000',
+            sellRate: '310000',
+          },
+          { ...actor, userId: randomUUID() },
+        ),
+      ).rejects.toThrow();
+      expect(await client.masterDraftExchangeRate.count()).toBe(before);
     });
 
     it('persists independent per-unit toman metadata without reinterpreting legacy USD rates', async () => {

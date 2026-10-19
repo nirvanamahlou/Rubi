@@ -203,13 +203,13 @@ function statusLabel(value: RateStatus): string {
   return value === 'DRAFT'
     ? 'پیش‌نویس'
     : value === 'APPROVED'
-      ? 'تأییدشده'
+      ? 'ثبت‌شده'
       : value === 'REJECTED'
         ? 'ردشده'
         : 'منقضی';
 }
 
-function FinanceChart({ rates }: { rates: readonly CurrencyRateRow[] }) {
+export function FinanceChart({ rates }: { rates: readonly CurrencyRateRow[] }) {
   const points = useMemo(() => {
     const ordered = [...rates]
       .filter((row) => row.status === 'APPROVED')
@@ -232,16 +232,16 @@ function FinanceChart({ rates }: { rates: readonly CurrencyRateRow[] }) {
   if (!points.length)
     return (
       <EmptyState
-        description="پس از تأیید نرخ، روند واقعی Backend در این نمودار نمایش داده می‌شود."
+        description="نرخ جدید را ثبت کنید تا در این نمودار نمایش داده شود."
         icon={ChartNoAxesCombined}
-        title="نرخ تأییدشده‌ای در این بازه نیست"
+        title="نرخ ثبت‌شده‌ای در این بازه نیست"
       />
     );
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-primary/5 to-transparent p-4">
       <svg
-        aria-label="نمودار تاریخچه نرخ‌های تأییدشده"
+        aria-label="نمودار تاریخچه نرخ‌های ثبت‌شده"
         className="h-64 w-full"
         preserveAspectRatio="none"
         role="img"
@@ -813,7 +813,7 @@ export function MasterDataFinanceWorkspace() {
   })();
   const currencyProfileKpis: readonly MasterDataKpiItem[] = [
     {
-      label: 'نرخ جاری تأییدشده',
+      label: 'نرخ جاری',
       value: currentCurrencyRate
         ? Number(currentCurrencyRate.rate).toLocaleString('fa-IR', {
             maximumFractionDigits: 10,
@@ -823,7 +823,7 @@ export function MasterDataFinanceWorkspace() {
       tone: 'sky',
       hint: currentCurrencyRate
         ? `${currentCurrencyRate.fromCurrencyCode}/${currentCurrencyRate.toCurrencyCode} · ${rateTypeLabel(currentCurrencyRate.rateType)}`
-        : 'نرخ تأییدشده‌ای ثبت نشده است',
+        : 'نرخی ثبت نشده است',
     },
     {
       label: 'تغییر نسبت به نرخ قبل',
@@ -1352,6 +1352,13 @@ export function MasterDataFinanceWorkspace() {
           }}
           onSaved={(record) => {
             if (selectedCurrency?.id === record.id) setSelectedCurrency(record);
+            void load();
+          }}
+          onQuoteSaved={(record, rates) => {
+            setSelectedCurrency({ ...record });
+            if (rates[0]) setSelectedPair(ratePairKey(rates[0]));
+            setFormMode(null);
+            setCurrencyProfileOpen(true);
             void load();
           }}
         />
