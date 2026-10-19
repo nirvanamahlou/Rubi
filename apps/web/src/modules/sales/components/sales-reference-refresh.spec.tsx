@@ -14,6 +14,7 @@ vi.mock('react', async (original) => ({
   ...(await original<typeof ReactModule>()),
   useEffect: vi.fn(),
   useMemo: (factory: () => unknown) => factory(),
+  useCallback: (callback: unknown) => callback,
   useRef: (value: unknown) => ({ current: value }),
   useState: (initial: unknown) => {
     const value =
