@@ -683,6 +683,21 @@ export function validateSalesContract(
     const hotelGuestCount = input.passengers.filter((passenger) =>
       passenger.serviceClientKeys.includes(hotel.serviceClientKey),
     ).length;
+    const flightKeys = new Set(
+      input.services.filter((s) => s.kind === 'FLIGHT').map((s) => s.clientKey),
+    );
+    if (
+      flightKeys.size &&
+      input.passengers.some(
+        (passenger) =>
+          passenger.serviceClientKeys.some((key) => flightKeys.has(key)) !==
+          passenger.serviceClientKeys.includes(hotel.serviceClientKey),
+      )
+    )
+      throw new SalesDomainError(
+        'SALES_HOTEL_INVALID',
+        'مسافران هتل و پرواز باید یکسان باشند.',
+      );
     if (hotelGuestCount < 1 || hotel.occupancy !== hotelGuestCount)
       throw new SalesDomainError(
         'SALES_HOTEL_INVALID',

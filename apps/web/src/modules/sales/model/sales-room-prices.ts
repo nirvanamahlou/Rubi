@@ -23,16 +23,17 @@ export function roomPartyUsage(
 export function salesRoomPartyError(state: SalesFormState): string | null {
   if (
     !state.serviceKinds.includes('HOTEL') ||
-    !state.serviceKinds.includes('FLIGHT')
+    !state.serviceKinds.includes('FLIGHT') ||
+    !state.hotel.rooms?.length
   )
     return null;
   const used = roomPartyUsage(state.hotel.rooms, state.hotelChildAssignments);
   const p = state.passengerComposition;
-  return used.adults > p.adults ||
-    used.children > p.children ||
-    used.infants > p.infants ||
-    used.total > p.adults + p.children + p.infants
-    ? 'مجموع بزرگسال و کودک اتاق‌ها نباید از تعداد مسافران پرواز بیشتر باشد.'
+  return used.adults !== p.adults ||
+    used.children !== p.children ||
+    used.infants !== p.infants ||
+    used.total !== p.adults + p.children + p.infants
+    ? 'تعداد بزرگسال، کودک و نوزاد اتاق‌ها باید با مسافران پرواز برابر باشد.'
     : null;
 }
 export function roomAgreedTotals(

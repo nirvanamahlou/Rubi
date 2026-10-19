@@ -1,0 +1,47 @@
+import type { ContractFlightDraft } from './sales-form';
+
+/** The Sales calendar provides the civil date; clocks are Tehran local time. */
+export function floatingFlightClock(value: string): string {
+  if (!value) return '';
+  if (!/(?:Z|[+-]\d{2}:\d{2})$/.test(value))
+    return /T(\d{2}:\d{2})/.exec(value)?.[1] ?? '';
+  if (!Number.isFinite(Date.parse(value))) return '';
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Tehran',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(value));
+}
+
+export function floatingFlightTimes(
+  date: string,
+  value: ContractFlightDraft,
+  clocks: { departure?: string; arrival?: string },
+): ContractFlightDraft {
+  const departure = clocks.departure ?? floatingFlightClock(value.departureAt);
+  const arrival = clocks.arrival ?? floatingFlightClock(value.arrivalAt);
+  const validClock = (s: string) => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(s);
+  const validDate =
+    /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+    Number.isFinite(Date.parse(date)) &&
+    new Date(date).toISOString().slice(0, 10) === date;
+  let arrivalDate = date;
+  if (
+    validDate &&
+    validClock(departure) &&
+    validClock(arrival) &&
+    arrival <= departure
+  ) {
+    const next = new Date(date + 'T12:00:00Z');
+    next.setUTCDate(next.getUTCDate() + 1);
+    arrivalDate = next.toISOString().slice(0, 10);
+  }
+  return {
+    ...value,
+    departureAt:
+      validDate && validClock(departure) ? `${date}T${departure}` : '',
+    arrivalAt:
+      validDate && validClock(arrival) ? `${arrivalDate}T${arrival}` : '',
+  };
+}
