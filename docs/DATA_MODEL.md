@@ -882,3 +882,23 @@ Only active internal IAM account labels are exposed through its public directory
 ## MESSAGING-REPLIES-REACTIONS-1018 — 2026-10-18
 
 MessagingMessage has a nullable replyToMessageId; composite FK (replyToMessageId, conversationId) references (id, conversationId) on MessagingMessage, preventing cross-conversation replies at database level. Existing rows remain NULL; no backfill. MessagingMessageReaction is owned by Messaging with real message/user FKs, one row per (messageId,userId), one allowed emoji (👍 ❤️ 😂 😮 🙏), and UTC created/updated timestamps. Explicit set/remove is idempotent and can only affect the authenticated member’s own reaction. The compatible v1 response adds optional replyTo (240-character preview plus minimum sender identity) and grouped reaction counts/member IDs. The producer validates membership/branch before every command or read. Forwarding does not copy source replies or reactions. Migration20261018190000 is additive and must precede API rollout. No other module accesses reaction tables directly.
+
+## 2026-10-18 — Call Center durable contact history
+
+Customer Affairs owns CallCenterContact, CallCenterCall and CallCenterNote.
+Contacts are unique by authorized Branch FK and HMAC of the canonical telephone.
+Calls and notes have restrictive real contact/User FKs; append operations retain
+UTC time and server actor identity. Call UUIDs and note UUIDs are replay keys:
+the same normalized request returns its saved record; changed requests conflict.
+Per-event and per-phone transaction locks serialize concurrent retries and contact
+creation, and audit metadata commits atomically without private text snapshots.
+Private call fields (phone/name/subject/source/operator/summary) and note bodies
+are AES-256-GCM encrypted with row/contact AAD and configured key version. No
+plain telephone, note body, external audio URL or copied Customer row is stored.
+The append-only API exposes no edit/delete command. Source/assigned-team labels
+are call snapshots, not new IAM identities. Lists use one authorized branch,
+50 contacts per page and each complete call/note history; UI explicitly reports
+statistics/search coverage of loaded contacts and offers further pages. The
+first authorized branch is the default, matching Customer Affairs conventions.
+Migration20261018200000 creates three tables/indexes/checks only. Provider webhooks,
+realtime notification and protected recording handoff require a separate unit.

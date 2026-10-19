@@ -14,6 +14,10 @@ User-details Save remains normal blue when idle, including after a successful sa
 
 International Sales passenger snapshots now use each saved row passport first/last name instead of potentially repeated CRM display titles. Domestic names, customer identity, person IDs and price keys remain unchanged.43 focused regressions pass, including three distinct passengers sharing one CRM title. No migration or live3100 update. Hosted exact-head checks gate authorized develop merge.
 
+## 2026-10-19 — CALL-CENTER-PERSISTENCE-1018 — PC-C — READY_FOR_CI
+
+The final Call Center panel now uses authenticated branch-scoped APIs and three additive PostgreSQL tables for calls, follow-ups and notes. Private content is encrypted; stable command IDs prevent duplicate retries and audit metadata commits atomically. Independent IAM contract14 permissions separate Call Center access from Lead access. The user approved only the three Call Center grants for amin. The backed-up local ERP was activated and a complete browser refresh retained the synthetic contact's inbound call, outbound follow-up and note. Focused database/HTTP/IAM/Web tests and production builds passed; details and migration handoff are in docs/tasks/CALL-CENTER-PERSISTENCE-1018.md. The user authorizes push, PR to develop and merge only after all final-head CI/CD checks pass. Candidate branch: codex/pc-c-call-center-persistence-1018. No unrelated local migration is applied.
+
 ## BROKER-FIELD-ACCESS-1018 — PC-B — READY_FOR_REVIEW
 
 Final local validation:77 API/Web/Contracts focused tests, scoped lint/format, Contracts/Database/API builds and full API/Web typechecks pass after refreshing stale ignored Prisma artifacts. Source frozen for review; task branch/PR publication only. No user grants, operational database change,3100 rollout or automatic develop merge.

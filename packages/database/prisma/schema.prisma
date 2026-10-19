@@ -30,6 +30,8 @@ enum AuditOutcome {
 }
 
 model User {
+  callCenterCalls                                  CallCenterCall[]
+  callCenterNotes                                  CallCenterNote[]
   internalLettersAuthored                          CorrespondenceLetter[]                    @relation("CorrespondenceAuthor")
   internalLettersSent                              CorrespondenceDelivery[]                  @relation("CorrespondenceSender")
   internalLettersReceived                          CorrespondenceDelivery[]                  @relation("CorrespondenceRecipient")
@@ -249,6 +251,7 @@ model RolePermission {
 }
 
 model Branch {
+  callCenterContacts                  CallCenterContact[]
   purchaseFxSnapshots                 FinancePurchaseFxSnapshot[]
   accountingBooks                     AccountingBook[]
   financeOperationalRequests          FinanceOperationalRequest[]
@@ -7627,4 +7630,53 @@ model CorrespondenceDelivery {
   @@index([recipientId, createdAt])
   @@index([letterId, recipientId])
   @@map("correspondence_deliveries")
+}
+
+// Customer Affairs-owned call history; all private text is encrypted at rest.
+model CallCenterContact {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId         String           @map("branch_id") @db.Uuid
+  phoneFingerprint String           @map("phone_fingerprint") @db.Char(64)
+  latestOccurredAt DateTime         @map("latest_occurred_at") @db.Timestamptz(3)
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  branch           Branch           @relation(fields: [branchId], references: [id], onDelete: Restrict, map: "call_contact_branch_fk")
+  calls            CallCenterCall[]
+  notes            CallCenterNote[]
+
+  @@unique([branchId, phoneFingerprint], map: "call_contact_phone_key")
+  @@index([branchId, latestOccurredAt, id], map: "call_contact_recent_idx")
+  @@map("customer_affairs_call_contacts")
+}
+
+model CallCenterCall {
+  id                 String            @id @db.Uuid
+  contactId          String            @map("contact_id") @db.Uuid
+  createdByUserId    String            @map("created_by_user_id") @db.Uuid
+  direction          String            @db.VarChar(8)
+  status             String            @db.VarChar(40)
+  occurredAt         DateTime          @map("occurred_at") @db.Timestamptz(3)
+  encryptedPayload   String            @map("encrypted_payload") @db.Text
+  keyVersion         Int               @map("key_version")
+  requestFingerprint String            @map("request_fingerprint") @db.Char(64)
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  contact            CallCenterContact @relation(fields: [contactId], references: [id], onDelete: Restrict, map: "call_contact_fk")
+  createdBy          User              @relation(fields: [createdByUserId], references: [id], onDelete: Restrict, map: "call_creator_fk")
+
+  @@index([contactId, occurredAt, id], map: "call_contact_calls_idx")
+  @@map("customer_affairs_calls")
+}
+
+model CallCenterNote {
+  id                 String            @id @db.Uuid
+  contactId          String            @map("contact_id") @db.Uuid
+  createdByUserId    String            @map("created_by_user_id") @db.Uuid
+  encryptedPayload   String            @map("encrypted_payload") @db.Text
+  keyVersion         Int               @map("key_version")
+  requestFingerprint String            @map("request_fingerprint") @db.Char(64)
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  contact            CallCenterContact @relation(fields: [contactId], references: [id], onDelete: Restrict, map: "call_note_contact_fk")
+  createdBy          User              @relation(fields: [createdByUserId], references: [id], onDelete: Restrict, map: "call_note_creator_fk")
+
+  @@index([contactId, createdAt, id], map: "call_contact_notes_idx")
+  @@map("customer_affairs_call_notes")
 }

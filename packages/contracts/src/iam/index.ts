@@ -13,7 +13,7 @@ import {
   PORTAL_SECTION_PERMISSIONS,
 } from './manual-access';
 
-export const IAM_PERMISSION_CONTRACT_VERSION = 13 as const;
+export const IAM_PERMISSION_CONTRACT_VERSION = 14 as const;
 export const IAM_STEP_UP_CONTRACT_VERSION = 1 as const;
 
 export const IAM_CORE_PERMISSION_CODES = [
