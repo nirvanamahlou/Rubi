@@ -29,7 +29,7 @@ type Rate = Pick<
 // Decimal JSON may use scientific notation; expand without floating-point rounding.
 export function editableCurrencyRate(value: string): string {
   const match = /^(\d+)(?:\.(\d+))?e([+-]?\d+)$/i.exec(value);
-  if (!match) return value;
+  if (!match || !match[1]) return value;
   const exponent = Number(match[3]);
   if (!Number.isInteger(exponent) || Math.abs(exponent) > 24) return value;
   const digits = match[1] + (match[2] ?? '');
