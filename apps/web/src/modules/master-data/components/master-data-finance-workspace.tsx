@@ -90,6 +90,9 @@ import {
 import { MasterDataCurrencyForm } from './master-data-currency-form';
 import { formatMasterDataNumber } from './master-data-number-input';
 import { MasterDataBankProfile } from './master-data-bank-profile';
+import { FinanceChart } from './master-data-currency-chart';
+import { CurrencyRateActions } from './master-data-currency-rate-actions';
+export { FinanceChart };
 
 type FinanceTab = 'currencies' | 'approvals' | 'banks' | 'payments';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
@@ -207,71 +210,6 @@ function statusLabel(value: RateStatus): string {
       : value === 'REJECTED'
         ? 'ردشده'
         : 'منقضی';
-}
-
-export function FinanceChart({ rates }: { rates: readonly CurrencyRateRow[] }) {
-  const points = useMemo(() => {
-    const ordered = [...rates]
-      .filter((row) => row.status === 'APPROVED')
-      .sort(
-        (left, right) =>
-          new Date(left.observedAt).getTime() -
-          new Date(right.observedAt).getTime(),
-      );
-    const values = ordered.map((row) => Number(row.rate));
-    const minimum = Math.min(...values);
-    const maximum = Math.max(...values);
-    const spread = maximum - minimum || 1;
-    return ordered.map((row, index) => ({
-      row,
-      x: ordered.length === 1 ? 50 : (index / (ordered.length - 1)) * 100,
-      y: 90 - ((Number(row.rate) - minimum) / spread) * 75,
-    }));
-  }, [rates]);
-
-  if (!points.length)
-    return (
-      <EmptyState
-        description="نرخ جدید را ثبت کنید تا در این نمودار نمایش داده شود."
-        icon={ChartNoAxesCombined}
-        title="نرخ ثبت‌شده‌ای در این بازه نیست"
-      />
-    );
-
-  return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-primary/5 to-transparent p-4">
-      <svg
-        aria-label="نمودار تاریخچه نرخ‌های ثبت‌شده"
-        className="h-64 w-full"
-        preserveAspectRatio="none"
-        role="img"
-        viewBox="0 0 100 100"
-      >
-        <polyline
-          fill="none"
-          points={points.map(({ x, y }) => `${x},${y}`).join(' ')}
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          vectorEffect="non-scaling-stroke"
-        />
-        {points.map(({ row, x, y }) => (
-          <circle
-            className="fill-background stroke-primary"
-            cx={x}
-            cy={y}
-            key={row.id}
-            r="1.8"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-          >
-            <title>{`${row.fromCurrencyCode}/${row.toCurrencyCode} · ${row.rate} · ${faDate(row.observedAt)}`}</title>
-          </circle>
-        ))}
-      </svg>
-    </div>
-  );
 }
 
 export function MasterDataFinanceWorkspace() {
@@ -1058,12 +996,9 @@ export function MasterDataFinanceWorkspace() {
                         >
                           <Eye aria-hidden="true" className="size-4" />
                         </Button>
+                        <CurrencyRateActions record={row} onSaved={load} />
                         {row.status === 'DRAFT' ? (
                           <>
-                            <MasterDataDeleteButton
-                              record={rateRecord(row)}
-                              onDeleted={afterDelete}
-                            />
                             <Button
                               onClick={() => void decide(row, 'approve')}
                               size="sm"
@@ -1501,7 +1436,6 @@ export function MasterDataFinanceWorkspace() {
               <>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="font-black">نرخ و تاریخچه ارز</h2>
-                  <Badge>isAuthoritative=false</Badge>
                 </div>
                 <MasterDataKpiGrid
                   items={currencyProfileKpis}
@@ -1545,12 +1479,13 @@ export function MasterDataFinanceWorkspace() {
                           </td>
                           <td className="p-4 text-center">
                             <div className="flex flex-wrap justify-center gap-2">
-                              {row.status === 'DRAFT' ? (
-                                <MasterDataDeleteButton
-                                  record={rateRecord(row)}
-                                  onDeleted={loadCurrencyHistory}
-                                />
-                              ) : null}
+                              <CurrencyRateActions
+                                record={row}
+                                onSaved={async () => {
+                                  await loadCurrencyHistory();
+                                  void load();
+                                }}
+                              />
                               <Button
                                 aria-label="مشاهده جزئیات رخداد"
                                 onClick={() => void showAudit(row)}

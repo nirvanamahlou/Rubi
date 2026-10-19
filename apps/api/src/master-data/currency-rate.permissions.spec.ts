@@ -16,6 +16,17 @@ describe('MASTER-003 controller permission metadata', () => {
     ).toEqual(['master_data.create', 'master_data.currency_rate.create']);
   });
   it.each([
+    ['update', 'master_data.update'],
+    ['remove', 'master_data.delete'],
+  ] as const)('keeps quote-write authority on %s', (method, permission) => {
+    expect(
+      Reflect.getMetadata(
+        PERMISSIONS_KEY,
+        CurrencyRateController.prototype[method],
+      ),
+    ).toEqual([permission, 'master_data.currency_rate.create']);
+  });
+  it.each([
     [CurrencyRateController, 'history', 'master_data.read'],
     [CurrencyRateController, 'current', 'master_data.read'],
     [CurrencyRateController, 'approve', 'master_data.currency_rate.approve'],

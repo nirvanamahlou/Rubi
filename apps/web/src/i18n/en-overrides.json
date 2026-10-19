@@ -1,4 +1,11 @@
 {
+  "مجوز لازم برای این عملیات وجود ندارد.": "You do not have permission for this operation.",
+  "شناسه یا نسخه نرخ معتبر نیست.": "The rate identifier or version is invalid.",
+  "مقدار نرخ معتبر نیست.": "Enter a valid positive rate.",
+  "ویرایش نرخ عملیاتی مجاز نیست.": "Operational exchange rates cannot be changed here.",
+  "ویرایش نرخ ارز": "Edit exchange rate",
+  "حذف نرخ ارز": "Delete exchange rate",
+  "نرخ از فهرست و نمودار حذف می‌شود و سابقه عملیات باقی می‌ماند.": "The rate will be removed from the list and chart; its audit history will be retained.",
   "جهان اکادمی": "Jahan Academy",
   "دفتر مرکزی": "Head office",
   "نرخ جاری": "Current rate",
