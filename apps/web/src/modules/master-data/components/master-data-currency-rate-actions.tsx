@@ -16,7 +16,14 @@ import { MasterDataNumberInput } from './master-data-number-input';
 
 type Rate = Pick<
   MasterCurrencyRateRecord,
-  'id' | 'rate' | 'source' | 'version' | 'fromCurrencyCode' | 'toCurrencyCode'
+  | 'id'
+  | 'rate'
+  | 'source'
+  | 'version'
+  | 'fromCurrencyCode'
+  | 'toCurrencyCode'
+  | 'rateType'
+  | 'observedAt'
 >;
 
 export function CurrencyRateActions({
@@ -104,9 +111,23 @@ export function CurrencyRateActions({
             {mode === 'edit' ? 'ویرایش نرخ ارز' : 'حذف نرخ ارز'}
           </DialogTitle>
           <DialogDescription>
+            <span className="mb-1 block font-mono" dir="ltr">
+              {target.fromCurrencyCode}/{target.toCurrencyCode} · {target.rate}
+            </span>
+            <span className="mb-2 block">
+              {target.rateType === 'BUY'
+                ? 'خرید'
+                : target.rateType === 'SELL'
+                  ? 'فروش'
+                  : 'مرجع'}{' '}
+              ·{' '}
+              {new Date(target.observedAt).toLocaleString('fa-IR', {
+                timeZone: 'Asia/Tehran',
+              })}
+            </span>
             {mode === 'delete'
               ? 'نرخ از فهرست و نمودار حذف می‌شود و سابقه عملیات باقی می‌ماند.'
-              : `${target.fromCurrencyCode}/${target.toCurrencyCode}`}
+              : null}
           </DialogDescription>
           <form
             className="mt-4 space-y-4"

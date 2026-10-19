@@ -11,6 +11,8 @@ const record = {
   source: 'manual',
   fromCurrencyCode: 'USD',
   toCurrencyCode: 'IRR',
+  rateType: 'BUY' as const,
+  observedAt: '2026-10-19T10:00:00Z',
 };
 describe('rate row edit/delete actions', () => {
   it('renders both compact accessible icon actions for registered rates', () => {
@@ -29,6 +31,9 @@ describe('rate row edit/delete actions', () => {
       'utf8',
     );
     expect(source).toContain('setTarget({ ...record })');
+    expect(source).toContain('{target.rate}');
+    expect(source).toContain('target.rateType');
+    expect(source).toContain('target.observedAt');
     expect(source).toContain('expectedVersion: target.version');
     expect(source).toContain(
       'masterDataApi.removeCurrencyRate(target.id, target.version)',
