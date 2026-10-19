@@ -1,3 +1,7 @@
+## USER-ROLE-SAVE-1019 — PC-B — READY_FOR_CI
+
+Owner reports legacy administrator to full-access role changes silently not saved, requests fix/push/develop merge. Manual-access editor draft/save lifecycle, user-management selected-account final save bridge, focused regression helpers/tests and own docs on codex/pc-b-user-role-save-1019 from origin/develop@0e0c1ae0. Final save submits pending manual role selection, surfaces errors beside picker, retains CAS/delegation/last-manager safeguards and never converts unchanged legacy grants. Branch saves use freshly reloaded access revision after a successful role save; failed role save stops subsequent writes.96 focused Web tests pass, plus16 API role/permission regressions. No API/schema/migration/dependency or operational user mutation. Prior relevant source locks released; bounded locks released at frozen candidate. Exact-head CI gates merge.
+
 ## ROLE-LABEL-1019 — PC-B — READY_FOR_CI
 
 Owner requests removing Demo from the full-access role title, push and develop merge. Branch codex/pc-b-role-label-1019 from origin/develop@d6c63af6. User-management and role-picker presentation, narrow role-label helper/tests and own status entries only. Normalize only the legacy full-access Demo display label; retain canonical role IDs, selection values, role membership, permissions and Demo account identity.16 focused tests pass. No API/schema/migration/dependency/data/runtime changes. Previous user-management source scopes released; bounded locks released with frozen candidate. Exact-head CI gates merge.

@@ -1,3 +1,7 @@
+## USER-ROLE-SAVE-1019 — PC-B
+
+Selected-user final Save now submits pending role/manual access through the existing guarded endpoint instead of saving branches only. A second near-picker Save and visible status/error avoid the former silent-looking flow. Unchanged legacy snapshots do not convert or rewrite grants. Branch changes follow only successful role saves and use a freshly loaded revision, preserving CAS/conflict handling. Account summaries show the effective manual snapshot label rather than implying retained administrator membership still controls access. No backend authorization rules, existing memberships, schema, dependency or operational account changes. Focused lifecycle/workflow tests and final-head full CI gate owner-authorized push/develop merge.
+
 ## ROLE-LABEL-1019 — PC-B
 
 Remove Demo only from the legacy full-access role display label across role selection, role directory, title preview and account role summaries/search. Canonical role names/IDs still drive selection and assignment; no membership, permissions or Demo account identity changes. Narrow helper and actual picker regressions verify display cleanup without callbacks on opening or role ID changes. No API/schema/migration/dependency/data/runtime changes; exact-head hosted CI gates authorized develop merge.
