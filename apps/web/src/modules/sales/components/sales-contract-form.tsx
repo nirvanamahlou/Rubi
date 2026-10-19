@@ -1,4 +1,5 @@
 'use client';
+import type { TicketOfferV1 } from '@nora/contracts';
 import { PublishedPackageSale } from './published-package-sale';
 import { readPassengerHotelPrices } from '@nora/contracts';
 import { syncHotelChildSelections } from '../model/hotel-child-selection';
@@ -21,7 +22,10 @@ import {
   ticketOnlySaleDefaults,
 } from '../model/ticket-only-sale-defaults';
 import { FlightTripDates } from './flight-trip-dates';
-import { exactFlightQuery } from '../model/exact-flight-dates';
+import {
+  pairedReturnDate,
+  exactFlightQuery,
+} from '../model/exact-flight-dates';
 import {
   salesFlightRangeReady,
   salesFlightToday,
@@ -41,7 +45,14 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from '@/i18n/link';
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
 
 import type { HotelRoomRateV1, SalesServiceKind } from '@nora/contracts';
 
@@ -289,6 +300,16 @@ export function SalesContractForm() {
   const [error, setError] = useState('');
   const [savedNumber, setSavedNumber] = useState('');
   const [savedId, setSavedId] = useState('');
+  const [returnCalendar, setReturnCalendar] = useState<{
+    route: string;
+    offers: TicketOfferV1[];
+  }>({ route: '', offers: [] });
+  const calendarRoute = state.originId + ':' + state.destinationId;
+  const onReturningOffers = useCallback(
+    (offers: TicketOfferV1[]) =>
+      setReturnCalendar({ route: calendarRoute, offers }),
+    [calendarRoute],
+  );
   const submission = useRef({ fingerprint: '', key: '' });
   const selectableHotelRoomTypes = useMemo(
     () =>
@@ -1253,6 +1274,7 @@ export function SalesContractForm() {
             className="mt-5 border-t border-border pt-4"
           >
             <FlightTripDates
+              onReturningOffers={onReturningOffers}
               international={salesInternationalTravel(state)}
               originId={
                 salesDirections(state, 'FLIGHT').includes('OUTBOUND')
@@ -1489,8 +1511,26 @@ export function SalesContractForm() {
                               'RETURN',
                             )}
                             selectedId={state.ticket.outboundOfferId}
-                            onSelect={(offer) =>
+                            onSelect={(offer) => {
+                              const paired =
+                                !flightRange.to &&
+                                salesDirections(state, 'FLIGHT').includes(
+                                  'RETURN',
+                                ) &&
+                                returnCalendar.route === calendarRoute
+                                  ? pairedReturnDate(
+                                      [offer],
+                                      returnCalendar.offers,
+                                      salesFlightSeats(state, 'RETURN'),
+                                    )
+                                  : undefined;
+                              if (paired)
+                                setFlightRange((range) => ({
+                                  ...range,
+                                  to: paired.day,
+                                }));
                               patchState({
+                                ...(paired ? { returnDate: paired.day } : {}),
                                 outboundOffer: offer,
                                 returnOffer: undefined,
                                 contractFlights: {},
@@ -1509,8 +1549,8 @@ export function SalesContractForm() {
                                   carrier: offer.carrierName,
                                   returnOfferId: '',
                                 },
-                              })
-                            }
+                              });
+                            }}
                           />
                         </>
                       ) : null}

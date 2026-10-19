@@ -1,3 +1,7 @@
+## PAIRED-RETURN-DATE-1019 — PC-A
+
+Sales fills a unique eligible registered return date after choosing the outbound day, using saved pair IDs or the defined load group and return window. Manual/floating return dates remain editable; an existing explicit date is retained when selecting the actual outbound offer. Search exposes only optional loadGroupId, preserving authorized route/branch filters and omitting audit/internal keys.26 Web and 18 API tests, Web typecheck and scoped lint pass; final-head full CI gates owner-authorized develop merge. No schema/migration/dependency/runtime changes.
+
 ## FIVE-BRANCH-COMPANY-1019 — PC-B
 
 Owner-authorized all-user access to the five named branches: add an atomic, idempotent data-only migration that preserves existing branch IDs/primary scopes/extra memberships, logs added memberships, provisions missing issuer companies and preserves existing official names/branding. Restore Jahan Academy in the active-company selector; new-user UI drafts default to actual five-branch IDs, while existing-account editing preserves stored values. Native permissions and later administrator edits remain independent. Push/PR only; not merged or deployed. The database upgrade must run on the intended server before these records are available there. See tasks/FIVE-BRANCH-COMPANY-1019.md.
