@@ -755,11 +755,20 @@ export function toMasterDataRecord(
       )?.phoneMasked ?? '',
     );
     attributes.dossierEmailMasked = String(
-      contacts.find((c) => c.jobTitle === 'PARTNER_EMAIL')?.emailMasked ?? '',
+      contacts.find(
+        (c) => c.isActive !== false && c.jobTitle === 'PARTNER_EMAIL',
+      )?.emailMasked ?? '',
     );
     attributes.dossierAddress = String(
       addresses[0]?.addressLine ?? row.address ?? '',
     );
+    if (resource === 'suppliers')
+      attributes.address = attributes.dossierAddress;
+    const office = contacts.find(
+      (c) => c.isActive !== false && hasPartnerPhoneRole(c.jobTitle, 'office'),
+    );
+    if (office?.phoneMasked)
+      attributes.primaryPhoneMasked = String(office.phoneMasked);
   }
   if (resource === 'travel-services') {
     attributes.supplierCount = Number(count?.suppliers ?? 0);
@@ -1382,6 +1391,7 @@ export class MasterDataRepository {
           dossier ?? {},
           actorUserId,
           actorBranchId,
+          Object.hasOwn(writeData, 'primaryPhoneEncrypted'),
         );
       }
 

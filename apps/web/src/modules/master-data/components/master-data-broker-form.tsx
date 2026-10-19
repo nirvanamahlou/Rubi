@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
 import { MasterDataReferenceSelector } from './master-data-reference-selector';
+import { MasterDataStoredContact } from './master-data-stored-contact';
 import {
   brokerFormValues,
   brokerName,
@@ -94,6 +95,9 @@ export function MasterDataBrokerForm({
             ['نام کارگزار', record?.name],
             ['نام انگلیسی کارگزار', values.englishName],
             ['شماره کارگزار', record?.attributes.primaryPhoneMasked],
+            ['شماره همراه', record?.attributes.dossierMobileMasked],
+            ['ایمیل', record?.attributes.dossierEmailMasked],
+            ['نشانی', values.dossierAddress],
             ['Board', values.boardText],
             ['کشور', record?.attributes.countryName],
             ['شهرهای فعالیت', record?.attributes.cityNames],
@@ -168,6 +172,29 @@ export function MasterDataBrokerForm({
                 }
                 onChange={(e) => change(String(key), e.target.value)}
               />
+              {record &&
+              ['primaryPhone', 'dossierMobile', 'dossierEmail'].includes(
+                String(key),
+              ) ? (
+                <MasterDataStoredContact
+                  label={String(label)}
+                  masked={String(
+                    record.attributes[
+                      key === 'primaryPhone'
+                        ? 'primaryPhoneMasked'
+                        : `${key}Masked`
+                    ] ?? '',
+                  )}
+                  touched={
+                    key === 'primaryPhone'
+                      ? phoneTouched
+                      : contactTouched.has(String(key))
+                  }
+                  value={values[String(key)] ?? ''}
+                  disabled={disabled}
+                  onClear={() => change(String(key), '')}
+                />
+              ) : null}
             </label>
           ))}
           <label className="grid gap-2">

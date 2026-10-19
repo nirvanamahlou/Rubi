@@ -742,6 +742,137 @@ describe.skipIf(!enabled)(
       ).rejects.toThrow();
     });
 
+    it.each(['suppliers', 'brokers'] as const)(
+      'round-trips %s contacts/address and preserves canonical edits on rename',
+      async (resource) => {
+        const crypto = new MasterDataContactCrypto(
+          new ConfigService({
+            MASTER_DATA_IMPORT_TOKEN_KEY_BASE64: Buffer.alloc(32, 9).toString(
+              'base64',
+            ),
+          }),
+        );
+        const country = await client.masterCountry.findFirstOrThrow();
+        const city = await client.masterCity.create({
+          data: {
+            code: `QA_RT_${resource}`,
+            name: 'Synthetic roundtrip city',
+            countryId: country.id,
+            createdByUserId: actorUserId,
+            updatedByUserId: actorUserId,
+          },
+        });
+        const master = new MasterDataRepository({ client } as DatabaseService);
+        const service = new MasterDataService(master, crypto);
+        const actor = {
+          userId: actorUserId,
+          branchIds: [branchId],
+          permissions: [
+            'master_data.create',
+            'master_data.read',
+            'master_data.update',
+          ],
+        } as AuthenticatedActor;
+        let saved = await service.create(
+          resource,
+          {
+            name: `Synthetic roundtrip ${resource}`,
+            countryId: country.id,
+            ...(resource === 'brokers'
+              ? { cityIds: city.id }
+              : { cityId: city.id }),
+            primaryPhone: '+12025550123',
+            dossierVersion: '1',
+            dossierMobile: '+12025550124',
+            dossierEmail: 'QA@EXAMPLE.TEST',
+            dossierAddress: 'Imported office',
+          },
+          actor,
+        );
+        const orgId = String(saved.data.attributes.organizationId);
+        let detail = await service.detail(resource, saved.data.id);
+        expect(detail.data.attributes).toMatchObject({
+          primaryPhoneMasked: crypto.protectTravelPhone('+12025550123').masked,
+          dossierMobileMasked: crypto.protectTravelPhone('+12025550124').masked,
+          dossierAddress: 'Imported office',
+        });
+        if (resource === 'suppliers')
+          expect(detail.data.attributes.address).toBe('Imported office');
+        const office = await client.masterOrganizationContact.findFirstOrThrow({
+          where: { organizationId: orgId, jobTitle: 'PARTNER_OFFICE' },
+        });
+        const changed = crypto.protectTravelPhone('+12025550125');
+        await client.masterOrganizationContact.update({
+          where: { id: office.id },
+          data: {
+            phoneEncrypted: changed.encrypted,
+            phoneEncryptionIv: changed.encryptionIv,
+            phoneEncryptionAuthTag: changed.encryptionAuthTag,
+            phoneEncryptionKeyVersion: changed.encryptionKeyVersion,
+            phoneMasked: changed.masked,
+            phoneFingerprint: changed.fingerprint,
+          },
+        });
+        await client.masterOrganizationAddress.updateMany({
+          where: { organizationId: orgId, isPrimary: true },
+          data: { addressLine: 'Canonical updated office' },
+        });
+        saved = await service.update(
+          resource,
+          saved.data.id,
+          { name: 'Renamed roundtrip partner', dossierVersion: '1' },
+          saved.data.version,
+          actor,
+        );
+        detail = await service.detail(resource, saved.data.id);
+        expect(detail.data.attributes).toMatchObject({
+          primaryPhoneMasked: changed.masked,
+          dossierMobileMasked: crypto.protectTravelPhone('+12025550124').masked,
+          dossierAddress: 'Canonical updated office',
+        });
+        expect(
+          (
+            await client.masterOrganizationContact.findUniqueOrThrow({
+              where: { id: office.id },
+            })
+          ).phoneFingerprint,
+        ).toBe(changed.fingerprint);
+        saved = await service.update(
+          resource,
+          saved.data.id,
+          {
+            dossierVersion: '1',
+            primaryPhone: '+12025550126',
+            dossierMobile: '+12025550127',
+            dossierAddress: 'Edited office',
+          },
+          saved.data.version,
+          actor,
+        );
+        detail = await service.detail(resource, saved.data.id);
+        expect(detail.data.attributes).toMatchObject({
+          primaryPhoneMasked: crypto.protectTravelPhone('+12025550126').masked,
+          dossierMobileMasked: crypto.protectTravelPhone('+12025550127').masked,
+          dossierAddress: 'Edited office',
+        });
+        await service.update(
+          resource,
+          saved.data.id,
+          { dossierVersion: '1', dossierMobile: '', dossierEmail: '' },
+          saved.data.version,
+          actor,
+        );
+        detail = await service.detail(resource, saved.data.id);
+        expect(detail.data.attributes).toMatchObject({
+          primaryPhoneMasked: crypto.protectTravelPhone('+12025550126').masked,
+          dossierMobileMasked: '',
+          dossierEmailMasked: '',
+          dossierAddress: 'Edited office',
+        });
+        expect(JSON.stringify(detail)).not.toContain('phoneEncrypted');
+      },
+    );
+
     it('saves a broker with identical office/mobile and Caps Lock email, then splits and clears roles', async () => {
       const crypto = new MasterDataContactCrypto(
         new ConfigService({

@@ -1,3 +1,7 @@
+## PARTNER-CONTACT-ROUNDTRIP-1019 — PC-B — READY_FOR_CI
+
+COMPUTER_ID=PC-B; branch codex/pc-b-partner-contact-roundtrip-1019 from origin/develop@a1c2e0e2. User authorizes supplier/broker phone, mobile and address save/read/edit repair, tests, push and develop merge. Reserve bounded Master Data partner projection/persistence, partner form state/components and regression tests plus own coordination notes. Preserve encrypted contacts, masking and native unmask authority; never send masked placeholders as replacement values or erase untouched fields. No migration, dependency, IAM grant, operational database or server rollout change. Previous broker contact unit merged; no overlapping active target reservation found. Exact-head hosted checks gate merge.
+
 ## SALES-PAST-TICKETS-1019 — PC-A — READY_FOR_CI
 
 Branch codex/pc-a-sales-past-tickets-1019 from origin/develop@6cc79760. User authorizes temporary past-flight selection and contract continuation in Sales, tests and develop merge. Reserve Sales date/calendar controls, Ticket Catalog public search/revalidation/allocation date policy and targeted tests plus own docs. Keep branch, active/manual-pause, capacity, fare/version and return-order guards. No migration/dependency/operational data/runtime change. Prior target locks released.22 focused Web and196 Ticket Catalog API tests pass (22 existing integration skips). Bounded locks released with frozen candidate; exact-head hosted types/build/quality/tests gate merge.
