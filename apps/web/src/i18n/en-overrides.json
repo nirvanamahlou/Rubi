@@ -3082,5 +3082,8 @@
   "گزارش تماس‌ها همیشه تمام تماس‌های منطبق با فیلتر و بازه را می‌شمارد؛ گزینه آخرین تماس فقط برای فهرست مخاطبان است.": "Call reports count all calls matching the filters and period; latest-call scope applies only to the contact list.",
   "یادداشت ذخیره‌نشده با تغییر شعبه کنار گذاشته شود؟": "Discard unsaved notes when changing branch?",
   "ارجاع درخواست": "Request referral",
-  "اصلاح ارتباط مشتری": "Customer association updated"
+  "اصلاح ارتباط مشتری": "Customer association updated",
+  "صف رسیدگی و پیگیری": "Request and follow-up queue",
+  "همه درخواست‌های باز": "All open requests",
+  "درخواست‌های همه شعبه‌های مجاز؛ مستقل از فیلتر شعبه فهرست مخاطبان": "Requests across all authorized branches, independent of the contact-list branch filter"
 }

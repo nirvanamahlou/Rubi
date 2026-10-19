@@ -8302,3 +8302,9 @@ Bounded CI reservation: extend existing disposable PostgreSQL Call Center job to
 Bounded IAM directory extension: read only authorized active branch names for the Call Center selector; no IAM administration or grant changes. Focus restoration uses existing Radix dialogs and a module-local hook.
 
 Package-two validation complete:34 PostgreSQL/HTTP,230 broader unit regressions (24 integration opt-in skips),34 Web checks; lint/API/Web builds pass. Synthetic Chrome/Edge keyboard/stale-response/mobile checks and local benchmark recorded in docs/tasks/CALL-CENTER-PACKAGE-TWO-1019.md. Own migration/backfill only, backup retained, no grants changed. Local API4000/Web3000 activated. Source/schema/migration reservations release on task-branch publication; owner authenticated review remains pending. No PR/merge/production deployment performed.
+
+## CALL-CENTER-GLOBAL-QUEUE-1019 — PC-C — READY_FOR_REVIEW
+
+Owner requests moving branch selection into advanced filters and making the request queue independent of selected branch. Branch codex/pc-c-call-center-global-queue-1019 from package-two389ccec0. Reserve Call Center workspace/workflow/client/API/DTO/tests, bounded existing Tasks matchingRequests port, own i18n and status/docs only. Queue defaults to all requests including closed across actor-authorized branches; optional open/mine/due views remain. Never bypass branch grants. Return each row branchId and open details in that branch. No schema/migration/dependency/grant/PR/merge changes. Local API/Web activation and task commit/push follow existing instructions.
+
+Validation:35 focused PostgreSQL/HTTP tests,12 client/search/localization tests, scoped lint/API/Web TypeScript and optimized builds pass. Synthetic Chrome/Edge placement/default/keyboard/mobile checks pass. API4000/Web3000 updated; no data/grant/migration changes. Source reservation releases at task publication; owner UI acceptance remains pending.

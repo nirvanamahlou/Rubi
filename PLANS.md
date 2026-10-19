@@ -551,3 +551,13 @@ Details and compatibility/runtime handoff: docs/tasks/CALL-CENTER-PACKAGE-ONE-10
 - [ ] Issabel API, real incoming call routing, recording ingestion, approved sales-conversion definition and optional audited Reporting exports remain subsequent scope.
 
 Evidence and compatibility: docs/tasks/CALL-CENTER-PACKAGE-TWO-1019.md.
+
+## CALL-CENTER-GLOBAL-QUEUE-1019
+
+- [x] Place branch selector in advanced filter grid.
+- [x] Queue all authorized branches independent of contact-list branch, ALL default includes closed.
+- [x] Preserve row branch for details and add explicit open-only view.
+- [x] PostgreSQL branch isolation and Chrome/Edge UI checks.
+- [ ] Owner authenticated review after local activation.
+
+See docs/tasks/CALL-CENTER-GLOBAL-QUEUE-1019.md.

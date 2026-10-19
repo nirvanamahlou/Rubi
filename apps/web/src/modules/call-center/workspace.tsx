@@ -1,6 +1,12 @@
 'use client';
 import { DatePicker } from '@/components/ui/date-picker';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react';
 import { Headset, Plus, RotateCcw, Search, Eye, X } from 'lucide-react';
 import { useAccessActor } from '@/modules/iam/access-context';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
@@ -95,32 +101,34 @@ export function CallCenterWorkspace() {
   if (!branch) return <p role="alert">شعبه مجازی در دسترس نیست.</p>;
   return (
     <>
-      <label>
-        شعبه مجاز
-        <NativeSearchSelect
-          aria-label="شعبه مجاز کال سنتر"
-          value={branch}
-          onChange={(e) => {
-            if (
-              !hasDraft ||
-              window.confirm(
-                'یادداشت ذخیره‌نشده با تغییر شعبه کنار گذاشته شود؟',
-              )
-            )
-              setChosen(e.target.value);
-          }}
-        >
-          {actor.branchIds.map((id, index) => (
-            <option key={id} value={id}>
-              {branches.find((b) => b.id === id)?.name ??
-                'شعبه ' + faNumber(index + 1)}
-            </option>
-          ))}
-        </NativeSearchSelect>
-      </label>
       <Content
         key={`${actor.userId}:${branch}:${actor.permissions.join(',')}`}
         branch={branch}
+        branchControl={
+          <label>
+            شعبه مجاز
+            <NativeSearchSelect
+              aria-label="شعبه مجاز کال سنتر"
+              value={branch}
+              onChange={(e) => {
+                if (
+                  !hasDraft ||
+                  window.confirm(
+                    'یادداشت ذخیره‌نشده با تغییر شعبه کنار گذاشته شود؟',
+                  )
+                )
+                  setChosen(e.target.value);
+              }}
+            >
+              {actor.branchIds.map((id, index) => (
+                <option key={id} value={id}>
+                  {branches.find((b) => b.id === id)?.name ??
+                    'شعبه ' + faNumber(index + 1)}
+                </option>
+              ))}
+            </NativeSearchSelect>
+          </label>
+        }
         onDirty={setHasDraft}
         actorId={actor.userId}
         permissions={actor.permissions}
@@ -130,11 +138,13 @@ export function CallCenterWorkspace() {
 }
 function Content({
   onDirty,
+  branchControl,
   branch,
   actorId,
   permissions,
 }: {
   branch: string;
+  branchControl: ReactNode;
   actorId: string;
   permissions: readonly string[];
   onDirty: (value: boolean) => void;
@@ -307,6 +317,7 @@ function Content({
       </header>
       <WorkQueue branchId={branch} actorId={actorId} canManage={canManage} />
       <div className={styles.filters}>
+        {branchControl}
         <label className={styles.search}>
           <Search size={18} />
           <input

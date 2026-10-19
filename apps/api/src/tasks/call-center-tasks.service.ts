@@ -9,7 +9,7 @@ export class CallCenterTasksService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
   async matchingRequests(
-    branchId: string,
+    branchId: string | string[],
     view: string,
     actorId: string,
     start: Date,
@@ -18,7 +18,7 @@ export class CallCenterTasksService {
     const rows = await this.database.client.automationTask.findMany({
       where: {
         sourceModule: 'CALL_CENTER',
-        branchId,
+        branchId: Array.isArray(branchId) ? { in: branchId } : branchId,
         status: 'OPEN',
         ...(view === 'MINE' ? { assigneeUserId: actorId } : {}),
         ...(view === 'TODAY' ? { dueAt: { gte: start, lt: end } } : {}),

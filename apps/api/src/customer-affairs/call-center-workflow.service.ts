@@ -259,7 +259,8 @@ export class CallCenterWorkflowService
     view: string,
     page: number,
   ) {
-    const branchId = this.scope(actor, branch);
+    this.scope(actor, undefined);
+    const branchIds = [...new Set(actor.branchIds)];
     const parts = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Asia/Tehran',
       year: 'numeric',
@@ -273,7 +274,7 @@ export class CallCenterWorkflowService
     );
     const ids = ['MINE', 'TODAY', 'OVERDUE'].includes(view)
       ? await this.tasks.matchingRequests(
-          branchId,
+          branchIds,
           view,
           actor.userId,
           start,
@@ -281,9 +282,9 @@ export class CallCenterWorkflowService
         )
       : null;
     const where: Prisma.CustomerAffairsTicketWhereInput = {
-      branchId,
+      branchId: { in: branchIds },
       category: CATEGORY,
-      status: { not: 'CLOSED' },
+      ...(view !== 'ALL' ? { status: { not: 'CLOSED' } } : {}),
       callCenterContactId: { not: null },
       ...(view === 'MINE'
         ? {
@@ -304,12 +305,17 @@ export class CallCenterWorkflowService
         orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
         skip: (page - 1) * 50,
         take: 50,
-        include: { executionOwner: { select: { displayName: true } } },
+        include: {
+          executionOwner: { select: { displayName: true } },
+          branch: { select: { name: true } },
+        },
       }),
     ]);
     return {
       data: rows.map((row) => ({
         id: row.id,
+        branchId: row.branchId,
+        branchName: row.branch.name,
         contactId: row.callCenterContactId!,
         title: this.crypto.decrypt<{ title: string }>(
           row.callCenterPayload!,

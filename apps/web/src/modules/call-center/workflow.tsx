@@ -473,7 +473,7 @@ export function WorkQueue({
   canManage: boolean;
 }) {
   const queueTrigger = useRef<HTMLButtonElement | null>(null);
-  const [view, setView] = useState('MINE'),
+  const [view, setView] = useState('ALL'),
     [page, setPage] = useState(1),
     [revision, setRevision] = useState(0);
   const [data, setData] = useState<Awaited<
@@ -481,7 +481,10 @@ export function WorkQueue({
   > | null>(null);
   const [error, setError] = useState(''),
     [loading, setLoading] = useState(true),
-    [selected, setSelected] = useState<string | null>(null);
+    [selected, setSelected] = useState<{
+      contactId: string;
+      branchId: string;
+    } | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     workflowApi
@@ -505,7 +508,7 @@ export function WorkQueue({
   return (
     <section className={styles.panel}>
       <header>
-        <h3>صف رسیدگی و پیگیری شعبه</h3>
+        <h3>صف رسیدگی و پیگیری</h3>
         <button
           type="button"
           onClick={() => (
@@ -517,6 +520,7 @@ export function WorkQueue({
           به‌روزرسانی
         </button>
       </header>
+      <p>درخواست‌های همه شعبه‌های مجاز؛ مستقل از فیلتر شعبه فهرست مخاطبان</p>
       <NativeSearchSelect
         aria-label="نمای صف رسیدگی"
         value={view}
@@ -531,7 +535,8 @@ export function WorkQueue({
         <option value="TODAY">امروز</option>
         <option value="OVERDUE">عقب‌افتاده</option>
         <option value="UNASSIGNED">بدون مسئول</option>
-        <option value="ALL">همه درخواست‌های باز شعبه</option>
+        <option value="ALL">همه درخواست‌ها</option>
+        <option value="OPEN">همه درخواست‌های باز</option>
       </NativeSearchSelect>
       {loading && <p role="status">در حال دریافت صف…</p>}
       {error && <p role="alert">{error}</p>}
@@ -548,11 +553,14 @@ export function WorkQueue({
               type="button"
               onClick={(event) => {
                 queueTrigger.current = event.currentTarget;
-                setSelected(item.contactId);
+                setSelected({
+                  contactId: item.contactId,
+                  branchId: item.branchId,
+                });
               }}
             >
-              {item.title} · {item.ownerName ?? 'بدون مسئول'} ·{' '}
-              {requestLabels[item.status]}
+              {item.title} · {item.branchName} ·{' '}
+              {item.ownerName ?? 'بدون مسئول'} · {requestLabels[item.status]}
             </button>
           ))}
           <div>
@@ -602,10 +610,10 @@ export function WorkQueue({
               درخواست و اقدام‌های مرتبط را بررسی کنید.
             </DialogDescription>
             <WorkflowPanel
-              key={selected}
-              branchId={branchId}
+              key={selected.contactId}
+              branchId={selected.branchId}
               actorId={actorId}
-              contactId={selected}
+              contactId={selected.contactId}
               canManage={canManage}
               onChanged={() => (
                 setLoading(true),

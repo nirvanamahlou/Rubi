@@ -494,5 +494,75 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         await db.customerAffairsTicket.count({ where: { id: item.id } }),
       ).toBe(1);
     });
+    it('lists all authorized branches including closed requests independently of selected branch', async () => {
+      const multi = { ...actor, branchIds: [branchId, otherBranch] };
+      const call = await calls.create(
+        {
+          id: randomUUID(),
+          phone: '09120009999',
+          name: 'Synthetic other branch',
+          subject: 'Queue scope test',
+          source: 'گوگل',
+          operator: 'پشتیبانی',
+          direction: 'INBOUND',
+          status: 'جدید',
+          outcome: 'ANSWERED',
+          occurredAt: '2026-10-19T10:00:00Z',
+          note: '',
+        },
+        multi,
+        otherBranch,
+      );
+      const template = await db.customerAffairsTicket.findUniqueOrThrow({
+        where: { id: request.id },
+      });
+      const id = randomUUID(),
+        contact = call.data.contactId!;
+      await db.customerAffairsTicket.create({
+        data: {
+          ...template,
+          id,
+          trackingNumber: id.slice(0, 30),
+          branchId: otherBranch,
+          callCenterContactId: contact,
+          status: 'CLOSED',
+          callCenterPayload: new CallCenterCrypto(
+            new ConfigService({
+              CUSTOMER_CONTACT_ENCRYPTION_KEY_BASE64: Buffer.alloc(
+                32,
+                7,
+              ).toString('base64'),
+              CUSTOMER_CONTACT_FINGERPRINT_KEY_BASE64: Buffer.alloc(
+                32,
+                9,
+              ).toString('base64'),
+              CUSTOMER_CONTACT_ENCRYPTION_KEY_VERSION: 1,
+            }),
+          ).encrypt(
+            { title: 'Synthetic closed request' },
+            'request:' + id + ':' + contact,
+          ),
+          callCenterKeyVersion: 1,
+        },
+      });
+      const one = await workflow.queue(multi, branchId, 'ALL', 1);
+      const two = await workflow.queue(multi, otherBranch, 'ALL', 1);
+      expect(one.data.map((r) => r.id)).toEqual(two.data.map((r) => r.id));
+      expect(one.data.find((r) => r.id === id)).toMatchObject({
+        branchId: otherBranch,
+        status: 'CLOSED',
+        title: 'Synthetic closed request',
+      });
+      expect(
+        (await workflow.queue(multi, branchId, 'OPEN', 1)).data.some(
+          (r) => r.id === id,
+        ),
+      ).toBe(false);
+      expect(
+        (await workflow.queue(actor, otherBranch, 'ALL', 1)).data.some(
+          (r) => r.id === id,
+        ),
+      ).toBe(false);
+    });
   },
 );

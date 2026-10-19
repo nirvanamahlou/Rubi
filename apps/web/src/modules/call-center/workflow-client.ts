@@ -58,6 +58,8 @@ export const workflowApi = {
       data: {
         id: string;
         contactId: string;
+        branchId: string;
+        branchName: string;
         title: string;
         ownerName: string | null;
         status: string;
