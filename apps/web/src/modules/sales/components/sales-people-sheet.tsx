@@ -19,6 +19,8 @@ import { SalesDatePicker } from './sales-date-picker';
 import { SalesThemedSelect } from './sales-themed-select';
 import { loadSalesAcquaintanceMethods } from '../api/acquaintance-methods';
 import {
+  salesPassengerFlightDirections,
+  salesDirections,
   salesPassengerAgeLabel,
   salesPassengerCounts,
   salesRequiresPassportIdentity,
@@ -48,8 +50,12 @@ export function SalesPeopleSheet({
   onBusyChange,
   onAddInfant,
   onTravelDateChange,
+  onFlightDirectionsChange,
   busy = false,
 }: {
+  onFlightDirectionsChange?: (
+    directions: NonNullable<SalesFormState['passengerFlightDirections']>,
+  ) => void;
   refreshRevision?: number;
   state: SalesFormState;
   draft: SalesPeopleDraft | null;
@@ -705,6 +711,42 @@ export function SalesPeopleSheet({
       </section>
 
       <CustomerEntrySheet
+        extraColumns={
+          state.serviceKinds.includes('FLIGHT')
+            ? (['OUTBOUND', 'RETURN'] as const)
+                .filter((d) => salesDirections(state, 'FLIGHT').includes(d))
+                .map((direction) => ({
+                  key: direction,
+                  title: direction === 'OUTBOUND' ? 'بلیط رفت' : 'بلیط برگشت',
+                  render: (row) => {
+                    const key = row.key.replace('sales-entry-', '');
+                    const person = peopleRow(draft, key).person;
+                    const id = person?.id ?? key;
+                    const selected = salesPassengerFlightDirections(state, id);
+                    return (
+                      <input
+                        type="checkbox"
+                        aria-label={
+                          (direction === 'OUTBOUND'
+                            ? 'بلیط رفت '
+                            : 'بلیط برگشت ') + row.label
+                        }
+                        disabled={busy}
+                        checked={selected.includes(direction)}
+                        onChange={() =>
+                          onFlightDirectionsChange?.({
+                            ...state.passengerFlightDirections,
+                            [id]: selected.includes(direction)
+                              ? selected.filter((d) => d !== direction)
+                              : [...selected, direction],
+                          })
+                        }
+                      />
+                    );
+                  },
+                }))
+            : []
+        }
         rows={rows.filter((row) => row.key !== 'sales-entry-primary')}
         showPassportExpiry={passportIdentity}
         visibleFields={visibleEntryFields}

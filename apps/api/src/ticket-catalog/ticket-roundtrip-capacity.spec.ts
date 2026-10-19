@@ -74,6 +74,13 @@ describe('atomic past-date round-trip sale capacity', () => {
         createdAllocationIds: [],
       });
       expect(create).not.toHaveBeenCalled();
+      await expect(
+        service.reserve(selections, id(3), id(6), 3, undefined, {
+          'flight-outbound': -1,
+          'flight-return': 2,
+        }),
+      ).rejects.toThrow();
+      expect(create).not.toHaveBeenCalled();
       expect(tx.ticketPublishedOffer.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ branchId: id(3), status: 'ACTIVE' }),
@@ -90,6 +97,24 @@ describe('atomic past-date round-trip sale capacity', () => {
       expect(create).toHaveBeenCalledTimes(2);
       for (const call of create.mock.calls)
         expect(call[0].data.quantity).toBe(2);
+      create.mockClear().mockResolvedValue({ id: 'new-allocation' });
+      const counts = {
+        'flight-outbound': limitedDirection === 'OUTBOUND' ? 2 : 3,
+        'flight-return': limitedDirection === 'RETURN' ? 2 : 3,
+      };
+      const result = await service.reserve(
+        selections,
+        id(3),
+        id(6),
+        3,
+        undefined,
+        counts,
+      );
+      expect(result.available).toBe(true);
+      expect(create.mock.calls.map((c) => c[0].data.quantity)).toEqual([
+        counts['flight-outbound'],
+        counts['flight-return'],
+      ]);
     },
   );
 });

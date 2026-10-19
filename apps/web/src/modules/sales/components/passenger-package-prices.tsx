@@ -2,8 +2,13 @@
 import { currencySymbol } from '@/lib/currency-symbol';
 import { Button } from '@/components/ui/button';
 import { insuranceExtraRials, passengerOverSixty } from '@nora/contracts';
-import { salesTravelDate, salesHotelGuestIds } from '../model/sales-form';
-import { roomPriceShares, hotelAgeOn } from '@nora/contracts';
+import {
+  salesTravelDate,
+  salesHotelGuestIds,
+  salesPassengerFlightDirections,
+  salesPassengerAgeLabel,
+} from '../model/sales-form';
+
 import { moneyDecimal, moneyUnits, type SalesMoney } from '@nora/contracts';
 import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
 import {
@@ -16,41 +21,26 @@ export function PassengerPackagePrices({
   state,
   currencies = [],
   flight = false,
+  hotel = false,
   onChange,
 }: {
   state: SalesFormState;
   flight?: boolean;
+  hotel?: boolean;
   currencies?: readonly SalesCurrency[];
   onChange: (prices: Record<string, SalesMoney[]>) => void;
 }) {
-  const hotelShares = flight && state.serviceKinds.includes('HOTEL');
-  let shares: Record<string, SalesMoney[]> = {};
-  if (hotelShares) {
-    const guests = new Set(salesHotelGuestIds(state));
-    try {
-      shares = roomPriceShares(
-        state.hotel.rooms ?? [],
-        state.passengers
-          .filter(
-            (p) =>
-              guests.has(p.customerId) &&
-              (hotelAgeOn(p.birthDate, state.hotel.checkIn) ?? 0) >= 15,
-          )
-          .map((p) => p.customerId),
-      );
-    } catch {
-      /* Incomplete room composition is validated by the contract form. */
-    }
-  }
+  const passengers = state.passengers.filter((p) =>
+    hotel
+      ? salesHotelGuestIds(state).includes(p.customerId)
+      : !flight ||
+        salesPassengerFlightDirections(state, p.customerId).length > 0,
+  );
   const totals = new Map<string, bigint>();
   let invalid = false;
-  for (const passenger of state.passengers)
+  for (const passenger of passengers)
     for (const price of state.passengerPrices?.[passenger.customerId] ?? []) {
-      if (
-        flight &&
-        (!price.amount.trim() || (hotelShares && price.currencyCode !== 'IRR'))
-      )
-        continue;
+      if (flight && !price.amount.trim()) continue;
       try {
         totals.set(
           price.currencyCode,
@@ -61,7 +51,7 @@ export function PassengerPackagePrices({
       }
     }
   if (!flight && state.serviceKinds.includes('INSURANCE'))
-    for (const passenger of state.passengers) {
+    for (const passenger of passengers) {
       const extra = state.insuranceExtraToman?.[passenger.customerId];
       if (
         extra &&
@@ -98,8 +88,8 @@ export function PassengerPackagePrices({
   return (
     <section className="space-y-3 rounded-xl border p-4">
       <h3 className="font-bold">
-        {hotelShares
-          ? 'قیمت پرواز و سهم هتل هر مسافر'
+        {hotel
+          ? 'قیمت هتل هر مسافر'
           : flight
             ? 'قیمت پرواز هر مسافر'
             : 'قیمت کل خدمات هر مسافر'}
@@ -119,13 +109,14 @@ export function PassengerPackagePrices({
           <thead>
             <tr className="bg-muted">
               <th className="p-2 text-right">مسافر</th>
+              <th className="p-2">رده سنی</th>
               <th className="p-2">قیمت ریالی (IRR)</th>
-              {!hotelShares && <th className="p-2">ارز</th>}
-              <th className="p-2">{hotelShares ? 'سهم اتاق' : 'قیمت ارزی'}</th>
+              <th className="p-2">ارز</th>
+              <th className="p-2">قیمت ارزی</th>
             </tr>
           </thead>
           <tbody>
-            {state.passengers.map((p, index) => {
+            {passengers.map((p, index) => {
               const rows = state.passengerPrices?.[p.customerId] ?? [];
               const rial = rows.find((r) => r.currencyCode === 'IRR');
               const foreign = rows.find((r) => r.currencyCode !== 'IRR');
@@ -133,7 +124,20 @@ export function PassengerPackagePrices({
                 <tr key={p.customerId} className="border-b">
                   <th className="p-2 text-right font-medium">
                     {index + 1}. {p.displayName}
+                    {flight && (
+                      <span className="block text-xs">
+                        {salesPassengerFlightDirections(state, p.customerId)
+                          .map((d) => (d === 'OUTBOUND' ? 'رفت' : 'برگشت'))
+                          .join(' / ')}
+                      </span>
+                    )}
                   </th>
+                  <td className="p-2">
+                    {salesPassengerAgeLabel(
+                      p.birthDate,
+                      salesTravelDate(state),
+                    )}
+                  </td>
                   <td className="min-w-40 p-2">
                     <MoneyInput
                       aria-label={'قیمت ریالی ' + p.displayName}
@@ -141,7 +145,7 @@ export function PassengerPackagePrices({
                       onValueChange={(value) => set(p.customerId, 'IRR', value)}
                     />
                   </td>
-                  {!hotelShares && (
+                  {
                     <td className="min-w-44 p-2">
                       <SalesCurrencySelect
                         label={'ارز ' + p.displayName}
@@ -162,22 +166,9 @@ export function PassengerPackagePrices({
                         </Button>
                       )}
                     </td>
-                  )}
+                  }
                   <td className="min-w-40 p-2">
-                    {hotelShares ? (
-                      <div aria-label={'سهم ارزی اتاق ' + p.displayName}>
-                        {shares[p.customerId]?.length
-                          ? shares[p.customerId]!.map((price) => (
-                              <div key={price.currencyCode}>
-                                <bdi>
-                                  {formatSalesMoney(price.amount)}{' '}
-                                  {currencySymbol(price.currencyCode)}
-                                </bdi>
-                              </div>
-                            ))
-                          : '—'}
-                      </div>
-                    ) : (
+                    {
                       <MoneyInput
                         aria-label={'قیمت ارزی ' + p.displayName}
                         disabled={!foreign?.currencyCode}
@@ -191,7 +182,7 @@ export function PassengerPackagePrices({
                           )
                         }
                       />
-                    )}
+                    }
                   </td>
                 </tr>
               );
@@ -200,7 +191,9 @@ export function PassengerPackagePrices({
         </table>
       </div>
       <div className="flex flex-wrap gap-4 border-t pt-3">
-        <strong>{flight ? 'جمع قیمت پرواز:' : 'جمع قرارداد:'}</strong>
+        <strong>
+          {hotel ? 'جمع هتل:' : flight ? 'جمع قیمت پرواز:' : 'جمع قرارداد:'}
+        </strong>
         {[...totals].map(([code, amount]) => (
           <span key={code}>
             <bdi>

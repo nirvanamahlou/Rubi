@@ -146,7 +146,7 @@ describe('compact sales contract form', () => {
   });
   it('keeps hotel guests and aggregate rooms without asking each guest for an occupancy type', () => {
     fixture.hotel = true;
-    fixture.step = 2;
+    fixture.step = 0;
     const html = renderToStaticMarkup(<SalesContractForm />);
     fixture.hotel = false;
     fixture.step = 0;

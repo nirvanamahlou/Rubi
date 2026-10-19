@@ -210,7 +210,13 @@ export function CustomerEntrySheet({
   visibleFields,
   columnOrder,
   columnLabels,
+  extraColumns = [],
 }: {
+  extraColumns?: readonly {
+    key: string;
+    title: ReactNode;
+    render: (row: CustomerEntryRow) => ReactNode;
+  }[];
   rows: readonly CustomerEntryRow[];
   calendarMode: CustomerCalendarMode;
   onCalendarModeChange: (mode: CustomerCalendarMode) => void;
@@ -253,6 +259,11 @@ export function CustomerEntrySheet({
               <th scope="col" className="w-40 border-e p-3 text-start">
                 پرونده / نقش
               </th>
+              {extraColumns.map((c) => (
+                <th key={c.key} scope="col" className="p-3">
+                  {c.title}
+                </th>
+              ))}
               {visibleColumns.map(([field, defaultLabel]) => {
                 const label = columnLabels?.[field] ?? defaultLabel;
                 return (
@@ -288,6 +299,11 @@ export function CustomerEntrySheet({
                   <p className="mb-2 font-bold">{row.label}</p>
                   {row.role}
                 </th>
+                {extraColumns.map((c) => (
+                  <td key={c.key} className="p-2">
+                    {c.render(row)}
+                  </td>
+                ))}
                 {visibleColumns.map(([field, defaultLabel, suffix]) => {
                   const label = columnLabels?.[field] ?? defaultLabel;
                   return (

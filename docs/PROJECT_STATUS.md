@@ -2,6 +2,10 @@
 
 Owner-authorized all-user access to the five named branches: add an atomic, idempotent data-only migration that preserves existing branch IDs/primary scopes/extra memberships, logs added memberships, provisions missing issuer companies and preserves existing official names/branding. Restore Jahan Academy in the active-company selector; new-user UI drafts default to actual five-branch IDs, while existing-account editing preserves stored values. Native permissions and later administrator edits remain independent. Push/PR only; not merged or deployed. The database upgrade must run on the intended server before these records are available there. See tasks/FIVE-BRANCH-COMPANY-1019.md.
 
+## PASSENGER-DIRECTIONS-1019 — PC-A
+
+Sales people entry now appears below route/services in step1; former people step is skipped. Per-person outbound/return choices default selected and flow through canonical service assignments, directional capacity reserve/amend and existing manifest membership. Hotel-only guests are allowed. Combined flight price appears only for selected flight people with direction and age labels; hotel amounts are entered manually per guest, exact totals exclude old room agreements. Same-day check-in defaults with explicit next-day arrival; checkout policy/manual overrides retained.88 API tests plus47 related Web tests, Web types and scoped lint pass; hosted full checks gate merge. No schema/migration/dependency or production runtime changes.
+
 ## DIRECT-CURRENCY-RATES-1019 — PC-B
 
 New manual reference quotes finalize during their existing transactional registration without a separate checker. Creation authority, branch/Decimal/active-currency checks, audit and non-authoritative status remain intact. Existing legacy drafts and Finance rates are unchanged. Web returns to the profile, reloads the newly registered pair/type and displays its chart without waiting-for-approval copy.32 focused API and22 focused Web tests pass; disposable PostgreSQL and exact-head hosted gates precede authorized push/develop merge. No migration, dependency, operational data or server deployment. Details: [DIRECT-CURRENCY-RATES-1019](tasks/DIRECT-CURRENCY-RATES-1019.md).
@@ -6639,3 +6643,8 @@ Sales contract rows use green when Finance's latest customer document delivery r
 ## ROOM-CATEGORY-1019 — PC-A
 
 Per-room occupancy category sits beside room type; Single for1, Double for2, Triple or Double with counted extra beds for3, counted extra beds for larger parties. Incompatible categories clear on occupancy edits. Optional category persists separately through Sales room creation/amendment/presentation and prints beside the unchanged type name in contract room rows. Legacy rooms remain valid. Additive nullable room_category column with allowlist CHECK; no live migration/runtime/data changes. Focused tests and exact-head CI gate authorized develop merge.
+
+
+## ROOM-FAMILY-DEFAULTS-1019 — PC-A
+
+Room categories now use adult count; child occupants do not automatically create extra beds. Three adults offer Triple, Family and Double+extra; four-plus offer Family and counted Double+extra. Two adults with children default Double with optional explicit extra. First valid choice is shown and persisted on submission; valid manual selections remain. Room summaries count extra beds only for explicit extra category, retaining uncategorized legacy behavior. Forward allowlist CHECK extension adds FAMILY; no historical rewrite or live migration/runtime change. Final-head CI gates user-authorized develop merge.

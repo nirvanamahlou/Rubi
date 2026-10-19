@@ -1,4 +1,6 @@
 {
+  "جهان اکادمی": "Jahan Academy",
+  "دفتر مرکزی": "Head office",
   "نرخ جاری": "Current rate",
   "نرخ‌ها ثبت شدند و بدون تأیید جداگانه در تاریخچه و نمودار نمایش داده می‌شوند.": "Rates are saved and appear in the history and chart without separate approval.",
   "ثبت مستقیم — بدون تأیید جداگانه": "Direct registration — no separate approval",
@@ -2888,5 +2890,9 @@
   "مسافران هتل و پرواز باید یکسان باشند.": "Hotel and flight passengers must be the same.",
   "سهم اتاق": "Room share",
   "ساعت حرکت بلیط شناور": "Floating ticket departure time",
-  "ساعت رسیدن بلیط شناور": "Floating ticket arrival time"
+  "ساعت رسیدن بلیط شناور": "Floating ticket arrival time",
+  "جمع هتل:": "Hotel total:",
+  "فردا می‌رسد": "Arrives the next day",
+  "قیمت هتل هر مسافر": "Hotel price per traveler",
+  "قیمت هتل هر مسافر را وارد کنید.": "Enter the hotel price for each traveler."
 }
