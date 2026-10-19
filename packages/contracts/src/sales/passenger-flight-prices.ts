@@ -136,3 +136,35 @@ export function roomPriceShares(
     ]),
   );
 }
+
+export const PASSENGER_HOTEL_PRICES = 'passengerHotelPricesV1';
+export function readPassengerHotelPrices(
+  services: readonly SalesServiceInput[],
+  passengers: readonly Pick<
+    SalesPassengerInput,
+    'customerId' | 'serviceClientKeys'
+  >[],
+): PassengerFlightPrices | undefined {
+  const hotel = services.find(
+    (s) =>
+      s.kind === 'HOTEL' && s.metadata?.[PASSENGER_HOTEL_PRICES] !== undefined,
+  );
+  if (!hotel) return undefined;
+  const prices = readPassengerFlightPrices([
+    {
+      kind: 'FLIGHT',
+      metadata: {
+        [PASSENGER_FLIGHT_PRICES]: hotel.metadata![PASSENGER_HOTEL_PRICES]!,
+      },
+    },
+  ])!;
+  const ids = passengers
+    .filter((p) => p.serviceClientKeys.includes(hotel.clientKey))
+    .map((p) => p.customerId);
+  if (
+    Object.keys(prices).length !== ids.length ||
+    ids.some((id) => !prices[id])
+  )
+    throw Error('قیمت هتل هر مسافر را وارد کنید.');
+  return prices;
+}

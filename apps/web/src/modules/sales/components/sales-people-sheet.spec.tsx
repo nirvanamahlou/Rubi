@@ -94,7 +94,9 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     const headers = [...html.matchAll(/<th\b[^>]*>(.*?)<\/th>/gs)].map(
       (match) => match[1]!.replace(/<[^>]*>/g, ''),
     );
-    expect(headers.slice(1, 4)).toEqual([
+    expect(
+      headers.filter((h) => h !== 'بلیط رفت' && h !== 'بلیط برگشت').slice(1, 4),
+    ).toEqual([
       'نام انگلیسی مطابق پاسپورت *',
       'نام خانوادگی انگلیسی مطابق پاسپورت *',
       'کد ملی *',

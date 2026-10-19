@@ -544,3 +544,7 @@ Owner explicitly authorizes selecting past dated flights and continuing contract
 ## 2026-10-19 — Floating clocks and consistent combined Sales parties
 
 Owner requests inheriting previously selected outbound/return civil dates for floating flights, asking only Tehran departure/arrival clocks, and automatic next-day arrival when the arrival clock does not follow departure. Changing calendar dates clears prior floating choices to prevent stale snapshots. Owner additionally requires exact hotel/flight adult, child and infant totals using existing airline age normalization and matching passenger membership on the API. Room negotiated currency now permits IRR through UI and shared validation, using existing exact per-currency totals with no exchange conversion. Legacy roomless draft compatibility remains; new UI requires room details. No data backfill, schema or dependency change. Owner authorizes develop merge and backed-up production rollout.
+
+## 2026-10-19 — PASSENGER-DIRECTIONS-1019
+
+Owner explicitly replaces mandatory hotel/flight membership equality with per-leg passenger selections: hotel-only guests are valid, and each flight consumes only its assigned non-infant seats. Existing global room composition validation and actual guest occupancy remain. New Sales drafts use manual per-guest hotel prices; legacy room agreement snapshots remain readable, while new per-guest totals never double count them. Canonical service allocations drive existing Reservations manifests. No schema or historical data rewrite.

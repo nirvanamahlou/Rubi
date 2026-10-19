@@ -1861,6 +1861,7 @@ export class TicketPublicService {
     branchId: string,
     contractId: string,
     seatCount: number,
+    counts?: Readonly<Record<string, number>>,
   ) {
     if (
       !Number.isInteger(seatCount) ||
@@ -1871,6 +1872,15 @@ export class TicketPublicService {
       new Set(selections.map((s) => s.offerId)).size !== selections.length
     )
       throw new BadRequestException('تعداد مسافر یا انتخاب بلیت معتبر نیست.');
+    if (
+      counts &&
+      selections.some(
+        (s) =>
+          !Number.isSafeInteger(counts[s.serviceClientKey]) ||
+          counts[s.serviceClientKey]! < 1,
+      )
+    )
+      throw new BadRequestException('Invalid service seat count');
     const existing = await tx.ticketOfferCapacityAllocation.findMany({
       where: { contractId },
     });
@@ -1894,13 +1904,14 @@ export class TicketPublicService {
       },
     });
     for (const selection of selections) {
+      const quantity = counts?.[selection.serviceClientKey] ?? seatCount;
       const offer = offers.find((o) => o.id === selection.offerId);
       const previous = existing.find(
         (a) => a.direction === selection.direction && a.status === 'ACTIVE',
       );
       const unchanged =
         previous?.offerId === selection.offerId &&
-        previous.quantity === seatCount;
+        previous.quantity === quantity;
       if (
         !offer ||
         (!unchanged && offer.status !== 'ACTIVE') ||
@@ -1921,7 +1932,7 @@ export class TicketPublicService {
           .filter((a) => a.contractId !== contractId)
           .reduce((n, a) => n + a.quantity, 0) +
         offer.capacityHolds.reduce((n, h) => n + h.quantity, 0);
-      if (!unchanged && offer.totalCapacity - used < seatCount)
+      if (!unchanged && offer.totalCapacity - used < quantity)
         throw new ConflictException(
           'ظرفیت باقی‌مانده برای این تعداد نفر کافی نیست.',
         );
@@ -1961,11 +1972,11 @@ export class TicketPublicService {
           contractId,
           direction: selection.direction,
           offerId: selection.offerId,
-          quantity: seatCount,
+          quantity: counts?.[selection.serviceClientKey] ?? seatCount,
         },
         update: {
           offerId: selection.offerId,
-          quantity: seatCount,
+          quantity: counts?.[selection.serviceClientKey] ?? seatCount,
           status: 'ACTIVE',
           releasedAt: null,
         },
@@ -1981,7 +1992,18 @@ export class TicketPublicService {
     expectedTicketTotals?: Readonly<
       Record<string, { amount: string; currencyCode: string }>
     >,
+    counts?: Readonly<Record<string, number>>,
   ) {
+    if (
+      counts &&
+      selections.some(
+        (s) =>
+          !Number.isSafeInteger(counts[s.serviceClientKey]) ||
+          counts[s.serviceClientKey]! < 1 ||
+          counts[s.serviceClientKey]! > 100000,
+      )
+    )
+      throw new BadRequestException('Invalid service seat count');
     if (!selections.length)
       return {
         available: true,
@@ -2051,6 +2073,7 @@ export class TicketPublicService {
       );
       const unavailableOfferIds = selections
         .filter((selection) => {
+          const quantity = counts?.[selection.serviceClientKey] ?? seatCount;
           const offer = byId.get(selection.offerId);
           const replay = existingByDirection.get(selection.direction);
           if (!offer) return true;
@@ -2058,7 +2081,7 @@ export class TicketPublicService {
             return (
               replay.status !== 'ACTIVE' ||
               replay.offerId !== offer.id ||
-              replay.quantity !== seatCount ||
+              replay.quantity !== quantity ||
               selection.originId !== offer.originId ||
               selection.destinationId !== offer.destinationId ||
               selection.cabinClassCode !== offer.cabinClassCode ||
@@ -2083,7 +2106,7 @@ export class TicketPublicService {
               0,
             ) +
             offer.capacityHolds.reduce((sum, hold) => sum + hold.quantity, 0);
-          return offer.totalCapacity - allocated < seatCount;
+          return offer.totalCapacity - allocated < quantity;
         })
         .map(({ offerId }) => offerId);
       const outbound = byId.get(
@@ -2122,12 +2145,13 @@ export class TicketPublicService {
             throw new ConflictException(
               'قیمت پله‌ای بلیت در قرارداد ثبت نشده است؛ قرارداد را تازه کنید.',
             );
+          const quantity = counts?.[selection.serviceClientKey] ?? seatCount;
           let first = 0;
           let units = 0n;
           for (const tier of tiers) {
             const count = Math.max(
               0,
-              Math.min(consumed + seatCount, first + tier.seatCount) -
+              Math.min(consumed + quantity, first + tier.seatCount) -
                 Math.max(consumed, first),
             );
             const net = commissionPercent
@@ -2139,7 +2163,7 @@ export class TicketPublicService {
             units += moneyUnits(net) * BigInt(count);
             first += tier.seatCount;
           }
-          if (consumed + seatCount > first)
+          if (consumed + quantity > first)
             throw new ConflictException(
               'ظرفیت پله‌های قیمت کافی نیست؛ فهرست را تازه کنید.',
             );
@@ -2243,7 +2267,7 @@ export class TicketPublicService {
             offerId: selection.offerId,
             contractId,
             direction: selection.direction,
-            quantity: seatCount,
+            quantity: counts?.[selection.serviceClientKey] ?? seatCount,
           },
           select: { id: true },
         });

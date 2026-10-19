@@ -106,6 +106,9 @@ export const salesSteps = [
 ] as const;
 
 export interface SalesFormState {
+  passengerFlightDirections?: Record<string, SalesTicketDirection[]>;
+  passengerHotelPrices?: Record<string, SalesMoney[]>;
+  hotelArrivesNextDay?: boolean;
   visaComposition?: { adults: number; children: number };
   visaChildAges?: (number | null)[];
   visaApplicantIds?: string[];
@@ -226,13 +229,17 @@ export function passengerFlightSalePrices(
   state: SalesFormState,
 ): Record<string, SalesMoney[]> {
   return Object.fromEntries(
-    state.passengers.map((p) => [
-      p.customerId,
-      (state.passengerFlightPrices?.[p.customerId] ?? []).filter(
-        (price) =>
-          !state.serviceKinds.includes('HOTEL') || price.currencyCode === 'IRR',
-      ),
-    ]),
+    state.passengers
+      .filter((p) => salesPassengerFlightDirections(state, p.customerId).length)
+      .map((p) => [
+        p.customerId,
+        (state.passengerFlightPrices?.[p.customerId] ?? []).filter(
+          (price) =>
+            state.passengerHotelPrices !== undefined ||
+            !state.serviceKinds.includes('HOTEL') ||
+            price.currencyCode === 'IRR',
+        ),
+      ]),
   );
 }
 
@@ -243,19 +250,34 @@ export function contractSaleComponents(
   if (state.tour && state.packageSaleAvailable && !state.packageSaleQuote)
     throw Error('برای ترکیب انتخاب‌شده قیمت منتشرشده موجود نیست.');
   const automatic =
-    !state.packageSaleQuote &&
+    (!state.packageSaleQuote || state.passengerHotelPrices !== undefined) &&
     state.automaticComponentPricing &&
     state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'HOTEL');
   if (
     automatic &&
+    state.passengerHotelPrices === undefined &&
     state.serviceKinds.includes('HOTEL') &&
     state.hotel.rooms?.some((r) => !r.agreedPrice?.amount.trim())
   )
     throw Error('قیمت هر اتاق را وارد کنید.');
   const prices = automatic
     ? flightRoomTotals(
-        passengerFlightSalePrices(state),
-        state.serviceKinds.includes('HOTEL') ? (state.hotel.rooms ?? []) : [],
+        {
+          ...passengerFlightSalePrices(state),
+          ...Object.fromEntries(
+            Object.entries(
+              state.serviceKinds.includes('HOTEL')
+                ? (state.passengerHotelPrices ?? {})
+                : {},
+            )
+              .filter(([id]) => salesHotelGuestIds(state).includes(id))
+              .map(([id, p]) => ['hotel-' + id, p]),
+          ),
+        },
+        state.passengerHotelPrices === undefined &&
+          state.serviceKinds.includes('HOTEL')
+          ? (state.hotel.rooms ?? [])
+          : [],
       )
     : (state.contractPrices ?? []);
   if (!prices.length) throw new Error('مبلغ کل قرارداد را وارد کنید.');
@@ -268,7 +290,10 @@ export function contractSaleComponents(
       throw new Error('ارز مبلغ قرارداد باید معتبر و یکتا باشد.');
     totals.set(price.currencyCode, moneyUnits(price.amount));
   }
-  if (state.serviceKinds.includes('HOTEL'))
+  if (
+    state.passengerHotelPrices === undefined &&
+    state.serviceKinds.includes('HOTEL')
+  )
     for (const price of roomAgreedTotals(state.hotel.rooms))
       if (moneyUnits(price.amount) > (totals.get(price.currencyCode) ?? 0n))
         throw new Error(
@@ -384,7 +409,13 @@ export function salesFlightSelection(
 }
 
 export function salesFlightsValid(state: SalesFormState): boolean {
-  const directions = salesDirections(state, 'FLIGHT');
+  const directions = salesDirections(state, 'FLIGHT').filter(
+    (d) =>
+      !state.passengers.length ||
+      state.passengers.some((p) =>
+        salesPassengerFlightDirections(state, p.customerId).includes(d),
+      ),
+  );
   if (
     directions.some((direction) => {
       const flight = salesFlightSelection(state, direction);
@@ -393,7 +424,7 @@ export function salesFlightsValid(state: SalesFormState): boolean {
         flight.source === 'CATALOG' &&
         !salesOfferHasCapacity(
           direction === 'OUTBOUND' ? state.outboundOffer : state.returnOffer,
-          salesPassengerCounts(state).seated,
+          salesFlightSeats(state, direction),
         )
       );
     })
@@ -965,7 +996,10 @@ export function withSalesHotelDates(
   const suggestion = (state: SalesFormState, field: 'checkIn' | 'checkOut') =>
     state.tour && state.packageSaleAvailable
       ? field === 'checkIn'
-        ? state.tour.startsOn
+        ? salesHotelDate(
+            state.tour.startsOn + 'T00:00:00+03:30',
+            state.hotelArrivesNextDay ? 1 : 0,
+          )
         : state.tour.endsOn
       : salesHotelDate(
           salesDirections(state, 'FLIGHT').includes(
@@ -979,7 +1013,7 @@ export function withSalesHotelDates(
                   ? `${field === 'checkIn' ? state.departureDate : state.returnDate}T00:00:00+03:30`
                   : undefined)
             : undefined,
-          field === 'checkIn' ? 1 : -1,
+          field === 'checkIn' ? (state.hotelArrivesNextDay ? 1 : 0) : -1,
         );
   const hotel = { ...next.hotel };
   for (const field of ['checkIn', 'checkOut'] as const) {
@@ -1072,6 +1106,8 @@ export function toggleSalesDirectionalService(
           outboundOffer: undefined,
           returnOffer: undefined,
           contractFlights: {},
+          passengerFlightDirections: {},
+          passengerFlightPrices: {},
           ticket: { ...state.ticket, outboundOfferId: '', returnOfferId: '' },
         }
       : {}),
@@ -1104,6 +1140,7 @@ export function salesPayload(
   if (
     state.serviceKinds.includes('HOTEL') &&
     state.priceEntryMode === 'CONTRACT_TOTAL' &&
+    state.passengerHotelPrices === undefined &&
     !state.packageSaleQuote &&
     state.hotel.rooms?.some((r) => !r.agreedPrice)
   )
@@ -1234,6 +1271,32 @@ export function salesPayload(
       ...contractFlightMetadata({ ...flight, version: 1 }),
     };
   }
+  for (let i = services.length - 1; i >= 0; i--) {
+    const service = services[i]!;
+    if (
+      service.kind === 'FLIGHT' &&
+      state.passengerFlightDirections !== undefined &&
+      !state.passengers.some((p) =>
+        salesPassengerFlightDirections(state, p.customerId).includes(
+          service.clientKey === 'flight-outbound' ? 'OUTBOUND' : 'RETURN',
+        ),
+      )
+    )
+      services.splice(i, 1);
+  }
+  const hotelPriceService = services.find((s) => s.kind === 'HOTEL');
+  if (hotelPriceService && state.passengerHotelPrices !== undefined)
+    hotelPriceService.metadata = {
+      ...hotelPriceService.metadata,
+      passengerHotelPricesV1: JSON.stringify(
+        Object.fromEntries(
+          salesHotelGuestIds(state).map((id) => [
+            id,
+            state.passengerHotelPrices?.[id] ?? [],
+          ]),
+        ),
+      ),
+    };
   if (state.packageSaleQuote && services[0])
     services[0].metadata = {
       ...services[0].metadata,
@@ -1279,17 +1342,21 @@ export function salesPayload(
       ...flightPriceService.metadata,
       [PASSENGER_FLIGHT_PRICES]: JSON.stringify(
         Object.fromEntries(
-          state.passengers.map((p) => [
-            p.customerId,
-            (flightPrices[p.customerId] ?? []).filter(
-              (price) => price.amount.trim() !== '',
-            ),
-          ]),
+          state.passengers
+            .filter(
+              (p) => salesPassengerFlightDirections(state, p.customerId).length,
+            )
+            .map((p) => [
+              p.customerId,
+              (flightPrices[p.customerId] ?? []).filter(
+                (price) => price.amount.trim() !== '',
+              ),
+            ]),
         ),
       ),
     };
   if (
-    !state.packageSaleQuote &&
+    (!state.packageSaleQuote || state.passengerHotelPrices !== undefined) &&
     state.automaticComponentPricing &&
     services.some((s) => s.kind === 'FLIGHT' || s.kind === 'HOTEL')
   )
@@ -1527,12 +1594,21 @@ export function salesPayload(
             ? metadata.passengerId === item.customerId
             : clientKey === 'visa' && state.visaComposition
               ? Boolean(state.visaApplicantIds?.includes(item.customerId))
-              : clientKey !== 'hotel' ||
-                salesHotelGuestIds(state).includes(item.customerId),
+              : clientKey === 'flight-outbound' || clientKey === 'flight-return'
+                ? salesPassengerFlightDirections(
+                    state,
+                    item.customerId,
+                  ).includes(
+                    clientKey === 'flight-outbound' ? 'OUTBOUND' : 'RETURN',
+                  )
+                : clientKey !== 'hotel' ||
+                  salesHotelGuestIds(state).includes(item.customerId),
         )
         .map(({ clientKey }) => clientKey),
     })),
-    ticketSelections,
+    ticketSelections: ticketSelections.filter((t) =>
+      services.some((s) => s.clientKey === t.serviceClientKey),
+    ),
     hotelSelection:
       state.serviceKinds.includes('HOTEL') && state.hotel.hotelId
         ? {
@@ -1544,7 +1620,14 @@ export function salesPayload(
             checkOutDate: state.hotel.checkOut,
             roomCount: state.hotel.rooms?.length ?? state.hotel.roomCount,
             ...(state.hotel.rooms
-              ? { rooms: state.hotel.rooms as SalesHotelRoomV1[] }
+              ? {
+                  rooms: (state.passengerHotelPrices !== undefined
+                    ? state.hotel.rooms.map(({ agreedPrice, ...room }) => {
+                        void agreedPrice;
+                        return room;
+                      })
+                    : state.hotel.rooms) as SalesHotelRoomV1[],
+                }
               : {}),
             singleRoomCount: state.hotel.singleRoomCount,
             doubleRoomCount: state.hotel.doubleRoomCount,
@@ -1591,4 +1674,28 @@ export function salesTransferCount(state: SalesFormState) {
   return state.transferPassengerCount === undefined
     ? max
     : Math.max(0, Math.min(max, Math.trunc(state.transferPassengerCount || 0)));
+}
+
+/** Missing direction choices retain legacy all-selected behavior. */
+export function salesPassengerFlightDirections(
+  state: SalesFormState,
+  id: string,
+): SalesTicketDirection[] {
+  if (!state.serviceKinds.includes('FLIGHT')) return [];
+  const enabled = salesDirections(state, 'FLIGHT');
+  return (state.passengerFlightDirections?.[id] ?? enabled).filter((d) =>
+    enabled.includes(d),
+  );
+}
+
+export function salesFlightSeats(
+  state: SalesFormState,
+  direction: SalesTicketDirection,
+): number {
+  if (!state.passengers.length) return salesPassengerCounts(state).seated;
+  return state.passengers.filter(
+    (p) =>
+      salesPassengerFlightDirections(state, p.customerId).includes(direction) &&
+      salesPassengerAgeLabel(p.birthDate, salesTravelDate(state)) !== 'نوزاد',
+  ).length;
 }

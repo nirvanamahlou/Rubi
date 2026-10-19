@@ -2,6 +2,7 @@ import { readAgencyCommission } from '@nora/contracts';
 import {
   flightRoomTotals,
   readPassengerFlightPrices,
+  readPassengerHotelPrices,
   insuranceExtraRials,
 } from '@nora/contracts';
 import { validatePassengerFlightPrices } from '@nora/contracts';
@@ -273,6 +274,7 @@ export function validateSalesContract(
     );
   }
   try {
+    readPassengerHotelPrices(input.services, input.passengers);
     validatePassengerFlightPrices(
       input.services,
       input.passengers,
@@ -293,7 +295,14 @@ export function validateSalesContract(
         !readPassengerFlightPrices(input.services)
       )
         throw Error('قیمت پرواز هر مسافر را وارد کنید.');
-      if (input.hotelSelection?.rooms?.some((r) => !r.agreedPrice))
+      const hotelPrices = readPassengerHotelPrices(
+        input.services,
+        input.passengers,
+      );
+      if (
+        !hotelPrices &&
+        input.hotelSelection?.rooms?.some((r) => !r.agreedPrice)
+      )
         throw Error('قیمت هر اتاق را وارد کنید.');
       const extra = input.services
         .filter((s) => s.metadata?.insuranceAgeSurcharge === true)
@@ -304,9 +313,15 @@ export function validateSalesContract(
       const expected = flightRoomTotals(
         {
           ...readPassengerFlightPrices(input.services),
+          ...Object.fromEntries(
+            Object.entries(hotelPrices ?? {}).map(([id, p]) => [
+              'hotel-' + id,
+              p,
+            ]),
+          ),
           insuranceExtras: extra,
         },
-        input.hotelSelection?.rooms ?? [],
+        hotelPrices ? [] : (input.hotelSelection?.rooms ?? []),
       );
       const actual = new Map<string, bigint>();
       for (const p of input.priceComponents.filter(
@@ -570,31 +585,6 @@ export function validateSalesContract(
           'SALES_HOTEL_INVALID',
           'ترکیب اتاق‌ها معتبر نیست.',
         );
-      const flightKeys = new Set(
-        input.services
-          .filter((s) => s.kind === 'FLIGHT')
-          .map((s) => s.clientKey),
-      );
-      if (flightKeys.size) {
-        const flightIds = new Set(
-          input.passengers
-            .filter((p) =>
-              p.serviceClientKeys.some((key) => flightKeys.has(key)),
-            )
-            .map((p) => p.customerId),
-        );
-        if (
-          input.passengers.some(
-            (p) =>
-              p.serviceClientKeys.includes(hotel.serviceClientKey) &&
-              !flightIds.has(p.customerId),
-          )
-        )
-          throw new SalesDomainError(
-            'SALES_HOTEL_INVALID',
-            'مجموع بزرگسال و کودک اتاق‌ها نباید از تعداد مسافران پرواز بیشتر باشد.',
-          );
-      }
       if (hotel.rooms.some((r) => r.agreedPrice)) {
         if (hotel.rooms.some((r) => !r.agreedPrice))
           throw new SalesDomainError(
@@ -683,21 +673,6 @@ export function validateSalesContract(
     const hotelGuestCount = input.passengers.filter((passenger) =>
       passenger.serviceClientKeys.includes(hotel.serviceClientKey),
     ).length;
-    const flightKeys = new Set(
-      input.services.filter((s) => s.kind === 'FLIGHT').map((s) => s.clientKey),
-    );
-    if (
-      flightKeys.size &&
-      input.passengers.some(
-        (passenger) =>
-          passenger.serviceClientKeys.some((key) => flightKeys.has(key)) !==
-          passenger.serviceClientKeys.includes(hotel.serviceClientKey),
-      )
-    )
-      throw new SalesDomainError(
-        'SALES_HOTEL_INVALID',
-        'مسافران هتل و پرواز باید یکسان باشند.',
-      );
     if (hotelGuestCount < 1 || hotel.occupancy !== hotelGuestCount)
       throw new SalesDomainError(
         'SALES_HOTEL_INVALID',

@@ -1,5 +1,6 @@
 import {
   salesHotelGuestIds,
+  salesPassengerFlightDirections,
   salesPassengerCompositionMatches,
   salesTravelDate,
   type SalesFormState,
@@ -37,11 +38,12 @@ export function salesPassengerStepError(
       return 'افراد متقاضی ویزا را مطابق تعداد بزرگسال و کودک انتخاب کنید.';
   }
   const hasSharedService = state.serviceKinds.some(
-    (kind) => kind !== 'HOTEL' && kind !== 'VISA',
+    (kind) => kind !== 'HOTEL' && kind !== 'VISA' && kind !== 'FLIGHT',
   );
   const everyPassengerAssigned = state.passengers.every(
     ({ customerId }) =>
       hasSharedService ||
+      salesPassengerFlightDirections(state, customerId).length > 0 ||
       (state.serviceKinds.includes('HOTEL') && guests.includes(customerId)) ||
       (state.serviceKinds.includes('VISA') &&
         state.visaApplicantIds?.includes(customerId)),

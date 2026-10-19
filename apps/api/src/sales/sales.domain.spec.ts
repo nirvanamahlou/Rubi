@@ -838,7 +838,7 @@ it('accepts fixed agency commission without altering the submitted financial com
   expect(input.priceComponents).toEqual(before);
 });
 
-it('requires the same passenger members for combined flight and hotel contracts', () => {
+it('allows independent passenger membership for combined flight and hotel contracts', () => {
   const input = structuredClone(draft);
   input.services = [
     ...input.services,
@@ -873,5 +873,54 @@ it('requires the same passenger members for combined flight and hotel contracts'
       serviceClientKeys: ['flight'],
     },
   ];
-  expect(() => validateSalesContract(input)).toThrow('مسافران هتل و پرواز');
+  expect(() => validateSalesContract(input)).not.toThrow();
+});
+
+it('checks manual per-guest hotel prices against exact automatic contract totals', () => {
+  const input = structuredClone(draft);
+  const id = input.passengers[0]!.customerId;
+  input.services[0]!.metadata = {
+    automaticFlightRoomTotalV1: true,
+    passengerFlightPricesV1: JSON.stringify({
+      [id]: [{ currencyCode: 'USD', amount: '100' }],
+    }),
+  };
+  input.services = [
+    ...input.services,
+    {
+      clientKey: 'hotel',
+      kind: 'HOTEL',
+      titleSnapshot: 'Hotel',
+      metadata: {
+        passengerHotelPricesV1: JSON.stringify({
+          [id]: [{ currencyCode: 'USD', amount: '100.50' }],
+        }),
+      },
+    },
+  ];
+  input.passengers[0]!.serviceClientKeys = [
+    ...input.passengers[0]!.serviceClientKeys,
+    'hotel',
+  ];
+  input.hotelSelection = {
+    serviceClientKey: 'hotel',
+    hotelId: 'hotel',
+    hotelNameSnapshot: 'Hotel',
+    cityId: input.destinationId,
+    checkInDate: '2026-10-01',
+    checkOutDate: '2026-10-03',
+    roomCount: 1,
+    roomTypeId: 'room',
+    occupancy: 1,
+    inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.services.find((s) => s.kind === 'HOTEL')!.metadata = {
+    passengerHotelPricesV1: JSON.stringify({
+      [id]: [{ currencyCode: 'USD', amount: '101' }],
+    }),
+  };
+  expect(() => validateSalesContract(input)).toThrow(
+    'مبلغ کل قرارداد باید برابر',
+  );
 });

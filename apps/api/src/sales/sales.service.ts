@@ -1282,6 +1282,7 @@ export class SalesService {
         childAgeBands: c.passengers.map((p) => [
           p.customerId,
           p.childAgeBand ?? null,
+          [...p.serviceClientKeys].sort(),
         ]),
         services: c.services.map((s) => ({
           clientKey: s.clientKey,
@@ -1375,6 +1376,16 @@ export class SalesService {
                 input.passengers.filter(
                   (p) => categories[p.customerId] !== 'INF',
                 ).length,
+                Object.fromEntries(
+                  (input.ticketSelections ?? []).map((t) => [
+                    t.serviceClientKey,
+                    input.passengers.filter(
+                      (p) =>
+                        categories[p.customerId] !== 'INF' &&
+                        p.serviceClientKeys.includes(t.serviceClientKey),
+                    ).length,
+                  ]),
+                ),
               );
             },
           }
@@ -1506,6 +1517,16 @@ export class SalesService {
                     expectedTicketSale(service.pricing?.[0], service.metadata),
                   ]),
               ),
+          Object.fromEntries(
+            presented.ticketSelections.map((t) => [
+              t.serviceClientKey,
+              presented.passengersDetail.filter(
+                (p) =>
+                  p.ageCategory !== 'INF' &&
+                  p.serviceClientKeys.includes(t.serviceClientKey),
+              ).length,
+            ]),
+          ),
         )
       : { available: true, unavailableOfferIds: [], createdAllocationIds: [] };
     if (!ticketCheck.available)

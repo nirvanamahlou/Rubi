@@ -1,3 +1,7 @@
+## PASSENGER-DIRECTIONS-1019 — PC-A
+
+Sales people entry now appears below route/services in step1; former people step is skipped. Per-person outbound/return choices default selected and flow through canonical service assignments, directional capacity reserve/amend and existing manifest membership. Hotel-only guests are allowed. Combined flight price appears only for selected flight people with direction and age labels; hotel amounts are entered manually per guest, exact totals exclude old room agreements. Same-day check-in defaults with explicit next-day arrival; checkout policy/manual overrides retained.88 API tests plus47 related Web tests, Web types and scoped lint pass; hosted full checks gate merge. No schema/migration/dependency or production runtime changes.
+
 ## USER-ROLE-SAVE-1019 — PC-B
 
 Selected-user final Save now submits pending role/manual access through the existing guarded endpoint instead of saving branches only. A second near-picker Save and visible status/error avoid the former silent-looking flow. Unchanged legacy snapshots do not convert or rewrite grants. Branch changes follow only successful role saves and use a freshly loaded revision, preserving CAS/conflict handling. Account summaries show the effective manual snapshot label rather than implying retained administrator membership still controls access. No backend authorization rules, existing memberships, schema, dependency or operational account changes. Focused lifecycle/workflow tests and final-head full CI gate owner-authorized push/develop merge.
