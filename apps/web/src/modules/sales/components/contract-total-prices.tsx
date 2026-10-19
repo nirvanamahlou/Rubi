@@ -12,6 +12,7 @@ import {
   passengerFlightSalePrices,
   salesHotelGuestIds,
   type SalesFormState,
+  salesNetServicePrices,
 } from '../model/sales-form';
 
 export function ContractTotalPrices({
@@ -51,6 +52,11 @@ export function ContractTotalPrices({
         ? (state.hotel.rooms ?? [])
         : [],
     );
+    if (
+      state.passengerDeductions &&
+      Object.keys(state.passengerDeductions).length
+    )
+      calculated = flightRoomTotals(salesNetServicePrices(state), []);
   } catch {
     /* Invalid input is reported by final-step validation. */
   }

@@ -5,7 +5,11 @@ import {
   readPassengerHotelPrices,
   insuranceExtraRials,
 } from '@nora/contracts';
-import { validatePassengerFlightPrices } from '@nora/contracts';
+import {
+  validatePassengerFlightPrices,
+  readPassengerDeductions,
+  passengerNetPrices,
+} from '@nora/contracts';
 import {
   moneyUnits,
   validSalesHotelRooms,
@@ -274,6 +278,17 @@ export function validateSalesContract(
     );
   }
   try {
+    const deductions = readPassengerDeductions(
+      input.services,
+      input.passengers,
+    );
+    if (
+      Object.keys(deductions).length &&
+      !input.services.some(
+        (s) => s.metadata?.automaticFlightRoomTotalV1 === true,
+      )
+    )
+      throw Error('تخفیف و کمیسیون مسافران معتبر نیست.');
     readPassengerHotelPrices(input.services, input.passengers);
     validatePassengerFlightPrices(
       input.services,
@@ -310,15 +325,26 @@ export function validateSalesContract(
           amount: insuranceExtraRials(String(s.metadata!.extraToman)),
           currencyCode: 'IRR',
         }));
+      const deductions = readPassengerDeductions(
+        input.services,
+        input.passengers,
+      );
+      const flightPrices = readPassengerFlightPrices(input.services);
+      const netPrices = passengerNetPrices(
+        Object.fromEntries(
+          input.passengers.map((p) => [
+            p.customerId,
+            [
+              ...(flightPrices?.[p.customerId] ?? []),
+              ...(hotelPrices?.[p.customerId] ?? []),
+            ],
+          ]),
+        ),
+        deductions,
+      );
       const expected = flightRoomTotals(
         {
-          ...readPassengerFlightPrices(input.services),
-          ...Object.fromEntries(
-            Object.entries(hotelPrices ?? {}).map(([id, p]) => [
-              'hotel-' + id,
-              p,
-            ]),
-          ),
+          ...netPrices,
           insuranceExtras: extra,
         },
         hotelPrices ? [] : (input.hotelSelection?.rooms ?? []),
@@ -332,6 +358,7 @@ export function validateSalesContract(
           (actual.get(p.currencyCode) ?? 0n) +
             moneyUnits(p.amount) * (p.type === 'DISCOUNT' ? -1n : 1n),
         );
+      for (const [code, value] of actual) if (value === 0n) actual.delete(code);
       const wanted = expected.filter((p) => moneyUnits(p.amount) > 0n);
       if (
         actual.size !== wanted.length ||

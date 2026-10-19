@@ -77,6 +77,38 @@ const draft: SalesContractCreateRequest = {
   ],
 };
 
+it('validates per-person discounts and commissions against the same-currency gross service price', () => {
+  const input = structuredClone(draft),
+    id = input.passengers[0]!.customerId;
+  input.services[0]!.metadata = {
+    automaticFlightRoomTotalV1: true,
+    passengerFlightPricesV1: JSON.stringify({
+      [id]: [{ amount: '200.50', currencyCode: 'USD' }],
+    }),
+    passengerDeductionsV1: JSON.stringify({
+      [id]: {
+        discount: { amount: '10', currencyCode: 'USD' },
+        commission: { amount: '5', currencyCode: 'USD' },
+      },
+    }),
+  };
+  input.priceComponents.push({
+    type: 'DISCOUNT',
+    title: 'Passenger deductions',
+    amount: '15',
+    currencyCode: 'USD',
+  });
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.priceComponents[1]!.amount = '14';
+  expect(() => validateSalesContract(input)).toThrow(
+    'مبلغ کل قرارداد باید برابر',
+  );
+  input.services[0]!.metadata.passengerDeductionsV1 = JSON.stringify({
+    [id]: { discount: { amount: '201', currencyCode: 'USD' } },
+  });
+  expect(() => validateSalesContract(input)).toThrow();
+});
+
 describe('Sales contract domain', () => {
   it('validates explicit child bands without changing birth dates and rejects them for other categories', () => {
     const input = structuredClone(draft);

@@ -1,3 +1,6 @@
+## UNIFIED-PASSENGER-PRICING-1019 — Sales deductions
+
+Optional `passengerDeductionsV1` JSON string on exactly one existing Sales service contains a passenger-ID map with optional `discount`/`commission` objects, each a nonnegative decimal-string amount and ISO currency code. Only allocated flight/hotel amounts of the same passenger/currency bound the total reduction; no implicit FX, cross-person subsidy or schema change. Existing service price metadata records gross prices; canonical DISCOUNT price components lower payable totals, checked transactionally by Sales validation. Missing metadata is legacy-compatible. Legacy `agencyCommissionV1` remains informational and is not migrated into deductions. Print consumes recorded hotel prices before legacy room shares and does not filter service amounts by currency.
 ## Manual per-unit toman reference — 2026-10-18
 
 MasterCurrency.tomanPerUnit is an independent nullable Decimal(24,10):1 unit of

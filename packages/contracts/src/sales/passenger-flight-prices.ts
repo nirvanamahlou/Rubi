@@ -1,4 +1,5 @@
 import { moneyUnits, moneyDecimal } from './pricing';
+import { readPassengerDeductions } from './passenger-deductions';
 import type {
   SalesMoney,
   SalesServiceInput,
@@ -77,6 +78,14 @@ export function validatePassengerFlightPrices(
       (totals.get(p.currencyCode) ?? 0n) +
         moneyUnits(p.amount) * (p.type === 'DISCOUNT' ? -1n : 1n),
     );
+  for (const row of Object.values(
+    readPassengerDeductions(services, passengers),
+  ))
+    for (const p of Object.values(row))
+      totals.set(
+        p.currencyCode,
+        (totals.get(p.currencyCode) ?? 0n) + moneyUnits(p.amount),
+      );
   for (const [code, sum] of sums)
     if (
       (!totals.has(code) && !(code === 'IRR' && sum === 0n)) ||
