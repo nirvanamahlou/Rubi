@@ -8332,6 +8332,14 @@ User authorizes adult-based Family/Triple/extra-bed choices, optional child extr
 
 Validation:38 focused Web and3 shared policy tests pass. Earlier broad local run had4 render timeouts under host load and the old expected room shape, corrected and passing focused rerun. Refresh existing stale deterministic offline API/legacy translations only for completeness gate. Source/migration reservations freeze/release on publication; final-head hosted tests/build/types/database remain required before authorized develop merge.
 
+## CONTRACT-REVIEW-PREVIEW-1019 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-contract-review-preview-1019 from origin/develop. User authorizes review preview, final reservations handoff, tests and develop merge. Reserve Sales contract form, local preview projection/component/tests and optional draft presentation flag in contract-print; own status notes. Reuse salesPayload and canonical print renderer without persistence or number allocation before final submit. Preserve confirm validations/idempotency. Earlier overlapping Sales form/output scopes released. No API/schema/migration/dependency/runtime changes. Final-head CI gates merge.
+
+CONTRACT-REVIEW-PREVIEW-1019 translation reservation: bounded additions to Web English catalogue for new review labels and deterministic generated catalogue sync; no active overlapping dictionary lock found.
+
+CONTRACT-REVIEW-PREVIEW-1019 candidate: local canonical document preview follows priced submit state, explicit unregistered marker and issuer selection, decimal signed currency totals and inherited flight/hotel/service/passenger selections. Confirm handoff and submission fingerprint/retry guards remain unchanged. Focused projection/escaping/update/no-network tests, existing print/form/idempotency regressions run; bounded dictionary and generated catalogues synchronized. Source locks freeze/release at publication. No live runtime or business-data mutation. Hosted full build/test/type/quality checks gate authorized develop merge.
+
 ## CONTRACT-BUYER-PASSPORT-1019 — PC-A — READY_FOR_CI
 
 User requests consolidated buyer type/acquaintance/name selection, agency contact autofill, required landline/optional postal, typed DOB, past-passport restriction and under-six-month warning, with develop merge. PC-A branch codex/pc-a-contract-buyer-passport-1019. Reserve Sales people sheet/model/BuyerContact contract and encrypted presenter validation, bounded Customers date/entry components and public authorized customer/organization contact consumers, tests/docs/localization. Preserve masking/field authority and immutable buyer snapshots; no grant changes, schema/migration/dependencies or live rollout. Optional additive landline field preserves legacy payload compatibility; new Sales confirmation requires it. Shared date changes opt-in for Sales. Acquaintance remains existing required workflow field within buyer card.

@@ -6653,6 +6653,10 @@ Per-room occupancy category sits beside room type; Single for1, Double for2, Tri
 
 Room categories now use adult count; child occupants do not automatically create extra beds. Three adults offer Triple, Family and Double+extra; four-plus offer Family and counted Double+extra. Two adults with children default Double with optional explicit extra. First valid choice is shown and persisted on submission; valid manual selections remain. Room summaries count extra beds only for explicit extra category, retaining uncategorized legacy behavior. Forward allowlist CHECK extension adds FAMILY; no historical rewrite or live migration/runtime change. Final-head CI gates user-authorized develop merge.
 
+## CONTRACT-REVIEW-PREVIEW-1019 — PC-A
+
+New Sales contract Review step shows the canonical customer contract before registration, with current passengers, flight/room prices and services. A local salesPayload projection keeps preview read-only and unnumbered; editing the draft updates the document. Active concrete issuer required for preview, unregistered state clearly marked. Existing final create/confirm path alone registers/sends to Reservations; idempotent create key and server authorization/availability checks preserved. No schema/migration/API/runtime changes. Focused regressions and full final-head CI gate user-authorized develop merge; local rollout is not part of this request.
+
 
 ## CONTRACT-BUYER-PASSPORT-1019 — PC-A
 

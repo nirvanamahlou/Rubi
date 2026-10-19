@@ -72,6 +72,9 @@ vi.mock('react', async (original) => ({
     return [value, vi.fn()];
   },
 }));
+vi.mock('@/modules/legal-entities/components/legal-entity-context', () => ({
+  useLegalEntityContext: () => ({ context: { legalEntity: null } }),
+}));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 describe('compact sales contract form', () => {
