@@ -15,12 +15,10 @@ afterEach(() => {
 describe('master data browser client', () => {
   it('uses the explicit consuming workflow for choices while keeping administration separate', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue({
-        ok: true,
-        json: async () => ({ data: [], meta: { total: 0 } }),
-      });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [], meta: { total: 0 } }),
+    });
     vi.stubGlobal('fetch', fetchMock);
     const query = {
       search: '',
