@@ -6635,3 +6635,8 @@ Sales contract rows use green when Finance's latest customer document delivery r
 ## ROOM-CATEGORY-1019 — PC-A
 
 Per-room occupancy category sits beside room type; Single for1, Double for2, Triple or Double with counted extra beds for3, counted extra beds for larger parties. Incompatible categories clear on occupancy edits. Optional category persists separately through Sales room creation/amendment/presentation and prints beside the unchanged type name in contract room rows. Legacy rooms remain valid. Additive nullable room_category column with allowlist CHECK; no live migration/runtime/data changes. Focused tests and exact-head CI gate authorized develop merge.
+
+
+## ROOM-FAMILY-DEFAULTS-1019 — PC-A
+
+Room categories now use adult count; child occupants do not automatically create extra beds. Three adults offer Triple, Family and Double+extra; four-plus offer Family and counted Double+extra. Two adults with children default Double with optional explicit extra. First valid choice is shown and persisted on submission; valid manual selections remain. Room summaries count extra beds only for explicit extra category, retaining uncategorized legacy behavior. Forward allowlist CHECK extension adds FAMILY; no historical rewrite or live migration/runtime change. Final-head CI gates user-authorized develop merge.
