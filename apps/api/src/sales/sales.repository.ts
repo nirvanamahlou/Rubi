@@ -545,7 +545,9 @@ export class SalesRepository {
                         ordinal: room.ordinal,
                         roomTypeId: room.roomTypeId,
                         roomTypeNameSnapshot: room.roomTypeNameSnapshot,
-                        roomCategory: room.roomCategory ?? null,
+                        ...(room.roomCategory
+                          ? { roomCategory: room.roomCategory }
+                          : {}),
                         adults: room.adults,
                         childAges: [...room.childAges],
                         ...(room.agreedPrice
@@ -796,7 +798,9 @@ export class SalesRepository {
                         ordinal: room.ordinal,
                         roomTypeId: room.roomTypeId,
                         roomTypeNameSnapshot: room.roomTypeNameSnapshot,
-                        roomCategory: room.roomCategory ?? null,
+                        ...(room.roomCategory
+                          ? { roomCategory: room.roomCategory }
+                          : {}),
                         adults: room.adults,
                         childAges: [...room.childAges],
                         ...(room.agreedPrice
