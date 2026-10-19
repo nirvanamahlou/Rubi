@@ -32,7 +32,7 @@ vi.mock('./sales-themed-select', () => ({
     options: { value: string; label: string }[];
     onValueChange: (key: string) => void;
   }) => {
-    fixture.childSelects.push(props);
+    if (props.label !== 'دسته‌بندی اتاق') fixture.childSelects.push(props);
     return <span>{props.label}</span>;
   },
 }));

@@ -5,7 +5,12 @@ import {
   selectHotelChild,
 } from '../model/hotel-child-selection';
 import { SalesThemedSelect } from './sales-themed-select';
-import { salesHotelRoomSummary } from '@nora/contracts';
+import {
+  salesRoomCategories,
+  salesRoomCategoryLabel,
+  type SalesRoomCategory,
+  salesHotelRoomSummary,
+} from '@nora/contracts';
 import { PassengerAgeField } from './passenger-age-field';
 import {
   salesRoomPartyError,
@@ -261,7 +266,18 @@ export function ServiceParties({
             {rooms.map((r, i) => {
               const update = (value: Partial<typeof r>) =>
                 changeRooms(
-                  rooms.map((v, j) => (j === i ? { ...v, ...value } : v)),
+                  rooms.map((v, j) => {
+                    if (j !== i) return v;
+                    const next = { ...v, ...value };
+                    if (
+                      next.roomCategory &&
+                      !salesRoomCategories(
+                        next.adults + next.childAges.length,
+                      ).includes(next.roomCategory)
+                    )
+                      delete next.roomCategory;
+                    return next;
+                  }),
                 );
               const others = rooms.filter((_, j) => j !== i);
               const othersUsed = roomPartyUsage(
@@ -297,21 +313,49 @@ export function ServiceParties({
                   key={r.ordinal}
                 >
                   <b>اتاق {i + 1}</b>
-                  <SearchableReference
-                    label="نوع اتاق"
-                    value={r.roomTypeId}
-                    options={roomTypes}
-                    showAllOptionsOnOpen
-                    preferEnglishName
-                    onChange={(roomTypeId) =>
-                      update({
-                        roomTypeId,
-                        roomTypeNameSnapshot:
-                          roomTypes.find((t) => t.id === roomTypeId)?.name ??
-                          '',
-                      })
-                    }
-                  />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <SearchableReference
+                      label="نوع اتاق"
+                      value={r.roomTypeId}
+                      options={roomTypes}
+                      showAllOptionsOnOpen
+                      preferEnglishName
+                      onChange={(roomTypeId) =>
+                        update({
+                          roomTypeId,
+                          roomTypeNameSnapshot:
+                            roomTypes.find((t) => t.id === roomTypeId)?.name ??
+                            '',
+                        })
+                      }
+                    />
+                    <label>
+                      دسته‌بندی اتاق
+                      <SalesThemedSelect
+                        label="دسته‌بندی اتاق"
+                        value={r.roomCategory ?? ''}
+                        options={[
+                          { value: '', label: 'انتخاب دسته‌بندی' },
+                          ...salesRoomCategories(
+                            r.adults + r.childAges.length,
+                          ).map((value) => ({
+                            value,
+                            label: salesRoomCategoryLabel(
+                              value,
+                              r.adults + r.childAges.length,
+                            ),
+                          })),
+                        ]}
+                        onValueChange={(value) =>
+                          update({
+                            roomCategory: value
+                              ? (value as SalesRoomCategory)
+                              : undefined,
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     {rate
                       ? 'ظرفیت بزرگسال: ' +

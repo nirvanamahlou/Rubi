@@ -7557,6 +7557,7 @@ model AccountingAccountGroupDetail {
 }
 
 model SalesContractHotelRoom {
+  roomCategory         String?                     @map("room_category") @db.VarChar(16)
   agreedPrice          Json?                       @map("agreed_price") @db.JsonB
   id                   String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   hotelSelectionId     String                      @map("hotel_selection_id") @db.Uuid
