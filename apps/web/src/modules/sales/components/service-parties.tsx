@@ -6,6 +6,7 @@ import {
 } from '../model/hotel-child-selection';
 import { SalesThemedSelect } from './sales-themed-select';
 import {
+  defaultSalesRoomCategory,
   salesRoomCategories,
   salesRoomCategoryLabel,
   type SalesRoomCategory,
@@ -40,7 +41,12 @@ export function ServiceParties({
     salesTravelDate(sourceState),
   );
   const childChoices = hotelChildChoices(state, salesTravelDate(state));
-  const rooms = state.hotel.rooms ?? [];
+  const rooms: NonNullable<SalesFormState['hotel']['rooms']> = (
+    state.hotel.rooms ?? []
+  ).map((room) => ({
+    ...room,
+    roomCategory: defaultSalesRoomCategory(room),
+  }));
   const limited = state.serviceKinds.includes('FLIGHT');
   const party = salesPassengerCounts(state);
   const partyError = salesRoomPartyError(state);
@@ -269,13 +275,7 @@ export function ServiceParties({
                   rooms.map((v, j) => {
                     if (j !== i) return v;
                     const next = { ...v, ...value };
-                    if (
-                      next.roomCategory &&
-                      !salesRoomCategories(
-                        next.adults + next.childAges.length,
-                      ).includes(next.roomCategory)
-                    )
-                      delete next.roomCategory;
+                    next.roomCategory = defaultSalesRoomCategory(next);
                     return next;
                   }),
                 );
@@ -337,13 +337,11 @@ export function ServiceParties({
                         options={[
                           { value: '', label: 'انتخاب دسته‌بندی' },
                           ...salesRoomCategories(
-                            r.adults + r.childAges.length,
+                            r.adults,
+                            r.childAges.length,
                           ).map((value) => ({
                             value,
-                            label: salesRoomCategoryLabel(
-                              value,
-                              r.adults + r.childAges.length,
-                            ),
+                            label: salesRoomCategoryLabel(value, r.adults),
                           })),
                         ]}
                         onValueChange={(value) =>

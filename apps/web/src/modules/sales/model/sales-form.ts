@@ -1,3 +1,4 @@
+import { defaultSalesRoomCategory } from '@nora/contracts';
 import { syncHotelChildSelections } from './hotel-child-selection';
 import {
   readAgencyCommission,
@@ -1544,13 +1545,23 @@ export function salesPayload(
             checkOutDate: state.hotel.checkOut,
             roomCount: state.hotel.rooms?.length ?? state.hotel.roomCount,
             ...(state.hotel.rooms
-              ? { rooms: state.hotel.rooms as SalesHotelRoomV1[] }
+              ? {
+                  rooms: state.hotel.rooms.map((room) => ({
+                    ...room,
+                    roomCategory: defaultSalesRoomCategory(room),
+                  })) as SalesHotelRoomV1[],
+                }
               : {}),
             singleRoomCount: state.hotel.singleRoomCount,
             doubleRoomCount: state.hotel.doubleRoomCount,
             extraBedCount: state.hotel.extraBedCount,
             ...(state.hotel.rooms?.length
-              ? salesHotelRoomSummary(state.hotel.rooms)
+              ? salesHotelRoomSummary(
+                  state.hotel.rooms.map((room) => ({
+                    ...room,
+                    roomCategory: defaultSalesRoomCategory(room),
+                  })),
+                )
               : {}),
             roomTypeId:
               state.hotel.rooms?.[0]?.roomTypeId || state.hotel.roomTypeId,
