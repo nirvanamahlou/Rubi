@@ -19,6 +19,40 @@ const baseRow = {
 };
 
 describe('MasterDataRepository code allocation', () => {
+  it.each(['suppliers', 'brokers'] as const)(
+    'reads saved canonical contact masks and address for %s without exposing ciphertext',
+    (resource) => {
+      const row = toMasterDataRecord(resource, {
+        ...baseRow,
+        name: 'QA',
+        address: 'Stale native address',
+        primaryPhoneMasked: null,
+        organization: {
+          contacts: [
+            {
+              jobTitle: 'PARTNER_OFFICE+PARTNER_MOBILE',
+              phoneMasked: '***0123',
+            },
+            {
+              jobTitle: 'PARTNER_EMAIL',
+              emailMasked: 'q***@example.test',
+              isActive: false,
+            },
+          ],
+          addresses: [{ addressLine: 'Canonical office' }],
+        },
+      });
+      expect(row.attributes).toMatchObject({
+        primaryPhoneMasked: '***0123',
+        dossierMobileMasked: '***0123',
+        dossierAddress: 'Canonical office',
+        dossierEmailMasked: '',
+      });
+      if (resource === 'suppliers')
+        expect(row.attributes.address).toBe('Canonical office');
+      expect(row.attributes).not.toHaveProperty('organization');
+    },
+  );
   it('checks generated codes against the target resource', async () => {
     const findFirst = vi.fn().mockResolvedValue(baseRow);
     const database = {

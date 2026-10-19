@@ -1,3 +1,9 @@
+## PARTNER-CONTACT-ROUNDTRIP-1019 — PC-B — READY_FOR_CI
+
+Bounded central localization reservation: only three new saved-contact status messages in apps/web/src/i18n/en-overrides.json; prior localization candidates are merged/frozen. No unrelated translations or catalogue generator changes. Freeze/release with the corrected candidate after coverage test passes.
+
+COMPUTER_ID=PC-B; branch codex/pc-b-partner-contact-roundtrip-1019 from origin/develop@a1c2e0e2. User authorizes supplier/broker phone, mobile and address save/read/edit repair, tests, push and develop merge. Reserve bounded Master Data partner projection/persistence, partner form state/components and regression tests plus own coordination notes. Preserve encrypted contacts, masking and native unmask authority; never send masked placeholders as replacement values or erase untouched fields. No migration, dependency, IAM grant, operational database or server rollout change. Previous broker contact unit merged; no overlapping active target reservation found. Exact-head hosted checks gate merge.
+
 ## FLOATING-FLIGHT-TIMES-1019 — PC-A — READY_FOR_CI
 
 Branch codex/pc-a-floating-flight-times-1019 from origin/develop@a1c2e0e2. Reserve Sales floating-flight editor, bounded parent date handoff/reset and pure Tehran clock composition helper/tests plus own docs. User authorizes develop merge and online rollout. Reuse prior outbound/return calendar dates; only ask departure/arrival clock values with next-day arrival inference. Preserve canonical UTC payload, validation, airline and fare/capacity rules. No schema/API/dependency change. Previous overlapping Sales locks released.

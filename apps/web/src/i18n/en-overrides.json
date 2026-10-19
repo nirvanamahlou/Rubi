@@ -1,4 +1,7 @@
 {
+  "بدون تغییر باقی می‌ماند.": "The saved value will remain unchanged.",
+  "مقدار ثبت‌شده پس از ذخیره پاک می‌شود.": "The saved value will be cleared when you save.",
+  "مقدار جدید پس از ذخیره جایگزین می‌شود.": "The new value will replace the saved value when you save.",
   "واحد سازمانی کاربر": "User organizational unit",
   "بدون واحد سازمانی": "No organizational unit",
   "واحد فعلی (غیرفعال یا خارج از شعب مجاز)": "Current unit (inactive or outside authorized branches)",

@@ -30,6 +30,8 @@ export async function persistPartnerDossier(
   input: Record<string, unknown>,
   actorUserId: string,
   actorBranchId: string,
+  syncOffice = true,
+  syncAddress = true,
 ) {
   const audit = async (resource: string, entityId: string, action: string) => {
     await tx.masterDataAuditEvent.create({
@@ -99,7 +101,7 @@ export async function persistPartnerDossier(
     createdByUserId: actorUserId,
     updatedByUserId: actorUserId,
   };
-  if (source.primaryPhoneEncrypted !== undefined) {
+  if (syncOffice && source.primaryPhoneEncrypted !== undefined) {
     input.office = source.primaryPhoneEncrypted
       ? {
           encrypted: source.primaryPhoneEncrypted,
@@ -133,7 +135,7 @@ export async function persistPartnerDossier(
       await tx.masterOrganizationContact.update({
         where: { id: existing.id },
         data: {
-          ...fields,
+          ...(input[key] ? fields : {}),
           isActive: Boolean(input[key]),
           updatedByUserId: actorUserId,
           version: { increment: 1 },
@@ -161,7 +163,9 @@ export async function persistPartnerDossier(
     });
     const addressLine = Object.hasOwn(input, 'address')
       ? String(input.address ?? '')
-      : String(source.address ?? existing?.addressLine ?? '');
+      : syncAddress && Object.hasOwn(source, 'address')
+        ? String(source.address ?? '')
+        : String(existing?.addressLine ?? source.address ?? '');
     const location = {
       countryId: (source.countryId as string | null) ?? null,
       cityId: (source.cityId as string | null) ?? null,

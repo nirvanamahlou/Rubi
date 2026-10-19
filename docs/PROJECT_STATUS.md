@@ -1,3 +1,7 @@
+## 2026-10-19 — PARTNER-CONTACT-ROUNDTRIP-1019 — PC-B
+
+Repair supplier canonical-address rehydration and preserve canonical office/address through unrelated partner edits. Explicitly display saved masked phones/mobile/email and deliberate clear state; broker profile now includes mobile/email/address. Email clear preserves valid encrypted inactive history rather than creating an invalid empty contact.38 API and30 Web focused tests pass; both-resource PostgreSQL round-trip regressions added. No schema, account grants or operational server rollout; exact-head hosted gates precede authorized develop merge. See tasks/PARTNER-CONTACT-ROUNDTRIP-1019.md.
+
 ## 2026-10-19 — FLOATING-FLIGHT-TIMES-1019 — PC-A
 
 Floating ticket details inherit the chosen leg date and ask only Tehran clock values, inferring next-day arrival across midnight. Hotel room adults/children/infants must exactly match flight composition (retaining airline12+/hotel15+ normalization), and API validates passenger membership equality. Negotiated room prices now accept IRR with exact existing currency totals. No migration, data rewrite or dependency change. User authorizes develop merge and production rollout after final-head checks; local3100 remains untouched.
