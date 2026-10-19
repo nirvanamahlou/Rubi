@@ -47,6 +47,9 @@ export class SalesBuyerContactCrypto {
       phone: input.phone.trim(),
       address: input.address.trim(),
       postalCode: input.postalCode.trim(),
+      ...(input.landline !== undefined
+        ? { landline: input.landline.trim() }
+        : {}),
     };
     const encrypted = Buffer.concat([
       cipher.update(JSON.stringify(value), 'utf-8'),

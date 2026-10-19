@@ -32,6 +32,7 @@ export function contractReviewOutput(
       kind: state.customerKind ?? 'person',
       address: payload.buyerContact?.address ?? null,
       phone: payload.buyerContact?.phone ?? null,
+      landline: payload.buyerContact?.landline ?? null,
       postalCode: payload.buyerContact?.postalCode ?? null,
     },
     contract: {

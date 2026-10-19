@@ -112,3 +112,22 @@ describe('Direct table calendar', () => {
     expect(html).not.toContain('role="dialog"');
   });
 });
+
+it('allows typed DOB and disables dates before the Sales passport minimum', () => {
+  const html = renderToStaticMarkup(
+    <CustomerDateField
+      allowTyping
+      compact
+      initialOpen
+      minDate="2026-10-19"
+      value="2026-10-19"
+      id="expiry-policy"
+      label="Expiry"
+      mode="gregorian"
+      onModeChange={vi.fn()}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(html).toContain('YYYY/MM/DD');
+  expect(html.match(/<button[^>]*disabled=""/g)).toHaveLength(18);
+});

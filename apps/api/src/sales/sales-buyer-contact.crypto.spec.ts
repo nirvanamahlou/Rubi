@@ -41,3 +41,11 @@ describe('Sales buyer contact encryption', () => {
     expect(() => service.decrypt(buyer)).toThrow('integrity');
   });
 });
+
+it('encrypts the optional landline and preserves empty postal codes without altering legacy envelopes', () => {
+  const service = crypto();
+  const contact = { ...buyer, postalCode: '', landline: '02112345678' };
+  const encrypted = service.protect(contact);
+  expect(JSON.stringify(encrypted)).not.toContain(contact.landline);
+  expect(service.decrypt(encrypted)).toEqual(contact);
+});

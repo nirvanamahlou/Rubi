@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { agencyBuyerContact } from '../model/agency-buyer-contact';
 import { Plus, Check, Search } from 'lucide-react';
 import type { CustomerSummary, MasterDataRecord } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
@@ -196,6 +197,75 @@ export function SalesPeopleSheet({
       onBusyChange(false);
     }
   };
+  const chooseOrganization = async (person: CustomerSummary) => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    onBusyChange(true);
+    setError('');
+    try {
+      let detail;
+      try {
+        detail = (await customersApi.detail(person.id, 'customer-verification'))
+          .data;
+      } catch (reason) {
+        if (!(
+          reason &&
+          typeof reason === 'object' &&
+          'status' in reason &&
+          reason.status === 403
+        ))
+          throw reason;
+        try {
+          detail = (await customersApi.detail(person.id)).data;
+        } catch (error) {
+          if (!(
+            error &&
+            typeof error === 'object' &&
+            'status' in error &&
+            error.status === 403
+          ))
+            throw error;
+          detail = { contacts: [], addresses: [] };
+        }
+      }
+      const phones = detail.contacts.filter(
+        (c) => c.type === 'phone' && c.value && !c.value.includes('*'),
+      );
+      const mobile = phones.find((c) => /^(\+98|0)?9/.test(c.value!));
+      const office = phones.find((c) => c !== mobile);
+      const organizationBuyer = {
+        name: person.displayName,
+        phone: mobile?.value ?? office?.value ?? '',
+        landline: office?.value ?? '',
+        address:
+          detail.addresses.find((a) => a.isPrimary)?.label ??
+          detail.addresses[0]?.label ??
+          '',
+        postalCode: '',
+      };
+      const completedBuyer = person.organizationId
+        ? await agencyBuyerContact(person.organizationId, organizationBuyer)
+        : organizationBuyer;
+      change({
+        ...draft,
+        organization: {
+          id: person.id,
+          displayName: person.displayName,
+          organizationId: person.organizationId,
+        },
+        buyerContact: completedBuyer,
+      });
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : 'دریافت اطلاعات آژانس انجام نشد.',
+      );
+    } finally {
+      inFlight.current = false;
+      onBusyChange(false);
+    }
+  };
   const save = async () => {
     if (inFlight.current) return;
     setClearKey(null);
@@ -223,23 +293,26 @@ export function SalesPeopleSheet({
   };
   const buyerKey = draft.mode === 'person' ? 'primary' : 'p0';
   const buyerRow = peopleRow(draft, buyerKey);
-  const buyerContact = draft.buyerContact ?? {
-    name:
-      draft.mode === 'organization'
-        ? (draft.organization?.displayName ?? '')
-        : (buyerRow.person?.displayName ??
-          [buyerRow.values.firstName, buyerRow.values.lastName]
-            .filter(Boolean)
-            .join(' ')),
-    phone: buyerRow.values.phone.includes('*') ? '' : buyerRow.values.phone,
-    address:
-      buyerRow.profile?.addresses?.find((address) => address.isPrimary)
-        ?.label ?? '',
-    postalCode: '',
+  const buyerContact = {
+    landline: '',
+    ...(draft.buyerContact ?? {
+      name:
+        draft.mode === 'organization'
+          ? (draft.organization?.displayName ?? '')
+          : (buyerRow.person?.displayName ??
+            [buyerRow.values.firstName, buyerRow.values.lastName]
+              .filter(Boolean)
+              .join(' ')),
+      phone: buyerRow.values.phone.includes('*') ? '' : buyerRow.values.phone,
+      address:
+        buyerRow.profile?.addresses?.find((address) => address.isPrimary)
+          ?.label ?? '',
+      postalCode: '',
+    }),
   };
   const changeBuyer = (field: keyof typeof buyerContact, value: string) => {
     const normalized =
-      field === 'phone' || field === 'postalCode'
+      field === 'phone' || field === 'postalCode' || field === 'landline'
         ? value.replace(/[۰-۹٠-٩]/g, (digit) =>
             String(
               '۰۱۲۳۴۵۶۷۸۹'.includes(digit)
@@ -385,126 +458,6 @@ export function SalesPeopleSheet({
         </div>
         <CustomerCalendarSwitch mode={calendar} onChange={setCalendar} />
       </div>
-      <div className="flex flex-wrap items-center gap-2 rounded-xl bg-primary/5 p-3">
-        <Button
-          type="button"
-          size="sm"
-          variant={draft.mode !== 'organization' ? 'primary' : 'outline'}
-          disabled={busy}
-          onClick={() =>
-            draft.mode === 'organization' &&
-            change(
-              normalizeSalesPeopleDraft({
-                ...draft,
-                mode: 'first-passenger',
-                buyerContact: {
-                  name: peopleRow(draft, 'p0').person?.displayName ?? '',
-                  phone: '',
-                  address: '',
-                  postalCode: '',
-                },
-                ...(draft.rows.primary
-                  ? { previousSeparateCustomer: draft.rows.primary }
-                  : {}),
-                rows: { ...draft.rows, primary: peopleRow(draft, 'p0') },
-              }),
-            )
-          }
-        >
-          مشتری حقیقی
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={draft.mode === 'organization' ? 'primary' : 'outline'}
-          disabled={busy}
-          onClick={() =>
-            change({
-              ...draft,
-              mode: 'organization',
-              buyerContact: {
-                name: draft.organization?.displayName ?? '',
-                phone: '',
-                address: '',
-                postalCode: '',
-              },
-            })
-          }
-        >
-          حقوقی / آژانس
-        </Button>
-      </div>
-      <div className="grid gap-2 rounded-xl border border-primary/15 bg-primary/[0.03] p-3 sm:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] sm:items-end">
-        <div>
-          <p className="font-bold">نحوه آشنایی با ما</p>
-        </div>
-        <SalesThemedSelect
-          label="نحوه آشنایی برای کل قرارداد"
-          value={
-            draft.acquaintanceMethodId ??
-            peopleRow(draft, 'p0').values.acquaintanceMethodId ??
-            ''
-          }
-          disabled={
-            busy ||
-            methodsLoading ||
-            Boolean(methodsError) ||
-            !acquaintanceMethods.length
-          }
-          options={[
-            { value: '', label: 'انتخاب نحوه آشنایی' },
-            ...acquaintanceMethods.map((item) => ({
-              value: item.id,
-              label: item.name,
-            })),
-          ]}
-          onValueChange={(acquaintanceMethodId) =>
-            change(
-              setSalesPeopleAcquaintanceMethod(draft, acquaintanceMethodId),
-            )
-          }
-        />
-      </div>
-      {draft.mode === 'organization' ? (
-        draft.organization ? (
-          <div className="flex items-center justify-between rounded-xl border p-3">
-            <strong>{draft.organization.displayName}</strong>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={busy}
-              onClick={() => change({ ...draft, organization: null })}
-            >
-              تغییر آژانس
-            </Button>
-          </div>
-        ) : (
-          <SalesOrganizationCustomer
-            refreshRevision={refreshRevision}
-            disabled={busy}
-            selectedOrganizationId=""
-            onClear={() => change({ ...draft, organization: null })}
-            onBusyChange={onBusyChange}
-            onSelected={(person) =>
-              change({
-                ...draft,
-                buyerContact: {
-                  name: person.displayName,
-                  phone: '',
-                  address: '',
-                  postalCode: '',
-                },
-                organization: {
-                  id: person.id,
-                  displayName: person.displayName,
-                  organizationId: person.organizationId,
-                },
-              })
-            }
-          />
-        )
-      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-semibold">
           {counts.total.toLocaleString('fa-IR')} ردیف مسافر ·{' '}
@@ -566,24 +519,6 @@ export function SalesPeopleSheet({
           </Button>
         </div>
       ) : null}
-      {lookup ? (
-        <SalesPersonSearch
-          purpose={
-            lookup === 'p0' && draft.mode !== 'organization'
-              ? 'customer'
-              : 'passenger'
-          }
-          selectedIds={keys
-            .filter((key) => key !== lookup)
-            .flatMap((key) =>
-              peopleRow(draft, key).person?.id
-                ? [peopleRow(draft, key).person!.id]
-                : [],
-            )}
-          onCancel={() => setLookup(null)}
-          onSelect={(person) => void choose(person)}
-        />
-      ) : null}
       {clearKey ? (
         <div
           role="alert"
@@ -622,6 +557,81 @@ export function SalesPeopleSheet({
         aria-label="مشخصات مشتری طرف حساب"
       >
         <h3 className="font-bold sm:col-span-2">مشتری و طرف حساب قرارداد</h3>
+        <div className="flex flex-wrap items-center gap-2 rounded-xl bg-primary/5 p-3">
+          <Button
+            type="button"
+            size="sm"
+            variant={draft.mode !== 'organization' ? 'primary' : 'outline'}
+            disabled={busy}
+            onClick={() =>
+              draft.mode === 'organization' &&
+              change(
+                normalizeSalesPeopleDraft({
+                  ...draft,
+                  mode: 'first-passenger',
+                  buyerContact: {
+                    name: peopleRow(draft, 'p0').person?.displayName ?? '',
+                    phone: '',
+                    address: '',
+                    postalCode: '',
+                  },
+                  ...(draft.rows.primary
+                    ? { previousSeparateCustomer: draft.rows.primary }
+                    : {}),
+                  rows: { ...draft.rows, primary: peopleRow(draft, 'p0') },
+                }),
+              )
+            }
+          >
+            مشتری حقیقی
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={draft.mode === 'organization' ? 'primary' : 'outline'}
+            disabled={busy}
+            onClick={() =>
+              change({
+                ...draft,
+                mode: 'organization',
+                buyerContact: {
+                  name: draft.organization?.displayName ?? '',
+                  phone: '',
+                  address: '',
+                  postalCode: '',
+                },
+              })
+            }
+          >
+            حقوقی / آژانس
+          </Button>
+        </div>
+        {draft.mode === 'organization' ? (
+          draft.organization ? (
+            <div className="flex items-center justify-between rounded-xl border p-3">
+              <strong>{draft.organization.displayName}</strong>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => change({ ...draft, organization: null })}
+              >
+                تغییر آژانس
+              </Button>
+            </div>
+          ) : (
+            <SalesOrganizationCustomer
+              refreshRevision={refreshRevision}
+              disabled={busy}
+              selectedOrganizationId=""
+              onClear={() => change({ ...draft, organization: null })}
+              onBusyChange={onBusyChange}
+              onSelected={(person) => chooseOrganization(person)}
+            />
+          )
+        ) : null}
+
         {draft.mode !== 'organization' ? (
           <label className="flex items-center gap-2 sm:col-span-2">
             <input
@@ -653,27 +663,49 @@ export function SalesPeopleSheet({
             مشتری طرف حساب همان مسافر اول است
           </label>
         ) : null}
-        {draft.mode === 'person' ? (
-          <Button
-            type="button"
-            variant="outline"
-            disabled={busy}
-            onClick={() => setLookup('primary')}
-          >
-            <Search className="size-4" />
-            انتخاب مشتری موجود
-          </Button>
-        ) : null}
         <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2 lg:grid-cols-4">
           <FormField label="نام مشتری" id="sales-buyer-name">
-            <Input
-              id="sales-buyer-name"
-              value={buyerContact.name}
-              maxLength={200}
-              disabled={busy}
-              onChange={(event) => changeBuyer('name', event.target.value)}
-            />
+            <div className="relative">
+              <Input
+                id="sales-buyer-name"
+                value={buyerContact.name}
+                maxLength={200}
+                disabled={busy}
+                onChange={(event) => changeBuyer('name', event.target.value)}
+              />
+              {draft.mode !== 'organization' ? (
+                <button
+                  type="button"
+                  aria-label="جست‌وجوی نام مشتری"
+                  className="absolute left-2 top-2 text-primary"
+                  disabled={busy}
+                  onClick={() => setLookup(buyerKey)}
+                >
+                  <Search className="size-5" />
+                </button>
+              ) : null}
+            </div>
           </FormField>
+          {lookup ? (
+            <SalesPersonSearch
+              {...(lookup === buyerKey ? { query: buyerContact.name } : {})}
+              purpose={
+                lookup === buyerKey && draft.mode !== 'organization'
+                  ? 'customer'
+                  : 'passenger'
+              }
+              selectedIds={keys
+                .filter((key) => key !== lookup)
+                .flatMap((key) =>
+                  peopleRow(draft, key).person?.id
+                    ? [peopleRow(draft, key).person!.id]
+                    : [],
+                )}
+              onCancel={() => setLookup(null)}
+              onSelect={(person) => void choose(person)}
+            />
+          ) : null}
+
           <FormField label="شماره مشتری" id="sales-buyer-phone">
             <Input
               id="sales-buyer-phone"
@@ -692,6 +724,46 @@ export function SalesPeopleSheet({
               maxLength={1000}
               disabled={busy}
               onChange={(event) => changeBuyer('address', event.target.value)}
+            />
+          </FormField>
+          <FormField label="نحوه آشنایی با ما" required>
+            <SalesThemedSelect
+              label="نحوه آشنایی برای کل قرارداد"
+              value={
+                draft.acquaintanceMethodId ??
+                peopleRow(draft, 'p0').values.acquaintanceMethodId ??
+                ''
+              }
+              disabled={
+                busy ||
+                methodsLoading ||
+                Boolean(methodsError) ||
+                !acquaintanceMethods.length
+              }
+              options={[
+                { value: '', label: 'انتخاب نحوه آشنایی' },
+                ...acquaintanceMethods.map((item) => ({
+                  value: item.id,
+                  label: item.name,
+                })),
+              ]}
+              onValueChange={(acquaintanceMethodId) =>
+                change(
+                  setSalesPeopleAcquaintanceMethod(draft, acquaintanceMethodId),
+                )
+              }
+            />
+          </FormField>
+          <FormField label="تلفن ثابت مشتری" required id="sales-buyer-landline">
+            <Input
+              id="sales-buyer-landline"
+              type="tel"
+              dir="ltr"
+              value={buyerContact.landline}
+              maxLength={16}
+              required
+              disabled={busy}
+              onChange={(event) => changeBuyer('landline', event.target.value)}
             />
           </FormField>
           <FormField label="کد پستی مشتری" id="sales-buyer-postal">
@@ -764,6 +836,7 @@ export function SalesPeopleSheet({
               }
             : { birthDate: 'تاریخ تولد *' }
         }
+        salesDatePolicy
         calendarMode={calendar}
         onCalendarModeChange={setCalendar}
         disabled={busy}
