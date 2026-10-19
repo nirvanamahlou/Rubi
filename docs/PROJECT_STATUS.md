@@ -6643,3 +6643,9 @@ Implemented provider-neutral telephony v1, encrypted durable Integrations Inbox/
 Additive migration20261020010000 applied after verified local backup, with no unrelated migrations. API4000 PID7940, Worker4409 PID17716, Web3000 PID20300; build2Z4HqLsKd7fBzWWDpWG0p. All three health checks200; uncredentialed attention/machine routes401; authenticated Worker transport200. Source branch codex/pc-c-call-center-telephony-1019 stacked on dc6cb70a. No PR/merge/production deployment. Detailed evidence, internal transport limitations, synthetic review guide and Issabel prerequisites: tasks/CALL-CENTER-TELEPHONY-1019.md.
 
 Final verification:49 focused API/PostgreSQL/auth checks,5 Worker checks and18 Web client/model/localization checks pass. Full API/Worker typecheck, Web build/typecheck, affected lint and all affected builds pass. Real Redis/BullMQ stopped-Worker recovery proof and final Chrome/Edge popup/draft/lease/revocation checks pass. Local owner acceptance is pending.
+
+## 2026-10-19 — CALL-CENTER-REMOVE-TELEPHONY-PANEL-1019 — PC-C
+
+Removed the full expandable telephony infrastructure/internal-testing section from the Call Center workspace at the owner's request. This also removes its configuration, synthetic-call and diagnostic controls from that page. The reusable component remains available for a future requested restoration. No API, database, grants or migration changes. Local Web build/lint and activation are recorded in the work assignment.
+
+Removal validated: ESLint and optimized Web build/TypeScript pass. Local Web3000 PID21140, build Ai_vGuYWT3-0hn9FvSpnp; Web/API health200. No tests added for the two-line visual removal.

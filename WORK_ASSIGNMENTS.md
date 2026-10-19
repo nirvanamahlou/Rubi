@@ -8319,3 +8319,9 @@ Bounded extension: IAM public Call Center directory verifies mapped team members
 Configuration handoff reserves only the new telephony entries in .env.example; no secret values or dependency changes. The existing workflow test's cloned JSON fixture is explicitly an empty references array to satisfy full API typecheck without changing behavior.
 
 Telephony validation complete:49 focused API/PostgreSQL/auth,5 Worker and18 Web checks; scoped lint, API/Worker full typecheck and API/Worker/Web builds pass. Real Redis dispatch and Worker restart proof plus Chrome155/Edge155 synthetic UI acceptance pass. Only own backed-up local migration applied; API4000/Web3000/Worker4409 active. Real Issabel remains not connected. Source/schema/migration/central reservations release with this immutable task publication; no dependency or grant changes, PR/merge/production deployment.
+
+## CALL-CENTER-REMOVE-TELEPHONY-PANEL-1019 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-center-remove-telephony-panel-1019 from b7e05527. Owner requests removing the entire telephony infrastructure/internal-test section from the Call Center page for now. Reserve only workspace import/render removal and own status/domain notes. Keep the reusable component available for a future explicitly requested restoration. No API, global attention, database, permission, migration or dependency changes. No overlapping active owner or local target changes. Local Web refresh and task commit/push follow repository workflow.
+
+Validation: scoped ESLint and optimized Web build including TypeScript pass. Web3000 PID21140 serves build Ai_vGuYWT3-0hn9FvSpnp; Web login/API health200. No tests added for this two-line reversible UI removal. Source reservation releases at task publication. No migration or account changes.

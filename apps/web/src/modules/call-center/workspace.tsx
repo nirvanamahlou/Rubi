@@ -1,5 +1,4 @@
 'use client';
-import { TelephonySettings } from './telephony-settings';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   useEffect,
@@ -316,7 +315,6 @@ function Content({
           <Plus size={18} /> ثبت تماس جدید
         </button>
       </header>
-      <TelephonySettings key={branch} branchId={branch} />
       <WorkQueue branchId={branch} actorId={actorId} canManage={canManage} />
       <div className={styles.filters}>
         {branchControl}

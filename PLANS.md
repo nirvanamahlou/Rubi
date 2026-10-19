@@ -574,3 +574,10 @@ See docs/tasks/CALL-CENTER-GLOBAL-QUEUE-1019.md.
 - [ ] Separate future provider adapter after Issabel documents/access, retention policy and real end-to-end latency verification.
 
 Evidence and limitations: docs/tasks/CALL-CENTER-TELEPHONY-1019.md.
+
+## CALL-CENTER-REMOVE-TELEPHONY-PANEL-1019
+
+- [x] Remove the telephony infrastructure/internal-test section from the Call Center workspace.
+- [x] Validate and activate the local Web preview.
+
+The earlier package-three UI test guide requires restoration of this section before its page controls can be used.
