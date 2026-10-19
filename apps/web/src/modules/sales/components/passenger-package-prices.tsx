@@ -121,9 +121,7 @@ export function PassengerPackagePrices({
               <th className="p-2 text-right">مسافر</th>
               <th className="p-2">قیمت ریالی (IRR)</th>
               {!hotelShares && <th className="p-2">ارز</th>}
-              <th className="p-2">
-                {hotelShares ? 'سهم ارزی اتاق' : 'قیمت ارزی'}
-              </th>
+              <th className="p-2">{hotelShares ? 'سهم اتاق' : 'قیمت ارزی'}</th>
             </tr>
           </thead>
           <tbody>
