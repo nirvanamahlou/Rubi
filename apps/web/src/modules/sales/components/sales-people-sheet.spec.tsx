@@ -24,6 +24,7 @@ describe('Sales uses the Customers entry spreadsheet', () => {
       'sales-buyer-phone',
       'sales-buyer-address',
       'sales-buyer-postal',
+      'sales-buyer-landline',
     ]) {
       expect(html).toContain(`id="${field}"`);
       expect(html.indexOf(`id="${field}"`)).toBeLessThan(

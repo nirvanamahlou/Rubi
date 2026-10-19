@@ -289,3 +289,26 @@ export function formatCustomerDate(
     { dateStyle: 'medium', timeZone: 'UTC' },
   ).format(new Date(value));
 }
+
+export function parseTypedCustomerDate(
+  input: string,
+  mode: 'persian' | 'gregorian',
+): string | null {
+  const normalized = input
+    .trim()
+    .replace(/[۰-۹٠-٩]/g, (d) =>
+      String(
+        '۰۱۲۳۴۵۶۷۸۹'.includes(d)
+          ? '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)
+          : '٠١٢٣٤٥٦٧٨٩'.indexOf(d),
+      ),
+    );
+  const m = /^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/.exec(normalized);
+  return m
+    ? (mode === 'persian' ? persianDateToIso : gregorianDateToIso)({
+        year: Number(m[1]),
+        month: Number(m[2]),
+        day: Number(m[3]),
+      })
+    : null;
+}

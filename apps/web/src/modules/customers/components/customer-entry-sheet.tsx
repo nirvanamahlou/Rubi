@@ -1,4 +1,5 @@
 'use client';
+import { tehranToday, passportExpiryWarning } from '@/lib/passport-dates';
 
 import type { ReactNode } from 'react';
 import { CircleHelp } from 'lucide-react';
@@ -207,6 +208,7 @@ export function CustomerEntrySheet({
   onCalendarModeChange,
   disabled = false,
   showPassportExpiry = false,
+  salesDatePolicy = false,
   visibleFields,
   columnOrder,
   columnLabels,
@@ -222,6 +224,7 @@ export function CustomerEntrySheet({
   onCalendarModeChange: (mode: CustomerCalendarMode) => void;
   disabled?: boolean;
   showPassportExpiry?: boolean;
+  salesDatePolicy?: boolean;
   /** Lets a host show the identity fields required for its workflow. */
   visibleFields?: readonly EntryField[];
   /** Optional leading fields; all other visible columns retain their default order. */
@@ -348,20 +351,38 @@ export function CustomerEntrySheet({
                         </div>
                       ) : field === 'birthDate' ||
                         field === 'passportExpiryDate' ? (
-                        <CustomerDateField
-                          compact
-                          id={`${row.key}-${suffix}`}
-                          label={`${field === 'birthDate' ? 'تاریخ تولد' : 'انقضای پاسپورت'} ${row.label}`}
-                          mode={calendarMode}
-                          onModeChange={onCalendarModeChange}
-                          value={row.values[field] ?? ''}
-                          onChange={(value) => row.onChange(field, value)}
-                          disabled={Boolean(
-                            disabled ||
-                            (row.readOnly &&
-                              !row.editableFields?.includes(field)),
-                          )}
-                        />
+                        <>
+                          <CustomerDateField
+                            allowTyping={salesDatePolicy}
+                            minDate={
+                              salesDatePolicy && field === 'passportExpiryDate'
+                                ? tehranToday()
+                                : undefined
+                            }
+                            compact
+                            id={`${row.key}-${suffix}`}
+                            label={`${field === 'birthDate' ? 'تاریخ تولد' : 'انقضای پاسپورت'} ${row.label}`}
+                            mode={calendarMode}
+                            onModeChange={onCalendarModeChange}
+                            value={row.values[field] ?? ''}
+                            onChange={(value) => row.onChange(field, value)}
+                            disabled={Boolean(
+                              disabled ||
+                              (row.readOnly &&
+                                !row.editableFields?.includes(field)),
+                            )}
+                          />
+                          {salesDatePolicy &&
+                          field === 'passportExpiryDate' &&
+                          passportExpiryWarning(row.values[field] ?? '') ? (
+                            <p
+                              role="status"
+                              className="text-xs font-semibold text-amber-700"
+                            >
+                              اعتبار پاسپورت کمتر از ۶ ماه است.
+                            </p>
+                          ) : null}
+                        </>
                       ) : (
                         <Input
                           aria-label={`${label.replace(' *', '')} ${row.label}`}
