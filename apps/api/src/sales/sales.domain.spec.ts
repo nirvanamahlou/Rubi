@@ -92,20 +92,26 @@ it('validates per-person discounts and commissions against the same-currency gro
       },
     }),
   };
-  input.priceComponents.push({
-    type: 'DISCOUNT',
-    title: 'Passenger deductions',
-    amount: '15',
-    currencyCode: 'USD',
-  });
+  input.priceComponents = [
+    ...input.priceComponents,
+    {
+      type: 'DISCOUNT',
+      title: 'Passenger deductions',
+      amount: '15',
+      currencyCode: 'USD',
+    },
+  ];
   expect(() => validateSalesContract(input)).not.toThrow();
   input.priceComponents[1]!.amount = '14';
   expect(() => validateSalesContract(input)).toThrow(
     'مبلغ کل قرارداد باید برابر',
   );
-  input.services[0]!.metadata.passengerDeductionsV1 = JSON.stringify({
-    [id]: { discount: { amount: '201', currencyCode: 'USD' } },
-  });
+  input.services[0]!.metadata = {
+    ...input.services[0]!.metadata,
+    passengerDeductionsV1: JSON.stringify({
+      [id]: { discount: { amount: '201', currencyCode: 'USD' } },
+    }),
+  };
   expect(() => validateSalesContract(input)).toThrow();
 });
 
