@@ -1,3 +1,7 @@
+## USER-ROLE-SAVE-1019 — PC-B
+
+Selected-user final Save now submits pending role/manual access through the existing guarded endpoint instead of saving branches only. A second near-picker Save and visible status/error avoid the former silent-looking flow. Unchanged legacy snapshots do not convert or rewrite grants. Branch changes follow only successful role saves and use a freshly loaded revision, preserving CAS/conflict handling. Account summaries show the effective manual snapshot label rather than implying retained administrator membership still controls access. No backend authorization rules, existing memberships, schema, dependency or operational account changes. Focused lifecycle/workflow tests and final-head full CI gate owner-authorized push/develop merge.
+
 ## 2026-10-19 — FLOATING-HOTEL-PEOPLE-1019 — PC-A
 
 Sales copies selected flight calendar days into the draft; hotel defaults use them even before floating-flight details are complete, retaining the existing day-after/day-before offsets, Tehran dates, tour precedence and manual overrides. Existing passenger rows accept identity edits before profile hydration; save retrieves the authorized customer profile and preserves dirty fields before existing validated/versioned updates.74 focused Web regressions, scoped lint and offline translation synchronization pass. No schema, migration or dependency change. User authorizes develop merge and production rollout after exact-head checks.

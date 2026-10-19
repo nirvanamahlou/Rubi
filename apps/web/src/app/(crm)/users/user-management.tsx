@@ -19,9 +19,14 @@ import { Input } from '@/components/ui/form-controls';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { AccessGroupCard } from './access-group-card';
-import { ManualAccessEditor } from './manual-access-editor';
+import {
+  ManualAccessEditor,
+  type ManualAccessEditorHandle,
+} from './manual-access-editor';
+import { saveSelectedUserChanges } from './selected-user-save';
 import { UserDetailsEditor } from './user-details-editor';
 import { roleLabel } from './role-label';
+import { effectiveRoleLabels } from './effective-role-labels';
 import { UserUnitSelect, type UserUnitOption } from './user-unit-select';
 import { sectionAccess } from './section-access';
 import { IamDeleteDialog, type DeleteTarget } from './iam-delete-dialog';
@@ -199,6 +204,7 @@ function Check({
   );
 }
 export function UserManagement() {
+  const manualAccessEditor = useRef<ManualAccessEditorHandle>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [deleteError, setDeleteError] = useState('');
   const [roleDirectory, setRoleDirectory] = useState<RoleDirectoryRow[]>([]);
@@ -463,47 +469,36 @@ export function UserManagement() {
     saving.current = true;
     setBusy(true);
     setMessage('');
-    const originalBranchIds =
-      selected?.branches.map((item) => item.branch.id).sort() ?? [];
-    const branchesChanged =
-      JSON.stringify([...branchIds].sort()) !==
-      JSON.stringify(originalBranchIds);
-    const access = selected
-      ? {
-          accessRevision: selected.accessRevision,
-          ...(branchesChanged ? { branchIds } : {}),
-        }
-      : {
-          accessTitle: title,
-          permissionIds,
-          screenIds,
-          deniedControlIds,
-          branchIds,
-          roleIds: [],
-        };
     try {
-      await request(
-        selected ? '/iam/users/' + selected.id + '/access' : '/iam/users',
-        {
-          method: selected ? 'PATCH' : 'POST',
+      if (selected) {
+        const saved = await saveSelectedUserChanges({
+          userId: selected.id,
+          branchIds,
+          originalBranchIds: selected.branches.map((item) => item.branch.id),
+          saveManualAccess: manualAccessEditor.current?.save,
+          request,
+        });
+        if (!saved) return;
+      } else {
+        await request('/iam/users', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(
-            selected
-              ? access
-              : {
-                  ...access,
-                  manualAccessV3: true,
-                  displayName: fields.get('displayName'),
-                  ...(organizationUnitId ? { organizationUnitId } : {}),
-                  username: fields.get('username'),
-                  ...(fields.get('email')
-                    ? { email: fields.get('email') }
-                    : {}),
-                  password: fields.get('password'),
-                },
-          ),
-        },
-      );
+          body: JSON.stringify({
+            accessTitle: title,
+            permissionIds,
+            screenIds,
+            deniedControlIds,
+            branchIds,
+            roleIds: [],
+            manualAccessV3: true,
+            displayName: fields.get('displayName'),
+            ...(organizationUnitId ? { organizationUnitId } : {}),
+            username: fields.get('username'),
+            ...(fields.get('email') ? { email: fields.get('email') } : {}),
+            password: fields.get('password'),
+          }),
+        });
+      }
       await load();
       if (!selected) edit(null);
       setMessage(selected ? 'دسترسی کاربر ذخیره شد.' : 'کاربر ایجاد شد.');
@@ -624,7 +619,7 @@ export function UserManagement() {
                   ' ' +
                   u.username +
                   ' ' +
-                  u.roles.map((r) => roleLabel(r.role.name)).join(' ')
+                  effectiveRoleLabels(u.roles).join(' ')
                 ).includes(search),
               )
               .map((user) => (
@@ -643,9 +638,7 @@ export function UserManagement() {
                   >
                     <strong>{user.displayName}</strong>
                     <span className="block text-sm text-muted-foreground">
-                      {user.roles
-                        .map((r) => roleLabel(r.role.name))
-                        .join('، ') || 'بدون نقش'}
+                      {effectiveRoleLabels(user.roles).join('، ') || 'بدون نقش'}
                     </span>
                     <span dir="ltr" className="block text-xs">
                       {user.username}
@@ -1110,6 +1103,7 @@ export function UserManagement() {
                 )}
                 {selected && (
                   <ManualAccessEditor
+                    ref={manualAccessEditor}
                     key={selected.id}
                     userId={selected.id}
                     canManage={canManage}
@@ -1135,7 +1129,7 @@ export function UserManagement() {
                     {busy
                       ? 'در حال ذخیره…'
                       : selected
-                        ? 'ذخیره شعبه‌های کاربر'
+                        ? 'ذخیره دسترسی‌های دستی'
                         : templateMode
                           ? 'ذخیره دسترسی نقش'
                           : 'ساخت کاربر با تیک‌های انتخاب‌شده'}
