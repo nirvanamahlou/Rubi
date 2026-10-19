@@ -51,6 +51,30 @@ const state = {
   ],
 };
 describe('review contract document', () => {
+  it('retains Gregorian travel dates for an international draft preview', () => {
+    const html = renderToStaticMarkup(
+      <ContractReviewPreview
+        state={{
+          ...state,
+          destinationCountryCode: 'TR',
+          serviceKinds: ['HOTEL'],
+          hotel: {
+            ...state.hotel,
+            hotelId: 'hotel',
+            roomTypeId: 'room',
+            name: 'Synthetic hotel',
+            checkIn: '2026-10-23',
+            checkOut: '2026-10-25',
+            guestCustomerIds: ['one'],
+          },
+        }}
+        references={references}
+      />,
+    );
+    expect(html).toContain('<iframe');
+    expect(html).toContain('23 October 2026');
+    expect(html).toContain('25 October 2026');
+  });
   it('shows the full sandboxed document and follows edits without creating or confirming anything', () => {
     const fetch = vi.spyOn(globalThis, 'fetch');
     try {

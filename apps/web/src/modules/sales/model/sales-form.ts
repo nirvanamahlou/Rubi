@@ -1,4 +1,10 @@
 import { defaultSalesRoomCategory } from '@nora/contracts';
+import {
+  PASSENGER_DEDUCTIONS,
+  readPassengerDeductions,
+  passengerNetPrices,
+  type PassengerDeductions,
+} from '@nora/contracts';
 import { syncHotelChildSelections } from './hotel-child-selection';
 import {
   readAgencyCommission,
@@ -107,6 +113,7 @@ export const salesSteps = [
 ] as const;
 
 export interface SalesFormState {
+  passengerDeductions?: PassengerDeductions;
   passengerFlightDirections?: Record<string, SalesTicketDirection[]>;
   passengerHotelPrices?: Record<string, SalesMoney[]>;
   hotelArrivesNextDay?: boolean;
@@ -244,6 +251,52 @@ export function passengerFlightSalePrices(
   );
 }
 
+export function salesPassengerDeductions(
+  state: SalesFormState,
+): PassengerDeductions {
+  const values = Object.fromEntries(
+    state.passengers.flatMap((p) => {
+      if (
+        !salesPassengerFlightDirections(state, p.customerId).length &&
+        !(
+          state.serviceKinds.includes('HOTEL') &&
+          salesHotelGuestIds(state).includes(p.customerId)
+        )
+      )
+        return [];
+      const rows = Object.fromEntries(
+        Object.entries(state.passengerDeductions?.[p.customerId] ?? {}).filter(
+          ([, price]) => price?.amount.trim(),
+        ),
+      );
+      return Object.keys(rows).length ? [[p.customerId, rows]] : [];
+    }),
+  );
+  return readPassengerDeductions(
+    [{ metadata: { [PASSENGER_DEDUCTIONS]: JSON.stringify(values) } }],
+    state.passengers,
+  );
+}
+
+export function salesNetServicePrices(state: SalesFormState) {
+  const flight = passengerFlightSalePrices(state);
+  const guests = new Set(salesHotelGuestIds(state));
+  return passengerNetPrices(
+    Object.fromEntries(
+      state.passengers.map((p) => [
+        p.customerId,
+        [
+          ...(flight[p.customerId] ?? []),
+          ...(state.serviceKinds.includes('HOTEL') && guests.has(p.customerId)
+            ? (state.passengerHotelPrices?.[p.customerId] ?? [])
+            : []),
+        ],
+      ]),
+    ),
+    salesPassengerDeductions(state),
+  );
+}
+
 export function contractSaleComponents(
   state: SalesFormState,
   extras: readonly { customerId: string }[] = [],
@@ -322,7 +375,7 @@ export function contractSaleComponents(
           insuranceExtraRials(state.insuranceExtraToman![person.customerId]!),
         ),
     );
-  return [...totals]
+  const components = [...totals]
     .filter(([, value]) => value > 0n)
     .flatMap(([currencyCode, value]): SalesPriceComponentInput[] => {
       const base = reference.get(currencyCode) ?? value;
@@ -350,6 +403,21 @@ export function contractSaleComponents(
         },
       ];
     });
+  const deductions = salesPassengerDeductions(state);
+  if (Object.keys(deductions).length) salesNetServicePrices(state);
+  return [
+    ...components,
+    ...Object.values(deductions).flatMap((row) =>
+      Object.entries(row)
+        .filter(([, p]) => moneyUnits(p!.amount) > 0n)
+        .map(([kind, p]) => ({
+          type: 'DISCOUNT' as const,
+          title: kind === 'discount' ? 'تخفیف مسافر' : 'کمیسیون مسافر',
+          currencyCode: p!.currencyCode,
+          amount: p!.amount,
+        })),
+    ),
+  ];
 }
 
 export function salesFlightSelection(
@@ -1336,6 +1404,12 @@ export function salesPayload(
     };
   }
   readAgencyCommission(services);
+  const deductions = salesPassengerDeductions(state);
+  if (Object.keys(deductions).length && services[0])
+    services[0].metadata = {
+      ...services[0].metadata,
+      [PASSENGER_DEDUCTIONS]: JSON.stringify(deductions),
+    };
   const flightPrices = passengerFlightSalePrices(state);
   const flightPriceService = services.find((s) => s.kind === 'FLIGHT');
   if (flightPriceService && state.passengerFlightPrices !== undefined)

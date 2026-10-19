@@ -515,3 +515,4 @@ export interface SalesContractAmendmentV1 extends SalesContractUpdateRequest {
 export * from './passenger-flight-prices';
 
 export * from './agency-commission';
+export * from './passenger-deductions';

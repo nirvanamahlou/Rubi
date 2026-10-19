@@ -7,6 +7,7 @@ import {
   type ContractPrintReferences,
 } from '../model/contract-print';
 import type { SalesFormState } from '../model/sales-form';
+import { salesInternationalTravel } from '../model/sales-form';
 import type { SalesReferences } from '../api/reference-refresh';
 
 export function ContractReviewPreview({
@@ -24,6 +25,7 @@ export function ContractReviewPreview({
     try {
       const hotel = references.hotels.find((h) => h.id === state.hotel.hotelId);
       const refs: ContractPrintReferences = {
+        international: salesInternationalTravel(state),
         names: Object.fromEntries(
           Object.values(references)
             .flat()
