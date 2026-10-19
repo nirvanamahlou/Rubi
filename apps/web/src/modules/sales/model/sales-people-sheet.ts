@@ -1,3 +1,4 @@
+import { tehranToday } from '@/lib/passport-dates';
 import type {
   CustomerDetail,
   CustomerMutationRequest,
@@ -294,6 +295,8 @@ function validatePassport(row: PeopleRow) {
       new Date(expiry).toISOString().slice(0, 10) !== expiry)
   )
     throw new Error('تاریخ انقضای پاسپورت معتبر نیست.');
+  if (expiry && expiry < tehranToday())
+    throw new Error('تاریخ انقضای پاسپورت نباید گذشته باشد.');
   const number = row.values.passportNumber.trim();
   if (row.person && row.savedPassportNumber && !number)
     throw new Error(
@@ -395,10 +398,13 @@ export function validateSalesPeopleDraft(
       !/^\+?[0-9]{10,15}$/.test(buyer.phone.trim()) ||
       !buyer.address.trim() ||
       buyer.address.length > 1000 ||
-      !/^[0-9]{10}$/.test(buyer.postalCode.trim())
+      (buyer.postalCode.trim() !== '' &&
+        !/^[0-9]{10}$/.test(buyer.postalCode.trim())) ||
+      (buyer.landline !== undefined &&
+        !/^\+?[0-9]{10,15}$/.test(buyer.landline.trim()))
     )
       throw new Error(
-        'نام، شماره تلفن، آدرس و کد پستی ۱۰رقمی مشتری را کامل و معتبر وارد کنید.',
+        'نام، شماره تماس، تلفن ثابت و آدرس مشتری را کامل کنید؛ کد پستی در صورت ورود باید ۱۰ رقم باشد.',
       );
   }
   if (draft.mode === 'organization' && !draft.organization)
