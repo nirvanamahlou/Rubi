@@ -73,6 +73,16 @@ it('prints actual hotel and flight amounts in any currency and omits only empty 
   expect(table).toContain('30 $');
   expect(table).toContain('<th>تخفیف</th>');
   expect(table).not.toContain('<th>کمیسیون</th>');
+  output.customer.kind = 'organization';
+  output.contract.servicesDetail[0]!.metadata = {
+    ...output.contract.servicesDetail[0]!.metadata,
+    [PASSENGER_DEDUCTIONS]: JSON.stringify({
+      [a!.customerId]: { commission: { amount: '5', currencyCode: 'USD' } },
+    }),
+  };
+  const agencyPrint = contractPrintHtml(output, printReferences);
+  expect(agencyPrint).toContain('<th>کمیسیون</th>');
+  expect(agencyPrint).not.toContain('هیچ مبلغی بابت آن');
   expect(contractPrintHtml(printFixture, printReferences)).not.toContain(
     '<th>تخفیف</th>',
   );
