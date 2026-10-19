@@ -45,6 +45,7 @@ User authorizes passport names and automatic child2-6/6-12 bands in reservation 
 ## VOUCHER-SUPPLIER-HANDOFF-1018 — PC-A — READY_FOR_REVIEW
 
 User authorizes fixing voucher issuance after a sent reservation form, passenger errors and develop merge. COMPUTER_ID=PC-A; codex/pc-a-voucher-supplier-handoff-1018 from origin/develop. Reserve only Reservations voucher defaults and focused handoff/leader tests, real validator regression consumer in tests and own notes. First voucher must inherit immutable sent supplier settings (passenger selections/child bands/rooms/dates) while existing voucher settings retain priority; reconcile current request passenger IDs through existing defaults. Preserve backend validation, broker/leader checks, CAS, finance release and issued history. No schema/API/dependency/migration/runtime/data changes; prior relevant source locks released.
+
 ## CONTRACT-HOTEL-COMPACT-1018 — PC-A — READY_FOR_CI
 
 Branch codex/pc-a-contract-hotel-compact-1018 from origin/develop. Reserve only Sales service-parties.tsx layout and own coordination notes. User authorizes same-row hotel/count controls and develop merge. Prior related source locks released; no API/schema/dependency/data changes. Six ServiceParties tests, scoped ESLint and formatting pass. Source scope released with frozen candidate; exact-head full hosted checks gate merge.
