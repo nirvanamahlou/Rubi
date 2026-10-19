@@ -25,7 +25,6 @@ import {
   Pencil,
   Phone,
   PhoneIncoming,
-  Plane,
   Plus,
   Search,
   Trophy,
@@ -291,13 +290,6 @@ function CallCenterContent({
             <Headset /> کال سنتر
           </h1>
           <p>مدیریت تماس‌ها، پیگیری‌ها و سرنخ‌های ورودی</p>
-        </div>
-        <div className={styles.travel}>
-          <Plane />
-          <div>
-            <strong>هر سفر با یک گفت‌وگو آغاز می‌شود...</strong>
-            <small>مسافران رؤیاها، ما مسیرشان را هموار می‌کنیم</small>
-          </div>
         </div>
         <button
           className={styles.primary}
