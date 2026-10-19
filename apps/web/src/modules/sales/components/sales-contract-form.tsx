@@ -258,8 +258,7 @@ export function SalesContractForm() {
     salesDirections(state, 'FLIGHT'),
   ]);
   const flightDatesReady =
-    flightRangeRoute === flightRouteKey &&
-    salesFlightRangeReady(flightRange, salesFlightToday());
+    flightRangeRoute === flightRouteKey && salesFlightRangeReady(flightRange);
   const canPrefetchTickets = Boolean(
     state.originId &&
     state.destinationId &&

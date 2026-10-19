@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import type { TicketOfferSearchV1, TicketOfferV1 } from '@nora/contracts';
 import { DatePicker } from '@/components/ui/date-picker';
 import { searchTickets } from '../api/ticket-search';
-import { salesFlightToday } from '../model/sales-flight-range';
+
 import { eligibleReturn, flightDay } from '../model/exact-flight-dates';
 import type { FlightDateRange } from './flight-date-range';
 
@@ -70,7 +70,7 @@ export function FlightTripDates({
     const controller = new AbortController();
     const timer = setTimeout(() => {
       setError('');
-      const base = { departureFrom: new Date().toISOString() };
+      const base = { departureFrom: '1900-01-01' };
       void Promise.all([
         flightCalendarOffers(
           { ...base, originId, destinationId },
@@ -103,9 +103,7 @@ export function FlightTripDates({
   }, [key, readyRoute, originId, destinationId, roundTrip, attempt]);
   const current = result.key === key;
   const saleable = (offer: TicketOfferV1) =>
-    offer.status === 'ACTIVE' &&
-    offer.remainingCapacity >= seats &&
-    flightDay(offer) >= salesFlightToday();
+    offer.status === 'ACTIVE' && offer.remainingCapacity >= seats;
   const outbound = current
     ? result.outbound.filter(
         (offer) =>
@@ -152,7 +150,7 @@ export function FlightTripDates({
             gregorianEnglish
             value={value.from}
             markedDates={days}
-            minimumDate={salesFlightToday()}
+
             disabled={!readyRoute}
             aria-label="تاریخ بلیط رفت"
             onChange={(from) => onChange({ from, to: roundTrip ? '' : from })}
@@ -169,7 +167,7 @@ export function FlightTripDates({
               gregorianEnglish
               value={value.to}
               markedDates={returnDays}
-              minimumDate={value.from || salesFlightToday()}
+              minimumDate={value.from}
               disabled={!readyRoute || !value.from}
               aria-label="تاریخ بلیط برگشت"
               onChange={(to) => {
