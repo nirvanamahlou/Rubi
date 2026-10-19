@@ -752,6 +752,10 @@ describe.skipIf(!enabled)(
             ),
           }),
         );
+        const officeMask = (phone: string) =>
+          resource === 'suppliers'
+            ? crypto.protect('phone', phone).masked
+            : crypto.protectTravelPhone(phone).masked;
         const country = await client.masterCountry.findFirstOrThrow();
         const city = await client.masterCity.create({
           data: {
@@ -792,7 +796,7 @@ describe.skipIf(!enabled)(
         const orgId = String(saved.data.attributes.organizationId);
         let detail = await service.detail(resource, saved.data.id);
         expect(detail.data.attributes).toMatchObject({
-          primaryPhoneMasked: crypto.protectTravelPhone('+12025550123').masked,
+          primaryPhoneMasked: officeMask('+12025550123'),
           dossierMobileMasked: crypto.protectTravelPhone('+12025550124').masked,
           dossierAddress: 'Imported office',
         });
@@ -851,7 +855,7 @@ describe.skipIf(!enabled)(
         );
         detail = await service.detail(resource, saved.data.id);
         expect(detail.data.attributes).toMatchObject({
-          primaryPhoneMasked: crypto.protectTravelPhone('+12025550126').masked,
+          primaryPhoneMasked: officeMask('+12025550126'),
           dossierMobileMasked: crypto.protectTravelPhone('+12025550127').masked,
           dossierAddress: 'Edited office',
         });
@@ -864,7 +868,7 @@ describe.skipIf(!enabled)(
         );
         detail = await service.detail(resource, saved.data.id);
         expect(detail.data.attributes).toMatchObject({
-          primaryPhoneMasked: crypto.protectTravelPhone('+12025550126').masked,
+          primaryPhoneMasked: officeMask('+12025550126'),
           dossierMobileMasked: '',
           dossierEmailMasked: '',
           dossierAddress: 'Edited office',
@@ -884,7 +888,7 @@ describe.skipIf(!enabled)(
         );
         detail = await service.detail(resource, current.id);
         expect(detail.data.attributes.primaryPhoneMasked).toBe(
-          crypto.protectTravelPhone('+12025550128').masked,
+          officeMask('+12025550128'),
         );
         if (resource === 'suppliers')
           expect(detail.data.attributes.dossierAddress).toBe(
