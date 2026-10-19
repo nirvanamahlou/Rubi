@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { CustomerSummary } from '@nora/contracts';
 import { customersApi } from '@/modules/customers/api/client';
 import { Button } from '@/components/ui/button';
@@ -33,8 +33,10 @@ export function SalesPersonSearch({
   selectedIds,
   onSelect,
   onCancel,
+  query,
 }: {
   purpose: 'customer' | 'passenger';
+  query?: string;
   selectedIds: readonly string[];
   onSelect: (person: CustomerSummary) => void;
   onCancel: () => void;
@@ -70,33 +72,77 @@ export function SalesPersonSearch({
       setBusy(false);
     }
   };
+  useEffect(() => {
+    if (query === undefined) return;
+    let active = true;
+    const timer = setTimeout(() => {
+      setItems([]);
+      setError('');
+      setSearched(false);
+      if (!query.trim()) {
+        setBusy(false);
+        setSubmitted(query);
+        return;
+      }
+      setBusy(true);
+      void customersApi
+        .list(salesPersonSearchQuery(query, purpose))
+        .then((result) => {
+          if (!active) return;
+          setItems(result.data);
+          setTotal(result.meta.total);
+          setPage(1);
+          setSubmitted(query);
+          setSearched(true);
+        })
+        .catch((reason) => {
+          if (active) {
+            setSubmitted(query);
+            setError(
+              reason instanceof Error ? reason.message : 'جست‌وجو انجام نشد.',
+            );
+          }
+        })
+        .finally(() => {
+          if (active) setBusy(false);
+        });
+    }, 250);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [query, purpose]);
   return (
     <section
       className="grid gap-3 rounded-xl border border-border bg-muted/20 p-3"
       aria-label={purpose === 'customer' ? 'جست‌وجوی مشتری' : 'جست‌وجوی مسافر'}
     >
       <div className="flex flex-wrap gap-2">
-        <Input
-          className="min-w-40 flex-1"
-          aria-label="نام، کد ملی یا شماره تماس"
-          placeholder="نام، کد ملی یا شماره تماس"
-          value={search}
-          disabled={busy}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              void lookup(1, search);
-            }
-          }}
-        />
-        <Button
-          type="button"
-          loading={busy}
-          onClick={() => void lookup(1, search)}
-        >
-          جست‌وجو
-        </Button>
+        {query === undefined ? (
+          <Input
+            className="min-w-40 flex-1"
+            aria-label="نام، کد ملی یا شماره تماس"
+            placeholder="نام، کد ملی یا شماره تماس"
+            value={search}
+            disabled={busy}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                void lookup(1, search);
+              }
+            }}
+          />
+        ) : null}
+        {query === undefined ? (
+          <Button
+            type="button"
+            loading={busy}
+            onClick={() => void lookup(1, query ?? search)}
+          >
+            جست‌وجو
+          </Button>
+        ) : null}
         <Button type="button" variant="ghost" onClick={onCancel}>
           بستن
         </Button>
@@ -110,34 +156,36 @@ export function SalesPersonSearch({
         </p>
       ) : null}
       <div className="max-h-72 overflow-y-auto divide-y divide-border">
-        {items.map((person) => (
-          <div
-            key={person.id}
-            className="flex items-center justify-between gap-3 py-3"
-          >
-            <div className="min-w-0">
-              <p className="font-bold break-words">{person.displayName}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                کد ملی: <bdi>{person.maskedNationalId ?? 'ثبت نشده'}</bdi> ·
-                تماس: <bdi>{person.maskedPrimaryContact ?? 'ثبت نشده'}</bdi>
-              </p>
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              disabled={busy || selectedIds.includes(person.id)}
-              onClick={() => onSelect(person)}
+        {(query !== undefined && query !== submitted ? [] : items).map(
+          (person) => (
+            <div
+              key={person.id}
+              className="flex items-center justify-between gap-3 py-3"
             >
-              {selectedIds.includes(person.id)
-                ? 'انتخاب‌شده'
-                : purpose === 'customer'
-                  ? 'انتخاب مشتری'
-                  : 'افزودن مسافر'}
-            </Button>
-          </div>
-        ))}
+              <div className="min-w-0">
+                <p className="font-bold break-words">{person.displayName}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  کد ملی: <bdi>{person.maskedNationalId ?? 'ثبت نشده'}</bdi> ·
+                  تماس: <bdi>{person.maskedPrimaryContact ?? 'ثبت نشده'}</bdi>
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                disabled={busy || selectedIds.includes(person.id)}
+                onClick={() => onSelect(person)}
+              >
+                {selectedIds.includes(person.id)
+                  ? 'انتخاب‌شده'
+                  : purpose === 'customer'
+                    ? 'انتخاب مشتری'
+                    : 'افزودن مسافر'}
+              </Button>
+            </div>
+          ),
+        )}
       </div>
-      {searched && !error && total > 10 ? (
+      {query === undefined && searched && !error && total > 10 ? (
         <div className="flex items-center justify-between text-xs">
           <Button
             type="button"

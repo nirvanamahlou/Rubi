@@ -197,7 +197,11 @@ export function validateSalesContract(
       !/^\+?[0-9]{10,15}$/.test(buyer.phone.trim()) ||
       !buyer.address.trim() ||
       buyer.address.length > 1000 ||
-      !/^[0-9]{10}$/.test(buyer.postalCode.trim()) ||
+      (buyer.postalCode.trim() !== '' &&
+        !/^[0-9]{10}$/.test(buyer.postalCode.trim())) ||
+      (buyer.landline !== undefined &&
+        (typeof buyer.landline !== 'string' ||
+          !/^\+?[0-9]{10,15}$/.test(buyer.landline.trim()))) ||
       (input.payerCustomerId && input.payerCustomerId !== input.customerId)
     )
       throw new SalesDomainError(

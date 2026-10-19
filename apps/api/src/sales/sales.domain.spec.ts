@@ -233,8 +233,20 @@ describe('Sales contract domain', () => {
         payerCustomerId: draft.customerId,
       }),
     ).not.toThrow();
+    expect(() =>
+      validateSalesContract({
+        ...draft,
+        buyerContact: {
+          ...buyerContact,
+          postalCode: '',
+          landline: '02112345678',
+        },
+      }),
+    ).not.toThrow();
     for (const change of [
       { phone: 'bad' },
+      { landline: '' },
+      { landline: 'bad' },
       { postalCode: '123' },
       { name: ' ' },
       { address: ' ' },
