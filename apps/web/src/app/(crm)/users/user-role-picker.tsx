@@ -14,6 +14,8 @@ interface Props {
   onTitleChange: (title: string) => void;
 }
 
+import { roleLabel } from './role-label';
+
 export function UserRolePicker({
   roles,
   title,
@@ -45,7 +47,7 @@ export function UserRolePicker({
             <option value="">دسترسی اختصاصی / انتخاب نقش</option>
             {roles.map((role) => (
               <option key={role.id} value={role.id}>
-                {role.name}
+                {roleLabel(role.name)}
               </option>
             ))}
           </NativeSearchSelect>
@@ -57,7 +59,7 @@ export function UserRolePicker({
           <label htmlFor={`${id}-title`}>عنوان شغلی</label>
           <Input
             id={`${id}-title`}
-            value={title}
+            value={roleLabel(title)}
             maxLength={80}
             disabled={disabled}
             onChange={(event) => onTitleChange(event.target.value)}
