@@ -837,3 +837,32 @@ it('accepts fixed agency commission without altering the submitted financial com
   expect(() => validateSalesContract(input)).not.toThrow();
   expect(input.priceComponents).toEqual(before);
 });
+
+it('requires the same passenger members for combined flight and hotel contracts', () => {
+  const input = structuredClone(draft);
+  input.services.push({
+    clientKey: 'hotel',
+    kind: 'HOTEL',
+    titleSnapshot: 'Hotel',
+  });
+  input.passengers[0]!.serviceClientKeys.push('hotel');
+  input.hotelSelection = {
+    serviceClientKey: 'hotel',
+    hotelId: 'hotel',
+    hotelNameSnapshot: 'Hotel',
+    cityId: input.destinationId,
+    checkInDate: '2026-10-01',
+    checkOutDate: '2026-10-03',
+    roomCount: 1,
+    roomTypeId: 'room',
+    occupancy: 1,
+    inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.passengers.push({
+    ...input.passengers[0]!,
+    customerId: '10000000-0000-4000-8000-000000000099',
+    serviceClientKeys: ['flight'],
+  });
+  expect(() => validateSalesContract(input)).toThrow('مسافران هتل و پرواز');
+});

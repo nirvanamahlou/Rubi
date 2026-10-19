@@ -2873,5 +2873,10 @@
   "یک شعبه مجاز برای ارسال انتخاب کنید.": "Select an authorized branch for publishing.",
   "عنوان پکیج باید بین ۱ تا ۲۰۰ نویسه باشد.": "The package title must contain 1 to 200 characters.",
   "در حال ارسال پکیج…": "Publishing package…",
-  "پاسخ ارسال دریافت نشد؛ پیش از ارسال دوباره، پکیج‌های روز را بررسی کنید.": "No publishing response was received. Check daily packages before trying again."
+  "پاسخ ارسال دریافت نشد؛ پیش از ارسال دوباره، پکیج‌های روز را بررسی کنید.": "No publishing response was received. Check daily packages before trying again.",
+  "تعداد بزرگسال، کودک و نوزاد اتاق‌ها باید با مسافران پرواز برابر باشد.": "Hotel room adult, child and infant totals must match the flight passengers.",
+  "مسافران هتل و پرواز باید یکسان باشند.": "Hotel and flight passengers must be the same.",
+  "سهم اتاق": "Room share",
+  "ساعت حرکت بلیط شناور": "Floating ticket departure time",
+  "ساعت رسیدن بلیط شناور": "Floating ticket arrival time"
 }
