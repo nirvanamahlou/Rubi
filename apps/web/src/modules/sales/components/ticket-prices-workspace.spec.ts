@@ -28,6 +28,7 @@ vi.mock('@/modules/ticket-catalog/api/references', () => ({
 }));
 import {
   TicketPricesWorkspace,
+  TicketPriceRoute,
   clampTierSeatCount,
 } from './ticket-prices-workspace';
 describe('ticket price workspace', () => {
@@ -225,6 +226,9 @@ describe('ticket price workspace', () => {
     state.index = 0;
     const html = renderToStaticMarkup(createElement(TicketPricesWorkspace));
     expect(html.match(/<article /g)).toHaveLength(3);
+    expect(html.match(/data-route-end="origin"/g)).toHaveLength(3);
+    expect(html).toContain('<bdi>تهران</bdi>');
+    expect(html).toContain('<bdi>آنتالیا</bdi>');
     const roundTrips = html.match(
       /<section[^>]*aria-labelledby="ticket-prices-roundtrip"[\s\S]*?<\/section>/,
     )?.[0];
@@ -292,4 +296,26 @@ describe('ticket price workspace', () => {
     expect(singlesOnly).toContain('aria-labelledby="ticket-prices-oneway"');
     state.values = null;
   }, 15_000);
+});
+
+it('isolates both route endpoints and labels origin/destination in canonical order for Persian and Latin names', () => {
+  for (const [origin, destination] of [
+    ['تهران', 'آنتالیا'],
+    ['Tehran', 'Antalya'],
+  ]) {
+    const html = renderToStaticMarkup(
+      createElement(TicketPriceRoute, {
+        origin: origin!,
+        destination: destination!,
+      }),
+    );
+    expect(html).toContain('dir="rtl"');
+    expect(html.indexOf('data-route-end="origin"')).toBeLessThan(
+      html.indexOf('data-route-end="destination"'),
+    );
+    expect(html).toContain('<bdi>' + origin + '</bdi>');
+    expect(html).toContain('<bdi>' + destination + '</bdi>');
+    expect(html).toContain('مبدأ');
+    expect(html).toContain('مقصد');
+  }
 });

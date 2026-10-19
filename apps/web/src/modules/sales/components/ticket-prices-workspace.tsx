@@ -1,7 +1,9 @@
 'use client';
+import { loadTicketPricingOffers } from '../api/ticket-pricing-offers';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  ArrowLeft,
   ArrowLeftRight,
   CircleDollarSign,
   Copy,
@@ -306,7 +308,7 @@ export function TicketPricesWorkspace() {
     setError('');
     try {
       const [offerResult, currencyRows, targetResult] = await Promise.all([
-        toursApi.managedOffers(),
+        loadTicketPricingOffers(),
         listActiveCurrencyReferences(),
         toursApi.salePriceTargets(),
       ]);
@@ -352,8 +354,11 @@ export function TicketPricesWorkspace() {
         offer.carrierName,
         offer.serviceNumber,
         ticketCabinLabel(offer.cabinClassCode),
-        cities[offer.originId] ?? offer.originId,
-        cities[offer.destinationId] ?? offer.destinationId,
+        '\u2067\u2068' +
+          (cities[offer.originId] ?? offer.originId) +
+          '\u2069 ← \u2068' +
+          (cities[offer.destinationId] ?? offer.destinationId) +
+          '\u2069\u2069',
         faDay.format(new Date(offer.departureAt)),
         faTime.format(new Date(offer.departureAt)),
       ].join(' · '),
@@ -478,7 +483,7 @@ export function TicketPricesWorkspace() {
         },
         crypto.randomUUID(),
       );
-      const refreshed = await toursApi.managedOffers();
+      const refreshed = await loadTicketPricingOffers();
       setOffers(refreshed.data);
       setPercentDrafts((drafts) =>
         clearSavedCommissionDrafts(drafts, rows, row, targetId, copyToAll),
@@ -1077,8 +1082,16 @@ export function TicketPricesWorkspace() {
                                 {row.returnOfferId ? 'رفت‌وبرگشت' : 'یک‌طرفه'}
                               </Badge>
                               <strong className="text-base font-bold">
-                                {cities[row.offer.originId] ?? 'مبدأ'} ←{' '}
-                                {cities[row.offer.destinationId] ?? 'مقصد'}
+                                <TicketPriceRoute
+                                  origin={
+                                    cities[row.offer.originId] ??
+                                    row.offer.originId
+                                  }
+                                  destination={
+                                    cities[row.offer.destinationId] ??
+                                    row.offer.destinationId
+                                  }
+                                />
                               </strong>
                             </div>
                             <div className="grid gap-1">
@@ -1390,5 +1403,34 @@ function CurrencySelect({
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+export function TicketPriceRoute({
+  origin,
+  destination,
+}: {
+  origin: string;
+  destination: string;
+}) {
+  return (
+    <span dir="rtl" className="inline-flex flex-wrap items-center gap-2">
+      <span className="inline-flex items-center gap-1" data-route-end="origin">
+        <small className="text-xs font-normal text-muted-foreground">
+          مبدأ
+        </small>
+        <bdi>{origin}</bdi>
+      </span>
+      <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
+      <span
+        className="inline-flex items-center gap-1"
+        data-route-end="destination"
+      >
+        <small className="text-xs font-normal text-muted-foreground">
+          مقصد
+        </small>
+        <bdi>{destination}</bdi>
+      </span>
+    </span>
   );
 }
