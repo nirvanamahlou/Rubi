@@ -1,4 +1,5 @@
 'use client';
+import { defaultNewUserBranches } from './default-user-branches';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -231,11 +232,12 @@ export function UserManagement() {
     [deniedControlIds, setDeniedControlIds] = useState<string[]>(
       USER_ACCESS_DENY_CONTROLS.map((c) => c.id),
     ),
-    [branchIds, setBranchIds] = useState<string[]>([]),
+    [branchSelection, setBranchIds] = useState<string[] | null>(null),
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true);
   const [units, setUnits] = useState<UserUnitOption[]>([]);
+  const branchIds = branchSelection ?? defaultNewUserBranches(options.branches);
   const [organizationUnitId, setOrganizationUnitId] = useState('');
   const [proposalOpen, setProposalOpen] = useState(false);
   const [accessControlSearch, setAccessControlSearch] = useState('');
@@ -417,7 +419,7 @@ export function UserManagement() {
         (control) => !user || codes.includes(denyPermission(control.id)),
       ).map((control) => control.id),
     );
-    setBranchIds(user?.branches.map((b) => b.branch.id) ?? []);
+    setBranchIds(user?.branches.map((b) => b.branch.id) ?? null);
     setOrganizationUnitId('');
     if (user && !codes.includes('ui.profile'))
       setMessage(
