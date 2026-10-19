@@ -1,0 +1,85 @@
+.panel {
+  padding: 14px;
+  border-top: 1px solid var(--border, #dce5ef);
+  font-size: 12px;
+  color: var(--foreground, #23354d);
+}
+.panel header,
+.form footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+.panel h3 {
+  font-weight: 700;
+}
+.panel p {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.panel button,
+.form button {
+  padding: 7px 10px;
+  border: 1px solid #2286db;
+  border-radius: 8px;
+  color: #1674c7;
+  background: var(--surface, #fff);
+  margin: 4px;
+}
+.panel button:disabled,
+.form button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.card {
+  border: 1px solid var(--border, #dce5ef);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 12px;
+}
+.task {
+  background: var(--muted, #f5f8fc);
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 10px;
+}
+.task[data-overdue='true'] {
+  border-inline-start: 3px solid #e3972d;
+}
+.panel details {
+  margin-top: 8px;
+}
+.panel summary {
+  cursor: pointer;
+}
+.form fieldset {
+  display: grid;
+  gap: 12px;
+}
+.form label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.form input,
+.form textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border, #dce5ef);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: inherit;
+}
+.form textarea {
+  min-height: 76px;
+}
+.form :focus-visible,
+.panel button:focus-visible {
+  outline: 2px solid #2286db;
+  outline-offset: 2px;
+}
+.form [role='alert'],
+.panel [role='alert'] {
+  color: #c83c3c;
+}

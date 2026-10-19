@@ -107,7 +107,7 @@ describe('Call Center authenticated HTTP boundary', () => {
       { id: 'bad-id' },
       { status: 'INVALID' },
       { recordings: [{ url: 'https://untrusted.example/a' }] },
-      { name: '' },
+      { outcome: 'UNKNOWN' },
       { note: 'x'.repeat(2001) },
     ]) {
       await request(app.getHttpServer())

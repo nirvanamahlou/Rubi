@@ -5719,6 +5719,12 @@ model CustomerAffairsLead {
 }
 
 model CustomerAffairsTicket {
+  callCenterTasks         AutomationTask[]
+  callCenterContactId     String?                           @map("call_center_contact_id") @db.Uuid
+  callCenterContact       CallCenterContact?                @relation(fields: [callCenterContactId], references: [id], onDelete: Restrict, map: "cc_ticket_contact_fk")
+  callCenterPayload       String?                           @map("call_center_payload") @db.Text
+  callCenterKeyVersion    Int?                              @map("call_center_key_version")
+  callCenterCalls         CallCenterCall[]
   id                      String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   trackingNumber          String                            @unique @map("tracking_number") @db.VarChar(32)
   branchId                String                            @map("branch_id") @db.Uuid
@@ -5775,6 +5781,7 @@ model CustomerAffairsTicket {
   @@index([executionOwnerUserId, status, nextActionAt])
   @@index([customerId, createdAt])
   @@index([firstResponseDueAt, resolutionDueAt])
+  @@index([callCenterContactId, createdAt], map: "cc_ticket_contact_idx")
   @@map("customer_affairs_tickets")
 }
 
@@ -6657,26 +6664,29 @@ model SettingsProcurementApprovalPolicy {
 }
 
 model AutomationTask {
-  id              String    @id @default(uuid()) @db.Uuid
-  sourceModule    String    @db.VarChar(80)
-  sourceEventId   String    @db.Uuid
-  sourceReference String    @db.VarChar(160)
-  branchId        String    @db.Uuid
-  assigneeUserId  String    @db.Uuid
-  kind            String    @db.VarChar(80)
-  title           String    @db.VarChar(300)
-  status          String    @default("OPEN") @db.VarChar(32)
-  dueAt           DateTime? @db.Timestamptz(3)
-  payload         Json      @default("{}")
-  completedAt     DateTime? @db.Timestamptz(3)
-  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime  @updatedAt @db.Timestamptz(3)
-  branch          Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  assignee        User      @relation("AutomationTaskAssignee", fields: [assigneeUserId], references: [id], onDelete: Restrict)
+  callCenterTicketId String?                @map("call_center_ticket_id") @db.Uuid
+  callCenterTicket   CustomerAffairsTicket? @relation(fields: [callCenterTicketId], references: [id], onDelete: Restrict, map: "cc_task_ticket_fk")
+  id                 String                 @id @default(uuid()) @db.Uuid
+  sourceModule       String                 @db.VarChar(80)
+  sourceEventId      String                 @db.Uuid
+  sourceReference    String                 @db.VarChar(160)
+  branchId           String                 @db.Uuid
+  assigneeUserId     String                 @db.Uuid
+  kind               String                 @db.VarChar(80)
+  title              String                 @db.VarChar(300)
+  status             String                 @default("OPEN") @db.VarChar(32)
+  dueAt              DateTime?              @db.Timestamptz(3)
+  payload            Json                   @default("{}")
+  completedAt        DateTime?              @db.Timestamptz(3)
+  createdAt          DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime               @updatedAt @db.Timestamptz(3)
+  branch             Branch                 @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  assignee           User                   @relation("AutomationTaskAssignee", fields: [assigneeUserId], references: [id], onDelete: Restrict)
 
   @@unique([sourceModule, sourceEventId, assigneeUserId])
   @@index([assigneeUserId, status, dueAt])
   @@index([sourceModule, sourceReference, status])
+  @@index([callCenterTicketId], map: "cc_task_ticket_idx")
   @@map("automation_tasks")
 }
 
@@ -7634,12 +7644,13 @@ model CorrespondenceDelivery {
 
 // Customer Affairs-owned call history; all private text is encrypted at rest.
 model CallCenterContact {
-  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  branchId         String           @map("branch_id") @db.Uuid
-  phoneFingerprint String           @map("phone_fingerprint") @db.Char(64)
-  latestOccurredAt DateTime         @map("latest_occurred_at") @db.Timestamptz(3)
-  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  branch           Branch           @relation(fields: [branchId], references: [id], onDelete: Restrict, map: "call_contact_branch_fk")
+  id               String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId         String                  @map("branch_id") @db.Uuid
+  phoneFingerprint String                  @map("phone_fingerprint") @db.Char(64)
+  latestOccurredAt DateTime                @map("latest_occurred_at") @db.Timestamptz(3)
+  createdAt        DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  branch           Branch                  @relation(fields: [branchId], references: [id], onDelete: Restrict, map: "call_contact_branch_fk")
+  requests         CustomerAffairsTicket[]
   calls            CallCenterCall[]
   notes            CallCenterNote[]
 
@@ -7649,20 +7660,25 @@ model CallCenterContact {
 }
 
 model CallCenterCall {
-  id                 String            @id @db.Uuid
-  contactId          String            @map("contact_id") @db.Uuid
-  createdByUserId    String            @map("created_by_user_id") @db.Uuid
-  direction          String            @db.VarChar(8)
-  status             String            @db.VarChar(40)
-  occurredAt         DateTime          @map("occurred_at") @db.Timestamptz(3)
-  encryptedPayload   String            @map("encrypted_payload") @db.Text
-  keyVersion         Int               @map("key_version")
-  requestFingerprint String            @map("request_fingerprint") @db.Char(64)
-  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-  contact            CallCenterContact @relation(fields: [contactId], references: [id], onDelete: Restrict, map: "call_contact_fk")
-  createdBy          User              @relation(fields: [createdByUserId], references: [id], onDelete: Restrict, map: "call_creator_fk")
+  ticketId           String?                @map("ticket_id") @db.Uuid
+  ticket             CustomerAffairsTicket? @relation(fields: [ticketId], references: [id], onDelete: Restrict, map: "cc_call_ticket_fk")
+  outcome            String?                @db.VarChar(32)
+  origin             String?                @db.VarChar(16)
+  id                 String                 @id @db.Uuid
+  contactId          String                 @map("contact_id") @db.Uuid
+  createdByUserId    String                 @map("created_by_user_id") @db.Uuid
+  direction          String                 @db.VarChar(8)
+  status             String                 @db.VarChar(40)
+  occurredAt         DateTime               @map("occurred_at") @db.Timestamptz(3)
+  encryptedPayload   String                 @map("encrypted_payload") @db.Text
+  keyVersion         Int                    @map("key_version")
+  requestFingerprint String                 @map("request_fingerprint") @db.Char(64)
+  createdAt          DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  contact            CallCenterContact      @relation(fields: [contactId], references: [id], onDelete: Restrict, map: "call_contact_fk")
+  createdBy          User                   @relation(fields: [createdByUserId], references: [id], onDelete: Restrict, map: "call_creator_fk")
 
   @@index([contactId, occurredAt, id], map: "call_contact_calls_idx")
+  @@index([ticketId], map: "cc_call_ticket_idx")
   @@map("customer_affairs_calls")
 }
 

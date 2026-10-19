@@ -1881,7 +1881,8 @@ export class CustomerAffairsService {
     actor: AuthenticatedActor,
   ): Promise<CustomerAffairsTicketRow> {
     const row = await this.repository.findTicket(id);
-    if (!row) throw new NotFoundException('تیکت پیدا نشد.');
+    if (!row || row.category === 'CALL_CENTER_REQUEST')
+      throw new NotFoundException('تیکت پیدا نشد.');
     assertRowBranch(actor, row.branchId);
     return row;
   }
@@ -2076,6 +2077,10 @@ export class CustomerAffairsService {
   }
 
   private validateTicket(input: CustomerAffairsTicketInput): void {
+    if (input.category === 'CALL_CENTER_REQUEST')
+      throw new BadRequestException(
+        'درخواست کال سنتر باید از پنل کال سنتر ثبت شود.',
+      );
     if (
       new Date(input.nextActionAt).getTime() <=
       new Date(input.contactOccurredAt).getTime()

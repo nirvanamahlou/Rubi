@@ -73,6 +73,11 @@ export class CallCenterService {
       direction: row.direction,
       status: row.status,
       occurredAt: row.occurredAt.toISOString(),
+      ticketId: row.ticketId,
+      outcome: row.outcome,
+      origin: row.origin,
+      createdByUserId: row.createdByUserId,
+      createdAt: row.createdAt.toISOString(),
       recordings: [],
     };
   }
@@ -140,24 +145,23 @@ export class CallCenterService {
     if (!Number.isFinite(occurredAt.getTime()))
       throw new BadRequestException('زمان تماس معتبر نیست.');
     const payload: PrivateCall = {
-      phone: normalizedCallPhone(input.phone),
+      phone: input.phone.trim() ? normalizedCallPhone(input.phone) : '',
       name: input.name.trim(),
       subject: input.subject.trim(),
       source: input.source.trim(),
       operator: input.operator.trim(),
       note: input.note.trim(),
     };
-    if (
-      !payload.name ||
-      !payload.subject ||
-      !payload.source ||
-      !payload.operator
-    )
+    if (!payload.subject || !payload.source || !payload.operator)
       throw new BadRequestException('اطلاعات تماس را کامل کنید.');
-    const phoneFingerprint = this.crypto.fingerprint(payload.phone);
+    const phoneFingerprint = this.crypto.fingerprint(
+      payload.phone || `anonymous:${input.id}`,
+    );
     const requestFingerprint = this.crypto.fingerprint(
       JSON.stringify({
         branchId,
+        ...(input.outcome ? { outcome: input.outcome } : {}),
+        ...(input.ticketId ? { ticketId: input.ticketId } : {}),
         ...payload,
         direction: input.direction,
         status: input.status,
@@ -197,9 +201,29 @@ export class CallCenterService {
           where: { id: contact.id },
           data: { latestOccurredAt: occurredAt },
         });
+      if (input.ticketId) {
+        await tx.$queryRaw`SELECT id FROM customer_affairs_tickets WHERE id = ${input.ticketId}::uuid FOR SHARE`;
+        const ticket = await tx.customerAffairsTicket.findFirst({
+          where: {
+            id: input.ticketId,
+            branchId,
+            callCenterContactId: contact.id,
+            category: 'CALL_CENTER_REQUEST',
+          },
+        });
+        if (!ticket)
+          throw new NotFoundException('درخواست متعلق به این مخاطب نیست.');
+        if (ticket.status === 'CLOSED')
+          throw new BadRequestException(
+            'درخواست بسته است؛ درخواست جدید بسازید یا آن را بازگشایی کنید.',
+          );
+      }
       const call = await tx.callCenterCall.create({
         data: {
           id: input.id,
+          ticketId: input.ticketId ?? null,
+          outcome: input.outcome ?? null,
+          origin: 'MANUAL',
           contactId: contact.id,
           createdByUserId: actor.userId,
           direction: input.direction,

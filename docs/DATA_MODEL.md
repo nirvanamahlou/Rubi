@@ -902,3 +902,9 @@ statistics/search coverage of loaded contacts and offers further pages. The
 first authorized branch is the default, matching Customer Affairs conventions.
 Migration20261018200000 creates three tables/indexes/checks only. Provider webhooks,
 realtime notification and protected recording handoff require a separate unit.
+
+## Call Center package one — 2026-10-19
+
+Customer Affairs reuses CustomerAffairsTicket with reserved CALL_CENTER_REQUEST, nullable restrictive CallCenterContact FK and AES-GCM encrypted title/reason/revision payload plus key version. Its generic support fields are private-content-free labels. Support consumers exclude this category; the CALL_CENTER_NO_SLA policy does not infer a deadline. Existing call status remains historical; nullable outcome/origin/ticket FK introduce independent manual results and request linkage without backfill. Anonymous calls use event-specific HMAC contact fingerprints.
+
+Tasks owns existing AutomationTask follow-ups through a public transaction port. A nullable restrictive callCenterTicketId FK and source-reference check link the task to its real request. Owner is the real User FK; UTC deadline/status and encrypted action/result/name plus revision metadata survive retries. Request/command/task-ID locks, expected versions and same-branch validation prevent conflicting writes and cross-request ID reuse. Notification retirement and revision-scoped claims share the domain transaction. No parallel request/task table or plaintext private-content audit is introduced. Additive migration20261019180000 must precede the updated API. See tasks/CALL-CENTER-PACKAGE-ONE-1019.md.

@@ -1,4 +1,5 @@
 export const sources = [
+  'نامشخص',
   'اینستاگرام',
   'گوگل',
   'سایت',
@@ -6,6 +7,7 @@ export const sources = [
   'معرفی دوستان',
 ] as const;
 export const operators = [
+  'نامشخص',
   'کارشناس تور خارجی',
   'واحد ویزا',
   'فروش داخلی',
@@ -31,6 +33,11 @@ export interface CallEvent {
   recordings: { id: string; url: string; title: string }[];
 }
 export interface Call extends CallEvent {
+  ticketId?: string | null;
+  outcome?: string | null;
+  origin?: string | null;
+  createdByUserId?: string;
+  createdAt?: string;
   contactId?: string;
   name: string;
   subject: string;
@@ -58,7 +65,10 @@ export function validPhone(value: string) {
   return /^(?:0\d{10}|\+[1-9]\d{7,14})$/.test(normalizePhone(value));
 }
 export function saveCall(calls: Call[], call: Call): Call[] {
-  if (!validPhone(call.phone) || !Number.isFinite(Date.parse(call.occurredAt)))
+  if (
+    (call.phone && !validPhone(call.phone)) ||
+    !Number.isFinite(Date.parse(call.occurredAt))
+  )
     throw new Error('شماره تلفن یا زمان تماس معتبر نیست.');
   // An event replay updates its metadata without creating a second follow-up.
   return [
@@ -69,12 +79,17 @@ export function saveCall(calls: Call[], call: Call): Call[] {
 export function groupCalls(calls: Call[]): Contact[] {
   const groups = new Map<string, Call[]>();
   for (const call of calls) {
-    const key = normalizePhone(call.phone);
+    const key =
+      normalizePhone(call.phone) || `unknown:${call.contactId ?? call.id}`;
     groups.set(key, [...(groups.get(key) ?? []), call]);
   }
   return [...groups.entries()]
     .map(([phone, items]) => {
-      items.sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt));
+      items.sort(
+        (a, b) =>
+          Date.parse(b.occurredAt) - Date.parse(a.occurredAt) ||
+          a.id.localeCompare(b.id),
+      );
       return {
         phone,
         latest: items[0]!,
@@ -84,7 +99,10 @@ export function groupCalls(calls: Call[]): Contact[] {
     })
     .sort(
       (a, b) =>
-        Date.parse(b.latest.occurredAt) - Date.parse(a.latest.occurredAt),
+        Date.parse(b.latest.occurredAt) - Date.parse(a.latest.occurredAt) ||
+        (a.latest.contactId ?? a.phone).localeCompare(
+          b.latest.contactId ?? b.phone,
+        ),
     );
 }
 export function filterContacts(
@@ -107,13 +125,16 @@ export function filterContacts(
       (!filters.direction || latest.direction === filters.direction) &&
       (!filters.source || latest.source === filters.source) &&
       (!filters.operator || latest.operator === filters.operator) &&
-      (!filters.status || latest.status === filters.status),
+      (!filters.status ||
+        latest.outcome === filters.status ||
+        (!latest.outcome && latest.status === filters.status)),
   );
 }
 export const faNumber = (value: number) => value.toLocaleString('fa-IR');
 export const callDate = (value: string) =>
   new Intl.DateTimeFormat('fa-IR', {
     timeZone: 'Asia/Tehran',
+    year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',

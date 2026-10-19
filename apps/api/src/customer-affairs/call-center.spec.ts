@@ -75,7 +75,11 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       const url = new URL(process.env.DATABASE_URL ?? '');
       if (
         !['localhost', '127.0.0.1'].includes(url.hostname) ||
-        !['/nora_call_center_test_1018', '/nora_ci'].includes(url.pathname)
+        ![
+          '/nora_call_center_package_one_test_1019',
+          '/nora_call_center_test_1018',
+          '/nora_ci',
+        ].includes(url.pathname)
       )
         throw Error('Only disposable named local/CI databases allowed.');
       client = createDatabaseClient(url.toString());

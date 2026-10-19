@@ -13,7 +13,7 @@ export interface CallCenterPage {
   data: { id: string; calls: Call[]; notes: CallNote[] }[];
   meta: { branchId: string; total: number; page: number; pageSize: number };
 }
-async function request<T>(
+export async function callCenterRequest<T>(
   path: string,
   branchId: string,
   init: RequestInit = {},
@@ -46,6 +46,7 @@ async function request<T>(
   }
   return response.json() as Promise<T>;
 }
+const request = callCenterRequest;
 export const callCenterApi = {
   list: (branchId: string, page = 1, signal?: AbortSignal) =>
     request<CallCenterPage>(
@@ -58,6 +59,8 @@ export const callCenterApi = {
       method: 'POST',
       body: JSON.stringify({
         id: call.id,
+        ...(call.ticketId ? { ticketId: call.ticketId } : {}),
+        ...(call.outcome ? { outcome: call.outcome } : {}),
         phone: call.phone,
         occurredAt: call.occurredAt,
         direction: call.direction,

@@ -527,3 +527,15 @@ Tool infrastructure #819 is merged and deployed on loopback4300 with green head/
 ## PC-C — ASSISTANT-ORCHESTRATOR-1013
 
 Gated conversation preparation: shared prepared actions, strict bounded planner contract, disabled-by-default POST/BFF and separate memory-only UI component. Synthetic providers only; live UI activation/provider/business pilot remain gated. See docs/tasks/ASSISTANT-ORCHESTRATOR-1013.md. Candidate validation and CI pending.
+
+## CALL-CENTER-PACKAGE-ONE-1019
+
+- [x] Existing Ticket request model, encrypted private revisions and call linking.
+- [x] Active branch-authorized real agents, assignment and explicit unassigned queue.
+- [x] Tasks-owned follow-ups with owner/deadline/priority/result, CAS and due reminders.
+- [x] Manual outcomes, unknown callers, retry-safe persistence and unsaved-draft warnings.
+- [x] Fresh migration, focused/broader tests, API/Web builds and localhost3000 activation.
+- [ ] Owner authenticated UI acceptance and any subsequent publication/merge approval.
+- [ ] Packages two through four: full call search/reporting, Customer/Sales linkage, telephony readiness and actual Issabel/recording integration.
+
+Details and compatibility/runtime handoff: docs/tasks/CALL-CENTER-PACKAGE-ONE-1019.md.

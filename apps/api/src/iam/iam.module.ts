@@ -1,3 +1,4 @@
+import { IamCallCenterDirectory } from './iam-call-center-directory';
 import { Module } from '@nestjs/common';
 import { IamCorrespondenceDirectory } from './iam-correspondence-directory';
 import { HrUserUnitDirectoryModule } from '../hr/hr-user-unit-directory';
@@ -39,6 +40,7 @@ import { ManualAccessVersionController } from './manual-access-version.controlle
     AuditController,
   ],
   providers: [
+    IamCallCenterDirectory,
     IamCorrespondenceDirectory,
     IamReservationsDirectory,
     ManualUserAccessService,
@@ -51,6 +53,7 @@ import { ManualAccessVersionController } from './manual-access-version.controlle
     { provide: IAM_STEP_UP_PORT, useExisting: IamService },
   ],
   exports: [
+    IamCallCenterDirectory,
     IamCorrespondenceDirectory,
     IamReservationsDirectory,
     IamService,
