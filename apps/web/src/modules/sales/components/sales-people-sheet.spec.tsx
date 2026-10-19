@@ -112,3 +112,52 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     expect(html).toContain('جنسیت *');
   });
 });
+
+it('allows passport entry for an existing floating-flight passenger before profile hydration', () => {
+  const html = renderToStaticMarkup(
+    <SalesPeopleSheet
+      state={{
+        ...emptySalesForm,
+        customerId: 'person',
+        customerName: 'Synthetic Person',
+        passengers: [
+          {
+            customerId: 'person',
+            displayName: 'Synthetic Person',
+            birthDate: '1990-01-01',
+          },
+        ],
+        originCountryCode: 'IR',
+        destinationCountryCode: 'TR',
+        serviceKinds: ['FLIGHT'],
+        passengerComposition: { adults: 1, children: 0, infants: 0 },
+        contractFlights: {
+          OUTBOUND: {
+            departureAt: '',
+            arrivalAt: '',
+            carrierName: '',
+            serviceNumber: '',
+            cabinClassCode: 'ECONOMY',
+          },
+        },
+      }}
+      draft={null}
+      onDraftChange={vi.fn()}
+      onConfirmed={vi.fn()}
+      onBusyChange={vi.fn()}
+      onAddInfant={vi.fn()}
+      onTravelDateChange={vi.fn()}
+    />,
+  );
+  for (const field of [
+    'passport-first-name',
+    'passport-last-name',
+    'passport-number',
+  ]) {
+    const inputs = [...html.matchAll(/<input[^>]*>/g)].map((x) => x[0]);
+    const input = inputs.find((x) => x.includes(field));
+    expect(input).toBeDefined();
+    expect(input).not.toContain('disabled=');
+    expect(input).not.toContain('readOnly');
+  }
+});

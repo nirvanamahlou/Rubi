@@ -558,7 +558,7 @@ export async function saveSalesPeopleDraft(
     ...keys,
   ]) {
     let row = peopleRow(current, key);
-    if (!row.reviewRequired) continue;
+    if (!row.reviewRequired && !(row.person && !row.profile)) continue;
     if (
       key === 'primary' &&
       !row.person &&
