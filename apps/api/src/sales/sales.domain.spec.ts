@@ -840,12 +840,18 @@ it('accepts fixed agency commission without altering the submitted financial com
 
 it('requires the same passenger members for combined flight and hotel contracts', () => {
   const input = structuredClone(draft);
-  input.services.push({
-    clientKey: 'hotel',
-    kind: 'HOTEL',
-    titleSnapshot: 'Hotel',
-  });
-  input.passengers[0]!.serviceClientKeys.push('hotel');
+  input.services = [
+    ...input.services,
+    {
+      clientKey: 'hotel',
+      kind: 'HOTEL',
+      titleSnapshot: 'Hotel',
+    },
+  ];
+  input.passengers = input.passengers.map((p) => ({
+    ...p,
+    serviceClientKeys: [...p.serviceClientKeys, 'hotel'],
+  }));
   input.hotelSelection = {
     serviceClientKey: 'hotel',
     hotelId: 'hotel',
@@ -859,10 +865,13 @@ it('requires the same passenger members for combined flight and hotel contracts'
     inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
   };
   expect(() => validateSalesContract(input)).not.toThrow();
-  input.passengers.push({
-    ...input.passengers[0]!,
-    customerId: '10000000-0000-4000-8000-000000000099',
-    serviceClientKeys: ['flight'],
-  });
+  input.passengers = [
+    ...input.passengers,
+    {
+      ...input.passengers[0]!,
+      customerId: '10000000-0000-4000-8000-000000000099',
+      serviceClientKeys: ['flight'],
+    },
+  ];
   expect(() => validateSalesContract(input)).toThrow('مسافران هتل و پرواز');
 });
