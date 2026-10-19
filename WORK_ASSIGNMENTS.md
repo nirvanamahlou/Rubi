@@ -1,5 +1,7 @@
 ## DIRECT-CURRENCY-RATES-1019 — PC-B — READY_FOR_CI
 
+Bounded CI repair reservation: master-data-contact.crypto.spec.ts only. Full-suite evidence exposed a pre-existing one-byte ciphertext collision assertion (1/256 chance); verify fresh GCM nonce and authenticated round-trip instead. No production encryption/keys/contact behavior change.
+
 COMPUTER_ID=PC-B; branch codex/pc-b-direct-currency-rates-1019 from origin/develop@85c54d2f. User explicitly requests immediate registration of new reference quotes without separate approval, current/chart visibility, tests, push and develop merge. Reserve bounded Master Data currency-rate service and tests, currency form/finance workspace and regressions, disposable B2B PostgreSQL fixture, own status/task notes and this policy decision plus only related English override keys. Producer POST currency-rates/quotes and Web consumer change together: existing response shape, newly created quotes finalized as APPROVED with backend-owned registrant/time; retain legacy draft decision guards. No retroactive approval, Finance authoritative FX, schema/migration/dependency, operational data or deployment change. Preserve Decimal, branch/permission validation, transactional audit and isAuthoritative=false. No overlapping active source reservation found; prior currency units are merged/released. Exact-head hosted gates must pass before merge.
 
 ## USER-ROLE-SAVE-1019 — PC-B — READY_FOR_CI

@@ -15,6 +15,7 @@ COMPUTER_ID=PC-B. User authorizes direct reference-rate registration, tests, pus
 - Focused Web:22 tests passed (currency form/model and actual server-rendered chart), including first-point visibility, subsequent trend and exclusion of legacy drafts. Translation completeness is checked separately.
 - Added disposable PostgreSQL regression for exact BUY/SELL persistence, real constraints/audit, current/history reads, later-rate selection and rollback on an injected second-audit failure inside the real transaction. The first hosted run disproved the initial test assumption that audit actor IDs have a user FK; the test now injects the intended failure explicitly. Hosted database CI is required; no operational database is used.
 - Lint, typecheck, affected builds and final-head hosted gates must pass before merge. Final evidence/hash is recorded on the PR.
+- Full-suite follow-up: the old visual KPI expectation now matches direct-registration copy. A separate pre-existing crypto test incorrectly required unequal one-byte ciphertexts (a legitimate collision has probability1/256); the assertion now verifies fresh GCM IV and authenticated round-trip. No production encryption changes. One full-suite event passed before this test-only stability repair; all final-head events must pass again.
 
 ## Rollout / limits
 
