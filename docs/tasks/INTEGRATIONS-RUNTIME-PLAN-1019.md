@@ -45,10 +45,8 @@ generic connectivity and avoids promising zero defects or vulnerabilities.
 
 ## Verification
 
-Build, restored-clone migration, local cutover health, data-preservation checks
-and authenticated browser verification are pending; do not infer success from
-the existence of this runbook. Final runtime receipts stay outside Git with the
-backups and contain no credentials or business payloads.
+Final successful verification is recorded below. Runtime receipts and backups
+stay outside Git; the receipt contains no credentials or business payloads.
 
 
 ## Resource failure before cutover
@@ -69,3 +67,30 @@ The engine subsequently recovered after cancellation, and starting the previous
 Rubi containers succeeded. No Docker-wide restart or other-project stop was
 performed. The second bounded-memory build is running; recovery permission is
 no longer needed while the engine remains responsive.
+
+
+## Final successful delivery
+
+Image `rubi-develop-local:1019-c5b267c4` has ID
+`sha256:cd4d4b7994d6715046279f2387a90845039ff771f7b0839909cce75d7dfdea4d`.
+Linux API and Web production builds, TypeScript and65-page generation passed.
+Webpack with explicit production mode and bounded Node heap completed; no
+quality/type check was disabled. All24 focused Integrations tests passed inside
+the image. API/Web are healthy on4192/3100 and API health returns HTTP200.
+
+A fresh cutover backup preceded all16 reviewed migrations. All166 migrations
+are applied and the script verified every existing table count was preserved.
+No business seed or schema reset ran. Source hashes for API, Web navigation and
+Prisma schema match the frozen source. Existing API environment and documents
+mount are retained; public assets and start.ps1 now use the frozen source/image.
+
+Authenticated browser login as ehsan, four existing systems, connection guide
+and Add website dialog/navigation lock passed; cancelled without saving. Generic
+connectivity/SSO remains unconfigured. The disposable test database and checker
+container were removed after success; both backups and rollback images remain.
+No other project was stopped or restarted, and no Docker Desktop restart ran.
+The later restart permission became unnecessary after the engine recovered.
+
+Artifacts: Rubi-runtime-local/develop-1019/receipt.json, integrations-running.png,
+TEST-SITE-INTEGRATION-PLAN.fa.md and TEST-SITE-INTEGRATION-PLAN.fa.html.
+No new GitHub push, CI dispatch, PR or merge is part of this unit.
