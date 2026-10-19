@@ -536,3 +536,7 @@ Owner explicitly requests removing the antivirus-wait restriction when another p
 ## Owner-approved self-service password exception — 2026-10-18
 
 The owner extends the simple-password policy to authenticated self-service password changes: 4–200 characters, including numeric-only passwords, without mandatory character classes. This supersedes the earlier creation-only limitation for self-service changes only. Administrator reset and bootstrap policies remain unchanged. Current-password verification, session revocation, hashing and throttling remain intact. No existing credentials are rewritten.
+
+## 2026-10-19 — Temporary Sales past-ticket entry
+
+Owner explicitly authorizes selecting past dated flights and continuing contract registration. Civil dates are still validated and return ordering/Min-Max stay, active status, branch, immutable flight facts, fares and seat capacity remain enforced. Search and management reads no longer automatically pause departed offers; previously paused records remain paused until an authorized manager explicitly reactivates them. No historical status/data backfill or automatic reactivation. Tour publication dates and unrelated financial deadlines are unchanged. No schema, migration or dependency change. Remove this temporary policy only under a later owner instruction.

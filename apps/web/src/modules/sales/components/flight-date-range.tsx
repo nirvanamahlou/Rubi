@@ -1,10 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
-import {
-  salesFlightRangeReady,
-  salesFlightToday,
-} from '../model/sales-flight-range';
+import { salesFlightRangeReady } from '../model/sales-flight-range';
 import { Button } from '@/components/ui/button';
 import {
   calendarMonthDays,
@@ -78,7 +75,7 @@ export function FlightDateRangeFilter({
     else setAnchor(moveCalendarMonth(anchor, offset, system));
   };
   const root = useRef<HTMLDivElement>(null);
-  const today = salesFlightToday();
+
   useEffect(() => {
     if (!open) return;
     const reposition = () => {
@@ -350,9 +347,7 @@ export function FlightDateRangeFilter({
                 </span>
               ))}
               {calendarMonthDays(anchor, system).map((day) => {
-                const past = day.isoDate < today;
                 const selected = Boolean(
-                  !past &&
                   draft.from &&
                   day.isoDate >= draft.from &&
                   day.isoDate <= (draft.to || draft.from),
@@ -363,24 +358,20 @@ export function FlightDateRangeFilter({
                     type="button"
                     aria-label={format(day.isoDate)}
                     aria-pressed={selected}
-                    disabled={past}
+
                     className={
                       'h-9 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-30 disabled:cursor-not-allowed ' +
-                      (past
-                        ? 'bg-white text-slate-300'
-                        : day.isoDate === draft.from || day.isoDate === draft.to
-                          ? 'bg-primary font-bold text-primary-foreground shadow-sm'
-                          : selected
-                            ? 'bg-primary/15 text-primary'
-                            : 'hover:bg-primary/10') +
+                      (day.isoDate === draft.from || day.isoDate === draft.to
+                        ? 'bg-primary font-bold text-primary-foreground shadow-sm'
+                        : selected
+                          ? 'bg-primary/15 text-primary'
+                          : 'hover:bg-primary/10') +
                       ' ' +
                       (day.isCurrentMonth ? '' : 'opacity-40')
                     }
                     onClick={() =>
                       setDraft((current) =>
-                        past
-                          ? current
-                          : selectFlightRange(current, day.isoDate),
+                        selectFlightRange(current, day.isoDate),
                       )
                     }
                   >
@@ -398,9 +389,9 @@ export function FlightDateRangeFilter({
           <Button
             type="button"
             className="w-full"
-            disabled={!salesFlightRangeReady(draft, today)}
+            disabled={!salesFlightRangeReady(draft)}
             onClick={() => {
-              if (!salesFlightRangeReady(draft, today)) return;
+              if (!salesFlightRangeReady(draft)) return;
               onChange(draft);
               setOpen(false);
             }}

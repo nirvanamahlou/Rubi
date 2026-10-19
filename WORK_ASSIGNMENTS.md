@@ -1,3 +1,7 @@
+## SALES-PAST-TICKETS-1019 — PC-A — READY_FOR_CI
+
+Branch codex/pc-a-sales-past-tickets-1019 from origin/develop@6cc79760. User authorizes temporary past-flight selection and contract continuation in Sales, tests and develop merge. Reserve Sales date/calendar controls, Ticket Catalog public search/revalidation/allocation date policy and targeted tests plus own docs. Keep branch, active/manual-pause, capacity, fare/version and return-order guards. No migration/dependency/operational data/runtime change. Prior target locks released.22 focused Web and196 Ticket Catalog API tests pass (22 existing integration skips). Bounded locks released with frozen candidate; exact-head hosted types/build/quality/tests gate merge.
+
 ## BROKER-CONTACT-SAVE-1018 — PC-B — READY_FOR_CI
 
 COMPUTER_ID=PC-B; branch codex/pc-b-broker-contact-save-1018 from origin/develop@6f6e480a. User confirms identical office/mobile numbers cause unexpected broker-save error and requests uppercase email acceptance, tests, push and develop merge. Reserve bounded partner-contact transaction helper/projection, broker email input and targeted unit/disposable PostgreSQL regressions plus own notes. Reuse one encrypted phone contact for shared office/mobile roles; preserve uniqueness, role ownership, explicit clears, masking, audit and transaction rollback. No schema/migration/dependency, IAM grant or runtime change. Exact-head full CI gates authorized merge; no3100 deployment inferred.

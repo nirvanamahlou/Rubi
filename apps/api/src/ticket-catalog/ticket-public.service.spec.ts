@@ -153,7 +153,7 @@ describe('TicketPublicService offer retry', () => {
     });
   });
 
-  it('does not reactivate a departed offer', async () => {
+  it('allows explicitly reactivating a departed offer', async () => {
     const offerId = '10000000-0000-4000-8000-000000000011';
     const tx = {
       $queryRaw: vi.fn().mockResolvedValue([]),
@@ -164,7 +164,7 @@ describe('TicketPublicService offer retry', () => {
           status: 'PAUSED',
           departureAt: new Date('2020-01-01T04:30:00.000Z'),
         }),
-        update: vi.fn(),
+        update: vi.fn().mockResolvedValue({ version: 3, status: 'ACTIVE' }),
       },
       ticketOfferAudit: { create: vi.fn() },
     };
@@ -181,10 +181,8 @@ describe('TicketPublicService offer retry', () => {
         { expectedVersion: 2, status: 'ACTIVE' },
         actor,
       ),
-    ).rejects.toThrow(
-      'بلیت تاریخ‌گذشته قابل فعال‌سازی و فروش در قرارداد جدید نیست.',
-    );
-    expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
+    ).resolves.toEqual({ data: { id: offerId, version: 3, status: 'ACTIVE' } });
+    expect(tx.ticketPublishedOffer.update).toHaveBeenCalled();
   });
 
   it('accepts the same persisted offer despite a legacy order-dependent fingerprint', async () => {
@@ -396,7 +394,7 @@ describe('TicketPublicService offer retry', () => {
     expect(create).toHaveBeenCalledTimes(1);
   });
 
-  it('automatically pauses departed offers with a versioned audit', async () => {
+  it('does not silently pause departed offers during inventory reads', async () => {
     const expiry = expiryTransaction([{ id: 'expired-offer', version: 4 }]);
     const list = vi.fn().mockResolvedValue([]);
     const service = new TicketPublicService(
@@ -411,27 +409,7 @@ describe('TicketPublicService offer retry', () => {
 
     await service.managed(actor);
 
-    expect(expiry.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          branchId: { in: ['branch-1'] },
-          status: 'ACTIVE',
-          departureAt: { lte: expect.any(Date) },
-        }),
-      }),
-    );
-    expect(expiry.updateMany).toHaveBeenCalledWith({
-      where: { id: 'expired-offer', status: 'ACTIVE', version: 4 },
-      data: { status: 'PAUSED', version: { increment: 1 } },
-    });
-    expect(expiry.create).toHaveBeenCalledWith({
-      data: {
-        offerId: 'expired-offer',
-        actorUserId: 'user-1',
-        action: 'ticket.offer.expired',
-        version: 5,
-      },
-    });
+    expect(expiry.transaction).not.toHaveBeenCalled();
   });
 
   it('still rejects a changed offer under the same key', async () => {

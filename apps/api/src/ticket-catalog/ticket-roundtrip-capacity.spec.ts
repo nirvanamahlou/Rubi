@@ -6,7 +6,7 @@ import { TicketPublicService } from './ticket-public.service';
 const id = (n: number) =>
   '10000000-0000-4000-8000-' + String(n).padStart(12, '0');
 
-describe('atomic round-trip sale capacity', () => {
+describe('atomic past-date round-trip sale capacity', () => {
   it.each(['OUTBOUND', 'RETURN'] as const)(
     'rejects overselling the smaller %s leg without reserving either leg',
     async (limitedDirection) => {
@@ -17,10 +17,10 @@ describe('atomic round-trip sale capacity', () => {
           originId: id(direction === 'OUTBOUND' ? 4 : 5),
           destinationId: id(direction === 'OUTBOUND' ? 5 : 4),
           departureAt: new Date(
-            index ? '2099-10-08T08:00:00Z' : '2099-10-01T08:00:00Z',
+            index ? '2020-10-08T08:00:00Z' : '2020-10-01T08:00:00Z',
           ),
           arrivalAt: new Date(
-            index ? '2099-10-08T10:00:00Z' : '2099-10-01T10:00:00Z',
+            index ? '2020-10-08T10:00:00Z' : '2020-10-01T10:00:00Z',
           ),
           cabinClassCode: 'ECONOMY' as const,
           carrierName: 'Synthetic',
@@ -74,6 +74,12 @@ describe('atomic round-trip sale capacity', () => {
         createdAllocationIds: [],
       });
       expect(create).not.toHaveBeenCalled();
+      expect(tx.ticketPublishedOffer.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ branchId: id(3), status: 'ACTIVE' }),
+        }),
+      );
+
       await expect(
         service.reserve(selections, id(3), id(6), 2),
       ).resolves.toEqual({

@@ -1,3 +1,7 @@
+## 2026-10-19 — SALES-PAST-TICKETS-1019 — PC-A
+
+Temporary owner-authorized past-ticket sale policy: Sales calendars and range continuation accept historical valid dates, public search preserves the requested range, revalidation/reserve/amend/hold keep active/branch/capacity/flight-fact guards without a future-only cutoff. Read-only lists no longer silently pause departed offers; explicit authorized reactivation is possible and prior manual/automatic pauses remain until changed. Tour availability policy unchanged.22 Web and19 focused API regressions pass; broader tests/types and exact-head CI gate merge. No migration, historical data rewrite or runtime deployment.
+
 ## VOUCHER-SUPPLIER-HANDOFF-1018 — PC-A
 
 First voucher defaults now inherit immutable sent supplier settings when no saved voucher exists, retaining passenger selections, child bands, dates and rooms. Saved voucher precedence, current passenger ID reconciliation and strict API validation remain intact.14 focused tests pass, including a real API validator regression for selected and excluded children and source immutability. No migration, permission or runtime change. Hosted final-head gates required before authorized develop merge.

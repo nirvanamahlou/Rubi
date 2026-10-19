@@ -511,50 +511,12 @@ export class TicketPublicService {
     );
   }
 
-  private async pauseExpiredOffers(
-    actor: AuthenticatedActor,
-    now = new Date(),
-  ) {
-    if (!actor.branchIds.length) return;
-    await this.database.client.$transaction(async (tx) => {
-      const expired = await tx.ticketPublishedOffer.findMany({
-        where: {
-          branchId: { in: actor.branchIds },
-          status: 'ACTIVE',
-          departureAt: { lte: now },
-        },
-        select: { id: true, version: true },
-        take: 500,
-      });
-      for (const offer of expired) {
-        const updated = await tx.ticketPublishedOffer.updateMany({
-          where: {
-            id: offer.id,
-            status: 'ACTIVE',
-            version: offer.version,
-          },
-          data: { status: 'PAUSED', version: { increment: 1 } },
-        });
-        if (updated.count === 1)
-          await tx.ticketOfferAudit.create({
-            data: {
-              offerId: offer.id,
-              actorUserId: actor.userId,
-              action: 'ticket.offer.expired',
-              version: offer.version + 1,
-            },
-          });
-      }
-    });
-  }
-
-  /** Management and Sales deliberately read the same published offer rows. */
   async managed(actor: AuthenticatedActor, page = 1, includePast = false) {
     this.require(actor, 'ticket_catalog.manage');
     if (!Number.isInteger(page) || page < 1 || page > 10000)
       throw new BadRequestException('Invalid management page');
     const now = new Date();
-    await this.pauseExpiredOffers(actor, now);
+
     const rows = await this.database.client.ticketPublishedOffer.findMany({
       where: {
         branchId: { in: actor.branchIds },
@@ -636,9 +598,8 @@ export class TicketPublicService {
       throw new BadRequestException('فیلتر مسیر و تاریخ معتبر لازم است.');
     const query = result.value as TicketOfferSearchV1;
     const from = new Date(query.departureFrom);
-    const now = new Date();
-    await this.pauseExpiredOffers(actor, now);
-    let effectiveFrom = from > now ? from : now;
+
+    let effectiveFrom = from;
     let to = query.departureTo
       ? new Date(`${query.departureTo.slice(0, 10)}T23:59:59.999Z`)
       : undefined;
@@ -652,7 +613,6 @@ export class TicketPublicService {
             id: query.outboundOfferId,
             branchId: { in: actor.branchIds },
             status: 'ACTIVE',
-            departureAt: { gt: now },
           },
         });
       if (!outbound)
@@ -1320,10 +1280,6 @@ export class TicketPublicService {
       if (!row) throw new ForbiddenException('بلیت در شعبه مجاز شما نیست.');
       if (row.version !== input.expectedVersion)
         throw new ConflictException('بلیت تغییر کرده؛ فهرست را تازه کنید.');
-      if (input.status === 'ACTIVE' && row.departureAt <= new Date())
-        throw new ConflictException(
-          'بلیت تاریخ‌گذشته قابل فعال‌سازی و فروش در قرارداد جدید نیست.',
-        );
       if (row.status === input.status)
         return { data: { id, version: row.version, status: input.status } };
       const updated = await tx.ticketPublishedOffer.update({
@@ -1855,7 +1811,6 @@ export class TicketPublicService {
         branchId,
         status: 'ACTIVE',
         totalCapacity: { gt: 0 },
-        departureAt: { gt: new Date() },
       },
     });
     const found = new Set(
@@ -1942,8 +1897,7 @@ export class TicketPublicService {
         previous.quantity === seatCount;
       if (
         !offer ||
-        (!unchanged &&
-          (offer.status !== 'ACTIVE' || offer.departureAt <= new Date())) ||
+        (!unchanged && offer.status !== 'ACTIVE') ||
         selection.originId !== offer.originId ||
         selection.destinationId !== offer.destinationId ||
         new Date(selection.departureAt).getTime() !==
@@ -2068,7 +2022,6 @@ export class TicketPublicService {
           id: { in: offerIds },
           branchId,
           status: 'ACTIVE',
-          departureAt: { gt: new Date() },
         },
         include: {
           capacityAllocations: {
@@ -2372,7 +2325,6 @@ export class TicketPublicService {
           id: offerId,
           branchId,
           status: 'ACTIVE',
-          departureAt: { gt: now },
         },
         include: {
           capacityAllocations: {
