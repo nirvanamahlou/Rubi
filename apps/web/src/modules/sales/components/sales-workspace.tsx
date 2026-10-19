@@ -45,6 +45,19 @@ import { PassengerCorrectionButton } from './passenger-correction';
 export const DEFAULT_CONTRACT_PAGE_SIZE = 20;
 export const DATE_FILTERED_CONTRACT_PAGE_SIZE = 10_000;
 
+export function contractRowClassName(
+  contract: Pick<
+    SalesContractSummary,
+    'customerDocumentDeliveryApproved' | 'reservationContractChanged'
+  >,
+) {
+  if (contract.customerDocumentDeliveryApproved)
+    return 'group border-t border-emerald-300 bg-emerald-100/70 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/60';
+  return contract.reservationContractChanged
+    ? 'group border-t border-amber-300 bg-amber-100/70 transition-colors hover:bg-amber-100 dark:bg-amber-950/40'
+    : 'group border-t border-border/70 transition-colors odd:bg-muted/[0.12] hover:bg-primary/[0.055]';
+}
+
 export function ContractListContactRouteDate({
   contract,
 }: {
@@ -429,11 +442,7 @@ export function SalesWorkspace() {
               <tbody>
                 {contracts.map((contract) => (
                   <tr
-                    className={
-                      contract.reservationContractChanged
-                        ? 'group border-t border-amber-300 bg-amber-100/70 transition-colors hover:bg-amber-100 dark:bg-amber-950/40'
-                        : 'group border-t border-border/70 transition-colors odd:bg-muted/[0.12] hover:bg-primary/[0.055]'
-                    }
+                    className={contractRowClassName(contract)}
                     key={contract.id}
                   >
                     <ContractListNumber contract={contract} />
