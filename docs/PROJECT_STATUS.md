@@ -2,6 +2,14 @@
 
 First voucher defaults now inherit immutable sent supplier settings when no saved voucher exists, retaining passenger selections, child bands, dates and rooms. Saved voucher precedence, current passenger ID reconciliation and strict API validation remain intact.14 focused tests pass, including a real API validator regression for selected and excluded children and source immutability. No migration, permission or runtime change. Hosted final-head gates required before authorized develop merge.
 
+## 2026-10-18 — BROKER-CONTACT-SAVE-1018 — PC-B
+
+Repair equal office/mobile broker save by persisting one encrypted contact with both reserved partner roles. Preserve unique fingerprints, atomic rollback, masking, audit and independent edit/clear semantics. Broker email input accepts uppercase without rewriting typed case; backend canonical normalization remains unchanged.44 focused tests and scoped lint pass. Actual PostgreSQL regression added for hosted CI because local Docker engine is unavailable. No migration, grants or runtime update. See tasks/BROKER-CONTACT-SAVE-1018.md; exact-head CI gates authorized develop merge.
+
+## USER-SAVE-BUTTON-1018 — PC-B
+
+User-details Save remains normal blue when idle, including after a successful save and refresh. Only pending submission or read-only authority disables the button; the shared loading prop exposes the actual busy state. Unchanged name/unit submissions are safely ignored before any request. Existing revision/unit/name payloads and account grants remain unchanged. Focused lifecycle tests cover idle, success/refresh, double clicks, error/retry, invalid names and read-only access. No API/schema/dependency/runtime changes; exact-head hosted CI gates authorized develop merge.
+
 ## 2026-10-18 — PASSENGER-PRICE-NAMES-1018 — PC-A
 
 International Sales passenger snapshots now use each saved row passport first/last name instead of potentially repeated CRM display titles. Domestic names, customer identity, person IDs and price keys remain unchanged.43 focused regressions pass, including three distinct passengers sharing one CRM title. No migration or live3100 update. Hosted exact-head checks gate authorized develop merge.
@@ -6555,3 +6563,11 @@ Fixed attachment-only chat HTTP500 caused by the existing non-empty body databas
 Message footer forwarding is icon-only with an accessible label. Right-click/keyboard/long-press opens five reaction choices (👍 ❤️ 😂 😮 🙏) and Reply. Reply preview can be cancelled; quotes and reactions are stored server-side and returned to all authorized participants. Each user may set/change/remove one reaction per message; counts refresh through existing message polling. Composite reply FK prevents references to another chat; reaction writes are membership-scoped and idempotent. Additive migration20261018190000; no production data/permission changes.27 API tests including real PostgreSQL and9 Web/menu tests pass; final hosted CI/merge pending.
 
 Browser fixture acceptance also passed for right-click, reaction set/remove, keyboard invocation/dismissal/focus, and quoted reply send/display using real UI components and synthetic transport; backend persistence is separately verified against PostgreSQL. Mobile device touch acceptance is not claimed.
+
+## WORKBENCH-PASSWORD-MINIMUM-1018 — 2026-10-18
+
+Self-service password change now accepts 4–200 characters, including numeric-only values, at both DTO/service and Workbench form validation. Current-password verification and revocation remain intact. Owner exception documented in DECISIONS; no data migration or automatic password changes. 40 focused tests and scoped lint passed.
+
+WORKBENCH-PASSWORD-MINIMUM-1018 follow-up: the prior fix remained in open PR950, explaining why develop still enforced the old rule. Owner now explicitly requests merge; candidate reconciled with current develop preserving peer code/translations. Workbench form, API DTO and service accept4–200 characters and numeric-only values.40 focused API/Web tests and scoped lint pass. An opt-in isolated PostgreSQL regression covers4-digit Latin/Persian passwords, login with the new credential and revocation of the original session; old short-password rejection is adjusted to3 characters. No actual account password is changed.
+
+Isolated PostgreSQL acceptance passed: all 11 password-change/reset tests, including Latin and Persian four-digit self-service passwords, persisted hashes, successful subsequent login and revoked previous sessions. The disposable test container was removed. SQL fixture setup timeout accommodates the full current migration history; production timeouts are unchanged.

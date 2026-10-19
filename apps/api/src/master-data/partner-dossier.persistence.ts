@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { Prisma } from '@nora/database';
+import { persistPartnerPhones } from './partner-phone.persistence';
 
 type ProtectedContact = {
   encrypted: string;
@@ -110,9 +111,17 @@ export async function persistPartnerDossier(
         }
       : null;
   }
+  await persistPartnerPhones(
+    tx,
+    organizationId,
+    name,
+    input,
+    actorUserId,
+    () =>
+      `CONTACT_${randomUUID().replaceAll('-', '').slice(0, 24).toUpperCase()}`,
+    audit,
+  );
   for (const [key, marker, kind] of [
-    ['office', 'PARTNER_OFFICE', 'phone'],
-    ['mobile', 'PARTNER_MOBILE', 'phone'],
     ['email', 'PARTNER_EMAIL', 'email'],
   ] as const) {
     if (!Object.hasOwn(input, key)) continue;

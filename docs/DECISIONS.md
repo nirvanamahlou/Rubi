@@ -532,3 +532,7 @@ Owner requests per-room base purchase rates, package-only sale adjustments, exac
 ## WORKBENCH-MESSENGER-FILES-1018 — owner-approved immediate chat file delivery — 2026-10-18
 
 Owner explicitly requests removing the antivirus-wait restriction when another participant downloads a chat attachment. Messaging may deliver an owned, message-linked GENERAL/INTERNAL attachment in CLEAN, PENDING_SCAN, AWAITING_ANTIVIRUS_ADAPTER or SCAN_FAILED state. Known INFECTED/QUARANTINED files stay denied. Membership, branch, source linkage, archive state, authenticated download, audit, encrypted storage and upload content/type/size validation remain mandatory. This exception applies only to the narrow Messaging download port; general Documents, profile and other consumers keep their existing policy. No version is falsely marked clean and no scanner is disabled globally.
+
+## Owner-approved self-service password exception — 2026-10-18
+
+The owner extends the simple-password policy to authenticated self-service password changes: 4–200 characters, including numeric-only passwords, without mandatory character classes. This supersedes the earlier creation-only limitation for self-service changes only. Administrator reset and bootstrap policies remain unchanged. Current-password verification, session revocation, hashing and throttling remain intact. No existing credentials are rewritten.

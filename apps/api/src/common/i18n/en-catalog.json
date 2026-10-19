@@ -3858,7 +3858,7 @@
   "رکورد هم‌زمان تغییر کرده یا کلید تکرار برای درخواست دیگری است.": "The record has changed at the same time, or the repeat key is for another request.",
   "رکورد یافت نشد یا هم‌زمان تغییر کرده است.": "The record could not be found or has changed at the same time.",
   "رمز باید حداکثر ۲۰۰ نویسه باشد.": "The password must be a maximum of 200 characters.",
-  "رمز جدید باید ۱۰ تا ۲۰۰ نویسه و شامل حرف بزرگ و کوچک لاتین، عدد و نویسه ویژه باشد.": "The new password must have 10 to 200 characters and include upper and lower case Latin letters, numbers and special characters.",
+  "رمز جدید باید ۴ تا ۲۰۰ نویسه باشد؛ رمز کاملاً عددی هم پذیرفته می‌شود.": "The new password must be 4–200 characters. Numeric-only passwords are accepted.",
   "رمز جدید باید با رمز فعلی متفاوت باشد.": "The new password must be different from the current password.",
   "رمز عبور فعلی صحیح نیست.": "The current password is not correct.",
   "رنگ": "color",
