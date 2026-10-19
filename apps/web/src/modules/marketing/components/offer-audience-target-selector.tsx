@@ -1,6 +1,6 @@
 'use client';
 
-import type { CustomerSummary, MasterDataRecord } from '@nora/contracts';
+import type { MasterDataRecord } from '@nora/contracts';
 import { ExternalLink, RefreshCw } from 'lucide-react';
 import Link from '@/i18n/link';
 import { useCallback, useEffect, useState, useRef } from 'react';
@@ -67,11 +67,12 @@ function AudienceSelect({
 }
 
 function customerOptions(
-  records: readonly CustomerSummary[],
+  records: readonly { id: string; displayName: string }[],
 ): AudienceOption[] {
-  return records
-    .filter((record) => record.currentConsentStatus === 'granted')
-    .map((record) => ({ id: record.id, label: record.displayName }));
+  return records.map((record) => ({
+    id: record.id,
+    label: record.displayName,
+  }));
 }
 
 function agencyOptions(records: readonly MasterDataRecord[]): AudienceOption[] {
@@ -130,7 +131,7 @@ export function OfferAudienceTargetSelector({
         kind === 'customer'
           ? customerOptions(
               (
-                await customersApi.list({
+                await customersApi.selections('marketing', {
                   search,
                   kind: 'all',
                   status: 'active',
@@ -150,15 +151,19 @@ export function OfferAudienceTargetSelector({
             )
           : agencyOptions(
               (
-                await masterDataApi.list('organizations', {
-                  search,
-                  status: 'active',
-                  sortBy: 'name',
-                  sortDirection: 'asc',
-                  page: 1,
-                  pageSize: 20,
-                  organizationRole: 'AGENCY',
-                })
+                await masterDataApi.list(
+                  'organizations',
+                  {
+                    search,
+                    status: 'active',
+                    sortBy: 'name',
+                    sortDirection: 'asc',
+                    page: 1,
+                    pageSize: 20,
+                    organizationRole: 'AGENCY',
+                  },
+                  'marketing',
+                )
               ).data,
             );
       if (requestId !== generation.current) return;

@@ -37,7 +37,7 @@ export async function loadContractPrint(id: string) {
   await Promise.all(
     keys.map(async ([resource, key]) => {
       try {
-        const { data } = await masterDataApi.detail(resource, key);
+        const { data } = await masterDataApi.detail(resource, key, 'sales');
         refs.names[key] = data.name;
         if (resource === 'hotels' && data.attributes.starRating != null)
           refs.hotelGrade = String(data.attributes.starRating);

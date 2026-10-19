@@ -151,14 +151,18 @@ export function TourWorkspace({
     const loadRefs = async (resource: MasterDataResource) => {
       const rows: MasterDataRecord[] = [];
       for (let page = 1; ; page++) {
-        const result = await masterDataApi.list(resource, {
-          search: '',
-          status: 'active',
-          sortBy: 'name',
-          sortDirection: 'asc',
-          page,
-          pageSize: 100,
-        });
+        const result = await masterDataApi.list(
+          resource,
+          {
+            search: '',
+            status: 'active',
+            sortBy: 'name',
+            sortDirection: 'asc',
+            page,
+            pageSize: 100,
+          },
+          'ticket-catalog',
+        );
         rows.push(...result.data);
         if (!result.data.length || rows.length >= result.meta.total)
           return rows;

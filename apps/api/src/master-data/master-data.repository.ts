@@ -1017,7 +1017,11 @@ export class MasterDataRepository {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
-  async list(resource: MasterDataResource, query: MasterDataListQuery) {
+  async list(
+    resource: MasterDataResource,
+    query: MasterDataListQuery,
+    selectionOnly = false,
+  ) {
     const model = delegate(this.database.client, resource);
     const nameField = nameFields[resource];
     const where: Record<string, unknown> = {};
@@ -1162,7 +1166,19 @@ export class MasterDataRepository {
       where.isActive = query.transportStatus === 'ACTIVE';
     }
     if (query.search) {
-      const direct = searchFields[resource].map((field) => ({
+      const selectionFields = [
+        ...new Set([
+          nameField,
+          codeFields[resource],
+          ...searchFields[resource].filter((field) =>
+            ['name', 'englishName', 'iataCode', 'icaoCode'].includes(field),
+          ),
+          ...(resource === 'organizations' ? ['displayName'] : []),
+        ]),
+      ];
+      const direct = (
+        selectionOnly ? selectionFields : searchFields[resource]
+      ).map((field) => ({
         [field]: { contains: query.search, mode: 'insensitive' },
       }));
       if (resource === 'suppliers' || resource === 'brokers')

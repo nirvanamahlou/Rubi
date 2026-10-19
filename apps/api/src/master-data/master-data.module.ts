@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { MasterSelectionController } from './master-selection.controller';
+import { MasterSelectionDirectory } from './master-selection.directory';
 import { MasterSalesDirectory } from './master-sales-directory';
 import { PartnerDossierController } from './partner-dossier.controller';
 import { MasterHrDirectory } from './master-hr-directory';
@@ -30,6 +32,7 @@ import {
 @Module({
   imports: [IamModule],
   controllers: [
+    MasterSelectionController,
     PartnerDossierController,
     CurrencyRateController,
     MasterDataAuditController,
@@ -39,6 +42,7 @@ import {
     OrganizationAddressController,
   ],
   providers: [
+    MasterSelectionDirectory,
     MasterSalesDirectory,
     MasterProcurementDirectory,
     AuthGuard,

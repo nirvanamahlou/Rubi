@@ -27,6 +27,7 @@ import { changedDeniedFields, hasAccessControl } from '@nora/contracts';
 import { CustomerKind, type Prisma } from '@nora/database';
 
 import { CustomerContactCrypto } from './customer-contact.crypto';
+import { canSelectForWorkflow } from '../common/workflow-selection.policy';
 import {
   CustomerNationalIdProtector,
   type ProtectedPassportNumber,
@@ -549,6 +550,31 @@ export class CustomerService {
     return { data: rows.map(auditDto) };
   }
 
+  async selectionOptions(
+    actor: AuthenticatedActor,
+    workflow: string,
+    query: CustomerListQuery,
+  ) {
+    if (
+      !['accounting', 'marketing'].includes(workflow) ||
+      !canSelectForWorkflow(actor, workflow)
+    )
+      throw new ForbiddenException();
+    const branches = scopedBranches(actor, query.branchId);
+    return {
+      data: await this.repository.selectionOptions(
+        branches,
+        {
+          search: query.search,
+          kind: query.kind ?? 'all',
+          page: query.page,
+          pageSize: query.pageSize,
+        },
+        workflow === 'marketing',
+      ),
+    };
+  }
+
   /** Minimal public projection; Marketing must never persist contact/name snapshots. */
   async marketingTargetReference(
     id: string,
@@ -556,7 +582,8 @@ export class CustomerService {
     actor: AuthenticatedActor,
   ) {
     if (
-      !actor.permissions.includes('customers.read') ||
+      (!actor.permissions.includes('customers.read') &&
+        !canSelectForWorkflow(actor, 'marketing')) ||
       !actor.branchIds.includes(branchId)
     )
       throw new ForbiddenException('مجوز مشاهده مخاطب وجود ندارد.');

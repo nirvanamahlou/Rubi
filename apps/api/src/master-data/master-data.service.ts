@@ -1156,10 +1156,16 @@ export class MasterDataService {
     return resourceOf(value);
   }
 
-  async list(resourceValue: string, query: MasterDataListQuery) {
+  async list(
+    resourceValue: string,
+    query: MasterDataListQuery,
+    selectionOnly = false,
+  ) {
     const resource = resourceOf(resourceValue);
     assertDateRange(query.createdFrom, query.createdTo);
-    const { rows, total } = await this.repository.list(resource, query);
+    const { rows, total } = selectionOnly
+      ? await this.repository.list(resource, query, true)
+      : await this.repository.list(resource, query);
     return {
       data: rows.map((row) => toMasterDataRecord(resource, row)),
       meta: { page: query.page, pageSize: query.pageSize, total },
