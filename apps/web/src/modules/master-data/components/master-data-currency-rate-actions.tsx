@@ -26,6 +26,19 @@ type Rate = Pick<
   | 'observedAt'
 >;
 
+// Decimal JSON may use scientific notation; expand without floating-point rounding.
+export function editableCurrencyRate(value: string): string {
+  const match = /^(\d+)(?:\.(\d+))?e([+-]?\d+)$/i.exec(value);
+  if (!match) return value;
+  const exponent = Number(match[3]);
+  if (!Number.isInteger(exponent) || Math.abs(exponent) > 24) return value;
+  const digits = match[1] + (match[2] ?? '');
+  const point = match[1].length + exponent;
+  if (point <= 0) return `0.${'0'.repeat(-point)}${digits}`;
+  if (point >= digits.length) return digits + '0'.repeat(point - digits.length);
+  return `${digits.slice(0, point)}.${digits.slice(point)}`;
+}
+
 export function CurrencyRateActions({
   record,
   onSaved,
@@ -35,7 +48,7 @@ export function CurrencyRateActions({
 }) {
   const [mode, setMode] = useState<'edit' | 'delete' | null>(null);
   const [target, setTarget] = useState(record);
-  const [rate, setRate] = useState(record.rate);
+  const [rate, setRate] = useState(editableCurrencyRate(record.rate));
   const [source, setSource] = useState(record.source);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
@@ -43,7 +56,7 @@ export function CurrencyRateActions({
   function open(next: 'edit' | 'delete') {
     if (busy.current) return;
     setTarget({ ...record });
-    setRate(record.rate);
+    setRate(editableCurrencyRate(record.rate));
     setSource(record.source);
     setError('');
     setMode(next);
