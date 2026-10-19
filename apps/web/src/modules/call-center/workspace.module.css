@@ -173,35 +173,50 @@
   gap: 7px;
   align-items: center;
   padding: 8px;
-  background: var(--muted, #f1f5f9);
+  background: var(--surface, white);
   border: 1px solid var(--cc-border);
-  border-radius: 5px;
+  border-radius: 8px;
   flex: 1.8;
   min-width: 160px;
-  height: 34px;
+  height: 40px;
   color: var(--cc-muted);
 }
 .search input {
+  appearance: none;
   outline: none;
   background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
   min-width: 0;
   width: 100%;
-  font-size: 11px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  box-shadow: none;
 }
 .filterSelect {
   flex: 1;
-  min-width: 95px;
+  min-width: 0;
   display: grid;
   gap: 3px;
   color: var(--cc-muted);
   font-size: 10px;
 }
-.filterSelect select {
-  height: 33px;
-  border: 1px solid var(--cc-border);
-  border-radius: 5px;
-  padding: 4px 8px;
-  color: var(--cc-ink);
+.filterSelect .control,
+.form .control {
+  appearance: none;
+  box-sizing: border-box;
+  height: 40px;
+  width: 100%;
+  border: 1px solid var(--cc-border, var(--border));
+  border-radius: 8px;
+  padding-block: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--cc-ink, var(--foreground));
   background: var(--surface, white);
 }
 .clear {
@@ -630,8 +645,7 @@
   gap: 6px;
   font-weight: 600;
 }
-.form input,
-.form select,
+.form input:not([data-search-select]),
 .form textarea {
   width: 100%;
   border: 1px solid var(--border, #dee6ef);
@@ -639,6 +653,15 @@
   border-radius: 6px;
   background: var(--surface, white);
   font-weight: 400;
+}
+.form input:not([data-search-select]) {
+  appearance: none;
+  box-sizing: border-box;
+  height: 40px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
 }
 .form input[readonly] {
   background: var(--muted);
@@ -771,4 +794,20 @@
   padding: 0;
   margin: 0;
   min-width: 0;
+}
+
+/* Shared focus treatment for search and selection controls. */
+.search:focus-within,
+.workspace .control:focus-visible,
+.form .control:focus-visible {
+  outline: none;
+  border-color: var(--primary, #1887db);
+  box-shadow: 0 0 0 3px #1887db26;
+}
+.search input:focus-visible {
+  outline: none;
+}
+.search input::-webkit-search-cancel-button,
+.search input::-webkit-search-decoration {
+  appearance: none;
 }

@@ -52,6 +52,7 @@ import {
   type CallEvent,
   type Status,
 } from './model';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import styles from './workspace.module.css';
 
 const emptyFilters = {
@@ -354,6 +355,8 @@ function CallCenterContent({
         <label className={styles.search}>
           <Search size={19} />
           <input
+            type="search"
+            autoComplete="off"
             aria-label="جست‌وجو در تماس‌ها"
             placeholder="جست‌وجو در نام، شماره، موضوع ..."
             value={filters.query}
@@ -792,14 +795,20 @@ function FilterSelect({
   return (
     <label className={styles.filterSelect}>
       <span>{label}</span>
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
+      <NativeSearchSelect
+        aria-label={label}
+        className={styles.control}
+        optionLimit={50}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
         <option value="">همه موارد</option>
         {options.map(([key, title]) => (
           <option key={key} value={key}>
             {title}
           </option>
         ))}
-      </select>
+      </NativeSearchSelect>
     </label>
   );
 }
@@ -902,14 +911,25 @@ function CallForm({
               </label>
               <label>
                 نوع تماس
-                <select name="direction" defaultValue={event.direction}>
+                <NativeSearchSelect
+                  aria-label="نوع تماس"
+                  className={styles.control}
+                  optionLimit={50}
+                  disabled={busy}
+                  name="direction"
+                  defaultValue={event.direction}
+                >
                   <option value="INBOUND">ورودی ـ تماس به شرکت</option>
                   <option value="OUTBOUND">خروجی ـ تماس از شرکت</option>
-                </select>
+                </NativeSearchSelect>
               </label>
               <label>
                 منبع آشنایی
-                <select
+                <NativeSearchSelect
+                  aria-label="منبع آشنایی"
+                  className={styles.control}
+                  optionLimit={50}
+                  disabled={busy}
                   name="source"
                   defaultValue={previous?.source ?? sources[0]}
                 >
@@ -918,11 +938,15 @@ function CallForm({
                       {source}
                     </option>
                   ))}
-                </select>
+                </NativeSearchSelect>
               </label>
               <label>
                 وصل شده به
-                <select
+                <NativeSearchSelect
+                  aria-label="وصل شده به"
+                  className={styles.control}
+                  optionLimit={50}
+                  disabled={busy}
                   name="operator"
                   defaultValue={previous?.operator ?? operators[0]}
                 >
@@ -931,11 +955,15 @@ function CallForm({
                       {operator}
                     </option>
                   ))}
-                </select>
+                </NativeSearchSelect>
               </label>
               <label>
                 وضعیت پیگیری
-                <select
+                <NativeSearchSelect
+                  aria-label="وضعیت پیگیری"
+                  className={styles.control}
+                  optionLimit={50}
+                  disabled={busy}
                   name="status"
                   defaultValue={
                     followUps ? statuses[Math.min(followUps, 3)] : 'جدید'
@@ -946,7 +974,7 @@ function CallForm({
                       {status}
                     </option>
                   ))}
-                </select>
+                </NativeSearchSelect>
               </label>
             </div>
             <label>

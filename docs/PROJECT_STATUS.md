@@ -6597,3 +6597,7 @@ FLIGHT-PRICING-ROUTE-LIST-1019 candidate: both initial/manual refresh and post-c
 ## 2026-10-19 — CALL-CENTER-HEADER-CLEANUP-1019 — PC-C
 
 Removed the promotional travel-message card and airplane icon from the Call Center header; the title and call-registration button remain aligned at opposite sides. No API, data, permission, schema or migration changes. The local Web build and its TypeScript check pass, scoped ESLint passes, and localhost Web/API both return HTTP 200. The app currently shows the login screen with the Call Center route as its post-login destination.
+
+## 2026-10-19 — CALL-CENTER-CONTROLS-1019 — PC-C
+
+Call Center toolbar filters and registration-dialog selectors now use the existing searchable ERP selection component instead of browser-native visible menus. Selection values/defaults, FormData and busy protection remain intact. Search and dropdown fields share40px height,8px corners, typography and focus styling; browser-specific search decorations are suppressed. Eight shared selection tests, scoped lint and optimized Web build/TypeScript pass. No API, database or permission changes; local Web preview refreshed. Browser is at login, so no authenticated or physical cross-browser visual acceptance is claimed.
