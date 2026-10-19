@@ -2,6 +2,10 @@
 
 Sales copies selected flight calendar days into the draft; hotel defaults use them even before floating-flight details are complete, retaining the existing day-after/day-before offsets, Tehran dates, tour precedence and manual overrides. Existing passenger rows accept identity edits before profile hydration; save retrieves the authorized customer profile and preserves dirty fields before existing validated/versioned updates.74 focused Web regressions, scoped lint and offline translation synchronization pass. No schema, migration or dependency change. User authorizes develop merge and production rollout after exact-head checks.
 
+## ROLE-LABEL-1019 — PC-B
+
+Remove Demo only from the legacy full-access role display label across role selection, role directory, title preview and account role summaries/search. Canonical role names/IDs still drive selection and assignment; no membership, permissions or Demo account identity changes. Narrow helper and actual picker regressions verify display cleanup without callbacks on opening or role ID changes. No API/schema/migration/dependency/data/runtime changes; exact-head hosted CI gates authorized develop merge.
+
 ## 2026-10-19 — TICKET-CALENDAR-RIAL-FIRST-1019 — PC-A
 
 Ticket pricing cards, selection labels and Excel now share geography-aware Gregorian dates for either foreign endpoint, preserving Tehran timezone and domestic Persian calendar. Active currency options show IRR first with stable remaining order and saved prices unchanged.13 focused Web tests, Web types and scoped lint pass. Refresh existing partner-contact generated translations to satisfy offline sync. No schema, migration, dependency or data change. Authorized develop merge and online rollout follow exact-head hosted gates.

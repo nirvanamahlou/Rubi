@@ -21,6 +21,7 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { AccessGroupCard } from './access-group-card';
 import { ManualAccessEditor } from './manual-access-editor';
 import { UserDetailsEditor } from './user-details-editor';
+import { roleLabel } from './role-label';
 import { UserUnitSelect, type UserUnitOption } from './user-unit-select';
 import { sectionAccess } from './section-access';
 import { IamDeleteDialog, type DeleteTarget } from './iam-delete-dialog';
@@ -623,7 +624,7 @@ export function UserManagement() {
                   ' ' +
                   u.username +
                   ' ' +
-                  u.roles.map((r) => r.role.name).join(' ')
+                  u.roles.map((r) => roleLabel(r.role.name)).join(' ')
                 ).includes(search),
               )
               .map((user) => (
@@ -642,8 +643,9 @@ export function UserManagement() {
                   >
                     <strong>{user.displayName}</strong>
                     <span className="block text-sm text-muted-foreground">
-                      {user.roles.map((r) => r.role.name).join('، ') ||
-                        'بدون نقش'}
+                      {user.roles
+                        .map((r) => roleLabel(r.role.name))
+                        .join('، ') || 'بدون نقش'}
                     </span>
                     <span dir="ltr" className="block text-xs">
                       {user.username}
@@ -710,7 +712,7 @@ export function UserManagement() {
                     className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
                   >
                     <div>
-                      <strong>{role.name}</strong>
+                      <strong>{roleLabel(role.name)}</strong>
                       <p className="text-sm text-muted-foreground">
                         {role.isSystem
                           ? 'نقش سیستمی'
@@ -742,7 +744,7 @@ export function UserManagement() {
                           setDeleteError('');
                           setDeleteTarget({
                             id: role.id,
-                            name: role.name,
+                            name: roleLabel(role.name),
                             kind: 'role',
                             revision: role.revision,
                           });
@@ -806,7 +808,7 @@ export function UserManagement() {
                       <Input
                         required
                         maxLength={80}
-                        value={title}
+                        value={roleLabel(title)}
                         onChange={(e) => setTitle(e.target.value)}
                       />
                     ) : (
@@ -830,7 +832,7 @@ export function UserManagement() {
                           ]),
                         ].map((t) => (
                           <option key={t} value={t}>
-                            {t}
+                            {roleLabel(t)}
                           </option>
                         ))}
                       </NativeSearchSelect>
