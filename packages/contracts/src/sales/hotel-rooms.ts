@@ -28,7 +28,7 @@ export function salesRoomDisplayName(room: SalesHotelRoomV1) {
   );
 }
 export interface SalesHotelRoomV1 {
-  roomCategory?: SalesRoomCategory;
+  roomCategory?: SalesRoomCategory | undefined;
   ordinal: number;
   roomTypeId: string;
   roomTypeNameSnapshot: string;
