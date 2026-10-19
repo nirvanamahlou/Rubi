@@ -2869,5 +2869,9 @@
   "هر سفر با یک گفت‌وگو آغاز می‌شود...": "Every journey starts with a conversation...",
   "یادداشت خود را وارد کنید...": "Enter your note...",
   "یادداشت در سرور ذخیره شد.": "The note was saved on the server.",
-  "یادداشتی برای این تماس ثبت نشده است.": "No note has been recorded for this call."
+  "یادداشتی برای این تماس ثبت نشده است.": "No note has been recorded for this call.",
+  "یک شعبه مجاز برای ارسال انتخاب کنید.": "Select an authorized branch for publishing.",
+  "عنوان پکیج باید بین ۱ تا ۲۰۰ نویسه باشد.": "The package title must contain 1 to 200 characters.",
+  "در حال ارسال پکیج…": "Publishing package…",
+  "پاسخ ارسال دریافت نشد؛ پیش از ارسال دوباره، پکیج‌های روز را بررسی کنید.": "No publishing response was received. Check daily packages before trying again."
 }

@@ -58,7 +58,7 @@ describe('travel output branding and readiness', () => {
       ).hotelPurchasePrices,
     ).toEqual(settings.hotelPurchasePrices);
     expect(renderToStaticMarkup(<TravelDocument intake={priced} />)).toContain(
-      '123.50 €',
+      '123.50 EUR',
     );
     expect(
       renderToStaticMarkup(<TravelDocument intake={priced} voucher />),

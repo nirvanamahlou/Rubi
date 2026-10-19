@@ -9,6 +9,7 @@ import type {
   MessagingMessageResponseV1,
   MessagingMessagesResponseV1,
   SendMessagingMessageInputV1,
+  SetMessagingReactionInputV1,
 } from '@nora/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -121,6 +122,16 @@ export const messagingApi = {
     return request<MessagingMessageResponseV1>(
       `/conversations/${encodeURIComponent(conversationId)}/messages`,
       json(input),
+    );
+  },
+  react(
+    conversationId: string,
+    messageId: string,
+    input: SetMessagingReactionInputV1,
+  ) {
+    return request<MessagingMessageResponseV1>(
+      `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/reaction`,
+      { ...json(input), method: 'PUT' },
     );
   },
   uploadAttachment(

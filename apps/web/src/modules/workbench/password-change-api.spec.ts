@@ -62,7 +62,15 @@ describe('password change consumer', () => {
     expect(
       passwordChangeError(oldPassword, oldPassword, oldPassword),
     ).toContain('متفاوت');
-    expect(passwordChangeError(oldPassword, 'weak', 'weak')).toContain('۱۰');
+    expect(passwordChangeError(oldPassword, '123', '123')).toContain('۴');
+    expect(passwordChangeError(oldPassword, '1234', '1234')).toBeNull();
+    expect(passwordChangeError(oldPassword, 'abcd', 'abcd')).toBeNull();
+    expect(
+      passwordChangeError(oldPassword, 'x'.repeat(200), 'x'.repeat(200)),
+    ).toBeNull();
+    expect(
+      passwordChangeError(oldPassword, 'x'.repeat(201), 'x'.repeat(201)),
+    ).toContain('۲۰۰');
   });
   it('sends only required secrets in the authenticated body and clears identity after204', async () => {
     const deps = dependencies();

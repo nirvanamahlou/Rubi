@@ -6,6 +6,7 @@ import {
   Inject,
   Param,
   Post,
+  Put,
   Query,
   Req,
   StreamableFile,
@@ -87,6 +88,16 @@ export class MessagingController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.service.send(id, body, request.actor);
+  }
+
+  @Put('conversations/:id/messages/:messageId/reaction')
+  reaction(
+    @Param('id') id: string,
+    @Param('messageId') messageId: string,
+    @Body() body: unknown,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.setReaction(id, messageId, body, request.actor);
   }
 
   @Post('conversations/:id/attachments')

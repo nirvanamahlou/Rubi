@@ -1,6 +1,9 @@
 import type { DisplayLanguage } from '../common/i18n/language';
 import { randomUUID } from 'node:crypto';
-import { preparePartnerDossier } from './partner-dossier.policy';
+import {
+  preparePartnerDossier,
+  partnerDossierAccessValues,
+} from './partner-dossier.policy';
 import { brokerCityIds, brokerLeaderDrafts } from './broker-form.policy';
 import { columnFilterWhere } from './catalog-filters';
 import {
@@ -3738,7 +3741,7 @@ export class MasterDataService {
         ? Object.fromEntries(
             Object.entries(values).filter(([key]) => key !== 'transportStatus'),
           )
-        : values,
+        : partnerDossierAccessValues(resource, values),
       current,
     );
     if (denied.length)

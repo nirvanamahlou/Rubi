@@ -25,6 +25,8 @@ import { ReservationsPublicService } from '../reservations/reservations-public.s
 import { ProcurementPublicService } from '../procurement/procurement-public.service';
 import { MasterDataService } from '../master-data/master-data.service';
 import { MasterDataRepository } from '../master-data/master-data.repository';
+import { ConfigService } from '@nestjs/config';
+import { MasterDataContactCrypto } from '../master-data/master-data-contact.crypto';
 
 const enabled = process.env.NORA_RUN_B2B_POSTGRES_TESTS === '1';
 const container = `nora-test-b2b-${randomUUID().slice(0, 8)}`;
@@ -738,6 +740,93 @@ describe.skipIf(!enabled)(
           data: { ...base, id: randomUUID(), counterpartyRole: 'AIRLINE' },
         }),
       ).rejects.toThrow();
+    });
+
+    it('saves a broker with identical office/mobile and Caps Lock email, then splits and clears roles', async () => {
+      const crypto = new MasterDataContactCrypto(
+        new ConfigService({
+          MASTER_DATA_IMPORT_TOKEN_KEY_BASE64: Buffer.alloc(32, 9).toString(
+            'base64',
+          ),
+        }),
+      );
+      const country = await client.masterCountry.findFirstOrThrow();
+      const city = await client.masterCity.create({
+        data: {
+          code: 'QA_SHARED_PHONE_CITY',
+          name: 'Synthetic phone city',
+          countryId: country.id,
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+        },
+      });
+      const master = new MasterDataRepository({ client } as DatabaseService);
+      const service = new MasterDataService(master, crypto);
+      const actor = {
+        userId: actorUserId,
+        branchIds: [branchId],
+        permissions: [
+          'master_data.create',
+          'master_data.update',
+          'master_data.read',
+        ],
+      } as AuthenticatedActor;
+      let saved = await service.create(
+        'brokers',
+        {
+          name: 'Synthetic shared phone broker',
+          countryId: country.id,
+          cityIds: city.id,
+          primaryPhone: '+90 555 123 4567',
+          dossierVersion: '1',
+          dossierMobile: '+905551234567',
+          dossierEmail: 'Caps.LOCK@EXAMPLE.TEST',
+        },
+        actor,
+      );
+      const orgId = String(saved.data.attributes.organizationId);
+      const phones = () =>
+        client.masterOrganizationContact.findMany({
+          where: {
+            organizationId: orgId,
+            isActive: true,
+            phoneFingerprint: { not: null },
+          },
+        });
+      expect(await phones()).toHaveLength(1);
+      expect(saved.data.attributes.dossierMobileMasked).toBeTruthy();
+      const email = await client.masterOrganizationContact.findFirstOrThrow({
+        where: { organizationId: orgId, jobTitle: 'PARTNER_EMAIL' },
+      });
+      expect(email.emailFingerprint).toBe(
+        crypto.protect('email', 'caps.lock@example.test').fingerprint,
+      );
+      saved = await service.update(
+        'brokers',
+        saved.data.id,
+        { dossierVersion: '1', dossierMobile: '+905559999999' },
+        saved.data.version,
+        actor,
+      );
+      expect(await phones()).toHaveLength(2);
+      saved = await service.update(
+        'brokers',
+        saved.data.id,
+        { dossierVersion: '1', dossierMobile: '+905551234567' },
+        saved.data.version,
+        actor,
+      );
+      expect(await phones()).toHaveLength(1);
+      saved = await service.update(
+        'brokers',
+        saved.data.id,
+        { dossierVersion: '1', dossierMobile: '' },
+        saved.data.version,
+        actor,
+      );
+      expect(await phones()).toHaveLength(1);
+      expect(saved.data.attributes.dossierMobileMasked).toBe('');
+      expect((await phones())[0]?.jobTitle).toBe('PARTNER_OFFICE');
     });
 
     it.each(['suppliers', 'brokers'] as const)(

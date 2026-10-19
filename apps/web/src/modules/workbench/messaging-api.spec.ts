@@ -106,4 +106,33 @@ describe('Workbench messaging API client', () => {
       'message:44444444-4444-4444-8444-444444444444',
     );
   });
+  it('sends reply targets and explicit idempotent reaction commands', async () => {
+    await messagingApi.send('conversation', {
+      body: 'reply',
+      clientRequestId: 'message:reply-0001',
+      replyToMessageId: 'source',
+    });
+    expect(fetch).toHaveBeenLastCalledWith(
+      expect.stringContaining('/conversations/conversation/messages'),
+      expect.objectContaining({
+        body: expect.stringContaining('"replyToMessageId":"source"'),
+      }),
+    );
+    await messagingApi.react('conversation', 'message', { emoji: '👍' });
+    expect(fetch).toHaveBeenLastCalledWith(
+      expect.stringContaining('/messages/message/reaction'),
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({ emoji: '👍' }),
+      }),
+    );
+    await messagingApi.react('conversation', 'message', { emoji: null });
+    expect(fetch).toHaveBeenLastCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({ emoji: null }),
+      }),
+    );
+  });
 });
