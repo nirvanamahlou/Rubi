@@ -628,20 +628,36 @@ describe.skipIf(!enabled)(
         (await service.current(buy.fromCurrencyId, buy.toCurrencyId, 'BUY'))
           .data?.id,
       ).toBe(next.data[0]!.id);
-      // A real FK failure during audit must roll back both rate writes.
+      // Fail the second audit inside a real DB transaction, after the first write/audit.
+      let audits = 0;
+      const failingAuditService = new CurrencyRateService({
+        client: client.$extends({
+          query: {
+            masterDataAuditEvent: {
+              create({ args, query }) {
+                if (++audits === 2)
+                  return Promise.reject(new Error('Synthetic audit failure'));
+                return query(args);
+              },
+            },
+          },
+        }),
+      } as unknown as DatabaseService);
       const before = await client.masterDraftExchangeRate.count();
+      const auditsBefore = await client.masterDataAuditEvent.count();
       await expect(
-        service.createQuote(
+        failingAuditService.createQuote(
           {
             fromCurrencyCode: 'USD',
             toCurrencyCode: 'IRR',
             buyRate: '300000',
             sellRate: '310000',
           },
-          { ...actor, userId: randomUUID() },
+          actor,
         ),
       ).rejects.toThrow();
       expect(await client.masterDraftExchangeRate.count()).toBe(before);
+      expect(await client.masterDataAuditEvent.count()).toBe(auditsBefore);
     });
 
     it('persists independent per-unit toman metadata without reinterpreting legacy USD rates', async () => {

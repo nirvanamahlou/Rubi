@@ -13,7 +13,7 @@ COMPUTER_ID=PC-B. User authorizes direct reference-rate registration, tests, pus
 
 - Focused API:32 tests passed, including create-only actor, metadata, invalid Decimal/date/pair, permissions/branch, inactive currencies, DTO injection protection and legacy decision guards.
 - Focused Web:22 tests passed (currency form/model and actual server-rendered chart), including first-point visibility, subsequent trend and exclusion of legacy drafts. Translation completeness is checked separately.
-- Added disposable PostgreSQL regression for exact BUY/SELL persistence, real constraints/audit, current/history reads, later-rate selection and rollback on invalid audit actor. Hosted database CI is required; no operational database is used.
+- Added disposable PostgreSQL regression for exact BUY/SELL persistence, real constraints/audit, current/history reads, later-rate selection and rollback on an injected second-audit failure inside the real transaction. The first hosted run disproved the initial test assumption that audit actor IDs have a user FK; the test now injects the intended failure explicitly. Hosted database CI is required; no operational database is used.
 - Lint, typecheck, affected builds and final-head hosted gates must pass before merge. Final evidence/hash is recorded on the PR.
 
 ## Rollout / limits
