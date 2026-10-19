@@ -103,7 +103,11 @@ describe('Contract-only flight form and consumers', () => {
     expect(patch.ticket?.outboundOfferId).toBe('');
     expect(patch.outboundOffer).toBeUndefined();
     const next = withSalesHotelDates(emptySalesForm, state);
-    expect(next.hotel.checkIn).toBe('2026-10-02');
+    expect(next.hotel.checkIn).toBe('2026-10-01');
+    expect(
+      withSalesHotelDates(next, { ...next, hotelArrivesNextDay: true }).hotel
+        .checkIn,
+    ).toBe('2026-10-02');
     expect(
       patchContractFlight(state, 'OUTBOUND', undefined).contractFlights,
     ).toEqual({});

@@ -24,6 +24,7 @@ export interface SalesTicketAvailabilityPort {
     branchId: string,
     contractId: string,
     seatCount: number,
+    counts?: Readonly<Record<string, number>>,
   ): Promise<void>;
   revalidate(
     offerIds: readonly string[],
@@ -38,6 +39,7 @@ export interface SalesTicketAvailabilityPort {
     expectedTicketTotals?: Readonly<
       Record<string, { amount: string; currencyCode: string }>
     >,
+    counts?: Readonly<Record<string, number>>,
   ): Promise<{
     available: boolean;
     unavailableOfferIds: readonly string[];
@@ -58,8 +60,16 @@ export class SalesTicketsPublicAdapter implements SalesTicketAvailabilityPort {
     branchId: string,
     contractId: string,
     seatCount: number,
+    counts?: Readonly<Record<string, number>>,
   ) {
-    return this.catalog.amend(tx, selections, branchId, contractId, seatCount);
+    return this.catalog.amend(
+      tx,
+      selections,
+      branchId,
+      contractId,
+      seatCount,
+      counts,
+    );
   }
   revalidate(
     offerIds: readonly string[],
@@ -76,6 +86,7 @@ export class SalesTicketsPublicAdapter implements SalesTicketAvailabilityPort {
     expectedTicketTotals?: Readonly<
       Record<string, { amount: string; currencyCode: string }>
     >,
+    counts?: Readonly<Record<string, number>>,
   ) {
     return this.catalog.reserve(
       selections,
@@ -83,6 +94,7 @@ export class SalesTicketsPublicAdapter implements SalesTicketAvailabilityPort {
       contractId,
       seatCount,
       expectedTicketTotals,
+      counts,
     );
   }
   release(allocationIds: readonly string[]) {

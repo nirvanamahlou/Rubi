@@ -2888,5 +2888,9 @@
   "مسافران هتل و پرواز باید یکسان باشند.": "Hotel and flight passengers must be the same.",
   "سهم اتاق": "Room share",
   "ساعت حرکت بلیط شناور": "Floating ticket departure time",
-  "ساعت رسیدن بلیط شناور": "Floating ticket arrival time"
+  "ساعت رسیدن بلیط شناور": "Floating ticket arrival time",
+  "جمع هتل:": "Hotel total:",
+  "فردا می‌رسد": "Arrives the next day",
+  "قیمت هتل هر مسافر": "Hotel price per traveler",
+  "قیمت هتل هر مسافر را وارد کنید.": "Enter the hotel price for each traveler."
 }

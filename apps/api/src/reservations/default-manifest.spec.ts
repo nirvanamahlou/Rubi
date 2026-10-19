@@ -385,6 +385,13 @@ describe('default ticket manifest', () => {
     },
   );
 
+  it('omits hotel-only passengers from flight manifest cards', async () => {
+    const f = fixture();
+    f.snapshot.passengerAssignments[0]!.serviceClientKeys = ['hotel'];
+    const cards = await f.service.listTickets(range, actor);
+    expect(cards.every((c) => c.passengerCount === 0)).toBe(true);
+  });
+
   it('exports ground contracts without finance approval', async () => {
     const f = fixture();
     f.snapshot.passengerAssignments[0]!.serviceClientKeys = ['ground'];

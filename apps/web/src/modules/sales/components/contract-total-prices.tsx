@@ -10,6 +10,7 @@ import {
 } from './sales-currency-select';
 import {
   passengerFlightSalePrices,
+  salesHotelGuestIds,
   type SalesFormState,
 } from '../model/sales-form';
 
@@ -27,14 +28,28 @@ export function ContractTotalPrices({
   ) => void;
 }) {
   const automatic =
-    !state.packageSaleQuote &&
+    (!state.packageSaleQuote || state.passengerHotelPrices !== undefined) &&
     state.automaticComponentPricing &&
     state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'HOTEL');
   let calculated: SalesMoney[] = [];
   try {
     calculated = flightRoomTotals(
-      passengerFlightSalePrices(state),
-      state.serviceKinds.includes('HOTEL') ? (state.hotel.rooms ?? []) : [],
+      {
+        ...passengerFlightSalePrices(state),
+        ...Object.fromEntries(
+          Object.entries(
+            state.serviceKinds.includes('HOTEL')
+              ? (state.passengerHotelPrices ?? {})
+              : {},
+          )
+            .filter(([id]) => salesHotelGuestIds(state).includes(id))
+            .map(([id, p]) => ['hotel-' + id, p]),
+        ),
+      },
+      state.passengerHotelPrices === undefined &&
+        state.serviceKinds.includes('HOTEL')
+        ? (state.hotel.rooms ?? [])
+        : [],
     );
   } catch {
     /* Invalid input is reported by final-step validation. */

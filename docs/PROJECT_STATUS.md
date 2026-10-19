@@ -1,3 +1,7 @@
+## PASSENGER-DIRECTIONS-1019 — PC-A
+
+Sales people entry now appears below route/services in step1; former people step is skipped. Per-person outbound/return choices default selected and flow through canonical service assignments, directional capacity reserve/amend and existing manifest membership. Hotel-only guests are allowed. Combined flight price appears only for selected flight people with direction and age labels; hotel amounts are entered manually per guest, exact totals exclude old room agreements. Same-day check-in defaults with explicit next-day arrival; checkout policy/manual overrides retained.88 API tests plus47 related Web tests, Web types and scoped lint pass; hosted full checks gate merge. No schema/migration/dependency or production runtime changes.
+
 ## DIRECT-CURRENCY-RATES-1019 — PC-B
 
 New manual reference quotes finalize during their existing transactional registration without a separate checker. Creation authority, branch/Decimal/active-currency checks, audit and non-authoritative status remain intact. Existing legacy drafts and Finance rates are unchanged. Web returns to the profile, reloads the newly registered pair/type and displays its chart without waiting-for-approval copy.32 focused API and22 focused Web tests pass; disposable PostgreSQL and exact-head hosted gates precede authorized push/develop merge. No migration, dependency, operational data or server deployment. Details: [DIRECT-CURRENCY-RATES-1019](tasks/DIRECT-CURRENCY-RATES-1019.md).

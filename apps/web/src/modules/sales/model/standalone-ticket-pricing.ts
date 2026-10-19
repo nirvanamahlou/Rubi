@@ -5,7 +5,7 @@ import {
   type TicketOfferV1,
   type TicketSalePriceTierV1,
 } from '@nora/contracts';
-import type { SalesFormState } from './sales-form';
+import { salesFlightSeats, type SalesFormState } from './sales-form';
 
 export function roundTripPerLegFares(
   outbound: TicketOfferV1,
@@ -54,10 +54,19 @@ export function roundTripTicketPricing(
   returning: TicketOfferV1,
   seats: number,
 ): Record<string, SalesServicePricingV1[]> {
+  const outboundSeats =
+    state.passengerFlightDirections === undefined
+      ? seats
+      : salesFlightSeats(state, 'OUTBOUND');
+  const returnSeats =
+    state.passengerFlightDirections === undefined
+      ? seats
+      : salesFlightSeats(state, 'RETURN');
   const fares = roundTripPerLegFares(outbound, returning);
   if (
     !fares ||
-    seats > Math.min(outbound.remainingCapacity, returning.remainingCapacity)
+    outboundSeats > outbound.remainingCapacity ||
+    returnSeats > returning.remainingCapacity
   ) {
     const next = { ...(state.servicePricing ?? {}) };
     delete next['flight-outbound'];
@@ -67,22 +76,24 @@ export function roundTripTicketPricing(
   const pair = outbound.roundTripSalePrices?.find(
     (fare) => fare.returnOfferId === returning.id,
   );
-  const pairTotal = seatTierTotal(
-    pair!.amount,
-    pair!.tiers,
-    Math.max(
-      outbound.totalCapacity - outbound.remainingCapacity,
-      returning.totalCapacity - returning.remainingCapacity,
-    ),
-    seats,
-  );
-  const pairUnits = moneyUnits(pairTotal);
+  const pairTotal = (quantity: number) =>
+    seatTierTotal(
+      pair!.amount,
+      pair!.tiers,
+      Math.max(
+        outbound.totalCapacity - outbound.remainingCapacity,
+        returning.totalCapacity - returning.remainingCapacity,
+      ),
+      quantity,
+    );
+  const outboundUnits = moneyUnits(pairTotal(outboundSeats));
+  const returnUnits = moneyUnits(pairTotal(returnSeats));
   const outboundTotal = pair?.tiers?.length
-    ? moneyDecimal(pairUnits / 2n)
-    : moneyDecimal(moneyUnits(fares.outboundAmount) * BigInt(seats));
+    ? moneyDecimal(outboundUnits / 2n)
+    : moneyDecimal(moneyUnits(fares.outboundAmount) * BigInt(outboundSeats));
   const returnTotal = pair?.tiers?.length
-    ? moneyDecimal(pairUnits - pairUnits / 2n)
-    : moneyDecimal(moneyUnits(fares.returnAmount) * BigInt(seats));
+    ? moneyDecimal(returnUnits - returnUnits / 2n)
+    : moneyDecimal(moneyUnits(fares.returnAmount) * BigInt(returnSeats));
   const price = (amount: string): SalesServicePricingV1[] => {
     const total = amount;
     return [
@@ -115,6 +126,8 @@ export function standaloneTicketPricing(
     !offer.standaloneSalePrice
   )
     return state.servicePricing ?? {};
+  if (state.passengerFlightDirections !== undefined)
+    seats = salesFlightSeats(state, direction);
   const fare = offer.standaloneSalePrice;
   const total = seatTierTotal(
     fare.amount,
