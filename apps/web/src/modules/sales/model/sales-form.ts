@@ -1,3 +1,4 @@
+import { defaultSalesRoomCategory } from '@nora/contracts';
 import { syncHotelChildSelections } from './hotel-child-selection';
 import {
   readAgencyCommission,
@@ -1621,19 +1622,29 @@ export function salesPayload(
             roomCount: state.hotel.rooms?.length ?? state.hotel.roomCount,
             ...(state.hotel.rooms
               ? {
-                  rooms: (state.passengerHotelPrices !== undefined
-                    ? state.hotel.rooms.map(({ agreedPrice, ...room }) => {
-                        void agreedPrice;
-                        return room;
-                      })
-                    : state.hotel.rooms) as SalesHotelRoomV1[],
+                  rooms: state.hotel.rooms.map((room) => {
+                    const { agreedPrice, ...rest } = room;
+                    return {
+                      ...rest,
+                      roomCategory: defaultSalesRoomCategory(room),
+                      ...(state.passengerHotelPrices === undefined &&
+                      agreedPrice
+                        ? { agreedPrice }
+                        : {}),
+                    };
+                  }) as SalesHotelRoomV1[],
                 }
               : {}),
             singleRoomCount: state.hotel.singleRoomCount,
             doubleRoomCount: state.hotel.doubleRoomCount,
             extraBedCount: state.hotel.extraBedCount,
             ...(state.hotel.rooms?.length
-              ? salesHotelRoomSummary(state.hotel.rooms)
+              ? salesHotelRoomSummary(
+                  state.hotel.rooms.map((room) => ({
+                    ...room,
+                    roomCategory: defaultSalesRoomCategory(room),
+                  })),
+                )
               : {}),
             roomTypeId:
               state.hotel.rooms?.[0]?.roomTypeId || state.hotel.roomTypeId,

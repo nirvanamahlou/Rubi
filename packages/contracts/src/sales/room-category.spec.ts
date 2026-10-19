@@ -1,5 +1,7 @@
 import { expect, it } from 'vitest';
 import {
+  defaultSalesRoomCategory,
+  salesHotelRoomSummary,
   salesRoomCategories,
   salesRoomDisplayName,
   validSalesHotelRooms,
@@ -7,8 +9,8 @@ import {
 it('offers occupancy categories and prints the selected category beside the unchanged type', () => {
   expect(salesRoomCategories(1)).toEqual(['SINGLE']);
   expect(salesRoomCategories(2)).toEqual(['DOUBLE']);
-  expect(salesRoomCategories(3)).toEqual(['DOUBLE_EXTRA', 'TRIPLE']);
-  expect(salesRoomCategories(5)).toEqual(['DOUBLE_EXTRA']);
+  expect(salesRoomCategories(3)).toEqual(['TRIPLE', 'FAMILY', 'DOUBLE_EXTRA']);
+  expect(salesRoomCategories(5)).toEqual(['FAMILY', 'DOUBLE_EXTRA']);
   const room = {
     ordinal: 1,
     roomTypeId: '11111111-1111-4111-8111-111111111111',
@@ -29,4 +31,40 @@ it('offers occupancy categories and prints the selected category beside the unch
   expect(
     salesRoomDisplayName({ ...room, adults: 5, roomCategory: 'DOUBLE_EXTRA' }),
   ).toBe('Deluxe Room · Double + 3 Extra Bed');
+});
+
+it('defaults by adults without adding child beds and preserves valid manual overrides', () => {
+  const room = { adults: 2, childAges: [5, 8] };
+  expect(defaultSalesRoomCategory(room)).toBe('DOUBLE');
+  expect(salesRoomCategories(2, 2)).toEqual(['DOUBLE', 'DOUBLE_EXTRA']);
+  expect(
+    defaultSalesRoomCategory({ ...room, roomCategory: 'DOUBLE_EXTRA' }),
+  ).toBe('DOUBLE_EXTRA');
+  expect(defaultSalesRoomCategory({ ...room, roomCategory: 'TRIPLE' })).toBe(
+    'DOUBLE',
+  );
+  expect(defaultSalesRoomCategory({ ...room, adults: 3 })).toBe('TRIPLE');
+  expect(defaultSalesRoomCategory({ ...room, adults: 4 })).toBe('FAMILY');
+  expect(
+    salesRoomDisplayName({
+      ...room,
+      ordinal: 1,
+      roomTypeId: 'r',
+      roomTypeNameSnapshot: 'Deluxe',
+      roomCategory: 'DOUBLE_EXTRA',
+    }),
+  ).toBe('Deluxe · Double + 1 Extra Bed');
+});
+
+it('does not count child beds for a double room, while respecting explicit extra beds', () => {
+  expect(
+    salesHotelRoomSummary([
+      { adults: 2, childAges: [5], roomCategory: 'DOUBLE' },
+    ]).extraBedCount,
+  ).toBe(0);
+  expect(
+    salesHotelRoomSummary([
+      { adults: 2, childAges: [5], roomCategory: 'DOUBLE_EXTRA' },
+    ]).extraBedCount,
+  ).toBe(1);
 });
