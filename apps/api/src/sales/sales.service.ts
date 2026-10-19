@@ -28,6 +28,7 @@ import {
 import { TourPublicService } from '../ticket-catalog/tour-public.service';
 import { HotelPurchaseRatesPublicService } from '../reservations/hotel-purchase-rates.public';
 import type {
+  SalesRoomCategory,
   SalesServicePricingV1,
   SalesAccommodationKind,
   AuthenticatedActor,
@@ -340,6 +341,11 @@ export function presentSalesContract(
                   ordinal: room.ordinal,
                   roomTypeId: room.roomTypeId,
                   roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                  ...(room.roomCategory
+                    ? {
+                        roomCategory: room.roomCategory as SalesRoomCategory,
+                      }
+                    : {}),
                   adults: room.adults,
                   childAges: room.childAges as number[],
                   ...(room.agreedPrice

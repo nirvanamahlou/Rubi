@@ -6626,3 +6626,8 @@ Call Center toolbar filters and registration-dialog selectors now use the existi
 ## SALES-DOCUMENT-GREEN-1019 — PC-A
 
 Sales contract rows use green when Finance's latest customer document delivery revision is approved. The list enriches only already-authorized Sales results using a batch Finance public projection; no financial reason, actor or payment details are exposed. Revoked/missing approval and cancelled contracts do not turn green. Green takes precedence over amendment amber while preserving the existing correction marker. No explanatory UI text, permission change, migration, dependency or runtime rollout. Focused regressions and exact-head hosted quality/test/build/database gates precede user-authorized develop merge.
+
+
+## ROOM-CATEGORY-1019 — PC-A
+
+Per-room occupancy category sits beside room type; Single for1, Double for2, Triple or Double with counted extra beds for3, counted extra beds for larger parties. Incompatible categories clear on occupancy edits. Optional category persists separately through Sales room creation/amendment/presentation and prints beside the unchanged type name in contract room rows. Legacy rooms remain valid. Additive nullable room_category column with allowlist CHECK; no live migration/runtime/data changes. Focused tests and exact-head CI gate authorized develop merge.

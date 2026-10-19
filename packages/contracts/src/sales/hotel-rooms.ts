@@ -1,4 +1,34 @@
+export type SalesRoomCategory = 'SINGLE' | 'DOUBLE' | 'DOUBLE_EXTRA' | 'TRIPLE';
+export function salesRoomCategories(n: number): SalesRoomCategory[] {
+  return n === 1
+    ? ['SINGLE']
+    : n === 2
+      ? ['DOUBLE']
+      : n === 3
+        ? ['DOUBLE_EXTRA', 'TRIPLE']
+        : n > 3
+          ? ['DOUBLE_EXTRA']
+          : [];
+}
+export function salesRoomCategoryLabel(category: SalesRoomCategory, n: number) {
+  return category === 'DOUBLE_EXTRA'
+    ? `Double + ${Math.max(1, n - 2)} Extra Bed`
+    : { SINGLE: 'Single', DOUBLE: 'Double', TRIPLE: 'Triple' }[category];
+}
+export function salesRoomDisplayName(room: SalesHotelRoomV1) {
+  return (
+    room.roomTypeNameSnapshot +
+    (room.roomCategory
+      ? ' · ' +
+        salesRoomCategoryLabel(
+          room.roomCategory,
+          room.adults + room.childAges.length,
+        )
+      : '')
+  );
+}
 export interface SalesHotelRoomV1 {
+  roomCategory?: SalesRoomCategory | undefined;
   ordinal: number;
   roomTypeId: string;
   roomTypeNameSnapshot: string;
@@ -33,6 +63,10 @@ export function validSalesHotelRooms(rooms: unknown, count: number) {
         room.adults >= 1 &&
         room.adults <= 20 &&
         Array.isArray(room.childAges) &&
+        (room.roomCategory === undefined ||
+          salesRoomCategories(room.adults + room.childAges.length).includes(
+            room.roomCategory,
+          )) &&
         room.childAges.length <= 20 &&
         room.childAges.every(
           (age: number) => Number.isInteger(age) && age >= 0 && age < 15,
