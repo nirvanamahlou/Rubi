@@ -40,3 +40,5 @@ export type {
   InternalLetterRecord,
   InternalLetterList,
 } from './correspondence';
+
+export * from './telephony';

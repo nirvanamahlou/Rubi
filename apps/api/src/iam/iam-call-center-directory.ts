@@ -39,6 +39,20 @@ export class IamCallCenterDirectory {
       })
       .map(({ id, displayName }) => ({ id, displayName }));
   }
+  async eligibleMapping(
+    branchId: string,
+    userId: string,
+    teamId: string | null,
+    tx?: Prisma.TransactionClient,
+  ) {
+    if (!(await this.list(branchId, tx)).some((user) => user.id === userId))
+      return false;
+    if (!teamId) return true;
+    return !!(await (tx ?? this.database.client).user.findFirst({
+      where: { id: userId, profile: { organizationUnitId: teamId } },
+      select: { id: true },
+    }));
+  }
   async referral(
     tx: Prisma.TransactionClient,
     branchId: string,

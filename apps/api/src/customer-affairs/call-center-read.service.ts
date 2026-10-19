@@ -327,11 +327,12 @@ export class CallCenterReadService {
             'شاخص جست‌وجو در حال آماده‌سازی است؛ دوباره تلاش کنید.',
           );
         }
-        const predicate = this.conditions(
+        const callPredicate = this.conditions(
           branchId,
           { ...q, from: from.toISOString(), to: to.toISOString() },
           teamUsers,
         );
+        const predicate = Prisma.sql`(${callPredicate}) AND (a.origin IS NULL OR a.origin <> 'SYNTHETIC')`;
         const groups = await tx.$queryRaw<
           Array<{
             direction: string;
@@ -349,7 +350,7 @@ export class CallCenterReadService {
         >`SELECT a.source_token AS token,count(*) AS count FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate} GROUP BY a.source_token`;
         const registrations = await tx.$queryRaw<
           Array<{ actorId: string; count: bigint }>
-        >`SELECT a.created_by_user_id AS "actorId",count(*) AS count FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate} GROUP BY a.created_by_user_id`;
+        >`SELECT a.created_by_user_id AS "actorId",count(*) AS count FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate} AND (a.origin IS NULL OR a.origin = 'MANUAL') GROUP BY a.created_by_user_id`;
         const requests = await tx.customerAffairsTicket.groupBy({
           by: ['status'],
           where: {

@@ -1,3 +1,5 @@
+import { CallCenterTelephonyService } from './call-center-telephony.service';
+import { CallCenterTelephonyController } from './call-center-telephony.controller';
 import { CallCenterCustomerController } from './call-center-customer.controller';
 import { CallCenterCustomerService } from './call-center-customer.service';
 import { CallCenterReadController } from './call-center-read.controller';
@@ -56,6 +58,7 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     SettingsModule,
   ],
   controllers: [
+    CallCenterTelephonyController,
     CallCenterCustomerController,
     CallCenterReadController,
     CallCenterWorkflowController,
@@ -69,6 +72,7 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     CustomerAffairsMarketingIntakeController,
   ],
   providers: [
+    CallCenterTelephonyService,
     CallCenterCustomerService,
     CallCenterReadService,
     CallCenterWorkflowService,
@@ -86,6 +90,11 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     CustomerContactCrypto,
     CustomerAffairsMarketingIntakeService,
   ],
-  exports: [CustomerAffairsService, CustomerAffairsMarketingIntakeService],
+  exports: [
+    IamWorkbenchRequestDirectory,
+    CallCenterTelephonyService,
+    CustomerAffairsService,
+    CustomerAffairsMarketingIntakeService,
+  ],
 })
 export class CustomerAffairsModule {}

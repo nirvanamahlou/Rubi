@@ -30,6 +30,13 @@ enum AuditOutcome {
 }
 
 model User {
+  telephonyAudit IntegrationTelephonyAudit[]
+  telephonyConnections IntegrationTelephonyConnection[]
+  telephonyMappings IntegrationTelephonyMapping[]
+  telephonyOffers CallCenterTelephonyOffer[]
+  telephonyLeases CallCenterTelephonyLease[]
+  telephonyClaims CallCenterTelephonySession[]
+
   callCenterCalls                                  CallCenterCall[]
   callCenterNotes                                  CallCenterNote[]
   internalLettersAuthored                          CorrespondenceLetter[]                    @relation("CorrespondenceAuthor")
@@ -251,6 +258,8 @@ model RolePermission {
 }
 
 model Branch {
+  telephonyConnections IntegrationTelephonyConnection[]
+
   callCenterContacts                  CallCenterContact[]
   purchaseFxSnapshots                 FinancePurchaseFxSnapshot[]
   accountingBooks                     AccountingBook[]
@@ -3613,6 +3622,7 @@ model HrEmployee {
 }
 
 model HrRecord {
+  telephonyMappings IntegrationTelephonyMapping[]
   userProfiles              IamUserProfile[]           @relation("IamUserOrganizationUnit")
   financeOperationalRequest FinanceOperationalRequest?
   organizationEmployees     HrEmployee[]               @relation("HrEmployeeOrganizationBranch")
@@ -7660,6 +7670,8 @@ model CallCenterContact {
 }
 
 model CallCenterCall {
+  telephonySession CallCenterTelephonySession?
+
   searchTokens String[] @default([]) @map("search_tokens")
   sourceToken String? @map("source_token") @db.Char(64)
   unitToken String? @map("unit_token") @db.Char(64)
@@ -7703,4 +7715,122 @@ model CallCenterNote {
 
   @@index([contactId, createdAt, id], map: "call_contact_notes_idx")
   @@map("customer_affairs_call_notes")
+}
+
+model IntegrationTelephonyConnection {
+  id String @id @default(uuid()) @db.Uuid
+  branchId String @db.Uuid
+  createdByUserId String @db.Uuid
+  name String @db.VarChar(100)
+  synthetic Boolean @default(false)
+  active Boolean @default(false)
+  maxAgeSeconds Int @default(86400)
+  maxFutureSeconds Int @default(120)
+  version Int @default(1)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  createdBy User @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  audits IntegrationTelephonyAudit[]
+  mappings IntegrationTelephonyMapping[]
+  inbox IntegrationTelephonyInbox[]
+  sessions CallCenterTelephonySession[]
+  @@map("integration_telephony_connections")
+}
+model IntegrationTelephonyMapping {
+  teamId String? @db.Uuid
+  team HrRecord? @relation(fields: [teamId], references: [id], onDelete: Restrict)
+  id String @id @default(uuid()) @db.Uuid
+  connectionId String @db.Uuid
+  extension String @db.VarChar(32)
+  userId String @db.Uuid
+  active Boolean @default(true)
+  version Int @default(1)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  connection IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  @@unique([connectionId, extension])
+  @@map("integration_telephony_mappings")
+}
+model IntegrationTelephonyInbox {
+  id String @id @default(uuid()) @db.Uuid
+  connectionId String @db.Uuid
+  externalFingerprint String @db.Char(64)
+  payloadFingerprint String @db.Char(64)
+  encryptedPayload String? @db.Text
+  keyVersion Int
+  receivedAt DateTime @default(now()) @db.Timestamptz(3)
+  status String @default("PENDING") @db.VarChar(16)
+  attempts Int @default(0)
+  errorCode String? @db.VarChar(32)
+  processedAt DateTime? @db.Timestamptz(3)
+  connection IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  dispatch IntegrationTelephonyOutbox?
+  @@unique([connectionId, externalFingerprint], map: "integration_telephony_inbox_connectionId_externalFingerprint_ke")
+  @@index([status, receivedAt])
+  @@map("integration_telephony_inbox")
+}
+model IntegrationTelephonyOutbox {
+  id String @id @default(uuid()) @db.Uuid
+  inboxId String @unique @db.Uuid
+  availableAt DateTime @default(now()) @db.Timestamptz(3)
+  completedAt DateTime? @db.Timestamptz(3)
+  inbox IntegrationTelephonyInbox @relation(fields: [inboxId], references: [id], onDelete: Restrict)
+  @@index([completedAt, availableAt])
+  @@map("integration_telephony_outbox")
+}
+model CallCenterTelephonySession {
+  id String @id @default(uuid()) @db.Uuid
+  connectionId String @db.Uuid
+  rootFingerprint String @db.Char(64)
+  callId String @unique @db.Uuid
+  state String @db.VarChar(16)
+  encryptedTechnical String @db.Text
+  keyVersion Int
+  version Int @default(1)
+  completed Boolean @default(false)
+  claimUserId String? @db.Uuid
+  synthetic Boolean
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  claimUser User? @relation(fields: [claimUserId], references: [id], onDelete: Restrict)
+  connection IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  call CallCenterCall @relation(fields: [callId], references: [id], onDelete: Restrict)
+  offers CallCenterTelephonyOffer[]
+  @@unique([connectionId, rootFingerprint])
+  @@index([completed, updatedAt, id])
+  @@map("call_center_telephony_sessions")
+}
+model CallCenterTelephonyOffer {
+  id String @id @default(uuid()) @db.Uuid
+  sessionId String @db.Uuid
+  userId String @db.Uuid
+  mappingVersion Int
+  active Boolean @default(true)
+  deferred Boolean @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  session CallCenterTelephonySession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  @@unique([sessionId, userId])
+  @@index([userId, active, createdAt])
+  @@map("call_center_telephony_offers")
+}
+model CallCenterTelephonyLease {
+  userId String @id @db.Uuid
+  tabId String @db.Uuid
+  expiresAt DateTime @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  @@map("call_center_telephony_leases")
+}
+
+model IntegrationTelephonyAudit {
+  id String @id @default(uuid()) @db.Uuid
+  connectionId String @db.Uuid
+  actorUserId String? @db.Uuid
+  action String @db.VarChar(40)
+  entityId String @db.Uuid
+  metadata Json
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  connection IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  actor User? @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  @@index([connectionId, createdAt])
+  @@map("integration_telephony_audit")
 }

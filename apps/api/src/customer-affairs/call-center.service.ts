@@ -89,7 +89,7 @@ export class CallCenterService {
     return {
       id: call.id,
       contactId: call.contactId,
-      name: call.name,
+      name: row.origin === 'SYNTHETIC' ? `آزمایشی · ${call.name}` : call.name,
       phone: call.phone,
       subject: call.subject,
       source: call.source,

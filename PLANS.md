@@ -561,3 +561,16 @@ Evidence and compatibility: docs/tasks/CALL-CENTER-PACKAGE-TWO-1019.md.
 - [ ] Owner authenticated review after local activation.
 
 See docs/tasks/CALL-CENTER-GLOBAL-QUEUE-1019.md.
+
+## CALL-CENTER-TELEPHONY-1019
+
+- [x] Versioned provider-neutral canonical contract and explicit unsupported reconciliation.
+- [x] Encrypted durable Inbox/Outbox, root/leg projection, dedupe, bounded retry/dead-letter/replay and audit.
+- [x] Extension/user/branch/team mapping and historical recipient snapshots; unknown/ineligible destination review.
+- [x] Global authenticated attention queue, server tab lease and atomic agent claim/transfer.
+- [x] Non-production authenticated synthetic harness through real Worker/BullMQ processing.
+- [x] Targeted PostgreSQL, Worker, transport-auth and Chrome/Edge UI proofs; local preview.
+- [ ] Owner authenticated acceptance on localhost3000.
+- [ ] Separate future provider adapter after Issabel documents/access, retention policy and real end-to-end latency verification.
+
+Evidence and limitations: docs/tasks/CALL-CENTER-TELEPHONY-1019.md.

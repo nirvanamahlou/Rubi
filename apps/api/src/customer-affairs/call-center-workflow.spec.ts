@@ -521,6 +521,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       await db.customerAffairsTicket.create({
         data: {
           ...template,
+          references: [],
           id,
           trackingNumber: id.slice(0, 30),
           branchId: otherBranch,
