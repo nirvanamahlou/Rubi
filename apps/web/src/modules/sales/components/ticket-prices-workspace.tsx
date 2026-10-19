@@ -354,11 +354,11 @@ export function TicketPricesWorkspace() {
         offer.carrierName,
         offer.serviceNumber,
         ticketCabinLabel(offer.cabinClassCode),
-        '\u2067' +
+        '\u2067\u2068' +
           (cities[offer.originId] ?? offer.originId) +
-          ' ← ' +
+          '\u2069 ← \u2068' +
           (cities[offer.destinationId] ?? offer.destinationId) +
-          '\u2069',
+          '\u2069\u2069',
         faDay.format(new Date(offer.departureAt)),
         faTime.format(new Date(offer.departureAt)),
       ].join(' · '),
