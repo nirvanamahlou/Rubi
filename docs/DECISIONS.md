@@ -558,3 +558,11 @@ Use bounded, branch-domain-separated HMAC whole-word tokens for name/subject, ex
 No Issabel protocol, authentication, capabilities or latency are known. This package supplies an authenticated synthetic adapter only; real connections stay inactive. Integrations owns encrypted durable canonical Inbox, dispatch Outbox, connection/mapping configuration and audit. Customer Affairs exposes a transactional projection port and owns the single business call plus technical root/legs, recipient snapshots, claims and completion. No raw provider payload is accepted or distributed. Shared v1 producer/consumer ship together, with explicit nulls and server receipt time distinct from occurrence.
 
 Worker uses existing BullMQ and polls the durable Outbox. Redis is disposable transport, never the acknowledgement source. The authenticated shell uses a bounded authoritative two-second polling snapshot rather than asserting provider push/latency. Reconnection reloads persisted incomplete work; tab leases and call CAS are enforced by the server. Synthetic rows use SYNTHETIC origin and reserved fictional numbers. Mapping recipients are snapshotted at receipt and revalidated at processing; unknown extensions are not broadcast. Canonical processed inbox payloads expire after seven days; HMAC deduplication tombstones remain. Real retention/recording policy and provider adapter activation require a separate approved integration.
+
+## 2026-10-19 — الزام مالک محصول برای حفظ طراحی کال سنتر
+
+تصمیم قطعی مالک: در بسته چهارم و اتصال ایزابل، آخرین طراحی/رفتار تأییدشده بدون اجازه
+صریح او تغییر نکند؛ هیچ بخش فنی یا آزمایشی به پنل افزوده یا بازگردانده نشود. حذف بخش
+آزمایش داخلی در8f485a26 باید حفظ شود. نیاز فنی یا دریافت API مجوز ضمنی UI نیست.
+این تصمیم، هر برداشت متفاوت از راهنمای تاریخی بسته سوم را کنار می‌زند.
+[سند الزام‌آور و روند تأیید](tasks/CALL-CENTER-UI-PRESERVATION.md).

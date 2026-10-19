@@ -1,5 +1,7 @@
 # Call Center package three — internal telephony readiness
 
+Mandatory for package four / Issabel integration: [Owner-approved UI preservation policy](CALL-CENTER-UI-PRESERVATION.md). Historical UI instructions below do not authorize restoring or adding technical/test controls to the operational panel.
+
 Update2026-10-19: the owner requested removal of the entire telephony settings/internal-test section from the Call Center page. The component is no longer mounted; the UI instructions below document the earlier implementation and require an explicit future restoration.
 
 Status: internal synthetic pipeline implemented; **Issabel is NOT CONNECTED or verified**. This is a stacked task on package one, package two and the global request queue (`dc6cb70a`). No real provider endpoint, payload, credential scheme, audio URL or latency claim has been invented.

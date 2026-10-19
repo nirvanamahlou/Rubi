@@ -8325,3 +8325,9 @@ Telephony validation complete:49 focused API/PostgreSQL/auth,5 Worker and18 Web 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-center-remove-telephony-panel-1019 from b7e05527. Owner requests removing the entire telephony infrastructure/internal-test section from the Call Center page for now. Reserve only workspace import/render removal and own status/domain notes. Keep the reusable component available for a future explicitly requested restoration. No API, global attention, database, permission, migration or dependency changes. No overlapping active owner or local target changes. Local Web refresh and task commit/push follow repository workflow.
 
 Validation: scoped ESLint and optimized Web build including TypeScript pass. Web3000 PID21140 serves build Ai_vGuYWT3-0hn9FvSpnp; Web login/API health200. No tests added for this two-line reversible UI removal. Source reservation releases at task publication. No migration or account changes.
+
+## CALL-CENTER-UI-PRESERVATION-POLICY-1019 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-center-ui-preservation-policy-1019 from8f485a26. Direct owner request: persist the mandatory Call Center approved-design protection for package four and Issabel integration. Reserve documentation only: canonical policy, bounded AGENTS.md reference, Product Requirements, Integrations, Decisions, Plans, Project Status and prior telephony guide cross-reference. No overlapping active document owner found. No application/runtime/data/schema/migration/dependency changes. Review policy consistency and local links, then commit/push this unit.
+
+Validation: policy reviewed against the explicit owner request; seven reference documents link to the canonical file and all local policy links resolve. git diff --check passes. Documentation-only: application lint/typecheck/tests/build and runtime restart are not applicable. Documentation reservations release at publication; no PR/merge/deploy.

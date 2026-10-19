@@ -6649,3 +6649,12 @@ Final verification:49 focused API/PostgreSQL/auth checks,5 Worker checks and18 W
 Removed the full expandable telephony infrastructure/internal-testing section from the Call Center workspace at the owner's request. This also removes its configuration, synthetic-call and diagnostic controls from that page. The reusable component remains available for a future requested restoration. No API, database, grants or migration changes. Local Web build/lint and activation are recorded in the work assignment.
 
 Removal validated: ESLint and optimized Web build/TypeScript pass. Local Web3000 PID21140, build Ai_vGuYWT3-0hn9FvSpnp; Web/API health200. No tests added for the two-line visual removal.
+
+## 2026-10-19 — CALL-CENTER-UI-PRESERVATION-POLICY-1019 — PC-C
+
+به درخواست صریح مالک، سیاست لازم‌الاجرای حفظ آخرین طراحی/رفتار تأییدشده کال سنتر
+برای بسته چهارم و اتصال ایزابل ثبت شد. هر تغییر رابط یا افزودن/بازگرداندن بخش فنی و
+آزمایشی نیازمند اجازه صریح کاربر برای همان تغییر است. مرجع در AGENTS، نیازمندی‌های
+محصول، Integrations، تصمیم‌ها و برنامه بسته چهارم درج شد:
+[tasks/CALL-CENTER-UI-PRESERVATION.md](tasks/CALL-CENTER-UI-PRESERVATION.md).
+تغییر فقط مستنداتی است؛ کد برنامه و محیط اجرا تغییر نکرده‌اند.

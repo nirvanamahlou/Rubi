@@ -581,3 +581,12 @@ Evidence and limitations: docs/tasks/CALL-CENTER-TELEPHONY-1019.md.
 - [x] Validate and activate the local Web preview.
 
 The earlier package-three UI test guide requires restoration of this section before its page controls can be used.
+
+## پیش‌شرط بسته چهارم کال سنتر
+
+- [x] ثبت الزام مالک به حفظ آخرین UI/UX تأییدشده و منع افزودن/بازگرداندن بخش فنی/آزمایشی بدون اجازه.
+- [ ] پیش از اجرای بسته چهارم، نسخه و تصاویر مرجع آخرین طراحی تأییدشده ثبت شود.
+- [ ] سازگاری اتصال ایزابل با اجزای موجود بررسی و هر تغییر ضروری رابط پیش از اجرا تأیید شود.
+- [ ] مقایسه بصری/رفتاری و مجوز هر تفاوت در گزارش پذیرش ثبت شود.
+
+مرجع لازم‌الاجرا: [حفظ طراحی کال سنتر](docs/tasks/CALL-CENTER-UI-PRESERVATION.md).
