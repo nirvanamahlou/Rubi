@@ -1382,7 +1382,10 @@ export class MasterDataRepository {
 
       if (
         (resource === 'suppliers' || resource === 'brokers') &&
-        (dossier || !before.organizationId)
+        (dossier ||
+          !before.organizationId ||
+          Object.hasOwn(writeData, 'primaryPhoneEncrypted') ||
+          Object.hasOwn(writeData, 'address'))
       ) {
         writeData.organizationId = await persistPartnerDossier(
           transaction,
@@ -1392,6 +1395,7 @@ export class MasterDataRepository {
           actorUserId,
           actorBranchId,
           Object.hasOwn(writeData, 'primaryPhoneEncrypted'),
+          Object.hasOwn(writeData, 'address'),
         );
       }
 

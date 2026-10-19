@@ -55,6 +55,7 @@ describe('partner identity persistence', () => {
         'actor',
         'branch',
         false,
+        false,
       );
       expect(tx.masterOrganizationContact.findMany).not.toHaveBeenCalled();
       expect(tx.masterOrganizationAddress.update).toHaveBeenCalledWith(

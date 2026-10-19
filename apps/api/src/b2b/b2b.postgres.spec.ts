@@ -869,6 +869,27 @@ describe.skipIf(!enabled)(
           dossierEmailMasked: '',
           dossierAddress: 'Edited office',
         });
+        const current = detail.data;
+        await service.update(
+          resource,
+          current.id,
+          {
+            primaryPhone: '+12025550128',
+            ...(resource === 'suppliers'
+              ? { address: 'Native address edit' }
+              : {}),
+          },
+          current.version,
+          actor,
+        );
+        detail = await service.detail(resource, current.id);
+        expect(detail.data.attributes.primaryPhoneMasked).toBe(
+          crypto.protectTravelPhone('+12025550128').masked,
+        );
+        if (resource === 'suppliers')
+          expect(detail.data.attributes.dossierAddress).toBe(
+            'Native address edit',
+          );
         expect(JSON.stringify(detail)).not.toContain('phoneEncrypted');
       },
     );

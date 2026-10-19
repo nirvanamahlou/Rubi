@@ -31,6 +31,7 @@ export async function persistPartnerDossier(
   actorUserId: string,
   actorBranchId: string,
   syncOffice = true,
+  syncAddress = true,
 ) {
   const audit = async (resource: string, entityId: string, action: string) => {
     await tx.masterDataAuditEvent.create({
@@ -162,7 +163,9 @@ export async function persistPartnerDossier(
     });
     const addressLine = Object.hasOwn(input, 'address')
       ? String(input.address ?? '')
-      : String(existing?.addressLine ?? source.address ?? '');
+      : syncAddress && Object.hasOwn(source, 'address')
+        ? String(source.address ?? '')
+        : String(existing?.addressLine ?? source.address ?? '');
     const location = {
       countryId: (source.countryId as string | null) ?? null,
       cityId: (source.cityId as string | null) ?? null,

@@ -15,4 +15,6 @@ Read canonical address consistently in supplier projection/form; preserve existi
 
 ## Validation
 
+Explicit native phone/address updates also synchronize the canonical dossier even without optional dossier envelope fields; untouched native snapshots never overwrite canonical data. The PostgreSQL round-trip includes this compatibility path.
+
 Initial focused run:38 API and30 Web tests pass. New disposable PostgreSQL scenarios cover both suppliers and brokers: save, reread, canonical contact/address update, unrelated rename, explicit replacement and mobile/email clear. Exact-head hosted tests, quality, builds and PostgreSQL gates must pass before merge. Browser check of the pre-existing synthetic QA broker hit a stale-version guard; it was not counted as a successful new save. Previous deployed shared-number failure is not claimed fixed on the server by a Git merge alone.
