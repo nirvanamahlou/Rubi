@@ -24,3 +24,37 @@ export function eligibleReturn(
     days <= (outbound.returnMaxDays ?? Infinity)
   );
 }
+
+/** Only registered pair identities can suggest a date; ambiguous dates stay manual. */
+export function pairedReturnDate(
+  outbound: readonly TicketOfferV1[],
+  returning: readonly TicketOfferV1[],
+  seats: number,
+) {
+  const pairs = outbound.flatMap((out) => {
+    if (out.status !== 'ACTIVE') return [];
+    const ids = new Set(
+      out.roundTripSalePrices?.map((p) => p.returnOfferId) ?? [],
+    );
+    return returning
+      .filter(
+        (back) =>
+          back.status === 'ACTIVE' &&
+          back.remainingCapacity >= seats &&
+          back.cabinClassCode === out.cabinClassCode &&
+          eligibleReturn(out, back) &&
+          (ids.size
+            ? ids.has(back.id)
+            : Boolean(
+                out.loadGroupId &&
+                out.returnMaxDays != null &&
+                out.loadGroupId === back.loadGroupId,
+              )),
+      )
+      .map((back) => ({ out, back }));
+  });
+  const days = [...new Set(pairs.map((p) => flightDay(p.back)))];
+  return days.length === 1
+    ? { day: days[0]!, outboundIds: [...new Set(pairs.map((p) => p.out.id))] }
+    : undefined;
+}

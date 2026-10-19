@@ -1,3 +1,7 @@
+## PAIRED-RETURN-DATE-1019 — PC-A
+
+Sales fills a unique eligible registered return date after choosing the outbound day, using saved pair IDs or the defined load group and return window. Manual/floating return dates remain editable; an existing explicit date is retained when selecting the actual outbound offer. Search exposes only optional loadGroupId, preserving authorized route/branch filters and omitting audit/internal keys.25 Web and 18 API tests, Web typecheck and scoped lint pass; final-head full CI gates owner-authorized develop merge. No schema/migration/dependency/runtime changes.
+
 ## PASSENGER-DIRECTIONS-1019 — PC-A
 
 Sales people entry now appears below route/services in step1; former people step is skipped. Per-person outbound/return choices default selected and flow through canonical service assignments, directional capacity reserve/amend and existing manifest membership. Hotel-only guests are allowed. Combined flight price appears only for selected flight people with direction and age labels; hotel amounts are entered manually per guest, exact totals exclude old room agreements. Same-day check-in defaults with explicit next-day arrival; checkout policy/manual overrides retained.88 API tests plus47 related Web tests, Web types and scoped lint pass; hosted full checks gate merge. No schema/migration/dependency or production runtime changes.

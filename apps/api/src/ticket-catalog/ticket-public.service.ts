@@ -648,6 +648,12 @@ export class TicketPublicService {
         totalCapacity: { gt: 0 },
       },
       include: {
+        audit: {
+          where: { action: { startsWith: loadGroupAuditPrefix } },
+          orderBy: { occurredAt: 'desc' },
+          take: 1,
+          select: { action: true },
+        },
         capacityAllocations: {
           where: { status: 'ACTIVE' },
           select: { quantity: true },
@@ -678,7 +684,16 @@ export class TicketPublicService {
     });
     return {
       version: 1 as const,
-      data: rows.slice(0, 50).map((row) => this.offerView(row)),
+      data: rows.slice(0, 50).map((row) => {
+        const loadGroupId = ticketLoadGroupId(
+          row.createKey,
+          row.audit?.[0]?.action,
+        );
+        return {
+          ...this.offerView(row),
+          ...(loadGroupId ? { loadGroupId } : {}),
+        };
+      }),
       hasMore: rows.length > 50,
     };
   }

@@ -244,3 +244,36 @@ it('searches and revalidates active past tickets without clamping dates to today
     totalCapacity: { gt: 0 },
   });
 });
+
+it('exposes only the load identity needed for paired dates in authorized search', async () => {
+  const { service, client } = setup();
+  client.ticketPublishedOffer.findMany.mockResolvedValue([
+    {
+      ...outbound,
+      createKey: 'legacy',
+      standaloneSalePrices: [],
+      outboundRoundTripSalePrices: [],
+      audit: [{ action: 'ticket.offer.load-group:' + contract }],
+      version: 1,
+      status: 'ACTIVE',
+    },
+  ] as never);
+  const result = await service.search(
+    { originId: a, destinationId: b, departureFrom: '2099-10-01' },
+    actor,
+  );
+  expect(result.data[0]?.loadGroupId).toBe(contract);
+  expect(result.data[0]).not.toHaveProperty('audit');
+  expect(result.data[0]).not.toHaveProperty('createKey');
+  expect(client.ticketPublishedOffer.findMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: expect.objectContaining({
+        branchId: { in: [branch] },
+        status: 'ACTIVE',
+      }),
+      include: expect.objectContaining({
+        audit: expect.objectContaining({ select: { action: true } }),
+      }),
+    }),
+  );
+});
