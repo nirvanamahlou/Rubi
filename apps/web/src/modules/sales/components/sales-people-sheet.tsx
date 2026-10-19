@@ -272,25 +272,22 @@ export function SalesPeopleSheet({
       label,
       values: row.values,
       readOnly: Boolean(row.person),
-      editableFields:
-        row.person && !row.profile
-          ? ['birthDate']
-          : [
-              'firstName',
-              'lastName',
-              'nationalId',
-              'birthDate',
-              'passportNumber',
-              'passportExpiryDate',
-              'passportFirstName',
-              'passportLastName',
-              'gender',
-              'nationalityCode',
-              'passportIssuingCountryCode',
-              'birthCountryCode',
-              'phone',
-              'email',
-            ],
+      editableFields: [
+        'firstName',
+        'lastName',
+        'nationalId',
+        'birthDate',
+        'passportNumber',
+        'passportExpiryDate',
+        'passportFirstName',
+        'passportLastName',
+        'gender',
+        'nationalityCode',
+        'passportIssuingCountryCode',
+        'birthCountryCode',
+        'phone',
+        'email',
+      ],
       role: (
         <div className="space-y-1 text-xs text-muted-foreground">
           <p>
@@ -334,6 +331,7 @@ export function SalesPeopleSheet({
         change(
           editPeopleRow(draft, key, {
             ...row,
+            savedValues: row.savedValues ?? { ...row.values },
             values: { ...row.values, [field]: value },
           }),
         ),

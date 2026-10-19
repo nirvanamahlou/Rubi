@@ -974,7 +974,10 @@ export function withSalesHotelDates(
             ? salesFlightSelection(
                 state,
                 field === 'checkIn' ? 'OUTBOUND' : 'RETURN',
-              )?.departureAt
+              )?.departureAt ||
+                ((field === 'checkIn' ? state.departureDate : state.returnDate)
+                  ? `${field === 'checkIn' ? state.departureDate : state.returnDate}T00:00:00+03:30`
+                  : undefined)
             : undefined,
           field === 'checkIn' ? 1 : -1,
         );

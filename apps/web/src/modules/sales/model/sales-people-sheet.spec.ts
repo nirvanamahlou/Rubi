@@ -1162,3 +1162,38 @@ it('projects each international passenger passport name independently of repeate
   ]);
   expect(result.patch.customerName).toBe('Synthetic Person');
 });
+
+it('hydrates existing passenger profiles before saving edits from a restored row', async () => {
+  const single = {
+    ...state,
+    passengerComposition: { adults: 1, children: 0, infants: 0 },
+  };
+  const profile = detail('existing', {
+    roles: ['customer', 'passenger'],
+    contacts: [],
+  });
+  const row = selectedPeopleRow(profile);
+  delete row.profile;
+  const draft: SalesPeopleDraft = {
+    ...initialSalesPeopleDraft(single),
+    rows: {
+      p0: {
+        ...row,
+        values: { ...row.values, lastName: 'Changed' },
+      },
+    },
+  };
+  const api = {
+    create: vi.fn(),
+    addContact: vi.fn(),
+    detail: vi.fn(async () => ({ data: profile })),
+    update: vi.fn(async () => ({
+      data: { ...profile, lastName: 'Changed', version: 2 },
+    })),
+  };
+  const result = await saveSalesPeopleDraft(single, draft, vi.fn(), api);
+  expect(api.detail).toHaveBeenCalledWith('existing', 'customer-verification');
+  expect(api.update).toHaveBeenCalled();
+  expect(result.draft.rows.p0?.values.lastName).toBe('Changed');
+  expect(api.create).not.toHaveBeenCalled();
+});

@@ -1303,6 +1303,8 @@ export function SalesContractForm() {
                 setFutureFrom(new Date().toISOString());
                 patchState({
                   ...resetSalesTicketRange(state),
+                  departureDate: range.from,
+                  returnDate: range.to,
                   contractFlights: {},
                 });
               }}
