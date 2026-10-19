@@ -31,6 +31,7 @@
 .header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 20px;
   margin-bottom: 14px;
 }
@@ -50,27 +51,6 @@
 .header p {
   color: var(--cc-muted);
   margin: 0;
-}
-.travel {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-inline-start: auto;
-  background: #eaf6fd;
-  color: #4c7e9d;
-  border-radius: 8px;
-  padding: 10px 15px;
-}
-.travel > svg {
-  width: 35px;
-  height: 35px;
-  transform: rotate(-20deg);
-  color: #64b8ed;
-}
-.travel small {
-  display: block;
-  font-size: 10px;
-  margin-top: 4px;
 }
 .primary {
   display: inline-flex;
@@ -731,12 +711,6 @@
   }
 }
 @media (max-width: 800px) {
-  .travel {
-    display: none;
-  }
-  .header {
-    justify-content: space-between;
-  }
   .stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
