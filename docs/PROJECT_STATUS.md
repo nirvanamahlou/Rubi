@@ -6621,3 +6621,8 @@ Removed the promotional travel-message card and airplane icon from the Call Cent
 ## 2026-10-19 — CALL-CENTER-CONTROLS-1019 — PC-C
 
 Call Center toolbar filters and registration-dialog selectors now use the existing searchable ERP selection component instead of browser-native visible menus. Selection values/defaults, FormData and busy protection remain intact. Search and dropdown fields share40px height,8px corners, typography and focus styling; browser-specific search decorations are suppressed. Eight shared selection tests, scoped lint and optimized Web build/TypeScript pass. No API, database or permission changes; local Web preview refreshed. Browser is at login, so no authenticated or physical cross-browser visual acceptance is claimed.
+
+
+## SALES-DOCUMENT-GREEN-1019 — PC-A
+
+Sales contract rows use green when Finance's latest customer document delivery revision is approved. The list enriches only already-authorized Sales results using a batch Finance public projection; no financial reason, actor or payment details are exposed. Revoked/missing approval and cancelled contracts do not turn green. Green takes precedence over amendment amber while preserving the existing correction marker. No explanatory UI text, permission change, migration, dependency or runtime rollout. Focused regressions and exact-head hosted quality/test/build/database gates precede user-authorized develop merge.

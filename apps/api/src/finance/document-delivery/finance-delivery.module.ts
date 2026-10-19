@@ -370,6 +370,22 @@ export class FinanceDeliveryService {
       };
     });
   }
+  async approvedCustomerContractIds(
+    contractIds: readonly string[],
+  ): Promise<string[]> {
+    if (!contractIds.length) return [];
+    const latest =
+      await this.database.client.financeCustomerDocumentDeliveryRevision.findMany(
+        {
+          where: { contractId: { in: [...new Set(contractIds)] } },
+          orderBy: { version: 'desc' },
+          distinct: ['contractId'],
+          select: { contractId: true, approved: true },
+        },
+      );
+    return latest.filter((row) => row.approved).map((row) => row.contractId);
+  }
+
   async readCustomerContract(
     contractId: string,
   ): Promise<FinanceCustomerDocumentDeliveryAuthorizationV1> {
