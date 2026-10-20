@@ -316,12 +316,20 @@ function isBlankRow(row: ParsedSheetRow) {
 }
 
 function isHeaderRow(row: ParsedSheetRow) {
-  return (
-    row.values.length === HOTEL_IMPORT_HEADERS.length &&
-    HOTEL_IMPORT_HEADERS.every(
-      (header, index) => normalize(row.values[index] ?? '') === header,
-    )
+  return ['نام هتل', 'شهر'].every((header) =>
+    row.values.some((value) => normalize(value ?? '') === header),
   );
+}
+
+function columnName(index: number) {
+  let value = index + 1;
+  let name = '';
+  while (value > 0) {
+    value -= 1;
+    name = String.fromCharCode(65 + (value % 26)) + name;
+    value = Math.floor(value / 26);
+  }
+  return name;
 }
 
 function dataRowsAfterCanonicalHeader(rows: readonly ParsedSheetRow[]) {
@@ -332,6 +340,18 @@ function dataRowsAfterCanonicalHeader(rows: readonly ParsedSheetRow[]) {
     fail('Headerهای Sheet Hotels با HOTEL_IMPORT_V1 مطابقت ندارند.');
 
   const headerIndex = headerIndexes[0] ?? -1;
+  const header = rows[headerIndex]?.values ?? [];
+  const columns = new Map<string, number>();
+  header.forEach((value, index) => {
+    const name = normalize(value ?? '');
+    if (!name) return;
+    if (
+      !HOTEL_IMPORT_HEADERS.some((known) => known === name) ||
+      columns.has(name)
+    )
+      fail('Headerهای Sheet Hotels با HOTEL_IMPORT_V1 مطابقت ندارند.');
+    columns.set(name, index);
+  });
   const preamble = rows.slice(0, headerIndex);
   const nonBlankPreamble = preamble.filter((row) => !isBlankRow(row));
   const directHeader = nonBlankPreamble.length === 0;
@@ -351,7 +371,35 @@ function dataRowsAfterCanonicalHeader(rows: readonly ParsedSheetRow[]) {
   if (!directHeader && !formattedTemplatePreamble)
     fail('ساختار عنوان و راهنمای HOTEL_IMPORT_V1 معتبر نیست.');
 
-  return rows.slice(headerIndex + 1).filter((row) => !isBlankRow(row));
+  return {
+    rows: rows
+      .slice(headerIndex + 1)
+      .filter((row) => !isBlankRow(row))
+      .map((row) => {
+        // Resolve by header, not physical offset: optional columns may be absent
+        // or reordered without moving status/facilities into unrelated fields.
+        if (
+          row.values.some(
+            (value, index) =>
+              normalize(value ?? '') && !normalize(header[index] ?? ''),
+          )
+        )
+          fail('داده در ستونی بدون عنوان معتبر یافت شد.');
+        return {
+          rowNumber: row.rowNumber,
+          values: HOTEL_IMPORT_HEADERS.map((name) => {
+            const index = columns.get(name);
+            return index === undefined ? '' : (row.values[index] ?? '');
+          }),
+        };
+      }),
+    mapping: Object.fromEntries(
+      HOTEL_IMPORT_HEADERS.map((name) => {
+        const index = columns.get(name);
+        return [name, index === undefined ? '' : columnName(index)];
+      }),
+    ) as ParsedHotelWorkbook['mapping'],
+  };
 }
 
 function optional(value: string | undefined) {
@@ -454,7 +502,7 @@ export function parseHotelImportWorkbook(input: {
   if (/\bDDE\b|WEBSERVICE\s*\(|HYPERLINK\s*\(/i.test(workbookText))
     fail('Remote Reference یا DDE در Workbook مجاز نیست.');
 
-  const rows = dataRowsAfterCanonicalHeader(
+  const { rows, mapping } = dataRowsAfterCanonicalHeader(
     parseSheet(hotelSheet, parseSharedStrings(files['xl/sharedStrings.xml'])),
   );
 
@@ -594,12 +642,7 @@ export function parseHotelImportWorkbook(input: {
     rows: result,
     issues,
     warnings,
-    mapping: Object.fromEntries(
-      HOTEL_IMPORT_HEADERS.map((header, index) => [
-        header,
-        String.fromCharCode(65 + index),
-      ]),
-    ) as ParsedHotelWorkbook['mapping'],
+    mapping,
     security: {
       entryCount,
       uncompressedBytes,

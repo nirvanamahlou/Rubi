@@ -73,33 +73,47 @@ function workbook(requiredOnly = false) {
 }
 
 describe('HotelImportService commit persistence', () => {
-  it.each(['legacy', 'downloadable template', 'required fields only'])(
+  it.each([
+    'legacy',
+    'downloadable template',
+    '14-column template',
+    'required fields only',
+  ])(
     'persists every valid parsed row from %s and writes audit records',
     async (source) => {
-      const supplied = source === 'downloadable template';
+      const reduced = source === '14-column template';
+      const supplied = source === 'downloadable template' || reduced;
       const requiredOnly = source === 'required fields only';
       const buffer = supplied
         ? readFileSync(
             resolve(
               process.cwd(),
-              '../web/public/templates/hotel-master-template.xlsx',
+              reduced
+                ? 'test/fixtures/hotel-master-template-14-columns.xlsx'
+                : '../web/public/templates/hotel-master-template.xlsx',
             ),
           )
         : workbook(requiredOnly);
       const expectedHotels = supplied
         ? [
             {
-              code: 'HTL-KUS-001',
+              code: reduced
+                ? expect.stringMatching(/^HOTEL_[A-F0-9]{12}$/)
+                : 'HTL-KUS-001',
               name: 'Charisma De Luxe Hotel',
               isActive: true,
             },
             {
-              code: 'HTL-KUS-002',
+              code: reduced
+                ? expect.stringMatching(/^HOTEL_[A-F0-9]{12}$/)
+                : 'HTL-KUS-002',
               name: 'Ramada Resort Kusadasi',
               isActive: true,
             },
             {
-              code: 'HTL-KUS-003',
+              code: reduced
+                ? expect.stringMatching(/^HOTEL_[A-F0-9]{12}$/)
+                : 'HTL-KUS-003',
               name: 'Signature Blue Resort',
               isActive: false,
             },
