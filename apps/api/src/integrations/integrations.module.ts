@@ -13,6 +13,13 @@ import { ProcurementSupplierIntegrationService } from './procurement-supplier.in
 import { SystemManagementModule } from '../system-management/system-management.module';
 import { IntegrationRegistryController } from './integration-registry.controller';
 import { IntegrationRegistryService } from './integration-registry.service';
+import { IssabelService } from './issabel/issabel.service';
+import { IssabelRecordingsService } from './issabel/recordings.service';
+import {
+  IssabelController,
+  IssabelRecordingController,
+  IssabelRecordingGuard,
+} from './issabel/issabel.controller';
 
 @Module({
   imports: [
@@ -22,12 +29,17 @@ import { IntegrationRegistryService } from './integration-registry.service';
     SystemManagementModule,
   ],
   controllers: [
+    IssabelController,
+    IssabelRecordingController,
     TelephonyIntegrationController,
     TelephonyWorkerController,
     IntegrationsController,
     IntegrationRegistryController,
   ],
   providers: [
+    IssabelService,
+    IssabelRecordingsService,
+    IssabelRecordingGuard,
     TelephonyIntegrationService,
     TelephonyWorkerGuard,
     ProcurementSupplierIntegrationService,

@@ -212,11 +212,20 @@ export class TelephonyIntegrationService {
     });
   }
   /** Adapter-facing in-process port. There is deliberately no public provider webhook. */
-  async receive(input: TelephonyEventV1) {
+  async receive(input: TelephonyEventV1, provider?: 'ISSABEL') {
     const c = await this.db.client.integrationTelephonyConnection.findUnique({
       where: { id: input.connectionId },
     });
-    if (!c || !c.active || !c.synthetic || !this.syntheticEnabled())
+    const realProvider =
+      provider === 'ISSABEL' &&
+      this.config.get<string>('ISSABEL_ENABLED') === 'true' &&
+      this.config.get<string>('ISSABEL_CONNECTION_ID') === c?.id &&
+      !c?.synthetic;
+    if (
+      !c ||
+      !c.active ||
+      !(realProvider || (c.synthetic && this.syntheticEnabled()))
+    )
       throw new ForbiddenException(
         'No verified provider adapter is configured.',
       );
