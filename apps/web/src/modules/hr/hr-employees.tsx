@@ -145,6 +145,19 @@ export function HrEmployeeEditor({
   return (
     <>
       <NewEmployeeDialog
+        groupOptions={references.data.records
+          .filter(
+            (r) =>
+              r.section === 'organization' &&
+              r.tab === 'groups' &&
+              r.status === 'فعال',
+          )
+          .map((r) => ({
+            id: r.id,
+            name: r.values[0] ?? '',
+            branch:
+              companies.find((c) => c.branchId === r.branchId)?.name ?? '',
+          }))}
         onAddReference={(kind, branch) => {
           const companyId = companies.find(
             (company) => company.name === branch,
@@ -169,7 +182,20 @@ export function HrEmployeeEditor({
         existingPersonnelCodes={store
           .data!.employees.filter((item) => item.id !== employee?.id)
           .map((item) => item.personnelCode)}
-        initialValue={employee ? employeeFormValue(employee, store) : undefined}
+        initialValue={
+          employee
+            ? {
+                ...employeeFormValue(employee, store),
+                groupId:
+                  references.data.records.find(
+                    (r) =>
+                      r.employeeId === employee.id &&
+                      r.tab === 'groupMembers' &&
+                      r.status === 'فعال',
+                  )?.parentId ?? '',
+              }
+            : undefined
+        }
         branchOptions={
           employee?.organizationBranchId
             ? [employee.companyName]
@@ -195,6 +221,7 @@ export function HrEmployeeEditor({
           if (value.manager !== 'بدون مدیر مستقیم' && managers.length !== 1)
             throw new Error('مدیر مستقیم را از فهرست کارکنان انتخاب کنید.');
           const input = {
+            groupId: value.groupId || null,
             userId: value.userId || null,
             branchId: branch.branchId,
             ...(branch.organizationBranchId
@@ -211,6 +238,7 @@ export function HrEmployeeEditor({
           };
           const saved = employee
             ? await hrApi.employees.update(employee.id, {
+                groupId: input.groupId,
                 name: input.name,
                 kind: input.kind,
                 status: input.status,

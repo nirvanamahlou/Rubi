@@ -6743,3 +6743,7 @@ PASSENGER-PRICE-COLUMNS-1020 ready for CI: merged-current-development regression
 ## 2026-10-20 — Contract creation presentation
 
 PC-A CONTRACT-UI-1020: clearer three-step progress, emphasized current step, responsive step layout, softer header/card spacing and wrapping sticky actions. Presentation classes only; existing state, validation, calculations and submit unchanged. Formatting and diff checks passed. No runtime deployment or browser acceptance claimed.
+
+## HR observed Radan completion — 2026-10-20 — PC-B
+
+Continuation of merged PR999: observed personnel identity/contact controls, canonical group selector, explicit attendance settings, reusable annual Persian shift calendars and organizational-position assignment, exact minute leave grants/cardex/conserved carry-burn-buyback, hourly/daily request subtypes and relational nominated approval stages, guarded xlsx/BIFF8 payslip import and scoped HR archive are implemented in the existing UI design. No schema, migration, lockfile, new dependency, IAM grant, runtime or operational-data change. Unobserved/locked engines are excluded rather than guessed. See docs/tasks/HR-RADAN-COMPLETION-1020.md for exact source boundaries, producer/consumer compatibility and validation. Final exact-source and hosted checks remain publication gates.

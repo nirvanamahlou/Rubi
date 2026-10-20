@@ -1,3 +1,4 @@
+import { zipSync, strToU8 } from 'fflate';
 import 'reflect-metadata';
 import { execFileSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -134,7 +135,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       const url = new URL(env.DATABASE_URL!);
       if (
         !['localhost', '127.0.0.1'].includes(url.hostname) ||
-        url.port !== '55432' ||
+        url.port !== (process.env.NORA_HR_TEST_PORT ?? '55432') ||
         !/^nora_hr_test_[a-f0-9]{32}$/.test(databaseName)
       )
         throw new Error(
@@ -1059,7 +1060,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       await expect(
         service.contractState(
           contract.id,
-          { version: active.version, state: 'ENDED' },
+          { version: active.version, state: 'ENDED', reason: 'x'.repeat(1001) },
           key(),
           admin,
         ),
@@ -1322,15 +1323,8 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         {
           branchId: branchA,
           section: 'recruitment',
-          tab: 'openings',
-          values: [
-            'فرصت اول',
-            'تهران',
-            'تمام‌وقت',
-            '2026-09-09',
-            '2026-10-09',
-            '1',
-          ],
+          tab: 'staffing',
+          values: ['2026', 'تهران', 'فروش', '1', '2', '', 'مدیر'],
         },
         key(),
         admin,
@@ -1339,15 +1333,8 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         {
           branchId: branchA,
           section: 'recruitment',
-          tab: 'openings',
-          values: [
-            'فرصت دوم',
-            'تهران',
-            'تمام‌وقت',
-            '2026-09-09',
-            '2026-10-09',
-            '1',
-          ],
+          tab: 'staffing',
+          values: ['2026', 'تهران', 'فروش', '1', '2', '', 'مدیر'],
         },
         key(),
         admin,
@@ -1373,14 +1360,14 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         admin,
       );
       expect(applicant.parentId).toBe(opening.id);
-      expect(applicant.values[1]).toBe('فرصت اول');
+      expect(applicant.values[1]).toBe('برنامه 2026 - فروش');
       const updated = await service.updateRecord(
         applicant.id,
         { version: applicant.version, parentId: next.id },
         admin,
       );
       expect(updated.parentId).toBe(next.id);
-      expect(updated.values[1]).toBe('فرصت دوم');
+      expect(updated.values[1]).toBe('برنامه 2026 - فروش');
       const otherRecruiter = (
         await actor(
           'hr_test_other_recruiter',
@@ -1392,15 +1379,8 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         {
           branchId: branchB,
           section: 'recruitment',
-          tab: 'openings',
-          values: [
-            'فرصت شعبه دیگر',
-            'تهران',
-            'تمام‌وقت',
-            '2026-09-09',
-            '2026-10-09',
-            '1',
-          ],
+          tab: 'staffing',
+          values: ['2026', 'تهران', 'فروش', '1', '2', '', 'مدیر'],
         },
         key(),
         otherRecruiter,
@@ -2124,6 +2104,465 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       );
     });
 
+    it('imports payslip Excel through authenticated multipart without touching Finance', async () => {
+      const slipOwner = await actor('radan_slip_owner', ['hr.self'], [branchA]);
+      const target = await service.createEmployee(
+        employeeInput('Radan Payslip', { userId: slipOwner.actor.userId }),
+        key(),
+        admin,
+      );
+      const buffer = Buffer.from(
+        zipSync({
+          'xl/worksheets/sheet1.xml': strToU8(
+            `<worksheet><sheetData><row><c r="A1" t="inlineStr"><is><t>کد پرسنلی</t></is></c><c r="B1" t="inlineStr"><is><t>خالص</t></is></c></row><row><c r="A2" t="inlineStr"><is><t>${target.personnelCode}</t></is></c><c r="B2"><v>123456789012345.25</v></c></row></sheetData></worksheet>`,
+          ),
+        }),
+      );
+      const token = key();
+      for (let retry = 0; retry < 2; retry++)
+        await request(app.getHttpServer())
+          .post('/api/v1/hr/payslips/import')
+          .set('Cookie', adminCookie)
+          .set('Idempotency-Key', token)
+          .field('branchId', branchA)
+          .field('year', '1405')
+          .field('month', '7')
+          .attach('file', buffer, 'pay.xlsx')
+          .expect(201);
+      const rows = await client.hrRecord.findMany({
+        where: {
+          employeeId: target.id,
+          section: 'payroll',
+          tab: 'importedPayslips',
+        },
+      });
+      expect(rows).toHaveLength(1);
+      expect(
+        (await service.getRecord(rows[0]!.id, slipOwner.actor)).values[4],
+      ).toBe('123456789012345.25');
+      expect((await service.getRecord(rows[0]!.id, reader)).values[4]).toBe(
+        '••••',
+      );
+      expect((rows[0]!.values as string[])[4]).toBe('123456789012345.25');
+      await expect(
+        service.importPayslips(
+          { buffer, originalname: 'pay.xlsx' },
+          { branchId: branchA, year: 1405, month: 7 },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('قبلاً');
+      await expect(
+        service.updateRecord(
+          rows[0]!.id,
+          { version: 1, values: ['forged'] },
+          admin,
+        ),
+      ).rejects.toThrow();
+      await request(app.getHttpServer())
+        .post('/api/v1/hr/payslips/import')
+        .set('Cookie', selfCookie)
+        .set('Idempotency-Key', key())
+        .field('branchId', branchA)
+        .field('year', '1405')
+        .field('month', '8')
+        .attach('file', buffer, 'pay.xlsx')
+        .expect(403);
+    });
+    it('links the employee group selector using actual memberships and branch validation', async () => {
+      const group = await service.createRecord(
+        {
+          branchId: branchA,
+          section: 'organization',
+          tab: 'groups',
+          values: ['گروه آزمایش', ''],
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      const target = await service.createEmployee(
+        employeeInput('Radan Group', { groupId: group.id }),
+        key(),
+        admin,
+      );
+      expect(
+        await client.hrRecord.count({
+          where: {
+            employeeId: target.id,
+            parentId: group.id,
+            tab: 'groupMembers',
+            status: 'فعال',
+          },
+        }),
+      ).toBe(1);
+      await service.updateEmployee(
+        target.id,
+        { version: target.version, groupId: null },
+        admin,
+      );
+      expect(
+        await client.hrRecord.count({
+          where: { employeeId: target.id, tab: 'groupMembers', status: 'فعال' },
+        }),
+      ).toBe(0);
+    });
+    it('persists Radan identity encrypted and never returns ciphertext or private audit values', async () => {
+      const previousKey = process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
+      process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 =
+        randomBytes(32).toString('base64');
+      try {
+        const target = await service.createEmployee(
+          employeeInput('Radan Private'),
+          key(),
+          admin,
+        );
+        const values = [
+          'نام',
+          'نام خانوادگی',
+          '0123456789',
+          '',
+          '',
+          '',
+          'مرد',
+          'مجرد',
+          '',
+          '',
+          'کارشناسی',
+          '',
+          'نامشخص',
+          'نشانی محرمانه',
+        ];
+        const record = await service.createRecord(
+          {
+            section: 'employee',
+            tab: 'identity',
+            employeeId: target.id,
+            values,
+            status: 'فعال',
+          },
+          key(),
+          admin,
+        );
+        expect(record.values).toEqual(values);
+        expect(JSON.stringify(record.data)).not.toContain('privatePayload');
+        const stored = await client.hrRecord.findUniqueOrThrow({
+          where: { id: record.id },
+        });
+        expect(JSON.stringify(stored)).not.toContain('0123456789');
+        expect(stored.searchText).toBe('');
+        expect(
+          (await service.getRecord(record.id, reader)).values.every(
+            (v) => v === '••••',
+          ),
+        ).toBe(true);
+        const updated = await service.updateRecord(
+          record.id,
+          {
+            version: record.version,
+            values: values.map((v, i) => (i === 13 ? 'نشانی جدید' : v)),
+          },
+          admin,
+        );
+        expect(updated.values[13]).toBe('نشانی جدید');
+        const audit = await client.hrAuditEvent.findMany({
+          where: { recordId: record.id },
+        });
+        expect(JSON.stringify(audit)).not.toContain('0123456789');
+        expect(JSON.stringify(audit)).not.toContain('نشانی جدید');
+        await expect(service.getRecord(record.id, outsider)).rejects.toThrow();
+        await service.deleteRecord(record.id, String(updated.version), admin);
+      } finally {
+        if (previousKey === undefined)
+          delete process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
+        else process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 = previousKey;
+      }
+    });
+    it('grants exact monthly minutes, retries once and conserves carry/burn/buyback', async () => {
+      const target = await service.createEmployee(
+        employeeInput('Radan Minutes'),
+        key(),
+        admin,
+      );
+      const grant = {
+        employeeIds: [target.id],
+        year: 1405,
+        months: [1, 2],
+        duration: '16:20',
+        type: 'استحقاقی',
+      };
+      const token = key();
+      await service.minuteLeave(grant, token, admin);
+      await service.minuteLeave(grant, token, admin);
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: target.id, year: 1405 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(1960);
+      const rule = await service.createRecord(
+        {
+          section: 'time',
+          tab: 'leaveTransferRules',
+          branchId: branchA,
+          values: [
+            'قاعده',
+            '1405',
+            '10:00',
+            '30:00',
+            '01:00',
+            '01:40',
+            '00:00',
+            '00:00',
+            '00:00',
+          ],
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      await service.minuteLeave(
+        {
+          employeeIds: [target.id],
+          year: 1405,
+          type: 'استحقاقی',
+          ruleId: rule.id,
+        },
+        key(),
+        admin,
+      );
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: target.id, year: 1405 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(0);
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: target.id, year: 1406 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(1800);
+      await expect(
+        service.minuteLeave(
+          {
+            employeeIds: [target.id],
+            year: 1405,
+            type: 'استحقاقی',
+            ruleId: rule.id,
+          },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('قبلاً');
+      await expect(service.minuteLeave(grant, key(), self)).rejects.toThrow();
+    });
+    it('approves every nominated stage before final effects and prevents bypass', async () => {
+      const approverAccount = await actor(
+        'radan_approver',
+        ['hr.self', 'hr.approve'],
+        [branchA],
+      );
+      const first = await service.createEmployee(
+        employeeInput('Radan First', { userId: admin.userId }),
+        key(),
+        admin,
+      );
+      const second = await service.createEmployee(
+        employeeInput('Radan Second', { userId: approverAccount.actor.userId }),
+        key(),
+        admin,
+      );
+      const target = await service.createEmployee(
+        employeeInput('Radan Workflow'),
+        key(),
+        admin,
+      );
+      const procedure = await service.createRecord(
+        {
+          branchId: branchA,
+          section: 'requests',
+          tab: 'procedures',
+          values: ['دو مرحله', '', JSON.stringify(['دورکاری ساعتی'])],
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      await service.createRecord(
+        {
+          section: 'requests',
+          tab: 'procedureMembers',
+          parentId: procedure.id,
+          employeeId: target.id,
+          values: [''],
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      for (const [staff, priority] of [
+        [first, 1],
+        [second, 2],
+      ] as const)
+        await service.createRecord(
+          {
+            section: 'requests',
+            tab: 'approvalStages',
+            parentId: procedure.id,
+            employeeId: staff.id,
+            values: ['', String(priority), 'خیر'],
+            status: 'فعال',
+          },
+          key(),
+          admin,
+        );
+      const item = await service.createRecord(
+        {
+          section: 'time',
+          tab: 'remote',
+          employeeId: target.id,
+          values: ['', '2027-01-15', '2027-01-15', 'ساعتی', '09:00', '11:00'],
+          status: 'در انتظار تأیید',
+        },
+        key(),
+        admin,
+      );
+      await expect(
+        service.updateRecord(
+          item.id,
+          { version: item.version, status: 'تأییدشده' },
+          approverAccount.actor,
+        ),
+      ).rejects.toThrow();
+      const partial = await service.updateRecord(
+        item.id,
+        { version: item.version, status: 'تأییدشده' },
+        admin,
+      );
+      expect(partial.status).toBe('در انتظار تأیید');
+      expect(partial.data.approvalStep).toBe(1);
+      await expect(
+        service.updateRecord(
+          item.id,
+          { version: partial.version, values: item.values },
+          admin,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.updateRecord(
+          item.id,
+          { version: partial.version, status: 'تأییدشده' },
+          admin,
+        ),
+      ).rejects.toThrow('مرحله');
+      const final = await service.updateRecord(
+        item.id,
+        { version: partial.version, status: 'تأییدشده' },
+        approverAccount.actor,
+      );
+      expect(final.status).toBe('تأییدشده');
+      expect(final.data.approvalStep).toBe(2);
+      expect(final.data.minutes).toBe(120);
+    });
+    it('saves a calendar atomically and assigns an immutable schedule snapshot', async () => {
+      const target = await service.createEmployee(
+        employeeInput('Radan Calendar'),
+        key(),
+        admin,
+      );
+      const hours = await service.createRecord(
+        {
+          branchId: branchA,
+          section: 'time',
+          tab: 'workingHours',
+          values: [
+            'صبح',
+            '',
+            '08:00',
+            '16:00',
+            'همان روز',
+            '0',
+            '0',
+            '#123456',
+          ],
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      const template = await service.createRecord(
+        {
+          branchId: branchA,
+          section: 'time',
+          tab: 'shiftTemplates',
+          values: ['تقویم', ''],
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      await service.saveTemplateCalendar(
+        template.id,
+        {
+          version: 1,
+          dates: ['2027-01-15', '2027-01-16'],
+          workingHoursId: hours.id,
+        },
+        key(),
+        admin,
+      );
+      await expect(
+        service.saveTemplateCalendar(
+          template.id,
+          { version: 1, dates: ['2027-01-17'], workingHoursId: hours.id },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow();
+      const assignment = await service.createRecord(
+        {
+          section: 'time',
+          tab: 'shift',
+          employeeId: target.id,
+          parentId: template.id,
+          values: [
+            'تقویم',
+            '',
+            '',
+            '0',
+            '0',
+            '',
+            '',
+            '2027-01-15',
+            '2027-01-16',
+          ],
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      expect(assignment.data.templateSchedule?.['2027-01-15']?.values[0]).toBe(
+        '08:00',
+      );
+      await service.saveTemplateCalendar(
+        template.id,
+        { version: 2, dates: ['2027-01-15'], remove: true },
+        key(),
+        admin,
+      );
+      expect(
+        (await service.getRecord(assignment.id, admin)).data.templateSchedule?.[
+          '2027-01-15'
+        ],
+      ).toBeDefined();
+    });
     it('applies due approved job changes automatically on authorized reads without replay', async () => {
       const before = await client.hrRecord.count({
         where: {

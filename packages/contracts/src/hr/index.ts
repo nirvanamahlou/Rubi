@@ -1,3 +1,4 @@
+export * from './radan-completion';
 export * from './radan-fields';
 export * from './resource-registry';
 export * from './connections';
@@ -83,6 +84,20 @@ export interface HrWorkflowData {
   earlyMinutes?: number | null;
   overtimeMinutes?: number | null;
   exceptionCodes?: string[];
+  calculationSettingsId?: string;
+  calculationBasis?: string;
+  calculationMetrics?: Record<string, number>;
+  /** Server managed workflow route; generic commands reject this field. */
+  approvalRoute?: {
+    employeeId: string;
+    senior: boolean;
+    priority: number;
+    decidedBy?: string;
+    decidedAt?: string;
+  }[];
+  approvalStep?: number;
+  requestSubtype?: string;
+  templateSchedule?: Record<string, { values: string[] }>;
 }
 
 export interface HrContractStateCommand {
@@ -94,6 +109,7 @@ export interface HrContractStateCommand {
 }
 
 export interface HrEmployeeCreate {
+  groupId?: string | null;
   branchId?: string;
   userId?: string | null;
   photoDocumentId?: string;

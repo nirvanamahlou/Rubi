@@ -1,3 +1,10 @@
+import {
+  HR_RADAN_COMPLETION_COLUMNS,
+  HR_RADAN_COMPLETION_OPTIONS,
+  HR_RADAN_PROVINCES,
+  HR_RADAN_CALCULATION_COMPONENTS,
+  HR_RADAN_REQUEST_TYPES,
+} from '@nora/contracts';
 import type { HrResourceDefinition } from '@nora/contracts';
 import {
   HR_RADAN_FIELD_OPTIONS,
@@ -34,7 +41,16 @@ export function retiredHrColumns(section: string, tab: string): string[] {
 export function parentFieldLabel(section: string, tab: string): string {
   if (section === 'organization')
     return tab === 'groupMembers' ? 'گروه' : 'واحد والد';
-  if (section === 'time' && tab === 'shift') return 'ساعت کاری';
+  if (section === 'time' && tab === 'shift')
+    return 'ساعت کاری یا شیفت تعریف‌شده';
+  if (section === 'time' && tab === 'templateDays') return 'شیفت تعریف‌شده';
+  if (section === 'time' && tab === 'deviceSecrets') return 'دستگاه';
+  if (
+    section === 'requests' &&
+    ['approvalStages', 'procedureMembers'].includes(tab)
+  )
+    return 'روند تأیید';
+  if (section === 'requests' && tab === 'patternAssignments') return 'الگو';
   if (section === 'recruitment')
     return tab === 'applicants' ? 'برنامه جذب' : 'متقاضی';
   if (section === 'contracts') return 'قرارداد مرجع';
@@ -193,7 +209,23 @@ export function hrReferenceOptions(
     delete options['عنوان شغل'];
   if (section === 'time' && tab === 'leavePolicies')
     delete options['نوع مرخصی'];
-  return options;
+  return {
+    ...options,
+    ...HR_RADAN_COMPLETION_OPTIONS,
+    'استان محل صدور': HR_RADAN_PROVINCES,
+    'اجزای کارکرد': HR_RADAN_CALCULATION_COMPONENTS,
+    درخواست‌ها: HR_RADAN_REQUEST_TYPES,
+    ...Object.fromEntries(
+      [
+        'مرخصی بر اساس طول شیفت',
+        'مأموریت خارج ساعت کاری اضافه‌کار',
+        'کسر کسرکار از اضافه‌کار',
+        'اضافه‌کار پنجشنبه',
+        'اضافه‌کار جمعه',
+        'افزودن اضافه‌کار تعطیل',
+      ].map((label) => [label, ['بله', 'خیر']]),
+    ),
+  };
 }
 
 export function needsHrDetail(
@@ -203,7 +235,15 @@ export function needsHrDetail(
 ): boolean {
   return (
     approval ||
-    ['applicants', 'training', 'docs'].includes(tab) ||
+    [
+      'applicants',
+      'training',
+      'docs',
+      'shiftTemplates',
+      'procedures',
+      'patterns',
+      'biometric',
+    ].includes(tab) ||
     (section === 'contracts' && tab === 'active')
   );
 }
@@ -213,6 +253,7 @@ export function radanOptionalLabels(
   definition: HrResourceDefinition,
 ): string[] {
   return [
+    ...Object.keys(HR_RADAN_COMPLETION_COLUMNS),
     'organization.groups',
     'organization.groupMembers',
     'time.workingHours',

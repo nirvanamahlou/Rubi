@@ -37,6 +37,7 @@ import { useHrRowSelection } from './hr-row-selection';
 import { needsHrDetail } from './hr-form-model';
 import { reportCellText } from './hr-report-text';
 import ui from './hr-unified.module.css';
+import { HrRadanTools, HrBackupButton } from './hr-radan-tools';
 import { parseSavedHrFilter } from './hr-filters';
 
 export { sourceForRecord } from './hr-record-source';
@@ -229,6 +230,12 @@ function AccessibleHrSection({
           </div>
         </header>
       ) : null}
+      {section === 'time' ? <HrBackupButton store={store} /> : null}
+      <HrRadanTools
+        key={`${source.section}.${source.tab}`}
+        tab={source.tab}
+        store={store}
+      />
       <HrRangeBar
         key={`${range.from}:${range.to}`}
         initialRange={range}

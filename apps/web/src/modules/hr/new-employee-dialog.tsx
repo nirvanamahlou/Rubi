@@ -37,6 +37,7 @@ export const employeeStatuses = ['فعال', 'در حال تکمیل', 'تعلی
 export type NewEmployeeStatus = (typeof employeeStatuses)[number];
 
 export interface NewEmployeeFormValue {
+  groupId?: string;
   userId?: string;
   firstName: string;
   lastName: string;
@@ -132,6 +133,8 @@ function FieldError({
 }
 
 interface NewEmployeeFormProps {
+  groupOptions?:
+    readonly { id: string; name: string; branch: string }[] | undefined;
   userOptions?:
     | readonly {
         id: string;
@@ -167,6 +170,7 @@ interface NewEmployeeFormProps {
 }
 
 export function NewEmployeeForm({
+  groupOptions,
   userOptions,
   userOptionsError,
   existingPersonnelCodes,
@@ -223,7 +227,7 @@ export function NewEmployeeForm({
     setValue((current) => ({
       ...current,
       [field]: nextValue,
-      ...(field === 'branch' ? { userId: '' } : {}),
+      ...(field === 'branch' ? { userId: '', groupId: '' } : {}),
       ...(field === 'branch' && organizationOptions
         ? { unit: '', position: '', grade: '' }
         : {}),
@@ -323,6 +327,24 @@ export function NewEmployeeForm({
             />
             <FieldError errors={errors} field="lastName" />
           </label>
+          {groupOptions ? (
+            <label className={styles.fieldLabel}>
+              گروه
+              <NativeSearchSelect
+                value={value.groupId ?? ''}
+                onChange={(event) => update('groupId', event.target.value)}
+              >
+                <option value="">بدون گروه</option>
+                {groupOptions
+                  .filter((group) => group.branch === value.branch)
+                  .map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+              </NativeSearchSelect>
+            </label>
+          ) : null}
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-code">
             <RequiredFieldLabel required>کد پرسنلی</RequiredFieldLabel>
             <input
@@ -634,6 +656,7 @@ export function NewEmployeeForm({
 }
 
 interface NewEmployeeDialogProps {
+  groupOptions?: NewEmployeeFormProps['groupOptions'];
   userOptions?: NewEmployeeFormProps['userOptions'];
   userOptionsError?: string | undefined;
   existingPersonnelCodes: readonly string[];
@@ -653,6 +676,7 @@ interface NewEmployeeDialogProps {
 }
 
 export function NewEmployeeDialog({
+  groupOptions,
   userOptions,
   userOptionsError,
   existingPersonnelCodes,
@@ -703,6 +727,7 @@ export function NewEmployeeDialog({
           </div>
         ) : (
           <NewEmployeeForm
+            groupOptions={groupOptions}
             userOptions={userOptions}
             userOptionsError={userOptionsError}
             existingPersonnelCodes={existingPersonnelCodes}

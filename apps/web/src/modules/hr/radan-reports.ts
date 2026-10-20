@@ -36,7 +36,7 @@ export interface RadanReportFilters {
   contractType: string;
   sort: string;
   aggregate: boolean;
-  unit: 'clock' | 'minutes';
+  unit: 'clock' | 'minutes' | 'days' | 'default';
 }
 export const emptyRadanFilters: RadanReportFilters = {
   employeeId: '',
@@ -145,12 +145,29 @@ export function buildRadanReport(
     const v = r.data[key];
     return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null;
   };
+  const lengths = references
+    .filter(
+      (r) =>
+        r.tab === 'calculationSettings' &&
+        r.status === 'فعال' &&
+        people.some((e) => e.branchId === r.branchId),
+    )
+    .map((r) => (r.values[2] === 'خیر' ? Number(r.values[3]) : NaN));
+  const dayMinutes =
+    lengths.length &&
+    lengths.every((n) => Number.isFinite(n) && n > 0 && n === lengths[0])
+      ? lengths[0]!
+      : null;
   const format = (n: number | null) =>
     n === null
       ? '—'
-      : filters.unit === 'minutes' || id.includes('Minutes')
-        ? String(n)
-        : Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0');
+      : filters.unit === 'days'
+        ? dayMinutes
+          ? String(Number((n / dayMinutes).toFixed(4)))
+          : '—'
+        : filters.unit === 'minutes' || id.includes('Minutes')
+          ? String(n)
+          : Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0');
   const attendance = source.filter(
     (r) => r.section === 'time' && r.tab === 'attendance',
   );
@@ -159,42 +176,55 @@ export function buildRadanReport(
   if (['leave', 'mission', 'remote'].includes(id)) {
     const match = source.filter((r) =>
       id === 'leave'
-        ? r.tab === 'leave' && ['time', 'requests'].includes(r.section)
+        ? ['leave', 'radanLeave'].includes(r.tab) &&
+          ['time', 'requests'].includes(r.section)
         : id === 'mission'
-          ? r.tab === 'mission' && ['time', 'expenses'].includes(r.section)
+          ? ['mission', 'radanMission'].includes(r.tab) &&
+            ['time', 'expenses', 'requests'].includes(r.section)
           : r.section === 'time' && r.tab === 'remote',
     );
-    const columns =
-      match[0]?.columns ??
-      (id === 'leave'
-        ? [
-            'کارمند',
-            'نوع مرخصی',
-            'از تاریخ',
-            'تا تاریخ',
-            'تعداد روز',
-            'جایگزین',
-          ]
-        : id === 'remote'
-          ? [
-              'کارمند',
-              'از تاریخ',
-              'تا تاریخ',
-              'نوع دورکاری',
-              'ساعت شروع',
-              'ساعت پایان',
-            ]
-          : [
-              'کارمند',
-              'مقصد',
-              'تاریخ رفت',
-              'تاریخ برگشت',
-              'هدف مأموریت',
-              'مسئول تأیید',
-            ]);
+    const read = (r: HrRecordDto, ...labels: string[]) =>
+      labels.map((label) => r.values[r.columns.indexOf(label)]).find(Boolean) ??
+      '—';
+    if (filters.aggregate) {
+      const peopleWithRecords = people.filter((e) =>
+        match.some((r) => r.employeeId === e.id),
+      );
+      return {
+        columns: ['کارمند', 'مدت'],
+        rows: peopleWithRecords.map((e) => {
+          const own = match.filter((r) => r.employeeId === e.id);
+          return [
+            e.name,
+            format(
+              own.some((r) => typeof r.data.minutes !== 'number')
+                ? null
+                : own.reduce((sum, r) => sum + r.data.minutes!, 0),
+            ),
+          ];
+        }),
+        recordIds: peopleWithRecords.map((e) => e.id),
+        totalLabel: String(peopleWithRecords.length),
+      };
+    }
     return {
-      columns: [...columns, 'وضعیت'],
-      rows: match.map((r) => [...r.values, r.status]),
+      columns: [
+        'کارمند',
+        'نوع درخواست',
+        'از تاریخ',
+        'تا تاریخ',
+        'مدت',
+        'وضعیت',
+      ],
+      rows: match.map((r) => [
+        people.find((e) => e.id === r.employeeId)?.name ?? '—',
+        r.data.requestSubtype ??
+          read(r, 'نوع مرخصی', 'نوع مأموریت', 'نوع دورکاری', 'مقصد'),
+        read(r, 'از تاریخ', 'تاریخ رفت'),
+        read(r, 'تا تاریخ', 'تاریخ برگشت'),
+        format(typeof r.data.minutes === 'number' ? r.data.minutes : null),
+        r.status,
+      ]),
       recordIds: match.map((r) => r.id),
       totalLabel: String(match.length),
     };
