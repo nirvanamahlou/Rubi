@@ -1,3 +1,4 @@
+import { assertNoActiveReceiptAllocations } from './sales-receipt-allocation.public';
 import { isOptionalOperationReason } from '@nora/contracts';
 import {
   BadRequestException,
@@ -105,6 +106,7 @@ export class SalesPartyCorrectionService {
         });
         if (result.count !== 1)
           throw new ConflictException('قرارداد هم‌زمان تغییر کرد.');
+        if (transfer) await assertNoActiveReceiptAllocations(tx, id);
         // Receipt amounts, currencies, confirmations, bank/check ownership and IDs remain
         // contract-owned. Their current counterparty follows this atomic payer change.
         await tx.salesContractAuditEvent.create({

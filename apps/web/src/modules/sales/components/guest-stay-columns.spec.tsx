@@ -6,10 +6,19 @@ vi.mock('./sales-date-picker', () => ({
   SalesDatePicker: ({
     value,
     disabled,
+    calendarSystem,
   }: {
     value: string;
     disabled: boolean;
-  }) => <input value={value} disabled={disabled} readOnly />,
+    calendarSystem: string;
+  }) => (
+    <input
+      value={value}
+      disabled={disabled}
+      data-calendar={calendarSystem}
+      readOnly
+    />
+  ),
 }));
 vi.mock('./sales-themed-select', () => ({
   SalesThemedSelect: ({ label }: { label: string }) => <span>{label}</span>,
@@ -33,7 +42,7 @@ describe('passenger hotel date columns', () => {
       renderToStaticMarkup(cols[0]!.render({ key: 'sales-entry-p0' })),
     ).toContain('2026-11-01');
   });
-  it('unlocks only an explicit override and exposes its own currency/amount fields', () => {
+  it('unlocks only an explicit override without putting pricing in the passenger table', () => {
     const cols = guestStayColumns(
       {
         ...state,
@@ -51,11 +60,12 @@ describe('passenger hotel date columns', () => {
     expect(
       renderToStaticMarkup(cols[0]!.render({ key: 'sales-entry-p0' })),
     ).not.toContain('disabled');
-    const price = renderToStaticMarkup(
-      cols[3]!.render({ key: 'sales-entry-p0' }),
-    );
-    expect(price).toContain('مبلغ اقامت متفاوت');
-    expect(price).toContain('ارز اقامت متفاوت');
+    expect(cols.map((col) => col.key)).toEqual([
+      'checkIn',
+      'checkOut',
+      'differentStay',
+    ]);
+    expect(cols.every((col) => col.position === 'end')).toBe(true);
   });
   it('does not show hotel dates or hotel price for a flight-only row', () => {
     const cols = guestStayColumns(
@@ -68,10 +78,23 @@ describe('passenger hotel date columns', () => {
         cols[0]!.render({ key: 'sales-entry-flight-only-0' }),
       ),
     ).toBe('<span>—</span>');
-    expect(
-      renderToStaticMarkup(
-        cols[3]!.render({ key: 'sales-entry-flight-only-0' }),
-      ),
-    ).toBe('<span>—</span>');
   });
+});
+
+it('uses the same Gregorian hotel calendar as the shared stay fields, independently of birth dates', () => {
+  for (const sample of [
+    { ...state, destinationCountryId: 'turkey', destinationCountryCode: 'TR' },
+    {
+      ...state,
+      hotel: { ...state.hotel, calendarSystem: 'gregorian' as const },
+    },
+  ]) {
+    const cols = guestStayColumns(sample, vi.fn(), (key) => key);
+    expect(
+      renderToStaticMarkup(cols[0]!.render({ key: 'sales-entry-p0' })),
+    ).toContain('data-calendar="gregorian"');
+    expect(
+      renderToStaticMarkup(cols[1]!.render({ key: 'sales-entry-p0' })),
+    ).toContain('data-calendar="gregorian"');
+  }
 });

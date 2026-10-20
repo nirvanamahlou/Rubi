@@ -1,3 +1,8 @@
+import {
+  isReceiptAllocation,
+  postedReceiptBasis,
+} from './receipt-funds.public';
+import { receiptAllocationLines } from './receipt-allocation-journal';
 import { accountingFinancialEventLabels } from '@nora/contracts';
 import {
   FINANCIAL_RULE_KIND,
@@ -744,6 +749,13 @@ export class AccountingService {
       items: items.map((e) => ({
         id: e.id,
         source: e.source,
+        ...(e.basisEventId
+          ? {
+              basisEventId: e.basisEventId,
+              carryingAmount: e.carryingAmount!.toString(),
+              carryingCurrency: e.carryingCurrency!,
+            }
+          : {}),
         kind: e.kind,
         requestId: e.requestId,
         trackingNumber: e.trackingNumber ?? e.requestId,
@@ -2710,6 +2722,19 @@ export class AccountingService {
         where: { id: eventId, branchId: book.branchId },
       });
       if (!event) v.rule('رویداد مالی در این شعبه پیدا نشد.');
+      if (isReceiptAllocation(event.kind)) {
+        if (action === 'financial-rule-save')
+          v.rule('حساب تخصیص از سند دریافت اصلی حمل می‌شود و قاعده جدا ندارد.');
+        return this.receiptAllocationJournal(
+          tx,
+          book,
+          event,
+          p,
+          expected,
+          actor,
+          stateEvents,
+        );
+      }
 
       let mapping = p;
       if (p.ruleId) {
@@ -4782,6 +4807,33 @@ export class AccountingService {
         return returned;
       }
       if (action === 'reverse') {
+        const sourceEvent = journal.sourceKey?.startsWith('SALES:')
+          ? await tx.financeAccountingEvent.findFirst({
+              where: { journalId: journal.id },
+            })
+          : null;
+        if (sourceEvent && isReceiptAllocation(sourceEvent.kind))
+          v.rule('برگشت سند تخصیص باید از عملیات برگشت تخصیص انجام شود.');
+        if (sourceEvent?.kind === 'CUSTOMER_RECEIPT') {
+          const transfers = await tx.financeAccountingEvent.findMany({
+            where: { basisEventId: sourceEvent.id },
+            include: { journal: { select: { status: true } } },
+          });
+          const net = transfers.reduce(
+            (sum, item) =>
+              sum.add(
+                item.amount.mul(item.kind === 'RECEIPT_ALLOCATION' ? 1 : -1),
+              ),
+            new Prisma.Decimal(0),
+          );
+          if (
+            !net.isZero() ||
+            transfers.some((item) => item.journal?.status !== 'POSTED')
+          )
+            v.rule(
+              'ابتدا همه تخصیص‌های دریافت را برگشت دهید و اسناد تخصیص و برگشت را ثبت نهایی کنید.',
+            );
+        }
         if (journal.status !== 'POSTED')
           v.rule('فقط سند قطعی برگشت داده می‌شود.');
         if (
@@ -5037,6 +5089,7 @@ export class AccountingService {
   ) {
     const endAttributes = v.attributes(journal.attributes);
     let financialValuationAt: Date | null = null;
+    let allocationCarry = false;
     if (endAttributes.financialEventId) {
       const event = await tx.financeAccountingEvent.findFirst({
         where: {
@@ -5047,12 +5100,56 @@ export class AccountingService {
       });
       if (!event) v.rule('مبنای رویداد مالی سند پیدا نشد.');
       financialValuationAt = event.occurredAt;
+      if (isReceiptAllocation(event.kind)) {
+        if (!event.basisEventId) v.rule('مبنای تخصیص سند یافت نشد.');
+        const original = await tx.financeAccountingEvent.findFirst({
+          where: { id: event.basisEventId, branchId: book.branchId },
+        });
+        if (!original) v.rule('دریافت اصلی سند یافت نشد.');
+        const basis = await postedReceiptBasis(
+          tx,
+          original.recordId,
+          book.branchId,
+          false,
+        );
+        if (basis.journal.bookId !== book.id)
+          v.rule('دفتر تخصیص با سند دریافت یکسان نیست.');
+        const expectedLines = receiptAllocationLines(event, basis);
+        if (
+          journal.lines.length !== expectedLines.length ||
+          expectedLines.some((line, index) => {
+            const actual = journal.lines[index]!;
+            return (
+              actual.accountId !== line.accountId ||
+              actual.detail4Id !== line.detail4Id ||
+              actual.detail5Id !== line.detail5Id ||
+              actual.detail6Id !== line.detail6Id ||
+              actual.debit.toString() !== line.debit ||
+              actual.credit.toString() !== line.credit ||
+              actual.currency !== (line.currency ?? null) ||
+              actual.foreignAmount?.toString() !== line.foreignAmount ||
+              actual.rate?.toString() !== line.rate ||
+              actual.fxSnapshotId !== (line.fxSnapshotId ?? null) ||
+              v.attributes(actual.attributes).trackingNumber !==
+                line.attributes.trackingNumber ||
+              v.attributes(actual.attributes).trackingDate !==
+                line.attributes.trackingDate
+            );
+          })
+        )
+          v.rule(
+            'اقلام تخصیص باید دقیقاً با مبنای دریافت و مبلغ دفتری ثبت‌شده منطبق باشند.',
+          );
+        allocationCarry = true;
+        financialValuationAt = basis.event.occurredAt;
+      }
     }
     const historicalHeader =
-      !!journal.sourceKey &&
-      /^(OPEN|CLOSE|FINAL|NATURE|REVERSE):/.test(journal.sourceKey) &&
-      (endAttributes.fxCarryPolicy === 'HISTORICAL_LOTS' ||
-        !!journal.reversalOfId);
+      allocationCarry ||
+      (!!journal.sourceKey &&
+        /^(OPEN|CLOSE|FINAL|NATURE|REVERSE):/.test(journal.sourceKey) &&
+        (endAttributes.fxCarryPolicy === 'HISTORICAL_LOTS' ||
+          !!journal.reversalOfId));
     if (endAttributes.sourceJournalChecksum && endAttributes.sourcePeriodId) {
       const basis = await tx.accountingJournal.findMany({
         where: {
@@ -5321,11 +5418,12 @@ export class AccountingService {
       }
       if (row.currency && row.currency !== book.baseCurrency) {
         const historicalCarry =
-          !!journal.sourceKey &&
-          /^(OPEN|CLOSE|FINAL|NATURE|REVERSE):/.test(journal.sourceKey) &&
-          (v.attributes(journal.attributes).fxCarryPolicy ===
-            'HISTORICAL_LOTS' ||
-            !!journal.reversalOfId);
+          allocationCarry ||
+          (!!journal.sourceKey &&
+            /^(OPEN|CLOSE|FINAL|NATURE|REVERSE):/.test(journal.sourceKey) &&
+            (v.attributes(journal.attributes).fxCarryPolicy ===
+              'HISTORICAL_LOTS' ||
+              !!journal.reversalOfId));
         if (!v.attributes(account.attributes).multiCurrency)
           v.rule('حساب ویژگی ارزی ندارد.');
         const fx = row.fxSnapshotId
@@ -5375,6 +5473,115 @@ export class AccountingService {
     }
     return warnings;
   }
+  private async receiptAllocationJournal(
+    tx: Tx,
+    book: Prisma.AccountingBookGetPayload<object>,
+    event: Prisma.FinanceAccountingEventGetPayload<object>,
+    p: Record<string, unknown>,
+    expected: number | undefined,
+    actor: AuthenticatedActor,
+    stateEvents: BufferedStateEvent[],
+  ) {
+    this.require(actor, 'finance.receipt.approve');
+    if (!event.basisEventId) v.rule('مبنای تخصیص یافت نشد.');
+    const original = await tx.financeAccountingEvent.findFirst({
+      where: { id: event.basisEventId, branchId: book.branchId },
+    });
+    if (!original) v.rule('دریافت اصلی تخصیص یافت نشد.');
+    const basis = await postedReceiptBasis(
+      tx,
+      original.recordId,
+      book.branchId,
+      false,
+    );
+    if (basis.journal.bookId !== book.id)
+      v.rule('تخصیص باید در دفتر سند دریافت اصلی ثبت شود.');
+    const previous = event.journalId
+      ? await tx.accountingJournal.findUniqueOrThrow({
+          where: { id: event.journalId },
+          include: journalInclude,
+        })
+      : null;
+    if (previous && p.rebuild !== true) return previous;
+    if (previous) {
+      this.version(previous.version, expected);
+      if (previous.status !== 'DRAFT')
+        v.rule('فقط پیش‌نویس تخصیص قابل بازسازی است.');
+    }
+    const operationDate = financialDate(event.occurredAt),
+      documentDate =
+        v.date(p.documentDate, true) ?? previous?.documentDate ?? operationDate;
+    const reason =
+      documentDate === operationDate
+        ? ''
+        : v.text(p.latePostingReason, 500) ||
+          String(
+            v.attributes(previous?.attributes ?? {}).latePostingReason ?? '',
+          );
+    if (
+      documentDate < operationDate ||
+      (documentDate !== operationDate && reason.length < 10)
+    )
+      v.rule(
+        'تاریخ تخصیص نباید پیش از عملیات باشد و ثبت دیرهنگام به علت نیاز دارد.',
+      );
+    const periods = await tx.accountingPeriod.findMany({
+      where: {
+        bookId: book.id,
+        status: 'OPEN',
+        startDate: { lte: documentDate },
+        endDate: { gte: documentDate },
+        ...(p.periodId ? { id: v.uuid(p.periodId)! } : {}),
+      },
+    });
+    if (periods.length !== 1)
+      v.rule('برای تاریخ تخصیص باید دقیقاً یک دوره باز انتخاب شود.');
+    const lines = receiptAllocationLines(event, basis);
+    const created = (await this.execute(
+      tx,
+      book,
+      'journal-save',
+      {
+        ...(previous ? { id: previous.id } : {}),
+        periodId: periods[0]!.id,
+        typeId: basis.journal.typeId,
+        documentDate,
+        sourceKey: event.sourceKey,
+        description: accountingFinancialEventLabels[event.kind],
+        reference: event.reference,
+        attributes: {
+          ...resetApprovalAttributes(previous?.attributes ?? {}),
+          financialEventId: event.id,
+          receiptBasisEventId: basis.event.id,
+          fxCarryPolicy: 'RECEIPT_ALLOCATION_CARRY',
+          sourceOccurredAt: event.occurredAt.toISOString(),
+          latePostingReason: reason,
+          source: event.source,
+          recordId: event.recordId,
+          sourceRequestId: event.requestId,
+          sourceAmount: event.amount.toString(),
+          sourceCurrency: event.currency,
+        },
+        lines,
+      },
+      previous?.version,
+      actor,
+      true,
+      stateEvents,
+      !!previous,
+    )) as { id: string };
+    const journal = await tx.accountingJournal.findUniqueOrThrow({
+      where: { id: created.id },
+      include: journalInclude,
+    });
+    await this.validatePosting(tx, book, journal);
+    await tx.financeAccountingEvent.update({
+      where: { id: event.id },
+      data: { journalId: journal.id, lastError: null, attemptedAt: new Date() },
+    });
+    return journal;
+  }
+
   private async approvalPolicy(
     tx: Tx,
     book: Prisma.AccountingBookGetPayload<object>,

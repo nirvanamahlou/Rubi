@@ -1,3 +1,11 @@
+import {
+  lockReceiptFunds,
+  reservedReceiptRefunds,
+} from '../accounting/receipt-funds.public';
+import {
+  receiptAllocationSource,
+  unallocatedReceiptAmount,
+} from '../../sales/sales-receipt-allocation.public';
 import { financialDate } from '../accounting/accounting.financial-events';
 import { assertFinancialProofVersion } from '../../documents/financial-proof.public';
 import { PETTY_KINDS, pettyBalance, lockPettyFund } from './finance.petty-cash';
@@ -214,6 +222,22 @@ export class FinancePayrollService {
             );
           return;
         }
+        if (initial.refundReceiptId) {
+          await lockReceiptFunds(tx, initial.refundReceiptId);
+          const repeated = await tx.financeOperationalRevision.findUnique({
+            where: { id: operationId },
+          });
+          if (repeated) {
+            if (
+              repeated.fingerprint !== fingerprint ||
+              repeated.requestId !== id
+            )
+              throw new ConflictException(
+                'شناسه عملیات با اطلاعات دیگری استفاده شده است.',
+              );
+            return;
+          }
+        }
         const isPetty = PETTY_KINDS.includes(initial.kind);
         const fundId = initial.pettyFundId ?? initial.id;
         if (isPetty)
@@ -269,6 +293,30 @@ export class FinancePayrollService {
           ? financialDate(referenceSource.createdAt)
           : undefined;
         const last = current.revisions[0]!;
+        if (current.refundReceiptId && action === 'RESUBMIT') {
+          const sourceReceipt = await receiptAllocationSource(
+            tx,
+            current.refundReceiptId,
+            [current.branchId],
+          );
+          const reserved = await reservedReceiptRefunds(
+            tx,
+            current.refundReceiptId,
+          );
+          const outstanding = Prisma.Decimal.max(
+            0,
+            current.amount.sub(last.cumulativePaid),
+          );
+          if (
+            outstanding.gt(
+              unallocatedReceiptAmount(sourceReceipt).sub(reserved),
+            )
+          )
+            throw new ConflictException(
+              'پس از تخصیص و رزرو استرداد، وجه کافی برای بازگشایی درخواست وجود ندارد.',
+            );
+        }
+
         let paidAmount: Prisma.Decimal | null = null,
           accountId: string | null = null,
           methodId: string | null = null,
@@ -735,20 +783,16 @@ export class FinancePayrollService {
           });
         }
         if (receipt) {
-          const total = await tx.financeOperationalRequest.aggregate({
-            where: {
-              refundReceiptId,
-              status: { notIn: ['REJECTED', 'CANCELLED'] },
-            },
-            _sum: { amount: true },
-          });
+          const sourceReceipt = await receiptAllocationSource(tx, receipt.id, [
+            branchId,
+          ]);
+          const reserved = await reservedReceiptRefunds(tx, receipt.id);
           if (
-            (total._sum.amount ?? new Prisma.Decimal(0))
-              .add(amount)
-              .gt(receipt.amount)
+            sourceReceipt.currencyCode !== currencyCode ||
+            amount.gt(unallocatedReceiptAmount(sourceReceipt).sub(reserved))
           )
             throw new BadRequestException(
-              'مجموع درخواست‌های استرداد از دریافت تأییدشده بیشتر است.',
+              'مجموع درخواست‌های استرداد از وجه تخصیص‌نیافته دریافت بیشتر است.',
             );
         }
         const row = await tx.financeOperationalRequest.create({

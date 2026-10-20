@@ -1,4 +1,8 @@
 import { validatePassengerHotelStays } from '@nora/contracts';
+import {
+  readPassengerTotalPrices,
+  validatePassengerTotalPricing,
+} from '@nora/contracts';
 import { readAgencyCommission } from '@nora/contracts';
 import {
   flightRoomTotals,
@@ -289,11 +293,13 @@ export function validateSalesContract(
     );
     if (
       Object.keys(deductions).length &&
+      !readPassengerTotalPrices(input.services, input.passengers) &&
       !input.services.some(
         (s) => s.metadata?.automaticFlightRoomTotalV1 === true,
       )
     )
       throw Error('تخفیف و کمیسیون مسافران معتبر نیست.');
+    validatePassengerTotalPricing(input.services, input.passengers);
     readPassengerHotelPrices(input.services, input.passengers);
     validatePassengerFlightPrices(
       input.services,

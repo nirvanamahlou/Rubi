@@ -23,6 +23,11 @@ import { salesRoomPartyError, roomAgreedTotals } from './sales-room-prices';
 import type { SalesHotelRoomV1 } from '@nora/contracts';
 import { validSalesHotelRooms } from '@nora/contracts';
 import { passengerSaleTotals } from './passenger-sale-totals';
+import { passengerTotalEntries } from './passenger-total-entry';
+import {
+  PASSENGER_TOTAL_PRICES,
+  readPassengerTotalPrices,
+} from '@nora/contracts';
 import { salesChequeComponents } from '@nora/contracts';
 import type { SalesPaymentTerms } from '@nora/contracts';
 import {
@@ -110,14 +115,18 @@ export function selectSalesPerson(
 }
 
 export const salesSteps = [
-  'مسیر و خدمات',
-  'جزئیات سفر',
-  'مشتری و مسافران',
+  'مسیر، خدمات و مسافران',
   'قیمت و پرداخت',
   'بازبینی',
 ] as const;
 
+export const salesAdditionalServices = {
+  CITY_TOUR: 'گشت شهری',
+  TOUR_GUIDE: 'راهنما',
+} as const;
+
 export interface SalesFormState {
+  additionalServices?: (keyof typeof salesAdditionalServices)[];
   roomDrivenGuests?: boolean;
   flightOnlyPassengers?: { key: string; age: number }[];
   passengerHotelStays?: Record<
@@ -127,6 +136,7 @@ export interface SalesFormState {
 
   passengerDeductions?: PassengerDeductions;
   passengerFlightDirections?: Record<string, SalesTicketDirection[]>;
+  passengerTransferDirections?: Record<string, SalesTicketDirection[]>;
   passengerHotelPrices?: Record<string, SalesMoney[]>;
   hotelArrivesNextDay?: boolean;
   visaComposition?: { adults: number; children: number };
@@ -160,7 +170,6 @@ export interface SalesFormState {
   customerOrganizationId?: string;
   firstPassengerIsCustomer?: boolean;
   businessOutput?: boolean;
-  transferPassengerCount?: number;
   passengerComposition: { adults: number; children: number; infants: number };
   outboundOffer?: TicketOfferV1 | undefined;
   returnOffer?: TicketOfferV1 | undefined;
@@ -204,6 +213,8 @@ export interface SalesFormState {
     rooms?: Array<
       Omit<SalesHotelRoomV1, 'childAges'> & { childAges: (number | null)[] }
     >;
+    /** Presentation only; actual dates remain ISO. */
+    calendarSystem?: 'persian' | 'gregorian';
     checkInManual?: boolean;
     checkOutManual?: boolean;
     hotelId: string;
@@ -230,6 +241,7 @@ export interface SalesFormState {
   paymentTerms?: SalesPaymentTerms | null;
   reservationNote?: string;
   passengerPrices?: Record<string, SalesMoney[]>;
+  passengerTotalPricing?: boolean;
   agencyCommission?: AgencyCommissionV1;
   passengerFlightPrices?: Record<string, SalesMoney[]>;
   automaticComponentPricing?: boolean;
@@ -269,6 +281,7 @@ export function salesPassengerDeductions(
   const values = Object.fromEntries(
     state.passengers.flatMap((p) => {
       if (
+        !state.passengerTotalPricing &&
         !salesPassengerFlightDirections(state, p.customerId).length &&
         !(
           state.serviceKinds.includes('HOTEL') &&
@@ -291,6 +304,11 @@ export function salesPassengerDeductions(
 }
 
 export function salesNetServicePrices(state: SalesFormState) {
+  if (state.passengerTotalPricing)
+    return passengerNetPrices(
+      passengerTotalEntries(state),
+      salesPassengerDeductions(state),
+    );
   const flight = passengerFlightSalePrices(state);
   const guests = new Set(salesHotelGuestIds(state));
   return passengerNetPrices(
@@ -313,6 +331,25 @@ export function contractSaleComponents(
   state: SalesFormState,
   extras: readonly { customerId: string }[] = [],
 ): SalesPriceComponentInput[] {
+  if (state.passengerTotalPricing) {
+    const gross = passengerTotalEntries(state);
+    passengerSaleTotals(state.passengers, gross);
+    const net = salesNetServicePrices(state);
+    return passengerSaleTotals(
+      state.passengers,
+      Object.fromEntries(
+        state.passengers.map((p) => [
+          p.customerId,
+          extras.some((e) => e.customerId === p.customerId)
+            ? addInsuranceExtra(
+                net[p.customerId] ?? [],
+                state.insuranceExtraToman![p.customerId]!,
+              )
+            : (net[p.customerId] ?? []),
+        ]),
+      ),
+    ).components;
+  }
   if (state.tour && state.packageSaleAvailable && !state.packageSaleQuote)
     throw Error('برای ترکیب انتخاب‌شده قیمت منتشرشده موجود نیست.');
   const automatic =
@@ -1044,6 +1081,15 @@ export function salesRequiresPassportIdentity(state: SalesFormState): boolean {
   return !salesDomesticIranRoute(state);
 }
 
+export function salesHotelCalendarSystem(
+  state: SalesFormState,
+): 'persian' | 'gregorian' {
+  return (
+    state.hotel.calendarSystem ??
+    (salesInternationalTravel(state) ? 'gregorian' : 'persian')
+  );
+}
+
 export function salesDetailSteps(state: SalesFormState): string[] {
   return state.serviceKinds.flatMap((kind) =>
     kind === 'TRANSFER' ||
@@ -1191,7 +1237,7 @@ export function toggleSalesDirectionalService(
           passengerFlightPrices: {},
           ticket: { ...state.ticket, outboundOfferId: '', returnOfferId: '' },
         }
-      : {}),
+      : { passengerTransferDirections: {} }),
   };
 }
 
@@ -1220,6 +1266,7 @@ export function salesPayload(
   if (roomPartyError) throw new Error(roomPartyError);
   if (
     state.serviceKinds.includes('HOTEL') &&
+    !state.passengerTotalPricing &&
     state.priceEntryMode === 'CONTRACT_TOTAL' &&
     state.passengerHotelPrices === undefined &&
     !state.packageSaleQuote &&
@@ -1296,7 +1343,7 @@ export function salesPayload(
                 ? state.serviceDetails?.[`${kind}-${direction}`]
                 : {}),
               ...(kind === 'TRANSFER'
-                ? { passengerCount: salesTransferCount(state) }
+                ? { passengerCount: salesTransferCount(state, direction) }
                 : {}),
               direction,
               originId:
@@ -1337,6 +1384,14 @@ export function salesPayload(
               },
             ],
   );
+  for (const role of new Set(state.additionalServices ?? [])) {
+    services.push({
+      clientKey: role === 'CITY_TOUR' ? 'city-tour' : 'tour-guide',
+      kind: 'OTHER',
+      titleSnapshot: salesAdditionalServices[role],
+      metadata: { additionalServiceRole: role },
+    });
+  }
   for (const direction of salesDirections(state, 'FLIGHT')) {
     if (!state.contractFlights?.[direction]) continue;
     const flight = salesFlightSelection(state, direction);
@@ -1355,12 +1410,13 @@ export function salesPayload(
   for (let i = services.length - 1; i >= 0; i--) {
     const service = services[i]!;
     if (
-      service.kind === 'FLIGHT' &&
-      state.passengerFlightDirections !== undefined &&
+      state.passengers.length > 0 &&
+      (service.kind === 'FLIGHT' || service.kind === 'TRANSFER') &&
       !state.passengers.some((p) =>
-        salesPassengerFlightDirections(state, p.customerId).includes(
-          service.clientKey === 'flight-outbound' ? 'OUTBOUND' : 'RETURN',
-        ),
+        (service.kind === 'FLIGHT'
+          ? salesPassengerFlightDirections(state, p.customerId)
+          : salesPassengerTransferDirections(state, p.customerId)
+        ).includes(service.metadata?.direction as SalesTicketDirection),
       )
     )
       services.splice(i, 1);
@@ -1378,7 +1434,11 @@ export function salesPayload(
         if (error) throw Error(error);
         if (
           stay.different &&
-          !state.passengerHotelPrices?.[id]?.some(
+          !(
+            state.passengerTotalPricing
+              ? passengerTotalEntries(state)[id]
+              : state.passengerHotelPrices?.[id]
+          )?.some(
             (p) => p.amount.trim() && /^\d+(?:\.\d{1,4})?$/.test(p.amount),
           )
         )
@@ -1398,7 +1458,11 @@ export function salesPayload(
       passengerHotelStaysV1: JSON.stringify(stays),
     };
   }
-  if (hotelPriceService && state.passengerHotelPrices !== undefined)
+  if (
+    hotelPriceService &&
+    !state.passengerTotalPricing &&
+    state.passengerHotelPrices !== undefined
+  )
     hotelPriceService.metadata = {
       ...hotelPriceService.metadata,
       passengerHotelPricesV1: JSON.stringify(
@@ -1456,7 +1520,11 @@ export function salesPayload(
     };
   const flightPrices = passengerFlightSalePrices(state);
   const flightPriceService = services.find((s) => s.kind === 'FLIGHT');
-  if (flightPriceService && state.passengerFlightPrices !== undefined)
+  if (
+    flightPriceService &&
+    !state.passengerTotalPricing &&
+    state.passengerFlightPrices !== undefined
+  )
     flightPriceService.metadata = {
       ...flightPriceService.metadata,
       [PASSENGER_FLIGHT_PRICES]: JSON.stringify(
@@ -1475,6 +1543,7 @@ export function salesPayload(
       ),
     };
   if (
+    !state.passengerTotalPricing &&
     (!state.packageSaleQuote || state.passengerHotelPrices !== undefined) &&
     state.automaticComponentPricing &&
     services.some((s) => s.kind === 'FLIGHT' || s.kind === 'HOTEL')
@@ -1512,10 +1581,16 @@ export function salesPayload(
       ],
     });
   }
-  if (state.priceEntryMode === 'PASSENGER_TOTAL')
-    passengerSaleTotals(state.passengers, state.passengerPrices ?? {});
+  const grossTotalPrices = state.passengerTotalPricing
+    ? passengerTotalEntries(state)
+    : (state.passengerPrices ?? {});
+  if (state.passengerTotalPricing || state.priceEntryMode === 'PASSENGER_TOTAL')
+    passengerSaleTotals(state.passengers, grossTotalPrices);
+  const totalPrices = state.passengerTotalPricing
+    ? salesNetServicePrices(state)
+    : grossTotalPrices;
   const packagePrices =
-    state.priceEntryMode === 'PASSENGER_TOTAL'
+    state.passengerTotalPricing || state.priceEntryMode === 'PASSENGER_TOTAL'
       ? passengerSaleTotals(
           state.passengers,
           Object.fromEntries(
@@ -1523,16 +1598,18 @@ export function salesPayload(
               p.customerId,
               extras.some((e) => e.customerId === p.customerId)
                 ? addInsuranceExtra(
-                    state.passengerPrices?.[p.customerId] ?? [],
+                    totalPrices[p.customerId] ?? [],
                     state.insuranceExtraToman![p.customerId]!,
                   )
-                : (state.passengerPrices?.[p.customerId] ?? []),
+                : (totalPrices[p.customerId] ?? []),
             ]),
           ),
         )
       : undefined;
   if (packagePrices)
     for (const service of services) {
+      if (service.metadata?.insuranceAgeSurcharge !== true)
+        delete service.pricing;
       service.metadata = {
         ...service.metadata,
         passengerPackagePricingVersion: 1,
@@ -1546,7 +1623,14 @@ export function salesPayload(
           catalogSaleQuoteAmount: catalog.daySale.amount,
         };
     }
-  if (state.priceEntryMode === 'CONTRACT_TOTAL')
+  if (state.passengerTotalPricing && services[0]) {
+    services[0].metadata = {
+      ...services[0].metadata,
+      [PASSENGER_TOTAL_PRICES]: JSON.stringify(grossTotalPrices),
+    };
+    readPassengerTotalPrices(services, state.passengers);
+  }
+  if (!state.passengerTotalPricing && state.priceEntryMode === 'CONTRACT_TOTAL')
     for (const service of services) {
       if (service.metadata?.insuranceAgeSurcharge !== true)
         delete service.pricing;
@@ -1694,16 +1778,17 @@ export function salesPayload(
       state.passengerAccommodations?.[item.customerId]
         ? { accommodationKind: state.passengerAccommodations[item.customerId] }
         : {}),
-      ...(state.passengerPrices && state.priceEntryMode !== 'CONTRACT_TOTAL'
+      ...((state.passengerTotalPricing || state.passengerPrices) &&
+      (state.passengerTotalPricing || state.priceEntryMode !== 'CONTRACT_TOTAL')
         ? {
             agreedPrices: packagePrices
               ? packagePrices.prices[item.customerId]
               : extras.some((p) => p.customerId === item.customerId)
                 ? addInsuranceExtra(
-                    state.passengerPrices[item.customerId] ?? [],
+                    state.passengerPrices?.[item.customerId] ?? [],
                     state.insuranceExtraToman![item.customerId]!,
                   )
-                : (state.passengerPrices[item.customerId] ?? []),
+                : (state.passengerPrices?.[item.customerId] ?? []),
           }
         : {}),
       birthDate: item.birthDate,
@@ -1720,8 +1805,16 @@ export function salesPayload(
                   ).includes(
                     clientKey === 'flight-outbound' ? 'OUTBOUND' : 'RETURN',
                   )
-                : clientKey !== 'hotel' ||
-                  salesHotelGuestIds(state).includes(item.customerId),
+                : clientKey === 'transfer-outbound' ||
+                    clientKey === 'transfer-return'
+                  ? salesPassengerTransferDirections(
+                      state,
+                      item.customerId,
+                    ).includes(
+                      clientKey === 'transfer-outbound' ? 'OUTBOUND' : 'RETURN',
+                    )
+                  : clientKey !== 'hotel' ||
+                    salesHotelGuestIds(state).includes(item.customerId),
         )
         .map(({ clientKey }) => clientKey),
     })),
@@ -1745,7 +1838,8 @@ export function salesPayload(
                     return {
                       ...rest,
                       roomCategory: defaultSalesRoomCategory(room),
-                      ...(state.passengerHotelPrices === undefined &&
+                      ...(!state.passengerTotalPricing &&
+                      state.passengerHotelPrices === undefined &&
                       agreedPrice
                         ? { agreedPrice }
                         : {}),
@@ -1797,12 +1891,34 @@ export function salesPayload(
   };
 }
 
-export function salesTransferCount(state: SalesFormState) {
-  const c = salesPassengerCounts(state);
-  const max = c.adults + c.children;
-  return state.transferPassengerCount === undefined
-    ? max
-    : Math.max(0, Math.min(max, Math.trunc(state.transferPassengerCount || 0)));
+/** Transfer legs are independent of flight membership and hotel date overrides. */
+export function salesPassengerTransferDirections(
+  state: SalesFormState,
+  id: string,
+): SalesTicketDirection[] {
+  if (!state.serviceKinds.includes('TRANSFER')) return [];
+  const enabled = salesDirections(state, 'TRANSFER');
+  return enabled.filter((direction) =>
+    (state.passengerTransferDirections?.[id] ?? enabled).includes(direction),
+  );
+}
+
+export function salesTransferCount(
+  state: SalesFormState,
+  direction?: SalesTicketDirection,
+) {
+  if (!state.serviceKinds.includes('TRANSFER')) return 0;
+  if (!state.passengers.length) {
+    const counts = salesPassengerCounts(state);
+    return counts.adults + counts.children;
+  }
+  return state.passengers.filter((p) => {
+    const directions = salesPassengerTransferDirections(state, p.customerId);
+    return (
+      (direction ? directions.includes(direction) : directions.length > 0) &&
+      salesPassengerAgeLabel(p.birthDate, salesTravelDate(state)) !== 'نوزاد'
+    );
+  }).length;
 }
 
 /** Missing direction choices retain legacy all-selected behavior. */

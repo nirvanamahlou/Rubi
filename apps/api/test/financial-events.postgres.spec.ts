@@ -1,4 +1,5 @@
 import { FinancePayrollService } from '../src/finance/operations/finance-payroll.service';
+import { FinanceReceiptAllocationService } from '../src/finance/operations/receipt-allocation.service';
 import { MasterProcurementDirectory } from '../src/master-data/master-procurement-directory';
 import { readFinanceHistory } from '../src/finance/finance-history';
 import { SalesRepository } from '../src/sales/sales.repository';
@@ -933,6 +934,216 @@ describe.skipIf(!url)(
       });
       expect(page.items.some((e) => e.id === event.id)).toBe(false);
     });
+    it('allocates a posted receipt without another cash movement and reverses it immutably', async () => {
+      const customerId = randomUUID();
+      const createContract = (amount: string) =>
+        db.salesContract.create({
+          data: {
+            contractNumber: randomUUID(),
+            branchId,
+            ownerUserId: makerId,
+            customerId,
+            payerCustomerId: customerId,
+            customerNameSnapshot: 'Synthetic allocation agency',
+            tripType: 'ONE_WAY',
+            originId: randomUUID(),
+            destinationId: randomUUID(),
+            departureDate: new Date('2026-11-01'),
+            createIdempotencyKey: randomUUID(),
+            createRequestFingerprint: 'a'.repeat(64),
+            priceComponents: {
+              create: {
+                type: 'BASE',
+                title: 'Service',
+                amount,
+                currencyCode: 'IRR',
+              },
+            },
+          },
+        });
+      const source = await createContract('100000');
+      const target = await createContract('60000');
+      const account = await db.financeSettlementAccount.create({
+        data: {
+          branchId,
+          title: randomUUID(),
+          kind: 'BANK',
+          currencyCode: 'IRR',
+          createdByUserId: makerId,
+        },
+      });
+      const payment = await db.salesContractPaymentEntry.create({
+        data: {
+          contractId: source.id,
+          amount: '100000',
+          currencyCode: 'IRR',
+          dueAt: new Date(),
+          method: 'BANK_TRANSFER',
+          status: 'FINANCE_CONFIRMED',
+          idempotencyKey: randomUUID(),
+          requestFingerprint: 'b'.repeat(64),
+          createdByUserId: makerId,
+          financeReceiptAccountId: account.id,
+          financeConfirmedAt: new Date(),
+        },
+      });
+      const event = await capture(
+        input({
+          recordId: payment.id,
+          requestId: source.id,
+          partyId: customerId,
+          amount: '100000',
+        }),
+      );
+      const allocation = new FinanceReceiptAllocationService({
+        client: db,
+      } as never);
+      expect((await allocation.context(event.id, maker)).accountingReady).toBe(
+        false,
+      );
+      let journal = await command<{ id: string; version: number }>(
+        'financial-event-journal',
+        { eventId: event.id, ...mapping() },
+      );
+      for (const action of ['submit', 'approve', 'post'])
+        journal = await command(
+          action,
+          { id: journal.id },
+          journal.version,
+          action === 'approve' ? { ...maker, userId: checkerId } : maker,
+        );
+      const context = await allocation.context(event.id, maker);
+      const body = {
+        operationId: randomUUID(),
+        targetContractId: target.id,
+        amount: '40000',
+        reason: 'Synthetic contractual allocation',
+        expectedSourceVersion: context.sourceVersion,
+        expectedTargetVersion: target.version,
+      };
+      const [first, replay] = await Promise.all([
+        allocation.command(event.id, body, maker),
+        allocation.command(event.id, body, maker),
+      ]);
+      expect(replay).toEqual(first);
+      expect((await allocation.context(event.id, maker)).availableAmount).toBe(
+        '60000',
+      );
+      expect(
+        (await db.salesContract.findUniqueOrThrow({ where: { id: target.id } }))
+          .settlementStatus,
+      ).toBe('PARTIALLY_SETTLED');
+      expect(
+        await db.salesContractPaymentEntry.count({
+          where: { contractId: target.id },
+        }),
+      ).toBe(0);
+      await expect(
+        allocation.command(event.id, { ...body, amount: '1' }, maker),
+      ).rejects.toThrow();
+      await expect(
+        allocation.context(event.id, { ...maker, branchIds: [] }),
+      ).rejects.toThrow();
+      const derived = await db.financeAccountingEvent.findUniqueOrThrow({
+        where: { sourceKey: `SALES:RECEIPT_ALLOCATION:${first.id}` },
+      });
+      expect(derived.carryingAmount?.toString()).toBe('40000');
+      const draft = await command<{ id: string; version: number }>(
+        'financial-event-journal',
+        { eventId: derived.id },
+      );
+      const lines = await db.accountingJournalLine.findMany({
+        where: { journalId: draft.id },
+        orderBy: { position: 'asc' },
+      });
+      expect(lines.map((line) => line.accountId)).toEqual([creditId, creditId]);
+      expect(lines.map((line) => line.debit.toString())).toEqual([
+        '40000',
+        '0',
+      ]);
+      await expect(
+        db.salesReceiptAllocation.update({
+          where: { id: first.id },
+          data: { amount: '1' },
+        }),
+      ).rejects.toThrow();
+      const current = await allocation.context(event.id, maker);
+      const row = current.allocations.find((item) => item.id === first.id)!;
+      const rejectedOperation = randomUUID();
+      await expect(
+        allocation.command(
+          event.id,
+          {
+            ...body,
+            operationId: rejectedOperation,
+            amount: '30000',
+            expectedSourceVersion: current.sourceVersion,
+            expectedTargetVersion: row.targetVersion,
+          },
+          maker,
+        ),
+      ).rejects.toThrow();
+      expect(
+        await db.salesReceiptAllocation.count({
+          where: { id: rejectedOperation },
+        }),
+      ).toBe(0);
+      expect(
+        await db.financeAccountingEvent.count({
+          where: { sourceKey: `SALES:RECEIPT_ALLOCATION:${rejectedOperation}` },
+        }),
+      ).toBe(0);
+      let postedAllocation = await command<{ id: string; version: number }>(
+        'submit',
+        { id: draft.id },
+        draft.version,
+      );
+      await expect(
+        command('approve', { id: draft.id }, postedAllocation.version),
+      ).rejects.toThrow();
+      postedAllocation = await command(
+        'approve',
+        { id: draft.id },
+        postedAllocation.version,
+        { ...maker, userId: checkerId },
+      );
+      postedAllocation = await command(
+        'post',
+        { id: draft.id },
+        postedAllocation.version,
+      );
+      await expect(
+        command(
+          'reverse',
+          { id: draft.id, reason: 'Synthetic direct journal reversal' },
+          postedAllocation.version,
+        ),
+      ).rejects.toThrow();
+      const reverse = {
+        operationId: randomUUID(),
+        reason: 'Synthetic full allocation reversal',
+        expectedSourceVersion: current.sourceVersion,
+        expectedTargetVersion: row.targetVersion,
+      };
+      expect(
+        (await allocation.command(event.id, reverse, maker, first.id)).status,
+      ).toBe('REVERSED');
+      expect((await allocation.context(event.id, maker)).availableAmount).toBe(
+        '100000',
+      );
+      expect(
+        (await db.salesContract.findUniqueOrThrow({ where: { id: target.id } }))
+          .settlementStatus,
+      ).toBe('UNPAID');
+      await expect(
+        allocation.command(
+          event.id,
+          { ...reverse, operationId: randomUUID() },
+          maker,
+          first.id,
+        ),
+      ).rejects.toThrow();
+    }, 120000);
     it('dispatches only new exact-match sources using live authority and never approves them', async () => {
       const body = input();
       const old = await capture(body);

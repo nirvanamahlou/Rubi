@@ -943,6 +943,15 @@ export async function saveSalesPeopleDraft(
           ? (draft.organization?.organizationId ?? '')
           : '',
       firstPassengerIsCustomer: draft.mode === 'first-passenger',
+      passengerTransferDirections: Object.fromEntries(
+        keys.flatMap((key, index) => {
+          const id = passengers[index]!.customerId;
+          const directions =
+            state.passengerTransferDirections?.[id] ??
+            state.passengerTransferDirections?.[key];
+          return directions ? [[id, directions]] : [];
+        }),
+      ),
       passengerHotelStays: Object.fromEntries(
         keys.flatMap((key, index) => {
           const id = passengers[index]!.customerId;

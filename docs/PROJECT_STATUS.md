@@ -1,3 +1,11 @@
+## CONTRACT-STAY-PAYMENT-LAYOUT-1020 — PC-A
+
+The new-contract wizard now has one canonical three-item model (route/services/passengers, pricing/payment, review), replacing the obsolete five-item array and hidden-index navigation. Different-stay rows are priced only on pricing/payment through the latest canonical gross passenger totals (no duplicate hotel allocation); the passenger table ends with check-in, check-out and different-stay controls. Shared stay and row calendars share an optional UI-only calendar preference, default Gregorian for international travel, independent of DOB. Selecting a new flight/date resets the affected shared-date provenance and derives dates with the existing hotel offset policy; explicit individual stays remain intact. No API/schema/migration/dependency or runtime rollout. Runtime3100 remains older9b499a7, so a separate local update is needed to view the merged source. 100 focused tests, full Web types and scoped lint pass. Broad local run526 passed/one skipped/two existing SSR timeouts; exact-head full hosted quality/build/tests/database gates the explicitly authorized develop merge.
+
+## CONTRACT-INLINE-FLIGHT-SEARCH-1020 — PC-A
+
+PR993 extension: new-contract flight cards appear below editable date calendars after explicit Search. Selecting an outbound chooses the unique eligible registered load partner (legacy saved pair ID fallback) and its pricing atomically; ambiguous partners remain manual. Changing only the return date retains the outbound and invalidates the old return quote; changing outbound date resets both. Details are inline in the first page, followed directly by pricing/review; hotel/tour/insurance/visa validation remains required. Sales opts into the Customers birth-date header calendar switch, preserving ISO dates and typed input. No API/schema/migration/dependency or runtime rollout. Local Sales/Customers regressions520 passed with one existing skip; Web types, scoped lint/format pass. Interaction checks cover search gating, automatic return selection, manual return overrides and stale quote removal. Exact-head hosted build/full-suite/database checks gate the explicitly authorized develop merge.
+
 ## RATE-ACTIONS-CHART-1019 — PC-B
 
 Registered reference rates gain dedicated amount/source edits and logical deletion with native/manual access, quote-write authority, branch, CAS and transactional before/after audit. Active history/current exclude removed rows; original pair/type/status/time and non-authoritative nature stay unchanged. Charts gain real date spacing and visible date/amount axes; the technical flag badge is removed only from UI. Broad API623 passed/one optional local skip, focused Web60 passed and updated permissions/mutations21 passed; real PostgreSQL correction/concurrency/delete/rollback proof and final-head hosted gates precede authorized push/develop merge. No migration/dependency, operational data, server or3100 rollout. Details: [RATE-ACTIONS-CHART-1019](tasks/RATE-ACTIONS-CHART-1019.md).
@@ -6685,9 +6693,25 @@ Typed customer DOB/passport dates now insert YYYY/MM/DD separators from digits, 
 Combined new-contract entry derives guests from rooms and appends explicit flight-only passengers. Flight selection and shared hotel dates precede identities; per-person stay fields inherit locked dates, with explicit different-stay override and separately entered accommodation currency/amount. Existing canonical passenger hotel prices aggregate once. Sales metadata snapshots preserve validated individual dates and hotel membership through Reservations, contract, reservation form and voucher output; older documents retain shared-date behavior. No schema/migration or runtime rollout. See docs/tasks/CONTRACT-GUEST-STAYS-1020.md and PR validation for final checks.
 
 
+## 2026-10-20 — PASSENGER-TRANSFER-SERVICES-1020 — PC-A
+
+Sales moves transfer leg choices to the final passenger columns, defaults enabled legs selected and derives each leg quantity from actual assignments. Confirmation remaps temporary slot exclusions to saved customer IDs. City tour/guide toggles create compatible OTHER service allocations; Visa reuses its existing applicant workflow. Contract PDF v2 separates each passenger service/stay row from their prices, removes the standalone Other Services block and prints explicit saved room count, type/category and per-room occupancy. Empty legacy room-price columns are omitted; existing saved prices/totals, capacity, financial gates and historical snapshots remain unchanged.507 Sales Web tests pass (one existing skip),70 unique Sales/Reservations API regressions pass; scoped lint/Web types and actual Chrome/Poppler PDF QA are checked, with final-head hosted full gates required before develop merge. No migration/dependency, operational data or local3100 rollout.
+
 ## FINANCE-ACCOUNTING-EVENTS-1018 — 2026-10-20 — in progress / PR992
 
-PC-A sole-writer implementation without orchestration: atomic immutable manual cash sources, exact mapping-driven accounting drafts, Sales refund/net settlement and obsolete release revocation, supplier/ticket/reservation/net-payroll hooks and proof-backed petty cash lifecycle. Five additive migrations applied to isolated QA only. Final local broad Finance/Sales run:496 passed,9 skipped; earlier focused PostgreSQL/release run:12 passed. New scheduled-due receipt and cancelled-source period-close regressions are awaiting final rerun. Draft PR992 and full quality/test/build/migration checks gate publication; no operational data/migration or3100 rollout yet. Full-plan remaining scope is explicitly listed in docs/tasks/FINANCE-ACCOUNTING-EVENTS-1018.md; this is not a completion claim for revenue/allocation/gross payroll/realized FX.
+Phase 1 merged as PR992 into develop5df04784 after all eight final-head hosted gates passed. Manual cash sources, mapping-driven accounting drafts, receipt/refund settlement, source hooks and petty cash lifecycle were deployed to3100/API4192 with five additive financial migrations and existing data preserved (222 accounts; no synthetic operational receipts/contracts/journals/events). Docker was reopened manually by the user on20 October; Web and API health checks recovered. No automatic banking. This milestone does not complete revenue recognition, multi-contract allocation, gross payroll or realized FX.
+
+
+## FINANCE-RECEIPT-ALLOCATION-1020 — PC-A — in progress
+
+Phase 2 adds immutable same-customer/branch/currency receipt allocation and full reversal, shared refund-reservation funds locks, original posted receipt carrying basis and inline UI without changing the original receipt or existing forms. Additive migration applied to isolated QA only. Twelve PostgreSQL tests, three carrying/reservation tests and final API typecheck pass. Broad Finance/Sales run:498 passed,9 skipped, one boundary failure subsequently fixed and all five boundary tests rerun successfully. UI checks/build/CI/merge/deployment still pending. Runtime3100 remains the phase1 image. See docs/tasks/FINANCE-RECEIPT-ALLOCATION-1020.md.
+
+
+GUEST-STAY-DRAFT-FIX-1020 / PC-A: repairing older new-contract browser draft restoration that hides individual hotel stay columns. No database changes.
+
+
+GUEST-STAY-DRAFT-FIX-1020 candidate:18 focused regression tests pass. Production build/local rollout verification in progress; no historical contracts changed.
+
 
 ## ASSISTANT-LIVE-CHAT-1020 — PC-C — VALIDATING
 
@@ -6696,3 +6720,14 @@ Owner approves Groq with message/session history only. Add explicit runtime cons
 ## 2026-10-20 — HR-RADAN-PARITY-1020 — IN_PROGRESS
 
 PC-B comparison: 23 observed functional areas; baseline 9 present / 8 partial / 6 absent. Bounded candidate adds employee groups/FK membership, separate working-hours snapshots, named shift definitions, remote requests, device fields, history filters and canonical-data report projections without redesign/schema changes. This is not full parity: identity privacy fields, calculation settings, exact minute leave grants/transfers, reusable shift calendar, configurable workflows and payslip import remain incomplete. See docs/tasks/HR-RADAN-PARITY-1020.md for evidence, gates and honest exclusions. No deployment or live data mutation.
+
+
+PASSENGER-PRICE-COLUMNS-1020 / PC-A: total per-passenger IRR and optional foreign price columns, service/stay context, canonical package persistence and validation in progress. No database migration.
+
+
+PASSENGER-PRICE-COLUMNS-1020 candidate validation:57 Sales API and3 shared-reader tests pass, with Web component/payload/output regressions. Fixed IRR and optional foreign total prices persist once per person; legacy contracts unchanged. No migration or runtime rollout.
+
+
+
+
+PASSENGER-PRICE-COLUMNS-1020 ready for CI: merged-current-development regressions45 Web/58 API/4 shared pass; gross/net total package validation, selectable non-IRR currency and fixed IRR UI, service/individual-stay context and PDF v2 totals retained. Final-head CI gates develop merge; no operational rollout or migration.
