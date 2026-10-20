@@ -7,6 +7,7 @@ export interface SalesPassengerHotelStayV1 {
 }
 export function readPassengerHotelStays(
   services: readonly Pick<SalesServiceInput, 'kind' | 'metadata'>[],
+  shared?: { checkInDate: string; checkOutDate: string } | null,
 ): Record<string, SalesPassengerHotelStayV1> | null {
   const raw = services.find((s) => s.kind === 'HOTEL')?.metadata
     ?.passengerHotelStaysV1;
@@ -31,7 +32,15 @@ export function readPassengerHotelStays(
       typeof stay.different !== 'boolean'
     )
       throw Error('تاریخ اقامت مسافر معتبر نیست.');
-  return value as Record<string, SalesPassengerHotelStayV1>;
+  const stays = value as Record<string, SalesPassengerHotelStayV1>;
+  return shared
+    ? Object.fromEntries(
+        Object.entries(stays).map(([id, stay]) => [
+          id,
+          stay.different ? stay : { ...stay, ...shared },
+        ]),
+      )
+    : stays;
 }
 export function validatePassengerHotelStays(
   input: Pick<

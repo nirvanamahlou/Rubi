@@ -97,7 +97,10 @@ export function contractPrintHtml(
   refs: ContractPrintReferences,
   options: { draft?: boolean } = {},
 ): string {
-  const guestStays = readPassengerHotelStays(output.contract.servicesDetail);
+  const guestStays = readPassengerHotelStays(
+    output.contract.servicesDetail,
+    output.contract.hotelSelection,
+  );
   const c = output.contract,
     e = escapeContractText;
   const travelDate = (value: string) =>

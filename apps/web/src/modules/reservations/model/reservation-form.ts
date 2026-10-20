@@ -66,7 +66,7 @@ export function reservationFormData(
     ? salesHotelRoomSummary(hotel.rooms)
     : undefined;
   const services = snapshot.serviceSelections;
-  const passengerStays = readPassengerHotelStays(services);
+  const passengerStays = readPassengerHotelStays(services, hotel);
   const flights = salesContractFlights(
     services,
     snapshot.ticketSelections ?? [],

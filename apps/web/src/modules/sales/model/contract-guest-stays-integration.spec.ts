@@ -143,3 +143,13 @@ it('counts the individually entered stay price once in the contract total', () =
       .map((p) => p.amount),
   ).toEqual(['230']);
 });
+
+it('keeps default stays following later shared-date edits without changing explicit overrides', () => {
+  const payload = salesPayload(state);
+  const stays = readPassengerHotelStays(payload.services, {
+    checkInDate: '2099-10-03',
+    checkOutDate: '2099-10-08',
+  })!;
+  expect(stays.a?.checkInDate).toBe('2099-10-02');
+  expect(stays.b?.checkInDate).toBe('2099-10-03');
+});
