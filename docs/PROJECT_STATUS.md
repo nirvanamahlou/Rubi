@@ -1090,7 +1090,7 @@ Sales contracts now open the active hotel list for the selected city, show avail
 
 ## 2026-09-29 — USER-ACCESS-UI-0929 — PC-A — READY_FOR_REVIEW
 
-User management now uses checkbox-first access cards: parent selection reveals child visibility/action checkboxes; partial grants stay expanded and indeterminate. Responsive compact cards, distinct selected-user styling and sticky save control replace dropdowns and excessive whitespace. Existing grant setters and authorization remain intact. 15 focused Web tests, strict typecheck and scoped lint pass; production build checked before handoff. No schema/API/dependency or operational account edits.
+User management now uses checkbox-first access cards: parent selection reveals child visibility/action checkboxes; partial grants stay expanded and indeterminate. Responsive compact cards, distinct selected-user styling and sticky save control replace dropdowns and excessive whitespace. Existing grant setters and authorization remain intact. 17 focused Web tests, strict typecheck and scoped lint pass; production build checked before handoff. No schema/API/dependency or operational account edits.
 
 ## 2026-09-28 — USER-ACCESS-TREE-0928 — PC-A — COMPLETE
 
@@ -6855,3 +6855,8 @@ Customer/buyer presentation now uses a clearer card, compact customer-mode contr
 Contract persistence now runs only from the explicit final commit button. Generic form submit is prevented and the advance/review buttons have distinct React identities so a step transition cannot reuse a submit control during the click. Existing create/confirm, validation, idempotency and browser draft persistence are retained.18 form regressions pass including non-submitting review/navigation controls. No API/schema/migration/data changes; local Web preview follows verified build. No authenticated business submission performed.
 
 ISSABEL-ADAPTER-1020 final integration: conflicts were resolved by retaining both append-only coordination tails and merging only15 Issabel translation keys into the latest HR/Sales catalogue; derived catalogues regenerated. All conflict-marker/JSON/diff checks pass. Final Contracts rebuild, complete API typecheck, API production build,65-route Web build with TypeScript, scoped API/Web lint and catalogue synchronization pass on the integrated develop7dfce188 source. Earlier compile observations came from pre-fix/pre-integration checks and are resolved; no quality gate was weakened. Exact-head full hosted CI and postmerge CI remain required. PBX/live deployment remains intentionally inactive pending actual configuration.
+
+
+## HR-PERSONNEL-FORM-1020 — PC-B — READY_FOR_CI
+
+Employee creation now contains the observed personal-information fields, typed contacts, photo selection and three-step entry flow in Nora existing controls. Optional encrypted identity/contact payload is atomic with employee creation and replay-safe; existing clients/edit/permission boundaries remain compatible. All34 real isolated PostgreSQL tests and17 focused Web checks pass; scoped lint, formatting and translation synchronization pass. Exact-head hosted types, whole-suite tests, build and PostgreSQL gates precede user-authorized develop merge. No schema/migration/dependency/design-style changes.

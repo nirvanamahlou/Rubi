@@ -54,6 +54,8 @@ type AssignmentLabels = {
   managers: Map<string, string>;
 };
 const employeeKeys = [
+  'identityValues',
+  'contactValues',
   'firstName',
   'lastName',
   'groupId',
@@ -920,10 +922,76 @@ export class HrService {
       }
     }
   }
+  private async insertPersonnelProfile(
+    tx: Tx,
+    employee: Employee,
+    input: Record<string, unknown>,
+    actor: AuthenticatedActor,
+  ) {
+    const identitySchema = validate.resource('employee', 'identity');
+    const identity = validate.recordValues(
+      input.identityValues,
+      identitySchema,
+    );
+    if (`${identity[0]} ${identity[1]}` !== employee.name)
+      throw new BadRequestException('نام و اطلاعات هویتی کارمند یکسان نیستند.');
+    const contacts = input.contactValues ?? [];
+    if (!Array.isArray(contacts) || contacts.length > 20)
+      throw new BadRequestException('حداکثر بیست شماره تماس مجاز است.');
+    const phoneSchema = validate.resource('employee', 'phones');
+    const phones = contacts.map((values) =>
+      validate.recordValues(values, phoneSchema),
+    );
+    const seen = new Set<string>();
+    for (const phone of phones) {
+      const normalized = `${phone[0]}:${validate.digits(phone[1]!).replace(/[()+-]/g, '')}`;
+      if (seen.has(normalized))
+        throw new BadRequestException('شماره تماس تکراری است.');
+      seen.add(normalized);
+    }
+    for (const [schema, values] of [
+      [identitySchema, identity],
+      ...phones.map((phone) => [phoneSchema, phone] as const),
+    ] as const) {
+      const row = await tx.hrRecord.create({
+        data: {
+          branchId: employee.branchId,
+          employeeId: employee.id,
+          section: schema.section,
+          tab: schema.tab,
+          code: `HR-PRIVATE-${randomUUID().slice(0, 16)}`,
+          values: values.map(() => '••••'),
+          searchText: '',
+          status: 'فعال',
+          data: protectHrValues(
+            values,
+            `${employee.branchId}:${employee.id}:${schema.key}`,
+          ),
+        },
+      });
+      await this.audit(
+        tx,
+        actor,
+        {
+          branchId: employee.branchId,
+          employeeId: employee.id,
+          recordId: row.id,
+        },
+        'personnel.profile.create',
+        { fields: schema.columns },
+        row.version,
+        undefined,
+        row.status,
+      );
+    }
+  }
   async createEmployee(body: unknown, key: unknown, actor: AuthenticatedActor) {
     this.require(actor, 'hr.manage');
     const input = validate.object(body, employeeKeys);
     this.nameParts(input);
+    const privateProfile =
+      input.identityValues !== undefined || input.contactValues !== undefined;
+    if (privateProfile) this.require(actor, 'hr.sensitive');
     const photo = input.photoDocumentId
       ? await this.documentReference(
           input.photoDocumentId,
@@ -934,10 +1002,18 @@ export class HrService {
     const result = await this.command(
       actor,
       key,
-      { operation: 'employee.create', input },
-      async (tx) => ({
-        id: (await this.insertEmployee(tx, input, actor, photo)).id,
-      }),
+      {
+        operation: 'employee.create',
+        input: privateProfile
+          ? privateCommandFingerprint(input, actor.userId)
+          : input,
+      },
+      async (tx) => {
+        const employee = await this.insertEmployee(tx, input, actor, photo);
+        if (privateProfile)
+          await this.insertPersonnelProfile(tx, employee, input, actor);
+        return { id: employee.id };
+      },
     );
     return this.employeeDto(
       await this.employee(this.database.client, result.id, actor),
@@ -945,7 +1021,12 @@ export class HrService {
   }
   async updateEmployee(id: string, body: unknown, actor: AuthenticatedActor) {
     this.require(actor, 'hr.manage');
-    const input = validate.object(body, [...employeeKeys, 'version']);
+    const input = validate.object(body, [
+      ...employeeKeys.filter(
+        (key) => !['identityValues', 'contactValues'].includes(key),
+      ),
+      'version',
+    ]);
     const expected = validate.version(input.version);
     const photo = input.photoDocumentId
       ? await this.documentReference(
