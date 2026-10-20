@@ -36,6 +36,11 @@ export function tehranDay(now: Date) {
     `${part('year')}-${part('month')}-${part('day')}T00:00:00+03:30`,
   );
 }
+export function tehranWeek(now: Date) {
+  const day = tehranDay(now);
+  const weekday = new Date(day.getTime() + 210 * 60000).getUTCDay();
+  return new Date(day.getTime() - ((weekday + 1) % 7) * 86400000);
+}
 @Injectable()
 export class CallCenterReadService {
   constructor(
@@ -295,6 +300,53 @@ export class CallCenterReadService {
       data: rows.slice(0, q.pageSize).map((r) => this.calls.presentNote(r)),
       meta: {
         next: rows.length > q.pageSize ? rows[q.pageSize - 1]!.id : null,
+      },
+    };
+  }
+  async kpis(actor: AuthenticatedActor, branch: string | undefined) {
+    const branchId = this.workflow.scope(actor, branch);
+    const now = new Date(),
+      day = tehranDay(now),
+      week = tehranWeek(now);
+    const rows = await this.db.client.$queryRaw<
+      Array<{
+        today: bigint;
+        week: bigint;
+        withoutOutcome: bigint;
+        needsFollowUp: bigint;
+      }>
+    >`SELECT
+      count(*) FILTER(WHERE a.occurred_at >= ${day} AND a.occurred_at <= ${now}) AS today,
+      count(*) FILTER(WHERE a.occurred_at >= ${week} AND a.occurred_at <= ${now}) AS week,
+      count(*) FILTER(WHERE a.outcome IS NULL) AS "withoutOutcome",
+      count(*) FILTER(WHERE EXISTS(
+        SELECT 1 FROM customer_affairs_tickets r
+        WHERE r.id=a.ticket_id AND r.branch_id=c.branch_id
+          AND r.category='CALL_CENTER_REQUEST' AND r.status <> 'CLOSED'
+          AND ${callCenterTaskFilter(branchId, 'OPEN', now, day)}
+      )) AS "needsFollowUp"
+      FROM customer_affairs_calls a
+      JOIN customer_affairs_call_contacts c ON c.id=a.contact_id
+      WHERE c.branch_id=${branchId}::uuid AND a.occurred_at <= ${now}
+        AND (a.origin IS NULL OR a.origin <> 'SYNTHETIC')`;
+    const row = rows[0]!;
+    return {
+      data: {
+        today: Number(row.today),
+        week: Number(row.week),
+        withoutOutcome: Number(row.withoutOutcome),
+        needsFollowUp: Number(row.needsFollowUp),
+      },
+      meta: {
+        branchId,
+        asOf: now.toISOString(),
+        timezone: 'Asia/Tehran',
+        todayFrom: day.toISOString(),
+        weekFrom: week.toISOString(),
+        scope:
+          'selected branch; independent of list filters; excludes synthetic calls',
+        basis:
+          'today/week=occurredAt through asOf; withoutOutcome=all history with null outcome; needsFollowUp=distinct calls linked to non-closed Call Center requests with OPEN follow-up',
       },
     };
   }

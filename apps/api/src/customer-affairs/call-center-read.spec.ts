@@ -12,7 +12,11 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CallCenterCrypto } from './call-center.crypto';
 import { CallCenterService } from './call-center.service';
 import { CallCenterWorkflowService } from './call-center-workflow.service';
-import { CallCenterReadService, tehranDay } from './call-center-read.service';
+import {
+  CallCenterReadService,
+  tehranDay,
+  tehranWeek,
+} from './call-center-read.service';
 import { callSearchMetadata, normalizeCallSearch } from './call-center-search';
 import { CallCenterSearchDto } from './call-center-search.dto';
 const crypto = new CallCenterCrypto(
@@ -46,6 +50,17 @@ describe('Call Center search semantics', () => {
   it('uses Tehran year/day boundary', () => {
     expect(tehranDay(new Date('2026-12-31T21:00:00Z')).toISOString()).toBe(
       '2026-12-31T20:30:00.000Z',
+    );
+  });
+  it('starts the Tehran week on Saturday across UTC and year boundaries', () => {
+    expect(tehranWeek(new Date('2026-10-16T20:29:59Z')).toISOString()).toBe(
+      '2026-10-09T20:30:00.000Z',
+    );
+    expect(tehranWeek(new Date('2026-10-16T20:30:00Z')).toISOString()).toBe(
+      '2026-10-16T20:30:00.000Z',
+    );
+    expect(tehranWeek(new Date('2027-01-01T20:30:00Z')).toISOString()).toBe(
+      '2027-01-01T20:30:00.000Z',
     );
   });
 });
@@ -489,6 +504,163 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         direction: 'INBOUND',
       });
       expect(inbound.data.topFollowUps).toEqual([]);
+    });
+    it('counts branch KPI calls with Tehran boundaries, null outcomes and deduplicated open follow-ups', async () => {
+      const kpiBranch = randomUUID(),
+        emptyBranch = randomUUID(),
+        kpiContact = randomUUID(),
+        outsideContact = randomUUID();
+      await db.branch.createMany({
+        data: [kpiBranch, emptyBranch].map((id) => ({
+          id,
+          code: id,
+          name: 'Synthetic KPI branch',
+        })),
+      });
+      const now = new Date('2026-10-20T10:00:00Z');
+      await db.callCenterContact.createMany({
+        data: [
+          {
+            id: kpiContact,
+            branchId: kpiBranch,
+            phoneFingerprint: crypto.fingerprint(kpiContact),
+            latestOccurredAt: now,
+          },
+          {
+            id: outsideContact,
+            branchId: otherBranch,
+            phoneFingerprint: crypto.fingerprint(outsideContact),
+            latestOccurredAt: now,
+          },
+        ],
+      });
+      const template = await db.customerAffairsTicket.findFirstOrThrow({
+        where: { branchId, category: 'CALL_CENTER_REQUEST' },
+      });
+      const requestIds = [randomUUID(), randomUUID(), randomUUID()];
+      for (const [index, id] of requestIds.entries())
+        await db.customerAffairsTicket.create({
+          data: {
+            ...template,
+            references: {},
+            id,
+            trackingNumber: id.replaceAll('-', ''),
+            branchId: kpiBranch,
+            callCenterContactId: kpiContact,
+            callCenterPayload: crypto.encrypt(
+              { title: 'Synthetic KPI request' },
+              `request:${id}:${kpiBranch}`,
+            ),
+            callCenterKeyVersion: 1,
+            status: index === 1 ? 'CLOSED' : 'NEW',
+          },
+        });
+      for (const [index, ticketId] of [
+        requestIds[0]!,
+        requestIds[0]!,
+        requestIds[1]!,
+        requestIds[2]!,
+      ].entries()) {
+        const id = randomUUID();
+        await db.automationTask.create({
+          data: {
+            id,
+            callCenterTicketId: ticketId,
+            sourceModule: 'CALL_CENTER',
+            sourceEventId: id,
+            sourceReference: ticketId,
+            branchId: kpiBranch,
+            assigneeUserId: userId,
+            kind: 'CALL_CENTER_FOLLOW_UP',
+            title: 'Synthetic KPI task',
+            status: index === 3 ? 'COMPLETED' : 'OPEN',
+            dueAt: now,
+            payload: {},
+          },
+        });
+      }
+      for (const [date, outcome, origin, ticketId, target] of [
+        ['2026-10-19T20:30:00Z', null, 'MANUAL', requestIds[0], kpiContact],
+        [
+          '2026-10-19T20:30:00.001Z',
+          'NO_ANSWER',
+          'MANUAL',
+          requestIds[0],
+          kpiContact,
+        ],
+        [
+          '2026-10-19T20:29:59Z',
+          'ANSWERED',
+          'MANUAL',
+          requestIds[1],
+          kpiContact,
+        ],
+        [
+          '2026-10-16T20:30:00Z',
+          'ANSWERED',
+          'MANUAL',
+          requestIds[2],
+          kpiContact,
+        ],
+        ['2026-10-16T20:29:59Z', 'ANSWERED', 'MANUAL', null, kpiContact],
+        ['2026-10-20T20:30:00Z', null, 'MANUAL', null, kpiContact],
+        ['2026-10-20T09:00:00Z', null, 'SYNTHETIC', requestIds[0], kpiContact],
+        ['2026-10-20T09:00:00Z', null, 'MANUAL', null, outsideContact],
+      ] as const) {
+        const id = randomUUID();
+        await db.callCenterCall.create({
+          data: {
+            id,
+            contactId: target,
+            createdByUserId: userId,
+            ticketId: ticketId ?? null,
+            direction: 'INBOUND',
+            status: 'جدید',
+            outcome,
+            origin,
+            occurredAt: new Date(date),
+            encryptedPayload: crypto.encrypt(value, `call:${id}:${target}`),
+            keyVersion: 1,
+            requestFingerprint: crypto.fingerprint(id),
+            searchVersion: 1,
+          },
+        });
+      }
+      const scopedActor = { ...actor, branchIds: [kpiBranch, emptyBranch] };
+      const decrypt = vi.spyOn(crypto, 'decrypt');
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(now);
+      try {
+        const result = await read.kpis(scopedActor, kpiBranch);
+        expect(result.data).toEqual({
+          today: 2,
+          week: 4,
+          withoutOutcome: 1,
+          needsFollowUp: 2,
+        });
+        expect(result.meta).toMatchObject({
+          branchId: kpiBranch,
+          timezone: 'Asia/Tehran',
+          todayFrom: '2026-10-19T20:30:00.000Z',
+          weekFrom: '2026-10-16T20:30:00.000Z',
+        });
+        expect((await read.kpis(scopedActor, emptyBranch)).data).toEqual({
+          today: 0,
+          week: 0,
+          withoutOutcome: 0,
+          needsFollowUp: 0,
+        });
+        await expect(read.kpis(scopedActor, otherBranch)).rejects.toMatchObject(
+          { status: 403 },
+        );
+        await expect(
+          read.kpis({ ...scopedActor, permissions: [] }, kpiBranch),
+        ).rejects.toMatchObject({ status: 403 });
+        expect(decrypt).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+        decrypt.mockRestore();
+      }
     });
   },
 );

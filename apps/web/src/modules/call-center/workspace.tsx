@@ -380,16 +380,7 @@ function Content({
         branchId={branch}
         actorId={actorId}
         canManage={canManage}
-        incomplete={
-          reportError || report?.data.unindexed
-            ? undefined
-            : report?.data.incomplete
-        }
-        onIncomplete={() => {
-          change('incomplete', 'YES');
-          change('scope', 'ANY');
-          searchInput.current?.focus();
-        }}
+        refreshKey={refresh}
       />
       <section className={styles.filterPanel} aria-label="جست‌وجو و فیلترها">
         <div className={styles.filters}>
