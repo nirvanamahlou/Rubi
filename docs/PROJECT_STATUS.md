@@ -6835,3 +6835,9 @@ HOTEL-STAY-LAYOUT-1020 / PC-A: remove the next-day checkbox and use equal-width 
 
 HOTEL-STAY-LAYOUT-1020 candidate: shared hotel dates now fill two equal columns, next-day checkbox removed. Existing calendar-state regression passed; no persisted dates or operational runtime changed.
 
+
+## ISSABEL-ADAPTER-1020 — implementation in progress
+
+PC-C is implementing an optional official AMI-based Issabel adapter on develop2446ce2f, after owner-approved preservation of the original unpublished Call Center baseline. Current develop already includes reviewed Call Center prerequisites. Source scope: real canonical PBX event ingress through the existing encrypted inbox/public domain port, authorized durable outbound commands, actual encrypted WAV chunk storage/private uploader, bounded dialer UI and disposable integration tests. Default disabled; no PBX host/version/credential or real call/recording supplied. No operational migration or current localhost runtime replacement performed. Verification and CI remain pending; see tasks/ISSABEL-ADAPTER-1020.md.
+
+ISSABEL-ADAPTER-1020 validation: dedicated disposable PostgreSQL applied all179 migrations, including the additive Issabel tables; all3 actual pipeline/authorization/audio lifecycle tests passed. Four fake-AMI/protocol tests,7 telephony security/state regressions,11 Web/client regressions, bounded uploader test and5 CI-policy checks passed. Shared packages/generated Prisma and corrected API production build pass; two exact-optional-property compile findings were corrected. API scoped lint passes after correcting a type-only import; Web lint/types/build and final-head hosted gates remain pending. No operational database, PBX call or live runtime was changed. Bounded source/schema reservations freeze on publication.
