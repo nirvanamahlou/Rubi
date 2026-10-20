@@ -204,7 +204,11 @@ it('rejects repeated multi-day long shifts while accepting a single start-day sn
   ).resolves.toHaveLength(9);
   expect(data.attendanceBeforeHours).toBe(0);
   expect(data.shiftEndDayOffset).toBe(2);
-  expect(findFirst.mock.calls[0]![0].where).toMatchObject({
+  expect(
+    findFirst.mock.calls.find(
+      (call) => call[0].where.tab === 'workingHours',
+    )![0].where,
+  ).toMatchObject({
     id: 'hours',
     branchId: 'branch',
     section: 'time',

@@ -64,7 +64,9 @@ type ContextualFieldType =
   | 'combobox'
   | 'file'
   | 'url'
-  | 'textarea';
+  | 'textarea'
+  | 'password'
+  | 'multi-select';
 
 export interface ContextualHrField {
   id: string;
@@ -839,7 +841,39 @@ export function ContextualHrForm({
                     افزودن {field.label}
                   </button>
                 ) : null}
-                {field.type === 'select' ? (
+                {field.type === 'multi-select' ? (
+                  <select
+                    {...commonProps}
+                    multiple
+                    disabled={readOnly}
+                    value={(() => {
+                      try {
+                        return JSON.parse(
+                          derivedValues[field.id] || '[]',
+                        ) as string[];
+                      } catch {
+                        return [];
+                      }
+                    })()}
+                    onChange={(event) =>
+                      update(
+                        field.id,
+                        JSON.stringify(
+                          Array.from(
+                            event.target.selectedOptions,
+                            (option) => option.value,
+                          ),
+                        ),
+                      )
+                    }
+                  >
+                    {(field.options ?? []).map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                ) : field.type === 'select' ? (
                   <NativeSearchSelect
                     {...commonProps}
                     disabled={readOnly}
