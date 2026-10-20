@@ -109,6 +109,8 @@ export interface HrContractStateCommand {
 }
 
 export interface HrEmployeeCreate {
+  firstName?: string;
+  lastName?: string;
   groupId?: string | null;
   branchId?: string;
   userId?: string | null;

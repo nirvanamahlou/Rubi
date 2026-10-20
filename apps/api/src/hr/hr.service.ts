@@ -53,6 +53,8 @@ type AssignmentLabels = {
   managers: Map<string, string>;
 };
 const employeeKeys = [
+  'firstName',
+  'lastName',
   'groupId',
   'branchId',
   'userId',
@@ -919,6 +921,7 @@ export class HrService {
   async createEmployee(body: unknown, key: unknown, actor: AuthenticatedActor) {
     this.require(actor, 'hr.manage');
     const input = validate.object(body, employeeKeys);
+    this.nameParts(input);
     const photo = input.photoDocumentId
       ? await this.documentReference(
           input.photoDocumentId,
@@ -975,6 +978,8 @@ export class HrService {
             key,
             key === 'personnelCode' ? 50 : key === 'kind' ? 80 : 160,
           );
+      const nameParts = this.nameParts(input);
+      if (nameParts) data.name = nameParts.join(' ');
       if (input.status !== undefined && input.status !== existing.status)
         throw new BadRequestException(
           'پایان همکاری باید از پرونده خروج ثبت شود.',
@@ -1005,6 +1010,8 @@ export class HrService {
       });
       if (changed.count !== 1)
         throw new ConflictException('نسخه کارمند تغییر کرده است.');
+      if (typeof data.name === 'string')
+        await this.syncIdentityNames(tx, existing, data.name, nameParts, actor);
       await this.audit(
         tx,
         actor,
@@ -1500,6 +1507,7 @@ export class HrService {
           employee,
           parent?.id ?? null,
           values,
+          actor,
         );
         if (schema.approval && employee)
           await this.attachRadanRoute(
@@ -1919,6 +1927,7 @@ export class HrService {
         employee,
         parentId,
         values,
+        actor,
         row.id,
       );
       if (
@@ -3513,6 +3522,7 @@ export class HrService {
     employee: Employee | null,
     parentId: string | null,
     values: string[],
+    actor: AuthenticatedActor,
     id?: string,
   ) {
     if (
@@ -3566,6 +3576,36 @@ export class HrService {
         );
       const mock = getHrResource('time', 'workingHours')!;
       validate.recordValues(['روز تقویم', '', ...values.slice(1)], mock);
+    }
+    if (schema.key === 'employee.identity' && employee) {
+      const name = validate.text(
+        `${validate.text(values[0], 'نام', 80)} ${validate.text(values[1], 'نام خانوادگی', 100)}`,
+        'نام',
+        160,
+      );
+      if (name !== employee.name) {
+        const changed = await tx.hrEmployee.updateMany({
+          where: {
+            id: employee.id,
+            branchId,
+            version: employee.version,
+            deletedAt: null,
+          },
+          data: { name, version: { increment: 1 } },
+        });
+        if (changed.count !== 1)
+          throw new ConflictException('نسخه کارمند تغییر کرده است.');
+        employee.name = name;
+        employee.version += 1;
+        await this.audit(
+          tx,
+          actor,
+          { branchId, employeeId: employee.id },
+          'employee.identity.name',
+          { fields: ['نام', 'نام خانوادگی'] },
+          employee.version,
+        );
+      }
     }
   }
   private async attachRadanRoute(
@@ -3952,10 +3992,15 @@ export class HrService {
       month = Number(input.month);
     if (!Number.isInteger(month) || month < 1 || month > 12)
       throw new BadRequestException('ماه معتبر نیست.');
-    const [headers, ...rows] = readPayslipWorkbook(
+    const [headerRow, ...rows] = readPayslipWorkbook(
       file.buffer,
       file.originalname,
     );
+    const headers = headerRow
+      ? Array.from(headerRow, (header) => String(header ?? '').trim())
+      : undefined;
+    if (headers?.[0]?.toLowerCase() === 'personnel code')
+      headers[0] = 'کد پرسنلی';
     if (
       !headers ||
       headers[0] !== 'کد پرسنلی' ||
@@ -4394,5 +4439,76 @@ export class HrService {
         status: 'فعال',
       },
     });
+  }
+  private nameParts(
+    input: Record<string, unknown>,
+  ): [string, string] | undefined {
+    if (input.firstName === undefined && input.lastName === undefined) return;
+    const parts: [string, string] = [
+      validate.text(input.firstName, 'نام', 80),
+      validate.text(input.lastName, 'نام خانوادگی', 100),
+    ];
+    validate.text(parts.join(' '), 'نام', 160);
+    if (
+      input.name !== undefined &&
+      validate.text(input.name, 'نام', 160) !== parts.join(' ')
+    )
+      throw new BadRequestException(
+        'نام و نام خانوادگی با نام پرونده یکسان نیست.',
+      );
+    return parts;
+  }
+  private async syncIdentityNames(
+    tx: Tx,
+    employee: Employee,
+    name: string,
+    parts: [string, string] | undefined,
+    actor: AuthenticatedActor,
+  ) {
+    const record = await tx.hrRecord.findFirst({
+      where: {
+        employeeId: employee.id,
+        branchId: employee.branchId,
+        section: 'employee',
+        tab: 'identity',
+        deletedAt: null,
+      },
+    });
+    if (!record) return;
+    const context = `${record.branchId}:${employee.id}:employee.identity`;
+    const values = revealHrValues(record.data, context);
+    const split = name.split(' ');
+    const first =
+      parts?.[0] ?? (name.startsWith(values[0] + ' ') ? values[0]! : split[0]!);
+    const last = parts?.[1] ?? name.slice(first.length).trim();
+    if (values[0] === first && values[1] === last) return;
+    validate.text(first, 'نام', 80);
+    validate.text(last, 'نام خانوادگی', 100);
+    values[0] = first;
+    values[1] = last;
+    const changed = await tx.hrRecord.updateMany({
+      where: { id: record.id, version: record.version, deletedAt: null },
+      data: {
+        data: json({
+          ...publicHrData(record.data),
+          ...protectHrValues(values, context),
+        }),
+        version: { increment: 1 },
+      },
+    });
+    if (changed.count !== 1)
+      throw new ConflictException('نسخه رکورد تغییر کرده است.');
+    await this.audit(
+      tx,
+      actor,
+      {
+        branchId: employee.branchId,
+        employeeId: employee.id,
+        recordId: record.id,
+      },
+      'employee.identity.name',
+      { fields: ['نام', 'نام خانوادگی'] },
+      record.version + 1,
+    );
   }
 }

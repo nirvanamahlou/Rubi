@@ -1,4 +1,4 @@
-import { zipSync, strToU8 } from 'fflate';
+import { zipSync, strToU8, unzipSync } from 'fflate';
 import 'reflect-metadata';
 import { execFileSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -2144,6 +2144,21 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         '••••',
       );
       expect((rows[0]!.values as string[])[4]).toBe('123456789012345.25');
+      const englishParts = unzipSync(buffer);
+      englishParts['xl/worksheets/sheet1.xml'] = strToU8(
+        Buffer.from(englishParts['xl/worksheets/sheet1.xml']!)
+          .toString('utf8')
+          .replace('کد پرسنلی', 'Personnel code'),
+      );
+      await request(app.getHttpServer())
+        .post('/api/v1/hr/payslips/import')
+        .set('Cookie', adminCookie)
+        .set('Idempotency-Key', key())
+        .field('branchId', branchA)
+        .field('year', '1405')
+        .field('month', '8')
+        .attach('file', Buffer.from(zipSync(englishParts)), 'english-pay.xlsx')
+        .expect(201);
       await expect(
         service.importPayslips(
           { buffer, originalname: 'pay.xlsx' },
@@ -2245,6 +2260,13 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           admin,
         );
         expect(record.values).toEqual(values);
+        expect(
+          (
+            await client.hrEmployee.findUniqueOrThrow({
+              where: { id: target.id },
+            })
+          ).name,
+        ).toBe('نام نام خانوادگی');
         expect(JSON.stringify(record.data)).not.toContain('privatePayload');
         const stored = await client.hrRecord.findUniqueOrThrow({
           where: { id: record.id },
@@ -2271,7 +2293,53 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         expect(JSON.stringify(audit)).not.toContain('0123456789');
         expect(JSON.stringify(audit)).not.toContain('نشانی جدید');
         await expect(service.getRecord(record.id, outsider)).rejects.toThrow();
-        await service.deleteRecord(record.id, String(updated.version), admin);
+        const currentEmployee = await client.hrEmployee.findUniqueOrThrow({
+          where: { id: target.id },
+        });
+        await expect(
+          service.updateEmployee(
+            target.id,
+            {
+              version: currentEmployee.version,
+              name: 'Different',
+              firstName: 'نام',
+              lastName: 'خانواده',
+            },
+            admin,
+          ),
+        ).rejects.toThrow();
+        const named = await service.updateEmployee(
+          target.id,
+          {
+            version: currentEmployee.version,
+            name: 'نام دو بخشی خانواده',
+            firstName: 'نام دو بخشی',
+            lastName: 'خانواده',
+          },
+          admin,
+        );
+        const synchronized = await service.getRecord(record.id, admin);
+        expect(synchronized.values.slice(0, 2)).toEqual([
+          'نام دو بخشی',
+          'خانواده',
+        ]);
+        expect(synchronized.values[2]).toBe('0123456789');
+        await expect(
+          service.updateRecord(
+            record.id,
+            { version: updated.version, values },
+            admin,
+          ),
+        ).rejects.toThrow();
+        await service.updateEmployee(
+          target.id,
+          { version: named.version, name: 'Legacy Name' },
+          admin,
+        );
+        const legacy = await service.getRecord(record.id, admin);
+        expect(legacy.values.slice(0, 2)).toEqual(['Legacy', 'Name']);
+        expect(legacy.values[2]).toBe('0123456789');
+        await service.deleteRecord(record.id, String(legacy.version), admin);
       } finally {
         if (previousKey === undefined)
           delete process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;

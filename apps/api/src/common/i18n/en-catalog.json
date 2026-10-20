@@ -4087,6 +4087,7 @@
   "درون‌شهری": "Within city",
   "طول شیفت مصوب برای روز مرخصی مشخص نیست.": "The approved shift duration is unavailable for the leave date.",
   "روزهای شیفت هم‌پوشانی دارند.": "Shift calendar intervals overlap.",
+  "نام و نام خانوادگی با نام پرونده یکسان نیست.": "The given and family names do not match the employee display name.",
   "،": ",",
   "؛": ";",
   ": پرونده را بررسی کنید.": ": Check the file.",

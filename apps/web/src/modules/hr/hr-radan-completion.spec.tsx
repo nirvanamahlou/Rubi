@@ -1,3 +1,6 @@
+import { employeeFormValue } from './hr-employees';
+import type { HrEmployeeDto, HrRecordDto } from '@nora/contracts';
+import type { HrStore } from './hr-store';
 import { describe, expect, it } from 'vitest';
 import { getHrResource } from '@nora/contracts';
 import { persianCalendarMonths } from './hr-template-calendar';
@@ -46,5 +49,26 @@ describe('Radan fields in existing HR surfaces', () => {
     expect(radanOptionalLabels(getHrResource('contracts', 'active')!)).toEqual(
       [],
     );
+  });
+});
+
+it('retains a multiword given name when editing the canonical employee record', () => {
+  const employee = {
+    id: 'employee',
+    name: 'نام دو بخشی خانواده',
+    managerId: null,
+  } as HrEmployeeDto;
+  const identity = {
+    employeeId: employee.id,
+    section: 'employee',
+    tab: 'identity',
+    values: ['نام دو بخشی', 'خانواده'],
+  } as HrRecordDto;
+  const store = {
+    data: { records: [identity], branches: [], employees: [] },
+  } as unknown as HrStore;
+  expect(employeeFormValue(employee, store)).toMatchObject({
+    firstName: 'نام دو بخشی',
+    lastName: 'خانواده',
   });
 });
