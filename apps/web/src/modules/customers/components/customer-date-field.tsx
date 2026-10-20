@@ -16,6 +16,8 @@ import {
   formatCustomerDate,
   gregorianParts,
   parseTypedCustomerDate,
+  formatTypedCustomerDate,
+  typedCustomerDateCaret,
   persianNumber,
   shiftCalendarMonth,
 } from '../model/customer-calendar';
@@ -206,6 +208,8 @@ export function CustomerDateField({
               <input
                 aria-label={label + ' — ورود تاریخ'}
                 placeholder="YYYY/MM/DD"
+                inputMode="numeric"
+                maxLength={10}
                 dir="ltr"
                 className="h-10 min-w-28 w-32 rounded-md border border-primary/30 px-2 text-xs"
                 disabled={disabled}
@@ -223,12 +227,13 @@ export function CustomerDateField({
                       : ''
                 }
                 onChange={(event) => {
-                  const text = event.target.value.replace(/[۰-۹٠-٩]/g, (d) =>
-                    String(
-                      '۰۱۲۳۴۵۶۷۸۹'.includes(d)
-                        ? '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)
-                        : '٠١٢٣٤٥٦٧٨٩'.indexOf(d),
-                    ),
+                  const input = event.currentTarget;
+                  const raw = input.value;
+                  const text = formatTypedCustomerDate(raw);
+                  const caret = typedCustomerDateCaret(
+                    raw,
+                    input.selectionStart ?? raw.length,
+                    text,
                   );
                   setTyped(text);
                   setTyping(true);
@@ -236,6 +241,10 @@ export function CustomerDateField({
                   const valid = Boolean(iso && (!minDate || iso >= minDate));
                   setDateError(Boolean(text) && !valid);
                   onChange(valid ? iso! : '');
+                  requestAnimationFrame(() => {
+                    if (document.activeElement === input)
+                      input.setSelectionRange(caret, caret);
+                  });
                 }}
               />
             ) : null}

@@ -290,6 +290,36 @@ export function formatCustomerDate(
   ).format(new Date(value));
 }
 
+export function formatTypedCustomerDate(input: string): string {
+  const normalized = input.replace(/[۰-۹٠-٩]/g, (d) =>
+    String(
+      '۰۱۲۳۴۵۶۷۸۹'.includes(d)
+        ? '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)
+        : '٠١٢٣٤٥٦٧٨٩'.indexOf(d),
+    ),
+  );
+  const digits = normalized.replace(/\D/g, '').slice(0, 8);
+  return (
+    digits.slice(0, 4) +
+    (digits.length > 4 ? '/' + digits.slice(4, 6) : '') +
+    (digits.length > 6 ? '/' + digits.slice(6) : '')
+  );
+}
+
+export function typedCustomerDateCaret(
+  raw: string,
+  caret: number,
+  formatted: string,
+): number {
+  if (caret === raw.length) return formatted.length;
+  const digitsBefore = raw.slice(0, caret).replace(/[^0-9۰-۹٠-٩]/g, '').length;
+  let seen = 0;
+  for (let i = 0; i < formatted.length; i++) {
+    if (/\d/.test(formatted[i]!) && ++seen === digitsBefore) return i + 1;
+  }
+  return digitsBefore === 0 ? 0 : formatted.length;
+}
+
 export function parseTypedCustomerDate(
   input: string,
   mode: 'persian' | 'gregorian',
