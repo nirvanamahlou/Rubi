@@ -1,4 +1,17 @@
 'use client';
+import serviceStyles from './contract-service-cards.module.css';
+import {
+  Plane,
+  Building2,
+  CarFront,
+  ShieldCheck,
+  MapPinned,
+  Armchair,
+  BusFront,
+  TrainFront,
+  Ellipsis,
+  BookOpen,
+} from 'lucide-react';
 import { restoreContractDraft } from '../model/restore-contract-draft';
 import type { TicketOfferV1 } from '@nora/contracts';
 import { PublishedPackageSale } from './published-package-sale';
@@ -1280,7 +1293,7 @@ export function SalesContractForm() {
           </div>
         ) : null}
         {step === 0 ? (
-          <div className="mt-5 grid gap-3 border-t border-border pt-4">
+          <div className="mt-6 grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">
             <h2 className="text-sm font-bold">خدمات قرارداد</h2>
             {state.tour ? (
               <p className="rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary">
@@ -1288,20 +1301,31 @@ export function SalesContractForm() {
                 ترانسفر یا خدمت اضافه به‌صورت جداگانه قابل تغییر نیست.
               </p>
             ) : (
-              <>
-                <div className="grid gap-3 sm:grid-cols-2">
+              <div className={serviceStyles.services}>
+                <div className="contents">
                   {(['FLIGHT', 'TRANSFER'] as const).map((kind) => (
                     <fieldset
                       key={kind}
-                      className="rounded-xl border border-border p-3 text-sm"
+                      className={`${serviceStyles.card} ${serviceStyles.primary} ${serviceStyles.directional} ${serviceStyles[kind.toLowerCase()]} ${state.serviceKinds.includes(kind) ? serviceStyles.selected : ''}`}
                     >
                       <label className="flex cursor-pointer items-center justify-between gap-3 font-bold">
-                        <span>
+                        <span className={serviceStyles.label}>
+                          {kind === 'FLIGHT' ? (
+                            <Plane
+                              className={serviceStyles.icon}
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <CarFront
+                              className={serviceStyles.icon}
+                              aria-hidden="true"
+                            />
+                          )}
                           {kind === 'FLIGHT' ? 'بلیط پرواز' : 'ترانسفر'}
                         </span>
                         <input
                           type="checkbox"
-                          className="size-4 accent-primary"
+                          className="size-5 shrink-0 cursor-pointer accent-primary"
                           checked={state.serviceKinds.includes(kind)}
                           aria-controls={
                             kind === 'FLIGHT'
@@ -1324,7 +1348,7 @@ export function SalesContractForm() {
                       state.serviceKinds.includes(kind) ? (
                         <div
                           id={`sales-directions-${kind}`}
-                          className="mt-2 flex gap-2 border-t border-border pt-2"
+                          className="mt-4 flex flex-wrap gap-2"
                         >
                           {(['OUTBOUND', 'RETURN'] as const).map(
                             (direction) => (
@@ -1334,7 +1358,7 @@ export function SalesContractForm() {
                               >
                                 <input
                                   type="checkbox"
-                                  className="size-4 accent-primary"
+                                  className="size-5 shrink-0 cursor-pointer accent-primary"
                                   checked={salesDirections(
                                     state,
                                     kind,
@@ -1352,14 +1376,14 @@ export function SalesContractForm() {
                     </fieldset>
                   ))}
                 </div>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="contents">
                   {serviceOptions
                     .filter(
                       ([kind]) => kind !== 'FLIGHT' && kind !== 'TRANSFER',
                     )
                     .map(([kind, label]) => (
                       <button
-                        className={`flex min-h-10 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-start text-sm disabled:cursor-not-allowed disabled:opacity-40 ${state.serviceKinds.includes(kind) ? 'border-primary bg-primary/5' : 'border-border'}`}
+                        className={`${serviceStyles.card} ${serviceStyles[kind.toLowerCase()]} ${kind === 'HOTEL' ? serviceStyles.primary : ''} ${state.serviceKinds.includes(kind) ? serviceStyles.selected : ''}`}
                         key={kind}
                         role="checkbox"
                         aria-checked={state.serviceKinds.includes(kind)}
@@ -1370,14 +1394,54 @@ export function SalesContractForm() {
                         }
                         type="button"
                       >
-                        <span>{label}</span>
-                        {state.serviceKinds.includes(kind) ? (
-                          <Check className="size-4 text-primary" />
-                        ) : null}
+                        <span className={serviceStyles.label}>
+                          {(() => {
+                            const Icon = {
+                              HOTEL: Building2,
+                              VISA: BookOpen,
+                              INSURANCE: ShieldCheck,
+                              TOUR: MapPinned,
+                              CIP: Armchair,
+                              BUS: BusFront,
+                              TRAIN: TrainFront,
+                              OTHER: Ellipsis,
+                              FLIGHT: Plane,
+                              TRANSFER: CarFront,
+                            }[kind];
+                            return (
+                              <Icon
+                                className={serviceStyles.icon}
+                                aria-hidden="true"
+                              />
+                            );
+                          })()}
+                          {label}
+                        </span>
+                        <span
+                          className={serviceStyles.check}
+                          aria-hidden="true"
+                        >
+                          {state.serviceKinds.includes(kind) ? (
+                            <Check className="size-4" />
+                          ) : null}
+                        </span>
                       </button>
                     ))}
                 </div>
-              </>
+                <div className={serviceStyles.summary} aria-live="polite">
+                  <Check
+                    className="size-5 shrink-0 text-primary"
+                    aria-hidden="true"
+                  />
+                  <span className="font-bold">{state.serviceKinds.length}</span>
+                  <span>
+                    {serviceOptions
+                      .filter(([kind]) => state.serviceKinds.includes(kind))
+                      .map(([, label]) => label)
+                      .join(' · ')}
+                  </span>
+                </div>
+              </div>
             )}
           </div>
         ) : null}

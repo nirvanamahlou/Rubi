@@ -1,0 +1,147 @@
+.services {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.card {
+  grid-column: span 3;
+  display: flex;
+  min-width: 0;
+  min-height: 5.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1rem;
+  text-align: start;
+  background: var(--surface);
+  transition:
+    border-color 150ms,
+    background-color 150ms,
+    box-shadow 150ms;
+}
+
+.card:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+
+.card:focus-visible,
+.card:has(input:focus-visible) {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.selected {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+.primary {
+  grid-column: span 4;
+  min-height: 9rem;
+}
+
+.directional {
+  display: block;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 700;
+}
+
+.icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+.check {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  display: grid;
+  place-items: center;
+}
+
+.selected .check {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+.card:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  background: var(--muted);
+}
+
+.flight {
+  order: 1;
+}
+.hotel {
+  order: 2;
+}
+.transfer {
+  order: 3;
+}
+.visa {
+  order: 4;
+}
+.insurance {
+  order: 5;
+}
+.tour {
+  order: 6;
+}
+.cip {
+  order: 7;
+}
+.bus {
+  order: 8;
+  grid-column: span 4;
+}
+.train {
+  order: 9;
+  grid-column: span 4;
+}
+.other {
+  order: 10;
+  grid-column: span 4;
+}
+
+@media (max-width: 640px) {
+  .services {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .card {
+    grid-column: span 1;
+    padding: 0.875rem;
+  }
+  .primary {
+    grid-column: span 2;
+    min-height: 5.5rem;
+  }
+}
+
+.summary {
+  order: 11;
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+  font-size: 0.875rem;
+}
