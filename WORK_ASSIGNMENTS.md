@@ -1,3 +1,7 @@
+## BANK-ACCOUNTS-1020 — PC-B — AUTHORIZED / WAITING_SHARED_LOCK_HANDOFF
+
+COMPUTER_ID=PC-B; branch codex/pc-b-bank-accounts-1020 from origin/develop@72f9f916. On 2026-10-20 the owner explicitly transfers this capability to PC-B after confirming accounts belong only to the company: multiple accounts per reference bank, account/card/IBAN entry and editing, tests, push and develop merge. Finance retains data ownership; Master Data consumes the owner API. Reserve this unit's task note and bounded ownership/status/assignment entries now. Proposed later implementation scope is Finance-owned settlement-account storage/API/validation/security tests and a bank-profile consumer; no schema/source implementation reservation is claimed before shared-lock handoff. Open PC-A PR998 currently changes schema.prisma and finance.module.ts and carries migration20261020120000_receipt_allocations. Preserve that candidate/migration and request explicit freeze/release; do not infer lock release merely from this delegation. No operational database, IAM grants, account records or deployment changes. No dependency lock requested. All final-head checks/review gate any future implementation merge. Details: docs/tasks/BANK-ACCOUNTS-1020.md.
+
 ## RATE-ACTIONS-CHART-1019 — PC-B — READY_FOR_CI
 
 Bounded localization outputs: existing offline i18n-sync API and standalone catalogues generated only from the related override keys; preserve peer labels. Test expectation updates cover active-only history and dedicated audited rate commands, not removal of security gates.
