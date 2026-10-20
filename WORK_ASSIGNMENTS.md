@@ -8460,3 +8460,9 @@ PASSENGER-PRICE-COLUMNS-1020 candidate: separate fixed-IRR and optional selectab
 PASSENGER-PRICE-COLUMNS-1020 final integration: preserve merged PR993 passenger transfer legs/additional services and PDF v2 service table, plus PR994 draft restoration. Final focused run45 Web,58 API and4 shared tests passed. API production compilation passed; Web compilation passed, then strict typing found a test fixture optional-property omission which is corrected. Exact-head hosted production build/type/quality/full-test/database gates remain required for authorized merge. No runtime3100 or operational database changes.
 
 CONTRACT-STAY-PAYMENT-LAYOUT-1020 final integration reservation: approved PR996 replaces service allocation entry with per-passenger gross IRR/foreign totals. Preserve that canonical producer/API/output unchanged; integrate this unit's first-step amount removal, trailing stay controls and shared calendar. On the payment table mark different-stay rows beside their effective dates and edit their existing gross total exactly once, without reintroducing a separate hotel charge. Reserve bounded pricing consumer/calendar and test alignment only. Source locks from merged PR996 are released. Final integrated109 regressions pass across12 files; full Web types/scoped lint and exact-head hosted checks gate final merge.
+
+## CONTRACT-UI-1020 — PC-A — IN_PROGRESS
+
+Reserve sales-contract-form.tsx presentation classes only on codex/pc-a-contract-ui-1020 from origin/develop@b5279cc5. Preserve all fields, state, validation, pricing and submit behavior. No schema, dependencies, API, runtime or deployment changes. No overlapping active form presentation reservation found.
+
+CONTRACT-UI-1020 — READY_FOR_REVIEW: bounded presentation-only candidate; no data/API/runtime changes. Source reservation released with commit. Visual browser acceptance and full production build remain unverified.

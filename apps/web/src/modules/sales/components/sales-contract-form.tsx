@@ -1141,13 +1141,13 @@ export function SalesContractForm() {
 
   return (
     <form
-      className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-[minmax(0,1fr)] gap-4"
+      className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-[minmax(0,1fr)] gap-5 pb-6"
       onSubmit={submit}
     >
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-primary/10 bg-gradient-to-l from-primary/10 via-surface to-surface p-5 sm:p-6">
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl font-black">قرارداد جدید</h1>
+            <h1 className="text-2xl font-black tracking-tight">قرارداد جدید</h1>
             <Button
               type="button"
               variant="outline"
@@ -1190,13 +1190,13 @@ export function SalesContractForm() {
         </Link>
       </header>
       <ol
-        className="flex gap-1 overflow-x-auto rounded-xl bg-muted/50 p-1"
+        className="grid grid-cols-1 gap-2 rounded-2xl border border-border bg-surface p-2 shadow-sm sm:grid-cols-3"
         aria-label="مراحل ثبت قرارداد"
       >
         {salesSteps.map((label, index) => (
           <li
             aria-current={index === step ? 'step' : undefined}
-            className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-center text-xs font-bold ${index === step ? 'bg-primary/10 text-primary' : index < step ? 'text-emerald-700' : 'text-muted-foreground'}`}
+            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-center text-sm font-bold transition-colors ${index === step ? 'border-primary bg-primary text-primary-foreground shadow-sm' : index < step ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'border-transparent bg-muted/40 text-muted-foreground'}`}
             key={label}
           >
             {index + 1}. {label}
@@ -1206,7 +1206,7 @@ export function SalesContractForm() {
       {error ? (
         <Alert tone="error" title="عملیات کامل نشد" description={error} />
       ) : null}
-      <Card className="min-w-0 p-4 sm:p-5">
+      <Card className="min-w-0 rounded-2xl border-border/80 p-4 shadow-sm sm:p-6 lg:p-8">
         <PublishedPackageSale state={state} onChange={setState} />
         {step === 0 ? (
           <div className="grid gap-5">
@@ -2346,7 +2346,7 @@ export function SalesContractForm() {
           {error}
         </p>
       ) : null}
-      <div className="sticky bottom-3 z-20 flex items-center justify-between rounded-xl border border-border bg-surface/95 p-3 shadow-sm backdrop-blur">
+      <div className="sticky bottom-3 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/15 bg-surface/95 p-3 shadow-lg backdrop-blur sm:p-4">
         <Button
           type="button"
           variant="outline"
