@@ -38,6 +38,7 @@ const record: MasterDataRecord = {
     hotelRules: 'Check in 14:00',
     sourceRefundRules: 'Reference refund rules',
     sourceFeatured: true,
+    freeSale: false,
     internalNote: null,
     sourceMainImage: '<img src=x onerror=alert(1)>',
     sourceGalleryImages: 'https://example.test/image.jpg',
@@ -63,6 +64,7 @@ describe('imported hotel profile and editing', () => {
       description: 'Imported description',
       serviceLevel: 'لوکس',
       sourceFeatured: 'true',
+      freeSale: 'false',
       internalNote: '',
     });
     const html = renderToStaticMarkup(

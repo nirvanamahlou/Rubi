@@ -230,6 +230,7 @@ export const MASTER_DATA_EDITABLE_FIELDS = {
     'sourceMainImage',
     'sourceGalleryImages',
     'sourceFeatured',
+    'freeSale',
     'website',
     'checkInTime',
     'checkOutTime',

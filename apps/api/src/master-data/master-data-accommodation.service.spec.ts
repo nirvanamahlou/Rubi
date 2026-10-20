@@ -64,6 +64,7 @@ describe('MasterDataService accommodation', () => {
         sourceGalleryImages:
           'https://example.test/one.jpg|https://example.test/two.jpg',
         sourceFeatured: 'false',
+        freeSale: 'false',
         serviceLevel: '',
       },
       1,
@@ -73,6 +74,7 @@ describe('MasterDataService accommodation', () => {
       description: 'updated',
       internalNote: 'new note',
       sourceFeatured: false,
+      freeSale: false,
       serviceLevel: null,
       sourceRefundRules: 'reference policy',
     });
@@ -94,6 +96,9 @@ describe('MasterDataService accommodation', () => {
         1,
         actor,
       ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.update('hotels', ids.chain, { freeSale: 'unknown' }, 1, actor),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(update).toHaveBeenCalledTimes(1);
   });

@@ -2213,6 +2213,7 @@ model MasterHotel {
   sourceMainImage      String?                      @db.VarChar(2000)
   sourceGalleryImages  String?                      @db.VarChar(2000)
   sourceFeatured       Boolean?
+  freeSale             Boolean?
   website              String?                      @db.VarChar(320)
   checkInTime          String?                      @db.Char(5)
   checkOutTime         String?                      @db.Char(5)

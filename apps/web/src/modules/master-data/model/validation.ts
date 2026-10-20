@@ -51,6 +51,8 @@ export function validateMasterDataDraft(
       !['true', 'false'].includes(values.sourceFeatured)
     )
       errors.sourceFeatured = 'مقادیر فرم معتبر نیستند.';
+    if (values.freeSale && !['true', 'false'].includes(values.freeSale))
+      errors.freeSale = 'مقادیر فرم معتبر نیستند.';
   }
   if (isMasterTransportFormResource(resource)) {
     if (

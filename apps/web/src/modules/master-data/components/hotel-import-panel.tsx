@@ -319,6 +319,9 @@ export function HotelImportPanel({
                   <th className="p-2">ردیف</th>
                   <th className="p-2">کد سیستمی</th>
                   <th className="p-2">نام هتل</th>
+                  <th className="p-2">نام فارسی</th>
+                  <th className="p-2">وب‌سایت</th>
+                  <th className="p-2">فروش آزاد</th>
                   <th className="p-2">ستاره</th>
                   <th className="p-2">وضعیت</th>
                 </tr>
@@ -329,6 +332,17 @@ export function HotelImportPanel({
                     <td className="p-2">{row.rowNumber}</td>
                     <td className="p-2 font-mono text-xs">{row.code}</td>
                     <td className="p-2">{row.englishName}</td>
+                    <td className="p-2">{row.persianName || '—'}</td>
+                    <td className="p-2">
+                      <bdi>{row.website || '—'}</bdi>
+                    </td>
+                    <td className="p-2">
+                      {row.freeSale === true
+                        ? 'بله'
+                        : row.freeSale === false
+                          ? 'خیر'
+                          : '—'}
+                    </td>
                     <td className="p-2">{row.starRating ?? '—'}</td>
                     <td className="p-2">{row.duplicate ? 'تکراری' : 'جدید'}</td>
                   </tr>

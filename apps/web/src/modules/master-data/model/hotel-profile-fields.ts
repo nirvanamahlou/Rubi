@@ -1,6 +1,16 @@
 import type { MasterDataFieldDefinition } from './catalog';
 
 export const hotelProfileFields: readonly MasterDataFieldDefinition[] = [
+  {
+    key: 'freeSale',
+    label: 'فروش آزاد',
+    type: 'select',
+    placeholder: '',
+    options: [
+      { value: 'true', label: 'بله' },
+      { value: 'false', label: 'خیر' },
+    ],
+  },
   { key: 'serviceLevel', label: 'درجه خدمات', type: 'text', placeholder: '' },
   { key: 'description', label: 'توضیحات', type: 'text', placeholder: '' },
   { key: 'hotelRules', label: 'قوانین هتل', type: 'text', placeholder: '' },
@@ -46,6 +56,7 @@ export const hotelProfileTextLimits: Readonly<Record<string, number>> = {
   name: 160,
   englishName: 160,
   address: 1000,
+  website: 320,
   serviceLevel: 160,
   sourceDestination: 160,
   description: 2000,
