@@ -506,7 +506,7 @@ export function WorkQueue({
     return () => controller.abort();
   }, [branchId, view, page, revision]);
   return (
-    <section className={styles.panel}>
+    <section className={`${styles.panel} ${styles.queue}`}>
       <header>
         <h3>صف رسیدگی و پیگیری</h3>
         <button
@@ -521,23 +521,36 @@ export function WorkQueue({
         </button>
       </header>
       <p>درخواست‌های همه شعبه‌های مجاز؛ مستقل از فیلتر شعبه فهرست مخاطبان</p>
-      <NativeSearchSelect
+      <div
+        className={styles.queueViews}
+        role="group"
         aria-label="نمای صف رسیدگی"
-        value={view}
-        onChange={(event) => {
-          setLoading(true);
-          setError('');
-          setView(event.target.value);
-          setPage(1);
-        }}
       >
-        <option value="MINE">کارهای من</option>
-        <option value="TODAY">امروز</option>
-        <option value="OVERDUE">عقب‌افتاده</option>
-        <option value="UNASSIGNED">بدون مسئول</option>
-        <option value="ALL">همه درخواست‌ها</option>
-        <option value="OPEN">همه درخواست‌های باز</option>
-      </NativeSearchSelect>
+        {(
+          [
+            ['ALL', 'همه درخواست‌ها'],
+            ['OPEN', 'باز'],
+            ['MINE', 'کارهای من'],
+            ['TODAY', 'امروز'],
+            ['OVERDUE', 'عقب‌افتاده'],
+            ['UNASSIGNED', 'بدون مسئول'],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={view === value}
+            onClick={() => {
+              setLoading(true);
+              setError('');
+              setView(value);
+              setPage(1);
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       {loading && <p role="status">در حال دریافت صف…</p>}
       {error && <p role="alert">{error}</p>}
       {!loading && !error && data && (
@@ -547,22 +560,35 @@ export function WorkQueue({
             اساس تهران
           </p>
           {!data.data.length && <p>درخواستی در این صف نیست.</p>}
-          {data.data.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={(event) => {
-                queueTrigger.current = event.currentTarget;
-                setSelected({
-                  contactId: item.contactId,
-                  branchId: item.branchId,
-                });
-              }}
-            >
-              {item.title} · {item.branchName} ·{' '}
-              {item.ownerName ?? 'بدون مسئول'} · {requestLabels[item.status]}
-            </button>
-          ))}
+          <div className={styles.queueRows}>
+            <div className={styles.queueColumns} aria-hidden="true">
+              <span>موضوع درخواست</span>
+              <span>شعبه</span>
+              <span>مسئول</span>
+              <span>وضعیت</span>
+            </div>
+            {data.data.map((item) => (
+              <button
+                className={styles.queueRow}
+                key={item.id}
+                type="button"
+                onClick={(event) => {
+                  queueTrigger.current = event.currentTarget;
+                  setSelected({
+                    contactId: item.contactId,
+                    branchId: item.branchId,
+                  });
+                }}
+              >
+                <strong>{item.title}</strong>
+                <span>{item.branchName}</span>
+                <span>{item.ownerName ?? 'بدون مسئول'}</span>
+                <span className={styles.status} data-status={item.status}>
+                  {requestLabels[item.status]}
+                </span>
+              </button>
+            ))}
+          </div>
           <div>
             <button
               type="button"

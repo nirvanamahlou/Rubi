@@ -1,4 +1,11 @@
 'use client';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/overlays';
+import { useDialogReturnFocus } from './use-dialog-focus';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   useEffect,
@@ -7,7 +14,21 @@ import {
   type FormEvent,
   type ReactNode,
 } from 'react';
-import { Headset, Plus, RotateCcw, Search, Eye, X } from 'lucide-react';
+import {
+  Headset,
+  Plus,
+  RotateCcw,
+  Search,
+  Eye,
+  X,
+  SlidersHorizontal,
+  Users,
+  BarChart3,
+  Phone,
+  FileText,
+  PhoneIncoming,
+  PhoneOutgoing,
+} from 'lucide-react';
 import { useAccessActor } from '@/modules/iam/access-context';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
@@ -149,6 +170,7 @@ function Content({
   permissions: readonly string[];
   onDirty: (value: boolean) => void;
 }) {
+  const [advanced, setAdvanced] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>(emptySearch),
     [page, setPage] = useState(1),
     [refresh, setRefresh] = useState(0);
@@ -296,6 +318,42 @@ function Content({
       setBusy(false);
     }
   }
+  const filterNames: Partial<Record<keyof SearchFilters, string>> = {
+    query: 'جست‌وجو',
+    direction: 'جهت تماس',
+    outcome: 'نتیجه تماس',
+    source: 'منبع',
+    unit: 'واحد',
+    teamId: 'تیم',
+    agentId: 'کارشناس',
+    requestStatus: 'وضعیت درخواست',
+    followUp: 'پیگیری',
+    origin: 'روش ثبت',
+    incomplete: 'تکمیل اطلاعات',
+    from: 'از تاریخ',
+    to: 'تا ابتدای تاریخ',
+  };
+  const filterValue = (key: string, value: string) =>
+    key === 'agentId'
+      ? (agents.find((a) => a.id === value)?.displayName ??
+        'کارشناس انتخاب‌شده')
+      : key === 'teamId'
+        ? (teams.find((t) => t.id === value)?.name ?? 'تیم انتخاب‌شده')
+        : ((
+            {
+              ...outcomes,
+              ...requestLabels,
+              ...taskLabels,
+              INBOUND: 'ورودی',
+              OUTBOUND: 'خروجی',
+              MANUAL: 'دستی',
+              TELEPHONY: 'تلفنی',
+              TODAY: 'موعد امروز',
+              OVERDUE: 'عقب‌افتاده',
+              YES: 'نیازمند تکمیل',
+              NO: 'تکمیل‌شده',
+            } as Record<string, string>
+          )[value] ?? value);
   const pageCount = Math.max(1, Math.ceil((result?.meta.total ?? 0) / 20));
   return (
     <section dir="rtl" className={styles.workspace}>
@@ -316,175 +374,211 @@ function Content({
         </button>
       </header>
       <WorkQueue branchId={branch} actorId={actorId} canManage={canManage} />
-      <div className={styles.filters}>
-        {branchControl}
-        <label className={styles.search}>
-          <Search size={18} />
-          <input
-            type="search"
-            aria-label="جست‌وجوی سروری"
-            autoComplete="off"
-            maxLength={120}
-            placeholder="شماره کامل یا کلمه کامل نام و موضوع"
-            value={filters.query}
-            onChange={(e) => change('query', e.target.value)}
+      <section className={styles.filterPanel} aria-label="جست‌وجو و فیلترها">
+        <div className={styles.filters}>
+          <div className={styles.searchField}>
+            <span>جست‌وجوی مخاطب</span>{' '}
+            <label className={styles.search}>
+              <Search size={18} />
+              <input
+                type="search"
+                aria-label="جست‌وجوی سروری"
+                autoComplete="off"
+                maxLength={120}
+                placeholder="شماره کامل یا کلمه کامل نام و موضوع"
+                value={filters.query}
+                onChange={(e) => change('query', e.target.value)}
+              />
+            </label>
+          </div>
+          {branchControl}
+          <Select
+            label="دامنه تماس"
+            value={filters.scope}
+            onChange={(v) => change('scope', v || 'LATEST')}
+            options={[
+              ['LATEST', 'آخرین تماس'],
+              ['ANY', 'همه تاریخچه'],
+            ]}
           />
-        </label>
-        <Select
-          label="دامنه تماس"
-          value={filters.scope}
-          onChange={(v) => change('scope', v || 'LATEST')}
-          options={[
-            ['LATEST', 'آخرین تماس'],
-            ['ANY', 'همه تاریخچه'],
-          ]}
-        />
-        <Select
-          label="جهت تماس"
-          value={filters.direction}
-          onChange={(v) => change('direction', v)}
-          options={[
-            ['INBOUND', 'ورودی'],
-            ['OUTBOUND', 'خروجی'],
-          ]}
-        />
-        <Select
-          label="نتیجه تماس"
-          value={filters.outcome}
-          onChange={(v) => change('outcome', v)}
-          options={Object.entries(outcomes)}
-        />
-        <Select
-          label="منبع آشنایی"
-          value={filters.source}
-          onChange={(v) => change('source', v)}
-          options={sources.map((v) => [v, v])}
-        />
-        <Select
-          label="واحد ثبت‌شده تماس"
-          value={filters.unit}
-          onChange={(v) => change('unit', v)}
-          options={operators.map((v) => [v, v])}
-        />
-        <Select
-          label="تیم فعلی ثبت‌کننده"
-          value={filters.teamId}
-          onChange={(v) => change('teamId', v)}
-          options={teams.map((t) => [t.id, t.name])}
-        />
-        <Select
-          label="کارشناس ثبت‌کننده"
-          value={filters.agentId}
-          onChange={(v) => change('agentId', v)}
-          options={agents.map((a) => [a.id, a.displayName])}
-        />
-        <Select
-          label="وضعیت درخواست"
-          value={filters.requestStatus}
-          onChange={(v) => change('requestStatus', v)}
-          options={Object.entries(requestLabels)}
-        />
-        <Select
-          label="پیگیری مخاطب"
-          value={filters.followUp}
-          onChange={(v) => change('followUp', v)}
-          options={[
-            ...Object.entries(taskLabels),
-            ['TODAY', 'موعد امروز'],
-            ['OVERDUE', 'عقب‌افتاده'],
-          ]}
-        />
-        <Select
-          label="روش ثبت"
-          value={filters.origin}
-          onChange={(v) => change('origin', v)}
-          options={[
-            ['MANUAL', 'دستی'],
-            ['TELEPHONY', 'تلفنی'],
-            ['UNKNOWN', 'نامشخص'],
-          ]}
-        />
-        <Select
-          label="تکمیل اطلاعات"
-          value={filters.incomplete}
-          onChange={(v) => change('incomplete', v)}
-          options={[
-            ['YES', 'نیازمند تکمیل'],
-            ['NO', 'تکمیل‌شده'],
-          ]}
-        />
-        <label>
-          از تاریخ میلادی (تهران)
-          <DatePicker
-            calendarSystem="gregorian"
-            aria-label="از تاریخ میلادی (تهران)"
-            value={filters.from}
-            onChange={(value) => change('from', value)}
-          />
-        </label>
-        <label>
-          تا ابتدای تاریخ میلادی (تهران)
-          <DatePicker
-            calendarSystem="gregorian"
-            aria-label="تا ابتدای تاریخ میلادی (تهران)"
-            value={filters.to}
-            onChange={(value) => change('to', value)}
-          />
-        </label>
-        <button
-          className={styles.clear}
-          onClick={() => {
-            setFilters(emptySearch);
-            setReport(null);
-            reload();
-          }}
-        >
-          <RotateCcw size={16} /> پاک کردن فیلترها
-        </button>
-      </div>
-      <p className={styles.formHint}>
-        جست‌وجو روی کل داده مجاز است؛ کلمه کامل نام و موضوع، یا شماره کامل.
-        فیلترهای تماس روی{' '}
-        {filters.scope === 'ANY' ? 'یک تماس در کل تاریخچه' : 'آخرین تماس'} و
-        فیلتر درخواست و پیگیری روی مخاطب اعمال می‌شوند. شماره مشترک به معنی یک
-        شخص نیست.
-      </p>
-      <div className={styles.personTags} aria-label="فیلترهای اعمال‌شده">
-        {Object.entries(filters)
-          .filter(([k, v]) => v && k !== 'scope')
-          .map(([k, v]) => (
-            <button
-              key={k}
-              type="button"
-              onClick={() => change(k as keyof SearchFilters, '')}
-              aria-label={`حذف فیلتر ${k}`}
-            >
-              {v} ×
-            </button>
-          ))}
-      </div>
-      <p role="status">{message}</p>
+          <button
+            className={styles.clear}
+            aria-expanded={advanced}
+            aria-controls="cc-advanced"
+            onClick={() => setAdvanced((v) => !v)}
+          >
+            <SlidersHorizontal size={16} />
+            {advanced ? 'بستن فیلترها' : 'فیلترهای پیشرفته'}
+          </button>
+          <button
+            className={styles.clear}
+            onClick={() => {
+              setFilters(emptySearch);
+              setReport(null);
+              reload();
+            }}
+          >
+            <RotateCcw size={16} /> پاک کردن فیلترها
+          </button>
+        </div>
+        <div id="cc-advanced" hidden={!advanced}>
+          <div className={styles.filterGroups}>
+            <fieldset>
+              <legend>محدوده و زمان</legend>{' '}
+              <label>
+                از تاریخ میلادی (تهران)
+                <DatePicker
+                  calendarSystem="gregorian"
+                  aria-label="از تاریخ میلادی (تهران)"
+                  value={filters.from}
+                  onChange={(value) => change('from', value)}
+                />
+              </label>
+              <label>
+                تا ابتدای تاریخ میلادی (تهران)
+                <DatePicker
+                  calendarSystem="gregorian"
+                  aria-label="تا ابتدای تاریخ میلادی (تهران)"
+                  value={filters.to}
+                  onChange={(value) => change('to', value)}
+                />
+              </label>
+            </fieldset>
+            <fieldset>
+              <legend>مشخصات تماس</legend>{' '}
+              <Select
+                label="جهت تماس"
+                value={filters.direction}
+                onChange={(v) => change('direction', v)}
+                options={[
+                  ['INBOUND', 'ورودی'],
+                  ['OUTBOUND', 'خروجی'],
+                ]}
+              />
+              <Select
+                label="نتیجه تماس"
+                value={filters.outcome}
+                onChange={(v) => change('outcome', v)}
+                options={Object.entries(outcomes)}
+              />
+              <Select
+                label="منبع آشنایی"
+                value={filters.source}
+                onChange={(v) => change('source', v)}
+                options={sources.map((v) => [v, v])}
+              />
+              <Select
+                label="واحد ثبت‌شده تماس"
+                value={filters.unit}
+                onChange={(v) => change('unit', v)}
+                options={operators.map((v) => [v, v])}
+              />
+              <Select
+                label="روش ثبت"
+                value={filters.origin}
+                onChange={(v) => change('origin', v)}
+                options={[
+                  ['MANUAL', 'دستی'],
+                  ['TELEPHONY', 'تلفنی'],
+                  ['UNKNOWN', 'نامشخص'],
+                ]}
+              />
+              <Select
+                label="تکمیل اطلاعات"
+                value={filters.incomplete}
+                onChange={(v) => change('incomplete', v)}
+                options={[
+                  ['YES', 'نیازمند تکمیل'],
+                  ['NO', 'تکمیل‌شده'],
+                ]}
+              />
+            </fieldset>
+            <fieldset>
+              <legend>مسئولیت و پیگیری</legend>{' '}
+              <Select
+                label="تیم فعلی ثبت‌کننده"
+                value={filters.teamId}
+                onChange={(v) => change('teamId', v)}
+                options={teams.map((t) => [t.id, t.name])}
+              />
+              <Select
+                label="کارشناس ثبت‌کننده"
+                value={filters.agentId}
+                onChange={(v) => change('agentId', v)}
+                options={agents.map((a) => [a.id, a.displayName])}
+              />
+              <Select
+                label="وضعیت درخواست"
+                value={filters.requestStatus}
+                onChange={(v) => change('requestStatus', v)}
+                options={Object.entries(requestLabels)}
+              />
+              <Select
+                label="پیگیری مخاطب"
+                value={filters.followUp}
+                onChange={(v) => change('followUp', v)}
+                options={[
+                  ...Object.entries(taskLabels),
+                  ['TODAY', 'موعد امروز'],
+                  ['OVERDUE', 'عقب‌افتاده'],
+                ]}
+              />
+            </fieldset>
+          </div>
+        </div>
+        <p className={styles.formHint}>
+          جست‌وجو روی کل داده مجاز است؛ کلمه کامل نام و موضوع، یا شماره کامل.
+          فیلترهای تماس روی{' '}
+          {filters.scope === 'ANY' ? 'یک تماس در کل تاریخچه' : 'آخرین تماس'} و
+          فیلتر درخواست و پیگیری روی مخاطب اعمال می‌شوند. شماره مشترک به معنی یک
+          شخص نیست.
+        </p>
+        <div className={styles.personTags} aria-label="فیلترهای اعمال‌شده">
+          {Object.entries(filters)
+            .filter(([k, v]) => v && k !== 'scope')
+            .map(([k, v]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => change(k as keyof SearchFilters, '')}
+                aria-label={`حذف فیلتر ${filterNames[k as keyof SearchFilters] ?? k}`}
+              >
+                {filterNames[k as keyof SearchFilters]}: {filterValue(k, v)}{' '}
+                <X size={12} />
+              </button>
+            ))}
+        </div>
+      </section>
+      {message && (
+        <p role="status" className={styles.feedback}>
+          {message}
+        </p>
+      )}
       {error && (
         <p role="alert" className={styles.error}>
           {error} <button onClick={reload}>تازه‌سازی و تلاش مجدد</button>
         </p>
       )}
-      <div className={styles.panelHeading}>
-        <p>
-          {result
-            ? `${faNumber(result.meta.total)} مخاطب · زمان دریافت ${callDate(result.meta.asOf)}`
-            : 'هنوز داده‌ای دریافت نشده است.'}
-        </p>
-        <button className={styles.clear} onClick={reload}>
-          <RotateCcw size={16} /> تازه‌سازی فهرست
-        </button>
-      </div>
       {loading && <p role="status">در حال دریافت فهرست…</p>}
       <div className={styles.content} data-history={!!selected}>
         <div className={styles.main}>
           <section className={styles.panel} aria-busy={loading}>
+            <div className={styles.panelHeading}>
+              <h2>
+                <Users size={19} /> فهرست مخاطبان
+              </h2>
+              <p>
+                {result
+                  ? `${faNumber(result.meta.total)} مخاطب · زمان دریافت ${callDate(result.meta.asOf)}`
+                  : 'هنوز داده‌ای دریافت نشده است.'}
+              </p>
+              <button className={styles.clear} onClick={reload}>
+                <RotateCcw size={16} /> تازه‌سازی فهرست
+              </button>
+            </div>
+
             <div className={styles.tableScroll}>
-              <table className={styles.table}>
+              <table className={`${styles.table} ${styles.contactTable}`}>
                 <thead>
                   <tr>
                     {[
@@ -505,19 +599,37 @@ function Content({
                 <tbody>
                   {result?.data.map((row) => (
                     <tr key={row.id} data-selected={selected?.id === row.id}>
-                      <td>{row.latest.name || 'مخاطب ناشناس'}</td>
-                      <td dir="ltr">{row.latest.phone || 'شماره نامعلوم'}</td>
-                      <td className={styles.subject} title={row.latest.subject}>
+                      <td data-label="نام مخاطب">
+                        {row.latest.name || 'مخاطب ناشناس'}
+                      </td>
+                      <td data-label="شماره تماس" dir="ltr">
+                        {row.latest.phone || 'شماره نامعلوم'}
+                      </td>
+                      <td
+                        data-label="موضوع آخرین تماس"
+                        className={styles.subject}
+                        title={row.latest.subject}
+                      >
                         {row.latest.subject}
                       </td>
-                      <td>{row.latest.source}</td>
-                      <td>{row.latest.operator}</td>
-                      <td>{callDate(row.latest.occurredAt)}</td>
-                      <td>{faNumber(row.callCount)}</td>
-                      <td>{outcomes[row.latest.outcome ?? 'UNKNOWN']}</td>
-                      <td>
+                      <td data-label="منبع">{row.latest.source}</td>
+                      <td data-label="واحد">{row.latest.operator}</td>
+                      <td data-label="آخرین تماس">
+                        {callDate(row.latest.occurredAt)}
+                      </td>
+                      <td data-label="تعداد تماس">{faNumber(row.callCount)}</td>
+                      <td data-label="نتیجه">
+                        <span
+                          className={styles.badge}
+                          data-outcome={row.latest.outcome}
+                        >
+                          {outcomes[row.latest.outcome ?? 'UNKNOWN']}
+                        </span>
+                      </td>
+                      <td data-label="جزئیات">
                         <button
                           className={styles.view}
+                          data-cc-focus-anchor
                           disabled={loading || !!error}
                           onClick={() => setSelected(row)}
                           aria-label={`مشاهده تاریخچه ${row.latest.name || 'مخاطب ناشناس'}`}
@@ -560,12 +672,11 @@ function Content({
               </button>
             </nav>
           </section>
-          <ReportPanel report={report} error={reportError} />
         </div>
         {selected && (
-          <aside className={`${styles.panel} ${styles.history}`}>
+          <DossierFrame onClose={() => setSelected(null)}>
             <header className={styles.panelHeading}>
-              <h2>سابقه مخاطب</h2>
+              <h2>پرونده مخاطب</h2>
               <button
                 className={styles.iconButton}
                 aria-label="بستن جزئیات"
@@ -575,7 +686,12 @@ function Content({
               </button>
             </header>
             <h3>{selected.latest.name || 'مخاطب ناشناس'}</h3>
-            <p dir="ltr">{selected.latest.phone || 'شماره نامعلوم'}</p>
+            <p dir="ltr" className={styles.phone}>
+              {selected.latest.phone || 'شماره نامعلوم'}
+            </p>
+            <p className={styles.formHint}>
+              شماره تلفن به‌تنهایی تأیید هویت نیست.
+            </p>
             <button
               className={styles.followUp}
               data-cc-focus-anchor
@@ -605,9 +721,10 @@ function Content({
               actorId={actorId}
               permissions={permissions}
             />
-          </aside>
+          </DossierFrame>
         )}
       </div>
+      <ReportPanel report={report} error={reportError} agents={agents} />
       {draft && (
         <CallForm
           branchId={branch}
@@ -625,10 +742,49 @@ function Content({
     </section>
   );
 }
+function DossierFrame({
+  children,
+  onClose,
+}: {
+  children: ReactNode;
+  onClose: () => void;
+}) {
+  // Keep the dossier mounted in the same surface while an editor contains a draft.
+  const [compact] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 1200px)').matches,
+  );
+  const restoreFocus = useDialogReturnFocus();
+  return compact ? (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent
+        dir="rtl"
+        className={styles.dossierDialog}
+        onCloseAutoFocus={restoreFocus}
+      >
+        <DialogTitle className="sr-only">پرونده مخاطب</DialogTitle>
+        <DialogDescription className="sr-only">
+          تماس‌ها، درخواست‌ها و یادداشت‌های مخاطب
+        </DialogDescription>
+        <div className={styles.workspace}>{children}</div>
+      </DialogContent>
+    </Dialog>
+  ) : (
+    <aside className={`${styles.panel} ${styles.history}`}>{children}</aside>
+  );
+}
 function ReportPanel({
   report,
   error,
+  agents,
 }: {
+  agents: Operator[];
   report: Report | null;
   error: string;
 }) {
@@ -636,8 +792,10 @@ function ReportPanel({
   if (!report) return <p role="status">در حال محاسبه گزارش…</p>;
   const { data: r, meta } = report;
   return (
-    <section className={styles.panel}>
-      <h2>گزارش داده ثبت‌شده</h2>
+    <section className={`${styles.panel} ${styles.reportPanel}`}>
+      <h2>
+        <BarChart3 size={21} /> گزارش داده ثبت‌شده
+      </h2>
       <p>
         گزارش تماس‌ها همیشه تمام تماس‌های منطبق با فیلتر و بازه را می‌شمارد؛
         گزینه آخرین تماس فقط برای فهرست مخاطبان است.
@@ -648,11 +806,20 @@ function ReportPanel({
       </p>
       <div className={styles.stats}>
         {[
-          ['تماس', r.calls],
+          ['تماس ثبت‌شده', r.calls],
           ['مخاطب تلفنی یکتا', r.contacts],
           ['نیازمند تکمیل', r.incomplete],
         ].map(([label, value]) => (
           <article className={styles.stat} key={label}>
+            <span className={styles.statIcon}>
+              {label === 'تماس ثبت‌شده' ? (
+                <Phone />
+              ) : label === 'مخاطب تلفنی یکتا' ? (
+                <Users />
+              ) : (
+                <FileText />
+              )}
+            </span>
             <span>{label}</span>
             <strong>{faNumber(Number(value))}</strong>
           </article>
@@ -667,13 +834,25 @@ function ReportPanel({
         <div>
           <h3>جهت، نتیجه و روش ثبت تماس</h3>
           <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>جهت تماس</th>
+                <th>نتیجه تماس</th>
+                <th>روش ثبت</th>
+                <th>تعداد</th>
+              </tr>
+            </thead>
             <tbody>
               {r.groups.map((g, i) => (
                 <tr key={i}>
                   <td>{g.direction === 'INBOUND' ? 'ورودی' : 'خروجی'}</td>
                   <td>{outcomes[g.outcome ?? 'UNKNOWN']}</td>
                   <td>
-                    {g.origin === 'MANUAL' ? 'دستی' : (g.origin ?? 'نامشخص')}
+                    {g.origin === 'MANUAL'
+                      ? 'دستی'
+                      : g.origin === 'TELEPHONY'
+                        ? 'تلفنی'
+                        : 'نامشخص'}
                   </td>
                   <td>{faNumber(g.count)}</td>
                 </tr>
@@ -684,52 +863,129 @@ function ReportPanel({
         <div>
           <h3>منابع تماس‌ها</h3>
           {r.sources.map((s, i) => (
-            <p key={i}>
-              {s.label}: {faNumber(s.count)}
-            </p>
+            <div key={i} className={styles.sourceRow}>
+              <span>{s.label}</span>
+              <strong>{faNumber(s.count)}</strong>
+              <span className={styles.sourceBar}>
+                <i
+                  style={{
+                    width: `${r.calls ? Math.min(100, (s.count / r.calls) * 100) : 0}%`,
+                  }}
+                />
+              </span>
+              <small>
+                {r.calls
+                  ? `${faNumber(Math.round((s.count / r.calls) * 100))}٪`
+                  : '—'}
+              </small>
+            </div>
           ))}
         </div>
         <div>
           <h3>درخواست‌های ایجادشده در بازه</h3>
           <p>کل شعبه؛ وضعیت فعلی، مستقل از فیلتر تماس</p>
+          {!r.requests.length && <p>درخواستی در این بازه ثبت نشده است.</p>}
           {r.requests.map((s) => (
             <p key={s.status}>
               {requestLabels[s.status] ?? s.status}: {faNumber(s.count)}
             </p>
           ))}
         </div>
+        <div>
+          <h3>پیگیری‌های شعبه</h3>
+          <p>
+            باز، امروز و عقب‌افتاده: موجودی فعلی کل شعبه؛ انجام‌شده: تاریخ انجام
+            در بازه گزارش.
+          </p>
+          <div className={styles.taskMetrics}>
+            {[
+              ['باز', r.tasks.open],
+              ['امروز', r.tasks.today],
+              ['عقب‌افتاده', r.tasks.overdue],
+              ['انجام‌شده', r.tasks.completed],
+            ].map(([label, value]) => (
+              <article key={label}>
+                <span>{label}</span>
+                <strong>{faNumber(Number(value))}</strong>
+              </article>
+            ))}
+          </div>
+          <p>امروز و عقب‌افتاده زیرمجموعه پیگیری‌های باز هستند.</p>
+          <p>
+            نرخ انجام به‌موقع:{' '}
+            {r.tasks.onTimeRate === null
+              ? 'قابل محاسبه نیست؛ پیگیری انجام‌شده‌ای در بازه وجود ندارد.'
+              : `${faNumber(Math.round(r.tasks.onTimeRate * 100))}٪ (${faNumber(r.tasks.onTime)} از ${faNumber(r.tasks.completed)})`}
+          </p>
+        </div>
       </div>
-      <h3>پیگیری‌های شعبه</h3>
-      <p>
-        باز، امروز و عقب‌افتاده: موجودی فعلی کل شعبه؛ انجام‌شده: تاریخ انجام در
-        بازه گزارش.
-      </p>
-      <p>
-        باز: {faNumber(r.tasks.open)} · امروز: {faNumber(r.tasks.today)} ·
-        عقب‌افتاده: {faNumber(r.tasks.overdue)} · انجام‌شده:{' '}
-        {faNumber(r.tasks.completed)}
-      </p>
-      <p>
-        نرخ انجام به‌موقع:{' '}
-        {r.tasks.onTimeRate === null
-          ? 'قابل محاسبه نیست؛ پیگیری انجام‌شده‌ای در بازه وجود ندارد.'
-          : `${faNumber(Math.round(r.tasks.onTimeRate * 100))}٪ (${faNumber(r.tasks.onTime)} از ${faNumber(r.tasks.completed)})`}
-      </p>
-      <details>
-        <summary>فعالیت ثبت‌کنندگان واقعی تماس</summary>
-        {r.tasks.activity?.map((a, i) => (
-          <p key={i}>
-            {a.role === 'CURRENT_OWNER'
-              ? 'مسئول فعلی اقدام باز'
-              : 'انجام‌دهنده ثبت‌شده اقدام'}{' '}
-            · <bdi>{a.actorId ?? 'نامشخص'}</bdi>: {faNumber(a.count)}
-          </p>
-        ))}
-        {r.registrations.map((a) => (
-          <p key={a.actorId}>
-            <bdi>{a.actorId}</bdi>: {faNumber(a.count)}
-          </p>
-        ))}
+      <details className={styles.activity}>
+        <summary>فعالیت ثبت‌کنندگان و انجام‌دهندگان</summary>
+        <div className={styles.tableScroll}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>کارشناس</th>
+                <th>ثبت تماس</th>
+                <th>مسئول فعلی اقدام باز</th>
+                <th>انجام‌دهنده اقدام</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from(
+                new Set([
+                  ...r.registrations.map((a) => a.actorId),
+                  ...(r.tasks.activity ?? []).map((a) => a.actorId),
+                ]),
+              ).map((id, index) => (
+                <tr key={id ?? index}>
+                  <td>
+                    {agents.find((a) => a.id === id)?.displayName ?? (
+                      <bdi>{id ?? 'نامشخص'}</bdi>
+                    )}
+                  </td>
+                  <td>
+                    {r.registrations.some((a) => a.actorId === id)
+                      ? faNumber(
+                          r.registrations
+                            .filter((a) => a.actorId === id)
+                            .reduce((sum, a) => sum + a.count, 0),
+                        )
+                      : '—'}
+                  </td>
+                  <td>
+                    {r.tasks.activity?.some(
+                      (a) => a.actorId === id && a.role === 'CURRENT_OWNER',
+                    )
+                      ? faNumber(
+                          r.tasks.activity
+                            .filter(
+                              (a) =>
+                                a.actorId === id && a.role === 'CURRENT_OWNER',
+                            )
+                            .reduce((sum, a) => sum + a.count, 0),
+                        )
+                      : '—'}
+                  </td>
+                  <td>
+                    {r.tasks.activity?.some(
+                      (a) => a.actorId === id && a.role !== 'CURRENT_OWNER',
+                    )
+                      ? faNumber(
+                          r.tasks.activity
+                            .filter(
+                              (a) =>
+                                a.actorId === id && a.role !== 'CURRENT_OWNER',
+                            )
+                            .reduce((sum, a) => sum + a.count, 0),
+                        )
+                      : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </details>
       <p>
         مخاطب یکتا = گروه شماره در شعبه؛ هر تماس با شماره نامعلوم جداست. زمان
@@ -830,7 +1086,7 @@ function History({
   }
   return (
     <>
-      <h3>تماس‌ها</h3>
+      <h3 className={styles.sectionTitle}>سابقه تماس‌ها</h3>
       {loading && <p role="status">در حال دریافت تماس‌ها…</p>}
       {error && (
         <p role="alert">
@@ -848,6 +1104,13 @@ function History({
       <ol className={styles.timeline}>
         {calls.map((c) => (
           <li key={c.id}>
+            <span className={styles.timelineIcon}>
+              {c.direction === 'INBOUND' ? (
+                <PhoneIncoming size={15} />
+              ) : (
+                <PhoneOutgoing size={15} />
+              )}
+            </span>
             <h3>{c.subject}</h3>
             <time dateTime={c.occurredAt}>{callDate(c.occurredAt)}</time>
             <p>
@@ -884,7 +1147,21 @@ function History({
           تماس‌های قدیمی‌تر
         </button>
       </div>
-      <h3>یادداشت‌ها</h3>
+      <WorkflowPanel
+        branchId={branch}
+        contactId={contact.id}
+        actorId={actorId}
+        canManage={permissions.includes(
+          'customer_affairs.call_center.workflow.manage',
+        )}
+        calls={calls}
+        onLinked={(id, ticketId) =>
+          setCalls((items) =>
+            items.map((c) => (c.id === id ? { ...c, ticketId } : c)),
+          )
+        }
+      />
+      <h3 className={styles.sectionTitle}>یادداشت‌ها</h3>
       {notesLoading && <p role="status">در حال دریافت یادداشت‌ها…</p>}
       {noteError && (
         <p role="alert">
@@ -951,20 +1228,6 @@ function History({
         </button>
         <p role="status">{saved}</p>
       </form>
-      <WorkflowPanel
-        branchId={branch}
-        contactId={contact.id}
-        actorId={actorId}
-        canManage={permissions.includes(
-          'customer_affairs.call_center.workflow.manage',
-        )}
-        calls={calls}
-        onLinked={(id, ticketId) =>
-          setCalls((items) =>
-            items.map((c) => (c.id === id ? { ...c, ticketId } : c)),
-          )
-        }
-      />
     </>
   );
 }

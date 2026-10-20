@@ -6658,3 +6658,9 @@ Removal validated: ESLint and optimized Web build/TypeScript pass. Local Web3000
 محصول، Integrations، تصمیم‌ها و برنامه بسته چهارم درج شد:
 [tasks/CALL-CENTER-UI-PRESERVATION.md](tasks/CALL-CENTER-UI-PRESERVATION.md).
 تغییر فقط مستنداتی است؛ کد برنامه و محیط اجرا تغییر نکرده‌اند.
+
+## CALL-CENTER-APPROVED-DESIGN-1020 — PC-C — READY_FOR_REVIEW
+
+The owner-approved proposal is implemented in the existing Call Center page: compact request queue, grouped advanced filters, desktop contact-list/dossier split, responsive mobile dossier/contact rows, grouped manual-call form and structured existing-data reports. Existing APIs, permissions, user data, and workflows are reused. The removed telephony test/settings panel stays absent. No schema, migration, dependency or grant changes.
+
+Focused existing tests: 15 passed. Chrome155/Edge155 isolated synthetic UI checks cover filter placement, queue default, stale search responses, history, dialog Escape/focus return and mobile width390. Scoped lint, optimized Web build/typecheck and translation catalogue checks pass. Build OmyNzXh8O-J8Av2k22Cvx is running at localhost3000; API health at localhost4000 returns200. User should sign in with their own ERP credentials for authenticated visual review.

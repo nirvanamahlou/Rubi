@@ -80,10 +80,6 @@ export function CallForm({
       setError('موضوع تماس را وارد کنید.');
       return;
     }
-    if (!value('outcome')) {
-      setError('نتیجه تماس را انتخاب کنید.');
-      return;
-    }
     setError('');
     try {
       await onSave({
@@ -117,11 +113,11 @@ export function CallForm({
       <DialogContent
         onCloseAutoFocus={restoreFocus}
         dir="rtl"
-        className="max-h-[90dvh] max-w-2xl overflow-y-auto"
+        className={styles.callDialog}
       >
         <DialogTitle className="flex items-center gap-2 pe-9">
           <PhoneIncoming className="text-blue-500" />
-          {event.direction === 'INBOUND' ? 'ثبت تماس ورودی' : 'ثبت تماس پیگیری'}
+          {event.direction === 'INBOUND' ? 'ثبت تماس جدید' : 'ثبت تماس پیگیری'}
         </DialogTitle>
         <DialogDescription>
           {callDate(event.occurredAt)} ·{' '}
@@ -135,136 +131,147 @@ export function CallForm({
           onChange={() => setDirty(true)}
         >
           <fieldset disabled={busy} className={styles.formFields}>
-            <div className={styles.formGrid}>
-              <label>
-                شماره تماس
-                <input
-                  name="phone"
-                  dir="ltr"
-                  type="tel"
-                  placeholder="شماره مخفی یا نامعلوم: خالی بگذارید"
-                  defaultValue={event.phone}
-                  readOnly={Boolean(event.phone)}
-                  maxLength={24}
-                  autoComplete="off"
-                />
-              </label>
-              <label>
-                نام مسافر
-                <input
-                  name="name"
-                  placeholder="اختیاری؛ مخاطب ناشناس"
-                  defaultValue={previous?.name}
-                  maxLength={100}
-                />
-              </label>
-              <label>
-                نوع تماس
-                <NativeSearchSelect
-                  onChange={() => setDirty(true)}
-                  aria-label="نوع تماس"
-                  className={styles.control}
-                  optionLimit={50}
-                  disabled={busy}
-                  name="direction"
-                  defaultValue={event.direction}
-                >
-                  <option value="INBOUND">ورودی ـ تماس به شرکت</option>
-                  <option value="OUTBOUND">خروجی ـ تماس از شرکت</option>
-                </NativeSearchSelect>
-              </label>
-              <label>
-                منبع آشنایی
-                <NativeSearchSelect
-                  onChange={() => setDirty(true)}
-                  aria-label="منبع آشنایی"
-                  className={styles.control}
-                  optionLimit={50}
-                  disabled={busy}
-                  name="source"
-                  defaultValue="نامشخص"
-                >
-                  {sources.map((source) => (
-                    <option key={source} value={source}>
-                      {source}
-                    </option>
-                  ))}
-                </NativeSearchSelect>
-              </label>
-              <label>
-                وصل شده به
-                <NativeSearchSelect
-                  onChange={() => setDirty(true)}
-                  aria-label="وصل شده به"
-                  className={styles.control}
-                  optionLimit={50}
-                  disabled={busy}
-                  name="operator"
-                  defaultValue="نامشخص"
-                >
-                  {operators.map((operator) => (
-                    <option key={operator} value={operator}>
-                      {operator}
-                    </option>
-                  ))}
-                </NativeSearchSelect>
-              </label>
-              <label>
-                نتیجه تماس
-                <NativeSearchSelect
-                  onChange={() => setDirty(true)}
-                  name="outcome"
-                  aria-label="نتیجه تماس"
-                  className={styles.control}
-                  disabled={busy}
-                  defaultValue=""
-                >
-                  <option value="">نتیجه تماس را انتخاب کنید</option>
-                  {Object.entries(outcomeLabels).map(([key, title]) => (
-                    <option key={key} value={key}>
-                      {title}
-                    </option>
-                  ))}
-                </NativeSearchSelect>
-              </label>
-              <label>
-                درخواست مرتبط
-                <NativeSearchSelect
-                  onChange={() => setDirty(true)}
-                  name="ticketId"
-                  aria-label="درخواست مرتبط"
-                  className={styles.control}
-                  disabled={busy}
-                  defaultValue=""
-                >
-                  <option value="">بدون اتصال؛ پس از ثبت تعیین می‌کنم</option>
-                  {requests
-                    .filter((request) => request.status !== 'CLOSED')
-                    .map((request) => (
-                      <option key={request.id} value={request.id}>
-                        {request.title}
+            <section className={styles.formSection}>
+              <h3>اطلاعات مخاطب</h3>
+              <div className={styles.formGrid}>
+                <label>
+                  شماره تماس (اختیاری)
+                  <input
+                    name="phone"
+                    dir="ltr"
+                    type="tel"
+                    placeholder="شماره مخفی یا نامعلوم: خالی بگذارید"
+                    defaultValue={event.phone}
+                    readOnly={Boolean(event.phone)}
+                    maxLength={24}
+                    autoComplete="off"
+                  />
+                </label>
+                <label>
+                  نام مخاطب (اختیاری)
+                  <input
+                    name="name"
+                    placeholder="اختیاری؛ مخاطب ناشناس"
+                    defaultValue={previous?.name}
+                    maxLength={100}
+                  />
+                </label>
+              </div>
+              <p className={styles.formHint}>
+                برای تماس با شماره مخفی یا نامعلوم، شماره را خالی بگذارید.
+              </p>
+            </section>
+            <section className={styles.formSection}>
+              <h3>مشخصات تماس</h3>
+              <div className={styles.formGrid}>
+                <label>
+                  نوع تماس
+                  <NativeSearchSelect
+                    onChange={() => setDirty(true)}
+                    aria-label="نوع تماس"
+                    className={styles.control}
+                    optionLimit={50}
+                    disabled={busy}
+                    name="direction"
+                    defaultValue={event.direction}
+                  >
+                    <option value="INBOUND">ورودی ـ تماس به شرکت</option>
+                    <option value="OUTBOUND">خروجی ـ تماس از شرکت</option>
+                  </NativeSearchSelect>
+                </label>
+                <label>
+                  منبع آشنایی
+                  <NativeSearchSelect
+                    onChange={() => setDirty(true)}
+                    aria-label="منبع آشنایی"
+                    className={styles.control}
+                    optionLimit={50}
+                    disabled={busy}
+                    name="source"
+                    defaultValue="نامشخص"
+                  >
+                    {sources.map((source) => (
+                      <option key={source} value={source}>
+                        {source}
                       </option>
                     ))}
-                </NativeSearchSelect>
+                  </NativeSearchSelect>
+                </label>
+                <label>
+                  وصل شده به
+                  <NativeSearchSelect
+                    onChange={() => setDirty(true)}
+                    aria-label="وصل شده به"
+                    className={styles.control}
+                    optionLimit={50}
+                    disabled={busy}
+                    name="operator"
+                    defaultValue="نامشخص"
+                  >
+                    {operators.map((operator) => (
+                      <option key={operator} value={operator}>
+                        {operator}
+                      </option>
+                    ))}
+                  </NativeSearchSelect>
+                </label>
+                <label>
+                  نتیجه تماس (اختیاری)
+                  <NativeSearchSelect
+                    onChange={() => setDirty(true)}
+                    name="outcome"
+                    aria-label="نتیجه تماس"
+                    className={styles.control}
+                    disabled={busy}
+                    defaultValue=""
+                  >
+                    <option value="">نتیجه تماس را انتخاب کنید</option>
+                    {Object.entries(outcomeLabels).map(([key, title]) => (
+                      <option key={key} value={key}>
+                        {title}
+                      </option>
+                    ))}
+                  </NativeSearchSelect>
+                </label>
+                <label>
+                  درخواست مرتبط
+                  <NativeSearchSelect
+                    onChange={() => setDirty(true)}
+                    name="ticketId"
+                    aria-label="درخواست مرتبط"
+                    className={styles.control}
+                    disabled={busy}
+                    defaultValue=""
+                  >
+                    <option value="">بدون اتصال؛ پس از ثبت تعیین می‌کنم</option>
+                    {requests
+                      .filter((request) => request.status !== 'CLOSED')
+                      .map((request) => (
+                        <option key={request.id} value={request.id}>
+                          {request.title}
+                        </option>
+                      ))}
+                  </NativeSearchSelect>
+                </label>
+              </div>
+              <label>
+                موضوع تماس *
+                <input
+                  name="subject"
+                  required
+                  placeholder="موضوع همین تماس"
+                  maxLength={200}
+                />
               </label>
-            </div>
-            <label>
-              موضوع تماس
-              <input
-                name="subject"
-                required
-                placeholder="موضوع همین تماس"
-                maxLength={200}
-              />
-            </label>
-            <label>
-              شرح تماس
-              <textarea
-                name="note"
-                maxLength={2000}
-                placeholder="نیاز مسافر، نتیجه گفت‌وگو و اقدام بعدی..."
-              />
-            </label>
+              <label>
+                شرح تماس
+                <textarea
+                  name="note"
+                  maxLength={2000}
+                  placeholder="نیاز مسافر، نتیجه گفت‌وگو و اقدام بعدی..."
+                />
+              </label>
+            </section>
             <p className={styles.formHint}>
               پس از تأیید سرور، تماس در سابقه مسافر ذخیره می‌شود.
             </p>
