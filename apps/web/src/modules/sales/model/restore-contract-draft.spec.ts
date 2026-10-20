@@ -28,7 +28,11 @@ describe('new contract browser draft compatibility', () => {
     original.hotel.checkIn = '2026-11-01';
     original.hotel.checkOut = '2026-11-08';
     original.passengers = [
-      { customerId: 'synthetic-guest', displayName: 'Synthetic Guest' },
+      {
+        customerId: 'synthetic-guest',
+        displayName: 'Synthetic Guest',
+        birthDate: '2000-01-01',
+      },
     ];
     original.passengerHotelPrices = {
       p0: [{ amount: '125', currencyCode: 'USD' }],
