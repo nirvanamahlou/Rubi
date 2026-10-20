@@ -484,6 +484,8 @@ export interface FinancePaidTicketCostV1 {
   paidAt: string;
 }
 
+export * from './bank-accounts';
+
 export type FinanceSettlementAccountKind = 'BANK' | 'CASH' | 'POS' | 'GATEWAY';
 
 export interface FinanceSettlementAccountV1 {
