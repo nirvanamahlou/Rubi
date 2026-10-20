@@ -1,4 +1,6 @@
-## BANK-ACCOUNTS-1020 — PC-B — 2026-10-20
+## BANK-ACCOUNTS-1020 — PC-B — IMPLEMENTATION / 2026-10-20
+
+Company-only multi-account bank profile consumer and Finance-owned create/list/edit/audited reveal endpoints are implemented in the task branch. Identifiers are validated, encrypted, masked by default and protected by branch/native permissions, CAS, duplicate fingerprints, replay keys and transactional append-only audit. Additive migration and disposable PostgreSQL evidence are pending final integration/hosted execution;17 focused API/HTTP and6 Web tests pass. PR998 has now merged, clearing its shared lock. No operational database, IAM grant, payment or runtime deployment is changed. This is not yet a completed/merged feature; final-head hosted gates remain mandatory.
 
 Owner explicitly delegates company-only multiple bank accounts (account/card/IBAN) to PC-B, including the bounded Finance producer and Master Data consumer. Delegation recorded in MODULE_OWNERSHIP and WORK_ASSIGNMENTS; no IAM privileges or operational data changed. Implementation has not started: shared schema/Finance module handoff from open PC-A PR998 is still required, preserving its existing migration and financial behavior. This is an ownership record, not an implementation/test/merge claim. See [BANK-ACCOUNTS-1020](tasks/BANK-ACCOUNTS-1020.md).
 

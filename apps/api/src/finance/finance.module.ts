@@ -1,4 +1,5 @@
 import { FinancialEventDispatcher } from './accounting/financial-event-dispatcher';
+import { BankAccountModule } from './bank-accounts/bank-account.module';
 import { PurchaseFxModule } from './purchase-fx/purchase-fx.service';
 import { FinancePartnerModule } from './partner-finance.module';
 import { AccountingController } from './accounting/accounting.controller';
@@ -29,6 +30,7 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
 
 @Module({
   imports: [
+    BankAccountModule,
     FinancePartnerModule,
     PurchaseFxModule,
     IamModule,

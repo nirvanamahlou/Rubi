@@ -230,6 +230,11 @@ jobs:
           NORA_RUN_FINANCIAL_EVENT_POSTGRES_TESTS: '1'
         run: pnpm --filter @nora/api exec vitest run test/financial-events.postgres.spec.ts --maxWorkers=1
 
+      - name: Prove company bank account encryption, CAS and audit atomicity
+        env:
+          NORA_RUN_BANK_ACCOUNT_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run test/bank-accounts.postgres.spec.ts --maxWorkers=1
+
       - name: Prove assistant read-only PostgreSQL and HTTP boundaries
         env:
           NORA_RUN_ASSISTANT_POSTGRES_TESTS: '1'
