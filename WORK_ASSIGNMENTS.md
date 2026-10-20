@@ -8590,3 +8590,9 @@ HOTEL-STAY-LAYOUT-1020 candidate: removed only next-day checkbox; two equal resp
 Reserve SalesPeopleSheet presentation/CSS and CustomerEntrySheet optional top scrollbar with focused scroll regression. Consumer Sales opts in; other CustomerEntrySheet hosts retain existing layout. Native RTL/LTR horizontal positions synchronized both ways and resize aware. Preserve all fields, handlers, validation, buyer/passenger roles, ticket/transfer choices and data. No API/schema/dependency/migration changes; no active overlapping target reservation. Local3100 Web preview requested through ongoing UI workflow; no production rollout.
 
 PEOPLE-UI-1020 — READY_FOR_REVIEW:17 focused tests pass, including native RTL/LTR scroll synchronization, resize/fit handling and listener cleanup. Source locks released with candidate. No production deployment or business-data writes.
+
+## EXPLICIT-CONTRACT-SUBMIT-1020 — PC-A — IN_PROGRESS
+
+Reserve SalesContractForm final-submit/navigation binding and focused existing form regressions. Remove implicit form-submit persistence; only an explicit final button click invokes existing create/confirm path. Preserve payload validation, local draft storage, idempotency and reservation dispatch after explicit commit. No API/schema/dependency/migration/data changes. Prior presentation source lock merged/released; no active overlap found. User requests fix; develop merge is not inferred for this new behavior task.
+
+EXPLICIT-CONTRACT-SUBMIT-1020 — READY_FOR_REVIEW:18 form regressions pass. Existing draft persistence and final create/confirm flow unchanged; only explicit final click may invoke it. Source reservation freezes/releases with candidate; local-only preview after build. No merge or production rollout inferred.
