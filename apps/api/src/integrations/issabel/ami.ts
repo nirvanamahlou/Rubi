@@ -198,3 +198,13 @@ export class AmiClient extends EventEmitter {
           `__NORA_COMMAND_ID=${id}`,
           `__NORA_EXTENSION=${extension}`,
           '__NORA_DIRECTION=OUT',
+        ],
+      },
+      id,
+    );
+  }
+  close() {
+    this.ready = false;
+    this.socket?.destroy();
+  }
+}

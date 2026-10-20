@@ -1,4 +1,5 @@
 'use client';
+import peopleStyles from './sales-people-sheet.module.css';
 import { useEffect, useRef, useState } from 'react';
 import { transferDirectionColumns } from './transfer-direction-columns';
 import { guestStayColumns } from './guest-stay-columns';
@@ -458,7 +459,10 @@ export function SalesPeopleSheet({
     };
   });
   return (
-    <section className="space-y-4" aria-label="ورود یکجای مشتری و مسافران">
+    <section
+      className={peopleStyles.workspace}
+      aria-label="ورود یکجای مشتری و مسافران"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-black">مشتری و مسافران همراه</h2>
@@ -585,11 +589,11 @@ export function SalesPeopleSheet({
         </div>
       ) : null}
       <section
-        className="grid gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4"
+        className={peopleStyles.buyer}
         aria-label="مشخصات مشتری طرف حساب"
       >
         <h3 className="font-bold sm:col-span-2">مشتری و طرف حساب قرارداد</h3>
-        <div className="flex flex-wrap items-center gap-2 rounded-xl bg-primary/5 p-3">
+        <div className={peopleStyles.modes}>
           <Button
             type="button"
             size="sm"
@@ -665,7 +669,7 @@ export function SalesPeopleSheet({
         ) : null}
 
         {draft.mode !== 'organization' ? (
-          <label className="flex items-center gap-2 sm:col-span-2">
+          <label className={peopleStyles.samePerson}>
             <input
               type="checkbox"
               checked={draft.mode === 'first-passenger'}
@@ -814,7 +818,7 @@ export function SalesPeopleSheet({
         </div>
       </section>
 
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
+      <div className={peopleStyles.extras}>
         {(
           Object.entries(salesAdditionalServices) as [
             keyof typeof salesAdditionalServices,
@@ -854,6 +858,7 @@ export function SalesPeopleSheet({
       </div>
 
       <CustomerEntrySheet
+        topScrollbar
         extraColumns={[
           ...(state.serviceKinds.includes('FLIGHT')
             ? (['OUTBOUND', 'RETURN'] as const)

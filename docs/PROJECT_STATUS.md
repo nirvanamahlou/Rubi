@@ -6824,6 +6824,10 @@ Owner authorizes PR1002 and develop merge after every final-head CI/CD check suc
 
 PC-A CONTRACT-UI-1020: clearer three-step progress, emphasized current step, responsive step layout, softer header/card spacing and wrapping sticky actions. Presentation classes only; existing state, validation, calculations and submit unchanged. Formatting and diff checks passed. No runtime deployment or browser acceptance claimed.
 
+## HR observed Radan completion — 2026-10-20 — PC-B
+
+Continuation of merged PR999: observed personnel identity/contact controls, canonical group selector, explicit attendance settings, reusable annual Persian shift calendars and organizational-position assignment, exact minute leave grants/cardex/conserved carry-burn-buyback, hourly/daily request subtypes and relational nominated approval stages, guarded xlsx/BIFF8 payslip import and scoped HR archive are implemented in the existing UI design. No schema, migration, lockfile, new dependency, IAM grant, runtime or operational-data change. Unobserved/locked engines are excluded rather than guessed. See docs/tasks/HR-RADAN-COMPLETION-1020.md for exact source boundaries, producer/consumer compatibility and validation. Final exact-source and hosted checks remain publication gates.
+
 CALL-CENTER-DEVELOP-INTEGRATION-1020 CI repair: the full hosted test suite detected two existing native datetime-local controls in Call Center follow-up/referral forms, violating the newly integrated shared-calendar contract. Reserve these two control bindings only; reuse DatePicker includeTime/withinDialog, retain FormData dueAt and existing device-local/Tehran UTC conversion semantics, and explicitly mark controlled calendar changes dirty. No table/layout/data/API change, no gate weakening. Existing shared calendar contract and date/time utility regressions validate this repair before final-head CI.
 CI calendar repair validation:12 focused shared-calendar contract/date utility tests pass; scoped ESLint and diff checks pass. Source-only local attempts first encountered missing dependency resolution in this dependency-free checkout; reused installed runtime tooling via ignored local links, without manifest/lockfile changes. No test assertion, timeout, exclusion or quality gate changed. Final hosted full checks remain required.
 
@@ -6836,8 +6840,18 @@ HOTEL-STAY-LAYOUT-1020 / PC-A: remove the next-day checkbox and use equal-width 
 HOTEL-STAY-LAYOUT-1020 candidate: shared hotel dates now fill two equal columns, next-day checkbox removed. Existing calendar-state regression passed; no persisted dates or operational runtime changed.
 
 
-## ISSABEL-ADAPTER-1020 — implementation in progress
+## ISSABEL-ADAPTER-1020 — implemented; live PBX acceptance pending
 
 PC-C is implementing an optional official AMI-based Issabel adapter on develop2446ce2f, after owner-approved preservation of the original unpublished Call Center baseline. Current develop already includes reviewed Call Center prerequisites. Source scope: real canonical PBX event ingress through the existing encrypted inbox/public domain port, authorized durable outbound commands, actual encrypted WAV chunk storage/private uploader, bounded dialer UI and disposable integration tests. Default disabled; no PBX host/version/credential or real call/recording supplied. No operational migration or current localhost runtime replacement performed. Verification and CI remain pending; see tasks/ISSABEL-ADAPTER-1020.md.
 
 ISSABEL-ADAPTER-1020 validation: dedicated disposable PostgreSQL applied all179 migrations, including the additive Issabel tables; all3 actual pipeline/authorization/audio lifecycle tests passed. Four fake-AMI/protocol tests,7 telephony security/state regressions,11 Web/client regressions, bounded uploader test and5 CI-policy checks passed. Shared packages/generated Prisma and corrected API production build pass; two exact-optional-property compile findings were corrected. API scoped lint passes after correcting a type-only import; Web lint/types/build and final-head hosted gates remain pending. No operational database, PBX call or live runtime was changed. Bounded source/schema reservations freeze on publication.
+
+## 2026-10-20 — PEOPLE-UI-1020 — PC-A
+
+Customer/buyer presentation now uses a clearer card, compact customer-mode control and highlighted first-passenger option. Sales opts into responsive table styling with fixed passenger identity column and a native upper horizontal scrollbar synchronized with the lower bar, including negative RTL offsets and width changes. Existing fields, callbacks and policies unchanged.17 focused CustomerEntrySheet/SalesPeopleSheet/scroll regressions pass. No schema/API/migration/dependency change; local Web-only preview follows verified build, preserving API/database. No authenticated visual acceptance claimed.
+
+## 2026-10-20 — EXPLICIT-CONTRACT-SUBMIT-1020 — PC-A
+
+Contract persistence now runs only from the explicit final commit button. Generic form submit is prevented and the advance/review buttons have distinct React identities so a step transition cannot reuse a submit control during the click. Existing create/confirm, validation, idempotency and browser draft persistence are retained.18 form regressions pass including non-submitting review/navigation controls. No API/schema/migration/data changes; local Web preview follows verified build. No authenticated business submission performed.
+
+ISSABEL-ADAPTER-1020 final integration: conflicts were resolved by retaining both append-only coordination tails and merging only15 Issabel translation keys into the latest HR/Sales catalogue; derived catalogues regenerated. All conflict-marker/JSON/diff checks pass. Final Contracts rebuild, complete API typecheck, API production build,65-route Web build with TypeScript, scoped API/Web lint and catalogue synchronization pass on the integrated develop7dfce188 source. Earlier compile observations came from pre-fix/pre-integration checks and are resolved; no quality gate was weakened. Exact-head full hosted CI and postmerge CI remain required. PBX/live deployment remains intentionally inactive pending actual configuration.

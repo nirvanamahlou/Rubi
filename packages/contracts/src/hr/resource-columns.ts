@@ -1,5 +1,7 @@
+import { HR_RADAN_COMPLETION_COLUMNS } from './radan-completion';
 // Approved HR field labels; behavior is defined in resource-registry.ts.
 export const HR_RESOURCE_COLUMNS = {
+  ...HR_RADAN_COMPLETION_COLUMNS,
   'organization.groups': ['نام گروه', 'توضیحات'],
   'organization.groupMembers': ['کارمند'],
   'time.workingHours': [
@@ -11,6 +13,7 @@ export const HR_RESOURCE_COLUMNS = {
     'ساعت قبل از شروع',
     'ساعت بعد از پایان',
     'رنگ',
+    'تعریف ضرایب پیش‌فرض',
   ],
   'time.shiftTemplates': ['نام شیفت', 'توضیحات'],
   'time.remote': [

@@ -1,3 +1,4 @@
+export * from './radan-completion';
 export * from './radan-fields';
 export * from './resource-registry';
 export * from './connections';
@@ -83,6 +84,20 @@ export interface HrWorkflowData {
   earlyMinutes?: number | null;
   overtimeMinutes?: number | null;
   exceptionCodes?: string[];
+  calculationSettingsId?: string;
+  calculationBasis?: string;
+  calculationMetrics?: Record<string, number>;
+  /** Server managed workflow route; generic commands reject this field. */
+  approvalRoute?: {
+    employeeId: string;
+    senior: boolean;
+    priority: number;
+    decidedBy?: string;
+    decidedAt?: string;
+  }[];
+  approvalStep?: number;
+  requestSubtype?: string;
+  templateSchedule?: Record<string, { values: string[] }>;
 }
 
 export interface HrContractStateCommand {
@@ -94,6 +109,9 @@ export interface HrContractStateCommand {
 }
 
 export interface HrEmployeeCreate {
+  firstName?: string;
+  lastName?: string;
+  groupId?: string | null;
   branchId?: string;
   userId?: string | null;
   photoDocumentId?: string;
@@ -110,6 +128,8 @@ export interface HrEmployeeCreate {
 }
 export type HrEmployeeUpdate = Partial<HrEmployeeCreate> & { version: number };
 export interface HrRecordCreate {
+  /** Write-only device credentials; never returned by record reads. */
+  privateData?: { networkPassword?: string };
   branchId?: string;
   section: string;
   tab: string;
@@ -121,6 +141,7 @@ export interface HrRecordCreate {
   data?: HrWorkflowData;
 }
 export interface HrRecordUpdate {
+  privateData?: { networkPassword?: string };
   version: number;
   /** Only organization units may be reparented; server checks branch and cycles. */
   parentId?: string | null;

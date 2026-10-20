@@ -176,3 +176,11 @@ Tests use loopback fake AMI and a disposable PostgreSQL database only. No provid
 Issabel host/version/credentials or real recording exists, so live acceptance and
 production readiness are explicitly pending. Local operational migrations and
 PBX changes are not implicit in this source delivery.
+
+Verified locally: all179 migrations on the isolated database;3 actual PostgreSQL
+pipeline/authorization/audio lifecycle tests;4 fake-AMI tests;7 telephony
+security/state regressions;11 Web/client regressions;1 uploader test and5 CI policy
+checks. Scoped API/Web lint and shared builds passed. Integration with current
+develop preserves both HR/Sales translations and coordination records. Final
+exact-head hosted quality, types, build and PostgreSQL checks gate develop merge;
+no live call, playback or installed-PBX compatibility test is claimed.
