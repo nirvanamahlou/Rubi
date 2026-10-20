@@ -1069,6 +1069,19 @@ export class HrService {
         values[3] = `${start.time} تا ${end.time}${end.date !== date ? ' (روز بعد)' : ''}`;
       }
     }
+    if (schema.key === 'time.remote') {
+      if (values[3] === 'ساعتی') {
+        const starts = validate.localClockToUtc(values[1]!, values[4]!);
+        const ends = validate.localClockToUtc(values[2]!, values[5]!);
+        data.startsAt = starts.toISOString();
+        data.endsAt = ends.toISOString();
+        data.minutes = (ends.getTime() - starts.getTime()) / 60000;
+      } else {
+        data.startsAt = values[1] + 'T00:00:00.000Z';
+        data.endsAt = values[2] + 'T23:59:59.999Z';
+        delete data.minutes;
+      }
+    }
     if (schema.key === 'time.shift' && parentId) {
       const hours = await tx.hrRecord.findFirst({
         where: {

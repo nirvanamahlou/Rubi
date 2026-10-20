@@ -213,3 +213,48 @@ it('rejects repeated multi-day long shifts while accepting a single start-day sn
     deletedAt: null,
   });
 });
+
+it('stores the actual hourly remote interval in UTC and clears stale hourly minutes for daily mode', async () => {
+  const derive = (
+    HrService.prototype as unknown as {
+      values: (
+        tx: unknown,
+        schema: unknown,
+        input: unknown,
+        employee: unknown,
+        branch: string,
+        data: Record<string, unknown>,
+      ) => Promise<string[]>;
+    }
+  ).values;
+  const schema = getHrResource('time', 'remote')!;
+  const data: Record<string, unknown> = {
+    startsAt: '2026-10-20T00:00:00.000Z',
+    endsAt: '2026-10-20T23:59:59.999Z',
+    minutes: 999,
+  };
+  await derive.call(
+    {},
+    null,
+    schema,
+    ['Employee', '2026-10-20', '2026-10-20', 'ساعتی', '08:00', '10:00'],
+    null,
+    'branch',
+    data,
+  );
+  expect(data.startsAt).toBe('2026-10-20T04:30:00.000Z');
+  expect(data.endsAt).toBe('2026-10-20T06:30:00.000Z');
+  expect(data.minutes).toBe(120);
+  await derive.call(
+    {},
+    null,
+    schema,
+    ['Employee', '2026-10-20', '2026-10-21', 'روزانه', '', ''],
+    null,
+    'branch',
+    data,
+  );
+  expect(data.minutes).toBeUndefined();
+  expect(data.startsAt).toBe('2026-10-20T00:00:00.000Z');
+  expect(data.endsAt).toBe('2026-10-21T23:59:59.999Z');
+});
