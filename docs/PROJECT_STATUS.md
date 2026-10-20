@@ -6712,4 +6712,3 @@ GUEST-STAY-DRAFT-FIX-1020 candidate:18 focused regression tests pass. Production
 ## ASSISTANT-LIVE-CHAT-1020 — PC-C — VALIDATING
 
 Owner approves Groq with message/session history only. Add explicit runtime consent/provider/key gate, bounded generic replies plus existing three read actions, and connect the existing composer to same-origin conversation transport. Provider receives no ERP results/identity/credentials; history excludes exact ERP evidence.67 service tests and74 UI tests pass; generic live HTTP200 and Persian REPLY validated. Web production build (65 routes), TypeScript and scoped lint pass. Browser rollout and exact-head CI remain delivery gates. No schema/migration/dependency changes. See tasks/ASSISTANT-LIVE-CHAT-1020.md.
-
