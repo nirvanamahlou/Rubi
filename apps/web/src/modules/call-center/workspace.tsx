@@ -59,6 +59,7 @@ import { CallForm } from './call-form';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './workspace.module.css';
 import { ReportHighlights } from './report-highlights';
+import { NextAction } from './next-action';
 const outcomes: Record<string, string> = {
   ANSWERED: 'گفت‌وگو انجام شد',
   NO_ANSWER: 'بدون پاسخ',
@@ -172,6 +173,7 @@ function Content({
   onDirty: (value: boolean) => void;
 }) {
   const [advanced, setAdvanced] = useState(false);
+  const searchInput = useRef<HTMLInputElement>(null);
   const [filters, setFilters] = useState<SearchFilters>(emptySearch),
     [page, setPage] = useState(1),
     [refresh, setRefresh] = useState(0);
@@ -374,7 +376,21 @@ function Content({
           <Plus size={18} /> ثبت تماس جدید
         </button>
       </header>
-      <WorkQueue branchId={branch} actorId={actorId} canManage={canManage} />
+      <WorkQueue
+        branchId={branch}
+        actorId={actorId}
+        canManage={canManage}
+        incomplete={
+          reportError || report?.data.unindexed
+            ? undefined
+            : report?.data.incomplete
+        }
+        onIncomplete={() => {
+          change('incomplete', 'YES');
+          change('scope', 'ANY');
+          searchInput.current?.focus();
+        }}
+      />
       <section className={styles.filterPanel} aria-label="جست‌وجو و فیلترها">
         <div className={styles.filters}>
           <div className={styles.searchField}>
@@ -382,6 +398,7 @@ function Content({
             <label className={styles.search}>
               <Search size={18} />
               <input
+                ref={searchInput}
                 type="search"
                 aria-label="جست‌وجوی سروری"
                 autoComplete="off"
@@ -410,6 +427,10 @@ function Content({
           >
             <SlidersHorizontal size={16} />
             {advanced ? 'بستن فیلترها' : 'فیلترهای پیشرفته'}
+            {Object.entries(filters).filter(
+              ([key, value]) => value && !['query', 'scope'].includes(key),
+            ).length > 0 &&
+              ` · ${faNumber(Object.entries(filters).filter(([key, value]) => value && !['query', 'scope'].includes(key)).length)}`}
           </button>
           <button
             className={styles.clear}
@@ -693,6 +714,11 @@ function Content({
             <p dir="ltr" className={styles.phone}>
               {selected.latest.phone || 'شماره نامعلوم'}
             </p>
+            {!!noteDrafts[selected.id]?.trim() && (
+              <p role="status" className={styles.feedback}>
+                یادداشت ثبت‌نشده این مخاطب حفظ شده است.
+              </p>
+            )}
             <p className={styles.formHint}>
               شماره تلفن به‌تنهایی تأیید هویت نیست.
             </p>
@@ -928,6 +954,8 @@ function History({
   setText: (value: string) => void;
   onNoteSaved: (value: string) => void;
 }) {
+  const [section, setSection] = useState('calls');
+  const sectionControls = useRef<HTMLDivElement>(null);
   const [calls, setCalls] = useState<Call[]>([]),
     [notes, setNotes] = useState<CallNote[]>([]),
     [callAfter, setCallAfter] = useState<string | undefined>(),
@@ -1003,148 +1031,194 @@ function History({
   }
   return (
     <>
-      <h3 className={styles.sectionTitle}>سابقه تماس‌ها</h3>
-      {loading && <p role="status">در حال دریافت تماس‌ها…</p>}
-      {error && (
-        <p role="alert">
-          {error}
+      <NextAction
+        key={contact.id}
+        branch={branch}
+        contactId={contact.id}
+        revision={retry}
+        onOpen={() => {
+          setSection('requests');
+          sectionControls.current
+            ?.querySelector<HTMLButtonElement>('[data-section="requests"]')
+            ?.focus();
+        }}
+      />
+      <div
+        ref={sectionControls}
+        className={styles.dossierTabs}
+        role="group"
+        aria-label="بخش‌های پرونده"
+      >
+        {(
+          [
+            ['calls', 'سابقه'],
+            ['requests', 'درخواست‌ها'],
+            ['notes', text.trim() ? 'یادداشت‌ها •' : 'یادداشت‌ها'],
+          ] as const
+        ).map(([value, label]) => (
           <button
+            type="button"
+            key={value}
+            data-section={value}
+            aria-pressed={section === value}
+            aria-controls={`cc-dossier-${value}`}
+            onClick={() => setSection(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <div id="cc-dossier-calls" hidden={section !== 'calls'}>
+        <h3 className={styles.sectionTitle}>سابقه تماس‌ها</h3>
+        {loading && <p role="status">در حال دریافت تماس‌ها…</p>}
+        {error && (
+          <p role="alert">
+            {error}
+            <button
+              onClick={() => {
+                setLoading(true);
+                setRetry((v) => v + 1);
+              }}
+            >
+              تلاش مجدد
+            </button>
+          </p>
+        )}
+        <ol className={styles.timeline}>
+          {calls.map((c) => (
+            <li key={c.id}>
+              <span className={styles.timelineIcon}>
+                {c.direction === 'INBOUND' ? (
+                  <PhoneIncoming size={15} />
+                ) : (
+                  <PhoneOutgoing size={15} />
+                )}
+              </span>
+              <h3>{c.subject}</h3>
+              <time dateTime={c.occurredAt}>{callDate(c.occurredAt)}</time>
+              <p>
+                {c.direction === 'INBOUND' ? 'ورودی' : 'خروجی'} ·{' '}
+                {outcomes[c.outcome ?? 'UNKNOWN']}
+              </p>
+              <details>
+                <summary>شرح تماس و اطلاعات ثبت</summary>
+                <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                  {c.note || 'بدون شرح'}
+                </p>
+                <p>
+                  زمان ثبت: {c.createdAt ? callDate(c.createdAt) : 'نامشخص'}
+                </p>
+              </details>
+            </li>
+          ))}
+        </ol>
+        <div className={styles.pagination}>
+          <button
+            disabled={!callAfter || loading}
             onClick={() => {
               setLoading(true);
-              setRetry((v) => v + 1);
+              setCallAfter(undefined);
             }}
           >
-            تلاش مجدد
+            جدیدترین تماس‌ها
           </button>
-        </p>
-      )}
-      <ol className={styles.timeline}>
-        {calls.map((c) => (
-          <li key={c.id}>
-            <span className={styles.timelineIcon}>
-              {c.direction === 'INBOUND' ? (
-                <PhoneIncoming size={15} />
-              ) : (
-                <PhoneOutgoing size={15} />
-              )}
-            </span>
-            <h3>{c.subject}</h3>
-            <time dateTime={c.occurredAt}>{callDate(c.occurredAt)}</time>
-            <p>
-              {c.direction === 'INBOUND' ? 'ورودی' : 'خروجی'} ·{' '}
-              {outcomes[c.outcome ?? 'UNKNOWN']}
-            </p>
-            <details>
-              <summary>شرح تماس و اطلاعات ثبت</summary>
-              <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-                {c.note || 'بدون شرح'}
-              </p>
-              <p>زمان ثبت: {c.createdAt ? callDate(c.createdAt) : 'نامشخص'}</p>
-            </details>
-          </li>
-        ))}
-      </ol>
-      <div className={styles.pagination}>
-        <button
-          disabled={!callAfter || loading}
-          onClick={() => {
-            setLoading(true);
-            setCallAfter(undefined);
-          }}
-        >
-          جدیدترین تماس‌ها
-        </button>
-        <button
-          disabled={!callNext || loading}
-          onClick={() => {
-            setLoading(true);
-            setCallAfter(callNext!);
-          }}
-        >
-          تماس‌های قدیمی‌تر
-        </button>
-      </div>
-      <WorkflowPanel
-        branchId={branch}
-        contactId={contact.id}
-        actorId={actorId}
-        canManage={permissions.includes(
-          'customer_affairs.call_center.workflow.manage',
-        )}
-        calls={calls}
-        onLinked={(id, ticketId) =>
-          setCalls((items) =>
-            items.map((c) => (c.id === id ? { ...c, ticketId } : c)),
-          )
-        }
-      />
-      <h3 className={styles.sectionTitle}>یادداشت‌ها</h3>
-      {notesLoading && <p role="status">در حال دریافت یادداشت‌ها…</p>}
-      {noteError && (
-        <p role="alert">
-          {noteError}
           <button
+            disabled={!callNext || loading}
+            onClick={() => {
+              setLoading(true);
+              setCallAfter(callNext!);
+            }}
+          >
+            تماس‌های قدیمی‌تر
+          </button>
+        </div>
+      </div>
+      <div id="cc-dossier-requests" hidden={section !== 'requests'}>
+        <WorkflowPanel
+          branchId={branch}
+          contactId={contact.id}
+          actorId={actorId}
+          canManage={permissions.includes(
+            'customer_affairs.call_center.workflow.manage',
+          )}
+          calls={calls}
+          onChanged={() => setRetry((value) => value + 1)}
+          onLinked={(id, ticketId) =>
+            setCalls((items) =>
+              items.map((c) => (c.id === id ? { ...c, ticketId } : c)),
+            )
+          }
+        />
+      </div>
+      <div id="cc-dossier-notes" hidden={section !== 'notes'}>
+        <h3 className={styles.sectionTitle}>یادداشت‌ها</h3>
+        {notesLoading && <p role="status">در حال دریافت یادداشت‌ها…</p>}
+        {noteError && (
+          <p role="alert">
+            {noteError}
+            <button
+              onClick={() => {
+                setNotesLoading(true);
+                setRetry((v) => v + 1);
+              }}
+            >
+              تلاش مجدد
+            </button>
+          </p>
+        )}
+        {notes.map((n) => (
+          <details key={n.id}>
+            <summary>{callDate(n.at)}</summary>
+            <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+              {n.text}
+            </p>
+          </details>
+        ))}
+        <div className={styles.pagination}>
+          <button
+            disabled={!noteAfter || notesLoading}
             onClick={() => {
               setNotesLoading(true);
-              setRetry((v) => v + 1);
+              setNoteAfter(undefined);
             }}
           >
-            تلاش مجدد
+            یادداشت‌های جدید
           </button>
-        </p>
-      )}
-      {notes.map((n) => (
-        <details key={n.id}>
-          <summary>{callDate(n.at)}</summary>
-          <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-            {n.text}
-          </p>
-        </details>
-      ))}
-      <div className={styles.pagination}>
-        <button
-          disabled={!noteAfter || notesLoading}
-          onClick={() => {
-            setNotesLoading(true);
-            setNoteAfter(undefined);
-          }}
-        >
-          یادداشت‌های جدید
-        </button>
-        <button
-          disabled={!noteNext || notesLoading}
-          onClick={() => {
-            setNotesLoading(true);
-            setNoteAfter(noteNext!);
-          }}
-        >
-          یادداشت‌های قدیمی‌تر
-        </button>
+          <button
+            disabled={!noteNext || notesLoading}
+            onClick={() => {
+              setNotesLoading(true);
+              setNoteAfter(noteNext!);
+            }}
+          >
+            یادداشت‌های قدیمی‌تر
+          </button>
+        </div>
+        <form className={styles.note} onSubmit={save}>
+          <label htmlFor="cc-note">یادداشت جدید</label>
+          <textarea
+            id="cc-note"
+            maxLength={2000}
+            value={text}
+            disabled={
+              busy ||
+              !permissions.includes('customer_affairs.call_center.notes.create')
+            }
+            onChange={(e) => setText(e.target.value)}
+          />
+          <button
+            className={styles.primary}
+            disabled={
+              busy ||
+              !text.trim() ||
+              !permissions.includes('customer_affairs.call_center.notes.create')
+            }
+          >
+            ثبت یادداشت
+          </button>
+          <p role="status">{saved}</p>
+        </form>
       </div>
-      <form className={styles.note} onSubmit={save}>
-        <label htmlFor="cc-note">یادداشت جدید</label>
-        <textarea
-          id="cc-note"
-          maxLength={2000}
-          value={text}
-          disabled={
-            busy ||
-            !permissions.includes('customer_affairs.call_center.notes.create')
-          }
-          onChange={(e) => setText(e.target.value)}
-        />
-        <button
-          className={styles.primary}
-          disabled={
-            busy ||
-            !text.trim() ||
-            !permissions.includes('customer_affairs.call_center.notes.create')
-          }
-        >
-          ثبت یادداشت
-        </button>
-        <p role="status">{saved}</p>
-      </form>
     </>
   );
 }

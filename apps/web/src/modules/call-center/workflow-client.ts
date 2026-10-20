@@ -53,6 +53,19 @@ export interface RequestCase {
   }[];
 }
 export const workflowApi = {
+  nextAction: (branch: string, contact: string, signal: AbortSignal) =>
+    callCenterRequest<{
+      data: {
+        id: string;
+        requestId: string;
+        requestTitle: string;
+        requestStatus: string;
+        action: string;
+        ownerName: string | null;
+        dueAt: string;
+        overdue?: boolean;
+      } | null;
+    }>(`/contacts/${contact}/next-action`, branch, { signal }),
   queue: (branch: string, view: string, page: number, signal?: AbortSignal) =>
     callCenterRequest<{
       data: {
@@ -63,8 +76,15 @@ export const workflowApi = {
         title: string;
         ownerName: string | null;
         status: string;
+        dueAt?: string | null;
       }[];
-      meta: { total: number; page: number; pageSize: number };
+      meta: {
+        total: number;
+        page: number;
+        pageSize: number;
+        counts?: Record<string, number>;
+        asOf?: string;
+      };
     }>(`/queue?view=${view}&page=${page}`, branch, signal ? { signal } : {}),
   link: (branch: string, callId: string, input: unknown) =>
     callCenterRequest<{ data: { id: string; ticketId: string } }>(

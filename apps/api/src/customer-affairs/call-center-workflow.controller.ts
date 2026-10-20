@@ -76,6 +76,16 @@ export class CallCenterWorkflowController {
   ) {
     return this.service.options(req.actor, branch);
   }
+  @Get('contacts/:id/next-action')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('customer_affairs.call_center.read')
+  nextAction(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Headers('x-branch-id') branch?: string,
+  ) {
+    return this.service.nextAction(req.actor, branch, id);
+  }
   @Get('contacts/:id/requests')
   @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('customer_affairs.call_center.read')

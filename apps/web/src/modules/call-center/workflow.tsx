@@ -11,7 +11,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/overlays';
-import { callDate } from './model';
+import { callDate, faNumber } from './model';
 import type { Call } from './model';
 import {
   workflowApi,
@@ -467,11 +467,17 @@ export function WorkQueue({
   branchId,
   actorId,
   canManage,
+  incomplete,
+  onIncomplete,
 }: {
   branchId: string;
   actorId: string;
   canManage: boolean;
+  incomplete?: number | undefined;
+  onIncomplete?: () => void;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const queueHeading = useRef<HTMLHeadingElement>(null);
   const queueTrigger = useRef<HTMLButtonElement | null>(null);
   const [view, setView] = useState('ALL'),
     [page, setPage] = useState(1),
@@ -492,11 +498,13 @@ export function WorkQueue({
       .then((result) => {
         if (!controller.signal.aborted) {
           setData(result);
+          setError('');
           setLoading(false);
         }
       })
       .catch((reason) => {
         if (!controller.signal.aborted) {
+          setData(null);
           setError(
             reason instanceof Error ? reason.message : 'دریافت صف انجام نشد.',
           );
@@ -506,151 +514,260 @@ export function WorkQueue({
     return () => controller.abort();
   }, [branchId, view, page, revision]);
   return (
-    <section className={`${styles.panel} ${styles.queue}`}>
-      <header>
-        <h3>صف رسیدگی و پیگیری</h3>
-        <button
-          type="button"
-          onClick={() => (
-            setLoading(true),
-            setError(''),
-            setRevision((value) => value + 1)
-          )}
-        >
-          به‌روزرسانی
-        </button>
-      </header>
-      <p>درخواست‌های همه شعبه‌های مجاز؛ مستقل از فیلتر شعبه فهرست مخاطبان</p>
-      <div
-        className={styles.queueViews}
-        role="group"
-        aria-label="نمای صف رسیدگی"
-      >
+    <>
+      <div className={styles.actionCards} aria-label="اقدام‌های فوری">
         {(
           [
-            ['ALL', 'همه درخواست‌ها'],
-            ['OPEN', 'باز'],
-            ['MINE', 'کارهای من'],
-            ['TODAY', 'امروز'],
-            ['OVERDUE', 'عقب‌افتاده'],
-            ['UNASSIGNED', 'بدون مسئول'],
+            ['OVERDUE', 'درخواست با پیگیری عقب‌افتاده'],
+            ['TODAY', 'درخواست با پیگیری امروز'],
+            ['UNASSIGNED', 'درخواست بدون مسئول'],
           ] as const
         ).map(([value, label]) => (
           <button
             key={value}
             type="button"
-            aria-pressed={view === value}
+            data-tone={value}
+            disabled={
+              loading || !!error || data?.meta.counts?.[value] === undefined
+            }
             onClick={() => {
-              setLoading(true);
-              setError('');
               setView(value);
               setPage(1);
+              setRevision((current) => current + 1);
+              setCollapsed(false);
+              setLoading(true);
+              queueHeading.current?.focus();
             }}
           >
-            {label}
+            <span>{label}</span>
+            <strong>
+              {loading
+                ? '…'
+                : data?.meta.counts?.[value] === undefined
+                  ? '—'
+                  : faNumber(data.meta.counts[value])}
+            </strong>
+            <small>همه شعب مجاز · درخواست یکتا</small>
           </button>
         ))}
+        <button
+          type="button"
+          disabled={incomplete === undefined}
+          onClick={onIncomplete}
+        >
+          <span>اطلاعات ناقص تماس</span>
+          <strong>
+            {incomplete === undefined ? '—' : faNumber(incomplete)}
+          </strong>
+          <small>شعبه، بازه و فیلتر فعلی گزارش</small>
+        </button>
       </div>
-      {loading && <p role="status">در حال دریافت صف…</p>}
-      {error && <p role="alert">{error}</p>}
-      {!loading && !error && data && (
-        <>
-          <p>
-            {data.meta.total.toLocaleString('fa-IR')} درخواست · تاریخ امروز بر
-            اساس تهران
-          </p>
-          {!data.data.length && <p>درخواستی در این صف نیست.</p>}
-          <div className={styles.queueRows}>
-            <div className={styles.queueColumns} aria-hidden="true">
-              <span>موضوع درخواست</span>
-              <span>شعبه</span>
-              <span>مسئول</span>
-              <span>وضعیت</span>
-            </div>
-            {data.data.map((item) => (
+      <section className={`${styles.panel} ${styles.queue}`}>
+        <header>
+          <h3 tabIndex={-1} ref={queueHeading}>
+            صف رسیدگی و پیگیری
+          </h3>
+          <button
+            type="button"
+            aria-expanded={!collapsed}
+            aria-controls="cc-queue-body"
+            onClick={() => setCollapsed((value) => !value)}
+          >
+            {collapsed ? 'نمایش صف' : 'جمع کردن صف'}
+          </button>
+          <button
+            type="button"
+            onClick={() => (
+              setLoading(true),
+              setError(''),
+              setRevision((value) => value + 1)
+            )}
+          >
+            به‌روزرسانی
+          </button>
+        </header>
+        <p>
+          همه شعب مجاز · مستقل از فیلتر مخاطبان
+          {data?.meta.asOf ? ` · به‌روز در ${callDate(data.meta.asOf)}` : ''}
+        </p>
+        <div id="cc-queue-body" hidden={collapsed}>
+          <div
+            className={styles.queueViews}
+            role="group"
+            aria-label="نمای صف رسیدگی"
+          >
+            {(
+              [
+                ['ALL', 'همه درخواست‌ها'],
+                ['OPEN', 'باز'],
+                ['MINE', 'کارهای من'],
+                ['TODAY', 'امروز'],
+                ['OVERDUE', 'عقب‌افتاده'],
+                ['UNASSIGNED', 'بدون مسئول'],
+                ['NO_ACTION', 'بدون اقدام بعدی'],
+              ] as const
+            ).map(([value, label]) => (
               <button
-                className={styles.queueRow}
-                key={item.id}
+                key={value}
                 type="button"
-                onClick={(event) => {
-                  queueTrigger.current = event.currentTarget;
-                  setSelected({
-                    contactId: item.contactId,
-                    branchId: item.branchId,
-                  });
+                aria-pressed={view === value}
+                onClick={() => {
+                  setLoading(true);
+                  setError('');
+                  setView(value);
+                  setPage(1);
+                  setRevision((current) => current + 1);
                 }}
               >
-                <strong>{item.title}</strong>
-                <span>{item.branchName}</span>
-                <span>{item.ownerName ?? 'بدون مسئول'}</span>
-                <span className={styles.status} data-status={item.status}>
-                  {requestLabels[item.status]}
-                </span>
+                {label}
+                {data?.meta.counts?.[value] !== undefined && !loading && !error
+                  ? ` · ${faNumber(data.meta.counts[value])}`
+                  : ''}
               </button>
             ))}
           </div>
-          <div>
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => {
-                setLoading(true);
-                setError('');
-                setPage((value) => value - 1);
-              }}
-            >
-              قبلی
-            </button>
-            <span>{page.toLocaleString('fa-IR')}</span>
-            <button
-              type="button"
-              disabled={page * data.meta.pageSize >= data.meta.total}
-              onClick={() => {
-                setLoading(true);
-                setError('');
-                setPage((value) => value + 1);
-              }}
-            >
-              بعدی
-            </button>
-          </div>
-        </>
-      )}
-      {selected && (
-        <Dialog
-          open
-          onOpenChange={(open) => {
-            if (!open) setSelected(null);
-          }}
-        >
-          <DialogContent
-            onCloseAutoFocus={(event) => {
-              event.preventDefault();
-              queueTrigger.current?.focus();
+          {loading && <p role="status">در حال دریافت صف…</p>}
+          {error && <p role="alert">{error}</p>}
+          {!loading && !error && data && (
+            <>
+              <p>
+                {data.meta.total.toLocaleString('fa-IR')} درخواست · تاریخ امروز
+                بر اساس تهران
+              </p>
+              <p className={styles.hint}>
+                امروز و عقب‌افتاده ممکن است هم‌پوشان باشند. «بدون اقدام بعدی»:
+                درخواست بازِ بدون پیگیری باز؛ منتظر پاسخ مشتری مستثناست.
+              </p>
+              {!data.data.length && <p>درخواستی در این صف نیست.</p>}
+              <div className={styles.queueRows}>
+                <div className={styles.queueColumns} aria-hidden="true">
+                  <span>موضوع درخواست</span>
+                  <span>شعبه</span>
+                  <span>مسئول</span>
+                  <span>وضعیت</span>
+                  <span>موعد نزدیک‌ترین پیگیری</span>
+                </div>
+                {data.data.map((item) => (
+                  <button
+                    className={styles.queueRow}
+                    key={item.id}
+                    type="button"
+                    onClick={(event) => {
+                      queueTrigger.current = event.currentTarget;
+                      setSelected({
+                        contactId: item.contactId,
+                        branchId: item.branchId,
+                      });
+                    }}
+                  >
+                    <strong>{item.title}</strong>
+                    <span>{item.branchName}</span>
+                    <span>{item.ownerName ?? 'بدون مسئول'}</span>
+                    <span className={styles.status} data-status={item.status}>
+                      {requestLabels[item.status]}
+                    </span>
+                    <span
+                      data-overdue={
+                        !!item.dueAt &&
+                        Date.parse(item.dueAt) <
+                          Date.parse(data?.meta.asOf ?? '')
+                      }
+                    >
+                      {item.dueAt ? (
+                        <>
+                          <time dateTime={item.dueAt}>
+                            {callDate(item.dueAt)}
+                          </time>
+                          {Date.parse(item.dueAt) <
+                            Date.parse(data?.meta.asOf ?? '') && (
+                            <small>
+                              {' '}
+                              ·{' '}
+                              {faNumber(
+                                Math.max(
+                                  1,
+                                  Math.floor(
+                                    (Date.parse(data?.meta.asOf ?? '') -
+                                      Date.parse(item.dueAt)) /
+                                      60000,
+                                  ),
+                                ),
+                              )}{' '}
+                              دقیقه تأخیر
+                            </small>
+                          )}
+                        </>
+                      ) : (
+                        'بدون پیگیری باز'
+                      )}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div>
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => {
+                    setLoading(true);
+                    setError('');
+                    setPage((value) => value - 1);
+                  }}
+                >
+                  قبلی
+                </button>
+                <span>{page.toLocaleString('fa-IR')}</span>
+                <button
+                  type="button"
+                  disabled={page * data.meta.pageSize >= data.meta.total}
+                  onClick={() => {
+                    setLoading(true);
+                    setError('');
+                    setPage((value) => value + 1);
+                  }}
+                >
+                  بعدی
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+        {selected && (
+          <Dialog
+            open
+            onOpenChange={(open) => {
+              if (!open) setSelected(null);
             }}
-            dir="rtl"
-            className="max-h-[90dvh] max-w-2xl overflow-y-auto"
           >
-            <DialogTitle>رسیدگی به درخواست‌های مخاطب</DialogTitle>
-            <DialogDescription>
-              درخواست و اقدام‌های مرتبط را بررسی کنید.
-            </DialogDescription>
-            <WorkflowPanel
-              key={selected.contactId}
-              branchId={selected.branchId}
-              actorId={actorId}
-              contactId={selected.contactId}
-              canManage={canManage}
-              onChanged={() => (
-                setLoading(true),
-                setError(''),
-                setRevision((value) => value + 1)
-              )}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
-    </section>
+            <DialogContent
+              onCloseAutoFocus={(event) => {
+                event.preventDefault();
+                queueTrigger.current?.focus();
+              }}
+              dir="rtl"
+              className="max-h-[90dvh] max-w-2xl overflow-y-auto"
+            >
+              <DialogTitle>رسیدگی به درخواست‌های مخاطب</DialogTitle>
+              <DialogDescription>
+                درخواست و اقدام‌های مرتبط را بررسی کنید.
+              </DialogDescription>
+              <WorkflowPanel
+                key={selected.contactId}
+                branchId={selected.branchId}
+                actorId={actorId}
+                contactId={selected.contactId}
+                canManage={canManage}
+                onChanged={() => (
+                  setLoading(true),
+                  setError(''),
+                  setRevision((value) => value + 1)
+                )}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
+      </section>
+    </>
   );
 }
 function WorkflowEditor({

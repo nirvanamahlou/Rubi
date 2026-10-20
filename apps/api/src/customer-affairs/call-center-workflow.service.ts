@@ -272,61 +272,144 @@ export class CallCenterWorkflowService
     const start = new Date(
       `${part('year')}-${part('month')}-${part('day')}T00:00:00+03:30`,
     );
-    const ids = ['MINE', 'TODAY', 'OVERDUE'].includes(view)
-      ? await this.tasks.matchingRequests(
-          branchIds,
-          view,
-          actor.userId,
-          start,
-          new Date(start.getTime() + 86400000),
-        )
-      : null;
-    const where: Prisma.CustomerAffairsTicketWhereInput = {
+    const now = new Date();
+    const forView = (
+      value: string,
+    ): Prisma.CustomerAffairsTicketWhereInput => ({
       branchId: { in: branchIds },
       category: CATEGORY,
-      ...(view !== 'ALL' ? { status: { not: 'CLOSED' } } : {}),
       callCenterContactId: { not: null },
-      ...(view === 'MINE'
+      ...(value !== 'ALL' ? { status: { not: 'CLOSED' } } : {}),
+      ...(value === 'MINE'
         ? {
             OR: [
               { executionOwnerUserId: actor.userId },
-              { id: { in: ids ?? [] } },
+              this.tasks.requestPredicate(
+                branchIds,
+                value,
+                actor.userId,
+                start,
+                now,
+              ),
             ],
           }
-        : ids
-          ? { id: { in: ids } }
+        : ['TODAY', 'OVERDUE', 'NO_ACTION'].includes(value)
+          ? this.tasks.requestPredicate(
+              branchIds,
+              value,
+              actor.userId,
+              start,
+              now,
+            )
           : {}),
-      ...(view === 'UNASSIGNED' ? { executionOwnerUserId: null } : {}),
-    };
-    const [total, rows] = await this.db.client.$transaction([
-      this.db.client.customerAffairsTicket.count({ where }),
-      this.db.client.customerAffairsTicket.findMany({
-        where,
-        orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
-        skip: (page - 1) * 50,
-        take: 50,
-        include: {
-          executionOwner: { select: { displayName: true } },
-          branch: { select: { name: true } },
+      ...(value === 'UNASSIGNED' ? { executionOwnerUserId: null } : {}),
+      ...(value === 'NO_ACTION'
+        ? { status: { in: ['NEW', 'IN_PROGRESS'] } }
+        : {}),
+    });
+    const where = forView(view);
+    const views = [
+      'ALL',
+      'OPEN',
+      'MINE',
+      'TODAY',
+      'OVERDUE',
+      'UNASSIGNED',
+      'NO_ACTION',
+    ];
+    return this.db.client.$transaction(
+      async (tx) => {
+        const counts = Object.fromEntries(
+          await Promise.all(
+            views.map(async (value) => [
+              value,
+              await tx.customerAffairsTicket.count({ where: forView(value) }),
+            ]),
+          ),
+        );
+        const total = counts[view] ?? 0;
+        const rows = await tx.customerAffairsTicket.findMany({
+          where,
+          orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+          skip: (page - 1) * 50,
+          take: 50,
+          include: {
+            executionOwner: { select: { displayName: true } },
+            branch: { select: { name: true } },
+          },
+        });
+        const deadlines = await this.tasks.deadlines(
+          tx,
+          branchIds,
+          rows.filter((row) => row.status !== 'CLOSED').map((row) => row.id),
+        );
+        return {
+          data: rows.map((row) => ({
+            id: row.id,
+            branchId: row.branchId,
+            branchName: row.branch.name,
+            dueAt:
+              deadlines
+                .find((item) => item.callCenterTicketId === row.id)
+                ?._min.dueAt?.toISOString() ?? null,
+            contactId: row.callCenterContactId!,
+            title: this.crypto.decrypt<{ title: string }>(
+              row.callCenterPayload!,
+              row.callCenterKeyVersion!,
+              `request:${row.id}:${row.callCenterContactId}`,
+            ).title,
+            ownerName: row.executionOwner?.displayName ?? null,
+            status: row.status,
+          })),
+          meta: { total, page, pageSize: 50, counts, asOf: now.toISOString() },
+        };
+      },
+      { isolationLevel: 'RepeatableRead' },
+    );
+  }
+  async nextAction(
+    actor: AuthenticatedActor,
+    branch: string | undefined,
+    contactId: string,
+  ) {
+    const branchId = this.scope(actor, branch);
+    return this.db.client.$transaction(async (tx) => {
+      await this.contact(tx, contactId, branchId);
+      const requestWhere = {
+        branchId,
+        category: CATEGORY,
+        callCenterContactId: contactId,
+        status: { not: 'CLOSED' },
+      };
+      const task = await this.tasks.next(tx, [branchId], requestWhere);
+      if (!task) return { data: null };
+      const request = await tx.customerAffairsTicket.findFirst({
+        where: { ...requestWhere, id: task.callCenterTicketId! },
+      });
+      if (!request) return { data: null };
+      const payload = task.payload as { encrypted: string; keyVersion: number };
+      const detail = this.crypto.decrypt<TaskPrivate>(
+        payload.encrypted,
+        payload.keyVersion,
+        `followup:${task.id}:${request.id}`,
+      );
+      return {
+        data: {
+          id: task.id,
+          requestId: request.id,
+          requestTitle: this.crypto.decrypt<{ title: string }>(
+            request.callCenterPayload!,
+            request.callCenterKeyVersion!,
+            `request:${request.id}:${contactId}`,
+          ).title,
+          requestStatus: request.status,
+          action: detail.action,
+          ownerName: detail.ownerName ?? null,
+          dueAt: task.dueAt!.toISOString(),
+          overdue: task.dueAt!.getTime() < Date.now(),
         },
-      }),
-    ]);
-    return {
-      data: rows.map((row) => ({
-        id: row.id,
-        branchId: row.branchId,
-        branchName: row.branch.name,
-        contactId: row.callCenterContactId!,
-        title: this.crypto.decrypt<{ title: string }>(
-          row.callCenterPayload!,
-          row.callCenterKeyVersion!,
-          `request:${row.id}:${row.callCenterContactId}`,
-        ).title,
-        ownerName: row.executionOwner?.displayName ?? null,
-        status: row.status,
-      })),
-      meta: { total, page, pageSize: 50 },
-    };
+      };
+    });
   }
   async list(
     actor: AuthenticatedActor,

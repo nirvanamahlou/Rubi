@@ -8,6 +8,60 @@ export class CallCenterTasksService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
+  /** Public Tasks-owned relation predicate for authorized request projections. */
+  requestPredicate(
+    branchIds: string[],
+    view: string,
+    actorId: string,
+    start: Date,
+    now: Date,
+  ): Prisma.CustomerAffairsTicketWhereInput {
+    const task = {
+      sourceModule: 'CALL_CENTER',
+      branchId: { in: branchIds },
+      status: 'OPEN',
+      ...(view === 'MINE' ? { assigneeUserId: actorId } : {}),
+      ...(view === 'TODAY'
+        ? { dueAt: { gte: start, lt: new Date(start.getTime() + 86400000) } }
+        : {}),
+      ...(view === 'OVERDUE' ? { dueAt: { lt: now } } : {}),
+    };
+    return {
+      callCenterTasks: view === 'NO_ACTION' ? { none: task } : { some: task },
+    };
+  }
+  async next(
+    tx: Prisma.TransactionClient,
+    branchIds: string[],
+    request: Prisma.CustomerAffairsTicketWhereInput,
+  ) {
+    return tx.automationTask.findFirst({
+      where: {
+        sourceModule: 'CALL_CENTER',
+        branchId: { in: branchIds },
+        callCenterTicket: request,
+        status: 'OPEN',
+        dueAt: { not: null },
+      },
+      orderBy: [{ dueAt: 'asc' }, { id: 'asc' }],
+    });
+  }
+  deadlines(
+    tx: Prisma.TransactionClient,
+    branchIds: string[],
+    ticketIds: string[],
+  ) {
+    return tx.automationTask.groupBy({
+      by: ['callCenterTicketId'],
+      where: {
+        sourceModule: 'CALL_CENTER',
+        branchId: { in: branchIds },
+        callCenterTicketId: { in: ticketIds },
+        status: 'OPEN',
+      },
+      _min: { dueAt: true },
+    });
+  }
   async matchingRequests(
     branchId: string | string[],
     view: string,

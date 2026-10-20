@@ -548,6 +548,11 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       });
       const one = await workflow.queue(multi, branchId, 'ALL', 1);
       const two = await workflow.queue(multi, otherBranch, 'ALL', 1);
+      expect(one.meta.counts.ALL).toBe(one.meta.total);
+      expect(two.meta.counts).toEqual(one.meta.counts);
+      expect(
+        (await workflow.queue(actor, branchId, 'ALL', 1)).meta.counts.ALL,
+      ).toBeLessThan(one.meta.counts.ALL!);
       expect(one.data.map((r) => r.id)).toEqual(two.data.map((r) => r.id));
       expect(one.data.find((r) => r.id === id)).toMatchObject({
         branchId: otherBranch,
@@ -562,6 +567,76 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       expect(
         (await workflow.queue(actor, otherBranch, 'ALL', 1)).data.some(
           (r) => r.id === id,
+        ),
+      ).toBe(false);
+    });
+    it('counts requests once, chooses the earliest open action and excludes waiting/closed requests from missing-action work', async () => {
+      const item = {
+        ...request,
+        id: randomUUID(),
+        commandId: randomUUID(),
+        expectedVersion: 0,
+        status: 'NEW',
+        ownerId: null,
+      };
+      await workflow.saveRequest(actor, branchId, contactId, item);
+      expect(
+        (await workflow.queue(actor, branchId, 'NO_ACTION', 1)).data.some(
+          (row) => row.id === item.id,
+        ),
+      ).toBe(true);
+      const first = {
+        ...follow,
+        id: randomUUID(),
+        commandId: randomUUID(),
+        expectedVersion: 0,
+        dueAt: '2020-01-01T00:00:00Z',
+        action: 'Earliest synthetic action',
+      };
+      await workflow.followUp(actor, branchId, item.id, first);
+      await workflow.followUp(actor, branchId, item.id, {
+        ...first,
+        id: randomUUID(),
+        commandId: randomUUID(),
+        dueAt: '2020-02-01T00:00:00Z',
+      });
+      const queue = await workflow.queue(actor, branchId, 'OVERDUE', 1);
+      expect(queue.meta.counts.OVERDUE).toBe(queue.meta.total);
+      expect(queue.data.filter((row) => row.id === item.id)).toHaveLength(1);
+      expect(queue.data.find((row) => row.id === item.id)?.dueAt).toBe(
+        '2020-01-01T00:00:00.000Z',
+      );
+      expect(
+        (await workflow.nextAction(actor, branchId, contactId)).data,
+      ).toMatchObject({
+        id: first.id,
+        requestId: item.id,
+        action: first.action,
+      });
+      await expect(
+        workflow.nextAction(actor, otherBranch, contactId),
+      ).rejects.toMatchObject({ status: 403 });
+      expect(
+        (await workflow.queue(actor, branchId, 'NO_ACTION', 1)).data.some(
+          (row) => row.id === item.id,
+        ),
+      ).toBe(false);
+      const waiting = {
+        ...item,
+        id: randomUUID(),
+        commandId: randomUUID(),
+        status: 'NEW',
+      };
+      await workflow.saveRequest(actor, branchId, contactId, waiting);
+      await workflow.saveRequest(actor, branchId, contactId, {
+        ...waiting,
+        commandId: randomUUID(),
+        expectedVersion: 1,
+        status: 'WAITING_CUSTOMER',
+      });
+      expect(
+        (await workflow.queue(actor, branchId, 'NO_ACTION', 1)).data.some(
+          (row) => row.id === waiting.id,
         ),
       ).toBe(false);
     });

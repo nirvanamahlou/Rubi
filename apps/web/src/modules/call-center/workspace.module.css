@@ -2,10 +2,14 @@
 .workspace {
   --cc-blue: #1875e5;
   --cc-ink: var(--foreground, #193457);
-  --cc-muted: var(--muted-foreground, #708099);
+  --cc-muted: color-mix(
+    in srgb,
+    var(--foreground, #193457) 78%,
+    var(--surface, #fff)
+  );
   --cc-border: var(--border, #e2e9f2);
   color: var(--cc-ink);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.8;
   display: grid;
   gap: 16px;
@@ -927,4 +931,69 @@
   .sourceLegend {
     max-width: 350px;
   }
+}
+/* Operational emphasis without changing the contact table schema. */
+.nextAction {
+  padding: 14px;
+  margin-block: 12px;
+  border: 1px solid var(--cc-border);
+  border-inline-start: 3px solid var(--cc-blue);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  overflow-wrap: anywhere;
+}
+.nextAction h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.nextAction p {
+  margin-block: 6px;
+  font-size: 13px;
+}
+.nextAction time {
+  font-size: 13px;
+}
+.nextAction button {
+  white-space: normal;
+  width: 100%;
+  margin-top: 10px;
+}
+.overdue {
+  color: #b42338;
+  font-weight: 600;
+}
+.dossierTabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--cc-border);
+  margin-block: 16px;
+}
+.dossierTabs button {
+  flex: 1;
+  min-height: 42px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--cc-muted);
+  font-size: 13px;
+}
+.dossierTabs button[aria-pressed='true'] {
+  color: var(--cc-blue);
+  border-bottom-color: var(--cc-blue);
+  font-weight: 700;
+}
+.history [hidden],
+.dossierDialog [hidden] {
+  display: none;
+}
+.reportPanel {
+  margin-top: 8px;
+}
+.tableScroll {
+  scrollbar-gutter: stable;
+}
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }

@@ -66,7 +66,7 @@ export function ReportHighlights({
     <div className={styles.highlights}>
       <article className={styles.reportCard}>
         <h3>
-          <Trophy size={19} /> بیشترین پیگیری
+          <Trophy size={19} /> بیشترین تماس خروجی
         </h3>
         <p className={styles.formHint}>
           پنج مخاطب با بیشترین تماس خروجی در بازه و فیلتر گزارش
@@ -81,7 +81,7 @@ export function ReportHighlights({
               <tr>
                 <th>رتبه</th>
                 <th>نام مخاطب</th>
-                <th>تعداد پیگیری تلفنی</th>
+                <th>تعداد تماس خروجی</th>
               </tr>
             </thead>
             <tbody>
@@ -102,7 +102,7 @@ export function ReportHighlights({
       </article>
       <article className={styles.reportCard}>
         <h3>
-          <Users size={19} /> عملکرد اپراتورها
+          <Users size={19} /> فعالیت کارشناسان
         </h3>
         <p className={styles.formHint}>
           ثبت و انجام در بازه؛ مسئولیت باز در وضعیت فعلی شعبه
