@@ -8,6 +8,16 @@ export class MasterProcurementDirectory {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
+  /** Finance-owned accounts reference this canonical bank, never duplicate it. */
+  async assertBank(id: string, transaction?: Prisma.TransactionClient) {
+    const row = await (
+      transaction ?? this.database.client
+    ).masterBank.findFirst({
+      where: { id, isActive: true },
+      select: { id: true },
+    });
+    if (!row) throw new BadRequestException('بانک انتخاب‌شده معتبر نیست.');
+  }
   /** Approved operational reference only; never journal-posting authority. */
   async purchaseRateToIrr(
     currencyCode: string,
@@ -41,8 +51,8 @@ export class MasterProcurementDirectory {
     }
     return null;
   }
-  branches(ids: string[]) {
-    return this.database.client.branch.findMany({
+  branches(ids: string[], transaction?: Prisma.TransactionClient) {
+    return (transaction ?? this.database.client).branch.findMany({
       where: { id: { in: ids }, isActive: true },
       select: { id: true, name: true },
       take: 100,
@@ -56,9 +66,9 @@ export class MasterProcurementDirectory {
       take: 250,
     });
   }
-  async assertCurrency(code: string) {
+  async assertCurrency(code: string, transaction?: Prisma.TransactionClient) {
     if (
-      !(await this.database.client.masterCurrency.findFirst({
+      !(await (transaction ?? this.database.client).masterCurrency.findFirst({
         where: { code, isActive: true },
         select: { id: true },
       }))

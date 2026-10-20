@@ -70,6 +70,7 @@ model User {
   reservationServicePurchases                      ReservationServicePurchase[]
   financeSupplierPaymentRevisions                  FinanceSupplierPaymentRevision[]
   financeSettlementAccountsCreated                 FinanceSettlementAccount[]                @relation("FinanceSettlementAccountCreator")
+  financeBankAccountAudits                         FinanceBankAccountAudit[]
   salesPaymentsFinanceReviewed                     SalesContractPaymentEntry[]               @relation("SalesPaymentFinanceReviewer")
   ownedTravelIntakes                               ReservationIntake[]                       @relation("TravelSalesOwner")
   travelWorkflowRevisions                          ReservationWorkflowRevision[]
@@ -4615,6 +4616,14 @@ enum FinanceSupplierPaymentStatus {
 }
 
 model FinanceSettlementAccount {
+  bankIdentifiers            Json?
+  maskedAccountNumber        String?                                @db.VarChar(40)
+  maskedCardNumber           String?                                @db.VarChar(24)
+  maskedIban                 String?                                @db.VarChar(40)
+  accountFingerprint         String?                                @db.VarChar(64)
+  cardFingerprint            String?                                @db.VarChar(64)
+  ibanFingerprint            String?                                @db.VarChar(64)
+  bankAccountAudits          FinanceBankAccountAudit[]
   accountingEvents           FinanceAccountingEvent[]
   financeOperationalPayments FinanceOperationalRevision[]
   id                         String                                 @id @default(uuid()) @db.Uuid
@@ -4638,8 +4647,25 @@ model FinanceSettlementAccount {
   procurementInvoicePayments FinanceProcurementInvoiceRevision[]
 
   @@unique([branchId, title, currencyCode])
+  @@unique([branchId, bankId, accountFingerprint], map: "FinanceBankAccount_account_key")
+  @@unique([branchId, bankId, cardFingerprint], map: "FinanceBankAccount_card_key")
+  @@unique([branchId, bankId, ibanFingerprint], map: "FinanceBankAccount_iban_key")
   @@index([branchId, isActive, title])
   @@index([bankId, isActive])
+}
+
+model FinanceBankAccountAudit {
+  id          String                   @id @default(uuid()) @db.Uuid
+  accountId   String                   @db.Uuid
+  actorUserId String                   @db.Uuid
+  action      String                   @db.VarChar(24)
+  metadata    Json
+  occurredAt  DateTime                 @default(now()) @db.Timestamptz(3)
+  account     FinanceSettlementAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  actor       User                     @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([accountId, occurredAt])
+  @@index([actorUserId, occurredAt])
 }
 
 model FinanceOperationalRequest {
