@@ -8,7 +8,12 @@ import {
   SalesCurrencySelect,
   type SalesCurrency,
 } from './sales-currency-select';
-import type { SalesFormState } from '../model/sales-form';
+import {
+  passengerFlightSalePrices,
+  salesHotelGuestIds,
+  type SalesFormState,
+  salesNetServicePrices,
+} from '../model/sales-form';
 
 export function ContractTotalPrices({
   state,
@@ -24,20 +29,34 @@ export function ContractTotalPrices({
   ) => void;
 }) {
   const automatic =
-    !state.packageSaleQuote &&
+    (!state.packageSaleQuote || state.passengerHotelPrices !== undefined) &&
     state.automaticComponentPricing &&
     state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'HOTEL');
   let calculated: SalesMoney[] = [];
   try {
     calculated = flightRoomTotals(
-      Object.fromEntries(
-        state.passengers.map((p) => [
-          p.customerId,
-          state.passengerFlightPrices?.[p.customerId] ?? [],
-        ]),
-      ),
-      state.serviceKinds.includes('HOTEL') ? (state.hotel.rooms ?? []) : [],
+      {
+        ...passengerFlightSalePrices(state),
+        ...Object.fromEntries(
+          Object.entries(
+            state.serviceKinds.includes('HOTEL')
+              ? (state.passengerHotelPrices ?? {})
+              : {},
+          )
+            .filter(([id]) => salesHotelGuestIds(state).includes(id))
+            .map(([id, p]) => ['hotel-' + id, p]),
+        ),
+      },
+      state.passengerHotelPrices === undefined &&
+        state.serviceKinds.includes('HOTEL')
+        ? (state.hotel.rooms ?? [])
+        : [],
     );
+    if (
+      state.passengerDeductions &&
+      Object.keys(state.passengerDeductions).length
+    )
+      calculated = flightRoomTotals(salesNetServicePrices(state), []);
   } catch {
     /* Invalid input is reported by final-step validation. */
   }
@@ -61,9 +80,7 @@ export function ContractTotalPrices({
             const price = room.agreedPrice ?? {
               amount: '',
               currencyCode:
-                currencies.find(
-                  (c) => c.status === 'active' && c.code !== 'IRR',
-                )?.code ?? '',
+                currencies.find((c) => c.status === 'active')?.code ?? '',
             };
             const update = (patch: Partial<SalesMoney>) =>
               onRoomPricesChange(
@@ -83,7 +100,7 @@ export function ContractTotalPrices({
                 </span>
                 <SalesCurrencySelect
                   label="ارز اتاق"
-                  currencies={currencies.filter((c) => c.code !== 'IRR')}
+                  currencies={currencies}
                   value={price.currencyCode}
                   onChange={(currencyCode) => update({ currencyCode })}
                 />

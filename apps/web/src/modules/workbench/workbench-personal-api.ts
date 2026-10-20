@@ -116,6 +116,7 @@ export const workbenchPersonalApi = {
     branchId: string;
     title: string;
     file: File;
+    signal?: AbortSignal;
   }) => {
     const form = new FormData();
     form.set('branchId', input.branchId);
@@ -124,6 +125,7 @@ export const workbenchPersonalApi = {
     return request<{ data: DocumentDetailV1 }>('/daily-packages', {
       method: 'POST',
       body: form,
+      ...(input.signal ? { signal: input.signal } : {}),
     });
   },
   dailyPackageFile: (id: string) =>

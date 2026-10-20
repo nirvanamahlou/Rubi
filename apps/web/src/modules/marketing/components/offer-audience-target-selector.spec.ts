@@ -25,9 +25,9 @@ describe('marketing offer audience target contract', () => {
   });
 
   it('reads customer and agency references only through their public clients', () => {
-    expect(selectorSource).toContain('customersApi.list({');
-    expect(selectorSource).toContain("currentConsentStatus === 'granted'");
-    expect(selectorSource).toContain("masterDataApi.list('organizations'");
+    expect(selectorSource).toContain("customersApi.selections('marketing'");
+    expect(selectorSource).not.toContain('customersApi.list({');
+    expect(selectorSource).toMatch(/masterDataApi\.list\(\s*'organizations'/);
     expect(selectorSource).toContain("organizationRole: 'AGENCY'");
     expect(selectorSource).not.toContain('fetch(');
     expect(selectorSource).not.toContain('repository');

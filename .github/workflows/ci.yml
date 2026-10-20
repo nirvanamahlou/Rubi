@@ -202,10 +202,10 @@ jobs:
           pnpm --filter @nora/database db:seed
           pnpm --filter @nora/database db:seed
 
-      - name: Prove optional IAM user unit migration and HR foreign keys
+      - name: Prove IAM user unit and company branch data upgrades
         env:
           IAM_USER_UNIT_TEST: '1'
-        run: pnpm --filter @nora/database exec vitest run test/iam-user-unit-postgres.spec.ts
+        run: pnpm --filter @nora/database exec vitest run test/iam-user-unit-postgres.spec.ts test/five-company-branches-postgres.spec.ts
 
       - name: Prove immutable purchase FX snapshots
         env:
@@ -243,6 +243,11 @@ jobs:
         run: |
           docker pull postgres:18.1-alpine
           pnpm --filter @nora/api exec vitest run src/b2b/b2b.postgres.spec.ts --maxWorkers=1
+
+      - name: Prove durable Call Center history, replay and branch isolation
+        env:
+          NORA_RUN_CALL_CENTER_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run src/customer-affairs/call-center.spec.ts --maxWorkers=1
 
   build:
     name: Full production build

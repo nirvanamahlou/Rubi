@@ -31,6 +31,12 @@ enum AuditOutcome {
 
 model User {
   accountingSourceEvents FinanceAccountingEvent[] @relation("FinancialEventActor")
+
+  callCenterCalls                                  CallCenterCall[]
+  callCenterNotes                                  CallCenterNote[]
+  internalLettersAuthored                          CorrespondenceLetter[]                    @relation("CorrespondenceAuthor")
+  internalLettersSent                              CorrespondenceDelivery[]                  @relation("CorrespondenceSender")
+  internalLettersReceived                          CorrespondenceDelivery[]                  @relation("CorrespondenceRecipient")
   purchaseFxSnapshots                              FinancePurchaseFxSnapshot[]
   accountingFxMade                                 AccountingFxSnapshot[]                    @relation("AccountingFxMaker")
   accountingFxApproved                             AccountingFxSnapshot[]                    @relation("AccountingFxApprover")
@@ -139,6 +145,7 @@ model User {
   messagingConversationsCreated                    MessagingConversation[]                   @relation("MessagingConversationCreator")
   messagingMemberships                             MessagingMember[]
   messagingMessagesSent                            MessagingMessage[]                        @relation("MessagingMessageSender")
+  messagingReactions                               MessagingMessageReaction[]
   workbenchFeedbackSubmitted                       WorkbenchFeedback[]                       @relation("WorkbenchFeedbackSubmitter")
   workbenchNotes                                   WorkbenchNote[]
   workbenchNoteFolders                             WorkbenchNoteFolder[]
@@ -247,6 +254,8 @@ model RolePermission {
 
 model Branch {
   accountingEvents FinanceAccountingEvent[]
+
+  callCenterContacts                  CallCenterContact[]
   purchaseFxSnapshots                 FinancePurchaseFxSnapshot[]
   accountingBooks                     AccountingBook[]
   financeOperationalRequests          FinanceOperationalRequest[]
@@ -606,18 +615,38 @@ model MessagingMessage {
   senderUserId           String                       @db.Uuid
   body                   String                       @db.VarChar(4000)
   forwardedFromMessageId String?                      @db.Uuid
+  replyToMessageId       String?                      @db.Uuid
   clientRequestId        String                       @db.VarChar(80)
   createdAt              DateTime                     @default(now()) @db.Timestamptz(3)
   conversation           MessagingConversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender                 User                         @relation("MessagingMessageSender", fields: [senderUserId], references: [id], onDelete: Restrict)
   forwardedFrom          MessagingMessage?            @relation("MessagingMessageForward", fields: [forwardedFromMessageId], references: [id], onDelete: SetNull)
   forwards               MessagingMessage[]           @relation("MessagingMessageForward")
+  replyTo                MessagingMessage?            @relation("MessagingMessageReply", fields: [replyToMessageId, conversationId], references: [id, conversationId], onDelete: NoAction, onUpdate: NoAction)
+  replies                MessagingMessage[]           @relation("MessagingMessageReply")
+  reactions              MessagingMessageReaction[]
   attachments            MessagingMessageAttachment[]
 
   @@unique([conversationId, senderUserId, clientRequestId])
+  @@unique([id, conversationId])
   @@index([conversationId, createdAt, id])
   @@index([forwardedFromMessageId])
+  @@index([replyToMessageId, conversationId])
   @@map("messaging_messages")
+}
+
+model MessagingMessageReaction {
+  messageId String           @db.Uuid
+  userId    String           @db.Uuid
+  emoji     String           @db.VarChar(8)
+  createdAt DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime         @updatedAt @db.Timestamptz(3)
+  message   MessagingMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([messageId, userId])
+  @@index([messageId, emoji])
+  @@map("messaging_message_reactions")
 }
 
 model MessagingMessageAttachment {
@@ -1168,6 +1197,7 @@ model MasterCurrency {
   symbol                               String?                     @db.VarChar(16)
   decimalDigits                        Int                         @default(2)
   unitsPerUsd                          Decimal?                    @db.Decimal(24, 10)
+  tomanPerUnit                         Decimal?                    @db.Decimal(24, 10)
   displayPolicy                        MasterCurrencyDisplayPolicy @default(CODE_AFTER)
   displayOrder                         Int                         @default(0)
   isActive                             Boolean                     @default(true)
@@ -4084,7 +4114,7 @@ model SalesContractPriceComponent {
 }
 
 model SalesContractPaymentEntry {
-  refunds SalesPaymentRefund[]
+  refunds                 SalesPaymentRefund[]
   financeRefundRequests   FinanceOperationalRequest[]
   id                      String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   contractId              String                      @map("contract_id") @db.Uuid
@@ -4581,7 +4611,7 @@ enum FinanceSupplierPaymentStatus {
 }
 
 model FinanceSettlementAccount {
-  accountingEvents FinanceAccountingEvent[]
+  accountingEvents           FinanceAccountingEvent[]
   financeOperationalPayments FinanceOperationalRevision[]
   id                         String                                 @id @default(uuid()) @db.Uuid
   branchId                   String                                 @db.Uuid
@@ -4609,9 +4639,9 @@ model FinanceSettlementAccount {
 }
 
 model FinanceOperationalRequest {
-  pettyFundId String? @db.Uuid
-  pettyFund FinanceOperationalRequest? @relation("PettyFundRequests", fields: [pettyFundId], references: [id], onDelete: Restrict)
-  pettyRequests FinanceOperationalRequest[] @relation("PettyFundRequests")
+  pettyFundId                String?                      @db.Uuid
+  pettyFund                  FinanceOperationalRequest?   @relation("PettyFundRequests", fields: [pettyFundId], references: [id], onDelete: Restrict)
+  pettyRequests              FinanceOperationalRequest[]  @relation("PettyFundRequests")
   counterpartyOrganizationId String?                      @db.Uuid
   counterpartyRole           MasterOrganizationRoleCode?
   counterpartyOrganization   MasterOrganization?          @relation(fields: [counterpartyOrganizationId], references: [id], onDelete: Restrict, map: "finance_partner_request_organization_fk")
@@ -4655,7 +4685,7 @@ model FinanceOperationalRequest {
 }
 
 model FinanceOperationalRevision {
-  salesRefund SalesPaymentRefund?
+  salesRefund      SalesPaymentRefund?
   payingSupplierId String?                   @db.Uuid
   payingSupplier   MasterSupplier?           @relation(fields: [payingSupplierId], references: [id], onDelete: Restrict)
   id               String                    @id @db.Uuid
@@ -7119,7 +7149,7 @@ model AccountingDetail {
 }
 
 model AccountingJournal {
-  financialEvent FinanceAccountingEvent?
+  financialEvent        FinanceAccountingEvent?
   id                    String                           @id @default(uuid()) @db.Uuid
   bookId                String                           @db.Uuid
   book                  AccountingBook                   @relation(fields: [bookId], references: [id], onDelete: Restrict)
@@ -7538,6 +7568,7 @@ model AccountingAccountGroupDetail {
 }
 
 model SalesContractHotelRoom {
+  roomCategory         String?                     @map("room_category") @db.VarChar(16)
   agreedPrice          Json?                       @map("agreed_price") @db.JsonB
   id                   String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   hotelSelectionId     String                      @map("hotel_selection_id") @db.Uuid
@@ -7579,43 +7610,129 @@ model FinancePurchaseFxSnapshot {
 
 // Immutable confirmed financial sources. Journal association is assigned atomically.
 model FinanceAccountingEvent {
-  trackingNumber String? @db.VarChar(160)
-  trackingDate String? @db.VarChar(10)
-  id String @id @default(uuid()) @db.Uuid
-  sourceKey String @unique @db.VarChar(200)
-  fingerprint String @db.VarChar(64)
-  source String @db.VarChar(24)
-  recordId String @db.Uuid
-  requestId String @db.Uuid
-  kind String @db.VarChar(48)
-  branchId String @db.Uuid
-  branch Branch @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  actorId String @db.Uuid
-  actor User @relation("FinancialEventActor", fields: [actorId], references: [id], onDelete: Restrict)
-  occurredAt DateTime @db.Timestamptz(3)
-  amount Decimal @db.Decimal(24,4)
-  currency String @db.VarChar(3)
-  settlementAccountId String? @db.Uuid
-  settlementAccount FinanceSettlementAccount? @relation(fields: [settlementAccountId], references: [id], onDelete: Restrict)
-  partyId String? @db.VarChar(160)
-  reference String? @db.VarChar(160)
-  journalId String? @unique @db.Uuid
-  journal AccountingJournal? @relation(fields: [journalId], references: [id], onDelete: Restrict)
-  lastError String? @db.VarChar(1000)
-  attemptedAt DateTime? @db.Timestamptz(3)
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  trackingNumber      String?                   @db.VarChar(160)
+  trackingDate        String?                   @db.VarChar(10)
+  id                  String                    @id @default(uuid()) @db.Uuid
+  sourceKey           String                    @unique @db.VarChar(200)
+  fingerprint         String                    @db.VarChar(64)
+  source              String                    @db.VarChar(24)
+  recordId            String                    @db.Uuid
+  requestId           String                    @db.Uuid
+  kind                String                    @db.VarChar(48)
+  branchId            String                    @db.Uuid
+  branch              Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  actorId             String                    @db.Uuid
+  actor               User                      @relation("FinancialEventActor", fields: [actorId], references: [id], onDelete: Restrict)
+  occurredAt          DateTime                  @db.Timestamptz(3)
+  amount              Decimal                   @db.Decimal(24, 4)
+  currency            String                    @db.VarChar(3)
+  settlementAccountId String?                   @db.Uuid
+  settlementAccount   FinanceSettlementAccount? @relation(fields: [settlementAccountId], references: [id], onDelete: Restrict)
+  partyId             String?                   @db.VarChar(160)
+  reference           String?                   @db.VarChar(160)
+  journalId           String?                   @unique @db.Uuid
+  journal             AccountingJournal?        @relation(fields: [journalId], references: [id], onDelete: Restrict)
+  lastError           String?                   @db.VarChar(1000)
+  attemptedAt         DateTime?                 @db.Timestamptz(3)
+  createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
 
   @@index([branchId, journalId, createdAt])
   @@map("finance_accounting_events")
 }
 
 model SalesPaymentRefund {
-  id String @id @db.Uuid
+  id        String                     @id @db.Uuid
   operation FinanceOperationalRevision @relation(fields: [id], references: [id], onDelete: Restrict)
-  paymentId String @db.Uuid
-  payment SalesContractPaymentEntry @relation(fields: [paymentId], references: [id], onDelete: Restrict)
-  amount Decimal @db.Decimal(24,4)
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  paymentId String                     @db.Uuid
+  payment   SalesContractPaymentEntry  @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  amount    Decimal                    @db.Decimal(24, 4)
+  createdAt DateTime                   @default(now()) @db.Timestamptz(3)
+
   @@index([paymentId])
   @@map("sales_payment_refunds")
+}
+
+model CorrespondenceLetter {
+  id         String                   @id @default(uuid()) @db.Uuid
+  authorId   String                   @db.Uuid
+  author     User                     @relation("CorrespondenceAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  number     String                   @unique @db.VarChar(100)
+  dateISO    String                   @db.VarChar(10)
+  content    Json
+  version    Int                      @default(1)
+  createdAt  DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime                 @updatedAt @db.Timestamptz(3)
+  deliveries CorrespondenceDelivery[]
+
+  @@index([authorId, createdAt])
+  @@map("correspondence_letters")
+}
+
+model CorrespondenceDelivery {
+  id          String               @id @default(uuid()) @db.Uuid
+  letterId    String               @db.Uuid
+  letter      CorrespondenceLetter @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  senderId    String               @db.Uuid
+  sender      User                 @relation("CorrespondenceSender", fields: [senderId], references: [id], onDelete: Restrict)
+  recipientId String               @db.Uuid
+  recipient   User                 @relation("CorrespondenceRecipient", fields: [recipientId], references: [id], onDelete: Restrict)
+  status      String               @db.VarChar(24)
+  requestKey  String               @db.Uuid
+  readAt      DateTime?            @db.Timestamptz(3)
+  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
+
+  @@unique([senderId, requestKey])
+  @@unique([letterId, recipientId])
+  @@index([recipientId, createdAt])
+  @@index([letterId, recipientId])
+  @@map("correspondence_deliveries")
+}
+
+// Customer Affairs-owned call history; all private text is encrypted at rest.
+model CallCenterContact {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId         String           @map("branch_id") @db.Uuid
+  phoneFingerprint String           @map("phone_fingerprint") @db.Char(64)
+  latestOccurredAt DateTime         @map("latest_occurred_at") @db.Timestamptz(3)
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  branch           Branch           @relation(fields: [branchId], references: [id], onDelete: Restrict, map: "call_contact_branch_fk")
+  calls            CallCenterCall[]
+  notes            CallCenterNote[]
+
+  @@unique([branchId, phoneFingerprint], map: "call_contact_phone_key")
+  @@index([branchId, latestOccurredAt, id], map: "call_contact_recent_idx")
+  @@map("customer_affairs_call_contacts")
+}
+
+model CallCenterCall {
+  id                 String            @id @db.Uuid
+  contactId          String            @map("contact_id") @db.Uuid
+  createdByUserId    String            @map("created_by_user_id") @db.Uuid
+  direction          String            @db.VarChar(8)
+  status             String            @db.VarChar(40)
+  occurredAt         DateTime          @map("occurred_at") @db.Timestamptz(3)
+  encryptedPayload   String            @map("encrypted_payload") @db.Text
+  keyVersion         Int               @map("key_version")
+  requestFingerprint String            @map("request_fingerprint") @db.Char(64)
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  contact            CallCenterContact @relation(fields: [contactId], references: [id], onDelete: Restrict, map: "call_contact_fk")
+  createdBy          User              @relation(fields: [createdByUserId], references: [id], onDelete: Restrict, map: "call_creator_fk")
+
+  @@index([contactId, occurredAt, id], map: "call_contact_calls_idx")
+  @@map("customer_affairs_calls")
+}
+
+model CallCenterNote {
+  id                 String            @id @db.Uuid
+  contactId          String            @map("contact_id") @db.Uuid
+  createdByUserId    String            @map("created_by_user_id") @db.Uuid
+  encryptedPayload   String            @map("encrypted_payload") @db.Text
+  keyVersion         Int               @map("key_version")
+  requestFingerprint String            @map("request_fingerprint") @db.Char(64)
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  contact            CallCenterContact @relation(fields: [contactId], references: [id], onDelete: Restrict, map: "call_note_contact_fk")
+  createdBy          User              @relation(fields: [createdByUserId], references: [id], onDelete: Restrict, map: "call_note_creator_fk")
+
+  @@index([contactId, createdAt, id], map: "call_contact_notes_idx")
+  @@map("customer_affairs_call_notes")
 }

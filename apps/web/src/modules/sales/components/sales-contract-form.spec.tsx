@@ -72,6 +72,9 @@ vi.mock('react', async (original) => ({
     return [value, vi.fn()];
   },
 }));
+vi.mock('@/modules/legal-entities/components/legal-entity-context', () => ({
+  useLegalEntityContext: () => ({ context: { legalEntity: null } }),
+}));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 describe('compact sales contract form', () => {
@@ -126,9 +129,9 @@ describe('compact sales contract form', () => {
     }
     expect(html).toContain('مبلغ کل قرارداد');
     expect(html).toContain('جمع خودکار قرارداد');
-    expect(html).toContain('قیمت پرواز هر مسافر');
-    expect(html).toContain('قیمت ریالی Sample');
-    expect(html).toContain('قیمت ارزی Sample');
+    expect(html).toContain('قیمت پرواز و هتل هر مسافر');
+    expect(html).toContain('قیمت پرواز Sample');
+    expect(html).not.toContain('قیمت ریالی Sample');
     expect(html).not.toContain('افزودن مبلغ با ارز دیگر');
     expect(html).not.toContain('قیمت روز فروش بلیط');
     expect(html).not.toContain('مبلغ توافق‌شده با مشتری بلیط');
@@ -146,7 +149,7 @@ describe('compact sales contract form', () => {
   });
   it('keeps hotel guests and aggregate rooms without asking each guest for an occupancy type', () => {
     fixture.hotel = true;
-    fixture.step = 2;
+    fixture.step = 0;
     const html = renderToStaticMarkup(<SalesContractForm />);
     fixture.hotel = false;
     fixture.step = 0;
@@ -370,5 +373,39 @@ it('lets a complete selected tour continue without an unrelated standalone fligh
     fixture.firstDetail = false;
     fixture.zeroIndex = 0;
     fixture.ticketDraft = null;
+  }
+});
+
+it('places combined flight selection and stay dates before identities and hides redundant party counts', () => {
+  fixture.step = 0;
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    roomDrivenGuests: true,
+    serviceKinds: ['FLIGHT', 'HOTEL'],
+    hotel: {
+      ...emptySalesForm.hotel,
+      hotelId: 'hotel',
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: '11111111-1111-4111-8111-111111111111',
+          roomTypeNameSnapshot: 'Double',
+          adults: 2,
+          childAges: [],
+        },
+      ],
+    },
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    const people = html.indexOf('ورود یکجای مشتری و مسافران');
+    expect(people).toBeGreaterThan(0);
+    expect(html.indexOf('تاریخ اقامت مهمانان')).toBeLessThan(people);
+    expect(html.indexOf('انتخاب بلیط پرواز')).toBeLessThan(people);
+    expect(html).not.toContain('>تعداد مسافران</h2>');
+    expect(html).toContain('افزودن مسافر (فقط پرواز)');
+  } finally {
+    fixture.ticketDraft = null;
+    fixture.step = 0;
   }
 });

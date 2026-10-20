@@ -1,4 +1,5 @@
 'use client';
+import { tehranToday, passportExpiryWarning } from '@/lib/passport-dates';
 
 import type { ReactNode } from 'react';
 import { CircleHelp } from 'lucide-react';
@@ -207,15 +208,23 @@ export function CustomerEntrySheet({
   onCalendarModeChange,
   disabled = false,
   showPassportExpiry = false,
+  salesDatePolicy = false,
   visibleFields,
   columnOrder,
   columnLabels,
+  extraColumns = [],
 }: {
+  extraColumns?: readonly {
+    key: string;
+    title: ReactNode;
+    render: (row: CustomerEntryRow) => ReactNode;
+  }[];
   rows: readonly CustomerEntryRow[];
   calendarMode: CustomerCalendarMode;
   onCalendarModeChange: (mode: CustomerCalendarMode) => void;
   disabled?: boolean;
   showPassportExpiry?: boolean;
+  salesDatePolicy?: boolean;
   /** Lets a host show the identity fields required for its workflow. */
   visibleFields?: readonly EntryField[];
   /** Optional leading fields; all other visible columns retain their default order. */
@@ -253,6 +262,11 @@ export function CustomerEntrySheet({
               <th scope="col" className="w-40 border-e p-3 text-start">
                 پرونده / نقش
               </th>
+              {extraColumns.map((c) => (
+                <th key={c.key} scope="col" className="p-3">
+                  {c.title}
+                </th>
+              ))}
               {visibleColumns.map(([field, defaultLabel]) => {
                 const label = columnLabels?.[field] ?? defaultLabel;
                 return (
@@ -288,6 +302,11 @@ export function CustomerEntrySheet({
                   <p className="mb-2 font-bold">{row.label}</p>
                   {row.role}
                 </th>
+                {extraColumns.map((c) => (
+                  <td key={c.key} className="p-2">
+                    {c.render(row)}
+                  </td>
+                ))}
                 {visibleColumns.map(([field, defaultLabel, suffix]) => {
                   const label = columnLabels?.[field] ?? defaultLabel;
                   return (
@@ -332,20 +351,38 @@ export function CustomerEntrySheet({
                         </div>
                       ) : field === 'birthDate' ||
                         field === 'passportExpiryDate' ? (
-                        <CustomerDateField
-                          compact
-                          id={`${row.key}-${suffix}`}
-                          label={`${field === 'birthDate' ? 'تاریخ تولد' : 'انقضای پاسپورت'} ${row.label}`}
-                          mode={calendarMode}
-                          onModeChange={onCalendarModeChange}
-                          value={row.values[field] ?? ''}
-                          onChange={(value) => row.onChange(field, value)}
-                          disabled={Boolean(
-                            disabled ||
-                            (row.readOnly &&
-                              !row.editableFields?.includes(field)),
-                          )}
-                        />
+                        <>
+                          <CustomerDateField
+                            allowTyping={salesDatePolicy}
+                            minDate={
+                              salesDatePolicy && field === 'passportExpiryDate'
+                                ? tehranToday()
+                                : undefined
+                            }
+                            compact
+                            id={`${row.key}-${suffix}`}
+                            label={`${field === 'birthDate' ? 'تاریخ تولد' : 'انقضای پاسپورت'} ${row.label}`}
+                            mode={calendarMode}
+                            onModeChange={onCalendarModeChange}
+                            value={row.values[field] ?? ''}
+                            onChange={(value) => row.onChange(field, value)}
+                            disabled={Boolean(
+                              disabled ||
+                              (row.readOnly &&
+                                !row.editableFields?.includes(field)),
+                            )}
+                          />
+                          {salesDatePolicy &&
+                          field === 'passportExpiryDate' &&
+                          passportExpiryWarning(row.values[field] ?? '') ? (
+                            <p
+                              role="status"
+                              className="text-xs font-semibold text-amber-700"
+                            >
+                              اعتبار پاسپورت کمتر از ۶ ماه است.
+                            </p>
+                          ) : null}
+                        </>
                       ) : (
                         <Input
                           aria-label={`${label.replace(' *', '')} ${row.label}`}

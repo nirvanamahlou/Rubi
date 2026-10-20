@@ -58,7 +58,7 @@ describe('travel output branding and readiness', () => {
       ).hotelPurchasePrices,
     ).toEqual(settings.hotelPurchasePrices);
     expect(renderToStaticMarkup(<TravelDocument intake={priced} />)).toContain(
-      '123.50 €',
+      '123.50 EUR',
     );
     expect(
       renderToStaticMarkup(<TravelDocument intake={priced} voucher />),
@@ -114,7 +114,7 @@ describe('travel output branding and readiness', () => {
     expect(html).toMatch(/SUPPLIER<\/span><b[^>]*>0<\/b>/);
     expect(html).not.toContain('SYNTHETIC BROKER');
     expect(html).toContain('STAMP');
-    expect(html).toContain('ROOM QUANTITIES BY TYPE');
+    expect(html).not.toContain('DBL · DOUBLE');
     expect(html).not.toContain('subject to supplier confirmation');
   });
   it('does not render an unissued voucher', () => {

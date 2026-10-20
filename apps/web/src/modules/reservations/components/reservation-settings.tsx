@@ -102,14 +102,18 @@ export async function loadReservationEditReferences(
   }
   const records = [];
   for (let page = 1; ; page++) {
-    const response = await masterDataApi.list(resource, {
-      search: '',
-      status: 'active',
-      sortBy: 'name',
-      sortDirection: 'asc',
-      page,
-      pageSize: 100,
-    });
+    const response = await masterDataApi.list(
+      resource,
+      {
+        search: '',
+        status: 'active',
+        sortBy: 'name',
+        sortDirection: 'asc',
+        page,
+        pageSize: 100,
+      },
+      'reservations',
+    );
     records.push(...response.data);
     if (!response.data.length || records.length >= response.meta.total)
       return records.map((record) =>
@@ -758,7 +762,9 @@ export function ReservationSettingsForm({
           <div className={styles.sectionCard}>
             <h4>تاریخ هتل و نوع اتاق</h4>
             <div className="grid gap-3 sm:grid-cols-3">
-              {primaryTextKeys.map(textField)}
+              {primaryTextKeys
+                .filter((key) => key !== 'roomType' || !draft.rooms?.length)
+                .map(textField)}
             </div>
           </div>
           <div className={styles.sectionCard}>

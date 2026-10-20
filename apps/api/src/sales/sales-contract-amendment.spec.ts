@@ -170,7 +170,7 @@ describe('canonical Sales amendment', () => {
       'AGE_6_12',
     );
     await options.reserve({});
-    expect(tickets.amend).toHaveBeenCalledWith({}, [], 'branch', id, 1);
+    expect(tickets.amend).toHaveBeenCalledWith({}, [], 'branch', id, 1, {});
   });
   it('changes exact sale amounts while retaining payment evidence and operational state', async () => {
     const { service, repo } = setup();
@@ -200,7 +200,7 @@ describe('canonical Sales amendment', () => {
     expect(options.snapshot.passengerAssignments[0]?.ageCategory).toBe('CHD');
     const tx = {};
     await options.reserve(tx);
-    expect(tickets.amend).toHaveBeenCalledWith(tx, [], 'branch', id, 1);
+    expect(tickets.amend).toHaveBeenCalledWith(tx, [], 'branch', id, 1, {});
   });
   it('cannot change a buyer through the inventory amendment endpoint', async () => {
     const { service, repo } = setup();

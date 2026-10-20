@@ -1,3 +1,11 @@
+## Manual per-unit toman reference — 2026-10-18
+
+MasterCurrency.tomanPerUnit is an independent nullable Decimal(24,10):1 unit of
+the row currency=N tomans. Positive finite decimal string; blank clears to NULL.
+The new form/table uses this value only. Legacy unitsPerUsd remains unchanged
+with its original meaning and is never automatically converted/backfilled.
+This reference does not alter purchase FX, settlements or ledger balances.
+
 ## Partner360 and manual USD reference rate — 2026-10-17
 
 MasterCurrency.unitsPerUsd is nullable Decimal(24,10), exposed as a decimal string
@@ -862,3 +870,46 @@ PACKAGE-SALE-FLOW-1018 adds nullable PackagePricingTourDraft.selectedRoomKeys JS
 ### Finance accounting events — 2026-10-18
 
 `FinanceAccountingEvent` retains the source owner's public immutable reference, amount/currency, branch, actor, occurrence and tracking date. Branch, actor, settlement account and journal use real FKs; polymorphic source references are public owner identifiers, not consumer table access. A unique source key and canonical fingerprint prevent duplicate or altered capture. Database triggers prohibit source changes/deletion and journal reassignment. `SalesPaymentRefund` is an immutable Sales-owned allocation of an actual Finance operational PAY revision to a confirmed receipt, with real FKs to both records. `FinanceOperationalRequest.pettyFundId` relates petty cash children to their parent fund; parent/branch/currency consistency and unique active expense proof are enforced in the database. Capture and business changes commit atomically. No historic source backfill runs on migration.
+
+## Internal correspondence — 2026-10-18
+
+System Management owns `correspondence_letters` and `correspondence_deliveries`.
+Letters persist the exact editable letter content, stable issued number, ISO letter
+date, UTC timestamps, author User FK and optimistic version. Deliveries have real
+sender/recipient User FKs, status, read time and sender-scoped UUID retry keys.
+One delivery per letter/recipient is maintained; forwarding back to an existing
+recipient updates that inbox entry and marks it unread. System audit retains
+send/edit/forward/delete metadata without letter bodies. A participant-authorized,
+version-checked hard delete removes the letter and all deliveries by cascade.
+No existing documents, accounting, business records or user grants are migrated.
+Only active internal IAM account labels are exposed through its public directory.
+
+
+## MESSAGING-REPLIES-REACTIONS-1018 — 2026-10-18
+
+MessagingMessage has a nullable replyToMessageId; composite FK (replyToMessageId, conversationId) references (id, conversationId) on MessagingMessage, preventing cross-conversation replies at database level. Existing rows remain NULL; no backfill. MessagingMessageReaction is owned by Messaging with real message/user FKs, one row per (messageId,userId), one allowed emoji (👍 ❤️ 😂 😮 🙏), and UTC created/updated timestamps. Explicit set/remove is idempotent and can only affect the authenticated member’s own reaction. The compatible v1 response adds optional replyTo (240-character preview plus minimum sender identity) and grouped reaction counts/member IDs. The producer validates membership/branch before every command or read. Forwarding does not copy source replies or reactions. Migration20261018190000 is additive and must precede API rollout. No other module accesses reaction tables directly.
+
+## 2026-10-18 — Call Center durable contact history
+
+Customer Affairs owns CallCenterContact, CallCenterCall and CallCenterNote.
+Contacts are unique by authorized Branch FK and HMAC of the canonical telephone.
+Calls and notes have restrictive real contact/User FKs; append operations retain
+UTC time and server actor identity. Call UUIDs and note UUIDs are replay keys:
+the same normalized request returns its saved record; changed requests conflict.
+Per-event and per-phone transaction locks serialize concurrent retries and contact
+creation, and audit metadata commits atomically without private text snapshots.
+Private call fields (phone/name/subject/source/operator/summary) and note bodies
+are AES-256-GCM encrypted with row/contact AAD and configured key version. No
+plain telephone, note body, external audio URL or copied Customer row is stored.
+The append-only API exposes no edit/delete command. Source/assigned-team labels
+are call snapshots, not new IAM identities. Lists use one authorized branch,
+50 contacts per page and each complete call/note history; UI explicitly reports
+statistics/search coverage of loaded contacts and offers further pages. The
+first authorized branch is the default, matching Customer Affairs conventions.
+Migration20261018200000 creates three tables/indexes/checks only. Provider webhooks,
+realtime notification and protected recording handoff require a separate unit.
+
+
+## UNIFIED-PASSENGER-PRICING-1019 — Sales deductions
+
+Optional `passengerDeductionsV1` JSON string on exactly one existing Sales service contains a passenger-ID map with optional `discount`/`commission` objects, each a nonnegative decimal-string amount and ISO currency code. Only allocated flight/hotel amounts of the same passenger/currency bound the total reduction; no implicit FX, cross-person subsidy or schema change. Existing service price metadata records gross prices; canonical DISCOUNT price components lower payable totals, checked transactionally by Sales validation. Missing metadata is legacy-compatible. Legacy `agencyCommissionV1` remains informational and is not migrated into deductions. Print consumes recorded hotel prices before legacy room shares and does not filter service amounts by currency.

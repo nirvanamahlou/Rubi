@@ -6,7 +6,7 @@ import {
   type SearchOption,
 } from '@/components/ui/search-combobox';
 import { toursApi } from '@/modules/ticket-catalog/api/tours';
-import { masterDataApi } from '@/modules/master-data/api/client';
+import { salesApi } from '../api/client';
 import { selectSalesInsurance } from '../model/sales-insurance';
 import { withSalesHotelDates, type SalesFormState } from '../model/sales-form';
 
@@ -66,7 +66,7 @@ export function SalesTourPicker({
       const insurance = tour.package.insuranceId
         ? selectSalesInsurance(
             (
-              await masterDataApi.detail(
+              await salesApi.reference(
                 'insurance-plans',
                 tour.package.insuranceId,
               )

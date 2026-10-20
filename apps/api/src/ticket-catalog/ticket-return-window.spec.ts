@@ -199,3 +199,81 @@ describe('server return-window enforcement', () => {
     expect(tx.ticketOfferCapacityAllocation.create).toHaveBeenCalledTimes(2);
   });
 });
+
+it('searches and revalidates active past tickets without clamping dates to today', async () => {
+  const { service, tx } = setup();
+  tx.ticketPublishedOffer.findMany.mockResolvedValue([]);
+  await service.search(
+    {
+      originId: a,
+      destinationId: b,
+      departureFrom: '2020-01-01',
+      departureTo: '2020-01-02',
+    },
+    actor,
+  );
+  expect(tx.ticketPublishedOffer.findMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: expect.objectContaining({
+        status: 'ACTIVE',
+        branchId: { in: [branch] },
+        departureAt: {
+          gte: new Date('2020-01-01'),
+          lte: new Date('2020-01-02T23:59:59.999Z'),
+        },
+      }),
+    }),
+  );
+  const past = {
+    ...outbound,
+    status: 'ACTIVE',
+    departureAt: new Date('2020-01-01T10:00:00Z'),
+    arrivalAt: new Date('2020-01-01T12:00:00Z'),
+  };
+  tx.ticketPublishedOffer.findMany.mockResolvedValue([past]);
+  expect(
+    await service.revalidate([a], branch, [selection(past, 'OUTBOUND')]),
+  ).toEqual({ available: true, unavailableOfferIds: [] });
+  const query = tx.ticketPublishedOffer.findMany.mock.lastCall?.[0] as {
+    where: Record<string, unknown>;
+  };
+  expect(query.where).not.toHaveProperty('departureAt');
+  expect(query.where).toMatchObject({
+    branchId: branch,
+    status: 'ACTIVE',
+    totalCapacity: { gt: 0 },
+  });
+});
+
+it('exposes only the load identity needed for paired dates in authorized search', async () => {
+  const { service, client } = setup();
+  client.ticketPublishedOffer.findMany.mockResolvedValue([
+    {
+      ...outbound,
+      createKey: 'legacy',
+      standaloneSalePrices: [],
+      outboundRoundTripSalePrices: [],
+      audit: [{ action: 'ticket.offer.load-group:' + contract }],
+      version: 1,
+      status: 'ACTIVE',
+    },
+  ] as never);
+  const result = await service.search(
+    { originId: a, destinationId: b, departureFrom: '2099-10-01' },
+    actor,
+  );
+  expect(result.data[0]?.loadGroupId).toBe(contract);
+  expect(result.data[0]).not.toHaveProperty('audit');
+  expect(result.data[0]).not.toHaveProperty('createKey');
+  expect(client.ticketPublishedOffer.findMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: expect.objectContaining({
+        branchId: { in: [branch] },
+        status: 'ACTIVE',
+      }),
+      include: expect.objectContaining({
+        audit: expect.objectContaining({ select: { action: true } }),
+      }),
+    }),
+  );
+});

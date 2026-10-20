@@ -156,6 +156,12 @@ describe('Customers public minimal promotion reference', () => {
       await customers.marketingTargetReference('customer-1', branchId, actor),
     ).toEqual({ id: 'customer-1', branchId });
     expect(find).toHaveBeenCalledWith('customer-1', [branchId]);
+    expect(
+      await customers.marketingTargetReference('customer-1', branchId, {
+        ...actor,
+        permissions: ['marketing.read', 'marketing.offer.manage'],
+      }),
+    ).toEqual({ id: 'customer-1', branchId });
   });
   it.each([
     null,
@@ -179,12 +185,12 @@ describe('Customers public minimal promotion reference', () => {
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
-  it('checks current customer read permission and branch before repository access', async () => {
+  it('checks consumer authority and branch before repository access', async () => {
     const { find, customers } = service(null);
     await expect(
       customers.marketingTargetReference('customer-1', branchId, {
         ...actor,
-        permissions: ['marketing.read'],
+        permissions: [],
       }),
     ).rejects.toBeInstanceOf(ForbiddenException);
     await expect(

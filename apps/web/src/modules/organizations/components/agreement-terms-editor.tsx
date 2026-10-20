@@ -78,14 +78,18 @@ export function AgreementTermsEditor({
   useEffect(() => {
     let active = true;
     void masterDataApi
-      .list('currencies', {
-        search: '',
-        status: 'active',
-        page: 1,
-        pageSize: 100,
-        sortBy: 'name',
-        sortDirection: 'asc',
-      })
+      .list(
+        'currencies',
+        {
+          search: '',
+          status: 'active',
+          page: 1,
+          pageSize: 100,
+          sortBy: 'name',
+          sortDirection: 'asc',
+        },
+        'organizations',
+      )
       .then((result) => {
         if (active) setCurrencies(result.data);
       })

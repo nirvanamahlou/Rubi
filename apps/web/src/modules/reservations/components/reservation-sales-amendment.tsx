@@ -82,14 +82,18 @@ export function ReservationSalesAmendment({
       resources.map(async (resource) => {
         const rows: MasterDataRecord[] = [];
         for (let page = 1; ; page++) {
-          const r = await masterDataApi.list(resource, {
-            search: '',
-            status: 'active',
-            sortBy: 'name',
-            sortDirection: 'asc',
-            page,
-            pageSize: 100,
-          });
+          const r = await masterDataApi.list(
+            resource,
+            {
+              search: '',
+              status: 'active',
+              sortBy: 'name',
+              sortDirection: 'asc',
+              page,
+              pageSize: 100,
+            },
+            'reservations',
+          );
           rows.push(...r.data);
           if (!r.data.length || rows.length >= r.meta.total) break;
         }

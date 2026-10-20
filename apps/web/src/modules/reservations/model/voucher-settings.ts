@@ -13,7 +13,8 @@ export function defaultVoucherSettings(
   intake: ReservationFormIntake,
   refs: ReservationFormReferences,
 ): VoucherSettingsV1 {
-  const saved = intake.workflow.voucherSettings;
+  const saved =
+    intake.workflow.voucherSettings ?? intake.workflow.sentSupplierFormSettings;
   const d = reservationFormData(intake, refs),
     h = intake.snapshot.hotelSelection;
   const text = Object.fromEntries(
@@ -79,8 +80,9 @@ export function defaultVoucherSettings(
       id: p.id,
       selected: true,
       roomType: text.roomType,
-      age: p.age === 'CHD' ? 'CHD' : p.age === 'INF' ? 'INF' : 'ADL',
-      hotelChildAgeBand: '',
+      age: p.age.startsWith('CHD') ? 'CHD' : p.age === 'INF' ? 'INF' : 'ADL',
+      hotelChildAgeBand: (p.hotelChildAgeBand ?? '') as
+        'CHD_2_TO_6' | 'CHD_6_TO_12' | '',
     })),
   };
   if (!saved) return defaults;
@@ -125,6 +127,11 @@ export function defaultVoucherSettings(
     passengers: defaults.passengers.map((passenger) => ({
       ...passenger,
       ...saved.passengers?.find((item) => item.id === passenger.id),
+      hotelChildAgeBand:
+        passenger.hotelChildAgeBand ||
+        saved.passengers?.find((item) => item.id === passenger.id)
+          ?.hotelChildAgeBand ||
+        '',
     })),
   };
 }
@@ -197,9 +204,12 @@ export function voucherFormData(
         ...p,
         age: reservationPassengerAgeLabel(
           setting.age,
-          setting.hotelChildAgeBand,
+          p.hotelChildAgeBand || setting.hotelChildAgeBand,
         ),
-        hotelChildAgeBand: setting.hotelChildAgeBand,
+        hotelChildAgeBand:
+          setting.age === 'CHD'
+            ? p.hotelChildAgeBand || setting.hotelChildAgeBand
+            : '',
         sex:
           setting.sex === 'MALE'
             ? 'Male'

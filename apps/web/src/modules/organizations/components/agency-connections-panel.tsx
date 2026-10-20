@@ -170,22 +170,30 @@ export function AgencyConnectionsPanel({
   useEffect(() => {
     let cancelled = false;
     void Promise.all([
-      masterDataApi.list('countries', {
-        search: '',
-        status: 'active',
-        sortBy: 'name',
-        sortDirection: 'asc',
-        page: 1,
-        pageSize: 100,
-      }),
-      masterDataApi.list('cities', {
-        search: '',
-        status: 'active',
-        sortBy: 'name',
-        sortDirection: 'asc',
-        page: 1,
-        pageSize: 100,
-      }),
+      masterDataApi.list(
+        'countries',
+        {
+          search: '',
+          status: 'active',
+          sortBy: 'name',
+          sortDirection: 'asc',
+          page: 1,
+          pageSize: 100,
+        },
+        'organizations',
+      ),
+      masterDataApi.list(
+        'cities',
+        {
+          search: '',
+          status: 'active',
+          sortBy: 'name',
+          sortDirection: 'asc',
+          page: 1,
+          pageSize: 100,
+        },
+        'organizations',
+      ),
     ])
       .then(([countryResponse, cityResponse]) => {
         if (cancelled) return;

@@ -6,7 +6,7 @@ import { TicketPublicService } from './ticket-public.service';
 const id = (n: number) =>
   '10000000-0000-4000-8000-' + String(n).padStart(12, '0');
 
-describe('atomic round-trip sale capacity', () => {
+describe('atomic past-date round-trip sale capacity', () => {
   it.each(['OUTBOUND', 'RETURN'] as const)(
     'rejects overselling the smaller %s leg without reserving either leg',
     async (limitedDirection) => {
@@ -17,10 +17,10 @@ describe('atomic round-trip sale capacity', () => {
           originId: id(direction === 'OUTBOUND' ? 4 : 5),
           destinationId: id(direction === 'OUTBOUND' ? 5 : 4),
           departureAt: new Date(
-            index ? '2099-10-08T08:00:00Z' : '2099-10-01T08:00:00Z',
+            index ? '2020-10-08T08:00:00Z' : '2020-10-01T08:00:00Z',
           ),
           arrivalAt: new Date(
-            index ? '2099-10-08T10:00:00Z' : '2099-10-01T10:00:00Z',
+            index ? '2020-10-08T10:00:00Z' : '2020-10-01T10:00:00Z',
           ),
           cabinClassCode: 'ECONOMY' as const,
           carrierName: 'Synthetic',
@@ -75,6 +75,19 @@ describe('atomic round-trip sale capacity', () => {
       });
       expect(create).not.toHaveBeenCalled();
       await expect(
+        service.reserve(selections, id(3), id(6), 3, undefined, {
+          'flight-outbound': -1,
+          'flight-return': 2,
+        }),
+      ).rejects.toThrow();
+      expect(create).not.toHaveBeenCalled();
+      expect(tx.ticketPublishedOffer.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ branchId: id(3), status: 'ACTIVE' }),
+        }),
+      );
+
+      await expect(
         service.reserve(selections, id(3), id(6), 2),
       ).resolves.toEqual({
         available: true,
@@ -84,6 +97,24 @@ describe('atomic round-trip sale capacity', () => {
       expect(create).toHaveBeenCalledTimes(2);
       for (const call of create.mock.calls)
         expect(call[0].data.quantity).toBe(2);
+      create.mockClear().mockResolvedValue({ id: 'new-allocation' });
+      const counts = {
+        'flight-outbound': limitedDirection === 'OUTBOUND' ? 2 : 3,
+        'flight-return': limitedDirection === 'RETURN' ? 2 : 3,
+      };
+      const result = await service.reserve(
+        selections,
+        id(3),
+        id(6),
+        3,
+        undefined,
+        counts,
+      );
+      expect(result.available).toBe(true);
+      expect(create.mock.calls.map((c) => c[0].data.quantity)).toEqual([
+        counts['flight-outbound'],
+        counts['flight-return'],
+      ]);
     },
   );
 });

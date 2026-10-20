@@ -177,11 +177,13 @@ export function TravelWorkflowForm({
       />
     );
   const closed = state.voucherIssued || state.supplierStatus === 'CANCELLED';
-  if (
-    action === 'رزرواسیون' &&
-    !editingForm &&
-    (state.sentSupplierFormSettings || state.voucherIssued)
-  )
+  const issuedForm = Boolean(
+    state.sentSupplierFormSettings ||
+    state.voucherIssued ||
+    (Number.isSafeInteger(state.sentSupplierFormVersion) &&
+      (state.sentSupplierFormVersion ?? 0) > 0),
+  );
+  if (action === 'رزرواسیون' && !editingForm && issuedForm)
     return (
       <div className="grid gap-3" dir="rtl">
         <Button
@@ -355,28 +357,26 @@ export function TravelWorkflowForm({
           بازگشت به فرم صادرشده
         </Button>
       )}
-      {action === 'رزرواسیون' &&
-        (editingForm ||
-          (!state.sentSupplierFormSettings && !state.voucherIssued)) && (
-          <ReservationSettings
-            key={`${id}:${state.version}`}
-            intake={intake}
-            onDirty={() => setSettingsDirty(true)}
-            showDocument
-            onSaved={(workflow) => {
-              setIntake({
-                ...intake,
-                workflow,
-                ...(workflow.appliedContractVersion
-                  ? { contractEditVersion: workflow.appliedContractVersion }
-                  : {}),
-              });
-              setSettingsDirty(false);
-              if (workflow.sentSupplierFormVersion === workflow.version)
-                setEditingForm(false);
-            }}
-          />
-        )}
+      {action === 'رزرواسیون' && (editingForm || !issuedForm) && (
+        <ReservationSettings
+          key={`${id}:${state.version}`}
+          intake={intake}
+          onDirty={() => setSettingsDirty(true)}
+          showDocument
+          onSaved={(workflow) => {
+            setIntake({
+              ...intake,
+              workflow,
+              ...(workflow.appliedContractVersion
+                ? { contractEditVersion: workflow.appliedContractVersion }
+                : {}),
+            });
+            setSettingsDirty(false);
+            if (workflow.sentSupplierFormVersion === workflow.version)
+              setEditingForm(false);
+          }}
+        />
+      )}
       {action === 'Confirmation' &&
         !closed &&
         hasSentReservationForm(state) && (

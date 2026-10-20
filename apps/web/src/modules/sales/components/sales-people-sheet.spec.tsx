@@ -24,6 +24,7 @@ describe('Sales uses the Customers entry spreadsheet', () => {
       'sales-buyer-phone',
       'sales-buyer-address',
       'sales-buyer-postal',
+      'sales-buyer-landline',
     ]) {
       expect(html).toContain(`id="${field}"`);
       expect(html.indexOf(`id="${field}"`)).toBeLessThan(
@@ -94,7 +95,9 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     const headers = [...html.matchAll(/<th\b[^>]*>(.*?)<\/th>/gs)].map(
       (match) => match[1]!.replace(/<[^>]*>/g, ''),
     );
-    expect(headers.slice(1, 4)).toEqual([
+    expect(
+      headers.filter((h) => h !== 'بلیط رفت' && h !== 'بلیط برگشت').slice(1, 4),
+    ).toEqual([
       'نام انگلیسی مطابق پاسپورت *',
       'نام خانوادگی انگلیسی مطابق پاسپورت *',
       'کد ملی *',
@@ -111,4 +114,53 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     expect(html).toContain('کد ملی *');
     expect(html).toContain('جنسیت *');
   });
+});
+
+it('allows passport entry for an existing floating-flight passenger before profile hydration', () => {
+  const html = renderToStaticMarkup(
+    <SalesPeopleSheet
+      state={{
+        ...emptySalesForm,
+        customerId: 'person',
+        customerName: 'Synthetic Person',
+        passengers: [
+          {
+            customerId: 'person',
+            displayName: 'Synthetic Person',
+            birthDate: '1990-01-01',
+          },
+        ],
+        originCountryCode: 'IR',
+        destinationCountryCode: 'TR',
+        serviceKinds: ['FLIGHT'],
+        passengerComposition: { adults: 1, children: 0, infants: 0 },
+        contractFlights: {
+          OUTBOUND: {
+            departureAt: '',
+            arrivalAt: '',
+            carrierName: '',
+            serviceNumber: '',
+            cabinClassCode: 'ECONOMY',
+          },
+        },
+      }}
+      draft={null}
+      onDraftChange={vi.fn()}
+      onConfirmed={vi.fn()}
+      onBusyChange={vi.fn()}
+      onAddInfant={vi.fn()}
+      onTravelDateChange={vi.fn()}
+    />,
+  );
+  for (const field of [
+    'passport-first-name',
+    'passport-last-name',
+    'passport-number',
+  ]) {
+    const inputs = [...html.matchAll(/<input[^>]*>/g)].map((x) => x[0]);
+    const input = inputs.find((x) => x.includes(field));
+    expect(input).toBeDefined();
+    expect(input).not.toContain('disabled=');
+    expect(input).not.toContain('readOnly');
+  }
 });

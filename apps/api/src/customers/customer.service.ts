@@ -1,4 +1,4 @@
-import { isOptionalOperationReason } from '@nora/contracts';
+import { hotelAgeOn, isOptionalOperationReason } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -27,6 +27,7 @@ import { changedDeniedFields, hasAccessControl } from '@nora/contracts';
 import { CustomerKind, type Prisma } from '@nora/database';
 
 import { CustomerContactCrypto } from './customer-contact.crypto';
+import { canSelectForWorkflow } from '../common/workflow-selection.policy';
 import {
   CustomerNationalIdProtector,
   type ProtectedPassportNumber,
@@ -549,6 +550,31 @@ export class CustomerService {
     return { data: rows.map(auditDto) };
   }
 
+  async selectionOptions(
+    actor: AuthenticatedActor,
+    workflow: string,
+    query: CustomerListQuery,
+  ) {
+    if (
+      !['accounting', 'marketing'].includes(workflow) ||
+      !canSelectForWorkflow(actor, workflow)
+    )
+      throw new ForbiddenException();
+    const branches = scopedBranches(actor, query.branchId);
+    return {
+      data: await this.repository.selectionOptions(
+        branches,
+        {
+          search: query.search,
+          kind: query.kind ?? 'all',
+          page: query.page,
+          pageSize: query.pageSize,
+        },
+        workflow === 'marketing',
+      ),
+    };
+  }
+
   /** Minimal public projection; Marketing must never persist contact/name snapshots. */
   async marketingTargetReference(
     id: string,
@@ -556,7 +582,8 @@ export class CustomerService {
     actor: AuthenticatedActor,
   ) {
     if (
-      !actor.permissions.includes('customers.read') ||
+      (!actor.permissions.includes('customers.read') &&
+        !canSelectForWorkflow(actor, 'marketing')) ||
       !actor.branchIds.includes(branchId)
     )
       throw new ForbiddenException('مجوز مشاهده مخاطب وجود ندارد.');
@@ -642,6 +669,35 @@ export class CustomerService {
         message: 'مشتری یافت نشد.',
       });
     return { data: toCustomerDetail(row, false) };
+  }
+
+  /** Request-scoped Reservations output; never exposes raw DOB or document numbers. */
+  async reservationOutputIdentity(
+    id: string,
+    travelDate: string | undefined,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    const row = await this.repository.find(id, actor.branchIds);
+    if (!row) throw new NotFoundException('مشتری یافت نشد.');
+    const first = row.passportFirstName?.trim();
+    const last = row.passportLastName?.trim();
+    const age =
+      row.birthDate && travelDate
+        ? hotelAgeOn(row.birthDate.toISOString().slice(0, 10), travelDate)
+        : null;
+    const hotelChildAgeBand =
+      age !== null && age >= 2 && age < 6
+        ? ('CHD_2_TO_6' as const)
+        : age !== null && age >= 6 && age < 12
+          ? ('CHD_6_TO_12' as const)
+          : null;
+    return {
+      customerId: id,
+      passportName: first && last ? `${last} / ${first}` : null,
+      hotelChildAgeBand,
+    };
   }
 
   /** Internal Sales reference: caller supplies buyers from its authorized contracts. */

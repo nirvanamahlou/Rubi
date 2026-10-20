@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { salesApi } from '../api/client';
 import type { SalesContractSummary } from '@nora/contracts';
 import {
+  contractRowClassName,
   formatMoney,
   hasContractDateFilter,
   loadSalesWorkspace,
@@ -286,4 +287,23 @@ describe('sales dashboard loading', () => {
     expect(html).not.toContain('در دسترس نیست');
     expect(html).not.toContain('ناموفق');
   });
+});
+
+it('uses finance delivery approval for green rows and removes green on revocation', () => {
+  expect(
+    contractRowClassName({ customerDocumentDeliveryApproved: true }),
+  ).toContain('bg-emerald-100');
+  expect(
+    contractRowClassName({
+      customerDocumentDeliveryApproved: true,
+      reservationContractChanged: true,
+    }),
+  ).not.toContain('bg-amber');
+  expect(
+    contractRowClassName({ customerDocumentDeliveryApproved: false }),
+  ).not.toContain('emerald');
+  expect(contractRowClassName({ reservationContractChanged: true })).toContain(
+    'bg-amber',
+  );
+  expect(contractRowClassName({})).toContain('odd:bg-muted');
 });

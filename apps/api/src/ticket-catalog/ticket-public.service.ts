@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { canSelectForWorkflow } from '../common/workflow-selection.policy';
 import { assertUniqueTicketIdentity } from './ticket-offer-identity';
 import {
   BadRequestException,
@@ -511,50 +512,12 @@ export class TicketPublicService {
     );
   }
 
-  private async pauseExpiredOffers(
-    actor: AuthenticatedActor,
-    now = new Date(),
-  ) {
-    if (!actor.branchIds.length) return;
-    await this.database.client.$transaction(async (tx) => {
-      const expired = await tx.ticketPublishedOffer.findMany({
-        where: {
-          branchId: { in: actor.branchIds },
-          status: 'ACTIVE',
-          departureAt: { lte: now },
-        },
-        select: { id: true, version: true },
-        take: 500,
-      });
-      for (const offer of expired) {
-        const updated = await tx.ticketPublishedOffer.updateMany({
-          where: {
-            id: offer.id,
-            status: 'ACTIVE',
-            version: offer.version,
-          },
-          data: { status: 'PAUSED', version: { increment: 1 } },
-        });
-        if (updated.count === 1)
-          await tx.ticketOfferAudit.create({
-            data: {
-              offerId: offer.id,
-              actorUserId: actor.userId,
-              action: 'ticket.offer.expired',
-              version: offer.version + 1,
-            },
-          });
-      }
-    });
-  }
-
-  /** Management and Sales deliberately read the same published offer rows. */
   async managed(actor: AuthenticatedActor, page = 1, includePast = false) {
     this.require(actor, 'ticket_catalog.manage');
     if (!Number.isInteger(page) || page < 1 || page > 10000)
       throw new BadRequestException('Invalid management page');
     const now = new Date();
-    await this.pauseExpiredOffers(actor, now);
+
     const rows = await this.database.client.ticketPublishedOffer.findMany({
       where: {
         branchId: { in: actor.branchIds },
@@ -622,7 +585,12 @@ export class TicketPublicService {
   }
 
   async search(input: TicketOfferSearchV1, actor: AuthenticatedActor) {
-    this.require(actor, 'ticket_catalog.read');
+    if (
+      !actor.permissions.includes('ticket_catalog.read') &&
+      !canSelectForWorkflow(actor, 'sales') &&
+      !canSelectForWorkflow(actor, 'reservations')
+    )
+      throw new ForbiddenException('مجوز بلیت وجود ندارد.');
     const result = Joi.object({
       outboundOfferId: uuid.optional(),
       originId: uuid.required(),
@@ -636,9 +604,8 @@ export class TicketPublicService {
       throw new BadRequestException('فیلتر مسیر و تاریخ معتبر لازم است.');
     const query = result.value as TicketOfferSearchV1;
     const from = new Date(query.departureFrom);
-    const now = new Date();
-    await this.pauseExpiredOffers(actor, now);
-    let effectiveFrom = from > now ? from : now;
+
+    let effectiveFrom = from;
     let to = query.departureTo
       ? new Date(`${query.departureTo.slice(0, 10)}T23:59:59.999Z`)
       : undefined;
@@ -652,7 +619,6 @@ export class TicketPublicService {
             id: query.outboundOfferId,
             branchId: { in: actor.branchIds },
             status: 'ACTIVE',
-            departureAt: { gt: now },
           },
         });
       if (!outbound)
@@ -682,6 +648,12 @@ export class TicketPublicService {
         totalCapacity: { gt: 0 },
       },
       include: {
+        audit: {
+          where: { action: { startsWith: loadGroupAuditPrefix } },
+          orderBy: { occurredAt: 'desc' },
+          take: 1,
+          select: { action: true },
+        },
         capacityAllocations: {
           where: { status: 'ACTIVE' },
           select: { quantity: true },
@@ -712,7 +684,16 @@ export class TicketPublicService {
     });
     return {
       version: 1 as const,
-      data: rows.slice(0, 50).map((row) => this.offerView(row)),
+      data: rows.slice(0, 50).map((row) => {
+        const loadGroupId = ticketLoadGroupId(
+          row.createKey,
+          row.audit?.[0]?.action,
+        );
+        return {
+          ...this.offerView(row),
+          ...(loadGroupId ? { loadGroupId } : {}),
+        };
+      }),
       hasMore: rows.length > 50,
     };
   }
@@ -1320,10 +1301,6 @@ export class TicketPublicService {
       if (!row) throw new ForbiddenException('بلیت در شعبه مجاز شما نیست.');
       if (row.version !== input.expectedVersion)
         throw new ConflictException('بلیت تغییر کرده؛ فهرست را تازه کنید.');
-      if (input.status === 'ACTIVE' && row.departureAt <= new Date())
-        throw new ConflictException(
-          'بلیت تاریخ‌گذشته قابل فعال‌سازی و فروش در قرارداد جدید نیست.',
-        );
       if (row.status === input.status)
         return { data: { id, version: row.version, status: input.status } };
       const updated = await tx.ticketPublishedOffer.update({
@@ -1855,7 +1832,6 @@ export class TicketPublicService {
         branchId,
         status: 'ACTIVE',
         totalCapacity: { gt: 0 },
-        departureAt: { gt: new Date() },
       },
     });
     const found = new Set(
@@ -1900,6 +1876,7 @@ export class TicketPublicService {
     branchId: string,
     contractId: string,
     seatCount: number,
+    counts?: Readonly<Record<string, number>>,
   ) {
     if (
       !Number.isInteger(seatCount) ||
@@ -1910,6 +1887,15 @@ export class TicketPublicService {
       new Set(selections.map((s) => s.offerId)).size !== selections.length
     )
       throw new BadRequestException('تعداد مسافر یا انتخاب بلیت معتبر نیست.');
+    if (
+      counts &&
+      selections.some(
+        (s) =>
+          !Number.isSafeInteger(counts[s.serviceClientKey]) ||
+          counts[s.serviceClientKey]! < 1,
+      )
+    )
+      throw new BadRequestException('Invalid service seat count');
     const existing = await tx.ticketOfferCapacityAllocation.findMany({
       where: { contractId },
     });
@@ -1933,17 +1919,17 @@ export class TicketPublicService {
       },
     });
     for (const selection of selections) {
+      const quantity = counts?.[selection.serviceClientKey] ?? seatCount;
       const offer = offers.find((o) => o.id === selection.offerId);
       const previous = existing.find(
         (a) => a.direction === selection.direction && a.status === 'ACTIVE',
       );
       const unchanged =
         previous?.offerId === selection.offerId &&
-        previous.quantity === seatCount;
+        previous.quantity === quantity;
       if (
         !offer ||
-        (!unchanged &&
-          (offer.status !== 'ACTIVE' || offer.departureAt <= new Date())) ||
+        (!unchanged && offer.status !== 'ACTIVE') ||
         selection.originId !== offer.originId ||
         selection.destinationId !== offer.destinationId ||
         new Date(selection.departureAt).getTime() !==
@@ -1961,7 +1947,7 @@ export class TicketPublicService {
           .filter((a) => a.contractId !== contractId)
           .reduce((n, a) => n + a.quantity, 0) +
         offer.capacityHolds.reduce((n, h) => n + h.quantity, 0);
-      if (!unchanged && offer.totalCapacity - used < seatCount)
+      if (!unchanged && offer.totalCapacity - used < quantity)
         throw new ConflictException(
           'ظرفیت باقی‌مانده برای این تعداد نفر کافی نیست.',
         );
@@ -2001,11 +1987,11 @@ export class TicketPublicService {
           contractId,
           direction: selection.direction,
           offerId: selection.offerId,
-          quantity: seatCount,
+          quantity: counts?.[selection.serviceClientKey] ?? seatCount,
         },
         update: {
           offerId: selection.offerId,
-          quantity: seatCount,
+          quantity: counts?.[selection.serviceClientKey] ?? seatCount,
           status: 'ACTIVE',
           releasedAt: null,
         },
@@ -2021,7 +2007,18 @@ export class TicketPublicService {
     expectedTicketTotals?: Readonly<
       Record<string, { amount: string; currencyCode: string }>
     >,
+    counts?: Readonly<Record<string, number>>,
   ) {
+    if (
+      counts &&
+      selections.some(
+        (s) =>
+          !Number.isSafeInteger(counts[s.serviceClientKey]) ||
+          counts[s.serviceClientKey]! < 1 ||
+          counts[s.serviceClientKey]! > 100000,
+      )
+    )
+      throw new BadRequestException('Invalid service seat count');
     if (!selections.length)
       return {
         available: true,
@@ -2068,7 +2065,6 @@ export class TicketPublicService {
           id: { in: offerIds },
           branchId,
           status: 'ACTIVE',
-          departureAt: { gt: new Date() },
         },
         include: {
           capacityAllocations: {
@@ -2092,6 +2088,7 @@ export class TicketPublicService {
       );
       const unavailableOfferIds = selections
         .filter((selection) => {
+          const quantity = counts?.[selection.serviceClientKey] ?? seatCount;
           const offer = byId.get(selection.offerId);
           const replay = existingByDirection.get(selection.direction);
           if (!offer) return true;
@@ -2099,7 +2096,7 @@ export class TicketPublicService {
             return (
               replay.status !== 'ACTIVE' ||
               replay.offerId !== offer.id ||
-              replay.quantity !== seatCount ||
+              replay.quantity !== quantity ||
               selection.originId !== offer.originId ||
               selection.destinationId !== offer.destinationId ||
               selection.cabinClassCode !== offer.cabinClassCode ||
@@ -2124,7 +2121,7 @@ export class TicketPublicService {
               0,
             ) +
             offer.capacityHolds.reduce((sum, hold) => sum + hold.quantity, 0);
-          return offer.totalCapacity - allocated < seatCount;
+          return offer.totalCapacity - allocated < quantity;
         })
         .map(({ offerId }) => offerId);
       const outbound = byId.get(
@@ -2163,12 +2160,13 @@ export class TicketPublicService {
             throw new ConflictException(
               'قیمت پله‌ای بلیت در قرارداد ثبت نشده است؛ قرارداد را تازه کنید.',
             );
+          const quantity = counts?.[selection.serviceClientKey] ?? seatCount;
           let first = 0;
           let units = 0n;
           for (const tier of tiers) {
             const count = Math.max(
               0,
-              Math.min(consumed + seatCount, first + tier.seatCount) -
+              Math.min(consumed + quantity, first + tier.seatCount) -
                 Math.max(consumed, first),
             );
             const net = commissionPercent
@@ -2180,7 +2178,7 @@ export class TicketPublicService {
             units += moneyUnits(net) * BigInt(count);
             first += tier.seatCount;
           }
-          if (consumed + seatCount > first)
+          if (consumed + quantity > first)
             throw new ConflictException(
               'ظرفیت پله‌های قیمت کافی نیست؛ فهرست را تازه کنید.',
             );
@@ -2284,7 +2282,7 @@ export class TicketPublicService {
             offerId: selection.offerId,
             contractId,
             direction: selection.direction,
-            quantity: seatCount,
+            quantity: counts?.[selection.serviceClientKey] ?? seatCount,
           },
           select: { id: true },
         });
@@ -2372,7 +2370,6 @@ export class TicketPublicService {
           id: offerId,
           branchId,
           status: 'ACTIVE',
-          departureAt: { gt: now },
         },
         include: {
           capacityAllocations: {

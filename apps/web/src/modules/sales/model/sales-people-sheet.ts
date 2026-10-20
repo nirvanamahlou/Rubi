@@ -1,3 +1,5 @@
+import { usesRoomDrivenGuests } from './contract-guest-stays';
+import { tehranToday } from '@/lib/passport-dates';
 import type {
   CustomerDetail,
   CustomerMutationRequest,
@@ -68,7 +70,7 @@ export function initialSalesPeopleDraft(
 ): SalesPeopleDraft {
   const rows: Record<string, PeopleRow> = {};
   state.passengers.forEach((person, index) => {
-    rows['p' + index] = {
+    rows[passengerSlotKeys(state)[index] ?? 'p' + index] = {
       person: { id: person.customerId, displayName: person.displayName },
       values: {
         ...emptyPeopleValues(),
@@ -126,11 +128,21 @@ export function normalizeSalesPeopleDraft(
     rows: { ...draft.rows, ...(payer ? { p0: payer, primary: payer } : {}) },
   };
 }
-export const passengerSlotKeys = (state: SalesFormState) =>
-  Array.from(
-    { length: salesPassengerCounts(state).total },
+export const passengerSlotKeys = (state: SalesFormState) => [
+  ...Array.from(
+    {
+      length:
+        salesPassengerCounts(state).total -
+        (usesRoomDrivenGuests(state)
+          ? (state.flightOnlyPassengers?.length ?? 0)
+          : 0),
+    },
     (_, index) => 'p' + index,
-  );
+  ),
+  ...(usesRoomDrivenGuests(state)
+    ? (state.flightOnlyPassengers ?? []).map((p) => p.key)
+    : []),
+];
 export const peopleRow = (draft: SalesPeopleDraft, key: string): PeopleRow =>
   draft.rows[key] ?? { values: emptyPeopleValues() };
 export function selectedPeopleRow(person: CustomerDetail): PeopleRow {
@@ -294,6 +306,8 @@ function validatePassport(row: PeopleRow) {
       new Date(expiry).toISOString().slice(0, 10) !== expiry)
   )
     throw new Error('تاریخ انقضای پاسپورت معتبر نیست.');
+  if (expiry && expiry < tehranToday())
+    throw new Error('تاریخ انقضای پاسپورت نباید گذشته باشد.');
   const number = row.values.passportNumber.trim();
   if (row.person && row.savedPassportNumber && !number)
     throw new Error(
@@ -395,10 +409,13 @@ export function validateSalesPeopleDraft(
       !/^\+?[0-9]{10,15}$/.test(buyer.phone.trim()) ||
       !buyer.address.trim() ||
       buyer.address.length > 1000 ||
-      !/^[0-9]{10}$/.test(buyer.postalCode.trim())
+      (buyer.postalCode.trim() !== '' &&
+        !/^[0-9]{10}$/.test(buyer.postalCode.trim())) ||
+      (buyer.landline !== undefined &&
+        !/^\+?[0-9]{10,15}$/.test(buyer.landline.trim()))
     )
       throw new Error(
-        'نام، شماره تلفن، آدرس و کد پستی ۱۰رقمی مشتری را کامل و معتبر وارد کنید.',
+        'نام، شماره تماس، تلفن ثابت و آدرس مشتری را کامل کنید؛ کد پستی در صورت ورود باید ۱۰ رقم باشد.',
       );
   }
   if (draft.mode === 'organization' && !draft.organization)
@@ -558,7 +575,7 @@ export async function saveSalesPeopleDraft(
     ...keys,
   ]) {
     let row = peopleRow(current, key);
-    if (!row.reviewRequired) continue;
+    if (!row.reviewRequired && !(row.person && !row.profile)) continue;
     if (
       key === 'primary' &&
       !row.person &&
@@ -888,7 +905,12 @@ export async function saveSalesPeopleDraft(
     const row = peopleRow(current, key);
     return {
       customerId: row.person!.id,
-      displayName: row.person!.displayName,
+      displayName:
+        passportIdentity &&
+        row.values.passportFirstName.trim() &&
+        row.values.passportLastName.trim()
+          ? `${row.values.passportFirstName.trim()} ${row.values.passportLastName.trim()}`.toUpperCase()
+          : row.person!.displayName,
       birthDate: row.values.birthDate,
     };
   });
@@ -921,16 +943,39 @@ export async function saveSalesPeopleDraft(
           ? (draft.organization?.organizationId ?? '')
           : '',
       firstPassengerIsCustomer: draft.mode === 'first-passenger',
+      passengerHotelStays: Object.fromEntries(
+        keys.flatMap((key, index) => {
+          const id = passengers[index]!.customerId;
+          const stay =
+            state.passengerHotelStays?.[id] ?? state.passengerHotelStays?.[key];
+          return stay ? [[id, stay]] : [];
+        }),
+      ),
+      ...(state.passengerHotelPrices !== undefined
+        ? {
+            passengerHotelPrices: Object.fromEntries(
+              keys.map((key, index) => [
+                passengers[index]!.customerId,
+                state.passengerHotelPrices?.[passengers[index]!.customerId] ??
+                  state.passengerHotelPrices?.[key] ??
+                  [],
+              ]),
+            ),
+          }
+        : {}),
       hotel: {
         ...state.hotel,
         guestCustomerIds: passengers
-          .filter(
-            (person) =>
-              !state.passengers.some(
-                (old) => old.customerId === person.customerId,
-              ) ||
-              state.hotel.guestCustomerIds === undefined ||
-              state.hotel.guestCustomerIds.includes(person.customerId),
+          .filter((person, index) =>
+            usesRoomDrivenGuests(state)
+              ? !(state.flightOnlyPassengers ?? []).some(
+                  (p) => p.key === keys[index],
+                )
+              : !state.passengers.some(
+                  (old) => old.customerId === person.customerId,
+                ) ||
+                state.hotel.guestCustomerIds === undefined ||
+                state.hotel.guestCustomerIds.includes(person.customerId),
           )
           .map((person) => person.customerId),
       },

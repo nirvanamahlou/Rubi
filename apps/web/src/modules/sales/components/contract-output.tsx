@@ -14,6 +14,7 @@ import {
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { legalEntityBrand } from '@/modules/legal-entities/model/context';
 import { salesApi } from '../api/client';
+import { printCityInternational } from '../model/contract-print-country';
 import {
   contractPrintHtml,
   type ContractPrintReferences,
@@ -37,8 +38,17 @@ export async function loadContractPrint(id: string) {
   await Promise.all(
     keys.map(async ([resource, key]) => {
       try {
-        const { data } = await masterDataApi.detail(resource, key);
+        const { data } = await masterDataApi.detail(resource, key, 'sales');
         refs.names[key] = data.name;
+        if (
+          resource === 'cities' &&
+          (await printCityInternational(
+            data,
+            async (id) =>
+              (await masterDataApi.detail('countries', id, 'sales')).data,
+          ))
+        )
+          refs.international = true;
         if (resource === 'hotels' && data.attributes.starRating != null)
           refs.hotelGrade = String(data.attributes.starRating);
         if (resource === 'hotels') {

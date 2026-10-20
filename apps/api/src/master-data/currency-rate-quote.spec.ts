@@ -65,11 +65,12 @@ describe('manual currency quotes', () => {
     ]);
     for (const row of result.data)
       expect(row).toMatchObject({
-        status: 'DRAFT',
+        status: 'APPROVED',
         version: 1,
         isAuthoritative: false,
         createdByUserId: maker.userId,
-        approvedByUserId: null,
+        approvedByUserId: maker.userId,
+        approvedAt: expect.any(String),
       });
     expect(tx.masterCurrency.findMany).toHaveBeenCalledWith({
       where: { code: { in: ['USD', 'IRR'] }, isActive: true },
@@ -79,6 +80,7 @@ describe('manual currency quotes', () => {
         actorUserId: maker.userId,
         actorBranchId: maker.branchIds[0],
         resource: 'exchange-rates',
+        afterSnapshot: expect.objectContaining({ status: 'APPROVED' }),
       }),
     });
   });

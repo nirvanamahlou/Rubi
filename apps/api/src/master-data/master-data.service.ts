@@ -1,6 +1,9 @@
 import type { DisplayLanguage } from '../common/i18n/language';
 import { randomUUID } from 'node:crypto';
-import { preparePartnerDossier } from './partner-dossier.policy';
+import {
+  preparePartnerDossier,
+  partnerDossierAccessValues,
+} from './partner-dossier.policy';
 import { brokerCityIds, brokerLeaderDrafts } from './broker-form.policy';
 import { columnFilterWhere } from './catalog-filters';
 import {
@@ -324,6 +327,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'symbol',
     'decimalDigits',
     'unitsPerUsd',
+    'tomanPerUnit',
     'displayPolicy',
   ],
   'exchange-rates': [
@@ -671,7 +675,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   'rail-terminals': ['name'],
   currencies: ['code', 'name'],
   'exchange-rates': ['fromCurrencyCode', 'toCurrencyCode', 'rate'],
-  banks: ['code', 'name', 'countryId'],
+  banks: ['name', 'countryId'],
   'bank-branches': ['code', 'name', 'bankId', 'cityId'],
   'payment-methods': ['name', 'channel', 'direction'],
   insurers: ['name', 'countryId'],
@@ -1152,10 +1156,16 @@ export class MasterDataService {
     return resourceOf(value);
   }
 
-  async list(resourceValue: string, query: MasterDataListQuery) {
+  async list(
+    resourceValue: string,
+    query: MasterDataListQuery,
+    selectionOnly = false,
+  ) {
     const resource = resourceOf(resourceValue);
     assertDateRange(query.createdFrom, query.createdTo);
-    const { rows, total } = await this.repository.list(resource, query);
+    const { rows, total } = selectionOnly
+      ? await this.repository.list(resource, query, true)
+      : await this.repository.list(resource, query);
     return {
       data: rows.map((row) => toMasterDataRecord(resource, row)),
       meta: { page: query.page, pageSize: query.pageSize, total },
@@ -1968,6 +1978,16 @@ export class MasterDataService {
         );
       data.displayOrder = order;
     }
+    if (
+      resource === 'banks' &&
+      (data.code === undefined ||
+        data.code === null ||
+        (typeof data.code === 'string' && !data.code.trim()))
+    ) {
+      // Manual bank codes are optional; retain a stable unique internal identity.
+      if (partial) delete data.code;
+      else data.code = await this.generateAutoCode(resource, values);
+    }
     const usesGeneratedCode =
       resource !== 'exchange-rates' &&
       resource !== 'countries' &&
@@ -2608,6 +2628,18 @@ export class MasterDataService {
         )
           throw new BadRequestException(`${field} خارج از بازه مجاز است.`);
         data[field] = String(data[field]).trim();
+      }
+    }
+    if (resource === 'currencies' && Object.hasOwn(data, 'tomanPerUnit')) {
+      const rate =
+        data.tomanPerUnit === null ? '' : String(data.tomanPerUnit).trim();
+      if (!rate) data.tomanPerUnit = null;
+      else {
+        if (!/^\d{1,14}(\.\d{1,10})?$/.test(rate) || !/[1-9]/.test(rate))
+          throw new BadRequestException(
+            'نرخ تومان باید مثبت، حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار باشد.',
+          );
+        data.tomanPerUnit = rate;
       }
     }
     if (resource === 'currencies' && Object.hasOwn(data, 'unitsPerUsd')) {
@@ -3725,7 +3757,7 @@ export class MasterDataService {
         ? Object.fromEntries(
             Object.entries(values).filter(([key]) => key !== 'transportStatus'),
           )
-        : values,
+        : partnerDossierAccessValues(resource, values),
       current,
     );
     if (denied.length)

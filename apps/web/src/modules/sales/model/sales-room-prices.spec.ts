@@ -144,3 +144,27 @@ it('retains hotel under15 children while consuming their correct flight age band
   };
   expect(salesRoomPartyError(state)).toBeNull();
 });
+
+it('rejects rooms below the flight party as well as above it', () => {
+  expect(
+    salesRoomPartyError({
+      ...state,
+      hotel: { ...state.hotel, rooms: [rooms[0]!] },
+    }),
+  ).toBeTruthy();
+  expect(
+    salesRoomPartyError({
+      ...state,
+      passengerComposition: { ...state.passengerComposition, adults: 7 },
+    }),
+  ).toBeTruthy();
+  expect(
+    salesRoomPartyError({
+      ...state,
+      hotel: {
+        ...state.hotel,
+        rooms: [rooms[0]!, { ...rooms[1]!, childAges: [] }],
+      },
+    }),
+  ).toBeTruthy();
+});

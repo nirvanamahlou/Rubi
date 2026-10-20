@@ -33,3 +33,12 @@ export * from './accounting-taxpayer-catalog';
 export * from './accounting-taxpayer-draft';
 
 export * from './operation-reason';
+export type {
+  CorrespondenceUser,
+  InternalLetterContent,
+  InternalLetterStatus,
+  InternalLetterRecord,
+  InternalLetterList,
+} from './correspondence';
+
+export * from './sales/passenger-hotel-stays';

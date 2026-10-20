@@ -26,6 +26,26 @@ const roles = [
   { id: 'support', name: 'Support' },
 ];
 describe('redesigned user role picker', () => {
+  it('cleans the full-access label without changing the saved role ID or selecting any new access', () => {
+    const name = 'مدیر سامانه، دسترسی کامل Demo';
+    const onRoleChange = vi.fn();
+    const html = renderToStaticMarkup(
+      <UserRolePicker
+        roles={[{ id: 'unchanged-role', name }]}
+        title={name}
+        disabled={false}
+        onRoleChange={onRoleChange}
+        onTitleChange={vi.fn()}
+      />,
+    );
+    expect(html).not.toContain('Demo');
+    expect(controls.select?.value).toBe('unchanged-role');
+    expect(onRoleChange).not.toHaveBeenCalled();
+    controls.select?.onChange?.({
+      target: { value: 'unchanged-role' },
+    } as never);
+    expect(onRoleChange).toHaveBeenCalledWith('unchanged-role');
+  });
   it('prefills the saved role and title without changing access on opening', () => {
     const onRoleChange = vi.fn();
     const onTitleChange = vi.fn();

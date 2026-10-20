@@ -2,6 +2,23 @@ import type { BranchReference } from '../iam';
 
 export type MessagingConversationTypeV1 = 'DIRECT' | 'GROUP';
 export type MessagingMemberRoleV1 = 'OWNER' | 'MEMBER';
+export const messagingReactionEmojisV1 = [
+  '👍',
+  '❤️',
+  '😂',
+  '😮',
+  '🙏',
+] as const;
+export type MessagingReactionEmojiV1 =
+  (typeof messagingReactionEmojisV1)[number];
+export interface MessagingMessageReactionV1 {
+  emoji: MessagingReactionEmojiV1;
+  count: number;
+  userIds: string[];
+}
+export interface SetMessagingReactionInputV1 {
+  emoji: MessagingReactionEmojiV1 | null;
+}
 
 export interface MessagingContactV1 {
   id: string;
@@ -32,6 +49,12 @@ export interface MessagingMessageV1 {
     senderDisplayName: string;
   } | null;
   attachments: Array<{ documentId: string; title: string }>;
+  replyTo?: {
+    id: string;
+    body: string;
+    sender: Pick<MessagingContactV1, 'id' | 'displayName' | 'username'>;
+  } | null;
+  reactions?: MessagingMessageReactionV1[];
   createdAt: string;
 }
 
@@ -79,6 +102,7 @@ export interface SendMessagingMessageInputV1 {
   body: string;
   clientRequestId: string;
   attachmentDocumentIds?: string[];
+  replyToMessageId?: string;
 }
 
 export interface ForwardMessagingMessageInputV1 {

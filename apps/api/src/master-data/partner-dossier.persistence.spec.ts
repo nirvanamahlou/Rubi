@@ -9,6 +9,8 @@ function harness() {
       update: vi.fn().mockResolvedValue({ id: 'organization' }),
     },
     masterOrganizationContact: {
+      findMany: vi.fn().mockResolvedValue([]),
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
       findFirst: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue({ id: 'contact' }),
       update: vi.fn().mockResolvedValue({ id: 'contact' }),
@@ -31,6 +33,60 @@ const protectedContact = {
   fingerprint: 'hash',
 };
 describe('partner identity persistence', () => {
+  it.each(['suppliers', 'brokers'] as const)(
+    'preserves canonical contacts and address on unrelated %s edits',
+    async (resource) => {
+      const { tx, client } = harness();
+      tx.masterOrganizationAddress.findFirst.mockResolvedValue({
+        id: 'address',
+        addressLine: 'Canonical office',
+      } as never);
+      await persistPartnerDossier(
+        client,
+        resource,
+        {
+          name: 'QA',
+          organizationId: 'organization',
+          countryId: 'country',
+          address: 'Stale native office',
+          primaryPhoneEncrypted: null,
+        },
+        {},
+        'actor',
+        'branch',
+        false,
+        false,
+      );
+      expect(tx.masterOrganizationContact.findMany).not.toHaveBeenCalled();
+      expect(tx.masterOrganizationAddress.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ addressLine: 'Canonical office' }),
+        }),
+      );
+    },
+  );
+  it('deactivates a cleared email without creating an empty invalid contact tuple', async () => {
+    const { tx, client } = harness();
+    tx.masterOrganizationContact.findFirst.mockResolvedValue({
+      id: 'email',
+    } as never);
+    await persistPartnerDossier(
+      client,
+      'brokers',
+      { name: 'QA', organizationId: 'organization' },
+      { email: null },
+      'actor',
+      'branch',
+    );
+    expect(tx.masterOrganizationContact.update).toHaveBeenCalledWith({
+      where: { id: 'email' },
+      data: {
+        isActive: false,
+        updatedByUserId: 'actor',
+        version: { increment: 1 },
+      },
+    });
+  });
   it.each([
     ['suppliers', 'SUPPLIER'],
     ['brokers', 'BROKER'],
@@ -79,9 +135,13 @@ describe('partner identity persistence', () => {
   );
   it('keeps untouched contact records intact while explicitly clearing only requested values', async () => {
     const { tx, client } = harness();
-    tx.masterOrganizationContact.findFirst.mockResolvedValue({
-      id: 'existing-contact',
-    } as never);
+    tx.masterOrganizationContact.findMany.mockResolvedValue([
+      {
+        id: 'existing-contact',
+        jobTitle: 'PARTNER_MOBILE',
+        isActive: true,
+      },
+    ] as never);
     await persistPartnerDossier(
       client,
       'suppliers',
@@ -95,8 +155,6 @@ describe('partner identity persistence', () => {
     expect(tx.masterOrganizationContact.update).toHaveBeenCalledWith({
       where: { id: 'existing-contact' },
       data: expect.objectContaining({
-        phoneEncrypted: null,
-        phoneFingerprint: null,
         isActive: false,
       }),
     });

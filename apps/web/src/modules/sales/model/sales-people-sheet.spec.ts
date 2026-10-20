@@ -1119,3 +1119,81 @@ it('recovers a corrected international passenger using passport names when hidde
   expect(result.patch.customerId).toBe('created-passenger');
   expect(result.draft.rows.p0?.reviewRequired).toBeFalsy();
 });
+
+it('projects each international passenger passport name independently of repeated CRM titles', async () => {
+  const travel = {
+    ...state,
+    originCountryCode: 'IR',
+    destinationCountryCode: 'TR',
+    serviceKinds: ['FLIGHT' as const],
+    passengerComposition: { adults: 3, children: 0, infants: 0 },
+  };
+  const rows = Object.fromEntries(
+    ['ALPHA', 'BETA', 'GAMMA'].map((name, i) => {
+      const profile = detail('person-' + i, {
+        roles: ['customer', 'passenger'],
+        passportFirstName: name,
+        passportLastName: 'TRAVELER',
+        passportNumber: 'X123456' + i,
+        passportExpiryDate: '2030-01-01',
+        gender: 'M',
+        nationalityCode: 'IRN',
+        passportIssuingCountryCode: 'IRN',
+        birthCountryCode: 'IRN',
+      });
+      return ['p' + i, selectedPeopleRow(profile)];
+    }),
+  );
+  const result = await saveSalesPeopleDraft(
+    travel,
+    { ...initialSalesPeopleDraft(travel), rows },
+    vi.fn(),
+    { create: vi.fn(), addContact: vi.fn() },
+  );
+  expect(result.patch.passengers?.map((p) => p.displayName)).toEqual([
+    'ALPHA TRAVELER',
+    'BETA TRAVELER',
+    'GAMMA TRAVELER',
+  ]);
+  expect(result.patch.passengers?.map((p) => p.customerId)).toEqual([
+    'person-0',
+    'person-1',
+    'person-2',
+  ]);
+  expect(result.patch.customerName).toBe('Synthetic Person');
+});
+
+it('hydrates existing passenger profiles before saving edits from a restored row', async () => {
+  const single = {
+    ...state,
+    passengerComposition: { adults: 1, children: 0, infants: 0 },
+  };
+  const profile = detail('existing', {
+    roles: ['customer', 'passenger'],
+    contacts: [],
+  });
+  const row = selectedPeopleRow(profile);
+  delete row.profile;
+  const draft: SalesPeopleDraft = {
+    ...initialSalesPeopleDraft(single),
+    rows: {
+      p0: {
+        ...row,
+        values: { ...row.values, lastName: 'Changed' },
+      },
+    },
+  };
+  const api = {
+    create: vi.fn(),
+    addContact: vi.fn(),
+    detail: vi.fn(async () => ({ data: profile })),
+    update: vi.fn(async () => ({
+      data: { ...profile, lastName: 'Changed', version: 2 },
+    })),
+  };
+  const result = await saveSalesPeopleDraft(single, draft, vi.fn(), api);
+  expect(api.detail).toHaveBeenCalledWith('existing', 'customer-verification');
+  expect(api.update).toHaveBeenCalled();
+  expect(result.draft.rows.p0?.values.lastName).toBe('Changed');
+  expect(api.create).not.toHaveBeenCalled();
+});

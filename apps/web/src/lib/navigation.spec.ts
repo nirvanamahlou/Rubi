@@ -16,6 +16,7 @@ import {
 } from './navigation';
 
 const expectedRoutes = [
+  '/customer-affairs/call-center',
   '/workbench',
   '/dashboard',
   '/customers',
@@ -41,6 +42,7 @@ const expectedRoutes = [
 ];
 
 const expectedTitles = [
+  'کال سنتر',
   'میزکار من',
   'داشبورد',
   'مشتریان B2c',
@@ -106,6 +108,7 @@ describe('CRM navigation', () => {
       '/customer-affairs',
       '/organizations',
       '/marketing',
+      '/customer-affairs/call-center',
     ]);
     expect(
       groupedNavigationItems
@@ -137,7 +140,7 @@ describe('CRM navigation', () => {
   });
   it('contains the approved routes plus the separate finance inbox in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);
-    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(22);
+    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(23);
     expect(
       groupedNavigationItems
         .flatMap((group) => group.items)
@@ -146,9 +149,9 @@ describe('CRM navigation', () => {
   });
 
   it('uses distinct Persian titles for all navigation items', () => {
-    expect(navigationItems).toHaveLength(22);
+    expect(navigationItems).toHaveLength(23);
     expect(navigationItems.map((item) => item.title)).toEqual(expectedTitles);
-    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(22);
+    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(23);
   });
 
   it('resolves the Human Resources owner route', () => {

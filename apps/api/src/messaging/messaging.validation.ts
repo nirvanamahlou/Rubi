@@ -1,3 +1,7 @@
+import {
+  messagingReactionEmojisV1,
+  type SetMessagingReactionInputV1,
+} from '@nora/contracts';
 import { BadRequestException } from '@nestjs/common';
 import type {
   CreateDirectConversationInputV1,
@@ -73,6 +77,7 @@ export function message(value: unknown): SendMessagingMessageInputV1 {
     'body',
     'clientRequestId',
     'attachmentDocumentIds',
+    'replyToMessageId',
   ]);
   const attachmentDocumentIds =
     input.attachmentDocumentIds === undefined
@@ -98,6 +103,9 @@ export function message(value: unknown): SendMessagingMessageInputV1 {
     body: input.body.trim(),
     clientRequestId: requestId(input.clientRequestId),
     attachmentDocumentIds,
+    ...(input.replyToMessageId === undefined
+      ? {}
+      : { replyToMessageId: uuid(input.replyToMessageId, 'پیام پاسخ') }),
   };
 }
 
@@ -122,4 +130,14 @@ export function search(value: unknown): string {
   if (typeof value !== 'string' || value.trim().length > 100)
     throw new BadRequestException('عبارت جست‌وجو معتبر نیست.');
   return value.trim();
+}
+
+export function reaction(value: unknown): SetMessagingReactionInputV1 {
+  const input = record(value, ['emoji']);
+  if (
+    input.emoji !== null &&
+    !(messagingReactionEmojisV1 as readonly unknown[]).includes(input.emoji)
+  )
+    throw new BadRequestException('واکنش پیام معتبر نیست.');
+  return { emoji: input.emoji as SetMessagingReactionInputV1['emoji'] };
 }

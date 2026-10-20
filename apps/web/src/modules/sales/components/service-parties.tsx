@@ -1,11 +1,22 @@
 'use client';
 import {
+  usesRoomDrivenGuests,
+  withRoomDrivenGuests,
+} from '../model/contract-guest-stays';
+
+import {
   hotelChildChoices,
   syncHotelChildSelections,
   selectHotelChild,
 } from '../model/hotel-child-selection';
 import { SalesThemedSelect } from './sales-themed-select';
-import { salesHotelRoomSummary } from '@nora/contracts';
+import {
+  defaultSalesRoomCategory,
+  salesRoomCategories,
+  salesRoomCategoryLabel,
+  type SalesRoomCategory,
+  salesHotelRoomSummary,
+} from '@nora/contracts';
 import { PassengerAgeField } from './passenger-age-field';
 import {
   salesRoomPartyError,
@@ -35,8 +46,14 @@ export function ServiceParties({
     salesTravelDate(sourceState),
   );
   const childChoices = hotelChildChoices(state, salesTravelDate(state));
-  const rooms = state.hotel.rooms ?? [];
-  const limited = state.serviceKinds.includes('FLIGHT');
+  const rooms: NonNullable<SalesFormState['hotel']['rooms']> = (
+    state.hotel.rooms ?? []
+  ).map((room) => ({
+    ...room,
+    roomCategory: defaultSalesRoomCategory(room),
+  }));
+  const limited =
+    state.serviceKinds.includes('FLIGHT') && !usesRoomDrivenGuests(state);
   const party = salesPassengerCounts(state);
   const partyError = salesRoomPartyError(state);
   const used = roomPartyUsage(rooms, state.hotelChildAssignments);
@@ -54,6 +71,10 @@ export function ServiceParties({
       )
     : 50;
   const changeRooms = (next: typeof rooms) => {
+    const driven = withRoomDrivenGuests({
+      ...state,
+      hotel: { ...state.hotel, rooms: next },
+    });
     const ages = next.flatMap((r) => r.childAges);
     const composition = {
       adults:
@@ -74,6 +95,13 @@ export function ServiceParties({
         ...salesHotelRoomSummary(next),
         roomTypeId: next[0]?.roomTypeId ?? '',
       },
+      ...(usesRoomDrivenGuests(state)
+        ? {
+            passengerComposition: driven.passengerComposition,
+            childAges: driven.childAges,
+            infantAges: driven.infantAges,
+          }
+        : {}),
       ...(!state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'TRANSFER')
         ? {
             passengerComposition: {
@@ -198,56 +226,60 @@ export function ServiceParties({
       {state.serviceKinds.includes('HOTEL') && (
         <section className="grid gap-3 rounded-xl border p-4">
           <h3 className="font-bold">هتل و ترکیب هر اتاق</h3>
-          <SearchableReference
-            label="هتل"
-            value={state.hotel.hotelId}
-            options={hotels}
-            showAllOptionsOnOpen
-            preferEnglishName
-            onChange={(hotelId) =>
-              patch({
-                hotelChildAssignments: {},
-                hotel: {
-                  ...state.hotel,
-                  hotelId,
-                  name: hotels.find((h) => h.id === hotelId)?.name ?? '',
-                  rooms: [],
-                  roomTypeId: '',
-                  guestCustomerIds: undefined,
-                },
-              })
-            }
-          />
-          <label>
-            تعداد اتاق
-            <Input
-              type="number"
-              min={1}
-              max={maxRooms}
-              value={rooms.length || ''}
-              disabled={!state.hotel.hotelId}
-              onChange={(e) =>
-                changeRooms(
-                  Array.from(
-                    {
-                      length: Math.max(
-                        1,
-                        Math.min(maxRooms, Number(e.target.value) || 1),
-                      ),
+          <div className="grid grid-cols-[minmax(0,1fr)_6rem] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_9rem]">
+            <div className="min-w-0">
+              <SearchableReference
+                label="هتل"
+                value={state.hotel.hotelId}
+                options={hotels}
+                showAllOptionsOnOpen
+                preferEnglishName
+                onChange={(hotelId) =>
+                  patch({
+                    hotelChildAssignments: {},
+                    hotel: {
+                      ...state.hotel,
+                      hotelId,
+                      name: hotels.find((h) => h.id === hotelId)?.name ?? '',
+                      rooms: [],
+                      roomTypeId: '',
+                      guestCustomerIds: undefined,
                     },
-                    (_, i) =>
-                      rooms[i] ?? {
-                        ordinal: i + 1,
-                        roomTypeId: '',
-                        roomTypeNameSnapshot: '',
-                        adults: 1,
-                        childAges: [],
+                  })
+                }
+              />
+            </div>
+            <label className="grid min-w-0 gap-1">
+              تعداد اتاق
+              <Input
+                type="number"
+                min={1}
+                max={maxRooms}
+                value={rooms.length || ''}
+                disabled={!state.hotel.hotelId}
+                onChange={(e) =>
+                  changeRooms(
+                    Array.from(
+                      {
+                        length: Math.max(
+                          1,
+                          Math.min(maxRooms, Number(e.target.value) || 1),
+                        ),
                       },
-                  ),
-                )
-              }
-            />
-          </label>
+                      (_, i) =>
+                        rooms[i] ?? {
+                          ordinal: i + 1,
+                          roomTypeId: '',
+                          roomTypeNameSnapshot: '',
+                          adults: 1,
+                          childAges: [],
+                        },
+                    ),
+                  )
+                }
+              />
+            </label>
+          </div>
           {partyError ? (
             <p role="alert" className="text-sm text-destructive">
               {partyError}
@@ -257,7 +289,12 @@ export function ServiceParties({
             {rooms.map((r, i) => {
               const update = (value: Partial<typeof r>) =>
                 changeRooms(
-                  rooms.map((v, j) => (j === i ? { ...v, ...value } : v)),
+                  rooms.map((v, j) => {
+                    if (j !== i) return v;
+                    const next = { ...v, ...value };
+                    next.roomCategory = defaultSalesRoomCategory(next);
+                    return next;
+                  }),
                 );
               const others = rooms.filter((_, j) => j !== i);
               const othersUsed = roomPartyUsage(
@@ -293,21 +330,47 @@ export function ServiceParties({
                   key={r.ordinal}
                 >
                   <b>اتاق {i + 1}</b>
-                  <SearchableReference
-                    label="نوع اتاق"
-                    value={r.roomTypeId}
-                    options={roomTypes}
-                    showAllOptionsOnOpen
-                    preferEnglishName
-                    onChange={(roomTypeId) =>
-                      update({
-                        roomTypeId,
-                        roomTypeNameSnapshot:
-                          roomTypes.find((t) => t.id === roomTypeId)?.name ??
-                          '',
-                      })
-                    }
-                  />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <SearchableReference
+                      label="نوع اتاق"
+                      value={r.roomTypeId}
+                      options={roomTypes}
+                      showAllOptionsOnOpen
+                      preferEnglishName
+                      onChange={(roomTypeId) =>
+                        update({
+                          roomTypeId,
+                          roomTypeNameSnapshot:
+                            roomTypes.find((t) => t.id === roomTypeId)?.name ??
+                            '',
+                        })
+                      }
+                    />
+                    <label>
+                      دسته‌بندی اتاق
+                      <SalesThemedSelect
+                        label="دسته‌بندی اتاق"
+                        value={r.roomCategory ?? ''}
+                        options={[
+                          { value: '', label: 'انتخاب دسته‌بندی' },
+                          ...salesRoomCategories(
+                            r.adults,
+                            r.childAges.length,
+                          ).map((value) => ({
+                            value,
+                            label: salesRoomCategoryLabel(value, r.adults),
+                          })),
+                        ]}
+                        onValueChange={(value) =>
+                          update({
+                            roomCategory: value
+                              ? (value as SalesRoomCategory)
+                              : undefined,
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     {rate
                       ? 'ظرفیت بزرگسال: ' +

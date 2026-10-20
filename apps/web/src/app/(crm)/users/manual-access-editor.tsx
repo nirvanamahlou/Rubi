@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+  useRef,
+  useImperativeHandle,
+  type Ref,
+} from 'react';
 import {
   MANUAL_ACCESS_SECTIONS,
   MANUAL_NEW_PERMISSIONS,
@@ -17,6 +23,11 @@ import styles from './user-management.module.css';
 import { sectionAccess, changeSectionAccess } from './section-access';
 import { permissionInSection, permissionLabel } from './access-permissions';
 import { UserRolePicker } from './user-role-picker';
+import { manualAccessDraftKey } from './manual-access-draft';
+
+export interface ManualAccessEditorHandle {
+  save: () => Promise<boolean>;
+}
 
 interface Snapshot {
   revision: string;
@@ -25,6 +36,7 @@ interface Snapshot {
   selection: ManualAccessSelection;
 }
 interface Props {
+  ref?: Ref<ManualAccessEditorHandle>;
   templates?: Array<{
     id: string;
     name: string;
@@ -45,6 +57,7 @@ interface Props {
 }
 
 export function ManualAccessEditor({
+  ref,
   userId,
   canManage,
   options,
@@ -57,11 +70,16 @@ export function ManualAccessEditor({
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const baseline = useRef<string | null>(null);
+  const saving = useRef(false);
   useEffect(() => {
     let active = true;
     request(`/iam/users/${userId}/manual-access`)
       .then((value) => {
-        if (active) setSnapshot(value as Snapshot);
+        if (active) {
+          baseline.current = manualAccessDraftKey(value as Snapshot);
+          setSnapshot(value as Snapshot);
+        }
       })
       .catch(() => {
         if (active) setMessage('دریافت دسترسی انجام نشد.');
@@ -71,9 +89,6 @@ export function ManualAccessEditor({
     };
   }, [userId, request]);
 
-  if (!snapshot)
-    return <p role="status">{message || 'در حال دریافت دسترسی‌های مؤثر…'}</p>;
-  const selection = snapshot.selection;
   function toggle(
     key: keyof ManualAccessSelection,
     ids: string[],
@@ -99,7 +114,9 @@ export function ManualAccessEditor({
     });
   }
   async function save() {
-    if (busy || !snapshot) return;
+    if (saving.current || !snapshot || !canManage) return false;
+    if (manualAccessDraftKey(snapshot) === baseline.current) return true;
+    saving.current = true;
     setBusy(true);
     setMessage('');
     try {
@@ -116,16 +133,24 @@ export function ManualAccessEditor({
         `/iam/users/${userId}/manual-access`,
       )) as Snapshot;
       setSnapshot(next);
+      baseline.current = manualAccessDraftKey(next);
       await onSaved();
       setMessage(
         'دسترسی‌های دستی ذخیره شد. تغییرات از درخواست بعدی در سرور اعمال می‌شوند.',
       );
+      return true;
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'ذخیره انجام نشد.');
+      return false;
     } finally {
       setBusy(false);
+      saving.current = false;
     }
   }
+  useImperativeHandle(ref, () => ({ save }));
+  if (!snapshot)
+    return <p role="status">{message || 'در حال دریافت دسترسی‌های مؤثر…'}</p>;
+  const selection = snapshot.selection;
   const match = (text: string) =>
     text
       .toLocaleLowerCase('fa')
@@ -192,6 +217,15 @@ export function ManualAccessEditor({
           });
         }}
       />
+      {message && <p role="status">{message}</p>}
+      <Button
+        type="button"
+        onClick={() => void save()}
+        disabled={!canManage || busy}
+        loading={busy}
+      >
+        {busy ? 'در حال ذخیره…' : 'ذخیره دسترسی‌های دستی'}
+      </Button>
       <Input
         aria-label="جست‌وجوی دسترسی دستی"
         value={search}
@@ -372,7 +406,6 @@ export function ManualAccessEditor({
           {busy ? 'در حال ذخیره…' : 'ذخیره دسترسی‌های دستی'}
         </Button>
       </fieldset>
-      {message && <p role="status">{message}</p>}
     </section>
   );
 }

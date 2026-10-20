@@ -5,6 +5,31 @@ import { emptySalesForm } from '../model/sales-form';
 import { ContractTotalPrices } from './contract-total-prices';
 import { ContractServiceSummary } from './contract-service-summary';
 
+it('shows Gregorian English travel dates for a foreign route in the contract summary', () => {
+  const html = renderToStaticMarkup(
+    <ContractServiceSummary
+      state={{
+        ...emptySalesForm,
+        destinationCountryCode: 'TR',
+        serviceKinds: ['FLIGHT', 'HOTEL'],
+        tripType: 'ONE_WAY',
+        ticket: {
+          ...emptySalesForm.ticket,
+          outboundDepartureAt: '2026-10-23T17:50:00Z',
+        },
+        hotel: {
+          ...emptySalesForm.hotel,
+          checkIn: '2026-10-23',
+          checkOut: '2026-10-30',
+        },
+      }}
+    />,
+  );
+  expect(html).toContain('23 Oct 2026');
+  expect(html).toContain('30 Oct 2026');
+  expect(html).not.toContain('۱۴۰۵');
+});
+
 it('renders one total per currency without a price row for each passenger', () => {
   const html = renderToStaticMarkup(
     <ContractTotalPrices
@@ -144,4 +169,40 @@ it('renders a separate foreign agreed price for each room within the contract to
   expect(html).toContain('100.25');
   expect(html).toContain('60.50');
   expect(html).toContain('160.75');
+});
+
+it('allows selecting IRR as the negotiated room currency', () => {
+  const rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: 'room',
+      roomTypeNameSnapshot: 'Standard',
+      adults: 1,
+      childAges: [],
+      agreedPrice: { amount: '500', currencyCode: 'USD' },
+    },
+  ];
+  const change = vi.fn();
+  const view = ContractTotalPrices({
+    state: {
+      ...emptySalesForm,
+      serviceKinds: ['HOTEL'],
+      hotel: { ...emptySalesForm.hotel, rooms },
+    },
+    currencies: [
+      { code: 'IRR', name: 'Rial', status: 'active' },
+      { code: 'USD', name: 'Dollar', status: 'active' },
+    ],
+    onChange: vi.fn(),
+    onRoomPricesChange: change,
+  });
+  const selector =
+    view.props.children[1].props.children[2][0].props.children[1];
+  expect(
+    selector.props.currencies.map((c: { code: string }) => c.code),
+  ).toContain('IRR');
+  selector.props.onChange('IRR');
+  expect(change).toHaveBeenCalledWith([
+    { ...rooms[0], agreedPrice: { amount: '500', currencyCode: 'IRR' } },
+  ]);
 });

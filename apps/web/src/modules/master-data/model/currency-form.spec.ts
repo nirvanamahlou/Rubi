@@ -15,7 +15,7 @@ const values = {
   symbol: '$',
   decimalDigits: '2',
   displayOrder: '0',
-  unitsPerUsd: '',
+  tomanPerUnit: '',
 };
 const record: MasterDataRecord = {
   id: 'currency-test',
@@ -42,20 +42,20 @@ const quote = {
 };
 
 describe('currency form', () => {
-  it('preserves an editable decimal USD rate and rejects invalid/self rates', () => {
+  it('preserves an editable per-unit toman rate including USD and rejects invalid rates', () => {
     expect(
       validateCurrencyForm({
         ...values,
-        code: 'IRR',
-        unitsPerUsd: '2700000.1234567890',
+        code: 'USD',
+        tomanPerUnit: '270000.1234567890',
       }).success,
     ).toBe(true);
     expect(
       currencyFormValues({
         ...record,
-        attributes: { ...record.attributes, unitsPerUsd: '1' },
-      }).unitsPerUsd,
-    ).toBe('1');
+        attributes: { ...record.attributes, tomanPerUnit: '270000' },
+      }).tomanPerUnit,
+    ).toBe('270000');
     for (const rate of [
       '0',
       '-1',
@@ -66,16 +66,26 @@ describe('currency form', () => {
       '100000000000000',
     ]) {
       expect(
-        validateCurrencyForm({ ...values, code: 'IRR', unitsPerUsd: rate })
-          .errors.unitsPerUsd,
+        validateCurrencyForm({ ...values, code: 'IRR', tomanPerUnit: rate })
+          .errors.tomanPerUnit,
       ).toBeDefined();
     }
     expect(
-      validateCurrencyForm({ ...values, unitsPerUsd: '2' }).errors.unitsPerUsd,
-    ).toBeDefined();
-    expect(
-      validateCurrencyForm({ ...values, unitsPerUsd: '1.0000000000' }).success,
+      validateCurrencyForm({ ...values, tomanPerUnit: '270000' }).success,
     ).toBe(true);
+    expect(
+      validateCurrencyForm({ ...values, tomanPerUnit: '0.1' }).success,
+    ).toBe(true);
+  });
+  it('never interprets the legacy USD reference as a toman rate', () => {
+    expect(
+      currencyFormValues({
+        ...record,
+        attributes: { ...record.attributes, unitsPerUsd: '1' },
+      }).tomanPerUnit,
+    ).toBe('');
+    const result = validateCurrencyForm({ ...values, unitsPerUsd: '999' });
+    expect(result.values).not.toHaveProperty('unitsPerUsd');
   });
   it('contains currency metadata without display policy or financial rate fields', () => {
     expect(currencyFormValues(record)).toEqual({ ...values, code: 'USD' });

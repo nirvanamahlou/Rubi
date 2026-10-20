@@ -1,7 +1,5 @@
 import { localizedFetch } from '@/i18n/localized-fetch';
 import {
-  MASTER_DATA_API_PREFIX,
-  masterDataEndpoints,
   type MasterDataListResponse,
   type MasterDataRecord,
 } from '@nora/contracts';
@@ -49,6 +47,7 @@ export async function listReferences(
   page: number,
   signal?: AbortSignal,
   filters: ReferenceFilters = {},
+  workflow: 'ticket-catalog' | 'sales' = 'ticket-catalog',
 ): Promise<MasterDataListResponse> {
   const base = getPublicApiBaseUrl();
   if (!base)
@@ -63,9 +62,7 @@ export async function listReferences(
   });
   if (filters.countryId) query.set('countryId', filters.countryId);
   if (filters.cityId) query.set('cityId', filters.cityId);
-  const path = masterDataEndpoints
-    .list(resource)
-    .slice(MASTER_DATA_API_PREFIX.length);
+  const path = `/selections/${workflow}/${resource}`;
   const response = await localizedFetch(`${base}/master-data${path}?${query}`, {
     method: 'GET',
     credentials: 'include',
@@ -106,12 +103,19 @@ export async function listReferences(
   };
 }
 
-export async function listActiveCurrencyReferences(): Promise<
-  readonly Reference[]
-> {
+export async function listActiveCurrencyReferences(
+  workflow: 'ticket-catalog' | 'sales' = 'ticket-catalog',
+): Promise<readonly Reference[]> {
   const records: MasterDataRecord[] = [];
   for (let page = 1; page <= 100; page += 1) {
-    const response = await listReferences('currencies', '', page);
+    const response = await listReferences(
+      'currencies',
+      '',
+      page,
+      undefined,
+      {},
+      workflow,
+    );
     records.push(...response.data);
     if (page * response.meta.pageSize >= response.meta.total) {
       const seen = new Set<string>();
@@ -135,9 +139,7 @@ export async function getActiveCityReference(
 ): Promise<Reference | undefined> {
   const base = getPublicApiBaseUrl();
   if (!base || !id) return undefined;
-  const path = masterDataEndpoints
-    .detail('cities', id)
-    .slice(MASTER_DATA_API_PREFIX.length);
+  const path = `/selections/ticket-catalog/cities/${encodeURIComponent(id)}`;
   const response = await localizedFetch(`${base}/master-data${path}`, {
     credentials: 'include',
     headers: { accept: 'application/json' },

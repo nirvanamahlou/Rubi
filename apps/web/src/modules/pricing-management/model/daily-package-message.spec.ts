@@ -48,77 +48,91 @@ describe('package generator daily publish bridge', () => {
   ])('rejects malformed output %j', (change) => {
     expect(dailyPackageMessage({ ...payload(), ...change })).toBeNull();
   });
-  it('sends the generated PDF and waits for a matching host result', async () => {
-    let listener: (event: unknown) => void = () => {};
-    const postMessage = vi.fn();
-    const parent = { postMessage };
-    const window: {
-      parent: typeof parent;
-      location: { origin: string };
-      addEventListener: (name: string, callback: typeof listener) => void;
-      PackageDailyPublisher?: {
-        publish: (blob: Blob, title: string) => Promise<void>;
+  it.each(['secure', 'lan'] as const)(
+    'sends the generated PDF on %s and waits for a matching host result',
+    async (context) => {
+      let listener: (event: unknown) => void = () => {};
+      const postMessage = vi.fn();
+      const parent = { postMessage };
+      const window: {
+        parent: typeof parent;
+        location: { origin: string };
+        addEventListener: (name: string, callback: typeof listener) => void;
+        PackageDailyPublisher?: {
+          publish: (blob: Blob, title: string) => Promise<void>;
+        };
+      } = {
+        parent,
+        location: { origin: 'https://crm.test' },
+        addEventListener: (_name, callback) => {
+          listener = callback;
+        },
       };
-    } = {
-      parent,
-      location: { origin: 'https://crm.test' },
-      addEventListener: (_name, callback) => {
-        listener = callback;
-      },
-    };
-    vm.runInNewContext(
-      readFileSync(
-        resolve(process.cwd(), 'public/package-generator/daily-packages.js'),
-        'utf8',
-      ),
-      {
-        window,
-        Blob,
-        crypto: { randomUUID: () => requestId },
-        setTimeout: () => 1,
-        clearTimeout: vi.fn(),
-      },
-    );
-    listener({
-      origin: 'https://evil.test',
-      source: parent,
-      data: { type: 'rubi-daily-packages-enabled' },
-    });
-    await expect(
-      window.PackageDailyPublisher!.publish(payload().blob, 'test'),
-    ).rejects.toThrow();
-    listener({
-      origin: 'https://crm.test',
-      source: parent,
-      data: { type: 'rubi-daily-packages-enabled' },
-    });
-    let done = false;
-    const result = window
-      .PackageDailyPublisher!.publish(payload().blob, 'test')
-      .then(() => {
-        done = true;
+      vm.runInNewContext(
+        readFileSync(
+          resolve(process.cwd(), 'public/package-generator/daily-packages.js'),
+          'utf8',
+        ),
+        {
+          window,
+          Blob,
+          crypto:
+            context === 'secure'
+              ? { randomUUID: () => requestId }
+              : {
+                  getRandomValues: (bytes: Uint8Array) => {
+                    bytes.set([
+                      17, 17, 17, 17, 17, 17, 65, 17, 129, 17, 17, 17, 17, 17,
+                      17, 17,
+                    ]);
+                    return bytes;
+                  },
+                },
+          setTimeout: () => 1,
+          clearTimeout: vi.fn(),
+        },
+      );
+      listener({
+        origin: 'https://evil.test',
+        source: parent,
+        data: { type: 'rubi-daily-packages-enabled' },
       });
-    expect(postMessage).toHaveBeenCalledWith(
-      expect.objectContaining({
-        requestId,
-        title: 'test',
-        type: 'rubi-daily-package-publish',
-      }),
-      'https://crm.test',
-    );
-    listener({
-      origin: 'https://crm.test',
-      source: {},
-      data: { type: 'rubi-daily-package-result', requestId, success: true },
-    });
-    await Promise.resolve();
-    expect(done).toBe(false);
-    listener({
-      origin: 'https://crm.test',
-      source: parent,
-      data: { type: 'rubi-daily-package-result', requestId, success: true },
-    });
-    await result;
-    expect(done).toBe(true);
-  });
+      await expect(
+        window.PackageDailyPublisher!.publish(payload().blob, 'test'),
+      ).rejects.toThrow();
+      listener({
+        origin: 'https://crm.test',
+        source: parent,
+        data: { type: 'rubi-daily-packages-enabled' },
+      });
+      let done = false;
+      const result = window
+        .PackageDailyPublisher!.publish(payload().blob, 'test')
+        .then(() => {
+          done = true;
+        });
+      expect(postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          requestId,
+          title: 'test',
+          type: 'rubi-daily-package-publish',
+        }),
+        'https://crm.test',
+      );
+      listener({
+        origin: 'https://crm.test',
+        source: {},
+        data: { type: 'rubi-daily-package-result', requestId, success: true },
+      });
+      await Promise.resolve();
+      expect(done).toBe(false);
+      listener({
+        origin: 'https://crm.test',
+        source: parent,
+        data: { type: 'rubi-daily-package-result', requestId, success: true },
+      });
+      await result;
+      expect(done).toBe(true);
+    },
+  );
 });

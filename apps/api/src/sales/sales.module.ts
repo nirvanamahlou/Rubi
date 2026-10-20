@@ -5,6 +5,7 @@ import { SalesProfitService } from './sales-profit.service';
 import { FinanceTicketCostModule } from '../finance/finance-ticket-cost.module';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import { Module } from '@nestjs/common';
+import { SalesReferencesController } from './sales-references.controller';
 import { MasterDataModule } from '../master-data/master-data.module';
 
 import { CustomersModule } from '../customers/customers.module';
@@ -38,7 +39,11 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
     TicketRuntimeModule,
     ReservationsRuntimeModule,
   ],
-  controllers: [SalesController, SalesAssistantController],
+  controllers: [
+    SalesController,
+    SalesAssistantController,
+    SalesReferencesController,
+  ],
   providers: [
     AuthGuard,
     SalesRepository,

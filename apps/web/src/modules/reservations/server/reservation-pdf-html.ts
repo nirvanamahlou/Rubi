@@ -69,6 +69,9 @@ export function reservationPdfHtml(
             : p.age === 'CHD (6-12)'
               ? 'CHD 6-12'
               : p.age,
+          ...(data.passengers.some((p) => p.checkIn !== undefined)
+            ? [p.checkIn ?? '—', p.checkOut ?? '—']
+            : []),
         ];
       });
       first += people.length;
@@ -77,10 +80,21 @@ export function reservationPdfHtml(
       [
         [voucher ? 'BOOKING NO.' : 'REQUEST NO.', data.request],
         ['SUPPLIER', data.supplier],
+        ...(!voucher
+          ? [
+              [
+                'PROPOSED PURCHASE PRICE',
+                reservationFormPriceText(
+                  settings?.hotelPurchasePrices ?? [],
+                  'code',
+                ) || '-',
+              ],
+            ]
+          : []),
         [voucher ? 'BOOKING DATE' : 'DATE OF ISSUE', data.issueDate],
         ['SERVICES', data.services],
       ],
-      'meta',
+      voucher ? 'meta' : 'meta metaWithPrice',
     )}
     <section class="bookingSection">${heading('01', 'BOOKING SUMMARY', 'Reservation details')}${fields(
       [
@@ -97,10 +111,23 @@ export function reservationPdfHtml(
       'summary',
     )}
     </section>${heading('02', 'FLIGHT INFORMATION', 'Departure & return · Tehran time')}${table(['AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'], data.flights.length ? data.flights.map((f) => [f.airline, f.number, f.date, f.time]) : [['-', '-', '-', '-']])}
-    ${!voucher && settings?.hotelPurchasePrices?.length ? `<div dir="ltr" style="padding:8px 10px;border:1px solid #c5d5e6;text-align:center;background:#eef4fa;font-weight:700"><strong>HOTEL TOTAL: </strong>${escape(reservationFormPriceText(settings.hotelPurchasePrices))}</div>` : ''}
     ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
-      ['HOTEL', 'CITY', 'STAR', 'SERVICE', 'ROOM TYPE'],
-      [[data.hotel, data.destination, data.stars, data.meal, data.roomType]],
+      [
+        'HOTEL',
+        'CITY',
+        'STAR',
+        'SERVICE',
+        ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
+      ],
+      [
+        [
+          data.hotel,
+          data.destination,
+          data.stars,
+          data.meal,
+          ...(!data.roomBreakdown.length ? [data.roomType] : []),
+        ],
+      ],
     )}
     ${
       data.roomBreakdown.length
@@ -115,15 +142,18 @@ export function reservationPdfHtml(
                 r.childAges.join(', ') || '-',
                 r.adults + r.childAges.length,
               ]),
+            'roomBreakdown',
+          ).replace(
+            '<thead>',
+            '<caption>ROOM QUANTITIES BY TYPE</caption><thead>',
           )
         : ''
     }
     <div class="accommodationBreakdown">
       ${table(['CHECK-IN', 'CHECK-OUT'], [[data.checkIn, data.checkOut]]).replace('<thead>', '<caption>STAY DATES</caption><thead>')}
-      ${table(['DBL · DOUBLE', 'SGL · SINGLE', 'EXT · EXTRA BED'], [[data.double, data.single, data.extra]], 'roomCounts').replace('<thead>', '<caption>ROOM QUANTITIES BY TYPE</caption><thead>')}
     </div>
     ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table(['TRANSFER', 'TOUR LEADER', 'EXCURSION'], [[voucher ? data.transfer + ' · Board: ' + (settings?.text.transferBoard?.trim() || '-') : data.transfer, data.leader, data.excursion]])}
-    ${heading('05', 'PASSENGERS', 'Passenger MANIFEST')}${table(['#', 'SURNAME / NAME', 'SEX', 'AGE RATE'], rows.length ? rows : [['-', '-', '-', '-']], 'passengers')}
+    ${heading('05', 'PASSENGERS', 'Passenger MANIFEST')}${table(['#', 'SURNAME / NAME', 'SEX', 'AGE RATE', ...(data.passengers.some((p) => p.checkIn !== undefined) ? ['CHECK-IN', 'CHECK-OUT'] : [])], rows.length ? rows : [['-', '-', '-', '-']], 'passengers')}
     ${heading('06', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
     <footer class="footer"><div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin, intake.workflow.branding?.companyCode, data.brand)}</div><div><span></span></div><b>${index + 1} / ${pageCount}</b></footer></article>`;
     })

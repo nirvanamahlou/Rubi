@@ -29,6 +29,7 @@ import {
 import { TourPublicService } from '../ticket-catalog/tour-public.service';
 import { HotelPurchaseRatesPublicService } from '../reservations/hotel-purchase-rates.public';
 import type {
+  SalesRoomCategory,
   SalesServicePricingV1,
   SalesAccommodationKind,
   AuthenticatedActor,
@@ -354,6 +355,11 @@ export function presentSalesContract(
                   ordinal: room.ordinal,
                   roomTypeId: room.roomTypeId,
                   roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                  ...(room.roomCategory
+                    ? {
+                        roomCategory: room.roomCategory as SalesRoomCategory,
+                      }
+                    : {}),
                   adults: room.adults,
                   childAges: room.childAges as number[],
                   ...(room.agreedPrice
@@ -1314,6 +1320,7 @@ export class SalesService {
         childAgeBands: c.passengers.map((p) => [
           p.customerId,
           p.childAgeBand ?? null,
+          [...p.serviceClientKeys].sort(),
         ]),
         services: c.services.map((s) => ({
           clientKey: s.clientKey,
@@ -1407,6 +1414,16 @@ export class SalesService {
                 input.passengers.filter(
                   (p) => categories[p.customerId] !== 'INF',
                 ).length,
+                Object.fromEntries(
+                  (input.ticketSelections ?? []).map((t) => [
+                    t.serviceClientKey,
+                    input.passengers.filter(
+                      (p) =>
+                        categories[p.customerId] !== 'INF' &&
+                        p.serviceClientKeys.includes(t.serviceClientKey),
+                    ).length,
+                  ]),
+                ),
               );
             },
           }
@@ -1538,6 +1555,16 @@ export class SalesService {
                     expectedTicketSale(service.pricing?.[0], service.metadata),
                   ]),
               ),
+          Object.fromEntries(
+            presented.ticketSelections.map((t) => [
+              t.serviceClientKey,
+              presented.passengersDetail.filter(
+                (p) =>
+                  p.ageCategory !== 'INF' &&
+                  p.serviceClientKeys.includes(t.serviceClientKey),
+              ).length,
+            ]),
+          ),
         )
       : { available: true, unavailableOfferIds: [], createdAllocationIds: [] };
     if (!ticketCheck.available)

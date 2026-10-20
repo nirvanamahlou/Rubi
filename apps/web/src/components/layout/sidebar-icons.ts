@@ -7,6 +7,7 @@ import {
   FileText,
   FileCheck2,
   Headphones,
+  Headset,
   House,
   Inbox,
   LayoutGrid,
@@ -27,6 +28,7 @@ export const sidebarIcons: Record<
   NavigationHref | '/sales/pricing' | '/sales/ticket-prices' | '/sales/tours',
   LucideIcon
 > = {
+  '/customer-affairs/call-center': Headset,
   '/workbench': House,
   '/dashboard': LayoutGrid,
   '/sales': FileText,

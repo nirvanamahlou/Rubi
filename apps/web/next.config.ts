@@ -6,6 +6,7 @@ const allowedDevOrigins = (process.env.NORA_ALLOWED_DEV_ORIGINS ?? '')
   .filter(Boolean);
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NORA_CALL_CENTER_NEXT_DIST_DIR ?? '.next',
   ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
   reactStrictMode: true,
   poweredByHeader: false,

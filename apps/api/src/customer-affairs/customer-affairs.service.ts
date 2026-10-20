@@ -1,5 +1,6 @@
 import { isOptionalOperationReason } from '@nora/contracts';
 import { HrDirectoryService } from '../hr/hr-directory.service';
+import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { createdDateFilter } from './customer-affairs-date-filter';
 import {
@@ -20,6 +21,8 @@ import type {
   CustomerAffairsTicketInput,
   CustomerAffairsTicketView,
   CustomerAffairsTimelineInput,
+  WorkbenchRequestInputV1,
+  WorkbenchRequestItemV1,
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 
@@ -254,6 +257,9 @@ export class CustomerAffairsService {
     @Optional()
     @Inject(SettingsRuntimeService)
     private readonly settings?: SettingsRuntimeService,
+    @Optional()
+    @Inject(IamWorkbenchRequestDirectory)
+    private readonly requestDirectory?: IamWorkbenchRequestDirectory,
   ) {}
 
   async dashboard(
@@ -1027,10 +1033,17 @@ export class CustomerAffairsService {
     idempotencyValue: string | undefined,
     traceId?: string,
     siteOrigin?: { siteId: string; externalId: string },
+    workbenchAssignment?: {
+      unitId: string;
+      recipientId: string;
+      fingerprint: string;
+    },
   ) {
     const branchId = branchScope(actor, requestedBranch);
     const key = requiredIdempotencyKey(idempotencyValue);
-    const hash = fingerprint(siteOrigin ? { input, siteOrigin } : input);
+    const hash =
+      workbenchAssignment?.fingerprint ??
+      fingerprint(siteOrigin ? { input, siteOrigin } : input);
     if (siteOrigin) {
       const existing = await this.repository.findSiteTicket(
         siteOrigin.siteId,
@@ -1087,9 +1100,25 @@ export class CustomerAffairsService {
     const trackingNumber = `CA-T-${now.getUTCFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
     try {
       const id = await this.repository.transaction(async (tx) => {
+        const assignment = workbenchAssignment
+          ? await this.requestDirectory!.resolve(
+              tx,
+              actor,
+              branchId,
+              workbenchAssignment.unitId,
+              workbenchAssignment.recipientId,
+            )
+          : null;
         const row = await tx.customerAffairsTicket.create({
           data: {
             ...this.ticketData(input),
+            ...(assignment
+              ? {
+                  executionOwnerUserId: assignment.recipient.id,
+                  executionUnit: assignment.unit.name.slice(0, 80),
+                  nextAction: `بررسی توسط ${assignment.recipient.displayName}`,
+                }
+              : {}),
             branchId,
             trackingNumber,
             customerOwnerUserId: owner,
@@ -1136,11 +1165,15 @@ export class CustomerAffairsService {
           actorUserId: actor.userId,
           sourceModule: 'customer-affairs',
           eventType: 'ticket.assigned',
-          title: 'تیکت جدید',
+          title: input.category.startsWith('WORKBENCH_')
+            ? 'درخواست جدید میزکار'
+            : 'تیکت جدید',
           message: `${trackingNumber} به شما تخصیص یافت.`,
           entityType: 'customer-affairs-ticket',
           entityId: row.id,
-          href: `/customer-affairs?view=tickets&ticket=${row.id}`,
+          href: input.category.startsWith('WORKBENCH_')
+            ? `/workbench?tab=requests&request=${row.id}`
+            : `/customer-affairs?view=tickets&ticket=${row.id}`,
         });
         await tx.customerAffairsAuditEvent.create({
           data: {
@@ -2149,33 +2182,71 @@ export class CustomerAffairsService {
   }
 
   async createWorkbenchRequest(
-    input: CustomerAffairsTicketInput,
+    input: WorkbenchRequestInputV1,
     actor: AuthenticatedActor,
     requestedBranch: string | undefined,
     idempotencyValue: string | undefined,
     traceId?: string,
   ) {
     const branchId = branchScope(actor, requestedBranch);
-    const recipients = await this.hrDirectory.workbenchFeedbackRecipientUserIds(
-      branchId,
-      this.workbenchUnitTerms(input.executionUnit),
-    );
-    const executionOwnerUserId =
-      input.executionOwnerUserId ??
-      recipients.find((userId) => userId !== actor.userId) ??
-      recipients[0];
+    if (!input.organizationUnitId || !input.executionOwnerUserId)
+      throw new BadRequestException('واحد مقصد و کاربر گیرنده را انتخاب کنید.');
+    if (input.subject.trim().length < 3 || input.description.trim().length < 3)
+      throw new BadRequestException(
+        'عنوان و شرح درخواست باید حداقل ۳ نویسه داشته باشند.',
+      );
+    const description = `${input.description.trim()}${input.reference?.trim() ? `\n\nمرجع پرونده: ${input.reference.trim()}` : ''}`;
+    if (description.length > 2000)
+      throw new BadRequestException(
+        'شرح درخواست همراه مرجع پرونده حداکثر ۲۰۰۰ نویسه است.',
+      );
+    const now = new Date();
     return this.createTicket(
       {
-        ...input,
-        ...(executionOwnerUserId ? { executionOwnerUserId } : {}),
+        subject: input.subject.trim(),
+        description,
+        priority: input.priority,
+        channel: 'CHAT',
+        contactOccurredAt: now.toISOString(),
+        category: 'WORKBENCH_INTERNAL',
+        serviceType: 'INTERNAL_REQUEST',
+        impact: input.priority === 'NORMAL' ? 'NORMAL' : 'HIGH',
+        urgency:
+          input.priority === 'URGENT'
+            ? 'HIGH'
+            : input.priority === 'HIGH'
+              ? 'NORMAL'
+              : 'LOW',
+        references: [],
+        nextAction: 'بررسی درخواست',
+        nextActionAt: new Date(now.getTime() + 86400000).toISOString(),
       },
       actor,
       branchId,
       idempotencyValue,
       traceId,
+      undefined,
+      {
+        unitId: input.organizationUnitId,
+        recipientId: input.executionOwnerUserId,
+        fingerprint: fingerprint(input),
+      },
     );
   }
-  async workbenchRequests(actor: AuthenticatedActor) {
+  async workbenchRequestOptions(
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ) {
+    return {
+      data: await this.requestDirectory!.options(
+        actor,
+        branchScope(actor, requestedBranch),
+      ),
+    };
+  }
+  async workbenchRequests(
+    actor: AuthenticatedActor,
+  ): Promise<{ data: WorkbenchRequestItemV1[] }> {
     const rows = await this.repository.workbenchRequests(
       actor.userId,
       actor.branchIds,
@@ -2191,6 +2262,14 @@ export class CustomerAffairsService {
         priority: row.priority,
         nextActionAt: row.nextActionAt.toISOString(),
         updatedAt: row.updatedAt.toISOString(),
+        direction:
+          row.createdByUserId === actor.userId
+            ? row.executionOwnerUserId === actor.userId
+              ? 'self'
+              : 'outgoing'
+            : 'incoming',
+        senderName: row.createdBy?.displayName ?? '',
+        recipientName: row.executionOwner?.displayName ?? null,
       })),
     };
   }

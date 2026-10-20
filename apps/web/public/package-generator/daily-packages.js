@@ -4,6 +4,14 @@ window.PackageDailyPublisher = (() => {
   let enabled = false;
   const buttons = [];
   const pending = new Map();
+  function requestId() {
+    if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    // LAN HTTP does not expose randomUUID; getRandomValues remains available.
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+    const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+  }
   const sync = () => buttons.forEach(({ button, exportButton }) => {
     button.hidden = !enabled;
     button.disabled = exportButton.disabled || pending.size > 0;
@@ -37,13 +45,13 @@ window.PackageDailyPublisher = (() => {
     publish(blob, title) {
       if (!enabled || !(blob instanceof Blob) || blob.type !== 'application/pdf' || blob.size < 1 || blob.size > 25 * 1024 * 1024)
         return Promise.reject(new Error('خروجی پکیج برای ارسال معتبر نیست.'));
-      const requestId = crypto.randomUUID();
       return new Promise((resolve, reject) => {
+        const id = requestId();
         const timer = setTimeout(() => {
-          pending.delete(requestId); sync(); reject(new Error('مهلت ارسال پکیج پایان یافت؛ دوباره تلاش کنید.'));
+          pending.delete(id); sync(); reject(new Error('مهلت ارسال پکیج پایان یافت؛ دوباره تلاش کنید.'));
         }, 300000);
-        pending.set(requestId, { resolve, reject, timer }); sync();
-        window.parent.postMessage({ type: 'rubi-daily-package-publish', requestId, title: String(title).slice(0, 200), blob }, window.location.origin);
+        pending.set(id, { resolve, reject, timer }); sync();
+        window.parent.postMessage({ type: 'rubi-daily-package-publish', requestId: id, title: String(title).slice(0, 200), blob }, window.location.origin);
       });
     },
   };

@@ -25,6 +25,9 @@ import { ReservationsPublicService } from '../reservations/reservations-public.s
 import { ProcurementPublicService } from '../procurement/procurement-public.service';
 import { MasterDataService } from '../master-data/master-data.service';
 import { MasterDataRepository } from '../master-data/master-data.repository';
+import { ConfigService } from '@nestjs/config';
+import { MasterDataContactCrypto } from '../master-data/master-data-contact.crypto';
+import { CurrencyRateService } from '../master-data/currency-rate.service';
 
 const enabled = process.env.NORA_RUN_B2B_POSTGRES_TESTS === '1';
 const container = `nora-test-b2b-${randomUUID().slice(0, 8)}`;
@@ -562,6 +565,353 @@ describe.skipIf(!enabled)(
       ).toBe(false);
     });
 
+    it('persists a bank without manual code and preserves its identity on blank-code edits', async () => {
+      const service = new MasterDataService(
+        new MasterDataRepository({ client } as DatabaseService),
+      );
+      const country = await client.masterCountry.findFirstOrThrow({
+        where: { isActive: true },
+      });
+      const actor: AuthenticatedActor = {
+        userId: actorUserId,
+        sessionId: randomUUID(),
+        branchIds: [branchId],
+        permissions: [
+          'master_data.create',
+          'master_data.update',
+          'master_data.read',
+        ],
+      };
+      const first = (
+        await service.create(
+          'banks',
+          { name: 'Synthetic optional bank', countryId: country.id, code: '' },
+          actor,
+        )
+      ).data;
+      const second = (
+        await service.create(
+          'banks',
+          { name: 'Synthetic optional bank', countryId: country.id },
+          actor,
+        )
+      ).data;
+      expect(first.code).toMatch(/^BANK_[A-Z0-9]{12}$/);
+      expect(second.code).not.toBe(first.code);
+      await service.update(
+        'banks',
+        first.id,
+        { name: 'Renamed optional bank', code: ' ' },
+        first.version,
+        actor,
+      );
+      expect(
+        await client.masterBank.findUniqueOrThrow({ where: { id: first.id } }),
+      ).toMatchObject({
+        code: first.code,
+        name: 'Renamed optional bank',
+        countryId: country.id,
+        version: first.version + 1,
+      });
+      const audit = await client.masterDataAuditEvent.count({
+        where: { resource: 'banks', entityId: first.id, actorUserId },
+      });
+      expect(audit).toBe(2);
+    });
+
+    it('edits/deletes real reference quotes atomically, excludes removed rows and retains audit evidence', async () => {
+      const service = new CurrencyRateService({ client } as DatabaseService);
+      const actor: AuthenticatedActor = {
+        userId: actorUserId,
+        sessionId: randomUUID(),
+        branchIds: [branchId],
+        permissions: [
+          'master_data.create',
+          'master_data.currency_rate.create',
+          'master_data.update',
+          'master_data.delete',
+        ],
+      };
+      const created = (
+        await service.createQuote(
+          { fromCurrencyCode: 'USD', toCurrencyCode: 'IRR', buyRate: '270000' },
+          actor,
+        )
+      ).data[0]!;
+      await service.mutate(
+        created.id,
+        { expectedVersion: 1, rate: '280000.1234567890', source: 'corrected' },
+        'update',
+        actor,
+      );
+      expect(
+        (
+          await service.current(
+            created.fromCurrencyId,
+            created.toCurrencyId,
+            'BUY',
+          )
+        ).data,
+      ).toMatchObject({
+        id: created.id,
+        rate: '280000.123456789',
+        status: 'APPROVED',
+        version: 2,
+      });
+      const concurrent = await Promise.allSettled([
+        service.mutate(
+          created.id,
+          { expectedVersion: 2, rate: '290000' },
+          'update',
+          actor,
+        ),
+        service.mutate(
+          created.id,
+          { expectedVersion: 2, rate: '300000' },
+          'update',
+          actor,
+        ),
+      ]);
+      expect(
+        concurrent.filter((row) => row.status === 'fulfilled'),
+      ).toHaveLength(1);
+      expect(
+        concurrent.filter((row) => row.status === 'rejected'),
+      ).toHaveLength(1);
+      await service.mutate(created.id, { expectedVersion: 3 }, 'delete', actor);
+      expect(
+        await client.masterDraftExchangeRate.findUniqueOrThrow({
+          where: { id: created.id },
+        }),
+      ).toMatchObject({
+        isActive: false,
+        isAuthoritative: false,
+        version: 4,
+        deactivatedByUserId: actorUserId,
+      });
+      expect(
+        (
+          await service.current(
+            created.fromCurrencyId,
+            created.toCurrencyId,
+            'BUY',
+          )
+        ).data?.id,
+      ).not.toBe(created.id);
+      expect(
+        (
+          await service.history({
+            page: 1,
+            pageSize: 100,
+            fromCurrencyId: created.fromCurrencyId,
+          })
+        ).data.map((row) => row.id),
+      ).not.toContain(created.id);
+      expect(
+        await client.masterDataAuditEvent.count({
+          where: { entityId: created.id, resource: 'exchange-rates' },
+        }),
+      ).toBe(4);
+      await expect(
+        service.mutate(
+          created.id,
+          { expectedVersion: 4, rate: '1' },
+          'update',
+          actor,
+        ),
+      ).rejects.toMatchObject({ status: 404 });
+      const retained = (
+        await service.createQuote(
+          { fromCurrencyCode: 'USD', toCurrencyCode: 'IRR', buyRate: '400000' },
+          actor,
+        )
+      ).data[0]!;
+      const failing = new CurrencyRateService({
+        client: client.$extends({
+          query: {
+            masterDataAuditEvent: {
+              create() {
+                return Promise.reject(new Error('Synthetic audit failure'));
+              },
+            },
+          },
+        }),
+      } as unknown as DatabaseService);
+      await expect(
+        failing.mutate(
+          retained.id,
+          { expectedVersion: 1, rate: '500000' },
+          'update',
+          actor,
+        ),
+      ).rejects.toThrow('Synthetic audit failure');
+      await expect(
+        failing.mutate(retained.id, { expectedVersion: 1 }, 'delete', actor),
+      ).rejects.toThrow('Synthetic audit failure');
+      expect(
+        await client.masterDraftExchangeRate.findUniqueOrThrow({
+          where: { id: retained.id },
+        }),
+      ).toMatchObject({
+        rate: new Prisma.Decimal('400000'),
+        isActive: true,
+        version: 1,
+      });
+    });
+
+    it('registers reference quotes without checker authority and immediately reads exact current/history values', async () => {
+      const service = new CurrencyRateService({ client } as DatabaseService);
+      const actor: AuthenticatedActor = {
+        userId: actorUserId,
+        sessionId: randomUUID(),
+        branchIds: [branchId],
+        permissions: ['master_data.create', 'master_data.currency_rate.create'],
+      };
+      const result = await service.createQuote(
+        {
+          fromCurrencyCode: 'USD',
+          toCurrencyCode: 'IRR',
+          buyRate: '270000.1234567890',
+          sellRate: '280000.9876543210',
+        },
+        actor,
+      );
+      expect(result.data).toHaveLength(2);
+      const buy = result.data[0]!;
+      for (const row of result.data) {
+        expect(row).toMatchObject({
+          status: 'APPROVED',
+          createdByUserId: actorUserId,
+          approvedByUserId: actorUserId,
+          isAuthoritative: false,
+        });
+        expect(row.approvedAt).not.toBeNull();
+        const audit = await client.masterDataAuditEvent.findFirstOrThrow({
+          where: { entityId: row.id },
+        });
+        expect(audit).toMatchObject({
+          actorUserId,
+          actorBranchId: branchId,
+          action: 'master_data.create',
+        });
+      }
+      expect(
+        (await service.current(buy.fromCurrencyId, buy.toCurrencyId, 'BUY'))
+          .data,
+      ).toMatchObject({
+        id: buy.id,
+        rate: '270000.123456789',
+        status: 'APPROVED',
+      });
+      expect(
+        (await service.current(buy.fromCurrencyId, buy.toCurrencyId, 'SELL'))
+          .data,
+      ).toMatchObject({ id: result.data[1]!.id, rate: '280000.987654321' });
+      const history = await service.history({
+        page: 1,
+        pageSize: 100,
+        fromCurrencyId: buy.fromCurrencyId,
+        toCurrencyId: buy.toCurrencyId,
+      });
+      expect(history.data.map((row) => row.id)).toContain(buy.id);
+      const next = await service.createQuote(
+        { fromCurrencyCode: 'USD', toCurrencyCode: 'IRR', buyRate: '290000' },
+        actor,
+      );
+      expect(
+        (await service.current(buy.fromCurrencyId, buy.toCurrencyId, 'BUY'))
+          .data?.id,
+      ).toBe(next.data[0]!.id);
+      // Fail the second audit inside a real DB transaction, after the first write/audit.
+      let audits = 0;
+      const failingAuditService = new CurrencyRateService({
+        client: client.$extends({
+          query: {
+            masterDataAuditEvent: {
+              create({ args, query }) {
+                if (++audits === 2)
+                  return Promise.reject(new Error('Synthetic audit failure'));
+                return query(args);
+              },
+            },
+          },
+        }),
+      } as unknown as DatabaseService);
+      const before = await client.masterDraftExchangeRate.count();
+      const auditsBefore = await client.masterDataAuditEvent.count();
+      await expect(
+        failingAuditService.createQuote(
+          {
+            fromCurrencyCode: 'USD',
+            toCurrencyCode: 'IRR',
+            buyRate: '300000',
+            sellRate: '310000',
+          },
+          actor,
+        ),
+      ).rejects.toThrow();
+      expect(await client.masterDraftExchangeRate.count()).toBe(before);
+      expect(await client.masterDataAuditEvent.count()).toBe(auditsBefore);
+    });
+
+    it('persists independent per-unit toman metadata without reinterpreting legacy USD rates', async () => {
+      const currency = await client.masterCurrency.findUniqueOrThrow({
+        where: { code: 'USD' },
+      });
+      const service = new MasterDataService(
+        new MasterDataRepository({ client } as DatabaseService),
+      );
+      const actor = {
+        userId: actorUserId,
+        branchIds: [branchId],
+        permissions: ['master_data.read', 'master_data.update'],
+      } as AuthenticatedActor;
+      const saved = await service.update(
+        'currencies',
+        currency.id,
+        { tomanPerUnit: '270000.1234567890' },
+        currency.version,
+        actor,
+      );
+      expect(saved.data.attributes.tomanPerUnit).toBe('270000.123456789');
+      const persisted = await client.masterCurrency.findUniqueOrThrow({
+        where: { id: currency.id },
+      });
+      expect(persisted.unitsPerUsd?.toString() ?? null).toBe(
+        currency.unitsPerUsd?.toString() ?? null,
+      );
+      for (const rate of ['0', '-1', 'NaN', 'Infinity'])
+        await expect(
+          client.masterCurrency.update({
+            where: { id: currency.id },
+            data: { tomanPerUnit: rate },
+          }),
+        ).rejects.toThrow();
+      await expect(
+        service.update(
+          'currencies',
+          currency.id,
+          { tomanPerUnit: '280000' },
+          currency.version,
+          actor,
+        ),
+      ).rejects.toThrow();
+      await service.update(
+        'currencies',
+        currency.id,
+        { tomanPerUnit: '' },
+        saved.data.version,
+        actor,
+      );
+      expect(
+        (
+          await client.masterCurrency.findUniqueOrThrow({
+            where: { id: currency.id },
+          })
+        ).tomanPerUnit,
+      ).toBeNull();
+    });
+
     it('persists exact manual USD currency metadata with CAS and database constraints', async () => {
       const currency = await client.masterCurrency.findUniqueOrThrow({
         where: { code: 'IRR' },
@@ -680,6 +1030,249 @@ describe.skipIf(!enabled)(
           data: { ...base, id: randomUUID(), counterpartyRole: 'AIRLINE' },
         }),
       ).rejects.toThrow();
+    });
+
+    it.each(['suppliers', 'brokers'] as const)(
+      'round-trips %s contacts/address and preserves canonical edits on rename',
+      async (resource) => {
+        const crypto = new MasterDataContactCrypto(
+          new ConfigService({
+            MASTER_DATA_IMPORT_TOKEN_KEY_BASE64: Buffer.alloc(32, 9).toString(
+              'base64',
+            ),
+          }),
+        );
+        const officeMask = (phone: string) =>
+          resource === 'suppliers'
+            ? crypto.protect('phone', phone).masked
+            : crypto.protectTravelPhone(phone).masked;
+        const country = await client.masterCountry.findFirstOrThrow();
+        const city = await client.masterCity.create({
+          data: {
+            code: `QA_RT_${resource}`,
+            name: 'Synthetic roundtrip city',
+            countryId: country.id,
+            createdByUserId: actorUserId,
+            updatedByUserId: actorUserId,
+          },
+        });
+        const master = new MasterDataRepository({ client } as DatabaseService);
+        const service = new MasterDataService(master, crypto);
+        const actor = {
+          userId: actorUserId,
+          branchIds: [branchId],
+          permissions: [
+            'master_data.create',
+            'master_data.read',
+            'master_data.update',
+          ],
+        } as AuthenticatedActor;
+        let saved = await service.create(
+          resource,
+          {
+            name: `Synthetic roundtrip ${resource}`,
+            countryId: country.id,
+            ...(resource === 'brokers'
+              ? { cityIds: city.id }
+              : { cityId: city.id }),
+            primaryPhone: '+12025550123',
+            dossierVersion: '1',
+            dossierMobile: '+12025550124',
+            dossierEmail: 'QA@EXAMPLE.TEST',
+            dossierAddress: 'Imported office',
+          },
+          actor,
+        );
+        const orgId = String(saved.data.attributes.organizationId);
+        let detail = await service.detail(resource, saved.data.id);
+        expect(detail.data.attributes).toMatchObject({
+          primaryPhoneMasked: officeMask('+12025550123'),
+          dossierMobileMasked: crypto.protectTravelPhone('+12025550124').masked,
+          dossierAddress: 'Imported office',
+        });
+        if (resource === 'suppliers')
+          expect(detail.data.attributes.address).toBe('Imported office');
+        const office = await client.masterOrganizationContact.findFirstOrThrow({
+          where: { organizationId: orgId, jobTitle: 'PARTNER_OFFICE' },
+        });
+        const changed = crypto.protectTravelPhone('+12025550125');
+        await client.masterOrganizationContact.update({
+          where: { id: office.id },
+          data: {
+            phoneEncrypted: changed.encrypted,
+            phoneEncryptionIv: changed.encryptionIv,
+            phoneEncryptionAuthTag: changed.encryptionAuthTag,
+            phoneEncryptionKeyVersion: changed.encryptionKeyVersion,
+            phoneMasked: changed.masked,
+            phoneFingerprint: changed.fingerprint,
+          },
+        });
+        await client.masterOrganizationAddress.updateMany({
+          where: { organizationId: orgId, isPrimary: true },
+          data: { addressLine: 'Canonical updated office' },
+        });
+        saved = await service.update(
+          resource,
+          saved.data.id,
+          { name: 'Renamed roundtrip partner', dossierVersion: '1' },
+          saved.data.version,
+          actor,
+        );
+        detail = await service.detail(resource, saved.data.id);
+        expect(detail.data.attributes).toMatchObject({
+          primaryPhoneMasked: changed.masked,
+          dossierMobileMasked: crypto.protectTravelPhone('+12025550124').masked,
+          dossierAddress: 'Canonical updated office',
+        });
+        expect(
+          (
+            await client.masterOrganizationContact.findUniqueOrThrow({
+              where: { id: office.id },
+            })
+          ).phoneFingerprint,
+        ).toBe(changed.fingerprint);
+        saved = await service.update(
+          resource,
+          saved.data.id,
+          {
+            dossierVersion: '1',
+            primaryPhone: '+12025550126',
+            dossierMobile: '+12025550127',
+            dossierAddress: 'Edited office',
+          },
+          saved.data.version,
+          actor,
+        );
+        detail = await service.detail(resource, saved.data.id);
+        expect(detail.data.attributes).toMatchObject({
+          primaryPhoneMasked: officeMask('+12025550126'),
+          dossierMobileMasked: crypto.protectTravelPhone('+12025550127').masked,
+          dossierAddress: 'Edited office',
+        });
+        await service.update(
+          resource,
+          saved.data.id,
+          { dossierVersion: '1', dossierMobile: '', dossierEmail: '' },
+          saved.data.version,
+          actor,
+        );
+        detail = await service.detail(resource, saved.data.id);
+        expect(detail.data.attributes).toMatchObject({
+          primaryPhoneMasked: officeMask('+12025550126'),
+          dossierMobileMasked: '',
+          dossierEmailMasked: '',
+          dossierAddress: 'Edited office',
+        });
+        const current = detail.data;
+        await service.update(
+          resource,
+          current.id,
+          {
+            primaryPhone: '+12025550128',
+            ...(resource === 'suppliers'
+              ? { address: 'Native address edit' }
+              : {}),
+          },
+          current.version,
+          actor,
+        );
+        detail = await service.detail(resource, current.id);
+        expect(detail.data.attributes.primaryPhoneMasked).toBe(
+          officeMask('+12025550128'),
+        );
+        if (resource === 'suppliers')
+          expect(detail.data.attributes.dossierAddress).toBe(
+            'Native address edit',
+          );
+        expect(JSON.stringify(detail)).not.toContain('phoneEncrypted');
+      },
+    );
+
+    it('saves a broker with identical office/mobile and Caps Lock email, then splits and clears roles', async () => {
+      const crypto = new MasterDataContactCrypto(
+        new ConfigService({
+          MASTER_DATA_IMPORT_TOKEN_KEY_BASE64: Buffer.alloc(32, 9).toString(
+            'base64',
+          ),
+        }),
+      );
+      const country = await client.masterCountry.findFirstOrThrow();
+      const city = await client.masterCity.create({
+        data: {
+          code: 'QA_SHARED_PHONE_CITY',
+          name: 'Synthetic phone city',
+          countryId: country.id,
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+        },
+      });
+      const master = new MasterDataRepository({ client } as DatabaseService);
+      const service = new MasterDataService(master, crypto);
+      const actor = {
+        userId: actorUserId,
+        branchIds: [branchId],
+        permissions: [
+          'master_data.create',
+          'master_data.update',
+          'master_data.read',
+        ],
+      } as AuthenticatedActor;
+      let saved = await service.create(
+        'brokers',
+        {
+          name: 'Synthetic shared phone broker',
+          countryId: country.id,
+          cityIds: city.id,
+          primaryPhone: '+90 555 123 4567',
+          dossierVersion: '1',
+          dossierMobile: '+905551234567',
+          dossierEmail: 'Caps.LOCK@EXAMPLE.TEST',
+        },
+        actor,
+      );
+      const orgId = String(saved.data.attributes.organizationId);
+      const phones = () =>
+        client.masterOrganizationContact.findMany({
+          where: {
+            organizationId: orgId,
+            isActive: true,
+            phoneFingerprint: { not: null },
+          },
+        });
+      expect(await phones()).toHaveLength(1);
+      expect(saved.data.attributes.dossierMobileMasked).toBeTruthy();
+      const email = await client.masterOrganizationContact.findFirstOrThrow({
+        where: { organizationId: orgId, jobTitle: 'PARTNER_EMAIL' },
+      });
+      expect(email.emailFingerprint).toBe(
+        crypto.protect('email', 'caps.lock@example.test').fingerprint,
+      );
+      saved = await service.update(
+        'brokers',
+        saved.data.id,
+        { dossierVersion: '1', dossierMobile: '+905559999999' },
+        saved.data.version,
+        actor,
+      );
+      expect(await phones()).toHaveLength(2);
+      saved = await service.update(
+        'brokers',
+        saved.data.id,
+        { dossierVersion: '1', dossierMobile: '+905551234567' },
+        saved.data.version,
+        actor,
+      );
+      expect(await phones()).toHaveLength(1);
+      saved = await service.update(
+        'brokers',
+        saved.data.id,
+        { dossierVersion: '1', dossierMobile: '' },
+        saved.data.version,
+        actor,
+      );
+      expect(await phones()).toHaveLength(1);
+      expect(saved.data.attributes.dossierMobileMasked).toBe('');
+      expect((await phones())[0]?.jobTitle).toBe('PARTNER_OFFICE');
     });
 
     it.each(['suppliers', 'brokers'] as const)(
