@@ -313,6 +313,15 @@ function HrRecordFormFields({
     ),
     وضعیت: ['فعال', 'غیرفعال', 'پیش‌نویس', 'در حال بررسی', 'تکمیل‌شده'],
     کارمند: employees.map((item) => item.name),
+    'عنوان شیفت': data.records
+      .filter(
+        (r) =>
+          r.section === 'time' &&
+          r.tab === 'shiftTemplates' &&
+          r.branchId === branchId &&
+          !r.deletedAt,
+      )
+      .map((r) => r.values[0] ?? ''),
     'واحد درخواست‌کننده': units,
     'واحد درخواست کننده': units,
     واحد: units,
@@ -638,6 +647,9 @@ function HrRecordFormFields({
               optionsByLabel,
               hiddenLabels,
               optionalLabels: [
+                ...definition.fields
+                  .filter((field) => !field.required)
+                  .map((field) => field.label),
                 ...(target.source.section === 'organization' &&
                 target.source.tab === 'branches'
                   ? ['مدیر']
@@ -696,6 +708,13 @@ function HrRecordFormFields({
                 : {}),
               fieldTypes: {
                 'نام واحد': 'text',
+                'نام گروه': 'text',
+                'نام ساعت کاری': 'text',
+                'نام شیفت': 'text',
+                'ساعت قبل از شروع': 'number',
+                'ساعت بعد از پایان': 'number',
+                'پورت دستگاه': 'number',
+                توضیحات: 'textarea',
                 'نام شعبه': 'text',
                 ...(target.source.section === 'organization'
                   ? { 'عنوان شغل': 'text' as const }
@@ -725,7 +744,9 @@ function HrRecordFormFields({
                 ? {
                     initialValues: [
                       target.record.code,
-                      ...target.record.values,
+                      ...definition.columns.map(
+                        (_, index) => target.record?.values[index] ?? '',
+                      ),
                       ...(attachmentLabel
                         ? [
                             target.record.data.documentId

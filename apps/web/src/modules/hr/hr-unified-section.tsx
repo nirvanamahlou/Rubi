@@ -72,6 +72,7 @@ function AccessibleHrSection({
     group.sources.find((item) => item.tab === sourceTab) ?? group.sources[0]!;
   const definition = getHrResource(source.section, source.tab);
   const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState('createdAt');
   const [status, setStatus] = useState('');
   const [branchId, setBranchId] = useState('');
   const [employeeId, setEmployeeId] = useState('');
@@ -97,6 +98,7 @@ function AccessibleHrSection({
   const requestQuery = {
     section: sourceSection,
     tab: activeTab,
+    sortBy,
     ...(query ? { search: query } : {}),
     ...(status ? { status } : {}),
     ...(employeeId ? { employeeId } : {}),
@@ -366,6 +368,20 @@ function AccessibleHrSection({
             </label>
           ) : null}
           <label>
+            مرتب‌سازی بر اساس
+            <NativeSearchSelect
+              value={sortBy}
+              onChange={(event) => {
+                setSortBy(event.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="createdAt">تاریخ ثبت</option>
+              <option value="name">اسم و فامیل</option>
+              <option value="personnelCode">کد پرسنلی</option>
+            </NativeSearchSelect>
+          </label>
+          <label>
             وضعیت
             <NativeSearchSelect
               value={status}
@@ -443,6 +459,7 @@ function AccessibleHrSection({
           <HrButton
             onClick={() => {
               setQuery('');
+              setSortBy('createdAt');
               setStatus('');
               setEmployeeId('');
               setBranchId('');

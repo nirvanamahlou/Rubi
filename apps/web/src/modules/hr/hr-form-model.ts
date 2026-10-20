@@ -1,3 +1,8 @@
+import {
+  HR_RADAN_FIELD_OPTIONS,
+  HR_RADAN_CONTRACT_TYPES,
+  HR_RADAN_LEAVE_TYPES,
+} from '@nora/contracts';
 import type { HrBootstrapDto, HrRecordDto } from '@nora/contracts';
 import { hrCompanies } from './hr-live-data';
 import { HR_GRADE_OPTIONS } from './hr-grade-options';
@@ -26,7 +31,9 @@ export function retiredHrColumns(section: string, tab: string): string[] {
 }
 
 export function parentFieldLabel(section: string, tab: string): string {
-  if (section === 'organization') return 'واحد والد';
+  if (section === 'organization')
+    return tab === 'groupMembers' ? 'گروه' : 'واحد والد';
+  if (section === 'time' && tab === 'shift') return 'ساعت کاری';
   if (section === 'recruitment')
     return tab === 'applicants' ? 'برنامه جذب' : 'متقاضی';
   if (section === 'contracts') return 'قرارداد مرجع';
@@ -78,7 +85,10 @@ export function hrReferenceOptions(
     ...new Set([...HR_GRADE_OPTIONS, ...titles('organization', 'grades')]),
   ];
   const companies = hrCompanies(data).map((c) => c.name);
-  const options: Record<string, readonly string[]> = {};
+  const options: Record<string, readonly string[]> = {
+    ...HR_RADAN_FIELD_OPTIONS,
+    'نوع قرارداد': HR_RADAN_CONTRACT_TYPES,
+  };
   const bind = (labels: string[], values: readonly string[]) =>
     labels.forEach((l) => {
       options[l] = values;
@@ -163,9 +173,7 @@ export function hrReferenceOptions(
     [
       ...new Set([
         ...titles('time', 'leavePolicies', 'نوع مرخصی'),
-        'استحقاقی',
-        'استعلاجی',
-        'بدون حقوق',
+        ...HR_RADAN_LEAVE_TYPES,
         'جبرانی',
       ]),
     ],

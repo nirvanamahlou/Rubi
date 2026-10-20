@@ -1,3 +1,4 @@
+export * from './radan-fields';
 export * from './resource-registry';
 export * from './connections';
 export * from './directory';
@@ -74,6 +75,9 @@ export interface HrWorkflowData {
   currency?: string;
   reason?: string;
   /** Server-derived attendance output; commands cannot supply these fields. */
+  shiftEndDayOffset?: number;
+  attendanceBeforeHours?: number;
+  attendanceAfterHours?: number;
   workedMinutes?: number;
   lateMinutes?: number | null;
   earlyMinutes?: number | null;
