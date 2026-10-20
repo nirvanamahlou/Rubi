@@ -457,5 +457,38 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       });
       expect(filtered.data.map((c) => c.id)).toEqual([contactId]);
     });
+    it('ranks only matching outbound calls across all contacts and decrypts bounded summaries', async () => {
+      for (let i = 0; i < 3; i++)
+        await calls.create(
+          {
+            id: randomUUID(),
+            ...value,
+            direction: 'OUTBOUND',
+            status: 'جدید',
+            outcome: 'ANSWERED',
+            occurredAt: '2026-10-20T10:00:00Z',
+          },
+          actor,
+          branchId,
+        );
+      const query = {
+        ...new CallCenterSearchDto(),
+        from: '2026-10-01T00:00:00Z',
+        to: '2026-11-01T00:00:00Z',
+      };
+      const report = await read.report(actor, branchId, query);
+      expect(report.data.topFollowUps).toHaveLength(5);
+      expect(report.data.topFollowUps[0]).toEqual({
+        contactId,
+        name: value.name,
+        count: 3,
+      });
+      expect(report.data.topFollowUps.every((r) => !('phone' in r))).toBe(true);
+      const inbound = await read.report(actor, branchId, {
+        ...query,
+        direction: 'INBOUND',
+      });
+      expect(inbound.data.topFollowUps).toEqual([]);
+    });
   },
 );

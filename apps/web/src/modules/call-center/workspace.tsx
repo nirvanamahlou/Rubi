@@ -58,6 +58,7 @@ import {
 import { CallForm } from './call-form';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './workspace.module.css';
+import { ReportHighlights } from './report-highlights';
 const outcomes: Record<string, string> = {
   ANSWERED: 'گفت‌وگو انجام شد',
   NO_ANSWER: 'بدون پاسخ',
@@ -672,6 +673,7 @@ function Content({
               </button>
             </nav>
           </section>
+          <ReportPanel report={report} error={reportError} agents={agents} />
         </div>
         {selected && (
           <DossierFrame onClose={() => setSelected(null)}>
@@ -724,7 +726,7 @@ function Content({
           </DossierFrame>
         )}
       </div>
-      <ReportPanel report={report} error={reportError} agents={agents} />
+
       {draft && (
         <CallForm
           branchId={branch}
@@ -830,6 +832,7 @@ function ReportPanel({
           پوشش شاخص اطلاعات ناقص است؛ آمار تکمیل اطلاعات قطعی نیست.
         </p>
       )}
+      <ReportHighlights data={r} agents={agents} />
       <div className={styles.reports}>
         <div>
           <h3>جهت، نتیجه و روش ثبت تماس</h3>
@@ -859,27 +862,6 @@ function ReportPanel({
               ))}
             </tbody>
           </table>
-        </div>
-        <div>
-          <h3>منابع تماس‌ها</h3>
-          {r.sources.map((s, i) => (
-            <div key={i} className={styles.sourceRow}>
-              <span>{s.label}</span>
-              <strong>{faNumber(s.count)}</strong>
-              <span className={styles.sourceBar}>
-                <i
-                  style={{
-                    width: `${r.calls ? Math.min(100, (s.count / r.calls) * 100) : 0}%`,
-                  }}
-                />
-              </span>
-              <small>
-                {r.calls
-                  ? `${faNumber(Math.round((s.count / r.calls) * 100))}٪`
-                  : '—'}
-              </small>
-            </div>
-          ))}
         </div>
         <div>
           <h3>درخواست‌های ایجادشده در بازه</h3>
@@ -919,74 +901,7 @@ function ReportPanel({
           </p>
         </div>
       </div>
-      <details className={styles.activity}>
-        <summary>فعالیت ثبت‌کنندگان و انجام‌دهندگان</summary>
-        <div className={styles.tableScroll}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>کارشناس</th>
-                <th>ثبت تماس</th>
-                <th>مسئول فعلی اقدام باز</th>
-                <th>انجام‌دهنده اقدام</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from(
-                new Set([
-                  ...r.registrations.map((a) => a.actorId),
-                  ...(r.tasks.activity ?? []).map((a) => a.actorId),
-                ]),
-              ).map((id, index) => (
-                <tr key={id ?? index}>
-                  <td>
-                    {agents.find((a) => a.id === id)?.displayName ?? (
-                      <bdi>{id ?? 'نامشخص'}</bdi>
-                    )}
-                  </td>
-                  <td>
-                    {r.registrations.some((a) => a.actorId === id)
-                      ? faNumber(
-                          r.registrations
-                            .filter((a) => a.actorId === id)
-                            .reduce((sum, a) => sum + a.count, 0),
-                        )
-                      : '—'}
-                  </td>
-                  <td>
-                    {r.tasks.activity?.some(
-                      (a) => a.actorId === id && a.role === 'CURRENT_OWNER',
-                    )
-                      ? faNumber(
-                          r.tasks.activity
-                            .filter(
-                              (a) =>
-                                a.actorId === id && a.role === 'CURRENT_OWNER',
-                            )
-                            .reduce((sum, a) => sum + a.count, 0),
-                        )
-                      : '—'}
-                  </td>
-                  <td>
-                    {r.tasks.activity?.some(
-                      (a) => a.actorId === id && a.role !== 'CURRENT_OWNER',
-                    )
-                      ? faNumber(
-                          r.tasks.activity
-                            .filter(
-                              (a) =>
-                                a.actorId === id && a.role !== 'CURRENT_OWNER',
-                            )
-                            .reduce((sum, a) => sum + a.count, 0),
-                        )
-                      : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
+
       <p>
         مخاطب یکتا = گروه شماره در شعبه؛ هر تماس با شماره نامعلوم جداست. زمان
         انتظار، مدت مکالمه و تبدیل فروش هنوز داده معتبر ندارند.

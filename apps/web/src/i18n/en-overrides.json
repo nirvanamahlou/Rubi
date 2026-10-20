@@ -3182,5 +3182,18 @@
   "نام مخاطب (اختیاری)": "Contact name (optional)",
   "نتیجه تماس *": "Call outcome *",
   "انجام‌دهنده اقدام": "Action completer",
-  "درخواستی در این بازه ثبت نشده است.": "No requests were registered in this period."
+  "درخواستی در این بازه ثبت نشده است.": "No requests were registered in this period.",
+  "اطلاعات رتبه‌بندی در دسترس نیست.": "Ranking data is unavailable.",
+  "انجام پیگیری": "Completed follow-ups",
+  "پنج مخاطب با بیشترین تماس خروجی در بازه و فیلتر گزارش": "Top five contacts by matching outbound calls in the report period",
+  "تعداد پیگیری تلفنی": "Outbound follow-up calls",
+  "تماس خروجی منطبق با فیلتر ثبت نشده است.": "No matching outbound calls were registered.",
+  "تماس؛ مقادیر در راهنمای رنگی درج شده‌اند": "calls; values are listed in the color legend",
+  "توزیع منابع": "Source distribution",
+  "ثبت و انجام در بازه؛ مسئولیت باز در وضعیت فعلی شعبه": "Registration and completion in period; current branch open responsibility",
+  "داده‌ای برای منابع تماس وجود ندارد.": "No call source data.",
+  "فعالیتی برای نمایش ثبت نشده است.": "No recorded activity to display.",
+  "کارشناس خارج از فهرست": "Agent outside the current directory",
+  "کل تماس‌ها": "Total calls",
+  "مسئول باز": "Open responsibility"
 }

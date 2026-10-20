@@ -351,6 +351,24 @@ export class CallCenterReadService {
         const registrations = await tx.$queryRaw<
           Array<{ actorId: string; count: bigint }>
         >`SELECT a.created_by_user_id AS "actorId",count(*) AS count FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate} AND (a.origin IS NULL OR a.origin = 'MANUAL') GROUP BY a.created_by_user_id`;
+        const followed = await tx.$queryRaw<
+          Array<{ contactId: string; latestId: string; count: bigint }>
+        >`WITH ranked AS (SELECT a.contact_id, count(*) AS count
+          FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id
+          WHERE ${predicate} AND a.direction='OUTBOUND'
+          GROUP BY a.contact_id ORDER BY count(*) DESC,a.contact_id ASC LIMIT 5)
+          SELECT ranked.contact_id AS "contactId", detail.id AS "latestId", ranked.count
+          FROM ranked JOIN customer_affairs_call_contacts c ON c.id=ranked.contact_id
+          CROSS JOIN LATERAL (SELECT a.id FROM customer_affairs_calls a
+            WHERE a.contact_id=ranked.contact_id AND ${predicate} AND a.direction='OUTBOUND'
+            ORDER BY a.occurred_at DESC,a.id ASC LIMIT 1) detail
+          ORDER BY ranked.count DESC,ranked.contact_id ASC`;
+        const followedCalls = await tx.callCenterCall.findMany({
+          where: {
+            id: { in: followed.map((r) => r.latestId) },
+            contact: { branchId },
+          },
+        });
         const requests = await tx.customerAffairsTicket.groupBy({
           by: ['status'],
           where: {
@@ -395,6 +413,14 @@ export class CallCenterReadService {
             registrations: registrations.map((r) => ({
               ...r,
               count: Number(r.count),
+            })),
+            topFollowUps: followed.map((row) => ({
+              contactId: row.contactId,
+              name:
+                this.calls.presentSummary(
+                  followedCalls.find((c) => c.id === row.latestId)!,
+                ).name || 'مخاطب ناشناس',
+              count: Number(row.count),
             })),
             requests: requests.map((r) => ({
               status: r.status,

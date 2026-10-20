@@ -63,6 +63,7 @@ export interface Report {
     }[];
     sources: { label: string; count: number }[];
     registrations: { actorId: string; count: number }[];
+    topFollowUps?: { contactId: string; name: string; count: number }[];
     requests: { status: string; count: number }[];
     tasks: {
       activity: { actorId: string | null; role: string; count: number }[];
