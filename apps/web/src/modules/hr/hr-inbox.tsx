@@ -30,15 +30,21 @@ export function HrInbox({
 }) {
   const [items, setItems] = useState<HrRecordDto[]>([]);
   const [status, setStatus] = useState('در انتظار تأیید');
+  const [requestType, setRequestType] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
   const [range, setRange] = useState({ from: '', to: '' });
   const [error, setError] = useState('');
   const [workbenchItems, setWorkbenchItems] = useState<WorkbenchHrRequest[]>(
     [],
   );
-  const selection = useHrRowSelection(JSON.stringify([status, range]));
+  const selection = useHrRowSelection(
+    JSON.stringify([status, range, requestType, employeeId]),
+  );
   useEffect(() => {
     let active = true;
     void allHrRecords({
+      dateField: 'createdAt',
+      ...(employeeId ? { employeeId } : {}),
       ...(status ? { status } : {}),
       ...(range.from ? { from: range.from } : {}),
       ...(range.to ? { to: range.to } : {}),
@@ -47,7 +53,9 @@ export function HrInbox({
         if (active)
           setItems(
             result.filter(
-              (item) => getHrResource(item.section, item.tab)?.approval,
+              (item) =>
+                getHrResource(item.section, item.tab)?.approval &&
+                (!requestType || `${item.section}.${item.tab}` === requestType),
             ),
           );
       })
@@ -60,7 +68,7 @@ export function HrInbox({
     return () => {
       active = false;
     };
-  }, [status, range, store.revision]);
+  }, [status, range, store.revision, requestType, employeeId]);
   useEffect(() => {
     let active = true;
     void customerAffairsApi
@@ -127,6 +135,37 @@ export function HrInbox({
       />
       <HrPanel title="درخواست‌ها">
         <div className={ui.filters}>
+          <label>
+            نوع درخواست
+            <NativeSearchSelect
+              value={requestType}
+              onChange={(e) => setRequestType(e.target.value)}
+            >
+              <option value="">همه درخواست‌ها</option>
+              <option value="time.leave">مرخصی</option>
+              <option value="requests.leave">مرخصی میزکار</option>
+              <option value="time.corrections">اصلاح تردد</option>
+              <option value="requests.attendance">اصلاح تردد میزکار</option>
+              <option value="time.mission">مأموریت</option>
+              <option value="expenses.mission">مأموریت و سفر</option>
+              <option value="time.overtime">اضافه‌کاری</option>
+              <option value="time.remote">دورکاری</option>
+            </NativeSearchSelect>
+          </label>
+          <label>
+            درخواست برای
+            <NativeSearchSelect
+              value={employeeId}
+              onChange={(e) => setEmployeeId(e.target.value)}
+            >
+              <option value="">همه کارکنان مجاز</option>
+              {store.data!.employees.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                </option>
+              ))}
+            </NativeSearchSelect>
+          </label>
           <label>
             وضعیت رسیدگی
             <NativeSearchSelect

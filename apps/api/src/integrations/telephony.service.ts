@@ -1,0 +1,569 @@
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'node:crypto';
+import type { AuthenticatedActor, TelephonyEventV1 } from '@nora/contracts';
+import { DatabaseService } from '../database/database.service';
+import { IamCallCenterDirectory } from '../iam/iam-call-center-directory';
+import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
+import { CallCenterTelephonyService } from '../customer-affairs/call-center-telephony.service';
+import { IntegrationRegistryService } from './integration-registry.service';
+import { validateTelephonyEvent } from './telephony.validation';
+
+type Envelope = {
+  event: TelephonyEventV1;
+  recipient: { userId: string; version: number; teamId: string | null } | null;
+};
+@Injectable()
+export class TelephonyIntegrationService {
+  private readonly logger = new Logger(TelephonyIntegrationService.name);
+  constructor(
+    @Inject(DatabaseService) private readonly db: DatabaseService,
+    @Inject(ConfigService) private readonly config: ConfigService,
+    @Inject(CallCenterTelephonyService)
+    private readonly domain: CallCenterTelephonyService,
+    @Inject(IntegrationRegistryService)
+    private readonly registry: IntegrationRegistryService,
+    @Inject(IamCallCenterDirectory)
+    private readonly directory: IamCallCenterDirectory,
+    @Inject(IamWorkbenchRequestDirectory)
+    private readonly teams: IamWorkbenchRequestDirectory,
+  ) {}
+  syntheticEnabled() {
+    return (
+      ['development', 'test'].includes(
+        this.config.get<string>('NODE_ENV') ?? '',
+      ) && this.config.get<string>('TELEPHONY_SYNTHETIC_ENABLED') === 'true'
+    );
+  }
+  private admin(actor: AuthenticatedActor) {
+    if (!this.registry.canManage(actor)) throw new ForbiddenException();
+  }
+  async settings(actor: AuthenticatedActor) {
+    this.domain.authorize(actor);
+    const canManage = this.registry.canManage(actor);
+    return {
+      state: 'NOT_CONNECTED',
+      syntheticEnabled: this.syntheticEnabled(),
+      canManage,
+      connections: canManage
+        ? await this.db.client.integrationTelephonyConnection.findMany({
+            where: { branchId: { in: [...actor.branchIds] } },
+            include: { mappings: true },
+            take: 100,
+          })
+        : [],
+    };
+  }
+  async configure(
+    actor: AuthenticatedActor,
+    input: {
+      id?: string;
+      branchId: string;
+      name: string;
+      version?: number;
+      maxAgeSeconds: number;
+      maxFutureSeconds: number;
+    },
+  ) {
+    this.admin(actor);
+    if (!actor.branchIds.includes(input.branchId))
+      throw new ForbiddenException();
+    return this.db.client.$transaction(async (tx) => {
+      const id = input.id ?? randomUUID();
+      if (input.id) {
+        const changed = await tx.integrationTelephonyConnection.updateMany({
+          where: {
+            id,
+            branchId: input.branchId,
+            version: input.version ?? 0,
+            synthetic: false,
+          },
+          data: {
+            name: input.name,
+            maxAgeSeconds: input.maxAgeSeconds,
+            maxFutureSeconds: input.maxFutureSeconds,
+            version: { increment: 1 },
+          },
+        });
+        if (!changed.count) throw new ConflictException();
+      } else
+        await tx.integrationTelephonyConnection.create({
+          data: {
+            id,
+            branchId: input.branchId,
+            createdByUserId: actor.userId,
+            name: input.name,
+            maxAgeSeconds: input.maxAgeSeconds,
+            maxFutureSeconds: input.maxFutureSeconds,
+            active: false,
+          },
+        });
+      await tx.integrationTelephonyAudit.create({
+        data: {
+          connectionId: id,
+          actorUserId: actor.userId,
+          entityId: id,
+          action: 'CONFIGURE',
+          metadata: { version: input.version ?? 0 },
+        },
+      });
+      return { id, state: 'NOT_CONNECTED' };
+    });
+  }
+  async mapping(
+    actor: AuthenticatedActor,
+    input: {
+      connectionId: string;
+      extension: string;
+      userId: string;
+      teamId?: string;
+      active: boolean;
+      version: number;
+    },
+  ) {
+    this.admin(actor);
+    return this.db.client.$transaction(async (tx) => {
+      const c = await tx.integrationTelephonyConnection.findFirst({
+        where: {
+          id: input.connectionId,
+          branchId: { in: [...actor.branchIds] },
+          synthetic: false,
+        },
+      });
+      if (!c) throw new NotFoundException();
+      if (input.active)
+        await this.directory.resolve(tx, c.branchId, input.userId);
+      if (input.teamId) {
+        const options = await this.teams.options(actor, c.branchId, tx);
+        if (
+          !options.units.some(
+            (u) =>
+              u.id === input.teamId &&
+              u.users.some((v) => v.id === input.userId),
+          )
+        )
+          throw new BadRequestException('کارشناس عضو تیم انتخاب‌شده نیست.');
+      }
+      await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${'telephony:mapping:' + c.id + ':' + input.extension},0))`;
+      const prior = await tx.integrationTelephonyMapping.findUnique({
+        where: {
+          connectionId_extension: {
+            connectionId: c.id,
+            extension: input.extension,
+          },
+        },
+      });
+      if ((prior?.version ?? 0) !== input.version)
+        throw new ConflictException();
+      const row = await tx.integrationTelephonyMapping.upsert({
+        where: {
+          connectionId_extension: {
+            connectionId: c.id,
+            extension: input.extension,
+          },
+        },
+        create: {
+          connectionId: c.id,
+          extension: input.extension,
+          userId: input.userId,
+          teamId: input.teamId ?? null,
+          active: input.active,
+        },
+        update: {
+          userId: input.userId,
+          teamId: input.teamId ?? null,
+          active: input.active,
+          version: { increment: 1 },
+        },
+      });
+      await tx.integrationTelephonyAudit.create({
+        data: {
+          connectionId: c.id,
+          actorUserId: actor.userId,
+          entityId: row.id,
+          action: 'MAPPING',
+          metadata: {
+            before: prior
+              ? {
+                  userId: prior.userId,
+                  teamId: prior.teamId,
+                  version: prior.version,
+                  active: prior.active,
+                }
+              : null,
+            after: {
+              userId: row.userId,
+              teamId: row.teamId,
+              version: row.version,
+              active: row.active,
+            },
+          },
+        },
+      });
+      return row;
+    });
+  }
+  /** Adapter-facing in-process port. There is deliberately no public provider webhook. */
+  async receive(input: TelephonyEventV1) {
+    const c = await this.db.client.integrationTelephonyConnection.findUnique({
+      where: { id: input.connectionId },
+    });
+    if (!c || !c.active || !c.synthetic || !this.syntheticEnabled())
+      throw new ForbiddenException(
+        'No verified provider adapter is configured.',
+      );
+    const event = validateTelephonyEvent(input, c);
+    const crypto = this.domain.crypto,
+      externalFingerprint = crypto.fingerprint(
+        `telephony:event:${c.id}:${event.externalEventId}`,
+      ),
+      payloadFingerprint = crypto.fingerprint(JSON.stringify(event));
+    return this.db.client.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${'telephony:ingress:' + c.id},0))`;
+      const prior = await tx.integrationTelephonyInbox.findUnique({
+        where: {
+          connectionId_externalFingerprint: {
+            connectionId: c.id,
+            externalFingerprint,
+          },
+        },
+      });
+      if (prior) {
+        if (prior.payloadFingerprint !== payloadFingerprint)
+          throw new ConflictException('Event identity collision.');
+        return { id: prior.id, duplicate: true };
+      }
+      const count = await tx.integrationTelephonyInbox.count({
+        where: {
+          connectionId: c.id,
+          receivedAt: { gte: new Date(Date.now() - 60000) },
+        },
+      });
+      if (count >= 120)
+        throw new BadRequestException(
+          'Telephony connection rate limit exceeded.',
+        );
+      const mapping = event.extension
+        ? await tx.integrationTelephonyMapping.findUnique({
+            where: {
+              connectionId_extension: {
+                connectionId: c.id,
+                extension: event.extension,
+              },
+            },
+          })
+        : null;
+      const eligible = mapping?.active
+        ? await this.directory.eligibleMapping(
+            c.branchId,
+            mapping.userId,
+            mapping.teamId,
+            tx,
+          )
+        : false;
+      const envelope: Envelope = {
+        event,
+        recipient:
+          eligible && mapping
+            ? {
+                userId: mapping.userId,
+                version: mapping.version,
+                teamId: mapping.teamId,
+              }
+            : null,
+      };
+      const id = randomUUID();
+      await tx.integrationTelephonyInbox.create({
+        data: {
+          id,
+          connectionId: c.id,
+          externalFingerprint,
+          payloadFingerprint,
+          encryptedPayload: crypto.encrypt(envelope, `telephony:inbox:${id}`),
+          keyVersion: crypto.keyVersion,
+          dispatch: { create: {} },
+        },
+      });
+      return { id, duplicate: false };
+    });
+  }
+  async pending() {
+    // Processed canonical private input expires after seven days; HMAC dedupe tombstones remain.
+    await this.db.client.integrationTelephonyInbox.updateMany({
+      where: {
+        status: 'DONE',
+        processedAt: { lt: new Date(Date.now() - 7 * 86400000) },
+        encryptedPayload: { not: null },
+      },
+      data: { encryptedPayload: null },
+    });
+    await this.db.client.integrationTelephonyInbox.updateMany({
+      where: {
+        status: 'DEAD',
+        receivedAt: { lt: new Date(Date.now() - 30 * 86400000) },
+        encryptedPayload: { not: null },
+      },
+      data: { encryptedPayload: null, errorCode: 'PAYLOAD_EXPIRED' },
+    });
+    return this.db.client.integrationTelephonyOutbox.findMany({
+      where: { completedAt: null, availableAt: { lte: new Date() } },
+      select: { inboxId: true },
+      orderBy: { availableAt: 'asc' },
+      take: 50,
+    });
+  }
+  async process(id: string) {
+    try {
+      return await this.db.client.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM integration_telephony_inbox WHERE id=${id}::uuid FOR UPDATE`;
+        const row = await tx.integrationTelephonyInbox.findUnique({
+          where: { id },
+          include: { connection: true, dispatch: true },
+        });
+        if (
+          !row ||
+          row.status === 'DONE' ||
+          row.status === 'DEAD' ||
+          !row.encryptedPayload ||
+          !row.dispatch ||
+          row.dispatch.availableAt > new Date()
+        )
+          return { processed: false };
+        const envelope = this.domain.crypto.decrypt<Envelope>(
+          row.encryptedPayload,
+          row.keyVersion,
+          `telephony:inbox:${id}`,
+        );
+        const sessionId = await this.domain.project(tx, envelope.event, {
+          branchId: row.connection.branchId,
+          creatorId: row.connection.createdByUserId,
+          synthetic: row.connection.synthetic,
+          receivedAt: row.receivedAt,
+          recipient: envelope.recipient,
+        });
+        await tx.integrationTelephonyAudit.create({
+          data: {
+            connectionId: row.connectionId,
+            entityId: id,
+            action: 'PROCESSED',
+            metadata: {
+              sessionId,
+              kind: envelope.event.kind,
+              receivedAt: row.receivedAt.toISOString(),
+            },
+          },
+        });
+        await tx.integrationTelephonyInbox.update({
+          where: { id },
+          data: {
+            status: 'DONE',
+            processedAt: new Date(),
+            attempts: { increment: 1 },
+            errorCode: null,
+          },
+        });
+        await tx.integrationTelephonyOutbox.update({
+          where: { inboxId: id },
+          data: { completedAt: new Date() },
+        });
+        return { processed: true };
+      });
+    } catch (error) {
+      const permanent =
+        error instanceof BadRequestException ||
+        error instanceof ConflictException;
+      await this.db.client.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM integration_telephony_inbox WHERE id=${id}::uuid FOR UPDATE`;
+        const row = await tx.integrationTelephonyInbox.findUnique({
+          where: { id },
+        });
+        if (!row || row.status === 'DONE' || row.status === 'DEAD') return;
+        const attempts = row.attempts + 1,
+          dead = permanent || attempts >= 6;
+        await tx.integrationTelephonyInbox.update({
+          where: { id },
+          data: {
+            attempts,
+            status: dead ? 'DEAD' : 'RETRY',
+            errorCode:
+              error instanceof ConflictException
+                ? 'CONFLICT'
+                : permanent
+                  ? 'INVALID_DATA'
+                  : 'TEMPORARY',
+          },
+        });
+        await tx.integrationTelephonyOutbox.update({
+          where: { inboxId: id },
+          data: {
+            availableAt: new Date(
+              Date.now() +
+                Math.min(300000, 1000 * 2 ** attempts) +
+                Math.floor(Math.random() * 1000),
+            ),
+            completedAt: dead ? new Date() : null,
+          },
+        });
+        if (dead) {
+          await tx.integrationTelephonyAudit.create({
+            data: {
+              connectionId: row.connectionId,
+              entityId: id,
+              action: 'DEAD_LETTER',
+              metadata: { attempts },
+            },
+          });
+          this.logger.warn(`Telephony dead letter ${id}`);
+        }
+      });
+      return { processed: false };
+    }
+  }
+  async operations(actor: AuthenticatedActor) {
+    this.admin(actor);
+    return {
+      unassigned: await this.domain.review(actor.branchIds),
+      dead: await this.db.client.integrationTelephonyInbox.findMany({
+        where: {
+          status: 'DEAD',
+          connection: { branchId: { in: [...actor.branchIds] } },
+        },
+        select: {
+          id: true,
+          connectionId: true,
+          attempts: true,
+          errorCode: true,
+          receivedAt: true,
+        },
+        take: 50,
+      }),
+      audit: await this.db.client.integrationTelephonyAudit.findMany({
+        where: { connection: { branchId: { in: [...actor.branchIds] } } },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      }),
+    };
+  }
+  async replay(actor: AuthenticatedActor, id: string) {
+    this.admin(actor);
+    return this.db.client.$transaction(async (tx) => {
+      const row = await tx.integrationTelephonyInbox.findFirst({
+        where: {
+          id,
+          status: 'DEAD',
+          connection: { branchId: { in: [...actor.branchIds] } },
+        },
+      });
+      if (!row || !row.encryptedPayload) throw new NotFoundException();
+      await tx.integrationTelephonyInbox.update({
+        where: { id },
+        data: { status: 'PENDING', attempts: 0, errorCode: null },
+      });
+      await tx.integrationTelephonyOutbox.update({
+        where: { inboxId: id },
+        data: { completedAt: null, availableAt: new Date() },
+      });
+      await tx.integrationTelephonyAudit.create({
+        data: {
+          connectionId: row.connectionId,
+          actorUserId: actor.userId,
+          entityId: id,
+          action: 'REPLAY',
+          metadata: {},
+        },
+      });
+      return { ok: true };
+    });
+  }
+  async synthetic(
+    actor: AuthenticatedActor,
+    branchId: string,
+    kind: TelephonyEventV1['kind'],
+    rootId: string | null,
+    externalEventId: string,
+    anonymous = false,
+  ) {
+    if (!this.syntheticEnabled()) throw new NotFoundException();
+    this.domain.authorize(actor, true);
+    if (!actor.branchIds.includes(branchId)) throw new ForbiddenException();
+    const c = await this.db.client.$transaction(async (tx) => {
+      await this.directory.resolve(tx, branchId, actor.userId);
+      await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${'telephony:synthetic:' + actor.userId + branchId},0))`;
+      const existing = await tx.integrationTelephonyConnection.findFirst({
+        where: { synthetic: true, branchId, createdByUserId: actor.userId },
+      });
+      const connection =
+        existing ??
+        (await tx.integrationTelephonyConnection.create({
+          data: {
+            branchId,
+            createdByUserId: actor.userId,
+            name: 'Synthetic development harness',
+            synthetic: true,
+            active: true,
+          },
+        }));
+      await tx.integrationTelephonyMapping.upsert({
+        where: {
+          connectionId_extension: {
+            connectionId: connection.id,
+            extension: 'TEST',
+          },
+        },
+        create: {
+          connectionId: connection.id,
+          extension: 'TEST',
+          userId: actor.userId,
+        },
+        update: {},
+      });
+      return connection;
+    });
+    const callId = rootId ?? randomUUID();
+    const event: TelephonyEventV1 = {
+      schemaVersion: 1,
+      connectionId: c.id,
+      externalEventId,
+      externalCallId: callId,
+      rootCallId: callId,
+      legId: 'leg-1',
+      kind,
+      direction: 'IN',
+      caller: anonymous
+        ? { kind: 'WITHHELD', value: null }
+        : { kind: 'KNOWN', value: '+12025550123' },
+      destination: { kind: 'UNKNOWN', value: null },
+      companyLine: null,
+      extension: 'TEST',
+      queue: null,
+      occurredAt: new Date().toISOString(),
+      sequence: null,
+      terminalForCall: kind === 'ENDED',
+      endReason: kind === 'ENDED' ? 'COMPLETED' : null,
+      recordingReference:
+        kind === 'RECORDING_READY' ? 'synthetic-no-audio' : null,
+    };
+    const result = await this.receive(event);
+    return { ...result, rootId: callId, synthetic: true };
+  }
+  routeReview(
+    actor: AuthenticatedActor,
+    id: string,
+    userId: string,
+    version: number,
+  ) {
+    this.admin(actor);
+    return this.domain.routeReview(actor, id, userId, version);
+  }
+  reconcile() {
+    return { supported: false as const };
+  }
+}

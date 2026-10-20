@@ -62,7 +62,7 @@ describe('call center contact history', () => {
     expect(() =>
       saveCall(calls, { ...original, occurredAt: 'invalid' }),
     ).toThrow();
-    expect(() => saveCall(calls, { ...original, phone: '' })).toThrow();
+    expect(saveCall(calls, { ...original, phone: '' })[0]?.phone).toBe('');
   });
   it('combines search, direction, source, operator and status filters on the latest contact state', () => {
     const contacts = groupCalls(previewCalls());
@@ -81,6 +81,15 @@ describe('call center contact history', () => {
     expect(
       filterContacts(contacts, { ...filters, query: 'غیر موجود' }),
     ).toHaveLength(0);
+  });
+  it('does not combine unrelated anonymous callers', () => {
+    const original = previewCalls()[0]!;
+    const contacts = groupCalls([
+      { ...original, id: 'one', contactId: 'a', phone: '' },
+      { ...original, id: 'two', contactId: 'b', phone: '' },
+    ]);
+    expect(contacts).toHaveLength(2);
+    expect(contacts.every((contact) => contact.followUps === 0)).toBe(true);
   });
   it('inherits the existing Customer Affairs access boundary', () => {
     expect(canViewRoute([], '/customer-affairs/call-center')).toBe(false);

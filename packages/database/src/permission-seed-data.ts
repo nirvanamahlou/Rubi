@@ -1,6 +1,11 @@
 import { PROCUREMENT_PERMISSION_SEED_DATA } from './procurement-permission-seed-data';
 
 export const PERMISSION_SEED_DATA = [
+  [
+    'customer_affairs.call_center.workflow.manage',
+    'customer_affairs',
+    'مدیریت درخواست و پیگیری کال سنتر',
+  ],
   ['customer_affairs.call_center.read', 'customer_affairs', 'مشاهده کال سنتر'],
   [
     'customer_affairs.call_center.calls.create',

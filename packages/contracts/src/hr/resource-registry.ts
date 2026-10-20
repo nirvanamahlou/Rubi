@@ -27,6 +27,8 @@ export interface HrResourceDefinition {
 
 const parentResources: Record<string, string[]> = {
   'organization.units': ['organization.units'],
+  'organization.groupMembers': ['organization.groups'],
+  'time.shift': ['time.workingHours'],
   'recruitment.applicants': ['recruitment.staffing', 'recruitment.openings'],
   'expenses.travel': ['time.mission', 'expenses.mission'],
   'expenses.advances': ['time.mission', 'expenses.mission'],
@@ -75,6 +77,7 @@ const readOnly = new Set([
   'requests.mobile',
 ]);
 const selfService = new Set([
+  'time.remote',
   'time.leave',
   'requests.leave',
   'time.corrections',
@@ -132,7 +135,21 @@ export function getHrResource(
                 ? 'decimal'
                 : 'text',
     required:
-      index === 0 || label === 'کارمند' || key === 'recruitment.assessment',
+      index === 0 ||
+      label === 'کارمند' ||
+      key === 'recruitment.assessment' ||
+      (key === 'time.workingHours' &&
+        [
+          'ساعت شروع',
+          'ساعت پایان',
+          'روز پایان',
+          'ساعت قبل از شروع',
+          'ساعت بعد از پایان',
+        ].includes(label)) ||
+      (key === 'time.remote' &&
+        ['از تاریخ', 'تا تاریخ', 'نوع دورکاری'].includes(label)) ||
+      (key === 'time.biometric' &&
+        ['آدرس دستگاه', 'نوع دستگاه'].includes(label)),
     maxLength: /شرح|تعهدات|بازخورد|توضیح/.test(label) ? 4000 : 500,
   }));
   return {
@@ -164,6 +181,7 @@ export function getHrResource(
     parentResources: parentResources[key] ?? [],
     parentOptional: [
       'organization.units',
+      'time.shift',
       'expenses.travel',
       'expenses.advances',
       'expenses.claims',

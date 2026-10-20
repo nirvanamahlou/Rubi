@@ -323,6 +323,31 @@ export class CustomerRepository {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
+  callCenterCandidates(branchId: string, fingerprints: string[]) {
+    return this.database.client.customer.findMany({
+      where: {
+        ownerBranchId: branchId,
+        mergedIntoId: null,
+        contacts: {
+          some: { type: 'PHONE', valueFingerprint: { in: fingerprints } },
+        },
+      },
+      select: { id: true, displayName: true, isActive: true },
+      orderBy: { id: 'asc' },
+      take: 51,
+    });
+  }
+  async callCenterReference(
+    tx: Prisma.TransactionClient,
+    id: string,
+    branchId: string,
+  ) {
+    await tx.$queryRaw`SELECT id FROM customers WHERE id=${id}::uuid FOR SHARE`;
+    return tx.customer.findFirst({
+      where: { id, ownerBranchId: branchId, mergedIntoId: null },
+      select: { id: true, displayName: true, isActive: true },
+    });
+  }
   async list(branchIds: readonly string[], query: CustomerListQuery) {
     const where: Record<string, unknown> = {
       ownerBranchId: { in: [...branchIds] },

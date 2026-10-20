@@ -27,6 +27,18 @@ const group = (
   caseLabel?: string,
 ): HrGroup => ({ id, label, sources, ...(caseLabel ? { caseLabel } : {}) });
 export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
+  organization: [
+    group('structure', 'ساختار سازمانی', [
+      source('organization', 'branches', 'شعبه‌ها'),
+      source('organization', 'units', 'واحدها'),
+      source('organization', 'positions', 'شغل و سمت'),
+      source('organization', 'grades', 'رده‌ها'),
+    ]),
+    group('groups', 'گروه‌های کارکنان', [
+      source('organization', 'groups', 'گروه‌ها', 'افزودن گروه'),
+      source('organization', 'groupMembers', 'اعضای گروه', 'افزودن عضو'),
+    ]),
+  ],
   time: [
     group(
       'work',
@@ -36,13 +48,18 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
         source('time', 'checkins', 'ورود و خروج', 'ثبت تردد'),
         source('time', 'corrections', 'اصلاح حضور', 'درخواست اصلاح حضور'),
         source('time', 'overtime', 'اضافه‌کاری', 'درخواست اضافه‌کاری'),
+        source('time', 'remote', 'دورکاری', 'درخواست دورکاری'),
       ],
       'جزئیات کارکرد',
     ),
     group(
       'shifts',
       'شیفت‌بندی',
-      [source('time', 'shift', 'تعریف شیفت', 'تعریف شیفت')],
+      [
+        source('time', 'workingHours', 'ساعت کاری', 'تعریف ساعت کاری'),
+        source('time', 'shiftTemplates', 'تعریف شیفت', 'تعریف شیفت'),
+        source('time', 'shift', 'انتساب شیفت', 'انتساب شیفت'),
+      ],
       'جزئیات شیفت',
     ),
     group(
@@ -308,4 +325,12 @@ export function canonicalHrLocation(
   if (section === 'fleet')
     return { section: 'assets', tab: tab === 'logs' ? 'logs' : 'vehicles' };
   return { section, ...(tab ? { tab } : {}) };
+}
+
+export function resolveHrSource(group: HrGroup, tab?: string): HrSource {
+  return (
+    group.sources.find(
+      (source) => source.tab === (tab === 'roster' ? 'shift' : tab),
+    ) ?? group.sources[0]!
+  );
 }
