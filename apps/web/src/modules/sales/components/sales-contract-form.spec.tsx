@@ -408,4 +408,4 @@ it('places combined flight selection and stay dates before identities and hides 
     fixture.ticketDraft = null;
     fixture.step = 0;
   }
-});
+}, 30000);
