@@ -1,4 +1,4 @@
-import { strToU8, zipSync } from 'fflate';
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -10,6 +10,58 @@ import {
 } from './hotel-import.parser';
 
 describe('downloadable hotel workbook', () => {
+  it('reads the supplied 14-column workbook without shifting status or dropping profile fields', () => {
+    const buffer = readFileSync(
+      resolve(
+        process.cwd(),
+        'test/fixtures/hotel-master-template-14-columns.xlsx',
+      ),
+    );
+    const parsed = parseHotelImportWorkbook({
+      buffer,
+      fileName: 'hotel-master-template.xlsx',
+      mimeType: HOTEL_IMPORT_MIME,
+      expectedCityName: 'کوش اداسی',
+    });
+    expect(parsed.issues).toEqual([]);
+    expect(
+      parsed.rows.map(({ rowNumber, englishName, isActive }) => ({
+        rowNumber,
+        englishName,
+        isActive,
+      })),
+    ).toEqual([
+      { rowNumber: 5, englishName: 'Charisma De Luxe Hotel', isActive: true },
+      { rowNumber: 6, englishName: 'Ramada Resort Kusadasi', isActive: true },
+      { rowNumber: 7, englishName: 'Signature Blue Resort', isActive: false },
+    ]);
+    expect(parsed.rows[0]).toMatchObject({
+      address: 'Akyar Mevkii',
+      starRating: 5,
+      serviceLevel: 'لوکس',
+      mealServiceCode: 'UALL',
+      defaultRoomType: 'Double',
+      facilities: ['استخر', 'وای‌فای', 'ساحل اختصاصی'],
+      description: 'هتل ساحلی پنج ستاره',
+      refundRules: 'تا ۷۲ ساعت طبق قرارداد',
+      hotelRules: 'ورود ۱۴:۰۰ | خروج ۱۲:۰۰',
+      mainImageSource: null,
+      galleryImageSources: [],
+      featuredSource: true,
+      internalNote: null,
+    });
+    expect(
+      parsed.rows.every((row) => /^HOTEL_[A-F0-9]{12}$/.test(row.code)),
+    ).toBe(true);
+    expect(new Set(parsed.rows.map((row) => row.code)).size).toBe(3);
+    expect(parsed.mapping).toMatchObject({
+      'شناسه هتل': '',
+      'نام هتل': 'A',
+      وضعیت: 'M',
+      پرفروش: 'N',
+      یادداشت: '',
+    });
+  });
   it('reads the three supplied hotel names and physical rows without importing formatted blanks', () => {
     const buffer = readFileSync(
       resolve(
@@ -286,6 +338,67 @@ function externalRejection(buffer: ReturnType<typeof fixture>) {
 }
 
 describe('parseHotelImportWorkbook', () => {
+  function customColumns(headers: string[], values: string[]) {
+    const files = unzipSync(fixture());
+    const row = (number: number, data: string[]) =>
+      `<row r="${number}">${data.map((value, index) => cell(`${column(index)}${number}`, value)).join('')}</row>`;
+    files['xl/worksheets/sheet1.xml'] = strToU8(
+      `<worksheet><sheetData>${row(1, headers)}${row(2, values)}</sheetData></worksheet>`,
+    );
+    return zipSync(files);
+  }
+
+  it('maps reordered optional columns and supports just name/city headers', () => {
+    const parsed = parse(
+      customColumns(
+        ['شهر', 'وضعیت', 'نام هتل', 'آدرس'],
+        ['بدروم', 'پیش‌نویس', 'Test Hotel', 'Test Address'],
+      ),
+    );
+    expect(parsed.issues).toEqual([]);
+    expect(parsed.rows[0]).toMatchObject({
+      englishName: 'Test Hotel',
+      address: 'Test Address',
+      isActive: false,
+      starRating: null,
+    });
+    expect(parsed.mapping['نام هتل']).toBe('C');
+    expect(
+      parse(customColumns(['نام هتل', 'شهر'], ['Test Hotel', 'بدروم'])).issues,
+    ).toEqual([]);
+  });
+
+  it('rejects duplicate, unknown or missing required headers and unlabelled data', () => {
+    for (const [headers, values] of [
+      [
+        ['نام هتل', 'شهر', 'شهر'],
+        ['Test', 'بدروم', 'بدروم'],
+      ],
+      [
+        ['نام هتل', 'شهر', 'ناشناخته'],
+        ['Test', 'بدروم', 'value'],
+      ],
+      [['نام هتل'], ['Test']],
+      [
+        ['نام هتل', 'شهر'],
+        ['Test', 'بدروم', 'hidden'],
+      ],
+    ])
+      expect(() => parse(customColumns(headers!, values!))).toThrow();
+  });
+
+  it('keeps rejecting formulas in the reduced template', () => {
+    const files = unzipSync(
+      customColumns(['نام هتل', 'شهر'], ['Test', 'بدروم']),
+    );
+    files['xl/worksheets/sheet1.xml'] = strToU8(
+      strFromU8(files['xl/worksheets/sheet1.xml']!).replace(
+        '</sheetData>',
+        '<row r="3"><c r="A3"><f>1+1</f><v>2</v></c></row></sheetData>',
+      ),
+    );
+    expect(() => parse(zipSync(files))).toThrow(/Formula/);
+  });
   it('creates a stable identity with only hotel name and city supplied', () => {
     const parsed = parse(fixture({ requiredOnly: true }));
     expect(parsed.issues).toEqual([]);

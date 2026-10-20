@@ -1,0 +1,124 @@
+.attention {
+  position: fixed;
+  bottom: 18px;
+  left: 100px;
+  z-index: 45;
+  display: grid;
+  gap: 4px;
+  max-width: 260px;
+  padding: 8px;
+  border: 1px solid var(--border, #d7e3f5);
+  border-radius: 12px;
+  background: var(--background, #fff);
+  box-shadow: 0 4px 16px #163d6d18;
+  font-size: 12px;
+}
+.attention button,
+.dialog button,
+.settings button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid #8cb7ec;
+  border-radius: 8px;
+  background: var(--background, #fff);
+  color: var(--foreground, #16437c);
+  cursor: pointer;
+}
+.attention small {
+  font-size: 10px;
+}
+.dialog {
+  max-width: 760px !important;
+  max-height: 90dvh;
+  overflow: auto;
+  direction: rtl;
+}
+.dialog button:disabled,
+.settings button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.queue,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.queue button[aria-pressed='true'] {
+  background: #e1efff;
+  border-color: #1479da;
+}
+.technical {
+  background: #eef5ff;
+  border: 1px solid #c5d8f0;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+}
+.form {
+  display: grid;
+  gap: 12px;
+}
+.form label,
+.settings label {
+  display: grid;
+  gap: 5px;
+}
+.form input,
+.form textarea,
+.settings input {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid #bbcee8;
+  border-radius: 8px;
+  background: var(--background, #fff);
+  color: inherit;
+}
+.form textarea {
+  resize: vertical;
+}
+.settings {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #cedcf0;
+  border-radius: 10px;
+}
+.settings summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.settings form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.settings p {
+  font-size: 13px;
+}
+.settings code {
+  overflow-wrap: anywhere;
+}
+.dialog [role='alert'] {
+  color: #b42318;
+}
+.settings select {
+  width: 100%;
+}
+@media (max-width: 600px) {
+  .attention {
+    left: 84px;
+    bottom: 12px;
+    max-width: 210px;
+  }
+  .dialog {
+    width: calc(100vw - 20px) !important;
+  }
+  .technical p {
+    overflow-wrap: anywhere;
+  }
+}

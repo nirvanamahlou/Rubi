@@ -1,3 +1,4 @@
+import { lockCustomerSettlement } from '../../sales/customer-purchase-settlement.public';
 import {
   lockReceiptFunds,
   reservedReceiptRefunds,
@@ -237,6 +238,14 @@ export class FinancePayrollService {
               );
             return;
           }
+          const sourceReceipt = await receiptAllocationSource(
+            tx,
+            initial.refundReceiptId,
+            [initial.branchId],
+          );
+          await lockCustomerSettlement(tx, sourceReceipt.contractId, [
+            initial.branchId,
+          ]);
         }
         const isPetty = PETTY_KINDS.includes(initial.kind);
         const fundId = initial.pettyFundId ?? initial.id;
@@ -784,6 +793,9 @@ export class FinancePayrollService {
         }
         if (receipt) {
           const sourceReceipt = await receiptAllocationSource(tx, receipt.id, [
+            branchId,
+          ]);
+          await lockCustomerSettlement(tx, sourceReceipt.contractId, [
             branchId,
           ]);
           const reserved = await reservedReceiptRefunds(tx, receipt.id);

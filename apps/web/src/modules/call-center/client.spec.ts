@@ -1,6 +1,7 @@
 import { previewCalls } from './fixture-data';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { callCenterApi } from './client';
+import { workflowApi } from './workflow-client';
 
 const transport = vi.hoisted(() => vi.fn());
 vi.mock('@/i18n/localized-fetch', () => ({ localizedFetch: transport }));
@@ -55,5 +56,46 @@ describe('durable Call Center client', () => {
         credentials: 'include',
       }),
     );
+  });
+  it('preserves command and optimistic version for workflow retries', async () => {
+    transport.mockImplementation(
+      async () => new Response(JSON.stringify({ data: [] })),
+    );
+    const input = {
+      commandId: 'stable-command',
+      id: 'request-id',
+      expectedVersion: 3,
+      title: 'Synthetic request',
+    };
+    await workflowApi.saveRequest('branch-1', 'contact-id', input);
+    await workflowApi.saveRequest('branch-1', 'contact-id', input);
+    expect(transport.mock.calls.map((call) => call[1].body)).toEqual([
+      JSON.stringify(input),
+      JSON.stringify(input),
+    ]);
+    expect(transport.mock.calls[0]?.[1]).toMatchObject({
+      credentials: 'include',
+      cache: 'no-store',
+      headers: expect.objectContaining({ 'x-branch-id': 'branch-1' }),
+    });
+  });
+  it('cancels stale queue reads and surfaces workflow conflicts', async () => {
+    const abort = new AbortController();
+    transport.mockResolvedValueOnce(
+      new Response(JSON.stringify({ data: [], meta: { total: 0 } })),
+    );
+    await workflowApi.queue('branch-1', 'OVERDUE', 2, abort.signal);
+    expect(transport.mock.calls[0]?.[0]).toContain(
+      '/queue?view=OVERDUE&page=2',
+    );
+    expect(transport.mock.calls[0]?.[1].signal).toBe(abort.signal);
+    transport.mockResolvedValueOnce(
+      new Response(JSON.stringify({ message: 'Version conflict' }), {
+        status: 409,
+      }),
+    );
+    await expect(
+      workflowApi.saveFollowUp('branch-1', 'request-id', {}),
+    ).rejects.toThrow('Version conflict');
   });
 });

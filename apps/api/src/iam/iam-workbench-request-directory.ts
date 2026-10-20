@@ -21,6 +21,16 @@ export class IamWorkbenchRequestDirectory {
     private readonly units: HrWorkbenchRequestUnits,
   ) {}
 
+  /** Minimal Call Center branch selector; no IAM administration authority is implied. */
+  async callCenterBranches(actor: AuthenticatedActor) {
+    if (!actor.permissions.includes('customer_affairs.call_center.read'))
+      throw new ForbiddenException();
+    return this.database.client.branch.findMany({
+      where: { id: { in: [...actor.branchIds] }, isActive: true },
+      select: { id: true, name: true },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    });
+  }
   async options(
     actor: AuthenticatedActor,
     branchId: string,

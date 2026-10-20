@@ -1,3 +1,12 @@
+import { CallCenterTelephonyService } from './call-center-telephony.service';
+import { CallCenterTelephonyController } from './call-center-telephony.controller';
+import { CallCenterCustomerController } from './call-center-customer.controller';
+import { CallCenterCustomerService } from './call-center-customer.service';
+import { CallCenterReadController } from './call-center-read.controller';
+import { CallCenterReadService } from './call-center-read.service';
+import { TasksModule } from '../tasks/tasks.module';
+import { CallCenterWorkflowService } from './call-center-workflow.service';
+import { CallCenterWorkflowController } from './call-center-workflow.controller';
 import { Module } from '@nestjs/common';
 import { CallCenterController } from './call-center.controller';
 import { CallCenterService } from './call-center.service';
@@ -37,6 +46,7 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
 
 @Module({
   imports: [
+    TasksModule,
     IamModule,
     CustomersModule,
     HrDirectoryModule,
@@ -48,6 +58,10 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     SettingsModule,
   ],
   controllers: [
+    CallCenterTelephonyController,
+    CallCenterCustomerController,
+    CallCenterReadController,
+    CallCenterWorkflowController,
     CallCenterController,
     CustomerAffairsAssistantController,
     CustomerAffairsController,
@@ -58,6 +72,10 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     CustomerAffairsMarketingIntakeController,
   ],
   providers: [
+    CallCenterTelephonyService,
+    CallCenterCustomerService,
+    CallCenterReadService,
+    CallCenterWorkflowService,
     CallCenterService,
     CallCenterCrypto,
     IamWorkbenchRequestDirectory,
@@ -72,6 +90,11 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     CustomerContactCrypto,
     CustomerAffairsMarketingIntakeService,
   ],
-  exports: [CustomerAffairsService, CustomerAffairsMarketingIntakeService],
+  exports: [
+    IamWorkbenchRequestDirectory,
+    CallCenterTelephonyService,
+    CustomerAffairsService,
+    CustomerAffairsMarketingIntakeService,
+  ],
 })
 export class CustomerAffairsModule {}
