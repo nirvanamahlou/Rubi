@@ -6683,3 +6683,8 @@ Typed customer DOB/passport dates now insert YYYY/MM/DD separators from digits, 
 ## CONTRACT-GUEST-STAYS-1020 — PC-A
 
 Combined new-contract entry derives guests from rooms and appends explicit flight-only passengers. Flight selection and shared hotel dates precede identities; per-person stay fields inherit locked dates, with explicit different-stay override and separately entered accommodation currency/amount. Existing canonical passenger hotel prices aggregate once. Sales metadata snapshots preserve validated individual dates and hotel membership through Reservations, contract, reservation form and voucher output; older documents retain shared-date behavior. No schema/migration or runtime rollout. See docs/tasks/CONTRACT-GUEST-STAYS-1020.md and PR validation for final checks.
+
+
+## ASSISTANT-LIVE-CHAT-1020 — PC-C — VALIDATING
+
+Owner approves Groq with message/session history only. Add explicit runtime consent/provider/key gate, bounded generic replies plus existing three read actions, and connect the existing composer to same-origin conversation transport. Provider receives no ERP results/identity/credentials; history excludes exact ERP evidence.67 service tests and74 UI tests pass; generic live HTTP200 and Persian REPLY validated. Web production build (65 routes), TypeScript and scoped lint pass. Browser rollout and exact-head CI remain delivery gates. No schema/migration/dependency changes. See tasks/ASSISTANT-LIVE-CHAT-1020.md.

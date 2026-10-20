@@ -90,7 +90,7 @@ export async function readMessage(request, signal) {
     if (signal.aborted) abort();
   });
 }
-/** No provider implementation is shipped. Only trusted constructor injection can enable this seam. */
+/** Provider plans remain untrusted; only fixed read actions can execute. */
 export function createOrchestrator({
   provider,
   enabled = false,
@@ -112,7 +112,7 @@ export function createOrchestrator({
     combined.addEventListener('abort', abort, { once: true });
     const timer = setTimeout(
       () => controller.abort(),
-      Math.min(1500, Math.max(1, timeoutMs)),
+      Math.min(6000, Math.max(1, timeoutMs)),
     );
     try {
       if (combined.aborted) throw new ServiceError(503, 'CONVERSATION_TIMEOUT');
@@ -128,6 +128,15 @@ export function createOrchestrator({
       ]);
       if (Buffer.byteLength(JSON.stringify(plan) ?? '') > 8192)
         throw new ServiceError(502, 'INVALID_PLAN');
+      if (
+        shape(plan, ['kind', 'text']) &&
+        plan.kind === 'REPLY' &&
+        typeof plan.text === 'string' &&
+        plan.text.trim() &&
+        plan.text.length <= 2000
+      ) {
+        return { version: 1, status: 'REPLY', text: plan.text.trim() };
+      }
       if (
         shape(plan, ['kind', 'field']) &&
         plan.kind === 'CLARIFY' &&

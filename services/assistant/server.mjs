@@ -1,3 +1,4 @@
+import { conversationConfiguration } from './conversation-config.mjs';
 import { createOrchestrator, readMessage } from './orchestrator.mjs';
 import { parseFilterSearch, resolveReportFilters } from './report-filters.mjs';
 import { runPreparedAction } from './prepared-actions.mjs';
@@ -276,6 +277,7 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   const service = createAssistantServer({
+    conversation: conversationConfiguration(),
     erpBaseUrl: process.env.ERP_API_BASE_URL,
     erpAuthBaseUrl:
       process.env.ERP_AUTH_API_BASE_URL ??
