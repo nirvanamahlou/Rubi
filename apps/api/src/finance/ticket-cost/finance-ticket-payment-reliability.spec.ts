@@ -1,3 +1,4 @@
+import { financialEventStore } from '../../../test/financial-event-store';
 import { Prisma } from '@nora/database';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
@@ -35,6 +36,7 @@ function fixture() {
   });
   const lock = vi.fn();
   const tx = {
+    financeAccountingEvent: financialEventStore(),
     $queryRaw: lock,
     financeTicketPurchasePaymentRevision: {
       findUnique: vi.fn(
@@ -137,7 +139,8 @@ describe('Ticket payment replay and concurrency', () => {
       'rejected',
     ]);
     expect(f.create).toHaveBeenCalledTimes(1);
-    expect(f.lock).toHaveBeenCalledTimes(4);
+    // Two advisory locks per attempt, plus one shared book lock for the successful source capture.
+    expect(f.lock).toHaveBeenCalledTimes(5);
   });
   it('rejects excess payment, invalid identifiers and malformed FX before writes', async () => {
     const f = fixture();
