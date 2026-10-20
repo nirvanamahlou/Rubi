@@ -247,7 +247,9 @@ export class HrService {
   ): Promise<HrRecordDto> {
     const schema = validate.resource(row.section, row.tab);
     const sensitive = schema.sensitive && !this.has(actor, 'hr.sensitive');
-    const values = [...(row.values as string[])];
+    const values = schema.columns.map(
+      (_, index) => (row.values as string[])[index] ?? '',
+    );
     if (schema.key === 'employee.assignment') {
       const labels = display ?? (await this.assignmentLabels([row], actor));
       values[0] = labels.branches.get(values[0]!) ?? values[0]!;
@@ -350,6 +352,8 @@ export class HrService {
       'to',
       'expiresWithin',
       'expired',
+      'dateField',
+      'sortBy',
     ]);
     const page = input.page === undefined ? 1 : Number(input.page);
     const pageSize = input.pageSize === undefined ? 50 : Number(input.pageSize);
@@ -406,10 +410,16 @@ export class HrService {
       if (from && to && from > to)
         throw new BadRequestException('بازه تاریخ معتبر نیست.');
       // All resources get a normalized searchable business date at creation/update.
-      filters.effectiveAt = {
-        ...(from ? { gte: from } : {}),
-        ...(to ? { lte: to } : {}),
-      };
+      if (input.dateField === 'createdAt')
+        filters.createdAt = {
+          ...(from ? { gte: from } : {}),
+          ...(to ? { lt: new Date(to.getTime() + 86400000) } : {}),
+        };
+      else
+        filters.effectiveAt = {
+          ...(from ? { gte: from } : {}),
+          ...(to ? { lte: to } : {}),
+        };
     }
     if (input.expiresWithin !== undefined || input.expired !== undefined) {
       const now = new Date(new Date().toISOString().slice(0, 10));
@@ -451,13 +461,29 @@ export class HrService {
         },
       ];
     }
+    if (
+      input.dateField !== undefined &&
+      !['createdAt', 'effectiveAt'].includes(String(input.dateField))
+    )
+      throw new BadRequestException('فیلتر تاریخ معتبر نیست.');
+    if (
+      input.sortBy !== undefined &&
+      !['name', 'personnelCode', 'createdAt'].includes(String(input.sortBy))
+    )
+      throw new BadRequestException('مرتب‌سازی معتبر نیست.');
+    const orderBy: Prisma.HrRecordOrderByWithRelationInput[] =
+      input.sortBy === 'name'
+        ? [{ employee: { name: 'asc' } }, { id: 'asc' }]
+        : input.sortBy === 'personnelCode'
+          ? [{ employee: { personnelCode: 'asc' } }, { id: 'asc' }]
+          : [{ createdAt: 'desc' }, { id: 'asc' }];
     const where = { AND: [this.recordScope(actor), filters] };
     const [rows, total] = await Promise.all([
       this.database.client.hrRecord.findMany({
         where,
         skip: (page - 1) * pageSize,
         take: pageSize,
-        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        orderBy,
       }),
       this.database.client.hrRecord.count({ where }),
     ]);
@@ -993,6 +1019,7 @@ export class HrService {
     employee: Employee | null,
     branchId: string,
     data: HrWorkflowData,
+    parentId?: string | null,
   ) {
     const values = validate.recordValues(input, schema);
     const employeeColumn = schema.columns.indexOf('کارمند');
@@ -1041,6 +1068,52 @@ export class HrService {
           );
         values[3] = `${start.time} تا ${end.time}${end.date !== date ? ' (روز بعد)' : ''}`;
       }
+    }
+    if (schema.key === 'time.remote') {
+      if (values[3] === 'ساعتی') {
+        const starts = validate.localClockToUtc(values[1]!, values[4]!);
+        const ends = validate.localClockToUtc(values[2]!, values[5]!);
+        data.startsAt = starts.toISOString();
+        data.endsAt = ends.toISOString();
+        data.minutes = (ends.getTime() - starts.getTime()) / 60000;
+      } else {
+        data.startsAt = values[1] + 'T00:00:00.000Z';
+        data.endsAt = values[2] + 'T23:59:59.999Z';
+        delete data.minutes;
+      }
+    }
+    if (schema.key === 'time.shift' && parentId) {
+      const hours = await tx.hrRecord.findFirst({
+        where: {
+          id: parentId,
+          branchId,
+          section: 'time',
+          tab: 'workingHours',
+          deletedAt: null,
+          status: 'فعال',
+        },
+      });
+      if (!hours)
+        throw new BadRequestException(
+          'ساعت کاری فعال متعلق به همین شعبه را انتخاب کنید.',
+        );
+      const v = hours.values as string[];
+      values[1] = v[2]!;
+      values[2] = v[3]!;
+      data.shiftEndDayOffset = ['همان روز', 'یک روز بعد', 'دو روز بعد'].indexOf(
+        v[4]!,
+      );
+      data.attendanceBeforeHours = Number(validate.digits(v[5]!));
+      data.attendanceAfterHours = Number(validate.digits(v[6]!));
+      const minute = (clock: string) =>
+        Number(validate.digits(clock).slice(0, 2)) * 60 +
+        Number(validate.digits(clock).slice(3));
+      const length =
+        data.shiftEndDayOffset * 1440 + minute(v[3]!) - minute(v[2]!);
+      if (length >= 1440 && values[7] !== values[8])
+        throw new BadRequestException(
+          'شیفت ۲۴ساعته یا بیشتر باید برای یک روز شروع مشخص ثبت شود.',
+        );
     }
     if (schema.key === 'time.biometric')
       for (const label of ['آخرین همگام‌سازی', 'تعداد رکورد', 'سلامت اتصال']) {
@@ -1228,6 +1301,7 @@ export class HrService {
           employee,
           branchId,
           data,
+          parent?.id,
         );
         if (missionExpenseResources.has(schema.key)) {
           const referenceIndex = schema.columns.indexOf('مأموریت مرجع');
@@ -1507,6 +1581,7 @@ export class HrService {
               employee,
               row.branchId,
               data,
+              parentId,
             );
       if (missionParent !== undefined) {
         const referenceIndex = schema.columns.indexOf('مأموریت مرجع');
@@ -2428,6 +2503,8 @@ export class HrService {
     const nextDate = new Date(validate.isoDate(date).getTime() + 86400000)
       .toISOString()
       .slice(0, 10);
+    const schedule = (shift?.data ?? {}) as HrWorkflowData;
+    const explicitOffset = schedule.shiftEndDayOffset;
     const overnight = Boolean(
       shiftValues &&
       validate.digits(shiftValues[2]!) <= validate.digits(shiftValues[1]!),
@@ -2436,14 +2513,31 @@ export class HrService {
       ? validate.localClockToUtc(date, shiftValues[1]!)
       : null;
     const shiftEnd = shiftValues
-      ? validate.localClockToUtc(overnight ? nextDate : date, shiftValues[2]!)
+      ? validate.localClockToUtc(
+          explicitOffset !== undefined
+            ? new Date(
+                validate.isoDate(date).getTime() + explicitOffset * 86400000,
+              )
+                .toISOString()
+                .slice(0, 10)
+            : overnight
+              ? nextDate
+              : date,
+          shiftValues[2]!,
+        )
       : null;
-    const lower = overnight
-      ? shiftStart!.getTime() - 6 * 3600000
-      : validate.localClockToUtc(date, '00:00').getTime();
-    const upper = overnight
-      ? shiftEnd!.getTime() + 6 * 3600000
-      : validate.localClockToUtc(nextDate, '00:00').getTime();
+    const lower =
+      shiftStart && explicitOffset !== undefined
+        ? shiftStart.getTime() - (schedule.attendanceBeforeHours ?? 0) * 3600000
+        : overnight
+          ? shiftStart!.getTime() - 6 * 3600000
+          : validate.localClockToUtc(date, '00:00').getTime();
+    const upper =
+      shiftEnd && explicitOffset !== undefined
+        ? shiftEnd.getTime() + (schedule.attendanceAfterHours ?? 0) * 3600000
+        : overnight
+          ? shiftEnd!.getTime() + 6 * 3600000
+          : validate.localClockToUtc(nextDate, '00:00').getTime();
     const punches = source.filter((row) => {
       if (row.tab !== 'checkins' || row.employeeId !== employeeId) return false;
       const v = row.values as string[];
@@ -2451,7 +2545,12 @@ export class HrService {
         (row.data as HrWorkflowData).startsAt ??
           validate.localClockToUtc(v[1]!, v[2]!),
       );
-      return at.getTime() >= lower && at.getTime() < upper;
+      return (
+        at.getTime() >= lower &&
+        (explicitOffset !== undefined
+          ? at.getTime() <= upper
+          : at.getTime() < upper)
+      );
     });
     const corrected = punches
       .filter((row) => row.parentId !== null)

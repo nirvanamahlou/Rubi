@@ -1,5 +1,26 @@
 // Approved HR field labels; behavior is defined in resource-registry.ts.
 export const HR_RESOURCE_COLUMNS = {
+  'organization.groups': ['نام گروه', 'توضیحات'],
+  'organization.groupMembers': ['کارمند'],
+  'time.workingHours': [
+    'نام ساعت کاری',
+    'توضیحات',
+    'ساعت شروع',
+    'ساعت پایان',
+    'روز پایان',
+    'ساعت قبل از شروع',
+    'ساعت بعد از پایان',
+    'رنگ',
+  ],
+  'time.shiftTemplates': ['نام شیفت', 'توضیحات'],
+  'time.remote': [
+    'کارمند',
+    'از تاریخ',
+    'تا تاریخ',
+    'نوع دورکاری',
+    'ساعت شروع',
+    'ساعت پایان',
+  ],
   'employee.contact': [
     'نوع اطلاعات',
     'مقدار پوشیده',
@@ -287,6 +308,10 @@ export const HR_RESOURCE_COLUMNS = {
     'آخرین همگام‌سازی',
     'تعداد رکورد',
     'سلامت اتصال',
+    'آدرس دستگاه',
+    'پورت دستگاه',
+    'نوع دستگاه',
+    'توضیحات',
   ],
   'time.corrections': [
     'کارمند',
