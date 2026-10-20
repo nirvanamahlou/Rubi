@@ -58,3 +58,38 @@ export function pairedReturnDate(
     ? { day: days[0]!, outboundIds: [...new Set(pairs.map((p) => p.out.id))] }
     : undefined;
 }
+
+/** Select only a unique registered partner; never guess between load dates/flights. */
+export function pairedReturnOffer(
+  outbound: TicketOfferV1,
+  returning: readonly TicketOfferV1[],
+  seats: number,
+  requireFare = false,
+): TicketOfferV1 | undefined {
+  if (outbound.status !== 'ACTIVE') return undefined;
+  const eligible = returning.filter(
+    (back) =>
+      back.cabinClassCode === outbound.cabinClassCode &&
+      eligibleReturn(outbound, back),
+  );
+  const loadPartners =
+    outbound.loadGroupId && outbound.returnMaxDays != null
+      ? eligible.filter((back) => back.loadGroupId === outbound.loadGroupId)
+      : [];
+  const pricedIds = new Set(
+    outbound.roundTripSalePrices?.map((p) => p.returnOfferId),
+  );
+  const candidates = loadPartners.length
+    ? loadPartners
+    : eligible.filter((back) => pricedIds.has(back.id));
+  const unique = [
+    ...new Map(candidates.map((back) => [back.id, back])).values(),
+  ];
+  const partner = unique.length === 1 ? unique[0] : undefined;
+  return partner &&
+    partner.status === 'ACTIVE' &&
+    partner.remainingCapacity >= seats &&
+    (!requireFare || partner.standaloneSalePrice || pricedIds.has(partner.id))
+    ? partner
+    : undefined;
+}

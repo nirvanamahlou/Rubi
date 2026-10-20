@@ -11,7 +11,6 @@ import { Input, FormField } from '@/components/ui/form-controls';
 import { Alert } from '@/components/ui/surfaces';
 import {
   CustomerEntrySheet,
-  CustomerCalendarSwitch,
   customersApi,
   type CustomerCalendarMode,
   type CustomerEntryRow,
@@ -464,7 +463,6 @@ export function SalesPeopleSheet({
         <div>
           <h2 className="text-lg font-black">مشتری و مسافران همراه</h2>
         </div>
-        <CustomerCalendarSwitch mode={calendar} onChange={setCalendar} />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-semibold">
@@ -924,6 +922,7 @@ export function SalesPeopleSheet({
             : { birthDate: 'تاریخ تولد *' }
         }
         salesDatePolicy
+        calendarSwitchInBirthDateHeader
         calendarMode={calendar}
         onCalendarModeChange={setCalendar}
         disabled={busy}

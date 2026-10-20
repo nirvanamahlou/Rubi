@@ -19,6 +19,13 @@ describe('Sales uses the Customers entry spreadsheet', () => {
       />,
     );
     expect(html).toContain('جدول ورود اطلاعات مشتری و مسافران');
+    const birthHeader = [...html.matchAll(/<th\b[^>]*>[\s\S]*?<\/th>/g)].find(
+      (m) => m[0].includes('تاریخ تولد'),
+    )?.[0];
+    expect(birthHeader).toContain('شمسی');
+    expect(birthHeader).toContain('میلادی');
+    expect(html.match(/aria-label="نوع تقویم Customers"/g)).toHaveLength(1);
+
     for (const field of [
       'sales-buyer-name',
       'sales-buyer-phone',

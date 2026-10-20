@@ -1,3 +1,4 @@
+import type { DatePickerProps } from '@/components/ui/date-picker';
 import type * as React from 'react';
 import { emptySalesForm, type SalesFormState } from '../model/sales-form';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -76,6 +77,18 @@ vi.mock('@/modules/legal-entities/components/legal-entity-context', () => ({
   useLegalEntityContext: () => ({ context: { legalEntity: null } }),
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+// This suite checks the parent workflow/layout; calendar rendering has its own coverage.
+vi.mock('@/components/ui/date-picker', () => ({
+  DatePicker: (props: DatePickerProps) => (
+    <button
+      type="button"
+      aria-label={props['aria-label']}
+      disabled={props.disabled}
+    >
+      {props.value || 'انتخاب تاریخ'}
+    </button>
+  ),
+}));
 
 describe('compact sales contract form', () => {
   it('explains invalid final-step data without hiding the form', () => {
@@ -216,7 +229,7 @@ it('offers the expert reservation note on sale pricing rather than only at final
 it('does not block hotel details while the date rate request is still pending', () => {
   fixture.firstDetail = true;
   fixture.zeroIndex = 0;
-  fixture.step = 1;
+  fixture.step = 0;
   fixture.ticketDraft = {
     ...emptySalesForm,
     serviceKinds: ['HOTEL'],
@@ -281,7 +294,7 @@ it('allows the next passenger step with a valid flight service despite stale hot
 });
 
 it('keeps hotel room and composition selection available inside a selected tour', () => {
-  fixture.step = 1;
+  fixture.step = 0;
   fixture.firstDetail = true;
   fixture.zeroIndex = 0;
   fixture.ticketDraft = {
@@ -311,8 +324,8 @@ it('keeps hotel room and composition selection available inside a selected tour'
   }
 });
 
-it('lets a complete selected tour continue without an unrelated standalone flight search calendar', () => {
-  fixture.step = 1;
+it('keeps tour selection inline without an unrelated standalone flight search calendar', () => {
+  fixture.step = 0;
   fixture.firstDetail = true;
   fixture.zeroIndex = 0;
   const offer = {
@@ -365,9 +378,9 @@ it('lets a complete selected tour continue without an unrelated standalone fligh
   };
   try {
     const html = renderToStaticMarkup(<SalesContractForm />);
-    const next = html.match(/<button[^>]*>بعدی/)?.[0];
-    expect(next).toBeDefined();
-    expect(next).not.toMatch(/\sdisabled(?:=|\s|>)/);
+    expect(html).toContain('جست‌وجو و انتخاب تور');
+    expect(html).not.toContain('aria-label="انتخاب تاریخ بلیط رفت و برگشت"');
+    expect(html).not.toContain('جزئیات سفر');
   } finally {
     fixture.step = 0;
     fixture.firstDetail = false;
@@ -401,7 +414,9 @@ it('places combined flight selection and stay dates before identities and hides 
     const people = html.indexOf('ورود یکجای مشتری و مسافران');
     expect(people).toBeGreaterThan(0);
     expect(html.indexOf('تاریخ اقامت مهمانان')).toBeLessThan(people);
-    expect(html.indexOf('انتخاب بلیط پرواز')).toBeLessThan(people);
+    expect(html.indexOf('جست‌وجوی بلیط‌ها')).toBeLessThan(people);
+    expect(html).not.toContain('انتخاب بلیط پرواز');
+    expect(html).not.toContain('جزئیات سفر');
     expect(html).not.toContain('>تعداد مسافران</h2>');
     expect(html).toContain('افزودن مسافر (فقط پرواز)');
   } finally {
