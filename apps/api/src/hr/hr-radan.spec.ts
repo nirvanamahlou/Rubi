@@ -157,11 +157,9 @@ describe('working-hours attendance window', () => {
 });
 
 it('rejects repeated multi-day long shifts while accepting a single start-day snapshot', async () => {
-  const findFirst = vi
-    .fn()
-    .mockResolvedValue({
-      values: ['Long', '', '08:00', '16:00', 'دو روز بعد', '۰', '۰', '#123456'],
-    });
+  const findFirst = vi.fn().mockResolvedValue({
+    values: ['Long', '', '08:00', '16:00', 'دو روز بعد', '۰', '۰', '#123456'],
+  });
   const tx = { hrRecord: { findFirst } };
   const schema = getHrResource('time', 'shift')!;
   const values = [
