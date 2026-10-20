@@ -228,6 +228,9 @@ export function buildRadanReport(
         });
       return {
         columns: ['کارمند', 'مدت اضافه‌کاری'],
+        recordIds: people
+          .filter((e) => overtime.some((r) => r.employeeId === e.id))
+          .map((e) => e.id),
         rows: grouped,
         totalLabel: String(grouped.length),
       };
@@ -283,6 +286,9 @@ export function buildRadanReport(
       });
     return {
       columns: ['کارمند', 'کارکرد', 'تأخیر', 'تعجیل', 'اضافه‌کار'],
+      recordIds: people
+        .filter((e) => selected.some((r) => r.employeeId === e.id))
+        .map((e) => e.id),
       rows,
       totalLabel: String(rows.length),
     };

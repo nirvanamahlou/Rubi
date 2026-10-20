@@ -113,3 +113,17 @@ it('aggregates actual overtime requests without silently ignoring the total swit
     ).rows[0],
   ).toEqual(['Synthetic Person', '1:30']);
 });
+
+it('keeps aggregate row identity stable for selection across refreshed reports', () => {
+  expect(
+    buildRadanReport('total', [record], [employee], emptyRadanFilters)
+      .recordIds,
+  ).toEqual(['e']);
+  const overtime = { ...record, tab: 'overtime', data: { minutes: 30 } };
+  expect(
+    buildRadanReport('overtime', [overtime], [employee], {
+      ...emptyRadanFilters,
+      aggregate: true,
+    }).recordIds,
+  ).toEqual(['e']);
+});
