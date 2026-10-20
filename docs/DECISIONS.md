@@ -578,3 +578,7 @@ Worker uses existing BullMQ and polls the durable Outbox. Redis is disposable tr
 ## 2026-10-19 — PASSENGER-DIRECTIONS-1019
 
 Owner explicitly replaces mandatory hotel/flight membership equality with per-leg passenger selections: hotel-only guests are valid, and each flight consumes only its assigned non-infant seats. Existing global room composition validation and actual guest occupancy remain. New Sales drafts use manual per-guest hotel prices; legacy room agreement snapshots remain readable, while new per-guest totals never double count them. Canonical service allocations drive existing Reservations manifests. No schema or historical data rewrite.
+
+## ISSABEL-ADAPTER-1020 — bounded recording storage
+
+Owner explicitly requests saved call audio without ERP playback. For this initial integration, actual audio is stored as authenticated encrypted32KiB chunks in Integration-owned PostgreSQL tables, rather than exposing an external recording URL or claiming that metadata is an audio backup. This is a bounded exception to general Documents/S3 file storage:20MiB WAV maximum, approved retention required, explicit byte/hash finalization and private PBX uploader. No cross-module Documents table access. Reassess storage/backup volume with measured call traffic before Production. AMI UserEvent hooks express verified PBX facts; generic channel Hangup/IVR Up is insufficient evidence of linked-call completion/human answer. Actual installed-version hook compatibility and reconciliation remain live-acceptance requirements, not assumptions.
