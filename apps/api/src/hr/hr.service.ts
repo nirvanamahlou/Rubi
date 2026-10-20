@@ -7,6 +7,7 @@ import {
   publicHrData,
 } from './hr-private-values';
 import {
+  assertTemplateIntervals,
   durationMinutes,
   jalaliYear,
   selection,
@@ -1238,6 +1239,7 @@ export class HrService {
         });
         if (!inRange.length)
           throw new BadRequestException('روزهای تقویم شیفت باید تعریف شوند.');
+        assertTemplateIntervals(inRange.map((day) => day.values as string[]));
         data.templateSchedule = Object.fromEntries(
           inRange.map((day) => {
             const d = day.values as string[];

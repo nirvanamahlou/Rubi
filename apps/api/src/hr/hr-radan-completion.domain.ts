@@ -140,3 +140,25 @@ export function transferSplit(balance: number, rule: string[]) {
     );
   return { carry: amounts[0]!, burn: amounts[1]!, buyback: amounts[2]! };
 }
+
+export function assertTemplateIntervals(days: readonly string[][]) {
+  const spans = days
+    .map((day) => {
+      const offset = ['همان روز', 'یک روز بعد', 'دو روز بعد'].indexOf(day[3]!);
+      const endDate = new Date(v.isoDate(day[0]).getTime() + offset * 86400000)
+        .toISOString()
+        .slice(0, 10);
+      return [
+        v.localClockToUtc(day[0]!, day[1]!).getTime(),
+        v.localClockToUtc(endDate, day[2]!).getTime(),
+      ] as const;
+    })
+    .sort((a, b) => a[0] - b[0]);
+  if (
+    spans.some(
+      (span, index) =>
+        span[1] <= span[0] || (index > 0 && spans[index - 1]![1] > span[0]),
+    )
+  )
+    throw new BadRequestException('روزهای شیفت هم‌پوشانی دارند.');
+}

@@ -2,7 +2,11 @@ import { randomBytes } from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getHrResource } from '@nora/contracts';
 import { strToU8, zipSync } from 'fflate';
-import { durationMinutes, transferSplit } from './hr-radan-completion.domain';
+import {
+  assertTemplateIntervals,
+  durationMinutes,
+  transferSplit,
+} from './hr-radan-completion.domain';
 import { recordValues } from './hr.validation';
 import {
   protectHrValues,
@@ -272,4 +276,19 @@ describe('payslip Excel boundary', () => {
       readPayslipWorkbook(Buffer.from('not CFB'), 'pay.xls'),
     ).toThrow();
   });
+});
+
+it('rejects overlapping long calendar shifts instead of attributing the same time twice', () => {
+  expect(() =>
+    assertTemplateIntervals([
+      ['2026-10-20', '08:00', '16:00', 'دو روز بعد'],
+      ['2026-10-21', '08:00', '16:00', 'همان روز'],
+    ]),
+  ).toThrow();
+  expect(() =>
+    assertTemplateIntervals([
+      ['2026-10-20', '08:00', '16:00', 'دو روز بعد'],
+      ['2026-10-23', '08:00', '16:00', 'همان روز'],
+    ]),
+  ).not.toThrow();
 });

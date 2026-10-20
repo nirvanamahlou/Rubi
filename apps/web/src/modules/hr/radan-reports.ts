@@ -154,7 +154,9 @@ export function buildRadanReport(
     )
     .map((r) => (r.values[2] === 'خیر' ? Number(r.values[3]) : NaN));
   const dayMinutes =
-    lengths.length &&
+    lengths.length ===
+      new Set(people.map((employee) => employee.branchId)).size &&
+    lengths.length > 0 &&
     lengths.every((n) => Number.isFinite(n) && n > 0 && n === lengths[0])
       ? lengths[0]!
       : null;

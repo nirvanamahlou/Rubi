@@ -4086,6 +4086,7 @@
   "برای این روز در تقویم شیفت رکورد وجود دارد.": "This shift calendar already has a record for that date.",
   "درون‌شهری": "Within city",
   "طول شیفت مصوب برای روز مرخصی مشخص نیست.": "The approved shift duration is unavailable for the leave date.",
+  "روزهای شیفت هم‌پوشانی دارند.": "Shift calendar intervals overlap.",
   "،": ",",
   "؛": ";",
   ": پرونده را بررسی کنید.": ": Check the file.",
