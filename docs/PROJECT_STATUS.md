@@ -1,3 +1,7 @@
+## CONTRACT-INLINE-FLIGHT-SEARCH-1020 — PC-A
+
+PR993 extension: new-contract flight cards appear below editable date calendars after explicit Search. Selecting an outbound chooses the unique eligible registered load partner (legacy saved pair ID fallback) and its pricing atomically; ambiguous partners remain manual. Changing only the return date retains the outbound and invalidates the old return quote; changing outbound date resets both. Details are inline in the first page, followed directly by pricing/review; hotel/tour/insurance/visa validation remains required. Sales opts into the Customers birth-date header calendar switch, preserving ISO dates and typed input. No API/schema/migration/dependency or runtime rollout. Local Sales/Customers regressions520 passed with one existing skip; Web types, scoped lint/format pass. Interaction checks cover search gating, automatic return selection, manual return overrides and stale quote removal. Exact-head hosted build/full-suite/database checks gate the explicitly authorized develop merge.
+
 ## RATE-ACTIONS-CHART-1019 — PC-B
 
 Registered reference rates gain dedicated amount/source edits and logical deletion with native/manual access, quote-write authority, branch, CAS and transactional before/after audit. Active history/current exclude removed rows; original pair/type/status/time and non-authoritative nature stay unchanged. Charts gain real date spacing and visible date/amount axes; the technical flag badge is removed only from UI. Broad API623 passed/one optional local skip, focused Web60 passed and updated permissions/mutations21 passed; real PostgreSQL correction/concurrency/delete/rollback proof and final-head hosted gates precede authorized push/develop merge. No migration/dependency, operational data, server or3100 rollout. Details: [RATE-ACTIONS-CHART-1019](tasks/RATE-ACTIONS-CHART-1019.md).
@@ -6684,6 +6688,10 @@ Typed customer DOB/passport dates now insert YYYY/MM/DD separators from digits, 
 
 Combined new-contract entry derives guests from rooms and appends explicit flight-only passengers. Flight selection and shared hotel dates precede identities; per-person stay fields inherit locked dates, with explicit different-stay override and separately entered accommodation currency/amount. Existing canonical passenger hotel prices aggregate once. Sales metadata snapshots preserve validated individual dates and hotel membership through Reservations, contract, reservation form and voucher output; older documents retain shared-date behavior. No schema/migration or runtime rollout. See docs/tasks/CONTRACT-GUEST-STAYS-1020.md and PR validation for final checks.
 
+
+## 2026-10-20 — PASSENGER-TRANSFER-SERVICES-1020 — PC-A
+
+Sales moves transfer leg choices to the final passenger columns, defaults enabled legs selected and derives each leg quantity from actual assignments. Confirmation remaps temporary slot exclusions to saved customer IDs. City tour/guide toggles create compatible OTHER service allocations; Visa reuses its existing applicant workflow. Contract PDF v2 separates each passenger service/stay row from their prices, removes the standalone Other Services block and prints explicit saved room count, type/category and per-room occupancy. Empty legacy room-price columns are omitted; existing saved prices/totals, capacity, financial gates and historical snapshots remain unchanged.507 Sales Web tests pass (one existing skip),70 unique Sales/Reservations API regressions pass; scoped lint/Web types and actual Chrome/Poppler PDF QA are checked, with final-head hosted full gates required before develop merge. No migration/dependency, operational data or local3100 rollout.
 
 ## FINANCE-ACCOUNTING-EVENTS-1018 — 2026-10-20 — in progress / PR992
 

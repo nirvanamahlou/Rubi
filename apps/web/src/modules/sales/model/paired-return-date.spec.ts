@@ -1,5 +1,5 @@
 import { it, expect } from 'vitest';
-import { pairedReturnDate } from './exact-flight-dates';
+import { pairedReturnDate, pairedReturnOffer } from './exact-flight-dates';
 import type { TicketOfferV1 } from '@nora/contracts';
 const out: TicketOfferV1 = {
   id: 'out',
@@ -78,4 +78,53 @@ it('rejects sold out, paused, different branch/cabin and out-of-window returns',
     expect(
       pairedReturnDate([out], [{ ...back, ...change }], 1),
     ).toBeUndefined();
+});
+
+it('selects the registered return object and does not guess between flights on the same day', () => {
+  expect(pairedReturnOffer(out, [back], 2)).toBe(back);
+  expect(
+    pairedReturnOffer(out, [back, { ...back, id: 'duplicate-flight' }], 2),
+  ).toBeUndefined();
+});
+it('prefers the unique original load partner over a separately priced alternative', () => {
+  const alternative = {
+    ...back,
+    id: 'alternative',
+    loadGroupId: 'different',
+    departureAt: '2026-10-23T10:00:00Z',
+  };
+  const priced = {
+    ...out,
+    roundTripSalePrices: [back, alternative].map((b) => ({
+      returnOfferId: b.id,
+      revision: 1,
+      amount: '100',
+      currencyCode: 'IRR',
+    })),
+  };
+  expect(pairedReturnOffer(priced, [alternative, back], 2, true)).toBe(back);
+});
+it('does not auto-select an unavailable, incompatible or unpublished standalone return', () => {
+  expect(pairedReturnOffer(out, [back], 2, true)).toBeUndefined();
+  for (const change of [
+    { remainingCapacity: 1 },
+    { status: 'PAUSED' as const },
+    { branchId: 'other' },
+    { cabinClassCode: 'BUSINESS' as const },
+    { departureAt: '2026-10-28T08:00:00Z' },
+  ])
+    expect(pairedReturnOffer(out, [{ ...back, ...change }], 2)).toBeUndefined();
+  const priced = {
+    ...out,
+    loadGroupId: '',
+    roundTripSalePrices: [
+      {
+        returnOfferId: back.id,
+        revision: 1,
+        amount: '100',
+        currencyCode: 'IRR',
+      },
+    ],
+  };
+  expect(pairedReturnOffer(priced, [back], 2, true)).toBe(back);
 });
