@@ -1086,3 +1086,37 @@ it('validates aggregate IRR/foreign prices and deductions without requiring flig
   ];
   expect(() => validateSalesContract(input)).toThrow('مبلغ نهایی هر مسافر');
 });
+
+it('accepts city tour and guide using existing OTHER services with explicit passenger assignments', () => {
+  const input = structuredClone(draft);
+  input.services = [
+    ...input.services,
+    {
+      clientKey: 'city-tour',
+      kind: 'OTHER',
+      titleSnapshot: 'گشت شهری',
+      metadata: { additionalServiceRole: 'CITY_TOUR' },
+    },
+    {
+      clientKey: 'tour-guide',
+      kind: 'OTHER',
+      titleSnapshot: 'راهنما',
+      metadata: { additionalServiceRole: 'TOUR_GUIDE' },
+    },
+  ];
+  input.passengers = [
+    {
+      ...input.passengers[0]!,
+      serviceClientKeys: ['flight', 'city-tour', 'tour-guide'],
+    },
+    {
+      ...input.passengers[0]!,
+      customerId: '10000000-0000-4000-8000-000000000005',
+      displayNameSnapshot: 'Second synthetic passenger',
+      serviceClientKeys: ['flight'],
+    },
+  ];
+  const before = structuredClone(input);
+  expect(() => validateSalesContract(input)).not.toThrow();
+  expect(input).toEqual(before);
+});

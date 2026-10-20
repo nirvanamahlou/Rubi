@@ -122,7 +122,13 @@ export const salesSteps = [
   'بازبینی',
 ] as const;
 
+export const salesAdditionalServices = {
+  CITY_TOUR: 'گشت شهری',
+  TOUR_GUIDE: 'راهنما',
+} as const;
+
 export interface SalesFormState {
+  additionalServices?: (keyof typeof salesAdditionalServices)[];
   roomDrivenGuests?: boolean;
   flightOnlyPassengers?: { key: string; age: number }[];
   passengerHotelStays?: Record<
@@ -132,6 +138,7 @@ export interface SalesFormState {
 
   passengerDeductions?: PassengerDeductions;
   passengerFlightDirections?: Record<string, SalesTicketDirection[]>;
+  passengerTransferDirections?: Record<string, SalesTicketDirection[]>;
   passengerHotelPrices?: Record<string, SalesMoney[]>;
   hotelArrivesNextDay?: boolean;
   visaComposition?: { adults: number; children: number };
@@ -165,7 +172,6 @@ export interface SalesFormState {
   customerOrganizationId?: string;
   firstPassengerIsCustomer?: boolean;
   businessOutput?: boolean;
-  transferPassengerCount?: number;
   passengerComposition: { adults: number; children: number; infants: number };
   outboundOffer?: TicketOfferV1 | undefined;
   returnOffer?: TicketOfferV1 | undefined;
@@ -1222,7 +1228,7 @@ export function toggleSalesDirectionalService(
           passengerFlightPrices: {},
           ticket: { ...state.ticket, outboundOfferId: '', returnOfferId: '' },
         }
-      : {}),
+      : { passengerTransferDirections: {} }),
   };
 }
 
@@ -1328,7 +1334,7 @@ export function salesPayload(
                 ? state.serviceDetails?.[`${kind}-${direction}`]
                 : {}),
               ...(kind === 'TRANSFER'
-                ? { passengerCount: salesTransferCount(state) }
+                ? { passengerCount: salesTransferCount(state, direction) }
                 : {}),
               direction,
               originId:
@@ -1369,6 +1375,14 @@ export function salesPayload(
               },
             ],
   );
+  for (const role of new Set(state.additionalServices ?? [])) {
+    services.push({
+      clientKey: role === 'CITY_TOUR' ? 'city-tour' : 'tour-guide',
+      kind: 'OTHER',
+      titleSnapshot: salesAdditionalServices[role],
+      metadata: { additionalServiceRole: role },
+    });
+  }
   for (const direction of salesDirections(state, 'FLIGHT')) {
     if (!state.contractFlights?.[direction]) continue;
     const flight = salesFlightSelection(state, direction);
@@ -1387,12 +1401,13 @@ export function salesPayload(
   for (let i = services.length - 1; i >= 0; i--) {
     const service = services[i]!;
     if (
-      service.kind === 'FLIGHT' &&
-      state.passengerFlightDirections !== undefined &&
+      state.passengers.length > 0 &&
+      (service.kind === 'FLIGHT' || service.kind === 'TRANSFER') &&
       !state.passengers.some((p) =>
-        salesPassengerFlightDirections(state, p.customerId).includes(
-          service.clientKey === 'flight-outbound' ? 'OUTBOUND' : 'RETURN',
-        ),
+        (service.kind === 'FLIGHT'
+          ? salesPassengerFlightDirections(state, p.customerId)
+          : salesPassengerTransferDirections(state, p.customerId)
+        ).includes(service.metadata?.direction as SalesTicketDirection),
       )
     )
       services.splice(i, 1);
@@ -1781,8 +1796,16 @@ export function salesPayload(
                   ).includes(
                     clientKey === 'flight-outbound' ? 'OUTBOUND' : 'RETURN',
                   )
-                : clientKey !== 'hotel' ||
-                  salesHotelGuestIds(state).includes(item.customerId),
+                : clientKey === 'transfer-outbound' ||
+                    clientKey === 'transfer-return'
+                  ? salesPassengerTransferDirections(
+                      state,
+                      item.customerId,
+                    ).includes(
+                      clientKey === 'transfer-outbound' ? 'OUTBOUND' : 'RETURN',
+                    )
+                  : clientKey !== 'hotel' ||
+                    salesHotelGuestIds(state).includes(item.customerId),
         )
         .map(({ clientKey }) => clientKey),
     })),
@@ -1859,12 +1882,34 @@ export function salesPayload(
   };
 }
 
-export function salesTransferCount(state: SalesFormState) {
-  const c = salesPassengerCounts(state);
-  const max = c.adults + c.children;
-  return state.transferPassengerCount === undefined
-    ? max
-    : Math.max(0, Math.min(max, Math.trunc(state.transferPassengerCount || 0)));
+/** Transfer legs are independent of flight membership and hotel date overrides. */
+export function salesPassengerTransferDirections(
+  state: SalesFormState,
+  id: string,
+): SalesTicketDirection[] {
+  if (!state.serviceKinds.includes('TRANSFER')) return [];
+  const enabled = salesDirections(state, 'TRANSFER');
+  return enabled.filter((direction) =>
+    (state.passengerTransferDirections?.[id] ?? enabled).includes(direction),
+  );
+}
+
+export function salesTransferCount(
+  state: SalesFormState,
+  direction?: SalesTicketDirection,
+) {
+  if (!state.serviceKinds.includes('TRANSFER')) return 0;
+  if (!state.passengers.length) {
+    const counts = salesPassengerCounts(state);
+    return counts.adults + counts.children;
+  }
+  return state.passengers.filter((p) => {
+    const directions = salesPassengerTransferDirections(state, p.customerId);
+    return (
+      (direction ? directions.includes(direction) : directions.length > 0) &&
+      salesPassengerAgeLabel(p.birthDate, salesTravelDate(state)) !== 'نوزاد'
+    );
+  }).length;
 }
 
 /** Missing direction choices retain legacy all-selected behavior. */

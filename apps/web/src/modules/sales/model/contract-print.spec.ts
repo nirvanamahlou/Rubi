@@ -73,10 +73,10 @@ describe('Saved contract print output', () => {
     const body = html.slice(html.indexOf('<body>'));
     const labels = [
       'CONTRACT PARTIES',
+      'PASSENGER SERVICES',
       'PASSENGERS & PRICING',
       'FLIGHT INFORMATION',
       'HOTEL INFORMATION',
-      'OTHER SERVICES',
       'APPROVAL & SIGNATURE',
     ];
     for (const label of labels) expect(body).toContain(label);
@@ -163,7 +163,7 @@ describe('Saved contract print output', () => {
       );
       const html = contractPrintHtml(output, printReferences);
       for (const p of output.contract.passengersDetail)
-        expect(html.split(p.displayNameSnapshot).length - 1).toBe(1);
+        expect(html.split(p.displayNameSnapshot).length - 1).toBe(2);
       expect(html).toContain(contractMoney(String(count * 100000000)));
       expect(html).toContain('thead{display:table-header-group}');
       expect(html).toContain('.financial-summary{break-inside:avoid}');
@@ -182,7 +182,7 @@ describe('Saved contract print output', () => {
       const cols = [...html.matchAll(/<col style="width:(\d+)%">/g)].map(
         (match) => Number(match[1]),
       );
-      expect(cols).toHaveLength(7);
+      expect(cols).toHaveLength(6);
       expect(cols.reduce((sum, width) => sum + width, 0)).toBe(100);
       expect(html).toContain('overflow-wrap:anywhere');
     },
@@ -280,6 +280,7 @@ describe('Saved contract print output', () => {
     expect(html).toContain('$');
     expect(html).toContain('BUSINESS');
     expect(html).toContain('ترانسفر رفت');
+    expect(html).not.toContain('OTHER SERVICES');
     expect(html).not.toContain('<th>کمیسیون</th>');
   });
   it('omits unrecorded commission for agency customers without inventing a deduction', () => {

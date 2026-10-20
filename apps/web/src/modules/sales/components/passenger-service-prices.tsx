@@ -18,6 +18,8 @@ import {
   salesHotelGuestIds,
   salesPassengerAgeLabel,
   salesPassengerFlightDirections,
+  salesPassengerTransferDirections,
+  salesAdditionalServices,
   salesTravelDate,
   salesNetServicePrices,
   salesInternationalTravel,
@@ -68,8 +70,8 @@ export function PassengerServicePrices({
         ? e.message
         : 'قیمت ریالی و ارزی مسافران را بررسی کنید.';
   }
-  const servicesFor = (id: string) =>
-    state.serviceKinds.flatMap((kind) => {
+  const servicesFor = (id: string) => [
+    ...state.serviceKinds.flatMap((kind) => {
       if (kind === 'FLIGHT') {
         const dirs = salesPassengerFlightDirections(state, id);
         return dirs.length
@@ -82,6 +84,17 @@ export function PassengerServicePrices({
           : [];
       }
       if (kind === 'HOTEL') return guests.has(id) ? ['هتل'] : [];
+      if (kind === 'TRANSFER') {
+        const dirs = salesPassengerTransferDirections(state, id);
+        return dirs.length
+          ? [
+              'ترانسفر ' +
+                dirs
+                  .map((d) => (d === 'OUTBOUND' ? 'رفت' : 'برگشت'))
+                  .join(' و '),
+            ]
+          : [];
+      }
       if (
         kind === 'VISA' &&
         state.visaComposition &&
@@ -100,7 +113,11 @@ export function PassengerServicePrices({
           OTHER: 'سایر خدمات',
         }[kind] ?? kind,
       ];
-    });
+    }),
+    ...(state.additionalServices ?? []).map(
+      (role) => salesAdditionalServices[role],
+    ),
+  ];
   return (
     <section className="space-y-3 rounded-xl border p-4">
       <h3 className="font-bold">قیمت کل خدمات هر مسافر</h3>

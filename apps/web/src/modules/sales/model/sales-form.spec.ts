@@ -653,31 +653,40 @@ it.each([
 );
 
 import { salesTransferCount } from './sales-form';
-it('defaults transfer quantity to adults plus children and bounds a manual reduction', () => {
+it('derives each transfer leg count from selected people, excluding infant seats', () => {
   const state = {
     ...emptySalesForm,
-    passengerComposition: { adults: 2, children: 1, infants: 1 },
+    serviceKinds: ['TRANSFER'] as typeof emptySalesForm.serviceKinds,
+    tripType: 'ROUND_TRIP' as const,
+    departureDate: '2026-10-01',
+    passengers: ['1990-01-01', '1991-01-01', '2020-01-01', '2026-01-01'].map(
+      (birthDate, i) => ({
+        customerId: `p${i}`,
+        displayName: `P${i}`,
+        birthDate,
+      }),
+    ),
+    passengerTransferDirections: {
+      p0: ['OUTBOUND'] as ['OUTBOUND'],
+      p1: ['RETURN'] as ['RETURN'],
+      p2: [],
+    },
   };
-  expect(salesTransferCount(state)).toBe(3);
-  expect(salesTransferCount({ ...state, transferPassengerCount: 2 })).toBe(2);
-  expect(salesTransferCount({ ...state, transferPassengerCount: 99 })).toBe(3);
-  expect(salesTransferCount({ ...state, transferPassengerCount: -1 })).toBe(0);
-});
-
-it('persists the reduced transfer count separately for each selected direction', () => {
-  const input = salesPayload({
-    ...emptySalesForm,
-    tripType: 'ROUND_TRIP',
-    serviceKinds: ['TRANSFER'],
-    serviceDirections: { TRANSFER: ['OUTBOUND', 'RETURN'] },
-    passengerComposition: { adults: 2, children: 1, infants: 1 },
-    transferPassengerCount: 2,
-  });
+  expect(salesTransferCount(state)).toBe(2);
+  expect(salesTransferCount(state, 'OUTBOUND')).toBe(1);
+  expect(salesTransferCount(state, 'RETURN')).toBe(1);
+  const input = salesPayload(state);
   expect(
     input.services
       .filter((s) => s.kind === 'TRANSFER')
       .map((s) => s.metadata?.passengerCount),
-  ).toEqual([2, 2]);
+  ).toEqual([1, 1]);
+  expect(input.passengers.map((p) => p.serviceClientKeys)).toEqual([
+    ['transfer-outbound'],
+    ['transfer-return'],
+    [],
+    ['transfer-outbound', 'transfer-return'],
+  ]);
 });
 
 describe('explicit visa applicants', () => {
