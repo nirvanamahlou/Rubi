@@ -76,6 +76,9 @@ vi.mock('./ticket-offer-picker', () => ({
 vi.mock('./sales-people-sheet', () => ({
   SalesPeopleSheet: () => <div>passenger table</div>,
 }));
+vi.mock('./hotel-stay-dates', () => ({
+  HotelStayDates: () => <div>shared hotel stay dates</div>,
+}));
 vi.mock('./contract-flight-editor', () => ({
   ContractFlightEditor: () => null,
 }));
@@ -196,4 +199,45 @@ it('clears the old return and both pair quotes when the next outbound has no eli
   expect(selected.returnOffer).toBeUndefined();
   expect(selected.servicePricing?.['flight-return']).toBeUndefined();
   expect(selected.servicePricing?.['flight-outbound']).toBeUndefined();
+});
+
+it('sets shared hotel dates from selected registered flights and preserves dates until a different flight is chosen', () => {
+  fixture.draft = {
+    ...fixture.draft!,
+    serviceKinds: ['FLIGHT', 'HOTEL'],
+    roomDrivenGuests: true,
+    hotel: {
+      ...emptySalesForm.hotel,
+      checkIn: '2099-11-01',
+      checkOut: '2099-11-10',
+      checkInManual: true,
+      checkOutManual: true,
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: 'room',
+          roomTypeNameSnapshot: 'Double',
+          adults: 2,
+          childAges: [],
+        },
+      ],
+    },
+  };
+  render();
+  fixture.dates!.onReturningOffers([back]);
+  fixture.dates!.onChange({ from: '2099-10-01', to: '2099-10-06' });
+  render();
+  fixture.search!();
+  render();
+  fixture.pickers[0]!.onSelect(out);
+  render();
+  const selected = fixture.cells.find((c): c is SalesFormState =>
+    Boolean(c && typeof c === 'object' && 'serviceKinds' in c),
+  )!;
+  expect(selected.hotel).toMatchObject({
+    checkIn: '2099-10-01',
+    checkOut: '2099-10-03',
+    checkInManual: false,
+    checkOutManual: false,
+  });
 });

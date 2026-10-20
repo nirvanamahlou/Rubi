@@ -702,7 +702,7 @@ export function SalesContractForm() {
     });
   };
   const finalStepError = (() => {
-    if (step !== 3) return '';
+    if (step !== 1) return '';
     if (hotelCapacityError) return hotelCapacityError;
     try {
       const payload = salesPayload({
@@ -800,8 +800,7 @@ export function SalesContractForm() {
             (!state.packageSaleAvailable || state.packageSaleQuote),
           )),
       );
-    if (step === 2) return passengerStepError === null;
-    if (step === 3) return !finalStepError;
+    if (step === 1) return !finalStepError;
     return true;
   })();
   const submit = async (event: FormEvent) => {
@@ -955,6 +954,14 @@ export function SalesContractForm() {
                       ...(paired ? { returnDate: flightDay(paired) } : {}),
                       outboundOffer: offer,
                       returnOffer: paired,
+                      hotel:
+                        offer.id !== state.outboundOffer?.id
+                          ? {
+                              ...state.hotel,
+                              checkInManual: false,
+                              checkOutManual: false,
+                            }
+                          : state.hotel,
                       contractFlights: {},
                       servicePricing: paired
                         ? roundTripTicketPricing(
@@ -1055,6 +1062,10 @@ export function SalesContractForm() {
                       setError('');
                       patchState({
                         returnOffer: offer,
+                        hotel:
+                          offer.id !== state.returnOffer?.id
+                            ? { ...state.hotel, checkOutManual: false }
+                            : state.hotel,
                         servicePricing: state.outboundOffer
                           ? roundTripTicketPricing(
                               state,
@@ -1167,8 +1178,7 @@ export function SalesContractForm() {
             </p>
           )}
           <p className="mt-1 text-xs text-muted-foreground">
-            مرحله {step === 0 ? 1 : step - 1} از 3 ·{' '}
-            {step === 0 ? 'مسیر، خدمات و مسافران' : salesSteps[step]}
+            مرحله {step + 1} از {salesSteps.length} · {salesSteps[step]}
           </p>
         </div>
         <Link
@@ -1183,18 +1193,15 @@ export function SalesContractForm() {
         className="flex gap-1 overflow-x-auto rounded-xl bg-muted/50 p-1"
         aria-label="مراحل ثبت قرارداد"
       >
-        {salesSteps.map((label, index) =>
-          index === 1 || index === 2 ? null : (
-            <li
-              aria-current={index === step ? 'step' : undefined}
-              className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-center text-xs font-bold ${index === step ? 'bg-primary/10 text-primary' : index < step ? 'text-emerald-700' : 'text-muted-foreground'}`}
-              key={label}
-            >
-              {index === 0 ? 1 : index - 1}.{' '}
-              {index === 0 ? 'مسیر، خدمات و مسافران' : label}
-            </li>
-          ),
-        )}
+        {salesSteps.map((label, index) => (
+          <li
+            aria-current={index === step ? 'step' : undefined}
+            className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-center text-xs font-bold ${index === step ? 'bg-primary/10 text-primary' : index < step ? 'text-emerald-700' : 'text-muted-foreground'}`}
+            key={label}
+          >
+            {index + 1}. {label}
+          </li>
+        ))}
       </ol>
       {error ? (
         <Alert tone="error" title="عملیات کامل نشد" description={error} />
@@ -1528,6 +1535,15 @@ export function SalesContractForm() {
                   ...reset,
                   departureDate: range.from,
                   returnDate: range.to,
+                  hotel: {
+                    ...state.hotel,
+                    ...(range.from !== flightRange.from
+                      ? { checkInManual: false }
+                      : {}),
+                    ...(range.to !== flightRange.to
+                      ? { checkOutManual: false }
+                      : {}),
+                  },
                   contractFlights:
                     keepOutbound && state.contractFlights?.OUTBOUND
                       ? { OUTBOUND: state.contractFlights.OUTBOUND }
@@ -2155,7 +2171,7 @@ export function SalesContractForm() {
             ) : null}
           </section>
         ) : null}
-        {step === 3 ? (
+        {step === 1 ? (
           <div className="grid gap-4 grid-cols-1">
             <div className="grid content-start gap-3">
               <ContractServiceSummary
@@ -2225,7 +2241,7 @@ export function SalesContractForm() {
             </div>
           </div>
         ) : null}
-        {step === 4 ? (
+        {step === 2 ? (
           <div className="grid gap-5">
             {state.serviceKinds.includes('FLIGHT') ? (
               <p className="text-sm text-muted-foreground">
@@ -2335,7 +2351,7 @@ export function SalesContractForm() {
           type="button"
           variant="outline"
           disabled={step === 0 || busy}
-          onClick={() => setStep((value) => (value === 3 ? 0 : value - 1))}
+          onClick={() => setStep((value) => value - 1)}
         >
           <ChevronRight className="size-4" />
           قبلی
@@ -2344,7 +2360,7 @@ export function SalesContractForm() {
           <Button
             type="button"
             disabled={!canContinue || busy}
-            onClick={() => setStep((value) => (value === 0 ? 3 : value + 1))}
+            onClick={() => setStep((value) => value + 1)}
           >
             {step === 0 ? 'تأیید مسیر و خدمات' : 'بعدی'}
             <ChevronLeft className="size-4" />

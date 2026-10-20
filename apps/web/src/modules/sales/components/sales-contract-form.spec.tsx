@@ -92,7 +92,7 @@ vi.mock('@/components/ui/date-picker', () => ({
 
 describe('compact sales contract form', () => {
   it('explains invalid final-step data without hiding the form', () => {
-    fixture.step = 3;
+    fixture.step = 1;
     let html: string;
     try {
       html = renderToStaticMarkup(<SalesContractForm />);
@@ -103,7 +103,7 @@ describe('compact sales contract form', () => {
     expect(html).toContain('disabled');
   });
   it('shows passenger package prices without catalog/day-sale or service agreement fields', () => {
-    fixture.step = 3;
+    fixture.step = 1;
     fixture.ticketDraft = {
       ...emptySalesForm,
       serviceKinds: ['FLIGHT'],
@@ -153,7 +153,7 @@ describe('compact sales contract form', () => {
   });
   it('uses the passenger table for round-trip packages without two agreement prices', () => {
     fixture.roundTrip = true;
-    fixture.step = 3;
+    fixture.step = 1;
     const html = renderToStaticMarkup(<SalesContractForm />);
     fixture.roundTrip = false;
     fixture.step = 0;
@@ -199,6 +199,9 @@ describe('compact sales contract form', () => {
     expect(html).toContain('grid-cols-[minmax(0,1fr)]');
     expect(html).toContain('داشبورد قراردادها');
     expect(html).toContain('مراحل ثبت قرارداد');
+    expect(html).toContain('مرحله 1 از 3');
+    expect(html).not.toContain('از 5');
+    expect(html).not.toContain('جزئیات سفر');
     expect(html).toContain('مسیر سفر');
     expect(html).not.toContain('تعداد مسافران');
     expect(html).not.toContain('type="number"');
@@ -215,14 +218,14 @@ describe('compact sales contract form', () => {
 });
 
 it('offers the expert reservation note on sale pricing rather than only at final submission', () => {
-  fixture.step = 3;
+  fixture.step = 1;
   const html = renderToStaticMarkup(<SalesContractForm />);
   fixture.step = 0;
   expect(html).toContain('یادداشت کارشناس برای رزرواسیون (اختیاری)');
   expect(html).toMatch(/maxlength="500"/i);
   expect(html).not.toContain('در توضیحات درخواست رزرواسیون نمایش داده می‌شود.');
   expect(html).toContain('یادداشت قیمت‌گذاری');
-  fixture.step = 4;
+  fixture.step = 2;
   const final = renderToStaticMarkup(<SalesContractForm />);
   fixture.step = 0;
   expect(final).not.toContain('یادداشت کارشناس برای رزرواسیون (اختیاری)');
@@ -252,8 +255,8 @@ it('does not block hotel details while the date rate request is still pending', 
     fixture.ticketDraft = null;
   }
 });
-it('allows the next passenger step with a valid flight service despite stale hotel draft fields', () => {
-  fixture.step = 2;
+it('keeps flight-only passenger validation independent from stale hotel draft fields', () => {
+  fixture.step = 0;
   fixture.ticketDraft = {
     ...emptySalesForm,
     customerId: 'person',
@@ -284,11 +287,7 @@ it('allows the next passenger step with a valid flight service despite stale hot
     expect(html).not.toContain(
       'هر مسافر باید حداقل یک خدمت انتخاب‌شده داشته باشد.',
     );
-    const next = html.match(
-      /<button\b[^>]*>(?:(?!<\/button>)[\s\S])*?بعدی(?:(?!<\/button>)[\s\S])*?<\/button>/,
-    )?.[0];
-    expect(next).toBeDefined();
-    expect(next).not.toMatch(/\sdisabled(?:=|>|\s)/);
+    expect(html).toContain('تأیید مسیر و خدمات');
   } finally {
     fixture.step = 0;
     fixture.ticketDraft = null;
@@ -451,3 +450,23 @@ it('keeps only the service toggle in the transfer card and moves leg choices to 
     fixture.step = 0;
   }
 });
+
+it.each([0, 1, 2])(
+  'uses the same three-step model for the header and navigation at stage %s',
+  (step) => {
+    fixture.step = step;
+    try {
+      const html = renderToStaticMarkup(<SalesContractForm />);
+      expect(html).toContain(`مرحله ${step + 1} از 3`);
+      const progress =
+        html.match(
+          /<ol[^>]*aria-label="مراحل ثبت قرارداد"[\s\S]*?<\/ol>/,
+        )?.[0] ?? '';
+      expect(progress.match(/<li\b/g)).toHaveLength(3);
+      expect(html).not.toContain('جزئیات سفر');
+      expect(html).not.toContain('از 5');
+    } finally {
+      fixture.step = 0;
+    }
+  },
+);

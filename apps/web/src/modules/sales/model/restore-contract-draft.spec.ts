@@ -13,12 +13,7 @@ describe('new contract browser draft compatibility', () => {
         () => {},
         (key) => key,
       ).map((c) => c.title),
-    ).toEqual([
-      'چک‌این هتل',
-      'چک‌اوت هتل',
-      'اقامت متفاوت',
-      'مبلغ اقامت متفاوت',
-    ]);
+    ).toEqual(['چک‌این هتل', 'چک‌اوت هتل', 'اقامت متفاوت']);
   });
 
   it('preserves entered people, hotel dates and custom stay amounts', () => {

@@ -1,6 +1,6 @@
 'use client';
 import type { SalesFormState } from '../model/sales-form';
-import { salesInternationalTravel } from '../model/sales-form';
+import { salesHotelCalendarSystem } from '../model/sales-form';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
 import { FormField } from '@/components/ui/form-controls';
 export function HotelStayDates({
@@ -31,10 +31,10 @@ export function HotelStayDates({
       </label>
       <FormField label="ورود (چک‌این)" required>
         <DatePicker
-          key={salesInternationalTravel(state) ? 'foreign' : 'local'}
-          {...(salesInternationalTravel(state)
-            ? { defaultCalendarSystem: 'gregorian' as const }
-            : {})}
+          calendarSystem={salesHotelCalendarSystem(state)}
+          onCalendarSystemChange={(calendarSystem) =>
+            patchState({ hotel: { ...state.hotel, calendarSystem } })
+          }
           value={state.hotel.checkIn}
           onChange={(checkIn) =>
             patchState({
@@ -49,10 +49,10 @@ export function HotelStayDates({
       </FormField>
       <FormField label="خروج (چک‌اوت)" required>
         <DatePicker
-          key={salesInternationalTravel(state) ? 'foreign' : 'local'}
-          {...(salesInternationalTravel(state)
-            ? { defaultCalendarSystem: 'gregorian' as const }
-            : {})}
+          calendarSystem={salesHotelCalendarSystem(state)}
+          onCalendarSystemChange={(calendarSystem) =>
+            patchState({ hotel: { ...state.hotel, calendarSystem } })
+          }
           value={state.hotel.checkOut}
           onChange={(checkOut) =>
             patchState({

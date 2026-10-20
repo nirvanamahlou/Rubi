@@ -22,7 +22,7 @@ import {
   salesAdditionalServices,
   salesTravelDate,
   salesNetServicePrices,
-  salesInternationalTravel,
+  salesHotelCalendarSystem,
   type SalesFormState,
 } from '../model/sales-form';
 
@@ -44,16 +44,15 @@ export function PassengerServicePrices({
     return null;
   const guests = new Set(salesHotelGuestIds(state));
   const foreignCurrencies = currencies.filter((c) => c.code !== 'IRR');
+  const calendar = salesHotelCalendarSystem(state);
   const date = (v: string) =>
     v && Number.isFinite(Date.parse(v))
       ? new Intl.DateTimeFormat(
-          language === 'en' || salesInternationalTravel(state)
-            ? 'en-GB'
-            : 'fa-IR',
+          language === 'en' || calendar === 'gregorian' ? 'en-GB' : 'fa-IR',
           {
             timeZone: 'UTC',
             dateStyle: 'medium',
-            ...(salesInternationalTravel(state) ? { calendar: 'gregory' } : {}),
+            calendar: calendar === 'gregorian' ? 'gregory' : 'persian',
           },
         ).format(new Date(v))
       : '—';
@@ -211,6 +210,11 @@ export function PassengerServicePrices({
                     {servicesFor(p.customerId).map((s) => (
                       <div key={s}>{s}</div>
                     ))}
+                    {stay?.different ? (
+                      <span className="mt-1 block text-xs text-muted-foreground">
+                        اقامت متفاوت
+                      </span>
+                    ) : null}
                   </td>
                   <td className="p-2 whitespace-nowrap">
                     {stay ? (

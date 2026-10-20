@@ -218,6 +218,8 @@ export function CustomerEntrySheet({
 }: {
   extraColumns?: readonly {
     key: string;
+    /** Default preserves leading host-specific columns. */
+    position?: 'start' | 'end';
     title: ReactNode;
     render: (row: CustomerEntryRow) => ReactNode;
   }[];
@@ -234,6 +236,12 @@ export function CustomerEntrySheet({
   columnLabels?: Partial<Record<EntryField, string>>;
   calendarSwitchInBirthDateHeader?: boolean;
 }) {
+  const leadingColumns = extraColumns.filter(
+    (column) => column.position !== 'end',
+  );
+  const trailingColumns = extraColumns.filter(
+    (column) => column.position === 'end',
+  );
   const orderedColumns = columnOrder
     ? [
         ...columns
@@ -265,7 +273,7 @@ export function CustomerEntrySheet({
               <th scope="col" className="w-40 border-e p-3 text-start">
                 پرونده / نقش
               </th>
-              {extraColumns.map((c) => (
+              {leadingColumns.map((c) => (
                 <th key={c.key} scope="col" className="p-3">
                   {c.title}
                 </th>
@@ -299,6 +307,11 @@ export function CustomerEntrySheet({
               <th scope="col" className="p-3 text-start">
                 جزئیات
               </th>
+              {trailingColumns.map((c) => (
+                <th key={c.key} scope="col" className="p-3">
+                  {c.title}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -314,7 +327,7 @@ export function CustomerEntrySheet({
                   <p className="mb-2 font-bold">{row.label}</p>
                   {row.role}
                 </th>
-                {extraColumns.map((c) => (
+                {leadingColumns.map((c) => (
                   <td key={c.key} className="p-2">
                     {c.render(row)}
                   </td>
@@ -497,6 +510,11 @@ export function CustomerEntrySheet({
                   );
                 })}
                 <td className="min-w-28 p-2">{row.actions}</td>
+                {trailingColumns.map((c) => (
+                  <td key={c.key} className="p-2">
+                    {c.render(row)}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>

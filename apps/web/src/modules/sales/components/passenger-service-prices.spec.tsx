@@ -170,3 +170,42 @@ it('shows only each passenger’s selected transfer legs and added services', ()
   expect(html).toContain('گشت شهری');
   expect(html).toContain('راهنما');
 });
+
+it('prices a different stay in the payment row total without a second hotel charge', () => {
+  const onChange = vi.fn();
+  const html = renderToStaticMarkup(
+    <PassengerServicePrices
+      state={state}
+      currencies={[]}
+      onChange={onChange}
+    />,
+  );
+  expect(html).toContain('اقامت متفاوت');
+  const price = fields.money.find((f) => f['aria-label'] === 'قیمت ارزی')!;
+  expect(price.value).toBe('20');
+  price.onValueChange('45');
+  expect(onChange).toHaveBeenLastCalledWith({
+    passengerPrices: {
+      ...state.passengerPrices,
+      a: [
+        { currencyCode: 'IRR', amount: '100' },
+        { currencyCode: 'USD', amount: '45' },
+      ],
+    },
+  });
+  expect(onChange.mock.calls[0]![0]).not.toHaveProperty('passengerHotelPrices');
+});
+it('uses the shared Gregorian hotel choice for payment-table stay dates', () => {
+  const html = renderToStaticMarkup(
+    <PassengerServicePrices
+      state={{
+        ...state,
+        hotel: { ...state.hotel, calendarSystem: 'gregorian' },
+      }}
+      currencies={[]}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(html).toContain('2 Nov 2026');
+  expect(html).toContain('7 Nov 2026');
+});

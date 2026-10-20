@@ -1,10 +1,12 @@
 'use client';
 import { Trash2 } from 'lucide-react';
-import { Input } from '@/components/ui/form-controls';
 import { SalesDatePicker } from './sales-date-picker';
 import { SalesThemedSelect } from './sales-themed-select';
 import { passengerHotelStay } from '../model/contract-guest-stays';
-import type { SalesFormState } from '../model/sales-form';
+import {
+  salesHotelCalendarSystem,
+  type SalesFormState,
+} from '../model/sales-form';
 export function guestStayColumns(
   state: SalesFormState,
   patch: (value: Partial<SalesFormState>) => void,
@@ -31,6 +33,10 @@ export function guestStayColumns(
         return stay ? (
           <div className="min-w-40">
             <SalesDatePicker
+              calendarSystem={salesHotelCalendarSystem(state)}
+              onCalendarSystemChange={(calendarSystem) =>
+                patch({ hotel: { ...state.hotel, calendarSystem } })
+              }
               value={stay[field]}
               disabled={busy || !stay.different}
               onChange={(day) =>
@@ -123,46 +129,5 @@ export function guestStayColumns(
         );
       },
     },
-    {
-      key: 'differentStayPrice',
-      title: 'مبلغ اقامت متفاوت',
-      render: (row: { key: string }) => {
-        const { id, stay } = value(row);
-        if (!stay?.different) return <span>—</span>;
-        const price = state.passengerHotelPrices?.[id]?.[0] ?? {
-          amount: '',
-          currencyCode: 'USD',
-        };
-        const set = (part: Partial<typeof price>) =>
-          patch({
-            passengerHotelPrices: {
-              ...state.passengerHotelPrices,
-              [id]: [{ ...price, ...part }],
-            },
-          });
-        return (
-          <div className="flex min-w-56 gap-2">
-            <Input
-              aria-label="مبلغ اقامت متفاوت"
-              inputMode="decimal"
-              value={price.amount}
-              onChange={(e) => set({ amount: e.target.value })}
-            />
-            <SalesThemedSelect
-              label="ارز اقامت متفاوت"
-              value={price.currencyCode}
-              options={['IRR', 'USD', 'EUR', 'AED', 'TRY'].map((code) => ({
-                value: code,
-                label: code,
-              }))}
-              onValueChange={(currencyCode) => set({ currencyCode })}
-            />
-          </div>
-        );
-      },
-    },
-  ].filter(
-    (column) =>
-      !state.passengerTotalPricing || column.key !== 'differentStayPrice',
-  );
+  ].map((column) => ({ ...column, position: 'end' as const }));
 }
