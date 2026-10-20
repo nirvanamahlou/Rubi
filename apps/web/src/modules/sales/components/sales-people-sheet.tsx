@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { guestStayColumns } from './guest-stay-columns';
+import { usesRoomDrivenGuests } from '../model/contract-guest-stays';
 import { agencyBuyerContact } from '../model/agency-buyer-contact';
 import { Plus, Check, Search } from 'lucide-react';
 import type { CustomerSummary, MasterDataRecord } from '@nora/contracts';
@@ -50,6 +52,7 @@ export function SalesPeopleSheet({
   onConfirmed,
   onBusyChange,
   onAddInfant,
+  onGuestStateChange,
   onTravelDateChange,
   onFlightDirectionsChange,
   busy = false,
@@ -64,6 +67,7 @@ export function SalesPeopleSheet({
   onConfirmed: (patch: Partial<SalesFormState>) => void;
   onBusyChange: (busy: boolean) => void;
   onAddInfant: () => void;
+  onGuestStateChange?: (patch: Partial<SalesFormState>) => void;
   onTravelDateChange: (value: string) => void;
   busy?: boolean;
 }) {
@@ -345,7 +349,7 @@ export function SalesPeopleSheet({
     const label =
       key === 'primary'
         ? 'مشتری اصلی'
-        : `مسافر ${(Number(key.slice(1)) + 1).toLocaleString('fa-IR')}`;
+        : `مسافر ${(slots.indexOf(key) + 1).toLocaleString('fa-IR')}`;
     return {
       key: 'sales-entry-' + key,
       label,
@@ -465,20 +469,46 @@ export function SalesPeopleSheet({
           {counts.children.toLocaleString('fa-IR')} کودک،{' '}
           {counts.infants.toLocaleString('fa-IR')} نوزاد
         </p>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          disabled={busy || counts.adults === 0}
-          onClick={() => {
-            onDraftChange(draft);
-            setConfirmed(false);
-            onAddInfant();
-          }}
-        >
-          <Plus className="size-4" />
-          افزودن نوزاد
-        </Button>
+        {usesRoomDrivenGuests(state) && onGuestStateChange ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onClick={() => {
+              const taken = new Set(
+                (state.flightOnlyPassengers ?? []).map((p) => p.key),
+              );
+              let n = 0;
+              while (taken.has('flight-only-' + n)) n++;
+              onDraftChange(draft);
+              setConfirmed(false);
+              onGuestStateChange({
+                flightOnlyPassengers: [
+                  ...(state.flightOnlyPassengers ?? []),
+                  { key: 'flight-only-' + n, age: 18 },
+                ],
+              });
+            }}
+          >
+            افزودن مسافر (فقط پرواز)
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={busy || counts.adults === 0}
+            onClick={() => {
+              onDraftChange(draft);
+              setConfirmed(false);
+              onAddInfant();
+            }}
+          >
+            <Plus className="size-4" />
+            افزودن نوزاد
+          </Button>
+        )}
       </div>
 
       {!salesTravelDate(state) ||
@@ -783,14 +813,14 @@ export function SalesPeopleSheet({
       </section>
 
       <CustomerEntrySheet
-        extraColumns={
-          state.serviceKinds.includes('FLIGHT')
+        extraColumns={[
+          ...(state.serviceKinds.includes('FLIGHT')
             ? (['OUTBOUND', 'RETURN'] as const)
                 .filter((d) => salesDirections(state, 'FLIGHT').includes(d))
                 .map((direction) => ({
                   key: direction,
                   title: direction === 'OUTBOUND' ? 'بلیط رفت' : 'بلیط برگشت',
-                  render: (row) => {
+                  render: (row: CustomerEntryRow) => {
                     const key = row.key.replace('sales-entry-', '');
                     const person = peopleRow(draft, key).person;
                     const id = person?.id ?? key;
@@ -817,8 +847,16 @@ export function SalesPeopleSheet({
                     );
                   },
                 }))
-            : []
-        }
+            : []),
+          ...(usesRoomDrivenGuests(state) && onGuestStateChange
+            ? guestStayColumns(
+                state,
+                onGuestStateChange,
+                (key) => peopleRow(draft, key).person?.id ?? key,
+                busy,
+              )
+            : []),
+        ]}
         rows={rows.filter((row) => row.key !== 'sales-entry-primary')}
         showPassportExpiry={passportIdentity}
         visibleFields={visibleEntryFields}

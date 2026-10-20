@@ -1,3 +1,4 @@
+import { readPassengerHotelStays } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
 export function englishOutputName(
   value: string,
@@ -65,6 +66,7 @@ export function reservationFormData(
     ? salesHotelRoomSummary(hotel.rooms)
     : undefined;
   const services = snapshot.serviceSelections;
+  const passengerStays = readPassengerHotelStays(services);
   const flights = salesContractFlights(
     services,
     snapshot.ticketSelections ?? [],
@@ -88,6 +90,8 @@ export function reservationFormData(
     sex: string;
     age: string;
     hotelChildAgeBand?: string | undefined;
+    checkIn?: string;
+    checkOut?: string;
   }> = ids.map((id) => {
     const person = snapshot.passengerAssignments?.find(
       (p) => p.customerId === id,
@@ -111,6 +115,12 @@ export function reservationFormData(
         : undefined;
     return {
       id,
+      ...(passengerStays
+        ? {
+            checkIn: reservationFormDate(passengerStays[id]?.checkInDate),
+            checkOut: reservationFormDate(passengerStays[id]?.checkOutDate),
+          }
+        : {}),
       name: text(identity?.passportName || person?.displayNameSnapshot),
       sex: '-',
       hotelChildAgeBand,

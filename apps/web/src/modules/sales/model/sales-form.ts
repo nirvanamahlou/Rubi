@@ -1,3 +1,8 @@
+import {
+  usesRoomDrivenGuests,
+  passengerHotelStay,
+  passengerHotelStayError,
+} from './contract-guest-stays';
 import { defaultSalesRoomCategory } from '@nora/contracts';
 import {
   PASSENGER_DEDUCTIONS,
@@ -113,6 +118,13 @@ export const salesSteps = [
 ] as const;
 
 export interface SalesFormState {
+  roomDrivenGuests?: boolean;
+  flightOnlyPassengers?: { key: string; age: number }[];
+  passengerHotelStays?: Record<
+    string,
+    { different: boolean; checkIn: string; checkOut: string }
+  >;
+
   passengerDeductions?: PassengerDeductions;
   passengerFlightDirections?: Record<string, SalesTicketDirection[]>;
   passengerHotelPrices?: Record<string, SalesMoney[]>;
@@ -1354,6 +1366,38 @@ export function salesPayload(
       services.splice(i, 1);
   }
   const hotelPriceService = services.find((s) => s.kind === 'HOTEL');
+  if (hotelPriceService && usesRoomDrivenGuests(state)) {
+    const stays = Object.fromEntries(
+      salesHotelGuestIds(state).map((id) => {
+        const stay = passengerHotelStay(
+          true,
+          state.hotel,
+          state.passengerHotelStays?.[id],
+        )!;
+        const error = passengerHotelStayError(stay);
+        if (error) throw Error(error);
+        if (
+          stay.different &&
+          !state.passengerHotelPrices?.[id]?.some(
+            (p) => p.amount.trim() && /^\d+(?:\.\d{1,4})?$/.test(p.amount),
+          )
+        )
+          throw Error('مبلغ اقامت متفاوت مسافر را وارد کنید.');
+        return [
+          id,
+          {
+            different: stay.different,
+            checkInDate: stay.checkIn,
+            checkOutDate: stay.checkOut,
+          },
+        ];
+      }),
+    );
+    hotelPriceService.metadata = {
+      ...hotelPriceService.metadata,
+      passengerHotelStaysV1: JSON.stringify(stays),
+    };
+  }
   if (hotelPriceService && state.passengerHotelPrices !== undefined)
     hotelPriceService.metadata = {
       ...hotelPriceService.metadata,

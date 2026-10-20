@@ -375,3 +375,37 @@ it('lets a complete selected tour continue without an unrelated standalone fligh
     fixture.ticketDraft = null;
   }
 });
+
+it('places combined flight selection and stay dates before identities and hides redundant party counts', () => {
+  fixture.step = 0;
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    roomDrivenGuests: true,
+    serviceKinds: ['FLIGHT', 'HOTEL'],
+    hotel: {
+      ...emptySalesForm.hotel,
+      hotelId: 'hotel',
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: '11111111-1111-4111-8111-111111111111',
+          roomTypeNameSnapshot: 'Double',
+          adults: 2,
+          childAges: [],
+        },
+      ],
+    },
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    const people = html.indexOf('ورود یکجای مشتری و مسافران');
+    expect(people).toBeGreaterThan(0);
+    expect(html.indexOf('تاریخ اقامت مهمانان')).toBeLessThan(people);
+    expect(html.indexOf('انتخاب بلیط پرواز')).toBeLessThan(people);
+    expect(html).not.toContain('>تعداد مسافران</h2>');
+    expect(html).toContain('افزودن مسافر (فقط پرواز)');
+  } finally {
+    fixture.ticketDraft = null;
+    fixture.step = 0;
+  }
+});

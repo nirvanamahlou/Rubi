@@ -974,3 +974,68 @@ it('checks manual per-guest hotel prices against exact automatic contract totals
     'مبلغ کل قرارداد باید برابر',
   );
 });
+
+it('validates individual hotel stay snapshots and rejects a flight-only stay or missing override price', () => {
+  const input = structuredClone(draft),
+    id = input.passengers[0]!.customerId;
+  input.passengers = [
+    { ...input.passengers[0]!, serviceClientKeys: ['flight', 'hotel'] },
+    {
+      ...input.passengers[0]!,
+      customerId: '10000000-0000-4000-8000-000000000099',
+      serviceClientKeys: ['flight'],
+    },
+  ];
+  input.services = [
+    ...input.services,
+    {
+      clientKey: 'hotel',
+      kind: 'HOTEL',
+      titleSnapshot: 'Sample hotel',
+      metadata: {
+        passengerHotelStaysV1: JSON.stringify({
+          [id]: {
+            different: true,
+            checkInDate: '2026-10-02',
+            checkOutDate: '2026-10-05',
+          },
+        }),
+        passengerHotelPricesV1: JSON.stringify({
+          [id]: [{ amount: '10', currencyCode: 'USD' }],
+        }),
+      },
+    },
+  ];
+  input.hotelSelection = {
+    serviceClientKey: 'hotel',
+    hotelId: '10000000-0000-4000-8000-000000000010',
+    hotelNameSnapshot: 'Sample',
+    cityId: input.destinationId,
+    checkInDate: '2026-10-01',
+    checkOutDate: '2026-10-07',
+    roomCount: 1,
+    roomTypeId: '10000000-0000-4000-8000-000000000011',
+    occupancy: 1,
+    inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  const metadata = { ...input.services[1]!.metadata! };
+  input.services[1]!.metadata = metadata;
+  metadata.passengerHotelStaysV1 = JSON.stringify({
+    [input.passengers[1]!.customerId]: {
+      different: true,
+      checkInDate: '2026-10-02',
+      checkOutDate: '2026-10-05',
+    },
+  });
+  expect(() => validateSalesContract(input)).toThrow('اقامت باید فقط');
+  metadata.passengerHotelStaysV1 = JSON.stringify({
+    [id]: {
+      different: true,
+      checkInDate: '2026-10-02',
+      checkOutDate: '2026-10-05',
+    },
+  });
+  metadata.passengerHotelPricesV1 = JSON.stringify({ [id]: [] });
+  expect(() => validateSalesContract(input)).toThrow();
+});
