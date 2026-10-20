@@ -6816,3 +6816,9 @@ PC-A CONTRACT-UI-1020: clearer three-step progress, emphasized current step, res
 
 CALL-CENTER-DEVELOP-INTEGRATION-1020 CI repair: the full hosted test suite detected two existing native datetime-local controls in Call Center follow-up/referral forms, violating the newly integrated shared-calendar contract. Reserve these two control bindings only; reuse DatePicker includeTime/withinDialog, retain FormData dueAt and existing device-local/Tehran UTC conversion semantics, and explicitly mark controlled calendar changes dirty. No table/layout/data/API change, no gate weakening. Existing shared calendar contract and date/time utility regressions validate this repair before final-head CI.
 CI calendar repair validation:12 focused shared-calendar contract/date utility tests pass; scoped ESLint and diff checks pass. Source-only local attempts first encountered missing dependency resolution in this dependency-free checkout; reused installed runtime tooling via ignored local links, without manifest/lockfile changes. No test assertion, timeout, exclusion or quality gate changed. Final hosted full checks remain required.
+
+HOTEL-STAY-LAYOUT-1020 / PC-A: remove the next-day checkbox and use equal-width shared hotel date controls; bounded presentation-only change, no data or runtime mutation.
+
+
+HOTEL-STAY-LAYOUT-1020 candidate: shared hotel dates now fill two equal columns, next-day checkbox removed. Existing calendar-state regression passed; no persisted dates or operational runtime changed.
+
