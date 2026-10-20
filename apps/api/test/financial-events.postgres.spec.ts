@@ -490,6 +490,64 @@ describe.skipIf(!url)(
           branchId,
         ]))!.settlementStatus,
       ).toBe('PARTIALLY_SETTLED');
+      const overdue = await db.salesContractPaymentEntry.create({
+        data: {
+          contractId: contract.id,
+          amount: '25000',
+          currencyCode: 'IRR',
+          dueAt: new Date(Date.now() - 86400000),
+          method: 'BANK_TRANSFER',
+          status: 'SCHEDULED',
+          idempotencyKey: randomUUID(),
+          requestFingerprint: 'f'.repeat(64),
+          createdByUserId: makerId,
+        },
+      });
+      expect(
+        (await sales.pendingFinancePayments([branchId])).some(
+          (p) => p.id === overdue.id,
+        ),
+      ).toBe(true);
+      expect(
+        await sales.applyFinanceConfirmation({
+          ...approval,
+          paymentId: overdue.id,
+          financeConfirmationId: randomUUID(),
+        }),
+      ).toBe('confirmed');
+      expect((await sales.findById(contract.id))!.settlementStatus).toBe(
+        'SETTLED',
+      );
+      const future = await db.salesContractPaymentEntry.create({
+        data: {
+          contractId: contract.id,
+          amount: '1',
+          currencyCode: 'IRR',
+          dueAt: new Date(Date.now() + 86400000),
+          method: 'BANK_TRANSFER',
+          status: 'SCHEDULED',
+          idempotencyKey: randomUUID(),
+          requestFingerprint: 'e'.repeat(64),
+          createdByUserId: makerId,
+        },
+      });
+      expect(
+        (await sales.pendingFinancePayments([branchId])).some(
+          (p) => p.id === future.id,
+        ),
+      ).toBe(false);
+      await expect(
+        sales.applyFinanceConfirmation({
+          ...approval,
+          paymentId: future.id,
+          financeConfirmationId: randomUUID(),
+        }),
+      ).rejects.toThrow('وضعیت بررسی مالی');
+      expect(
+        await db.financeAccountingEvent.count({
+          where: { sourceKey: `SALES:${future.id}` },
+        }),
+      ).toBe(0);
     }, 30000);
     it('records the full manual petty-cash cycle without treating funding as expense', async () => {
       const checker: AuthenticatedActor = { ...maker, userId: checkerId };

@@ -863,7 +863,10 @@ export class FinanceInboxService {
       );
       return { status: 'RECEIPT_CONFIRMED' as const, documentDelivery };
     }
-    if (receipt.status !== 'PENDING_FINANCE_CONFIRMATION')
+    if (
+      receipt.status !== 'PENDING_FINANCE_CONFIRMATION' &&
+      !(receipt.status === 'SCHEDULED' && receipt.dueAt <= new Date())
+    )
       throw new ConflictException('دریافت در وضعیت بررسی مالی نیست.');
     const payment = { ...receipt, branchId: receipt.contract.branchId };
     if (input.action === 'APPROVE') {

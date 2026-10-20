@@ -168,6 +168,7 @@ export class SalesRepository {
         id: true,
         contractId: true,
         status: true,
+        dueAt: true,
         currencyCode: true,
         financeReceiptAccountId: true,
         contract: { select: { branchId: true } },
@@ -179,7 +180,10 @@ export class SalesRepository {
     if (!branchIds.length) return Promise.resolve([]);
     return this.database.client.salesContractPaymentEntry.findMany({
       where: {
-        status: 'PENDING_FINANCE_CONFIRMATION',
+        OR: [
+          { status: 'PENDING_FINANCE_CONFIRMATION' },
+          { status: 'SCHEDULED', dueAt: { lte: new Date() } },
+        ],
         contract: { branchId: { in: [...branchIds] } },
       },
       include: {
@@ -1142,7 +1146,10 @@ export class SalesRepository {
             );
           return 'replayed';
         }
-        if (payment.status !== 'PENDING_FINANCE_CONFIRMATION')
+        if (
+          payment.status !== 'PENDING_FINANCE_CONFIRMATION' &&
+          !(payment.status === 'SCHEDULED' && payment.dueAt <= new Date())
+        )
           throw new ConflictException('دریافت در وضعیت بررسی مالی نیست.');
         await tx.salesContractPaymentEntry.update({
           where: { id: payment.id },
@@ -1210,6 +1217,7 @@ export class SalesRepository {
     traceId?: string;
   }): Promise<'corrected' | 'replayed' | 'not-found' | 'conflict'> {
     return this.database.client.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM sales_contracts WHERE id=${event.contractId}::uuid FOR UPDATE`;
       const payment = await tx.salesContractPaymentEntry.findFirst({
         where: { id: event.paymentId, contractId: event.contractId },
         include: { contract: { select: { branchId: true } } },
@@ -1217,7 +1225,11 @@ export class SalesRepository {
       if (!payment || payment.contract.branchId !== event.branchId)
         return 'not-found';
       if (payment.status === 'FINANCE_REJECTED') return 'replayed';
-      if (payment.status !== 'PENDING_FINANCE_CONFIRMATION') return 'conflict';
+      if (
+        payment.status !== 'PENDING_FINANCE_CONFIRMATION' &&
+        !(payment.status === 'SCHEDULED' && payment.dueAt <= new Date())
+      )
+        return 'conflict';
       await tx.salesContractPaymentEntry.update({
         where: { id: payment.id },
         data: {
