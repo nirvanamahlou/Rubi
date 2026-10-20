@@ -27,7 +27,7 @@ export interface ContractPrintReferences {
   logoDataUrl?: string;
   international?: boolean;
 }
-export const contractOutputTemplateVersion = 'travel-services-v1';
+export const contractOutputTemplateVersion = 'travel-services-v2';
 
 /** Canonical room products take precedence over legacy summary fields. */
 export function contractRoomSummary(
@@ -189,10 +189,10 @@ export function contractPrintHtml(
     Object.values(deductions).some((p) => p.commission !== undefined);
   const passengerColumns = (
     showDiscount && showCommission
-      ? [4, 22, 6, 5, 17, 17, 10, 10, 9]
+      ? [4, 24, 7, 18, 18, 10, 10, 9]
       : showDiscount || showCommission
-        ? [5, 25, 7, 5, 18, 18, 12, 10]
-        : [5, 28, 9, 6, 24, 18, 10]
+        ? [5, 28, 9, 18, 18, 12, 10]
+        : [5, 30, 10, 24, 21, 10]
   )
     .map((width) => `<col style="width:${width}%">`)
     .join('');
@@ -205,6 +205,15 @@ export function contractPrintHtml(
   const room = hotel
     ? name(hotel.rooms?.[0]?.roomTypeId ?? hotel.roomTypeId)
     : '—';
+  const roomCount = hotel?.rooms?.length ?? hotel?.roomCount ?? 0;
+  const roomGuestCount = hotel?.rooms?.length
+    ? hotel.rooms.reduce(
+        (total, room) => total + room.adults + room.childAges.length,
+        0,
+      )
+    : (hotel?.occupancy ?? 0);
+  const showRoomPrices =
+    hotel?.rooms?.some((room) => room.agreedPrice) ?? false;
   const flightPrices = readPassengerFlightPrices(c.servicesDetail);
   const hotelPrices = readPassengerHotelPrices(
     c.servicesDetail,
@@ -228,9 +237,6 @@ export function contractPrintHtml(
         CHD: 'کودک',
         INF: 'نوزاد',
       }[p.ageCategory];
-      const allocated = c.servicesDetail.filter((s) =>
-        p.serviceClientKeys.includes(s.clientKey),
-      );
       const deductionCell = (kind: 'discount' | 'commission') => {
         const price = deductions[p.customerId]?.[kind];
         return price
@@ -255,7 +261,68 @@ export function contractPrintHtml(
               '</bdi></div>',
           )
           .join('');
-      return `<tr><td>${i + 1}</td><td>${e(p.displayNameSnapshot)}</td><td>${ageLabel}</td><td>${allocated.some((s) => s.kind === 'VISA') ? 'دارد' : '—'}</td><td class="contract-total">${flightPrices?.[p.customerId]?.length ? renderPrices(false) : 'ثبت نشده'}</td><td>${renderPrices(true)}</td>${showDiscount ? '<td>' + deductionCell('discount') + '</td>' : ''}${showCommission ? '<td>' + (deductions[p.customerId]?.commission ? deductionCell('commission') : p.ageCategory !== 'INF' && commission ? contractMoney(p.ageCategory === 'ADT' ? commission.adult : commission.child) : '—') + '</td>' : ''}<td>—</td>${guestStays ? `<td>${e(guestStays[p.customerId]?.checkInDate ? date(guestStays[p.customerId]!.checkInDate) : '—')}</td><td>${e(guestStays[p.customerId]?.checkOutDate ? date(guestStays[p.customerId]!.checkOutDate) : '—')}</td>` : ''}</tr>`;
+      return `<tr><td>${i + 1}</td><td>${e(p.displayNameSnapshot)}</td><td>${ageLabel}</td><td class="contract-total">${flightPrices?.[p.customerId]?.length ? renderPrices(false) : 'ثبت نشده'}</td><td>${renderPrices(true)}</td>${showDiscount ? '<td>' + deductionCell('discount') + '</td>' : ''}${showCommission ? '<td>' + (deductions[p.customerId]?.commission ? deductionCell('commission') : p.ageCategory !== 'INF' && commission ? contractMoney(p.ageCategory === 'ADT' ? commission.adult : commission.child) : '—') + '</td>' : ''}<td>—</td></tr>`;
+    })
+    .join('');
+  const contractFlights = salesContractFlights(
+    c.servicesDetail,
+    c.ticketSelections,
+  );
+  const serviceDirection = (service: (typeof c.servicesDetail)[number]) =>
+    service.metadata?.direction ??
+    contractFlights.find(
+      (flight) => flight.serviceClientKey === service.clientKey,
+    )?.direction ??
+    (/(?:^|[-_])(?:out|outbound)$/.test(service.clientKey)
+      ? 'OUTBOUND'
+      : /(?:^|[-_])(?:return|back|in)$/.test(service.clientKey)
+        ? 'RETURN'
+        : undefined);
+  const stayDate = (value: string) =>
+    refs.international
+      ? new Intl.DateTimeFormat('en-GB', {
+          timeZone: 'Asia/Tehran',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(new Date(value))
+      : date(value);
+  const serviceRows = c.passengersDetail
+    .map((p, i) => {
+      const allocated = c.servicesDetail.filter((service) =>
+        p.serviceClientKeys.includes(service.clientKey),
+      );
+      const hasLeg = (
+        kind: 'FLIGHT' | 'TRANSFER',
+        direction: 'OUTBOUND' | 'RETURN',
+      ) =>
+        allocated.some(
+          (service) =>
+            service.kind === kind && serviceDirection(service) === direction,
+        );
+      const mark = (selected: boolean) =>
+        selected
+          ? '<span class="service-selected" aria-label="دارد">✓</span>'
+          : '<span class="service-empty">—</span>';
+      const hotelGuest =
+        hotel && p.serviceClientKeys.includes(hotel.serviceClientKey);
+      const stay = hotelGuest ? (guestStays?.[p.customerId] ?? hotel) : null;
+      const other = [
+        ...new Set(
+          allocated
+            .filter(
+              (service) =>
+                !['FLIGHT', 'HOTEL', 'TRANSFER'].includes(service.kind) ||
+                (service.kind === 'TRANSFER' && !serviceDirection(service)),
+            )
+            .map((service) =>
+              ['OTHER', 'TRANSFER'].includes(service.kind)
+                ? service.titleSnapshot
+                : kind(service.kind),
+            ),
+        ),
+      ];
+      return `<tr><td>${i + 1}</td><td class="passenger-name"><bdi>${e(p.displayNameSnapshot)}</bdi></td><td>${e({ ADT: 'بزرگسال', CHD: 'کودک', INF: 'نوزاد' }[p.ageCategory])}</td><td>${mark(hasLeg('FLIGHT', 'OUTBOUND'))}</td><td>${mark(hasLeg('FLIGHT', 'RETURN'))}</td><td>${stay ? '<bdi class="stay-date">' + e(stayDate(stay.checkInDate)) + '</bdi>' : '—'}</td><td>${stay ? '<bdi class="stay-date">' + e(stayDate(stay.checkOutDate)) + '</bdi>' : '—'}</td><td>${mark(hasLeg('TRANSFER', 'OUTBOUND'))}</td><td>${mark(hasLeg('TRANSFER', 'RETURN'))}</td><td>${e(other.join('، ') || '—')}</td></tr>`;
     })
     .join('');
   const flights = salesContractFlights(c.servicesDetail, c.ticketSelections)
@@ -266,16 +333,6 @@ export function contractPrintHtml(
       return `<tr><td>${e(name(t.originId))} ← ${e(name(t.destinationId))}<small>${t.direction === 'RETURN' ? 'برگشت' : 'رفت'}${t.source === 'CONTRACT_ONLY' ? ' · شناور، نیازمند تأیید رزرو' : ''}</small></td><td>${e(t.carrierNameSnapshot)}</td><td><bdi>${e(t.serviceNumberSnapshot)}</bdi></td><td>${e(travelDate(t.departureAt))}</td><td>${e(time(t.departureAt))}</td><td>${e(business ? 'BUSINESS' : t.cabinClassCode)}</td></tr>`;
     })
     .join('');
-  const transfers = c.servicesDetail
-    .filter((s) => s.kind === 'TRANSFER')
-    .map(
-      (s) =>
-        s.titleSnapshot +
-        (typeof s.metadata?.passengerCount === 'number'
-          ? ` · ${s.metadata.passengerCount} نفر`
-          : ''),
-    )
-    .join('، ');
   const issuerName =
     output.company.code === 'JAHAN_BASTAN'
       ? 'جهان باستان'
@@ -320,6 +377,8 @@ export function contractPrintHtml(
   table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10pt}thead{display:table-header-group}th{background:#dce6ee;color:#15375c;border-color:white;font-weight:bold}td,th{border:1px solid #cdd7e1;padding:1mm .7mm;text-align:center;overflow-wrap:anywhere}
   tr{break-inside:avoid;page-break-inside:avoid}td:first-child{white-space:normal}
   .passengers{break-inside:auto}.passengers h2{break-after:avoid}.passengers th{font-size:9.5pt}.passengers td{padding:.8mm .6mm}
+  .passenger-services{margin-top:1.5mm}.passenger-services th{background:#e6f1f2;color:#123c4e}.passenger-prices{margin-top:1.5mm}.passenger-prices th{background:#dce6ee}.passengers tbody tr:nth-child(even){background:#f6f9fc}.passenger-name{text-align:right}.service-selected{color:#126a57;font-family:Arial,sans-serif;font-weight:bold}.service-empty{color:#8392a3}.passenger-services td{font-size:9pt}.passenger-services .passenger-name{font-size:9.5pt}
+  .stay-date{white-space:nowrap;font-size:9pt}
   .money,.summary-value bdi{font-family:Arial,sans-serif!important;direction:ltr;font-size:10pt;font-variant-numeric:tabular-nums}
   .passengers .money{font-size:9pt;overflow-wrap:anywhere}
   bdi{unicode-bidi:isolate}strong{font-weight:bold}.ltr{direction:ltr}
@@ -337,42 +396,32 @@ export function contractPrintHtml(
   .cancelled{padding:2mm;margin:2mm 0;border:2px solid #a02020;color:#a02020;text-align:center;font-weight:bold}
   @media screen{body{background:#edf1f8;padding:12px}.document{max-width:794px;min-width:650px;margin:auto;box-shadow:0 4px 20px #0001}}
   @media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact}a{color:inherit;text-decoration:none}}
-  /* Keep six passengers on A4 while retaining the reference hierarchy. */
-  body{font-size:9.5pt;line-height:1.12}header{min-height:22mm;padding:2mm 4mm}header img{max-height:12mm;max-width:45mm}header h1{font-size:25pt}header .brand{font-size:9pt}
+  /* Compact rows with repeating table headers for larger groups. */
+  body{font-size:9.5pt;line-height:1.05}header{min-height:18mm;padding:2mm 4mm}header img{max-height:12mm;max-width:45mm}header h1{font-size:25pt}header .brand{font-size:9pt}
   .meta{padding:1mm 0;margin-bottom:1mm}.meta strong{font-size:10pt}
-  section{margin-top:1mm;padding-bottom:.8mm}h2{min-height:5.5mm;margin-bottom:.7mm}h2 em{font-size:12pt;padding:.6mm 1.6mm}h2 small{font-size:14pt}
-  table{font-size:9.5pt}td,th{padding:.6mm}.passengers td{padding:.55mm}.fields>div{padding:.15mm 1mm}
+  section{margin-top:.8mm;padding-bottom:.6mm}h2{min-height:5.5mm;margin-bottom:.7mm}h2 em{font-size:12pt;padding:.6mm 1.6mm}h2 small{font-size:14pt}
+  table{font-size:9.5pt}td,th{padding:.4mm}.passengers td{padding:.3mm}.fields>div{padding:.05mm 1mm}
   .summary-card b{margin:0}.summary-value bdi{font-size:10.5pt}
   .signatures{min-height:10mm}.signatures>div{padding:.7mm}.signature-line{margin-top:1.5mm}
   .customer-terms{line-height:1.2;margin-top:1mm;padding-top:.6mm}footer{padding-top:1mm;margin-top:1mm}.contact-row{margin:.2mm 0}.footer-contact strong{font-size:11pt}
+  .hotel-room-summary{display:flex;gap:8mm;align-items:center;margin:1mm 0;padding:.6mm 1.5mm;background:#f4f8fc;border:1px solid #dce6ee;font-size:9pt}.hotel-rooms th{background:#e6f1f2}
+  .contract-closing{break-inside:avoid;page-break-inside:avoid}.footer-qr svg{width:18mm;height:18mm}
   </style></head><body><article class="document">
   <header><div class="brand${output.company.code === 'JAHAN_BASTAN' ? ' jahan-brand' : ''}">${logo}<div>${e(issuerName)}</div><small>${e(output.company.code === 'JAHAN_BASTAN' ? 'JAHAN BASTAN' : (output.company.latinName ?? ''))}</small></div><div class="title"><h1>قرارداد فروش خدمات مسافرتی</h1><p class="subtitle" dir="ltr">TRAVEL SERVICES CONTRACT</p></div></header>
   ${c.status === 'CANCELLED' ? '<div class="cancelled">این قرارداد لغو شده است</div>' : ''}
   ${options.draft ? '<p class="note"><b>پیش‌نمایش قرارداد — هنوز ثبت و به رزرواسیون ارسال نشده است.</b></p>' : ''}
   <div class="meta"><div>شماره قرارداد<strong><bdi>${e(c.contractNumber)}</bdi></strong></div><div>${options.draft ? 'تاریخ پیش‌نمایش' : 'تاریخ ثبت'}<strong>${e(date(c.createdAt))}</strong></div><div>ساعت<strong>${e(time(c.createdAt))}</strong></div><div>مسئول فروش<strong>${e(output.ownerName)}</strong></div></div>
   <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(contractPartyName)}</b></div><div>شماره مشتری: <bdi>${e(output.customer.phone)}</bdi></div>${output.customer.landline ? `<div>تلفن ثابت: <bdi>${e(output.customer.landline)}</bdi></div>` : ''}<div class="wide">نشانی: ${e(output.customer.address)}</div><div>کد پستی: <bdi>${e(output.customer.postalCode)}</bdi></div><div>مقصد: ${e(name(c.destinationId))}</div><div>تعداد: ${c.passengersDetail.length} نفر</div><div>درخواست‌کننده: ${e(contractPartyName)}</div><div>خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
-<section class="passengers">${heading(2, 'PASSENGERS & PRICING', 'مسافران و قیمت')}<table><colgroup>${passengerColumns}${guestStays ? '<col/><col/>' : ''}</colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>ویزا</th><th>مبلغ پرواز</th><th>قیمت ارزی</th>${showDiscount ? '<th>تخفیف</th>' : ''}${showCommission ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th>${guestStays ? '<th>چک‌این هتل</th><th>چک‌اوت هتل</th>' : ''}</tr></thead><tbody>${rows}</tbody></table><div class="financial-summary"><p class="note">مبلغ پرواز هر مسافر جزئی از مبلغ کل قرارداد است.</p><div class="summary-grid"><div class="summary-card"><b>قیمت توافق‌شده قرارداد</b><div class="summary-value">${c.paymentTerms?.mode === 'CHECK' || c.servicesDetail.some((s) => s.metadata?.automaticFlightRoomTotalV1 === true) ? moneyRows('amount') : (agreementTotal ?? moneyRows('amount'))}</div></div></div>${chequeTerms}${agency && !commission && !showCommission ? '<p class="note">کمیسیون آژانس در این قرارداد ثبت نشده؛ هیچ مبلغی بابت آن از جمع قرارداد کسر نشده است.</p>' : ''}</div></section>
-  <section>${heading(3, 'FLIGHT INFORMATION', 'اطلاعات پرواز')}<table><thead><tr><th>مسیر</th><th>ایرلاین</th><th>شماره</th><th>تاریخ</th><th>ساعت</th><th>کلاس</th></tr></thead><tbody>${flights || '<tr><td colspan="6">پرواز در این قرارداد انتخاب نشده است.</td></tr>'}</tbody></table></section>
-  <section>${heading(4, 'HOTEL INFORMATION', 'اطلاعات هتل')}${hotel ? `<table><thead><tr><th style="width:30%">نام هتل</th><th>درجه</th><th>خدمات</th><th>ورود</th><th>خروج</th>${mixedRoomTypes ? '' : '<th>نوع اتاق</th>'}</tr></thead><tbody><tr><td><bdi>${e(refs.hotelLatinName ?? 'ثبت نشده')}</bdi><small><bdi>${e(refs.hotelWebsite ?? 'وب‌سایت ثبت نشده')}</bdi></small></td><td>${e(refs.hotelGrade)}</td><td>${e(name(hotel.mealServiceId))}</td><td>${e(travelDate(hotel.checkInDate))}</td><td>${e(travelDate(hotel.checkOutDate))}</td>${mixedRoomTypes ? '' : `<td>${e(room)}</td>`}</tr></tbody></table>${hotel.rooms?.length ? `<table><thead><tr><th>اتاق</th><th>نوع اتاق</th><th>بزرگسال</th><th>سن کودکان</th><th>تعداد نفرات</th><th>مبلغ توافق‌شدهٔ اتاق</th></tr></thead><tbody>${hotel.rooms.map((r) => `<tr><td>${e(r.ordinal)}</td><td>${e(salesRoomDisplayName(r))}</td><td>${e(r.adults)}</td><td>${e(r.childAges.join(', ') || '—')}</td><td>${e(r.adults + r.childAges.length)}</td><td>${r.agreedPrice ? '<bdi class="money">' + contractMoney(r.agreedPrice.amount) + ' ' + e(currencySymbol(r.agreedPrice.currencyCode)) + '</bdi>' : '—'}</td></tr>`).join('')}</tbody></table>` : ''}` : 'هتل در این قرارداد انتخاب نشده است.'}</section>
-  <section>${heading(5, 'OTHER SERVICES', 'سایر خدمات')}<div class="fields"><div>ترانسفر: ${e(transfers || 'ندارد')}</div><div>گشت شهری: ${e(
-    c.servicesDetail
-      .filter((s) => s.kind === 'TOUR')
-      .map((s) => s.titleSnapshot)
-      .join('، ') || '—',
-  )}</div><div>راهنما: —</div><div>وقت سفارت: —</div><div class="wide">سایر: ${e(
-    c.servicesDetail
-      .filter((s) =>
-        ['OTHER', 'CIP', 'INSURANCE', 'BUS', 'TRAIN'].includes(s.kind),
-      )
-      .map((s) => s.titleSnapshot)
-      .join('، ') || '—',
-  )}</div></div></section>
-  <section>${heading(6, 'APPROVAL & SIGNATURE', 'تأیید و امضا')}<div class="signatures"><div>نام و امضای مسافر / نماینده<span class="signature-line">....................................</span></div><div>نام و امضای مسئول فروش<span class="signature-line">....................................</span></div></div></section>
+<section class="passengers passenger-services">${heading(2, 'PASSENGER SERVICES', 'خدمات هر مسافر')}<table><colgroup><col width="4%"><col width="22%"><col width="7%"><col width="6%"><col width="6%"><col width="12%"><col width="12%"><col width="7%"><col width="7%"><col width="17%"></colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>بلیط رفت</th><th>بلیط برگشت</th><th>چک‌این هتل</th><th>چک‌اوت هتل</th><th>ترانسفر رفت</th><th>ترانسفر برگشت</th><th>سایر خدمات</th></tr></thead><tbody>${serviceRows}</tbody></table></section>
+<section class="passengers passenger-prices">${heading(3, 'PASSENGERS & PRICING', 'قیمت هر مسافر')}<table><colgroup>${passengerColumns}</colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>مبلغ پرواز</th><th>قیمت ارزی</th>${showDiscount ? '<th>تخفیف</th>' : ''}${showCommission ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th></tr></thead><tbody>${rows}</tbody></table><div class="financial-summary"><p class="note">مبلغ پرواز هر مسافر جزئی از مبلغ کل قرارداد است.</p><div class="summary-grid"><div class="summary-card"><b>قیمت توافق‌شده قرارداد</b><div class="summary-value">${c.paymentTerms?.mode === 'CHECK' || c.servicesDetail.some((s) => s.metadata?.automaticFlightRoomTotalV1 === true) ? moneyRows('amount') : (agreementTotal ?? moneyRows('amount'))}</div></div></div>${chequeTerms}${agency && !commission && !showCommission ? '<p class="note">کمیسیون آژانس در این قرارداد ثبت نشده؛ هیچ مبلغی بابت آن از جمع قرارداد کسر نشده است.</p>' : ''}</div></section>
+  <section>${heading(4, 'FLIGHT INFORMATION', 'اطلاعات پرواز')}<table><thead><tr><th>مسیر</th><th>ایرلاین</th><th>شماره</th><th>تاریخ</th><th>ساعت</th><th>کلاس</th></tr></thead><tbody>${flights || '<tr><td colspan="6">پرواز در این قرارداد انتخاب نشده است.</td></tr>'}</tbody></table></section>
+  <section>${heading(5, 'HOTEL INFORMATION', 'اطلاعات هتل')}${hotel ? `<table><thead><tr><th style="width:30%">نام هتل</th><th>درجه</th><th>خدمات</th><th>ورود</th><th>خروج</th>${mixedRoomTypes ? '' : '<th>نوع اتاق</th>'}</tr></thead><tbody><tr><td><bdi>${e(refs.hotelLatinName ?? 'ثبت نشده')}</bdi><small><bdi>${e(refs.hotelWebsite ?? 'وب‌سایت ثبت نشده')}</bdi></small></td><td>${e(refs.hotelGrade)}</td><td>${e(name(hotel.mealServiceId))}</td><td>${e(travelDate(hotel.checkInDate))}</td><td>${e(travelDate(hotel.checkOutDate))}</td>${mixedRoomTypes ? '' : `<td>${e(room)}</td>`}</tr></tbody></table><div class="hotel-room-summary"><span>تعداد اتاق‌ها: <b>${e(roomCount)}</b></span><span>مجموع مهمانان هتل: <b>${e(roomGuestCount)}</b></span></div>${hotel.rooms?.length ? `<table class="hotel-rooms"><colgroup>${(showRoomPrices ? [6, 30, 10, 16, 14, 24] : [8, 40, 12, 20, 20]).map((width) => `<col width="${width}%">`).join('')}</colgroup><thead><tr><th>اتاق</th><th>نوع و دسته‌بندی اتاق</th><th>بزرگسال</th><th>سن کودکان</th><th>تعداد نفرات اتاق</th>${showRoomPrices ? '<th>مبلغ توافق‌شدهٔ اتاق</th>' : ''}</tr></thead><tbody>${hotel.rooms.map((r) => `<tr><td>${e(r.ordinal)}</td><td><bdi>${e(salesRoomDisplayName(r))}</bdi></td><td>${e(r.adults)}</td><td>${e(r.childAges.join(', ') || '—')}</td><td>${e(r.adults + r.childAges.length)}</td>${showRoomPrices ? `<td>${r.agreedPrice ? '<bdi class="money">' + contractMoney(r.agreedPrice.amount) + ' ' + e(currencySymbol(r.agreedPrice.currencyCode)) + '</bdi>' : '—'}</td>` : ''}</tr>`).join('')}</tbody></table>` : ''}` : 'هتل در این قرارداد انتخاب نشده است.'}</section>
+  <div class="contract-closing"><section>${heading(6, 'APPROVAL & SIGNATURE', 'تأیید و امضا')}<div class="signatures"><div>نام و امضای مسافر / نماینده<span class="signature-line">....................................</span></div><div>نام و امضای مسئول فروش<span class="signature-line">....................................</span></div></div></section>
   <div class="customer-terms">
     <p>در صورت تأیید نشدن هتل درخواستی، هتل مشابه جایگزین می‌گردد.</p>
     <p>توجه داشته باشید این برگه بدون قبض رسید صندوق فاقد هرگونه اعتبار می‌باشد.</p>
     <p>با آگاهی از مفاد قراردادهای خارج از کشور که توسط سازمان میراث فرهنگی و گردشگری تهیه گردیده است، نسبت به ارسال درخواست به آژانس ${e(niyayeshIssuer ? 'نیایش سیر سحر' : issuerName)} اقدام نموده و ارسال درخواست به منزله قبول تمامی شرایط، مواد و تبصره‌های قرارداد فوق می‌باشد.</p>
   </div>
-  <footer>${contractPendingQrHtml()}<div class="footer-contact"><strong>${e(issuerName)}</strong>${niyayeshIssuer ? `<div class="contact-row">${websiteIcon}<bdi>Nystkt.ir</bdi></div>` : ''}${niyayeshIssuer ? `<div class="contact-row">${phoneIcon}<bdi>021-72075000</bdi></div><div class="contact-row">${emailIcon}<bdi>support@niyayeshseir.com</bdi></div>` : ''}</div></footer>
+  <footer>${contractPendingQrHtml()}<div class="footer-contact"><strong>${e(issuerName)}</strong>${niyayeshIssuer ? `<div class="contact-row">${websiteIcon}<bdi>Nystkt.ir</bdi></div>` : ''}${niyayeshIssuer ? `<div class="contact-row">${phoneIcon}<bdi>021-72075000</bdi></div><div class="contact-row">${emailIcon}<bdi>support@niyayeshseir.com</bdi></div>` : ''}</div></footer></div>
   </article></body></html>`;
 }

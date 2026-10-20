@@ -12,6 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 import {
   CustomerDateField,
+  CustomerCalendarSwitch,
   type CustomerCalendarMode,
 } from './customer-date-field';
 
@@ -212,6 +213,7 @@ export function CustomerEntrySheet({
   visibleFields,
   columnOrder,
   columnLabels,
+  calendarSwitchInBirthDateHeader = false,
   extraColumns = [],
 }: {
   extraColumns?: readonly {
@@ -230,6 +232,7 @@ export function CustomerEntrySheet({
   /** Optional leading fields; all other visible columns retain their default order. */
   columnOrder?: readonly EntryField[];
   columnLabels?: Partial<Record<EntryField, string>>;
+  calendarSwitchInBirthDateHeader?: boolean;
 }) {
   const orderedColumns = columnOrder
     ? [
@@ -281,6 +284,15 @@ export function CustomerEntrySheet({
                         <Iso3CountryGuide label={label} />
                       ) : null}
                     </span>
+                    {field === 'birthDate' &&
+                    calendarSwitchInBirthDateHeader ? (
+                      <div className="mt-2">
+                        <CustomerCalendarSwitch
+                          mode={calendarMode}
+                          onChange={onCalendarModeChange}
+                        />
+                      </div>
+                    ) : null}
                   </th>
                 );
               })}

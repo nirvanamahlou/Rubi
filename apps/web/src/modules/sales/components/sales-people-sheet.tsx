@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { transferDirectionColumns } from './transfer-direction-columns';
 import { guestStayColumns } from './guest-stay-columns';
 import { usesRoomDrivenGuests } from '../model/contract-guest-stays';
 import { agencyBuyerContact } from '../model/agency-buyer-contact';
@@ -10,7 +11,6 @@ import { Input, FormField } from '@/components/ui/form-controls';
 import { Alert } from '@/components/ui/surfaces';
 import {
   CustomerEntrySheet,
-  CustomerCalendarSwitch,
   customersApi,
   type CustomerCalendarMode,
   type CustomerEntryRow,
@@ -22,6 +22,7 @@ import { SalesDatePicker } from './sales-date-picker';
 import { SalesThemedSelect } from './sales-themed-select';
 import { loadSalesAcquaintanceMethods } from '../api/acquaintance-methods';
 import {
+  salesAdditionalServices,
   salesPassengerFlightDirections,
   salesDirections,
   salesPassengerAgeLabel,
@@ -55,8 +56,10 @@ export function SalesPeopleSheet({
   onGuestStateChange,
   onTravelDateChange,
   onFlightDirectionsChange,
+  onToggleVisa,
   busy = false,
 }: {
+  onToggleVisa?: () => void;
   onFlightDirectionsChange?: (
     directions: NonNullable<SalesFormState['passengerFlightDirections']>,
   ) => void;
@@ -460,7 +463,6 @@ export function SalesPeopleSheet({
         <div>
           <h2 className="text-lg font-black">مشتری و مسافران همراه</h2>
         </div>
-        <CustomerCalendarSwitch mode={calendar} onChange={setCalendar} />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-semibold">
@@ -812,6 +814,45 @@ export function SalesPeopleSheet({
         </div>
       </section>
 
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
+        {(
+          Object.entries(salesAdditionalServices) as [
+            keyof typeof salesAdditionalServices,
+            string,
+          ][]
+        ).map(([role, label]) => (
+          <label
+            key={role}
+            className="flex cursor-pointer items-center gap-2 text-sm font-semibold"
+          >
+            <input
+              type="checkbox"
+              className="size-4 accent-primary"
+              checked={state.additionalServices?.includes(role) ?? false}
+              disabled={busy || Boolean(state.tour)}
+              onChange={() =>
+                onGuestStateChange?.({
+                  additionalServices: state.additionalServices?.includes(role)
+                    ? state.additionalServices.filter((item) => item !== role)
+                    : [...(state.additionalServices ?? []), role],
+                })
+              }
+            />
+            {label}
+          </label>
+        ))}
+        <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
+          <input
+            type="checkbox"
+            className="size-4 accent-primary"
+            checked={state.serviceKinds.includes('VISA')}
+            disabled={busy || Boolean(state.tour)}
+            onChange={onToggleVisa}
+          />
+          ویزا
+        </label>
+      </div>
+
       <CustomerEntrySheet
         extraColumns={[
           ...(state.serviceKinds.includes('FLIGHT')
@@ -856,6 +897,12 @@ export function SalesPeopleSheet({
                 busy,
               )
             : []),
+          ...transferDirectionColumns(
+            state,
+            (patch) => onGuestStateChange?.(patch),
+            (key) => peopleRow(draft, key).person?.id ?? key,
+            busy,
+          ),
         ]}
         rows={rows.filter((row) => row.key !== 'sales-entry-primary')}
         showPassportExpiry={passportIdentity}
@@ -875,6 +922,7 @@ export function SalesPeopleSheet({
             : { birthDate: 'تاریخ تولد *' }
         }
         salesDatePolicy
+        calendarSwitchInBirthDateHeader
         calendarMode={calendar}
         onCalendarModeChange={setCalendar}
         disabled={busy}

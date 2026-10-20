@@ -972,3 +972,25 @@
   width: 19px;
   height: 19px;
 }
+
+.chatMessages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chatMessages p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 95%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #ffffff10;
+  line-height: 1.8;
+}
+.chatMessages p[data-role='user'] {
+  background: #14b8a622;
+  align-self: flex-start;
+}
+.chatMessages p[data-role='assistant'] {
+  align-self: flex-end;
+}
