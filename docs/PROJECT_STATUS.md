@@ -1,3 +1,7 @@
+## 2026-10-19 — CALL-CENTER-PACKAGE-ONE-1019 — PC-C — LOCAL_REVIEW
+
+Package one adds encrypted requests on the existing Customer Affairs Ticket, real-agent assignment, Tasks-owned dated follow-ups, call/request linking, independent manual-call outcomes, anonymous callers, audit/CAS/retry protection and durable reminder deduplication. Support lists/reports/SLA processing exclude the reserved private category. IAM catalogue15 adds only workflow.manage; the owner approved its exclusive amin grant. PostgreSQL/HTTP21, Web22, IAM4 and seed2 targeted tests pass; broader Customer Affairs/Tasks151 pass with one existing skip. API/Web lint, TypeScript and production builds pass. Fresh disposable migration chain164 passes; only own migration applied locally after backup. Local3000/4000 healthy, build gDKkoWHbLt4koO2Y1vejc. User login/visual review remains; no telephony API or production rollout. See tasks/CALL-CENTER-PACKAGE-ONE-1019.md.
+
 ## BANK-ACCOUNTS-1020 — PC-B — IMPLEMENTATION / 2026-10-20
 
 PR1000 published and synchronized with the merged receipt-allocation source. New PostgreSQL proof4/4 passes on both hosted database gates, including25 concurrent retries and audit-failure rollback; both production builds pass. Local API/HTTP17 and Web6 tests, API/Web types, scoped lint and Prisma validation pass. Final documentation-head full checks still gate the authorized develop merge. Browser initialization was unavailable, so interactive visual QA is unexecuted; no operational migration/deployment or real account mutation occurred. Bounded migration/source locks are frozen/released at candidate publication; see PR1000 for final merge/check evidence.
@@ -6662,6 +6666,68 @@ Removed the promotional travel-message card and airplane icon from the Call Cent
 
 Call Center toolbar filters and registration-dialog selectors now use the existing searchable ERP selection component instead of browser-native visible menus. Selection values/defaults, FormData and busy protection remain intact. Search and dropdown fields share40px height,8px corners, typography and focus styling; browser-specific search decorations are suppressed. Eight shared selection tests, scoped lint and optimized Web build/TypeScript pass. No API, database or permission changes; local Web preview refreshed. Browser is at login, so no authenticated or physical cross-browser visual acceptance is claimed.
 
+## 2026-10-19 — CALL-CENTER-PACKAGE-TWO-1019 — PC-C
+
+Implemented bounded summary/history reads, server filtering over branch-authorized data, branch-keyed whole-word search and exact-phone fingerprints, explicit request/customer associations through Customers, retry-safe Customer Affairs referrals, and server reports with separate call/contact/request/task definitions. Existing ERP components provide selectors/date inputs, keyboard/dialog return focus and responsive states. Native customer permissions remain required; no grants changed. Unknown phone metrics and sales conversion remain unavailable until valid source data exists.
+
+Validation:34 targeted PostgreSQL/HTTP tests pass;230 broader unit regressions pass (24 opt-in integrations skipped in that broader run);34 Web client/model/search/date/control/localization checks pass. Affected lint, API/Web TypeScript and production builds pass. Synthetic browser transport verified actual workspace in Chrome155/Edge155 with Tab/Escape/focus return/stale response and390px no-overflow. Benchmark1026 calls:20 summaries/9003bytes,24–64ms local. Owner authenticated acceptance remains pending.
+
+Own additive migration20261019210000 applied after verified local backup; four existing calls indexed initially and one concurrent old-writer call caught by final backfill. Unrelated pending migrations untouched. API4000 PID2068, Web3000 PID13672, Web build `zrgeJKgNh56Y5lN3fdz8C`; runtime remains the preserved durable runtime worktree. Branch is stacked on package one4b2f08d9; no PR/merge/production deploy. Full definitions, evidence, rollout and limitations: tasks/CALL-CENTER-PACKAGE-TWO-1019.md.
+
+## 2026-10-19 — CALL-CENTER-GLOBAL-QUEUE-1019 — PC-C
+
+Branch selector moved into advanced filters. Queue defaults to all requests including closed across actor-authorized branches, independent of selected contact/report branch; explicit OPEN view and existing personal/due views remain. Each row displays its branch and opens details under that branch.35 focused PostgreSQL/HTTP tests,12 client/search/localization tests, affected ESLint and API/Web TypeScript/build pass. Localization inventory timed out once during concurrent work and passed in isolated rerun with unchanged timeout. Chrome155/Edge155 synthetic UI checks pass for placement/default/keyboard/focus/stale response/mobile overflow. No migration, dependency or grant changes.
+
+Activated local API4000 PID8344 and Web3000 PID2040 with build YRnZmG6hZhKHT0BRYdkVo in preserved durable runtime. Owner authenticated review pending. Branch codex/pc-c-call-center-global-queue-1019; no PR/merge/production deployment. Details: tasks/CALL-CENTER-GLOBAL-QUEUE-1019.md.
+
+## 2026-10-19 — CALL-CENTER-TELEPHONY-1019 — PC-C
+
+Implemented provider-neutral telephony v1, encrypted durable Integrations Inbox/Outbox and mapping audit, existing Worker/BullMQ dispatch, transactional Customer Affairs root/leg/call projection, recipient snapshots, CAS claims/transfers, server tab lease, global authenticated attention UI and development-only synthetic harness. Real connections remain NOT_CONNECTED; no Issabel endpoint/authentication/capability/latency assumption. Synthetic rows are labelled and excluded from operational call metrics; account grants unchanged.
+
+Additive migration20261020010000 applied after verified local backup, with no unrelated migrations. API4000 PID7940, Worker4409 PID17716, Web3000 PID20300; build2Z4HqLsKd7fBzWWDpWG0p. All three health checks200; uncredentialed attention/machine routes401; authenticated Worker transport200. Source branch codex/pc-c-call-center-telephony-1019 stacked on dc6cb70a. No PR/merge/production deployment. Detailed evidence, internal transport limitations, synthetic review guide and Issabel prerequisites: tasks/CALL-CENTER-TELEPHONY-1019.md.
+
+Final verification:49 focused API/PostgreSQL/auth checks,5 Worker checks and18 Web client/model/localization checks pass. Full API/Worker typecheck, Web build/typecheck, affected lint and all affected builds pass. Real Redis/BullMQ stopped-Worker recovery proof and final Chrome/Edge popup/draft/lease/revocation checks pass. Local owner acceptance is pending.
+
+## 2026-10-19 — CALL-CENTER-REMOVE-TELEPHONY-PANEL-1019 — PC-C
+
+Removed the full expandable telephony infrastructure/internal-testing section from the Call Center workspace at the owner's request. This also removes its configuration, synthetic-call and diagnostic controls from that page. The reusable component remains available for a future requested restoration. No API, database, grants or migration changes. Local Web build/lint and activation are recorded in the work assignment.
+
+Removal validated: ESLint and optimized Web build/TypeScript pass. Local Web3000 PID21140, build Ai_vGuYWT3-0hn9FvSpnp; Web/API health200. No tests added for the two-line visual removal.
+
+## 2026-10-19 — CALL-CENTER-UI-PRESERVATION-POLICY-1019 — PC-C
+
+به درخواست صریح مالک، سیاست لازم‌الاجرای حفظ آخرین طراحی/رفتار تأییدشده کال سنتر
+برای بسته چهارم و اتصال ایزابل ثبت شد. هر تغییر رابط یا افزودن/بازگرداندن بخش فنی و
+آزمایشی نیازمند اجازه صریح کاربر برای همان تغییر است. مرجع در AGENTS، نیازمندی‌های
+محصول، Integrations، تصمیم‌ها و برنامه بسته چهارم درج شد:
+[tasks/CALL-CENTER-UI-PRESERVATION.md](tasks/CALL-CENTER-UI-PRESERVATION.md).
+تغییر فقط مستنداتی است؛ کد برنامه و محیط اجرا تغییر نکرده‌اند.
+
+## CALL-CENTER-APPROVED-DESIGN-1020 — PC-C — READY_FOR_REVIEW
+
+The owner-approved proposal is implemented in the existing Call Center page: compact request queue, grouped advanced filters, desktop contact-list/dossier split, responsive mobile dossier/contact rows, grouped manual-call form and structured existing-data reports. Existing APIs, permissions, user data, and workflows are reused. The removed telephony test/settings panel stays absent. No schema, migration, dependency or grant changes.
+
+Focused existing tests: 15 passed. Chrome155/Edge155 isolated synthetic UI checks cover filter placement, queue default, stale search responses, history, dialog Escape/focus return and mobile width390. Scoped lint, optimized Web build/typecheck and translation catalogue checks pass. Build OmyNzXh8O-J8Av2k22Cvx is running at localhost3000; API health at localhost4000 returns200. User should sign in with their own ERP credentials for authenticated visual review.
+
+## CALL-CENTER-LAYOUT-REPORTS-1020 — PC-C — READY_FOR_REVIEW
+
+Owner-approved reference-image layout: a narrow right contact dossier and wide left contacts/reports, larger body/control typography, source donut with colored count/share legend, top-five outbound follow-up ranking computed over all matching authorized calls, and operator registration/completion/open-responsibility columns. API adds only optional-compatible topFollowUps report projection with a bounded5-summary decrypt; existing scopes, historical attribution and synthetic exclusions remain. No migration, schema, dependency, permissions or operational data changes.
+
+Validation:36 PostgreSQL/HTTP and17 Web checks pass; final local API run uses a command-only20s deadline because retained disposable fixtures make the pre-existing reminder test exceed5s under load. No repository gate changed. API/Web lint and builds/typechecks pass. Chrome155/Edge155 verify placement/proportions, open-dossier resize, keyboard/Escape/focus and mobile390. Local Web3000 build DYw1CLzImaCWcvR8th0Zf and API4000 health return200. Details: [layout/report definitions](tasks/CALL-CENTER-LAYOUT-REPORTS-1020.md). Task branch only; no PR/merge/production deployment.
+
+## CALL-CENTER-TABLE-ALIGN-1020 — PC-C — READY_FOR_REVIEW
+
+Center all headers and data cells only in the contacts and direction/outcome/registration tables using a shared module-scoped CSS class. Chrome155/Edge155 computed styles confirm all target cells centered; scoped lint and optimized Web build/typecheck pass. No unit tests added for a reversible CSS-only change. Owner explicitly approved replacing the other worktree's newly active3000 server; build BW-uj0iKApnaede2Q9w8D now serves localhost3000 with HTTP200 and its build ID verified. No backend/data/grant/schema/dependency changes.
+## CALL-CENTER-HIGHLIGHT-ALIGN-1020 — PC-C
+
+Center headers and data cells in the most-followed and operator-performance report tables using the existing module-local centeredTable style. Chrome155 and Edge155 computed-style checks pass for all four centered Call Center tables, including9 most-followed and8 operator cells in the synthetic fixture. Scoped ESLint passes. No data, report calculation, API, schema, migration, grant or dependency changes.
+Full optimized Web build and TypeScript pass (65 pages). Local3000 returns200 and serves verified build9lgDXYV0gJivcf2dKNuj1. Task-only branch publication; no PR/merge/production deployment.
+## CALL-CENTER-ACTION-UX-1020 — PC-C — READY_FOR_REVIEW
+
+Owner-approved operational UX preserves all nine contact columns, data and centering. Adds request-based actionable cards, server-counted queue tabs, collapsible bounded-height queue, deadlines, no-next-action view, authorized earliest action in the dossier, persistent mounted sections, note-draft indicators, improved typography/filter count and precise report titles. Queue counts/rows/deadlines share a RepeatableRead snapshot across all authorized branches; incomplete-call card explicitly follows the current branch/report filters. Tasks publishes predicates/deadline/next-action reads through its existing public port. No migration, permission, dependency or real data changes.
+
+Chrome155/Edge155 synthetic interaction checks pass: exact nine headers, all four centered tables, card-to-queue navigation, collapse, next action, note retention across sections/contacts and390px layout.17 Web tests pass. Targeted PostgreSQL/API run passes36 tests with one existing HTTP setup-hook timeout under local load; the unchanged five-test HTTP file passes separately at its default timeout. API lint/build/typecheck and offline catalogue verification pass. Final Web lint, TypeScript and optimized build pass (65 pages). Local3000 returns200 and serves verified build EGPQI6wG6CSE_v05uE6de (PID14076); API4000 health200 (PID16448). Final browser checks also cover repeated card selection and incomplete-call scope ANY. No PR/merge/production deployment. Definitions: [operational UX](tasks/CALL-CENTER-ACTION-UX-1020.md).
+
 
 ## SALES-DOCUMENT-GREEN-1019 — PC-A
 
@@ -6740,6 +6806,13 @@ PASSENGER-PRICE-COLUMNS-1020 candidate validation:57 Sales API and3 shared-reade
 
 PASSENGER-PRICE-COLUMNS-1020 ready for CI: merged-current-development regressions45 Web/58 API/4 shared pass; gross/net total package validation, selectable non-IRR currency and fixed IRR UI, service/individual-stay context and PDF v2 totals retained. Final-head CI gates develop merge; no operational rollout or migration.
 
+## CALL-CENTER-DEVELOP-INTEGRATION-1020 — PC-C — READY_FOR_CI
+
+Owner authorizes PR1002 and develop merge after every final-head CI/CD check succeeds. Authenticated PR author Amin-tech11/id211146168 verified. Local3000 serves final approved build EGPQI6wG6CSE_v05uE6de. Integrated developb5279cc5 into the Call Center task branch: preserved both schema model/enum sets and relation fields, contract exports, append-only domain/status history and both translation additions; regenerated deterministic catalogues. Prisma format/validation and diff checks pass; source formatting aligned to existing CI. No Call Center layout/content behavior changes during integration; nine columns stay unchanged. Three previously authored additive Call Center migrations remain immutable. No live database mutation or runtime replacement. Hosted exact-head quality, tests, database and production build gates remain required before merge.
+
 ## 2026-10-20 — Contract creation presentation
 
 PC-A CONTRACT-UI-1020: clearer three-step progress, emphasized current step, responsive step layout, softer header/card spacing and wrapping sticky actions. Presentation classes only; existing state, validation, calculations and submit unchanged. Formatting and diff checks passed. No runtime deployment or browser acceptance claimed.
+
+CALL-CENTER-DEVELOP-INTEGRATION-1020 CI repair: the full hosted test suite detected two existing native datetime-local controls in Call Center follow-up/referral forms, violating the newly integrated shared-calendar contract. Reserve these two control bindings only; reuse DatePicker includeTime/withinDialog, retain FormData dueAt and existing device-local/Tehran UTC conversion semantics, and explicitly mark controlled calendar changes dirty. No table/layout/data/API change, no gate weakening. Existing shared calendar contract and date/time utility regressions validate this repair before final-head CI.
+CI calendar repair validation:12 focused shared-calendar contract/date utility tests pass; scoped ESLint and diff checks pass. Source-only local attempts first encountered missing dependency resolution in this dependency-free checkout; reused installed runtime tooling via ignored local links, without manifest/lockfile changes. No test assertion, timeout, exclusion or quality gate changed. Final hosted full checks remain required.

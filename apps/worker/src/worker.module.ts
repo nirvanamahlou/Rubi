@@ -1,3 +1,4 @@
+import { TelephonyWorker } from './telephony-worker';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
@@ -17,6 +18,6 @@ import { WorkerHealthServer } from './worker-health-server';
       validationSchema: environmentValidationSchema,
     }),
   ],
-  providers: [WorkerHealthService, WorkerHealthServer],
+  providers: [TelephonyWorker, WorkerHealthService, WorkerHealthServer],
 })
 export class WorkerModule {}

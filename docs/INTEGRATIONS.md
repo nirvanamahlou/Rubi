@@ -90,3 +90,15 @@ manual follow-up/refund approval ایجاد می‌شود. هیچ retry کور �
 contract fixture مشترک، mock/sandbox، timeout، malformed response، partial success، duplicate/
 late webhook، price change، unavailable، ambiguous booking، issue failure و refund failure.
 Credential واقعی در test یا Repository استفاده نمی‌شود.
+
+## Telephony internal readiness (2026-10-19)
+
+Provider-neutral v1 canonical events and unsupported reconciliation port are defined in contracts/telephony. Integrations owns IntegrationTelephonyConnection/Mapping/Inbox/Outbox/Audit; Customer Affairs exposes CallCenterTelephonyService.project(tx,event,context) and owns root/leg state, call projection, offers, leases and business completion. Worker dispatches UUID-only jobs over existing BullMQ to a secret-protected internal API. Real adapter ingestion is deliberately absent pending provider verification. Operational state remains NOT_CONNECTED; synthetic capability requires non-production plus explicit enablement. See tasks/CALL-CENTER-TELEPHONY-1019.md for policies, tests and provider prerequisites.
+
+## الزام رابط برای بسته چهارم و اتصال ایزابل
+
+اتصال Provider باید با آخرین UI/UX تأییدشده کال سنتر سازگار بماند. ابزار تست، تنظیمات
+فنی، بنر وضعیت و کنترل تازه نباید بدون اجازه صریح کاربر به پنل افزوده یا بازگردانده شوند.
+دریافت API مجوز تغییر طراحی نیست. پیش از هر تغییر ضروری رابط، دامنه و دلیل آن برای
+تأیید کاربر ارائه شود. مرجع الزامی:
+[سیاست حفظ طراحی کال سنتر](tasks/CALL-CENTER-UI-PRESERVATION.md).

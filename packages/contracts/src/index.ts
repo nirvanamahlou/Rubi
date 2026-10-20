@@ -41,4 +41,6 @@ export type {
   InternalLetterList,
 } from './correspondence';
 
+export * from './telephony';
+
 export * from './sales/passenger-hotel-stays';

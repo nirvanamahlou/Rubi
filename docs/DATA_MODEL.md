@@ -909,6 +909,20 @@ first authorized branch is the default, matching Customer Affairs conventions.
 Migration20261018200000 creates three tables/indexes/checks only. Provider webhooks,
 realtime notification and protected recording handoff require a separate unit.
 
+## Call Center package one — 2026-10-19
+
+Customer Affairs reuses CustomerAffairsTicket with reserved CALL_CENTER_REQUEST, nullable restrictive CallCenterContact FK and AES-GCM encrypted title/reason/revision payload plus key version. Its generic support fields are private-content-free labels. Support consumers exclude this category; the CALL_CENTER_NO_SLA policy does not infer a deadline. Existing call status remains historical; nullable outcome/origin/ticket FK introduce independent manual results and request linkage without backfill. Anonymous calls use event-specific HMAC contact fingerprints.
+
+Tasks owns existing AutomationTask follow-ups through a public transaction port. A nullable restrictive callCenterTicketId FK and source-reference check link the task to its real request. Owner is the real User FK; UTC deadline/status and encrypted action/result/name plus revision metadata survive retries. Request/command/task-ID locks, expected versions and same-branch validation prevent conflicting writes and cross-request ID reuse. Notification retirement and revision-scoped claims share the domain transaction. No parallel request/task table or plaintext private-content audit is introduced. Additive migration20261019180000 must precede the updated API. See tasks/CALL-CENTER-PACKAGE-ONE-1019.md.
+
+## 2026-10-19 — Call Center package two
+
+Existing CallCenterCall adds searchTokens (branch-domain HMAC whole words, GIN), sourceToken/unitToken (opaque HMAC), needsCompletion nullable for legacy, and searchVersion0 until backfilled. No plaintext private fields. Indexes on occurredAt/direction/outcome and createdAt/id support bounded reporting and revisions. Migration20261019210000 is additive. Explicit customer association reuses CustomerAffairsTicket.customerId FK; shared phone is not identity, no contact/person auto-merge. CustomerAffairsAuditEvent preserves association actor/time/previous and target IDs. Existing CustomerAffairsReferral and Tasks AutomationTask ownership remain unchanged. See tasks/CALL-CENTER-PACKAGE-TWO-1019.md for index leakage, backfill and report definitions.
+
+## Telephony package-three additions (2026-10-19)
+
+Eight additive tables separate Integrations connection/mapping/inbox/outbox/audit from Customer Affairs telephony session/offer/lease. Every stored identity relationship uses a real FK; root uniqueness is (connectionId, rootFingerprint), ingress uniqueness (connectionId, externalFingerprint), extension uniqueness (connectionId, extension). One session references one existing CallCenterCall. Private canonical events and technical leg/recording state are encrypted; external identity fingerprints are keyed. Claims and mapping versions are CAS-controlled. Synthetic origins are separately labelled and excluded from operational call metrics. The existing origin constraint is widened without rewriting history. Full definitions/retention and custodian-versus-human attribution: tasks/CALL-CENTER-TELEPHONY-1019.md.
+
 
 ## UNIFIED-PASSENGER-PRICING-1019 — Sales deductions
 
