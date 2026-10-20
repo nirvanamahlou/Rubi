@@ -8406,3 +8406,5 @@ Validation:507 Sales Web tests passed, one existing skip;70 unique Sales/Reserva
 FINANCE-ACCOUNTING-EVENTS-1018 due-receipt correction: reserve bounded scheduled-receipt eligibility after due date in existing Sales/Finance public reads and decisions; receipt confirmation remains manual. Serialize correction with the same Sales contract row lock as confirmation to prevent a concurrent rejection overwriting a confirmed receipt. No schedule auto-confirmation or bank automation.
 
 FINANCE-ACCOUNTING-EVENTS-1018 i18n reservation: bounded English overrides for new Finance/Accounting labels and visible errors, plus deterministic offline API/legacy catalogue regeneration. Prior translation scopes merged/released. Preserve Persian UI, source text and existing translations; no dependency changes.
+
+CI compatibility repair reservation: reservations/model/room-output-consistency.spec.ts only. Keep cross-output occupant invariants; align the expected customer-contract column heading and bdi-isolated room label with the requested PDF v2, and verify canonical room/guest counts despite stale aggregates. No reservation production source or gate changes.
