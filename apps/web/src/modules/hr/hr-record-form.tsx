@@ -26,6 +26,7 @@ import {
   hrReferenceOptions,
   parentFieldLabel,
   retiredHrColumns,
+  radanOptionalLabels,
 } from './hr-form-model';
 import { useHrReferenceData } from './hr-reference-data';
 import { useHrFormReferences } from './hr-directory-picker';
@@ -313,6 +314,15 @@ function HrRecordFormFields({
     ),
     وضعیت: ['فعال', 'غیرفعال', 'پیش‌نویس', 'در حال بررسی', 'تکمیل‌شده'],
     کارمند: employees.map((item) => item.name),
+    'عنوان شیفت': data.records
+      .filter(
+        (r) =>
+          r.section === 'time' &&
+          r.tab === 'shiftTemplates' &&
+          r.branchId === branchId &&
+          !r.deletedAt,
+      )
+      .map((r) => r.values[0] ?? ''),
     'واحد درخواست‌کننده': units,
     'واحد درخواست کننده': units,
     واحد: units,
@@ -370,6 +380,9 @@ function HrRecordFormFields({
     (target.source.section === 'expenses' && target.source.tab === 'claims');
   const hiddenLabels = [
     ...retiredHrColumns(target.source.section, target.source.tab),
+    ...(definition.key === 'time.shift' && parentId
+      ? ['ساعت شروع', 'ساعت پایان', 'شناوری ورود', 'حداقل کارکرد']
+      : []),
     ...(target.organizationNode ? ['نام واحد'] : []),
     'شرکت',
     'شرکت یا شعبه',
@@ -638,6 +651,7 @@ function HrRecordFormFields({
               optionsByLabel,
               hiddenLabels,
               optionalLabels: [
+                ...radanOptionalLabels(definition),
                 ...(target.source.section === 'organization' &&
                 target.source.tab === 'branches'
                   ? ['مدیر']
@@ -696,6 +710,13 @@ function HrRecordFormFields({
                 : {}),
               fieldTypes: {
                 'نام واحد': 'text',
+                'نام گروه': 'text',
+                'نام ساعت کاری': 'text',
+                'نام شیفت': 'text',
+                'ساعت قبل از شروع': 'number',
+                'ساعت بعد از پایان': 'number',
+                'پورت دستگاه': 'number',
+                توضیحات: 'textarea',
                 'نام شعبه': 'text',
                 ...(target.source.section === 'organization'
                   ? { 'عنوان شغل': 'text' as const }
@@ -725,7 +746,9 @@ function HrRecordFormFields({
                 ? {
                     initialValues: [
                       target.record.code,
-                      ...target.record.values,
+                      ...definition.columns.map(
+                        (_, index) => target.record?.values[index] ?? '',
+                      ),
                       ...(attachmentLabel
                         ? [
                             target.record.data.documentId

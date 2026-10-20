@@ -6725,6 +6725,10 @@ GUEST-STAY-DRAFT-FIX-1020 candidate:18 focused regression tests pass. Production
 
 Owner approves Groq with message/session history only. Add explicit runtime consent/provider/key gate, bounded generic replies plus existing three read actions, and connect the existing composer to same-origin conversation transport. Provider receives no ERP results/identity/credentials; history excludes exact ERP evidence.67 service tests and74 UI tests pass; generic live HTTP200 and Persian REPLY validated. Web production build (65 routes), TypeScript and scoped lint pass. Browser rollout and exact-head CI remain delivery gates. No schema/migration/dependency changes. See tasks/ASSISTANT-LIVE-CHAT-1020.md.
 
+## 2026-10-20 — HR-RADAN-PARITY-1020 — IN_PROGRESS
+
+PC-B comparison: 23 observed functional areas; baseline 9 present / 8 partial / 6 absent. Bounded candidate adds employee groups/FK membership, separate working-hours snapshots, named shift definitions, remote requests, device fields, history filters and canonical-data report projections without redesign/schema changes. This is not full parity: identity privacy fields, calculation settings, exact minute leave grants/transfers, reusable shift calendar, configurable workflows and payslip import remain incomplete. See docs/tasks/HR-RADAN-PARITY-1020.md for evidence, gates and honest exclusions. No deployment or live data mutation.
+
 
 PASSENGER-PRICE-COLUMNS-1020 / PC-A: total per-passenger IRR and optional foreign price columns, service/stay context, canonical package persistence and validation in progress. No database migration.
 

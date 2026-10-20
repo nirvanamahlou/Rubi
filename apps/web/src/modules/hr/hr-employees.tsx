@@ -273,6 +273,23 @@ export function HrEmployees({
   onProfile: (employee: HrEmployeeDto) => void;
 }) {
   const [query, setQuery] = useState('');
+  const [groupId, setGroupId] = useState('');
+  const [sort, setSort] = useState('code');
+  const references = useHrReferenceData(store);
+  const members = useMemo(
+    () =>
+      references.data.records
+        .filter(
+          (r) =>
+            r.section === 'organization' &&
+            r.tab === 'groupMembers' &&
+            r.parentId === groupId &&
+            !r.deletedAt &&
+            r.status === 'فعال',
+        )
+        .map((r) => r.employeeId),
+    [references.data.records, groupId],
+  );
   const [branch, setBranch] = useState('');
   const [unit, setUnit] = useState('');
   const [status, setStatus] = useState('');
@@ -283,25 +300,34 @@ export function HrEmployees({
   const [removing, setRemoving] = useState<HrEmployeeDto | null>(null);
   const filtered = useMemo(
     () =>
-      store.data!.employees.filter(
-        (item) =>
-          item.status !== 'پایان همکاری' &&
-          (!branch ||
-            (item.organizationBranchId || item.branchId) === branch) &&
-          (!unit || item.unit === unit) &&
-          (!status || hrStatusText(item.status) === status) &&
-          (!query ||
-            normalizeHrText(
-              `${item.name} ${item.personnelCode} ${item.position}`,
-            ).includes(normalizeHrText(query))) &&
-          (!range.from || item.startedAtValue >= range.from) &&
-          (!range.to || item.startedAtValue <= range.to),
-      ),
-    [store.data, branch, unit, status, query, range],
+      store
+        .data!.employees.filter(
+          (item) =>
+            item.status !== 'پایان همکاری' &&
+            (!groupId || members.includes(item.id)) &&
+            (!branch ||
+              (item.organizationBranchId || item.branchId) === branch) &&
+            (!unit || item.unit === unit) &&
+            (!status || hrStatusText(item.status) === status) &&
+            (!query ||
+              normalizeHrText(
+                `${item.name} ${item.personnelCode} ${item.position}`,
+              ).includes(normalizeHrText(query))) &&
+            (!range.from || item.startedAtValue >= range.from) &&
+            (!range.to || item.startedAtValue <= range.to),
+        )
+        .sort((a, b) =>
+          (sort === 'name' ? a.name : a.personnelCode).localeCompare(
+            sort === 'name' ? b.name : b.personnelCode,
+            'fa',
+            { numeric: true },
+          ),
+        ),
+    [store.data, branch, unit, status, query, range, sort, groupId, members],
   );
   const dataset = employeeDataset(filtered, store.data!.branches);
   const selection = useHrRowSelection(
-    JSON.stringify([query, branch, unit, status, range]),
+    JSON.stringify([query, branch, unit, status, range, groupId, sort]),
   );
   const exportDataset = selectedHrDataset(dataset, selection.selectedIds);
   return (
@@ -342,6 +368,38 @@ export function HrEmployees({
               onChange={(event) => setQuery(event.target.value)}
               placeholder="نام، کد پرسنلی یا سمت"
             />
+          </label>
+          <label>
+            گروه
+            <NativeSearchSelect
+              value={groupId}
+              onChange={(e) => setGroupId(e.target.value)}
+            >
+              <option value="">همه گروه‌ها</option>
+              {references.data.records
+                .filter(
+                  (r) =>
+                    r.section === 'organization' &&
+                    r.tab === 'groups' &&
+                    !r.deletedAt &&
+                    r.status === 'فعال',
+                )
+                .map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.values[0]}
+                  </option>
+                ))}
+            </NativeSearchSelect>
+          </label>
+          <label>
+            مرتب‌سازی بر اساس
+            <NativeSearchSelect
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+            >
+              <option value="code">کد پرسنلی</option>
+              <option value="name">اسم و فامیل</option>
+            </NativeSearchSelect>
           </label>
           <label>
             وضعیت
@@ -403,6 +461,8 @@ export function HrEmployees({
           <HrButton
             onClick={() => {
               setQuery('');
+              setGroupId('');
+              setSort('code');
               setBranch('');
               setUnit('');
               setStatus('');
