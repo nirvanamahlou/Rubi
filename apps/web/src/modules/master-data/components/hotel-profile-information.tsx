@@ -17,7 +17,7 @@ export function HotelProfileInformation({
         const value =
           raw === null || raw === undefined || raw === ''
             ? '—'
-            : field.key === 'sourceFeatured'
+            : field.key === 'sourceFeatured' || field.key === 'freeSale'
               ? String(raw) === 'true'
                 ? 'بله'
                 : 'خیر'

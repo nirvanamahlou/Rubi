@@ -45,6 +45,7 @@ const STAGING_TTL_MS = 60 * 60 * 1000;
 const MAX_RATE_WINDOW_MS = 60 * 1000;
 const MAX_PREVIEWS_PER_WINDOW = 5;
 const MAX_COMMITS_PER_WINDOW = 10;
+const COMMIT_TIMEOUT_MS = 120_000;
 
 function sha256(value: Uint8Array | string) {
   return createHash('sha256').update(value).digest('hex');
@@ -71,6 +72,9 @@ function safeSnapshot(row: HotelImportSourceRow) {
   return {
     code: row.code,
     englishName: row.englishName,
+    persianName: row.persianName,
+    website: row.website,
+    freeSale: row.freeSale,
     city: row.city,
     starRating: row.starRating,
     mealServiceCode: row.mealServiceCode,
@@ -374,177 +378,200 @@ export class HotelImportService implements OnModuleDestroy {
         details: parsed.issues,
       });
 
-    const completed = await this.database.client.$transaction(async (tx) => {
-      const claimed = await tx.masterHotelImportSession.updateMany({
-        where: {
-          id: session.id,
-          status: MasterHotelImportStatus.PREVIEW_READY,
-        },
-        data: {
-          status: MasterHotelImportStatus.COMMITTING,
-          idempotencyKeyHash,
-          duplicateBehavior:
-            input.duplicateBehavior as MasterHotelImportDuplicateBehavior,
-          traceId: traceId ?? null,
-        },
-      });
-      if (claimed.count !== 1)
-        throw new ConflictException({
-          code: 'CONCURRENT_MODIFICATION',
-          message: 'Import هم‌زمان Commit شده است.',
+    const completed = await this.database.client.$transaction(
+      async (tx) => {
+        const claimed = await tx.masterHotelImportSession.updateMany({
+          where: {
+            id: session.id,
+            status: MasterHotelImportStatus.PREVIEW_READY,
+          },
+          data: {
+            status: MasterHotelImportStatus.COMMITTING,
+            idempotencyKeyHash,
+            duplicateBehavior:
+              input.duplicateBehavior as MasterHotelImportDuplicateBehavior,
+            traceId: traceId ?? null,
+          },
         });
-      let createdCount = 0;
-      let updatedCount = 0;
-      let skippedCount = 0;
-      for (const row of parsed.rows) {
-        const existing = await tx.masterHotel.findUnique({
-          where: { code: row.code },
-        });
-        let affectedHotelId = existing?.id ?? null;
-        if (existing && input.duplicateBehavior === 'SKIP') {
-          skippedCount += 1;
-          continue;
-        }
-        const references = await this.resolveReferences(
-          tx,
-          row,
-          actor.userId,
-          input.createMissingReferences,
-        );
-        if (existing) {
-          const updated = await tx.masterHotel.updateMany({
-            where: { id: existing.id, version: existing.version },
-            data: {
-              name: row.englishName,
-              englishName: row.englishName,
-              cityId: session.cityId,
-              address: row.address,
-              description: row.description,
-              hotelRules: row.hotelRules,
-              serviceLevel: row.serviceLevel,
-              internalNote: row.internalNote,
-              sourceDestination: row.destination || null,
-              sourceRefundRules: row.refundRules,
-              sourceMainImage: row.mainImageSource,
-              sourceGalleryImages: row.galleryImageSources.join('|') || null,
-              sourceFeatured: row.featuredSource,
-              starRating: row.starRating,
-              mealServiceId: references.mealServiceId,
-              defaultRoomTypeId: references.roomTypeId,
-              isSaleableReference: row.isActive,
-              isActive: row.isActive,
-              updatedByUserId: actor.userId,
-              version: { increment: 1 },
-            },
+        if (claimed.count !== 1)
+          throw new ConflictException({
+            code: 'CONCURRENT_MODIFICATION',
+            message: 'Import هم‌زمان Commit شده است.',
           });
-          if (updated.count !== 1)
-            throw new ConflictException({
-              code: 'CONCURRENT_MODIFICATION',
-              message: `هتل ${row.code} هم‌زمان تغییر کرده است.`,
+        let createdCount = 0;
+        let updatedCount = 0;
+        let skippedCount = 0;
+        const referenceCache = new Map<
+          string,
+          Awaited<ReturnType<HotelImportService['resolveReferences']>>
+        >();
+        for (const row of parsed.rows) {
+          const existing = await tx.masterHotel.findUnique({
+            where: { code: row.code },
+          });
+          let affectedHotelId = existing?.id ?? null;
+          if (existing && input.duplicateBehavior === 'SKIP') {
+            skippedCount += 1;
+            continue;
+          }
+          const referenceKey = JSON.stringify([
+            row.mealServiceCode,
+            row.defaultRoomType,
+            row.facilities,
+          ]);
+          const references =
+            referenceCache.get(referenceKey) ??
+            (await this.resolveReferences(
+              tx,
+              row,
+              actor.userId,
+              input.createMissingReferences,
+            ));
+          referenceCache.set(referenceKey, references);
+          if (existing) {
+            const updated = await tx.masterHotel.updateMany({
+              where: { id: existing.id, version: existing.version },
+              data: {
+                ...(parsed.mapping['نام فارسی']
+                  ? { name: row.persianName || row.englishName }
+                  : {}),
+                englishName: row.englishName,
+                ...(parsed.mapping['وب‌سایت'] ? { website: row.website } : {}),
+                ...(parsed.mapping['فروش آزاد']
+                  ? { freeSale: row.freeSale }
+                  : {}),
+                cityId: session.cityId,
+                address: row.address,
+                description: row.description,
+                hotelRules: row.hotelRules,
+                serviceLevel: row.serviceLevel,
+                internalNote: row.internalNote,
+                sourceDestination: row.destination || null,
+                sourceRefundRules: row.refundRules,
+                sourceMainImage: row.mainImageSource,
+                sourceGalleryImages: row.galleryImageSources.join('|') || null,
+                sourceFeatured: row.featuredSource,
+                starRating: row.starRating,
+                mealServiceId: references.mealServiceId,
+                defaultRoomTypeId: references.roomTypeId,
+                isSaleableReference: row.isActive,
+                isActive: row.isActive,
+                updatedByUserId: actor.userId,
+                version: { increment: 1 },
+              },
             });
-          await tx.masterHotelFacility.deleteMany({
-            where: { hotelId: existing.id },
-          });
-          await tx.masterHotelMealService.deleteMany({
-            where: { hotelId: existing.id },
-          });
-          await tx.masterHotelRoomType.deleteMany({
-            where: { hotelId: existing.id },
-          });
-          await this.assignHotelCatalogs(
-            tx,
-            existing.id,
-            references.mealServiceId,
-            references.roomTypeId,
-            references.facilityIds,
-            actor.userId,
-          );
-          updatedCount += 1;
-        } else {
-          const hotel = await tx.masterHotel.create({
+            if (updated.count !== 1)
+              throw new ConflictException({
+                code: 'CONCURRENT_MODIFICATION',
+                message: `هتل ${row.code} هم‌زمان تغییر کرده است.`,
+              });
+            await tx.masterHotelFacility.deleteMany({
+              where: { hotelId: existing.id },
+            });
+            await tx.masterHotelMealService.deleteMany({
+              where: { hotelId: existing.id },
+            });
+            await tx.masterHotelRoomType.deleteMany({
+              where: { hotelId: existing.id },
+            });
+            await this.assignHotelCatalogs(
+              tx,
+              existing.id,
+              references.mealServiceId,
+              references.roomTypeId,
+              references.facilityIds,
+              actor.userId,
+            );
+            updatedCount += 1;
+          } else {
+            const hotel = await tx.masterHotel.create({
+              data: {
+                code: normalizedCode(row.code),
+                name: row.persianName || row.englishName,
+                englishName: row.englishName,
+                website: row.website,
+                freeSale: row.freeSale,
+                cityId: session.cityId,
+                address: row.address,
+                description: row.description,
+                hotelRules: row.hotelRules,
+                serviceLevel: row.serviceLevel,
+                internalNote: row.internalNote,
+                sourceDestination: row.destination || null,
+                sourceRefundRules: row.refundRules,
+                sourceMainImage: row.mainImageSource,
+                sourceGalleryImages: row.galleryImageSources.join('|') || null,
+                sourceFeatured: row.featuredSource,
+                starRating: row.starRating,
+                mealServiceId: references.mealServiceId,
+                defaultRoomTypeId: references.roomTypeId,
+                isSaleableReference: row.isActive,
+                isActive: row.isActive,
+                createdByUserId: actor.userId,
+                updatedByUserId: actor.userId,
+              },
+            });
+            affectedHotelId = hotel.id;
+            await this.assignHotelCatalogs(
+              tx,
+              hotel.id,
+              references.mealServiceId,
+              references.roomTypeId,
+              references.facilityIds,
+              actor.userId,
+            );
+            createdCount += 1;
+          }
+          await tx.masterDataAuditEvent.create({
             data: {
-              code: normalizedCode(row.code),
-              name: row.englishName,
-              englishName: row.englishName,
-              cityId: session.cityId,
-              address: row.address,
-              description: row.description,
-              hotelRules: row.hotelRules,
-              serviceLevel: row.serviceLevel,
-              internalNote: row.internalNote,
-              sourceDestination: row.destination || null,
-              sourceRefundRules: row.refundRules,
-              sourceMainImage: row.mainImageSource,
-              sourceGalleryImages: row.galleryImageSources.join('|') || null,
-              sourceFeatured: row.featuredSource,
-              starRating: row.starRating,
-              mealServiceId: references.mealServiceId,
-              defaultRoomTypeId: references.roomTypeId,
-              isSaleableReference: row.isActive,
-              isActive: row.isActive,
-              createdByUserId: actor.userId,
-              updatedByUserId: actor.userId,
+              actorUserId: actor.userId,
+              actorBranchId: branchOf(actor, requestedBranch),
+              action: existing
+                ? 'master_data.hotel_import.update'
+                : 'master_data.hotel_import.create',
+              resource: 'hotels',
+              entityId: affectedHotelId,
+              outcome: AuditOutcome.SUCCESS,
+              afterSnapshot: safeSnapshot(row),
+              traceId: traceId ?? null,
             },
           });
-          affectedHotelId = hotel.id;
-          await this.assignHotelCatalogs(
-            tx,
-            hotel.id,
-            references.mealServiceId,
-            references.roomTypeId,
-            references.facilityIds,
-            actor.userId,
-          );
-          createdCount += 1;
         }
+        const result = await tx.masterHotelImportSession.update({
+          where: { id: session.id },
+          data: {
+            status: MasterHotelImportStatus.COMPLETED,
+            createdCount,
+            updatedCount,
+            skippedCount,
+            committedAt: new Date(),
+            errorReport: JSON.parse(
+              JSON.stringify({ issues: [], warnings: parsed.warnings }),
+            ) as Prisma.InputJsonValue,
+          },
+        });
         await tx.masterDataAuditEvent.create({
           data: {
             actorUserId: actor.userId,
             actorBranchId: branchOf(actor, requestedBranch),
-            action: existing
-              ? 'master_data.hotel_import.update'
-              : 'master_data.hotel_import.create',
-            resource: 'hotels',
-            entityId: affectedHotelId,
+            action: 'master_data.hotel_import.commit',
+            resource: 'hotel-imports',
+            entityId: session.id,
             outcome: AuditOutcome.SUCCESS,
-            afterSnapshot: safeSnapshot(row),
+            afterSnapshot: {
+              fileHash: session.fileHash,
+              createdCount,
+              updatedCount,
+              skippedCount,
+              duplicateBehavior: input.duplicateBehavior,
+            },
             traceId: traceId ?? null,
           },
         });
-      }
-      const result = await tx.masterHotelImportSession.update({
-        where: { id: session.id },
-        data: {
-          status: MasterHotelImportStatus.COMPLETED,
-          createdCount,
-          updatedCount,
-          skippedCount,
-          committedAt: new Date(),
-          errorReport: JSON.parse(
-            JSON.stringify({ issues: [], warnings: parsed.warnings }),
-          ) as Prisma.InputJsonValue,
-        },
-      });
-      await tx.masterDataAuditEvent.create({
-        data: {
-          actorUserId: actor.userId,
-          actorBranchId: branchOf(actor, requestedBranch),
-          action: 'master_data.hotel_import.commit',
-          resource: 'hotel-imports',
-          entityId: session.id,
-          outcome: AuditOutcome.SUCCESS,
-          afterSnapshot: {
-            fileHash: session.fileHash,
-            createdCount,
-            updatedCount,
-            skippedCount,
-            duplicateBehavior: input.duplicateBehavior,
-          },
-          traceId: traceId ?? null,
-        },
-      });
-      return result;
-    });
+        return result;
+      },
+      { timeout: COMMIT_TIMEOUT_MS, maxWait: 10_000 },
+    );
     await unlink(stagingPath).catch(() => undefined);
     return { data: this.sessionResult(completed) };
   }

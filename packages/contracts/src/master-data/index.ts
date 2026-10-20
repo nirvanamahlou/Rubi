@@ -485,6 +485,7 @@ export interface MasterHotelImportPreview {
     formulaCount: 0;
     externalLinkCount: 0;
     macroCount: 0;
+    ignoredWebsiteHyperlinkCount?: number;
     malwareScanStatus: 'UNAVAILABLE';
   };
   counts: { rows: number; invalid: number; duplicates: number };
@@ -497,6 +498,9 @@ export interface MasterHotelImportPreview {
     mealServiceCode: string | null;
     defaultRoomType: string | null;
     facilityCount: number;
+    persianName?: string | null;
+    website?: string | null;
+    freeSale?: boolean | null;
     isActive: boolean;
     duplicate: boolean;
   }[];
