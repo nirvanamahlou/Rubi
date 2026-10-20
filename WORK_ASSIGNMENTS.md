@@ -8560,3 +8560,9 @@ CONTRACT-UI-1020 — READY_FOR_REVIEW: bounded presentation-only candidate; no d
 CALL-CENTER-DEVELOP-INTEGRATION-1020: hosted quality, production build, database/seed and read-boundary gates pass on67241fc2. Concurrent PR1001 advanced develop to3915f256; integrate its released Sales styling and append-only status update without changing Call Center source. Source reservations freeze/release on this final candidate publication; all exact-head CI checks remain mandatory before merge.
 
 CALL-CENTER-DEVELOP-INTEGRATION-1020 CI repair: the full hosted test suite detected two existing native datetime-local controls in Call Center follow-up/referral forms, violating the newly integrated shared-calendar contract. Reserve these two control bindings only; reuse DatePicker includeTime/withinDialog, retain FormData dueAt and existing device-local/Tehran UTC conversion semantics, and explicitly mark controlled calendar changes dirty. No table/layout/data/API change, no gate weakening. Existing shared calendar contract and date/time utility regressions validate this repair before final-head CI.
+
+## SERVICE-CARDS-1020 — PC-A — IN_PROGRESS
+
+Branch codex/pc-a-service-cards-1020 from origin/develop@83f5daa3. Reserve Sales contract service selection presentation, isolated CSS module and own docs. Implement owner-approved image using existing service/direction handlers and tour/disabled rules unchanged. No schema/API/dependency/migration changes. User authorizes develop merge and bounded local3100 Web rollout; preserve API/database. Prior form presentation reservation merged/released.
+
+SERVICE-CARDS-1020 — READY_FOR_CI:19 focused existing form/direction tests pass with current Contracts source alias (root-installed shared dist is older); scoped lint and formatting pass. No handler/state/validation changes. Source reservation freezes/releases with candidate; user authorizes develop merge and isolated Web3100 rollout after checks.
