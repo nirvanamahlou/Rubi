@@ -76,7 +76,7 @@ export function ReportHighlights({
         ) : data.topFollowUps.length === 0 ? (
           <p>تماس خروجی منطبق با فیلتر ثبت نشده است.</p>
         ) : (
-          <table className={styles.table}>
+          <table className={`${styles.table} ${styles.centeredTable}`}>
             <thead>
               <tr>
                 <th>رتبه</th>
@@ -111,7 +111,7 @@ export function ReportHighlights({
           <p>فعالیتی برای نمایش ثبت نشده است.</p>
         ) : (
           <div className={styles.operatorScroll}>
-            <table className={styles.table}>
+            <table className={`${styles.table} ${styles.centeredTable}`}>
               <thead>
                 <tr>
                   <th>اپراتور</th>

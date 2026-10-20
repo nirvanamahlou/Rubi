@@ -6674,3 +6674,7 @@ Validation:36 PostgreSQL/HTTP and17 Web checks pass; final local API run uses a 
 ## CALL-CENTER-TABLE-ALIGN-1020 — PC-C — READY_FOR_REVIEW
 
 Center all headers and data cells only in the contacts and direction/outcome/registration tables using a shared module-scoped CSS class. Chrome155/Edge155 computed styles confirm all target cells centered; scoped lint and optimized Web build/typecheck pass. No unit tests added for a reversible CSS-only change. Owner explicitly approved replacing the other worktree's newly active3000 server; build BW-uj0iKApnaede2Q9w8D now serves localhost3000 with HTTP200 and its build ID verified. No backend/data/grant/schema/dependency changes.
+## CALL-CENTER-HIGHLIGHT-ALIGN-1020 — PC-C
+
+Center headers and data cells in the most-followed and operator-performance report tables using the existing module-local centeredTable style. Chrome155 and Edge155 computed-style checks pass for all four centered Call Center tables, including9 most-followed and8 operator cells in the synthetic fixture. Scoped ESLint passes. No data, report calculation, API, schema, migration, grant or dependency changes.
+Full optimized Web build and TypeScript pass (65 pages). Local3000 returns200 and serves verified build9lgDXYV0gJivcf2dKNuj1. Task-only branch publication; no PR/merge/production deployment.
