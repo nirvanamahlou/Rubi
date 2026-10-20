@@ -6,6 +6,7 @@ import type {
 } from '@nora/contracts';
 
 export const CLOSED_FINANCE_STATUSES = new Set([
+  'CLOSED',
   'APPROVED',
   'PAID',
   'RECEIPT_CONFIRMED',

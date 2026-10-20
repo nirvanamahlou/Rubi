@@ -10,7 +10,7 @@ import { SalesRepository } from './sales.repository';
 import { SalesService } from './sales.service';
 
 describe('Sales Finance inbox projection', () => {
-  it('queries only pending payment entries in the requested branches', async () => {
+  it('queries pending and due scheduled receipts only in the requested branches', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const repository = new SalesRepository({
       client: { salesContractPaymentEntry: { findMany } },
@@ -20,7 +20,10 @@ describe('Sales Finance inbox projection', () => {
 
     expect(findMany).toHaveBeenCalledWith({
       where: {
-        status: 'PENDING_FINANCE_CONFIRMATION',
+        OR: [
+          { status: 'PENDING_FINANCE_CONFIRMATION' },
+          { status: 'SCHEDULED', dueAt: { lte: expect.any(Date) } },
+        ],
         contract: { branchId: { in: ['branch-b', 'branch-a'] } },
       },
       include: {

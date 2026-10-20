@@ -75,6 +75,16 @@ export class MasterProcurementDirectory {
       select: { id: true, name: true },
     });
   }
+  /** Public validator for manually confirmed incoming treasury receipts. */
+  activeIncomingPaymentMethod(
+    id: string,
+    transaction?: Prisma.TransactionClient,
+  ) {
+    return (transaction ?? this.database.client).masterPaymentMethod.findFirst({
+      where: { id, isActive: true, direction: { in: ['RECEIPT', 'BOTH'] } },
+      select: { id: true, name: true },
+    });
+  }
   async suppliers(
     search: string,
     page: number,
