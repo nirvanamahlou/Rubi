@@ -164,3 +164,79 @@ it('allows passport entry for an existing floating-flight passenger before profi
     expect(input).not.toContain('readOnly');
   }
 });
+
+it('places the two default-selected transfer columns after hotel stay columns in the actual people sheet', () => {
+  const html = renderToStaticMarkup(
+    <SalesPeopleSheet
+      state={{
+        ...emptySalesForm,
+        passengerComposition: { adults: 2, children: 0, infants: 0 },
+        serviceKinds: ['FLIGHT', 'HOTEL', 'TRANSFER'],
+        roomDrivenGuests: true,
+        tripType: 'ROUND_TRIP',
+        hotel: {
+          ...emptySalesForm.hotel,
+          rooms: [
+            {
+              ordinal: 1,
+              roomTypeId: 'room',
+              roomTypeNameSnapshot: 'Standard',
+              adults: 2,
+              childAges: [],
+            },
+          ],
+          checkIn: '2026-11-01',
+          checkOut: '2026-11-08',
+        },
+      }}
+      draft={null}
+      onDraftChange={vi.fn()}
+      onConfirmed={vi.fn()}
+      onBusyChange={vi.fn()}
+      onAddInfant={vi.fn()}
+      onTravelDateChange={vi.fn()}
+      onGuestStateChange={vi.fn()}
+    />,
+  );
+  const headers = html.match(/<thead[\s\S]*?<\/thead>/)?.[0] ?? '';
+  expect(headers.indexOf('ترانسفر رفت')).toBeGreaterThan(
+    headers.indexOf('چک‌این هتل'),
+  );
+  expect(headers.indexOf('ترانسفر برگشت')).toBeGreaterThan(
+    headers.indexOf('ترانسفر رفت'),
+  );
+  expect(headers).toContain('ترانسفر برگشت');
+  const transfers = [...html.matchAll(/<input[^>]+aria-label="ترانسفر[^>]*>/g)];
+  expect(transfers).toHaveLength(4);
+  for (const input of transfers) expect(input[0]).toContain('checked');
+});
+
+it('shows the city tour, guide and existing visa toggles together above the passenger table', () => {
+  const html = renderToStaticMarkup(
+    <SalesPeopleSheet
+      state={{
+        ...emptySalesForm,
+        serviceKinds: ['VISA'],
+        additionalServices: ['CITY_TOUR', 'TOUR_GUIDE'],
+      }}
+      draft={null}
+      onDraftChange={vi.fn()}
+      onConfirmed={vi.fn()}
+      onBusyChange={vi.fn()}
+      onAddInfant={vi.fn()}
+      onTravelDateChange={vi.fn()}
+      onGuestStateChange={vi.fn()}
+      onToggleVisa={vi.fn()}
+    />,
+  );
+  const beforeTable = html.slice(0, html.indexOf('<table'));
+  expect(beforeTable).toContain('گشت شهری');
+  expect(beforeTable).toContain('راهنما');
+  expect(beforeTable).toContain('ویزا');
+  const toggles = [
+    ...beforeTable.matchAll(/<input[^>]*type="checkbox"[^>]*>/g),
+  ].map((m) => m[0]);
+  expect(
+    toggles.filter((input) => input.includes('checked')).length,
+  ).toBeGreaterThanOrEqual(3);
+});

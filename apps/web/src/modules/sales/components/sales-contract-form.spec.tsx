@@ -409,3 +409,28 @@ it('places combined flight selection and stay dates before identities and hides 
     fixture.step = 0;
   }
 });
+
+it('keeps only the service toggle in the transfer card and moves leg choices to passenger rows', () => {
+  fixture.step = 0;
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    serviceKinds: ['TRANSFER'],
+    tripType: 'ROUND_TRIP',
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    const card =
+      [...html.matchAll(/<fieldset[^>]*>[\s\S]*?<\/fieldset>/g)].find((m) =>
+        m[0].includes('ترانسفر'),
+      )?.[0] ?? '';
+    expect(card).toContain('ترانسفر');
+    expect(card.match(/<input/g)).toHaveLength(1);
+    expect(card).not.toContain('تعداد مسافران ترانسفر');
+    expect(card).not.toContain('sales-directions-TRANSFER');
+    expect(html).toContain('ترانسفر رفت');
+    expect(html).toContain('ترانسفر برگشت');
+  } finally {
+    fixture.ticketDraft = null;
+    fixture.step = 0;
+  }
+});

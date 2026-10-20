@@ -116,7 +116,6 @@ import {
   salesFlightSeats,
   salesPassengerAgeLabel,
   salesPassengerCounts,
-  salesTransferCount,
   salesHotelGuestIds,
   salesHotelCapacityError,
   salesHotelOccupancyQuote,
@@ -1308,8 +1307,16 @@ export function SalesContractForm() {
                           type="checkbox"
                           className="size-4 accent-primary"
                           checked={state.serviceKinds.includes(kind)}
-                          aria-controls={`sales-directions-${kind}`}
-                          aria-expanded={state.serviceKinds.includes(kind)}
+                          aria-controls={
+                            kind === 'FLIGHT'
+                              ? `sales-directions-${kind}`
+                              : undefined
+                          }
+                          aria-expanded={
+                            kind === 'FLIGHT'
+                              ? state.serviceKinds.includes(kind)
+                              : undefined
+                          }
                           onChange={() =>
                             patchState(
                               toggleSalesDirectionalService(state, kind),
@@ -1317,7 +1324,8 @@ export function SalesContractForm() {
                           }
                         />
                       </label>
-                      {state.serviceKinds.includes(kind) ? (
+                      {kind === 'FLIGHT' &&
+                      state.serviceKinds.includes(kind) ? (
                         <div
                           id={`sales-directions-${kind}`}
                           className="mt-2 flex gap-2 border-t border-border pt-2"
@@ -1345,29 +1353,6 @@ export function SalesContractForm() {
                           )}
                         </div>
                       ) : null}
-                      {kind === 'TRANSFER' &&
-                        state.serviceKinds.includes(kind) && (
-                          <label className="mt-3 grid gap-2">
-                            تعداد مسافران ترانسفر
-                            <Input
-                              type="number"
-                              min={0}
-                              max={
-                                salesPassengerCounts(state).adults +
-                                salesPassengerCounts(state).children
-                              }
-                              value={salesTransferCount(state)}
-                              onChange={(event) =>
-                                patchState({
-                                  ...state,
-                                  transferPassengerCount: Number(
-                                    event.target.value,
-                                  ),
-                                })
-                              }
-                            />
-                          </label>
-                        )}
                     </fieldset>
                   ))}
                 </div>
@@ -1563,6 +1548,7 @@ export function SalesContractForm() {
           )}
         {step === 0 ? (
           <SalesPeopleSheet
+            onToggleVisa={() => toggleService('VISA')}
             refreshRevision={referenceRefresh.revision}
             onGuestStateChange={(patch) => {
               if (patch.flightOnlyPassengers) setPeopleDirty(true);
