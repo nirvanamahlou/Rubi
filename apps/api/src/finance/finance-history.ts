@@ -137,6 +137,7 @@ export async function readFinanceHistory(
   const enabled = (source: FinanceHistorySourceV1) =>
     (!query.source || query.source === source) &&
     (!query.direction ||
+      source === 'OPERATIONAL' ||
       query.direction === (source === 'SALES' ? 'RECEIPT' : 'PAYMENT'));
   const db = database.client;
   const take = pageSize + 1;
@@ -197,6 +198,11 @@ export async function readFinanceHistory(
               transferAt: { not: null },
               request: {
                 branchId: { in: actor.branchIds },
+                ...(query.direction === 'RECEIPT'
+                  ? { kind: 'PETTY_CASH_RETURN' }
+                  : query.direction === 'PAYMENT'
+                    ? { kind: { not: 'PETTY_CASH_RETURN' } }
+                    : {}),
                 ...(query.requestId ? { id: query.requestId } : {}),
               },
               ...historyAfter(cursor, 'OPERATIONAL', 'transferAt'),
@@ -241,7 +247,10 @@ export async function readFinanceHistory(
     ...operational.map((row) => ({
       id: row.id,
       source: 'OPERATIONAL' as const,
-      direction: 'PAYMENT' as const,
+      direction:
+        row.request.kind === 'PETTY_CASH_RETURN'
+          ? ('RECEIPT' as const)
+          : ('PAYMENT' as const),
       requestId: row.requestId,
       title: `${row.request.title} · ${row.request.party}`,
       occurredAt: row.transferAt!.toISOString(),

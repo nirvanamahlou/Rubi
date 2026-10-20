@@ -1159,6 +1159,7 @@ test('plain model replies reauthenticate before release and never fetch or audit
   assert.ok(h.calls.every((call) => call.path === '/api/v1/iam/auth/access'));
   assert.ok(!JSON.stringify(h.audit).includes('private generic message'));
   assert.ok(!JSON.stringify(h.audit).includes('Synthetic reply'));
+  assert.equal(h.audit.at(-1).outcome, 'SUCCESS');
   const revoked = await harness(t, { conversation, revokeAt: 2 });
   const denied = await revoked.post({
     version: 1,

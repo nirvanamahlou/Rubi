@@ -22,6 +22,7 @@ export function FinanceRequestCreate({ onCreated }: { onCreated: () => void }) {
   const [dueAt, setDueAt] = useState('');
   const [refundReceiptId, setRefundReceiptId] = useState('');
   const [documentId, setDocumentId] = useState('');
+  const [pettyFundId, setPettyFundId] = useState('');
   const [busy, setBusy] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [message, setMessage] = useState('');
@@ -65,6 +66,13 @@ export function FinanceRequestCreate({ onCreated }: { onCreated: () => void }) {
         dueAt,
         ...(kind === 'REFUND' ? { refundReceiptId } : {}),
         ...(documentId ? { documentId } : {}),
+        ...([
+          'PETTY_CASH_TOPUP',
+          'PETTY_CASH_EXPENSE',
+          'PETTY_CASH_RETURN',
+        ].includes(kind)
+          ? { pettyFundId }
+          : {}),
       });
     attempt.current = payload;
     lock.current = true;
@@ -110,9 +118,9 @@ export function FinanceRequestCreate({ onCreated }: { onCreated: () => void }) {
       {open ? (
         <div className="mt-3 space-y-3">
           <p>
-            درخواست حقوق از جدول منابع انسانی ارسال می‌شود. این فرم محاسبه
-            کمیسیون، سند حسابداری یا تأیید وصول چک نیست؛ فقط درخواست پرداخت و
-            سوابق رسیدگی را ثبت می‌کند.
+            درخواست حقوق از جدول منابع انسانی ارسال می‌شود. دریافت و پرداخت با
+            تأیید دستی ثبت می‌شود و رویداد آن برای تنظیم و صدور سند به حسابداری
+            می‌رود. هزینه تنخواه به مدرک و تأیید مستقل نیاز دارد.
           </p>
           <div className="grid gap-3 md:grid-cols-2">
             <label>
@@ -127,6 +135,10 @@ export function FinanceRequestCreate({ onCreated }: { onCreated: () => void }) {
                 <option value="REFUND">استرداد</option>
                 <option value="CHECK">پرداخت چک</option>
                 <option value="ADJUSTMENT">پرداخت اصلاح مالی</option>
+                <option value="PETTY_CASH_ADVANCE">تنخواه اولیه</option>
+                <option value="PETTY_CASH_TOPUP">شارژ مجدد تنخواه</option>
+                <option value="PETTY_CASH_EXPENSE">هزینه تنخواه با مدرک</option>
+                <option value="PETTY_CASH_RETURN">بازگشت وجه تنخواه</option>
               </select>
             </label>
             <label>
@@ -200,6 +212,20 @@ export function FinanceRequestCreate({ onCreated }: { onCreated: () => void }) {
                 onChange={setDueAt}
               />
             </label>
+            {[
+              'PETTY_CASH_TOPUP',
+              'PETTY_CASH_EXPENSE',
+              'PETTY_CASH_RETURN',
+            ].includes(kind) ? (
+              <label>
+                شناسه تنخواه اصلی
+                <Input
+                  value={pettyFundId}
+                  disabled={disabled}
+                  onChange={(event) => setPettyFundId(event.target.value)}
+                />
+              </label>
+            ) : null}
             {kind === 'REFUND' ? (
               <label>
                 شناسه دریافت تأییدشده مبنا
@@ -240,7 +266,14 @@ export function FinanceRequestCreate({ onCreated }: { onCreated: () => void }) {
               !amount ||
               !dueAt ||
               !description.trim() ||
-              (kind === 'REFUND' && !refundReceiptId)
+              (kind === 'REFUND' && !refundReceiptId) ||
+              ([
+                'PETTY_CASH_TOPUP',
+                'PETTY_CASH_EXPENSE',
+                'PETTY_CASH_RETURN',
+              ].includes(kind) &&
+                !pettyFundId) ||
+              (kind === 'PETTY_CASH_EXPENSE' && !documentId)
             }
             onClick={() => void submit()}
           >

@@ -1,3 +1,4 @@
+import { financialDate } from '../finance/accounting/financial-event.public';
 import { PackageTourPricingService } from '../package-pricing/package-tour-pricing.service';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
@@ -45,7 +46,7 @@ import type {
   SalesFinanceInboxPaymentV1,
   FinanceCustomerDocumentDeliveryCandidateV1,
 } from '@nora/contracts';
-import type { Prisma } from '@nora/database';
+import { Prisma } from '@nora/database';
 
 import {
   SALES_TICKET_AVAILABILITY_PORT,
@@ -225,7 +226,20 @@ export function presentSalesContract(
     status: row.status,
     settlementStatus: row.settlementStatus,
     reservationStatus: row.reservationStatus,
-    balances: calculateSalesBalances(priceComponents, payments),
+    balances: calculateSalesBalances(
+      priceComponents,
+      payments.map((payment, index) => ({
+        ...payment,
+        amount: new Prisma.Decimal(payment.amount)
+          .sub(
+            (row.payments[index]!.refunds ?? []).reduce(
+              (sum, refund) => sum.add(refund.amount),
+              new Prisma.Decimal(0),
+            ),
+          )
+          .toString(),
+      })),
+    ),
     version: row.version,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -879,17 +893,26 @@ export class SalesService {
       branchId: row.branchId,
       customerNameSnapshot: row.customerNameSnapshot,
       settlementStatus: row.settlementStatus,
-      hasConfirmedPayment: row.payments.length > 0,
+      hasConfirmedPayment: row.payments.some((p) =>
+        p.amount.gt(
+          p.refunds.reduce(
+            (sum, r) => sum.add(r.amount),
+            new Prisma.Decimal(0),
+          ),
+        ),
+      ),
     }));
   }
 
   async financeCustomerDocumentDeliveryFacts(
     contractId: string,
     branchIds: readonly string[],
+    tx?: Prisma.TransactionClient,
   ) {
     const row = await this.repository.financeCustomerDocumentDeliveryFacts(
       contractId,
       branchIds,
+      tx,
     );
     if (!row)
       throw new NotFoundException('قرارداد در شعب مجاز برای مالی یافت نشد.');
@@ -897,8 +920,20 @@ export class SalesService {
       contractId: row.id,
       branchId: row.branchId,
       salesOwnerUserId: row.ownerUserId,
-      hasConfirmedPayment: row.payments.length > 0,
-      fullySettled: ['SETTLED', 'OVERPAID'].includes(row.settlementStatus),
+      cancelled: row.status === 'CANCELLED',
+      hasConfirmedPayment:
+        row.status !== 'CANCELLED' &&
+        row.payments.some((p) =>
+          p.amount.gt(
+            p.refunds.reduce(
+              (sum, r) => sum.add(r.amount),
+              new Prisma.Decimal(0),
+            ),
+          ),
+        ),
+      fullySettled:
+        row.status !== 'CANCELLED' &&
+        ['SETTLED', 'OVERPAID'].includes(row.settlementStatus),
     };
   }
   async financeReceiptHistory(
@@ -919,6 +954,9 @@ export class SalesService {
       id: row.id,
       source: 'SALES' as const,
       requestId: row.id,
+      trackingNumber: row.contractId,
+      trackingDate: financialDate(row.contract.createdAt),
+      customerId: row.contract.customerId,
       direction: 'RECEIPT' as const,
       title: 'دریافت قرارداد ' + row.contract.contractNumber,
       occurredAt: row.financeConfirmedAt!.toISOString(),
@@ -1894,6 +1932,34 @@ export class SalesService {
           'AWAITING_CUSTOMER_AFFAIRS_PUBLIC_CONTRACT' as const,
       },
     };
+  }
+
+  financeReceipt(
+    paymentId: string,
+    contractId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!has(actor, 'finance.read'))
+      throw new ForbiddenException('مجوز مشاهده دریافت‌ها وجود ندارد.');
+    return this.repository.financeReceipt(
+      paymentId,
+      contractId,
+      actor.branchIds,
+    );
+  }
+
+  applyFinanceRefund(
+    tx: Prisma.TransactionClient,
+    input: {
+      paymentId: string;
+      operationId: string;
+      actorId: string;
+      amount: string;
+      currency: string;
+      branchId: string;
+    },
+  ) {
+    return this.repository.applyFinanceRefund(tx, input);
   }
 
   applyFinancePaymentConfirmed(event: {

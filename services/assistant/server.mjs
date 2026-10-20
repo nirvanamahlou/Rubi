@@ -221,7 +221,8 @@ export function createAssistantServer({
                 );
             }
           }
-          if (result.status === 'CLARIFY') outcome = 'SUCCESS';
+          if (result.status === 'CLARIFY' || result.status === 'REPLY')
+            outcome = 'SUCCESS';
           send(200, result);
           return;
         }

@@ -1,3 +1,4 @@
+export * from './accounting-events';
 import type { HotelPurchaseSavingsV1 } from '../travel/hotel-savings';
 export const FINANCE_CONTRACT_VERSION = 'finance.v1-proposal' as const;
 export const FINANCE_API_PREFIX = '/api/v1/finance' as const;
@@ -344,6 +345,7 @@ export const financeWorkflowContracts = {
 } as const;
 
 export type FinanceRequestStatus =
+  | 'CLOSED'
   | 'NEW'
   | 'UNDER_REVIEW'
   | 'CORRECTION_REQUIRED'
@@ -373,6 +375,8 @@ export interface FinanceInboxSourceStateV1 {
 }
 
 export interface FinanceInboxItemV1 {
+  /** Absent in older producers. Internal expense clearance is not a second cash payment. */
+  direction?: 'RECEIPT' | 'PAYMENT' | 'NON_CASH';
   purchaseFx?: readonly FinancePurchaseFxV1[];
   version: 1;
   id: string;
