@@ -8394,3 +8394,7 @@ Validation:145 focused Web tests plus56 Sales API domain tests pass; API typeche
 FINANCE-ACCOUNTING-EVENTS-1018 due-receipt correction: reserve bounded scheduled-receipt eligibility after due date in existing Sales/Finance public reads and decisions; receipt confirmation remains manual. Serialize correction with the same Sales contract row lock as confirmation to prevent a concurrent rejection overwriting a confirmed receipt. No schedule auto-confirmation or bank automation.
 
 FINANCE-ACCOUNTING-EVENTS-1018 i18n reservation: bounded English overrides for new Finance/Accounting labels and visible errors, plus deterministic offline API/legacy catalogue regeneration. Prior translation scopes merged/released. Preserve Persian UI, source text and existing translations; no dependency changes.
+
+## ASSISTANT-LIVE-CHAT-1020 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; branch codex/pc-c-assistant-live-chat-1020 from origin/develop. User explicitly approves Groq with message/session history only, no ERP results. Reserve assistant Groq transport, runtime opt-in, orchestrator, composer and conversation validators/tests, bounded bilingual copy/CSS and own docs. Preserve native authorization, fixed read tools, deterministic ERP evidence and quick actions. No schema/migration/dependency changes. Only user/model conversational text enters provider history; ERP evidence never does. Explicit local activation after successful tests; final-head CI gates standing authorized develop merge.

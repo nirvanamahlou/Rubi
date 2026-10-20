@@ -175,6 +175,14 @@ export const assistantCopy = {
   quickDaily: ['خلاصه امروز', 'Today’s summary'],
   quickSales: ['تحلیل فروش', 'Sales analysis'],
   quickReceivables: ['پیگیری مطالبات', 'Receivables follow-up'],
+  chatPolicy: [
+    'فقط متن پیام و تاریخچهٔ نشست به Groq ارسال می‌شود؛ نتایج ERP داخل سامانه می‌مانند.',
+    'Only message text and session history are sent to Groq; ERP results stay in the system.',
+  ],
+  chatDisabled: [
+    'اتصال گفت‌وگو در سرویس فعال نیست؛ از درخواست‌های آماده استفاده کنید.',
+    'Conversation is disabled on the service; use the prepared requests.',
+  ],
   fixedActions: [
     'سه درخواست آماده با ابزارهای خواندنی اجرا می‌شوند؛ گفت‌وگوی آزاد و ارسال داده به مدل غیرفعال است.',
     'The three fixed requests use read-only tools. Free conversation and model data transfer are disabled.',
