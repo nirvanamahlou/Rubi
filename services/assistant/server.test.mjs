@@ -1136,3 +1136,36 @@ test('conversation repeats native source checks at final evidence release', asyn
   assert.equal(response.status, 403);
   assert.ok(!JSON.stringify(await response.json()).includes(example.title));
 });
+
+test('plain model replies reauthenticate before release and never fetch or audit ERP evidence', async (t) => {
+  const conversation = {
+    enabled: true,
+    provider: {
+      plan: async () => ({ kind: 'REPLY', text: 'Synthetic reply' }),
+    },
+  };
+  const h = await harness(t, { conversation });
+  const response = await h.post({
+    version: 1,
+    message: 'private generic message',
+    history: [],
+  });
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    version: 1,
+    status: 'REPLY',
+    text: 'Synthetic reply',
+  });
+  assert.ok(h.calls.every((call) => call.path === '/api/v1/iam/auth/access'));
+  assert.ok(!JSON.stringify(h.audit).includes('private generic message'));
+  assert.ok(!JSON.stringify(h.audit).includes('Synthetic reply'));
+  assert.equal(h.audit.at(-1).outcome, 'SUCCESS');
+  const revoked = await harness(t, { conversation, revokeAt: 2 });
+  const denied = await revoked.post({
+    version: 1,
+    message: 'hello',
+    history: [],
+  });
+  assert.equal(denied.status, 401);
+  assert.ok(!JSON.stringify(await denied.json()).includes('Synthetic reply'));
+});

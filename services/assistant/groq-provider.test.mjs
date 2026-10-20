@@ -18,6 +18,7 @@ const plan = {
   originId: null,
   destinationId: null,
   branchId: null,
+  reply: null,
 };
 const result = (value = plan, overrides = {}) =>
   new Response(
@@ -186,4 +187,32 @@ test('cancellation during provider I/O aborts without leaking the upstream excep
     { message: 'CONVERSATION_TIMEOUT' },
   );
   assert.equal(calls, 1);
+});
+
+test('plain conversational replies require null action/scope and remain bounded', async () => {
+  const reply = Object.fromEntries(Object.keys(plan).map((key) => [key, null]));
+  Object.assign(reply, { kind: 'REPLY', reply: 'Hello' });
+  const provider = createGroqProvider({
+    apiKey: 'test',
+    now,
+    fetchImpl: async () => result(reply),
+  });
+  assert.deepEqual(await provider.plan(input), {
+    kind: 'REPLY',
+    text: 'Hello',
+  });
+  for (const bad of [
+    { ...reply, action: 'sales-analysis' },
+    { ...reply, reply: 'x'.repeat(2001) },
+    { ...reply, reply: ' ' },
+  ]) {
+    await assert.rejects(
+      createGroqProvider({
+        apiKey: 'test',
+        now,
+        fetchImpl: async () => result(bad),
+      }).plan(input),
+      /INVALID_PLAN/,
+    );
+  }
 });

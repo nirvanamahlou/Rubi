@@ -5,6 +5,30 @@ import {
   conversationResponseSchema,
 } from './conversation';
 describe('gated conversation UI', () => {
+  it('accepts bounded plain text separately from exact ERP evidence', () => {
+    expect(
+      conversationResponseSchema.safeParse({
+        version: 1,
+        status: 'REPLY',
+        text: 'Hello',
+      }).success,
+    ).toBe(true);
+    expect(
+      conversationResponseSchema.safeParse({
+        version: 1,
+        status: 'REPLY',
+        text: 'x'.repeat(2001),
+      }).success,
+    ).toBe(false);
+    expect(
+      conversationResponseSchema.safeParse({
+        version: 1,
+        status: 'REPLY',
+        text: 'Hello',
+        evidence: { amount: 500 },
+      }).success,
+    ).toBe(false);
+  });
   it('does not mount or expose message inputs before model policy approval', () => {
     expect(
       renderToStaticMarkup(

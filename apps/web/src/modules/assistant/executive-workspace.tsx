@@ -59,6 +59,7 @@ import {
   type ExecutiveSnapshot,
 } from './model';
 import styles from './executive-workspace.module.css';
+import { conversationResponseSchema } from './conversation';
 
 type Translate = (text: AssistantText) => string;
 function SourceUpdated({
@@ -232,7 +233,10 @@ export function AssistantComposer({
   }, [draft]);
 
   const [filterError, setFilterError] = useState(false);
-  const [notSubmitted, setNotSubmitted] = useState(false);
+  const [messages, setMessages] = useState<
+    Array<{ role: 'user' | 'assistant'; content: string }>
+  >([]);
+  const [chatError, setChatError] = useState<string | null>(null);
   const [actionResult, setActionResult] =
     useState<AssistantActionResult | null>(null);
   const [actionState, setActionState] = useState<AssistantLoadState | null>(
@@ -251,7 +255,7 @@ export function AssistantComposer({
     const controller = new AbortController();
     pending.current = controller;
     setActionResult(null);
-    setNotSubmitted(false);
+    setChatError(null);
     setActionState('loading');
     setFilterError(false);
     try {
@@ -280,18 +284,70 @@ export function AssistantComposer({
       }
     }
   };
-  const submit = () => {
-    if (denied || !draft.trim()) return;
-    const match = prompts.find(([label]) =>
-      label.some((text) => text === draft.trim()),
-    );
-    // User text is never transmitted; dispatch only an exact fixed capability.
-    if (match) void run(match[1]);
-    else {
-      pending.current?.abort();
-      setActionResult(null);
+  const submit = async () => {
+    if (denied || !draft.trim() || actionState === 'loading') return;
+    const message = draft.trim();
+    pending.current?.abort();
+    const controller = new AbortController();
+    pending.current = controller;
+    setActionResult(null);
+    setActionState('loading');
+    setChatError(null);
+    try {
+      const response = await fetch('/api/assistant/v2/conversation', {
+        method: 'POST',
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          version: 1,
+          message,
+          history: messages
+            .slice(-12)
+            .map((item) => ({ ...item, content: item.content.slice(0, 1000) })),
+        }),
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          setMessages([]);
+          setActionResult(null);
+        }
+        const body = (await response.json().catch(() => null)) as {
+          error?: { code?: string };
+        } | null;
+        throw new Error(
+          body?.error?.code === 'CONVERSATION_DISABLED'
+            ? 'disabled'
+            : response.status === 429
+              ? 'rate'
+              : 'unavailable',
+        );
+      }
+      const result = conversationResponseSchema.parse(await response.json());
+      if (controller.signal.aborted) return;
+      const answer =
+        result.status === 'REPLY'
+          ? result.text
+          : result.status === 'CLARIFY'
+            ? t(c.conversationClarification[result.field])
+            : t(c.conversationEvidence);
+      // ERP evidence is rendered separately and never enters model history.
+      setMessages((previous) =>
+        [
+          ...previous,
+          { role: 'user' as const, content: message },
+          { role: 'assistant' as const, content: answer },
+        ].slice(-12),
+      );
+      if (result.status === 'ANSWER') setActionResult(result.evidence);
+      setDraft('');
       setActionState(null);
-      setNotSubmitted(true);
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        setChatError(error instanceof Error ? error.message : 'unavailable');
+        setActionState(null);
+      }
     }
   };
   return (
@@ -305,7 +361,7 @@ export function AssistantComposer({
         className={styles.composerForm}
         onSubmit={(event) => {
           event.preventDefault();
-          submit();
+          void submit();
         }}
       >
         <textarea
@@ -324,7 +380,7 @@ export function AssistantComposer({
             setActionResult(null);
             setActionState(null);
             setDraft(event.target.value);
-            setNotSubmitted(false);
+            setChatError(null);
           }}
           onKeyDown={(event) => {
             if (
@@ -333,7 +389,7 @@ export function AssistantComposer({
               !event.nativeEvent.isComposing
             ) {
               event.preventDefault();
-              submit();
+              void submit();
             }
           }}
         />
@@ -357,9 +413,9 @@ export function AssistantComposer({
           <button
             type="submit"
             className={styles.composerSend}
-            disabled={denied || !draft.trim()}
+            disabled={denied || !draft.trim() || actionState === 'loading'}
             aria-label={t(c.send)}
-            title={t(c.fixedActions)}
+            title={t(c.chatPolicy)}
           >
             <ArrowUp size={24} aria-hidden="true" />
           </button>
@@ -373,7 +429,7 @@ export function AssistantComposer({
             disabled={denied}
             onClick={() => {
               setDraft(t(prompt));
-              setNotSubmitted(false);
+              setChatError(null);
               input.current?.focus();
               void run(action);
             }}
@@ -388,10 +444,34 @@ export function AssistantComposer({
         aria-label={t(c.widgetResponse)}
         tabIndex={0}
       >
+        {!denied && (
+          <div
+            className={styles.chatMessages}
+            role="log"
+            aria-label={t(c.conversationLabel)}
+          >
+            {messages.map((item, index) => (
+              <p key={index} data-role={item.role} dir="auto">
+                {item.content}
+              </p>
+            ))}
+          </div>
+        )}
+        {!denied && chatError && (
+          <p role="alert">
+            {t(
+              chatError === 'disabled'
+                ? c.chatDisabled
+                : chatError === 'rate'
+                  ? c.states['rate-limited']
+                  : c.conversationUnavailable,
+            )}
+          </p>
+        )}
         {filterError && <p role="alert">{t(c.filterInvalid)}</p>}
         <div className={styles.composerFooter}>
           <p id={helpId} className={styles.composerHint} role="status">
-            {t(notSubmitted ? c.messageNotSubmitted : c.fixedActions)}
+            {t(c.chatPolicy)}
           </p>
         </div>
         {!denied && actionResult && 'filters' in actionResult && (
