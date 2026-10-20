@@ -434,7 +434,8 @@ describe('sales contract form payload', () => {
     ).toEqual(['HOTEL']);
   });
   it('starts with route/services and derives age at travel date', () => {
-    expect(salesSteps[0]).toBe('مسیر و خدمات');
+    expect(salesSteps[0]).toBe('مسیر، خدمات و مسافران');
+    expect(salesSteps).toHaveLength(3);
     expect(salesPassengerAgeLabel('2025-10-02', '2027-10-01')).toBe('نوزاد');
     expect(salesPassengerAgeLabel('2025-10-01', '2027-10-01')).toBe('کودک');
     expect(salesPassengerAgeLabel('2015-10-01', '2027-10-01')).toBe('بزرگسال');

@@ -94,3 +94,31 @@ it('replaces the single selected service currency and persists each deduction in
     },
   });
 });
+
+it('edits the different-stay amount in pricing/payment using the existing hotel allocation exactly once', () => {
+  const onChange = vi.fn();
+  const html = renderToStaticMarkup(
+    <PassengerServicePrices
+      state={{
+        ...state,
+        passengerHotelStays: {
+          a: { different: true, checkIn: '2026-11-02', checkOut: '2026-11-04' },
+        },
+      }}
+      currencies={[]}
+      onChange={onChange}
+    />,
+  );
+  expect(html).toContain('مبلغ اقامت متفاوت');
+  const price = fields.money.find(
+    (f) => f['aria-label'] === 'مبلغ اقامت متفاوت Adult',
+  )!;
+  expect(price.value).toBe('20');
+  price.onValueChange('45');
+  expect(onChange).toHaveBeenLastCalledWith({
+    passengerHotelPrices: {
+      ...state.passengerHotelPrices,
+      a: [{ currencyCode: 'USD', amount: '45' }],
+    },
+  });
+});

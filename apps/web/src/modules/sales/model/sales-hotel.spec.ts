@@ -226,6 +226,7 @@ describe('combined flight and hotel details', () => {
       checkIn: '2026-09-12',
       checkOut: '2026-09-18',
       checkInManual: true,
+      calendarSystem: 'gregorian',
     };
     const payload = salesPayload(state);
     expect(payload.hotelSelection).toMatchObject({
@@ -237,6 +238,7 @@ describe('combined flight and hotel details', () => {
       extraBedCount: 0,
     });
     expect(payload.hotelSelection).not.toHaveProperty('checkInManual');
+    expect(payload.hotelSelection).not.toHaveProperty('calendarSystem');
   });
   it('reports known room capacity immediately and ignores missing rate factors', () => {
     const state = selected();

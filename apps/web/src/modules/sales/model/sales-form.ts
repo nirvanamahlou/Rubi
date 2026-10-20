@@ -110,9 +110,7 @@ export function selectSalesPerson(
 }
 
 export const salesSteps = [
-  'مسیر و خدمات',
-  'جزئیات سفر',
-  'مشتری و مسافران',
+  'مسیر، خدمات و مسافران',
   'قیمت و پرداخت',
   'بازبینی',
 ] as const;
@@ -210,6 +208,8 @@ export interface SalesFormState {
     rooms?: Array<
       Omit<SalesHotelRoomV1, 'childAges'> & { childAges: (number | null)[] }
     >;
+    /** Presentation only; actual dates remain ISO. */
+    calendarSystem?: 'persian' | 'gregorian';
     checkInManual?: boolean;
     checkOutManual?: boolean;
     hotelId: string;
@@ -1048,6 +1048,15 @@ export function salesRequiresPassportIdentity(state: SalesFormState): boolean {
   )
     return false;
   return !salesDomesticIranRoute(state);
+}
+
+export function salesHotelCalendarSystem(
+  state: SalesFormState,
+): 'persian' | 'gregorian' {
+  return (
+    state.hotel.calendarSystem ??
+    (salesInternationalTravel(state) ? 'gregorian' : 'persian')
+  );
 }
 
 export function salesDetailSteps(state: SalesFormState): string[] {

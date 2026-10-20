@@ -110,6 +110,15 @@ export function PassengerServicePrices({
                         —
                       </td>
                     );
+                  const differentStay =
+                    s.field === 'passengerHotelPrices' &&
+                    state.passengerHotelStays?.[p.customerId]?.different;
+                  const amountLabel =
+                    s.field === 'passengerHotelPrices'
+                      ? differentStay
+                        ? 'مبلغ اقامت متفاوت'
+                        : 'قیمت ارزی'
+                      : 'قیمت پرواز';
                   const rows = state[s.field]?.[p.customerId] ?? [];
                   const price = rows.length === 1 ? rows[0] : undefined;
                   const code =
@@ -130,14 +139,13 @@ export function PassengerServicePrices({
                         />
                       </td>
                       <td className="min-w-40 p-2">
+                        {differentStay ? (
+                          <span className="mb-1 block text-xs text-muted-foreground">
+                            مبلغ اقامت متفاوت
+                          </span>
+                        ) : null}
                         <MoneyInput
-                          aria-label={
-                            (s.field === 'passengerHotelPrices'
-                              ? 'قیمت ارزی'
-                              : 'قیمت پرواز') +
-                            ' ' +
-                            p.displayName
-                          }
+                          aria-label={amountLabel + ' ' + p.displayName}
                           disabled={!code || rows.length > 1}
                           value={price?.amount ?? ''}
                           onValueChange={(amount) =>
