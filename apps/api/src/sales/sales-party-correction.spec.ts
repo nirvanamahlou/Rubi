@@ -37,6 +37,7 @@ function setup(overrides: Record<string, unknown> = {}) {
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     salesContractAuditEvent: { create: vi.fn().mockResolvedValue({}) },
+    salesReceiptAllocation: { count: vi.fn().mockResolvedValue(0) },
   };
   const database = {
     client: {

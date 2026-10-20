@@ -793,3 +793,5 @@ export interface FinancePurchaseFxV1 {
   averagePaidRateToIrr?: string | null;
   gainLossPerUnit?: string | null;
 }
+
+export * from './receipt-allocation';
