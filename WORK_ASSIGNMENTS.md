@@ -8578,3 +8578,9 @@ SERVICE-CARDS-1020 — READY_FOR_CI:19 focused existing form/direction tests pas
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-stay-layout-1020 from develop83f5daa3. Reserve hotel-stay-dates.tsx presentation and own status notes only: remove next-day checkbox and make shared check-in/out equal full-row columns. Preserve calendar, date values/manual edits and historical model compatibility. Earlier presentation scopes merged/released. No API/schema/migration/dependency/runtime changes.
 
 HOTEL-STAY-LAYOUT-1020 candidate: removed only next-day checkbox; two equal responsive date columns fill the row and title spans both. Existing calendar/date round-trip regression passes; scoped lint and final hosted quality/type/build/test gates verify publication. Source scope released on publication. No model/date value/API/runtime changes.
+
+## PEOPLE-UI-1020 — PC-A — IN_PROGRESS
+
+Reserve SalesPeopleSheet presentation/CSS and CustomerEntrySheet optional top scrollbar with focused scroll regression. Consumer Sales opts in; other CustomerEntrySheet hosts retain existing layout. Native RTL/LTR horizontal positions synchronized both ways and resize aware. Preserve all fields, handlers, validation, buyer/passenger roles, ticket/transfer choices and data. No API/schema/dependency/migration changes; no active overlapping target reservation. Local3100 Web preview requested through ongoing UI workflow; no production rollout.
+
+PEOPLE-UI-1020 — READY_FOR_REVIEW:17 focused tests pass, including native RTL/LTR scroll synchronization, resize/fit handling and listener cleanup. Source locks released with candidate. No production deployment or business-data writes.

@@ -6829,3 +6829,7 @@ HOTEL-STAY-LAYOUT-1020 / PC-A: remove the next-day checkbox and use equal-width 
 
 HOTEL-STAY-LAYOUT-1020 candidate: shared hotel dates now fill two equal columns, next-day checkbox removed. Existing calendar-state regression passed; no persisted dates or operational runtime changed.
 
+
+## 2026-10-20 — PEOPLE-UI-1020 — PC-A
+
+Customer/buyer presentation now uses a clearer card, compact customer-mode control and highlighted first-passenger option. Sales opts into responsive table styling with fixed passenger identity column and a native upper horizontal scrollbar synchronized with the lower bar, including negative RTL offsets and width changes. Existing fields, callbacks and policies unchanged.17 focused CustomerEntrySheet/SalesPeopleSheet/scroll regressions pass. No schema/API/migration/dependency change; local Web-only preview follows verified build, preserving API/database. No authenticated visual acceptance claimed.
