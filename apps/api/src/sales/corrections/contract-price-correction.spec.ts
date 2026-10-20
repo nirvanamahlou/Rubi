@@ -167,4 +167,6 @@ it('reuses one correction row and consolidates previous corrections without addi
   expect(tx.salesContractAuditEvent.create).toHaveBeenCalled();
 });
 
-vi.mock('../sales-financial-settlement', () => ({ recalculateSalesSettlement: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('../sales-financial-settlement', () => ({
+  recalculateSalesSettlement: vi.fn().mockResolvedValue(undefined),
+}));

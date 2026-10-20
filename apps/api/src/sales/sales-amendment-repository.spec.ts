@@ -243,4 +243,6 @@ it('persists the room occupancy summary from products rather than stale submitte
   );
 });
 
-vi.mock('./sales-financial-settlement', () => ({ recalculateSalesSettlement: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('./sales-financial-settlement', () => ({
+  recalculateSalesSettlement: vi.fn().mockResolvedValue(undefined),
+}));

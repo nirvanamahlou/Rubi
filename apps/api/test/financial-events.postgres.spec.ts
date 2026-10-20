@@ -397,7 +397,7 @@ describe.skipIf(!url)(
           version: 1,
           approved: true,
           basis: 'FULL_SETTLEMENT',
-          reason: '',
+          reason: 'تأیید تسویه قرارداد آزمایشی',
           actorUserId: makerId,
         },
       });
@@ -771,6 +771,36 @@ describe.skipIf(!url)(
         (
           await db.accountingPeriod.findUniqueOrThrow({
             where: { id: period.id },
+          })
+        ).status,
+      ).toBe('OPEN');
+    });
+    it('does not close a period merely because its financial draft was cancelled', async () => {
+      const year = await command('save-configuration', {
+        kind: 'fiscal-years',
+        code: '2024',
+        title: 'Synthetic prior year',
+      });
+      const period = await command('save-period', {
+        fiscalYearId: year.id,
+        startDate: '2024-01-01',
+        endDate: '2024-12-31',
+      });
+      const event = await capture(
+        input({ occurredAt: new Date('2024-06-01T08:00:00Z') }),
+      );
+      const journal = await command('financial-event-journal', {
+        eventId: event.id,
+        ...mapping(),
+      });
+      await command('cancel', { id: journal.id }, Number(journal.version));
+      await expect(
+        command('close-period', { id: period.id }, Number(period.version)),
+      ).rejects.toThrow('منابع مالی بدون سند');
+      expect(
+        (
+          await db.accountingPeriod.findUniqueOrThrow({
+            where: { id: String(period.id) },
           })
         ).status,
       ).toBe('OPEN');

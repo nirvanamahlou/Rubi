@@ -919,9 +919,10 @@ export class AccountingService {
       if (!period) throw new NotFoundException();
       const [pending] = await tx.$queryRaw<
         { count: number }[]
-      >`SELECT count(*)::int AS count FROM finance_accounting_events
-        WHERE "branchId"=${book.branchId}::uuid AND "journalId" IS NULL
-          AND ("occurredAt" AT TIME ZONE 'Asia/Tehran')::date BETWEEN ${period.startDate}::date AND ${period.endDate}::date`;
+      >`SELECT count(*)::int AS count FROM finance_accounting_events e
+        LEFT JOIN accounting_journals j ON j.id=e."journalId"
+        WHERE e."branchId"=${book.branchId}::uuid AND (e."journalId" IS NULL OR j.status='CANCELLED')
+          AND (e."occurredAt" AT TIME ZONE 'Asia/Tehran')::date BETWEEN ${period.startDate}::date AND ${period.endDate}::date`;
       if (pending?.count)
         v.rule(
           'منابع مالی بدون سند این شعبه در بازه دوره باید پیش از بستن دوره تعیین تکلیف شوند.',
@@ -4416,11 +4417,12 @@ export class AccountingService {
               v.attributes(existing.attributes).sourceForm ===
                 'rahkaran-documents-v1'
             )) ||
-          existing.sourceKey ||
+          (existing.sourceKey && !financialSourceRebuild) ||
           existing.reversalOfId ||
           existingAttributes.operation !== undefined ||
           existingAttributes.templateId !== undefined ||
-          existingAttributes.sourceRequestId !== undefined
+          (existingAttributes.sourceRequestId !== undefined &&
+            !financialSourceRebuild)
         )
           v.rule('سند شماره‌دار، مبدأدار یا برگشتی قابل جابه‌جایی نیست.');
         if (
