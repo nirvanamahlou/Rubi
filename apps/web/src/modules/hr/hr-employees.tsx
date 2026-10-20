@@ -137,6 +137,12 @@ export function HrEmployeeEditor({
   onSaved?: (employee: HrEmployeeDto) => void;
   preferredCompanyId?: string;
 }) {
+  const photoUpload = useRef<{
+    file: File;
+    validUntil: string;
+    branch: string;
+    id: string;
+  } | null>(null);
   const key = useRef(crypto.randomUUID());
   const [newReference, setNewReference] = useState<{
     kind: 'branches' | 'units' | 'positions';
@@ -156,6 +162,19 @@ export function HrEmployeeEditor({
   return (
     <>
       <NewEmployeeDialog
+        personnelMode={!employee && store.data!.capabilities.sensitive}
+        cityOptions={references.data.records
+          .filter(
+            (record) =>
+              record.section === 'employee' &&
+              record.tab === 'identity' &&
+              record.values[8] &&
+              record.values[9],
+          )
+          .map((record) => ({
+            province: record.values[8]!,
+            city: record.values[9]!,
+          }))}
         groupOptions={references.data.records
           .filter(
             (r) =>
@@ -231,7 +250,40 @@ export function HrEmployeeEditor({
           const manager = managers[0];
           if (value.manager !== 'بدون مدیر مستقیم' && managers.length !== 1)
             throw new Error('مدیر مستقیم را از فهرست کارکنان انتخاب کنید.');
+          let photoDocumentId: string | undefined;
+          if (value.photoFile) {
+            if (
+              photoUpload.current?.file === value.photoFile &&
+              photoUpload.current.branch === branch.branchId &&
+              photoUpload.current.validUntil === value.photoValidUntil
+            )
+              photoDocumentId = photoUpload.current.id;
+            else {
+              const { archiveHrFile } = await import('./hr-file-archive');
+              const document = await archiveHrFile({
+                file: value.photoFile,
+                validUntil: value.photoValidUntil,
+                branchId: branch.branchId,
+                entityId: key.current,
+                title: `عکس پرسنلی ${value.firstName} ${value.lastName}`,
+              });
+              photoDocumentId = document.id;
+              photoUpload.current = {
+                validUntil: value.photoValidUntil ?? '',
+                file: value.photoFile,
+                branch: branch.branchId,
+                id: document.id,
+              };
+            }
+          }
           const input = {
+            ...(value.identityValues
+              ? {
+                  identityValues: value.identityValues,
+                  contactValues: value.contactValues ?? [],
+                }
+              : {}),
+            ...(photoDocumentId ? { photoDocumentId } : {}),
             groupId: value.groupId || null,
             userId: value.userId || null,
             branchId: branch.branchId,

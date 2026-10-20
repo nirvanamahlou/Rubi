@@ -1094,7 +1094,7 @@ Sales contracts now open the active hotel list for the selected city, show avail
 
 ## 2026-09-29 — USER-ACCESS-UI-0929 — PC-A — READY_FOR_REVIEW
 
-User management now uses checkbox-first access cards: parent selection reveals child visibility/action checkboxes; partial grants stay expanded and indeterminate. Responsive compact cards, distinct selected-user styling and sticky save control replace dropdowns and excessive whitespace. Existing grant setters and authorization remain intact. 15 focused Web tests, strict typecheck and scoped lint pass; production build checked before handoff. No schema/API/dependency or operational account edits.
+User management now uses checkbox-first access cards: parent selection reveals child visibility/action checkboxes; partial grants stay expanded and indeterminate. Responsive compact cards, distinct selected-user styling and sticky save control replace dropdowns and excessive whitespace. Existing grant setters and authorization remain intact. 17 focused Web tests, strict typecheck and scoped lint pass; production build checked before handoff. No schema/API/dependency or operational account edits.
 
 ## 2026-09-28 — USER-ACCESS-TREE-0928 — PC-A — COMPLETE
 
@@ -6866,3 +6866,7 @@ Owner-approved replacement of four top cards: today's calls, current Saturday-ba
 ## CALL-CENTER-REPORT-TRIM-1020 — PC-C — READY_FOR_REVIEW
 
 Owner requests removing three report sections: direction/outcome/registration method, requests created in period, and branch follow-ups. Removed only their JSX and wrapper from ReportPanel. Four current KPI cards, all nine contact columns/order/data/centering, sources, outbound ranking, operator activity, queue, filters and dossier remain intact. No API/data/schema/migration/dependency/grant changes. Two existing report-highlight tests and Prettier/diff checks pass. Isolated Chrome/Edge synthetic checks confirm the three headings absent, all three remaining tables centered, exact contact columns, four KPI values/error/retry, queue/dossier/note and mobile390 behavior. Scoped Web lint, optimized build and TypeScript pass (65 pages). Web3000 PID14544 serves verified build uLTV0_qicViVV1BxsDKHW with HTTP200; API4000 remains unchanged and healthy200. Browser fixture passes after retry with native access following a restricted CDP timeout. No new unit tests for this reversible presentation removal. Source reservations release at publication. Branch continues approved local candidate d3ef8bce; no PR/merge/production deployment requested.
+
+## HR-PERSONNEL-FORM-1020 — PC-B — READY_FOR_CI
+
+Employee creation now contains the observed personal-information fields, typed contacts, photo selection and three-step entry flow in Nora existing controls. Optional encrypted identity/contact payload is atomic with employee creation and replay-safe; existing clients/edit/permission boundaries remain compatible. All34 real isolated PostgreSQL tests and17 focused Web checks pass; scoped lint, formatting and translation synchronization pass. Exact-head hosted types, whole-suite tests, build and PostgreSQL gates precede user-authorized develop merge. No schema/migration/dependency/design-style changes.
