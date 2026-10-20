@@ -1,7 +1,20 @@
+import type { DatePickerProps } from '@/components/ui/date-picker';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { SalesPeopleSheet } from './sales-people-sheet';
 import { emptySalesForm } from '../model/sales-form';
+// Keep this suite about the real table structure; calendar behavior is covered separately.
+vi.mock('./sales-date-picker', () => ({
+  SalesDatePicker: (props: DatePickerProps) => (
+    <input
+      value={props.value}
+      disabled={props.disabled}
+      readOnly
+      data-calendar={props.calendarSystem}
+    />
+  ),
+}));
+
 describe('Sales uses the Customers entry spreadsheet', () => {
   it('renders every requested passenger row immediately with the same columns', () => {
     const html = renderToStaticMarkup(
@@ -172,7 +185,7 @@ it('allows passport entry for an existing floating-flight passenger before profi
   }
 });
 
-it('places the two default-selected transfer columns after hotel stay columns in the actual people sheet', () => {
+it('keeps transfer selections and places the three hotel stay columns last in the actual people sheet', () => {
   const html = renderToStaticMarkup(
     <SalesPeopleSheet
       state={{
@@ -206,9 +219,16 @@ it('places the two default-selected transfer columns after hotel stay columns in
     />,
   );
   const headers = html.match(/<thead[\s\S]*?<\/thead>/)?.[0] ?? '';
-  expect(headers.indexOf('ترانسفر رفت')).toBeGreaterThan(
+  expect(headers.indexOf('چک‌این هتل')).toBeGreaterThan(
+    headers.indexOf('جزئیات'),
+  );
+  expect(headers.indexOf('چک‌اوت هتل')).toBeGreaterThan(
     headers.indexOf('چک‌این هتل'),
   );
+  expect(headers.indexOf('اقامت متفاوت')).toBeGreaterThan(
+    headers.indexOf('چک‌اوت هتل'),
+  );
+  expect(html).not.toContain('مبلغ اقامت متفاوت');
   expect(headers.indexOf('ترانسفر برگشت')).toBeGreaterThan(
     headers.indexOf('ترانسفر رفت'),
   );
