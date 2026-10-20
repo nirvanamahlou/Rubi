@@ -5,6 +5,31 @@ import { emptySalesForm } from '../model/sales-form';
 import { ContractTotalPrices } from './contract-total-prices';
 import { ContractServiceSummary } from './contract-service-summary';
 
+it('shows Gregorian English travel dates for a foreign route in the contract summary', () => {
+  const html = renderToStaticMarkup(
+    <ContractServiceSummary
+      state={{
+        ...emptySalesForm,
+        destinationCountryCode: 'TR',
+        serviceKinds: ['FLIGHT', 'HOTEL'],
+        tripType: 'ONE_WAY',
+        ticket: {
+          ...emptySalesForm.ticket,
+          outboundDepartureAt: '2026-10-23T17:50:00Z',
+        },
+        hotel: {
+          ...emptySalesForm.hotel,
+          checkIn: '2026-10-23',
+          checkOut: '2026-10-30',
+        },
+      }}
+    />,
+  );
+  expect(html).toContain('23 Oct 2026');
+  expect(html).toContain('30 Oct 2026');
+  expect(html).not.toContain('۱۴۰۵');
+});
+
 it('renders one total per currency without a price row for each passenger', () => {
   const html = renderToStaticMarkup(
     <ContractTotalPrices

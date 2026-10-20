@@ -34,7 +34,9 @@ describe('Published read-only Master Data adapter', () => {
       kind: 'city',
       name: 'آنتالیا',
     });
-    expect(fetcher.mock.calls[0]![0]).toContain('/master-data/cities/city-1');
+    expect(fetcher.mock.calls[0]![0]).toContain(
+      '/master-data/selections/ticket-catalog/cities/city-1',
+    );
   });
   it('fails closed without configuration', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '');
@@ -66,7 +68,7 @@ describe('Published read-only Master Data adapter', () => {
     vi.stubGlobal('fetch', fetcher);
     await listReferences('currencies', 'a&b', 2);
     expect(fetcher.mock.calls[0]![0]).toContain(
-      '/api/v1/master-data/currencies?search=a%26b&status=active',
+      '/api/v1/master-data/selections/ticket-catalog/currencies?search=a%26b&status=active',
     );
     expect(fetcher.mock.calls[0]![1]).toMatchObject({
       method: 'GET',

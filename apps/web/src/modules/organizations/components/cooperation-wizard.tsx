@@ -305,14 +305,18 @@ export function CooperationWizard({
     const timer = window.setTimeout(() => {
       setSearching(true);
       void masterDataApi
-        .list('organizations', {
-          search: query,
-          status: 'active',
-          page: 1,
-          pageSize: 20,
-          sortBy: 'name',
-          sortDirection: 'asc',
-        })
+        .list(
+          'organizations',
+          {
+            search: query,
+            status: 'active',
+            page: 1,
+            pageSize: 20,
+            sortBy: 'name',
+            sortDirection: 'asc',
+          },
+          'organizations',
+        )
         .then((response) => {
           if (active) setMatches(response.data);
         })

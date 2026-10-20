@@ -90,6 +90,9 @@ import {
 import { MasterDataCurrencyForm } from './master-data-currency-form';
 import { formatMasterDataNumber } from './master-data-number-input';
 import { MasterDataBankProfile } from './master-data-bank-profile';
+import { FinanceChart } from './master-data-currency-chart';
+import { CurrencyRateActions } from './master-data-currency-rate-actions';
+export { FinanceChart };
 
 type FinanceTab = 'currencies' | 'approvals' | 'banks' | 'payments';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
@@ -203,75 +206,10 @@ function statusLabel(value: RateStatus): string {
   return value === 'DRAFT'
     ? 'پیش‌نویس'
     : value === 'APPROVED'
-      ? 'تأییدشده'
+      ? 'ثبت‌شده'
       : value === 'REJECTED'
         ? 'ردشده'
         : 'منقضی';
-}
-
-function FinanceChart({ rates }: { rates: readonly CurrencyRateRow[] }) {
-  const points = useMemo(() => {
-    const ordered = [...rates]
-      .filter((row) => row.status === 'APPROVED')
-      .sort(
-        (left, right) =>
-          new Date(left.observedAt).getTime() -
-          new Date(right.observedAt).getTime(),
-      );
-    const values = ordered.map((row) => Number(row.rate));
-    const minimum = Math.min(...values);
-    const maximum = Math.max(...values);
-    const spread = maximum - minimum || 1;
-    return ordered.map((row, index) => ({
-      row,
-      x: ordered.length === 1 ? 50 : (index / (ordered.length - 1)) * 100,
-      y: 90 - ((Number(row.rate) - minimum) / spread) * 75,
-    }));
-  }, [rates]);
-
-  if (!points.length)
-    return (
-      <EmptyState
-        description="پس از تأیید نرخ، روند واقعی Backend در این نمودار نمایش داده می‌شود."
-        icon={ChartNoAxesCombined}
-        title="نرخ تأییدشده‌ای در این بازه نیست"
-      />
-    );
-
-  return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-primary/5 to-transparent p-4">
-      <svg
-        aria-label="نمودار تاریخچه نرخ‌های تأییدشده"
-        className="h-64 w-full"
-        preserveAspectRatio="none"
-        role="img"
-        viewBox="0 0 100 100"
-      >
-        <polyline
-          fill="none"
-          points={points.map(({ x, y }) => `${x},${y}`).join(' ')}
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          vectorEffect="non-scaling-stroke"
-        />
-        {points.map(({ row, x, y }) => (
-          <circle
-            className="fill-background stroke-primary"
-            cx={x}
-            cy={y}
-            key={row.id}
-            r="1.8"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-          >
-            <title>{`${row.fromCurrencyCode}/${row.toCurrencyCode} · ${row.rate} · ${faDate(row.observedAt)}`}</title>
-          </circle>
-        ))}
-      </svg>
-    </div>
-  );
 }
 
 export function MasterDataFinanceWorkspace() {
@@ -813,7 +751,7 @@ export function MasterDataFinanceWorkspace() {
   })();
   const currencyProfileKpis: readonly MasterDataKpiItem[] = [
     {
-      label: 'نرخ جاری تأییدشده',
+      label: 'نرخ جاری',
       value: currentCurrencyRate
         ? Number(currentCurrencyRate.rate).toLocaleString('fa-IR', {
             maximumFractionDigits: 10,
@@ -823,7 +761,7 @@ export function MasterDataFinanceWorkspace() {
       tone: 'sky',
       hint: currentCurrencyRate
         ? `${currentCurrencyRate.fromCurrencyCode}/${currentCurrencyRate.toCurrencyCode} · ${rateTypeLabel(currentCurrencyRate.rateType)}`
-        : 'نرخ تأییدشده‌ای ثبت نشده است',
+        : 'نرخی ثبت نشده است',
     },
     {
       label: 'تغییر نسبت به نرخ قبل',
@@ -1058,12 +996,9 @@ export function MasterDataFinanceWorkspace() {
                         >
                           <Eye aria-hidden="true" className="size-4" />
                         </Button>
+                        <CurrencyRateActions record={row} onSaved={load} />
                         {row.status === 'DRAFT' ? (
                           <>
-                            <MasterDataDeleteButton
-                              record={rateRecord(row)}
-                              onDeleted={afterDelete}
-                            />
                             <Button
                               onClick={() => void decide(row, 'approve')}
                               size="sm"
@@ -1111,13 +1046,7 @@ export function MasterDataFinanceWorkspace() {
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {records.map((record) => (
               <Card className="p-5" key={record.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs" dir="ltr">
-                      {record.code}
-                    </span>
-                    <MasterDataLogoCell asCell={false} record={record} />
-                  </div>
+                <div className="flex justify-end">
                   <Badge>
                     {record.status === 'active' ? 'فعال' : 'غیرفعال'}
                   </Badge>
@@ -1354,6 +1283,13 @@ export function MasterDataFinanceWorkspace() {
             if (selectedCurrency?.id === record.id) setSelectedCurrency(record);
             void load();
           }}
+          onQuoteSaved={(record, rates) => {
+            setSelectedCurrency({ ...record });
+            if (rates[0]) setSelectedPair(ratePairKey(rates[0]));
+            setFormMode(null);
+            setCurrencyProfileOpen(true);
+            void load();
+          }}
         />
       ) : formMode ? (
         <MasterDataLiveForm
@@ -1500,7 +1436,6 @@ export function MasterDataFinanceWorkspace() {
               <>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="font-black">نرخ و تاریخچه ارز</h2>
-                  <Badge>isAuthoritative=false</Badge>
                 </div>
                 <MasterDataKpiGrid
                   items={currencyProfileKpis}
@@ -1544,12 +1479,13 @@ export function MasterDataFinanceWorkspace() {
                           </td>
                           <td className="p-4 text-center">
                             <div className="flex flex-wrap justify-center gap-2">
-                              {row.status === 'DRAFT' ? (
-                                <MasterDataDeleteButton
-                                  record={rateRecord(row)}
-                                  onDeleted={loadCurrencyHistory}
-                                />
-                              ) : null}
+                              <CurrencyRateActions
+                                record={row}
+                                onSaved={async () => {
+                                  await loadCurrencyHistory();
+                                  void load();
+                                }}
+                              />
                               <Button
                                 aria-label="مشاهده جزئیات رخداد"
                                 onClick={() => void showAudit(row)}

@@ -162,11 +162,24 @@ export class SalesController {
   }
   @Get('contracts')
   @Header('Cache-Control', 'private, no-store')
-  list(
+  async list(
     @Query() query: SalesContractListQuery,
     @Req() request: AuthenticatedRequest,
   ) {
-    return this.service.list(query, request.actor);
+    const result = await this.service.list(query, request.actor);
+    const approved = new Set(
+      await this.delivery.approvedCustomerContractIds(
+        result.data.map((contract) => contract.id),
+      ),
+    );
+    return {
+      ...result,
+      data: result.data.map((contract) => ({
+        ...contract,
+        customerDocumentDeliveryApproved:
+          contract.status !== 'CANCELLED' && approved.has(contract.id),
+      })),
+    };
   }
 
   @Post('contracts')

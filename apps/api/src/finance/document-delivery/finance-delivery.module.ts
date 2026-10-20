@@ -1,3 +1,9 @@
+import type { CustomerFinancialReleaseFacts } from './financial-release.public';
+import { financialDate } from '../accounting/accounting.financial-events';
+import {
+  recordFinancialEvent,
+  isNewAccountingSource,
+} from '../accounting/financial-event.public';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { hotelPurchaseSavingsEvidence } from '@nora/contracts';
 import { paymentSource } from '../payments/payment-source';
@@ -349,6 +355,48 @@ export class FinanceDeliveryService {
           actorUserId,
         },
       });
+      if (
+        paid &&
+        alreadyPaid.isZero() &&
+        transferAt &&
+        (await isNewAccountingSource(tx, purchase.createdAt))
+      )
+        await recordFinancialEvent(tx, {
+          source: 'RESERVATIONS',
+          recordId: purchaseId,
+          requestId: purchaseId,
+          kind: 'RESERVATION_PAYABLE',
+          ...(purchase.createdAt
+            ? { trackingDate: financialDate(purchase.createdAt) }
+            : {}),
+          branchId: purchase.intake.branchId,
+          actorId: actorUserId,
+          occurredAt: purchase.createdAt,
+          amount: purchase.amount.toString(),
+          currency: purchase.currencyCode,
+          partyId:
+            purchase.supplierBrokerId ??
+            purchase.supplierOrganizationId ??
+            purchaseId,
+        });
+      if (paid && paidAmount && transferAt)
+        await recordFinancialEvent(tx, {
+          source: 'RESERVATIONS',
+          recordId: row.id,
+          requestId: purchaseId,
+          kind: 'RESERVATION_PAYMENT',
+          ...(purchase.createdAt
+            ? { trackingDate: financialDate(purchase.createdAt) }
+            : {}),
+          branchId: purchase.intake.branchId,
+          actorId: actorUserId,
+          occurredAt: transferAt,
+          amount: paidAmount.toString(),
+          currency: purchase.currencyCode,
+          settlementAccountId: account?.id ?? null,
+          partyId: `${purchase.supplierBrokerId ?? purchase.supplierOrganizationId ?? purchaseId}:${payingSupplierId ?? ''}`,
+          reference: row.paymentReference,
+        });
       return {
         version: row.version,
         status: row.status,
@@ -370,6 +418,22 @@ export class FinanceDeliveryService {
       };
     });
   }
+  async approvedCustomerContractIds(
+    contractIds: readonly string[],
+  ): Promise<string[]> {
+    if (!contractIds.length) return [];
+    const latest =
+      await this.database.client.financeCustomerDocumentDeliveryRevision.findMany(
+        {
+          where: { contractId: { in: [...new Set(contractIds)] } },
+          orderBy: { version: 'desc' },
+          distinct: ['contractId'],
+          select: { contractId: true, approved: true },
+        },
+      );
+    return latest.filter((row) => row.approved).map((row) => row.contractId);
+  }
+
   async readCustomerContract(
     contractId: string,
   ): Promise<FinanceCustomerDocumentDeliveryAuthorizationV1> {
@@ -404,14 +468,11 @@ export class FinanceDeliveryService {
 
   async updateCustomerContract(
     command: FinanceCustomerDocumentDeliveryCommandV1,
-    facts: {
-      contractId: string;
-      branchId: string;
-      salesOwnerUserId: string;
-      hasConfirmedPayment: boolean;
-      fullySettled: boolean;
-    },
+    facts: CustomerFinancialReleaseFacts,
     actor: { userId: string; permissions: readonly string[] },
+    refreshFacts?: (
+      tx: Prisma.TransactionClient,
+    ) => Promise<CustomerFinancialReleaseFacts>,
   ): Promise<FinanceCustomerDocumentDeliveryAuthorizationV1> {
     const reason = command?.reason?.trim() ?? '';
     const basis = command?.basis;
@@ -432,48 +493,67 @@ export class FinanceDeliveryService {
       (reason ?? '').length > 500
     )
       throw new BadRequestException('مجوز تحویل مدارک مشتری معتبر نیست.');
-    if (
-      command.approved &&
-      basis === 'AFTER_RECEIPT' &&
-      !facts.hasConfirmedPayment
-    )
-      throw new BadRequestException(
-        'ابتدا حداقل یک پرداخت مشتری باید توسط مالی تأیید شود.',
-      );
-    if (command.approved && basis === 'FULL_SETTLEMENT' && !facts.fullySettled)
-      throw new BadRequestException(
-        'صدور مجوز بر مبنای تسویه کامل فقط پس از تسویه کامل قرارداد ممکن است.',
-      );
-    if (command.approved && basis === 'MANAGER_EXCEPTION') {
-      if (!isUuid(command.secondApproverReference))
-        throw new BadRequestException('تأییدکننده دوم استثنا معتبر نیست.');
-      const evaluation = evaluateFinancialRelease(
-        {
-          fullySettled: facts.fullySettled,
-          approvedCreditAvailable: false,
-          approvedPaymentPlanActive: false,
-          validCheckAvailable: false,
-        },
-        {
-          requestedStatus: 'CONDITIONAL',
-          basis: 'MANAGER_EXCEPTION',
-          reason,
-          makerReference: actor.userId,
-          secondApproverReference: command.secondApproverReference ?? null,
-          exceptionExpiresAt: command.exceptionExpiresAt ?? null,
-          now: new Date().toISOString(),
-          makerPermissions: actor.permissions,
-        },
-      );
-      if (!evaluation.allowed)
+    const validateFinancialFacts = () => {
+      if (command.approved && facts.cancelled)
+        throw new BadRequestException('قرارداد لغوشده مجوز تحویل نمی‌گیرد.');
+      if (
+        command.approved &&
+        basis === 'AFTER_RECEIPT' &&
+        !facts.hasConfirmedPayment
+      )
         throw new BadRequestException(
-          'مجوز استثنایی مدیر معتبر نیست: ' + evaluation.reasons.join(' '),
+          'ابتدا حداقل یک پرداخت مشتری باید توسط مالی تأیید شود.',
         );
-    }
+      if (
+        command.approved &&
+        basis === 'FULL_SETTLEMENT' &&
+        !facts.fullySettled
+      )
+        throw new BadRequestException(
+          'صدور مجوز بر مبنای تسویه کامل فقط پس از تسویه کامل قرارداد ممکن است.',
+        );
+      if (command.approved && basis === 'MANAGER_EXCEPTION') {
+        if (!isUuid(command.secondApproverReference))
+          throw new BadRequestException('تأییدکننده دوم استثنا معتبر نیست.');
+        const evaluation = evaluateFinancialRelease(
+          {
+            fullySettled: facts.fullySettled,
+            approvedCreditAvailable: false,
+            approvedPaymentPlanActive: false,
+            validCheckAvailable: false,
+          },
+          {
+            requestedStatus: 'CONDITIONAL',
+            basis: 'MANAGER_EXCEPTION',
+            reason,
+            makerReference: actor.userId,
+            secondApproverReference: command.secondApproverReference ?? null,
+            exceptionExpiresAt: command.exceptionExpiresAt ?? null,
+            now: new Date().toISOString(),
+            makerPermissions: actor.permissions,
+          },
+        );
+        if (!evaluation.allowed)
+          throw new BadRequestException(
+            'مجوز استثنایی مدیر معتبر نیست: ' + evaluation.reasons.join(' '),
+          );
+      }
+    };
+    validateFinancialFacts();
     return this.database.client.$transaction(async (tx) => {
       await tx.$queryRaw(
         Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${facts.contractId}, 0))`,
       );
+      if (refreshFacts) {
+        const fresh = await refreshFacts(tx);
+        if (
+          fresh.contractId !== facts.contractId ||
+          fresh.branchId !== facts.branchId
+        )
+          throw new ConflictException('مرجع قرارداد تغییر کرده است.');
+        facts = fresh;
+        validateFinancialFacts();
+      }
       const current =
         await tx.financeCustomerDocumentDeliveryRevision.findFirst({
           where: { contractId: facts.contractId },

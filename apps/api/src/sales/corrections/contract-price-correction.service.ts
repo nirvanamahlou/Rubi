@@ -1,3 +1,4 @@
+import { recalculateSalesSettlement } from '../sales-financial-settlement';
 import { isOptionalOperationReason } from '@nora/contracts';
 import {
   Injectable,
@@ -175,6 +176,7 @@ export class ContractPriceCorrectionService {
           afterSnapshot: { totals: value.totals, version: row.version + 1 },
         },
       });
+      await recalculateSalesSettlement(tx, id, actor.userId, false);
       return { version: row.version + 1, totals: value.totals };
     });
   }

@@ -132,6 +132,11 @@ const body = (value: unknown): RequestInit => ({
 });
 
 export const customersApi = {
+  selections(workflow: 'accounting' | 'marketing', query: CustomerListQuery) {
+    return request<{ data: readonly { id: string; displayName: string }[] }>(
+      `/selections/${workflow}?${serializeCustomerListQuery(query)}`,
+    );
+  },
   registrationLookup(input: CustomerRegistrationLookupRequest) {
     return request<{ data: CustomerDetail | null }>(
       '/registration-lookup',

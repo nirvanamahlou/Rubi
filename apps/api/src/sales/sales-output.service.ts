@@ -89,6 +89,7 @@ export class SalesOutputService {
           customer.addresses.find((a) => a.isPrimary)?.label ??
           null,
         phone: contract.buyerContact?.phone ?? null,
+        landline: contract.buyerContact?.landline ?? null,
         postalCode: contract.buyerContact?.postalCode ?? null,
       },
       company: {

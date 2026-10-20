@@ -72,7 +72,7 @@ export function SalesOrganizationCustomer({
   selectedOrganizationId?: string;
   onClear?: () => void;
   disabled?: boolean;
-  onSelected: (person: CustomerSummary) => void;
+  onSelected: (person: CustomerSummary) => void | Promise<void>;
   onBusyChange: (busy: boolean) => void;
 }) {
   const [organizations, setOrganizations] = useState<MasterDataRecord[]>([]);
@@ -138,7 +138,7 @@ export function SalesOrganizationCustomer({
     setError('');
     try {
       const person = await resolveOrganizationCustomer(organization);
-      onSelected(person);
+      await onSelected(person);
       setCustomers((current) => [
         ...current.filter((item) => item.id !== person.id),
         person,

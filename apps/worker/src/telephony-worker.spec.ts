@@ -11,12 +11,10 @@ describe('telephony worker transport', () => {
     expect(worker['queue']).toBeUndefined();
   });
   it('sends only the configured machine credential and rejects failed delivery', async () => {
-    const fetch = vi
-      .fn()
-      .mockResolvedValue({
-        ok: true,
-        json: async () => [{ inboxId: 'opaque-id' }],
-      });
+    const fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [{ inboxId: 'opaque-id' }],
+    });
     vi.stubGlobal('fetch', fetch);
     const worker = new TelephonyWorker(
       new ConfigService({

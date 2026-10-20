@@ -37,6 +37,7 @@ it('offers independent rial and optional foreign flight amounts for each passeng
       flight
       state={{
         ...emptySalesForm,
+        serviceKinds: ['FLIGHT'],
         passengers: [
           {
             customerId: 'p',
@@ -60,54 +61,25 @@ it('offers independent rial and optional foreign flight amounts for each passeng
   expect(html).not.toContain('مبلغ معتبر با حداکثر');
 });
 
-it.each([1, 2])(
-  'shows the hotel foreign price split across %i adults without a foreign flight input',
-  (count) => {
-    const passengers = Array.from({ length: count }, (_, i) => ({
-      customerId: `adult-${i}`,
-      displayName: `Adult ${i}`,
-      birthDate: '1990-01-01',
-    }));
-    const html = renderToStaticMarkup(
-      <PassengerPackagePrices
-        flight
-        state={{
-          ...emptySalesForm,
-          serviceKinds: ['FLIGHT', 'HOTEL'],
-          passengers,
-          passengerPrices: Object.fromEntries(
-            passengers.map((p) => [
-              p.customerId,
-              [
-                { amount: '15000', currencyCode: 'USD' },
-                { amount: '25000000', currencyCode: 'IRR' },
-              ],
-            ]),
-          ),
-          hotel: {
-            ...emptySalesForm.hotel,
-            checkIn: '2026-11-23',
-            guestCustomerIds: passengers.map((p) => p.customerId),
-            rooms: [
-              {
-                ordinal: 1,
-                roomTypeId: 'standard',
-                roomTypeNameSnapshot: 'Standard',
-                adults: count,
-                childAges: [],
-                agreedPrice: { amount: '25000', currencyCode: 'USD' },
-              },
-            ],
-          },
-        }}
-        onChange={vi.fn()}
-      />,
-    );
-    expect(html).toContain('سهم ارزی اتاق');
-    expect(html).not.toContain('قیمت ارزی Adult');
-    expect(html).not.toContain('15,000');
-    expect(
-      html.match(new RegExp(`${count === 1 ? '25,000' : '12,500'} \\$`, 'g')),
-    ).toHaveLength(count);
-  },
-);
+it('shows editable hotel currency amounts and the age as the second column', () => {
+  const html = renderToStaticMarkup(
+    <PassengerPackagePrices
+      hotel
+      state={{
+        ...emptySalesForm,
+        serviceKinds: ['HOTEL'],
+        hotel: { ...emptySalesForm.hotel, guestCustomerIds: ['p'] },
+        departureDate: '2026-10-19',
+        passengers: [
+          { customerId: 'p', displayName: 'Guest', birthDate: '2020-01-01' },
+        ],
+      }}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(html).toContain('قیمت ارزی Guest');
+  expect(html).toContain('کودک');
+  const heads = [...html.matchAll(/<th[^>]*>(.*?)<\/th>/g)].map((m) => m[1]);
+  expect(heads[1]).toBe('رده سنی');
+  expect(html).not.toContain('سهم ارزی اتاق');
+});

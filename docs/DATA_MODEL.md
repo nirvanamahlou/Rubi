@@ -865,6 +865,12 @@ FinancePurchaseFxSnapshot stores one immutable Decimal(24,8) IRR-per-foreign-uni
 ## 2026-10-18 — Package composition sale snapshots
 
 PACKAGE-SALE-FLOW-1018 adds nullable PackagePricingTourDraft.selectedRoomKeys JSON. Existing drafts/publications keep legacy behavior until explicitly edited. Published roomCode is widened to TEXT and v2 codes encode exact room-type ID, adult count, sorted child age bands and board; legacy codes remain readable. Each publication freezes only selected composition rows and retains the real hotel-rate FK. Purchase bases and source occupancy history are unchanged. Sales stores the canonical sale-only publication references and per-currency price snapshot in existing service metadata; negotiated totals remain separate and a positive difference is a DISCOUNT component. Create and changed-room updates validate through the Package Pricing public producer. Unchanged saved quote/room selections on amendments retain their immutable reference, with discount amounts checked against the stored canonical baseline. No live migration or data rewrite is part of implementation.
+
+
+### Finance accounting events — 2026-10-18
+
+`FinanceAccountingEvent` retains the source owner's public immutable reference, amount/currency, branch, actor, occurrence and tracking date. Branch, actor, settlement account and journal use real FKs; polymorphic source references are public owner identifiers, not consumer table access. A unique source key and canonical fingerprint prevent duplicate or altered capture. Database triggers prohibit source changes/deletion and journal reassignment. `SalesPaymentRefund` is an immutable Sales-owned allocation of an actual Finance operational PAY revision to a confirmed receipt, with real FKs to both records. `FinanceOperationalRequest.pettyFundId` relates petty cash children to their parent fund; parent/branch/currency consistency and unique active expense proof are enforced in the database. Capture and business changes commit atomically. No historic source backfill runs on migration.
+
 ## Internal correspondence — 2026-10-18
 
 System Management owns `correspondence_letters` and `correspondence_deliveries`.
@@ -916,3 +922,16 @@ Existing CallCenterCall adds searchTokens (branch-domain HMAC whole words, GIN),
 ## Telephony package-three additions (2026-10-19)
 
 Eight additive tables separate Integrations connection/mapping/inbox/outbox/audit from Customer Affairs telephony session/offer/lease. Every stored identity relationship uses a real FK; root uniqueness is (connectionId, rootFingerprint), ingress uniqueness (connectionId, externalFingerprint), extension uniqueness (connectionId, extension). One session references one existing CallCenterCall. Private canonical events and technical leg/recording state are encrypted; external identity fingerprints are keyed. Claims and mapping versions are CAS-controlled. Synthetic origins are separately labelled and excluded from operational call metrics. The existing origin constraint is widened without rewriting history. Full definitions/retention and custodian-versus-human attribution: tasks/CALL-CENTER-TELEPHONY-1019.md.
+
+
+## UNIFIED-PASSENGER-PRICING-1019 — Sales deductions
+
+Optional `passengerDeductionsV1` JSON string on exactly one existing Sales service contains a passenger-ID map with optional `discount`/`commission` objects, each a nonnegative decimal-string amount and ISO currency code. Only allocated flight/hotel amounts of the same passenger/currency bound the total reduction; no implicit FX, cross-person subsidy or schema change. Existing service price metadata records gross prices; canonical DISCOUNT price components lower payable totals, checked transactionally by Sales validation. Missing metadata is legacy-compatible. Legacy `agencyCommissionV1` remains informational and is not migrated into deductions. Print consumes recorded hotel prices before legacy room shares and does not filter service amounts by currency.
+
+## BANK-ACCOUNTS-1020 — company bank identifiers
+
+FinanceSettlementAccount retains its existing account identity, branch/currency and operational links. Optional bankIdentifiers stores one AES-GCM envelope bound to branch/bank/account; maskedAccountNumber/maskedCardNumber/maskedIban and three HMAC fingerprints support safe lists and branch/bank-scoped uniqueness without plaintext indexes. Nullable additions preserve legacy accounts. Company accounts only; MasterBank FK remains canonical. FinanceBankAccountAudit has real account/User FKs and an append-only trigger; metadata contains masks, version and actor/time evidence, not full identifiers. Migration20261020160000 is additive; no backfill or operational application is performed here. The Master Data bank profile consumes the bounded Finance API; identifiers are never stored in Master Data attributes.
+
+### Receipt allocation — FINANCE-RECEIPT-ALLOCATION-1020 (QA, not yet deployed)
+
+Sales owns immutable SalesReceiptAllocation rows with real source-payment, target-contract, actor and unique reversal FKs. A source receipt can be distributed only within its customer, branch and currency, accounting for actual refunds and Finance-owned pending refund reservations under a shared receipt lock. FinanceAccountingEvent has an optional original-receipt basis FK and immutable base carrying amount/currency for non-cash allocation events. Allocation journals derive the original posted receipt credit account/details/rate and change contract tracking only; there is no second bank movement. Full reversals preserve source rows. Old uncaptured/unposted receipts require reconciliation first. Migration20261020120000 is applied to isolated QA only; this is not yet a deployed capability. See docs/tasks/FINANCE-RECEIPT-ALLOCATION-1020.md for validation and rollout status.

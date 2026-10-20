@@ -5,6 +5,7 @@ import {
   salesDirections,
   salesFlightSelection,
   salesHotelGuestIds,
+  salesInternationalTravel,
 } from '../model/sales-form';
 
 const labels: Record<string, string> = {
@@ -31,6 +32,7 @@ export function ContractServiceSummary({
   roomType?: string | undefined;
 }) {
   const language = useDisplayLanguage();
+  const international = salesInternationalTravel(state);
   const nights =
     (Date.parse(state.hotel.checkOut) - Date.parse(state.hotel.checkIn)) /
     86400000;
@@ -38,11 +40,15 @@ export function ContractServiceSummary({
     if (!value) return '—';
     const parsed = new Date(value);
     return Number.isFinite(parsed.getTime())
-      ? new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'fa-IR', {
-          timeZone: 'Asia/Tehran',
-          dateStyle: 'medium',
-          ...(time ? { timeStyle: 'short' as const } : {}),
-        }).format(parsed)
+      ? new Intl.DateTimeFormat(
+          language === 'en' || international ? 'en-GB' : 'fa-IR',
+          {
+            ...(international ? { calendar: 'gregory' } : {}),
+            timeZone: 'Asia/Tehran',
+            dateStyle: 'medium',
+            ...(time ? { timeStyle: 'short' as const } : {}),
+          },
+        ).format(parsed)
       : value;
   };
   return (

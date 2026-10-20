@@ -24,9 +24,7 @@ const draft: SalesPersonDraft = {
 describe('combined sales people step', () => {
   it('has one people step followed immediately by payment and review', () => {
     expect(salesSteps).toEqual([
-      'مسیر و خدمات',
-      'جزئیات سفر',
-      'مشتری و مسافران',
+      'مسیر، خدمات و مسافران',
       'قیمت و پرداخت',
       'بازبینی',
     ]);

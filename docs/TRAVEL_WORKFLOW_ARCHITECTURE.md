@@ -275,3 +275,7 @@ For contracts with ordered room products, each room counts all recorded occupant
 ### 2026-10-15 — Supplier form output isolation
 
 Only supplier-form settings affect the supplier form. Their hotel dates do not drive purchase totals; all hotel purchase paths use the contractual stay dates. Voucher defaults no longer inherit supplier-form content; its saved settings are independent. The sent broker remains the recipient for confirmation/leader workflow. Existing booked costs and issued document snapshots stay immutable. See SUPPLIER-FORM-ISOLATION-1015 in DECISIONS.md.
+
+### 2026-10-20 — Inline contract flight search
+
+The contract's initial page contains route, service/room composition, editable flight dates, explicit Search and flight cards, plus passenger and supplemental-service forms. Pricing and review follow directly; there is no separate travel-details navigation step. Outbound selection also selects its unique eligible registered return (same load/cabin/route/window, with saved pair-price identity for older offers); conflicting identities are never guessed. Capacity, publication and server confirmation checks remain authoritative. Return date/offer can be changed manually without discarding the outbound; a new outbound day clears both old selections and flight quotes. A birth-date header calendar switch changes presentation only, retaining actual ISO dates.

@@ -51,7 +51,11 @@ export function ManifestReferenceFilter({
     let active = true;
     const timer = window.setTimeout(() => {
       void masterDataApi
-        .list(resource, manifestReferenceQuery(search, countryId))
+        .list(
+          resource,
+          manifestReferenceQuery(search, countryId),
+          'reservations',
+        )
         .then((response) => {
           if (active)
             setResult({

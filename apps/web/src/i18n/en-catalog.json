@@ -2476,7 +2476,7 @@
   "انتخاب درخواست تأییدشده": "Select the approved request",
   "انتخاب درگاه": "Port selection",
   "انتخاب دسته": "Category selection",
-  "انتخاب دسته‌بندی": "Choose a category",
+  "انتخاب دسته‌بندی": "Select category",
   "انتخاب رده شغلی": "Choose a job category",
   "انتخاب ردهٔ هتل": "Choose the hotel category",
   "انتخاب ردیف": "Row selection",
@@ -17424,5 +17424,14 @@
   "واکنش و پاسخ به پیام": "Message reactions and reply",
   "واکنش‌های پیام": "Message reactions",
   "رمز جدید باید ۴ تا ۲۰۰ نویسه باشد؛ رمز کاملاً عددی هم پذیرفته می‌شود.": "The new password must be 4–200 characters. Numeric-only passwords are accepted.",
-  "۴ تا ۲۰۰ نویسه؛ رمز کاملاً عددی هم پذیرفته می‌شود.": "4–200 characters; numeric-only passwords are accepted."
+  "۴ تا ۲۰۰ نویسه؛ رمز کاملاً عددی هم پذیرفته می‌شود.": "4–200 characters; numeric-only passwords are accepted.",
+  "دسته‌بندی اتاق": "Room category",
+  "اطلاعات قرارداد برای پیش‌نمایش کامل نیست.": "Contract information is incomplete for preview.",
+  "برای پیش‌نمایش قرارداد، شرکت فعال را انتخاب کنید.": "Select the active company to preview the contract.",
+  "پس از بررسی قرارداد، «ثبت و ارسال به رزرواسیون» را بزنید.": "After reviewing the contract, select “Register and send to reservations”.",
+  "پیش‌نمایش قرارداد": "Contract preview",
+  "پیش‌نمایش قرارداد قبل از ثبت": "Contract preview before registration",
+  "پیش‌نمایش؛ ثبت نشده": "Preview; not registered",
+  "پیش‌نمایش قرارداد — هنوز ثبت و به رزرواسیون ارسال نشده است.": "Contract preview — not yet registered or sent to reservations.",
+  "تاریخ پیش‌نمایش": "Preview date"
 }

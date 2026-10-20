@@ -202,10 +202,10 @@ jobs:
           pnpm --filter @nora/database db:seed
           pnpm --filter @nora/database db:seed
 
-      - name: Prove optional IAM user unit migration and HR foreign keys
+      - name: Prove IAM user unit and company branch data upgrades
         env:
           IAM_USER_UNIT_TEST: '1'
-        run: pnpm --filter @nora/database exec vitest run test/iam-user-unit-postgres.spec.ts
+        run: pnpm --filter @nora/database exec vitest run test/iam-user-unit-postgres.spec.ts test/five-company-branches-postgres.spec.ts
 
       - name: Prove immutable purchase FX snapshots
         env:
@@ -224,6 +224,16 @@ jobs:
           pnpm --filter @nora/contracts build
           pnpm --filter @nora/database build
           pnpm --filter @nora/api exec vitest run src/marketing/marketing-records.postgres.spec.ts
+
+      - name: Prove financial source, refund and petty-cash atomicity
+        env:
+          NORA_RUN_FINANCIAL_EVENT_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run test/financial-events.postgres.spec.ts --maxWorkers=1
+
+      - name: Prove company bank account encryption, CAS and audit atomicity
+        env:
+          NORA_RUN_BANK_ACCOUNT_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run test/bank-accounts.postgres.spec.ts --maxWorkers=1
 
       - name: Prove assistant read-only PostgreSQL and HTTP boundaries
         env:

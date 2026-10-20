@@ -675,7 +675,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   'rail-terminals': ['name'],
   currencies: ['code', 'name'],
   'exchange-rates': ['fromCurrencyCode', 'toCurrencyCode', 'rate'],
-  banks: ['code', 'name', 'countryId'],
+  banks: ['name', 'countryId'],
   'bank-branches': ['code', 'name', 'bankId', 'cityId'],
   'payment-methods': ['name', 'channel', 'direction'],
   insurers: ['name', 'countryId'],
@@ -1156,10 +1156,16 @@ export class MasterDataService {
     return resourceOf(value);
   }
 
-  async list(resourceValue: string, query: MasterDataListQuery) {
+  async list(
+    resourceValue: string,
+    query: MasterDataListQuery,
+    selectionOnly = false,
+  ) {
     const resource = resourceOf(resourceValue);
     assertDateRange(query.createdFrom, query.createdTo);
-    const { rows, total } = await this.repository.list(resource, query);
+    const { rows, total } = selectionOnly
+      ? await this.repository.list(resource, query, true)
+      : await this.repository.list(resource, query);
     return {
       data: rows.map((row) => toMasterDataRecord(resource, row)),
       meta: { page: query.page, pageSize: query.pageSize, total },
@@ -1971,6 +1977,16 @@ export class MasterDataService {
           'ترتیب کشور باید عدد صحیح بین صفر و ۱۰۰٬۰۰۰ باشد.',
         );
       data.displayOrder = order;
+    }
+    if (
+      resource === 'banks' &&
+      (data.code === undefined ||
+        data.code === null ||
+        (typeof data.code === 'string' && !data.code.trim()))
+    ) {
+      // Manual bank codes are optional; retain a stable unique internal identity.
+      if (partial) delete data.code;
+      else data.code = await this.generateAutoCode(resource, values);
     }
     const usesGeneratedCode =
       resource !== 'exchange-rates' &&

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { canSelectForWorkflow } from '../common/workflow-selection.policy';
 import { eligibleTicketReturn } from '@nora/contracts';
 import {
   BadRequestException,
@@ -240,7 +241,7 @@ export class TourPublicService {
     }
   }
   async departures(actor: AuthenticatedActor) {
-    this.authorize(actor);
+    if (!canSelectForWorkflow(actor, 'sales')) this.authorize(actor);
     const rows = await this.database.client.tourDeparture.findMany({
       where: {
         branchId: { in: actor.branchIds },

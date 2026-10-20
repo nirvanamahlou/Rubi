@@ -4,6 +4,11 @@ import type { ComponentProps } from 'react';
 import { ServiceParties } from './service-parties';
 import { emptySalesForm, type SalesFormState } from '../model/sales-form';
 const fixture = vi.hoisted(() => ({
+  categorySelects: [] as {
+    value: string;
+    options: { value: string; label: string }[];
+    onValueChange: (value: string) => void;
+  }[],
   childSelects: [] as {
     label: string;
     value: string;
@@ -32,7 +37,8 @@ vi.mock('./sales-themed-select', () => ({
     options: { value: string; label: string }[];
     onValueChange: (key: string) => void;
   }) => {
-    fixture.childSelects.push(props);
+    if (props.label === 'دسته‌بندی اتاق') fixture.categorySelects.push(props);
+    else fixture.childSelects.push(props);
     return <span>{props.label}</span>;
   },
 }));
@@ -58,6 +64,7 @@ vi.mock('./searchable-reference', () => ({
 }));
 beforeEach(() => {
   fixture.childSelects = [];
+  fixture.categorySelects = [];
   fixture.inputs = [];
   fixture.selects = [];
 });
@@ -110,13 +117,13 @@ it('changing a room affects that room without changing the flight party', () => 
   fixture.inputs[6]!.onChange({ target: { value: '2' } });
   const next = patch.mock.calls[0]![0];
   expect(next.passengerComposition).toBeUndefined();
-  expect(next.hotel.rooms[0]).toEqual(state.hotel.rooms![0]);
+  expect(next.hotel.rooms[0]).toMatchObject(state.hotel.rooms![0]!);
   expect(next.hotel.rooms[1].adults).toBe(2);
   expect(next.hotel).toMatchObject({
     roomCount: 2,
     singleRoomCount: 0,
     doubleRoomCount: 2,
-    extraBedCount: 1,
+    extraBedCount: 0,
     occupancy: 5,
   });
 });
@@ -188,6 +195,7 @@ it('offers only unused flight children and inherits their age instead of asking 
   fixture.childSelects[0]!.onValueChange('');
   expect(patch.mock.calls[0]![0].hotel.rooms[0].childAges).toEqual([null]);
   fixture.childSelects = [];
+  fixture.categorySelects = [];
   renderToStaticMarkup(
     <ServiceParties
       {...props}
@@ -198,4 +206,20 @@ it('offers only unused flight children and inherits their age instead of asking 
   expect(
     fixture.childSelects[0]!.options.some((o) => o.label === 'کودک 1 · 6 سال'),
   ).toBe(true);
+});
+
+it('defaults a double with children without extra beds and saves an editable extra-bed override', () => {
+  const patch = vi.fn();
+  renderToStaticMarkup(<ServiceParties {...props} patch={patch} />);
+  expect(fixture.categorySelects[0]!.value).toBe('DOUBLE');
+  expect(fixture.categorySelects[0]!.options.map((o) => o.value)).toEqual([
+    '',
+    'DOUBLE',
+    'DOUBLE_EXTRA',
+  ]);
+  fixture.categorySelects[0]!.onValueChange('DOUBLE_EXTRA');
+  expect(patch.mock.calls[0]![0].hotel.rooms[0].roomCategory).toBe(
+    'DOUBLE_EXTRA',
+  );
+  expect(patch.mock.calls[0]![0].hotel.extraBedCount).toBe(1);
 });

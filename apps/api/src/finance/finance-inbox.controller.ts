@@ -123,7 +123,9 @@ export class FinanceInboxController {
         overdueCount: open.filter(
           (item) => item.dueAt && item.dueAt < result.generatedAt,
         ).length,
-        receiptCount: open.filter((item) => item.source === 'SALES').length,
+        receiptCount: open.filter(
+          (item) => item.source === 'SALES' || item.direction === 'RECEIPT',
+        ).length,
         paymentCount: open.filter(
           (item) =>
             [
@@ -132,6 +134,8 @@ export class FinanceInboxController {
               'OPERATIONAL_REQUEST',
             ].includes(item.kind) &&
             item.amount &&
+            item.direction !== 'RECEIPT' &&
+            item.direction !== 'NON_CASH' &&
             ['READY_FOR_PAYMENT', 'APPROVED', 'PAYING'].includes(item.status),
         ).length,
       },
@@ -182,8 +186,16 @@ export class FinanceInboxController {
 
   @Get('payment-methods')
   @RequirePermissions('finance.payment.create')
-  async paymentMethods(@Req() request: AuthenticatedRequest) {
-    return { data: await this.inbox.listPaymentMethods(request.actor) };
+  async paymentMethods(
+    @Req() request: AuthenticatedRequest,
+    @Query('direction') direction?: string,
+  ) {
+    return {
+      data: await this.inbox.listPaymentMethods(
+        request.actor,
+        direction === 'RECEIPT' ? 'RECEIPT' : 'PAYMENT',
+      ),
+    };
   }
 
   @Post('settlement-accounts')

@@ -354,7 +354,7 @@ function LoadedDetails({
     if (typeof countryId !== 'string') return;
     let active = true;
     void masterDataApi
-      .detail('countries', countryId)
+      .detail('countries', countryId, 'reservations')
       .then(({ data }) => {
         if (active) setCountry(text(data.attributes.englishName || data.name));
       })

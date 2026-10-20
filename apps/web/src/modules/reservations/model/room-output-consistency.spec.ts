@@ -117,9 +117,11 @@ it('keeps mixed room occupancies consistent in reservation, voucher and customer
     'مجموع 3 اتاق: 1 سینگل، 2 دبل، 2 تخت اضافه',
   );
   const contract = contractPrintHtml(output, printReferences);
-  expect(contract).toContain('<th>تعداد نفرات</th>');
+  expect(contract).toContain('<th>تعداد نفرات اتاق</th>');
+  expect(contract).toContain('تعداد اتاق‌ها: <b>3</b>');
+  expect(contract).toContain('مجموع مهمانان هتل: <b>7</b>');
   expect(contract).toContain(
-    '<td>Sea Double</td><td>1</td><td>7</td><td>2</td>',
+    '<td><bdi>Sea Double</bdi></td><td>1</td><td>7</td><td>2</td>',
   );
   expect(intake).toEqual(original);
 });
