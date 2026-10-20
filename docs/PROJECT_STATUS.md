@@ -1,6 +1,6 @@
 ## CONTRACT-STAY-PAYMENT-LAYOUT-1020 — PC-A
 
-The new-contract wizard now has one canonical three-item model (route/services/passengers, pricing/payment, review), replacing the obsolete five-item array and hidden-index navigation. Different-stay amounts use the existing passenger hotel price allocation only on pricing/payment; the passenger table ends with check-in, check-out and different-stay controls. Shared stay and row calendars share an optional UI-only calendar preference, default Gregorian for international travel, independent of DOB. Selecting a new flight/date resets the affected shared-date provenance and derives dates with the existing hotel offset policy; explicit individual stays remain intact. No API/schema/migration/dependency or runtime rollout. Runtime3100 remains older9b499a7, so a separate local update is needed to view the merged source. 100 focused tests, full Web types and scoped lint pass. Broad local run526 passed/one skipped/two existing SSR timeouts; exact-head full hosted quality/build/tests/database gates the explicitly authorized develop merge.
+The new-contract wizard now has one canonical three-item model (route/services/passengers, pricing/payment, review), replacing the obsolete five-item array and hidden-index navigation. Different-stay rows are priced only on pricing/payment through the latest canonical gross passenger totals (no duplicate hotel allocation); the passenger table ends with check-in, check-out and different-stay controls. Shared stay and row calendars share an optional UI-only calendar preference, default Gregorian for international travel, independent of DOB. Selecting a new flight/date resets the affected shared-date provenance and derives dates with the existing hotel offset policy; explicit individual stays remain intact. No API/schema/migration/dependency or runtime rollout. Runtime3100 remains older9b499a7, so a separate local update is needed to view the merged source. 100 focused tests, full Web types and scoped lint pass. Broad local run526 passed/one skipped/two existing SSR timeouts; exact-head full hosted quality/build/tests/database gates the explicitly authorized develop merge.
 
 ## CONTRACT-INLINE-FLIGHT-SEARCH-1020 — PC-A
 
@@ -6710,4 +6710,14 @@ GUEST-STAY-DRAFT-FIX-1020 candidate:18 focused regression tests pass. Production
 ## ASSISTANT-LIVE-CHAT-1020 — PC-C — VALIDATING
 
 Owner approves Groq with message/session history only. Add explicit runtime consent/provider/key gate, bounded generic replies plus existing three read actions, and connect the existing composer to same-origin conversation transport. Provider receives no ERP results/identity/credentials; history excludes exact ERP evidence.67 service tests and74 UI tests pass; generic live HTTP200 and Persian REPLY validated. Web production build (65 routes), TypeScript and scoped lint pass. Browser rollout and exact-head CI remain delivery gates. No schema/migration/dependency changes. See tasks/ASSISTANT-LIVE-CHAT-1020.md.
+
+PASSENGER-PRICE-COLUMNS-1020 / PC-A: total per-passenger IRR and optional foreign price columns, service/stay context, canonical package persistence and validation in progress. No database migration.
+
+
+PASSENGER-PRICE-COLUMNS-1020 candidate validation:57 Sales API and3 shared-reader tests pass, with Web component/payload/output regressions. Fixed IRR and optional foreign total prices persist once per person; legacy contracts unchanged. No migration or runtime rollout.
+
+
+
+
+PASSENGER-PRICE-COLUMNS-1020 ready for CI: merged-current-development regressions45 Web/58 API/4 shared pass; gross/net total package validation, selectable non-IRR currency and fixed IRR UI, service/individual-stay context and PDF v2 totals retained. Final-head CI gates develop merge; no operational rollout or migration.
 

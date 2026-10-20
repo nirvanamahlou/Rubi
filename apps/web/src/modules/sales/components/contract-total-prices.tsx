@@ -29,9 +29,10 @@ export function ContractTotalPrices({
   ) => void;
 }) {
   const automatic =
-    (!state.packageSaleQuote || state.passengerHotelPrices !== undefined) &&
-    state.automaticComponentPricing &&
-    state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'HOTEL');
+    state.passengerTotalPricing ||
+    ((!state.packageSaleQuote || state.passengerHotelPrices !== undefined) &&
+      state.automaticComponentPricing &&
+      state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'HOTEL'));
   let calculated: SalesMoney[] = [];
   try {
     calculated = flightRoomTotals(
@@ -53,8 +54,9 @@ export function ContractTotalPrices({
         : [],
     );
     if (
-      state.passengerDeductions &&
-      Object.keys(state.passengerDeductions).length
+      state.passengerTotalPricing ||
+      (state.passengerDeductions &&
+        Object.keys(state.passengerDeductions).length)
     )
       calculated = flightRoomTotals(salesNetServicePrices(state), []);
   } catch {

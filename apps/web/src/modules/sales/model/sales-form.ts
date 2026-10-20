@@ -23,6 +23,11 @@ import { salesRoomPartyError, roomAgreedTotals } from './sales-room-prices';
 import type { SalesHotelRoomV1 } from '@nora/contracts';
 import { validSalesHotelRooms } from '@nora/contracts';
 import { passengerSaleTotals } from './passenger-sale-totals';
+import { passengerTotalEntries } from './passenger-total-entry';
+import {
+  PASSENGER_TOTAL_PRICES,
+  readPassengerTotalPrices,
+} from '@nora/contracts';
 import { salesChequeComponents } from '@nora/contracts';
 import type { SalesPaymentTerms } from '@nora/contracts';
 import {
@@ -236,6 +241,7 @@ export interface SalesFormState {
   paymentTerms?: SalesPaymentTerms | null;
   reservationNote?: string;
   passengerPrices?: Record<string, SalesMoney[]>;
+  passengerTotalPricing?: boolean;
   agencyCommission?: AgencyCommissionV1;
   passengerFlightPrices?: Record<string, SalesMoney[]>;
   automaticComponentPricing?: boolean;
@@ -275,6 +281,7 @@ export function salesPassengerDeductions(
   const values = Object.fromEntries(
     state.passengers.flatMap((p) => {
       if (
+        !state.passengerTotalPricing &&
         !salesPassengerFlightDirections(state, p.customerId).length &&
         !(
           state.serviceKinds.includes('HOTEL') &&
@@ -297,6 +304,11 @@ export function salesPassengerDeductions(
 }
 
 export function salesNetServicePrices(state: SalesFormState) {
+  if (state.passengerTotalPricing)
+    return passengerNetPrices(
+      passengerTotalEntries(state),
+      salesPassengerDeductions(state),
+    );
   const flight = passengerFlightSalePrices(state);
   const guests = new Set(salesHotelGuestIds(state));
   return passengerNetPrices(
@@ -319,6 +331,25 @@ export function contractSaleComponents(
   state: SalesFormState,
   extras: readonly { customerId: string }[] = [],
 ): SalesPriceComponentInput[] {
+  if (state.passengerTotalPricing) {
+    const gross = passengerTotalEntries(state);
+    passengerSaleTotals(state.passengers, gross);
+    const net = salesNetServicePrices(state);
+    return passengerSaleTotals(
+      state.passengers,
+      Object.fromEntries(
+        state.passengers.map((p) => [
+          p.customerId,
+          extras.some((e) => e.customerId === p.customerId)
+            ? addInsuranceExtra(
+                net[p.customerId] ?? [],
+                state.insuranceExtraToman![p.customerId]!,
+              )
+            : (net[p.customerId] ?? []),
+        ]),
+      ),
+    ).components;
+  }
   if (state.tour && state.packageSaleAvailable && !state.packageSaleQuote)
     throw Error('برای ترکیب انتخاب‌شده قیمت منتشرشده موجود نیست.');
   const automatic =
@@ -1235,6 +1266,7 @@ export function salesPayload(
   if (roomPartyError) throw new Error(roomPartyError);
   if (
     state.serviceKinds.includes('HOTEL') &&
+    !state.passengerTotalPricing &&
     state.priceEntryMode === 'CONTRACT_TOTAL' &&
     state.passengerHotelPrices === undefined &&
     !state.packageSaleQuote &&
@@ -1402,7 +1434,11 @@ export function salesPayload(
         if (error) throw Error(error);
         if (
           stay.different &&
-          !state.passengerHotelPrices?.[id]?.some(
+          !(
+            state.passengerTotalPricing
+              ? passengerTotalEntries(state)[id]
+              : state.passengerHotelPrices?.[id]
+          )?.some(
             (p) => p.amount.trim() && /^\d+(?:\.\d{1,4})?$/.test(p.amount),
           )
         )
@@ -1422,7 +1458,11 @@ export function salesPayload(
       passengerHotelStaysV1: JSON.stringify(stays),
     };
   }
-  if (hotelPriceService && state.passengerHotelPrices !== undefined)
+  if (
+    hotelPriceService &&
+    !state.passengerTotalPricing &&
+    state.passengerHotelPrices !== undefined
+  )
     hotelPriceService.metadata = {
       ...hotelPriceService.metadata,
       passengerHotelPricesV1: JSON.stringify(
@@ -1480,7 +1520,11 @@ export function salesPayload(
     };
   const flightPrices = passengerFlightSalePrices(state);
   const flightPriceService = services.find((s) => s.kind === 'FLIGHT');
-  if (flightPriceService && state.passengerFlightPrices !== undefined)
+  if (
+    flightPriceService &&
+    !state.passengerTotalPricing &&
+    state.passengerFlightPrices !== undefined
+  )
     flightPriceService.metadata = {
       ...flightPriceService.metadata,
       [PASSENGER_FLIGHT_PRICES]: JSON.stringify(
@@ -1499,6 +1543,7 @@ export function salesPayload(
       ),
     };
   if (
+    !state.passengerTotalPricing &&
     (!state.packageSaleQuote || state.passengerHotelPrices !== undefined) &&
     state.automaticComponentPricing &&
     services.some((s) => s.kind === 'FLIGHT' || s.kind === 'HOTEL')
@@ -1536,10 +1581,16 @@ export function salesPayload(
       ],
     });
   }
-  if (state.priceEntryMode === 'PASSENGER_TOTAL')
-    passengerSaleTotals(state.passengers, state.passengerPrices ?? {});
+  const grossTotalPrices = state.passengerTotalPricing
+    ? passengerTotalEntries(state)
+    : (state.passengerPrices ?? {});
+  if (state.passengerTotalPricing || state.priceEntryMode === 'PASSENGER_TOTAL')
+    passengerSaleTotals(state.passengers, grossTotalPrices);
+  const totalPrices = state.passengerTotalPricing
+    ? salesNetServicePrices(state)
+    : grossTotalPrices;
   const packagePrices =
-    state.priceEntryMode === 'PASSENGER_TOTAL'
+    state.passengerTotalPricing || state.priceEntryMode === 'PASSENGER_TOTAL'
       ? passengerSaleTotals(
           state.passengers,
           Object.fromEntries(
@@ -1547,16 +1598,18 @@ export function salesPayload(
               p.customerId,
               extras.some((e) => e.customerId === p.customerId)
                 ? addInsuranceExtra(
-                    state.passengerPrices?.[p.customerId] ?? [],
+                    totalPrices[p.customerId] ?? [],
                     state.insuranceExtraToman![p.customerId]!,
                   )
-                : (state.passengerPrices?.[p.customerId] ?? []),
+                : (totalPrices[p.customerId] ?? []),
             ]),
           ),
         )
       : undefined;
   if (packagePrices)
     for (const service of services) {
+      if (service.metadata?.insuranceAgeSurcharge !== true)
+        delete service.pricing;
       service.metadata = {
         ...service.metadata,
         passengerPackagePricingVersion: 1,
@@ -1570,7 +1623,14 @@ export function salesPayload(
           catalogSaleQuoteAmount: catalog.daySale.amount,
         };
     }
-  if (state.priceEntryMode === 'CONTRACT_TOTAL')
+  if (state.passengerTotalPricing && services[0]) {
+    services[0].metadata = {
+      ...services[0].metadata,
+      [PASSENGER_TOTAL_PRICES]: JSON.stringify(grossTotalPrices),
+    };
+    readPassengerTotalPrices(services, state.passengers);
+  }
+  if (!state.passengerTotalPricing && state.priceEntryMode === 'CONTRACT_TOTAL')
     for (const service of services) {
       if (service.metadata?.insuranceAgeSurcharge !== true)
         delete service.pricing;
@@ -1718,16 +1778,17 @@ export function salesPayload(
       state.passengerAccommodations?.[item.customerId]
         ? { accommodationKind: state.passengerAccommodations[item.customerId] }
         : {}),
-      ...(state.passengerPrices && state.priceEntryMode !== 'CONTRACT_TOTAL'
+      ...((state.passengerTotalPricing || state.passengerPrices) &&
+      (state.passengerTotalPricing || state.priceEntryMode !== 'CONTRACT_TOTAL')
         ? {
             agreedPrices: packagePrices
               ? packagePrices.prices[item.customerId]
               : extras.some((p) => p.customerId === item.customerId)
                 ? addInsuranceExtra(
-                    state.passengerPrices[item.customerId] ?? [],
+                    state.passengerPrices?.[item.customerId] ?? [],
                     state.insuranceExtraToman![item.customerId]!,
                   )
-                : (state.passengerPrices[item.customerId] ?? []),
+                : (state.passengerPrices?.[item.customerId] ?? []),
           }
         : {}),
       birthDate: item.birthDate,
@@ -1777,7 +1838,8 @@ export function salesPayload(
                     return {
                       ...rest,
                       roomCategory: defaultSalesRoomCategory(room),
-                      ...(state.passengerHotelPrices === undefined &&
+                      ...(!state.passengerTotalPricing &&
+                      state.passengerHotelPrices === undefined &&
                       agreedPrice
                         ? { agreedPrice }
                         : {}),
