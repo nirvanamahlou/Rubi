@@ -6674,3 +6674,8 @@ Buyer type and acquaintance now live inside the buyer card, with acquaintance in
 ## UNIFIED-PASSENGER-PRICING-1019 — PC-A
 
 New-contract Sales entry uses one passenger table with one selected-currency amount for each allocated flight/hotel service, retaining the hotel column title «قیمت ارزی» even for IRR. Per-person optional fixed discount and commission both reduce the same-currency payable, bounded by that person's combined flight/hotel price. Gross service metadata remains explicit; reductions persist in optional passengerDeductionsV1 metadata and DISCOUNT price components, checked by shared Decimal helpers and Sales API. Printed output shows each actual service amount in its currency, includes populated deduction columns only, and preserves historical agency informational commissions/legacy room shares without rewriting them. International summary/print/PDF travel dates use English Gregorian with Tehran timezone; stored dates and registration dates remain unchanged. No migration/dependency/server deployment.
+
+
+## DATE-AUTO-SLASHES-1020 — PC-A
+
+Typed customer DOB/passport dates now insert YYYY/MM/DD separators from digits, including Persian/Arabic digits and pasted standard dates. Keep partial day input incomplete until all digits are entered, support deletion/clear and restore the caret by digit position during middle edits. Existing strict calendar conversion, past-expiry minimum and six-month warning stay unchanged. No API/schema/migration/dependency/runtime change; final-head hosted gates precede user-authorized develop merge.
