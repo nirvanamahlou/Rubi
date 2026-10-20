@@ -1,3 +1,5 @@
+import { revealHrValues } from './hr-private-values';
+import { getHrResource } from '@nora/contracts';
 import { zipSync, strToU8, unzipSync } from 'fflate';
 import 'reflect-metadata';
 import { execFileSync } from 'node:child_process';
@@ -2221,6 +2223,95 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           where: { employeeId: target.id, tab: 'groupMembers', status: 'فعال' },
         }),
       ).toBe(0);
+    });
+
+    it('saves device credentials atomically inside the device form without exposing them', async () => {
+      const previousKey = process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
+      process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 =
+        randomBytes(32).toString('base64');
+      try {
+        const schema = getHrResource('time', 'biometric')!,
+          values = schema.columns.map(() => '');
+        values[0] = 'Synthetic private device';
+        values[schema.columns.indexOf('آدرس دستگاه')] = '127.0.0.1';
+        values[schema.columns.indexOf('نوع دستگاه')] = 'ZK';
+        const input = {
+          branchId: branchA,
+          section: 'time',
+          tab: 'biometric',
+          values,
+          status: 'فعال',
+          privateData: { networkPassword: ' 0087-synthetic ' },
+        };
+        const token = key(),
+          device = await service.createRecord(input, token, admin);
+        expect((await service.createRecord(input, token, admin)).id).toBe(
+          device.id,
+        );
+        expect(JSON.stringify(device)).not.toContain('0087-synthetic');
+        expect(JSON.stringify(device.data)).not.toContain('privatePayload');
+        let stored = await client.hrRecord.findUniqueOrThrow({
+          where: { id: device.id },
+        });
+        expect(JSON.stringify(stored)).not.toContain('0087-synthetic');
+        expect(
+          revealHrValues(stored.data, `${branchA}:${device.id}:time.biometric`),
+        ).toEqual([' 0087-synthetic ']);
+        const changed = await service.updateRecord(
+          device.id,
+          {
+            version: device.version,
+            privateData: { networkPassword: 'new-synthetic-secret' },
+          },
+          admin,
+        );
+        stored = await client.hrRecord.findUniqueOrThrow({
+          where: { id: device.id },
+        });
+        expect(
+          revealHrValues(stored.data, `${branchA}:${device.id}:time.biometric`),
+        ).toEqual(['new-synthetic-secret']);
+        expect(
+          JSON.stringify(await service.getRecord(device.id, reader)),
+        ).not.toContain('privatePayload');
+        const unchanged = await service.updateRecord(
+          device.id,
+          { version: changed.version, privateData: { networkPassword: '' } },
+          admin,
+        );
+        const preserved = await client.hrRecord.findUniqueOrThrow({
+          where: { id: device.id },
+        });
+        expect(
+          revealHrValues(
+            preserved.data,
+            `${branchA}:${device.id}:time.biometric`,
+          ),
+        ).toEqual(['new-synthetic-secret']);
+        const audit = await client.hrAuditEvent.findMany({
+          where: { recordId: device.id },
+        });
+        expect(JSON.stringify(audit)).not.toContain('new-synthetic-secret');
+        expect(JSON.stringify(audit)).not.toContain('0087-synthetic');
+        const manager = (
+          await actor('device_manager_no_sensitive', ['hr.manage'], [branchA])
+        ).actor;
+        await expect(
+          service.updateRecord(
+            device.id,
+            {
+              version: unchanged.version,
+              privateData: { networkPassword: 'denied' },
+            },
+            manager,
+          ),
+        ).rejects.toThrow();
+        await service.deleteRecord(device.id, String(unchanged.version), admin);
+      } finally {
+        if (previousKey === undefined)
+          delete process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
+        else process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 = previousKey;
+      }
     });
     it('persists Radan identity encrypted and never returns ciphertext or private audit values', async () => {
       const previousKey = process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;

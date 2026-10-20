@@ -407,6 +407,10 @@ function HrRecordFormFields({
   const columns = [
     'شناسه',
     ...definition.columns,
+    ...(definition.key === 'time.biometric' &&
+    store.data!.capabilities.sensitive
+      ? ['رمز عبور شبکه']
+      : []),
     ...(attachmentLabel ? [attachmentLabel] : []),
     ...(showStatus ? ['وضعیت'] : []),
   ];
@@ -652,6 +656,9 @@ function HrRecordFormFields({
               hiddenLabels,
               optionalLabels: [
                 ...radanOptionalLabels(definition),
+                ...(definition.key === 'time.biometric'
+                  ? ['رمز عبور شبکه']
+                  : []),
                 ...(target.source.section === 'organization' &&
                 target.source.tab === 'branches'
                   ? ['مدیر']
@@ -774,6 +781,10 @@ function HrRecordFormFields({
                               ? `document://${target.record.data.documentId}`
                               : '',
                           ]
+                        : []),
+                      ...(definition.key === 'time.biometric' &&
+                      store.data!.capabilities.sensitive
+                        ? ['']
                         : []),
                       ...(showStatus ? [target.record.status] : []),
                     ],
@@ -960,6 +971,15 @@ function HrRecordFormFields({
                   tab: target.source.tab,
                   values,
                   status,
+                  ...(definition.key === 'time.biometric' &&
+                  store.data!.capabilities.sensitive &&
+                  raw[1 + definition.columns.length]
+                    ? {
+                        privateData: {
+                          networkPassword: raw[1 + definition.columns.length]!,
+                        },
+                      }
+                    : {}),
                   data: extra,
                   ...(employeeId ? { employeeId } : {}),
                   ...(parentId ? { parentId } : {}),
@@ -970,6 +990,9 @@ function HrRecordFormFields({
               const record = target.record
                 ? await store.update(target.record, {
                     values: input.values,
+                    ...(input.privateData
+                      ? { privateData: input.privateData }
+                      : {}),
                     ...(input.status ? { status: input.status } : {}),
                     ...(input.data ? { data: input.data } : {}),
                     ...(isUnit || isApplicant || missionExpense

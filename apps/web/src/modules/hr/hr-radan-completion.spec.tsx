@@ -1,3 +1,5 @@
+import { renderToStaticMarkup } from 'react-dom/server';
+import { ContextualHrForm } from './contextual-hr-form';
 import { employeeFormValue } from './hr-employees';
 import type { HrEmployeeDto, HrRecordDto } from '@nora/contracts';
 import type { HrStore } from './hr-store';
@@ -34,10 +36,7 @@ describe('Radan fields in existing HR surfaces', () => {
     expect(
       employeeGroups.flatMap((g) => g.sources.map((s) => s.tab)),
     ).toContain('identity');
-    for (const [section, tab] of [
-      ['employee', 'identity'],
-      ['time', 'deviceSecrets'],
-    ] as const)
+    for (const [section, tab] of [['employee', 'identity']] as const)
       expect(getHrResource(section, tab)?.sensitive).toBe(true);
     expect(getHrResource('time', 'minuteLedger')?.readOnly).toBe(true);
     expect(getHrResource('payroll', 'importedPayslips')?.readOnly).toBe(true);
@@ -71,4 +70,27 @@ it('retains a multiword given name when editing the canonical employee record', 
     firstName: 'نام دو بخشی',
     lastName: 'خانواده',
   });
+});
+
+it('renders a write-only password input in the device form, not in table columns', () => {
+  expect(getHrResource('time', 'biometric')!.columns).not.toContain(
+    'رمز عبور شبکه',
+  );
+  const html = renderToStaticMarkup(
+    <ContextualHrForm
+      context={{
+        section: 'time',
+        tab: 'biometric',
+        title: 'دستگاه',
+        description: '',
+        columns: ['شناسه', 'نام دستگاه', 'رمز عبور شبکه'],
+        mode: 'create',
+        fieldTypes: { 'رمز عبور شبکه': 'password' },
+        optionalLabels: ['رمز عبور شبکه'],
+      }}
+      onCancel={() => undefined}
+      onSubmit={() => undefined}
+    />,
+  );
+  expect(html).toContain('type="password"');
 });

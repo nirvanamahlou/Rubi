@@ -1,4 +1,9 @@
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHmac,
+  randomBytes,
+} from 'node:crypto';
 import { ServiceUnavailableException } from '@nestjs/common';
 import { HR_RADAN_PRIVATE_RESOURCES } from '@nora/contracts';
 
@@ -63,4 +68,11 @@ export function publicHrData(data: unknown) {
       ([key]) => !['privatePayload', 'privateVersion'].includes(key),
     ),
   );
+}
+
+export function privateCommandFingerprint(value: unknown, actorId: string) {
+  return createHmac('sha256', key())
+    .update(`hr-private-command:v1:${actorId}:`)
+    .update(JSON.stringify(value))
+    .digest('hex');
 }

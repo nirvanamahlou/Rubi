@@ -30,7 +30,6 @@ const parentResources: Record<string, string[]> = {
   'organization.groupMembers': ['organization.groups'],
   'time.shift': ['time.workingHours', 'time.shiftTemplates'],
   'time.templateDays': ['time.shiftTemplates'],
-  'time.deviceSecrets': ['time.biometric'],
   'requests.patternAssignments': ['requests.patterns'],
   'requests.procedureMembers': ['requests.procedures'],
   'requests.approvalStages': ['requests.procedures'],
@@ -189,7 +188,6 @@ export function getHrResource(
     employeeRequired:
       columns.some((label) => label === 'کارمند') || section === 'employee',
     sensitive:
-      key === 'time.deviceSecrets' ||
       key === 'employee.identity' ||
       key === 'employee.phones' ||
       section === 'recruitment' ||

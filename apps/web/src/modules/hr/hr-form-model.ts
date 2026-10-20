@@ -44,7 +44,6 @@ export function parentFieldLabel(section: string, tab: string): string {
   if (section === 'time' && tab === 'shift')
     return 'ساعت کاری یا شیفت تعریف‌شده';
   if (section === 'time' && tab === 'templateDays') return 'شیفت تعریف‌شده';
-  if (section === 'time' && tab === 'deviceSecrets') return 'دستگاه';
   if (
     section === 'requests' &&
     ['approvalStages', 'procedureMembers'].includes(tab)

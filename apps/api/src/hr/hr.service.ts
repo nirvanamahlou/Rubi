@@ -2,6 +2,7 @@ import { configuredAttendance } from './hr-attendance-settings';
 import { readPayslipWorkbook } from './hr-payslip-import';
 import {
   privateHrResource,
+  privateCommandFingerprint,
   protectHrValues,
   revealHrValues,
   publicHrData,
@@ -71,6 +72,7 @@ const employeeKeys = [
   'status',
 ];
 const recordKeys = [
+  'privateData',
   'branchId',
   'section',
   'tab',
@@ -1417,10 +1419,28 @@ export class HrService {
     const input = validate.object(body, recordKeys);
     const schema = validate.resource(input.section, input.tab);
     const data = validate.workflowData(input.data);
+    const networkPassword = this.devicePassword(
+      input.privateData,
+      schema,
+      actor,
+    );
+    if (privateHrResource(schema.key)) this.require(actor, 'hr.sensitive');
+    const commandInput = privateHrResource(schema.key)
+      ? privateCommandFingerprint(input, actor.userId)
+      : networkPassword !== undefined
+        ? {
+            ...input,
+            privateData: privateCommandFingerprint(
+              input.privateData,
+              actor.userId,
+            ),
+          }
+        : input;
+
     const result = await this.command(
       actor,
       key,
-      { operation: 'record.create', input },
+      { operation: 'record.create', input: commandInput },
       async (tx) => {
         const employee = input.employeeId
           ? await this.employee(tx, validate.uuid(input.employeeId), actor)
@@ -1527,7 +1547,8 @@ export class HrService {
         const persistedValues = privateValues
           ? values.map(() => '••••')
           : values;
-        const persistedData = privateValues
+        const newId = randomUUID();
+        let persistedData = privateValues
           ? {
               ...data,
               ...protectHrValues(
@@ -1543,8 +1564,17 @@ export class HrService {
           throw new ConflictException(
             'قرارداد عمومی دریافت ورودی پرداخت Finance هنوز منتشر نشده است.',
           );
+        if (networkPassword !== undefined)
+          persistedData = {
+            ...persistedData,
+            ...protectHrValues(
+              [networkPassword],
+              `${branchId}:${newId}:time.biometric`,
+            ),
+          };
         const row = await tx.hrRecord.create({
           data: {
+            id: newId,
             branchId,
             employeeId: employee?.id ?? null,
             parentId: parent?.id ?? null,
@@ -1616,6 +1646,7 @@ export class HrService {
   }
   async updateRecord(id: string, body: unknown, actor: AuthenticatedActor) {
     const input = validate.object(body, [
+      'privateData',
       'version',
       'values',
       'status',
@@ -1646,6 +1677,11 @@ export class HrService {
           'حقوق تأییدشده تغییر نمی‌کند؛ پس از برگشت مالی یک درخواست اصلاح‌شده ارسال کنید.',
         );
       const schema = validate.resource(row.section, row.tab);
+      const networkPassword = this.devicePassword(
+        input.privateData,
+        schema,
+        actor,
+      );
       let parentId = row.parentId;
       if (input.parentId !== undefined) {
         if (
@@ -1949,7 +1985,7 @@ export class HrService {
       }
       const privateValues = privateHrResource(schema.key);
       const persistedValues = privateValues ? values.map(() => '••••') : values;
-      const persistedData = privateValues
+      let persistedData = privateValues
         ? {
             ...publicHrData(data),
             ...protectHrValues(
@@ -1958,6 +1994,14 @@ export class HrService {
             ),
           }
         : data;
+      if (networkPassword !== undefined)
+        persistedData = {
+          ...persistedData,
+          ...protectHrValues(
+            [networkPassword],
+            `${row.branchId}:${row.id}:time.biometric`,
+          ),
+        };
       const changed = await tx.hrRecord.updateMany({
         where: { id, version: expected, deletedAt: null },
         data: {
@@ -2044,13 +2088,13 @@ export class HrService {
           reason: providedData?.reason ?? null,
           before: {
             values: privateValues ? undefined : row.values,
-            data: privateValues ? undefined : row.data,
+            data: privateValues ? undefined : publicHrData(row.data),
             status: row.status,
             parentId: row.parentId,
           },
           after: privateValues
             ? { status: state, parentId }
-            : { values, data, status: state, parentId },
+            : { values, data: publicHrData(data), status: state, parentId },
         },
         expected + 1,
         row.status,
@@ -3526,11 +3570,7 @@ export class HrService {
     id?: string,
   ) {
     if (
-      [
-        'employee.identity',
-        'time.calculationSettings',
-        'time.deviceSecrets',
-      ].includes(schema.key)
+      ['employee.identity', 'time.calculationSettings'].includes(schema.key)
     ) {
       const count = await tx.hrRecord.count({
         where: {
@@ -4510,5 +4550,25 @@ export class HrService {
       { fields: ['نام', 'نام خانوادگی'] },
       record.version + 1,
     );
+  }
+  private devicePassword(
+    value: unknown,
+    schema: HrResourceDefinition,
+    actor: AuthenticatedActor,
+  ) {
+    if (value === undefined) return;
+    if (schema.key !== 'time.biometric')
+      throw new BadRequestException('فیلد ناشناخته در درخواست وجود دارد.');
+    const input = validate.object(value, ['networkPassword']);
+    if (input.networkPassword === undefined || input.networkPassword === '')
+      return;
+    this.require(actor, 'hr.sensitive');
+    if (
+      typeof input.networkPassword !== 'string' ||
+      input.networkPassword.length > 500 ||
+      input.networkPassword.includes(String.fromCharCode(0))
+    )
+      throw new BadRequestException('رمز عبور شبکه معتبر نیست.');
+    return input.networkPassword;
   }
 }

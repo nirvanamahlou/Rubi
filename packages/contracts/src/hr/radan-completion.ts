@@ -18,7 +18,6 @@ export const HR_RADAN_COMPLETION_COLUMNS = {
     'نشانی',
   ],
   'employee.phones': ['نوع شماره تماس', 'شماره تماس'],
-  'time.deviceSecrets': ['رمز عبور شبکه'],
   'time.calculationSettings': [
     'عنوان تنظیمات',
     'اجزای کارکرد',
@@ -179,7 +178,6 @@ export const HR_RADAN_REQUEST_TYPES = [
 export const HR_RADAN_PRIVATE_RESOURCES = [
   'employee.identity',
   'employee.phones',
-  'time.deviceSecrets',
 ] as const;
 export const HR_RADAN_PROVINCES = [
   'آذربایجان شرقی',

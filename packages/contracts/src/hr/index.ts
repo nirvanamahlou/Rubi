@@ -128,6 +128,8 @@ export interface HrEmployeeCreate {
 }
 export type HrEmployeeUpdate = Partial<HrEmployeeCreate> & { version: number };
 export interface HrRecordCreate {
+  /** Write-only device credentials; never returned by record reads. */
+  privateData?: { networkPassword?: string };
   branchId?: string;
   section: string;
   tab: string;
@@ -139,6 +141,7 @@ export interface HrRecordCreate {
   data?: HrWorkflowData;
 }
 export interface HrRecordUpdate {
+  privateData?: { networkPassword?: string };
   version: number;
   /** Only organization units may be reparented; server checks branch and cycles. */
   parentId?: string | null;

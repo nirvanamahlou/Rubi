@@ -9,6 +9,7 @@ import {
 } from './hr-radan-completion.domain';
 import { recordValues } from './hr.validation';
 import {
+  privateCommandFingerprint,
   protectHrValues,
   revealHrValues,
   publicHrData,
@@ -291,4 +292,23 @@ it('rejects overlapping long calendar shifts instead of attributing the same tim
       ['2026-10-23', '08:00', '16:00', 'همان روز'],
     ]),
   ).not.toThrow();
+});
+
+it('binds private idempotency fingerprints to the server key and actor', () => {
+  vi.stubEnv(
+    'HR_PRIVATE_ENCRYPTION_KEY_BASE64',
+    randomBytes(32).toString('base64'),
+  );
+  const value = { networkPassword: 'synthetic-password' };
+  const fingerprint = privateCommandFingerprint(value, 'actor-a');
+  expect(privateCommandFingerprint(value, 'actor-a')).toBe(fingerprint);
+  expect(privateCommandFingerprint(value, 'actor-b')).not.toBe(fingerprint);
+  expect(
+    privateCommandFingerprint({ networkPassword: 'changed' }, 'actor-a'),
+  ).not.toBe(fingerprint);
+  vi.stubEnv(
+    'HR_PRIVATE_ENCRYPTION_KEY_BASE64',
+    randomBytes(32).toString('base64'),
+  );
+  expect(privateCommandFingerprint(value, 'actor-a')).not.toBe(fingerprint);
 });
