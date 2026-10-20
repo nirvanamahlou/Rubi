@@ -933,6 +933,7 @@ export class HrService {
       input.identityValues,
       identitySchema,
     );
+    this.nameParts({ firstName: identity[0], lastName: identity[1] });
     if (`${identity[0]} ${identity[1]}` !== employee.name)
       throw new BadRequestException('نام و اطلاعات هویتی کارمند یکسان نیستند.');
     const contacts = input.contactValues ?? [];

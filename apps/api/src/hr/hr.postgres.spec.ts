@@ -2432,6 +2432,22 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
             where: { name: 'Atomic Personnel' },
           }),
         ).toBe(count);
+        const longFirstName = 'A'.repeat(81);
+        await expect(
+          service.createEmployee(
+            employeeInput(`${longFirstName} Worker`, {
+              identityValues: [longFirstName, 'Worker', ...identity.slice(2)],
+              contactValues: [],
+            }),
+            key(),
+            admin,
+          ),
+        ).rejects.toThrow();
+        expect(
+          await client.hrEmployee.count({
+            where: { name: `${longFirstName} Worker` },
+          }),
+        ).toBe(0);
         await expect(
           service.updateEmployee(
             id,
