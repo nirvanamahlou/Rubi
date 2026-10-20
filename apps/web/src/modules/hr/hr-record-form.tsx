@@ -407,6 +407,10 @@ function HrRecordFormFields({
   const columns = [
     'شناسه',
     ...definition.columns,
+    ...(definition.key === 'time.biometric' &&
+    store.data!.capabilities.sensitive
+      ? ['رمز عبور شبکه']
+      : []),
     ...(attachmentLabel ? [attachmentLabel] : []),
     ...(showStatus ? ['وضعیت'] : []),
   ];
@@ -652,6 +656,9 @@ function HrRecordFormFields({
               hiddenLabels,
               optionalLabels: [
                 ...radanOptionalLabels(definition),
+                ...(definition.key === 'time.biometric'
+                  ? ['رمز عبور شبکه']
+                  : []),
                 ...(target.source.section === 'organization' &&
                 target.source.tab === 'branches'
                   ? ['مدیر']
@@ -709,6 +716,25 @@ function HrRecordFormFields({
                   }
                 : {}),
               fieldTypes: {
+                نام: 'text',
+                'نام خانوادگی': 'text',
+                'کد ملی': 'text',
+                'شماره شناسنامه': 'text',
+                'نام پدر': 'text',
+                'شهر محل صدور': 'text',
+                ملیت: 'text',
+                'شماره تماس': 'text',
+                'رمز عبور شبکه': 'password',
+                نشانی: 'textarea',
+                'اجزای کارکرد': 'multi-select',
+                درخواست‌ها: 'multi-select',
+                'روز تقویم': 'date',
+                اولویت: 'number',
+                'طول مرخصی روزانه به دقیقه': 'number',
+                'نام الگو': 'text',
+                'نام روند': 'text',
+                'عنوان تنظیمات': 'text',
+                'عنوان قاعده': 'text',
                 'نام واحد': 'text',
                 'نام گروه': 'text',
                 'نام ساعت کاری': 'text',
@@ -755,6 +781,10 @@ function HrRecordFormFields({
                               ? `document://${target.record.data.documentId}`
                               : '',
                           ]
+                        : []),
+                      ...(definition.key === 'time.biometric' &&
+                      store.data!.capabilities.sensitive
+                        ? ['']
                         : []),
                       ...(showStatus ? [target.record.status] : []),
                     ],
@@ -941,6 +971,15 @@ function HrRecordFormFields({
                   tab: target.source.tab,
                   values,
                   status,
+                  ...(definition.key === 'time.biometric' &&
+                  store.data!.capabilities.sensitive &&
+                  raw[1 + definition.columns.length]
+                    ? {
+                        privateData: {
+                          networkPassword: raw[1 + definition.columns.length]!,
+                        },
+                      }
+                    : {}),
                   data: extra,
                   ...(employeeId ? { employeeId } : {}),
                   ...(parentId ? { parentId } : {}),
@@ -951,6 +990,9 @@ function HrRecordFormFields({
               const record = target.record
                 ? await store.update(target.record, {
                     values: input.values,
+                    ...(input.privateData
+                      ? { privateData: input.privateData }
+                      : {}),
                     ...(input.status ? { status: input.status } : {}),
                     ...(input.data ? { data: input.data } : {}),
                     ...(isUnit || isApplicant || missionExpense

@@ -72,10 +72,21 @@ export function employeeFormValue(
   store: HrStore,
 ): NewEmployeeFormValue {
   const [firstName, ...last] = employee.name.split(' ');
+  const identity = store.data?.records?.find(
+    (record) =>
+      record.employeeId === employee.id &&
+      record.section === 'employee' &&
+      record.tab === 'identity' &&
+      !record.deletedAt,
+  );
+  const parts =
+    identity && `${identity.values[0]} ${identity.values[1]}` === employee.name
+      ? identity.values
+      : undefined;
   return {
     userId: employee.userId ?? '',
-    firstName: firstName ?? '',
-    lastName: last.join(' '),
+    firstName: parts?.[0] ?? firstName ?? '',
+    lastName: parts?.[1] ?? last.join(' '),
     personnelCode: employee.personnelCode,
     employmentType: employee.kind,
     branch:
@@ -145,6 +156,19 @@ export function HrEmployeeEditor({
   return (
     <>
       <NewEmployeeDialog
+        groupOptions={references.data.records
+          .filter(
+            (r) =>
+              r.section === 'organization' &&
+              r.tab === 'groups' &&
+              r.status === 'فعال',
+          )
+          .map((r) => ({
+            id: r.id,
+            name: r.values[0] ?? '',
+            branch:
+              companies.find((c) => c.branchId === r.branchId)?.name ?? '',
+          }))}
         onAddReference={(kind, branch) => {
           const companyId = companies.find(
             (company) => company.name === branch,
@@ -169,7 +193,20 @@ export function HrEmployeeEditor({
         existingPersonnelCodes={store
           .data!.employees.filter((item) => item.id !== employee?.id)
           .map((item) => item.personnelCode)}
-        initialValue={employee ? employeeFormValue(employee, store) : undefined}
+        initialValue={
+          employee
+            ? {
+                ...employeeFormValue(employee, store),
+                groupId:
+                  references.data.records.find(
+                    (r) =>
+                      r.employeeId === employee.id &&
+                      r.tab === 'groupMembers' &&
+                      r.status === 'فعال',
+                  )?.parentId ?? '',
+              }
+            : undefined
+        }
         branchOptions={
           employee?.organizationBranchId
             ? [employee.companyName]
@@ -195,11 +232,14 @@ export function HrEmployeeEditor({
           if (value.manager !== 'بدون مدیر مستقیم' && managers.length !== 1)
             throw new Error('مدیر مستقیم را از فهرست کارکنان انتخاب کنید.');
           const input = {
+            groupId: value.groupId || null,
             userId: value.userId || null,
             branchId: branch.branchId,
             ...(branch.organizationBranchId
               ? { organizationBranchId: branch.organizationBranchId }
               : {}),
+            firstName: value.firstName,
+            lastName: value.lastName,
             name: `${value.firstName} ${value.lastName}`.trim(),
             kind: value.employmentType,
             unit: value.unit,
@@ -211,6 +251,9 @@ export function HrEmployeeEditor({
           };
           const saved = employee
             ? await hrApi.employees.update(employee.id, {
+                groupId: input.groupId,
+                firstName: input.firstName,
+                lastName: input.lastName,
                 name: input.name,
                 kind: input.kind,
                 status: input.status,

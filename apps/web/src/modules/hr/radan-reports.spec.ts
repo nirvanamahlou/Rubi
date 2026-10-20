@@ -127,3 +127,33 @@ it('keeps aggregate row identity stable for selection across refreshed reports',
     }).recordIds,
   ).toEqual(['e']);
 });
+
+it('does not reuse one branch daily duration for another branch without settings', () => {
+  const a = { ...employee, branchId: 'branch-a' },
+    b = { ...employee, id: 'b', name: 'Other', branchId: 'branch-b' };
+  const config = {
+    ...record,
+    section: 'time',
+    tab: 'calculationSettings',
+    branchId: 'branch-a',
+    status: 'فعال',
+    values: ['تنظیمات', '[]', 'خیر', '480'],
+  };
+  const result = buildRadanReport(
+    'total',
+    [record, { ...record, id: 'second', employeeId: 'b' }],
+    [a, b],
+    { ...emptyRadanFilters, unit: 'days' },
+    [config],
+  );
+  expect(result.rows.every((row) => row[1] === '—')).toBe(true);
+  expect(
+    buildRadanReport(
+      'total',
+      [record],
+      [a],
+      { ...emptyRadanFilters, unit: 'days' },
+      [config],
+    ).rows[0]![1],
+  ).toBe('1');
+});

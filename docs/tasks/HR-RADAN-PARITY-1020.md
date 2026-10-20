@@ -59,3 +59,7 @@ The checklist below counts 23 functional areas, not individual controls or equiv
 This candidate is not completion of the user's whole transfer request. Finish the unresolved rows above using observed evidence and approved data boundaries; do not label them delivered, silently substitute zeroes, store network credentials in generic text columns, or assume statutory payroll rules. Full transfer must not be marked complete merely because the bounded candidate passes tests.
 
 Production Web build succeeded with65 routes. Long shifts cannot repeat daily over a multi-day assignment range: a single start day is required to prevent duplicated attendance attribution. No claim of a reusable Radan calendar-template engine.
+
+## Follow-up scope
+
+The owner authorized completion of every remaining **observed control/accessible structure** on2026-10-20. The implementation and its evidence exclusions are tracked in [HR-RADAN-COMPLETION-1020](HR-RADAN-COMPLETION-1020.md). This document retains the original23-area baseline and first-PR history; it is not the final follow-up checklist. Unobserved engines and inaccessible controls are not automatically required functionality.
