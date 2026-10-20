@@ -142,8 +142,10 @@ describe('compact sales contract form', () => {
     }
     expect(html).toContain('مبلغ کل قرارداد');
     expect(html).toContain('جمع خودکار قرارداد');
-    expect(html).toContain('قیمت پرواز و هتل هر مسافر');
-    expect(html).toContain('قیمت پرواز Sample');
+    expect(html).toContain('قیمت کل خدمات هر مسافر');
+    expect(html).toContain('قیمت ریالی');
+    expect(html).toContain('قیمت ارزی');
+    expect(html).not.toContain('قیمت پرواز Sample');
     expect(html).not.toContain('قیمت ریالی Sample');
     expect(html).not.toContain('افزودن مبلغ با ارز دیگر');
     expect(html).not.toContain('قیمت روز فروش بلیط');

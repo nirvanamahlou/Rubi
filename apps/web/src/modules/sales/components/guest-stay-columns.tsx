@@ -161,5 +161,8 @@ export function guestStayColumns(
         );
       },
     },
-  ];
+  ].filter(
+    (column) =>
+      !state.passengerTotalPricing || column.key !== 'differentStayPrice',
+  );
 }

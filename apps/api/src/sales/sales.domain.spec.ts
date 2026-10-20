@@ -1040,6 +1040,53 @@ it('validates individual hotel stay snapshots and rejects a flight-only stay or 
   expect(() => validateSalesContract(input)).toThrow();
 });
 
+it('validates aggregate IRR/foreign prices and deductions without requiring flight-specific prices', () => {
+  const input = structuredClone(draft);
+  const id = input.passengers[0]!.customerId;
+  input.services = input.services.map((s) => ({
+    ...s,
+    metadata: {
+      passengerPackagePricingVersion: 1,
+      passengerTotalPricesV1: JSON.stringify({
+        [id]: [
+          { amount: '100', currencyCode: 'IRR' },
+          { amount: '20', currencyCode: 'USD' },
+        ],
+      }),
+      passengerDeductionsV1: JSON.stringify({
+        [id]: { discount: { amount: '10', currencyCode: 'IRR' } },
+      }),
+    },
+  }));
+  input.passengers = input.passengers.map((p) => ({
+    ...p,
+    agreedPrices: [
+      { amount: '90', currencyCode: 'IRR' },
+      { amount: '20', currencyCode: 'USD' },
+    ],
+  }));
+  input.priceComponents = [
+    {
+      type: 'BASE',
+      title: 'قیمت کل خدمات مسافران',
+      amount: '90',
+      currencyCode: 'IRR',
+    },
+    {
+      type: 'BASE',
+      title: 'قیمت کل خدمات مسافران',
+      amount: '20',
+      currencyCode: 'USD',
+    },
+  ];
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.passengers[0]!.agreedPrices = [
+    { amount: '100', currencyCode: 'IRR' },
+    { amount: '20', currencyCode: 'USD' },
+  ];
+  expect(() => validateSalesContract(input)).toThrow('مبلغ نهایی هر مسافر');
+});
+
 it('accepts city tour and guide using existing OTHER services with explicit passenger assignments', () => {
   const input = structuredClone(draft);
   input.services = [
