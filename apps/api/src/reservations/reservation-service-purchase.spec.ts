@@ -611,11 +611,13 @@ it('records insurance actual cost through the same authorized, scoped CAS and id
 it('records floating actual cost through the same authorized, scoped CAS and idempotency purchase path', async () => {
   const create = vi.fn().mockResolvedValue({ id: 'floating-cost', version: 1 });
   const updateMany = vi.fn().mockResolvedValue({ count: 1 });
+  const audit = vi.fn().mockResolvedValue({});
   const db = {
     client: {
       reservationIntake: {
         findUnique: vi.fn().mockResolvedValue({
           branchId: 'branch',
+          contractId: 'contract',
           snapshot: {
             serviceSelections: [
               {
@@ -634,7 +636,38 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
       },
       $transaction: vi.fn(async (run: (tx: unknown) => Promise<unknown>) =>
         run({
-          $queryRaw: vi.fn(),
+          $queryRaw: vi.fn().mockResolvedValue([{ id: 'contract' }]),
+          salesContract: {
+            findFirst: vi.fn().mockResolvedValue({
+              id: 'contract',
+              version: 1,
+              branchId: 'branch',
+              status: 'SENT_TO_RESERVATIONS',
+              priceComponents: [
+                {
+                  type: 'BASE',
+                  title: 'Ticket',
+                  amount: '1250000',
+                  currencyCode: 'IRR',
+                },
+              ],
+              payments: [
+                {
+                  id: 'receipt',
+                  amount: '1250000',
+                  currencyCode: 'IRR',
+                  status: 'FINANCE_CONFIRMED',
+                  refunds: [],
+                  allocations: [],
+                },
+              ],
+              receiptAllocations: [],
+            }),
+          },
+          financeOperationalRequest: {
+            findMany: vi.fn().mockResolvedValue([]),
+          },
+          auditEvent: { create: audit },
           reservationIntake: { updateMany },
           reservationServicePurchase: { create },
         }),
@@ -666,6 +699,18 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
       'floating-cost-key',
     ),
   ).resolves.toMatchObject({ data: { id: 'floating-cost' } });
+  expect(audit).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        action: 'reservations.ticket_purchase.authorized',
+        metadata: expect.objectContaining({
+          policy: 'CUSTOMER_FLIGHT_FULL_SETTLEMENT_V1',
+          contractId: 'contract',
+          contractVersion: 1,
+        }),
+      }),
+    }),
+  );
   expect(create).toHaveBeenCalledWith(
     expect.objectContaining({
       data: expect.objectContaining({
