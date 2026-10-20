@@ -53,6 +53,19 @@ export class IamCallCenterDirectory {
       select: { id: true },
     }));
   }
+  /** Public IAM check used immediately before a queued PBX side effect. */
+  async canOriginate(branchId: string, userId: string) {
+    const user = (await this.rows(branchId)).find((row) => row.id === userId);
+    if (!user) return false;
+    const permissions = authenticatedPermissionCodes(user.roles);
+    return (
+      [
+        'customer_affairs.call_center.read',
+        'customer_affairs.call_center.workflow.manage',
+        'customer_affairs.call_center.calls.create',
+      ] as const
+    ).every((code) => permissions.includes(code));
+  }
   async referral(
     tx: Prisma.TransactionClient,
     branchId: string,

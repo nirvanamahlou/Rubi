@@ -1,8 +1,15 @@
 'use client';
+import { DatePicker } from '@/components/ui/date-picker';
+import { HrButton } from './hr-controls';
+import Link from '@/components/access-link';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
-import { getHrResource, type HrRecordDto } from '@nora/contracts';
+import {
+  HR_RADAN_REQUEST_TYPES,
+  getHrResource,
+  type HrRecordDto,
+} from '@nora/contracts';
 import { allHrRecords, type HrStore } from './hr-store';
 import {
   HrExportButton,
@@ -55,7 +62,9 @@ export function HrInbox({
             result.filter(
               (item) =>
                 getHrResource(item.section, item.tab)?.approval &&
-                (!requestType || `${item.section}.${item.tab}` === requestType),
+                (!requestType ||
+                  `${item.section}.${item.tab}` === requestType ||
+                  item.data.requestSubtype === requestType),
             ),
           );
       })
@@ -89,12 +98,14 @@ export function HrInbox({
     };
   }, [store.revision]);
   const data = {
-    columns: ['کد', 'نوع درخواست', 'کارمند', 'شرکت', 'آخرین تغییر', 'وضعیت'],
+    columns: ['کد', 'نوع درخواست', 'کارمند', 'شرکت', 'تاریخ ایجاد', 'وضعیت'],
     rows: items.map((item) => [
       item.code,
-      sourceForRecord(item).label,
+      item.data.requestSubtype ?? sourceForRecord(item).label,
       store.data!.employees.find((employee) => employee.id === item.employeeId)
-        ?.name ?? '—',
+        ?.name ??
+        item.values[item.columns.indexOf('کارمند')] ??
+        '—',
       store.data!.records.find(
         (company) => company.id === item.data.organizationBranchId,
       )?.values[0] ||
@@ -104,7 +115,7 @@ export function HrInbox({
         store.data!.branches.find((branch) => branch.id === item.branchId)
           ?.name ||
         '',
-      new Date(item.updatedAt).toLocaleDateString('fa-IR'),
+      new Date(item.createdAt).toLocaleDateString('fa-IR'),
       item.status,
     ]),
     recordIds: items.map((item) => item.id),
@@ -112,6 +123,11 @@ export function HrInbox({
   };
   return (
     <div className={ui.spaced}>
+      <nav className={ui.actions}>
+        <Link href="/hr?section=requests&tab=radanLeave">ثبت درخواست</Link>
+        <Link href="/hr?section=requests&tab=patterns">الگوها</Link>
+        <Link href="/hr?section=requests&tab=procedures">روند تأیید</Link>
+      </nav>
       <header className={ui.heading}>
         <div>
           <h1>کارتابل و درخواست‌های من</h1>
@@ -150,6 +166,9 @@ export function HrInbox({
               <option value="expenses.mission">مأموریت و سفر</option>
               <option value="time.overtime">اضافه‌کاری</option>
               <option value="time.remote">دورکاری</option>
+              {HR_RADAN_REQUEST_TYPES.map((type) => (
+                <option key={type}>{type}</option>
+              ))}
             </NativeSearchSelect>
           </label>
           <label>
@@ -166,6 +185,30 @@ export function HrInbox({
               ))}
             </NativeSearchSelect>
           </label>
+          <label>
+            از تاریخ ایجاد
+            <DatePicker
+              value={range.from}
+              onChange={(from) => setRange({ ...range, from })}
+            />
+          </label>
+          <label>
+            تا تاریخ ایجاد
+            <DatePicker
+              value={range.to}
+              onChange={(to) => setRange({ ...range, to })}
+            />
+          </label>
+          <HrButton
+            onClick={() => {
+              setRange({ from: '', to: '' });
+              setStatus('');
+              setRequestType('');
+              setEmployeeId('');
+            }}
+          >
+            بازنشانی
+          </HrButton>
           <label>
             وضعیت رسیدگی
             <NativeSearchSelect

@@ -91,6 +91,32 @@ vi.mock('@/components/ui/date-picker', () => ({
 }));
 
 describe('compact sales contract form', () => {
+  it('keeps review as a non-submitting screen with an explicit final action', () => {
+    fixture.step = 2;
+    let html: string;
+    try {
+      html = renderToStaticMarkup(<SalesContractForm />);
+    } finally {
+      fixture.step = 0;
+    }
+    expect(html).toContain('ثبت و ارسال به رزرواسیون');
+    expect(html).not.toMatch(/<button[^>]*type="submit"/);
+    expect(html).toMatch(
+      /<button[^>]*type="button"[^>]*>ثبت و ارسال به رزرواسیون<\/button>/,
+    );
+  });
+  it('never offers an implicit submit action while advancing to review', () => {
+    fixture.step = 1;
+    let html: string;
+    try {
+      html = renderToStaticMarkup(<SalesContractForm />);
+    } finally {
+      fixture.step = 0;
+    }
+    expect(html).not.toMatch(/<button[^>]*type="submit"/);
+    expect(html).not.toContain('ثبت و ارسال به رزرواسیون');
+  });
+
   it('explains invalid final-step data without hiding the form', () => {
     fixture.step = 1;
     let html: string;

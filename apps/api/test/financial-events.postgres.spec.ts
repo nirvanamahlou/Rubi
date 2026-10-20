@@ -1,4 +1,9 @@
 import { FinancePayrollService } from '../src/finance/operations/finance-payroll.service';
+import {
+  customerPurchaseSettlement,
+  assertCustomerPurchaseCoverage,
+} from '../src/sales/customer-purchase-settlement.public';
+import { reservedCustomerRefunds } from '../src/finance/operations/receipt-refund-reservations.public';
 import { FinanceReceiptAllocationService } from '../src/finance/operations/receipt-allocation.service';
 import { MasterProcurementDirectory } from '../src/master-data/master-procurement-directory';
 import { readFinanceHistory } from '../src/finance/finance-history';
@@ -383,6 +388,33 @@ describe.skipIf(!url)(
       };
       expect(await sales.applyFinanceConfirmation(approval)).toBe('confirmed');
       expect(await sales.applyFinanceConfirmation(approval)).toBe('replayed');
+      await db.$transaction(async (tx) => {
+        const facts = await customerPurchaseSettlement(tx, contract.id, [
+          branchId,
+        ]);
+        const holds = await reservedCustomerRefunds(
+          tx,
+          facts.receipts,
+          branchId,
+        );
+        expect(() =>
+          assertCustomerPurchaseCoverage(facts, holds),
+        ).not.toThrow();
+        expect(facts.balances).toEqual([
+          { currencyCode: 'IRR', outstanding: '0' },
+        ]);
+        // A concurrent authorization/refund writer cannot pass the shared row lock.
+        await expect(
+          db.$transaction(async (contender) => {
+            await contender.$executeRawUnsafe(
+              "SET LOCAL lock_timeout = '100ms'",
+            );
+            await customerPurchaseSettlement(contender, contract.id, [
+              branchId,
+            ]);
+          }),
+        ).rejects.toThrow(/lock timeout|55P03/i);
+      });
       const event = await db.financeAccountingEvent.findUniqueOrThrow({
         where: { sourceKey: `SALES:${paymentId}` },
       });
@@ -473,6 +505,20 @@ describe.skipIf(!url)(
       );
       const row = (await sales.findById(contract.id))!;
       expect(row.settlementStatus).toBe('PARTIALLY_SETTLED');
+      await db.$transaction(async (tx) => {
+        const facts = await customerPurchaseSettlement(tx, contract.id, [
+          branchId,
+        ]);
+        const holds = await reservedCustomerRefunds(
+          tx,
+          facts.receipts,
+          branchId,
+        );
+        expect(holds.get('IRR')).toBe('0');
+        expect(() => assertCustomerPurchaseCoverage(facts, holds)).toThrow(
+          'تسویه کامل',
+        );
+      });
       expect(
         await db.financeCustomerDocumentDeliveryRevision.findFirst({
           where: { contractId: contract.id },

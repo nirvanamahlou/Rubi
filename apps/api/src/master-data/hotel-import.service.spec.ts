@@ -28,7 +28,7 @@ function cell(reference: string, value: string) {
     : `<c r="${reference}"/>`;
 }
 
-function workbook(requiredOnly = false) {
+function workbook(requiredOnly = false, extended = false) {
   const values = [
     'HTL-BODRUM-IMPORT-001',
     'Bodrum Marina Hotel',
@@ -49,6 +49,11 @@ function workbook(requiredOnly = false) {
     'TRUE',
     '',
   ];
+  values.push(
+    extended ? 'www.hotel.example' : '',
+    extended ? 'خیر' : '',
+    extended ? 'هتل مارینا' : '',
+  );
   if (requiredOnly)
     values.forEach((_, index) => {
       if (index !== 1 && index !== 3) values[index] = '';
@@ -73,33 +78,49 @@ function workbook(requiredOnly = false) {
 }
 
 describe('HotelImportService commit persistence', () => {
-  it.each(['legacy', 'downloadable template', 'required fields only'])(
+  it.each([
+    'legacy',
+    'downloadable template',
+    '14-column template',
+    'required fields only',
+    'extended columns',
+  ])(
     'persists every valid parsed row from %s and writes audit records',
     async (source) => {
-      const supplied = source === 'downloadable template';
+      const reduced = source === '14-column template';
+      const extended = source === 'extended columns';
+      const supplied = source === 'downloadable template' || reduced;
       const requiredOnly = source === 'required fields only';
       const buffer = supplied
         ? readFileSync(
             resolve(
               process.cwd(),
-              '../web/public/templates/hotel-master-template.xlsx',
+              reduced
+                ? 'test/fixtures/hotel-master-template-14-columns.xlsx'
+                : 'test/fixtures/hotel-master-template-18-columns.xlsx',
             ),
           )
-        : workbook(requiredOnly);
+        : workbook(requiredOnly, extended);
       const expectedHotels = supplied
         ? [
             {
-              code: 'HTL-KUS-001',
+              code: reduced
+                ? expect.stringMatching(/^HOTEL_[A-F0-9]{12}$/)
+                : 'HTL-KUS-001',
               name: 'Charisma De Luxe Hotel',
               isActive: true,
             },
             {
-              code: 'HTL-KUS-002',
+              code: reduced
+                ? expect.stringMatching(/^HOTEL_[A-F0-9]{12}$/)
+                : 'HTL-KUS-002',
               name: 'Ramada Resort Kusadasi',
               isActive: true,
             },
             {
-              code: 'HTL-KUS-003',
+              code: reduced
+                ? expect.stringMatching(/^HOTEL_[A-F0-9]{12}$/)
+                : 'HTL-KUS-003',
               name: 'Signature Blue Resort',
               isActive: false,
             },
@@ -109,7 +130,7 @@ describe('HotelImportService commit persistence', () => {
               code: requiredOnly
                 ? expect.stringMatching(/^HOTEL_[A-F0-9]{12}$/)
                 : 'HTL-BODRUM-IMPORT-001',
-              name: 'Bodrum Marina Hotel',
+              name: extended ? 'هتل مارینا' : 'Bodrum Marina Hotel',
               isActive: true,
             },
           ];
@@ -226,6 +247,10 @@ describe('HotelImportService commit persistence', () => {
           status: MasterHotelImportStatus.COMPLETED,
           counts: { created: expectedHotels.length, updated: 0, skipped: 0 },
         });
+        expect(database.client.$transaction).toHaveBeenCalledWith(
+          expect.any(Function),
+          { timeout: 120_000, maxWait: 10_000 },
+        );
         expect(tx.masterHotel.create).toHaveBeenCalledTimes(
           expectedHotels.length,
         );
@@ -247,8 +272,19 @@ describe('HotelImportService commit persistence', () => {
           expect(tx.masterHotel.create).toHaveBeenCalledWith({
             data: expect.objectContaining({
               ...hotel,
-              englishName: hotel.name,
+              englishName: extended ? 'Bodrum Marina Hotel' : hotel.name,
               cityId: session.cityId,
+            }),
+          });
+        expect(tx.masterDataAuditEvent.create).toHaveBeenCalledWith({
+          data: expect.objectContaining({ resource: 'hotels' }),
+        });
+        if (extended)
+          expect(tx.masterHotel.create).toHaveBeenCalledWith({
+            data: expect.objectContaining({
+              website: 'www.hotel.example',
+              freeSale: false,
+              name: 'هتل مارینا',
             }),
           });
         expect(tx.masterDataAuditEvent.create).toHaveBeenCalledWith({

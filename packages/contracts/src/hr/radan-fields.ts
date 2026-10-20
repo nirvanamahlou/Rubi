@@ -41,6 +41,7 @@ export const HR_RADAN_FIELD_OPTIONS: Readonly<
 };
 /** Old persisted column positions must never move. Additions can be omitted by old clients. */
 export const HR_RADAN_LEGACY_LENGTHS: Readonly<Record<string, number>> = {
+  'time.workingHours': 8,
   'time.biometric': 6,
 };
 export const HR_RADAN_REQUEST_RESOURCES = [

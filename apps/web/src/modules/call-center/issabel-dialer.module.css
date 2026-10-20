@@ -1,0 +1,39 @@
+.dialer {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border, #d5e2f7);
+  border-radius: 1rem;
+  background: var(--card, #fff);
+}
+.dialer label {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+}
+.dialer input,
+.dialer button {
+  min-height: 2.5rem;
+  border: 1px solid var(--border, #d5e2f7);
+  border-radius: 0.6rem;
+  padding: 0.45rem 0.8rem;
+  background: transparent;
+  color: inherit;
+}
+.dialer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+.dialer button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.dialer p {
+  margin: 0;
+  font-size: 0.8rem;
+  flex-basis: 100%;
+}

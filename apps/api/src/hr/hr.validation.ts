@@ -1,3 +1,5 @@
+import { privateHrResource } from './hr-private-values';
+import { validateCompletionValues } from './hr-radan-completion.domain';
 import { HR_RADAN_LEGACY_LENGTHS } from '@nora/contracts';
 import { validateRadanFields } from './hr-radan.validation';
 import { BadRequestException } from '@nestjs/common';
@@ -153,60 +155,73 @@ export function recordValues(
     ...value,
     ...Array(Math.max(0, schema.columns.length - value.length)).fill(''),
   ];
-  return validateRadanFields(
-    padded.map((input: unknown, index) => {
-      const field = schema.fields[index]!;
-      if (
-        typeof input !== 'string' ||
-        input.length > field.maxLength ||
-        input.includes(String.fromCharCode(0)) ||
-        /data:|blob:/i.test(input)
-      )
-        throw new BadRequestException(`${field.label} معتبر نیست.`);
-      const normalized = input.trim();
-      if (
-        field.required &&
-        !normalized &&
-        !(
-          HR_RADAN_LEGACY_LENGTHS[schema.key] === value.length &&
-          index >= value.length
+  return validateCompletionValues(
+    schema.key,
+    schema.columns,
+    validateRadanFields(
+      padded.map((input: unknown, index) => {
+        const field = schema.fields[index]!;
+        if (
+          typeof input !== 'string' ||
+          input.length > field.maxLength ||
+          input.includes(String.fromCharCode(0)) ||
+          /data:|blob:/i.test(input)
         )
-      )
-        throw new BadRequestException(`${field.label} الزامی است.`);
-      if (field.type === 'date' && normalized && normalized !== '—')
-        isoDate(normalized, field.label);
-      if (
-        field.type === 'time' &&
-        normalized &&
-        !/^([01]\d|2[0-3]):[0-5]\d$/.test(digits(normalized))
-      )
-        throw new BadRequestException(`${field.label} باید HH:mm باشد.`);
-      if (
-        field.type === 'money' &&
-        normalized &&
-        normalized !== '—' &&
-        !/^\d{1,20}(\.\d{1,4})?$/.test(digits(normalized))
-      )
-        throw new BadRequestException(`${field.label} باید مبلغ غیرمنفی باشد.`);
-      if (
-        field.type === 'decimal' &&
-        normalized &&
-        !/^\d{1,8}(\.\d{1,2})?$/.test(digits(normalized))
-      )
-        throw new BadRequestException(`${field.label} باید عدد معتبر باشد.`);
-      if (/پوشیده/.test(field.label) && normalized && !/[•*]/.test(normalized))
-        throw new BadRequestException('این فیلد فقط مقدار پوشیده را می‌پذیرد.');
-      if (
-        /شبا|کارت|CVV|رمز/i.test(field.label) &&
-        normalized &&
-        !/[•*]/.test(normalized)
-      )
-        throw new BadRequestException(
-          'اطلاعات بانکی خام باید در سامانه مالک و با مجوز تخصصی نگهداری شود.',
-        );
-      return normalized;
-    }),
-    schema,
+          throw new BadRequestException(`${field.label} معتبر نیست.`);
+        const normalized = input.trim();
+        if (
+          field.required &&
+          !normalized &&
+          !(
+            HR_RADAN_LEGACY_LENGTHS[schema.key] === value.length &&
+            index >= value.length
+          )
+        )
+          throw new BadRequestException(`${field.label} الزامی است.`);
+        if (field.type === 'date' && normalized && normalized !== '—')
+          isoDate(normalized, field.label);
+        if (
+          field.type === 'time' &&
+          normalized &&
+          !/^([01]\d|2[0-3]):[0-5]\d$/.test(digits(normalized))
+        )
+          throw new BadRequestException(`${field.label} باید HH:mm باشد.`);
+        if (
+          field.type === 'money' &&
+          normalized &&
+          normalized !== '—' &&
+          !/^\d{1,20}(\.\d{1,4})?$/.test(digits(normalized))
+        )
+          throw new BadRequestException(
+            `${field.label} باید مبلغ غیرمنفی باشد.`,
+          );
+        if (
+          field.type === 'decimal' &&
+          normalized &&
+          !/^\d{1,8}(\.\d{1,2})?$/.test(digits(normalized))
+        )
+          throw new BadRequestException(`${field.label} باید عدد معتبر باشد.`);
+        if (
+          /پوشیده/.test(field.label) &&
+          normalized &&
+          !/[•*]/.test(normalized)
+        )
+          throw new BadRequestException(
+            'این فیلد فقط مقدار پوشیده را می‌پذیرد.',
+          );
+        if (
+          /شبا|کارت|CVV|رمز/i.test(field.label) &&
+          !privateHrResource(schema.key) &&
+          normalized &&
+          !/[•*]/.test(normalized)
+        )
+          throw new BadRequestException(
+            'اطلاعات بانکی خام باید در سامانه مالک و با مجوز تخصصی نگهداری شود.',
+          );
+        return normalized;
+      }),
+      schema,
+    ),
   );
 }
 export const APPROVED = new Set(['تأییدشده', 'تاییدشده', 'فعال', 'آماده شروع']);

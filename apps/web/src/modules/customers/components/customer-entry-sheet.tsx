@@ -1,7 +1,8 @@
 'use client';
 import { tehranToday, passportExpiryWarning } from '@/lib/passport-dates';
 
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { connectEntryTableScroll } from './entry-table-scroll';
 import { CircleHelp } from 'lucide-react';
 import { Input } from '@/components/ui/form-controls';
 import {
@@ -215,7 +216,9 @@ export function CustomerEntrySheet({
   columnLabels,
   calendarSwitchInBirthDateHeader = false,
   extraColumns = [],
+  topScrollbar = false,
 }: {
+  topScrollbar?: boolean;
   extraColumns?: readonly {
     key: string;
     /** Default preserves leading host-specific columns. */
@@ -236,6 +239,12 @@ export function CustomerEntrySheet({
   columnLabels?: Partial<Record<EntryField, string>>;
   calendarSwitchInBirthDateHeader?: boolean;
 }) {
+  const upperScroll = useRef<HTMLDivElement>(null);
+  const tableScroll = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!topScrollbar || !upperScroll.current || !tableScroll.current) return;
+    return connectEntryTableScroll(upperScroll.current, tableScroll.current);
+  }, [topScrollbar]);
   const leadingColumns = extraColumns.filter(
     (column) => column.position !== 'end',
   );
@@ -256,8 +265,22 @@ export function CustomerEntrySheet({
       (!visibleFields || visibleFields.includes(field)),
   );
   return (
-    <>
+    <div className={topScrollbar ? 'grid min-w-0 gap-1' : 'contents'}>
+      {topScrollbar ? (
+        <div
+          ref={upperScroll}
+          role="region"
+          aria-label="اسکرول افقی بالای جدول قراردادها"
+          tabIndex={0}
+          className="h-6 overflow-x-auto overflow-y-hidden rounded-t-xl border border-border bg-muted/40"
+          style={{ scrollbarWidth: 'auto' }}
+        >
+          <div style={{ width: 0, height: 1 }} />
+        </div>
+      ) : null}
       <div
+        ref={tableScroll}
+        data-entry-table-enhanced={topScrollbar || undefined}
         className="overflow-x-auto rounded-xl border"
         role="region"
         aria-label="جدول ورود اطلاعات مشتری و مسافران"
@@ -520,6 +543,6 @@ export function CustomerEntrySheet({
           </tbody>
         </table>
       </div>
-    </>
+    </div>
   );
 }

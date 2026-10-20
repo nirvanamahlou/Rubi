@@ -60,6 +60,7 @@ import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './workspace.module.css';
 import { ReportHighlights } from './report-highlights';
 import { NextAction } from './next-action';
+import { IssabelDialer } from './issabel-dialer';
 const outcomes: Record<string, string> = {
   ANSWERED: 'گفت‌وگو انجام شد',
   NO_ANSWER: 'بدون پاسخ',
@@ -376,6 +377,7 @@ function Content({
           <Plus size={18} /> ثبت تماس جدید
         </button>
       </header>
+      <IssabelDialer branchId={branch} allowed={canCreate && canManage} />
       <WorkQueue
         branchId={branch}
         actorId={actorId}

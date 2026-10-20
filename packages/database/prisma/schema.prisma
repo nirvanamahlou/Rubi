@@ -30,6 +30,7 @@ enum AuditOutcome {
 }
 
 model User {
+  telephonyCommands      IntegrationTelephonyCommand[]
   telephonyAudit         IntegrationTelephonyAudit[]
   telephonyConnections   IntegrationTelephonyConnection[]
   telephonyMappings      IntegrationTelephonyMapping[]
@@ -2213,6 +2214,7 @@ model MasterHotel {
   sourceMainImage      String?                      @db.VarChar(2000)
   sourceGalleryImages  String?                      @db.VarChar(2000)
   sourceFeatured       Boolean?
+  freeSale             Boolean?
   website              String?                      @db.VarChar(320)
   checkInTime          String?                      @db.Char(5)
   checkOutTime         String?                      @db.Char(5)
@@ -7808,18 +7810,20 @@ model CallCenterNote {
 }
 
 model IntegrationTelephonyConnection {
-  id               String                        @id @default(uuid()) @db.Uuid
-  branchId         String                        @db.Uuid
-  createdByUserId  String                        @db.Uuid
-  name             String                        @db.VarChar(100)
-  synthetic        Boolean                       @default(false)
-  active           Boolean                       @default(false)
-  maxAgeSeconds    Int                           @default(86400)
-  maxFutureSeconds Int                           @default(120)
-  version          Int                           @default(1)
-  createdAt        DateTime                      @default(now()) @db.Timestamptz(3)
-  branch           Branch                        @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  createdBy        User                          @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  id               String                          @id @default(uuid()) @db.Uuid
+  branchId         String                          @db.Uuid
+  createdByUserId  String                          @db.Uuid
+  name             String                          @db.VarChar(100)
+  synthetic        Boolean                         @default(false)
+  active           Boolean                         @default(false)
+  maxAgeSeconds    Int                             @default(86400)
+  maxFutureSeconds Int                             @default(120)
+  version          Int                             @default(1)
+  createdAt        DateTime                        @default(now()) @db.Timestamptz(3)
+  branch           Branch                          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  createdBy        User                            @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  commands         IntegrationTelephonyCommand[]
+  recordings       IntegrationTelephonyRecording[]
   audits           IntegrationTelephonyAudit[]
   mappings         IntegrationTelephonyMapping[]
   inbox            IntegrationTelephonyInbox[]
@@ -7962,4 +7966,54 @@ model SalesReceiptAllocation {
   @@index([targetContractId, createdAt], map: "sales_receipt_allocations_target_idx")
   @@index([branchId, createdAt], map: "sales_receipt_allocations_branch_idx")
   @@map("sales_receipt_allocations")
+}
+
+model IntegrationTelephonyCommand {
+  id                   String                         @id @db.Uuid
+  connectionId         String                         @db.Uuid
+  actorUserId          String                         @db.Uuid
+  extension            String                         @db.VarChar(10)
+  encryptedDestination String                         @db.Text
+  keyVersion           Int
+  fingerprint          String                         @db.Char(64)
+  state                String                         @default("QUEUED") @db.VarChar(16)
+  createdAt            DateTime                       @default(now()) @db.Timestamptz(3)
+  dispatchedAt         DateTime?                      @db.Timestamptz(3)
+  updatedAt            DateTime                       @updatedAt @db.Timestamptz(3)
+  connection           IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  actor                User                           @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([state, createdAt])
+  @@map("integration_telephony_commands")
+}
+
+model IntegrationTelephonyRecording {
+  id                String                               @id @db.Uuid
+  connectionId      String                               @db.Uuid
+  rootFingerprint   String                               @db.Char(64)
+  encryptedMetadata String                               @db.Text
+  keyVersion        Int
+  sha256            String                               @db.Char(64)
+  sizeBytes         Int
+  state             String                               @default("UPLOADING") @db.VarChar(16)
+  createdAt         DateTime                             @default(now()) @db.Timestamptz(3)
+  expiresAt         DateTime                             @db.Timestamptz(3)
+  completedAt       DateTime?                            @db.Timestamptz(3)
+  connection        IntegrationTelephonyConnection       @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  chunks            IntegrationTelephonyRecordingChunk[]
+
+  @@index([expiresAt])
+  @@map("integration_telephony_recordings")
+}
+
+model IntegrationTelephonyRecordingChunk {
+  recordingId    String                        @db.Uuid
+  index          Int
+  encryptedAudio String                        @db.Text
+  keyVersion     Int
+  fingerprint    String                        @db.Char(64)
+  recording      IntegrationTelephonyRecording @relation(fields: [recordingId], references: [id], onDelete: Cascade)
+
+  @@id([recordingId, index])
+  @@map("integration_telephony_recording_chunks")
 }

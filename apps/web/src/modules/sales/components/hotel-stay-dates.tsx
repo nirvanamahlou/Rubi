@@ -12,23 +12,10 @@ export function HotelStayDates({
 }) {
   return (
     <section
-      className="grid gap-3 rounded-xl border p-4 md:grid-cols-3"
+      className="grid gap-3 rounded-xl border p-4 md:grid-cols-2"
       aria-label="تاریخ اقامت مهمانان"
     >
-      <h3 className="font-bold md:col-span-3">جزئیات اقامت هتل</h3>
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={state.hotelArrivesNextDay ?? false}
-          onChange={(e) =>
-            patchState({
-              hotelArrivesNextDay: e.target.checked,
-              hotel: { ...state.hotel, checkInManual: false },
-            })
-          }
-        />
-        فردا می‌رسد
-      </label>
+      <h3 className="font-bold md:col-span-2">جزئیات اقامت هتل</h3>
       <FormField label="ورود (چک‌این)" required>
         <DatePicker
           calendarSystem={salesHotelCalendarSystem(state)}

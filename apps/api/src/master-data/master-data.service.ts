@@ -492,6 +492,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'sourceMainImage',
     'sourceGalleryImages',
     'sourceFeatured',
+    'freeSale',
     'website',
     'checkInTime',
     'checkOutTime',
@@ -2954,13 +2955,12 @@ export class MasterDataService {
           );
         data[field] = value || null;
       }
-      if (Object.hasOwn(data, 'sourceFeatured')) {
-        const value = String(data.sourceFeatured ?? '').trim();
+      for (const field of ['sourceFeatured', 'freeSale'] as const) {
+        if (!Object.hasOwn(data, field)) continue;
+        const value = String(data[field] ?? '').trim();
         if (!['', 'true', 'false'].includes(value))
-          throw new BadRequestException(
-            'sourceFeatured must be true or false.',
-          );
-        data.sourceFeatured = value === '' ? null : value === 'true';
+          throw new BadRequestException(`${field} must be true or false.`);
+        data[field] = value === '' ? null : value === 'true';
       }
       if (data.isSaleableReference === '') delete data.isSaleableReference;
       else if (data.isSaleableReference !== undefined)

@@ -253,7 +253,7 @@ export function HrLiveWorkspace({
           onForm={setForm}
           onSelect={select}
         />
-      ) : section === 'requests' ? (
+      ) : section === 'requests' && !tab ? (
         <HrInbox store={store} onSelect={select} />
       ) : (
         <HrUnifiedSection
