@@ -64,3 +64,39 @@ test('general reply executes no ERP tool and rejects oversized or forged reply p
   }
   assert.equal(calls, 0);
 });
+
+test('identity transport can tolerate cold reads while data keeps its shorter deadline', async () => {
+  const { createErpClient } = await import('./erp-client.mjs');
+  const fetcher = async (_url, { signal }) =>
+    new Promise((resolve, reject) => {
+      const timer = setTimeout(
+        () =>
+          resolve(
+            new Response('{}', {
+              headers: { 'content-type': 'application/json' },
+            }),
+          ),
+        25,
+      );
+      signal.addEventListener(
+        'abort',
+        () => {
+          clearTimeout(timer);
+          reject(signal.reason);
+        },
+        { once: true },
+      );
+    });
+  const client = createErpClient({
+    erpBaseUrl: 'http://127.0.0.1:4000/api/v1',
+    timeoutMs: 5,
+    identityTimeoutMs: 100,
+    fetcher,
+  });
+  const signal = new AbortController().signal;
+  assert.deepEqual(await client.identity('nora_access=test', signal), {});
+  await assert.rejects(
+    client.readTool('calendar', 'nora_access=test', signal),
+    /SOURCE_TIMEOUT/,
+  );
+});
