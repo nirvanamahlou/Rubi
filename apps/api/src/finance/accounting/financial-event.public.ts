@@ -1,3 +1,4 @@
+import { isReceiptAllocation } from './receipt-funds.public';
 import { financialDate } from './accounting.financial-events';
 export { financialDate };
 import { createHash } from 'node:crypto';
@@ -7,6 +8,9 @@ import { Prisma } from '@nora/database';
 /** Owner modules call this public sink inside their own business transaction.
  * A failed event insert must roll back the source confirmation as well. */
 export interface FinancialEventV1 {
+  basisEventId?: string;
+  carryingAmount?: string;
+  carryingCurrency?: string;
   source: 'SALES' | 'TICKET' | 'RESERVATIONS' | 'INVOICE' | 'OPERATIONAL';
   recordId: string;
   requestId: string;
@@ -41,7 +45,7 @@ export async function isNewAccountingSource(
 export async function recordFinancialEvent(
   tx: Prisma.TransactionClient,
   input: FinancialEventV1,
-): Promise<void> {
+): Promise<string> {
   if (
     !Number.isFinite(input.occurredAt.getTime()) ||
     ((input.kind === 'CUSTOMER_RECEIPT' || input.kind.endsWith('_PAYMENT')) &&
@@ -49,6 +53,32 @@ export async function recordFinancialEvent(
   )
     throw new ConflictException(
       'زمان رویداد مالی معتبر نیست؛ دریافت یا پرداخت آینده تأیید نمی‌شود.',
+    );
+  const allocation = isReceiptAllocation(input.kind);
+  if (allocation) {
+    if (
+      input.source !== 'SALES' ||
+      !input.basisEventId ||
+      !input.carryingAmount ||
+      !input.carryingCurrency ||
+      input.settlementAccountId
+    )
+      throw new ConflictException('مبنای ثبت تخصیص دریافت معتبر نیست.');
+    const carrying = new Prisma.Decimal(input.carryingAmount);
+    if (
+      !carrying.isFinite() ||
+      !carrying.isPositive() ||
+      carrying.decimalPlaces() > 4 ||
+      !/^[A-Z]{3}$/.test(input.carryingCurrency)
+    )
+      throw new ConflictException('مبلغ دفتری تخصیص معتبر نیست.');
+  } else if (
+    input.basisEventId ||
+    input.carryingAmount ||
+    input.carryingCurrency
+  )
+    throw new ConflictException(
+      'اطلاعات تخصیص فقط برای رویداد تخصیص دریافت مجاز است.',
     );
   const amount = new Prisma.Decimal(input.amount);
   if (!amount.isFinite() || !amount.isPositive() || amount.decimalPlaces() > 4)
@@ -78,6 +108,9 @@ export async function recordFinancialEvent(
   const body = {
     ...input,
     amount: amount.toFixed(4),
+    ...(allocation
+      ? { carryingAmount: new Prisma.Decimal(input.carryingAmount!).toFixed(4) }
+      : {}),
     occurredAt: input.occurredAt.toISOString(),
     trackingNumber: input.trackingNumber ?? input.requestId,
     trackingDate: input.trackingDate ?? financialDate(input.occurredAt),
@@ -99,4 +132,5 @@ export async function recordFinancialEvent(
     throw new ConflictException(
       'رویداد مالی قبلاً با اطلاعات دیگری ثبت شده است.',
     );
+  return saved.id;
 }

@@ -6699,7 +6699,13 @@ Sales moves transfer leg choices to the final passenger columns, defaults enable
 
 ## FINANCE-ACCOUNTING-EVENTS-1018 — 2026-10-20 — in progress / PR992
 
-PC-A sole-writer implementation without orchestration: atomic immutable manual cash sources, exact mapping-driven accounting drafts, Sales refund/net settlement and obsolete release revocation, supplier/ticket/reservation/net-payroll hooks and proof-backed petty cash lifecycle. Five additive migrations applied to isolated QA only. Final local broad Finance/Sales run:496 passed,9 skipped; earlier focused PostgreSQL/release run:12 passed. New scheduled-due receipt and cancelled-source period-close regressions are awaiting final rerun. Draft PR992 and full quality/test/build/migration checks gate publication; no operational data/migration or3100 rollout yet. Full-plan remaining scope is explicitly listed in docs/tasks/FINANCE-ACCOUNTING-EVENTS-1018.md; this is not a completion claim for revenue/allocation/gross payroll/realized FX.
+Phase 1 merged as PR992 into develop5df04784 after all eight final-head hosted gates passed. Manual cash sources, mapping-driven accounting drafts, receipt/refund settlement, source hooks and petty cash lifecycle were deployed to3100/API4192 with five additive financial migrations and existing data preserved (222 accounts; no synthetic operational receipts/contracts/journals/events). Docker was reopened manually by the user on20 October; Web and API health checks recovered. No automatic banking. This milestone does not complete revenue recognition, multi-contract allocation, gross payroll or realized FX.
+
+
+## FINANCE-RECEIPT-ALLOCATION-1020 — PC-A — in progress
+
+Phase 2 adds immutable same-customer/branch/currency receipt allocation and full reversal, shared refund-reservation funds locks, original posted receipt carrying basis and inline UI without changing the original receipt or existing forms. Additive migration applied to isolated QA only. Twelve PostgreSQL tests, three carrying/reservation tests and final API typecheck pass. Broad Finance/Sales run:498 passed,9 skipped, one boundary failure subsequently fixed and all five boundary tests rerun successfully. UI checks/build/CI/merge/deployment still pending. Runtime3100 remains the phase1 image. See docs/tasks/FINANCE-RECEIPT-ALLOCATION-1020.md.
+
 
 GUEST-STAY-DRAFT-FIX-1020 / PC-A: repairing older new-contract browser draft restoration that hides individual hotel stay columns. No database changes.
 
@@ -6711,6 +6717,7 @@ GUEST-STAY-DRAFT-FIX-1020 candidate:18 focused regression tests pass. Production
 
 Owner approves Groq with message/session history only. Add explicit runtime consent/provider/key gate, bounded generic replies plus existing three read actions, and connect the existing composer to same-origin conversation transport. Provider receives no ERP results/identity/credentials; history excludes exact ERP evidence.67 service tests and74 UI tests pass; generic live HTTP200 and Persian REPLY validated. Web production build (65 routes), TypeScript and scoped lint pass. Browser rollout and exact-head CI remain delivery gates. No schema/migration/dependency changes. See tasks/ASSISTANT-LIVE-CHAT-1020.md.
 
+
 PASSENGER-PRICE-COLUMNS-1020 / PC-A: total per-passenger IRR and optional foreign price columns, service/stay context, canonical package persistence and validation in progress. No database migration.
 
 
@@ -6720,4 +6727,3 @@ PASSENGER-PRICE-COLUMNS-1020 candidate validation:57 Sales API and3 shared-reade
 
 
 PASSENGER-PRICE-COLUMNS-1020 ready for CI: merged-current-development regressions45 Web/58 API/4 shared pass; gross/net total package validation, selectable non-IRR currency and fixed IRR UI, service/individual-stay context and PDF v2 totals retained. Final-head CI gates develop merge; no operational rollout or migration.
-

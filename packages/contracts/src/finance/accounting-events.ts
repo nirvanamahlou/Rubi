@@ -2,6 +2,9 @@
 export interface AccountingFinancialEventV1 {
   id: string;
   source: string;
+  basisEventId?: string;
+  carryingAmount?: string;
+  carryingCurrency?: string;
   kind: string;
   requestId: string;
   trackingNumber?: string;
@@ -27,6 +30,8 @@ export interface AccountingFinancialEventPageV1 {
 
 export const accountingFinancialEventLabels: Record<string, string> = {
   CUSTOMER_RECEIPT: 'دریافت قرارداد',
+  RECEIPT_ALLOCATION: 'تخصیص دریافت به قرارداد',
+  RECEIPT_ALLOCATION_REVERSAL: 'برگشت تخصیص دریافت',
   PETTY_CASH_ADVANCE_PAYMENT: 'تأمین اولیه تنخواه',
   PETTY_CASH_TOPUP_PAYMENT: 'شارژ مجدد تنخواه',
   PETTY_CASH_EXPENSE_POSTED: 'هزینه تأییدشده تنخواه',

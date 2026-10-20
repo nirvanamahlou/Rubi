@@ -8407,6 +8407,10 @@ FINANCE-ACCOUNTING-EVENTS-1018 due-receipt correction: reserve bounded scheduled
 
 FINANCE-ACCOUNTING-EVENTS-1018 i18n reservation: bounded English overrides for new Finance/Accounting labels and visible errors, plus deterministic offline API/legacy catalogue regeneration. Prior translation scopes merged/released. Preserve Persian UI, source text and existing translations; no dependency changes.
 
+## FINANCE-RECEIPT-ALLOCATION-1020 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-finance-receipt-allocation-1020 from develop5df04784. Continuing the same user-authorized complete financial workflow without orchestration or delegation. Prior FINANCE-ACCOUNTING-EVENTS-1018 source milestone merged as PR992, all eight exact-head gates passed and deployed on3100/API4192 with preserved222 accounts and no inserted financial fixtures. Its migration/source locks are frozen/released. Reserve Sales-owned immutable receipt allocation/full-reversal records, net settlement/read projections and bounded buyer-change guard; Finance-owned common receipt funds lock/refund reservation projection, explicit original-receipt journal basis/carrying amount events and derived draft handling; existing financial-event UI inline allocation panel, additive public DTOs, tests/English catalogue sync and own docs. Sole schema/migration owner PC-A for SalesReceiptAllocation and FinanceAccountingEvent basis/carrying metadata only. No dependency/lockfile, pricing/commission algorithms, automatic banking, HR or other modules. Only same customer/branch/currency contracts; original bank receipt and posted source journal remain unchanged. Require explicit approved original journal, stable versions, actual refund/reserved-fund checks, immutable row reversal, same original carrying rate and independent final journal approval. No live fixtures/backfill; isolated PostgreSQL proof before publication. Existing forms remain.
+
 ## GUEST-STAY-DRAFT-FIX-1020 — PC-A — IN_PROGRESS
 
 Branch codex/pc-a-guest-stay-draft-fix-1020 from develop5df04784. Reserve Sales new-contract local draft restore helper, form wiring and regression tests; own status notes. Fix older browser drafts missing roomDrivenGuests without clearing entered identities, room composition or amounts. Prior PR991 scope merged/released. No API/schema/migration/dependency/shared contract changes. User requests repair and local verification.
@@ -8424,6 +8428,10 @@ CONTRACT-INLINE-FLIGHT-SEARCH-1020 validation: full Sales and Customers entry re
 ## ASSISTANT-LIVE-CHAT-1020 — PC-C — IN_PROGRESS
 
 COMPUTER_ID=PC-C; branch codex/pc-c-assistant-live-chat-1020 from origin/develop. User explicitly approves Groq with message/session history only, no ERP results. Reserve assistant Groq transport, runtime opt-in, orchestrator, composer and conversation validators/tests, bounded bilingual copy/CSS and own docs. Preserve native authorization, fixed read tools, deterministic ERP evidence and quick actions. No schema/migration/dependency changes. Only user/model conversational text enters provider history; ERP evidence never does. Explicit local activation after successful tests; final-head CI gates standing authorized develop merge.
+
+FINANCE-RECEIPT-ALLOCATION-1020 validation:12 isolated PostgreSQL tests and3 carrying/refund-reservation tests pass. Broad Finance/Sales498 passed/9 skipped; the single initial boundary failure was corrected and all5 boundary tests pass.33 Web/i18n tests (new permission mock corrected), final API/Web types and scoped API/Web lint pass. Candidate synchronized with develop5dad9652 preserving other teams' work and translations. Full build and exact-head hosted quality/tests/migration gates remain before user-authorized merge and3100 deployment. Source/schema locks freeze on candidate publication; no operational phase2 migration or fixtures.
+
+FINANCE-RECEIPT-ALLOCATION-1020 review correction: reopen only Sales settlement arithmetic and its focused regression. Sum immutable four-decimal allocation/reversal/refund amounts as exact scaled integers so historical row ordering cannot lose small units after large cancelled allocations. No schema or financial policy change; final-head checks rerun after publication.
 
 ## CONTRACT-STAY-PAYMENT-LAYOUT-1020 — PC-A — READY_FOR_CI
 

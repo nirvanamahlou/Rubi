@@ -30,6 +30,7 @@ enum AuditOutcome {
 }
 
 model User {
+  receiptAllocations     SalesReceiptAllocation[]
   accountingSourceEvents FinanceAccountingEvent[] @relation("FinancialEventActor")
 
   callCenterCalls                                  CallCenterCall[]
@@ -253,7 +254,8 @@ model RolePermission {
 }
 
 model Branch {
-  accountingEvents FinanceAccountingEvent[]
+  receiptAllocations SalesReceiptAllocation[]
+  accountingEvents   FinanceAccountingEvent[]
 
   callCenterContacts                  CallCenterContact[]
   purchaseFxSnapshots                 FinancePurchaseFxSnapshot[]
@@ -3931,6 +3933,7 @@ enum PackagePricingRenderStatus {
 }
 
 model SalesContract {
+  receiptAllocations        SalesReceiptAllocation[]
   paymentTerms              Json?                          @map("payment_terms")
   buyerContact              Json?                          @map("buyer_contact")
   id                        String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -4114,6 +4117,7 @@ model SalesContractPriceComponent {
 }
 
 model SalesContractPaymentEntry {
+  allocations             SalesReceiptAllocation[]
   refunds                 SalesPaymentRefund[]
   financeRefundRequests   FinanceOperationalRequest[]
   id                      String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -7610,6 +7614,11 @@ model FinancePurchaseFxSnapshot {
 
 // Immutable confirmed financial sources. Journal association is assigned atomically.
 model FinanceAccountingEvent {
+  basisEventId        String?                   @db.Uuid
+  basisEvent          FinanceAccountingEvent?   @relation("ReceiptAllocationBasis", fields: [basisEventId], references: [id], onDelete: Restrict)
+  derivedEvents       FinanceAccountingEvent[]  @relation("ReceiptAllocationBasis")
+  carryingAmount      Decimal?                  @db.Decimal(24, 4)
+  carryingCurrency    String?                   @db.VarChar(3)
   trackingNumber      String?                   @db.VarChar(160)
   trackingDate        String?                   @db.VarChar(10)
   id                  String                    @id @default(uuid()) @db.Uuid
@@ -7636,6 +7645,7 @@ model FinanceAccountingEvent {
   attemptedAt         DateTime?                 @db.Timestamptz(3)
   createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
 
+  @@index([basisEventId], map: "financial_event_basis_idx")
   @@index([branchId, journalId, createdAt])
   @@map("finance_accounting_events")
 }
@@ -7735,4 +7745,29 @@ model CallCenterNote {
 
   @@index([contactId, createdAt, id], map: "call_contact_notes_idx")
   @@map("customer_affairs_call_notes")
+}
+
+model SalesReceiptAllocation {
+  id               String                    @id @db.Uuid
+  sourcePaymentId  String                    @db.Uuid
+  sourcePayment    SalesContractPaymentEntry @relation(fields: [sourcePaymentId], references: [id], onDelete: Restrict)
+  targetContractId String                    @db.Uuid
+  targetContract   SalesContract             @relation(fields: [targetContractId], references: [id], onDelete: Restrict)
+  branchId         String                    @db.Uuid
+  branch           Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  actorId          String                    @db.Uuid
+  actor            User                      @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  amount           Decimal                   @db.Decimal(24, 4)
+  currencyCode     String                    @db.VarChar(3)
+  reason           String                    @db.VarChar(500)
+  fingerprint      String                    @db.Char(64)
+  reversalOfId     String?                   @unique @db.Uuid
+  reversalOf       SalesReceiptAllocation?   @relation("ReceiptAllocationReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversal         SalesReceiptAllocation?   @relation("ReceiptAllocationReversal")
+  createdAt        DateTime                  @default(now()) @db.Timestamptz(3)
+
+  @@index([sourcePaymentId, createdAt], map: "sales_receipt_allocations_source_idx")
+  @@index([targetContractId, createdAt], map: "sales_receipt_allocations_target_idx")
+  @@index([branchId, createdAt], map: "sales_receipt_allocations_branch_idx")
+  @@map("sales_receipt_allocations")
 }

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { ReceiptAllocationPanel } from './receipt-allocation-panel';
 import { useQuery } from '@tanstack/react-query';
 import type {
   AccountingSnapshotV1,
@@ -16,6 +17,8 @@ import { AccountingButton as Button } from './accounting-operations';
 import { apiRequest, FinanceInboxApiError } from '../api/finance-inbox-api';
 
 type Event = AccountingFinancialEventV1;
+const allocationKind = (kind: string) =>
+  kind === 'RECEIPT_ALLOCATION' || kind === 'RECEIPT_ALLOCATION_REVERSAL';
 
 export function AccountingFinancialEvents({
   book,
@@ -31,6 +34,10 @@ export function AccountingFinancialEvents({
   ) => Promise<T | undefined>;
 }) {
   const [selected, setSelected] = useState<Event | null>(null);
+  const [allocationEventId, setAllocationEventId] = useState<string | null>(
+    null,
+  );
+  const derivedSelected = !!selected && allocationKind(selected.kind);
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState('');
   const [cursor, setCursor] = useState('');
@@ -92,7 +99,13 @@ export function AccountingFinancialEvents({
       rule ? 'financial-rule-save' : 'financial-event-journal',
       {
         eventId: selected.id,
-        ...mapping,
+        ...(derivedSelected
+          ? {
+              documentDate: mapping.documentDate ?? '',
+              periodId: mapping.periodId ?? '',
+              latePostingReason: mapping.latePostingReason ?? '',
+            }
+          : mapping),
         ...(!rule && selected.journal ? { rebuild: true } : {}),
       },
       !rule ? selected.journal?.version : undefined,
@@ -260,6 +273,20 @@ export function AccountingFinancialEvents({
                         تنظیم و ایجاد سند
                       </Button>
                     )}
+                    {event.source === 'SALES' &&
+                      (event.kind === 'CUSTOMER_RECEIPT' ||
+                        (allocationKind(event.kind) && event.basisEventId)) && (
+                        <Button
+                          permission="finance.journal.read"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() =>
+                            setAllocationEventId(event.basisEventId ?? event.id)
+                          }
+                        >
+                          تخصیص‌های دریافت
+                        </Button>
+                      )}
                   </td>
                 </tr>
               ))}
@@ -322,6 +349,17 @@ export function AccountingFinancialEvents({
           </ul>
         </details>
       ) : null}
+      {allocationEventId && (
+        <ReceiptAllocationPanel
+          key={allocationEventId}
+          eventId={allocationEventId}
+          onClose={() => setAllocationEventId(null)}
+          onChanged={() => {
+            void query.refetch();
+            void reconciliation.refetch();
+          }}
+        />
+      )}
       {selected && (
         <form
           className="space-y-4 rounded-xl bg-muted/30 p-4"
@@ -339,18 +377,27 @@ export function AccountingFinancialEvents({
             است. دریافت پیش از ارائه خدمت را به حساب پیش‌دریافت تخصیص دهید؛
             دریافت وجه به‌تنهایی درآمد نیست.
           </p>
-          <SearchCombobox
-            label="نوع سند رویداد"
-            value={mapping.typeId ?? ''}
-            onValueChange={(value) =>
-              setMapping((m) => ({ ...m, typeId: value }))
-            }
-            options={options(
-              book.configurations.filter(
-                (c) => c.kind === 'voucher-types' && c.active,
-              ),
-            )}
-          />
+          {!derivedSelected && (
+            <SearchCombobox
+              label="نوع سند رویداد"
+              value={mapping.typeId ?? ''}
+              onValueChange={(value) =>
+                setMapping((m) => ({ ...m, typeId: value }))
+              }
+              options={options(
+                book.configurations.filter(
+                  (c) => c.kind === 'voucher-types' && c.active,
+                ),
+              )}
+            />
+          )}
+          {derivedSelected && (
+            <p>
+              حساب، تفصیلی، نوع سند و نرخ حمل‌شده از دریافت اصلی حفظ می‌شوند؛
+              مبلغ دفتری این تخصیص {selected.carryingAmount}{' '}
+              {selected.carryingCurrency} است.
+            </p>
+          )}
           <details className="rounded-xl border p-3">
             <summary>ثبت در دوره یا تاریخی متفاوت از عملیات</summary>
             <p className="text-sm">
@@ -391,7 +438,7 @@ export function AccountingFinancialEvents({
               />
             </label>
           </details>
-          {selected.currency !== book.book.baseCurrency ? (
+          {!derivedSelected && selected.currency !== book.book.baseCurrency ? (
             <SearchCombobox
               label="نرخ مصوب مبنای رویداد (در صورت چند نرخ)"
               value={mapping.fxSnapshotId ?? ''}
@@ -412,52 +459,59 @@ export function AccountingFinancialEvents({
                 }))}
             />
           ) : null}
-          <label className="block">
-            عنوان قاعده (برای ذخیره خودکار)
-            <Input
-              maxLength={160}
-              value={mapping.title ?? ''}
-              onChange={(e) =>
-                setMapping((m) => ({ ...m, title: e.target.value }))
-              }
-            />
-          </label>
-          <div className="grid gap-4 md:grid-cols-2">
-            {(['debit', 'credit'] as const).map((side) => (
-              <div className="space-y-3" key={side}>
-                <SearchCombobox
-                  label={
-                    side === 'debit'
-                      ? 'حساب بدهکار رویداد'
-                      : 'حساب بستانکار رویداد'
+          {!derivedSelected && (
+            <>
+              <label className="block">
+                عنوان قاعده (برای ذخیره خودکار)
+                <Input
+                  maxLength={160}
+                  value={mapping.title ?? ''}
+                  onChange={(e) =>
+                    setMapping((m) => ({ ...m, title: e.target.value }))
                   }
-                  value={mapping[`${side}AccountId`] ?? ''}
-                  onValueChange={(value) =>
-                    setMapping((m) => ({ ...m, [`${side}AccountId`]: value }))
-                  }
-                  options={options(
-                    book.accounts.filter(
-                      (a) => a.active && a.level === 'SUBSIDIARY',
-                    ),
-                  )}
                 />
-                {[4, 5, 6].map((level) => (
-                  <SearchCombobox
-                    key={level}
-                    label={`تفصیلی ${level} ${side === 'debit' ? 'بدهکار' : 'بستانکار'}`}
-                    value={mapping[`${side}Detail${level}Id`] ?? ''}
-                    onValueChange={(value) =>
-                      setMapping((m) => ({
-                        ...m,
-                        [`${side}Detail${level}Id`]: value,
-                      }))
-                    }
-                    options={options(book.details.filter((d) => d.active))}
-                  />
+              </label>
+              <div className="grid gap-4 md:grid-cols-2">
+                {(['debit', 'credit'] as const).map((side) => (
+                  <div className="space-y-3" key={side}>
+                    <SearchCombobox
+                      label={
+                        side === 'debit'
+                          ? 'حساب بدهکار رویداد'
+                          : 'حساب بستانکار رویداد'
+                      }
+                      value={mapping[`${side}AccountId`] ?? ''}
+                      onValueChange={(value) =>
+                        setMapping((m) => ({
+                          ...m,
+                          [`${side}AccountId`]: value,
+                        }))
+                      }
+                      options={options(
+                        book.accounts.filter(
+                          (a) => a.active && a.level === 'SUBSIDIARY',
+                        ),
+                      )}
+                    />
+                    {[4, 5, 6].map((level) => (
+                      <SearchCombobox
+                        key={level}
+                        label={`تفصیلی ${level} ${side === 'debit' ? 'بدهکار' : 'بستانکار'}`}
+                        value={mapping[`${side}Detail${level}Id`] ?? ''}
+                        onValueChange={(value) =>
+                          setMapping((m) => ({
+                            ...m,
+                            [`${side}Detail${level}Id`]: value,
+                          }))
+                        }
+                        options={options(book.details.filter((d) => d.active))}
+                      />
+                    ))}
+                  </div>
                 ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button
               type="submit"
@@ -468,14 +522,16 @@ export function AccountingFinancialEvents({
                 ? 'بازسازی پیش‌نویس از مبدأ'
                 : 'ایجاد پیش‌نویس رویداد'}
             </Button>
-            <Button
-              type="button"
-              disabled={busy}
-              permission="finance.account.manage"
-              onClick={() => void submit(true)}
-            >
-              ذخیره قاعده برای رویدادهای بعدی
-            </Button>
+            {!derivedSelected && (
+              <Button
+                type="button"
+                disabled={busy}
+                permission="finance.account.manage"
+                onClick={() => void submit(true)}
+              >
+                ذخیره قاعده برای رویدادهای بعدی
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"

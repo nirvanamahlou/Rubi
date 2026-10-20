@@ -34,7 +34,11 @@ export const salesDetailInclude = {
   ticketSelections: { orderBy: { departureAt: 'asc' } },
   hotelSelection: { include: { rooms: { orderBy: { ordinal: 'asc' } } } },
   priceComponents: { orderBy: { createdAt: 'asc' } },
-  payments: { include: { refunds: true }, orderBy: { createdAt: 'asc' } },
+  payments: {
+    include: { refunds: true, allocations: true },
+    orderBy: { createdAt: 'asc' },
+  },
+  receiptAllocations: true,
   reservationRequests: { orderBy: { createdAt: 'desc' } },
 } satisfies Prisma.SalesContractInclude;
 
@@ -227,6 +231,9 @@ export class SalesRepository {
         branchId: true,
         ownerUserId: true,
         customerNameSnapshot: true,
+        receiptAllocations: {
+          select: { amount: true, currencyCode: true, reversalOfId: true },
+        },
         settlementStatus: true,
         payments: {
           where: { status: 'FINANCE_CONFIRMED' },
@@ -234,6 +241,7 @@ export class SalesRepository {
             id: true,
             amount: true,
             refunds: { select: { amount: true } },
+            allocations: { select: { amount: true, reversalOfId: true } },
           },
         },
       },
@@ -253,6 +261,9 @@ export class SalesRepository {
         id: true,
         branchId: true,
         ownerUserId: true,
+        receiptAllocations: {
+          select: { amount: true, currencyCode: true, reversalOfId: true },
+        },
         settlementStatus: true,
         status: true,
         payments: {
@@ -261,6 +272,7 @@ export class SalesRepository {
             id: true,
             amount: true,
             refunds: { select: { amount: true } },
+            allocations: { select: { amount: true, reversalOfId: true } },
           },
         },
       },
@@ -689,6 +701,21 @@ export class SalesRepository {
           where: {
             id,
             version,
+            OR: [
+              { customerId: input.customerId },
+              {
+                receiptAllocations: {
+                  none: { reversalOfId: null, reversal: null },
+                },
+                payments: {
+                  none: {
+                    allocations: {
+                      some: { reversalOfId: null, reversal: null },
+                    },
+                  },
+                },
+              },
+            ],
             status: amendment
               ? { not: 'CANCELLED' }
               : { in: ['DRAFT', 'PENDING_CONFIRMATION'] },
@@ -1099,9 +1126,18 @@ export class SalesRepository {
       where: { paymentId: payment.id },
       _sum: { amount: true },
     });
+    const allocation = await tx.salesReceiptAllocation.aggregate({
+      where: {
+        sourcePaymentId: payment.id,
+        reversalOfId: null,
+        reversal: null,
+      },
+      _sum: { amount: true },
+    });
     if (
       (total._sum.amount ?? new Prisma.Decimal(0))
         .add(input.amount)
+        .add(allocation._sum.amount ?? 0)
         .gt(payment.amount)
     )
       throw new InternalServerErrorException(

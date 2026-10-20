@@ -1,3 +1,7 @@
+import {
+  hasConfirmedReceiptFunds,
+  netSalesPayments,
+} from './sales-financial-settlement';
 import { financialDate } from '../finance/accounting/financial-event.public';
 import { PackageTourPricingService } from '../package-pricing/package-tour-pricing.service';
 import { isOptionalOperationReason } from '@nora/contracts';
@@ -46,7 +50,7 @@ import type {
   SalesFinanceInboxPaymentV1,
   FinanceCustomerDocumentDeliveryCandidateV1,
 } from '@nora/contracts';
-import { Prisma } from '@nora/database';
+import type { Prisma } from '@nora/database';
 
 import {
   SALES_TICKET_AVAILABILITY_PORT,
@@ -228,17 +232,7 @@ export function presentSalesContract(
     reservationStatus: row.reservationStatus,
     balances: calculateSalesBalances(
       priceComponents,
-      payments.map((payment, index) => ({
-        ...payment,
-        amount: new Prisma.Decimal(payment.amount)
-          .sub(
-            (row.payments[index]!.refunds ?? []).reduce(
-              (sum, refund) => sum.add(refund.amount),
-              new Prisma.Decimal(0),
-            ),
-          )
-          .toString(),
-      })),
+      netSalesPayments(row.payments, row.receiptAllocations ?? []),
     ),
     version: row.version,
     createdAt: row.createdAt.toISOString(),
@@ -893,13 +887,9 @@ export class SalesService {
       branchId: row.branchId,
       customerNameSnapshot: row.customerNameSnapshot,
       settlementStatus: row.settlementStatus,
-      hasConfirmedPayment: row.payments.some((p) =>
-        p.amount.gt(
-          p.refunds.reduce(
-            (sum, r) => sum.add(r.amount),
-            new Prisma.Decimal(0),
-          ),
-        ),
+      hasConfirmedPayment: hasConfirmedReceiptFunds(
+        row.payments,
+        row.receiptAllocations ?? [],
       ),
     }));
   }
@@ -923,14 +913,7 @@ export class SalesService {
       cancelled: row.status === 'CANCELLED',
       hasConfirmedPayment:
         row.status !== 'CANCELLED' &&
-        row.payments.some((p) =>
-          p.amount.gt(
-            p.refunds.reduce(
-              (sum, r) => sum.add(r.amount),
-              new Prisma.Decimal(0),
-            ),
-          ),
-        ),
+        hasConfirmedReceiptFunds(row.payments, row.receiptAllocations ?? []),
       fullySettled:
         row.status !== 'CANCELLED' &&
         ['SETTLED', 'OVERPAID'].includes(row.settlementStatus),
