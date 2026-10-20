@@ -1,6 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
+import { DatePicker } from '@/components/ui/date-picker';
 import { callCenterRequest } from './client';
 import type { Operator, RequestCase } from './workflow-client';
 export function RequestReferral({
@@ -80,10 +81,13 @@ export function RequestReferral({
       </NativeSearchSelect>
       <label>
         موعد ارجاع به وقت تهران
-        <input
-          type="datetime-local"
+        <DatePicker
+          aria-label="موعد ارجاع به وقت تهران"
+          includeTime
+          withinDialog
+          required
           value={due}
-          onChange={(e) => setDue(e.target.value)}
+          onChange={setDue}
         />
       </label>
       <button

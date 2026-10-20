@@ -5,6 +5,7 @@ import { useDialogReturnFocus } from './use-dialog-focus';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
   DialogContent,
@@ -928,11 +929,14 @@ function WorkflowEditor({
                 </label>
                 <label>
                   موعد پیگیری
-                  <input
+                  <DatePicker
                     name="dueAt"
-                    type="datetime-local"
+                    aria-label="موعد پیگیری"
+                    includeTime
+                    withinDialog
                     required
                     defaultValue={due}
+                    onChange={() => setDirty(true)}
                   />
                 </label>
                 <label>
