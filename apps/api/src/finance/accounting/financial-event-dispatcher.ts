@@ -1,3 +1,4 @@
+import { isReceiptAllocation } from './receipt-funds.public';
 import {
   Inject,
   Injectable,
@@ -54,6 +55,36 @@ export class FinancialEventDispatcher implements OnModuleInit, OnModuleDestroy {
       );
       for (const event of events) {
         try {
+          if (isReceiptAllocation(event.kind)) {
+            const basis = event.basisEventId
+              ? await this.database.client.financeAccountingEvent.findUnique({
+                  where: { id: event.basisEventId },
+                  include: { journal: { select: { bookId: true } } },
+                })
+              : null;
+            if (!basis?.journal)
+              throw new Error('سند دریافت اصلی تخصیص در دسترس نیست.');
+            const actor = await this.iam.reminderPrincipal(
+              event.actorId,
+              event.branchId,
+            );
+            if (
+              !actor ||
+              !actor.permissions.includes('finance.journal.create') ||
+              !actor.permissions.includes('finance.receipt.approve')
+            )
+              throw new Error('دسترسی ثبت‌کننده تخصیص معتبر نیست.');
+            await this.accounting.command(
+              basis.journal.bookId,
+              'financial-event-journal',
+              {
+                key: `financial-allocation:${event.id}`,
+                payload: { eventId: event.id },
+              },
+              { ...actor, sessionId: 'system:financial-allocation-draft' },
+            );
+            continue;
+          }
           const candidates =
             await this.database.client.accountingConfiguration.findMany({
               where: {
