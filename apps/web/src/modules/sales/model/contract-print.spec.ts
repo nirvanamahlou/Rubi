@@ -349,3 +349,31 @@ it('uses the Jahan Bastan issuer throughout the contract without Niyayesh contac
   expect(html).not.toContain('Nystkt.ir');
   expect(html).not.toContain('niyayeshseir.com');
 });
+
+it('prints aggregate passenger prices as IRR and foreign totals without inventing flight/hotel prices', () => {
+  const output = structuredClone(printFixture);
+  const prices = Object.fromEntries(
+    output.contract.passengersDetail.map((p) => [
+      p.customerId,
+      [
+        { amount: '234567', currencyCode: 'IRR' },
+        { amount: '123.45', currencyCode: 'USD' },
+      ],
+    ]),
+  );
+  output.contract.servicesDetail = output.contract.servicesDetail.map(
+    (s, i) => ({
+      ...s,
+      metadata: {
+        passengerPackagePricingVersion: 1,
+        ...(i === 0 ? { passengerTotalPricesV1: JSON.stringify(prices) } : {}),
+      },
+    }),
+  );
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('<th>قیمت ریالی</th>');
+  expect(html).toContain('234,567');
+  expect(html).toContain('123.45');
+  expect(html).not.toContain('<th>مبلغ پرواز</th>');
+  expect(html).toContain('قیمت کل خدمات هر مسافر');
+});

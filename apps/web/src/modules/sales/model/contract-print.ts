@@ -1,4 +1,5 @@
 import { readPassengerHotelStays } from '@nora/contracts';
+import { readPassengerTotalPrices } from '@nora/contracts';
 import { salesRoomDisplayName } from '@nora/contracts';
 import { readAgencyCommission } from '@nora/contracts';
 import { roomPriceShares, hotelAgeOn } from '@nora/contracts';
@@ -206,6 +207,10 @@ export function contractPrintHtml(
     ? name(hotel.rooms?.[0]?.roomTypeId ?? hotel.roomTypeId)
     : '—';
   const flightPrices = readPassengerFlightPrices(c.servicesDetail);
+  const totalPrices = readPassengerTotalPrices(
+    c.servicesDetail,
+    c.passengersDetail,
+  );
   const hotelPrices = readPassengerHotelPrices(
     c.servicesDetail,
     c.passengersDetail,
@@ -242,9 +247,15 @@ export function contractPrintHtml(
           : '—';
       };
       const renderPrices = (hotelPrice: boolean) =>
-        (hotelPrice
-          ? (hotelPrices?.[p.customerId] ?? shares[p.customerId] ?? [])
-          : (flightPrices?.[p.customerId] ?? [])
+        (totalPrices
+          ? (totalPrices[p.customerId] ?? []).filter((price) =>
+              hotelPrice
+                ? price.currencyCode !== 'IRR'
+                : price.currencyCode === 'IRR',
+            )
+          : hotelPrice
+            ? (hotelPrices?.[p.customerId] ?? shares[p.customerId] ?? [])
+            : (flightPrices?.[p.customerId] ?? [])
         )
           .map(
             (price) =>
@@ -255,7 +266,7 @@ export function contractPrintHtml(
               '</bdi></div>',
           )
           .join('');
-      return `<tr><td>${i + 1}</td><td>${e(p.displayNameSnapshot)}</td><td>${ageLabel}</td><td>${allocated.some((s) => s.kind === 'VISA') ? 'دارد' : '—'}</td><td class="contract-total">${flightPrices?.[p.customerId]?.length ? renderPrices(false) : 'ثبت نشده'}</td><td>${renderPrices(true)}</td>${showDiscount ? '<td>' + deductionCell('discount') + '</td>' : ''}${showCommission ? '<td>' + (deductions[p.customerId]?.commission ? deductionCell('commission') : p.ageCategory !== 'INF' && commission ? contractMoney(p.ageCategory === 'ADT' ? commission.adult : commission.child) : '—') + '</td>' : ''}<td>—</td>${guestStays ? `<td>${e(guestStays[p.customerId]?.checkInDate ? date(guestStays[p.customerId]!.checkInDate) : '—')}</td><td>${e(guestStays[p.customerId]?.checkOutDate ? date(guestStays[p.customerId]!.checkOutDate) : '—')}</td>` : ''}</tr>`;
+      return `<tr><td>${i + 1}</td><td>${e(p.displayNameSnapshot)}</td><td>${ageLabel}</td><td>${allocated.some((s) => s.kind === 'VISA') ? 'دارد' : '—'}</td><td class="contract-total">${totalPrices ? renderPrices(false) || '—' : flightPrices?.[p.customerId]?.length ? renderPrices(false) : 'ثبت نشده'}</td><td>${renderPrices(true)}</td>${showDiscount ? '<td>' + deductionCell('discount') + '</td>' : ''}${showCommission ? '<td>' + (deductions[p.customerId]?.commission ? deductionCell('commission') : p.ageCategory !== 'INF' && commission ? contractMoney(p.ageCategory === 'ADT' ? commission.adult : commission.child) : '—') + '</td>' : ''}<td>—</td>${guestStays ? `<td>${e(guestStays[p.customerId]?.checkInDate ? date(guestStays[p.customerId]!.checkInDate) : '—')}</td><td>${e(guestStays[p.customerId]?.checkOutDate ? date(guestStays[p.customerId]!.checkOutDate) : '—')}</td>` : ''}</tr>`;
     })
     .join('');
   const flights = salesContractFlights(c.servicesDetail, c.ticketSelections)
@@ -351,7 +362,7 @@ export function contractPrintHtml(
   ${options.draft ? '<p class="note"><b>پیش‌نمایش قرارداد — هنوز ثبت و به رزرواسیون ارسال نشده است.</b></p>' : ''}
   <div class="meta"><div>شماره قرارداد<strong><bdi>${e(c.contractNumber)}</bdi></strong></div><div>${options.draft ? 'تاریخ پیش‌نمایش' : 'تاریخ ثبت'}<strong>${e(date(c.createdAt))}</strong></div><div>ساعت<strong>${e(time(c.createdAt))}</strong></div><div>مسئول فروش<strong>${e(output.ownerName)}</strong></div></div>
   <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(contractPartyName)}</b></div><div>شماره مشتری: <bdi>${e(output.customer.phone)}</bdi></div>${output.customer.landline ? `<div>تلفن ثابت: <bdi>${e(output.customer.landline)}</bdi></div>` : ''}<div class="wide">نشانی: ${e(output.customer.address)}</div><div>کد پستی: <bdi>${e(output.customer.postalCode)}</bdi></div><div>مقصد: ${e(name(c.destinationId))}</div><div>تعداد: ${c.passengersDetail.length} نفر</div><div>درخواست‌کننده: ${e(contractPartyName)}</div><div>خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
-<section class="passengers">${heading(2, 'PASSENGERS & PRICING', 'مسافران و قیمت')}<table><colgroup>${passengerColumns}${guestStays ? '<col/><col/>' : ''}</colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>ویزا</th><th>مبلغ پرواز</th><th>قیمت ارزی</th>${showDiscount ? '<th>تخفیف</th>' : ''}${showCommission ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th>${guestStays ? '<th>چک‌این هتل</th><th>چک‌اوت هتل</th>' : ''}</tr></thead><tbody>${rows}</tbody></table><div class="financial-summary"><p class="note">مبلغ پرواز هر مسافر جزئی از مبلغ کل قرارداد است.</p><div class="summary-grid"><div class="summary-card"><b>قیمت توافق‌شده قرارداد</b><div class="summary-value">${c.paymentTerms?.mode === 'CHECK' || c.servicesDetail.some((s) => s.metadata?.automaticFlightRoomTotalV1 === true) ? moneyRows('amount') : (agreementTotal ?? moneyRows('amount'))}</div></div></div>${chequeTerms}${agency && !commission && !showCommission ? '<p class="note">کمیسیون آژانس در این قرارداد ثبت نشده؛ هیچ مبلغی بابت آن از جمع قرارداد کسر نشده است.</p>' : ''}</div></section>
+<section class="passengers">${heading(2, 'PASSENGERS & PRICING', 'مسافران و قیمت')}<table><colgroup>${passengerColumns}${guestStays ? '<col/><col/>' : ''}</colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>ویزا</th><th>${totalPrices ? 'قیمت ریالی' : 'مبلغ پرواز'}</th><th>قیمت ارزی</th>${showDiscount ? '<th>تخفیف</th>' : ''}${showCommission ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th>${guestStays ? '<th>چک‌این هتل</th><th>چک‌اوت هتل</th>' : ''}</tr></thead><tbody>${rows}</tbody></table><div class="financial-summary"><p class="note">${totalPrices ? 'مبالغ ریالی و ارزی، قیمت کل خدمات هر مسافر هستند.' : 'مبلغ پرواز هر مسافر جزئی از مبلغ کل قرارداد است.'}</p><div class="summary-grid"><div class="summary-card"><b>قیمت توافق‌شده قرارداد</b><div class="summary-value">${c.paymentTerms?.mode === 'CHECK' || c.servicesDetail.some((s) => s.metadata?.automaticFlightRoomTotalV1 === true) ? moneyRows('amount') : (agreementTotal ?? moneyRows('amount'))}</div></div></div>${chequeTerms}${agency && !commission && !showCommission ? '<p class="note">کمیسیون آژانس در این قرارداد ثبت نشده؛ هیچ مبلغی بابت آن از جمع قرارداد کسر نشده است.</p>' : ''}</div></section>
   <section>${heading(3, 'FLIGHT INFORMATION', 'اطلاعات پرواز')}<table><thead><tr><th>مسیر</th><th>ایرلاین</th><th>شماره</th><th>تاریخ</th><th>ساعت</th><th>کلاس</th></tr></thead><tbody>${flights || '<tr><td colspan="6">پرواز در این قرارداد انتخاب نشده است.</td></tr>'}</tbody></table></section>
   <section>${heading(4, 'HOTEL INFORMATION', 'اطلاعات هتل')}${hotel ? `<table><thead><tr><th style="width:30%">نام هتل</th><th>درجه</th><th>خدمات</th><th>ورود</th><th>خروج</th>${mixedRoomTypes ? '' : '<th>نوع اتاق</th>'}</tr></thead><tbody><tr><td><bdi>${e(refs.hotelLatinName ?? 'ثبت نشده')}</bdi><small><bdi>${e(refs.hotelWebsite ?? 'وب‌سایت ثبت نشده')}</bdi></small></td><td>${e(refs.hotelGrade)}</td><td>${e(name(hotel.mealServiceId))}</td><td>${e(travelDate(hotel.checkInDate))}</td><td>${e(travelDate(hotel.checkOutDate))}</td>${mixedRoomTypes ? '' : `<td>${e(room)}</td>`}</tr></tbody></table>${hotel.rooms?.length ? `<table><thead><tr><th>اتاق</th><th>نوع اتاق</th><th>بزرگسال</th><th>سن کودکان</th><th>تعداد نفرات</th><th>مبلغ توافق‌شدهٔ اتاق</th></tr></thead><tbody>${hotel.rooms.map((r) => `<tr><td>${e(r.ordinal)}</td><td>${e(salesRoomDisplayName(r))}</td><td>${e(r.adults)}</td><td>${e(r.childAges.join(', ') || '—')}</td><td>${e(r.adults + r.childAges.length)}</td><td>${r.agreedPrice ? '<bdi class="money">' + contractMoney(r.agreedPrice.amount) + ' ' + e(currencySymbol(r.agreedPrice.currencyCode)) + '</bdi>' : '—'}</td></tr>`).join('')}</tbody></table>` : ''}` : 'هتل در این قرارداد انتخاب نشده است.'}</section>
   <section>${heading(5, 'OTHER SERVICES', 'سایر خدمات')}<div class="fields"><div>ترانسفر: ${e(transfers || 'ندارد')}</div><div>گشت شهری: ${e(

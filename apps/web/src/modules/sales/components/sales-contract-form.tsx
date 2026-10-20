@@ -216,12 +216,16 @@ export function SalesContractForm() {
     if (isTicketOnlyContract(draftState))
       return ticketOnlySaleDefaults({
         ...draftState,
+        passengerTotalPricing: true,
         automaticComponentPricing: true,
         priceEntryMode: 'CONTRACT_TOTAL',
       });
     return syncHotelChildSelections(
       withRoomDrivenGuests({
         ...draftState,
+        passengerTotalPricing: draftState.serviceKinds.some(
+          (k) => k === 'FLIGHT' || k === 'HOTEL',
+        ),
         automaticComponentPricing: true,
         priceEntryMode: 'CONTRACT_TOTAL',
         servicePricing: draftState.servicePricing ?? {},
@@ -732,6 +736,7 @@ export function SalesContractForm() {
       readPassengerHotelPrices(payload.services, payload.passengers);
       if (
         payload.services.some((s) => s.kind === 'FLIGHT') &&
+        !state.passengerTotalPricing &&
         state.passengerFlightPrices === undefined
       )
         throw Error('قیمت پرواز هر مسافر را وارد کنید.');
@@ -750,7 +755,8 @@ export function SalesContractForm() {
         payload.paymentTerms
           ? payload.priceComponents.filter((p) => p.title !== SALES_CHEQUE_FEE)
           : payload.priceComponents,
-        state.priceEntryMode === 'PASSENGER_TOTAL',
+        state.passengerTotalPricing ||
+          state.priceEntryMode === 'PASSENGER_TOTAL',
       );
       return payload.priceComponents.length > 0 ||
         (payload.services.length > 0 &&
