@@ -6727,3 +6727,8 @@ PASSENGER-PRICE-COLUMNS-1020 candidate validation:57 Sales API and3 shared-reade
 
 
 PASSENGER-PRICE-COLUMNS-1020 ready for CI: merged-current-development regressions45 Web/58 API/4 shared pass; gross/net total package validation, selectable non-IRR currency and fixed IRR UI, service/individual-stay context and PDF v2 totals retained. Final-head CI gates develop merge; no operational rollout or migration.
+
+
+## LOCAL-CONTRACT-STAGES-1020 — PC-A — completed
+
+User-authorized local update fast-forwarded a task checkout from7b7ba280 to develop d1aa63fd. API and Web production builds pass and named scheduled runners now serve this same code on4000/3100. Three-stage contract progress, trailing hotel stay columns, payment-only amounts and international hotel calendar changes are present. Verified local database backup preceded six additive migrations; unrelated deferred five-company branch grants remain unapplied. Final HTTP checks confirm API200, protected API401, login200, current build/assets, protected-route redirects and localhost CORS. No real-data seed or source changes. Authenticated workflow acceptance is left to the requesting user. Operational details/rollback are kept in ignored .runtime/contract-stages-state-1020 and active-main3100.json.
