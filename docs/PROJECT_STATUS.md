@@ -6820,3 +6820,8 @@ CI calendar repair validation:12 focused shared-calendar contract/date utility t
 ## 2026-10-20 — SERVICE-CARDS-1020 — PC-A
 
 Owner-approved service selector artwork implemented with isolated responsive CSS: prominent Flight/Hotel/Transfer cards, line icons, selected blue surfaces, direction chips, secondary services and selection summary. Existing onChange/onClick, tour lock and BUS/TRAIN disabled conditions preserved. No new display copy, API/schema/data changes.19 focused contract-form/direction regressions pass against current Contracts source; scoped lint/format/diff checks pass. Exact-head hosted quality/test/build gates required before authorized merge; local3100 Web rollout follows verified build, API/database untouched.
+HOTEL-STAY-LAYOUT-1020 / PC-A: remove the next-day checkbox and use equal-width shared hotel date controls; bounded presentation-only change, no data or runtime mutation.
+
+
+HOTEL-STAY-LAYOUT-1020 candidate: shared hotel dates now fill two equal columns, next-day checkbox removed. Existing calendar-state regression passed; no persisted dates or operational runtime changed.
+

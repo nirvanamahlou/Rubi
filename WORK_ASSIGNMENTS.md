@@ -8566,3 +8566,8 @@ CALL-CENTER-DEVELOP-INTEGRATION-1020 CI repair: the full hosted test suite detec
 Branch codex/pc-a-service-cards-1020 from origin/develop@83f5daa3. Reserve Sales contract service selection presentation, isolated CSS module and own docs. Implement owner-approved image using existing service/direction handlers and tour/disabled rules unchanged. No schema/API/dependency/migration changes. User authorizes develop merge and bounded local3100 Web rollout; preserve API/database. Prior form presentation reservation merged/released.
 
 SERVICE-CARDS-1020 — READY_FOR_CI:19 focused existing form/direction tests pass with current Contracts source alias (root-installed shared dist is older); scoped lint and formatting pass. No handler/state/validation changes. Source reservation freezes/releases with candidate; user authorizes develop merge and isolated Web3100 rollout after checks.
+## HOTEL-STAY-LAYOUT-1020 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-hotel-stay-layout-1020 from develop83f5daa3. Reserve hotel-stay-dates.tsx presentation and own status notes only: remove next-day checkbox and make shared check-in/out equal full-row columns. Preserve calendar, date values/manual edits and historical model compatibility. Earlier presentation scopes merged/released. No API/schema/migration/dependency/runtime changes.
+
+HOTEL-STAY-LAYOUT-1020 candidate: removed only next-day checkbox; two equal responsive date columns fill the row and title spans both. Existing calendar/date round-trip regression passes; scoped lint and final hosted quality/type/build/test gates verify publication. Source scope released on publication. No model/date value/API/runtime changes.
