@@ -1,3 +1,4 @@
+import { conversationConfiguration } from './conversation-config.mjs';
 import { createOrchestrator, readMessage } from './orchestrator.mjs';
 import { parseFilterSearch, resolveReportFilters } from './report-filters.mjs';
 import { runPreparedAction } from './prepared-actions.mjs';
@@ -26,6 +27,7 @@ export function createAssistantServer({
   fetcher = fetch,
   audit = (event) => process.stdout.write(JSON.stringify(event) + '\n'),
   timeoutMs = 2500,
+  identityTimeoutMs = timeoutMs,
   now = () => new Date(),
   conversation,
 }) {
@@ -35,6 +37,7 @@ export function createAssistantServer({
     erpAuthBaseUrl,
     fetcher,
     timeoutMs,
+    identityTimeoutMs,
   });
   const authenticateErp = createAuthorization(client);
   const execute = createToolExecutor({
@@ -220,7 +223,8 @@ export function createAssistantServer({
                 );
             }
           }
-          if (result.status === 'CLARIFY') outcome = 'SUCCESS';
+          if (result.status === 'CLARIFY' || result.status === 'REPLY')
+            outcome = 'SUCCESS';
           send(200, result);
           return;
         }
@@ -276,6 +280,8 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   const service = createAssistantServer({
+    conversation: conversationConfiguration(),
+    identityTimeoutMs: 5000,
     erpBaseUrl: process.env.ERP_API_BASE_URL,
     erpAuthBaseUrl:
       process.env.ERP_AUTH_API_BASE_URL ??

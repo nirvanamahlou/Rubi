@@ -1,7 +1,7 @@
 # Independent assistant service
 
-Node 24 native HTTP service; no package installation, database access, model
-provider, user-content persistence, arbitrary URL/SQL execution or write tools.
+Node 24 native HTTP service; no package installation, database access,
+user-content persistence, arbitrary URL/SQL execution or write tools.
 
 ## Current public contract
 
@@ -107,3 +107,7 @@ conversation component is not mounted pending policy approval. See
 ## Groq synthetic evaluation — 2026-10-14
 
 A Groq adapter is available only through explicit trusted test injection; server.mjs does not load it. Use groq-synthetic-eval.mjs --synthetic-only with the local ignored key environment for fixed fictional cases. No arbitrary prompt or ERP client is included in that CLI. Provider access currently returns403 in this environment; live inference is not validated. Policy and activation gates remain closed. See ../../docs/tasks/ASSISTANT-GROQ-TEST-1014.md.
+
+## Live messages-only opt-in — 2026-10-20
+
+The default remains disabled. The owner has approved Groq for message/session text only. Set ASSISTANT_CONVERSATION_ENABLED=true, ASSISTANT_MODEL_PROVIDER=groq, ASSISTANT_DATA_POLICY=messages-only and a private GROQ_API_KEY in the service environment. This supersedes the earlier synthetic-only runtime gate for this explicit opt-in. No ERP tool result is sent to Groq. REPLY returns plain general conversation; ACTION and CLARIFY preserve the existing fixed contracts. Six-second model deadline, no retries. Quick reports remain usable if the provider fails. See ../../docs/tasks/ASSISTANT-LIVE-CHAT-1020.md.
