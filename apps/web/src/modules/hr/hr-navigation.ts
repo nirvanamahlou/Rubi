@@ -326,3 +326,11 @@ export function canonicalHrLocation(
     return { section: 'assets', tab: tab === 'logs' ? 'logs' : 'vehicles' };
   return { section, ...(tab ? { tab } : {}) };
 }
+
+export function resolveHrSource(group: HrGroup, tab?: string): HrSource {
+  return (
+    group.sources.find(
+      (source) => source.tab === (tab === 'roster' ? 'shift' : tab),
+    ) ?? group.sources[0]!
+  );
+}

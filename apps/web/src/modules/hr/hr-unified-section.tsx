@@ -11,6 +11,7 @@ import { screenMeta, sectionTabs } from './hr.model';
 import {
   hrGroups,
   resolveHrGroup,
+  resolveHrSource,
   type HrGroup,
   type HrSource,
 } from './hr-navigation';
@@ -65,8 +66,7 @@ function AccessibleHrSection({
   const [groupId, setGroupId] = useState(first.id);
   const group = groups.find((item) => item.id === groupId) ?? first;
   const [sourceTab, setSourceTab] = useState(
-    first.sources.find((item) => item.tab === initialTab)?.tab ??
-      first.sources[0]!.tab,
+    resolveHrSource(first, initialTab).tab,
   );
   const source =
     group.sources.find((item) => item.tab === sourceTab) ?? group.sources[0]!;
@@ -86,7 +86,10 @@ function AccessibleHrSection({
   const [notice, setNotice] = useState('');
   const [removing, setRemoving] = useState<HrRecordDto | null>(null);
   const [importing, setImporting] = useState(false);
-  const [calendar, setCalendar] = useState(initialTab === 'roster');
+  const [calendar, setCalendar] = useState(
+    initialTab === 'roster' &&
+      first.sources.some((source) => source.tab === 'shift'),
+  );
   const [busy, setBusy] = useState(false);
   const [expiry, setExpiry] = useState('');
   const [calendarItems, setCalendarItems] = useState<HrRecordDto[]>([]);
@@ -281,14 +284,18 @@ function AccessibleHrSection({
       <HrPanel
         title={group.label}
         actions={
-          group.id === 'shifts' ? (
+          group.id === 'shifts' &&
+          group.sources.some((item) => item.tab === 'shift') ? (
             <HrTabs
               items={[
                 { id: 'list', label: 'تعریف شیفت' },
                 { id: 'calendar', label: 'تقویم کارکنان' },
               ]}
               value={calendar ? 'calendar' : 'list'}
-              onChange={(id) => setCalendar(id === 'calendar')}
+              onChange={(id) => {
+                setCalendar(id === 'calendar');
+                if (id === 'calendar') setSourceTab('shift');
+              }}
               label="نمای شیفت"
             />
           ) : undefined
@@ -302,6 +309,7 @@ function AccessibleHrSection({
                 value={source.tab}
                 onChange={(event) => {
                   setSourceTab(event.target.value);
+                  setCalendar(false);
                   setPage(1);
                 }}
               >
