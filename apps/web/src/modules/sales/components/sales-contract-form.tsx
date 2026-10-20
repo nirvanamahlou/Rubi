@@ -1,4 +1,5 @@
 'use client';
+import { restoreContractDraft } from '../model/restore-contract-draft';
 import type { TicketOfferV1 } from '@nora/contracts';
 import { PublishedPackageSale } from './published-package-sale';
 import { readPassengerHotelPrices } from '@nora/contracts';
@@ -442,15 +443,7 @@ export function SalesContractForm() {
       ? globalThis.setTimeout(() => {
           try {
             const parsed = JSON.parse(saved) as Partial<SalesFormState>;
-            const restored = {
-              ...emptySalesForm,
-              ...parsed,
-              passengerComposition: {
-                ...emptySalesForm.passengerComposition,
-                ...parsed.passengerComposition,
-              },
-              hotel: { ...emptySalesForm.hotel, ...parsed.hotel },
-            } as SalesFormState;
+            const restored = restoreContractDraft(parsed);
             if (restored.serviceKinds.includes('FLIGHT'))
               restored.serviceKinds = restored.serviceKinds.filter(
                 (kind) => kind !== 'BUS' && kind !== 'TRAIN',

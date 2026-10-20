@@ -8394,3 +8394,10 @@ Validation:145 focused Web tests plus56 Sales API domain tests pass; API typeche
 FINANCE-ACCOUNTING-EVENTS-1018 due-receipt correction: reserve bounded scheduled-receipt eligibility after due date in existing Sales/Finance public reads and decisions; receipt confirmation remains manual. Serialize correction with the same Sales contract row lock as confirmation to prevent a concurrent rejection overwriting a confirmed receipt. No schedule auto-confirmation or bank automation.
 
 FINANCE-ACCOUNTING-EVENTS-1018 i18n reservation: bounded English overrides for new Finance/Accounting labels and visible errors, plus deterministic offline API/legacy catalogue regeneration. Prior translation scopes merged/released. Preserve Persian UI, source text and existing translations; no dependency changes.
+
+## GUEST-STAY-DRAFT-FIX-1020 — PC-A — IN_PROGRESS
+Branch codex/pc-a-guest-stay-draft-fix-1020 from develop5df04784. Reserve Sales new-contract local draft restore helper, form wiring and regression tests; own status notes. Fix older browser drafts missing roomDrivenGuests without clearing entered identities, room composition or amounts. Prior PR991 scope merged/released. No API/schema/migration/dependency/shared contract changes. User requests repair and local verification.
+
+
+GUEST-STAY-DRAFT-FIX-1020: regression suite18/18 passed (single worker30s rendering limit on local machine). Draft restoration enables current room-driven entry while preserving rooms, identities, stay overrides and amounts; flight-only drafts do not show hotel columns. Source scope frozen/released on publication. No migration or data writes.
+

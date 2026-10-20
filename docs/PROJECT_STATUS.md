@@ -6688,3 +6688,9 @@ Combined new-contract entry derives guests from rooms and appends explicit fligh
 ## FINANCE-ACCOUNTING-EVENTS-1018 — 2026-10-20 — in progress / PR992
 
 PC-A sole-writer implementation without orchestration: atomic immutable manual cash sources, exact mapping-driven accounting drafts, Sales refund/net settlement and obsolete release revocation, supplier/ticket/reservation/net-payroll hooks and proof-backed petty cash lifecycle. Five additive migrations applied to isolated QA only. Final local broad Finance/Sales run:496 passed,9 skipped; earlier focused PostgreSQL/release run:12 passed. New scheduled-due receipt and cancelled-source period-close regressions are awaiting final rerun. Draft PR992 and full quality/test/build/migration checks gate publication; no operational data/migration or3100 rollout yet. Full-plan remaining scope is explicitly listed in docs/tasks/FINANCE-ACCOUNTING-EVENTS-1018.md; this is not a completion claim for revenue/allocation/gross payroll/realized FX.
+
+GUEST-STAY-DRAFT-FIX-1020 / PC-A: repairing older new-contract browser draft restoration that hides individual hotel stay columns. No database changes.
+
+
+GUEST-STAY-DRAFT-FIX-1020 candidate:18 focused regression tests pass. Production build/local rollout verification in progress; no historical contracts changed.
+
