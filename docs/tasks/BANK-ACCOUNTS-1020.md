@@ -2,6 +2,8 @@
 
 ## Implementation candidate
 
+Published source03b4a20c / PR1000:17 API/HTTP and6 Web local tests pass, as do local API/Web typechecks, scoped lint and Prisma validation. Both hosted PostgreSQL gates and both full production builds pass. The actual bank-account PostgreSQL suite is4/4 (746ms on one hosted run), exercising25 simultaneous replay requests, normalized duplicate/CAS races, secret-free persistence/list/detail, explicit clear/omission, immutable audit and rollback. That is functional concurrency evidence, not an SLO/load benchmark. Browser tool initialization failed before any interaction, so live/mobile/visual checks are unexecuted. Final documentation-head full CI and verified merge remain required; record final delivery on PR1000 rather than claiming operational rollout.
+
 PR998 merged during this work; its shared locks are conclusively released. The final candidate must integrate its develop result. Existing receipt-allocation code and migration remain unchanged.
 
 Finance owns nullable encrypted identifier fields and keyed deduplication fingerprints on the existing FinanceSettlementAccount; a new append-only FinanceBankAccountAudit references the real account and actor. Bank -> multiple branch-scoped company accounts -> immutable audit events. Existing account IDs, branch/currency and payment relations are preserved. Existing bank/branch lookup indexes and unique fingerprint indexes serve bounded25-row paging; no plaintext-number search/index or export is introduced.

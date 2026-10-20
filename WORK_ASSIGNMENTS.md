@@ -1,4 +1,6 @@
-## BANK-ACCOUNTS-1020 — PC-B — IN_PROGRESS
+## BANK-ACCOUNTS-1020 — PC-B — READY_FOR_CI / PR1000
+
+Published implementation03b4a20c integrates merged PR998. Local17 API/HTTP and6 Web tests, API/Web types, scoped lint and Prisma validation passed. Both hosted production builds and both PostgreSQL gates passed; the new real PostgreSQL suite is4/4, including25 simultaneous retry requests, normalized duplicates, CAS/clear and immutable transactional audit rollback. Browser initialization failed; no visual acceptance or operational rollout claimed. Source/migration/central-file reservations freeze and release with the published candidate; subsequent repairs reopen only the bounded failing scope. Final documentation-head full checks/review and verified develop merge remain delivery gates; authoritative final evidence is recorded on PR1000. No existing migration modified or real accounts created.
 
 PR998 subsequently merged during implementation (verified GitHub state); its shared migration/registration lock is now conclusively released. Integrate its develop result without modifying the published receipt-allocation migration. Reserve the existing CI PostgreSQL job's additive bank-account test step and only related English overrides/derived offline catalogues; all existing gates retained. This supersedes earlier provisional freeze/handoff notes, not PC-A's preserved financial behavior.
 
