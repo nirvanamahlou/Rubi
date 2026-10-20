@@ -7,53 +7,61 @@ export type ReceiptAllocationMoney = {
   reversalOfId: string | null;
   currencyCode?: string;
 };
+// Persisted receipt/refund/allocation columns have four decimal places. Integer
+// summation preserves small units regardless of historical reversal row order.
+function moneyUnits(amount: { toString(): string }) {
+  return BigInt(
+    new Prisma.Decimal(amount.toString()).toFixed(4).replace('.', ''),
+  );
+}
+function unitsAmount(units: bigint) {
+  const magnitude = units < 0n ? -units : units;
+  return new Prisma.Decimal(
+    `${units < 0n ? '-' : ''}${magnitude / 10000n}.${(magnitude % 10000n).toString().padStart(4, '0')}`,
+  );
+}
+function allocationUnits(rows: readonly ReceiptAllocationMoney[] = []) {
+  return rows.reduce(
+    (sum, row) => sum + moneyUnits(row.amount) * (row.reversalOfId ? -1n : 1n),
+    0n,
+  );
+}
 export function netReceiptAllocations(
   rows: readonly ReceiptAllocationMoney[] = [],
 ) {
-  return rows.reduce(
-    (sum, row) =>
-      sum.add(
-        new Prisma.Decimal(row.amount.toString()).mul(
-          row.reversalOfId ? -1 : 1,
-        ),
-      ),
-    new Prisma.Decimal(0),
-  );
+  return unitsAmount(allocationUnits(rows));
 }
 export function netReceiptAmount(payment: {
   amount: { toString(): string };
   refunds?: readonly { amount: { toString(): string } }[];
   allocations?: readonly ReceiptAllocationMoney[];
 }) {
-  return new Prisma.Decimal(payment.amount.toString())
-    .sub(
+  return unitsAmount(
+    moneyUnits(payment.amount) -
       (payment.refunds ?? []).reduce(
-        (sum, r) => sum.add(r.amount.toString()),
-        new Prisma.Decimal(0),
-      ),
-    )
-    .sub(netReceiptAllocations(payment.allocations));
+        (sum, refund) => sum + moneyUnits(refund.amount),
+        0n,
+      ) -
+      allocationUnits(payment.allocations),
+  );
 }
 export function incomingAllocationPayments(
   rows: readonly ReceiptAllocationMoney[] = [],
 ) {
-  const grouped = new Map<string, Prisma.Decimal>();
+  const grouped = new Map<string, bigint>();
   for (const row of rows) {
     if (!row.currencyCode) continue;
     grouped.set(
       row.currencyCode,
-      (grouped.get(row.currencyCode) ?? new Prisma.Decimal(0)).add(
-        new Prisma.Decimal(row.amount.toString()).mul(
-          row.reversalOfId ? -1 : 1,
-        ),
-      ),
+      (grouped.get(row.currencyCode) ?? 0n) +
+        moneyUnits(row.amount) * (row.reversalOfId ? -1n : 1n),
     );
   }
   return [...grouped]
-    .filter(([, amount]) => amount.gt(0))
+    .filter(([, amount]) => amount > 0n)
     .map(([currencyCode, amount]) => ({
       currencyCode,
-      amount: amount.toString(),
+      amount: unitsAmount(amount).toString(),
       status: 'FINANCE_CONFIRMED' as const,
     }));
 }
