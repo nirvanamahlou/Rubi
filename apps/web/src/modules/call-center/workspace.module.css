@@ -271,6 +271,11 @@
   padding: 12px 10px;
   border-bottom: 1px solid var(--cc-border);
 }
+.centeredTable th,
+.centeredTable td {
+  text-align: center;
+  vertical-align: middle;
+}
 .table tbody tr:nth-child(even) {
   background: color-mix(in srgb, var(--muted, #edf4fa) 35%, transparent);
 }

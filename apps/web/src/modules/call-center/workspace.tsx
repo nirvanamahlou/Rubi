@@ -579,7 +579,9 @@ function Content({
             </div>
 
             <div className={styles.tableScroll}>
-              <table className={`${styles.table} ${styles.contactTable}`}>
+              <table
+                className={`${styles.table} ${styles.contactTable} ${styles.centeredTable}`}
+              >
                 <thead>
                   <tr>
                     {[
@@ -836,7 +838,7 @@ function ReportPanel({
       <div className={styles.reports}>
         <div>
           <h3>جهت، نتیجه و روش ثبت تماس</h3>
-          <table className={styles.table}>
+          <table className={`${styles.table} ${styles.centeredTable}`}>
             <thead>
               <tr>
                 <th>جهت تماس</th>
