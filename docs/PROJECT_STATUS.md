@@ -6735,3 +6735,10 @@ PASSENGER-PRICE-COLUMNS-1020 candidate validation:57 Sales API and3 shared-reade
 
 
 PASSENGER-PRICE-COLUMNS-1020 ready for CI: merged-current-development regressions45 Web/58 API/4 shared pass; gross/net total package validation, selectable non-IRR currency and fixed IRR UI, service/individual-stay context and PDF v2 totals retained. Final-head CI gates develop merge; no operational rollout or migration.
+
+
+FINANCE-RECEIPT-ALLOCATION-1020 deployed:PR998 merged d1aa63fd, identical tree to final995b8d3c. All8 hosted gates pass;3501 Web/2941 API tests plus12 financial PostgreSQL scenarios pass. Additive migration applied after backup without seeds or financial fixtures;222 accounts and zero journals/contracts/receipts/requests/events preserved.3100/API4192 healthy on rubi-receipt-allocation:d1aa63fd. Deployment receipt outside Git. Source/migration locks released.
+
+## CUSTOMER-TICKET-APPROVAL-1020 — PC-A — IN_PROGRESS
+
+New customer floating-flight purchase registrations are being connected to locked live Sales net settlement and Finance pending refund holds per currency. Keep the existing purchase form and record an audit approval basis. Serialize refund reservation changes with the same Sales contract lock. Stock/charter procurement, independent hotel payments and recording actual money remain available. No migration/dependency/accounting-policy change; focused unit/PostgreSQL concurrency verification is in progress. Runtime3100 remains the already verified PR998 deployment.
