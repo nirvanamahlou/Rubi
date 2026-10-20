@@ -1,3 +1,4 @@
+import type { HrResourceDefinition } from '@nora/contracts';
 import {
   HR_RADAN_FIELD_OPTIONS,
   HR_RADAN_CONTRACT_TYPES,
@@ -205,4 +206,22 @@ export function needsHrDetail(
     ['applicants', 'training', 'docs'].includes(tab) ||
     (section === 'contracts' && tab === 'active')
   );
+}
+
+/** Keep Radan-specific requiredness from changing unrelated Nora forms. */
+export function radanOptionalLabels(
+  definition: HrResourceDefinition,
+): string[] {
+  return [
+    'organization.groups',
+    'organization.groupMembers',
+    'time.workingHours',
+    'time.shiftTemplates',
+    'time.remote',
+    'time.biometric',
+  ].includes(definition.key)
+    ? definition.fields
+        .filter((field) => !field.required)
+        .map((field) => field.label)
+    : [];
 }

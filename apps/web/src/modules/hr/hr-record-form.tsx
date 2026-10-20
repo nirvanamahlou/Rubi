@@ -26,6 +26,7 @@ import {
   hrReferenceOptions,
   parentFieldLabel,
   retiredHrColumns,
+  radanOptionalLabels,
 } from './hr-form-model';
 import { useHrReferenceData } from './hr-reference-data';
 import { useHrFormReferences } from './hr-directory-picker';
@@ -379,6 +380,9 @@ function HrRecordFormFields({
     (target.source.section === 'expenses' && target.source.tab === 'claims');
   const hiddenLabels = [
     ...retiredHrColumns(target.source.section, target.source.tab),
+    ...(definition.key === 'time.shift' && parentId
+      ? ['ساعت شروع', 'ساعت پایان', 'شناوری ورود', 'حداقل کارکرد']
+      : []),
     ...(target.organizationNode ? ['نام واحد'] : []),
     'شرکت',
     'شرکت یا شعبه',
@@ -647,9 +651,7 @@ function HrRecordFormFields({
               optionsByLabel,
               hiddenLabels,
               optionalLabels: [
-                ...definition.fields
-                  .filter((field) => !field.required)
-                  .map((field) => field.label),
+                ...radanOptionalLabels(definition),
                 ...(target.source.section === 'organization' &&
                 target.source.tab === 'branches'
                   ? ['مدیر']
