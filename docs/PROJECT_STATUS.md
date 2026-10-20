@@ -6805,3 +6805,7 @@ PASSENGER-PRICE-COLUMNS-1020 ready for CI: merged-current-development regression
 ## CALL-CENTER-DEVELOP-INTEGRATION-1020 — PC-C — READY_FOR_CI
 
 Owner authorizes PR1002 and develop merge after every final-head CI/CD check succeeds. Authenticated PR author Amin-tech11/id211146168 verified. Local3000 serves final approved build EGPQI6wG6CSE_v05uE6de. Integrated developb5279cc5 into the Call Center task branch: preserved both schema model/enum sets and relation fields, contract exports, append-only domain/status history and both translation additions; regenerated deterministic catalogues. Prisma format/validation and diff checks pass; source formatting aligned to existing CI. No Call Center layout/content behavior changes during integration; nine columns stay unchanged. Three previously authored additive Call Center migrations remain immutable. No live database mutation or runtime replacement. Hosted exact-head quality, tests, database and production build gates remain required before merge.
+
+## 2026-10-20 — Contract creation presentation
+
+PC-A CONTRACT-UI-1020: clearer three-step progress, emphasized current step, responsive step layout, softer header/card spacing and wrapping sticky actions. Presentation classes only; existing state, validation, calculations and submit unchanged. Formatting and diff checks passed. No runtime deployment or browser acceptance claimed.
