@@ -6839,3 +6839,7 @@ HOTEL-STAY-LAYOUT-1020 candidate: shared hotel dates now fill two equal columns,
 ## 2026-10-20 — PEOPLE-UI-1020 — PC-A
 
 Customer/buyer presentation now uses a clearer card, compact customer-mode control and highlighted first-passenger option. Sales opts into responsive table styling with fixed passenger identity column and a native upper horizontal scrollbar synchronized with the lower bar, including negative RTL offsets and width changes. Existing fields, callbacks and policies unchanged.17 focused CustomerEntrySheet/SalesPeopleSheet/scroll regressions pass. No schema/API/migration/dependency change; local Web-only preview follows verified build, preserving API/database. No authenticated visual acceptance claimed.
+
+## 2026-10-20 — EXPLICIT-CONTRACT-SUBMIT-1020 — PC-A
+
+Contract persistence now runs only from the explicit final commit button. Generic form submit is prevented and the advance/review buttons have distinct React identities so a step transition cannot reuse a submit control during the click. Existing create/confirm, validation, idempotency and browser draft persistence are retained.18 form regressions pass including non-submitting review/navigation controls. No API/schema/migration/data changes; local Web preview follows verified build. No authenticated business submission performed.

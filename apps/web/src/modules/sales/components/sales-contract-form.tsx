@@ -66,14 +66,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from '@/i18n/link';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type FormEvent,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { HotelRoomRateV1, SalesServiceKind } from '@nora/contracts';
 
@@ -816,8 +809,7 @@ export function SalesContractForm() {
     if (step === 1) return !finalStepError;
     return true;
   })();
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
+  const submit = async () => {
     if (step !== salesSteps.length - 1 || busy) return;
     setBusy(true);
     setError('');
@@ -1155,7 +1147,7 @@ export function SalesContractForm() {
   return (
     <form
       className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-[minmax(0,1fr)] gap-5 pb-6"
-      onSubmit={submit}
+      onSubmit={(event) => event.preventDefault()}
     >
       <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-primary/10 bg-gradient-to-l from-primary/10 via-surface to-surface p-5 sm:p-6">
         <div>
@@ -2422,6 +2414,7 @@ export function SalesContractForm() {
         </Button>
         {step < salesSteps.length - 1 ? (
           <Button
+            key="advance-step"
             type="button"
             disabled={!canContinue || busy}
             onClick={() => setStep((value) => value + 1)}
@@ -2430,7 +2423,13 @@ export function SalesContractForm() {
             <ChevronLeft className="size-4" />
           </Button>
         ) : (
-          <Button type="submit" loading={busy} disabled={!canContinue}>
+          <Button
+            key="commit-contract"
+            type="button"
+            onClick={() => void submit()}
+            loading={busy}
+            disabled={!canContinue}
+          >
             ثبت و ارسال به رزرواسیون
           </Button>
         )}
