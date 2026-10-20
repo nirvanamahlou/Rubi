@@ -1,3 +1,4 @@
+import { usesRoomDrivenGuests } from './contract-guest-stays';
 import { hotelAgeOn } from '@nora/contracts';
 import type { SalesFormState } from './sales-form';
 export interface HotelChildChoice {
@@ -57,6 +58,7 @@ export function syncHotelChildSelections(
   state: SalesFormState,
   travelDate: string,
 ): SalesFormState {
+  if (usesRoomDrivenGuests(state)) return state;
   if (
     !state.serviceKinds.includes('FLIGHT') ||
     !state.serviceKinds.includes('HOTEL') ||

@@ -6679,3 +6679,7 @@ New-contract Sales entry uses one passenger table with one selected-currency amo
 ## DATE-AUTO-SLASHES-1020 — PC-A
 
 Typed customer DOB/passport dates now insert YYYY/MM/DD separators from digits, including Persian/Arabic digits and pasted standard dates. Keep partial day input incomplete until all digits are entered, support deletion/clear and restore the caret by digit position during middle edits. Existing strict calendar conversion, past-expiry minimum and six-month warning stay unchanged. No API/schema/migration/dependency/runtime change; final-head hosted gates precede user-authorized develop merge.
+
+## CONTRACT-GUEST-STAYS-1020 — PC-A
+
+Combined new-contract entry derives guests from rooms and appends explicit flight-only passengers. Flight selection and shared hotel dates precede identities; per-person stay fields inherit locked dates, with explicit different-stay override and separately entered accommodation currency/amount. Existing canonical passenger hotel prices aggregate once. Sales metadata snapshots preserve validated individual dates and hotel membership through Reservations, contract, reservation form and voucher output; older documents retain shared-date behavior. No schema/migration or runtime rollout. See docs/tasks/CONTRACT-GUEST-STAYS-1020.md and PR validation for final checks.

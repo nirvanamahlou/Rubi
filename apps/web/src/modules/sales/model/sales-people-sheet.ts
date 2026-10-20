@@ -1,3 +1,4 @@
+import { usesRoomDrivenGuests } from './contract-guest-stays';
 import { tehranToday } from '@/lib/passport-dates';
 import type {
   CustomerDetail,
@@ -69,7 +70,7 @@ export function initialSalesPeopleDraft(
 ): SalesPeopleDraft {
   const rows: Record<string, PeopleRow> = {};
   state.passengers.forEach((person, index) => {
-    rows['p' + index] = {
+    rows[passengerSlotKeys(state)[index] ?? 'p' + index] = {
       person: { id: person.customerId, displayName: person.displayName },
       values: {
         ...emptyPeopleValues(),
@@ -127,11 +128,21 @@ export function normalizeSalesPeopleDraft(
     rows: { ...draft.rows, ...(payer ? { p0: payer, primary: payer } : {}) },
   };
 }
-export const passengerSlotKeys = (state: SalesFormState) =>
-  Array.from(
-    { length: salesPassengerCounts(state).total },
+export const passengerSlotKeys = (state: SalesFormState) => [
+  ...Array.from(
+    {
+      length:
+        salesPassengerCounts(state).total -
+        (usesRoomDrivenGuests(state)
+          ? (state.flightOnlyPassengers?.length ?? 0)
+          : 0),
+    },
     (_, index) => 'p' + index,
-  );
+  ),
+  ...(usesRoomDrivenGuests(state)
+    ? (state.flightOnlyPassengers ?? []).map((p) => p.key)
+    : []),
+];
 export const peopleRow = (draft: SalesPeopleDraft, key: string): PeopleRow =>
   draft.rows[key] ?? { values: emptyPeopleValues() };
 export function selectedPeopleRow(person: CustomerDetail): PeopleRow {
@@ -932,16 +943,39 @@ export async function saveSalesPeopleDraft(
           ? (draft.organization?.organizationId ?? '')
           : '',
       firstPassengerIsCustomer: draft.mode === 'first-passenger',
+      passengerHotelStays: Object.fromEntries(
+        keys.flatMap((key, index) => {
+          const id = passengers[index]!.customerId;
+          const stay =
+            state.passengerHotelStays?.[id] ?? state.passengerHotelStays?.[key];
+          return stay ? [[id, stay]] : [];
+        }),
+      ),
+      ...(state.passengerHotelPrices !== undefined
+        ? {
+            passengerHotelPrices: Object.fromEntries(
+              keys.map((key, index) => [
+                passengers[index]!.customerId,
+                state.passengerHotelPrices?.[passengers[index]!.customerId] ??
+                  state.passengerHotelPrices?.[key] ??
+                  [],
+              ]),
+            ),
+          }
+        : {}),
       hotel: {
         ...state.hotel,
         guestCustomerIds: passengers
-          .filter(
-            (person) =>
-              !state.passengers.some(
-                (old) => old.customerId === person.customerId,
-              ) ||
-              state.hotel.guestCustomerIds === undefined ||
-              state.hotel.guestCustomerIds.includes(person.customerId),
+          .filter((person, index) =>
+            usesRoomDrivenGuests(state)
+              ? !(state.flightOnlyPassengers ?? []).some(
+                  (p) => p.key === keys[index],
+                )
+              : !state.passengers.some(
+                  (old) => old.customerId === person.customerId,
+                ) ||
+                state.hotel.guestCustomerIds === undefined ||
+                state.hotel.guestCustomerIds.includes(person.customerId),
           )
           .map((person) => person.customerId),
       },

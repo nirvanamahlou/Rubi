@@ -1,3 +1,4 @@
+import { validatePassengerHotelStays } from '@nora/contracts';
 import { readAgencyCommission } from '@nora/contracts';
 import {
   flightRoomTotals,
@@ -608,6 +609,14 @@ export function validateSalesContract(
       'RETURN_TICKET_INVALID',
       'مسیر یا زمان بلیت برگشت با قرارداد سازگار نیست.',
     );
+  try {
+    validatePassengerHotelStays(input);
+  } catch (reason) {
+    throw new SalesDomainError(
+      'SALES_HOTEL_INVALID',
+      reason instanceof Error ? reason.message : 'Invalid passenger stays',
+    );
+  }
   if (input.hotelSelection) {
     const hotel = input.hotelSelection;
     if (hotel.rooms !== undefined) {

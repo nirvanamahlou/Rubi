@@ -1,5 +1,10 @@
 'use client';
 import {
+  usesRoomDrivenGuests,
+  withRoomDrivenGuests,
+} from '../model/contract-guest-stays';
+
+import {
   hotelChildChoices,
   syncHotelChildSelections,
   selectHotelChild,
@@ -47,7 +52,8 @@ export function ServiceParties({
     ...room,
     roomCategory: defaultSalesRoomCategory(room),
   }));
-  const limited = state.serviceKinds.includes('FLIGHT');
+  const limited =
+    state.serviceKinds.includes('FLIGHT') && !usesRoomDrivenGuests(state);
   const party = salesPassengerCounts(state);
   const partyError = salesRoomPartyError(state);
   const used = roomPartyUsage(rooms, state.hotelChildAssignments);
@@ -65,6 +71,10 @@ export function ServiceParties({
       )
     : 50;
   const changeRooms = (next: typeof rooms) => {
+    const driven = withRoomDrivenGuests({
+      ...state,
+      hotel: { ...state.hotel, rooms: next },
+    });
     const ages = next.flatMap((r) => r.childAges);
     const composition = {
       adults:
@@ -85,6 +95,13 @@ export function ServiceParties({
         ...salesHotelRoomSummary(next),
         roomTypeId: next[0]?.roomTypeId ?? '',
       },
+      ...(usesRoomDrivenGuests(state)
+        ? {
+            passengerComposition: driven.passengerComposition,
+            childAges: driven.childAges,
+            infantAges: driven.infantAges,
+          }
+        : {}),
       ...(!state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'TRANSFER')
         ? {
             passengerComposition: {

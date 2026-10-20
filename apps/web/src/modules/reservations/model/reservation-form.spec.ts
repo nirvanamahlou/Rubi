@@ -164,3 +164,32 @@ it('keeps large room lists on bounded appendix pages without losing or repeating
   expect([...rooms.slice(0, 4), ...pages.flat()]).toEqual(rooms);
   expect(reservationRoomAppendices(rooms.slice(0, 4))).toEqual([]);
 });
+
+it('preserves individual hotel dates and no stay for a flight-only passenger', () => {
+  const intake = {
+    ...input,
+    snapshot: {
+      ...input.snapshot,
+      serviceSelections: [
+        {
+          clientKey: 'hotel',
+          kind: 'HOTEL',
+          metadata: {
+            passengerHotelStaysV1: JSON.stringify({
+              a: {
+                different: true,
+                checkInDate: '2026-10-02',
+                checkOutDate: '2026-10-05',
+              },
+            }),
+          },
+        },
+      ],
+    },
+  } as unknown as ReservationFormIntake;
+  const result = reservationFormData(intake);
+  expect(result.passengers.find((p) => p.id === 'a')?.checkIn).toBe(
+    '02 OCT 2026',
+  );
+  expect(result.passengers.find((p) => p.id === 'b')?.checkIn).toBe('-');
+});
