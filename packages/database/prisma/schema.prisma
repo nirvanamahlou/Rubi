@@ -4084,6 +4084,7 @@ model SalesContractPriceComponent {
 }
 
 model SalesContractPaymentEntry {
+  refunds SalesPaymentRefund[]
   financeRefundRequests   FinanceOperationalRequest[]
   id                      String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   contractId              String                      @map("contract_id") @db.Uuid
@@ -4608,6 +4609,9 @@ model FinanceSettlementAccount {
 }
 
 model FinanceOperationalRequest {
+  pettyFundId String? @db.Uuid
+  pettyFund FinanceOperationalRequest? @relation("PettyFundRequests", fields: [pettyFundId], references: [id], onDelete: Restrict)
+  pettyRequests FinanceOperationalRequest[] @relation("PettyFundRequests")
   counterpartyOrganizationId String?                      @db.Uuid
   counterpartyRole           MasterOrganizationRoleCode?
   counterpartyOrganization   MasterOrganization?          @relation(fields: [counterpartyOrganizationId], references: [id], onDelete: Restrict, map: "finance_partner_request_organization_fk")
@@ -4651,6 +4655,7 @@ model FinanceOperationalRequest {
 }
 
 model FinanceOperationalRevision {
+  salesRefund SalesPaymentRefund?
   payingSupplierId String?                   @db.Uuid
   payingSupplier   MasterSupplier?           @relation(fields: [payingSupplierId], references: [id], onDelete: Restrict)
   id               String                    @id @db.Uuid
@@ -7574,6 +7579,8 @@ model FinancePurchaseFxSnapshot {
 
 // Immutable confirmed financial sources. Journal association is assigned atomically.
 model FinanceAccountingEvent {
+  trackingNumber String? @db.VarChar(160)
+  trackingDate String? @db.VarChar(10)
   id String @id @default(uuid()) @db.Uuid
   sourceKey String @unique @db.VarChar(200)
   fingerprint String @db.VarChar(64)
@@ -7600,4 +7607,15 @@ model FinanceAccountingEvent {
 
   @@index([branchId, journalId, createdAt])
   @@map("finance_accounting_events")
+}
+
+model SalesPaymentRefund {
+  id String @id @db.Uuid
+  operation FinanceOperationalRevision @relation(fields: [id], references: [id], onDelete: Restrict)
+  paymentId String @db.Uuid
+  payment SalesContractPaymentEntry @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  amount Decimal @db.Decimal(24,4)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([paymentId])
+  @@map("sales_payment_refunds")
 }

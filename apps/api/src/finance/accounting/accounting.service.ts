@@ -1,4 +1,10 @@
-import { FINANCIAL_RULE_KIND, financialDate, financialEventLines, ruleMatches } from './accounting.financial-events';
+import { accountingFinancialEventLabels } from '@nora/contracts';
+import {
+  FINANCIAL_RULE_KIND,
+  financialDate,
+  financialEventLines,
+  ruleMatches,
+} from './accounting.financial-events';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   ConflictException,
@@ -11,6 +17,7 @@ import {
 import { Prisma } from '@nora/database';
 import type {
   AccountingAttributes,
+  AccountingFinancialEventPageV1,
   AccountingCommandV1,
   AuthenticatedActor,
   IamPermissionCode,
@@ -24,6 +31,7 @@ import * as v from './accounting.validation';
 import {
   executeAccountSetup,
   validateGroupDetailAllocations,
+  validateSetupDetail,
 } from './accounting.accounts';
 import { setupNotes } from './accounting.setup-notes';
 import { allocationTargets, allocateAmount } from './accounting.allocation';
@@ -668,14 +676,88 @@ export class AccountingService {
       v.invalid('فیلتر معتبر نیست.');
     }
   }
-  async financialEvents(bookId: string, actor: AuthenticatedActor) {
+  async financialEventReconciliation(
+    bookId: string,
+    actor: AuthenticatedActor,
+  ) {
     this.require(actor, 'finance.journal.read');
     const book = await this.book(this.database.client, bookId, actor);
+    const rows = await this.database.client.$queryRaw<
+      {
+        kind: string;
+        currency: string;
+        state: string;
+        count: number;
+        amount: string;
+      }[]
+    >`
+      WITH classified AS (
+        SELECT e.kind, e.currency, e.amount,
+          CASE WHEN j.id IS NULL THEN 'UNLINKED' WHEN j."bookId"<>${book.id}::uuid THEN 'OTHER_BOOK'
+            WHEN EXISTS (SELECT 1 FROM accounting_journals r WHERE r."reversalOfId"=j.id AND r.status='POSTED') THEN 'REVERSED'
+            ELSE j.status END AS state
+        FROM finance_accounting_events e LEFT JOIN accounting_journals j ON j.id=e."journalId"
+        WHERE e."branchId"=${book.branchId}::uuid
+      ) SELECT kind,currency,state,COUNT(*)::int AS count,SUM(amount)::text AS amount FROM classified
+      GROUP BY kind,currency,state ORDER BY currency,kind,state`;
+    return { version: 1 as const, rows };
+  }
+
+  async financialEvents(
+    bookId: string,
+    actor: AuthenticatedActor,
+    query: Record<string, string> = {},
+  ): Promise<AccountingFinancialEventPageV1> {
+    this.require(actor, 'finance.journal.read');
+    const book = await this.book(this.database.client, bookId, actor);
+    const before = query.before
+      ? await this.database.client.financeAccountingEvent.findFirst({
+          where: { id: v.uuid(query.before)!, branchId: book.branchId },
+        })
+      : null;
+    if (query.before && !before)
+      throw new NotFoundException('نشانگر رویداد در شعبه مجاز پیدا نشد.');
     const events = await this.database.client.financeAccountingEvent.findMany({
-      where: { branchId: book.branchId }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      take: 200, include: { journal: { select: { id: true, bookId: true, status: true } } },
+      where: {
+        branchId: book.branchId,
+        ...(query.pending === 'true' ? { journalId: null } : {}),
+        ...(before
+          ? {
+              OR: [
+                { createdAt: { lt: before.createdAt } },
+                { createdAt: before.createdAt, id: { lt: before.id } },
+              ],
+            }
+          : {}),
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 51,
+      include: {
+        journal: {
+          select: { id: true, bookId: true, status: true, version: true },
+        },
+      },
     });
-    return { items: events.map(e => ({ ...e, amount: e.amount.toString() })) };
+    const items = events.slice(0, 50);
+    return {
+      version: 1 as const,
+      items: items.map((e) => ({
+        id: e.id,
+        source: e.source,
+        kind: e.kind,
+        requestId: e.requestId,
+        trackingNumber: e.trackingNumber ?? e.requestId,
+        trackingDate: e.trackingDate ?? financialDate(e.occurredAt),
+        reference: e.reference,
+        amount: e.amount.toString(),
+        currency: e.currency,
+        occurredAt: e.occurredAt.toISOString(),
+        createdAt: e.createdAt.toISOString(),
+        lastError: e.lastError,
+        journal: e.journal,
+      })),
+      nextCursor: events.length > 50 ? items.at(-1)!.id : null,
+    };
   }
 
   async command(
@@ -820,8 +902,31 @@ export class AccountingService {
     actor: AuthenticatedActor,
     internal = false,
     stateEvents: BufferedStateEvent[] = [],
+    financialSourceRebuild = false,
   ): Promise<unknown> {
     const bookId = book.id;
+    if (
+      action === 'close-period' ||
+      action === 'year-end-final' ||
+      (action === 'year-end-preview' && p.operation === 'year-end-final')
+    ) {
+      const period = await tx.accountingPeriod.findFirst({
+        where: {
+          id: v.uuid(action === 'close-period' ? p.id : p.periodId)!,
+          bookId,
+        },
+      });
+      if (!period) throw new NotFoundException();
+      const [pending] = await tx.$queryRaw<
+        { count: number }[]
+      >`SELECT count(*)::int AS count FROM finance_accounting_events
+        WHERE "branchId"=${book.branchId}::uuid AND "journalId" IS NULL
+          AND ("occurredAt" AT TIME ZONE 'Asia/Tehran')::date BETWEEN ${period.startDate}::date AND ${period.endDate}::date`;
+      if (pending?.count)
+        v.rule(
+          'منابع مالی بدون سند این شعبه در بازه دوره باید پیش از بستن دوره تعیین تکلیف شوند.',
+        );
+    }
     if (action === 'journal-statement-preview') {
       const currencies =
         p.currencyMode === true ? await accountingCurrencies(this.master) : [];
@@ -2583,69 +2688,251 @@ export class AccountingService {
         include: journalInclude,
       });
     }
-    if (action === 'financial-rule-save' || action === 'financial-event-journal') {
+    if (action === 'financial-rule-disable') {
+      const rule = await tx.accountingConfiguration.findFirst({
+        where: { id: v.uuid(p.id)!, bookId, kind: FINANCIAL_RULE_KIND },
+      });
+      if (!rule) throw new NotFoundException();
+      this.version(rule.version, expected);
+      return tx.accountingConfiguration.update({
+        where: { id: rule.id },
+        data: { active: false, version: { increment: 1 } },
+      });
+    }
+    if (
+      action === 'financial-rule-save' ||
+      action === 'financial-event-journal'
+    ) {
       const eventId = v.uuid(p.eventId)!;
       await tx.$queryRaw`SELECT id FROM finance_accounting_events WHERE id=${eventId}::uuid FOR UPDATE`;
-      const event = await tx.financeAccountingEvent.findFirst({ where: { id: eventId, branchId: book.branchId } });
+      const event = await tx.financeAccountingEvent.findFirst({
+        where: { id: eventId, branchId: book.branchId },
+      });
       if (!event) v.rule('رویداد مالی در این شعبه پیدا نشد.');
-      if (event.currency !== book.baseCurrency)
-        v.rule('رویداد ارزی به نگاشت نرخ مصوب نیاز دارد؛ مبلغ بدون تبدیل ثبت نمی‌شود.');
+
       let mapping = p;
       if (p.ruleId) {
-        const rule = await tx.accountingConfiguration.findFirst({ where: { id: v.uuid(p.ruleId)!, bookId, kind: FINANCIAL_RULE_KIND, active: true } });
-        if (!rule || !ruleMatches(rule.attributes, event)) v.rule('قاعده فعال و منطبق با رویداد پیدا نشد.');
+        const rule = await tx.accountingConfiguration.findFirst({
+          where: {
+            id: v.uuid(p.ruleId)!,
+            bookId,
+            kind: FINANCIAL_RULE_KIND,
+            active: true,
+          },
+        });
+        if (!rule || !ruleMatches(rule.attributes, event))
+          v.rule('قاعده فعال و منطبق با رویداد پیدا نشد.');
         mapping = v.attributes(rule.attributes);
       }
-      const lines = financialEventLines(event, mapping);
-      if (lines[0]!.accountId === lines[1]!.accountId) v.rule('حساب بدهکار و بستانکار باید متفاوت باشند.');
+      const rates =
+        event.currency === book.baseCurrency
+          ? []
+          : await tx.accountingFxSnapshot.findMany({
+              where: {
+                bookId,
+                ...(p.fxSnapshotId ? { id: v.uuid(p.fxSnapshotId)! } : {}),
+                currency: event.currency,
+                status: 'APPROVED',
+                validFrom: { lte: event.occurredAt },
+                validTo: { gte: event.occurredAt },
+              },
+            });
+      if (event.currency !== book.baseCurrency && rates.length !== 1)
+        v.rule(
+          'برای زمان رویداد ارزی باید دقیقاً یک نرخ مستقل مصوب وجود داشته باشد.',
+        );
+      const fx = rates[0];
+      const lines = financialEventLines(
+        event,
+        mapping,
+        fx
+          ? { id: fx.id, rate: fx.rate, baseCurrency: book.baseCurrency }
+          : undefined,
+      );
+      if (lines[0]!.accountId === lines[1]!.accountId)
+        v.rule('حساب بدهکار و بستانکار باید متفاوت باشند.');
       if (action === 'financial-rule-save') {
         this.require(actor, 'finance.journal.create');
         const typeId = v.uuid(p.typeId)!;
-        if (!await tx.accountingConfiguration.findFirst({ where: { id: typeId, bookId, kind: 'voucher-types', active: true } })) v.rule('نوع سند فعال انتخاب کنید.');
+        if (
+          !(await tx.accountingConfiguration.findFirst({
+            where: { id: typeId, bookId, kind: 'voucher-types', active: true },
+          }))
+        )
+          v.rule('نوع سند فعال انتخاب کنید.');
         for (const line of lines) {
-          if (!await tx.accountingAccount.findFirst({ where: { id: line.accountId, bookId, active: true } })) v.rule('حساب فعال همین دفتر انتخاب کنید.');
-          for (const id of [line.detail4Id, line.detail5Id, line.detail6Id].filter(Boolean))
-            if (!await tx.accountingDetail.findFirst({ where: { id: id!, bookId, active: true } })) v.rule('تفصیلی فعال همین دفتر انتخاب کنید.');
+          const account = await tx.accountingAccount.findFirst({
+            where: {
+              id: line.accountId,
+              bookId,
+              active: true,
+              level: 'SUBSIDIARY',
+            },
+          });
+          if (!account) v.rule('حساب معین فعال همین دفتر انتخاب کنید.');
+          const attrs = v.attributes(account.attributes);
+          if (event.currency !== book.baseCurrency && !attrs.multiCurrency)
+            v.rule('برای رویداد ارزی حساب با ویژگی ارزی انتخاب کنید.');
+          for (const level of [4, 5, 6] as const) {
+            const id = line[`detail${level}Id`];
+            if (attrs[`detail${level}Required`] && !id)
+              v.rule('تفصیلی الزامی قاعده باید انتخاب شود.');
+            if (id) await validateSetupDetail(tx, bookId, account, id, level);
+          }
         }
         // Rules are versioned records; replacing a match retires the old version.
-        const old = await tx.accountingConfiguration.findMany({ where: { bookId, kind: FINANCIAL_RULE_KIND, active: true } });
+        const old = await tx.accountingConfiguration.findMany({
+          where: { bookId, kind: FINANCIAL_RULE_KIND, active: true },
+        });
         for (const rule of old) {
           const a = v.attributes(rule.attributes);
-          if (a.kind === event.kind && a.currency === event.currency && a.partyId === (event.partyId ?? '') && a.settlementAccountId === (event.settlementAccountId ?? ''))
-            await tx.accountingConfiguration.update({ where: { id: rule.id }, data: { active: false, version: { increment: 1 } } });
+          if (
+            a.kind === event.kind &&
+            a.currency === event.currency &&
+            a.partyId === (event.partyId ?? '') &&
+            a.settlementAccountId === (event.settlementAccountId ?? '')
+          )
+            await tx.accountingConfiguration.update({
+              where: { id: rule.id },
+              data: { active: false, version: { increment: 1 } },
+            });
         }
         const attributes: Record<string, string> = {
-          kind: event.kind, currency: event.currency, partyId: event.partyId ?? '',
-          settlementAccountId: event.settlementAccountId ?? '', typeId,
-          creatorId: actor.userId, effectiveFrom: new Date().toISOString(),
+          kind: event.kind,
+          currency: event.currency,
+          partyId: event.partyId ?? '',
+          settlementAccountId: event.settlementAccountId ?? '',
+          typeId,
+          creatorId: actor.userId,
+          effectiveFrom: new Date().toISOString(),
         };
-        for (const side of ['debit', 'credit']) for (const field of ['AccountId', 'Detail4Id', 'Detail5Id', 'Detail6Id'])
-          attributes[side + field] = String(mapping[side + field] ?? '');
-        return tx.accountingConfiguration.create({ data: { bookId, kind: FINANCIAL_RULE_KIND, code: randomUUID(), title: 'قاعده ثبت رویداد مالی', attributes } });
+        for (const side of ['debit', 'credit'])
+          for (const field of [
+            'AccountId',
+            'Detail4Id',
+            'Detail5Id',
+            'Detail6Id',
+          ])
+            attributes[side + field] = String(mapping[side + field] ?? '');
+        return tx.accountingConfiguration.create({
+          data: {
+            bookId,
+            kind: FINANCIAL_RULE_KIND,
+            code: randomUUID(),
+            title: v.text(p.title, 160) || 'قاعده ثبت رویداد مالی',
+            attributes,
+          },
+        });
       }
       if (event.journalId) {
-        const linked = await tx.accountingJournal.findUniqueOrThrow({ where: { id: event.journalId }, include: journalInclude });
-        if (linked.bookId !== bookId) v.rule('رویداد قبلاً در دفتر دیگری سند دارد.');
-        return linked;
+        const linked = await tx.accountingJournal.findUniqueOrThrow({
+          where: { id: event.journalId },
+          include: journalInclude,
+        });
+        if (linked.bookId !== bookId)
+          v.rule('رویداد قبلاً در دفتر دیگری سند دارد.');
+        if (p.rebuild !== true) return linked;
+        this.version(linked.version, expected);
+        if (linked.status !== 'DRAFT')
+          v.rule('فقط پیش‌نویس نهایی‌نشده از مبدأ بازسازی می‌شود.');
       }
-      const previous = await tx.accountingJournal.findMany({ where: { sourceKey: event.sourceKey, book: { branchId: book.branchId } }, include: journalInclude });
-      if (previous.length > 1 || (previous[0] && previous[0].bookId !== bookId)) v.rule('برای این رویداد سند قبلی در دفتر دیگری وجود دارد؛ تطبیق لازم است.');
-      let journal = previous[0];
-      if (!journal) {
-        const documentDate = financialDate(event.occurredAt);
-        const periods = await tx.accountingPeriod.findMany({ where: { bookId, status: 'OPEN', startDate: { lte: documentDate }, endDate: { gte: documentDate } } });
-        if (periods.length !== 1) v.rule('برای تاریخ رویداد باید دقیقاً یک دوره باز وجود داشته باشد.');
-        const created = await this.execute(tx, book, 'journal-save', {
-          periodId: periods[0]!.id, typeId: mapping.typeId, documentDate,
-          description: `رویداد مالی ${event.kind}`, reference: event.reference,
+      const previous = await tx.accountingJournal.findMany({
+        where: {
           sourceKey: event.sourceKey,
-          attributes: { financialEventId: event.id, source: event.source, recordId: event.recordId, sourceRequestId: event.requestId, sourceAmount: event.amount.toString(), sourceCurrency: event.currency, ruleId: String(p.ruleId ?? '') },
-          lines,
-        }, undefined, actor, true, stateEvents) as { id: string };
-        journal = await tx.accountingJournal.findUniqueOrThrow({ where: { id: created.id }, include: journalInclude });
+          book: { branchId: book.branchId },
+        },
+        include: journalInclude,
+      });
+      if (previous.length > 1 || (previous[0] && previous[0].bookId !== bookId))
+        v.rule(
+          'برای این رویداد سند قبلی در دفتر دیگری وجود دارد؛ تطبیق لازم است.',
+        );
+      let journal = previous[0];
+      if (!journal || p.rebuild === true) {
+        if (journal && journal.status !== 'DRAFT')
+          v.rule('سند تأییدشده یا نهایی از مبدأ بازنویسی نمی‌شود.');
+        if (journal) this.version(journal.version, expected);
+        const sourceDate = financialDate(event.occurredAt);
+        const documentDate =
+          v.date(p.documentDate, true) ?? journal?.documentDate ?? sourceDate;
+        const oldReason =
+          journal?.documentDate === documentDate
+            ? String(v.attributes(journal.attributes).latePostingReason ?? '')
+            : '';
+        const latePostingReason =
+          documentDate === sourceDate
+            ? ''
+            : v.text(p.latePostingReason, 500) || oldReason;
+        if (
+          (event.kind === 'CUSTOMER_RECEIPT' ||
+            event.kind.endsWith('_PAYMENT')) &&
+          documentDate < sourceDate
+        )
+          v.rule('ثبت دریافت و پرداخت پیش از تاریخ واقعی وجه مجاز نیست.');
+        if (documentDate !== sourceDate && latePostingReason.length < 10)
+          v.rule(
+            'برای ثبت در تاریخی متفاوت از عملیات، علت حداقل ده‌حرفی ثبت کنید؛ تأیید مستقل سند لازم است.',
+          );
+        const periods = await tx.accountingPeriod.findMany({
+          where: {
+            bookId,
+            status: 'OPEN',
+            startDate: { lte: documentDate },
+            endDate: { gte: documentDate },
+            ...(p.periodId ? { id: v.uuid(p.periodId)! } : {}),
+          },
+        });
+        if (periods.length !== 1)
+          v.rule('برای تاریخ ثبت حسابداری باید دقیقاً یک دوره باز انتخاب شود.');
+        const created = (await this.execute(
+          tx,
+          book,
+          'journal-save',
+          {
+            ...(journal ? { id: journal.id } : {}),
+            periodId: periods[0]!.id,
+            typeId: mapping.typeId,
+            documentDate,
+            description:
+              journal?.description ??
+              accountingFinancialEventLabels[event.kind] ??
+              'عملیات مالی',
+            reference: journal?.reference ?? event.reference,
+            sourceKey: event.sourceKey,
+            attributes: {
+              ...resetApprovalAttributes(journal?.attributes ?? {}),
+              financialEventId: event.id,
+              sourceOccurredAt: event.occurredAt.toISOString(),
+              latePostingReason,
+              source: event.source,
+              recordId: event.recordId,
+              sourceRequestId: event.requestId,
+              sourceAmount: event.amount.toString(),
+              sourceCurrency: event.currency,
+              ruleId: String(p.ruleId ?? ''),
+            },
+            lines,
+          },
+          journal?.version,
+          actor,
+          true,
+          stateEvents,
+          Boolean(journal && p.rebuild === true),
+        )) as { id: string };
+        journal = await tx.accountingJournal.findUniqueOrThrow({
+          where: { id: created.id },
+          include: journalInclude,
+        });
         await this.validatePosting(tx, book, journal);
       }
-      await tx.financeAccountingEvent.update({ where: { id: event.id }, data: { journalId: journal.id, lastError: null, attemptedAt: new Date() } });
+      await tx.financeAccountingEvent.update({
+        where: { id: event.id },
+        data: {
+          journalId: journal.id,
+          lastError: null,
+          attemptedAt: new Date(),
+        },
+      });
       return journal;
     }
     if (action === 'source-journal') {
@@ -2658,8 +2945,20 @@ export class AccountingService {
         )
       )
         v.invalid('منبع مالی معتبر نیست.');
-      const captured = await tx.financeAccountingEvent.findFirst({ where: { sourceKey: `${source}:${recordId}`, branchId: book.branchId } });
-      if (captured) return this.execute(tx, book, 'financial-event-journal', { ...p, eventId: captured.id }, undefined, actor, true, stateEvents);
+      const captured = await tx.financeAccountingEvent.findFirst({
+        where: { sourceKey: `${source}:${recordId}`, branchId: book.branchId },
+      });
+      if (captured)
+        return this.execute(
+          tx,
+          book,
+          'financial-event-journal',
+          { ...p, eventId: captured.id },
+          undefined,
+          actor,
+          true,
+          stateEvents,
+        );
       const history = await this.finance.history(
         { source: source as 'SALES', recordId },
         { ...actor, branchIds: [book.branchId] },
@@ -3910,7 +4209,7 @@ export class AccountingService {
         }
       }
 
-      if (existing?.sourceKey) {
+      if (existing?.sourceKey && !financialSourceRebuild) {
         const unchanged =
           rows.length === existing.lines.length &&
           rows.every((row, i) => {
@@ -3943,7 +4242,8 @@ export class AccountingService {
       if (
         existing?.sourceKey &&
         !internal &&
-        (/^(OPEN|CLOSE|FINAL|NATURE):/.test(existing.sourceKey) || !!v.attributes(existing.attributes).financialEventId) &&
+        (/^(OPEN|CLOSE|FINAL|NATURE):/.test(existing.sourceKey) ||
+          !!v.attributes(existing.attributes).financialEventId) &&
         (periodId !== existing.periodId ||
           typeId !== existing.typeId ||
           documentDate !== existing.documentDate)
@@ -4734,6 +5034,18 @@ export class AccountingService {
     }>,
   ) {
     const endAttributes = v.attributes(journal.attributes);
+    let financialValuationAt: Date | null = null;
+    if (endAttributes.financialEventId) {
+      const event = await tx.financeAccountingEvent.findFirst({
+        where: {
+          id: String(endAttributes.financialEventId),
+          branchId: book.branchId,
+          sourceKey: journal.sourceKey ?? '',
+        },
+      });
+      if (!event) v.rule('مبنای رویداد مالی سند پیدا نشد.');
+      financialValuationAt = event.occurredAt;
+    }
     const historicalHeader =
       !!journal.sourceKey &&
       /^(OPEN|CLOSE|FINAL|NATURE|REVERSE):/.test(journal.sourceKey) &&
@@ -5029,7 +5341,8 @@ export class AccountingService {
           !fx.approverId ||
           fx.makerId === fx.approverId ||
           (!historicalCarry &&
-            (fx.validFrom > new Date() || fx.validTo < new Date())) ||
+            (fx.validFrom > (financialValuationAt ?? new Date()) ||
+              fx.validTo < (financialValuationAt ?? new Date()))) ||
           !row.foreignAmount ||
           !row.rate ||
           fx.rate.toString() !== row.rate.toString()

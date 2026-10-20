@@ -1,3 +1,4 @@
+import { financialEventStore } from '../../../test/financial-event-store';
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@nora/database';
 import { describe, expect, it, vi } from 'vitest';
@@ -7,6 +8,7 @@ import { FinanceDeliveryService } from './finance-delivery.module';
 function fixture(amount = '100', currencyCode = 'IRR') {
   const createdAt = new Date('2026-09-13T12:00:00.000Z');
   const tx = {
+    financeAccountingEvent: financialEventStore(),
     $queryRaw: vi.fn().mockResolvedValue([]),
     reservationServicePurchase: {
       findFirst: vi.fn().mockResolvedValue({

@@ -11,11 +11,11 @@ import type {
   AccountingSourcePageV1,
 } from '@nora/contracts';
 import { AccountingButton as Button } from './accounting-operations';
-import { FormField } from '@/components/ui/form-controls';
+import { FormField, Input } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import Link from '@/i18n/link';
-import { apiRequest } from '../api/finance-inbox-api';
+import { apiRequest, FinanceInboxApiError } from '../api/finance-inbox-api';
 
 export function AccountingSourceWorkspace({
   book,
@@ -43,7 +43,8 @@ export function AccountingSourceWorkspace({
     [typeId, setTypeId] = useState(''),
     [date, setDate] = useState(''),
     [debit, setDebit] = useState(''),
-    [credit, setCredit] = useState('');
+    [credit, setCredit] = useState(''),
+    [lateReason, setLateReason] = useState('');
   const query = useQuery({
     queryKey: [
       'accounting',
@@ -62,6 +63,11 @@ export function AccountingSourceWorkspace({
         `/finance/accounting/books/${book.book.id}/sources?${new URLSearchParams({ ...(cursor ? { cursor } : {}), ...(direction ? { direction } : {}), ...(source ? { source } : {}), ...(recordId ? { recordId } : {}), ...(requestId ? { requestId } : {}), ...(from ? { from } : {}), ...(to ? { to } : {}) })}`,
       ),
   });
+  if (
+    query.error instanceof FinanceInboxApiError &&
+    [401, 403, 404].includes(query.error.status)
+  )
+    return <p role="alert">{query.error.message}</p>;
   const options = (rows: { id: string; title: string; code?: string }[]) =>
     rows.map((r) => ({ value: r.id, label: `${r.code ?? ''} ${r.title}` }));
   const item = query.data?.items.find((i) => i.id === selected);
@@ -75,6 +81,7 @@ export function AccountingSourceWorkspace({
       documentDate: date,
       debitAccountId: debit,
       creditAccountId: credit,
+      latePostingReason: lateReason,
     });
     if (journal) {
       setSelected('');
@@ -83,7 +90,6 @@ export function AccountingSourceWorkspace({
   };
   return (
     <section className="space-y-5">
-      <AccountingFinancialEvents book={book} run={run} busy={busy} />
       <h2 className="text-lg font-black">دریافت و پرداخت و سند مرتبط</h2>
       <div className="flex flex-wrap gap-3">
         <FormField label="از تاریخ">
@@ -268,6 +274,19 @@ export function AccountingSourceWorkspace({
                 onChange={setDate}
               />
             </FormField>
+            {date &&
+            date !==
+              new Date(item.occurredAt).toLocaleDateString('sv-SE', {
+                timeZone: 'Asia/Tehran',
+              }) ? (
+              <FormField label="علت ثبت در تاریخ متفاوت">
+                <Input
+                  value={lateReason}
+                  maxLength={500}
+                  onChange={(e) => setLateReason(e.target.value)}
+                />
+              </FormField>
+            ) : null}
             <FormField label="حساب بدهکار">
               <SearchCombobox
                 label="حساب بدهکار"
@@ -311,6 +330,12 @@ export function AccountingSourceWorkspace({
           </div>
         </form>
       ) : null}
+      <AccountingFinancialEvents
+        key={book.book.id}
+        book={book}
+        run={run}
+        busy={busy}
+      />
     </section>
   );
 }

@@ -127,10 +127,22 @@ export class AccountingController {
   ) {
     return this.accounting.journalEvents(id, journalId, request.actor);
   }
+  @Get('books/:bookId/financial-events/reconciliation')
+  @Header('Cache-Control', 'private, no-store')
+  financialReconciliation(
+    @Param('bookId') id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.accounting.financialEventReconciliation(id, request.actor);
+  }
   @Get('books/:bookId/financial-events')
   @Header('Cache-Control', 'private, no-store')
-  financialEvents(@Param('bookId') id: string, @Req() request: AuthenticatedRequest) {
-    return this.accounting.financialEvents(id, request.actor);
+  financialEvents(
+    @Param('bookId') id: string,
+    @Req() request: AuthenticatedRequest,
+    @Query() query: Record<string, string>,
+  ) {
+    return this.accounting.financialEvents(id, request.actor, query);
   }
   @Get('books/:bookId/sources')
   @Header('Cache-Control', 'private, no-store')
