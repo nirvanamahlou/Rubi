@@ -6714,3 +6714,6 @@ PASSENGER-PRICE-COLUMNS-1020 candidate validation:57 Sales API and3 shared-reade
 
 
 
+
+PASSENGER-PRICE-COLUMNS-1020 ready for CI: merged-current-development regressions45 Web/58 API/4 shared pass; gross/net total package validation, selectable non-IRR currency and fixed IRR UI, service/individual-stay context and PDF v2 totals retained. Final-head CI gates develop merge; no operational rollout or migration.
+
