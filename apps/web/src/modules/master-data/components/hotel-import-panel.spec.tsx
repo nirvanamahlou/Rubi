@@ -50,6 +50,47 @@ afterEach(() => {
 });
 
 describe('hotel import template download', () => {
+  it('shows Persian name, website and an explicit false free-sale value in preview', () => {
+    hooks.states = [
+      [],
+      [],
+      'country-id',
+      'city-id',
+      null,
+      {
+        sessionId: 'session',
+        previewToken: 'token',
+        counts: { rows: 1, invalid: 0, duplicates: 0 },
+        rows: [
+          {
+            rowNumber: 5,
+            code: 'HOTEL_TEST',
+            englishName: 'Test Hotel',
+            persianName: 'هتل آزمون',
+            website: 'https://hotel.example',
+            freeSale: false,
+            starRating: 5,
+            duplicate: false,
+          },
+        ],
+        issues: [],
+        security: {},
+      },
+      'SKIP',
+      true,
+      null,
+      null,
+    ];
+    const tree = canonicalTestTree(
+      HotelImportPanel({ onImported: () => undefined }),
+    );
+    hooks.states = null;
+    const html = renderToStaticMarkup(tree);
+    expect(html).toContain('هتل آزمون');
+    expect(html).toContain('https://hotel.example');
+    expect(html).toContain('فروش آزاد');
+    expect(html).toContain('خیر');
+  });
   it('commits the preview and refreshes hotels on LAN HTTP without randomUUID', async () => {
     const counts = {
       rows: 3,

@@ -66,7 +66,7 @@ describe('downloadable hotel workbook', () => {
     const buffer = readFileSync(
       resolve(
         process.cwd(),
-        '../web/public/templates/hotel-master-template.xlsx',
+        'test/fixtures/hotel-master-template-18-columns.xlsx',
       ),
     );
     const parsed = parseHotelImportWorkbook({
@@ -132,6 +132,9 @@ function fixture(options?: {
   code?: string;
   worksheetXml?: string;
   sharedStringsXml?: string;
+  website?: string;
+  freeSale?: string;
+  persianName?: string;
 }) {
   const headers = [...HOTEL_IMPORT_HEADERS];
   if (options?.badHeader) headers[0] = 'کد' as (typeof headers)[0];
@@ -154,6 +157,9 @@ function fixture(options?: {
     'منتشرشده',
     'TRUE',
     'یادداشت',
+    options?.website ?? '',
+    options?.freeSale ?? '',
+    options?.persianName ?? '',
   ];
   const row = (number: number, source: readonly string[]) =>
     source
@@ -338,6 +344,110 @@ function externalRejection(buffer: ReturnType<typeof fixture>) {
 }
 
 describe('parseHotelImportWorkbook', () => {
+  function websiteLink(target = 'https://hotel.example', ref = 'S2') {
+    const files = unzipSync(fixture({ website: 'https://hotel.example' }));
+    files['xl/worksheets/sheet1.xml'] = strToU8(
+      strFromU8(files['xl/worksheets/sheet1.xml']!).replace(
+        '</worksheet>',
+        `<hyperlinks><hyperlink ref="${ref}" r:id="rId1"/></hyperlinks></worksheet>`,
+      ),
+    );
+    files['xl/worksheets/_rels/sheet1.xml.rels'] = strToU8(
+      relationship(
+        target,
+        'External',
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
+      ),
+    );
+    return zipSync(files);
+  }
+  it('reads Excel auto-linked website cells as inert matching text', () => {
+    const parsed = parse(websiteLink());
+    expect(parsed.issues).toEqual([]);
+    expect(parsed.rows[0]?.website).toBe('https://hotel.example');
+    expect(parsed.security.ignoredWebsiteHyperlinkCount).toBe(1);
+    expect(parsed.security.externalLinkCount).toBe(0);
+  });
+  it.each([
+    'https://different.example',
+    'file:///etc/passwd',
+    'javascript:alert(1)',
+    'https://user:secret@hotel.example',
+  ])('rejects unsafe or mismatched website hyperlink %s', (target) => {
+    expect(() => parse(websiteLink(target))).toThrow(/Hyperlink/);
+  });
+  it('does not allow website hyperlink metadata on another column', () => {
+    expect(() => parse(websiteLink('https://hotel.example', 'B2'))).toThrow(
+      /Hyperlink/,
+    );
+  });
+  it.each(['بله', 'TRUE', 'true', '1', '۱', '١'])(
+    'reads free sale true %s with website and Persian name',
+    (freeSale) => {
+      const result = parse(
+        fixture({
+          website: 'https://hotel.example/path',
+          freeSale,
+          persianName: 'هتل آزمایشی',
+        }),
+      );
+      expect(result.issues).toEqual([]);
+      expect(result.rows[0]).toMatchObject({
+        website: 'https://hotel.example/path',
+        freeSale: true,
+        persianName: 'هتل آزمایشی',
+        englishName: 'Test Hotel',
+      });
+    },
+  );
+  it.each(['خیر', 'FALSE', 'false', '0', '۰', '٠'])(
+    'reads explicit false without treating it as blank: %s',
+    (freeSale) => {
+      expect(parse(fixture({ freeSale })).rows[0]?.freeSale).toBe(false);
+    },
+  );
+  it('validates extended optional fields and retains blank nulls', () => {
+    expect(parse().rows[0]).toMatchObject({
+      website: null,
+      freeSale: null,
+      persianName: null,
+    });
+    expect(
+      parse(
+        fixture({
+          website: 'javascript:alert(1)',
+          freeSale: 'maybe',
+          persianName: 'x'.repeat(161),
+        }),
+      ).issues.map((i) => i.code),
+    ).toEqual(
+      expect.arrayContaining([
+        'INVALID_WEBSITE',
+        'INVALID_BOOLEAN',
+        'VALUE_TOO_LONG',
+      ]),
+    );
+  });
+  it('reads the current downloadable extended template', () => {
+    const parsed = parseHotelImportWorkbook({
+      buffer: readFileSync(
+        resolve(
+          process.cwd(),
+          '../web/public/templates/hotel-master-template.xlsx',
+        ),
+      ),
+      fileName: 'hotels.xlsx',
+      mimeType: HOTEL_IMPORT_MIME,
+      expectedCityName: 'کوش اداسی',
+    });
+    expect(parsed.issues).toEqual([]);
+    expect(parsed.rows).toHaveLength(0);
+    expect(parsed.mapping).toMatchObject({
+      وب‌سایت: 'O',
+      'فروش آزاد': 'P',
+      'نام فارسی': 'Q',
+    });
+  });
   function customColumns(headers: string[], values: string[]) {
     const files = unzipSync(fixture());
     const row = (number: number, data: string[]) =>

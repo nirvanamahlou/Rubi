@@ -49,6 +49,21 @@ export interface SearchPage {
     asOf: string;
   };
 }
+export interface CallKpis {
+  data: {
+    today: number;
+    week: number;
+    withoutOutcome: number;
+    needsFollowUp: number;
+  };
+  meta: {
+    branchId: string;
+    asOf: string;
+    timezone: string;
+    todayFrom: string;
+    weekFrom: string;
+  };
+}
 export interface Report {
   data: {
     calls: number;
@@ -90,6 +105,8 @@ export function searchBody(filters: SearchFilters) {
   );
 }
 export const readApi = {
+  kpis: (branch: string, signal: AbortSignal) =>
+    callCenterRequest<CallKpis>('/kpis', branch, { signal }),
   branches: (branch: string) =>
     callCenterRequest<{ data: { id: string; name: string }[] }>(
       '/branches',

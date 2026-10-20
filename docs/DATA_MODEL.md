@@ -1,3 +1,7 @@
+## Hotel import optional identity/website/free-sale — 2026-10-20
+
+MasterHotel.freeSale is nullable Boolean reference metadata, independent of isActive, isSaleableReference and sourceFeatured; NULL means unspecified and false must remain false. No backfill or availability/payment policy change. Existing name stores optional Persian name (hotel-name fallback), englishName stores the workbook hotel name, and website keeps its existing nullable320-character text field. An omitted new header on import UPDATE preserves saved values; explicit blanks clear nullable website/freeSale. Generic authorized profile edits preserve omitted fields and audit/version behavior. Apply additive migration20261020180000_hotel_free_sale before API/Web rollout; no operational migration was performed by implementation. Older14/18-column workbooks remain valid.
+
 ## Manual per-unit toman reference — 2026-10-18
 
 MasterCurrency.tomanPerUnit is an independent nullable Decimal(24,10):1 unit of
