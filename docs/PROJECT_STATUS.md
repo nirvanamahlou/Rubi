@@ -6735,3 +6735,7 @@ PASSENGER-PRICE-COLUMNS-1020 candidate validation:57 Sales API and3 shared-reade
 
 
 PASSENGER-PRICE-COLUMNS-1020 ready for CI: merged-current-development regressions45 Web/58 API/4 shared pass; gross/net total package validation, selectable non-IRR currency and fixed IRR UI, service/individual-stay context and PDF v2 totals retained. Final-head CI gates develop merge; no operational rollout or migration.
+
+## 2026-10-20 — Contract creation presentation
+
+PC-A CONTRACT-UI-1020: clearer three-step progress, emphasized current step, responsive step layout, softer header/card spacing and wrapping sticky actions. Presentation classes only; existing state, validation, calculations and submit unchanged. Formatting and diff checks passed. No runtime deployment or browser acceptance claimed.
