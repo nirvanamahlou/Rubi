@@ -1,6 +1,6 @@
 ## HOTEL-TEMPLATE-1020 — PC-B — 2026-10-20
 
-The supplied14-column hotel workbook previously failed the exact18-column header check. Import now resolves known columns by header, requires name/city and preserves optional defaults, actual row numbers, normalized city matching and existing security/duplicate/audit rules. The exact sample fixture and legacy format pass49 parser/commit/permission tests. Isolated PostgreSQL preview/commit/reread regressions cover both formats; execution and final local/hosted gates are recorded in the task/PR. No schema/migration/dependency, live import or deployment. See tasks/HOTEL-TEMPLATE-1020.md.
+The supplied14-column hotel workbook previously failed the exact18-column header check. Import now resolves known columns by header, requires name/city and preserves optional defaults, actual row numbers, normalized city matching and existing security/duplicate/audit rules.51 tests pass:49 parser/commit/permission and2 isolated PostgreSQL preview/commit/edit/reread/duplicate-SKIP cases for both formats.178 migrations applied to disposable QA only; scoped lint/diff checks pass. Local full types/build were interrupted by host paging-file exhaustion; PR1005 exact-head full hosted gates must pass before authorized merge. No browser claim, schema/migration/dependency change, live import or deployment. See tasks/HOTEL-TEMPLATE-1020.md and PR1005 for final check/merge evidence.
 
 ## 2026-10-19 — CALL-CENTER-PACKAGE-ONE-1019 — PC-C — LOCAL_REVIEW
 

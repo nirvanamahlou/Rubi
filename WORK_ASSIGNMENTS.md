@@ -1,4 +1,6 @@
-## HOTEL-TEMPLATE-1020 — PC-B — IN_PROGRESS
+## HOTEL-TEMPLATE-1020 — PC-B — READY_FOR_CI / PR1005
+
+51 focused tests passed:49 parser/commit/permission regressions and2 actual PostgreSQL preview/commit/edit/reopen/duplicate-SKIP cases (legacy18 and supplied14 columns). All178 migrations succeeded on disposable hotel_profile_test at127.0.0.1:55449 only. Scoped ESLint and diff checks pass. Local full types/build were interrupted by host paging-file exhaustion; hosted exact-head full quality/build/tests/database gates remain mandatory. No browser or operational import claimed. Bounded parser/test/doc reservation freezes/releases with the published candidate; final check/merge evidence is recorded on PR1005.
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hotel-template-1020 from origin/develop@83f5daa3. Owner requests support for the supplied14-column hotel workbook, tests, push and develop merge. Reserve Master Data hotel-import parser and focused parser/service regressions, an exact sample workbook fixture and own task/status notes. Existing18-column imports remain compatible; required hotel name/city, canonical city selection, preview/commit permissions, duplicate policy, atomic audit and OOXML safety remain unchanged. No schema/migration/dependency/public API contract/runtime or operational import changes. No active overlapping hotel-import source reservation found; prior1012/1013 candidates are merged/released. Hosted exact-head gates precede authorized merge.
 
