@@ -1,0 +1,97 @@
+.workspace {
+  display: grid;
+  gap: 1.25rem;
+}
+.buyer {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow: 0 2px 8px #152d5010;
+}
+.buyer h3 {
+  padding-block-end: 0.875rem;
+  border-block-end: 1px solid var(--border);
+  font-size: 1rem;
+}
+.modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.375rem;
+  width: fit-content;
+  border-radius: 0.875rem;
+  background: var(--muted);
+}
+.samePerson {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--primary) 4%, var(--surface));
+}
+.samePerson input {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--primary);
+}
+.extras {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+}
+.extras label {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.625rem;
+  background: var(--muted);
+}
+.workspace :global([data-entry-table-enhanced]) {
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px #152d5010;
+}
+.workspace :global([data-entry-table-enhanced]) thead {
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+}
+.workspace :global([data-entry-table-enhanced]) thead th {
+  padding: 1rem 0.75rem;
+  vertical-align: middle;
+}
+.workspace :global([data-entry-table-enhanced]) tbody tr {
+  background: var(--surface);
+}
+.workspace :global([data-entry-table-enhanced]) tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--primary) 3%, var(--surface));
+}
+.workspace :global([data-entry-table-enhanced]) tbody tr:focus-within {
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+}
+.workspace :global([data-entry-table-enhanced]) tbody th {
+  padding: 1rem 0.75rem;
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  background: var(--surface);
+  box-shadow: -2px 0 4px #152d5008;
+}
+.workspace :global([data-entry-table-enhanced]) tbody td {
+  padding: 0.75rem 0.5rem;
+}
+.workspace :global([data-entry-table-enhanced]) input[type='checkbox'] {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--primary);
+}
+@media (max-width: 640px) {
+  .buyer {
+    padding: 1rem;
+  }
+}
