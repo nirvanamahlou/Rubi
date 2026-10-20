@@ -3869,5 +3869,6 @@
   "بررسی درخواست تماس": "Check call request",
   "تماس از داخلی من": "Call from my extension",
   "پیش از تماس جدید، وضعیت تماس قبلی در مرکز تلفن بررسی شده است؟": "Have you checked the previous call in the PBX before starting a new call?",
-  "تماس جدید": "New call"
+  "تماس جدید": "New call",
+  "نام، شماره تماس و آدرس مشتری را کامل کنید؛ تلفن ثابت اختیاری است و کد پستی در صورت ورود باید ۱۰ رقم باشد.": "Enter the customer name, contact number and address; landline is optional and a postal code, if entered, must contain ten digits."
 }

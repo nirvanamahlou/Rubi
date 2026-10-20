@@ -249,9 +249,16 @@ describe('Sales contract domain', () => {
         },
       }),
     ).not.toThrow();
+    for (const landline of ['', '   ', '02112345678']) {
+      expect(() =>
+        validateSalesContract({
+          ...draft,
+          buyerContact: { ...buyerContact, landline },
+        }),
+      ).not.toThrow();
+    }
     for (const change of [
       { phone: 'bad' },
-      { landline: '' },
       { landline: 'bad' },
       { postalCode: '123' },
       { name: ' ' },

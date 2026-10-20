@@ -8618,3 +8618,9 @@ PEOPLE-UI-1020 — READY_FOR_REVIEW:17 focused tests pass, including native RTL/
 Reserve SalesContractForm final-submit/navigation binding and focused existing form regressions. Remove implicit form-submit persistence; only an explicit final button click invokes existing create/confirm path. Preserve payload validation, local draft storage, idempotency and reservation dispatch after explicit commit. No API/schema/dependency/migration/data changes. Prior presentation source lock merged/released; no active overlap found. User requests fix; develop merge is not inferred for this new behavior task.
 
 EXPLICIT-CONTRACT-SUBMIT-1020 — READY_FOR_REVIEW:18 form regressions pass. Existing draft persistence and final create/confirm flow unchanged; only explicit final click may invoke it. Source reservation freezes/releases with candidate; local-only preview after build. No merge or production rollout inferred.
+
+## OPTIONAL-BUYER-LANDLINE-1020 — PC-A — IN_PROGRESS
+
+Reserve Sales buyer-contact form/model/API domain and focused tests; one new English override entry plus own status notes. Buyer landline accepts omission, empty or whitespace string; nonempty numbers retain existing format validation and non-string API values remain rejected. Remove native/UI required marker, retain customer phone/address/postal validation. No public type/schema/migration/dependency/data/runtime changes. Prior Sales locks released; user explicitly authorizes develop merge after final CI.
+
+OPTIONAL-BUYER-LANDLINE-1020 — READY_FOR_CI:113 focused tests pass covering blank/omitted/whitespace/valid/malformed landlines and removal of native required. New guidance translation is covered. Bounded source/catalogue reservations freeze/release with candidate; exact-head hosted quality/types/build/full tests gate authorized develop merge. No runtime or data changes.

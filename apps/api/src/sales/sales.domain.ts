@@ -206,7 +206,8 @@ export function validateSalesContract(
         !/^[0-9]{10}$/.test(buyer.postalCode.trim())) ||
       (buyer.landline !== undefined &&
         (typeof buyer.landline !== 'string' ||
-          !/^\+?[0-9]{10,15}$/.test(buyer.landline.trim()))) ||
+          (buyer.landline.trim() !== '' &&
+            !/^\+?[0-9]{10,15}$/.test(buyer.landline.trim())))) ||
       (input.payerCustomerId && input.payerCustomerId !== input.customerId)
     )
       throw new SalesDomainError(
