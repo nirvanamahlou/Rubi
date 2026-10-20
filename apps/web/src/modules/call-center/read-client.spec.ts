@@ -8,6 +8,26 @@ vi.mock('@/lib/environment', () => ({
 }));
 describe('Call Center paginated read transport', () => {
   beforeEach(() => vi.clearAllMocks());
+  it('loads branch-wide KPI counts independently of list filters and forwards cancellation', async () => {
+    const data = { today: 0, week: 4, withoutOutcome: 2, needsFollowUp: 1 };
+    transport.mockResolvedValue(
+      new Response(JSON.stringify({ data, meta: {} })),
+    );
+    const controller = new AbortController();
+    expect((await readApi.kpis('branch', controller.signal)).data).toEqual(
+      data,
+    );
+    const [url, options] = transport.mock.calls[0]!;
+    expect(url).toBe(
+      'http://localhost:4000/api/v1/customer-affairs/call-center/kpis',
+    );
+    expect(options).toMatchObject({
+      signal: controller.signal,
+      cache: 'no-store',
+      headers: { 'x-branch-id': 'branch' },
+    });
+    expect(options.body).toBeUndefined();
+  });
   it('keeps private query out of URL and sends branch, revision and abort signal', async () => {
     transport.mockImplementation(
       async () => new Response(JSON.stringify({ data: [], meta: {} })),

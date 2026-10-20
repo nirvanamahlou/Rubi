@@ -21,6 +21,7 @@ import {
   type FollowUp,
 } from './workflow-client';
 import styles from './workflow.module.css';
+import { CallKpiCards } from './kpis';
 
 export const requestLabels: Record<string, string> = {
   NEW: 'باز',
@@ -468,14 +469,12 @@ export function WorkQueue({
   branchId,
   actorId,
   canManage,
-  incomplete,
-  onIncomplete,
+  refreshKey = 0,
 }: {
   branchId: string;
   actorId: string;
   canManage: boolean;
-  incomplete?: number | undefined;
-  onIncomplete?: () => void;
+  refreshKey?: number;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const queueHeading = useRef<HTMLHeadingElement>(null);
@@ -516,53 +515,10 @@ export function WorkQueue({
   }, [branchId, view, page, revision]);
   return (
     <>
-      <div className={styles.actionCards} aria-label="اقدام‌های فوری">
-        {(
-          [
-            ['OVERDUE', 'درخواست با پیگیری عقب‌افتاده'],
-            ['TODAY', 'درخواست با پیگیری امروز'],
-            ['UNASSIGNED', 'درخواست بدون مسئول'],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            data-tone={value}
-            disabled={
-              loading || !!error || data?.meta.counts?.[value] === undefined
-            }
-            onClick={() => {
-              setView(value);
-              setPage(1);
-              setRevision((current) => current + 1);
-              setCollapsed(false);
-              setLoading(true);
-              queueHeading.current?.focus();
-            }}
-          >
-            <span>{label}</span>
-            <strong>
-              {loading
-                ? '…'
-                : data?.meta.counts?.[value] === undefined
-                  ? '—'
-                  : faNumber(data.meta.counts[value])}
-            </strong>
-            <small>همه شعب مجاز · درخواست یکتا</small>
-          </button>
-        ))}
-        <button
-          type="button"
-          disabled={incomplete === undefined}
-          onClick={onIncomplete}
-        >
-          <span>اطلاعات ناقص تماس</span>
-          <strong>
-            {incomplete === undefined ? '—' : faNumber(incomplete)}
-          </strong>
-          <small>شعبه، بازه و فیلتر فعلی گزارش</small>
-        </button>
-      </div>
+      <CallKpiCards
+        branchId={branchId}
+        revision={`${refreshKey}:${revision}`}
+      />
       <section className={`${styles.panel} ${styles.queue}`}>
         <header>
           <h3 tabIndex={-1} ref={queueHeading}>
