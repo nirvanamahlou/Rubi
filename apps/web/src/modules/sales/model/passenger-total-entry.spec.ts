@@ -92,9 +92,9 @@ describe('total passenger pricing persistence', () => {
     ).not.toThrow();
   });
   it('preserves legacy draft values by summing each currency without conversion', () => {
-    expect(
-      passengerTotalEntry({ ...draft, passengerPrices: undefined }, 'a'),
-    ).toEqual([
+    const legacy = { ...draft };
+    delete legacy.passengerPrices;
+    expect(passengerTotalEntry(legacy, 'a')).toEqual([
       { currencyCode: 'IRR', amount: '9999' },
       { currencyCode: 'USD', amount: '9999' },
     ]);

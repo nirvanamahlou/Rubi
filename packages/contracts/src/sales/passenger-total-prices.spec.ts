@@ -85,3 +85,39 @@ describe('total per-passenger IRR and foreign prices', () => {
     ).toThrow('نباید از قیمت همان مسافر');
   });
 });
+
+it('adds a passenger insurance surcharge once after their deductions', () => {
+  const services = [
+    ...source(),
+    {
+      metadata: {
+        passengerPackagePricingVersion: 1,
+        insuranceAgeSurcharge: true,
+        passengerId: id,
+        extraToman: '10',
+      },
+    },
+  ];
+  expect(() =>
+    validatePassengerTotalPricing(services, [
+      {
+        customerId: id,
+        agreedPrices: [
+          { amount: '190', currencyCode: 'IRR' },
+          { amount: '20', currencyCode: 'USD' },
+        ],
+      },
+    ]),
+  ).not.toThrow();
+  expect(() =>
+    validatePassengerTotalPricing(services, [
+      {
+        customerId: id,
+        agreedPrices: [
+          { amount: '290', currencyCode: 'IRR' },
+          { amount: '20', currencyCode: 'USD' },
+        ],
+      },
+    ]),
+  ).toThrow('مبلغ نهایی');
+});

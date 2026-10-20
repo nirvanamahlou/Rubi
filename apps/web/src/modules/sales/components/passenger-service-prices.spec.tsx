@@ -149,3 +149,24 @@ it('reports deductions above the same-person same-currency total', () => {
   );
   expect(html).toContain('تخفیف و کمیسیون نباید از قیمت همان مسافر');
 });
+
+it('shows only each passenger’s selected transfer legs and added services', () => {
+  const html = renderToStaticMarkup(
+    <PassengerServicePrices
+      state={{
+        ...state,
+        tripType: 'ROUND_TRIP',
+        serviceKinds: ['FLIGHT', 'HOTEL', 'TRANSFER'],
+        serviceDirections: { TRANSFER: ['OUTBOUND', 'RETURN'] },
+        passengerTransferDirections: { a: ['RETURN'], b: [] },
+        additionalServices: ['CITY_TOUR', 'TOUR_GUIDE'],
+      }}
+      currencies={[]}
+      onChange={vi.fn()}
+    />,
+  );
+  expect((html.match(/ترانسفر برگشت/g) ?? []).length).toBe(1);
+  expect(html).not.toContain('ترانسفر رفت');
+  expect(html).toContain('گشت شهری');
+  expect(html).toContain('راهنما');
+});
