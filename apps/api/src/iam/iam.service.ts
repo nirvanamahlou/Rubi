@@ -17,6 +17,7 @@ import {
   screenPermission,
   hasManagedAccess,
   canViewScreen,
+  canViewRoute,
   denyPermission,
   isUserAccessControlId,
   USER_ACCESS_DENY_CONTROLS,
@@ -24,6 +25,9 @@ import {
   hasAccessControl,
   IAM_PERMISSION_CODES,
   MANUAL_ACCESS_ROLE_PREFIX,
+  CALL_CENTER_SCOPED_ACCESS,
+  hasScopedCallCenterAccess,
+  mustScopeCallCenter,
 } from '@nora/contracts';
 import {
   createHash,
@@ -1393,19 +1397,38 @@ export class IamService implements IamStepUpPort {
       dto.code.startsWith('personal-access-')
     )
       throw new BadRequestException('پیشوند نقش اختصاصی رزرو شده است.');
-    await this.assertPermissionsAssignable(dto.permissionIds, actor);
+    const codes = await this.assertPermissionsAssignable(
+      dto.permissionIds,
+      actor,
+    );
     this.assertPermissionCodesAssignable(
       salesManagerRolePermissions([
         { role: { code: dto.code, name: dto.name.trim(), isActive: true } },
       ]),
       actor,
     );
+    const rolePermissionIds = [...dto.permissionIds];
+    if (
+      codes.some((code) => code.startsWith('customer_affairs.call_center.'))
+    ) {
+      const flag = await this.database.client.permission.upsert({
+        where: { code: CALL_CENTER_SCOPED_ACCESS },
+        create: {
+          code: CALL_CENTER_SCOPED_ACCESS,
+          module: 'customer_affairs',
+          name: 'محدوده امن کال سنتر نسخه ۱',
+        },
+        update: {},
+        select: { id: true },
+      });
+      if (!rolePermissionIds.includes(flag.id)) rolePermissionIds.push(flag.id);
+    }
     const role = await this.database.client.role.create({
       data: {
         code: dto.code,
         name: dto.name.trim(),
         permissions: {
-          create: dto.permissionIds.map((permissionId) => ({ permissionId })),
+          create: rolePermissionIds.map((permissionId) => ({ permissionId })),
         },
       },
       include: { permissions: { include: { permission: true } } },
@@ -1652,7 +1675,16 @@ export class IamService implements IamStepUpPort {
       });
       if (dto.manualAccessV3 && profile) {
         await persistManualSnapshot(transaction, created.id, profile.title, {
-          permissionCodes: profile.permissionCodes,
+          permissionCodes: [
+            ...new Set([
+              ...profile.permissionCodes,
+              ...(profile.permissionCodes.some((code) =>
+                code.startsWith('customer_affairs.call_center.'),
+              ) || profile.screenIds.includes('customer-affairs.call-center')
+                ? [CALL_CENTER_SCOPED_ACCESS]
+                : []),
+            ]),
+          ],
           screenIds: profile.screenIds,
           allowedControlIds: USER_ACCESS_DENY_CONTROLS.filter(
             (control) =>
@@ -2426,6 +2458,36 @@ export class IamService implements IamStepUpPort {
         : []),
       ...profile.deniedControlIds.map(denyPermission),
     ]);
+    const previousCodes = (role.permissions ?? []).map(
+      ({ permission }) => permission.code,
+    );
+    if (
+      mustScopeCallCenter(
+        {
+          permissionCodes: previousCodes,
+          screenIds: canViewRoute(
+            previousCodes,
+            '/customer-affairs/call-center',
+          )
+            ? ['customer-affairs.call-center']
+            : [],
+        },
+        profile,
+      )
+    ) {
+      const flag = await transaction.permission.upsert({
+        where: { code: CALL_CENTER_SCOPED_ACCESS },
+        create: {
+          code: CALL_CENTER_SCOPED_ACCESS,
+          module: 'customer_affairs',
+          name: 'محدوده امن کال سنتر نسخه ۱',
+        },
+        update: {},
+        select: { id: true },
+      });
+      viewIds.push(flag.id);
+      desiredCodes.add(CALL_CENTER_SCOPED_ACCESS);
+    }
     const preservedIds: string[] = [];
     for (const grant of role.permissions ?? []) {
       const code = grant.permission.code;
@@ -2544,6 +2606,7 @@ export class IamService implements IamStepUpPort {
       permissions.map(({ code }) => code),
       actor,
     );
+    return permissions.map(({ code }) => code);
   }
   private async isSystemAdministrator(actor: AuthenticatedActor) {
     const user = await this.database.client.user.findUnique({
@@ -2563,6 +2626,16 @@ export class IamService implements IamStepUpPort {
     permissionCodes: readonly string[],
     actor: AuthenticatedActor,
   ) {
+    if (
+      hasScopedCallCenterAccess(actor.permissions) &&
+      permissionCodes.some((code) =>
+        code.startsWith('customer_affairs.call_center.'),
+      ) &&
+      !hasScopedCallCenterAccess(permissionCodes)
+    )
+      throw new ForbiddenException(
+        'واگذاری دسترسی قدیمی و بدون محدوده کال سنتر از اختیار شما خارج است.',
+      );
     const actorPermissions = new Set<string>(actor.permissions);
     if (permissionCodes.some((code) => !actorPermissions.has(code)))
       throw new ForbiddenException(

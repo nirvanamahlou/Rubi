@@ -1,4 +1,7 @@
 import { CallCenterTelephonyService } from './call-center-telephony.service';
+import { CallCenterAccessService } from './call-center-access.service';
+import { CallCenterOwnerService } from './call-center-owner.service';
+import { CallCenterOwnerController } from './call-center-owner.controller';
 import { CallCenterTelephonyController } from './call-center-telephony.controller';
 import { CallCenterCustomerController } from './call-center-customer.controller';
 import { CallCenterCustomerService } from './call-center-customer.service';
@@ -58,6 +61,7 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     SettingsModule,
   ],
   controllers: [
+    CallCenterOwnerController,
     CallCenterTelephonyController,
     CallCenterCustomerController,
     CallCenterReadController,
@@ -72,6 +76,8 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     CustomerAffairsMarketingIntakeController,
   ],
   providers: [
+    CallCenterOwnerService,
+    CallCenterAccessService,
     CallCenterTelephonyService,
     CallCenterCustomerService,
     CallCenterReadService,
@@ -91,6 +97,7 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     CustomerAffairsMarketingIntakeService,
   ],
   exports: [
+    CallCenterAccessService,
     IamWorkbenchRequestDirectory,
     CallCenterTelephonyService,
     CustomerAffairsService,

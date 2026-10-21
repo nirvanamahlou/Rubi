@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 import {
   IAM_PERMISSION_CODES,
+  CALL_CENTER_SCOPED_ACCESS,
+  mustScopeCallCenter,
   MANUAL_ACCESS_ROLE_PREFIX,
   MANUAL_ACCESS_VERSION,
   USER_ACCESS_SCREENS,
@@ -26,6 +28,7 @@ import {
   manualAccessSelection,
   manualSnapshotCodes,
   previewManualConversion,
+  canDelegateCallCenterScopeFlag,
 } from './manual-access-policy';
 import { readB2bAccessSnapshot } from '../b2b/b2b-access-snapshot.public';
 import type { ManualUserAccessDto } from './dto/manual-user-access.dto';
@@ -263,6 +266,12 @@ export class ManualUserAccessService {
           screenIds: [...dto.screenIds].sort(),
           allowedControlIds: [...dto.allowedControlIds].sort(),
         };
+        // Opt-in is sticky: removing scope ticks cannot fall back to legacy branch-wide read.
+        // Unrelated edits to pre-existing accounts do not opt them in.
+        if (mustScopeCallCenter(before, requested)) {
+          if (!requested.permissionCodes.includes(CALL_CENTER_SCOPED_ACCESS))
+            requested.permissionCodes.push(CALL_CENTER_SCOPED_ACCESS);
+        }
         const storedPermissions = await tx.permission.findMany({
           where: { NOT: { code: { startsWith: 'ui.' } } },
           select: { code: true },
@@ -293,6 +302,9 @@ export class ManualUserAccessService {
             ...operator,
             b2bOrganizationUser: await readB2bAccessSnapshot(tx, operator.id),
           });
+          // This sticky, restrictive policy flag adds no operation/data authority.
+          if (canDelegateCallCenterScopeFlag(authority, before, requested))
+            delegable.permissionCodes.push(CALL_CENTER_SCOPED_ACCESS);
           delegable.allowedControlIds = delegable.allowedControlIds.filter(
             (id) => {
               if (!hasAccessControl(authority, id)) return false;

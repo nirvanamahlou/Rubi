@@ -1,4 +1,8 @@
 import type { DisplayLanguage } from '../common/i18n/language';
+import {
+  FACILITY_NAME_MAX_CHARACTERS,
+  postgresCharacterLength,
+} from './facility-text';
 import { randomUUID } from 'node:crypto';
 import {
   preparePartnerDossier,
@@ -2922,6 +2926,21 @@ export class MasterDataService {
         )
           throw new BadRequestException('فهرست وعده‌های شامل‌شده معتبر نیست.');
         data.includedMeals = [...new Set(includedMeals)];
+      }
+    }
+    if (resource === 'facilities') {
+      for (const [field, limit] of [
+        ['name', FACILITY_NAME_MAX_CHARACTERS],
+        ['englishName', 160],
+        ['category', 80],
+      ] as const) {
+        if (
+          typeof data[field] === 'string' &&
+          postgresCharacterLength(data[field]) > limit
+        )
+          throw new BadRequestException(
+            `${field}: maximum ${limit} characters.`,
+          );
       }
     }
     if (resource === 'facilities' && data.displayOrder !== undefined) {

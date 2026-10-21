@@ -42,6 +42,7 @@ model User {
 
   callCenterCalls                                  CallCenterCall[]
   callCenterNotes                                  CallCenterNote[]
+  callCenterOwnedContacts                          CallCenterContact[]                       @relation("CallCenterContactOwner")
   internalLettersAuthored                          CorrespondenceLetter[]                    @relation("CorrespondenceAuthor")
   internalLettersSent                              CorrespondenceDelivery[]                  @relation("CorrespondenceSender")
   internalLettersReceived                          CorrespondenceDelivery[]                  @relation("CorrespondenceRecipient")
@@ -2379,7 +2380,7 @@ model MasterFacility {
   trainTypes          MasterTrainTypeFacility[]
   id                  String                    @id @default(uuid()) @db.Uuid
   code                String                    @unique @db.VarChar(32)
-  name                String                    @db.VarChar(160)
+  name                String                    @db.VarChar(500)
   englishName         String?                   @db.VarChar(160)
   category            String?                   @db.VarChar(80)
   iconFileReference   String?                   @db.Uuid
@@ -7746,6 +7747,9 @@ model CorrespondenceDelivery {
 
 // Customer Affairs-owned call history; all private text is encrypted at rest.
 model CallCenterContact {
+  ownerUserId      String?                 @map("owner_user_id") @db.Uuid
+  ownerVersion     Int                     @default(0) @map("owner_version")
+  owner            User?                   @relation("CallCenterContactOwner", fields: [ownerUserId], references: [id], onDelete: Restrict, map: "call_contact_owner_fk")
   id               String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   branchId         String                  @map("branch_id") @db.Uuid
   phoneFingerprint String                  @map("phone_fingerprint") @db.Char(64)
@@ -7758,6 +7762,8 @@ model CallCenterContact {
 
   @@unique([branchId, phoneFingerprint], map: "call_contact_phone_key")
   @@index([branchId, latestOccurredAt, id], map: "call_contact_recent_idx")
+  @@index([branchId, ownerUserId], map: "call_contact_owner_idx")
+  @@index([ownerUserId], map: "call_contact_owner_user_idx")
   @@map("customer_affairs_call_contacts")
 }
 

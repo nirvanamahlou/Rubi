@@ -24,7 +24,14 @@ export async function callCenterTaskReport(
   to: Date,
   now: Date,
   day: Date,
+  users: string[] | null = null,
 ) {
+  const scope =
+    users === null
+      ? Prisma.sql`TRUE`
+      : users.length
+        ? Prisma.sql`"assigneeUserId" IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))})`
+        : Prisma.sql`FALSE`;
   const rows = await tx.$queryRaw<
     Array<{
       open: bigint;
@@ -39,14 +46,14 @@ export async function callCenterTaskReport(
     count(*) FILTER(WHERE status='OPEN' AND "dueAt" < ${now}) AS overdue,
     count(*) FILTER(WHERE status='COMPLETED' AND "completedAt" >= ${from} AND "completedAt" < ${to}) AS completed,
     count(*) FILTER(WHERE status='COMPLETED' AND "completedAt" >= ${from} AND "completedAt" < ${to} AND "completedAt" <= "dueAt") AS "onTime"
-    FROM automation_tasks WHERE "sourceModule"='CALL_CENTER' AND "branchId"=${branchId}::uuid`;
+    FROM automation_tasks WHERE "sourceModule"='CALL_CENTER' AND "branchId"=${branchId}::uuid AND (${scope})`;
   const activity = await tx.$queryRaw<
     Array<{ actorId: string | null; role: string; count: bigint }>
   >`SELECT "assigneeUserId"::text AS "actorId",'CURRENT_OWNER' AS role,count(*) AS count FROM automation_tasks
-    WHERE "sourceModule"='CALL_CENTER' AND "branchId"=${branchId}::uuid AND status='OPEN' GROUP BY "assigneeUserId"
+    WHERE "sourceModule"='CALL_CENTER' AND "branchId"=${branchId}::uuid AND (${scope}) AND status='OPEN' GROUP BY "assigneeUserId"
     UNION ALL
     SELECT payload->'history'->-1->>'actorId' AS "actorId",'COMPLETED_BY' AS role,count(*) AS count FROM automation_tasks
-    WHERE "sourceModule"='CALL_CENTER' AND "branchId"=${branchId}::uuid AND status='COMPLETED' AND "completedAt">=${from} AND "completedAt"<${to}
+    WHERE "sourceModule"='CALL_CENTER' AND "branchId"=${branchId}::uuid AND (${scope}) AND status='COMPLETED' AND "completedAt">=${from} AND "completedAt"<${to}
     GROUP BY payload->'history'->-1->>'actorId'`;
   const row = rows[0]!;
   return {

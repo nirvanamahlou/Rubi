@@ -1,6 +1,18 @@
 export const CUSTOMER_AFFAIRS_CONTRACT_VERSION = 'customer-affairs.v1' as const;
 
+import { CALL_CENTER_SCOPED_ACCESS } from '../iam/call-center-access';
+
 export const CUSTOMER_AFFAIRS_PERMISSIONS = {
+  callCenterContactsOwn: 'customer_affairs.call_center.contacts.read.own',
+  callCenterContactsTeam: 'customer_affairs.call_center.contacts.read.team',
+  callCenterReportsOwn: 'customer_affairs.call_center.reports.read.own',
+  callCenterReportsTeam: 'customer_affairs.call_center.reports.read.team',
+  callCenterWorkflowTeam: 'customer_affairs.call_center.workflow.manage.team',
+  callCenterOutboundOwn: 'customer_affairs.call_center.outbound.own',
+  callCenterOwnerAssign: 'customer_affairs.call_center.owner.assign',
+  callCenterOwnerChange: 'customer_affairs.call_center.owner.change',
+  callCenterOwnerHistory: 'customer_affairs.call_center.owner.history',
+  callCenterScopedAccess: CALL_CENTER_SCOPED_ACCESS,
   callCenterWorkflowManage: 'customer_affairs.call_center.workflow.manage',
   callCenterRead: 'customer_affairs.call_center.read',
   callCenterCallCreate: 'customer_affairs.call_center.calls.create',

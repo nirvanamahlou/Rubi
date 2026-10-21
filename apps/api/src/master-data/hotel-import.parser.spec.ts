@@ -344,6 +344,78 @@ function externalRejection(buffer: ReturnType<typeof fixture>) {
 }
 
 describe('parseHotelImportWorkbook', () => {
+  function withValues(values: Record<number, string>) {
+    const files = unzipSync(fixture());
+    let sheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
+    for (const [index, value] of Object.entries(values)) {
+      const ref = `${column(Number(index))}2`;
+      sheet = sheet.replace(
+        new RegExp(`<c r="${ref}"(?:[^>]*?\\/>|[^>]*>[\\s\\S]*?<\\/c>)`),
+        cell(ref, value),
+      );
+    }
+    files['xl/worksheets/sheet1.xml'] = strToU8(sheet);
+    return zipSync(files);
+  }
+  it.each([160, 164, 500])(
+    'retains a %i-character facility in full',
+    (length) => {
+      const facility = 'ر'.repeat(length);
+      const parsed = parse(withValues({ 9: `استخر|${facility}` }));
+      expect(parsed.issues).toEqual([]);
+      expect(parsed.rows[0]?.facilities).toEqual(['استخر', facility]);
+    },
+  );
+  it('reports the precise row/column for overlong facilities without changing text', () => {
+    const facility = 'ر'.repeat(501);
+    const parsed = parse(withValues({ 9: facility }));
+    expect(parsed.issues).toContainEqual(
+      expect.objectContaining({
+        rowNumber: 2,
+        column: 'امکانات',
+        code: 'VALUE_TOO_LONG',
+      }),
+    );
+    expect(parsed.rows[0]?.facilities).toEqual([facility]);
+  });
+  it('counts Unicode characters consistently with PostgreSQL', () => {
+    const facility = '🏊'.repeat(500);
+    expect(parse(withValues({ 9: facility })).issues).toEqual([]);
+    expect(parse(withValues({ 9: facility + '🏊' })).issues).toContainEqual(
+      expect.objectContaining({ column: 'امکانات', code: 'VALUE_TOO_LONG' }),
+    );
+  });
+  it.each([
+    [7, 160],
+    [8, 160],
+    [10, 2000],
+    [11, 2000],
+    [12, 2000],
+    [13, 2000],
+    [14, 2000],
+    [17, 2000],
+  ])(
+    'checks storage boundary for source column %i before commit',
+    (index, limit) => {
+      expect(parse(withValues({ [index]: 'x'.repeat(limit) })).issues).toEqual(
+        [],
+      );
+      if (limit === 2000) {
+        expect(() =>
+          parse(withValues({ [index]: 'x'.repeat(limit + 1) })),
+        ).toThrow(/Cell/);
+      } else {
+        const result = parse(withValues({ [index]: 'x'.repeat(limit + 1) }));
+        expect(result.issues).toContainEqual(
+          expect.objectContaining({
+            rowNumber: 2,
+            column: HOTEL_IMPORT_HEADERS[index],
+            code: 'VALUE_TOO_LONG',
+          }),
+        );
+      }
+    },
+  );
   function websiteLink(target = 'https://hotel.example', ref = 'S2') {
     const files = unzipSync(fixture({ website: 'https://hotel.example' }));
     files['xl/worksheets/sheet1.xml'] = strToU8(
