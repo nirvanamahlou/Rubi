@@ -6936,3 +6936,7 @@ Power status toggle now renders independently of the future-date single-ticket e
 ## HR-EXTENSION-1021 — PC-B — READY_FOR_CI
 
 Optional employee extension is connected to create/edit, employee table/search and existing table exports. Existing HR-owned records store the business extension with real employee FK; employee CAS/transaction/audit and read-only generic-resource protection preserve one active value. Omitted edits preserve and blank clears; Persian/Arabic digits normalize without losing leading zeros. No schema/migration, dependency, IAM or design changes. All35 isolated PostgreSQL HR tests and48 Web checks pass; hosted exact-head gates precede user-authorized develop merge.
+
+## MESSAGE-TEMPLATE-BLANKS-1021 — PC-B
+
+Removed bracketed entry guidance from all Workbench message templates; field labels remain with empty colon values. Visa follow-up and Management inline placeholders now use separate editable blank lines. Existing saved/sent messages untouched. Scoped lint/format and catalogue inspection pass; exact-head hosted type/build/tests required before explicitly authorized develop merge. No API/database/dependency/runtime changes.
