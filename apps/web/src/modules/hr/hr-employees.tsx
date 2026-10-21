@@ -34,6 +34,8 @@ import { useHrReferenceData } from './hr-reference-data';
 import { useHrFormReferences } from './hr-directory-picker';
 import { hrStatusText } from './hr-presentation';
 import { hrDisplayDate } from './hr-dates';
+import { defaultPersonnelIdentity } from './personnel-identity-fields';
+import { useHrEmployeeRecords } from './hr-employee-records';
 
 export function employeeDataset(
   employees: readonly HrEmployeeDto[],
@@ -86,6 +88,32 @@ export function employeeFormValue(
       ? identity.values
       : undefined;
   return {
+    ...(store.data!.capabilities?.sensitive
+      ? {
+          identityValues: identity
+            ? [...identity.values]
+            : [...defaultPersonnelIdentity],
+          contactValues: store
+            .data!.records.filter(
+              (r) =>
+                r.employeeId === employee.id &&
+                r.section === 'employee' &&
+                r.tab === 'phones' &&
+                !r.deletedAt,
+            )
+            .sort((a, b) => a.id.localeCompare(b.id))
+            .map((r) => [...r.values]),
+          profileRecords: store
+            .data!.records.filter(
+              (r) =>
+                r.employeeId === employee.id &&
+                r.section === 'employee' &&
+                ['identity', 'phones'].includes(r.tab) &&
+                !r.deletedAt,
+            )
+            .map((r) => ({ id: r.id, version: r.version })),
+        }
+      : {}),
     userId: employee.userId ?? '',
     extension: employee.extension ?? '',
     firstName: parts?.[0] ?? firstName ?? '',
@@ -105,9 +133,7 @@ export function employeeFormValue(
           ?.name ?? employee.manager)
       : 'بدون مدیر مستقیم',
     startedAt: employee.startedAtValue,
-    status: (['فعال', 'در حال تکمیل', 'تعلیق‌شده'].includes(employee.status)
-      ? employee.status
-      : 'فعال') as NewEmployeeFormValue['status'],
+    status: employee.status as NewEmployeeFormValue['status'],
   };
 }
 export function employeeOrganizationOptions(data: HrBootstrapDto) {
@@ -158,6 +184,7 @@ export function HrEmployeeEditor({
   }>();
   const references = useHrReferenceData(store);
   const external = useHrFormReferences(employee?.id);
+  const profile = useHrEmployeeRecords(employee?.id, store.revision);
   const companies = hrCompanies(references.data);
   const preferredCompany = companies.find(
     (company) => company.id === preferredCompanyId,
@@ -165,7 +192,7 @@ export function HrEmployeeEditor({
   return (
     <>
       <NewEmployeeDialog
-        personnelMode={!employee && store.data!.capabilities.sensitive}
+        personnelMode={store.data!.capabilities?.sensitive}
         cityOptions={references.data.records
           .filter(
             (record) =>
@@ -208,9 +235,12 @@ export function HrEmployeeEditor({
             .map((c) => c.name),
         }))}
         userOptionsError={external.error}
-        referenceLoading={references.loading}
-        referenceError={references.error}
-        onRetryReferences={() => void store.refresh().catch(() => undefined)}
+        referenceLoading={references.loading || profile.loading}
+        referenceError={references.error || profile.error || ''}
+        onRetryReferences={() => {
+          profile.retry();
+          void store.refresh().catch(() => undefined);
+        }}
         lockAssignment={Boolean(employee)}
         existingPersonnelCodes={store
           .data!.employees.filter((item) => item.id !== employee?.id)
@@ -218,7 +248,10 @@ export function HrEmployeeEditor({
         initialValue={
           employee
             ? {
-                ...employeeFormValue(employee, store),
+                ...employeeFormValue(employee, {
+                  ...store,
+                  data: { ...store.data!, records: profile.records ?? [] },
+                }),
                 groupId:
                   references.data.records.find(
                     (r) =>
@@ -308,6 +341,14 @@ export function HrEmployeeEditor({
           const saved = employee
             ? await hrApi.employees.update(employee.id, {
                 extension: input.extension,
+                ...(value.identityValues
+                  ? {
+                      identityValues: value.identityValues,
+                      contactValues: value.contactValues ?? [],
+                      profileRecords: value.profileRecords ?? [],
+                    }
+                  : {}),
+                ...(photoDocumentId ? { photoDocumentId } : {}),
                 groupId: input.groupId,
                 firstName: input.firstName,
                 lastName: input.lastName,
