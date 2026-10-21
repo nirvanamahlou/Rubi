@@ -21,6 +21,7 @@ import { AmiClient, type AmiMessage } from './ami';
 import { issabelOptions, type IssabelOptions } from './config';
 import { normalizeIssabelEvent } from './events';
 import { nativeEventNames, normalizeNativeQueueEvent } from './native-events';
+import { AmiContinuity } from './continuity';
 
 @Injectable()
 export class IssabelService implements OnModuleInit, OnModuleDestroy {
@@ -36,6 +37,9 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
   private stopped = false;
   private state = 'DISABLED';
   private gap = false;
+  private continuity?: AmiContinuity;
+  private running?: Promise<void>;
+  private shutdownDeadline = Infinity;
   constructor(
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(ConfigService) private readonly config: ConfigService,
@@ -57,17 +61,48 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
       return;
     }
     if (!this.options) return;
+    this.continuity = new AmiContinuity(this.db, this.options.connectionId);
     this.state = 'NOT_CONNECTED';
     this.timer = setInterval(() => {
-      void this.tick();
+      this.runTick();
     }, 2000);
     this.timer.unref();
-    void this.tick();
+    this.runTick();
   }
-  onModuleDestroy() {
+  private runTick() {
+    if (!this.busy && !this.stopped) this.running = this.tick();
+  }
+  async onModuleDestroy() {
     this.stopped = true;
+    this.shutdownDeadline = Date.now() + 30000;
     clearInterval(this.timer);
     this.client?.close();
+    await this.running;
+    // Frames received before shutdown are still committed through normal ingress.
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const drained = await Promise.race([
+      this.eventTail.then(() => true),
+      new Promise<boolean>((resolve) => {
+        timeout = setTimeout(() => resolve(false), 30000);
+      }),
+    ]);
+    clearTimeout(timeout);
+    if (!drained) {
+      this.gap = true;
+      await this.continuity?.gap('SHUTDOWN_TIMEOUT').catch(() => {
+        this.logger.warn('Issabel continuity audit unavailable.');
+      });
+    }
+    await this.continuity?.stop().catch(() => {
+      this.logger.warn('Issabel continuity audit unavailable.');
+    });
+    this.state = 'DISABLED';
+  }
+  private markGap(reason: 'DISCONNECTED' | 'BUFFER_LIMIT' | 'INGRESS_FAILED') {
+    this.gap = true;
+    void this.continuity?.gap(reason).catch(() => {
+      this.logger.warn('Issabel continuity audit unavailable.');
+    });
   }
   private async connection() {
     const options = this.options ?? issabelOptions(this.config);
@@ -92,12 +127,22 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
           select: { id: true, active: true, branchId: true },
         })
       : null;
+    const continuity = connection
+      ? await new AmiContinuity(this.db, connection.id).snapshot()
+      : null;
     return {
       provider: 'ISSABEL',
       state: connection ? this.state : 'NOT_CONFIGURED',
       connectionId: connection?.id ?? null,
       branchId: connection?.branchId ?? null,
-      eventCoverage: this.gap ? 'GAP' : 'LIVE_ONLY',
+      eventCoverage: !connection
+        ? 'NOT_CONFIGURED'
+        : this.gap || continuity?.reconciliationRequired
+          ? 'GAP'
+          : 'LIVE_ONLY',
+      continuity,
+      popupDeliveryEnabled: !!connection?.active && !options?.nativeCapture,
+      pendingFrames: connection ? this.queuedEvents : null,
       reconciliationSupported: false,
       outboundAvailable:
         !!connection?.active &&
@@ -399,6 +444,8 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
   }
   private async receiveWithRetry(message: AmiMessage, receivedAt: Date) {
     for (let attempt = 0; ; attempt++) {
+      if (Date.now() >= this.shutdownDeadline)
+        throw Error('ISSABEL_DRAIN_EXPIRED');
       try {
         await this.incoming(message, receivedAt);
         return;
@@ -409,7 +456,7 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
           (error instanceof HttpException &&
             error.getStatus() < 500 &&
             error.getStatus() !== 429);
-        if (permanent || attempt >= 5 || this.stopped) throw error;
+        if (permanent || attempt >= 5) throw error;
         await new Promise((resolve) =>
           setTimeout(
             resolve,
@@ -425,15 +472,18 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
     this.busy = true;
     try {
       await this.connection();
+      await this.continuity?.start();
+      if (this.stopped) return;
       if (!this.client?.connected) {
         if (Date.now() < this.nextConnect) return;
         const client = new AmiClient();
         this.client = client;
         client.on('disconnected', () => {
           this.state = 'NOT_CONNECTED';
-          this.gap = true;
+          if (!this.stopped) this.markGap('DISCONNECTED');
         });
         client.on('event', (message: AmiMessage) => {
+          if (this.stopped) return;
           if (
             this.options?.nativeCapture
               ? !nativeEventNames.has(message.event ?? '')
@@ -444,14 +494,14 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
           const receivedAt = new Date();
           if (++this.queuedEvents > 500) {
             this.queuedEvents--;
-            this.gap = true;
+            this.markGap('BUFFER_LIMIT');
             client.close();
             return;
           }
           this.eventTail = this.eventTail
             .then(() => this.receiveWithRetry(message, receivedAt))
             .catch(() => {
-              this.gap = true;
+              this.markGap('INGRESS_FAILED');
               this.logger.warn(
                 'Issabel event rejected or could not be persisted.',
               );
@@ -462,6 +512,11 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
         });
         try {
           await client.connect(this.options);
+          if (this.stopped) {
+            client.close();
+            return;
+          }
+          await this.continuity?.connected();
         } catch {
           client.close();
           throw Error('ISSABEL_UNAVAILABLE');

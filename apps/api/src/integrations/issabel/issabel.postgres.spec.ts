@@ -14,6 +14,7 @@ import { IssabelRecordingsService } from './recordings.service';
 import { normalizeIssabelEvent } from './events';
 import { issabelOptions, type IssabelOptions } from './config';
 import type { AmiMessage } from './ami';
+import { AmiContinuity } from './continuity';
 
 describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
   'Issabel actual PostgreSQL delivery',
@@ -136,7 +137,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       media = new IssabelRecordingsService(database, config, domain, events);
     }, 30000);
     afterAll(async () => {
-      service?.onModuleDestroy();
+      await service?.onModuleDestroy();
       media?.onModuleDestroy();
       await db?.$disconnect();
     });
@@ -579,7 +580,132 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         ).rejects.toMatchObject({ status: 403 });
       } finally {
         config.set('ISSABEL_EVENT_MODE', 'CUSTOM_FACTS');
-        native.onModuleDestroy();
+        await native.onModuleDestroy();
+      }
+    });
+    it('retains continuity gaps across restart without exposing another branch or private facts', async () => {
+      const journal = new AmiContinuity({ client: db } as never, connectionId);
+      await journal.start();
+      expect((await journal.snapshot()).reconciliationRequired).toBe(true);
+      await journal.connected();
+      await Promise.all([
+        journal.gap('DISCONNECTED'),
+        journal.gap('DISCONNECTED'),
+      ]);
+      expect(
+        await db.integrationTelephonyAudit.count({
+          where: { connectionId, action: 'AMI_GAP' },
+        }),
+      ).toBe(2);
+      await journal.stop();
+      const restarted = new AmiContinuity(
+        { client: db } as never,
+        connectionId,
+      );
+      await restarted.start();
+      await restarted.connected();
+      expect((await restarted.snapshot()).reconciliationRequired).toBe(true);
+      (service as unknown as { options: IssabelOptions }).options =
+        issabelOptions(config)!;
+      expect((await service.status(actor)).eventCoverage).toBe('GAP');
+      expect(await service.status({ ...actor, branchIds: [] })).toMatchObject({
+        state: 'NOT_CONFIGURED',
+        continuity: null,
+        eventCoverage: 'NOT_CONFIGURED',
+        pendingFrames: null,
+      });
+      await expect(
+        service.status({ ...actor, permissions: [] }),
+      ).rejects.toMatchObject({ status: 403 });
+    });
+    it('isolates concurrent abandoned and answered roots with duplicate delivery and no offers', async () => {
+      config.set('ISSABEL_EVENT_MODE', 'NATIVE_QUEUE_CAPTURE');
+      config.set('ISSABEL_INBOUND_QUEUES', 'sales-test');
+      const native = new IssabelService(
+        { client: db } as never,
+        config,
+        domain,
+        {} as never,
+        events,
+        {} as never,
+      );
+      const internal = native as unknown as {
+        options: IssabelOptions;
+        incoming(message: AmiMessage): Promise<void>;
+      };
+      internal.options = issabelOptions(config)!;
+      const roots = [randomUUID(), randomUUID(), randomUUID()];
+      const before = await db.integrationTelephonyInbox.findMany({
+        where: { connectionId },
+        select: { id: true },
+      });
+      const message = (
+        root: string,
+        event: string,
+        patch: Record<string, string> = {},
+      ) => ({
+        event,
+        linkedid: root,
+        uniqueid: root,
+        queue: 'sales-test',
+        calleridnum: 'anonymous',
+        ...patch,
+      });
+      try {
+        await Promise.all(
+          roots.map((root) =>
+            internal.incoming(message(root, 'QueueCallerJoin')),
+          ),
+        );
+        await Promise.all(
+          roots.map((root) =>
+            internal.incoming(message(root, 'QueueCallerJoin')),
+          ),
+        );
+        await internal.incoming(
+          message(roots[0]!, 'AgentConnect', { destuniqueid: 'agent-first' }),
+        );
+        await internal.incoming(
+          message(roots[0]!, 'Hangup', { uniqueid: 'agent-first' }),
+        );
+        await internal.incoming(
+          message(roots[0]!, 'AgentCalled', { destuniqueid: 'agent-transfer' }),
+        );
+        await Promise.all(
+          roots.map((root) => internal.incoming(message(root, 'Hangup'))),
+        );
+        const rows = await db.integrationTelephonyInbox.findMany({
+          where: { connectionId, id: { notIn: before.map((r) => r.id) } },
+          orderBy: { receivedAt: 'desc' },
+        });
+        expect(rows).toHaveLength(8);
+        await Promise.all(rows.map((row) => events.process(row.id)));
+        for (const row of rows)
+          expect((await events.process(row.id)).processed).toBe(false);
+        const sessions = await db.callCenterTelephonySession.findMany({
+          where: {
+            connectionId,
+            rootFingerprint: {
+              in: roots.map((root) =>
+                crypto.fingerprint(`telephony:root:${connectionId}:${root}`),
+              ),
+            },
+          },
+          include: { call: true, _count: { select: { offers: true } } },
+        });
+        expect(sessions).toHaveLength(3);
+        expect(
+          sessions.every(
+            (s) =>
+              s.state === 'ENDED' &&
+              s.call.needsCompletion &&
+              s._count.offers === 0 &&
+              s.claimUserId === null,
+          ),
+        ).toBe(true);
+      } finally {
+        config.set('ISSABEL_EVENT_MODE', 'CUSTOM_FACTS');
+        await native.onModuleDestroy();
       }
     });
     it('accepts only the configured relay connection and uses the same durable processing path', async () => {

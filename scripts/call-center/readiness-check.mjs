@@ -24,7 +24,8 @@ export async function check(env = process.env, request = fetch) {
     anonymousOperationsDenied: false,
     internalHealth: null,
     provider: null,
-    liveAcceptance: 'PENDING_REAL_PBX',
+    liveAcceptance: 'NOT_DETERMINED_BY_HEALTH_CHECK',
+    operationalReady: false,
     authenticatedChecks: cookie ? 'FAILED' : 'NOT_SUPPLIED',
   };
   async function get(path, authenticated = false) {
@@ -60,9 +61,22 @@ export async function check(env = process.env, request = fetch) {
         state: data.state,
         eventCoverage: data.eventCoverage,
         reconciliationSupported: data.reconciliationSupported,
+        popupDeliveryEnabled: data.popupDeliveryEnabled,
+        pendingFrames: data.pendingFrames,
+        reconciliationRequired: data.continuity?.reconciliationRequired ?? null,
+        lastGapAt: data.continuity?.lastGapAt ?? null,
       };
     } else await provider.body?.cancel();
   }
+  result.operationalReady =
+    result.anonymousOperationsDenied &&
+    result.authenticatedChecks === 'PASSED' &&
+    result.internalHealth?.state === 'NO_INTERNAL_ALERT' &&
+    Array.isArray(result.internalHealth?.alerts) &&
+    result.internalHealth.alerts.length === 0 &&
+    result.provider?.state === 'CONNECTED' &&
+    result.provider?.eventCoverage === 'LIVE_ONLY' &&
+    result.provider?.reconciliationRequired === false;
   return result;
 }
 if (
@@ -72,12 +86,7 @@ if (
   try {
     const result = await check();
     console.log(JSON.stringify(result, null, 2));
-    if (
-      !result.anonymousOperationsDenied ||
-      result.authenticatedChecks !== 'PASSED' ||
-      result.internalHealth?.alerts?.length
-    )
-      process.exitCode = 2;
+    if (!result.operationalReady) process.exitCode = 2;
   } catch {
     console.error(
       'Readiness check failed; verify private endpoint and authorization.',

@@ -66,6 +66,11 @@ describe('native queue capture', () => {
     const service = new IssabelService(
       {
         client: {
+          integrationTelephonyInbox: { findFirst: async () => null },
+          integrationTelephonyAudit: {
+            findFirst: async () => null,
+            create: async () => ({}),
+          },
           integrationTelephonyConnection: {
             findUnique: async () => ({
               id: connection,
@@ -115,7 +120,7 @@ describe('native queue capture', () => {
         actions.every((action) => ['Login', 'Ping'].includes(action)),
       ).toBe(true);
     } finally {
-      service.onModuleDestroy();
+      await service.onModuleDestroy();
       for (const socket of sockets) socket.destroy();
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
