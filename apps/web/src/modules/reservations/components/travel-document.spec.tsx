@@ -1,5 +1,28 @@
+const qrState = vi.hoisted(() => ({
+  current: {
+    status: 'ready',
+    url: 'https://example.test/d/' + 'a'.repeat(32),
+    html: '',
+  } as { status: string; url: string; html: string } | undefined,
+}));
+vi.mock(
+  '@/modules/travel-documents/public/use-public-document-link',
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import('@/modules/travel-documents/public/use-public-document-link')
+    >()),
+    usePublicDocumentLink: () => qrState.current,
+  }),
+);
+beforeEach(() => {
+  qrState.current = {
+    status: 'ready',
+    url: 'https://example.test/d/' + 'a'.repeat(32),
+    html: '',
+  };
+});
 import { defaultVoucherSettings } from '../model/voucher-settings';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type {
   ReservationIntakeV1,
@@ -232,4 +255,28 @@ it('keeps direct download available on an issued reservation form', () => {
   expect(html).not.toContain('Special room:');
   expect(html).not.toContain('Country:');
   expect(html).not.toContain('subject to supplier confirmation');
+});
+
+it('waits for the canonical QR before making the saved form printable', () => {
+  qrState.current = undefined;
+  const html = renderToStaticMarkup(<TravelDocument intake={intake} />);
+  expect(html).toContain('در حال آماده‌سازی بارکد مدرک…');
+  expect(html).not.toContain('data-document-preview');
+});
+it('never prints a pending QR after publication fails', () => {
+  qrState.current = { status: 'failed', url: '', html: '' };
+  const html = renderToStaticMarkup(<TravelDocument intake={intake} />);
+  expect(html).toContain('آماده‌سازی بارکد انجام نشد');
+  expect(html).not.toContain('data-document-preview');
+});
+it('uses the ready document capability in the printed form', () => {
+  const html = renderToStaticMarkup(<TravelDocument intake={intake} />);
+  expect(html).toContain(qrState.current!.url);
+  expect(html).toContain('data-document-preview');
+});
+it('preserves offline legacy preview only when hosting is explicitly disabled', () => {
+  qrState.current = { status: 'disabled', url: '', html: '' };
+  expect(renderToStaticMarkup(<TravelDocument intake={intake} />)).toContain(
+    'data-document-preview',
+  );
 });
