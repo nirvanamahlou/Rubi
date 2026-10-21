@@ -1001,6 +1001,7 @@ export class HrService {
     employee: Employee,
     input: Record<string, unknown>,
     actor: AuthenticatedActor,
+    existing: RecordRow[] = [],
   ) {
     const identitySchema = validate.resource('employee', 'identity');
     const identity = validate.recordValues(
@@ -1024,39 +1025,85 @@ export class HrService {
         throw new BadRequestException('شماره تماس تکراری است.');
       seen.add(normalized);
     }
+    const remaining = [...existing];
     for (const [schema, values] of [
       [identitySchema, identity],
       ...phones.map((phone) => [phoneSchema, phone] as const),
     ] as const) {
-      const row = await tx.hrRecord.create({
-        data: {
-          branchId: employee.branchId,
-          employeeId: employee.id,
-          section: schema.section,
-          tab: schema.tab,
-          code: `HR-PRIVATE-${randomUUID().slice(0, 16)}`,
-          values: values.map(() => '••••'),
-          searchText: '',
-          status: 'فعال',
-          data: protectHrValues(
+      const index = remaining.findIndex((row) => row.tab === schema.tab);
+      const previous = index < 0 ? undefined : remaining.splice(index, 1)[0];
+      const data = {
+        values: values.map(() => '••••'),
+        searchText: '',
+        data: json({
+          ...(previous ? publicHrData(previous.data) : {}),
+          ...protectHrValues(
             values,
             `${employee.branchId}:${employee.id}:${schema.key}`,
           ),
-        },
-      });
+        }),
+      };
+      let recordId: string;
+      let version: number;
+      if (previous) {
+        const changed = await tx.hrRecord.updateMany({
+          where: {
+            id: previous.id,
+            version: previous.version,
+            deletedAt: null,
+          },
+          data: { ...data, version: { increment: 1 } },
+        });
+        if (changed.count !== 1)
+          throw new ConflictException('نسخه رکورد تغییر کرده است.');
+        recordId = previous.id;
+        version = previous.version + 1;
+      } else {
+        const row = await tx.hrRecord.create({
+          data: {
+            ...data,
+            branchId: employee.branchId,
+            employeeId: employee.id,
+            section: schema.section,
+            tab: schema.tab,
+            code: `HR-PRIVATE-${randomUUID().slice(0, 16)}`,
+            status: 'فعال',
+          },
+        });
+        recordId = row.id;
+        version = row.version;
+      }
       await this.audit(
         tx,
         actor,
         {
           branchId: employee.branchId,
           employeeId: employee.id,
-          recordId: row.id,
+          recordId,
         },
-        'personnel.profile.create',
+        previous ? 'personnel.profile.update' : 'personnel.profile.create',
         { fields: schema.columns },
-        row.version,
-        undefined,
-        row.status,
+        version,
+      );
+    }
+    for (const previous of remaining) {
+      const changed = await tx.hrRecord.updateMany({
+        where: { id: previous.id, version: previous.version, deletedAt: null },
+        data: { deletedAt: new Date(), version: { increment: 1 } },
+      });
+      if (changed.count !== 1)
+        throw new ConflictException('نسخه رکورد تغییر کرده است.');
+      await this.audit(
+        tx,
+        actor,
+        {
+          branchId: employee.branchId,
+          employeeId: employee.id,
+          recordId: previous.id,
+        },
+        'personnel.profile.remove',
+        { fields: ['شماره‌های تماس'] },
+        previous.version + 1,
       );
     }
   }
@@ -1097,11 +1144,31 @@ export class HrService {
   async updateEmployee(id: string, body: unknown, actor: AuthenticatedActor) {
     this.require(actor, 'hr.manage');
     const input = validate.object(body, [
-      ...employeeKeys.filter(
-        (key) => !['identityValues', 'contactValues'].includes(key),
-      ),
+      ...employeeKeys,
+      'profileRecords',
       'version',
     ]);
+    const privateProfile =
+      input.identityValues !== undefined || input.contactValues !== undefined;
+    if (privateProfile) {
+      this.require(actor, 'hr.sensitive');
+      if (
+        !Array.isArray(input.identityValues) ||
+        !Array.isArray(input.contactValues)
+      )
+        throw new BadRequestException('اطلاعات هویتی و تماس الزامی است.');
+      if (
+        !Array.isArray(input.profileRecords) ||
+        input.profileRecords.length > 100
+      )
+        throw new BadRequestException('نسخه اطلاعات هویتی و تماس الزامی است.');
+      for (const record of input.profileRecords) {
+        const value = validate.object(record, ['id', 'version']);
+        validate.text(value.id, 'شناسه رکورد', 100);
+        validate.version(value.version);
+      }
+    } else if (input.profileRecords !== undefined)
+      throw new BadRequestException('اطلاعات هویتی و تماس الزامی است.');
     const expected = validate.version(input.version);
     const photo = input.photoDocumentId
       ? await this.documentReference(
@@ -1169,7 +1236,45 @@ export class HrService {
       if (changed.count !== 1)
         throw new ConflictException('نسخه کارمند تغییر کرده است.');
       await this.setEmployeeExtension(tx, existing, input.extension, actor);
-      if (typeof data.name === 'string')
+      if (privateProfile) {
+        const records = await tx.hrRecord.findMany({
+          where: {
+            employeeId: id,
+            branchId: existing.branchId,
+            section: 'employee',
+            tab: { in: ['identity', 'phones'] },
+            deletedAt: null,
+          },
+          orderBy: { id: 'asc' },
+        });
+        const snapshot = input.profileRecords as {
+          id: string;
+          version: number;
+        }[];
+        if (
+          snapshot.length !== records.length ||
+          new Set(snapshot.map((r) => r.id)).size !== snapshot.length ||
+          records.some(
+            (r) =>
+              !snapshot.some((v) => v.id === r.id && v.version === r.version),
+          )
+        )
+          throw new ConflictException(
+            'نسخه اطلاعات هویتی و تماس تغییر کرده است.',
+          );
+        if (records.filter((r) => r.tab === 'identity').length > 1)
+          throw new ConflictException('بیش از یک پرونده هویتی ثبت شده است.');
+        await this.insertPersonnelProfile(
+          tx,
+          {
+            ...existing,
+            name: typeof data.name === 'string' ? data.name : existing.name,
+          },
+          input,
+          actor,
+          records,
+        );
+      } else if (typeof data.name === 'string')
         await this.syncIdentityNames(tx, existing, data.name, nameParts, actor);
       await this.audit(
         tx,
