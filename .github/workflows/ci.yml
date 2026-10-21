@@ -233,6 +233,11 @@ jobs:
           NORA_RUN_FINANCIAL_EVENT_POSTGRES_TESTS: '1'
         run: pnpm --filter @nora/api exec vitest run test/financial-events.postgres.spec.ts --maxWorkers=1
 
+      - name: Prove shared flight capacity across commercial destinations
+        env:
+          NORA_RUN_TICKET_ROUTES_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run src/ticket-catalog/ticket-sale-routes.postgres.spec.ts --maxWorkers=1
+
       - name: Prove company bank account encryption, CAS and audit atomicity
         env:
           NORA_RUN_BANK_ACCOUNT_POSTGRES_TESTS: '1'

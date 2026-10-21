@@ -247,6 +247,12 @@ export function FlightScheduleForm({
   const [advanced, setAdvanced] = useState(false);
   const [maxEdited, setMaxEdited] = useState(false);
   const [input, setInput] = useState<ProductInput>(defaults.input);
+  const [multipleDestinations, setMultipleDestinations] = useState(
+    Boolean(defaults.input.saleRoutes?.length),
+  );
+  const [routeCountries, setRouteCountries] = useState<Record<number, string>>(
+    {},
+  );
   const [start, setStart] = useState(defaults.start),
     [end, setEnd] = useState(defaults.end);
   const [allowPastDate, setAllowPastDate] = useState(defaults.allowPastDate);
@@ -263,12 +269,38 @@ export function FlightScheduleForm({
   const submitting = useRef(false),
     batchId = useRef('');
   const segment = input.segments[0]!;
+  const saleField =
+    input.journeyRole === 'return' ? 'originId' : 'destinationId';
+  const saleSide = input.journeyRole === 'return' ? 'origin' : 'destination';
+  const saleRouteFor = (cityId: string) =>
+    input.journeyRole === 'return'
+      ? { originId: cityId, destinationId: segment.destinationCityId }
+      : { originId: segment.originCityId, destinationId: cityId };
   const ref = (kind: Reference['kind'], id: string) =>
     references.find((r) => r.kind === kind && r.id === id);
   const patchSegment = (patch: Partial<Segment>) =>
     setInput((current) => ({
       ...current,
       segments: [{ ...current.segments[0]!, ...patch }],
+      saleRoutes: current.saleRoutes
+        ?.map((r) =>
+          input.journeyRole === 'return'
+            ? {
+                ...r,
+                destinationId: patch.destinationCityId ?? r.destinationId,
+              }
+            : { ...r, originId: patch.originCityId ?? r.originId },
+        )
+        .filter(
+          (r) =>
+            !(
+              r.destinationId ===
+                (patch.destinationCityId ??
+                  current.segments[0]!.destinationCityId) &&
+              r.originId ===
+                (patch.originCityId ?? current.segments[0]!.originCityId)
+            ),
+        ),
     }));
   const picker = (
     id: string,
@@ -314,6 +346,20 @@ export function FlightScheduleForm({
     setSaving(true);
     setProblem('');
     try {
+      const routes = input.saleRoutes ?? [];
+      if (
+        routes.some(
+          (r) =>
+            !r.originId ||
+            !r.destinationId ||
+            r.originId === r.destinationId ||
+            (r.destinationId === segment.destinationCityId &&
+              r.originId === segment.originCityId),
+        ) ||
+        new Set(routes.map((r) => r.originId + ':' + r.destinationId)).size !==
+          routes.length
+      )
+        throw new Error('اطلاعات بلیت معتبر نیست.');
       const dates = scheduleDates(start, end, weekdays, mode === 'round-trip');
       if (!batchId.current) batchId.current = browserRandomUuid();
       const outbound = {
@@ -443,6 +489,102 @@ export function FlightScheduleForm({
                 'Asia/Tehran',
             }),
           { countryId: segment[`${side}CountryId`] },
+        )}
+        {side === saleSide && (
+          <div className="grid gap-2">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={multipleDestinations}
+                onChange={(e) => {
+                  setMultipleDestinations(e.target.checked);
+                  if (!e.target.checked)
+                    setInput((c) => ({ ...c, saleRoutes: [] }));
+                }}
+              />
+              افزودن مقصد
+            </label>
+            {multipleDestinations && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  همه مقصدها از ظرفیت همین پرواز استفاده می‌کنند.
+                </p>
+                {(input.saleRoutes ?? []).map((saleRoute, index) => (
+                  <div key={index} className="grid gap-2 rounded-lg border p-2">
+                    {picker(
+                      'sale-country-' + index,
+                      'کشور',
+                      'countries',
+                      'country',
+                      routeCountries[index] ??
+                        ref('city', saleRoute[saleField])?.countryId ??
+                        segment[`${saleSide}CountryId`],
+                      (r) => {
+                        setRouteCountries((c) => ({
+                          ...c,
+                          [index]: r?.id ?? '',
+                        }));
+                        setInput((c) => ({
+                          ...c,
+                          saleRoutes: c.saleRoutes?.map((v, i) =>
+                            i === index ? { ...v, [saleField]: '' } : v,
+                          ),
+                        }));
+                      },
+                    )}
+                    {picker(
+                      'sale-destination-' + index,
+                      'مقصد فروش',
+                      'cities',
+                      'city',
+                      saleRoute[saleField],
+                      (r) =>
+                        setInput((c) => ({
+                          ...c,
+                          saleRoutes: c.saleRoutes?.map((v, i) =>
+                            i === index ? saleRouteFor(r?.id ?? '') : v,
+                          ),
+                        })),
+                      {
+                        countryId:
+                          routeCountries[index] ??
+                          ref('city', saleRoute[saleField])?.countryId ??
+                          segment[`${saleSide}CountryId`],
+                      },
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setInput((c) => ({
+                          ...c,
+                          saleRoutes: c.saleRoutes?.filter(
+                            (_, i) => i !== index,
+                          ),
+                        }));
+                        setRouteCountries({});
+                      }}
+                    >
+                      حذف مقصد
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={(input.saleRoutes?.length ?? 0) >= 20}
+                  onClick={() =>
+                    setInput((c) => ({
+                      ...c,
+                      saleRoutes: [...(c.saleRoutes ?? []), saleRouteFor('')],
+                    }))
+                  }
+                >
+                  افزودن مقصد فروش
+                </Button>
+              </>
+            )}
+          </div>
         )}
         {picker(
           `schedule-${side}-airport`,

@@ -3967,6 +3967,11 @@
   "سلام واحد منابع انسانی، موضوع: نوع مدرک یا سند: مرجع پرونده یا درخواست: شرح درخواست: فهرست فایل‌های پیوست: مهلت موردنظر: لطفاً دریافت و نتیجه بررسی یا مدارک تکمیلی موردنیاز را اعلام کنید.": "Hello, Human Resources Unit, Subject: Type of document or document: File reference or request: Description of the request: List of attached files: Desired deadline: Please announce the receipt and result of the review or the required supplementary documents.",
   "سلام، لطفاً موضوع زیر را بررسی و نظر خود را اعلام کنید. موضوع: شرح: مهلت موردنیاز:": "Hello, please review the following topic and share your opinion. Topic: Description: Required deadline:",
   "سلام، گزارش وضعیت موضوع زیر: موضوع: اقدامات انجام‌شده: موارد باقی‌مانده: تصمیم موردنیاز:": "Hello, status report for the following topic: Topic: Completed actions: Remaining items: Decision required:",
+  "افزودن مقصد": "Add destination",
+  "همه مقصدها از ظرفیت همین پرواز استفاده می‌کنند.": "All destinations share the capacity of this flight.",
+  "مقصد فروش": "Sales destination",
+  "حذف مقصد": "Remove destination",
+  "افزودن مقصد فروش": "Add sales destination",
   "ثبت بلیط شناور": "Confirm floating ticket",
   "بلیط شناور ثبت شد.": "Floating ticket confirmed.",
   "اطلاعات بلیط شناور کامل نیست.": "Complete the floating ticket details."
