@@ -2380,7 +2380,7 @@ model MasterFacility {
   trainTypes          MasterTrainTypeFacility[]
   id                  String                    @id @default(uuid()) @db.Uuid
   code                String                    @unique @db.VarChar(32)
-  name                String                    @db.VarChar(160)
+  name                String                    @db.VarChar(500)
   englishName         String?                   @db.VarChar(160)
   category            String?                   @db.VarChar(80)
   iconFileReference   String?                   @db.Uuid

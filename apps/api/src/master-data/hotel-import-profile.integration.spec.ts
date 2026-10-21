@@ -16,7 +16,7 @@ import { MasterDataRepository } from './master-data.repository';
 import { MasterDataService } from './master-data.service';
 
 const url = process.env.HOTEL_PROFILE_DATABASE_URL;
-function extendedWorkbook() {
+function extendedWorkbook(longFacilities = false) {
   const files = unzipSync(
     readFileSync(
       resolve(
@@ -34,7 +34,19 @@ function extendedWorkbook() {
         const n = Number(number);
         return (
           open +
-          cells +
+          (longFacilities && n > 4
+            ? cells.replace(
+                new RegExp(`<c r="I${n}"[^>]*>[\\s\\S]*?<\\/c>`),
+                text(
+                  `I${n}`,
+                  n === 5
+                    ? 'ف'.repeat(164)
+                    : n === 6
+                      ? 'ژ'.repeat(500)
+                      : '🏊'.repeat(500),
+                ),
+              )
+            : cells) +
           text(`O${n}`, n === 4 ? 'وب‌سایت' : `https://hotel${n}.example`) +
           text(
             `P${n}`,
@@ -51,7 +63,7 @@ function extendedWorkbook() {
 describe.skipIf(!url)(
   'hotel workbook to editable profile on isolated PostgreSQL',
   () => {
-    it.each(['legacy', '14-column', 'extended'])(
+    it.each(['legacy', '14-column', 'extended', 'long-facilities'])(
       'persists %s sample rows, fills a missing field, reopens it, and skips duplicates',
       async (format) => {
         if (!url || new URL(url).pathname !== '/hotel_profile_test')
@@ -102,8 +114,8 @@ describe.skipIf(!url)(
             },
           });
           const buffer =
-            format === 'extended'
-              ? extendedWorkbook()
+            format === 'extended' || format === 'long-facilities'
+              ? extendedWorkbook(format === 'long-facilities')
               : readFileSync(
                   resolve(
                     process.cwd(),
@@ -163,6 +175,34 @@ describe.skipIf(!url)(
           });
           expect(hotels[2]?.isActive).toBe(false);
           const first = hotels[0]!;
+          if (format === 'long-facilities') {
+            const links = await client.masterHotelFacility.findMany({
+              where: { hotelId: { in: hotels.map((h) => h.id) } },
+              include: { facility: true },
+            });
+            expect(links.map((link) => link.facility.name)).toEqual(
+              expect.arrayContaining([
+                'ف'.repeat(164),
+                'ژ'.repeat(500),
+                '🏊'.repeat(500),
+              ]),
+            );
+            expect(links).toHaveLength(3);
+            const wide = links.find(
+              (link) => link.facility.name === '🏊'.repeat(500),
+            )!.facility;
+            await client.masterFacility.update({
+              where: { id: wide.id },
+              data: { category: '🏨'.repeat(80) },
+            });
+            expect(
+              (
+                await client.masterFacility.findUniqueOrThrow({
+                  where: { id: wide.id },
+                })
+              ).name,
+            ).toBe('🏊'.repeat(500));
+          }
           if (format === 'extended') {
             expect(first).toMatchObject({
               name: 'هتل آزمایشی 5',
