@@ -6873,3 +6873,7 @@ Owner requests removing three report sections: direction/outcome/registration me
 ## HR-PERSONNEL-FORM-1020 — PC-B — READY_FOR_CI
 
 Employee creation now contains the observed personal-information fields, typed contacts, photo selection and three-step entry flow in Nora existing controls. Optional encrypted identity/contact payload is atomic with employee creation and replay-safe; existing clients/edit/permission boundaries remain compatible. All34 real isolated PostgreSQL tests and17 focused Web checks pass; scoped lint, formatting and translation synchronization pass. Exact-head hosted types, whole-suite tests, build and PostgreSQL gates precede user-authorized develop merge. No schema/migration/dependency/design-style changes.
+
+## 2026-10-21 — RESERVATION-AMOUNT-1021 — PC-A
+
+Reservation hotel amount editor reuses shared MoneyInput for grouped display and canonical decimal storage. Currency placeholder is no longer a selectable item; saved inactive currencies remain supported. An inline explicit save-only button persists current supplier-form settings with existing CAS, without branding/requesting a broker or changing Sales. Existing broker send stays separate and cancelled requests remain locked. Feedback moved above the editor.17 focused editor/currency/settings/English regressions and scoped lint pass. No API/schema/migration/dependency/operational data or runtime changes; final-head hosted checks gate user-authorized develop merge.

@@ -63,7 +63,6 @@ it('reads every active master-data currency page and retains canonical codes sep
   );
   expect(html).toContain('value="EUR"');
   expect(selector.props?.options).toEqual([
-    { value: '', label: 'انتخاب ارز' },
     { value: 'EUR', label: 'Euro · EUR (€)', searchText: 'Euro EUR' },
     { value: 'USD', label: 'Dollar · USD ($)', searchText: 'Dollar USD' },
   ]);
@@ -83,11 +82,10 @@ it('preserves a saved inactive currency without inventing new directory options'
   );
   expect(html).toContain('value="GBP"');
   expect(selector.props?.options.map((option) => option.value)).toEqual([
-    '',
     'GBP',
     'EUR',
   ]);
-  expect(selector.props?.options[1]?.label).toBe('£');
+  expect(selector.props?.options[0]?.label).toBe('£');
   expect(html).toContain('disabled');
 });
 it('passes Persian master-data currency labels and every option to the actual picker boundary', () => {
@@ -109,10 +107,9 @@ it('passes Persian master-data currency labels and every option to the actual pi
     />,
   );
   expect(selector.props?.options.map((option) => option.value)).toEqual([
-    '',
     ...currencies.map((currency) => currency.code),
   ]);
-  expect(selector.props?.options[1]?.label).toContain('ریال');
+  expect(selector.props?.options[0]?.label).toContain('ریال');
   expect(selector.props?.optionLimit).toBeGreaterThanOrEqual(currencies.length);
 });
 it('does not substitute a hardcoded currency list when the directory fails', async () => {
