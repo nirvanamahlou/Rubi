@@ -6928,3 +6928,7 @@ CONTRACT-TYPE-CURRENCY-1021 CI follow-up: three legacy exact-markup assertions u
 ## FLIGHT-LOAD-ACTIONS-1021 — PC-A
 
 Restored Edit Load below selected outbound/return details using existing exact-server-group expansion, cached definitions and weekly group editor/save flow. Reserve Capacity remains visible with a disabled reason for inactive, departed or sold-out offers; existing server hold command and eligibility remain unchanged. Single-ticket view/edit and status controls retained; no delete controls added.205 Ticket Catalog regressions pass (one pre-existing skip), scoped lint/format pass. Final Web type/build and exact-head hosted checks gate explicitly authorized develop merge. No API/schema/migration/dependency/permission/runtime or operational-data change. Flight-load model/grid/reference peer work untouched. Source locks release at candidate publication.
+
+## HR-EXTENSION-1021 — PC-B — READY_FOR_CI
+
+Optional employee extension is connected to create/edit, employee table/search and existing table exports. Existing HR-owned records store the business extension with real employee FK; employee CAS/transaction/audit and read-only generic-resource protection preserve one active value. Omitted edits preserve and blank clears; Persian/Arabic digits normalize without losing leading zeros. No schema/migration, dependency, IAM or design changes. All35 isolated PostgreSQL HR tests and48 Web checks pass; hosted exact-head gates precede user-authorized develop merge.

@@ -43,6 +43,7 @@ export function employeeDataset(
     columns: [
       'کد پرسنلی',
       'نام و نام خانوادگی',
+      'شماره داخلی',
       'نوع همکاری',
       'شرکت و واحد',
       'سمت',
@@ -54,6 +55,7 @@ export function employeeDataset(
     rows: employees.map((item) => [
       item.personnelCode,
       item.name,
+      item.extension || '—',
       item.kind,
       `${item.companyName || branches.find((branch) => branch.id === item.branchId)?.name || ''} / ${item.unit}`,
       item.position,
@@ -85,6 +87,7 @@ export function employeeFormValue(
       : undefined;
   return {
     userId: employee.userId ?? '',
+    extension: employee.extension ?? '',
     firstName: parts?.[0] ?? firstName ?? '',
     lastName: parts?.[1] ?? last.join(' '),
     personnelCode: employee.personnelCode,
@@ -277,6 +280,7 @@ export function HrEmployeeEditor({
             }
           }
           const input = {
+            extension: value.extension?.trim() ?? '',
             ...(value.identityValues
               ? {
                   identityValues: value.identityValues,
@@ -303,6 +307,7 @@ export function HrEmployeeEditor({
           };
           const saved = employee
             ? await hrApi.employees.update(employee.id, {
+                extension: input.extension,
                 groupId: input.groupId,
                 firstName: input.firstName,
                 lastName: input.lastName,
@@ -406,7 +411,7 @@ export function HrEmployees({
             (!status || hrStatusText(item.status) === status) &&
             (!query ||
               normalizeHrText(
-                `${item.name} ${item.personnelCode} ${item.position}`,
+                `${item.name} ${item.personnelCode} ${item.position} ${item.extension ?? ''}`,
               ).includes(normalizeHrText(query))) &&
             (!range.from || item.startedAtValue >= range.from) &&
             (!range.to || item.startedAtValue <= range.to),
