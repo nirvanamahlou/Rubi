@@ -2,7 +2,31 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const renderer = vi.hoisted(() =>
   vi.fn().mockResolvedValue(Buffer.from('%PDF-1.4 synthetic')),
 );
-vi.mock('./reservation-pdf', () => ({ renderReservationPdf: renderer }));
+vi.mock('./reservation-pdf', () => ({
+  renderReservationPdf: renderer,
+  prepareReservationHtml: async (
+    output: ReservationFormIntake,
+    refs: Parameters<typeof reservationPdfHtml>[1],
+    logo: string,
+    css: string,
+    voucher: boolean,
+    origin: string,
+    _language: string,
+    url: string,
+  ) => reservationPdfHtml(output, refs, logo, css, voucher, origin, url),
+}));
+const publishing = vi.hoisted(() => ({ enabled: false, html: '' }));
+vi.mock('@/modules/travel-documents/server/public-document-store', () => ({
+  createPublicDocument: () =>
+    publishing.enabled
+      ? {
+          url: 'https://example.test/d/' + 'a'.repeat(32),
+          save: async (html: string) => {
+            publishing.html = html;
+          },
+        }
+      : undefined,
+}));
 vi.mock('@/lib/environment', () => ({
   getPublicApiBaseUrl: () => 'http://api.test/api/v1',
 }));
@@ -41,6 +65,8 @@ const request = () =>
   });
 beforeEach(() => {
   vi.clearAllMocks();
+  publishing.enabled = false;
+  publishing.html = '';
   vi.unstubAllGlobals();
 });
 describe('reservation PDF route', () => {
@@ -275,6 +301,7 @@ it('downloads an issued voucher using saved voucher settings and a voucher filen
     true,
     'http://localhost',
     'fa',
+    undefined,
   );
 });
 it('renders voucher booking references and a separated summary without letterhead', () => {
@@ -502,4 +529,74 @@ it('loads the new Jahan logo for the authorized reservation PDF instead of an ol
     ),
   ).toBe(false);
   expect(renderer.mock.calls[0]?.[2]).toBe('data:image/png;base64,c2FmZQ==');
+});
+
+it('publishes only the sent supplier form and keeps public voucher issuance guards', async () => {
+  publishing.enabled = true;
+  const value = {
+    ...intake,
+    workflow: {
+      ...intake.workflow,
+      supplierFormSettings: {
+        ...intake.workflow.supplierFormSettings!,
+        text: {
+          ...intake.workflow.supplierFormSettings!.text,
+          broker: 'UNSENT DRAFT',
+        },
+      },
+      sentSupplierFormSettings: {
+        ...intake.workflow.supplierFormSettings!,
+        text: {
+          ...intake.workflow.supplierFormSettings!.text,
+          broker: 'SAVED FORM',
+        },
+      },
+    },
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockImplementation(async () => Response.json({ data: value })),
+  );
+  const response = await GET(new Request(request().url + '?format=share'), {
+    params: Promise.resolve({ id }),
+  });
+  expect(response.status).toBe(200);
+  expect(publishing.html).toContain('SAVED FORM');
+  expect(publishing.html).toContain('https://example.test/d/' + 'a'.repeat(32));
+  expect(publishing.html).not.toContain('UNSENT DRAFT');
+  expect(renderer).not.toHaveBeenCalled();
+  publishing.html = '';
+  const voucher = await GET(
+    new Request(request().url + '?kind=voucher&format=share'),
+    { params: Promise.resolve({ id }) },
+  );
+  expect(voucher.status).toBe(409);
+  expect(publishing.html).toBe('');
+});
+
+it('publishes an issued voucher as its own voucher HTML without a browser PDF process', async () => {
+  publishing.enabled = true;
+  const value = {
+    ...intake,
+    workflow: {
+      ...intake.workflow,
+      voucherIssued: true,
+      voucherSettings: {
+        ...intake.workflow.supplierFormSettings!,
+        leaderId: id,
+      },
+    },
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockImplementation(async () => Response.json({ data: value })),
+  );
+  const result = await GET(
+    new Request(request().url + '?kind=voucher&format=share'),
+    { params: Promise.resolve({ id }) },
+  );
+  expect(result.status).toBe(200);
+  expect(publishing.html).toContain('HOTEL VOUCHER');
+  expect(publishing.html).toContain('https://example.test/d/' + 'a'.repeat(32));
+  expect(renderer).not.toHaveBeenCalled();
 });

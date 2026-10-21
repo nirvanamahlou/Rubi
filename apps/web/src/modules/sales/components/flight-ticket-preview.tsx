@@ -18,6 +18,7 @@ import {
 import styles from './flight-ticket-preview.module.css';
 
 export interface FlightTicketSheetData {
+  publicDocumentUrl?: string;
   branding?: { name: string; logo: string; companyCode?: string };
   airlines?: Readonly<Record<string, TicketLayoutAirline>>;
   issued?: boolean;

@@ -1,4 +1,5 @@
 'use client';
+import { usePublicDocumentLink } from '@/modules/travel-documents/public/use-public-document-link';
 import { travelRequest } from './travel-workflow-form';
 import type {
   ReservationTicketDocumentV1,
@@ -189,8 +190,22 @@ export function ReservationTickets({
   }, [request.id, salesContractId, flightContextKey]);
   const [printAll, setPrintAll] = useState(false);
   const [printing, setPrinting] = useState(false);
+  const [printDocument, setPrintDocument] = useState('');
   const [downloading, setDownloading] = useState(false);
   const ticket = tickets.find((item) => item.passengerId === selected);
+  const shared = usePublicDocumentLink(
+    branding && documents.length
+      ? '/reservations/requests/' +
+          encodeURIComponent(request.id) +
+          '/tickets/pdf?' +
+          new URLSearchParams({
+            ...(salesContractId ? { salesContractId } : {}),
+          })
+      : undefined,
+    JSON.stringify([request.contractVersion, documents, flightNumbers]),
+  );
+  const documentUrl = (passengerId: string) =>
+    shared?.documents?.find((item) => item.passengerId === passengerId)?.url;
   useEffect(() => {
     let active = true;
     const ids = [
@@ -324,6 +339,37 @@ export function ReservationTickets({
       setPrinting(true);
     });
     try {
+      const parameters = new URLSearchParams({
+        format: 'share',
+        ...(salesContractId ? { salesContractId } : {}),
+        ...(!all && ticket ? { passengerId: ticket.passengerId } : {}),
+      });
+      const response = await fetch(
+        '/reservations/requests/' +
+          encodeURIComponent(request.id) +
+          '/tickets/pdf?' +
+          parameters,
+        { credentials: 'include', cache: 'no-store' },
+      );
+      const result = (await response.json()) as {
+        code?: string;
+        message?: string;
+        documents?: Array<{ html: string }>;
+      };
+      if (!response.ok && result.code !== 'PUBLIC_DOCUMENTS_DISABLED')
+        throw new Error(result.message || 'دریافت بلیط انجام نشد.');
+      const pages =
+        result.documents
+          ?.map(
+            (item) =>
+              item.html.match(/<body[^>]*>([\s\S]*)<\/body>/i)?.[1] ?? '',
+          )
+          .join('') ?? '';
+      const style =
+        result.documents?.[0]?.html.match(
+          /<head[^>]*>([\s\S]*)<\/head>/i,
+        )?.[1] ?? '';
+      flushSync(() => setPrintDocument(pages ? style + pages : ''));
       await Promise.all(
         Array.from(
           document.querySelectorAll<HTMLImageElement>(
@@ -529,6 +575,7 @@ export function ReservationTickets({
                   <FlightTicketSheet
                     data={{
                       ...ticket,
+                      publicDocumentUrl: documentUrl(ticket.passengerId),
                       gender: passengerGender[ticket.passengerId] ?? null,
                       airlines: airlineMarks,
                       ...(branding
@@ -561,25 +608,30 @@ export function ReservationTickets({
               '@page {size: A4 portrait; margin:0} body > :not([data-reservation-ticket-print]){display:none!important} body{margin:0!important;padding:0!important;overflow:visible!important} [data-reservation-ticket-print]{display:block!important} [data-reservation-ticket-page]{break-after:page} [data-reservation-ticket-page]:last-child{break-after:auto}'
             }
           </style>
-          {(printAll ? tickets : ticket ? [ticket] : []).map((item) => (
-            <div key={item.passengerId} data-reservation-ticket-page>
-              <FlightTicketSheet
-                data={{
-                  ...item,
-                  ...(branding
-                    ? {
-                        branding: {
-                          name: branding.name,
-                          logo,
-                          companyCode: branding.companyCode ?? '',
-                        },
-                      }
-                    : {}),
-                }}
-                cityName={name}
-              />
-            </div>
-          ))}
+          {printDocument ? (
+            <div dangerouslySetInnerHTML={{ __html: printDocument }} />
+          ) : (
+            (printAll ? tickets : ticket ? [ticket] : []).map((item) => (
+              <div key={item.passengerId} data-reservation-ticket-page>
+                <FlightTicketSheet
+                  data={{
+                    ...item,
+                    publicDocumentUrl: documentUrl(item.passengerId),
+                    ...(branding
+                      ? {
+                          branding: {
+                            name: branding.name,
+                            logo,
+                            companyCode: branding.companyCode ?? '',
+                          },
+                        }
+                      : {}),
+                  }}
+                  cityName={name}
+                />
+              </div>
+            ))
+          )}
         </div>,
         document.body,
       )}

@@ -88,6 +88,19 @@ export async function loadContractPrint(id: string) {
   } catch {
     warnings.push('لوگوی شرکت بارگذاری نشد.');
   }
+  try {
+    const response = await localizedFetch(
+      '/sales/contracts/' + encodeURIComponent(id) + '/pdf?format=share',
+      { credentials: 'include', cache: 'no-store' },
+    );
+    if (response.ok) {
+      const shared = (await response.json()) as { html?: unknown };
+      if (typeof shared.html === 'string')
+        return { output, html: shared.html, warnings };
+    }
+  } catch {
+    /* Legacy rendering remains available when public hosting is unconfigured. */
+  }
   return { output, html: contractPrintHtml(output, refs), warnings };
 }
 

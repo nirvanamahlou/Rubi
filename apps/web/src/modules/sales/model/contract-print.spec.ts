@@ -442,3 +442,14 @@ it('prints actual airport endpoints only in the flight section and preserves the
   expect(printFixture).toEqual(before);
   expect(printFixture.contract.destinationId).toBe('antalya');
 });
+
+it('uses the dedicated public contract capability instead of the pending QR', () => {
+  const url = 'https://example.test/d/' + 'a'.repeat(32);
+  const html = contractPrintHtml(printFixture, {
+    ...printReferences,
+    publicDocumentUrl: url,
+  });
+  expect(html).toContain(url);
+  expect(html).toContain('data-public-document-qr');
+  expect(html).not.toContain('pending-server');
+});
