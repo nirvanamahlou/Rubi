@@ -15,6 +15,7 @@ import { IamCallCenterDirectory } from '../iam/iam-call-center-directory';
 import { CallCenterTasksService } from '../tasks/call-center-tasks.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CallCenterCrypto } from './call-center.crypto';
+import { CallCenterAccessService } from './call-center-access.service';
 import type {
   CallCenterFollowUpDto,
   CallCenterRequestDto,
@@ -46,6 +47,11 @@ export class CallCenterWorkflowService
     private readonly tasks: CallCenterTasksService,
     @Inject(NotificationsService)
     private readonly notifications: NotificationsService,
+    @Inject(CallCenterAccessService)
+    readonly access: CallCenterAccessService = new CallCenterAccessService(
+      db,
+      undefined as never,
+    ),
   ) {}
   onModuleInit() {
     this.timer = setInterval(() => {
@@ -135,6 +141,17 @@ export class CallCenterWorkflowService
         where: { id, branchId, category: CATEGORY },
       });
       if (!row) throw new NotFoundException();
+      if (this.access.scoped(actor)) {
+        await this.access.request(actor, branchId, id, tx);
+        await this.access.contact(
+          actor,
+          branchId,
+          row.callCenterContactId!,
+          'workflow',
+          tx,
+        );
+        await this.access.recipient(actor, branchId, input.ownerId, tx);
+      }
       await this.directory.referral(
         tx,
         branchId,
@@ -201,7 +218,15 @@ export class CallCenterWorkflowService
     });
   }
   async options(actor: AuthenticatedActor, branch?: string) {
-    return { data: await this.directory.list(this.scope(actor, branch)) };
+    const branchId = this.scope(actor, branch);
+    const users = this.access.scoped(actor)
+      ? await this.access.users(actor, branchId, 'workflow')
+      : null;
+    return {
+      data: (await this.directory.list(branchId)).filter(
+        (u) => !users || users.includes(u.id),
+      ),
+    };
   }
   async link(
     actor: AuthenticatedActor,
@@ -217,6 +242,14 @@ export class CallCenterWorkflowService
         where: { id: callId, contact: { branchId } },
       });
       if (!call) throw new NotFoundException();
+      if (this.access.scoped(actor))
+        await this.access.contact(
+          actor,
+          branchId,
+          call.contactId,
+          'workflow',
+          tx,
+        );
       const ticket = await tx.customerAffairsTicket.findFirst({
         where: {
           id: input.ticketId,
@@ -227,6 +260,8 @@ export class CallCenterWorkflowService
       });
       if (!ticket)
         throw new NotFoundException('درخواست متعلق به این مخاطب نیست.');
+      if (this.access.scoped(actor))
+        await this.access.request(actor, branchId, ticket.id, tx);
       if (
         await this.command(tx, actor, branchId, input.commandId, callId, input)
       ) {
@@ -261,6 +296,14 @@ export class CallCenterWorkflowService
   ) {
     this.scope(actor, undefined);
     const branchIds = [...new Set(actor.branchIds)];
+    const scopedBranches = this.access.scoped(actor)
+      ? await Promise.all(
+          branchIds.map(async (branchId) => ({
+            branchId,
+            AND: [await this.access.requestWhere(actor, branchId)],
+          })),
+        )
+      : null;
     const parts = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Asia/Tehran',
       year: 'numeric',
@@ -279,6 +322,7 @@ export class CallCenterWorkflowService
       branchId: { in: branchIds },
       category: CATEGORY,
       callCenterContactId: { not: null },
+      ...(scopedBranches ? { AND: [{ OR: scopedBranches }] } : {}),
       ...(value !== 'ALL' ? { status: { not: 'CLOSED' } } : {}),
       ...(value === 'MINE'
         ? {
@@ -375,13 +419,25 @@ export class CallCenterWorkflowService
     const branchId = this.scope(actor, branch);
     return this.db.client.$transaction(async (tx) => {
       await this.contact(tx, contactId, branchId);
+      if (this.access.scoped(actor))
+        await this.access.contact(actor, branchId, contactId, 'workflow', tx);
       const requestWhere = {
+        ...(this.access.scoped(actor)
+          ? await this.access.requestWhere(actor, branchId, tx)
+          : {}),
         branchId,
         category: CATEGORY,
         callCenterContactId: contactId,
         status: { not: 'CLOSED' },
       };
-      const task = await this.tasks.next(tx, [branchId], requestWhere);
+      const task = await this.tasks.next(
+        tx,
+        [branchId],
+        requestWhere,
+        this.access.scoped(actor)
+          ? await this.access.users(actor, branchId, 'workflow', tx)
+          : null,
+      );
       if (!task) return { data: null };
       const request = await tx.customerAffairsTicket.findFirst({
         where: { ...requestWhere, id: task.callCenterTicketId! },
@@ -421,8 +477,17 @@ export class CallCenterWorkflowService
     const branchId = this.scope(actor, branch);
     return this.db.client.$transaction(async (tx) => {
       await this.contact(tx, contactId, branchId);
+      if (this.access.scoped(actor))
+        await this.access.contact(actor, branchId, contactId, 'workflow', tx);
       const rows = await tx.customerAffairsTicket.findMany({
-        where: { branchId, callCenterContactId: contactId, category: CATEGORY },
+        where: {
+          ...(this.access.scoped(actor)
+            ? await this.access.requestWhere(actor, branchId, tx)
+            : {}),
+          branchId,
+          callCenterContactId: contactId,
+          category: CATEGORY,
+        },
         include: { executionOwner: { select: { displayName: true } } },
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         skip: (page - 1) * 10,
@@ -433,10 +498,20 @@ export class CallCenterWorkflowService
         branchId,
         rows.map((row) => row.id),
         taskPage,
+        this.access.scoped(actor)
+          ? await this.access.users(actor, branchId, 'workflow', tx)
+          : null,
       );
       const tasks = taskResult.rows;
       const total = await tx.customerAffairsTicket.count({
-        where: { branchId, callCenterContactId: contactId, category: CATEGORY },
+        where: {
+          ...(this.access.scoped(actor)
+            ? await this.access.requestWhere(actor, branchId, tx)
+            : {}),
+          branchId,
+          callCenterContactId: contactId,
+          category: CATEGORY,
+        },
       });
       const history = await tx.customerAffairsAuditEvent.findMany({
         where: {
@@ -524,6 +599,12 @@ export class CallCenterWorkflowService
       throw new BadRequestException('عنوان درخواست را وارد کنید.');
     await this.db.client.$transaction(async (tx) => {
       await this.contact(tx, contactId, branchId);
+      if (this.access.scoped(actor)) {
+        await this.access.contact(actor, branchId, contactId, 'workflow', tx);
+        if (input.ownerId)
+          await this.access.recipient(actor, branchId, input.ownerId, tx);
+        else input = { ...input, ownerId: actor.userId };
+      }
       await this.lock(tx, input.id);
       if (
         !(await this.command(tx, actor, branchId, input.commandId, input.id, {
@@ -535,6 +616,8 @@ export class CallCenterWorkflowService
       const current = await tx.customerAffairsTicket.findFirst({
         where: { id: input.id },
       });
+      if (current && this.access.scoped(actor))
+        await this.access.request(actor, branchId, current.id, tx);
       if (
         current &&
         (current.branchId !== branchId ||
@@ -692,6 +775,11 @@ export class CallCenterWorkflowService
       });
       if (!ticket) throw new NotFoundException();
       contactId = ticket.callCenterContactId!;
+      if (this.access.scoped(actor)) {
+        await this.access.request(actor, branchId, ticketId, tx);
+        await this.access.contact(actor, branchId, contactId, 'workflow', tx);
+        await this.access.recipient(actor, branchId, input.ownerId, tx);
+      }
       if (
         !(await this.command(
           tx,
@@ -717,6 +805,8 @@ export class CallCenterWorkflowService
       const prior = (await this.tasks.list(tx, branchId, [ticketId])).find(
         (task) => task.id === input.id,
       );
+      if (prior && this.access.scoped(actor))
+        await this.access.recipient(actor, branchId, prior.assigneeUserId, tx);
       if (prior && prior.status !== 'OPEN')
         throw new BadRequestException(
           'پیگیری پایان‌یافته قابل بازنویسی نیست؛ اقدام جدید بسازید.',

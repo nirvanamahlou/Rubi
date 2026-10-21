@@ -1,5 +1,7 @@
 import {
   USER_JOB_TITLES,
+  CALL_CENTER_SALES_EXPERT,
+  CALL_CENTER_SALES_MANAGER,
   USER_ACCESS_PROFILE_PERMISSION,
   USER_ACCESS_SCREENS,
   screenPermission,
@@ -45,6 +47,44 @@ const permissions = codes.map((code) => ({ id: code, code, name: code }));
 const proposal = (title: string) =>
   recommendRoleAccess(title, permissions, codes);
 describe('role access recommendations', () => {
+  it('proposes explicit own/team Call Center grants without other Customer Affairs or Issabel administration', () => {
+    const all = [
+      ...new Set([
+        ...codes,
+        ...CALL_CENTER_SALES_MANAGER,
+        'system.settings.manage',
+        'customer_affairs.ticket.update',
+      ]),
+    ];
+    const available = all.map((code) => ({ id: code, code, name: code }));
+    const expert = recommendRoleAccess('کارشناس فروش', available, all, true);
+    const manager = recommendRoleAccess('مدیر فروش', available, all, true);
+    for (const code of CALL_CENTER_SALES_EXPERT)
+      expect(expert.permissionIds).toContain(code);
+    for (const code of CALL_CENTER_SALES_MANAGER)
+      expect(manager.permissionIds).toContain(code);
+    expect(expert.screenIds).toContain('customer-affairs.call-center');
+    expect(expert.screenIds).not.toContain('customer-affairs.home');
+    expect(expert.permissionIds).not.toContain(
+      'customer_affairs.call_center.contacts.read.team',
+    );
+    expect(expert.permissionIds).not.toContain(
+      'customer_affairs.call_center.owner.change',
+    );
+    expect(manager.permissionIds).not.toContain(
+      'customer_affairs.ticket.update',
+    );
+    expect(manager.permissionIds).not.toContain('system.settings.manage');
+    const restricted = recommendRoleAccess(
+      'مدیر فروش',
+      available,
+      [...CALL_CENTER_SALES_EXPERT],
+      false,
+    );
+    expect(restricted.permissionIds).not.toContain(
+      'customer_affairs.call_center.contacts.read.team',
+    );
+  });
   it('offers the sales manager title with system-wide contract read and creation', () => {
     expect(USER_JOB_TITLES).toContain('مدیر فروش');
     expect(proposal('مدیر فروش').permissionIds).toContain(
@@ -125,9 +165,10 @@ describe('role access recommendations', () => {
   it('offers every catalogued section and native permission to a system administrator', () => {
     const result = recommendRoleAccess('مدیر', permissions, [], true);
     expect(result.screenIds).toEqual(
-      USER_ACCESS_SCREENS.filter((screen) => !screen.inheritFrom).map(
-        (screen) => screen.id,
-      ),
+      USER_ACCESS_SCREENS.filter(
+        (screen) =>
+          !screen.inheritFrom || screen.id === 'customer-affairs.call-center',
+      ).map((screen) => screen.id),
     );
     // Additive controls inherit existing access and are edited via explicit restrictions.
     expect(result.screenIds).not.toContain('system.module.general');

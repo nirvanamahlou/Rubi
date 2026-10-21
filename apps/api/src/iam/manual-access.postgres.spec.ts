@@ -1,7 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { randomUUID } from 'node:crypto';
 import { createDatabaseClient } from '@nora/database';
 import {
   MANUAL_ACCESS_ROLE_PREFIX,
+  CALL_CENTER_SCOPED_ACCESS,
   MANUAL_NEW_PERMISSIONS,
   type AuthenticatedActor,
 } from '@nora/contracts';
@@ -212,6 +214,87 @@ describe.skipIf(!url)(
       expect(authenticatedPermissionCodes(restored.roles)).toContain(
         'customers.update',
       );
+    }, 90000);
+
+    it('opts only the edited user into sticky Call Center scope and preserves revisions/delegation/audit', async () => {
+      const untouched = await service.read(targetId);
+      const subject = await db.user.create({
+        data: {
+          username: randomUUID(),
+          displayName: 'Synthetic Call Center target',
+          passwordHash: 'not-a-login',
+          roles: { create: { roleId: sharedId } },
+        },
+      });
+      const before = await service.read(subject.id);
+      const dto = {
+        ...before.selection,
+        revision: before.revision,
+        title: 'Arbitrary title',
+        screenIds: [
+          ...before.selection.screenIds,
+          'customer-affairs.call-center',
+        ],
+        permissionCodes: [
+          ...before.selection.permissionCodes,
+          'customer_affairs.call_center.read',
+          'customer_affairs.call_center.contacts.read.own',
+        ],
+      };
+      const restrictedRole = await db.role.create({
+        data: {
+          code: randomUUID(),
+          name: 'Not a Call Center delegator',
+          permissions: {
+            create: { permission: { connect: { code: 'iam.users.manage' } } },
+          },
+        },
+      });
+      const restricted = await db.user.create({
+        data: {
+          username: randomUUID(),
+          displayName: 'Synthetic limited delegator',
+          passwordHash: 'not-a-login',
+          roles: { create: { roleId: restrictedRole.id } },
+        },
+      });
+      await expect(
+        service.save(subject.id, dto, { ...actor(), userId: restricted.id }),
+      ).rejects.toThrow();
+      expect((await service.read(subject.id)).revision).toBe(before.revision);
+      await service.save(subject.id, dto, actor());
+      await expect(service.save(subject.id, dto, actor())).rejects.toThrow();
+      const scoped = await service.read(subject.id);
+      expect(scoped.selection.permissionCodes).toContain(
+        CALL_CENTER_SCOPED_ACCESS,
+      );
+      await service.save(
+        subject.id,
+        {
+          ...scoped.selection,
+          revision: scoped.revision,
+          title: scoped.title,
+          permissionCodes: scoped.selection.permissionCodes.filter(
+            (code) =>
+              code !== CALL_CENTER_SCOPED_ACCESS &&
+              code !== 'customer_affairs.call_center.contacts.read.own',
+          ),
+        },
+        actor(),
+      );
+      expect(
+        (await service.read(subject.id)).selection.permissionCodes,
+      ).toContain(CALL_CENTER_SCOPED_ACCESS);
+      expect(await service.read(targetId)).toEqual(untouched);
+      expect(
+        await db.auditEvent.count({
+          where: {
+            entityId: subject.id,
+            action: 'iam.user.manual_access.update',
+            outcome: 'SUCCESS',
+          },
+        }),
+      ).toBe(2);
     }, 90000);
 
     it('protects the last effective access administrator even though the old administrator membership remains', async () => {

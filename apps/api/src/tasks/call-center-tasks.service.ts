@@ -34,12 +34,14 @@ export class CallCenterTasksService {
     tx: Prisma.TransactionClient,
     branchIds: string[],
     request: Prisma.CustomerAffairsTicketWhereInput,
+    users: string[] | null = null,
   ) {
     return tx.automationTask.findFirst({
       where: {
         sourceModule: 'CALL_CENTER',
         branchId: { in: branchIds },
         callCenterTicket: request,
+        ...(users ? { assigneeUserId: { in: users } } : {}),
         status: 'OPEN',
         dueAt: { not: null },
       },
@@ -98,6 +100,7 @@ export class CallCenterTasksService {
     branchId: string,
     ticketIds: string[],
     page: number,
+    users: string[] | null = null,
   ) {
     const pages = await Promise.all(
       ticketIds.map((id) =>
@@ -106,6 +109,7 @@ export class CallCenterTasksService {
             sourceModule: 'CALL_CENTER',
             branchId,
             callCenterTicketId: id,
+            ...(users ? { assigneeUserId: { in: users } } : {}),
           },
           orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
           skip: (page - 1) * 20,

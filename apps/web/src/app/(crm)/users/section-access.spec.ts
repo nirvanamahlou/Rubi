@@ -7,6 +7,46 @@ import {
 import { sectionAccess, changeSectionAccess } from './section-access';
 const empty = { screenIds: [], permissionCodes: [], allowedControlIds: [] };
 describe('complete section selection', () => {
+  it('isolates Call Center bulk selection from every Customer Affairs permission', () => {
+    const current = {
+      screenIds: ['customer-affairs.home'],
+      permissionCodes: [
+        'customer_affairs.ticket.read',
+        'customer_affairs.ticket.update',
+      ],
+      allowedControlIds: ['customer-affairs.home'],
+    };
+    const options = {
+      canAssignAll: true,
+      assignableScreenIds: [],
+      assignableControlIds: [],
+      permissions: [
+        { code: 'customer_affairs.call_center.read' },
+        { code: 'customer_affairs.call_center.notes.create' },
+        { code: 'customer_affairs.ticket.read' },
+        { code: 'customer_affairs.ticket.update' },
+      ],
+    };
+    const section = sectionAccess('call-center', options);
+    expect(section.screenIds).toEqual(['customer-affairs.call-center']);
+    expect(section.permissionCodes).toEqual([
+      'customer_affairs.call_center.read',
+      'customer_affairs.call_center.notes.create',
+    ]);
+    const selected = changeSectionAccess(current, section, true);
+    expect(selected.permissionCodes).toEqual([
+      ...current.permissionCodes,
+      ...section.permissionCodes,
+    ]);
+    expect(changeSectionAccess(selected, section, false)).toEqual(current);
+    const affairs = sectionAccess('customer-affairs', options);
+    expect(affairs.screenIds).not.toContain('customer-affairs.call-center');
+    expect(
+      affairs.permissionCodes.every(
+        (p) => !p.startsWith('customer_affairs.call_center.'),
+      ),
+    ).toBe(true);
+  });
   it('selects all screens, operations, resources and fields, independent of search', () => {
     const section = sectionAccess('master-data', {
       canAssignAll: true,

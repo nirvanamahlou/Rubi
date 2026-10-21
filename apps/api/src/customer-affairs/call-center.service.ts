@@ -15,6 +15,7 @@ import {
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { CallCenterCrypto } from './call-center.crypto';
+import { CallCenterAccessService } from './call-center-access.service';
 import type {
   CallCenterCallDto,
   CallCenterListDto,
@@ -47,6 +48,11 @@ export class CallCenterService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(CallCenterCrypto) private readonly crypto: CallCenterCrypto,
+    @Inject(CallCenterAccessService)
+    readonly access: CallCenterAccessService = new CallCenterAccessService(
+      database,
+      undefined as never,
+    ),
   ) {}
 
   private branch(
@@ -127,11 +133,12 @@ export class CallCenterService {
     );
     const page = query.page ?? 1,
       pageSize = query.pageSize ?? 50;
+    const where = await this.access.where(actor, branchId);
     const [total, contacts] = await this.database.client.$transaction(
       [
-        this.database.client.callCenterContact.count({ where: { branchId } }),
+        this.database.client.callCenterContact.count({ where }),
         this.database.client.callCenterContact.findMany({
-          where: { branchId },
+          where,
           orderBy: [{ latestOccurredAt: 'desc' }, { id: 'asc' }],
           skip: (page - 1) * pageSize,
           take: pageSize,
@@ -212,16 +219,50 @@ export class CallCenterService {
           throw new ConflictException(
             'شناسه تماس قبلاً برای اطلاعات دیگری استفاده شده است.',
           );
+        if (this.access.scoped(actor))
+          await this.access.contact(
+            actor,
+            branchId,
+            prior.contactId,
+            'contacts',
+            tx,
+          );
         return prior;
       }
       await tx.$queryRaw(
         Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${'call-center:phone:' + branchId + ':' + phoneFingerprint},0))`,
       );
+      const priorContact = await tx.callCenterContact.findUnique({
+        where: { branchId_phoneFingerprint: { branchId, phoneFingerprint } },
+      });
       const contact = await tx.callCenterContact.upsert({
         where: { branchId_phoneFingerprint: { branchId, phoneFingerprint } },
-        create: { branchId, phoneFingerprint, latestOccurredAt: occurredAt },
+        create: {
+          branchId,
+          phoneFingerprint,
+          latestOccurredAt: occurredAt,
+          ownerUserId: this.access.scoped(actor) ? actor.userId : null,
+          ownerVersion: this.access.scoped(actor) ? 1 : 0,
+        },
         update: {},
       });
+      if (this.access.scoped(actor))
+        await this.access.contact(actor, branchId, contact.id, 'contacts', tx);
+      if (!priorContact && this.access.scoped(actor))
+        await tx.customerAffairsAuditEvent.create({
+          data: {
+            branchId,
+            actorUserId: actor.userId,
+            entityType: 'CALL_CENTER_CONTACT',
+            entityId: contact.id,
+            action: 'OWNER_ASSIGNED',
+            version: 1,
+            afterSnapshot: {
+              previousOwnerUserId: null,
+              ownerUserId: actor.userId,
+            },
+          },
+        });
       if (occurredAt > contact.latestOccurredAt)
         await tx.callCenterContact.update({
           where: { id: contact.id },
@@ -295,6 +336,8 @@ export class CallCenterService {
       JSON.stringify({ branchId, contactId, text }),
     );
     const row = await this.database.client.$transaction(async (tx) => {
+      if (this.access.scoped(actor))
+        await this.access.contact(actor, branchId, contactId, 'contacts', tx);
       const contact = await tx.callCenterContact.findFirst({
         where: { id: contactId, branchId },
       });
