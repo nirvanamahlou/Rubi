@@ -1630,7 +1630,9 @@ export function SalesContractForm() {
             >
               جست‌وجوی بلیط‌ها
             </Button>
-            {flightSearchReady ? (
+            {flightSearchReady ||
+            state.contractFlights?.OUTBOUND ||
+            state.contractFlights?.RETURN ? (
               <div className="mt-4">{flightDetails}</div>
             ) : null}
           </section>

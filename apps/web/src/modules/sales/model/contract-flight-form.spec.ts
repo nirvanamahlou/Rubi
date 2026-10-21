@@ -15,6 +15,7 @@ import {
   salesTravelDate,
   withSalesHotelDates,
   type SalesFormState,
+  type ContractFlightDraft,
 } from './sales-form';
 import { ContractFlightEditor } from '../components/contract-flight-editor';
 import { FlightTicketDocument } from '../components/flight-ticket-preview';
@@ -259,4 +260,43 @@ it('does not require an unused return when every confirmed passenger excludes th
       passengerFlightDirections: { synthetic: ['OUTBOUND'] },
     }),
   ).toBe(true);
+});
+
+it('confirms overnight floating tickets through the button and builds a contract without inventory selection', () => {
+  const confirm = (date: string, value: typeof draft) => {
+    let result: ContractFlightDraft = value;
+    const editor = ContractFlightEditor({
+      value,
+      flightDate: date,
+      onChange: (next) => {
+        if (next) result = next;
+      },
+    });
+    const button = editor.props.children[3];
+    expect(button.props.type).toBe('button');
+    button.props.onClick();
+    return result;
+  };
+  const outbound = confirm('2027-09-01', {
+    ...draft,
+    departureAt: '2027-08-01T01:08',
+    arrivalAt: '2027-08-01T00:02',
+  });
+  const returning = confirm('2027-09-14', {
+    ...draft,
+    departureAt: '2027-08-01T00:30',
+    arrivalAt: '2027-08-01T08:09',
+  });
+  expect(outbound.arrivalAt).toBe('2027-09-02T00:02');
+  const confirmed = {
+    ...state,
+    tripType: 'ROUND_TRIP' as const,
+    contractFlights: { OUTBOUND: outbound, RETURN: returning },
+  };
+  expect(salesSelectedFlightsReady(confirmed)).toBe(true);
+  expect(salesFlightsValid(confirmed)).toBe(true);
+  const payload = salesPayload(confirmed);
+  expect(payload.ticketSelections).toEqual([]);
+  expect(salesContractOnlyFlights(payload.services)).toHaveLength(2);
+  expect(JSON.stringify(payload)).not.toContain('confirmation');
 });

@@ -249,6 +249,7 @@ export interface SalesFormState {
 }
 
 export interface ContractFlightDraft {
+  confirmation?: 'saved' | 'invalid' | undefined;
   departureAt: string;
   arrivalAt: string;
   carrierName: string;

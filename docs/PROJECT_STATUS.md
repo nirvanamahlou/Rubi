@@ -6966,6 +6966,13 @@ Removed bracketed entry guidance from all Workbench message templates; field lab
 
 English coverage gate found the 33 changed template strings needed translations; existing English templates were updated offline with blank fields. All3 coverage/synchronization tests now pass; derived catalogues synchronized.
 
+
+## FLOATING-FLIGHT-CONFIRM-1021 — READY_FOR_CI
+
+Explicit floating-ticket confirmation normalizes clocks against selected civil flight date and next-day arrival, checks required flight fields and provides inline feedback. Editing clears prior confirmation. Keeps existing contract-only snapshot/payload flow and canonical server validation; never writes company inventory or implicitly submits contract. Focused readiness/payload/overnight regressions and complete hosted gates required before authorized develop merge.
+
+Validation:23 focused tests in4 files pass in an isolated network-disabled disposable container using the current production dependency runtime and reviewed source overlay. Tests exercise actual confirmation buttons, enabled continuation with confirmed passengers, overnight clocks, restored Tehran dates and contract-only payload with no inventory selection. Five additional pure clock/date assertions pass locally. No live service, database or inventory writes; final exact-head hosted gates precede merge.
+
 ## PAST-TICKET-SINGLE-EDIT-1021 — PC-A
 
 Selected published tickets expose the existing single-offer Edit action for past as well as future departure dates, alongside the separate load editor. Reuse unchanged PublishedOfferForm and canonical reviseOffer(id, version, input), refresh and error handling. New interaction regression uses a synthetic historical paused ticket to verify exactly one selected ID/version is submitted without moving dates, and read-only viewing never submits. Existing future/active/capacity conditions on capacity reservation and all server allocation/CAS/audit guards remain unchanged. No schema/migration/API/dependency/translation/runtime or operational data changes. Scoped lint/types/build and exact-head hosted checks gate owner-authorized develop merge.
