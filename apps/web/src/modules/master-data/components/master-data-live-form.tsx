@@ -628,6 +628,7 @@ function GenericMasterDataLiveForm({
                     aria-invalid={Boolean(error)}
                     disabled={readonly || saving}
                     dir={
+                      field.key === 'gmtOffset' ||
                       field.key.toLowerCase().includes('code')
                         ? 'ltr'
                         : undefined
