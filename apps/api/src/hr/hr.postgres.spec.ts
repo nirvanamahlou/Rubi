@@ -305,6 +305,114 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         service.createEmployee(employeeInput('Wrong branch'), key(), outsider),
       ).rejects.toThrow();
     });
+    it('persists employee extensions through create, replay, partial edit and clear with scope and CAS guards', async () => {
+      const input = employeeInput('Synthetic Extension', { extension: '۰۰۱۲' });
+      const commandKey = key();
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/hr/employees')
+        .set('Cookie', adminCookie)
+        .set('Idempotency-Key', commandKey)
+        .send(input)
+        .expect(201);
+      const target = response.body as HrEmployeeDto;
+      expect(target.extension).toBe('0012');
+      expect(
+        (await service.createEmployee(input, commandKey, admin)).extension,
+      ).toBe('0012');
+      expect(
+        await client.hrRecord.count({
+          where: {
+            employeeId: target.id,
+            tab: 'internalContact',
+            deletedAt: null,
+          },
+        }),
+      ).toBe(1);
+      expect(
+        (await service.bootstrap(reader)).employees.find(
+          (e) => e.id === target.id,
+        )?.extension,
+      ).toBe('0012');
+      const edited = await service.updateEmployee(
+        target.id,
+        { version: 1, extension: '0024' },
+        admin,
+      );
+      expect(edited.extension).toBe('0024');
+      await expect(
+        service.updateEmployee(
+          target.id,
+          { version: 1, extension: '999' },
+          admin,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.updateEmployee(
+          target.id,
+          { version: 2, extension: '888' },
+          outsider,
+        ),
+      ).rejects.toThrow();
+      const partial = await service.updateEmployee(
+        target.id,
+        { version: 2, kind: 'پاره‌وقت' },
+        admin,
+      );
+      expect(partial.extension).toBe('0024');
+      await expect(
+        service.updateEmployee(
+          target.id,
+          { version: 3, extension: '*123' },
+          admin,
+        ),
+      ).rejects.toThrow();
+      const cleared = await service.updateEmployee(
+        target.id,
+        { version: 3, extension: '' },
+        admin,
+      );
+      expect(cleared.extension).toBe('');
+      expect(
+        await client.hrRecord.count({
+          where: {
+            employeeId: target.id,
+            tab: 'internalContact',
+            deletedAt: null,
+          },
+        }),
+      ).toBe(0);
+      for (const extension of ['abc', '1'.repeat(21), 123])
+        await expect(
+          service.createEmployee(
+            employeeInput('Invalid Extension', { extension }),
+            key(),
+            admin,
+          ),
+        ).rejects.toThrow();
+      expect(
+        await client.hrEmployee.count({ where: { name: 'Invalid Extension' } }),
+      ).toBe(0);
+      await expect(
+        service.createRecord(
+          {
+            section: 'employee',
+            tab: 'internalContact',
+            employeeId: target.id,
+            values: ['999'],
+          },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow();
+      await client.hrRecord.updateMany({
+        where: { employeeId: target.id },
+        data: { deletedAt: new Date() },
+      });
+      await client.hrEmployee.update({
+        where: { id: target.id },
+        data: { deletedAt: new Date() },
+      });
+    });
     it('loses exactly one stale concurrent edit and forbids direct job assignment changes', async () => {
       const outcomes = await Promise.allSettled([
         service.updateEmployee(

@@ -2,6 +2,8 @@ import { HR_RADAN_COMPLETION_COLUMNS } from './radan-completion';
 // Approved HR field labels; behavior is defined in resource-registry.ts.
 export const HR_RESOURCE_COLUMNS = {
   ...HR_RADAN_COMPLETION_COLUMNS,
+  // Managed through employee commands, without a separate UI section.
+  'employee.internalContact': ['شماره داخلی'],
   'organization.groups': ['نام گروه', 'توضیحات'],
   'organization.groupMembers': ['کارمند'],
   'time.workingHours': [

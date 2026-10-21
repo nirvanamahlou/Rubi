@@ -4164,6 +4164,8 @@
   "کودک (6-12)": "Child (6-12)",
   "کودک (12-18)": "Child (12-18)",
   "ساعت رفت و برگشت به وقت تهران است. Min و Max فاصلهٔ روزهای مجاز برگشت در فروش هستند. Max پیش‌فرض برای هر رفت، یک روز بیشتر از فاصلهٔ برگشت است و می‌توانید آن را تغییر دهید.": "Outbound and return times use Tehran time. Min and Max specify the permitted return interval in days. The default Max is one day longer than the return interval and can be changed.",
+  "شماره داخلی": "Phone extension",
+  "شماره داخلی باید فقط شامل رقم باشد.": "The phone extension must contain digits only.",
   "،": ",",
   "؛": ";",
   ": پرونده را بررسی کنید.": ": Check the file.",

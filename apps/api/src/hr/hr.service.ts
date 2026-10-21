@@ -53,7 +53,13 @@ type AssignmentLabels = {
   branches: Map<string, string>;
   managers: Map<string, string>;
 };
+const employeeExtensionProjection = {
+  where: { section: 'employee', tab: 'internalContact', deletedAt: null },
+  select: { values: true },
+  take: 1,
+} as const;
 const employeeKeys = [
+  'extension',
   'identityValues',
   'contactValues',
   'firstName',
@@ -238,6 +244,7 @@ export class HrService {
       include: {
         manager: { select: { name: true } },
         organizationBranch: true,
+        records: employeeExtensionProjection,
       },
     });
     if (!result)
@@ -256,11 +263,15 @@ export class HrService {
     row: Employee & {
       manager?: { name: string } | null;
       organizationBranch?: RecordRow | null;
+      records?: { values: Prisma.JsonValue }[];
     },
   ): HrEmployeeDto {
     return {
       id: row.id,
       personnelCode: row.personnelCode,
+      extension: String(
+        (row.records?.[0]?.values as string[] | undefined)?.[0] ?? '',
+      ),
       branchId: row.branchId,
       userId: row.userId,
       photoDocumentId: row.photoDocumentId,
@@ -390,6 +401,7 @@ export class HrService {
         include: {
           manager: { select: { name: true } },
           organizationBranch: true,
+          records: employeeExtensionProjection,
         },
         orderBy: { name: 'asc' },
         take: 2000,
@@ -760,6 +772,67 @@ export class HrService {
       throw new BadRequestException('حساب کاربری فعال در شعبه پیدا نشد.');
     return userId;
   }
+  private async setEmployeeExtension(
+    tx: Tx,
+    employee: Employee,
+    value: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    if (value === undefined) return;
+    const extension = validate.digits(
+      validate.text(value, 'شماره داخلی', 20, true),
+    );
+    if (extension && !/^\d{1,20}$/.test(extension))
+      throw new BadRequestException('شماره داخلی باید فقط شامل رقم باشد.');
+    const row = await tx.hrRecord.findFirst({
+      where: {
+        employeeId: employee.id,
+        branchId: employee.branchId,
+        section: 'employee',
+        tab: 'internalContact',
+        deletedAt: null,
+      },
+    });
+    if (
+      (row?.values as string[] | undefined)?.[0] === extension ||
+      (!row && !extension)
+    )
+      return;
+    const saved = row
+      ? await tx.hrRecord.update({
+          where: { id: row.id },
+          data: {
+            values: [extension],
+            searchText: extension,
+            version: { increment: 1 },
+            ...(extension ? {} : { deletedAt: new Date() }),
+          },
+        })
+      : await tx.hrRecord.create({
+          data: {
+            employeeId: employee.id,
+            branchId: employee.branchId,
+            section: 'employee',
+            tab: 'internalContact',
+            code: `HR-EXT-${randomUUID()}`,
+            values: [extension],
+            searchText: extension,
+            status: 'فعال',
+          },
+        });
+    await this.audit(
+      tx,
+      actor,
+      {
+        employeeId: employee.id,
+        branchId: employee.branchId,
+        recordId: saved.id,
+      },
+      'employee.extension',
+      { before: row?.values ?? [], after: extension ? [extension] : [] },
+      saved.version,
+    );
+  }
   private async insertEmployee(
     tx: Tx,
     input: Record<string, unknown>,
@@ -793,6 +866,7 @@ export class HrService {
         status: input.status ? validate.status(input.status, false) : 'فعال',
       },
     });
+    await this.setEmployeeExtension(tx, row, input.extension, actor);
     if (input.groupId !== undefined)
       await this.setEmployeeGroup(tx, row, input.groupId, actor);
     const assignment = await tx.hrRecord.create({
@@ -1094,6 +1168,7 @@ export class HrService {
       });
       if (changed.count !== 1)
         throw new ConflictException('نسخه کارمند تغییر کرده است.');
+      await this.setEmployeeExtension(tx, existing, input.extension, actor);
       if (typeof data.name === 'string')
         await this.syncIdentityNames(tx, existing, data.name, nameParts, actor);
       await this.audit(
@@ -1111,6 +1186,7 @@ export class HrService {
         where: { id },
         include: {
           organizationBranch: true,
+          records: employeeExtensionProjection,
           manager: { select: { name: true } },
         },
       });
