@@ -272,3 +272,20 @@ it('filters both endpoint countries and reverses their roles for reverse searche
   expect(disjointFlightLoadLegs([a, b], [b])).toEqual([a]);
   expect(companyReturnLegs([a, b], a, false, '')).toEqual([b]);
 });
+
+it('finds the same load through its second commercial destination without multiplying inventory', () => {
+  const shared = offer('shared', '2099-10-03', {
+    saleRoutes: [{ originId: 'a', destinationId: 'c' }],
+  });
+  const rows = companyFlightLegs([shared], { ...filter, destination: 'c' });
+  expect(rows).toEqual([shared]);
+  expect(flightLoadTotals(rows)).toEqual({
+    total: 50,
+    remaining: 43,
+    sold: 5,
+    reserved: 2,
+  });
+  expect(
+    companyFlightLegs([shared], { ...filter, origin: 'c', destination: 'b' }),
+  ).toEqual([]);
+});

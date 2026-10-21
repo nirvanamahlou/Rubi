@@ -119,6 +119,7 @@ export function flightOfferInput(
   return {
     originAirportId: firstSegment.originAirportId || null,
     destinationAirportId: lastSegment.destinationAirportId || null,
+    saleRoutes: definition.saleRoutes ?? [],
     originId: firstSegment.originCityId,
     destinationId: lastSegment.destinationCityId,
     departureAt: firstSegment.departureAt,

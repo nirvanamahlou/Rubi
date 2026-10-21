@@ -1,3 +1,4 @@
+import type { TicketSaleRouteV1 } from '@nora/contracts';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { validReturnWindow } from '@nora/contracts';
 // Phase A pure proposal; mirrored in Web until a shared-contract handoff.
@@ -66,6 +67,8 @@ export interface ProductDisplaySnapshot {
   destination: string;
 }
 export interface ProductInput {
+  saleRoutes?:
+    readonly TicketSaleRouteV1[] | undefined;
   economyBaggageKg?: string | null;
   businessBaggageKg?: string | null;
   returnMinDays?: number | null;

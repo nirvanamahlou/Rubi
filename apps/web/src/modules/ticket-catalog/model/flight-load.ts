@@ -1,5 +1,6 @@
 import {
   eligibleTicketReturn,
+  ticketOfferRoutes,
   ticketCalendarDate,
   type TicketOfferV1,
 } from '@nora/contracts';
@@ -17,10 +18,11 @@ export const countryFlightLoadOffers = (
       (ref) =>
         ref.kind === 'city' && ref.id === cityId && ref.countryId === countryId,
     );
-  return offers.filter(
-    (offer) =>
-      matches(offer.originId, originCountry) &&
-      matches(offer.destinationId, country),
+  return offers.filter((offer) =>
+    ticketOfferRoutes(offer).some(
+      (r) =>
+        matches(r.originId, originCountry) && matches(r.destinationId, country),
+    ),
   );
 };
 
@@ -58,8 +60,11 @@ export function validFlightLoadDates(
     .filter(
       (offer) =>
         isCompanyLoadOffer(offer) &&
-        (!filter.origin || offer.originId === filter.origin) &&
-        (!filter.destination || offer.destinationId === filter.destination),
+        ticketOfferRoutes(offer).some(
+          (r) =>
+            (!filter.origin || r.originId === filter.origin) &&
+            (!filter.destination || r.destinationId === filter.destination),
+        ),
     )
     .map((offer) => ticketCalendarDate(offer.departureAt))
     .sort();
@@ -98,8 +103,11 @@ export function companyFlightLegs(
         isCompanyLoadOffer(offer) &&
         (!filter.from || date >= filter.from) &&
         (!filter.to || date <= filter.to) &&
-        (!filter.origin || offer.originId === filter.origin) &&
-        (!filter.destination || offer.destinationId === filter.destination) &&
+        ticketOfferRoutes(offer).some(
+          (r) =>
+            (!filter.origin || r.originId === filter.origin) &&
+            (!filter.destination || r.destinationId === filter.destination),
+        ) &&
         (!filter.carrier || offer.carrierName === filter.carrier) &&
         (!filter.cabin || offer.cabinClassCode === filter.cabin) &&
         (!filter.weekday || weekday === filter.weekday) &&

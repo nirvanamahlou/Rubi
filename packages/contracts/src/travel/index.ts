@@ -99,7 +99,17 @@ export {
   validReturnWindow,
 } from './ticket-return-window';
 
+export interface TicketSaleRouteV1 {
+  originId: string;
+  destinationId: string;
+}
+export {
+  ticketOfferMatchesRoute,
+  ticketOfferRoutes,
+} from './ticket-sale-routes';
 export interface TicketOfferV1 {
+  /** Additional commercial routes sharing this exact offer/inventory. */
+  saleRoutes?: readonly TicketSaleRouteV1[];
   /** Actual airports chosen in ticket definition; absent on legacy offers. */
   originAirportId?: string | null;
   destinationAirportId?: string | null;

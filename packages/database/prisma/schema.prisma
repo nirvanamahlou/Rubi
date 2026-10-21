@@ -1044,6 +1044,8 @@ model MasterCountry {
 }
 
 model MasterCity {
+  ticketSaleOrigins           TicketOfferSaleRoute[]      @relation("TicketSaleOrigin")
+  ticketSaleDestinations      TicketOfferSaleRoute[]      @relation("TicketSaleDestination")
   id                          String                      @id @default(uuid()) @db.Uuid
   countryId                   String                      @db.Uuid
   regionId                    String?                     @db.Uuid
@@ -4250,6 +4252,7 @@ model TourDeparture {
 }
 
 model TicketPublishedOffer {
+  saleRoutes                  TicketOfferSaleRoute[]
   originAirportId             String?                             @db.Uuid
   destinationAirportId        String?                             @db.Uuid
   originAirport               MasterAirport?                      @relation("TicketOriginAirport", fields: [originAirportId], references: [id], onDelete: Restrict)
@@ -8023,4 +8026,17 @@ model IntegrationTelephonyRecordingChunk {
 
   @@id([recordingId, index])
   @@map("integration_telephony_recording_chunks")
+}
+
+model TicketOfferSaleRoute {
+  offerId       String               @db.Uuid
+  originId      String               @db.Uuid
+  destinationId String               @db.Uuid
+  offer         TicketPublishedOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  origin        MasterCity           @relation("TicketSaleOrigin", fields: [originId], references: [id], onDelete: Restrict)
+  destination   MasterCity           @relation("TicketSaleDestination", fields: [destinationId], references: [id], onDelete: Restrict)
+
+  @@id([offerId, originId, destinationId])
+  @@index([originId, destinationId])
+  @@index([destinationId])
 }
