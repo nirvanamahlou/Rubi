@@ -109,3 +109,7 @@ and [AgentConnect](https://docs.asterisk.org/Asterisk_21_Documentation/API_Docum
 These references describe the event family; actual Asterisk16 event names and
 identity relationships were observed in the isolated test. No unsupported provider
 payload or custom dialplan hook is assumed in native mode.
+
+## Activation follow-up
+
+The later owner-approved queue1002/HQ local activation and real-call acceptance are recorded in [AMI-SALES-ACTIVATION-1021](AMI-SALES-ACTIVATION-1021.md). The earlier pending status above describes this implementation unit before activation; popup delivery remains disabled.
