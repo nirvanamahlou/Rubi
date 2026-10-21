@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   canViewScreen,
+  canViewIntegrationSection,
+  visibleIntegrationSections,
   type AuthenticatedActor,
   type BranchReference,
   type IntegrationExistingAdapterV1,
@@ -68,7 +70,10 @@ function errorMessage(error: unknown) {
 export function IntegrationsWorkspace() {
   const actor = useAccessActor();
   if (!actor) return <Skeleton className="h-96" />;
-  if (!canViewScreen(actor.permissions, 'integrations.home'))
+  if (
+    !canViewScreen(actor.permissions, 'integrations.home') ||
+    !visibleIntegrationSections(actor.permissions).length
+  )
     return (
       <Alert
         title="دسترسی مجاز نیست"
@@ -94,7 +99,10 @@ export function IntegrationWorkspaceBody({
   const [branchId, setBranchId] = useState('');
   const [data, setData] = useState<IntegrationRegistryV1 | null>(null);
   const [adapters, setAdapters] = useState<IntegrationExistingAdapterV1[]>([]);
-  const [section, setSection] = useState<IntegrationSection>('brands');
+  const allowedSections = visibleIntegrationSections(actor.permissions);
+  const [section, setSection] = useState<IntegrationSection>(
+    () => allowedSections[0] ?? 'brands',
+  );
   const [managingCatalogue, setManagingCatalogue] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -139,8 +147,10 @@ export function IntegrationWorkspaceBody({
       setError('');
       try {
         const [registry, adapters] = await Promise.all([
-          integrationsApi.read(branchId, signal),
-          integrationsApi.adapters(signal),
+          integrationsApi.read(branchId, signal, section),
+          canViewIntegrationSection(actor.permissions, 'connections')
+            ? integrationsApi.adapters(signal)
+            : Promise.resolve([]),
         ]);
         if (signal?.aborted || sequence !== loadSequence.current) return;
         setData(registry);
@@ -153,7 +163,7 @@ export function IntegrationWorkspaceBody({
           setLoading(false);
       }
     },
-    [branchId],
+    [branchId, section, actor.permissions],
   );
   useEffect(() => {
     const controller = new AbortController();
@@ -191,6 +201,14 @@ export function IntegrationWorkspaceBody({
   }
   const system = data?.systems.find((row) => row.id === selectedSystem);
   function changeSection(next: IntegrationSection) {
+    if (!allowedSections.includes(next)) {
+      setError('مجوز مشاهده این بخش یکپارچه‌سازی را ندارید.');
+      return;
+    }
+    if (next !== section) {
+      loadSequence.current += 1;
+      setData(null);
+    }
     setSelectedSystem(null);
     setManagingCatalogue(false);
     setSection(next);
@@ -252,6 +270,7 @@ export function IntegrationWorkspaceBody({
         section={section}
         disabled={!!edit || !!siteForm || busy}
         onChange={changeSection}
+        allowedSections={allowedSections}
       />
       {error ? (
         <Alert title="عملیات کامل نشد" description={error} tone="error" />
@@ -301,7 +320,8 @@ export function IntegrationWorkspaceBody({
                 </Button>
               ) : (
                 <p className="mt-2 text-sm">
-                  ایجاد فهرست به مجوز مدیریت تنظیمات نیاز دارد.
+                  ایجاد فهرست به تیک تنظیمات اتصال و دسترسی، مجوز مدیریت تنظیمات
+                  و مجوز ویرایش فهرست در مدیریت کاربران نیاز دارد.
                 </p>
               )}
             </Alert>
@@ -321,6 +341,7 @@ export function IntegrationWorkspaceBody({
               key={system.id}
               system={system}
               data={data}
+              allowedSections={allowedSections}
               onBack={() => setSelectedSystem(null)}
               onEdit={() => setEdit({ kind: 'system', record: system })}
               onSetup={() => openSite(system)}
@@ -342,6 +363,11 @@ export function IntegrationWorkspaceBody({
                       <button
                         type="button"
                         key={String(label)}
+                        disabled={
+                          !allowedSections.includes(
+                            target as IntegrationSection,
+                          )
+                        }
                         className="rounded-2xl border border-border bg-surface p-5 text-start shadow-sm hover:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                         onClick={() => {
                           changeSection(target as IntegrationSection);
@@ -374,6 +400,7 @@ export function IntegrationWorkspaceBody({
                         variant="outline"
                         className="mt-3"
                         type="button"
+                        disabled={!allowedSections.includes('connections')}
                         onClick={() => changeSection('connections')}
                       >
                         بررسی اتصال‌ها
@@ -398,6 +425,7 @@ export function IntegrationWorkspaceBody({
                   data={data}
                   onOpen={setSelectedSystem}
                   onSection={changeSection}
+                  allowedSections={allowedSections}
                   onManage={() => setManagingCatalogue(true)}
                   {...(data.canManage ? { onCreate: () => openSite() } : {})}
                 />
@@ -790,12 +818,14 @@ function SystemDetail({
   onBack,
   onEdit,
   onSetup,
+  allowedSections,
 }: {
   system: IntegrationSystemConfigV1;
   data: IntegrationRegistryV1;
   onBack: () => void;
   onEdit: () => void;
   onSetup: () => void;
+  allowedSections: readonly IntegrationSection[];
 }) {
   const [area, setArea] = useState('settings');
   return (
@@ -815,22 +845,34 @@ function SystemDetail({
       </div>
       <nav aria-label="مدیریت سامانه" className="flex flex-wrap gap-2">
         {[
-          ['settings', 'تنظیمات'],
+          ['settings', 'مشخصات سامانه'],
           ['connection', 'اتصال'],
           ['sync', 'همگام‌سازی'],
           ['health', 'سلامت'],
           ['history', 'سوابق'],
-        ].map(([id, title]) => (
-          <Button
-            key={id}
-            type="button"
-            variant={area === id ? 'primary' : 'outline'}
-            aria-pressed={area === id}
-            onClick={() => setArea(id!)}
-          >
-            {title}
-          </Button>
-        ))}
+        ]
+          .filter(
+            ([id]) =>
+              id === 'settings' ||
+              allowedSections.includes(
+                (id === 'connection'
+                  ? 'connections'
+                  : id === 'history'
+                    ? 'logs'
+                    : id) as IntegrationSection,
+              ),
+          )
+          .map(([id, title]) => (
+            <Button
+              key={id}
+              type="button"
+              variant={area === id ? 'primary' : 'outline'}
+              aria-pressed={area === id}
+              onClick={() => setArea(id!)}
+            >
+              {title}
+            </Button>
+          ))}
       </nav>
       {area === 'settings' ? (
         <>

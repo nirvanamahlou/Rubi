@@ -286,10 +286,26 @@ export const ADDITIVE_USER_ACCESS_SCREENS: readonly AdditiveUserAccessScreen[] =
     {
       id: 'system.module.integrations',
       group: 'integrations',
-      title: 'مدیریت تنظیمات اتصال سایت‌ها',
+      title: 'تنظیمات اتصال و دسترسی',
       route: '/integrations',
       inheritFrom: 'integrations.home',
     },
+    ...childTabs(
+      'integrations',
+      '/integrations',
+      'integrations.home',
+      [
+        ['brands', 'برندها و سامانه‌ها'],
+        ['overview', 'نمای کلی'],
+        ['connections', 'اتصال‌ها و تأمین‌کنندگان'],
+        ['events', 'رویدادها و وب‌هوک‌ها'],
+        ['mapping', 'نگاشت و گردش داده'],
+        ['sync', 'همگام‌سازی‌ها'],
+        ['health', 'سلامت و خطاها'],
+        ['logs', 'لاگ‌ها و سوابق'],
+      ],
+      'integrations.section',
+    ),
     {
       id: 'ticket-purchases.home',
       group: 'procurement',

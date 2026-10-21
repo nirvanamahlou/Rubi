@@ -5,6 +5,7 @@ import {
   ManualAccessEditor,
   type ManualAccessEditorHandle,
 } from './manual-access-editor';
+import { INTEGRATION_ACCESS_SECTIONS } from '@nora/contracts';
 
 const fixture = vi.hoisted(() => ({
   values: [] as unknown[],
@@ -138,6 +139,22 @@ describe('legacy administrator role save round trip', () => {
   it('keeps an unchanged administrator untouched when final Save is clicked', async () => {
     const { request, ref, render } = setup();
     await load(render);
+    expect(await ref.current!.save()).toBe(true);
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+  it('renders all nine Integrations choices as checkboxes without changing an existing user', async () => {
+    const { request, ref, render } = setup();
+    await load(render);
+    const html = render();
+    const group = html.slice(html.indexOf('انتخاب کل بخش یکپارچه‌سازی‌ها'));
+    for (const [, title] of INTEGRATION_ACCESS_SECTIONS) {
+      const label = (
+        group.match(/<label\b[^>]*>[\s\S]*?<\/label>/g) ?? []
+      ).find((value) => value.includes(title));
+      expect(label).toContain('type="checkbox"');
+      expect(label).not.toContain('checked=""');
+    }
+    expect(group).toContain('SSO');
     expect(await ref.current!.save()).toBe(true);
     expect(request).toHaveBeenCalledTimes(1);
   });

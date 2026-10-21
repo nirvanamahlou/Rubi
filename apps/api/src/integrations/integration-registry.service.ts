@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Inject,
@@ -7,6 +8,9 @@ import {
 import { randomUUID } from 'node:crypto';
 import {
   canViewScreen,
+  canViewIntegrationSection,
+  INTEGRATION_ACCESS_SECTIONS,
+  visibleIntegrationSections,
   hasAccessControl,
   systemSettingControlId,
   type AuthenticatedActor,
@@ -14,6 +18,7 @@ import {
   type IntegrationExistingAdapterV1,
   type IntegrationRegistryV1,
   type SystemSettingV1,
+  type IntegrationAccessSection,
 } from '@nora/contracts';
 import { SystemManagementService } from '../system-management/system-management.service';
 import {
@@ -40,7 +45,7 @@ export class IntegrationRegistryService {
 
   canManage(actor: AuthenticatedActor) {
     return (
-      canViewScreen(actor.permissions, 'integrations.home') &&
+      canViewIntegrationSection(actor.permissions, 'settings') &&
       actor.permissions.includes('system.settings.manage') &&
       hasAccessControl(actor.permissions, 'system.module.integrations') &&
       hasAccessControl(
@@ -54,6 +59,7 @@ export class IntegrationRegistryService {
     const branchId = integrationBranchId(branch);
     if (
       !canViewScreen(actor.permissions, 'integrations.home') ||
+      !visibleIntegrationSections(actor.permissions).length ||
       !actor.branchIds.includes(branchId) ||
       (write && !this.canManage(actor))
     )
@@ -93,6 +99,17 @@ export class IntegrationRegistryService {
     );
     return {
       ...config,
+      // Setup belongs to connection/configuration screens; audit requires logs.
+      systems: config.systems.map((system) => {
+        if (
+          canViewIntegrationSection(actor.permissions, 'connections') ||
+          canViewIntegrationSection(actor.permissions, 'settings')
+        )
+          return system;
+        const summary = { ...system };
+        delete summary.setup;
+        return summary;
+      }),
       contract: 'integrations.registry.v1',
       branchId,
       initialized: !!setting,
@@ -108,18 +125,35 @@ export class IntegrationRegistryService {
             awaitingConnection: systems.length,
           }
         : null,
-      lastChange: setting
-        ? {
-            occurredAt: setting.updatedAt,
-            actorUserId: setting.updatedByUserId,
-            reason: safeIntegrationReason(setting.reason),
-          }
-        : null,
+      lastChange:
+        setting && canViewIntegrationSection(actor.permissions, 'logs')
+          ? {
+              occurredAt: setting.updatedAt,
+              actorUserId: setting.updatedByUserId,
+              reason: safeIntegrationReason(setting.reason),
+            }
+          : null,
     };
   }
 
-  async read(actor: AuthenticatedActor, branch: unknown) {
+  async read(actor: AuthenticatedActor, branch: unknown, section?: string) {
     const branchId = this.authorize(actor, branch);
+    if (section !== undefined) {
+      const known: readonly string[] = INTEGRATION_ACCESS_SECTIONS.map(
+        ([id]) => id,
+      );
+      if (!known.includes(section))
+        throw new BadRequestException('بخش یکپارچه‌سازی معتبر نیست.');
+      if (
+        !canViewIntegrationSection(
+          actor.permissions,
+          section as IntegrationAccessSection,
+        )
+      )
+        throw new ForbiddenException(
+          'مجوز مشاهده این بخش یکپارچه‌سازی را ندارید.',
+        );
+    }
     return this.present(await this.setting(branchId), actor, branchId);
   }
 
@@ -220,7 +254,7 @@ export class IntegrationRegistryService {
   }
 
   adapters(actor: AuthenticatedActor): IntegrationExistingAdapterV1[] {
-    if (!canViewScreen(actor.permissions, 'integrations.home'))
+    if (!canViewIntegrationSection(actor.permissions, 'connections'))
       throw new ForbiddenException();
     return [
       {

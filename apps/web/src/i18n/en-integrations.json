@@ -1,4 +1,10 @@
 {
+  "مجوز مشاهده این بخش یکپارچه‌سازی را ندارید.": "You do not have permission to view this integration section.",
+  "بخش یکپارچه‌سازی معتبر نیست.": "The integration section is invalid.",
+  "مجوز مشاهده سوابق را ندارید.": "You do not have permission to view history.",
+  "مشخصات سامانه": "System details",
+  "ایجاد فهرست به تیک تنظیمات اتصال و دسترسی، مجوز مدیریت تنظیمات و مجوز ویرایش فهرست در مدیریت کاربران نیاز دارد.": "To create the catalogue, select connection and access settings, configuration-management permission, and catalogue editing in user administration.",
+  "ابتدا ورود به صفحه یکپارچه‌سازی‌ها و سپس بخش‌های موردنیاز را تیک بزنید. مشاهده با ویرایش متفاوت است؛ برای ایجاد یا ویرایش سایت، تنظیمات اتصال و دسترسی، مجوز مدیریت تنظیمات و ویرایش فهرست را هم انتخاب کنید. محدودیت شعبه حفظ می‌شود. این تیک‌ها ورود به پنل خارجی یا SSO را فعال نمی‌کنند.": "Select the Integrations home page and the required sections. Viewing and editing are separate: site creation or editing also requires connection and access settings, configuration-management permission, and catalogue editing. Branch scope remains enforced. These checkboxes do not enable external admin sign-in or SSO.",
   "آخرین تغییر ثبت‌شده تنظیمات": "Latest recorded configuration change",
   "آکادمی از فروش مستقیم سفر جداست": "Academy activity is separate from direct travel sales",
   "آماده اتصال": "Ready for connection setup",

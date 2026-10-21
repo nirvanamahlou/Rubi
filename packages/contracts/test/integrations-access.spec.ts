@@ -10,12 +10,61 @@ import {
   manualSectionForScreen,
   screenPermission,
   systemSettingControlId,
+  INTEGRATION_ACCESS_SECTIONS,
+  integrationScreenId,
+  canViewIntegrationSection,
+  visibleIntegrationSections,
+  denyPermission,
 } from '../src';
 
 const moduleId = 'system.module.integrations';
 const fieldId = systemSettingControlId('integrations', 'registry');
 
 describe('Integrations access in native user administration', () => {
+  it.each(INTEGRATION_ACCESS_SECTIONS)(
+    'keeps %s independently selectable and denied by default',
+    (section) => {
+      const permissions = [
+        MANUAL_ACCESS_VERSION,
+        screenPermission('integrations.home'),
+      ];
+      expect(visibleIntegrationSections(permissions)).toEqual([]);
+      const id = integrationScreenId(section);
+      expect(
+        USER_ACCESS_SCREENS.filter((screen) => screen.id === id),
+      ).toHaveLength(1);
+      const selected = [
+        ...permissions,
+        screenPermission(id),
+        allowAccessControl(id),
+      ];
+      expect(visibleIntegrationSections(selected)).toEqual([section]);
+      expect(
+        canViewIntegrationSection([...selected, denyPermission(id)], section),
+      ).toBe(false);
+      expect(
+        visibleIntegrationSections(
+          selected.filter((p) => p !== screenPermission('integrations.home')),
+        ),
+      ).toEqual([]);
+      expect(canViewScreen(selected, 'system.users')).toBe(false);
+    },
+  );
+
+  it('preserves legacy profiles while honoring explicit section denials', () => {
+    const legacy = [
+      'ui.profile',
+      'integrations.read',
+      screenPermission('integrations.home'),
+    ];
+    expect(visibleIntegrationSections(legacy)).toHaveLength(9);
+    expect(
+      canViewIntegrationSection(
+        [...legacy, denyPermission(integrationScreenId('logs'))],
+        'logs',
+      ),
+    ).toBe(false);
+  });
   it('registers both required controls once in the Integrations section', () => {
     for (const id of [moduleId, fieldId]) {
       expect(isUserAccessControlId(id)).toBe(true);
