@@ -526,6 +526,11 @@ export function salesFlightSelection(
     : undefined;
 }
 
+/** Readiness is derived from selected snapshots, not transient search UI state. */
+export function salesSelectedFlightsReady(state: SalesFormState): boolean {
+  return salesFlightsValid(state);
+}
+
 export function salesFlightsValid(state: SalesFormState): boolean {
   const directions = salesDirections(state, 'FLIGHT').filter(
     (d) =>
