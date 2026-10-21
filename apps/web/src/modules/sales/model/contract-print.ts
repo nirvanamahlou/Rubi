@@ -19,9 +19,11 @@ import {
   salesPrincipal,
   type SalesContractOutputV1,
 } from '@nora/contracts';
+import { publicDocumentQr } from '@/modules/travel-documents/public/document-qr';
 import { contractPendingQrHtml } from './contract-pending-qr';
 
 export interface ContractPrintReferences {
+  publicDocumentUrl?: string;
   names: Record<string, string>;
   flightFacts?: Record<string, TicketDocumentFacts>;
   hotelGrade?: string;
@@ -471,5 +473,5 @@ export function contractPrintHtml(
     <p>توجه داشته باشید این برگه بدون قبض رسید صندوق فاقد هرگونه اعتبار می‌باشد.</p>
     <p>با آگاهی از مفاد قراردادهای خارج از کشور که توسط سازمان میراث فرهنگی و گردشگری تهیه گردیده است، نسبت به ارسال درخواست به آژانس ${e(niyayeshIssuer ? 'نیایش سیر سحر' : issuerName)} اقدام نموده و ارسال درخواست به منزله قبول تمامی شرایط، مواد و تبصره‌های قرارداد فوق می‌باشد.</p>
   </div>
-  <footer>${contractPendingQrHtml()}<div class="footer-contact"><strong>${e(issuerName)}</strong>${niyayeshIssuer ? `<div class="contact-row">${websiteIcon}<bdi>Nystkt.ir</bdi></div>` : ''}${niyayeshIssuer ? `<div class="contact-row">${phoneIcon}<bdi>021-72075000</bdi></div><div class="contact-row">${emailIcon}<bdi>support@niyayeshseir.com</bdi></div>` : ''}</div></footer></div></td></tr></tfoot></table></article></body></html>`;
+  <footer>${refs.publicDocumentUrl ? `<div class="footer-qr">${publicDocumentQr(refs.publicDocumentUrl) ?? ''}</div>` : contractPendingQrHtml()}<div class="footer-contact"><strong>${e(issuerName)}</strong>${niyayeshIssuer ? `<div class="contact-row">${websiteIcon}<bdi>Nystkt.ir</bdi></div>` : ''}${niyayeshIssuer ? `<div class="contact-row">${phoneIcon}<bdi>021-72075000</bdi></div><div class="contact-row">${emailIcon}<bdi>support@niyayeshseir.com</bdi></div>` : ''}</div></footer></div></td></tr></tfoot></table></article></body></html>`;
 }

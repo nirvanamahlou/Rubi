@@ -459,3 +459,14 @@ it('reserves every printed page for approval/footer and keeps compact two-column
   expect(html).toContain('class="flight-route"');
   expect(html).toContain('IRR</span>');
 });
+
+it('uses the dedicated public contract capability instead of the pending QR', () => {
+  const url = 'https://example.test/d/' + 'a'.repeat(32);
+  const html = contractPrintHtml(printFixture, {
+    ...printReferences,
+    publicDocumentUrl: url,
+  });
+  expect(html).toContain(url);
+  expect(html).toContain('data-public-document-qr');
+  expect(html).not.toContain('pending-server');
+});

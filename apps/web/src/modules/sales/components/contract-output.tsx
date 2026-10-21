@@ -1,4 +1,5 @@
 'use client';
+import { readPublicDocumentLink } from '@/modules/travel-documents/public/use-public-document-link';
 import { readContractFlightFacts } from '../model/contract-flight-facts';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -88,6 +89,10 @@ export async function loadContractPrint(id: string) {
   } catch {
     warnings.push('لوگوی شرکت بارگذاری نشد.');
   }
+  const shared = await readPublicDocumentLink(
+    '/sales/contracts/' + encodeURIComponent(id) + '/pdf?format=share',
+  );
+  if (shared.status === 'ready') return { output, html: shared.html, warnings };
   return { output, html: contractPrintHtml(output, refs), warnings };
 }
 
