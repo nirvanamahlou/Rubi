@@ -3903,5 +3903,8 @@
   "فرم پرسنلی": "Personnel form",
   "حذف عکس انتخاب‌شده": "Remove selected photo",
   "نام، شماره تماس و آدرس مشتری را کامل کنید؛ تلفن ثابت اختیاری است و کد پستی در صورت ورود باید ۱۰ رقم باشد.": "Enter the customer name, contact number and address; landline is optional and a postal code, if entered, must contain ten digits.",
-  "ثبت مبلغ فرم": "Save form amount"
+  "ثبت مبلغ فرم": "Save form amount",
+  "کودک (2-6)": "Child (2-6)",
+  "کودک (6-12)": "Child (6-12)",
+  "کودک (12-18)": "Child (12-18)"
 }

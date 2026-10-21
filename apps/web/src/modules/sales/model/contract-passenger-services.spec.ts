@@ -1,6 +1,31 @@
 import { expect, it } from 'vitest';
 import { contractPrintHtml } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
+it.each([
+  [2, 'کودک (2-6)'],
+  [5, 'کودک (2-6)'],
+  [6, 'کودک (6-12)'],
+  [11, 'کودک (6-12)'],
+  [12, 'کودک (12-18)'],
+  [17, 'کودک (12-18)'],
+])(
+  'prints the saved child birthday band at departure for age %s in both passenger tables',
+  (age, label) => {
+    const out = structuredClone(printFixture);
+    out.contract.departureDate = '2026-09-19';
+    const child = out.contract.passengersDetail[1]!;
+    child.birthDate = `${2026 - Number(age)}-09-19`;
+    child.ageCategory = 'CHD';
+    const html = contractPrintHtml(out, printReferences);
+    for (const section of ['PASSENGER SERVICES', 'PASSENGERS & PRICING'])
+      expect(
+        html
+          .split(section)[1]!
+          .split('</table>')[0]!
+          .replace(/<[^>]*>/g, ''),
+      ).toContain(label);
+  },
+);
 it('prints actual service membership and distinct hotel stays separately from money', () => {
   const output = structuredClone(printFixture);
   const [a, b] = output.contract.passengersDetail;

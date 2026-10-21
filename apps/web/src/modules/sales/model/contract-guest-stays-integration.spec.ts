@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { emptySalesForm, salesPayload } from './sales-form';
+import {
+  emptySalesForm,
+  salesPayload,
+  type SalesFormState,
+} from './sales-form';
 import { passengerSlotKeys } from './sales-people-sheet';
 import { withRoomDrivenGuests } from './contract-guest-stays';
 import {
@@ -112,10 +116,25 @@ describe('combined contract guest memberships and dates', () => {
       ),
     ).toThrow();
   });
-  it('requires an explicit price for a different stay', () => {
-    expect(() => salesPayload({ ...state, passengerHotelPrices: {} })).toThrow(
-      'مبلغ اقامت متفاوت',
-    );
+  it('accepts a different stay using passenger service totals without obsolete hotel prices', () => {
+    const input: SalesFormState = {
+      ...state,
+      passengerTotalPricing: true,
+      passengerPrices: Object.fromEntries(
+        state.passengers.map((p) => [
+          p.customerId,
+          [{ amount: '100', currencyCode: 'USD' }],
+        ]),
+      ),
+    };
+    delete input.passengerHotelPrices;
+    const payload = salesPayload(input);
+    expect(() => validatePassengerHotelStays(payload)).not.toThrow();
+    expect(
+      payload.services.find((s) => s.kind === 'HOTEL')?.metadata
+        ?.passengerHotelPricesV1,
+    ).toBeUndefined();
+    expect(readPassengerHotelStays(payload.services)?.a?.different).toBe(true);
   });
 });
 

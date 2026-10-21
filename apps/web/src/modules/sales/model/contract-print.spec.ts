@@ -131,7 +131,7 @@ describe('Saved contract print output', () => {
     };
     const html = contractPrintHtml(output, printReferences);
     expect(html).toContain('مشتری نمونه');
-    expect(html).toContain('<td>کودک</td>');
+    expect(html).toContain('کودک (<bdi dir="ltr">6-12</bdi>)');
     expect(html).not.toContain('کودک ·');
     expect(html).not.toContain('طرف عملیاتی ساختگی');
     expect(html).not.toContain('OPERATIONAL HOTEL');
@@ -292,7 +292,7 @@ describe('Saved contract print output', () => {
       printReferences,
     );
     expect(html).not.toContain('<th>کمیسیون</th>');
-    expect(html).toContain('هیچ مبلغی بابت آن');
+    expect(html).not.toContain('هیچ مبلغی بابت آن');
     expect(html).toContain('123,456,789.25');
   });
   it('escapes all dynamic content and rejects active logo sources', () => {
@@ -376,5 +376,7 @@ it('prints aggregate passenger prices as IRR and foreign totals without inventin
   expect(html).toContain('234,567');
   expect(html).toContain('123.45');
   expect(html).not.toContain('<th>مبلغ پرواز</th>');
-  expect(html).toContain('قیمت کل خدمات هر مسافر');
+  expect(html).not.toContain(
+    'مبالغ ریالی و ارزی، قیمت کل خدمات هر مسافر هستند.',
+  );
 });
