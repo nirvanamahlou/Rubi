@@ -8798,3 +8798,5 @@ PAST-TICKET-SINGLE-EDIT-1021 validation:213 Ticket Catalog tests pass with one p
 Reserve Sales contract-print presentation and focused PDF regressions only. User authorizes repeated approval/signature footer, IRR label, compact hotel dates/flight route and two-column parties layout, tests and develop merge. Prior print scopes released; no active overlapping target writer found. No data/API/schema/dependency/runtime changes.
 
 CONTRACT-PDF-FOOTER-1021 candidate:32 local focused tests pass; synthetic local Chromium PDF pagination verified. Bounded source reservation freezes/releases at publication; full hosted checks gate authorized merge. No production service or data writes.
+
+CI compatibility follow-up reserves existing preview-date and commission-row assertions only: numeric hotel dates and the newly nested document table require scoped passenger-table selection; monetary assertions unchanged.
