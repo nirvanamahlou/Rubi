@@ -1,4 +1,5 @@
 'use client';
+import { useFlightDocumentFacts } from './use-flight-document-facts';
 import { SalesThemedSelect } from './sales-themed-select';
 
 import { useState } from 'react';
@@ -68,6 +69,7 @@ export function FlightTicketDocument({
       ? [
           {
             id: flight.serviceClientKey,
+            offerId: flight.offerId,
             originId: flight.originId,
             destinationId: flight.destinationId,
             departureAt: flight.departureAt,
@@ -81,6 +83,12 @@ export function FlightTicketDocument({
         ]
       : [];
   });
+  const facts = useFlightDocumentFacts(
+    offers.map((offer) => ({
+      ...offer,
+      businessOutput: state.businessOutput === true,
+    })),
+  );
   return (
     <FlightTicketSheet
       data={{
@@ -88,6 +96,7 @@ export function FlightTicketDocument({
         businessOutput: state.businessOutput === true,
         offers: offers.map((offer) => ({
           ...offer,
+          ...(offer.offerId ? facts[offer.offerId] : {}),
           businessOutput: state.businessOutput === true,
         })),
         transferDirections: state.serviceKinds.includes('TRANSFER')

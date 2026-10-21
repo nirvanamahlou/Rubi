@@ -426,7 +426,6 @@ export function FlightScheduleForm({
             patchSegment({
               [`${side}CountryId`]: r?.id ?? '',
               [`${side}CityId`]: '',
-              [`${side}AirportId`]: '',
               [side === 'origin' ? 'departureZone' : 'arrivalZone']:
                 'Asia/Tehran',
             }),
@@ -440,7 +439,6 @@ export function FlightScheduleForm({
           (r) =>
             patchSegment({
               [`${side}CityId`]: r?.id ?? '',
-              [`${side}AirportId`]: '',
               [side === 'origin' ? 'departureZone' : 'arrivalZone']:
                 'Asia/Tehran',
             }),
@@ -458,7 +456,6 @@ export function FlightScheduleForm({
               [side === 'origin' ? 'departureZone' : 'arrivalZone']:
                 'Asia/Tehran',
             }),
-          { cityId: segment[`${side}CityId`] },
         )}
       </section>
     );

@@ -414,3 +414,31 @@ it('uses compact soft Latin names and room types, isolated rial glyphs and left-
   expect(html).toContain('.stay-date-cell{text-align:left;direction:ltr}');
   expect(out).toEqual(before);
 });
+
+it('prints actual airport endpoints only in the flight section and preserves the contract destination', () => {
+  const before = structuredClone(printFixture);
+  const html = contractPrintHtml(printFixture, {
+    ...printReferences,
+    flightFacts: {
+      offer1: {
+        originAirport: {
+          code: 'IKA',
+          name: 'Imam Khomeini',
+          cityName: 'Tehran',
+        },
+        destinationAirport: {
+          code: 'GZP',
+          name: 'Gazipasa Airport',
+          cityName: 'Gazipasa',
+        },
+      },
+    },
+  });
+  const section =
+    html.split('FLIGHT INFORMATION')[1]?.split('HOTEL INFORMATION')[0] || '';
+  expect(section).toContain('Gazipasa (GZP)');
+  expect(section).toContain('Tehran (IKA)');
+  expect(html).toContain('مقصد:');
+  expect(printFixture).toEqual(before);
+  expect(printFixture.contract.destinationId).toBe('antalya');
+});

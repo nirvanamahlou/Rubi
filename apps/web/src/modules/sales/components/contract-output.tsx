@@ -1,4 +1,7 @@
 'use client';
+import { readContractFlightFacts } from '../model/contract-flight-facts';
+import { localizedFetch } from '@/i18n/localized-fetch';
+import { getPublicApiBaseUrl } from '@/lib/environment';
 import { useRef, useState } from 'react';
 import type {
   MasterDataResource,
@@ -35,6 +38,14 @@ export async function loadContractPrint(id: string) {
     keys.push(['hotels', c.hotelSelection.hotelId]);
   const refs: ContractPrintReferences = { names: {} };
   const warnings: string[] = [];
+  const base = getPublicApiBaseUrl();
+  if (base)
+    refs.flightFacts = await readContractFlightFacts(output, (path) =>
+      localizedFetch(base + path, {
+        credentials: 'include',
+        cache: 'no-store',
+      }),
+    );
   await Promise.all(
     keys.map(async ([resource, key]) => {
       try {

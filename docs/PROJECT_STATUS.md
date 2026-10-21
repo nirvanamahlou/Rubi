@@ -6942,6 +6942,10 @@ Optional employee extension is connected to create/edit, employee table/search a
 
 Explicit planned return day from weekly schedules is preserved in catalog source identity and exposed as optional scheduledReturnDate in managed offer projections. Sales narrows existing eligible same-load candidates to that exact Tehran day; missing/ambiguous partners stay manual and manual return changes remain unchanged. No inference from Max days, migration or production writes. Existing legacy source keys remain compatible. Focused regression and complete hosted gates required before owner-authorized develop merge.
 
+## FLIGHT-AIRPORT-ENDPOINTS-1021 — PC-A — READY_FOR_CI
+
+Airport selection is independent of commercial route geography in weekly and advanced ticket editors; active-reference validation remains. Ticket, Sales preview, contract flight rows and PDF output resolve the selected airport city and IATA through existing authorized public references. Commercial origin/destination IDs, sales matching, contract destination, hotel dates, capacity and immutable saved snapshots remain unchanged. Minimal document-details projection admits existing Sales contract readers with existing branch isolation, without catalog management access. No schema/migration/dependency/runtime or operational data change.29 API and273 Web regressions pass (one existing skip), scoped lint and API/Web type/build pass in isolated containers; hosted exact-head full checks gate user-authorized develop merge. Source reservations freeze/release at publication.
+
 ## MESSAGE-TEMPLATE-BLANKS-1021 — PC-B
 
 Removed bracketed entry guidance from all Workbench message templates; field labels remain with empty colon values. Visa follow-up and Management inline placeholders now use separate editable blank lines. Existing saved/sent messages untouched. Scoped lint/format and catalogue inspection pass; exact-head hosted type/build/tests required before explicitly authorized develop merge. No API/database/dependency/runtime changes.

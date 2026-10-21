@@ -8751,6 +8751,12 @@ HR-EXTENSION-1021 validation:35 complete isolated PostgreSQL HR tests and48 focu
 
 Reserve bounded Ticket Catalog scheduled return identity, shared optional TicketOffer preferred return date, API source-key decoder and Sales paired-return consumers/tests. Preserve explicit planned return day in immutable source identity; legacy keys remain compatible and ambiguous records stay manual. No migration/dependency or production-data edits. Producer Web schedule/create key; consumer API search/calendar and Sales date/card. Owner authorizes develop merge after all gates.
 
+## FLIGHT-AIRPORT-ENDPOINTS-1021 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-flight-airport-endpoints-1021 from origin/develop01f962d0. User explicitly permits airport city differing from commercial origin/destination, requests actual airport city/IATA in ticket and contract flight information only, and develop merge. Reserve Ticket Catalog ReferencePicker/weekly/advanced selectors, airport-reference validator and focused tests; bounded public document-facts reader and shared ticket layout, Sales contract print/reference consumers and regressions; own notes. Keep commercial route IDs, matching, hotel/contract destination, times, capacities and historical snapshots unchanged. Producer/consumer compatibility: no wire/schema change; existing optional airport IDs remain authoritative, minimal branch-authorized document-details may be read by Sales output consumers. Unknown/unavailable airport city stays unguessed with legacy route fallback. Prior source scopes released; no active overlapping source lock found. No migration/dependency, runtime or operational data changes.
+
+FLIGHT-AIRPORT-ENDPOINTS-1021 — READY_FOR_CI:29 API and273 Web tests pass (one existing skip); scoped lint, API/Web TypeScript and builds pass. Optional airport facts keep commercial snapshots unchanged; source locks freeze/release at publication. No runtime/data changes. Exact-head hosted checks required before authorized develop merge.
+
 ## MESSAGE-TEMPLATE-BLANKS-1021 — PC-B — IN_PROGRESS
 
 COMPUTER_ID=PC-B; branch codex/pc-b-message-template-blanks-1021 from origin/develop01f962d0. Reserve only Workbench message-templates.ts and own status notes. Owner requests removing bracketed field guidance so colon fields are blank and explicitly authorizes push/develop merge. No API/schema/migration/dependency, existing-message edits or runtime changes. No overlapping active template writer found.
