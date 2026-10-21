@@ -42,6 +42,7 @@ export const employeeStatuses = ['فعال', 'در حال تکمیل', 'تعلی
 export type NewEmployeeStatus = (typeof employeeStatuses)[number];
 
 export interface NewEmployeeFormValue {
+  extension?: string;
   identityValues?: string[];
   contactValues?: string[][];
   photoFile?: File | undefined;
@@ -98,6 +99,8 @@ export function validateNewEmployeeForm(
   const firstName = value.firstName.trim();
   const lastName = value.lastName.trim();
   const personnelCode = value.personnelCode.trim();
+  if (value.extension && !/^[0-9۰-۹٠-٩]{1,20}$/.test(value.extension.trim()))
+    errors.extension = 'شماره داخلی باید فقط شامل رقم باشد.';
 
   if (value.photoFile && !value.photoValidUntil)
     errors.photoFile = 'برای این نوع فایل، تاریخ اعتبار بایگانی را مشخص کنید.';
@@ -272,7 +275,7 @@ export function NewEmployeeForm({
       if (step === 0) {
         const nameErrors = Object.fromEntries(
           Object.entries(nextErrors).filter(([key]) =>
-            ['firstName', 'lastName', 'photoFile'].includes(key),
+            ['firstName', 'lastName', 'photoFile', 'extension'].includes(key),
           ),
         );
         setErrors(nameErrors);
@@ -450,6 +453,7 @@ export function NewEmployeeForm({
             />
             <FieldError errors={errors} field="lastName" />
           </label>
+
           {!personnelMode ? groupControl : null}
           {personnelMode && step === 0 ? (
             <PersonnelIdentityFields
@@ -475,6 +479,27 @@ export function NewEmployeeForm({
               error={identityError}
             />
           ) : null}
+          <label
+            className={styles.fieldLabel}
+            style={
+              personnelMode && step !== 0 ? { display: 'none' } : undefined
+            }
+            htmlFor="hr-employee-extension"
+          >
+            شماره داخلی
+            <input
+              id="hr-employee-extension"
+              name="extension"
+              className={styles.control}
+              dir="ltr"
+              inputMode="numeric"
+              maxLength={20}
+              value={value.extension ?? ''}
+              onChange={(event) => update('extension', event.target.value)}
+              {...errorProps('extension')}
+            />
+            <FieldError errors={errors} field="extension" />
+          </label>
           <label
             className={styles.fieldLabel}
             htmlFor="hr-new-employee-code"

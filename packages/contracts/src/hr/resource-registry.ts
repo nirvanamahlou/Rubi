@@ -56,6 +56,7 @@ const parentResources: Record<string, string[]> = {
   'fleet.logs': ['fleet.vehicles', 'assets.vehicles'],
 };
 const readOnly = new Set([
+  'employee.internalContact',
   'requests.approvalAssignments',
   'time.minuteLedger',
   'payroll.importedPayslips',
