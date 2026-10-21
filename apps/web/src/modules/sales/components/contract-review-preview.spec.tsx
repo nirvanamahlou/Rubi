@@ -72,8 +72,8 @@ describe('review contract document', () => {
       />,
     );
     expect(html).toContain('<iframe');
-    expect(html).toContain('23 October 2026');
-    expect(html).toContain('25 October 2026');
+    expect(html).toContain('23/10/2026');
+    expect(html).toContain('25/10/2026');
   });
   it('shows the full sandboxed document and follows edits without creating or confirming anything', () => {
     const fetch = vi.spyOn(globalThis, 'fetch');

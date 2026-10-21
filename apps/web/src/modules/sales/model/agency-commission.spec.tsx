@@ -65,9 +65,11 @@ it('prints adult and child commissions on their own rows and keeps legacy and in
   expect(rows[1]).toContain('<td>45,000</td>');
   expect(html).not.toContain('کمیسیون آژانس در این قرارداد ثبت نشده');
   out.contract.passengersDetail[1]!.ageCategory = 'INF';
-  expect(contractPrintHtml(out, printReferences).split('<tbody>')[1]).toContain(
-    '<td>—</td>',
-  );
+  expect(
+    contractPrintHtml(out, printReferences)
+      .split('PASSENGERS & PRICING')[1]!
+      .split('<tbody>')[1],
+  ).toContain('<td>—</td>');
   out.customer.kind = 'person';
   expect(contractPrintHtml(out, printReferences)).not.toContain(
     '<th>کمیسیون</th>',

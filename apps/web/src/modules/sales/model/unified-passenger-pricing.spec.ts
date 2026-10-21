@@ -70,7 +70,7 @@ it('prints actual hotel and flight amounts in any currency and omits only empty 
   expect(table).toContain('قیمت ارزی');
   expect(table).toContain('80 $');
   expect(table).toContain(
-    '5,000 <span class="currency-symbol" dir="rtl">﷼</span>',
+    '5,000 <span class="currency-symbol" dir="ltr">IRR</span>',
   );
   expect(table).toContain('30 $');
   expect(table).toContain('<th>تخفیف</th>');
@@ -95,7 +95,7 @@ it('uses English Gregorian travel dates for international prints, without changi
     international: true,
   });
   expect(html.split('FLIGHT INFORMATION')[1]).toContain('19 September 2026');
-  expect(html.split('HOTEL INFORMATION')[1]).toContain('20 September 2026');
+  expect(html.split('HOTEL INFORMATION')[1]).toContain('20/09/2026');
 });
 it('resolves foreign countries from canonical references and falls back without inventing geography', async () => {
   expect(

@@ -2586,6 +2586,207 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         else process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 = previousKey;
       }
     });
+    it('atomically edits the complete personnel form with private snapshot, rollback and permission guards', async () => {
+      const previousKey = process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
+      process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 =
+        randomBytes(32).toString('base64');
+      let id: string | undefined;
+      const identity = [
+        'Unified',
+        'Worker',
+        '0123456789',
+        '',
+        '',
+        '1990-01-02',
+        'مرد',
+        'مجرد',
+        'تهران',
+        'تهران',
+        'کارشناسی',
+        'ایرانی',
+        'نامشخص',
+        'Synthetic edit address',
+      ];
+      try {
+        const created = await service.createEmployee(
+          employeeInput('Unified Worker', {
+            identityValues: identity,
+            contactValues: [
+              ['موبایل', '09123456789'],
+              ['خانه', '02112345678'],
+            ],
+          }),
+          key(),
+          admin,
+        );
+        id = created.id;
+        const privateRows = () =>
+          client.hrRecord.findMany({
+            where: {
+              employeeId: created.id,
+              section: 'employee',
+              tab: { in: ['identity', 'phones'] },
+              deletedAt: null,
+            },
+            orderBy: { id: 'asc' },
+          });
+        const original = await privateRows();
+        const snapshot = original.map(({ id, version }) => ({ id, version }));
+        const input = {
+          version: created.version,
+          firstName: 'Edited',
+          lastName: 'Worker',
+          identityValues: ['Edited', ...identity.slice(1)],
+          contactValues: [['محل کار', '02187654321']],
+          profileRecords: snapshot,
+          extension: '0019',
+        };
+        await expect(
+          service.updateEmployee(id, input, {
+            ...admin,
+            permissions: admin.permissions.filter((p) => p !== 'hr.sensitive'),
+          }),
+        ).rejects.toThrow();
+        await expect(
+          service.updateEmployee(id, input, outsider),
+        ).rejects.toThrow();
+        await expect(
+          service.updateEmployee(id, { ...input, profileRecords: [] }, admin),
+        ).rejects.toThrow();
+        await expect(
+          service.updateEmployee(
+            id,
+            { ...input, contactValues: [['موبایل', 'invalid']] },
+            admin,
+          ),
+        ).rejects.toThrow();
+        expect(
+          (await client.hrEmployee.findUniqueOrThrow({ where: { id } }))
+            .version,
+        ).toBe(created.version);
+        expect(await privateRows()).toEqual(original);
+        const auditSpy = vi
+          .spyOn(
+            service as unknown as {
+              audit: (...args: unknown[]) => Promise<unknown>;
+            },
+            'audit',
+          )
+          .mockRejectedValueOnce(new Error('Synthetic audit failure'));
+        await expect(
+          service.updateEmployee(id, input, admin),
+        ).rejects.toThrow();
+        auditSpy.mockRestore();
+        expect(
+          (await client.hrEmployee.findUniqueOrThrow({ where: { id } })).name,
+        ).toBe('Unified Worker');
+        expect(await privateRows()).toEqual(original);
+        const response = await request(app.getHttpServer())
+          .patch(`/api/v1/hr/employees/${id}`)
+          .set('Cookie', adminCookie)
+          .send(input)
+          .expect(200);
+        const edited = response.body as HrEmployeeDto;
+        expect(edited.name).toBe('Edited Worker');
+        expect(edited.extension).toBe('0019');
+        const rows = await privateRows();
+        expect(rows).toHaveLength(2);
+        expect(rows.find((r) => r.tab === 'identity')?.id).toBe(
+          original.find((r) => r.tab === 'identity')?.id,
+        );
+        expect(
+          revealHrValues(
+            rows.find((r) => r.tab === 'identity')!.data,
+            `${branchA}:${id}:employee.identity`,
+          ),
+        ).toEqual(input.identityValues);
+        expect(
+          revealHrValues(
+            rows.find((r) => r.tab === 'phones')!.data,
+            `${branchA}:${id}:employee.phones`,
+          ),
+        ).toEqual(input.contactValues[0]);
+        expect(JSON.stringify(rows)).not.toContain(identity[13]);
+        expect(
+          JSON.stringify(
+            await client.hrAuditEvent.findMany({ where: { employeeId: id } }),
+          ),
+        ).not.toContain(identity[13]);
+        // Employee version is current, but an independently edited private record is stale.
+        await expect(
+          service.updateEmployee(
+            id,
+            { ...input, version: edited.version },
+            admin,
+          ),
+        ).rejects.toThrow();
+        const currentSnapshot = rows.map(({ id, version }) => ({
+          id,
+          version,
+        }));
+        const identityRow = rows.find((r) => r.tab === 'identity')!;
+        await client.hrRecord.update({
+          where: { id: identityRow.id },
+          data: { version: { increment: 1 } },
+        });
+        await expect(
+          service.updateEmployee(
+            id,
+            {
+              ...input,
+              version: edited.version,
+              profileRecords: currentSnapshot,
+            },
+            admin,
+          ),
+        ).rejects.toThrow();
+        expect(
+          (await client.hrEmployee.findUniqueOrThrow({ where: { id } }))
+            .version,
+        ).toBe(edited.version);
+        const fresh = (await privateRows()).map(({ id, version }) => ({
+          id,
+          version,
+        }));
+        const cleared = await service.updateEmployee(
+          id,
+          {
+            ...input,
+            version: edited.version,
+            profileRecords: fresh,
+            contactValues: [],
+          },
+          admin,
+        );
+        expect(
+          (await privateRows()).filter((r) => r.tab === 'phones'),
+        ).toHaveLength(0);
+        // Legacy public partial edits preserve private information.
+        await service.updateEmployee(
+          id,
+          { version: cleared.version, extension: '0020' },
+          admin,
+        );
+        expect(
+          (await privateRows()).find((r) => r.tab === 'identity'),
+        ).toBeDefined();
+      } finally {
+        vi.restoreAllMocks();
+        if (id) {
+          await client.hrRecord.updateMany({
+            where: { employeeId: id },
+            data: { deletedAt: new Date() },
+          });
+          await client.hrEmployee.update({
+            where: { id },
+            data: { deletedAt: new Date() },
+          });
+        }
+        if (previousKey === undefined)
+          delete process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
+        else process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 = previousKey;
+      }
+    });
     it('persists Radan identity encrypted and never returns ciphertext or private audit values', async () => {
       const previousKey = process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
       process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 =
