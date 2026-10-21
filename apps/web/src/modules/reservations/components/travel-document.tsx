@@ -183,7 +183,20 @@ export function TravelDocument({
           بررسی کنید.
         </p>
       )}
-      {enabled && supplierReady && <DocumentPreview>{sheet}</DocumentPreview>}
+      {enabled &&
+        supplierReady &&
+        (historical ||
+        dirty ||
+        publicDocument?.status === 'ready' ||
+        publicDocument?.status === 'disabled' ? (
+          <DocumentPreview>{sheet}</DocumentPreview>
+        ) : (
+          <p role="status">
+            {publicDocument?.status === 'failed'
+              ? 'آماده‌سازی بارکد انجام نشد؛ دوباره فرم را باز کنید.'
+              : 'در حال آماده‌سازی بارکد مدرک…'}
+          </p>
+        ))}
     </div>
   );
 }
