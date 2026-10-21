@@ -562,8 +562,7 @@ function RouteFields({
                   [`${end}CountryId`]: ref?.id ?? '',
                   [`${end}CityId`]: '',
                   [`${end}AirportId`]: '',
-                  [zoneKey]:
-                    input.transport === 'flight' ? 'UTC' : 'Asia/Tehran',
+                  [zoneKey]: 'Asia/Tehran',
                 });
               }}
             />
@@ -582,8 +581,7 @@ function RouteFields({
                 onSegment({
                   [`${end}CityId`]: ref?.id ?? '',
                   [`${end}AirportId`]: '',
-                  [zoneKey]:
-                    input.transport === 'flight' ? 'UTC' : 'Asia/Tehran',
+                  [zoneKey]: 'Asia/Tehran',
                 });
               }}
             />
@@ -604,7 +602,7 @@ function RouteFields({
                   if (ref) onReference?.(ref);
                   onSegment({
                     [`${end}AirportId`]: ref?.id ?? '',
-                    [zoneKey]: ref?.timezone ?? 'UTC',
+                    [zoneKey]: 'Asia/Tehran',
                   });
                 }}
               />
@@ -665,7 +663,18 @@ export function TicketForm({
   allowRoundTrip?: boolean;
   allowMultipleClasses?: boolean;
 }) {
-  const [input, setInput] = useState(initial);
+  const [input, setInput] = useState<ProductInput>(() => ({
+    ...initial,
+    segments: initial.segments.map((segment) =>
+      initial.transport === 'flight'
+        ? {
+            ...segment,
+            departureZone: 'Asia/Tehran',
+            arrivalZone: 'Asia/Tehran',
+          }
+        : { ...segment },
+    ),
+  }));
   const [definitionMode, setDefinitionMode] = useState<TicketDefinitionMode>(
     initial.segments.length > 1
       ? 'combined'
@@ -674,7 +683,7 @@ export function TicketForm({
         : 'round-trip',
   );
   const [returnInput, setReturnInput] = useState(() =>
-    createReturnTicketDraft(initial),
+    createReturnTicketDraft(input),
   );
   const [reason, setReason] = useState('');
   const [allowPastDate, setAllowPastDate] = useState(false);

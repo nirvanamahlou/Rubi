@@ -69,7 +69,9 @@ export function validFlightLoadDates(
   };
 }
 export const canSearchFlightLoad = (filter: FlightLoadFilter) =>
-  Boolean(filter.origin || filter.destination || filter.from || filter.to);
+  Boolean(
+    filter.origin && filter.destination && filter.origin !== filter.destination,
+  );
 
 export function changeFlightLoadFilter(
   current: FlightLoadFilter,
@@ -87,6 +89,7 @@ export function companyFlightLegs(
   offers: readonly TicketOfferV1[],
   filter: FlightLoadFilter,
 ) {
+  if (!canSearchFlightLoad(filter)) return [];
   return offers
     .filter((offer) => {
       const date = ticketCalendarDate(offer.departureAt);

@@ -3,8 +3,54 @@ import { describe, expect, it, vi } from 'vitest';
 import { saveTicketFormOnCtrlS } from './ticket-form';
 import { flightScheduleDefaults } from './flight-schedule-form';
 import { emptyInput } from '../model/preview';
+import { buildWeekdayTickets } from '../model/weekday-schedule';
+import { scheduleToUtc } from './ticket-form';
 
 describe('ticket form usability', () => {
+  it('keeps entered flight clocks in Tehran for both legs, regardless of foreign airport zones', () => {
+    const input = emptyInput();
+    input.segments = [
+      {
+        ...input.segments[0]!,
+        departureZone: 'Europe/Istanbul',
+        arrivalZone: 'Europe/London',
+        departureAt: '2099-10-01T21:30:00Z',
+        arrivalAt: '2099-10-02T00:30:00Z',
+      },
+    ];
+    const defaults = flightScheduleDefaults(
+      input,
+      new Date('2099-09-01T00:00:00Z'),
+    );
+    expect(defaults.outboundTime).toMatchObject({
+      departure: '01:00',
+      arrival: '04:00',
+    });
+    expect(defaults.input.segments[0]).toMatchObject({
+      departureZone: 'Asia/Tehran',
+      arrivalZone: 'Asia/Tehran',
+    });
+    expect(input.segments[0]!.departureZone).toBe('Europe/Istanbul');
+    const clock = { departure: '08:00', arrival: '11:00', arrivalDayOffset: 0 };
+    const rows = buildWeekdayTickets(
+      [{ outbound: '2099-10-02' }],
+      defaults.input,
+      undefined,
+      clock,
+      clock,
+      'synthetic',
+      scheduleToUtc,
+    );
+    expect(rows[0]!.segments[0]!.departureAt).toBe('2099-10-02T04:30:00.000Z');
+    expect(
+      new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Tehran',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+      }).format(new Date(rows[0]!.segments[0]!.departureAt)),
+    ).toBe('08:00');
+  });
   it('submits the active form with Ctrl+S', () => {
     const preventDefault = vi.fn();
     const requestSubmit = vi.fn();
