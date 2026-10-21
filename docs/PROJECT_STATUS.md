@@ -6955,3 +6955,7 @@ Airport selection is independent of commercial route geography in weekly and adv
 Removed bracketed entry guidance from all Workbench message templates; field labels remain with empty colon values. Visa follow-up and Management inline placeholders now use separate editable blank lines. Existing saved/sent messages untouched. Scoped lint/format and catalogue inspection pass; exact-head hosted type/build/tests required before explicitly authorized develop merge. No API/database/dependency/runtime changes.
 
 English coverage gate found the 33 changed template strings needed translations; existing English templates were updated offline with blank fields. All3 coverage/synchronization tests now pass; derived catalogues synchronized.
+
+## PAST-TICKET-SINGLE-EDIT-1021 — PC-A
+
+Selected published tickets expose the existing single-offer Edit action for past as well as future departure dates, alongside the separate load editor. Reuse unchanged PublishedOfferForm and canonical reviseOffer(id, version, input), refresh and error handling. New interaction regression uses a synthetic historical paused ticket to verify exactly one selected ID/version is submitted without moving dates, and read-only viewing never submits. Existing future/active/capacity conditions on capacity reservation and all server allocation/CAS/audit guards remain unchanged. No schema/migration/API/dependency/translation/runtime or operational data changes. Scoped lint/types/build and exact-head hosted checks gate owner-authorized develop merge.

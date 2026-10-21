@@ -1045,17 +1045,13 @@ function TicketCatalogWorkspace() {
       >
         <Power className="size-5" aria-hidden />
       </Button>
-      {new Date(offer.departureAt).getTime() > catalogNow ? (
-        <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setOfferForm({ offer, readOnly: false })}
-          >
-            ویرایش
-          </Button>
-        </div>
-      ) : null}
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => setOfferForm({ offer, readOnly: false })}
+      >
+        ویرایش
+      </Button>
     </div>
   );
   return (
