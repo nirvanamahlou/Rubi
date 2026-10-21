@@ -132,9 +132,11 @@ export interface HrEmployeeCreate {
   startedAtValue: string;
   status?: string;
 }
-export type HrEmployeeUpdate = Partial<
-  Omit<HrEmployeeCreate, 'identityValues' | 'contactValues'>
-> & { version: number };
+export type HrEmployeeUpdate = Partial<HrEmployeeCreate> & {
+  version: number;
+  /** Complete identity/contact snapshot required when editing private profile values. */
+  profileRecords?: { id: string; version: number }[];
+};
 export interface HrRecordCreate {
   /** Write-only device credentials; never returned by record reads. */
   privateData?: { networkPassword?: string };
