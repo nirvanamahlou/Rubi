@@ -1,3 +1,4 @@
+import { masterDataAccessValues } from './master-data-access-values';
 import type { DisplayLanguage } from '../common/i18n/language';
 import {
   FACILITY_NAME_MAX_CHARACTERS,
@@ -3772,12 +3773,16 @@ export class MasterDataService {
       `field.master-data.${resource}`,
       // Transport status has its own validator and status-management permission.
       // It is not an editable-field control in the IAM field catalogue.
-      isMasterTransportFormResource(resource)
-        ? Object.fromEntries(
-            Object.entries(values).filter(([key]) => key !== 'transportStatus'),
-          )
-        : partnerDossierAccessValues(resource, values),
-      current,
+      masterDataAccessValues(
+        isMasterTransportFormResource(resource)
+          ? Object.fromEntries(
+              Object.entries(values).filter(
+                ([key]) => key !== 'transportStatus',
+              ),
+            )
+          : partnerDossierAccessValues(resource, values),
+      ),
+      current ? masterDataAccessValues(current) : undefined,
     );
     if (denied.length)
       throw new ForbiddenException({
