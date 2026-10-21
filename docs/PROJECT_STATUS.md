@@ -6960,3 +6960,7 @@ English coverage gate found the 33 changed template strings needed translations;
 ## FLOATING-FLIGHT-CONFIRM-1021 — candidate
 
 Explicit floating-ticket confirmation normalizes clocks against selected civil flight date and next-day arrival, checks required flight fields and provides inline feedback. Editing clears prior confirmation. Keeps existing contract-only snapshot/payload flow and canonical server validation; never writes company inventory or implicitly submits contract. Focused readiness/payload/overnight regressions and complete hosted gates required before authorized develop merge.
+
+## PAST-TICKET-SINGLE-EDIT-1021 — PC-A
+
+Selected published tickets expose the existing single-offer Edit action for past as well as future departure dates, alongside the separate load editor. Reuse unchanged PublishedOfferForm and canonical reviseOffer(id, version, input), refresh and error handling. New interaction regression uses a synthetic historical paused ticket to verify exactly one selected ID/version is submitted without moving dates, and read-only viewing never submits. Existing future/active/capacity conditions on capacity reservation and all server allocation/CAS/audit guards remain unchanged. No schema/migration/API/dependency/translation/runtime or operational data changes. Scoped lint/types/build and exact-head hosted checks gate owner-authorized develop merge.

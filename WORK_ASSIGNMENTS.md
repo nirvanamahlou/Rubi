@@ -8774,3 +8774,9 @@ Translation follow-up reserves derived API and standalone catalogue outputs only
 ## FLOATING-FLIGHT-CONFIRM-1021 — PC-A — IN_PROGRESS
 
 Reserve ContractFlightEditor explicit local confirmation and focused regressions, floating-flight-times helper and Sales draft-only confirmation feedback. Confirm rebases clocks to selected departure/return day, handles overnight arrival, validates required fields and shows inline result; no inventory write or implicit contract submission. Existing canonical Sales payload/server validation preserved. No migration/dependency/permissions/API changes; owner authorizes develop merge after full gates.
+
+## PAST-TICKET-SINGLE-EDIT-1021 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; codex/pc-a-past-ticket-single-edit-1021 from origin/develop30358baa. User requests single-offer editing for past tickets alongside existing load editing, explicitly authorizes develop merge. Reserve TicketWorkspace single edit action visibility and focused existing published-form interaction test only, plus own notes. Remove only departure-date visibility guard; retain canonical reviseOffer id/version, branch authorization, capacity/allocation checks, audit and active/future hold eligibility. Prior workspace source reservations released on publication; no active overlapping writer found. No API/schema/migration/dependency/translation/runtime or operational-data mutation.
+
+PAST-TICKET-SINGLE-EDIT-1021 validation:213 Ticket Catalog tests pass with one pre-existing skip; three new tests cover one historical ID/version submission, unchanged historical instants, read-only no-write and date-independent action. No backend guard weakened. Scoped source lock RELEASED with candidate; lint/types/build and exact-head hosted checks gate owner-authorized develop merge. No operational runtime/data changes.
