@@ -8792,3 +8792,10 @@ Validation:23 focused tests in4 files pass in an isolated network-disabled dispo
 COMPUTER_ID=PC-A; codex/pc-a-past-ticket-single-edit-1021 from origin/develop30358baa. User requests single-offer editing for past tickets alongside existing load editing, explicitly authorizes develop merge. Reserve TicketWorkspace single edit action visibility and focused existing published-form interaction test only, plus own notes. Remove only departure-date visibility guard; retain canonical reviseOffer id/version, branch authorization, capacity/allocation checks, audit and active/future hold eligibility. Prior workspace source reservations released on publication; no active overlapping writer found. No API/schema/migration/dependency/translation/runtime or operational-data mutation.
 
 PAST-TICKET-SINGLE-EDIT-1021 validation:213 Ticket Catalog tests pass with one pre-existing skip; three new tests cover one historical ID/version submission, unchanged historical instants, read-only no-write and date-independent action. No backend guard weakened. Scoped source lock RELEASED with candidate; lint/types/build and exact-head hosted checks gate owner-authorized develop merge. No operational runtime/data changes.
+
+
+## CONTRACT-PDF-FOOTER-1021 — PC-A — IN_PROGRESS
+
+Reserve Sales contract-print presentation and focused PDF regressions only. User authorizes repeated approval/signature footer, IRR label, compact hotel dates/flight route and two-column parties layout, tests and develop merge. Prior print scopes released; no active overlapping target writer found. No data/API/schema/dependency/runtime changes.
+
+CONTRACT-PDF-FOOTER-1021 candidate:32 local focused tests pass; synthetic local Chromium PDF pagination verified. Bounded source reservation freezes/releases at publication; full hosted checks gate authorized merge. No production service or data writes.

@@ -3974,5 +3974,7 @@
   "افزودن مقصد فروش": "Add sales destination",
   "ثبت بلیط شناور": "Confirm floating ticket",
   "بلیط شناور ثبت شد.": "Floating ticket confirmed.",
-  "اطلاعات بلیط شناور کامل نیست.": "Complete the floating ticket details."
+  "اطلاعات بلیط شناور کامل نیست.": "Complete the floating ticket details.",
+  "ورود هتل": "Hotel check-in",
+  "خروج هتل": "Hotel check-out"
 }

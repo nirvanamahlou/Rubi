@@ -6972,3 +6972,8 @@ Validation:23 focused tests in4 files pass in an isolated network-disabled dispo
 ## PAST-TICKET-SINGLE-EDIT-1021 — PC-A
 
 Selected published tickets expose the existing single-offer Edit action for past as well as future departure dates, alongside the separate load editor. Reuse unchanged PublishedOfferForm and canonical reviseOffer(id, version, input), refresh and error handling. New interaction regression uses a synthetic historical paused ticket to verify exactly one selected ID/version is submitted without moving dates, and read-only viewing never submits. Existing future/active/capacity conditions on capacity reservation and all server allocation/CAS/audit guards remain unchanged. No schema/migration/API/dependency/translation/runtime or operational data changes. Scoped lint/types/build and exact-head hosted checks gate owner-authorized develop merge.
+
+
+## CONTRACT-PDF-FOOTER-1021 — PC-A
+
+Contract PDF approval/signatures, notices and issuer contact now form a repeating table footer, with native pagination reserving their height on every page. Compact numeric hotel dates, smaller wrapped flight routes, paired party fields and IRR/IRI print label IRR; canonical data and other UI currency formatting unchanged.32 targeted regressions pass locally using source contracts alias; synthetic Chromium one/four-page output visually checked with no overlap. No API/schema/dependency/runtime changes; exact-head hosted gates required before owner-authorized develop merge.
