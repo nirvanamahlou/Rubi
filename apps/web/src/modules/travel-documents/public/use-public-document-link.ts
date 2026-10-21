@@ -7,7 +7,7 @@ export function usePublicDocumentLink(path: string | undefined, revision = '') {
     revision: string;
     url: string;
     html: string;
-    documents?: Array<{ passengerId: string; url: string }>;
+    documents?: Array<{ passengerId: string; url: string }> | undefined;
   }>();
   useEffect(() => {
     if (!path) return;
@@ -26,7 +26,7 @@ export function usePublicDocumentLink(path: string | undefined, revision = '') {
         const data = result as {
           url?: unknown;
           html?: unknown;
-          documents?: Array<{ passengerId: string; url: string }>;
+          documents?: Array<{ passengerId: string; url: string }> | undefined;
         };
         if (typeof data.url === 'string' && typeof data.html === 'string')
           setLoaded({
@@ -40,7 +40,7 @@ export function usePublicDocumentLink(path: string | undefined, revision = '') {
       .catch(() => undefined);
     return () => controller.abort();
   }, [path, revision]);
-  return loaded?.path === path && loaded.revision === revision
+  return loaded && loaded.path === path && loaded.revision === revision
     ? loaded
     : undefined;
 }

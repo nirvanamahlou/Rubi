@@ -18,7 +18,7 @@ export interface TicketLayoutFlight {
     { code: string; name: string; cityName?: string } | undefined;
 }
 export interface TicketLayoutData {
-  publicDocumentUrl?: string;
+  publicDocumentUrl?: string | undefined;
   passengerName: string;
   contractNumber?: string;
   ageCategory?: 'ADT' | 'CHD' | 'INF';

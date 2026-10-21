@@ -144,7 +144,7 @@ export function ReservationFormSheet({
   logo: string;
   references?: ReservationFormReferences;
   voucher?: boolean;
-  publicDocumentUrl?: string;
+  publicDocumentUrl?: string | undefined;
 }) {
   const data = voucher
     ? voucherFormData(intake, references)
