@@ -115,12 +115,14 @@ export function BrandsDashboard({
   onSection,
   onManage,
   onCreate,
+  allowedSections,
 }: {
   data: IntegrationRegistryV1;
   onOpen: (id: string) => void;
   onSection: (section: IntegrationSection) => void;
   onManage: () => void;
   onCreate?: () => void;
+  allowedSections?: readonly IntegrationSection[];
 }) {
   const [period, setPeriod] = useState<PeriodKey>('month');
   const [range, setRange] = useState(() => periodRange('month'));
@@ -273,7 +275,12 @@ export function BrandsDashboard({
               : '—'}{' '}
             سامانه در فهرست
           </span>
-          <button onClick={() => onSection('connections')}>
+          <button
+            disabled={
+              allowedSections && !allowedSections.includes('connections')
+            }
+            onClick={() => onSection('connections')}
+          >
             بررسی اتصال‌ها
             <ChevronLeft className="size-3" />
           </button>
@@ -320,6 +327,9 @@ export function BrandsDashboard({
             action={
               <button
                 className={styles.textButton}
+                disabled={
+                  allowedSections && !allowedSections.includes('connections')
+                }
                 onClick={() => onSection('connections')}
               >
                 بررسی آماده‌سازی
@@ -340,6 +350,9 @@ export function BrandsDashboard({
               variant="ghost"
               size="sm"
               aria-label="مشاهده اتصال‌های منتظر آماده‌سازی"
+              disabled={
+                allowedSections && !allowedSections.includes('connections')
+              }
               onClick={() => onSection('connections')}
             >
               {data.counts?.awaitingConnection.toLocaleString('fa-IR') ?? '—'}
@@ -411,6 +424,7 @@ export function BrandsDashboard({
           ) : null}
           <button
             className={styles.textButton}
+            disabled={allowedSections && !allowedSections.includes('mapping')}
             onClick={() => onSection('mapping')}
           >
             مشاهده نگاشت و گردش داده
@@ -439,13 +453,18 @@ export function BrandsDashboard({
               </div>
             </div>
           ) : (
-            <p className={styles.caption}>تغییری در تنظیمات ثبت نشده است.</p>
+            <p className={styles.caption}>
+              {allowedSections && !allowedSections.includes('logs')
+                ? 'مجوز مشاهده سوابق را ندارید.'
+                : 'تغییری در تنظیمات ثبت نشده است.'}
+            </p>
           )}
           <div className={styles.operationEmpty}>
             <p>فعالیت بیرونی دریافت نشده است.</p>
           </div>
           <button
             className={styles.textButton}
+            disabled={allowedSections && !allowedSections.includes('logs')}
             onClick={() => onSection('logs')}
           >
             مشاهده سوابق
@@ -594,6 +613,9 @@ export function BrandsDashboard({
                   بستن
                 </Button>
                 <Button
+                  disabled={
+                    allowedSections && !allowedSections.includes('connections')
+                  }
                   onClick={() => {
                     setMetric(null);
                     onSection('connections');

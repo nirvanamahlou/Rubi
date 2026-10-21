@@ -71,6 +71,62 @@ const command = (
 });
 
 describe('Integration configuration boundary', () => {
+  it('redacts setup and audit independently for readers and preserves both in storage', async () => {
+    const { service } = fixture();
+    const first = await service.initialize(actor, branchId);
+    await service.write(
+      actor,
+      branchId,
+      command(first, {
+        systems: first.systems.map((system, index) =>
+          index
+            ? system
+            : {
+                ...system,
+                setup: {
+                  websiteUrl: 'https://example.com',
+                  environment: 'SANDBOX',
+                  protocol: 'REST',
+                  authentication: 'OAUTH2',
+                },
+              },
+        ),
+      }),
+    );
+    const reader = (section: string): AuthenticatedActor => ({
+      ...actor,
+      permissions: manualSnapshotCodes({
+        permissionCodes: [],
+        screenIds: ['integrations.home', `integrations.section.${section}`],
+        allowedControlIds: [],
+      }) as AuthenticatedActor['permissions'],
+    });
+    const brands = await service.read(reader('brands'), branchId, 'brands');
+    expect(brands.systems[0]?.setup).toBeUndefined();
+    expect(brands.lastChange).toBeNull();
+    expect(brands.canManage).toBe(false);
+    const connection = await service.read(
+      reader('connections'),
+      branchId,
+      'connections',
+    );
+    expect(connection.systems[0]?.setup?.websiteUrl).toBe(
+      'https://example.com',
+    );
+    expect(connection.lastChange).toBeNull();
+    const logs = await service.read(reader('logs'), branchId, 'logs');
+    expect(logs.lastChange).not.toBeNull();
+    expect(logs.systems[0]?.setup).toBeUndefined();
+    expect(
+      (await service.read(actor, branchId)).systems[0]?.setup,
+    ).toBeDefined();
+    await expect(
+      service.read(reader('brands'), randomUUID(), 'brands'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.read(reader('brands'), branchId, 'connections'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
   it.each([
     'http://example.com',
     'https://127.0.0.1',
