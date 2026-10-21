@@ -584,7 +584,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         [
           '2026-10-19T20:30:00.001Z',
           'NO_ANSWER',
-          'MANUAL',
+          'TELEPHONY',
           requestIds[0],
           kpiContact,
         ],

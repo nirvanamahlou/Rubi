@@ -21,6 +21,14 @@ export function applyTelephonyEvent(
         legs: {},
         recordings: [],
       };
+  // Preserve the earliest known business event even when the recording/end
+  // arrived first. Receipt time is separate and terminal state stays monotone.
+  if (
+    event.kind !== 'RECORDING_READY' &&
+    (next.first.kind === 'RECORDING_READY' ||
+      event.occurredAt < next.first.occurredAt)
+  )
+    next.first = event;
   const legId = `leg:${event.legId ?? event.externalCallId}`;
   const leg = next.legs[legId];
   const older =

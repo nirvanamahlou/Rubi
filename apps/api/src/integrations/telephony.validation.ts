@@ -7,6 +7,7 @@ export function validateTelephonyEvent(
   input: unknown,
   policy: { maxAgeSeconds: number; maxFutureSeconds: number },
   now = new Date(),
+  enforceClock = true,
 ): TelephonyEventV1 {
   if (
     !input ||
@@ -126,8 +127,9 @@ export function validateTelephonyEvent(
   if (
     !/(?:Z|[+-]\d{2}:\d{2})$/.test(String(e.occurredAt)) ||
     !Number.isFinite(at) ||
-    at < now.getTime() - policy.maxAgeSeconds * 1000 ||
-    at > now.getTime() + policy.maxFutureSeconds * 1000
+    (enforceClock &&
+      (at < now.getTime() - policy.maxAgeSeconds * 1000 ||
+        at > now.getTime() + policy.maxFutureSeconds * 1000))
   )
     return fail();
   return {

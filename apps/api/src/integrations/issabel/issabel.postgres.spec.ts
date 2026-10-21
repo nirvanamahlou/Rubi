@@ -193,6 +193,37 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           })
         ).encryptedPayload,
       ).not.toContain('+12025550123');
+      const earlier = {
+        ...fact('RINGING', 'late-ring'),
+        occurredAt: new Date(Date.now() - 3600000).toISOString(),
+      };
+      const receipt = await events.receive(earlier, 'ISSABEL');
+      await events.process(receipt.id);
+      const corrected = await db.callCenterTelephonySession.findUniqueOrThrow({
+        where: { id: session.id },
+        include: { call: { include: { contact: true } } },
+      });
+      expect(corrected.state).toBe('ENDED');
+      expect(corrected.call.occurredAt.toISOString()).toBe(earlier.occurredAt);
+      expect(corrected.call.contact.latestOccurredAt.toISOString()).toBe(
+        earlier.occurredAt,
+      );
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(Date.now() + 2 * 86400000));
+      try {
+        expect((await events.receive(ringing, 'ISSABEL')).duplicate).toBe(true);
+        await expect(
+          events.receive(
+            { ...ringing, externalEventId: randomUUID() },
+            'ISSABEL',
+          ),
+        ).rejects.toThrow();
+        await expect(
+          events.receive({ ...ringing, queue: 'different' }, 'ISSABEL'),
+        ).rejects.toThrow('collision');
+      } finally {
+        vi.useRealTimers();
+      }
     });
     it('enforces branch/permissions, stable commands, live authorization, extension ownership, rate budget and no duplicate dispatch', async () => {
       const input = { id: randomUUID(), connectionId, number: '09120000001' };
@@ -297,7 +328,19 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           offset / 32768,
           audio.subarray(offset, offset + 32768).toString('base64'),
         );
-      await media.finish(id);
+      const receive = vi
+        .spyOn(events, 'receive')
+        .mockRejectedValueOnce(Error('temporary outage'));
+      await expect(media.finish(id)).rejects.toThrow('temporary outage');
+      expect(
+        (
+          await db.integrationTelephonyRecording.findUniqueOrThrow({
+            where: { id },
+          })
+        ).state,
+      ).toBe('COMPLETE');
+      receive.mockRestore();
+      await media.maintain();
       await media.finish(id);
       const chunks = await db.integrationTelephonyRecordingChunk.findMany({
         where: { recordingId: id },
@@ -330,9 +373,74 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         },
       });
       expect((await events.process(publication.id)).processed).toBe(true);
+      const listener: AuthenticatedActor = {
+        ...actor,
+        permissions: [
+          ...actor.permissions,
+          'customer_affairs.call_center.recordings.read',
+        ],
+      };
+      await expect(media.read(actor, id)).rejects.toMatchObject({
+        status: 403,
+      });
+      await expect(
+        media.read({ ...listener, branchIds: [] }, id),
+      ).rejects.toMatchObject({ status: 404 });
+      await expect(
+        media.read({ ...listener, userId: randomUUID() }, id),
+      ).rejects.toMatchObject({ status: 404 });
+      const partial = await media.read(listener, id, 'bytes=32760-32780');
+      expect(partial.partial).toBe(true);
+      expect(partial.audio.equals(audio.subarray(32760, 32781))).toBe(true);
+      expect((await media.read(listener, id)).audio.equals(audio)).toBe(true);
+      await expect(
+        media.read(listener, id, 'bytes=999999-'),
+      ).rejects.toMatchObject({ status: 416 });
+      expect(
+        await db.integrationTelephonyAudit.count({
+          where: { entityId: id, action: 'RECORDING_PUBLISHED' },
+        }),
+      ).toBe(1);
+      expect(
+        await db.integrationTelephonyAudit.count({
+          where: { entityId: id, action: 'RECORDING_READ' },
+        }),
+      ).toBe(2);
+      const health = await events.health(actor);
+      expect(health.unpublishedRecordings).toBe(0);
+      expect(health.unknownCommands).toBe(1);
+      expect(health.alerts).toContain('COMMAND_OUTCOME_UNKNOWN');
+      expect(
+        (await events.health({ ...actor, branchIds: [] })).unknownCommands,
+      ).toBe(0);
+      await expect(
+        events.health({ ...actor, permissions: [] }),
+      ).rejects.toMatchObject({ status: 403 });
+      await db.integrationTelephonyAudit.createMany({
+        data: Array.from({ length: 57 }, () => ({
+          connectionId,
+          entityId: id,
+          actorUserId: userId,
+          action: 'RECORDING_READ',
+          metadata: {},
+        })),
+      });
+      const competingReads = await Promise.allSettled([
+        media.read(listener, id),
+        media.read(listener, id),
+      ]);
+      expect(
+        competingReads.filter((r) => r.status === 'fulfilled'),
+      ).toHaveLength(1);
+      expect(competingReads.find((r) => r.status === 'rejected')).toMatchObject(
+        { reason: { status: 429 } },
+      );
       await db.integrationTelephonyRecording.update({
         where: { id },
         data: { expiresAt: new Date(0) },
+      });
+      await expect(media.read(listener, id)).rejects.toMatchObject({
+        status: 404,
       });
       await media.prune();
       expect(
@@ -344,6 +452,26 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         await db.integrationTelephonyRecording.count({ where: { id } }),
       ).toBe(0);
       await expect(media.start(input)).rejects.toThrow('retention');
+    });
+    it('accepts only the configured relay connection and uses the same durable processing path', async () => {
+      const relay = {
+        ...fact('RINGING', 'relay'),
+        externalEventId: randomUUID(),
+        rootCallId: 'relay-' + root,
+      };
+      await expect(events.receive(relay, 'RELAY')).rejects.toMatchObject({
+        status: 403,
+      });
+      config.set('TELEPHONY_RELAY_ENABLED', 'true');
+      config.set('TELEPHONY_RELAY_CONNECTION_ID', connectionId);
+      const receipt = await events.receive(relay, 'RELAY');
+      expect((await events.receive(relay, 'RELAY')).duplicate).toBe(true);
+      expect((await events.process(receipt.id)).processed).toBe(true);
+      expect((await events.process(receipt.id)).processed).toBe(false);
+      config.set('TELEPHONY_RELAY_ENABLED', 'false');
+      await expect(events.receive(relay, 'RELAY')).rejects.toMatchObject({
+        status: 403,
+      });
     });
   },
 );

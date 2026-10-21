@@ -3,6 +3,7 @@ export const CUSTOMER_AFFAIRS_CONTRACT_VERSION = 'customer-affairs.v1' as const;
 export const CUSTOMER_AFFAIRS_PERMISSIONS = {
   callCenterWorkflowManage: 'customer_affairs.call_center.workflow.manage',
   callCenterRead: 'customer_affairs.call_center.read',
+  callCenterRecordingRead: 'customer_affairs.call_center.recordings.read',
   callCenterCallCreate: 'customer_affairs.call_center.calls.create',
   callCenterNoteCreate: 'customer_affairs.call_center.notes.create',
   leadRead: 'customer_affairs.lead.read',

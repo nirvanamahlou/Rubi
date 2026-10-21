@@ -2,6 +2,11 @@ import { PROCUREMENT_PERMISSION_SEED_DATA } from './procurement-permission-seed-
 
 export const PERMISSION_SEED_DATA = [
   [
+    'customer_affairs.call_center.recordings.read',
+    'customer_affairs',
+    'شنیدن ضبط تماس‌های مجاز کال سنتر',
+  ],
+  [
     'customer_affairs.call_center.workflow.manage',
     'customer_affairs',
     'مدیریت درخواست و پیگیری کال سنتر',

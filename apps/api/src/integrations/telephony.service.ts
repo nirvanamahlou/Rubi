@@ -6,6 +6,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  HttpException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
@@ -212,14 +213,15 @@ export class TelephonyIntegrationService {
     });
   }
   /** Adapter-facing in-process port. There is deliberately no public provider webhook. */
-  async receive(input: TelephonyEventV1, provider?: 'ISSABEL') {
+  async receive(input: TelephonyEventV1, provider?: 'ISSABEL' | 'RELAY') {
     const c = await this.db.client.integrationTelephonyConnection.findUnique({
       where: { id: input.connectionId },
     });
+    const prefix = provider === 'RELAY' ? 'TELEPHONY_RELAY' : 'ISSABEL';
     const realProvider =
-      provider === 'ISSABEL' &&
-      this.config.get<string>('ISSABEL_ENABLED') === 'true' &&
-      this.config.get<string>('ISSABEL_CONNECTION_ID') === c?.id &&
+      !!provider &&
+      this.config.get<string>(`${prefix}_ENABLED`) === 'true' &&
+      this.config.get<string>(`${prefix}_CONNECTION_ID`) === c?.id &&
       !c?.synthetic;
     if (
       !c ||
@@ -229,7 +231,9 @@ export class TelephonyIntegrationService {
       throw new ForbiddenException(
         'No verified provider adapter is configured.',
       );
-    const event = validateTelephonyEvent(input, c);
+    // Validate structure before hashing; already accepted receipts remain retryable
+    // after the ingress age window. New identities still obey the clock policy.
+    const event = validateTelephonyEvent(input, c, new Date(), false);
     const crypto = this.domain.crypto,
       externalFingerprint = crypto.fingerprint(
         `telephony:event:${c.id}:${event.externalEventId}`,
@@ -250,15 +254,27 @@ export class TelephonyIntegrationService {
           throw new ConflictException('Event identity collision.');
         return { id: prior.id, duplicate: true };
       }
+      validateTelephonyEvent(event, c);
       const count = await tx.integrationTelephonyInbox.count({
         where: {
           connectionId: c.id,
           receivedAt: { gte: new Date(Date.now() - 60000) },
         },
       });
-      if (count >= 120)
-        throw new BadRequestException(
+      const configuredLimit = Number(
+        this.config.get<string>('TELEPHONY_EVENTS_PER_MINUTE') ?? 120,
+      );
+      const limit =
+        !c.synthetic &&
+        Number.isInteger(configuredLimit) &&
+        configuredLimit >= 120 &&
+        configuredLimit <= 6000
+          ? configuredLimit
+          : 120;
+      if (count >= limit)
+        throw new HttpException(
           'Telephony connection rate limit exceeded.',
+          429,
         );
       const mapping = event.extension
         ? await tx.integrationTelephonyMapping.findUnique({
@@ -439,6 +455,7 @@ export class TelephonyIntegrationService {
   async operations(actor: AuthenticatedActor) {
     this.admin(actor);
     return {
+      health: await this.health(actor),
       unassigned: await this.domain.review(actor.branchIds),
       dead: await this.db.client.integrationTelephonyInbox.findMany({
         where: {
@@ -461,9 +478,84 @@ export class TelephonyIntegrationService {
       }),
     };
   }
+  /** Authorized operational counters; no payload decrypts or private fields. */
+  async health(actor: AuthenticatedActor) {
+    this.admin(actor);
+    this.domain.authorize(actor);
+    const scoped = {
+      connection: { branchId: { in: [...actor.branchIds] }, synthetic: false },
+    };
+    const now = new Date();
+    const [groups, oldest, commands, uploading, expired, unpublished] =
+      await this.db.client.$transaction(
+        [
+          this.db.client.integrationTelephonyInbox.groupBy({
+            by: ['status'],
+            where: scoped,
+            _count: true,
+          }),
+          this.db.client.integrationTelephonyInbox.findFirst({
+            where: { ...scoped, status: { in: ['PENDING', 'RETRY'] } },
+            orderBy: [{ receivedAt: 'asc' }, { id: 'asc' }],
+            select: { receivedAt: true },
+          }),
+          this.db.client.integrationTelephonyCommand.count({
+            where: { ...scoped, state: 'UNKNOWN' },
+          }),
+          this.db.client.integrationTelephonyRecording.count({
+            where: { ...scoped, state: 'UPLOADING' },
+          }),
+          this.db.client.integrationTelephonyRecording.count({
+            where: { ...scoped, expiresAt: { lte: now } },
+          }),
+          this.db.client.$queryRaw<Array<{ count: bigint }>>`
+        SELECT count(*) AS count FROM integration_telephony_recordings r
+        JOIN integration_telephony_connections c ON c.id=r."connectionId"
+        WHERE c."branchId"=ANY(${[...actor.branchIds]}::uuid[]) AND NOT c.synthetic
+          AND r.state='COMPLETE' AND r."expiresAt">${now} AND NOT EXISTS (
+            SELECT 1 FROM integration_telephony_audit a WHERE a."connectionId"=r."connectionId"
+              AND a."entityId"=r.id AND a.action='RECORDING_PUBLISHED')`,
+        ],
+        { isolationLevel: 'RepeatableRead' },
+      );
+    const count = (status: string) =>
+      groups.find((group) => group.status === status)?._count ?? 0;
+    const oldestPendingSeconds = oldest
+      ? Math.max(
+          0,
+          Math.floor((now.getTime() - oldest.receivedAt.getTime()) / 1000),
+        )
+      : null;
+    const alerts: string[] = [];
+    if (count('DEAD')) alerts.push('DEAD_LETTER');
+    if (oldestPendingSeconds !== null && oldestPendingSeconds >= 60)
+      alerts.push('PROCESSING_DELAY');
+    if (commands) alerts.push('COMMAND_OUTCOME_UNKNOWN');
+    if (expired) alerts.push('RETENTION_OVERDUE');
+    if (Number(unpublished[0]?.count ?? 0))
+      alerts.push('RECORDING_PUBLICATION_PENDING');
+    return {
+      asOf: now.toISOString(),
+      scope: 'authorized branches; excludes synthetic',
+      state: alerts.length ? 'ATTENTION_REQUIRED' : 'NO_INTERNAL_ALERT',
+      pending: count('PENDING'),
+      retrying: count('RETRY'),
+      dead: count('DEAD'),
+      processed: count('DONE'),
+      oldestPendingSeconds,
+      unknownCommands: commands,
+      uploadingRecordings: uploading,
+      expiredRecordings: expired,
+      unpublishedRecordings: Number(unpublished[0]?.count ?? 0),
+      alerts,
+      providerCoverage: 'NOT_VERIFIED',
+      liveAcceptance: false,
+    };
+  }
   async replay(actor: AuthenticatedActor, id: string) {
     this.admin(actor);
     return this.db.client.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM integration_telephony_inbox WHERE id=${id}::uuid FOR UPDATE`;
       const row = await tx.integrationTelephonyInbox.findFirst({
         where: {
           id,

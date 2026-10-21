@@ -158,6 +158,28 @@ export class CallCenterTelephonyService {
         },
       });
     } else {
+      if (
+        previous &&
+        technical.first.occurredAt !== previous.first.occurredAt
+      ) {
+        const call = await tx.callCenterCall.update({
+          where: { id: row.callId },
+          data: { occurredAt: new Date(technical.first.occurredAt) },
+          select: { contactId: true },
+        });
+        // Correct the contact ordering after a delayed earlier ring, without
+        // rewriting operator-entered business data or inventing a call outcome.
+        await tx.$queryRaw`SELECT id FROM customer_affairs_call_contacts WHERE id=${call.contactId}::uuid FOR UPDATE`;
+        const latest = await tx.callCenterCall.aggregate({
+          where: { contactId: call.contactId },
+          _max: { occurredAt: true },
+        });
+        if (latest._max.occurredAt)
+          await tx.callCenterContact.update({
+            where: { id: call.contactId },
+            data: { latestOccurredAt: latest._max.occurredAt },
+          });
+      }
       row = await tx.callCenterTelephonySession.update({
         where: { id: row.id },
         data: {
@@ -315,6 +337,35 @@ export class CallCenterTelephonyService {
       take: 3,
     });
     return { data: calls.map((c) => this.calls.presentSummary(c)) };
+  }
+  /** Public media authorization: Integrations never queries Customer Affairs tables. */
+  async authorizeRecording(
+    actor: AuthenticatedActor,
+    connectionId: string,
+    rootFingerprint: string,
+    reference: string,
+    tx: Prisma.TransactionClient = this.db.client,
+  ) {
+    this.authorize(actor);
+    if (
+      !actor.permissions.includes(
+        'customer_affairs.call_center.recordings.read',
+      )
+    )
+      throw new ForbiddenException();
+    const session = await tx.callCenterTelephonySession.findFirst({
+      where: { ...this.scope(actor), connectionId, rootFingerprint },
+      select: { id: true, encryptedTechnical: true, keyVersion: true },
+    });
+    if (!session) throw new NotFoundException();
+    const technical = this.crypto.decrypt<TelephonyTechnical>(
+      session.encryptedTechnical,
+      session.keyVersion,
+      `telephony:${session.id}`,
+    );
+    if (!technical.recordings.includes(reference))
+      throw new NotFoundException();
+    return { sessionId: session.id };
   }
   private scope(
     actor: AuthenticatedActor,
