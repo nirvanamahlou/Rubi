@@ -1,3 +1,5 @@
+import { CallCenterReadController } from './call-center-read.controller';
+import { CallCenterReadService } from './call-center-read.service';
 import 'reflect-metadata';
 import {
   ForbiddenException,
@@ -18,6 +20,7 @@ import { CallCenterService } from './call-center.service';
 describe('Call Center authenticated HTTP boundary', () => {
   let app: INestApplication;
   const service = {
+    search: vi.fn().mockResolvedValue({ data: [], meta: { total: 0 } }),
     list: vi.fn().mockResolvedValue({ data: [], meta: { total: 0 } }),
     create: vi.fn().mockResolvedValue({ data: { id: 'saved' } }),
     note: vi.fn().mockResolvedValue({ data: { id: 'note' } }),
@@ -37,9 +40,10 @@ describe('Call Center authenticated HTTP boundary', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     const module = await Test.createTestingModule({
-      controllers: [CallCenterController],
+      controllers: [CallCenterController, CallCenterReadController],
       providers: [
         PermissionGuard,
+        { provide: CallCenterReadService, useValue: service },
         { provide: CallCenterService, useValue: service },
         {
           provide: IamService,
@@ -107,7 +111,7 @@ describe('Call Center authenticated HTTP boundary', () => {
       { id: 'bad-id' },
       { status: 'INVALID' },
       { recordings: [{ url: 'https://untrusted.example/a' }] },
-      { name: '' },
+      { outcome: 'UNKNOWN' },
       { note: 'x'.repeat(2001) },
     ]) {
       await request(app.getHttpServer())
@@ -147,5 +151,37 @@ describe('Call Center authenticated HTTP boundary', () => {
       .send({ id: input.id, text: 'note', actorUserId: 'forged' })
       .expect(400);
     expect(service.note).not.toHaveBeenCalled();
+  });
+  it('validates search limits and keeps search responses private', async () => {
+    await request(app.getHttpServer())
+      .post('/customer-affairs/call-center/search')
+      .send({})
+      .expect(401);
+    for (const patch of [
+      { pageSize: 51 },
+      { page: 0 },
+      { query: 'x'.repeat(121) },
+      { direction: 'INVALID' },
+      { teamId: 'bad-id' },
+      { unexpected: 'private' },
+    ])
+      await request(app.getHttpServer())
+        .post('/customer-affairs/call-center/search')
+        .set('x-test-actor', 'reader')
+        .send(patch)
+        .expect(400);
+    expect(service.search).not.toHaveBeenCalled();
+    await request(app.getHttpServer())
+      .post('/customer-affairs/call-center/search')
+      .set('x-test-actor', 'reader')
+      .set('x-branch-id', 'branch')
+      .send({ query: 'کیش', page: 1 })
+      .expect('Cache-Control', 'private, no-store')
+      .expect(201);
+    expect(service.search).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'synthetic' }),
+      'branch',
+      expect.objectContaining({ query: 'کیش', page: 1, pageSize: 20 }),
+    );
   });
 });

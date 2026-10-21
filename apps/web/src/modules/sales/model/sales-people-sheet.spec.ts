@@ -1197,3 +1197,75 @@ it('hydrates existing passenger profiles before saving edits from a restored row
   expect(result.draft.rows.p0?.values.lastName).toBe('Changed');
   expect(api.create).not.toHaveBeenCalled();
 });
+
+it('retains transfer leg exclusions when temporary passenger slots become saved customer IDs', async () => {
+  const travel: SalesFormState = {
+    ...state,
+    serviceKinds: ['OTHER', 'TRANSFER'],
+    tripType: 'ROUND_TRIP',
+    passengerTransferDirections: {
+      p0: ['OUTBOUND'],
+      p1: ['RETURN'],
+      p2: [],
+      p3: ['OUTBOUND', 'RETURN'],
+    },
+  };
+  const result = await saveSalesPeopleDraft(travel, filled(), vi.fn(), {
+    create: vi.fn(async (input: CustomerMutationRequest) => ({
+      data: detail('person-' + input.nationalId, {
+        displayName: input.displayName,
+      }),
+    })),
+    addContact: vi.fn(),
+  });
+  expect(Object.keys(result.patch.passengerTransferDirections)).toEqual(
+    result.patch.passengers.map((p) => p.customerId),
+  );
+  expect(Object.values(result.patch.passengerTransferDirections)).toEqual([
+    ['OUTBOUND'],
+    ['RETURN'],
+    [],
+    ['OUTBOUND', 'RETURN'],
+  ]);
+  const payload = salesPayload({ ...travel, ...result.patch });
+  expect(
+    payload.passengers.map((p) =>
+      p.serviceClientKeys.filter((k) => k.startsWith('transfer-')),
+    ),
+  ).toEqual([
+    ['transfer-outbound'],
+    ['transfer-return'],
+    [],
+    ['transfer-outbound', 'transfer-return'],
+  ]);
+});
+
+it.each([undefined, '', '   ', '02112345678'])(
+  'accepts optional buyer landline %s',
+  (landline) => {
+    const draft = {
+      ...filled(),
+      buyerContact: {
+        name: 'Synthetic Buyer',
+        phone: '09120000000',
+        address: 'Synthetic address',
+        postalCode: '',
+        ...(landline === undefined ? {} : { landline }),
+      },
+    };
+    expect(() => validateSalesPeopleDraft(state, draft)).not.toThrow();
+  },
+);
+it('rejects a malformed nonempty optional landline', () => {
+  const draft = {
+    ...filled(),
+    buyerContact: {
+      name: 'Synthetic Buyer',
+      phone: '09120000000',
+      address: 'Synthetic address',
+      postalCode: '',
+      landline: 'bad',
+    },
+  };
+  expect(() => validateSalesPeopleDraft(state, draft)).toThrow('تلفن ثابت');
+});

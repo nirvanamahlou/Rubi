@@ -30,8 +30,19 @@ enum AuditOutcome {
 }
 
 model User {
+  telephonyCommands      IntegrationTelephonyCommand[]
+  telephonyAudit         IntegrationTelephonyAudit[]
+  telephonyConnections   IntegrationTelephonyConnection[]
+  telephonyMappings      IntegrationTelephonyMapping[]
+  telephonyOffers        CallCenterTelephonyOffer[]
+  telephonyLeases        CallCenterTelephonyLease[]
+  telephonyClaims        CallCenterTelephonySession[]
+  receiptAllocations     SalesReceiptAllocation[]
+  accountingSourceEvents FinanceAccountingEvent[]         @relation("FinancialEventActor")
+
   callCenterCalls                                  CallCenterCall[]
   callCenterNotes                                  CallCenterNote[]
+  callCenterOwnedContacts                          CallCenterContact[]                       @relation("CallCenterContactOwner")
   internalLettersAuthored                          CorrespondenceLetter[]                    @relation("CorrespondenceAuthor")
   internalLettersSent                              CorrespondenceDelivery[]                  @relation("CorrespondenceSender")
   internalLettersReceived                          CorrespondenceDelivery[]                  @relation("CorrespondenceRecipient")
@@ -67,6 +78,7 @@ model User {
   reservationServicePurchases                      ReservationServicePurchase[]
   financeSupplierPaymentRevisions                  FinanceSupplierPaymentRevision[]
   financeSettlementAccountsCreated                 FinanceSettlementAccount[]                @relation("FinanceSettlementAccountCreator")
+  financeBankAccountAudits                         FinanceBankAccountAudit[]
   salesPaymentsFinanceReviewed                     SalesContractPaymentEntry[]               @relation("SalesPaymentFinanceReviewer")
   ownedTravelIntakes                               ReservationIntake[]                       @relation("TravelSalesOwner")
   travelWorkflowRevisions                          ReservationWorkflowRevision[]
@@ -251,6 +263,10 @@ model RolePermission {
 }
 
 model Branch {
+  telephonyConnections IntegrationTelephonyConnection[]
+  receiptAllocations   SalesReceiptAllocation[]
+  accountingEvents     FinanceAccountingEvent[]
+
   callCenterContacts                  CallCenterContact[]
   purchaseFxSnapshots                 FinancePurchaseFxSnapshot[]
   accountingBooks                     AccountingBook[]
@@ -2199,6 +2215,7 @@ model MasterHotel {
   sourceMainImage      String?                      @db.VarChar(2000)
   sourceGalleryImages  String?                      @db.VarChar(2000)
   sourceFeatured       Boolean?
+  freeSale             Boolean?
   website              String?                      @db.VarChar(320)
   checkInTime          String?                      @db.Char(5)
   checkOutTime         String?                      @db.Char(5)
@@ -2363,7 +2380,7 @@ model MasterFacility {
   trainTypes          MasterTrainTypeFacility[]
   id                  String                    @id @default(uuid()) @db.Uuid
   code                String                    @unique @db.VarChar(32)
-  name                String                    @db.VarChar(160)
+  name                String                    @db.VarChar(500)
   englishName         String?                   @db.VarChar(160)
   category            String?                   @db.VarChar(80)
   iconFileReference   String?                   @db.Uuid
@@ -3613,33 +3630,34 @@ model HrEmployee {
 }
 
 model HrRecord {
-  userProfiles              IamUserProfile[]           @relation("IamUserOrganizationUnit")
+  telephonyMappings         IntegrationTelephonyMapping[]
+  userProfiles              IamUserProfile[]              @relation("IamUserOrganizationUnit")
   financeOperationalRequest FinanceOperationalRequest?
-  organizationEmployees     HrEmployee[]               @relation("HrEmployeeOrganizationBranch")
-  searchText                String                     @default("") @map("search_text") @db.VarChar(12000)
-  expiresAt                 DateTime?                  @map("expires_at") @db.Date
-  documentId                String?                    @map("document_id") @db.Uuid
-  document                  Document?                  @relation(fields: [documentId], references: [id], onDelete: Restrict)
-  id                        String                     @id @default(uuid()) @db.Uuid
-  code                      String                     @unique @db.VarChar(60)
-  branchId                  String                     @map("branch_id") @db.Uuid
-  employeeId                String?                    @map("employee_id") @db.Uuid
-  parentId                  String?                    @map("parent_id") @db.Uuid
-  section                   String                     @db.VarChar(40)
-  tab                       String                     @db.VarChar(40)
+  organizationEmployees     HrEmployee[]                  @relation("HrEmployeeOrganizationBranch")
+  searchText                String                        @default("") @map("search_text") @db.VarChar(12000)
+  expiresAt                 DateTime?                     @map("expires_at") @db.Date
+  documentId                String?                       @map("document_id") @db.Uuid
+  document                  Document?                     @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  id                        String                        @id @default(uuid()) @db.Uuid
+  code                      String                        @unique @db.VarChar(60)
+  branchId                  String                        @map("branch_id") @db.Uuid
+  employeeId                String?                       @map("employee_id") @db.Uuid
+  parentId                  String?                       @map("parent_id") @db.Uuid
+  section                   String                        @db.VarChar(40)
+  tab                       String                        @db.VarChar(40)
   values                    Json
-  data                      Json                       @default("{}")
-  status                    String                     @default("پیش‌نویس") @db.VarChar(80)
-  version                   Int                        @default(1)
-  effectiveAt               DateTime?                  @map("effective_at") @db.Date
-  appliedAt                 DateTime?                  @map("applied_at") @db.Timestamptz(3)
-  deletedAt                 DateTime?                  @map("deleted_at") @db.Timestamptz(3)
-  createdAt                 DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt                 DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(3)
-  branch                    Branch                     @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  employee                  HrEmployee?                @relation(fields: [employeeId], references: [id], onDelete: Restrict)
-  parent                    HrRecord?                  @relation("HrRecordParent", fields: [parentId, branchId], references: [id, branchId], onDelete: Restrict)
-  children                  HrRecord[]                 @relation("HrRecordParent")
+  data                      Json                          @default("{}")
+  status                    String                        @default("پیش‌نویس") @db.VarChar(80)
+  version                   Int                           @default(1)
+  effectiveAt               DateTime?                     @map("effective_at") @db.Date
+  appliedAt                 DateTime?                     @map("applied_at") @db.Timestamptz(3)
+  deletedAt                 DateTime?                     @map("deleted_at") @db.Timestamptz(3)
+  createdAt                 DateTime                      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                 DateTime                      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch                    Branch                        @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  employee                  HrEmployee?                   @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  parent                    HrRecord?                     @relation("HrRecordParent", fields: [parentId, branchId], references: [id, branchId], onDelete: Restrict)
+  children                  HrRecord[]                    @relation("HrRecordParent")
   auditEvents               HrAuditEvent[]
   amounts                   HrRecordAmount[]
   leaveEntries              HrLeaveEntry[]
@@ -3927,6 +3945,7 @@ enum PackagePricingRenderStatus {
 }
 
 model SalesContract {
+  receiptAllocations        SalesReceiptAllocation[]
   paymentTerms              Json?                          @map("payment_terms")
   buyerContact              Json?                          @map("buyer_contact")
   id                        String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -4110,6 +4129,8 @@ model SalesContractPriceComponent {
 }
 
 model SalesContractPaymentEntry {
+  allocations             SalesReceiptAllocation[]
+  refunds                 SalesPaymentRefund[]
   financeRefundRequests   FinanceOperationalRequest[]
   id                      String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   contractId              String                      @map("contract_id") @db.Uuid
@@ -4606,6 +4627,15 @@ enum FinanceSupplierPaymentStatus {
 }
 
 model FinanceSettlementAccount {
+  bankIdentifiers            Json?
+  maskedAccountNumber        String?                                @db.VarChar(40)
+  maskedCardNumber           String?                                @db.VarChar(24)
+  maskedIban                 String?                                @db.VarChar(40)
+  accountFingerprint         String?                                @db.VarChar(64)
+  cardFingerprint            String?                                @db.VarChar(64)
+  ibanFingerprint            String?                                @db.VarChar(64)
+  bankAccountAudits          FinanceBankAccountAudit[]
+  accountingEvents           FinanceAccountingEvent[]
   financeOperationalPayments FinanceOperationalRevision[]
   id                         String                                 @id @default(uuid()) @db.Uuid
   branchId                   String                                 @db.Uuid
@@ -4628,11 +4658,31 @@ model FinanceSettlementAccount {
   procurementInvoicePayments FinanceProcurementInvoiceRevision[]
 
   @@unique([branchId, title, currencyCode])
+  @@unique([branchId, bankId, accountFingerprint], map: "FinanceBankAccount_account_key")
+  @@unique([branchId, bankId, cardFingerprint], map: "FinanceBankAccount_card_key")
+  @@unique([branchId, bankId, ibanFingerprint], map: "FinanceBankAccount_iban_key")
   @@index([branchId, isActive, title])
   @@index([bankId, isActive])
 }
 
+model FinanceBankAccountAudit {
+  id          String                   @id @default(uuid()) @db.Uuid
+  accountId   String                   @db.Uuid
+  actorUserId String                   @db.Uuid
+  action      String                   @db.VarChar(24)
+  metadata    Json
+  occurredAt  DateTime                 @default(now()) @db.Timestamptz(3)
+  account     FinanceSettlementAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  actor       User                     @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([accountId, occurredAt])
+  @@index([actorUserId, occurredAt])
+}
+
 model FinanceOperationalRequest {
+  pettyFundId                String?                      @db.Uuid
+  pettyFund                  FinanceOperationalRequest?   @relation("PettyFundRequests", fields: [pettyFundId], references: [id], onDelete: Restrict)
+  pettyRequests              FinanceOperationalRequest[]  @relation("PettyFundRequests")
   counterpartyOrganizationId String?                      @db.Uuid
   counterpartyRole           MasterOrganizationRoleCode?
   counterpartyOrganization   MasterOrganization?          @relation(fields: [counterpartyOrganizationId], references: [id], onDelete: Restrict, map: "finance_partner_request_organization_fk")
@@ -4676,6 +4726,7 @@ model FinanceOperationalRequest {
 }
 
 model FinanceOperationalRevision {
+  salesRefund      SalesPaymentRefund?
   payingSupplierId String?                   @db.Uuid
   payingSupplier   MasterSupplier?           @relation(fields: [payingSupplierId], references: [id], onDelete: Restrict)
   id               String                    @id @db.Uuid
@@ -5719,6 +5770,12 @@ model CustomerAffairsLead {
 }
 
 model CustomerAffairsTicket {
+  callCenterTasks         AutomationTask[]
+  callCenterContactId     String?                           @map("call_center_contact_id") @db.Uuid
+  callCenterContact       CallCenterContact?                @relation(fields: [callCenterContactId], references: [id], onDelete: Restrict, map: "cc_ticket_contact_fk")
+  callCenterPayload       String?                           @map("call_center_payload") @db.Text
+  callCenterKeyVersion    Int?                              @map("call_center_key_version")
+  callCenterCalls         CallCenterCall[]
   id                      String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   trackingNumber          String                            @unique @map("tracking_number") @db.VarChar(32)
   branchId                String                            @map("branch_id") @db.Uuid
@@ -5775,6 +5832,7 @@ model CustomerAffairsTicket {
   @@index([executionOwnerUserId, status, nextActionAt])
   @@index([customerId, createdAt])
   @@index([firstResponseDueAt, resolutionDueAt])
+  @@index([callCenterContactId, createdAt], map: "cc_ticket_contact_idx")
   @@map("customer_affairs_tickets")
 }
 
@@ -6657,26 +6715,29 @@ model SettingsProcurementApprovalPolicy {
 }
 
 model AutomationTask {
-  id              String    @id @default(uuid()) @db.Uuid
-  sourceModule    String    @db.VarChar(80)
-  sourceEventId   String    @db.Uuid
-  sourceReference String    @db.VarChar(160)
-  branchId        String    @db.Uuid
-  assigneeUserId  String    @db.Uuid
-  kind            String    @db.VarChar(80)
-  title           String    @db.VarChar(300)
-  status          String    @default("OPEN") @db.VarChar(32)
-  dueAt           DateTime? @db.Timestamptz(3)
-  payload         Json      @default("{}")
-  completedAt     DateTime? @db.Timestamptz(3)
-  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime  @updatedAt @db.Timestamptz(3)
-  branch          Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  assignee        User      @relation("AutomationTaskAssignee", fields: [assigneeUserId], references: [id], onDelete: Restrict)
+  callCenterTicketId String?                @map("call_center_ticket_id") @db.Uuid
+  callCenterTicket   CustomerAffairsTicket? @relation(fields: [callCenterTicketId], references: [id], onDelete: Restrict, map: "cc_task_ticket_fk")
+  id                 String                 @id @default(uuid()) @db.Uuid
+  sourceModule       String                 @db.VarChar(80)
+  sourceEventId      String                 @db.Uuid
+  sourceReference    String                 @db.VarChar(160)
+  branchId           String                 @db.Uuid
+  assigneeUserId     String                 @db.Uuid
+  kind               String                 @db.VarChar(80)
+  title              String                 @db.VarChar(300)
+  status             String                 @default("OPEN") @db.VarChar(32)
+  dueAt              DateTime?              @db.Timestamptz(3)
+  payload            Json                   @default("{}")
+  completedAt        DateTime?              @db.Timestamptz(3)
+  createdAt          DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime               @updatedAt @db.Timestamptz(3)
+  branch             Branch                 @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  assignee           User                   @relation("AutomationTaskAssignee", fields: [assigneeUserId], references: [id], onDelete: Restrict)
 
   @@unique([sourceModule, sourceEventId, assigneeUserId])
   @@index([assigneeUserId, status, dueAt])
   @@index([sourceModule, sourceReference, status])
+  @@index([callCenterTicketId], map: "cc_task_ticket_idx")
   @@map("automation_tasks")
 }
 
@@ -7139,6 +7200,7 @@ model AccountingDetail {
 }
 
 model AccountingJournal {
+  financialEvent        FinanceAccountingEvent?
   id                    String                           @id @default(uuid()) @db.Uuid
   bookId                String                           @db.Uuid
   book                  AccountingBook                   @relation(fields: [bookId], references: [id], onDelete: Restrict)
@@ -7597,6 +7659,56 @@ model FinancePurchaseFxSnapshot {
   @@map("finance_purchase_fx_snapshots")
 }
 
+// Immutable confirmed financial sources. Journal association is assigned atomically.
+model FinanceAccountingEvent {
+  basisEventId        String?                   @db.Uuid
+  basisEvent          FinanceAccountingEvent?   @relation("ReceiptAllocationBasis", fields: [basisEventId], references: [id], onDelete: Restrict)
+  derivedEvents       FinanceAccountingEvent[]  @relation("ReceiptAllocationBasis")
+  carryingAmount      Decimal?                  @db.Decimal(24, 4)
+  carryingCurrency    String?                   @db.VarChar(3)
+  trackingNumber      String?                   @db.VarChar(160)
+  trackingDate        String?                   @db.VarChar(10)
+  id                  String                    @id @default(uuid()) @db.Uuid
+  sourceKey           String                    @unique @db.VarChar(200)
+  fingerprint         String                    @db.VarChar(64)
+  source              String                    @db.VarChar(24)
+  recordId            String                    @db.Uuid
+  requestId           String                    @db.Uuid
+  kind                String                    @db.VarChar(48)
+  branchId            String                    @db.Uuid
+  branch              Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  actorId             String                    @db.Uuid
+  actor               User                      @relation("FinancialEventActor", fields: [actorId], references: [id], onDelete: Restrict)
+  occurredAt          DateTime                  @db.Timestamptz(3)
+  amount              Decimal                   @db.Decimal(24, 4)
+  currency            String                    @db.VarChar(3)
+  settlementAccountId String?                   @db.Uuid
+  settlementAccount   FinanceSettlementAccount? @relation(fields: [settlementAccountId], references: [id], onDelete: Restrict)
+  partyId             String?                   @db.VarChar(160)
+  reference           String?                   @db.VarChar(160)
+  journalId           String?                   @unique @db.Uuid
+  journal             AccountingJournal?        @relation(fields: [journalId], references: [id], onDelete: Restrict)
+  lastError           String?                   @db.VarChar(1000)
+  attemptedAt         DateTime?                 @db.Timestamptz(3)
+  createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
+
+  @@index([basisEventId], map: "financial_event_basis_idx")
+  @@index([branchId, journalId, createdAt])
+  @@map("finance_accounting_events")
+}
+
+model SalesPaymentRefund {
+  id        String                     @id @db.Uuid
+  operation FinanceOperationalRevision @relation(fields: [id], references: [id], onDelete: Restrict)
+  paymentId String                     @db.Uuid
+  payment   SalesContractPaymentEntry  @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  amount    Decimal                    @db.Decimal(24, 4)
+  createdAt DateTime                   @default(now()) @db.Timestamptz(3)
+
+  @@index([paymentId])
+  @@map("sales_payment_refunds")
+}
+
 model CorrespondenceLetter {
   id         String                   @id @default(uuid()) @db.Uuid
   authorId   String                   @db.Uuid
@@ -7635,35 +7747,56 @@ model CorrespondenceDelivery {
 
 // Customer Affairs-owned call history; all private text is encrypted at rest.
 model CallCenterContact {
-  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  branchId         String           @map("branch_id") @db.Uuid
-  phoneFingerprint String           @map("phone_fingerprint") @db.Char(64)
-  latestOccurredAt DateTime         @map("latest_occurred_at") @db.Timestamptz(3)
-  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  branch           Branch           @relation(fields: [branchId], references: [id], onDelete: Restrict, map: "call_contact_branch_fk")
+  ownerUserId      String?                 @map("owner_user_id") @db.Uuid
+  ownerVersion     Int                     @default(0) @map("owner_version")
+  owner            User?                   @relation("CallCenterContactOwner", fields: [ownerUserId], references: [id], onDelete: Restrict, map: "call_contact_owner_fk")
+  id               String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId         String                  @map("branch_id") @db.Uuid
+  phoneFingerprint String                  @map("phone_fingerprint") @db.Char(64)
+  latestOccurredAt DateTime                @map("latest_occurred_at") @db.Timestamptz(3)
+  createdAt        DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  branch           Branch                  @relation(fields: [branchId], references: [id], onDelete: Restrict, map: "call_contact_branch_fk")
+  requests         CustomerAffairsTicket[]
   calls            CallCenterCall[]
   notes            CallCenterNote[]
 
   @@unique([branchId, phoneFingerprint], map: "call_contact_phone_key")
   @@index([branchId, latestOccurredAt, id], map: "call_contact_recent_idx")
+  @@index([branchId, ownerUserId], map: "call_contact_owner_idx")
+  @@index([ownerUserId], map: "call_contact_owner_user_idx")
   @@map("customer_affairs_call_contacts")
 }
 
 model CallCenterCall {
-  id                 String            @id @db.Uuid
-  contactId          String            @map("contact_id") @db.Uuid
-  createdByUserId    String            @map("created_by_user_id") @db.Uuid
-  direction          String            @db.VarChar(8)
-  status             String            @db.VarChar(40)
-  occurredAt         DateTime          @map("occurred_at") @db.Timestamptz(3)
-  encryptedPayload   String            @map("encrypted_payload") @db.Text
-  keyVersion         Int               @map("key_version")
-  requestFingerprint String            @map("request_fingerprint") @db.Char(64)
-  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-  contact            CallCenterContact @relation(fields: [contactId], references: [id], onDelete: Restrict, map: "call_contact_fk")
-  createdBy          User              @relation(fields: [createdByUserId], references: [id], onDelete: Restrict, map: "call_creator_fk")
+  telephonySession CallCenterTelephonySession?
+
+  searchTokens       String[]               @default([]) @map("search_tokens")
+  sourceToken        String?                @map("source_token") @db.Char(64)
+  unitToken          String?                @map("unit_token") @db.Char(64)
+  needsCompletion    Boolean?               @map("needs_completion")
+  searchVersion      Int                    @default(0) @map("search_version")
+  ticketId           String?                @map("ticket_id") @db.Uuid
+  ticket             CustomerAffairsTicket? @relation(fields: [ticketId], references: [id], onDelete: Restrict, map: "cc_call_ticket_fk")
+  outcome            String?                @db.VarChar(32)
+  origin             String?                @db.VarChar(16)
+  id                 String                 @id @db.Uuid
+  contactId          String                 @map("contact_id") @db.Uuid
+  createdByUserId    String                 @map("created_by_user_id") @db.Uuid
+  direction          String                 @db.VarChar(8)
+  status             String                 @db.VarChar(40)
+  occurredAt         DateTime               @map("occurred_at") @db.Timestamptz(3)
+  encryptedPayload   String                 @map("encrypted_payload") @db.Text
+  keyVersion         Int                    @map("key_version")
+  requestFingerprint String                 @map("request_fingerprint") @db.Char(64)
+  createdAt          DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  contact            CallCenterContact      @relation(fields: [contactId], references: [id], onDelete: Restrict, map: "call_contact_fk")
+  createdBy          User                   @relation(fields: [createdByUserId], references: [id], onDelete: Restrict, map: "call_creator_fk")
 
   @@index([contactId, occurredAt, id], map: "call_contact_calls_idx")
+  @@index([ticketId], map: "cc_call_ticket_idx")
+  @@index([searchTokens], type: Gin, map: "cc_search_tokens_idx")
+  @@index([createdAt, id], map: "cc_call_registered_idx")
+  @@index([occurredAt, direction, outcome], map: "cc_call_report_idx")
   @@map("customer_affairs_calls")
 }
 
@@ -7680,4 +7813,213 @@ model CallCenterNote {
 
   @@index([contactId, createdAt, id], map: "call_contact_notes_idx")
   @@map("customer_affairs_call_notes")
+}
+
+model IntegrationTelephonyConnection {
+  id               String                          @id @default(uuid()) @db.Uuid
+  branchId         String                          @db.Uuid
+  createdByUserId  String                          @db.Uuid
+  name             String                          @db.VarChar(100)
+  synthetic        Boolean                         @default(false)
+  active           Boolean                         @default(false)
+  maxAgeSeconds    Int                             @default(86400)
+  maxFutureSeconds Int                             @default(120)
+  version          Int                             @default(1)
+  createdAt        DateTime                        @default(now()) @db.Timestamptz(3)
+  branch           Branch                          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  createdBy        User                            @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  commands         IntegrationTelephonyCommand[]
+  recordings       IntegrationTelephonyRecording[]
+  audits           IntegrationTelephonyAudit[]
+  mappings         IntegrationTelephonyMapping[]
+  inbox            IntegrationTelephonyInbox[]
+  sessions         CallCenterTelephonySession[]
+
+  @@map("integration_telephony_connections")
+}
+
+model IntegrationTelephonyMapping {
+  teamId       String?                        @db.Uuid
+  team         HrRecord?                      @relation(fields: [teamId], references: [id], onDelete: Restrict)
+  id           String                         @id @default(uuid()) @db.Uuid
+  connectionId String                         @db.Uuid
+  extension    String                         @db.VarChar(32)
+  userId       String                         @db.Uuid
+  active       Boolean                        @default(true)
+  version      Int                            @default(1)
+  updatedAt    DateTime                       @updatedAt @db.Timestamptz(3)
+  connection   IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  user         User                           @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([connectionId, extension])
+  @@map("integration_telephony_mappings")
+}
+
+model IntegrationTelephonyInbox {
+  id                  String                         @id @default(uuid()) @db.Uuid
+  connectionId        String                         @db.Uuid
+  externalFingerprint String                         @db.Char(64)
+  payloadFingerprint  String                         @db.Char(64)
+  encryptedPayload    String?                        @db.Text
+  keyVersion          Int
+  receivedAt          DateTime                       @default(now()) @db.Timestamptz(3)
+  status              String                         @default("PENDING") @db.VarChar(16)
+  attempts            Int                            @default(0)
+  errorCode           String?                        @db.VarChar(32)
+  processedAt         DateTime?                      @db.Timestamptz(3)
+  connection          IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  dispatch            IntegrationTelephonyOutbox?
+
+  @@unique([connectionId, externalFingerprint], map: "integration_telephony_inbox_connectionId_externalFingerprint_ke")
+  @@index([status, receivedAt])
+  @@map("integration_telephony_inbox")
+}
+
+model IntegrationTelephonyOutbox {
+  id          String                    @id @default(uuid()) @db.Uuid
+  inboxId     String                    @unique @db.Uuid
+  availableAt DateTime                  @default(now()) @db.Timestamptz(3)
+  completedAt DateTime?                 @db.Timestamptz(3)
+  inbox       IntegrationTelephonyInbox @relation(fields: [inboxId], references: [id], onDelete: Restrict)
+
+  @@index([completedAt, availableAt])
+  @@map("integration_telephony_outbox")
+}
+
+model CallCenterTelephonySession {
+  id                 String                         @id @default(uuid()) @db.Uuid
+  connectionId       String                         @db.Uuid
+  rootFingerprint    String                         @db.Char(64)
+  callId             String                         @unique @db.Uuid
+  state              String                         @db.VarChar(16)
+  encryptedTechnical String                         @db.Text
+  keyVersion         Int
+  version            Int                            @default(1)
+  completed          Boolean                        @default(false)
+  claimUserId        String?                        @db.Uuid
+  synthetic          Boolean
+  updatedAt          DateTime                       @updatedAt @db.Timestamptz(3)
+  claimUser          User?                          @relation(fields: [claimUserId], references: [id], onDelete: Restrict)
+  connection         IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  call               CallCenterCall                 @relation(fields: [callId], references: [id], onDelete: Restrict)
+  offers             CallCenterTelephonyOffer[]
+
+  @@unique([connectionId, rootFingerprint])
+  @@index([completed, updatedAt, id])
+  @@map("call_center_telephony_sessions")
+}
+
+model CallCenterTelephonyOffer {
+  id             String                     @id @default(uuid()) @db.Uuid
+  sessionId      String                     @db.Uuid
+  userId         String                     @db.Uuid
+  mappingVersion Int
+  active         Boolean                    @default(true)
+  deferred       Boolean                    @default(false)
+  createdAt      DateTime                   @default(now()) @db.Timestamptz(3)
+  session        CallCenterTelephonySession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  user           User                       @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([sessionId, userId])
+  @@index([userId, active, createdAt])
+  @@map("call_center_telephony_offers")
+}
+
+model CallCenterTelephonyLease {
+  userId    String   @id @db.Uuid
+  tabId     String   @db.Uuid
+  expiresAt DateTime @db.Timestamptz(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("call_center_telephony_leases")
+}
+
+model IntegrationTelephonyAudit {
+  id           String                         @id @default(uuid()) @db.Uuid
+  connectionId String                         @db.Uuid
+  actorUserId  String?                        @db.Uuid
+  action       String                         @db.VarChar(40)
+  entityId     String                         @db.Uuid
+  metadata     Json
+  createdAt    DateTime                       @default(now()) @db.Timestamptz(3)
+  connection   IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  actor        User?                          @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([connectionId, createdAt])
+  @@map("integration_telephony_audit")
+}
+
+model SalesReceiptAllocation {
+  id               String                    @id @db.Uuid
+  sourcePaymentId  String                    @db.Uuid
+  sourcePayment    SalesContractPaymentEntry @relation(fields: [sourcePaymentId], references: [id], onDelete: Restrict)
+  targetContractId String                    @db.Uuid
+  targetContract   SalesContract             @relation(fields: [targetContractId], references: [id], onDelete: Restrict)
+  branchId         String                    @db.Uuid
+  branch           Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  actorId          String                    @db.Uuid
+  actor            User                      @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  amount           Decimal                   @db.Decimal(24, 4)
+  currencyCode     String                    @db.VarChar(3)
+  reason           String                    @db.VarChar(500)
+  fingerprint      String                    @db.Char(64)
+  reversalOfId     String?                   @unique @db.Uuid
+  reversalOf       SalesReceiptAllocation?   @relation("ReceiptAllocationReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversal         SalesReceiptAllocation?   @relation("ReceiptAllocationReversal")
+  createdAt        DateTime                  @default(now()) @db.Timestamptz(3)
+
+  @@index([sourcePaymentId, createdAt], map: "sales_receipt_allocations_source_idx")
+  @@index([targetContractId, createdAt], map: "sales_receipt_allocations_target_idx")
+  @@index([branchId, createdAt], map: "sales_receipt_allocations_branch_idx")
+  @@map("sales_receipt_allocations")
+}
+
+model IntegrationTelephonyCommand {
+  id                   String                         @id @db.Uuid
+  connectionId         String                         @db.Uuid
+  actorUserId          String                         @db.Uuid
+  extension            String                         @db.VarChar(10)
+  encryptedDestination String                         @db.Text
+  keyVersion           Int
+  fingerprint          String                         @db.Char(64)
+  state                String                         @default("QUEUED") @db.VarChar(16)
+  createdAt            DateTime                       @default(now()) @db.Timestamptz(3)
+  dispatchedAt         DateTime?                      @db.Timestamptz(3)
+  updatedAt            DateTime                       @updatedAt @db.Timestamptz(3)
+  connection           IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  actor                User                           @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([state, createdAt])
+  @@map("integration_telephony_commands")
+}
+
+model IntegrationTelephonyRecording {
+  id                String                               @id @db.Uuid
+  connectionId      String                               @db.Uuid
+  rootFingerprint   String                               @db.Char(64)
+  encryptedMetadata String                               @db.Text
+  keyVersion        Int
+  sha256            String                               @db.Char(64)
+  sizeBytes         Int
+  state             String                               @default("UPLOADING") @db.VarChar(16)
+  createdAt         DateTime                             @default(now()) @db.Timestamptz(3)
+  expiresAt         DateTime                             @db.Timestamptz(3)
+  completedAt       DateTime?                            @db.Timestamptz(3)
+  connection        IntegrationTelephonyConnection       @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  chunks            IntegrationTelephonyRecordingChunk[]
+
+  @@index([expiresAt])
+  @@map("integration_telephony_recordings")
+}
+
+model IntegrationTelephonyRecordingChunk {
+  recordingId    String                        @db.Uuid
+  index          Int
+  encryptedAudio String                        @db.Text
+  keyVersion     Int
+  fingerprint    String                        @db.Char(64)
+  recording      IntegrationTelephonyRecording @relation(fields: [recordingId], references: [id], onDelete: Cascade)
+
+  @@id([recordingId, index])
+  @@map("integration_telephony_recording_chunks")
 }

@@ -160,7 +160,7 @@ describe('Master Data visual polish contract', () => {
       'ارز فعال',
       'ارز پایه سازمان',
       'آخرین همگام‌سازی',
-      'نرخ جاری تأییدشده',
+      'نرخ جاری',
       'تغییر نسبت به نرخ قبل',
       'آخرین مشاهده',
       'رکورد تاریخچه در بازه',
@@ -181,6 +181,25 @@ describe('Master Data visual polish contract', () => {
     }
     expect(finance).toContain('<MasterDataBankProfile');
     expect(finance).not.toContain("key: 'branches'");
+  });
+
+  it('hides payment code/avatar on list cards while preserving identity in View', () => {
+    const finance = source('master-data-finance-workspace.tsx');
+    const start = finance.indexOf("tab === 'payments' ? (");
+    expect(start).toBeGreaterThan(0);
+    const cards = finance.slice(
+      start,
+      finance.indexOf('<Card className="overflow-x-auto">', start),
+    );
+    expect(cards).not.toContain('{record.code}');
+    expect(cards).not.toContain('<MasterDataLogoCell');
+    expect(cards).toContain('{record.name}');
+    expect(cards).toContain("setFormMode('view')");
+    expect(cards).toContain("setFormMode('edit')");
+    expect(cards).toContain('<MasterDataDeleteButton');
+    const profile = source('master-data-profile-details.tsx');
+    expect(profile).toContain('{record.code}');
+    expect(profile).toContain('<MasterDataLogoImage record={record}');
   });
 
   it('does not draw an underline on section-card hover', () => {

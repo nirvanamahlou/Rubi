@@ -1,11 +1,17 @@
 'use client';
 import {
+  usesRoomDrivenGuests,
+  withRoomDrivenGuests,
+} from '../model/contract-guest-stays';
+
+import {
   hotelChildChoices,
   syncHotelChildSelections,
   selectHotelChild,
 } from '../model/hotel-child-selection';
 import { SalesThemedSelect } from './sales-themed-select';
 import {
+  defaultSalesRoomCategory,
   salesRoomCategories,
   salesRoomCategoryLabel,
   type SalesRoomCategory,
@@ -40,8 +46,14 @@ export function ServiceParties({
     salesTravelDate(sourceState),
   );
   const childChoices = hotelChildChoices(state, salesTravelDate(state));
-  const rooms = state.hotel.rooms ?? [];
-  const limited = state.serviceKinds.includes('FLIGHT');
+  const rooms: NonNullable<SalesFormState['hotel']['rooms']> = (
+    state.hotel.rooms ?? []
+  ).map((room) => ({
+    ...room,
+    roomCategory: defaultSalesRoomCategory(room),
+  }));
+  const limited =
+    state.serviceKinds.includes('FLIGHT') && !usesRoomDrivenGuests(state);
   const party = salesPassengerCounts(state);
   const partyError = salesRoomPartyError(state);
   const used = roomPartyUsage(rooms, state.hotelChildAssignments);
@@ -59,6 +71,10 @@ export function ServiceParties({
       )
     : 50;
   const changeRooms = (next: typeof rooms) => {
+    const driven = withRoomDrivenGuests({
+      ...state,
+      hotel: { ...state.hotel, rooms: next },
+    });
     const ages = next.flatMap((r) => r.childAges);
     const composition = {
       adults:
@@ -79,6 +95,13 @@ export function ServiceParties({
         ...salesHotelRoomSummary(next),
         roomTypeId: next[0]?.roomTypeId ?? '',
       },
+      ...(usesRoomDrivenGuests(state)
+        ? {
+            passengerComposition: driven.passengerComposition,
+            childAges: driven.childAges,
+            infantAges: driven.infantAges,
+          }
+        : {}),
       ...(!state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'TRANSFER')
         ? {
             passengerComposition: {
@@ -269,13 +292,7 @@ export function ServiceParties({
                   rooms.map((v, j) => {
                     if (j !== i) return v;
                     const next = { ...v, ...value };
-                    if (
-                      next.roomCategory &&
-                      !salesRoomCategories(
-                        next.adults + next.childAges.length,
-                      ).includes(next.roomCategory)
-                    )
-                      delete next.roomCategory;
+                    next.roomCategory = defaultSalesRoomCategory(next);
                     return next;
                   }),
                 );
@@ -337,13 +354,11 @@ export function ServiceParties({
                         options={[
                           { value: '', label: 'انتخاب دسته‌بندی' },
                           ...salesRoomCategories(
-                            r.adults + r.childAges.length,
+                            r.adults,
+                            r.childAges.length,
                           ).map((value) => ({
                             value,
-                            label: salesRoomCategoryLabel(
-                              value,
-                              r.adults + r.childAges.length,
-                            ),
+                            label: salesRoomCategoryLabel(value, r.adults),
                           })),
                         ]}
                         onValueChange={(value) =>

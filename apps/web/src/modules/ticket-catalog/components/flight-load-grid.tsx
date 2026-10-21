@@ -570,13 +570,13 @@ export function FlightLoadGrid({
       {!company.length && (
         <p className={styles.help}>بلیتی برای نمایش در لود وجود ندارد.</p>
       )}
-      {hasSearched && (
+      {hasSearched && canSearchFlightLoad(filter) && (
         <div className={styles.tables}>
           {table(outbounds, false)}
           {table(returns, true)}
         </div>
       )}
-      {hasSearched && (
+      {hasSearched && canSearchFlightLoad(filter) && (
         <div className={styles.details}>
           {detail(outbound, false)}
           {detail(returning, true)}

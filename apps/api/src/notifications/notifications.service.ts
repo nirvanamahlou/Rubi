@@ -108,4 +108,20 @@ export class NotificationsService {
       })),
     });
   }
+
+  /** Retire superseded Call Center task reminders in the domain transaction. */
+  async retireCallCenterTaskWithinTransaction(
+    transaction: NotificationTransaction,
+    taskId: string,
+  ) {
+    await transaction.notification.updateMany({
+      where: {
+        sourceModule: 'customer-affairs',
+        entityType: 'CALL_CENTER_FOLLOW_UP',
+        entityId: taskId,
+        readAt: null,
+      },
+      data: { readAt: new Date() },
+    });
+  }
 }

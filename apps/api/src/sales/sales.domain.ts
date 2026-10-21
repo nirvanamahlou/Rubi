@@ -1,10 +1,20 @@
+import { validatePassengerHotelStays } from '@nora/contracts';
+import {
+  readPassengerTotalPrices,
+  validatePassengerTotalPricing,
+} from '@nora/contracts';
 import { readAgencyCommission } from '@nora/contracts';
 import {
   flightRoomTotals,
   readPassengerFlightPrices,
+  readPassengerHotelPrices,
   insuranceExtraRials,
 } from '@nora/contracts';
-import { validatePassengerFlightPrices } from '@nora/contracts';
+import {
+  validatePassengerFlightPrices,
+  readPassengerDeductions,
+  passengerNetPrices,
+} from '@nora/contracts';
 import {
   moneyUnits,
   validSalesHotelRooms,
@@ -192,7 +202,12 @@ export function validateSalesContract(
       !/^\+?[0-9]{10,15}$/.test(buyer.phone.trim()) ||
       !buyer.address.trim() ||
       buyer.address.length > 1000 ||
-      !/^[0-9]{10}$/.test(buyer.postalCode.trim()) ||
+      (buyer.postalCode.trim() !== '' &&
+        !/^[0-9]{10}$/.test(buyer.postalCode.trim())) ||
+      (buyer.landline !== undefined &&
+        (typeof buyer.landline !== 'string' ||
+          (buyer.landline.trim() !== '' &&
+            !/^\+?[0-9]{10,15}$/.test(buyer.landline.trim())))) ||
       (input.payerCustomerId && input.payerCustomerId !== input.customerId)
     )
       throw new SalesDomainError(
@@ -273,6 +288,20 @@ export function validateSalesContract(
     );
   }
   try {
+    const deductions = readPassengerDeductions(
+      input.services,
+      input.passengers,
+    );
+    if (
+      Object.keys(deductions).length &&
+      !readPassengerTotalPrices(input.services, input.passengers) &&
+      !input.services.some(
+        (s) => s.metadata?.automaticFlightRoomTotalV1 === true,
+      )
+    )
+      throw Error('تخفیف و کمیسیون مسافران معتبر نیست.');
+    validatePassengerTotalPricing(input.services, input.passengers);
+    readPassengerHotelPrices(input.services, input.passengers);
     validatePassengerFlightPrices(
       input.services,
       input.passengers,
@@ -293,7 +322,14 @@ export function validateSalesContract(
         !readPassengerFlightPrices(input.services)
       )
         throw Error('قیمت پرواز هر مسافر را وارد کنید.');
-      if (input.hotelSelection?.rooms?.some((r) => !r.agreedPrice))
+      const hotelPrices = readPassengerHotelPrices(
+        input.services,
+        input.passengers,
+      );
+      if (
+        !hotelPrices &&
+        input.hotelSelection?.rooms?.some((r) => !r.agreedPrice)
+      )
         throw Error('قیمت هر اتاق را وارد کنید.');
       const extra = input.services
         .filter((s) => s.metadata?.insuranceAgeSurcharge === true)
@@ -301,12 +337,29 @@ export function validateSalesContract(
           amount: insuranceExtraRials(String(s.metadata!.extraToman)),
           currencyCode: 'IRR',
         }));
+      const deductions = readPassengerDeductions(
+        input.services,
+        input.passengers,
+      );
+      const flightPrices = readPassengerFlightPrices(input.services);
+      const netPrices = passengerNetPrices(
+        Object.fromEntries(
+          input.passengers.map((p) => [
+            p.customerId,
+            [
+              ...(flightPrices?.[p.customerId] ?? []),
+              ...(hotelPrices?.[p.customerId] ?? []),
+            ],
+          ]),
+        ),
+        deductions,
+      );
       const expected = flightRoomTotals(
         {
-          ...readPassengerFlightPrices(input.services),
+          ...netPrices,
           insuranceExtras: extra,
         },
-        input.hotelSelection?.rooms ?? [],
+        hotelPrices ? [] : (input.hotelSelection?.rooms ?? []),
       );
       const actual = new Map<string, bigint>();
       for (const p of input.priceComponents.filter(
@@ -317,6 +370,7 @@ export function validateSalesContract(
           (actual.get(p.currencyCode) ?? 0n) +
             moneyUnits(p.amount) * (p.type === 'DISCOUNT' ? -1n : 1n),
         );
+      for (const [code, value] of actual) if (value === 0n) actual.delete(code);
       const wanted = expected.filter((p) => moneyUnits(p.amount) > 0n);
       if (
         actual.size !== wanted.length ||
@@ -562,6 +616,14 @@ export function validateSalesContract(
       'RETURN_TICKET_INVALID',
       'مسیر یا زمان بلیت برگشت با قرارداد سازگار نیست.',
     );
+  try {
+    validatePassengerHotelStays(input);
+  } catch (reason) {
+    throw new SalesDomainError(
+      'SALES_HOTEL_INVALID',
+      reason instanceof Error ? reason.message : 'Invalid passenger stays',
+    );
+  }
   if (input.hotelSelection) {
     const hotel = input.hotelSelection;
     if (hotel.rooms !== undefined) {
@@ -570,31 +632,6 @@ export function validateSalesContract(
           'SALES_HOTEL_INVALID',
           'ترکیب اتاق‌ها معتبر نیست.',
         );
-      const flightKeys = new Set(
-        input.services
-          .filter((s) => s.kind === 'FLIGHT')
-          .map((s) => s.clientKey),
-      );
-      if (flightKeys.size) {
-        const flightIds = new Set(
-          input.passengers
-            .filter((p) =>
-              p.serviceClientKeys.some((key) => flightKeys.has(key)),
-            )
-            .map((p) => p.customerId),
-        );
-        if (
-          input.passengers.some(
-            (p) =>
-              p.serviceClientKeys.includes(hotel.serviceClientKey) &&
-              !flightIds.has(p.customerId),
-          )
-        )
-          throw new SalesDomainError(
-            'SALES_HOTEL_INVALID',
-            'مجموع بزرگسال و کودک اتاق‌ها نباید از تعداد مسافران پرواز بیشتر باشد.',
-          );
-      }
       if (hotel.rooms.some((r) => r.agreedPrice)) {
         if (hotel.rooms.some((r) => !r.agreedPrice))
           throw new SalesDomainError(
@@ -683,21 +720,6 @@ export function validateSalesContract(
     const hotelGuestCount = input.passengers.filter((passenger) =>
       passenger.serviceClientKeys.includes(hotel.serviceClientKey),
     ).length;
-    const flightKeys = new Set(
-      input.services.filter((s) => s.kind === 'FLIGHT').map((s) => s.clientKey),
-    );
-    if (
-      flightKeys.size &&
-      input.passengers.some(
-        (passenger) =>
-          passenger.serviceClientKeys.some((key) => flightKeys.has(key)) !==
-          passenger.serviceClientKeys.includes(hotel.serviceClientKey),
-      )
-    )
-      throw new SalesDomainError(
-        'SALES_HOTEL_INVALID',
-        'مسافران هتل و پرواز باید یکسان باشند.',
-      );
     if (hotelGuestCount < 1 || hotel.occupancy !== hotelGuestCount)
       throw new SalesDomainError(
         'SALES_HOTEL_INVALID',

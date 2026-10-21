@@ -6,6 +6,9 @@ import {
   USER_ACCESS_SCREENS,
   USER_ACCESS_DENY_CONTROLS,
   canViewScreen,
+  canViewRoute,
+  hasScopedCallCenterAccess,
+  CALL_CENTER_SCOPED_ACCESS,
   hasAccessControl,
   allowAccessControl,
   screenPermission,
@@ -22,6 +25,29 @@ export interface ManualAccessUser {
   roles: Array<PermissionBearingRole & { role: { id: string } }>;
   branches: Array<{ branchId: string }>;
   b2bOrganizationUser?: { isActive: boolean; sections: string[] } | null;
+}
+
+/** Restrictive policy flags still require related delegation authority. */
+export function canDelegateCallCenterScopeFlag(
+  authority: readonly string[],
+  before: ManualAccessSelection,
+  after: ManualAccessSelection,
+) {
+  if (hasScopedCallCenterAccess(authority)) return true;
+  const changed =
+    [...before.permissionCodes, ...after.permissionCodes].some(
+      (code) =>
+        code !== CALL_CENTER_SCOPED_ACCESS &&
+        code.startsWith('customer_affairs.call_center.') &&
+        before.permissionCodes.includes(code) !==
+          after.permissionCodes.includes(code),
+    ) ||
+    before.screenIds.includes('customer-affairs.call-center') !==
+      after.screenIds.includes('customer-affairs.call-center');
+  return (
+    changed &&
+    authority.some((code) => code.startsWith('customer_affairs.call_center.'))
+  );
 }
 
 export function manualAccessCatalogFingerprint() {
@@ -71,7 +97,13 @@ export function manualAccessSelection(
     permissionCodes: [
       ...new Set([...codes.filter((c) => !c.startsWith('ui.')), ...portal]),
     ].sort(),
-    screenIds: USER_ACCESS_SCREENS.filter((s) => canViewScreen(codes, s.id))
+    screenIds: USER_ACCESS_SCREENS.filter(
+      (s) =>
+        canViewScreen(codes, s.id) ||
+        (s.id === 'customer-affairs.call-center' &&
+          !hasScopedCallCenterAccess(codes) &&
+          canViewRoute(codes, s.route)),
+    )
       .map((s) => s.id)
       .sort(),
     allowedControlIds: USER_ACCESS_DENY_CONTROLS.filter(

@@ -69,6 +69,9 @@ jobs:
       - name: Verify multi-computer CI policy
         run: node --test .github/tests/ci-policy.test.mjs
 
+      - name: Verify bounded PBX recording uploader
+        run: node --test scripts/call-center/upload-issabel-recording.test.mjs
+
       - name: Frozen install
         run: pnpm install --frozen-lockfile
 
@@ -202,10 +205,10 @@ jobs:
           pnpm --filter @nora/database db:seed
           pnpm --filter @nora/database db:seed
 
-      - name: Prove optional IAM user unit migration and HR foreign keys
+      - name: Prove IAM user unit and company branch data upgrades
         env:
           IAM_USER_UNIT_TEST: '1'
-        run: pnpm --filter @nora/database exec vitest run test/iam-user-unit-postgres.spec.ts
+        run: pnpm --filter @nora/database exec vitest run test/iam-user-unit-postgres.spec.ts test/five-company-branches-postgres.spec.ts
 
       - name: Prove immutable purchase FX snapshots
         env:
@@ -225,6 +228,16 @@ jobs:
           pnpm --filter @nora/database build
           pnpm --filter @nora/api exec vitest run src/marketing/marketing-records.postgres.spec.ts
 
+      - name: Prove financial source, refund and petty-cash atomicity
+        env:
+          NORA_RUN_FINANCIAL_EVENT_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run test/financial-events.postgres.spec.ts --maxWorkers=1
+
+      - name: Prove company bank account encryption, CAS and audit atomicity
+        env:
+          NORA_RUN_BANK_ACCOUNT_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run test/bank-accounts.postgres.spec.ts --maxWorkers=1
+
       - name: Prove assistant read-only PostgreSQL and HTTP boundaries
         env:
           NORA_RUN_ASSISTANT_POSTGRES_TESTS: '1'
@@ -242,7 +255,7 @@ jobs:
       - name: Prove durable Call Center history, replay and branch isolation
         env:
           NORA_RUN_CALL_CENTER_POSTGRES_TESTS: '1'
-        run: pnpm --filter @nora/api exec vitest run src/customer-affairs/call-center.spec.ts --maxWorkers=1
+        run: pnpm --filter @nora/api exec vitest run src/customer-affairs/call-center.spec.ts src/customer-affairs/call-center-workflow.spec.ts src/customer-affairs/call-center-read.spec.ts src/integrations/telephony.spec.ts src/integrations/issabel/issabel.postgres.spec.ts --maxWorkers=1
 
   build:
     name: Full production build

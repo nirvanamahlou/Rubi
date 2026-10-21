@@ -676,6 +676,21 @@ export const masterDataApi = {
       },
     );
   },
+  updateCurrencyRate(
+    id: string,
+    body: { expectedVersion: number; rate: string; source: string },
+  ) {
+    return request<{ data: Record<string, unknown> }>(
+      `/currency-rates/${encodeURIComponent(id)}`,
+      { method: 'PATCH', body: JSON.stringify(body) },
+    );
+  },
+  removeCurrencyRate(id: string, expectedVersion: number) {
+    return request<{ data: Record<string, unknown> }>(
+      `/currency-rates/${encodeURIComponent(id)}`,
+      { method: 'DELETE', body: JSON.stringify({ expectedVersion }) },
+    );
+  },
   decideCurrencyRate(
     id: string,
     action: 'approve' | 'reject',

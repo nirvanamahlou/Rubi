@@ -1,4 +1,8 @@
 import type { DisplayLanguage } from '../common/i18n/language';
+import {
+  FACILITY_NAME_MAX_CHARACTERS,
+  postgresCharacterLength,
+} from './facility-text';
 import { randomUUID } from 'node:crypto';
 import {
   preparePartnerDossier,
@@ -492,6 +496,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'sourceMainImage',
     'sourceGalleryImages',
     'sourceFeatured',
+    'freeSale',
     'website',
     'checkInTime',
     'checkOutTime',
@@ -675,7 +680,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   'rail-terminals': ['name'],
   currencies: ['code', 'name'],
   'exchange-rates': ['fromCurrencyCode', 'toCurrencyCode', 'rate'],
-  banks: ['code', 'name', 'countryId'],
+  banks: ['name', 'countryId'],
   'bank-branches': ['code', 'name', 'bankId', 'cityId'],
   'payment-methods': ['name', 'channel', 'direction'],
   insurers: ['name', 'countryId'],
@@ -1978,6 +1983,16 @@ export class MasterDataService {
         );
       data.displayOrder = order;
     }
+    if (
+      resource === 'banks' &&
+      (data.code === undefined ||
+        data.code === null ||
+        (typeof data.code === 'string' && !data.code.trim()))
+    ) {
+      // Manual bank codes are optional; retain a stable unique internal identity.
+      if (partial) delete data.code;
+      else data.code = await this.generateAutoCode(resource, values);
+    }
     const usesGeneratedCode =
       resource !== 'exchange-rates' &&
       resource !== 'countries' &&
@@ -2913,6 +2928,21 @@ export class MasterDataService {
         data.includedMeals = [...new Set(includedMeals)];
       }
     }
+    if (resource === 'facilities') {
+      for (const [field, limit] of [
+        ['name', FACILITY_NAME_MAX_CHARACTERS],
+        ['englishName', 160],
+        ['category', 80],
+      ] as const) {
+        if (
+          typeof data[field] === 'string' &&
+          postgresCharacterLength(data[field]) > limit
+        )
+          throw new BadRequestException(
+            `${field}: maximum ${limit} characters.`,
+          );
+      }
+    }
     if (resource === 'facilities' && data.displayOrder !== undefined) {
       const displayOrder =
         data.displayOrder === '' || data.displayOrder === null
@@ -2944,13 +2974,12 @@ export class MasterDataService {
           );
         data[field] = value || null;
       }
-      if (Object.hasOwn(data, 'sourceFeatured')) {
-        const value = String(data.sourceFeatured ?? '').trim();
+      for (const field of ['sourceFeatured', 'freeSale'] as const) {
+        if (!Object.hasOwn(data, field)) continue;
+        const value = String(data[field] ?? '').trim();
         if (!['', 'true', 'false'].includes(value))
-          throw new BadRequestException(
-            'sourceFeatured must be true or false.',
-          );
-        data.sourceFeatured = value === '' ? null : value === 'true';
+          throw new BadRequestException(`${field} must be true or false.`);
+        data[field] = value === '' ? null : value === 'true';
       }
       if (data.isSaleableReference === '') delete data.isSaleableReference;
       else if (data.isSaleableReference !== undefined)

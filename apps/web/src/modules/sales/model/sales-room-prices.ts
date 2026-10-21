@@ -1,3 +1,4 @@
+import { usesRoomDrivenGuests } from './contract-guest-stays';
 import { moneyUnits, moneyDecimal } from '@nora/contracts';
 import type { SalesMoney } from '@nora/contracts';
 import type { SalesFormState } from './sales-form';
@@ -28,7 +29,14 @@ export function salesRoomPartyError(state: SalesFormState): string | null {
   )
     return null;
   const used = roomPartyUsage(state.hotel.rooms, state.hotelChildAssignments);
+  const extra = usesRoomDrivenGuests(state)
+    ? (state.flightOnlyPassengers ?? [])
+    : [];
   const p = state.passengerComposition;
+  used.adults += extra.filter((p) => p.age >= 12).length;
+  used.children += extra.filter((p) => p.age >= 2 && p.age < 12).length;
+  used.infants += extra.filter((p) => p.age < 2).length;
+  used.total += extra.length;
   return used.adults !== p.adults ||
     used.children !== p.children ||
     used.infants !== p.infants ||

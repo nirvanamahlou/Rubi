@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  formatTypedCustomerDate,
+  typedCustomerDateCaret,
+  parseTypedCustomerDate,
   calendarMonthDays,
   calendarMonthName,
   formatCustomerDate,
@@ -62,4 +65,44 @@ describe('Customer date field', () => {
     expect(calendarMonthName('gregorian', 12)).toBe('December');
     expect(calendarMonthName('persian', 1)).toBe('فروردین');
   });
+});
+
+it('inserts slashes while typing digits without completing partial days early', () => {
+  const raw = [
+    '1',
+    '13',
+    '135',
+    '1356',
+    '13560',
+    '135605',
+    '1356051',
+    '13560511',
+  ];
+  expect(raw.map(formatTypedCustomerDate)).toEqual([
+    '1',
+    '13',
+    '135',
+    '1356',
+    '1356/0',
+    '1356/05',
+    '1356/05/1',
+    '1356/05/11',
+  ]);
+  expect(formatTypedCustomerDate('۱۳۵۶۰۵۱۱')).toBe('1356/05/11');
+  expect(formatTypedCustomerDate('٢٠٠٠٠٢٢٩')).toBe('2000/02/29');
+  expect(formatTypedCustomerDate('2000-02-29')).toBe('2000/02/29');
+  expect(
+    parseTypedCustomerDate(formatTypedCustomerDate('20000229'), 'gregorian'),
+  ).toBe('2000-02-29');
+  expect(
+    parseTypedCustomerDate(formatTypedCustomerDate('20260230'), 'gregorian'),
+  ).toBeNull();
+  expect(formatTypedCustomerDate('1356/')).toBe('1356');
+  expect(formatTypedCustomerDate('')).toBe('');
+});
+it('keeps digit-relative caret positions during middle edits and slash insertion', () => {
+  expect(typedCustomerDateCaret('13560', 5, '1356/0')).toBe(6);
+  expect(typedCustomerDateCaret('1356/05/11', 3, '1356/05/11')).toBe(3);
+  expect(typedCustomerDateCaret('13560511', 6, '1356/05/11')).toBe(7);
+  expect(typedCustomerDateCaret('13560511', 0, '1356/05/11')).toBe(0);
 });

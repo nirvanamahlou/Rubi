@@ -14,6 +14,8 @@ export const employeeProfileSources: Readonly<
   requests: ['requests', 'inbox'],
   payslips: ['payroll', 'payslips'],
   financial: ['payroll', 'payslips'],
+  importedPayslips: ['payroll', 'importedPayslips'],
+  minuteLedger: ['time', 'minuteLedger'],
 };
 export function filterEmployeeRecords(
   data: HrPreviewDataset,

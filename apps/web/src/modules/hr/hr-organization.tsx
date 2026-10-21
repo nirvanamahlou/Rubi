@@ -145,6 +145,8 @@ export function HrOrganization({
                 { id: 'orgchart', label: 'چارت سازمانی' },
                 { id: 'branches', label: 'شعبه‌ها' },
                 { id: 'units', label: 'واحدها' },
+                { id: 'groups', label: 'گروه‌های کارکنان' },
+                { id: 'groupMembers', label: 'اعضای گروه' },
               ]
             : [{ id: 'positions', label: 'شغل و سمت' }]
         }

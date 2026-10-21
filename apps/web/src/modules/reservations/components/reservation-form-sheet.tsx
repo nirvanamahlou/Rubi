@@ -447,6 +447,12 @@ export function ReservationFormSheet({
                   <th>SURNAME / NAME</th>
                   <th>SEX</th>
                   <th>AGE RATE</th>
+                  {data.passengers.some((p) => p.checkIn !== undefined) && (
+                    <>
+                      <th>CHECK-IN</th>
+                      <th>CHECK-OUT</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -457,6 +463,12 @@ export function ReservationFormSheet({
                       <td dir="auto">{p.name}</td>
                       <td>{p.sex}</td>
                       <td>{p.age}</td>
+                      {data.passengers.some((p) => p.checkIn !== undefined) && (
+                        <>
+                          <td>{p.checkIn ?? '—'}</td>
+                          <td>{p.checkOut ?? '—'}</td>
+                        </>
+                      )}
                     </tr>
                   ))
                 ) : (

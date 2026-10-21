@@ -1,3 +1,8 @@
+import { financialDate } from '../accounting/accounting.financial-events';
+import {
+  recordFinancialEvent,
+  isNewAccountingSource,
+} from '../accounting/financial-event.public';
 import { PurchaseFxService } from '../purchase-fx/purchase-fx.service';
 import { TicketPublicService } from '../../ticket-catalog/ticket-public.service';
 import { moneyUnits, moneyDecimal } from '@nora/contracts';
@@ -510,6 +515,39 @@ export class FinanceTicketCostService {
           reason: '',
           actorUserId: actor.userId,
         },
+      });
+      if (!previous && (await isNewAccountingSource(tx, cost.createdAt)))
+        await recordFinancialEvent(tx, {
+          source: 'TICKET',
+          recordId: cost.id,
+          requestId,
+          kind: 'TICKET_PAYABLE',
+          ...(cost.createdAt
+            ? { trackingDate: financialDate(cost.createdAt) }
+            : {}),
+          branchId: request.branchId,
+          actorId: actor.userId,
+          occurredAt: transferAt,
+          amount: cost.invoiceAmount.toString(),
+          currency: cost.currencyCode,
+          partyId: requestId,
+        });
+      await recordFinancialEvent(tx, {
+        source: 'TICKET',
+        recordId: row.id,
+        requestId,
+        kind: 'TICKET_PAYMENT',
+        ...(cost.createdAt
+          ? { trackingDate: financialDate(cost.createdAt) }
+          : {}),
+        branchId: request.branchId,
+        actorId: actor.userId,
+        occurredAt: transferAt,
+        amount: amount.toString(),
+        currency: cost.currencyCode,
+        settlementAccountId: account?.id ?? null,
+        partyId: `${requestId}:${payingSupplierId ?? ''}`,
+        reference: row.paymentReference,
       });
       if (remaining.isZero())
         await this.procurement.markFinancePaid(

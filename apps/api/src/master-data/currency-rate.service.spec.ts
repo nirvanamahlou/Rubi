@@ -151,6 +151,7 @@ describe('CurrencyRateService decisions', () => {
       status: 'DRAFT',
     });
     const where = {
+      isActive: true,
       status: 'DRAFT',
       fromCurrency: { code: { contains: 'usd', mode: 'insensitive' } },
       toCurrency: { code: { contains: 'IRR', mode: 'insensitive' } },
@@ -178,6 +179,7 @@ describe('CurrencyRateService decisions', () => {
           id: draft.id,
           version: 1,
           status: MasterCurrencyRateStatus.DRAFT,
+          isActive: true,
         },
         data: expect.objectContaining({ status, version: { increment: 1 } }),
       });

@@ -142,9 +142,9 @@ describe('combined flight and hotel details', () => {
       salesDetailSteps({ ...base, serviceKinds: ['HOTEL', 'VISA'] }),
     ).toEqual(['HOTEL', 'VISA']);
   });
-  it('defaults to the day after outbound and day before return', () => {
+  it('defaults to the outbound day and day before return', () => {
     expect(selected().hotel).toMatchObject({
-      checkIn: '2026-09-11',
+      checkIn: '2026-09-10',
       checkOut: '2026-09-19',
     });
   });
@@ -161,7 +161,7 @@ describe('combined flight and hotel details', () => {
       outboundOffer: offer('2026-09-12T07:00:00Z'),
       returnOffer: undefined,
     });
-    expect(next.hotel.checkIn).toBe('2026-09-13');
+    expect(next.hotel.checkIn).toBe('2026-09-12');
     expect(next.hotel.checkOut).toBe('');
   });
   it('preserves manual overrides including an intentionally cleared value', () => {
@@ -183,7 +183,7 @@ describe('combined flight and hotel details', () => {
       ...next,
       hotel: { ...next.hotel, checkInManual: false, checkOutManual: false },
     });
-    expect(reset.hotel.checkIn).toBe('2026-09-13');
+    expect(reset.hotel.checkIn).toBe('2026-09-12');
     expect(reset.hotel.checkOut).toBe('2026-09-19');
   });
   it('keeps saved legacy draft dates and never invents a return date for a one-way ticket', () => {
@@ -199,7 +199,7 @@ describe('combined flight and hotel details', () => {
       tripType: 'ONE_WAY',
       outboundOffer: offer('2026-09-10T07:00:00Z'),
     });
-    expect(oneWay.hotel.checkIn).toBe('2026-09-11');
+    expect(oneWay.hotel.checkIn).toBe('2026-09-10');
     expect(oneWay.hotel.checkOut).toBe('');
   });
   it('rejects invalid or incomplete stays, including a short-flight suggested range', () => {
@@ -226,6 +226,7 @@ describe('combined flight and hotel details', () => {
       checkIn: '2026-09-12',
       checkOut: '2026-09-18',
       checkInManual: true,
+      calendarSystem: 'gregorian',
     };
     const payload = salesPayload(state);
     expect(payload.hotelSelection).toMatchObject({
@@ -237,6 +238,7 @@ describe('combined flight and hotel details', () => {
       extraBedCount: 0,
     });
     expect(payload.hotelSelection).not.toHaveProperty('checkInManual');
+    expect(payload.hotelSelection).not.toHaveProperty('calendarSystem');
   });
   it('reports known room capacity immediately and ignores missing rate factors', () => {
     const state = selected();
@@ -286,7 +288,7 @@ it('derives floating hotel dates from selected calendar days before flight ident
     },
   });
   expect(next.hotel).toMatchObject({
-    checkIn: '2026-10-13',
+    checkIn: '2026-10-12',
     checkOut: '2026-10-19',
   });
   const changed = withSalesHotelDates(next, {
@@ -295,11 +297,25 @@ it('derives floating hotel dates from selected calendar days before flight ident
     returnDate: '2026-10-22',
   });
   expect(changed.hotel).toMatchObject({
-    checkIn: '2026-10-15',
+    checkIn: '2026-10-14',
     checkOut: '2026-10-21',
   });
   expect(
     withSalesHotelDates(changed, { ...changed, tripType: 'ONE_WAY' }).hotel
       .checkOut,
   ).toBe('');
+});
+
+it('moves the whole hotel stay check-in to tomorrow only when requested', () => {
+  const current = selected();
+  const next = withSalesHotelDates(current, {
+    ...current,
+    hotelArrivesNextDay: true,
+  });
+  expect(next.hotel.checkIn).toBe('2026-09-11');
+  expect(next.hotel.checkOut).toBe(current.hotel.checkOut);
+  expect(
+    withSalesHotelDates(next, { ...next, hotelArrivesNextDay: false }).hotel
+      .checkIn,
+  ).toBe('2026-09-10');
 });

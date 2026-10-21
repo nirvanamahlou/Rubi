@@ -82,6 +82,7 @@ const sourceLabels: Record<FinanceInboxSource, string> = {
   FINANCE: 'درخواست مستقیم مالی',
 };
 const statusLabels: Partial<Record<FinanceRequestStatus, string>> = {
+  CLOSED: 'بسته‌شده',
   NEW: 'جدید',
   UNDER_REVIEW: 'در حال بررسی',
   APPROVED: 'تأییدشده',
@@ -94,6 +95,7 @@ const statusLabels: Partial<Record<FinanceRequestStatus, string>> = {
   CANCELLED: 'لغوشده',
 };
 const closed = new Set<FinanceRequestStatus>([
+  'CLOSED',
   'APPROVED',
   'PAID',
   'RECEIPT_CONFIRMED',
@@ -364,7 +366,9 @@ export function FinanceInboxLiveWorkspace() {
   const items = useMemo(() => data?.items ?? [], [data]);
   const dashboard = useMemo(() => {
     const openItems = items.filter((item) => !isClosed(item));
-    const receiptItems = openItems.filter((item) => item.source === 'SALES');
+    const receiptItems = openItems.filter(
+      (item) => item.source === 'SALES' || item.direction === 'RECEIPT',
+    );
     const paymentItems = openItems.filter(isActionablePayment);
     const dueItems = [...openItems]
       .filter((item) => item.dueAt)

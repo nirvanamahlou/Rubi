@@ -27,6 +27,12 @@ export interface HrResourceDefinition {
 
 const parentResources: Record<string, string[]> = {
   'organization.units': ['organization.units'],
+  'organization.groupMembers': ['organization.groups'],
+  'time.shift': ['time.workingHours', 'time.shiftTemplates'],
+  'time.templateDays': ['time.shiftTemplates'],
+  'requests.patternAssignments': ['requests.patterns'],
+  'requests.procedureMembers': ['requests.procedures'],
+  'requests.approvalStages': ['requests.procedures'],
   'recruitment.applicants': ['recruitment.staffing', 'recruitment.openings'],
   'expenses.travel': ['time.mission', 'expenses.mission'],
   'expenses.advances': ['time.mission', 'expenses.mission'],
@@ -50,6 +56,9 @@ const parentResources: Record<string, string[]> = {
   'fleet.logs': ['fleet.vehicles', 'assets.vehicles'],
 };
 const readOnly = new Set([
+  'requests.approvalAssignments',
+  'time.minuteLedger',
+  'payroll.importedPayslips',
   'time.periods',
   'time.leaveGrants',
   'employee.assignment',
@@ -75,6 +84,9 @@ const readOnly = new Set([
   'requests.mobile',
 ]);
 const selfService = new Set([
+  'requests.radanLeave',
+  'requests.radanMission',
+  'time.remote',
   'time.leave',
   'requests.leave',
   'time.corrections',
@@ -132,8 +144,40 @@ export function getHrResource(
                 ? 'decimal'
                 : 'text',
     required:
-      index === 0 || label === 'کارمند' || key === 'recruitment.assessment',
-    maxLength: /شرح|تعهدات|بازخورد|توضیح/.test(label) ? 4000 : 500,
+      index === 0 ||
+      label === 'کارمند' ||
+      (key === 'employee.identity' &&
+        ['نام خانوادگی', 'کد ملی'].includes(label)) ||
+      (key === 'employee.phones' && label === 'شماره تماس') ||
+      (key === 'requests.approvalStages' && label === 'اولویت') ||
+      (key === 'requests.procedures' && label === 'درخواست‌ها') ||
+      (['requests.radanLeave', 'requests.radanMission'].includes(key) &&
+        [
+          'نوع مرخصی',
+          'نوع مأموریت',
+          'از تاریخ',
+          'تا تاریخ',
+          'نوع مدت',
+          'با جایگزینی',
+        ].includes(label)) ||
+      key === 'recruitment.assessment' ||
+      (key === 'time.workingHours' &&
+        [
+          'ساعت شروع',
+          'ساعت پایان',
+          'روز پایان',
+          'ساعت قبل از شروع',
+          'ساعت بعد از پایان',
+        ].includes(label)) ||
+      (key === 'time.remote' &&
+        ['از تاریخ', 'تا تاریخ', 'نوع دورکاری'].includes(label)) ||
+      (key === 'time.biometric' &&
+        ['آدرس دستگاه', 'نوع دستگاه'].includes(label)),
+    maxLength: ['اجزای کارکرد', 'درخواست‌ها'].includes(label)
+      ? 8000
+      : /شرح|تعهدات|بازخورد|توضیح/.test(label)
+        ? 4000
+        : 500,
   }));
   return {
     key,
@@ -144,6 +188,8 @@ export function getHrResource(
     employeeRequired:
       columns.some((label) => label === 'کارمند') || section === 'employee',
     sensitive:
+      key === 'employee.identity' ||
+      key === 'employee.phones' ||
       section === 'recruitment' ||
       key === 'lifecycle.exit' ||
       [
@@ -164,6 +210,7 @@ export function getHrResource(
     parentResources: parentResources[key] ?? [],
     parentOptional: [
       'organization.units',
+      'time.shift',
       'expenses.travel',
       'expenses.advances',
       'expenses.claims',

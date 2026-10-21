@@ -1,3 +1,11 @@
+## RATE-ACTIONS-CHART-1019 — reference correction policy (2026-10-19)
+
+The owner explicitly permits editing/removing registered Master Data reference quotes. Dedicated versioned PATCH/DELETE commands supersede blanket immutability only for these non-authoritative reference rows: edit amount/source, retaining original pair/type/observation/validity/status; removal logically deactivates with actor/time/version. All previous values remain in transactional audit, inactive rows are excluded from current/history and cannot be approved through legacy commands. This is not Finance rate approval, financial document rewriting or physical audit deletion. Preserve native update/delete authority, manual resource/field access, permitted audit branch, exact positive Decimal strings and compare-and-swap. Removing the visible isAuthoritative=false badge never changes the stored flag. No schema/migration or operational data change.
+
+## DIRECT-CURRENCY-RATES-1019 — owner policy (2026-10-19)
+
+The owner explicitly removes separate approval for newly entered Master Data reference currency quotes. POST currency-rates/quotes now atomically registers BUY/SELL as finalized (existing APPROVED enum), with backend-owned registrant/finalization time and creation audit; current-rate and chart consumers immediately read them. This supersedes maker/checker only for this new reference-registration command, not Finance authoritative FX or legacy draft approve/reject commands. Existing drafts/history are not mass-approved or rewritten. Keep create permissions, branch checks, positive exact Decimal strings, active currency FKs, validity windows, transactional audit and isAuthoritative=false. Producer/consumer deploy together; older API deployments still create drafts. No migration or accounting-rate change.
+
 ## OPTIONAL-OPERATION-REASONS-1015 — owner policy (2026-10-15)
 
 The owner explicitly makes human change/action reason text optional throughout the application. This supersedes earlier nonempty/minimum-length reason requirements, including financial override/correction, administrative and document actions. Permissions, branch isolation, maker/checker, expiry, CAS, idempotency, actor/time and audit history remain mandatory. Omitted/blank reasons store empty text (or existing nullable representation), never an invented reason. Optional does not mean unbounded or untyped: supplied text retains maximum length and other content constraints. Structured failure reason codes and required business content such as a newly added note/message are not audit-reason fields. One forward SQL constraint replacement removes only the receipt adjustment reason-text check and preserves all quantity/FK/history constraints. No retrospective audit/data rewriting or local deployment.
@@ -544,3 +552,33 @@ Owner explicitly authorizes selecting past dated flights and continuing contract
 ## 2026-10-19 — Floating clocks and consistent combined Sales parties
 
 Owner requests inheriting previously selected outbound/return civil dates for floating flights, asking only Tehran departure/arrival clocks, and automatic next-day arrival when the arrival clock does not follow departure. Changing calendar dates clears prior floating choices to prevent stale snapshots. Owner additionally requires exact hotel/flight adult, child and infant totals using existing airline age normalization and matching passenger membership on the API. Room negotiated currency now permits IRR through UI and shared validation, using existing exact per-currency totals with no exchange conversion. Legacy roomless draft compatibility remains; new UI requires room details. No data backfill, schema or dependency change. Owner authorizes develop merge and backed-up production rollout.
+
+## 2026-10-19 — Call Center request and follow-up ownership
+
+CALL-CENTER-PACKAGE-ONE-1019 reuses Customer Affairs Ticket and Tasks AutomationTask rather than duplicate generic request/task models. The reserved Call Center category keeps private data encrypted and is excluded from generic support reads/mutations/reports/SLA reminders. No business SLA is assumed: its explicit no-SLA marker permits equal technical required date placeholders while preserving the existing support SLA-order constraint for ordinary tickets. Caller number groups communication history within one branch and does not establish Customer identity; unknown numbers are event-specific. Existing historical records remain unchanged. New workflow authority is independent and only the owner-approved amin grant is applied locally. Private unconfirmed drafts stay in memory with exit warnings, without browser plaintext persistence or crash-recovery guarantees.
+
+## Call Center package two search decision — 2026-10-19
+
+Use bounded, branch-domain-separated HMAC whole-word tokens for name/subject, exact phone fingerprints and opaque source/team fingerprints. No substring/ngram index and no plaintext private shadow columns. Leakage: token equality, frequency and token count within a branch; key holders can test guesses. API only exposes authorized matches. Index generation is a resumable one-time bounded backfill, never a full decrypt scan per query. Queries reject incomplete index coverage rather than silently returning incomplete results. Exact normalized words (AND) and exact equivalent phone formats are supported; partial-word search is explicitly unsupported. Pagination rejects a changed data revision with409 and offers explicit refresh, preserving selected context; it never silently skips shifted rows. No URL private search terms. Reports state time window, grain, timezone, null denominator and coverage.
+
+## 2026-10-19 — Telephony package three, internal contract v1
+
+No Issabel protocol, authentication, capabilities or latency are known. This package supplies an authenticated synthetic adapter only; real connections stay inactive. Integrations owns encrypted durable canonical Inbox, dispatch Outbox, connection/mapping configuration and audit. Customer Affairs exposes a transactional projection port and owns the single business call plus technical root/legs, recipient snapshots, claims and completion. No raw provider payload is accepted or distributed. Shared v1 producer/consumer ship together, with explicit nulls and server receipt time distinct from occurrence.
+
+Worker uses existing BullMQ and polls the durable Outbox. Redis is disposable transport, never the acknowledgement source. The authenticated shell uses a bounded authoritative two-second polling snapshot rather than asserting provider push/latency. Reconnection reloads persisted incomplete work; tab leases and call CAS are enforced by the server. Synthetic rows use SYNTHETIC origin and reserved fictional numbers. Mapping recipients are snapshotted at receipt and revalidated at processing; unknown extensions are not broadcast. Canonical processed inbox payloads expire after seven days; HMAC deduplication tombstones remain. Real retention/recording policy and provider adapter activation require a separate approved integration.
+
+## 2026-10-19 — الزام مالک محصول برای حفظ طراحی کال سنتر
+
+تصمیم قطعی مالک: در بسته چهارم و اتصال ایزابل، آخرین طراحی/رفتار تأییدشده بدون اجازه
+صریح او تغییر نکند؛ هیچ بخش فنی یا آزمایشی به پنل افزوده یا بازگردانده نشود. حذف بخش
+آزمایش داخلی در8f485a26 باید حفظ شود. نیاز فنی یا دریافت API مجوز ضمنی UI نیست.
+این تصمیم، هر برداشت متفاوت از راهنمای تاریخی بسته سوم را کنار می‌زند.
+[سند الزام‌آور و روند تأیید](tasks/CALL-CENTER-UI-PRESERVATION.md).
+
+## 2026-10-19 — PASSENGER-DIRECTIONS-1019
+
+Owner explicitly replaces mandatory hotel/flight membership equality with per-leg passenger selections: hotel-only guests are valid, and each flight consumes only its assigned non-infant seats. Existing global room composition validation and actual guest occupancy remain. New Sales drafts use manual per-guest hotel prices; legacy room agreement snapshots remain readable, while new per-guest totals never double count them. Canonical service allocations drive existing Reservations manifests. No schema or historical data rewrite.
+
+## ISSABEL-ADAPTER-1020 — bounded recording storage
+
+Owner explicitly requests saved call audio without ERP playback. For this initial integration, actual audio is stored as authenticated encrypted32KiB chunks in Integration-owned PostgreSQL tables, rather than exposing an external recording URL or claiming that metadata is an audio backup. This is a bounded exception to general Documents/S3 file storage:20MiB WAV maximum, approved retention required, explicit byte/hash finalization and private PBX uploader. No cross-module Documents table access. Reassess storage/backup volume with measured call traffic before Production. AMI UserEvent hooks express verified PBX facts; generic channel Hangup/IVR Up is insufficient evidence of linked-call completion/human answer. Actual installed-version hook compatibility and reconciliation remain live-acceptance requirements, not assumptions.

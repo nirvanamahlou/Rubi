@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { PASSENGER_FLIGHT_PRICES } from '@nora/contracts';
 import { contractPrintHtml } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
-it('prints flight rial amounts and room-only foreign shares without double charging', () => {
+it('prints all flight currencies and compatible legacy room shares without double charging', () => {
   const out = structuredClone(printFixture),
     p = out.contract.passengersDetail[0]!;
   out.contract.servicesDetail[0]!.metadata = {
@@ -31,9 +31,9 @@ it('prints flight rial amounts and room-only foreign shares without double charg
   const html = contractPrintHtml(out, printReferences),
     table = html.split('PASSENGERS & PRICING')[1]!.split('</table>')[0]!;
   expect(table).toContain('مبلغ پرواز');
-  expect(table).toContain('سهم ارزی اتاق');
+  expect(table).toContain('قیمت ارزی');
   expect(table).toContain('50 $');
-  expect(table).not.toContain('12.50 $');
+  expect(table).toContain('12.50 $');
   expect(table).toContain('12,345');
   expect(table).not.toContain('مبلغ فروش');
   expect(html).not.toContain('اتاق‌های قرارداد:');

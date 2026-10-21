@@ -10,7 +10,9 @@ import {
 } from './sales-currency-select';
 import {
   passengerFlightSalePrices,
+  salesHotelGuestIds,
   type SalesFormState,
+  salesNetServicePrices,
 } from '../model/sales-form';
 
 export function ContractTotalPrices({
@@ -27,15 +29,36 @@ export function ContractTotalPrices({
   ) => void;
 }) {
   const automatic =
-    !state.packageSaleQuote &&
-    state.automaticComponentPricing &&
-    state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'HOTEL');
+    state.passengerTotalPricing ||
+    ((!state.packageSaleQuote || state.passengerHotelPrices !== undefined) &&
+      state.automaticComponentPricing &&
+      state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'HOTEL'));
   let calculated: SalesMoney[] = [];
   try {
     calculated = flightRoomTotals(
-      passengerFlightSalePrices(state),
-      state.serviceKinds.includes('HOTEL') ? (state.hotel.rooms ?? []) : [],
+      {
+        ...passengerFlightSalePrices(state),
+        ...Object.fromEntries(
+          Object.entries(
+            state.serviceKinds.includes('HOTEL')
+              ? (state.passengerHotelPrices ?? {})
+              : {},
+          )
+            .filter(([id]) => salesHotelGuestIds(state).includes(id))
+            .map(([id, p]) => ['hotel-' + id, p]),
+        ),
+      },
+      state.passengerHotelPrices === undefined &&
+        state.serviceKinds.includes('HOTEL')
+        ? (state.hotel.rooms ?? [])
+        : [],
     );
+    if (
+      state.passengerTotalPricing ||
+      (state.passengerDeductions &&
+        Object.keys(state.passengerDeductions).length)
+    )
+      calculated = flightRoomTotals(salesNetServicePrices(state), []);
   } catch {
     /* Invalid input is reported by final-step validation. */
   }

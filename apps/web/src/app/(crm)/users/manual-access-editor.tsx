@@ -9,6 +9,7 @@ import {
 } from 'react';
 import {
   MANUAL_ACCESS_SECTIONS,
+  CALL_CENTER_SCOPED_ACCESS,
   MANUAL_NEW_PERMISSIONS,
   USER_ACCESS_SCREENS,
   USER_ACCESS_DENY_CONTROLS,
@@ -242,6 +243,7 @@ export function ManualAccessEditor({
           );
           const permissions = options.permissions.filter(
             (p) =>
+              p.code !== CALL_CENTER_SCOPED_ACCESS &&
               permissionInSection(p.code, id) &&
               (sectionMatch || match(permissionLabel(p, id))),
           );

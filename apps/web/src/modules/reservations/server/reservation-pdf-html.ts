@@ -69,6 +69,9 @@ export function reservationPdfHtml(
             : p.age === 'CHD (6-12)'
               ? 'CHD 6-12'
               : p.age,
+          ...(data.passengers.some((p) => p.checkIn !== undefined)
+            ? [p.checkIn ?? '—', p.checkOut ?? '—']
+            : []),
         ];
       });
       first += people.length;
@@ -150,7 +153,7 @@ export function reservationPdfHtml(
       ${table(['CHECK-IN', 'CHECK-OUT'], [[data.checkIn, data.checkOut]]).replace('<thead>', '<caption>STAY DATES</caption><thead>')}
     </div>
     ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table(['TRANSFER', 'TOUR LEADER', 'EXCURSION'], [[voucher ? data.transfer + ' · Board: ' + (settings?.text.transferBoard?.trim() || '-') : data.transfer, data.leader, data.excursion]])}
-    ${heading('05', 'PASSENGERS', 'Passenger MANIFEST')}${table(['#', 'SURNAME / NAME', 'SEX', 'AGE RATE'], rows.length ? rows : [['-', '-', '-', '-']], 'passengers')}
+    ${heading('05', 'PASSENGERS', 'Passenger MANIFEST')}${table(['#', 'SURNAME / NAME', 'SEX', 'AGE RATE', ...(data.passengers.some((p) => p.checkIn !== undefined) ? ['CHECK-IN', 'CHECK-OUT'] : [])], rows.length ? rows : [['-', '-', '-', '-']], 'passengers')}
     ${heading('06', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
     <footer class="footer"><div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin, intake.workflow.branding?.companyCode, data.brand)}</div><div><span></span></div><b>${index + 1} / ${pageCount}</b></footer></article>`;
     })

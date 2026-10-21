@@ -27,6 +27,33 @@ const group = (
   caseLabel?: string,
 ): HrGroup => ({ id, label, sources, ...(caseLabel ? { caseLabel } : {}) });
 export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
+  requests: [
+    group('forms', 'درخواست‌ها', [
+      source('requests', 'radanLeave', 'مرخصی ساعتی و روزانه'),
+      source('requests', 'radanMission', 'مأموریت ساعتی و روزانه'),
+    ]),
+    group('patterns', 'الگوها', [
+      source('requests', 'patterns', 'تعریف الگو'),
+      source('requests', 'patternAssignments', 'انتساب الگو'),
+    ]),
+    group('procedures', 'روند تأیید', [
+      source('requests', 'procedures', 'تعریف روند'),
+      source('requests', 'procedureMembers', 'درخواست‌کنندگان'),
+      source('requests', 'approvalStages', 'مراحل تأیید'),
+    ]),
+  ],
+  organization: [
+    group('structure', 'ساختار سازمانی', [
+      source('organization', 'branches', 'شعبه‌ها'),
+      source('organization', 'units', 'واحدها'),
+      source('organization', 'positions', 'شغل و سمت'),
+      source('organization', 'grades', 'رده‌ها'),
+    ]),
+    group('groups', 'گروه‌های کارکنان', [
+      source('organization', 'groups', 'گروه‌ها', 'افزودن گروه'),
+      source('organization', 'groupMembers', 'اعضای گروه', 'افزودن عضو'),
+    ]),
+  ],
   time: [
     group(
       'work',
@@ -36,25 +63,36 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
         source('time', 'checkins', 'ورود و خروج', 'ثبت تردد'),
         source('time', 'corrections', 'اصلاح حضور', 'درخواست اصلاح حضور'),
         source('time', 'overtime', 'اضافه‌کاری', 'درخواست اضافه‌کاری'),
+        source('time', 'remote', 'دورکاری', 'درخواست دورکاری'),
       ],
       'جزئیات کارکرد',
     ),
     group(
       'shifts',
       'شیفت‌بندی',
-      [source('time', 'shift', 'تعریف شیفت', 'تعریف شیفت')],
+      [
+        source('time', 'workingHours', 'ساعت کاری', 'تعریف ساعت کاری'),
+        source('time', 'shiftTemplates', 'تعریف شیفت', 'تعریف شیفت'),
+        source('time', 'templateDays', 'تقویم سالانه شیفت', 'ثبت روز تقویم'),
+        source('time', 'shift', 'انتساب شیفت', 'انتساب شیفت'),
+      ],
       'جزئیات شیفت',
     ),
     group(
       'leaves',
       'مرخصی',
-      [source('time', 'leave', 'تعریف مرخصی', 'تعریف مرخصی')],
+      [
+        source('time', 'leave', 'تعریف مرخصی', 'تعریف مرخصی'),
+        source('time', 'minuteLedger', 'کاردکس دقیقه‌ای مرخصی', '', true),
+        source('time', 'leaveTransferRules', 'قواعد انتقال مرخصی'),
+      ],
       'پرونده مرخصی',
     ),
     group('settings', 'تنظیمات کارکرد', [
       source('time', 'leavePolicies', 'سیاست و سهمیه', 'تعریف سیاست مرخصی'),
       source('time', 'holidays', 'تعطیلات', 'ثبت تعطیلی'),
       source('time', 'biometric', 'دستگاه‌ها', 'افزودن دستگاه'),
+      source('time', 'calculationSettings', 'تنظیمات محاسبات کارکرد'),
     ]),
   ],
   contracts: [
@@ -219,6 +257,7 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
         source('finance', 'batch', 'مبانی پرداخت', 'آماده‌سازی مبانی پرداخت'),
         source('finance', 'results', 'نتیجه حقوق', 'دریافت نتیجه', true),
         source('payroll', 'payslips', 'فیش‌های حقوقی', 'مشاهده فیش', true),
+        source('payroll', 'importedPayslips', 'فیش‌های واردشده', '', true),
         source('finance', 'payments', 'پرداخت و مغایرت', 'مشاهده پرداخت', true),
         source('payroll', 'accounting', 'سند حسابداری', 'مشاهده سند', true),
       ],
@@ -252,6 +291,8 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
 export const employeeGroups: readonly HrGroup[] = [
   group('identity', 'مشخصات', [
     source('employee', 'summary', 'مشخصات فردی'),
+    source('employee', 'identity', 'اطلاعات هویتی'),
+    source('employee', 'phones', 'شماره‌های تماس'),
     source('employee', 'contact', 'اطلاعات تماس'),
   ]),
   group('employment', 'همکاری و قرارداد', [
@@ -262,11 +303,13 @@ export const employeeGroups: readonly HrGroup[] = [
     source('employee', 'attendance', 'کارکرد', '', true),
     source('employee', 'shift', 'شیفت', '', true),
     source('employee', 'leave', 'مرخصی', '', true),
+    source('employee', 'minuteLedger', 'کاردکس دقیقه‌ای مرخصی', '', true),
     source('employee', 'overtime', 'اضافه‌کاری', '', true),
   ]),
   group('pay', 'حقوق و پرداخت‌ها', [
     source('employee', 'financial', 'حقوق و کسورات', '', true),
     source('employee', 'payslips', 'فیش‌های حقوقی', '', true),
+    source('employee', 'importedPayslips', 'فیش‌های واردشده', '', true),
   ]),
   group('development', 'عملکرد و آموزش', [
     source('employee', 'performance', 'ارزیابی', '', true),
@@ -308,4 +351,12 @@ export function canonicalHrLocation(
   if (section === 'fleet')
     return { section: 'assets', tab: tab === 'logs' ? 'logs' : 'vehicles' };
   return { section, ...(tab ? { tab } : {}) };
+}
+
+export function resolveHrSource(group: HrGroup, tab?: string): HrSource {
+  return (
+    group.sources.find(
+      (source) => source.tab === (tab === 'roster' ? 'shift' : tab),
+    ) ?? group.sources[0]!
+  );
 }

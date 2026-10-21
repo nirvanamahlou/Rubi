@@ -1,3 +1,10 @@
+import { CustomerAffairsModule } from '../customer-affairs/customer-affairs.module';
+import { TelephonyIntegrationService } from './telephony.service';
+import {
+  TelephonyIntegrationController,
+  TelephonyWorkerController,
+  TelephonyWorkerGuard,
+} from './telephony.controller';
 import { Module } from '@nestjs/common';
 import { IamModule } from '../iam/iam.module';
 import { ProcurementModule } from '../procurement/procurement.module';
@@ -6,11 +13,35 @@ import { ProcurementSupplierIntegrationService } from './procurement-supplier.in
 import { SystemManagementModule } from '../system-management/system-management.module';
 import { IntegrationRegistryController } from './integration-registry.controller';
 import { IntegrationRegistryService } from './integration-registry.service';
+import { IssabelService } from './issabel/issabel.service';
+import { IssabelRecordingsService } from './issabel/recordings.service';
+import {
+  IssabelController,
+  IssabelRecordingController,
+  IssabelRecordingGuard,
+} from './issabel/issabel.controller';
 
 @Module({
-  imports: [IamModule, ProcurementModule, SystemManagementModule],
-  controllers: [IntegrationsController, IntegrationRegistryController],
+  imports: [
+    CustomerAffairsModule,
+    IamModule,
+    ProcurementModule,
+    SystemManagementModule,
+  ],
+  controllers: [
+    IssabelController,
+    IssabelRecordingController,
+    TelephonyIntegrationController,
+    TelephonyWorkerController,
+    IntegrationsController,
+    IntegrationRegistryController,
+  ],
   providers: [
+    IssabelService,
+    IssabelRecordingsService,
+    IssabelRecordingGuard,
+    TelephonyIntegrationService,
+    TelephonyWorkerGuard,
     ProcurementSupplierIntegrationService,
     IntegrationRegistryService,
   ],

@@ -1,4 +1,5 @@
 'use client';
+import { MoneyInput } from '@/components/ui/money-input';
 import {
   ReservationCurrencySelect,
   useReservationCurrencies,
@@ -332,8 +333,9 @@ export function ReservationSettingsForm({
       live = false;
     };
   }, [intake.id, intake.workflow.version]);
-  async function save() {
-    if (busy || priceLoading) return;
+  async function save(sendToBroker = showDocument) {
+    if (busy || priceLoading || intake.workflow.supplierStatus === 'CANCELLED')
+      return;
     if (activeDirectory.loading || activeDirectory.error) {
       setError(
         activeDirectory.error ||
@@ -368,7 +370,7 @@ export function ReservationSettingsForm({
       );
       return;
     }
-    if (showDocument && !draft.brokerId) {
+    if (sendToBroker && !draft.brokerId) {
       setError('پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.');
       return;
     }
@@ -378,7 +380,7 @@ export function ReservationSettingsForm({
     let savedWorkflow: TravelWorkflowStateV1 | undefined;
     try {
       let currentVersion = intake.workflow.version;
-      if (showDocument && !intake.workflow.branding) {
+      if (sendToBroker && !intake.workflow.branding) {
         const branded = await travelRequest<{ data: TravelWorkflowStateV1 }>(
           `reservations/requests/${intake.id}/workflow`,
           {
@@ -424,7 +426,7 @@ export function ReservationSettingsForm({
         },
       );
       savedWorkflow = r.data;
-      const result = showDocument
+      const result = sendToBroker
         ? await sendSavedReservationForm(intake.id, r.data)
         : r;
       onSaved(result.data);
@@ -588,6 +590,7 @@ export function ReservationSettingsForm({
   };
   const saveButton = (
     <Button
+      type="button"
       onClick={() => void save()}
       disabled={
         busy ||
@@ -614,6 +617,13 @@ export function ReservationSettingsForm({
           رزواسیون می‌سازد؛ ردهٔ کودک هتل در فرم ارسالی کارگزار چاپ می‌شود.
         </p>
       </header>
+      {message && <p role="status">{message}</p>}
+      {error && (
+        <p role="alert" className="text-destructive">
+          {error}
+        </p>
+      )}
+
       {(section === 'ALL' || section === 'HOTEL') && (
         <div className={styles.sectionCard}>
           <h4>مبلغ هتل در فرم رزواسیون</h4>
@@ -632,19 +642,17 @@ export function ReservationSettingsForm({
             <div className="grid grid-cols-2 gap-2" key={index}>
               <label>
                 مبلغ
-                <Input
+                <MoneyInput
                   aria-label={`مبلغ هتل ${index + 1}`}
-                  dir="ltr"
-                  inputMode="decimal"
                   value={price.amount}
-                  disabled={priceLoading}
-                  onChange={(event) => {
+                  disabled={busy || priceLoading}
+                  onValueChange={(amount) => {
                     const prices = [
                       ...(draft.hotelPurchasePrices?.length
                         ? draft.hotelPurchasePrices
                         : [{ amount: '', currencyCode: '' }]),
                     ];
-                    prices[index] = { ...price, amount: event.target.value };
+                    prices[index] = { ...price, amount };
                     update({ ...draft, hotelPurchasePrices: prices });
                   }}
                 />
@@ -655,7 +663,7 @@ export function ReservationSettingsForm({
                   label={`ارز هتل ${index + 1}`}
                   value={price.currencyCode}
                   currencies={currencyDirectory.currencies}
-                  disabled={priceLoading || currencyDirectory.loading}
+                  disabled={busy || priceLoading || currencyDirectory.loading}
                   onChange={(currencyCode) => {
                     const prices = [
                       ...(draft.hotelPurchasePrices?.length
@@ -673,8 +681,24 @@ export function ReservationSettingsForm({
             </div>
           ))}
           <Button
+            type="button"
+            loading={busy}
+            disabled={
+              busy ||
+              priceLoading ||
+              currencyDirectory.loading ||
+              intake.workflow.supplierStatus === 'CANCELLED' ||
+              activeDirectory.loading ||
+              !selected.length
+            }
+            onClick={() => void save(false)}
+          >
+            ثبت مبلغ فرم
+          </Button>
+          <Button
+            type="button"
             variant="outline"
-            disabled={priceLoading}
+            disabled={busy || priceLoading}
             onClick={() =>
               update({
                 ...draft,
@@ -689,7 +713,7 @@ export function ReservationSettingsForm({
           </Button>
           <Button
             variant="outline"
-            disabled={priceLoading}
+            disabled={busy || priceLoading}
             onClick={() => update({ ...draft, hotelPurchasePrices: [] })}
           >
             پاک‌کردن مبلغ فرم
@@ -1094,12 +1118,6 @@ export function ReservationSettingsForm({
         </p>
         {!showDocument && saveButton}
       </fieldset>
-      {message && <p role="status">{message}</p>}
-      {error && (
-        <p role="alert" className="text-destructive">
-          {error}
-        </p>
-      )}
       <details
         className={section === 'ALL' ? '' : 'hidden'}
         onToggle={(event) => setShowFiles(event.currentTarget.open)}

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   Inject,
@@ -23,6 +24,8 @@ import {
   CurrencyRateDecisionDto,
   CurrencyRateListDto,
   CurrencyRateQuoteDto,
+  CurrencyRateUpdateDto,
+  CurrencyRateVersionDto,
 } from './currency-rate.dto';
 import { CurrencyRateService } from './currency-rate.service';
 
@@ -77,6 +80,28 @@ export class CurrencyRateController {
       request.actor,
       branchId,
     );
+  }
+
+  @Patch(':id')
+  @RequirePermissions('master_data.update', 'master_data.currency_rate.create')
+  update(
+    @Param('id') id: string,
+    @Body() dto: CurrencyRateUpdateDto,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+  ) {
+    return this.service.mutate(id, dto, 'update', request.actor, branchId);
+  }
+
+  @Delete(':id')
+  @RequirePermissions('master_data.delete', 'master_data.currency_rate.create')
+  remove(
+    @Param('id') id: string,
+    @Body() dto: CurrencyRateVersionDto,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+  ) {
+    return this.service.mutate(id, dto, 'delete', request.actor, branchId);
   }
 
   @Patch(':id/reject')

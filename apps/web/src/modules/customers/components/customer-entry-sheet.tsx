@@ -1,6 +1,8 @@
 'use client';
+import { tehranToday, passportExpiryWarning } from '@/lib/passport-dates';
 
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { connectEntryTableScroll } from './entry-table-scroll';
 import { CircleHelp } from 'lucide-react';
 import { Input } from '@/components/ui/form-controls';
 import {
@@ -11,6 +13,7 @@ import {
 import { cn } from '@/lib/utils';
 import {
   CustomerDateField,
+  CustomerCalendarSwitch,
   type CustomerCalendarMode,
 } from './customer-date-field';
 
@@ -207,21 +210,47 @@ export function CustomerEntrySheet({
   onCalendarModeChange,
   disabled = false,
   showPassportExpiry = false,
+  salesDatePolicy = false,
   visibleFields,
   columnOrder,
   columnLabels,
+  calendarSwitchInBirthDateHeader = false,
+  extraColumns = [],
+  topScrollbar = false,
 }: {
+  topScrollbar?: boolean;
+  extraColumns?: readonly {
+    key: string;
+    /** Default preserves leading host-specific columns. */
+    position?: 'start' | 'end';
+    title: ReactNode;
+    render: (row: CustomerEntryRow) => ReactNode;
+  }[];
   rows: readonly CustomerEntryRow[];
   calendarMode: CustomerCalendarMode;
   onCalendarModeChange: (mode: CustomerCalendarMode) => void;
   disabled?: boolean;
   showPassportExpiry?: boolean;
+  salesDatePolicy?: boolean;
   /** Lets a host show the identity fields required for its workflow. */
   visibleFields?: readonly EntryField[];
   /** Optional leading fields; all other visible columns retain their default order. */
   columnOrder?: readonly EntryField[];
   columnLabels?: Partial<Record<EntryField, string>>;
+  calendarSwitchInBirthDateHeader?: boolean;
 }) {
+  const upperScroll = useRef<HTMLDivElement>(null);
+  const tableScroll = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!topScrollbar || !upperScroll.current || !tableScroll.current) return;
+    return connectEntryTableScroll(upperScroll.current, tableScroll.current);
+  }, [topScrollbar]);
+  const leadingColumns = extraColumns.filter(
+    (column) => column.position !== 'end',
+  );
+  const trailingColumns = extraColumns.filter(
+    (column) => column.position === 'end',
+  );
   const orderedColumns = columnOrder
     ? [
         ...columns
@@ -236,8 +265,22 @@ export function CustomerEntrySheet({
       (!visibleFields || visibleFields.includes(field)),
   );
   return (
-    <>
+    <div className={topScrollbar ? 'grid min-w-0 gap-1' : 'contents'}>
+      {topScrollbar ? (
+        <div
+          ref={upperScroll}
+          role="region"
+          aria-label="اسکرول افقی بالای جدول قراردادها"
+          tabIndex={0}
+          className="h-6 overflow-x-auto overflow-y-hidden rounded-t-xl border border-border bg-muted/40"
+          style={{ scrollbarWidth: 'auto' }}
+        >
+          <div style={{ width: 0, height: 1 }} />
+        </div>
+      ) : null}
       <div
+        ref={tableScroll}
+        data-entry-table-enhanced={topScrollbar || undefined}
         className="overflow-x-auto rounded-xl border"
         role="region"
         aria-label="جدول ورود اطلاعات مشتری و مسافران"
@@ -253,6 +296,11 @@ export function CustomerEntrySheet({
               <th scope="col" className="w-40 border-e p-3 text-start">
                 پرونده / نقش
               </th>
+              {leadingColumns.map((c) => (
+                <th key={c.key} scope="col" className="p-3">
+                  {c.title}
+                </th>
+              ))}
               {visibleColumns.map(([field, defaultLabel]) => {
                 const label = columnLabels?.[field] ?? defaultLabel;
                 return (
@@ -267,12 +315,26 @@ export function CustomerEntrySheet({
                         <Iso3CountryGuide label={label} />
                       ) : null}
                     </span>
+                    {field === 'birthDate' &&
+                    calendarSwitchInBirthDateHeader ? (
+                      <div className="mt-2">
+                        <CustomerCalendarSwitch
+                          mode={calendarMode}
+                          onChange={onCalendarModeChange}
+                        />
+                      </div>
+                    ) : null}
                   </th>
                 );
               })}
               <th scope="col" className="p-3 text-start">
                 جزئیات
               </th>
+              {trailingColumns.map((c) => (
+                <th key={c.key} scope="col" className="p-3">
+                  {c.title}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -288,6 +350,11 @@ export function CustomerEntrySheet({
                   <p className="mb-2 font-bold">{row.label}</p>
                   {row.role}
                 </th>
+                {leadingColumns.map((c) => (
+                  <td key={c.key} className="p-2">
+                    {c.render(row)}
+                  </td>
+                ))}
                 {visibleColumns.map(([field, defaultLabel, suffix]) => {
                   const label = columnLabels?.[field] ?? defaultLabel;
                   return (
@@ -332,20 +399,38 @@ export function CustomerEntrySheet({
                         </div>
                       ) : field === 'birthDate' ||
                         field === 'passportExpiryDate' ? (
-                        <CustomerDateField
-                          compact
-                          id={`${row.key}-${suffix}`}
-                          label={`${field === 'birthDate' ? 'تاریخ تولد' : 'انقضای پاسپورت'} ${row.label}`}
-                          mode={calendarMode}
-                          onModeChange={onCalendarModeChange}
-                          value={row.values[field] ?? ''}
-                          onChange={(value) => row.onChange(field, value)}
-                          disabled={Boolean(
-                            disabled ||
-                            (row.readOnly &&
-                              !row.editableFields?.includes(field)),
-                          )}
-                        />
+                        <>
+                          <CustomerDateField
+                            allowTyping={salesDatePolicy}
+                            minDate={
+                              salesDatePolicy && field === 'passportExpiryDate'
+                                ? tehranToday()
+                                : undefined
+                            }
+                            compact
+                            id={`${row.key}-${suffix}`}
+                            label={`${field === 'birthDate' ? 'تاریخ تولد' : 'انقضای پاسپورت'} ${row.label}`}
+                            mode={calendarMode}
+                            onModeChange={onCalendarModeChange}
+                            value={row.values[field] ?? ''}
+                            onChange={(value) => row.onChange(field, value)}
+                            disabled={Boolean(
+                              disabled ||
+                              (row.readOnly &&
+                                !row.editableFields?.includes(field)),
+                            )}
+                          />
+                          {salesDatePolicy &&
+                          field === 'passportExpiryDate' &&
+                          passportExpiryWarning(row.values[field] ?? '') ? (
+                            <p
+                              role="status"
+                              className="text-xs font-semibold text-amber-700"
+                            >
+                              اعتبار پاسپورت کمتر از ۶ ماه است.
+                            </p>
+                          ) : null}
+                        </>
                       ) : (
                         <Input
                           aria-label={`${label.replace(' *', '')} ${row.label}`}
@@ -448,11 +533,16 @@ export function CustomerEntrySheet({
                   );
                 })}
                 <td className="min-w-28 p-2">{row.actions}</td>
+                {trailingColumns.map((c) => (
+                  <td key={c.key} className="p-2">
+                    {c.render(row)}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </>
+    </div>
   );
 }

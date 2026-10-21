@@ -1,3 +1,8 @@
+import {
+  hasConfirmedReceiptFunds,
+  netSalesPayments,
+} from './sales-financial-settlement';
+import { financialDate } from '../finance/accounting/financial-event.public';
 import { PackageTourPricingService } from '../package-pricing/package-tour-pricing.service';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
@@ -225,7 +230,10 @@ export function presentSalesContract(
     status: row.status,
     settlementStatus: row.settlementStatus,
     reservationStatus: row.reservationStatus,
-    balances: calculateSalesBalances(priceComponents, payments),
+    balances: calculateSalesBalances(
+      priceComponents,
+      netSalesPayments(row.payments, row.receiptAllocations ?? []),
+    ),
     version: row.version,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -879,17 +887,22 @@ export class SalesService {
       branchId: row.branchId,
       customerNameSnapshot: row.customerNameSnapshot,
       settlementStatus: row.settlementStatus,
-      hasConfirmedPayment: row.payments.length > 0,
+      hasConfirmedPayment: hasConfirmedReceiptFunds(
+        row.payments,
+        row.receiptAllocations ?? [],
+      ),
     }));
   }
 
   async financeCustomerDocumentDeliveryFacts(
     contractId: string,
     branchIds: readonly string[],
+    tx?: Prisma.TransactionClient,
   ) {
     const row = await this.repository.financeCustomerDocumentDeliveryFacts(
       contractId,
       branchIds,
+      tx,
     );
     if (!row)
       throw new NotFoundException('قرارداد در شعب مجاز برای مالی یافت نشد.');
@@ -897,8 +910,13 @@ export class SalesService {
       contractId: row.id,
       branchId: row.branchId,
       salesOwnerUserId: row.ownerUserId,
-      hasConfirmedPayment: row.payments.length > 0,
-      fullySettled: ['SETTLED', 'OVERPAID'].includes(row.settlementStatus),
+      cancelled: row.status === 'CANCELLED',
+      hasConfirmedPayment:
+        row.status !== 'CANCELLED' &&
+        hasConfirmedReceiptFunds(row.payments, row.receiptAllocations ?? []),
+      fullySettled:
+        row.status !== 'CANCELLED' &&
+        ['SETTLED', 'OVERPAID'].includes(row.settlementStatus),
     };
   }
   async financeReceiptHistory(
@@ -919,6 +937,9 @@ export class SalesService {
       id: row.id,
       source: 'SALES' as const,
       requestId: row.id,
+      trackingNumber: row.contractId,
+      trackingDate: financialDate(row.contract.createdAt),
+      customerId: row.contract.customerId,
       direction: 'RECEIPT' as const,
       title: 'دریافت قرارداد ' + row.contract.contractNumber,
       occurredAt: row.financeConfirmedAt!.toISOString(),
@@ -1282,6 +1303,7 @@ export class SalesService {
         childAgeBands: c.passengers.map((p) => [
           p.customerId,
           p.childAgeBand ?? null,
+          [...p.serviceClientKeys].sort(),
         ]),
         services: c.services.map((s) => ({
           clientKey: s.clientKey,
@@ -1375,6 +1397,16 @@ export class SalesService {
                 input.passengers.filter(
                   (p) => categories[p.customerId] !== 'INF',
                 ).length,
+                Object.fromEntries(
+                  (input.ticketSelections ?? []).map((t) => [
+                    t.serviceClientKey,
+                    input.passengers.filter(
+                      (p) =>
+                        categories[p.customerId] !== 'INF' &&
+                        p.serviceClientKeys.includes(t.serviceClientKey),
+                    ).length,
+                  ]),
+                ),
               );
             },
           }
@@ -1506,6 +1538,16 @@ export class SalesService {
                     expectedTicketSale(service.pricing?.[0], service.metadata),
                   ]),
               ),
+          Object.fromEntries(
+            presented.ticketSelections.map((t) => [
+              t.serviceClientKey,
+              presented.passengersDetail.filter(
+                (p) =>
+                  p.ageCategory !== 'INF' &&
+                  p.serviceClientKeys.includes(t.serviceClientKey),
+              ).length,
+            ]),
+          ),
         )
       : { available: true, unavailableOfferIds: [], createdAllocationIds: [] };
     if (!ticketCheck.available)
@@ -1873,6 +1915,34 @@ export class SalesService {
           'AWAITING_CUSTOMER_AFFAIRS_PUBLIC_CONTRACT' as const,
       },
     };
+  }
+
+  financeReceipt(
+    paymentId: string,
+    contractId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!has(actor, 'finance.read'))
+      throw new ForbiddenException('مجوز مشاهده دریافت‌ها وجود ندارد.');
+    return this.repository.financeReceipt(
+      paymentId,
+      contractId,
+      actor.branchIds,
+    );
+  }
+
+  applyFinanceRefund(
+    tx: Prisma.TransactionClient,
+    input: {
+      paymentId: string;
+      operationId: string;
+      actorId: string;
+      amount: string;
+      currency: string;
+      branchId: string;
+    },
+  ) {
+    return this.repository.applyFinanceRefund(tx, input);
   }
 
   applyFinancePaymentConfirmed(event: {
