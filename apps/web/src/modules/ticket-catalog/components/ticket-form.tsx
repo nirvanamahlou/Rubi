@@ -677,7 +677,7 @@ export function TicketForm({
     createReturnTicketDraft(initial),
   );
   const [reason, setReason] = useState('');
-  const [allowPastDate, setAllowPastDate] = useState(false);
+  const [allowPastDate, setAllowPastDate] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const submitting = useRef(false);

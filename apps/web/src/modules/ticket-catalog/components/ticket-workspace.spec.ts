@@ -8,10 +8,11 @@ import {
   requireFutureTicketDates,
 } from './ticket-workspace';
 import { emptyInput } from '../model/preview';
+import { flightScheduleDefaults } from './flight-schedule-form';
 import type { Product, ProductInput, Reference } from '../model/catalog';
 
 describe('ticket workspace entry points', () => {
-  it('requires future dates by default and permits them only with the historical opt-in', () => {
+  it('allows historical creation by default while retaining an explicit future-only option', () => {
     const input = {
       departureAt: '2026-10-01T08:00:00.000Z',
     } as TicketOfferCreateV1;
@@ -20,7 +21,13 @@ describe('ticket workspace entry points', () => {
     expect(() => requireFutureTicketDates([input], false, now)).toThrow(
       'باید در آینده باشد',
     );
-    expect(() => requireFutureTicketDates([input], true, now)).not.toThrow();
+    expect(() =>
+      requireFutureTicketDates(
+        [input],
+        flightScheduleDefaults().allowPastDate,
+        now,
+      ),
+    ).not.toThrow();
   });
 
   it('renders the historical-date opt-in in both ticket-definition paths', () => {
