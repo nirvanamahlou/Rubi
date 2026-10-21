@@ -7828,6 +7828,7 @@ model IntegrationTelephonyConnection {
   mappings         IntegrationTelephonyMapping[]
   inbox            IntegrationTelephonyInbox[]
   sessions         CallCenterTelephonySession[]
+  answers          IntegrationTelephonyAnswer[]
 
   @@map("integration_telephony_connections")
 }
@@ -7863,6 +7864,7 @@ model IntegrationTelephonyInbox {
   processedAt         DateTime?                      @db.Timestamptz(3)
   connection          IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
   dispatch            IntegrationTelephonyOutbox?
+  answer              IntegrationTelephonyAnswer?
 
   @@unique([connectionId, externalFingerprint], map: "integration_telephony_inbox_connectionId_externalFingerprint_ke")
   @@index([status, receivedAt])
@@ -8016,4 +8018,22 @@ model IntegrationTelephonyRecordingChunk {
 
   @@id([recordingId, index])
   @@map("integration_telephony_recording_chunks")
+}
+
+// Integrations-owned technical answer history; never an ERP user assignment.
+model IntegrationTelephonyAnswer {
+  id                 String @id @default(uuid()) @db.Uuid
+  connectionId       String @db.Uuid
+  inboxId            String @unique @db.Uuid
+  queue              String @db.VarChar(100)
+  phoneFingerprint   String? @db.Char(64)
+  answeredAt         DateTime @db.Timestamptz(3)
+  encryptedAnswer    String @db.Text
+  keyVersion         Int
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+  connection         IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  inbox              IntegrationTelephonyInbox @relation(fields: [inboxId], references: [id], onDelete: Restrict)
+
+  @@index([connectionId, queue, phoneFingerprint, answeredAt(sort: Desc), id(sort: Desc)], map: "telephony_answer_lookup_idx")
+  @@map("integration_telephony_answers")
 }

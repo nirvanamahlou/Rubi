@@ -708,6 +708,265 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         await native.onModuleDestroy();
       }
     });
+    it('stores private answer history atomically and selects the latest eligible agent without routing or offers', async () => {
+      const previousAnswers = await db.integrationTelephonyAnswer.findMany({
+        where: { connectionId },
+        select: { id: true },
+      });
+      await db.integrationTelephonyMapping.create({
+        data: { connectionId, userId, extension: '105', active: true },
+      });
+      config.set('ISSABEL_EVENT_MODE', 'NATIVE_QUEUE_CAPTURE');
+      config.set('ISSABEL_INBOUND_QUEUES', 'sales-test');
+      const native = new IssabelService(
+        { client: db } as never,
+        config,
+        domain,
+        {} as never,
+        events,
+        {} as never,
+      );
+      const internal = native as unknown as {
+        options: IssabelOptions;
+        incoming(m: AmiMessage): Promise<void>;
+      };
+      internal.options = issabelOptions(config)!;
+      const now = Date.now();
+      const phone = '+12025550188';
+      const roots = [randomUUID(), randomUUID(), randomUUID()];
+      const emit = async (
+        root: string,
+        event: string,
+        extension: string,
+        at: number,
+        caller = phone,
+        leg = root + '-agent',
+      ) =>
+        internal.incoming({
+          event,
+          uniqueid: root,
+          linkedid: root,
+          queue: 'sales-test',
+          calleridnum: caller,
+          destuniqueid: leg,
+          interface: `Local/${extension}@from-queue/n`,
+          timestamp: String(at / 1000),
+        });
+      const snapshot = () => ({
+        queue: 'sales-test',
+        observedAt: new Date(),
+        members: ['105', '110', '115'].map((extension) => ({
+          extension,
+          active: true,
+          paused: false,
+          available: true,
+        })),
+      });
+      const choose = (raw = phone, s = snapshot()) =>
+        events.preferredAgent(actor, connectionId, 'sales-test', raw, s);
+      try {
+        await emit(roots[0]!, 'QueueCallerJoin', '105', now - 10000);
+        await emit(roots[0]!, 'AgentCalled', '105', now - 9000);
+        expect(await choose()).toMatchObject({
+          kind: 'FALLBACK',
+          reason: 'NO_ANSWER_HISTORY',
+        });
+        await emit(roots[0]!, 'AgentConnect', '105', now - 8000);
+        await emit(roots[0]!, 'AgentConnect', '105', now - 8000);
+        expect(await choose()).toMatchObject({
+          kind: 'PREFER',
+          extension: '105',
+          ringSeconds: 20,
+          fallbackQueue: 'sales-test',
+        });
+        await emit(roots[1]!, 'QueueCallerJoin', '115', now - 15000);
+        await emit(roots[1]!, 'AgentConnect', '115', now - 14000);
+        expect(await choose()).toMatchObject({ extension: '105' });
+        await emit(
+          roots[0]!,
+          'AgentConnect',
+          '110',
+          now - 7000,
+          phone,
+          'transferred-agent',
+        );
+        expect(await choose()).toMatchObject({ extension: '110' });
+        expect(
+          await choose(phone, {
+            ...snapshot(),
+            members: snapshot().members.filter((m) => m.extension !== '110'),
+          }),
+        ).toMatchObject({ reason: 'NOT_A_CURRENT_MEMBER' });
+        expect(
+          await choose(phone, {
+            ...snapshot(),
+            members: snapshot().members.map((m) => ({ ...m, paused: true })),
+          }),
+        ).toMatchObject({ reason: 'AGENT_UNAVAILABLE' });
+        expect(
+          await choose(phone, {
+            ...snapshot(),
+            observedAt: new Date(now - 6000),
+          }),
+        ).toMatchObject({ reason: 'AVAILABILITY_UNKNOWN' });
+        expect(await choose('anonymous')).toMatchObject({
+          reason: 'UNKNOWN_NUMBER',
+        });
+        await expect(
+          events.preferredAgent(
+            { ...actor, branchIds: [] },
+            connectionId,
+            'sales-test',
+            phone,
+            snapshot(),
+          ),
+        ).rejects.toMatchObject({ status: 404 });
+        await expect(
+          events.preferredAgent(
+            { ...actor, permissions: [] },
+            connectionId,
+            'sales-test',
+            phone,
+            snapshot(),
+          ),
+        ).rejects.toMatchObject({ status: 403 });
+        await expect(
+          events.preferredAgent(
+            actor,
+            connectionId,
+            'other-queue',
+            phone,
+            snapshot(),
+          ),
+        ).rejects.toMatchObject({ status: 403 });
+        const iranRoot = randomUUID();
+        await emit(
+          iranRoot,
+          'QueueCallerJoin',
+          '115',
+          now - 6000,
+          '+989120000001',
+        );
+        await emit(
+          iranRoot,
+          'AgentConnect',
+          '115',
+          now - 5000,
+          '+989120000001',
+        );
+        for (const number of [
+          '09120000001',
+          '۰۹۱۲۰۰۰۰۰۰۱',
+          '٠٩١٢٠٠٠٠٠٠١',
+          '00989120000001',
+          '+98 (912) 000-0001',
+        ])
+          expect(await choose(number)).toMatchObject({ extension: '115' });
+        const ties = [randomUUID(), randomUUID()];
+        await Promise.all(
+          ties.map((r) => emit(r, 'QueueCallerJoin', '105', now - 4000)),
+        );
+        await Promise.all(
+          ties.map((r, i) =>
+            emit(r, 'AgentConnect', i ? '115' : '105', now - 3000),
+          ),
+        );
+        expect(await choose()).toMatchObject({
+          reason: 'AMBIGUOUS_ANSWER_ORDER',
+        });
+        const unknown = randomUUID();
+        await emit(unknown, 'QueueCallerJoin', '105', now - 2000, 'anonymous');
+        await emit(unknown, 'AgentConnect', '105', now - 1000, 'anonymous');
+        const answers = await db.integrationTelephonyAnswer.findMany({
+          where: {
+            connectionId,
+            id: { notIn: previousAnswers.map((a) => a.id) },
+          },
+        });
+        expect(answers).toHaveLength(7);
+        expect(answers.filter((a) => a.phoneFingerprint === null)).toHaveLength(
+          1,
+        );
+        expect(JSON.stringify(answers)).not.toContain(phone);
+        expect(
+          answers.every((a) => !a.encryptedAnswer.includes('extension')),
+        ).toBe(true);
+        const inbox = await db.integrationTelephonyInbox.findMany({
+          where: { id: { in: answers.map((a) => a.inboxId) } },
+        });
+        for (const row of inbox) {
+          expect(
+            crypto.decrypt<{ recipient: unknown }>(
+              row.encryptedPayload!,
+              row.keyVersion,
+              `telephony:inbox:${row.id}`,
+            ).recipient,
+          ).toBeNull();
+          await events.process(row.id);
+        }
+        const sessions = await db.callCenterTelephonySession.findMany({
+          where: {
+            connectionId,
+            rootFingerprint: {
+              in: [...roots, iranRoot, ...ties, unknown].map((r) =>
+                crypto.fingerprint(`telephony:root:${connectionId}:${r}`),
+              ),
+            },
+          },
+          include: { _count: { select: { offers: true } } },
+        });
+        expect(sessions.every((s) => s._count.offers === 0)).toBe(true);
+        const beforeCount = await db.integrationTelephonyInbox.count({
+          where: { connectionId },
+        });
+        const atomic = {
+          ...fact('ANSWERED'),
+          externalEventId: randomUUID(),
+          rootCallId: randomUUID(),
+          queue: 'sales-test',
+          extension: '105',
+        };
+        const encrypt = crypto.encrypt.bind(crypto);
+        const failing = vi
+          .spyOn(crypto, 'encrypt')
+          .mockImplementation((value, context) => {
+            if (context.startsWith('telephony:answer:'))
+              throw Error('TEST_ENCRYPTION_FAILURE');
+            return encrypt(value, context);
+          });
+        try {
+          await expect(events.receive(atomic, 'ISSABEL')).rejects.toThrow(
+            'TEST_ENCRYPTION_FAILURE',
+          );
+        } finally {
+          failing.mockRestore();
+        }
+        expect(
+          await db.integrationTelephonyInbox.count({ where: { connectionId } }),
+        ).toBe(beforeCount);
+        expect(
+          await db.integrationTelephonyAnswer.count({
+            where: { connectionId },
+          }),
+        ).toBe(previousAnswers.length + 7);
+        const recovered = await events.receive(atomic, 'ISSABEL');
+        expect((await events.receive(atomic, 'ISSABEL')).duplicate).toBe(true);
+        expect(
+          await db.integrationTelephonyAnswer.count({
+            where: { inboxId: recovered.id },
+          }),
+        ).toBe(1);
+        const uncertainRoot = randomUUID();
+        await emit(uncertainRoot, 'QueueCallerJoin', '', now - 500, phone);
+        await emit(uncertainRoot, 'AgentConnect', '', now - 100, phone);
+        expect(await choose()).toMatchObject({
+          reason: 'UNKNOWN_ANSWERING_EXTENSION',
+        });
+      } finally {
+        config.set('ISSABEL_EVENT_MODE', 'CUSTOM_FACTS');
+        await native.onModuleDestroy();
+      }
+    });
     it('accepts only the configured relay connection and uses the same durable processing path', async () => {
       const relay = {
         ...fact('RINGING', 'relay'),

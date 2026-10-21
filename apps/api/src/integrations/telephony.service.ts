@@ -17,6 +17,11 @@ import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-direc
 import { CallCenterTelephonyService } from '../customer-affairs/call-center-telephony.service';
 import { IntegrationRegistryService } from './integration-registry.service';
 import { validateTelephonyEvent } from './telephony.validation';
+import {
+  recordNativeAnswer,
+  selectPreviousAgent,
+  type MemberSnapshot,
+} from './issabel/sticky-sales';
 
 type Envelope = {
   event: TelephonyEventV1;
@@ -322,8 +327,51 @@ export class TelephonyIntegrationService {
           dispatch: { create: {} },
         },
       });
+      if (captureOnly) await recordNativeAnswer(tx, crypto, event, id);
       return { id, duplicate: false };
     });
+  }
+  /** Admin/internal preview only; no public PBX endpoint and no dial action. */
+  async preferredAgent(
+    actor: AuthenticatedActor,
+    connectionId: string,
+    queue: string,
+    phone: string,
+    availability: MemberSnapshot | null,
+  ) {
+    this.admin(actor);
+    this.domain.authorize(actor);
+    const connection =
+      await this.db.client.integrationTelephonyConnection.findFirst({
+        where: {
+          id: connectionId,
+          branchId: { in: [...actor.branchIds] },
+          active: true,
+          synthetic: false,
+        },
+        select: { id: true },
+      });
+    if (!connection) throw new NotFoundException();
+    const queues = (this.config.get<string>('ISSABEL_INBOUND_QUEUES') ?? '')
+      .split(',')
+      .map((v) => v.trim());
+    if (
+      this.config.get<string>('ISSABEL_ENABLED') !== 'true' ||
+      this.config.get<string>('ISSABEL_EVENT_MODE') !==
+        'NATIVE_QUEUE_CAPTURE' ||
+      this.config.get<string>('ISSABEL_CONNECTION_ID') !== connectionId ||
+      !queues.includes(queue) ||
+      !/^[a-zA-Z0-9_.:-]{1,100}$/.test(queue)
+    )
+      throw new ForbiddenException();
+    return selectPreviousAgent(
+      this.db.client,
+      this.domain.crypto,
+      connectionId,
+      queue,
+      phone,
+      availability,
+    );
   }
   /** Integrations-owned receipt lookup for native AMI correlation/restart recovery. */
   async acceptedEvent(

@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { ConfigService } from '@nestjs/config';
 import type { TelephonyEventV1 } from '@nora/contracts';
 import { describe, expect, it } from 'vitest';
-import { normalizeNativeQueueEvent } from './native-events';
+import { normalizeNativeQueueEvent, answeredExtension } from './native-events';
 import { issabelOptions } from './config';
 import net from 'node:net';
 import { AmiParser } from './ami';
@@ -32,6 +32,52 @@ const setup = () => {
   return { receipts, lookup, receive };
 };
 describe('native queue capture', () => {
+  it('learns only observed answered Interface and preserves multiple answered transfer legs', async () => {
+    expect(
+      answeredExtension({
+        ...base,
+        event: 'AgentCalled',
+        interface: 'Local/105@from-queue/n',
+      }),
+    ).toBeNull();
+    for (const value of [
+      '105',
+      'Local/105@other/n',
+      'SIP/105',
+      'Local/105@from-queue/n;bad',
+    ])
+      expect(
+        answeredExtension({
+          ...base,
+          event: 'AgentConnect',
+          interface: value,
+          membername: '105',
+          destexten: '105',
+        }),
+      ).toBeNull();
+    const { receive, receipts } = setup();
+    await receive('QueueCallerJoin');
+    const a = await receive('AgentConnect', {
+      destuniqueid: 'leg-one',
+      interface: 'Local/105@from-queue/n',
+    });
+    expect(a?.extension).toBe('105');
+    expect(
+      await receive('AgentConnect', {
+        destuniqueid: 'leg-one',
+        interface: 'Local/110@from-queue/n',
+      }),
+    ).toEqual(a);
+    const b = await receive('AgentConnect', {
+      destuniqueid: 'leg-two',
+      interface: 'Local/110@from-queue/n',
+    });
+    expect(b?.extension).toBe('110');
+    expect(b?.externalEventId).not.toBe(a?.externalEventId);
+    expect(
+      [...receipts.values()].filter((e) => e.kind === 'ANSWERED'),
+    ).toHaveLength(2);
+  });
   it('wires native socket frames into canonical ingress without sending outbound actions', async () => {
     const receipts = new Map<string, TelephonyEventV1>();
     const actions: string[] = [];

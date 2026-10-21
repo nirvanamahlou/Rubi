@@ -6894,3 +6894,15 @@ Queue1002 native inbound capture is active on the compatible local API4000; owne
 ## CALL-CENTER-OPERATIONS-1021 — PC-C — LOCAL_VERIFIED
 
 Provider-independent operational completion on7deea673: durable sanitized AMI continuity audit, conservative restart/gap visibility, bounded graceful frame drain and API shutdown hooks; existing readiness CLI now fails disconnected/unknown/gap states rather than trusting API health alone.24 selected API/socket/security/real-PostgreSQL tests and4 CLI tests pass; full API types, scoped lint, compatible build and diff checks pass. Local API4000 PID23700 authenticated, old real call and4 DONE receipts preserved, zero real offers and no active mappings. Approved Web3000 build uLTV0_qicViVV1BxsDKHW and Worker4409 unchanged. No schema/dependency/grant/PBX write/production deploy. Legacy rollover gap recorded honestly; no claim of historical backfill or new live multi-call acceptance. Source reservation freezes/releases on commit/push. Remaining externally gated items and evidence: docs/tasks/CALL-CENTER-OPERATIONS-1021.md.
+
+## STICKY-SALES-FOUNDATION-1021 — local verified (2026-10-21)
+
+Actual native AgentConnect answering extension and encrypted, indexed, transactional
+phone-to-answer history implemented; internal previous-agent policy prefers only
+freshly available current queue members, otherwise normal queue. Duplicate, late,
+transfer, unknown-extension and tied-time cases covered.26 targeted tests, lint,
+types and compatible build pass. Additive answer-table migration applied locally
+after encrypted backup validation. API4000 PID14280 connected to AMI; approved Web
+and Worker unchanged, zero real popup offers. New live answer acceptance and actual
+PBX routing remain pending; no historical agent backfill or SSH/PBX mutation.
+Evidence, limitations and handoff: docs/tasks/STICKY-SALES-FOUNDATION-1021.md.

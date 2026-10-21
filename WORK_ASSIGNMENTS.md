@@ -8684,3 +8684,18 @@ COMPUTER_ID=PC-C. Owner requests completing information-independent readiness wi
 ## CALL-CENTER-OPERATIONS-1021 — PC-C — LOCAL_VERIFIED
 
 Provider-independent operational completion on7deea673: durable sanitized AMI continuity audit, conservative restart/gap visibility, bounded graceful frame drain and API shutdown hooks; existing readiness CLI now fails disconnected/unknown/gap states rather than trusting API health alone.24 selected API/socket/security/real-PostgreSQL tests and4 CLI tests pass; full API types, scoped lint, compatible build and diff checks pass. Local API4000 PID23700 authenticated, old real call and4 DONE receipts preserved, zero real offers and no active mappings. Approved Web3000 build uLTV0_qicViVV1BxsDKHW and Worker4409 unchanged. No schema/dependency/grant/PBX write/production deploy. Legacy rollover gap recorded honestly; no claim of historical backfill or new live multi-call acceptance. Source reservation freezes/releases on commit/push. Remaining externally gated items and evidence: docs/tasks/CALL-CENTER-OPERATIONS-1021.md.
+
+## STICKY-SALES-FOUNDATION-1021 — PC-C — IN_PROGRESS
+
+Owner explicitly requests all SSH-independent sticky-sales implementation: actual answering extension, private phone-to-latest-answer history, decision/fallback policy and tests; approved UI unchanged and native popups remain suppressed. Base2efa0082; fetched develop7b4fa80a. PC-B CALL-CENTER-MANUAL-ACCESS candidate explicitly releases published schema reservations; no later active migration scope found. Reserve sole Migration/schema ownership for one additive Integrations-owned answer history table with real connection/inbox FK and indexed HMAC phone lookup; no changes to IAM/contact ownership or unrelated schema. Reserve native normalization, bounded receive transaction history projection, new sticky store/policy and tests, own docs/data-model notes. Existing canonical v1 extension becomes technical answering extension for native AgentConnect only; native recipient-resolution suppression stays authoritative. Source raw Interface evidence: QueueStatus1002 members use Local/<extension>@from-queue/n; no guessing from MemberName. No public routing endpoint, live routing/AMI write, SSH, caller identity merge, grants, mapping or Web change. Future PBX producer must use explicit authenticated prequeue protocol and preserve capture/recording semantics; installation remains gated. No dependency changes. Additive local migration only after compatible build/disposable DB tests and backup; preserve current capture and rollout safely. Commit/push only, no PR/merge/production deploy.
+
+## STICKY-SALES-FOUNDATION-1021 — PC-C — LOCAL_VERIFIED
+
+Actual answering extension, encrypted HMAC-indexed answer history and internal
+preference/fallback policy completed.26 targeted tests plus API types/lint and
+compatible build pass. Additive migration locally applied after encrypted backup
+validation; API4000 PID14280 authenticated, approved Web/Worker retained, existing
+real call preserved and zero real offers. No new real answering-call acceptance
+claimed. No UI, popup, mapping/grant, PBX write or actual routing activation.
+Source and sole schema/migration reservation freeze/release on commit/push.
+Handoff and remaining SSH/production gates: docs/tasks/STICKY-SALES-FOUNDATION-1021.md.

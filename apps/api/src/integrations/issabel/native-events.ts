@@ -25,6 +25,15 @@ const phone = (value: string | undefined): TelephonyNumberV1 => {
   };
 };
 
+/** Observed queue member Interface, never display name, caller ID or dialplan Exten. */
+export function answeredExtension(message: AmiMessage): string | null {
+  if (message.event !== 'AgentConnect') return null;
+  return (
+    /^Local\/(\d{2,10})@from-queue\/n$/.exec(message.interface ?? '')?.[1] ??
+    null
+  );
+}
+
 export async function normalizeNativeQueueEvent(
   connectionId: string,
   message: AmiMessage,
@@ -60,13 +69,16 @@ export async function normalizeNativeQueueEvent(
     !identity(destinationLeg)
   )
     return null;
+  const firstAnswer = await lookup(nativeEventId(root, 'answer'));
   const eventId =
     message.event === 'QueueCallerJoin'
       ? anchorId
       : kind === 'ENDED'
         ? nativeEventId(root, 'end')
         : kind === 'ANSWERED'
-          ? nativeEventId(root, 'answer')
+          ? firstAnswer && firstAnswer.legId !== destinationLeg
+            ? nativeEventId(root, 'answer', destinationLeg)
+            : nativeEventId(root, 'answer')
           : nativeEventId(root, 'ring', destinationLeg);
   // Preserve first receipt time across retries even when AMI has no Timestamp.
   const existing = eventId === anchorId ? anchor : await lookup(eventId);
@@ -77,8 +89,7 @@ export async function normalizeNativeQueueEvent(
       throw Error('NATIVE_TIMESTAMP_INVALID');
     occurredAt = new Date(Number(message.timestamp) * 1000).toISOString();
   }
-  const answered =
-    kind === 'ENDED' ? await lookup(nativeEventId(root, 'answer')) : null;
+  const answered = kind === 'ENDED' ? firstAnswer : null;
   return {
     schemaVersion: 1,
     connectionId,
@@ -91,8 +102,8 @@ export async function normalizeNativeQueueEvent(
     caller: anchor?.caller ?? phone(message.calleridnum),
     destination: anchor?.destination ?? { kind: 'UNKNOWN', value: null },
     companyLine: null,
-    // Deliberately no recipient/extension inference until the owner approves mapping.
-    extension: null,
+    // Technical answer evidence only. Native ingress independently suppresses recipients.
+    extension: answeredExtension(message),
     queue: message.queue ?? anchor?.queue ?? null,
     occurredAt,
     sequence: null,
