@@ -790,14 +790,13 @@ export function SalesPeopleSheet({
               }
             />
           </FormField>
-          <FormField label="تلفن ثابت مشتری" required id="sales-buyer-landline">
+          <FormField label="تلفن ثابت مشتری" id="sales-buyer-landline">
             <Input
               id="sales-buyer-landline"
               type="tel"
               dir="ltr"
               value={buyerContact.landline}
               maxLength={16}
-              required
               disabled={busy}
               onChange={(event) => changeBuyer('landline', event.target.value)}
             />

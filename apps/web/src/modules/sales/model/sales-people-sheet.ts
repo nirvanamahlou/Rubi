@@ -412,10 +412,11 @@ export function validateSalesPeopleDraft(
       (buyer.postalCode.trim() !== '' &&
         !/^[0-9]{10}$/.test(buyer.postalCode.trim())) ||
       (buyer.landline !== undefined &&
+        buyer.landline.trim() !== '' &&
         !/^\+?[0-9]{10,15}$/.test(buyer.landline.trim()))
     )
       throw new Error(
-        'نام، شماره تماس، تلفن ثابت و آدرس مشتری را کامل کنید؛ کد پستی در صورت ورود باید ۱۰ رقم باشد.',
+        'نام، شماره تماس و آدرس مشتری را کامل کنید؛ تلفن ثابت اختیاری است و کد پستی در صورت ورود باید ۱۰ رقم باشد.',
       );
   }
   if (draft.mode === 'organization' && !draft.organization)

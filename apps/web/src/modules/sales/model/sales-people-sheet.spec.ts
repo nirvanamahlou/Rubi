@@ -1239,3 +1239,33 @@ it('retains transfer leg exclusions when temporary passenger slots become saved 
     ['transfer-outbound', 'transfer-return'],
   ]);
 });
+
+it.each([undefined, '', '   ', '02112345678'])(
+  'accepts optional buyer landline %s',
+  (landline) => {
+    const draft = {
+      ...filled(),
+      buyerContact: {
+        name: 'Synthetic Buyer',
+        phone: '09120000000',
+        address: 'Synthetic address',
+        postalCode: '',
+        ...(landline === undefined ? {} : { landline }),
+      },
+    };
+    expect(() => validateSalesPeopleDraft(state, draft)).not.toThrow();
+  },
+);
+it('rejects a malformed nonempty optional landline', () => {
+  const draft = {
+    ...filled(),
+    buyerContact: {
+      name: 'Synthetic Buyer',
+      phone: '09120000000',
+      address: 'Synthetic address',
+      postalCode: '',
+      landline: 'bad',
+    },
+  };
+  expect(() => validateSalesPeopleDraft(state, draft)).toThrow('تلفن ثابت');
+});

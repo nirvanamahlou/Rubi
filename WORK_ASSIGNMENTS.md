@@ -8619,6 +8619,12 @@ Reserve SalesContractForm final-submit/navigation binding and focused existing f
 
 EXPLICIT-CONTRACT-SUBMIT-1020 — READY_FOR_REVIEW:18 form regressions pass. Existing draft persistence and final create/confirm flow unchanged; only explicit final click may invoke it. Source reservation freezes/releases with candidate; local-only preview after build. No merge or production rollout inferred.
 
+## OPTIONAL-BUYER-LANDLINE-1020 — PC-A — IN_PROGRESS
+
+Reserve Sales buyer-contact form/model/API domain and focused tests; one new English override entry plus own status notes. Buyer landline accepts omission, empty or whitespace string; nonempty numbers retain existing format validation and non-string API values remain rejected. Remove native/UI required marker, retain customer phone/address/postal validation. No public type/schema/migration/dependency/data/runtime changes. Prior Sales locks released; user explicitly authorizes develop merge after final CI.
+
+OPTIONAL-BUYER-LANDLINE-1020 — READY_FOR_CI:113 focused tests pass covering blank/omitted/whitespace/valid/malformed landlines and removal of native required. New guidance translation is covered. Bounded source/catalogue reservations freeze/release with candidate; exact-head hosted quality/types/build/full tests gate authorized develop merge. No runtime or data changes.
+
 ## CALL-CENTER-KPIS-1020 — PC-C — READY_FOR_REVIEW
 
 Owner requests replacement of the four top Call Center KPI cards with today's calls, this week's calls, calls without outcome and calls needing follow-up. Branch codex/pc-c-call-center-kpis-1020 from origin/develop83f5daa3. Reserve bounded Call Center read service/controller/tests, Tasks existing public query-contract usage, Web KPI leaf/client/workspace/old-card removal/CSS and own docs/translations. Preserve all nine contact columns and operational queue. Owner explicitly confirmed missing outcome and calls linked to a request with an OPEN follow-up; use authorized server counts with explicit Tehran calendar boundaries, selected-branch scope and synthetic exclusion. No schema/migration/dependency/grant or operational data change. Local3000 activation and task commit/push under ongoing review workflow; no new PR/merge/production deployment requested.

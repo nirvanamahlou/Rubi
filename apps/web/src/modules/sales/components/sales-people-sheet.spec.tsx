@@ -59,6 +59,11 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     expect(html).toContain('مشتری طرف حساب همان مسافر اول است');
     expect(html).not.toContain('شماره پاسپورت');
     expect(html).toContain('تلفن');
+    const landlineInput = html.match(
+      /<input[^>]*id="sales-buyer-landline"[^>]*>/,
+    )?.[0];
+    expect(landlineInput).toBeDefined();
+    expect(landlineInput).not.toContain('required');
     expect(html).toContain('ایمیل');
     expect(html).toContain('افزودن نوزاد');
     expect(html).toContain('ثبت و تأیید افراد');
