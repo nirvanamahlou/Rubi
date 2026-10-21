@@ -1017,6 +1017,28 @@ function TicketCatalogWorkspace() {
       >
         رزرو ظرفیت
       </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={statusSaving === offer.id}
+        aria-label={
+          offer.status === 'ACTIVE' ? 'غیرفعال کردن بلیت' : 'فعال کردن بلیت'
+        }
+        title={
+          offer.status === 'ACTIVE' ? 'غیرفعال کردن بلیت' : 'فعال کردن بلیت'
+        }
+        className={
+          offer.status === 'ACTIVE' ? 'text-red-600' : 'text-emerald-600'
+        }
+        onClick={() =>
+          void updatePublishedStatus(
+            offer,
+            offer.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE',
+          ).catch(() => undefined)
+        }
+      >
+        <Power className="size-5" aria-hidden />
+      </Button>
       {new Date(offer.departureAt).getTime() > catalogNow ? (
         <div className="flex flex-wrap gap-2">
           <Button
@@ -1025,28 +1047,6 @@ function TicketCatalogWorkspace() {
             onClick={() => setOfferForm({ offer, readOnly: false })}
           >
             ویرایش
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={statusSaving === offer.id}
-            aria-label={
-              offer.status === 'ACTIVE' ? 'غیرفعال کردن بلیت' : 'فعال کردن بلیت'
-            }
-            title={
-              offer.status === 'ACTIVE' ? 'غیرفعال کردن بلیت' : 'فعال کردن بلیت'
-            }
-            className={
-              offer.status === 'ACTIVE' ? 'text-red-600' : 'text-emerald-600'
-            }
-            onClick={() =>
-              void updatePublishedStatus(
-                offer,
-                offer.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE',
-              ).catch(() => undefined)
-            }
-          >
-            <Power className="size-5" aria-hidden />
           </Button>
         </div>
       ) : null}

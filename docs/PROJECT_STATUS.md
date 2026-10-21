@@ -6928,3 +6928,7 @@ CONTRACT-TYPE-CURRENCY-1021 CI follow-up: three legacy exact-markup assertions u
 ## FLIGHT-LOAD-ACTIONS-1021 — PC-A
 
 Restored Edit Load below selected outbound/return details using existing exact-server-group expansion, cached definitions and weekly group editor/save flow. Reserve Capacity remains visible with a disabled reason for inactive, departed or sold-out offers; existing server hold command and eligibility remain unchanged. Single-ticket view/edit and status controls retained; no delete controls added.205 Ticket Catalog regressions pass (one pre-existing skip), scoped lint/format pass. Final Web type/build and exact-head hosted checks gate explicitly authorized develop merge. No API/schema/migration/dependency/permission/runtime or operational-data change. Flight-load model/grid/reference peer work untouched. Source locks release at candidate publication.
+
+## FLIGHT-LOAD-POWER-1021 — PC-A
+
+Power status toggle now renders independently of the future-date single-ticket edit guard in selected outbound/return load actions. Existing active/red and paused/green icon, accessible labels, versioned status API, permissions, refresh and error handling retained. No deletion, capacity-hold or edit logic change.208 Ticket Catalog tests pass (one existing skip); scoped ESLint/Prettier and diff checks pass. Exact-head hosted typecheck/full production build/quality/tests/database gates precede user-authorized develop merge. No API/schema/migration/dependency or runtime/data changes. Bounded source reservation releases on publication.
