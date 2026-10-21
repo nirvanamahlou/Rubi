@@ -6940,3 +6940,5 @@ Optional employee extension is connected to create/edit, employee table/search a
 ## MESSAGE-TEMPLATE-BLANKS-1021 — PC-B
 
 Removed bracketed entry guidance from all Workbench message templates; field labels remain with empty colon values. Visa follow-up and Management inline placeholders now use separate editable blank lines. Existing saved/sent messages untouched. Scoped lint/format and catalogue inspection pass; exact-head hosted type/build/tests required before explicitly authorized develop merge. No API/database/dependency/runtime changes.
+
+English coverage gate found the 33 changed template strings needed translations; existing English templates were updated offline with blank fields. All3 coverage/synchronization tests now pass; derived catalogues synchronized.

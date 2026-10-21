@@ -8752,3 +8752,7 @@ HR-EXTENSION-1021 validation:35 complete isolated PostgreSQL HR tests and48 focu
 COMPUTER_ID=PC-B; branch codex/pc-b-message-template-blanks-1021 from origin/develop01f962d0. Reserve only Workbench message-templates.ts and own status notes. Owner requests removing bracketed field guidance so colon fields are blank and explicitly authorizes push/develop merge. No API/schema/migration/dependency, existing-message edits or runtime changes. No overlapping active template writer found.
 
 MESSAGE-TEMPLATE-BLANKS-1021 ready: bracket hints removed across all units, including inline Visa/Management fields. Scoped lint/format and direct template inspection pass. Source lock releases at publication; hosted gates precede authorized merge.
+
+MESSAGE-TEMPLATE-BLANKS-1021 scope includes additive English catalogue entries for the 33 changed template texts; required by existing UI coverage. Preserve peer entries and translate offline using existing template translations; no external service or API contract.
+
+Translation follow-up reserves derived API and standalone catalogue outputs only for deterministic synchronization of the added English template entries.
