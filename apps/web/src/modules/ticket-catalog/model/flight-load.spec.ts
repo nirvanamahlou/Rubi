@@ -46,6 +46,27 @@ const filter: FlightLoadFilter = {
   cabin: '',
 };
 describe('company flight load', () => {
+  it('never puts an outbound or another forward leg in returns, even on the same day', () => {
+    const out = offer('out', '2099-10-01');
+    const forward = offer('other-out', '2099-10-01', {
+      departureAt: '2099-10-01T14:00:00Z',
+    });
+    const back = offer('back', '2099-10-01', {
+      originId: 'b',
+      destinationId: 'a',
+      departureAt: '2099-10-01T14:00:00Z',
+      arrivalAt: '2099-10-01T16:00:00Z',
+    });
+    expect(
+      companyFlightLegs([out, forward, back], filter).map((row) => row.id),
+    ).toEqual(['out', 'other-out']);
+    expect(
+      companyReturnLegs([out, forward, back], out, false).map((row) => row.id),
+    ).toEqual(['back']);
+    expect(companyReturnLegs([out, forward, back], undefined, false)).toEqual(
+      [],
+    );
+  });
   it('keeps historical legs while valid dates start today and exclude departed legs', () => {
     const rows = [
       offer('ended', '2099-10-01', { status: 'PAUSED' }),
@@ -67,10 +88,20 @@ describe('company flight load', () => {
     });
   });
 
-  it('requires route or dates and derives inclusive dates only for the selected route', () => {
+  it('requires both distinct endpoints even when dates are selected', () => {
     const blank = { ...filter, from: '', to: '', origin: '', destination: '' };
     expect(canSearchFlightLoad(blank)).toBe(false);
-    expect(canSearchFlightLoad({ ...blank, destination: 'b' })).toBe(true);
+    expect(canSearchFlightLoad({ ...blank, destination: 'b' })).toBe(false);
+    expect(canSearchFlightLoad({ ...filter, origin: '' })).toBe(false);
+    expect(canSearchFlightLoad({ ...filter, destination: '' })).toBe(false);
+    expect(canSearchFlightLoad({ ...filter, destination: 'a' })).toBe(false);
+    expect(canSearchFlightLoad(filter)).toBe(true);
+    expect(
+      companyFlightLegs([offer('out', '2099-10-01')], {
+        ...filter,
+        origin: '',
+      }),
+    ).toEqual([]);
     const rows = [
       offer('latest', '2099-11-03'),
       offer('first', '2099-10-02'),

@@ -82,12 +82,25 @@ function select(id: string) {
 }
 const tables = () =>
   render().filter((n) => n.props.className === styles.scroller);
+function route() {
+  for (const [id, value] of [
+    ['load-origin', 'a'],
+    ['load-destination', 'b'],
+  ]) {
+    const field = render().find(
+      (n) => n.props.id === id && typeof n.props.onChange === 'function',
+    );
+    expect(field).toBeDefined();
+    (field!.props.onChange as (event: unknown) => void)({ target: { value } });
+  }
+}
 beforeEach(() => {
   hooks.states = [];
   hooks.index = 0;
 });
 it('keeps both result viewports mounted while changed filters clear stale selectable rows', () => {
   expect(tables()).toHaveLength(0);
+  route();
   click('جست‌وجو');
   expect(tables()).toHaveLength(2);
   const input = render().find(
@@ -105,6 +118,7 @@ it('keeps both result viewports mounted while changed filters clear stale select
   expect(render().some((n) => n.props.className === styles.details)).toBe(true);
 });
 it('keeps result and detail regions when a new outbound removes the previously selected return', () => {
+  route();
   click('جست‌وجو');
   select('out-a');
   select('return-a');
@@ -120,4 +134,18 @@ it('keeps result and detail regions when a new outbound removes the previously s
   );
   expect(back).toBeDefined();
   expect(nodes(back).some((n) => n.props.children === 'action')).toBe(false);
+});
+
+it('hides both load tables when either endpoint is cleared after searching', () => {
+  route();
+  click('جست‌وجو');
+  expect(tables()).toHaveLength(2);
+  const field = render().find(
+    (n) =>
+      n.props.id === 'load-origin' && typeof n.props.onChange === 'function',
+  );
+  (field!.props.onChange as (event: unknown) => void)({
+    target: { value: '' },
+  });
+  expect(tables()).toHaveLength(0);
 });

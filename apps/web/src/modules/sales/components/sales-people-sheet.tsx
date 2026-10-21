@@ -80,6 +80,7 @@ export function SalesPeopleSheet({
   );
   const [calendar, setCalendar] = useState<CustomerCalendarMode>('persian');
   const [lookup, setLookup] = useState<string | null>(null);
+  const [lookupInRow, setLookupInRow] = useState(false);
   const [clearKey, setClearKey] = useState<string | null>(null);
   const [acquaintanceMethods, setAcquaintanceMethods] = useState<
     MasterDataRecord[]
@@ -188,6 +189,14 @@ export function SalesPeopleSheet({
               detail.addresses?.find((address) => address.isPrimary)?.label ??
               '',
             postalCode: '',
+            landline:
+              detail.contacts?.find(
+                (contact) =>
+                  contact.type === 'phone' &&
+                  contact.value &&
+                  !contact.value.includes('*') &&
+                  !/^(\+98|0)?9/.test(contact.value),
+              )?.value ?? '',
           },
         };
       }
@@ -429,11 +438,33 @@ export function SalesPeopleSheet({
             size="sm"
             variant="outline"
             disabled={busy}
-            onClick={() => setLookup(key)}
+            onClick={() => {
+              setLookupInRow(true);
+              setLookup(key);
+            }}
           >
             <Search className="size-3" />
             انتخاب موجود
           </Button>
+          {lookupInRow && lookup === key ? (
+            <div
+              className="min-w-72 max-w-md"
+              aria-label="انتخاب پرونده در ردیف مسافر"
+            >
+              <SalesPersonSearch
+                purpose="passenger"
+                selectedIds={keys
+                  .filter((other) => other !== key)
+                  .flatMap((other) =>
+                    peopleRow(draft, other).person?.id
+                      ? [peopleRow(draft, other).person!.id]
+                      : [],
+                  )}
+                onCancel={() => setLookup(null)}
+                onSelect={(person) => void choose(person)}
+              />
+            </div>
+          ) : null}
           {row.person && (!row.profile || row.profile.birthDateMasked) ? (
             <Button
               type="button"
@@ -715,14 +746,17 @@ export function SalesPeopleSheet({
                   aria-label="جست‌وجوی نام مشتری"
                   className="absolute left-2 top-2 text-primary"
                   disabled={busy}
-                  onClick={() => setLookup(buyerKey)}
+                  onClick={() => {
+                    setLookupInRow(false);
+                    setLookup(buyerKey);
+                  }}
                 >
                   <Search className="size-5" />
                 </button>
               ) : null}
             </div>
           </FormField>
-          {lookup ? (
+          {lookup && !lookupInRow ? (
             <SalesPersonSearch
               {...(lookup === buyerKey ? { query: buyerContact.name } : {})}
               purpose={

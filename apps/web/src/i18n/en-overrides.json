@@ -3906,5 +3906,9 @@
   "ثبت مبلغ فرم": "Save form amount",
   "کودک (2-6)": "Child (2-6)",
   "کودک (6-12)": "Child (6-12)",
-  "کودک (12-18)": "Child (12-18)"
+  "کودک (12-18)": "Child (12-18)",
+  "ساعت رفت و برگشت به وقت تهران است. Min و Max فاصلهٔ روزهای مجاز برگشت در فروش هستند. Max پیش‌فرض برای هر رفت، یک روز بیشتر از فاصلهٔ برگشت است و می‌توانید آن را تغییر دهید.": "Outbound and return times use Tehran time. Min and Max specify the permitted return interval in days. The default Max is one day longer than the return interval and can be changed.",
+  "انتخاب پرونده در ردیف مسافر": "Select an existing profile in this passenger row",
+  "اطلاعات و ترتیب تاریخ بلیط‌های انتخاب‌شده را بررسی کنید.": "Check the selected flight details and date order.",
+  "اطلاعات مسیر و خدمات انتخاب‌شده را کامل کنید.": "Complete the route and selected service details."
 }
