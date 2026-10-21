@@ -53,7 +53,7 @@ vi.mock('@/modules/legal-entities/components/legal-entity-context', () => ({
 vi.mock('@/components/ui/button', async (original) => ({
   ...(await original<typeof ButtonModule>()),
   Button: (props: React.ComponentProps<'button'>) => {
-    if (props.children === 'ثبت بلیط شناور')
+    if (props['aria-label'] === 'ثبت بلیط شناور')
       fixture.confirms.push(props.onClick as () => void);
     if (props['aria-label'] === 'جست‌وجوی بلیط‌ها')
       fixture.search = props.onClick as () => void;

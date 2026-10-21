@@ -155,6 +155,7 @@ export function ContractFlightEditor({
       </div>
       <Button
         type="button"
+        aria-label="ثبت بلیط شناور"
         onClick={() => onChange(confirmFloatingFlight(date, value))}
       >
         ثبت بلیط شناور
