@@ -43,8 +43,8 @@ upload/scan result propagation, CLEAN-only preview, CAS/cleanup, scanner exit/pr
 failure mapping, private temporary-file cleanup and Web preview/fallback behavior.
 133 API and27 Web tests pass; scoped API/Web lint, formatting/diff checks and API
 production build pass. Web compiled; its first type-check caught an optional
-property in the new test, fixed before publication; final full build/type checks
-are recorded in publication notes. No real ClamAV engine
+property in the new test, fixed before publication. Final Web production build
+(all65 routes) and Web full type check pass. No real ClamAV engine
 or production UI acceptance claimed: local tests use controlled process outcomes.
 
 ## Production handoff (not executed)

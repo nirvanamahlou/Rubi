@@ -1,4 +1,6 @@
-## MASTER-LOGO-SAVE-DISPLAY-1021 — PC-B — READY_FOR_PUSH
+## MASTER-LOGO-SAVE-DISPLAY-1021 — PC-B — PUSHED / SOURCE_RELEASED
+
+Implementation e18b81f9 published on the reserved branch. API and Web production builds pass (65 Web routes); Web full type check passes.133 API and27 Web tests, scoped lint and formatting/diff checks pass. No real ClamAV engine or production UI acceptance claimed. No merge, installation, activation or deployment. Bounded source reservations released; any subsequent review repair reopens only its failing scope.
 
 User subsequently requests direct continuation without worker-orchestrator; no further worker dispatch.133 focused API tests and27 Web tests pass, scoped API/Web lint and diff checks pass. Shared generated Contracts/Prisma/Database artifacts refreshed from unchanged source (no database connection or migration). Final types/build checks pending. Publication is branch push only, no automatic merge/deploy or scanner installation/activation; runtime handoff in docs/tasks/MASTER-LOGO-SAVE-DISPLAY-1021.md. Source locks release on push.
 

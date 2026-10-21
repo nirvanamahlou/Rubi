@@ -1,5 +1,7 @@
 ## MASTER-LOGO-SAVE-DISPLAY-1021 — PC-B — 2026-10-21
 
+Published implementation e18b81f9; API/Web production builds and Web full type check pass, including all65 Web routes.133 API and27 Web tests and scoped lint/format/diff checks pass. Source reservations released. No real-engine/production acceptance, merge, scanner installation or runtime activation; direct continuation respected after user excludes orchestrator.
+
 Read-only Avina diagnosis found missing fixed brand archive references and disabled Linux antivirus. Candidate adds authorized insert-only reference repair (preserves inactive/customized policies), code-only real ClamAV adapter with fail-closed process/exit handling and private temporary cleanup, scan-state save warnings and accessible shared logo-table fallback.133 focused API and27 Web tests plus scoped lint/diff checks pass; final types/build checks pending. No schema/dependencies/migration/IAM grants or operational writes. User requests direct continuation without orchestrator, push only; server installation/activation/deployment and merge are excluded. See tasks/MASTER-LOGO-SAVE-DISPLAY-1021.md for honest scanner/runtime recovery prerequisites.
 
 ## AIRCRAFT-INACTIVE-VISIBLE-1021 — PC-B — 2026-10-21
