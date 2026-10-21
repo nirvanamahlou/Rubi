@@ -82,9 +82,6 @@ vi.mock('./sales-people-sheet', () => ({
 vi.mock('./hotel-stay-dates', () => ({
   HotelStayDates: () => <div>shared hotel stay dates</div>,
 }));
-vi.mock('./contract-flight-editor', () => ({
-  ContractFlightEditor: () => null,
-}));
 
 const out: TicketOfferV1 = {
   id: 'out',
