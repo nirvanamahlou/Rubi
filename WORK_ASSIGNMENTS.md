@@ -8735,6 +8735,12 @@ COMPUTER_ID=PC-A; codex/pc-a-flight-load-actions-1021 from origin/develop397ad41
 
 FLIGHT-LOAD-ACTIONS-1021 — READY_FOR_CI: selected-load editor restored; reserve-capacity action visible with existing eligibility.205 Ticket Catalog tests pass, one existing skip; scoped lint/format pass. Web type/build and exact-head CI required before owner-authorized merge. Bounded source locks RELEASED on publication; no operational rollout.
 
+## FLIGHT-LOAD-POWER-1021 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; codex/pc-a-flight-load-power-1021 from origin/develop ee60554e. User requests restoring the Power activate/deactivate control in selected flight load actions and explicitly authorizes develop merge. Reserve only TicketWorkspace action visibility and own status notes. Render existing accessible state toggle independently of future-date edit guard; retain canonical status API, CAS/version, permissions, error/refresh flow and existing hold eligibility. Prior workspace source scope released at PR1029; no active overlap found. No API/schema/migration/dependency, translations, data or runtime deployment changes.
+
+FLIGHT-LOAD-POWER-1021 — READY_FOR_CI: existing Power control visible for selected flights regardless of departure date; state transition remains the same authenticated CAS command.208 focused tests passed, one existing skip, scoped lint/format passed. Source lock RELEASED on publication; exact-head hosted gates required before authorized merge. No server deployment or data changes.
+
 ## HR-EXTENSION-1021 — PC-B — READY_FOR_CI
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-extension-1021 from origin/develop397ad411. User requests optional employee extension in create/edit/table, tests, push and develop merge. Reserve HR employee API/dialog/table and focused tests, additive optional employee v1 extension contract plus one read-only internal employee-contact record definition, own docs and related i18n keys/derived outputs. Use existing HR-owned record storage with real employee FK, employee CAS/transaction and audit; no new UI section, schema/migration/dependency/lockfile, IAM or runtime changes. Producer HR returns optional extension; legacy omission preserves it and blank clears. Shared source reservation limited to HR contract/registry/columns and i18n leaves. Prior PR1015 merged/released; no overlapping HR source lock found.
