@@ -10,6 +10,7 @@ import {
   patchContractFlight,
   salesFlightSelection,
   salesFlightsValid,
+  salesSelectedFlightsReady,
   salesPayload,
   salesTravelDate,
   withSalesHotelDates,
@@ -211,4 +212,51 @@ it('keeps an entered manual fare while editing its flight details', () => {
       serviceNumber: 'EDITED',
     }).servicePricing,
   ).toBe(pricing);
+});
+
+it('restored floating selections are ready without transient catalog search state', () => {
+  expect(salesSelectedFlightsReady(state)).toBe(true);
+  expect(salesSelectedFlightsReady({ ...state, contractFlights: {} })).toBe(
+    false,
+  );
+  expect(
+    salesSelectedFlightsReady({
+      ...state,
+      contractFlights: { OUTBOUND: { ...draft, serviceNumber: '' } },
+    }),
+  ).toBe(false);
+  expect(salesSelectedFlightsReady({ ...state, tripType: 'ROUND_TRIP' })).toBe(
+    false,
+  );
+  expect(
+    salesSelectedFlightsReady({
+      ...state,
+      tripType: 'ROUND_TRIP',
+      contractFlights: {
+        OUTBOUND: draft,
+        RETURN: {
+          ...draft,
+          departureAt: '2026-10-02T10:30:00',
+          arrivalAt: '2026-10-02T13:30:00',
+        },
+      },
+    }),
+  ).toBe(true);
+});
+
+it('does not require an unused return when every confirmed passenger excludes that leg', () => {
+  expect(
+    salesSelectedFlightsReady({
+      ...state,
+      tripType: 'ROUND_TRIP',
+      passengers: [
+        {
+          customerId: 'synthetic',
+          displayName: 'Synthetic Person',
+          birthDate: '1990-01-01',
+        },
+      ],
+      passengerFlightDirections: { synthetic: ['OUTBOUND'] },
+    }),
+  ).toBe(true);
 });
