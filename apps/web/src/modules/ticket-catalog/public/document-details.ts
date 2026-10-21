@@ -1,3 +1,7 @@
+import {
+  ticketOfferMatchesRoute,
+  type TicketSaleRouteV1,
+} from '@nora/contracts';
 import type { TicketLayoutFlight } from '@/components/travel/flight-ticket-layout';
 export type TicketDocumentFacts = Pick<
   TicketLayoutFlight,
@@ -28,6 +32,7 @@ export async function readTicketDocumentFacts(
         const { data } = (await response.json()) as {
           data?: {
             id: string;
+            saleRoutes?: readonly TicketSaleRouteV1[];
             originId: string;
             destinationId: string;
             originAirportId?: string | null;
@@ -39,8 +44,7 @@ export async function readTicketDocumentFacts(
         if (
           !data ||
           data.id !== offer.offerId ||
-          data.originId !== offer.originId ||
-          data.destinationId !== offer.destinationId
+          !ticketOfferMatchesRoute(data, offer)
         )
           return;
         const airport = async (id: string | null | undefined) => {

@@ -91,6 +91,7 @@ describe('ticket selected airport document projection', () => {
           destinationAirportId: true,
           economyBaggageKg: true,
           businessBaggageKg: true,
+          saleRoutes: { select: { originId: true, destinationId: true } },
         },
       }),
     );

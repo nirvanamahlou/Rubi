@@ -87,6 +87,11 @@ export function createReturnTicketDraft(source: ProductInput): ProductInput {
     ...source,
     title: '',
     journeyRole: 'return',
+    saleRoutes:
+      source.saleRoutes?.map((r) => ({
+        originId: r.destinationId,
+        destinationId: r.originId,
+      })) ?? [],
     returnMinDays: null,
     returnMaxDays: null,
     fare: { ...source.fare },

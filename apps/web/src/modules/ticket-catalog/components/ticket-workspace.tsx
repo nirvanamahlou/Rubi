@@ -119,6 +119,7 @@ export function flightOfferInput(
   return {
     originAirportId: firstSegment.originAirportId || null,
     destinationAirportId: lastSegment.destinationAirportId || null,
+    saleRoutes: definition.saleRoutes ?? [],
     originId: firstSegment.originCityId,
     destinationId: lastSegment.destinationCityId,
     departureAt: firstSegment.departureAt,
@@ -569,10 +570,17 @@ function TicketCatalogWorkspace() {
     if (!hydrated) return;
     const cityIds = new Set(
       displayedProducts.flatMap((product) =>
-        product.definition.segments.flatMap((segment) => [
-          segment.originCityId,
-          segment.destinationCityId,
-        ]),
+        product.definition.segments
+          .flatMap((segment) => [
+            segment.originCityId,
+            segment.destinationCityId,
+          ])
+          .concat(
+            (product.definition.saleRoutes ?? []).flatMap((route) => [
+              route.originId,
+              route.destinationId,
+            ]),
+          ),
       ),
     );
     for (const id of cityIds) {
