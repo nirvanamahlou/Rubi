@@ -69,7 +69,9 @@ it('prints actual hotel and flight amounts in any currency and omits only empty 
     .split('</table>')[0]!;
   expect(table).toContain('قیمت ارزی');
   expect(table).toContain('80 $');
-  expect(table).toContain('5,000 ﷼');
+  expect(table).toContain(
+    '5,000 <span class="currency-symbol" dir="rtl">﷼</span>',
+  );
   expect(table).toContain('30 $');
   expect(table).toContain('<th>تخفیف</th>');
   expect(table).not.toContain('<th>کمیسیون</th>');

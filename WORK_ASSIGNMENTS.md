@@ -8722,6 +8722,13 @@ Validation:208 Ticket Catalog tests pass (one pre-existing skip), including Tehr
 
 FLIGHT-LOAD-TIME-ROUTE-1021 reserves one additive English help-label override and derived catalogue synchronization; no unrelated translation changes. CI correctly detected the missing translation; fix required before merge, no gate skipped.
 
+## CONTRACT-TYPE-CURRENCY-1021 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; codex/pc-a-contract-type-currency-1021 from origin/develop397ad411. User requests smaller passenger/room typography, softer English font, reliable rial symbol and left-aligned check-in output; explicitly authorizes develop merge. Reserve only Sales contract-print leaf, focused output regression and own status notes. Keep canonical amounts, dates, passenger names, room labels and saved history unchanged; scope presentation/CSS and bidi isolation only. Prior CONTRACT-STAY-PRINT source reservation released on publication; no overlapping active target writer found. No API/schema/migration/dependency/runtime or operational data changes.
+
+CONTRACT-TYPE-CURRENCY-1021 candidate:32 focused output/review tests pass; synthetic Chromium visual check confirms compact softer Latin names/room types, correct rial glyph and left-aligned isolated dates. Existing monetary values and saved input unchanged, CSS-only typography plus safe escaped symbol markup. Source locks freeze/release at candidate publication; final lint/types/build and exact-head hosted checks gate user-authorized develop merge. No live runtime/data changes.
+CONTRACT-TYPE-CURRENCY-1021 CI follow-up reserves only existing contract-rendering assertions in room-output-consistency, contract-passenger-services and unified-passenger-pricing tests. Update exact expected markup for room-type class, left-aligned empty stay cells and isolated rial span while retaining occupancy/amount assertions. One unrelated purchase-workspace test hit its unchanged5s timeout; rerun full suite without weakening its deadline or assertions.
+
 ## FLIGHT-LOAD-ACTIONS-1021 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; codex/pc-a-flight-load-actions-1021 from origin/develop397ad411. User requests restoring bottom Edit Load and Reserve Capacity controls, explicitly authorizes develop merge. Reserve TicketWorkspace selected-offer actions/group edit binding, focused regressions and own notes. Do not edit flight-load model/grid/reference files reserved by FLIGHT-LOAD-TIME-ROUTE-1021. Restore existing publishedLoadGroups and weekly edit/save flow; keep capacity hold eligibility and existing server command/idempotency. Display ineligible hold action disabled with reason. No API/schema/migration/dependency, permissions or operational data/runtime changes.
