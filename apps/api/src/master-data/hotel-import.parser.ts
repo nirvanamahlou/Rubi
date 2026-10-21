@@ -45,6 +45,11 @@ const activeContentEntry =
 const externalDataEntry =
   /(^|\/)(?:externalLinks|queryTables)(?:\/|\.|$)|(^|\/)connections\.xml$/i;
 
+import {
+  FACILITY_NAME_MAX_CHARACTERS,
+  postgresCharacterLength,
+} from './facility-text';
+
 export interface HotelImportSourceRow {
   rowNumber: number;
   code: string;
@@ -639,7 +644,7 @@ export function parseHotelImportWorkbook(input: {
         code: 'INVALID_BOOLEAN',
         message: 'فروش آزاد باید بله، خیر، TRUE، FALSE، ۱ یا ۰ باشد.',
       });
-    if ((persianName?.length ?? 0) > 160)
+    if (postgresCharacterLength(persianName ?? '') > 160)
       issues.push({
         rowNumber,
         column: 'نام فارسی',
@@ -651,8 +656,19 @@ export function parseHotelImportWorkbook(input: {
       [2, 160],
       [4, 1000],
       [6, 160],
+      [7, 160],
+      [8, 160],
+      [10, 2000],
+      [11, 2000],
+      [12, 2000],
+      [13, 2000],
+      [17, 2000],
     ] as const) {
-      if ((cells[index]?.length ?? 0) > limit)
+      const value = normalize(cells[index] ?? '');
+      if (
+        postgresCharacterLength(index === 7 ? value.toUpperCase() : value) >
+        limit
+      )
         issues.push({
           rowNumber,
           column: HOTEL_IMPORT_HEADERS[index],
@@ -660,6 +676,32 @@ export function parseHotelImportWorkbook(input: {
           message: `${HOTEL_IMPORT_HEADERS[index]}: maximum ${limit} characters.`,
         });
     }
+    const facilities = (cells[9] ?? '')
+      .split('|')
+      .map(normalize)
+      .filter(Boolean);
+    if (
+      facilities.some(
+        (name) => postgresCharacterLength(name) > FACILITY_NAME_MAX_CHARACTERS,
+      )
+    )
+      issues.push({
+        rowNumber,
+        column: 'امکانات',
+        code: 'VALUE_TOO_LONG',
+        message: `Each facility: maximum ${FACILITY_NAME_MAX_CHARACTERS} characters. No text was truncated.`,
+      });
+    const galleryImageSources = (cells[14] ?? '')
+      .split('|')
+      .map(normalize)
+      .filter(Boolean);
+    if (postgresCharacterLength(galleryImageSources.join('|')) > 2000)
+      issues.push({
+        rowNumber,
+        column: 'تصاویر گالری',
+        code: 'VALUE_TOO_LONG',
+        message: 'Gallery image addresses: maximum 2000 characters in total.',
+      });
     if (suppliedCode && !codePattern.test(suppliedCode))
       issues.push({
         rowNumber,
@@ -750,15 +792,12 @@ export function parseHotelImportWorkbook(input: {
       serviceLevel: optional(cells[6]),
       mealServiceCode: optional(cells[7])?.toUpperCase() ?? null,
       defaultRoomType: optional(cells[8]),
-      facilities: (cells[9] ?? '').split('|').map(normalize).filter(Boolean),
+      facilities,
       description: optional(cells[10]),
       refundRules: optional(cells[11]),
       hotelRules: optional(cells[12]),
       mainImageSource: optional(cells[13]),
-      galleryImageSources: (cells[14] ?? '')
-        .split('|')
-        .map(normalize)
-        .filter(Boolean),
+      galleryImageSources,
       sourceStatus: status,
       isActive: status === 'منتشرشده',
       featuredSource: boolValue(cells[16]),

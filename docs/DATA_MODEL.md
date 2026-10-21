@@ -1,3 +1,7 @@
+## Facility import lossless text — 2026-10-21
+
+MasterFacility.name widens from varchar160 to varchar500 without changing identities, relations or existing indices. Import preview and final revalidation enforce PostgreSQL character counts and all persisted hotel/reference string limits; accepted facility text is never truncated. Boundary500 with four-byte characters plus an80-character category is verified against the actual compound indexes. Migration20261021100000_facility_name_text is widening-only; retain it on application rollback and never narrow after longer names have been saved. No cross-module ownership/API changes. See tasks/HOTEL-FACILITY-TEXT-1021.md.
+
 ## Hotel import optional identity/website/free-sale — 2026-10-20
 
 MasterHotel.freeSale is nullable Boolean reference metadata, independent of isActive, isSaleableReference and sourceFeatured; NULL means unspecified and false must remain false. No backfill or availability/payment policy change. Existing name stores optional Persian name (hotel-name fallback), englishName stores the workbook hotel name, and website keeps its existing nullable320-character text field. An omitted new header on import UPDATE preserves saved values; explicit blanks clear nullable website/freeSale. Generic authorized profile edits preserve omitted fields and audit/version behavior. Apply additive migration20261020180000_hotel_free_sale before API/Web rollout; no operational migration was performed by implementation. Older14/18-column workbooks remain valid.
