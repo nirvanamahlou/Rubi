@@ -6,7 +6,11 @@ import type { MasterDataRecord, SalesContractOutputV1 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { legalEntityBrand } from '@/modules/legal-entities/model/context';
 import type { ContractPrintReferences } from '@/modules/sales/model/contract-print';
-import { renderContractPdf } from '@/modules/sales/server/contract-pdf';
+import { createPublicDocument } from '@/modules/travel-documents/server/public-document-store';
+import {
+  renderContractPdf,
+  prepareContractHtml,
+} from '@/modules/sales/server/contract-pdf';
 import { printCityInternational } from '@/modules/sales/model/contract-print-country';
 
 export const runtime = 'nodejs';
@@ -101,6 +105,22 @@ export async function GET(
     refs.logoDataUrl =
       'data:image/png;base64,' +
       (await readFile(join(process.cwd(), 'public', logo))).toString('base64');
+    const share = createPublicDocument();
+    const language = languageFromCookies(request.headers.get('cookie'));
+    if (share) {
+      refs.publicDocumentUrl = share.url;
+      const html = await prepareContractHtml(output, refs, language);
+      await share.save(html);
+      if (new URL(request.url).searchParams.get('format') === 'share')
+        return Response.json({ url: share.url, html }, { headers });
+    } else if (new URL(request.url).searchParams.get('format') === 'share')
+      return Response.json(
+        {
+          message: 'Public documents unavailable',
+          code: 'PUBLIC_DOCUMENTS_DISABLED',
+        },
+        { status: 503, headers },
+      );
     const bytes = await renderContractPdf(
       output,
       refs,

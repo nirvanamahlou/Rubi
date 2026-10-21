@@ -1,4 +1,5 @@
 'use client';
+import { usePublicDocumentLink } from '@/modules/travel-documents/public/use-public-document-link';
 import {
   ReservationFormSheet,
   useReservationFormReferences,
@@ -103,12 +104,22 @@ export function TravelDocument({
           workflow: { ...state, supplierFormSettings: previewSettings },
         }
       : intake;
+  const publicDocument = usePublicDocumentLink(
+    !historical && enabled && supplierReady && !dirty
+      ? '/reservations/requests/' +
+          encodeURIComponent(intake.id) +
+          '/pdf?' +
+          new URLSearchParams({ ...(voucher ? { kind: 'voucher' } : {}) })
+      : undefined,
+    JSON.stringify(state),
+  );
   const sheet = (
     <ReservationFormSheet
       intake={previewIntake}
       logo={logo}
       references={formReferences.references}
       voucher={voucher}
+      publicDocumentUrl={publicDocument?.url}
     />
   );
   async function downloadPdf() {
@@ -172,7 +183,20 @@ export function TravelDocument({
           بررسی کنید.
         </p>
       )}
-      {enabled && supplierReady && <DocumentPreview>{sheet}</DocumentPreview>}
+      {enabled &&
+        supplierReady &&
+        (historical ||
+        dirty ||
+        publicDocument?.status === 'ready' ||
+        publicDocument?.status === 'disabled' ? (
+          <DocumentPreview>{sheet}</DocumentPreview>
+        ) : (
+          <p role="status">
+            {publicDocument?.status === 'failed'
+              ? 'آماده‌سازی بارکد انجام نشد؛ دوباره فرم را باز کنید.'
+              : 'در حال آماده‌سازی بارکد مدرک…'}
+          </p>
+        ))}
     </div>
   );
 }

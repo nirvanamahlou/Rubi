@@ -1,4 +1,4 @@
-/** QR version 4-L, byte mode, mask 0. Encodes an authenticated reservation form URL. */
+/** QR version 4-L, byte mode, mask 0. Encodes a document URL. */
 export function reservationFormQr(value: string): string | null {
   const bytes = new TextEncoder().encode(value);
   if (!bytes.length || bytes.length > 78) return null;

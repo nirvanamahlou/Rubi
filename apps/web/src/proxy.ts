@@ -3,6 +3,11 @@ import { NextResponse, type NextRequest } from 'next/server';
 const ACCESS_COOKIE = 'nora_access';
 
 export function proxy(request: NextRequest) {
+  if (
+    ['GET', 'HEAD'].includes(request.method) &&
+    /^\/d\/[A-Za-z0-9_-]{32}$/.test(request.nextUrl.pathname)
+  )
+    return NextResponse.next();
   if (request.nextUrl.pathname === '/human-resources') {
     const currentHr = request.nextUrl.clone();
     currentHr.pathname = '/hr';

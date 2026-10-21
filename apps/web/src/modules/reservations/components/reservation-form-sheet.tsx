@@ -138,11 +138,13 @@ export function ReservationFormSheet({
   logo,
   references = {},
   voucher = false,
+  publicDocumentUrl,
 }: {
   intake: ReservationFormIntake;
   logo: string;
   references?: ReservationFormReferences;
   voucher?: boolean;
+  publicDocumentUrl?: string | undefined;
 }) {
   const data = voucher
     ? voucherFormData(intake, references)
@@ -501,6 +503,7 @@ export function ReservationFormSheet({
                       origin,
                       intake.workflow.branding?.companyCode,
                       data.brand,
+                      publicDocumentUrl,
                     ),
                   }}
                 />
