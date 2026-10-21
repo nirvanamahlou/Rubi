@@ -1,9 +1,11 @@
 'use client';
+import { ExecutiveWorkspace } from '@/modules/assistant/executive-workspace';
+import { assistantViewForDashboardPage } from '@/modules/assistant/dashboard-location';
+import { useRouteAccess } from '@/modules/iam/access-context';
 import { currencySymbol, currencySymbols } from '@/lib/currency-symbol';
 
 import { useQuery } from '@tanstack/react-query';
 import {
-  AlertTriangle,
   ArrowLeft,
   ArrowDownRight,
   ArrowUpRight,
@@ -28,22 +30,19 @@ import {
   Info,
   LayoutDashboard,
   Lightbulb,
-  LineChart,
-  ListFilter,
   LockKeyhole,
   Megaphone,
   Minus,
   PhoneCall,
-  PieChart,
   Plane,
   RefreshCw,
   RotateCcw,
   Search,
   ShieldAlert,
+  Sparkles,
   Ticket,
   UserRoundCog,
   UserCheck,
-  UserPlus,
   UsersRound,
   WalletCards,
   X,
@@ -118,6 +117,8 @@ import {
   type DashboardVisualKind,
 } from '../model/registry';
 import { trendAxisLabelIndexes } from '../model/trend-axis';
+import { dashboardChartArtwork, dashboardKpiArtwork } from '../model/artwork';
+import { DashboardArtworkIcon } from './dashboard-artwork-icon';
 
 const rangeOptions: readonly [DashboardRange, string][] = [
   ['today', 'امروز'],
@@ -410,16 +411,6 @@ function filterCopyForPage(pageId: string, key: DashboardFilterKey) {
   };
 }
 
-const visualIcons: Record<DashboardVisualKind, typeof BarChart3> = {
-  line: LineChart,
-  bar: BarChart3,
-  donut: PieChart,
-  'stacked-bar': BarChart3,
-  funnel: ListFilter,
-  table: ListFilter,
-  queue: AlertTriangle,
-};
-
 const visualLabels: Record<DashboardVisualKind, string> = {
   line: 'نمودار روند',
   bar: 'نمودار مقایسه‌ای',
@@ -434,230 +425,8 @@ const dashboardPageById = new Map(
   dashboardPages.map((page) => [page.id, page] as const),
 );
 
-type KpiVisual = {
-  icon: LucideIcon;
-  label: string;
-  className: string;
-};
-
-const kpiVisualMatchers: readonly [RegExp, KpiVisual][] = [
-  [
-    /cancel|refund|failure|breach|overdue|risk|debt|payables|receivables|due|blocker|guarantee/i,
-    {
-      icon: ShieldAlert,
-      label: 'ریسک و استثنا',
-      className:
-        'bg-rose-50 text-rose-700 ring-rose-100 dark:bg-rose-950/50 dark:text-rose-200 dark:ring-rose-900',
-    },
-  ],
-  [
-    /lead|customer|crm|followup|satisfaction|consent|ticket|employee|response-time/i,
-    {
-      icon: UsersRound,
-      label: 'مشتری و ارتباط',
-      className:
-        'bg-blue-50 text-blue-700 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-200 dark:ring-blue-900',
-    },
-  ],
-  [
-    /tour|hotel|airline|ticket|route|reservation|order|issue|capacity|offer|stay|awaiting-payment|delivery/i,
-    {
-      icon: Plane,
-      label: 'عملیات سفر و محصول',
-      className:
-        'bg-sky-50 text-sky-700 ring-sky-100 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-900',
-    },
-  ],
-  [
-    /campaign|marketing|advertising|attributed/i,
-    {
-      icon: Megaphone,
-      label: 'بازاریابی و رشد',
-      className:
-        'bg-violet-50 text-violet-700 ring-violet-100 dark:bg-violet-950/50 dark:text-violet-200 dark:ring-violet-900',
-    },
-  ],
-  [
-    /workday|leave|overtime|hr|performance/i,
-    {
-      icon: BriefcaseBusiness,
-      label: 'سرمایه انسانی',
-      className:
-        'bg-indigo-50 text-indigo-700 ring-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-200 dark:ring-indigo-900',
-    },
-  ],
-  [
-    /supplier|provider|spend|purchase|inventory|remaining|sell-through/i,
-    {
-      icon: Building2,
-      label: 'تأمین و ظرفیت',
-      className:
-        'bg-orange-50 text-orange-700 ring-orange-100 dark:bg-orange-950/50 dark:text-orange-200 dark:ring-orange-900',
-    },
-  ],
-  [
-    /sales|revenue|profit|income|amount|price|discount|commission|balance|collection|collected|payment|expense|roas/i,
-    {
-      icon: BadgeDollarSign,
-      label: 'فروش و مالی',
-      className:
-        'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-900',
-    },
-  ],
-  [
-    /rate|ratio|growth|conversion|average|count|number|volume|age/i,
-    {
-      icon: ChartNoAxesCombined,
-      label: 'روند و عملکرد',
-      className:
-        'bg-cyan-50 text-cyan-700 ring-cyan-100 dark:bg-cyan-950/50 dark:text-cyan-200 dark:ring-cyan-900',
-    },
-  ],
-];
-
 const adverseKpiIdPattern =
   /refund|cancel|discount|expense|commission|overdue|awaiting|pending|failure|breach|debt|payable|risk|complaint|escalation|expired|blocked|shortage/i;
-
-const kpiVisualOverrides: Readonly<Record<string, KpiVisual>> = {
-  'gross-sales': {
-    icon: Banknote,
-    label: 'مبلغ فروش',
-    className:
-      'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-900',
-  },
-  'net-sales': {
-    icon: BadgeDollarSign,
-    label: 'فروش خالص',
-    className:
-      'bg-teal-50 text-teal-700 ring-teal-100 dark:bg-teal-950/50 dark:text-teal-200 dark:ring-teal-900',
-  },
-  'new-customers': {
-    icon: UserPlus,
-    label: 'مشتری جدید',
-    className:
-      'bg-blue-50 text-blue-700 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-200 dark:ring-blue-900',
-  },
-  'returning-customers': {
-    icon: UserCheck,
-    label: 'مشتری بازگشتی',
-    className:
-      'bg-violet-50 text-violet-700 ring-violet-100 dark:bg-violet-950/50 dark:text-violet-200 dark:ring-violet-900',
-  },
-  'new-leads': {
-    icon: UserPlus,
-    label: 'لید جدید',
-    className:
-      'bg-sky-50 text-sky-700 ring-sky-100 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-900',
-  },
-  'lead-volume': {
-    icon: UsersRound,
-    label: 'حجم لید',
-    className:
-      'bg-sky-50 text-sky-700 ring-sky-100 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-900',
-  },
-  'employee-call-count': {
-    icon: PhoneCall,
-    label: 'تماس ثبت‌شده',
-    className:
-      'bg-cyan-50 text-cyan-700 ring-cyan-100 dark:bg-cyan-950/50 dark:text-cyan-200 dark:ring-cyan-900',
-  },
-  'employee-lead-count': {
-    icon: UserPlus,
-    label: 'لیدهای ثبت‌شده',
-    className:
-      'bg-sky-50 text-sky-700 ring-sky-100 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-900',
-  },
-  'employee-finalized-sales-count': {
-    icon: BadgeDollarSign,
-    label: 'فروش نهایی کارشناس',
-    className:
-      'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-900',
-  },
-  'employee-sales-amount': {
-    icon: Banknote,
-    label: 'مبلغ فروش کارشناس',
-    className:
-      'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-900',
-  },
-  'employee-lead-conversion': {
-    icon: ChartNoAxesCombined,
-    label: 'نرخ تبدیل کارشناس',
-    className:
-      'bg-violet-50 text-violet-700 ring-violet-100 dark:bg-violet-950/50 dark:text-violet-200 dark:ring-violet-900',
-  },
-  'employee-average-sale': {
-    icon: BadgeDollarSign,
-    label: 'میانگین فروش کارشناس',
-    className:
-      'bg-teal-50 text-teal-700 ring-teal-100 dark:bg-teal-950/50 dark:text-teal-200 dark:ring-teal-900',
-  },
-  'employee-contract-count': {
-    icon: BriefcaseBusiness,
-    label: 'قراردادهای کارشناس',
-    className:
-      'bg-indigo-50 text-indigo-700 ring-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-200 dark:ring-indigo-900',
-  },
-  'employee-followup-count': {
-    icon: CalendarCheck,
-    label: 'پیگیری فروش',
-    className:
-      'bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-950/50 dark:text-amber-200 dark:ring-amber-900',
-  },
-  'employee-sales-rank': {
-    icon: Gauge,
-    label: 'رتبه عملکرد',
-    className:
-      'bg-indigo-50 text-indigo-700 ring-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-200 dark:ring-indigo-900',
-  },
-  'tour-reservations': {
-    icon: Ticket,
-    label: 'رزرو تور',
-    className:
-      'bg-orange-50 text-orange-700 ring-orange-100 dark:bg-orange-950/50 dark:text-orange-200 dark:ring-orange-900',
-  },
-  'hotel-reservations': {
-    icon: Hotel,
-    label: 'رزرو هتل',
-    className:
-      'bg-sky-50 text-sky-700 ring-sky-100 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-900',
-  },
-  'average-ticket-price': {
-    icon: Ticket,
-    label: 'متوسط قیمت بلیت',
-    className:
-      'bg-blue-50 text-blue-700 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-200 dark:ring-blue-900',
-  },
-  'remaining-capacity': {
-    icon: Gauge,
-    label: 'ظرفیت باقی‌مانده',
-    className:
-      'bg-orange-50 text-orange-700 ring-orange-100 dark:bg-orange-950/50 dark:text-orange-200 dark:ring-orange-900',
-  },
-  'collection-rate': {
-    icon: CircleCheckBig,
-    label: 'نرخ وصول',
-    className:
-      'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-900',
-  },
-  'lead-conversion-rate': {
-    icon: ChartNoAxesCombined,
-    label: 'نرخ تبدیل لید',
-    className:
-      'bg-violet-50 text-violet-700 ring-violet-100 dark:bg-violet-950/50 dark:text-violet-200 dark:ring-violet-900',
-  },
-};
-
-function kpiVisualFor(definition: DashboardKpiDefinition): KpiVisual {
-  return (
-    kpiVisualOverrides[definition.id] ??
-    kpiVisualMatchers.find(([pattern]) => pattern.test(definition.id))?.[1] ?? {
-      icon: CircleDollarSign,
-      label: 'شاخص عملکرد',
-      className:
-        'bg-slate-100 text-slate-700 ring-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700',
-    }
-  );
-}
 
 const comparisonRankPalette = [
   '#172554',
@@ -851,6 +620,7 @@ function dashboardVisualIsWide(
 }
 
 const navigationIcons: Record<string, LucideIcon> = {
+  assistant: Sparkles,
   'executive-overview': LayoutDashboard,
   'executive-growth-risk': Gauge,
   'commercial-performance': BriefcaseBusiness,
@@ -1523,8 +1293,6 @@ function KpiCard({
   featured?: boolean;
   metric?: DashboardMetricSnapshot | undefined;
 }) {
-  const visual = kpiVisualFor(definition);
-  const Icon = visual.icon;
   return (
     <button
       data-dashboard-kpi
@@ -1550,17 +1318,7 @@ function KpiCard({
       />
       <span className="relative flex min-w-0 items-center gap-2.5">
         <span className="flex min-w-0 items-center gap-2.5">
-          <span
-            aria-label={visual.label}
-            className={cn(
-              'grid size-9 shrink-0 place-items-center rounded-xl shadow-sm ring-1',
-              visual.className,
-            )}
-            title={visual.label}
-            role="img"
-          >
-            <Icon aria-hidden="true" className="size-[18px]" />
-          </span>
+          <DashboardArtworkIcon name={dashboardKpiArtwork(definition.id)} />
           <span
             className="min-w-0 truncate text-sm font-black text-foreground"
             title={definition.title}
@@ -3208,7 +2966,7 @@ function ProjectionSlot({
   const isEmployeeComparison =
     visualId.startsWith('employee-') &&
     (resolvedKind === 'bar' || resolvedKind === 'stacked-bar');
-  const Icon = isEmployeeComparison ? UsersRound : visualIcons[resolvedKind];
+
   const visualLabel = isEmployeeComparison
     ? 'مقایسه عملکرد تیم'
     : visualLabels[resolvedKind];
@@ -3232,9 +2990,9 @@ function ProjectionSlot({
       >
         <div className="flex items-start justify-between gap-3 border-b border-border/70 bg-gradient-to-l from-blue-50/70 via-surface to-surface p-3.5 dark:from-blue-950/20">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-900">
-              <Icon aria-hidden="true" className="size-5" />
-            </span>
+            <DashboardArtworkIcon
+              name={dashboardChartArtwork(visualId, resolvedKind)}
+            />
             <div className="min-w-0">
               <h3 className="font-black text-foreground">{title}</h3>
               <p className="mt-1 text-xs leading-6 text-muted-foreground">
@@ -3267,7 +3025,7 @@ function ProjectionSlot({
                 >
                   <SelectTrigger
                     aria-label={`واحد پول نمودار ${title}`}
-                    className="h-7 min-w-28 border-border/80 bg-background px-2 text-[9px] font-bold"
+                    className="h-7 w-28 min-w-0 border-border/80 bg-background px-2 text-[9px] font-bold"
                     data-dashboard-visual-currency-selector
                   >
                     <CircleDollarSign aria-hidden="true" className="size-3.5" />
@@ -3493,6 +3251,8 @@ function DashboardSidebar({
 }) {
   const [dateCalendarSystem, setDateCalendarSystem] =
     useState<CalendarSystem>('persian');
+  const canNavigate = useRouteAccess();
+  const assistantPage = assistantViewForDashboardPage(activePageId);
   const activePage = dashboardPageById.get(activePageId);
   const activeFiltersTitle = activePage
     ? `فیلترهای ${activePage.title}`
@@ -3557,6 +3317,7 @@ function DashboardSidebar({
             <LayoutDashboard aria-hidden="true" className="size-4" />
           </Button>
           <Button
+            disabled={!!assistantPage}
             aria-label="نمایش فیلترها"
             className="size-10 w-full p-0"
             onClick={() => onPanelChange('filters')}
@@ -3587,6 +3348,7 @@ function DashboardSidebar({
             صفحه‌ها
           </button>
           <button
+            disabled={!!assistantPage}
             aria-selected={activePanel === 'filters'}
             className={cn(
               'min-h-10 whitespace-nowrap rounded-xl px-2 text-[11px] font-black leading-5 tracking-tight outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
@@ -3605,89 +3367,94 @@ function DashboardSidebar({
 
       {activePanel === 'workspace' ? (
         <nav aria-labelledby="dashboard-pages-title" className="space-y-1 p-2">
-          {dashboardNavigation.map((item) => {
-            const page = dashboardPageById.get(item.pageId);
-            if (!page) return null;
-            const Icon = navigationIcons[item.pageId] ?? LayoutDashboard;
-            const hasChildren = Boolean(item.children?.length);
-            const expanded = expandedGroups.has(item.pageId);
-            const branchActive =
-              activePageId === item.pageId ||
-              Boolean(
-                item.children?.some((child) => child.pageId === activePageId),
-              );
+          {dashboardNavigation
+            .filter((item) => canNavigate('/dashboard?page=' + item.pageId))
+            .map((item) => {
+              const page = dashboardPageById.get(item.pageId);
+              if (!page) return null;
+              const Icon = navigationIcons[item.pageId] ?? LayoutDashboard;
+              const hasChildren = Boolean(item.children?.length);
+              const expanded = expandedGroups.has(item.pageId);
+              const branchActive =
+                activePageId === item.pageId ||
+                Boolean(
+                  item.children?.some((child) => child.pageId === activePageId),
+                );
 
-            return (
-              <div key={item.pageId}>
-                <div className="flex items-center gap-1">
-                  <button
-                    aria-current={
-                      activePageId === item.pageId ? 'page' : undefined
-                    }
-                    aria-label={collapsed ? page.title : undefined}
-                    className={cn(
-                      'flex min-h-11 min-w-0 flex-1 items-center rounded-xl text-start text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                      collapsed ? 'justify-center px-2' : 'gap-3 px-3',
-                      branchActive
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-foreground hover:bg-muted',
-                    )}
-                    onClick={() => onPageSelect(item.pageId)}
-                    title={collapsed ? page.title : undefined}
-                    type="button"
-                  >
-                    <Icon aria-hidden="true" className="size-[18px] shrink-0" />
-                    {collapsed ? null : (
-                      <span className="min-w-0 flex-1">{page.title}</span>
-                    )}
-                  </button>
-                  {hasChildren && !collapsed ? (
+              return (
+                <div key={item.pageId}>
+                  <div className="flex items-center gap-1">
                     <button
-                      aria-expanded={expanded}
-                      aria-label={`${expanded ? 'بستن' : 'بازکردن'} زیرصفحه‌های ${page.title}`}
-                      className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                      onClick={() => onGroupToggle(item.pageId)}
+                      aria-current={
+                        activePageId === item.pageId ? 'page' : undefined
+                      }
+                      aria-label={collapsed ? page.title : undefined}
+                      className={cn(
+                        'flex min-h-11 min-w-0 flex-1 items-center rounded-xl text-start text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                        collapsed ? 'justify-center px-2' : 'gap-3 px-3',
+                        branchActive
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-foreground hover:bg-muted',
+                      )}
+                      onClick={() => onPageSelect(item.pageId)}
+                      title={collapsed ? page.title : undefined}
                       type="button"
                     >
-                      <ChevronDown
+                      <Icon
                         aria-hidden="true"
-                        className={cn(
-                          'size-4 transition-transform',
-                          expanded && 'rotate-180',
-                        )}
+                        className="size-[18px] shrink-0"
                       />
+                      {collapsed ? null : (
+                        <span className="min-w-0 flex-1">{page.title}</span>
+                      )}
                     </button>
+                    {hasChildren && !collapsed ? (
+                      <button
+                        aria-expanded={expanded}
+                        aria-label={`${expanded ? 'بستن' : 'بازکردن'} زیرصفحه‌های ${page.title}`}
+                        className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        onClick={() => onGroupToggle(item.pageId)}
+                        type="button"
+                      >
+                        <ChevronDown
+                          aria-hidden="true"
+                          className={cn(
+                            'size-4 transition-transform',
+                            expanded && 'rotate-180',
+                          )}
+                        />
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {hasChildren && expanded && !collapsed ? (
+                    <div className="me-5 mt-1 space-y-1 border-e border-border pe-3">
+                      {item.children?.map((child) => {
+                        const childPage = dashboardPageById.get(child.pageId);
+                        if (!childPage) return null;
+                        const selected = child.pageId === activePageId;
+                        return (
+                          <button
+                            aria-current={selected ? 'page' : undefined}
+                            className={cn(
+                              'flex min-h-10 w-full items-center rounded-lg px-3 text-start text-xs font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                              selected
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                            )}
+                            key={child.pageId}
+                            onClick={() => onPageSelect(child.pageId)}
+                            type="button"
+                          >
+                            {childPage.title}
+                          </button>
+                        );
+                      })}
+                    </div>
                   ) : null}
                 </div>
-
-                {hasChildren && expanded && !collapsed ? (
-                  <div className="me-5 mt-1 space-y-1 border-e border-border pe-3">
-                    {item.children?.map((child) => {
-                      const childPage = dashboardPageById.get(child.pageId);
-                      if (!childPage) return null;
-                      const selected = child.pageId === activePageId;
-                      return (
-                        <button
-                          aria-current={selected ? 'page' : undefined}
-                          className={cn(
-                            'flex min-h-10 w-full items-center rounded-lg px-3 text-start text-xs font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                            selected
-                              ? 'bg-primary/10 text-primary'
-                              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                          )}
-                          key={child.pageId}
-                          onClick={() => onPageSelect(child.pageId)}
-                          type="button"
-                        >
-                          {childPage.title}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
+              );
+            })}
         </nav>
       ) : null}
 
@@ -3919,9 +3686,14 @@ export function DashboardWorkspace() {
   } | null>(null);
   const legalEntity = useLegalEntityContext();
   const selection = legalEntity.context?.selection ?? null;
+  const assistantPage = assistantViewForDashboardPage(
+    filters.page,
+    searchParams.get('view'),
+  );
   const activePage =
-    dashboardPages.find((page) => page.id === filters.page) ??
-    dashboardPages[0]!;
+    dashboardPages.find(
+      (page) => page.id === (assistantPage ? 'assistant' : filters.page),
+    ) ?? dashboardPages[0]!;
   const ActivePageIcon = navigationIcons[activePage.id] ?? LayoutDashboard;
   const activePageHeaderTheme =
     dashboardHeaderThemeByPageId[activePage.id] ??
@@ -3955,7 +3727,7 @@ export function DashboardWorkspace() {
         visualIds: activePage.visualizations.map((item) => item.id),
         signal,
       }),
-    enabled: !dateRangeError,
+    enabled: !assistantPage && !dateRangeError,
     staleTime: 30_000,
   });
 
@@ -4022,6 +3794,7 @@ export function DashboardWorkspace() {
     });
   };
   const selectPage = (pageId: string) => {
+    setSidebarPanel('workspace');
     const supportedFilters = new Set(dashboardPageFilterKeys[pageId] ?? []);
     const clearHiddenFilters = Object.fromEntries(
       (Object.keys(defaultDashboardFilters) as Array<keyof DashboardFilters>)
@@ -4060,39 +3833,41 @@ export function DashboardWorkspace() {
       data-dashboard-workspace
       style={{ overflowAnchor: 'none' }}
     >
-      <section aria-live="polite">
-        {query.isError ? (
-          <ErrorState
-            title="خطا در دریافت Dashboard"
-            description="هیچ دادهٔ قدیمی یا حدسی نمایش داده نمی‌شود."
-            action={
-              <Button onClick={refreshDashboard} variant="outline">
-                تلاش دوباره
-              </Button>
-            }
-          />
-        ) : null}
-        {query.data?.state === 'forbidden' ? (
-          <EmptyState
-            icon={LockKeyhole}
-            title="دسترسی مجاز نیست"
-            description="Permission snapshot این کاربر اجازه مشاهدهٔ داده را نمی‌دهد."
-          />
-        ) : null}
-        {query.data?.state === 'empty' ? (
-          <EmptyState
-            title="داده‌ای در این دامنه نیست"
-            description="Projection معتبر پاسخ خالی داده است؛ فیلترها را بررسی کنید."
-          />
-        ) : null}
-        {query.data?.state === 'stale' ? (
-          <Alert
-            title="داده ممکن است قدیمی باشد"
-            description={query.data.message}
-            tone="warning"
-          />
-        ) : null}
-      </section>
+      {!assistantPage && (
+        <section aria-live="polite">
+          {query.isError ? (
+            <ErrorState
+              title="خطا در دریافت Dashboard"
+              description="هیچ دادهٔ قدیمی یا حدسی نمایش داده نمی‌شود."
+              action={
+                <Button onClick={refreshDashboard} variant="outline">
+                  تلاش دوباره
+                </Button>
+              }
+            />
+          ) : null}
+          {query.data?.state === 'forbidden' ? (
+            <EmptyState
+              icon={LockKeyhole}
+              title="دسترسی مجاز نیست"
+              description="Permission snapshot این کاربر اجازه مشاهدهٔ داده را نمی‌دهد."
+            />
+          ) : null}
+          {query.data?.state === 'empty' ? (
+            <EmptyState
+              title="داده‌ای در این دامنه نیست"
+              description="Projection معتبر پاسخ خالی داده است؛ فیلترها را بررسی کنید."
+            />
+          ) : null}
+          {query.data?.state === 'stale' ? (
+            <Alert
+              title="داده ممکن است قدیمی باشد"
+              description={query.data.message}
+              tone="warning"
+            />
+          ) : null}
+        </section>
+      )}
 
       <section
         aria-label="فضای صفحه‌های داشبورد"
@@ -4105,7 +3880,7 @@ export function DashboardWorkspace() {
       >
         <DashboardSidebar
           activePageId={activePage.id}
-          activePanel={sidebarPanel}
+          activePanel={assistantPage ? 'workspace' : sidebarPanel}
           collapsed={sidebarCollapsed}
           dateRangeError={dateRangeError}
           expandedGroups={expandedGroups}
@@ -4124,159 +3899,163 @@ export function DashboardWorkspace() {
           onRefresh={refreshDashboard}
         />
 
-        <div className="min-w-0 space-y-5">
-          <section aria-labelledby="active-dashboard-page-title">
-            <div className="space-y-4">
-              <header
-                className={cn(
-                  'relative isolate overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-bl p-4 shadow-sm sm:p-5',
-                  activePageHeaderTheme,
-                )}
-              >
-                <Image
-                  alt=""
-                  aria-hidden="true"
-                  className="pointer-events-none object-cover object-right opacity-100 dark:hidden"
-                  fill
-                  quality={45}
-                  sizes="(min-width: 1024px) 72vw, 100vw"
-                  src={activePageHeaderLightArtwork}
-                />
-                <Image
-                  alt=""
-                  aria-hidden="true"
-                  className="pointer-events-none hidden object-cover object-right dark:block dark:opacity-95"
-                  data-dashboard-dark-header-artwork
-                  fill
-                  quality={55}
-                  sizes="(min-width: 1024px) 72vw, 100vw"
-                  src={activePageHeaderDarkArtwork}
-                />
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/25 via-surface/10 to-transparent dark:from-surface/45 dark:via-surface/20 dark:to-surface/5"
-                />
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -end-14 -top-14 size-40 rounded-full bg-primary/10 blur-3xl"
-                />
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -start-16 bottom-0 size-32 rounded-full bg-cyan-400/10 blur-3xl"
-                />
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -bottom-10 -end-2 text-primary/[0.055] dark:text-primary/[0.12]"
-                >
-                  <ActivePageIcon className="size-44 stroke-[1.15] sm:size-52" />
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-x-10 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/25 to-transparent"
-                />
-                <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
-                  <span className="mb-2 grid size-10 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 shadow-sm">
-                    <ActivePageIcon aria-hidden="true" className="size-5" />
-                  </span>
-                  <h2
-                    id="active-dashboard-page-title"
-                    className="text-2xl font-black tracking-tight text-foreground sm:text-3xl"
-                  >
-                    {activePage.title}
-                  </h2>
-                  <p
-                    className="mt-1 text-xs font-bold tracking-wide text-primary"
-                    dir="ltr"
-                  >
-                    {activePage.technicalName}
-                  </p>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                    {activePage.description}
-                  </p>
-                </div>
-              </header>
-
-              {activePageKpis.length > 0 ? (
-                <div
+        {assistantPage ? (
+          <ExecutiveWorkspace view={assistantPage} />
+        ) : (
+          <div className="min-w-0 space-y-5">
+            <section aria-labelledby="active-dashboard-page-title">
+              <div className="space-y-4">
+                <header
                   className={cn(
-                    'grid grid-cols-1 gap-3',
-                    kpiGridColumns(activePageKpis.length),
+                    'relative isolate overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-bl p-4 shadow-sm sm:p-5',
+                    activePageHeaderTheme,
                   )}
-                  data-dashboard-kpi-count={activePageKpis.length}
                 >
-                  {activePageKpis.map((item) => (
-                    <KpiCard
-                      key={item.id}
-                      definition={item}
-                      featured
-                      loading={query.isPending}
-                      metric={query.data?.metrics[item.id]}
-                      selected={filters.widget === item.id}
-                      onSelect={() =>
-                        updateFilters({
-                          widget: filters.widget === item.id ? null : item.id,
-                        })
-                      }
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">
-                  برای این صفحه هنوز KPI تأییدشده‌ای در Projection عمومی منتشر
-                  نشده است.
-                </p>
-              )}
+                  <Image
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none object-cover object-right opacity-100 dark:hidden"
+                    fill
+                    quality={45}
+                    sizes="(min-width: 1024px) 72vw, 100vw"
+                    src={activePageHeaderLightArtwork}
+                  />
+                  <Image
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none hidden object-cover object-right dark:block dark:opacity-95"
+                    data-dashboard-dark-header-artwork
+                    fill
+                    quality={55}
+                    sizes="(min-width: 1024px) 72vw, 100vw"
+                    src={activePageHeaderDarkArtwork}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/25 via-surface/10 to-transparent dark:from-surface/45 dark:via-surface/20 dark:to-surface/5"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -end-14 -top-14 size-40 rounded-full bg-primary/10 blur-3xl"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -start-16 bottom-0 size-32 rounded-full bg-cyan-400/10 blur-3xl"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -bottom-10 -end-2 text-primary/[0.055] dark:text-primary/[0.12]"
+                  >
+                    <ActivePageIcon className="size-44 stroke-[1.15] sm:size-52" />
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-10 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/25 to-transparent"
+                  />
+                  <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
+                    <span className="mb-2 grid size-10 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 shadow-sm">
+                      <ActivePageIcon aria-hidden="true" className="size-5" />
+                    </span>
+                    <h2
+                      id="active-dashboard-page-title"
+                      className="text-2xl font-black tracking-tight text-foreground sm:text-3xl"
+                    >
+                      {activePage.title}
+                    </h2>
+                    <p
+                      className="mt-1 text-xs font-bold tracking-wide text-primary"
+                      dir="ltr"
+                    >
+                      {activePage.technicalName}
+                    </p>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                      {activePage.description}
+                    </p>
+                  </div>
+                </header>
 
-              {activePage.visualizations.length ? (
-                <div className="grid items-stretch gap-3 xl:grid-cols-2">
-                  {activePage.visualizations.map((visualization, index) => (
-                    <ProjectionSlot
-                      visualId={visualization.id}
-                      wide={dashboardVisualIsWide(
-                        activePage.visualizations,
-                        index,
-                      )}
-                      key={visualization.id}
-                      kind={visualization.kind}
-                      title={visualization.title}
-                      description={visualization.description}
-                      decision={visualization.openDecision}
-                      drilldown={visualization.drilldown}
-                      onOpenReportConfiguration={openReportConfiguration}
-                      onTrendCalendarSystemChange={setTrendCalendarSystem}
-                      permission={visualization.permission}
-                      range={filters.range}
-                      loading={query.isPending}
-                      source={visualization.source}
-                      trendCalendarSystem={trendCalendarSystem}
-                      data={query.data?.visuals[visualization.id]}
-                    />
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </section>
+                {activePageKpis.length > 0 ? (
+                  <div
+                    className={cn(
+                      'grid grid-cols-1 gap-3',
+                      kpiGridColumns(activePageKpis.length),
+                    )}
+                    data-dashboard-kpi-count={activePageKpis.length}
+                  >
+                    {activePageKpis.map((item) => (
+                      <KpiCard
+                        key={item.id}
+                        definition={item}
+                        featured
+                        loading={query.isPending}
+                        metric={query.data?.metrics[item.id]}
+                        selected={filters.widget === item.id}
+                        onSelect={() =>
+                          updateFilters({
+                            widget: filters.widget === item.id ? null : item.id,
+                          })
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">
+                    برای این صفحه هنوز KPI تأییدشده‌ای در Projection عمومی منتشر
+                    نشده است.
+                  </p>
+                )}
 
-          {selectedKpi ? (
-            <KpiDefinitionPanel
-              definition={selectedKpi}
-              metric={query.data?.metrics[selectedKpi.id]}
-              onClose={() => updateFilters({ widget: null })}
-              onOpenReportConfiguration={openReportConfiguration}
-            />
-          ) : null}
+                {activePage.visualizations.length ? (
+                  <div className="grid items-stretch gap-3 xl:grid-cols-2">
+                    {activePage.visualizations.map((visualization, index) => (
+                      <ProjectionSlot
+                        visualId={visualization.id}
+                        wide={dashboardVisualIsWide(
+                          activePage.visualizations,
+                          index,
+                        )}
+                        key={visualization.id}
+                        kind={visualization.kind}
+                        title={visualization.title}
+                        description={visualization.description}
+                        decision={visualization.openDecision}
+                        drilldown={visualization.drilldown}
+                        onOpenReportConfiguration={openReportConfiguration}
+                        onTrendCalendarSystemChange={setTrendCalendarSystem}
+                        permission={visualization.permission}
+                        range={filters.range}
+                        loading={query.isPending}
+                        source={visualization.source}
+                        trendCalendarSystem={trendCalendarSystem}
+                        data={query.data?.visuals[visualization.id]}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </section>
 
-          {reportConfigurationState ? (
-            <ReportingWorkspace
-              configurationOnly
-              initialFilterState={reportConfigurationState}
-              key={JSON.stringify(reportConfigurationState)}
-              onConfigurationOpenChange={(open) => {
-                if (!open) setReportConfigurationCode(null);
-              }}
-            />
-          ) : null}
-        </div>
+            {selectedKpi ? (
+              <KpiDefinitionPanel
+                definition={selectedKpi}
+                metric={query.data?.metrics[selectedKpi.id]}
+                onClose={() => updateFilters({ widget: null })}
+                onOpenReportConfiguration={openReportConfiguration}
+              />
+            ) : null}
+
+            {reportConfigurationState ? (
+              <ReportingWorkspace
+                configurationOnly
+                initialFilterState={reportConfigurationState}
+                key={JSON.stringify(reportConfigurationState)}
+                onConfigurationOpenChange={(open) => {
+                  if (!open) setReportConfigurationCode(null);
+                }}
+              />
+            ) : null}
+          </div>
+        )}
       </section>
     </div>
   );

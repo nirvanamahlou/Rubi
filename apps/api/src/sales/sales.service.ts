@@ -1,3 +1,11 @@
+import {
+  hasConfirmedReceiptFunds,
+  netSalesPayments,
+} from './sales-financial-settlement';
+import { financialDate } from '../finance/accounting/financial-event.public';
+import { PackageTourPricingService } from '../package-pricing/package-tour-pricing.service';
+import { isOptionalOperationReason } from '@nora/contracts';
+import { salesHotelRoomSummary } from '@nora/contracts';
 import type { DisplayLanguage } from '../common/i18n/language';
 import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { expectedTicketSale } from './sales-ticket-quote';
@@ -25,6 +33,7 @@ import {
 import { TourPublicService } from '../ticket-catalog/tour-public.service';
 import { HotelPurchaseRatesPublicService } from '../reservations/hotel-purchase-rates.public';
 import type {
+  SalesRoomCategory,
   SalesServicePricingV1,
   SalesAccommodationKind,
   AuthenticatedActor,
@@ -221,7 +230,10 @@ export function presentSalesContract(
     status: row.status,
     settlementStatus: row.settlementStatus,
     reservationStatus: row.reservationStatus,
-    balances: calculateSalesBalances(priceComponents, payments),
+    balances: calculateSalesBalances(
+      priceComponents,
+      netSalesPayments(row.payments, row.receiptAllocations ?? []),
+    ),
     version: row.version,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -322,6 +334,14 @@ export function presentSalesContract(
           ...(row.hotelSelection.extraBedCount == null
             ? {}
             : { extraBedCount: row.hotelSelection.extraBedCount }),
+          ...(row.hotelSelection.rooms?.length
+            ? salesHotelRoomSummary(
+                row.hotelSelection.rooms.map((room) => ({
+                  adults: room.adults,
+                  childAges: room.childAges as number[],
+                })),
+              )
+            : {}),
           roomTypeId: row.hotelSelection.roomTypeId,
           ...(row.hotelSelection.rooms?.length
             ? {
@@ -329,8 +349,21 @@ export function presentSalesContract(
                   ordinal: room.ordinal,
                   roomTypeId: room.roomTypeId,
                   roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                  ...(room.roomCategory
+                    ? {
+                        roomCategory: room.roomCategory as SalesRoomCategory,
+                      }
+                    : {}),
                   adults: room.adults,
                   childAges: room.childAges as number[],
+                  ...(room.agreedPrice
+                    ? {
+                        agreedPrice: room.agreedPrice as {
+                          amount: string;
+                          currencyCode: string;
+                        },
+                      }
+                    : {}),
                 })),
               }
             : {}),
@@ -409,6 +442,9 @@ export class SalesService {
     @Optional()
     @Inject(IamFinanceDirectory)
     private readonly identities?: IamFinanceDirectory,
+    @Optional()
+    @Inject(PackageTourPricingService)
+    private readonly packageQuotes?: PackageTourPricingService,
   ) {}
 
   async availableHotelRoomRates(
@@ -436,10 +472,8 @@ export class SalesService {
         checkIn: hotel.checkInDate,
         checkOut: hotel.checkOutDate,
       });
-      if (!rate)
-        throw new BadRequestException(
-          'برای یکی از انواع اتاق، نرخ معتبر در بازه انتخاب‌شده وجود ندارد.',
-        );
+      // Match legacy selections: missing tariffs do not prohibit agreed prices.
+      if (!rate) continue;
       if (rate.occupancyRates) {
         if (
           !quoteHotelOccupancy(rate.occupancyRates, {
@@ -573,6 +607,7 @@ export class SalesService {
   private async assertTour(
     input: SalesContractCreateRequest,
     branchId: string,
+    validatedPublishedHotelId?: string,
   ) {
     if (
       !input.services.some(
@@ -581,7 +616,11 @@ export class SalesService {
     )
       return;
     if (!this.tours) throw new BadRequestException('سرویس تور در دسترس نیست.');
-    await this.tours.assertSalesSelection(input, branchId);
+    await this.tours.assertSalesSelection(
+      input,
+      branchId,
+      validatedPublishedHotelId,
+    );
   }
 
   private assertRead(row: SalesContractRow, actor: AuthenticatedActor): void {
@@ -848,17 +887,22 @@ export class SalesService {
       branchId: row.branchId,
       customerNameSnapshot: row.customerNameSnapshot,
       settlementStatus: row.settlementStatus,
-      hasConfirmedPayment: row.payments.length > 0,
+      hasConfirmedPayment: hasConfirmedReceiptFunds(
+        row.payments,
+        row.receiptAllocations ?? [],
+      ),
     }));
   }
 
   async financeCustomerDocumentDeliveryFacts(
     contractId: string,
     branchIds: readonly string[],
+    tx?: Prisma.TransactionClient,
   ) {
     const row = await this.repository.financeCustomerDocumentDeliveryFacts(
       contractId,
       branchIds,
+      tx,
     );
     if (!row)
       throw new NotFoundException('قرارداد در شعب مجاز برای مالی یافت نشد.');
@@ -866,8 +910,13 @@ export class SalesService {
       contractId: row.id,
       branchId: row.branchId,
       salesOwnerUserId: row.ownerUserId,
-      hasConfirmedPayment: row.payments.length > 0,
-      fullySettled: ['SETTLED', 'OVERPAID'].includes(row.settlementStatus),
+      cancelled: row.status === 'CANCELLED',
+      hasConfirmedPayment:
+        row.status !== 'CANCELLED' &&
+        hasConfirmedReceiptFunds(row.payments, row.receiptAllocations ?? []),
+      fullySettled:
+        row.status !== 'CANCELLED' &&
+        ['SETTLED', 'OVERPAID'].includes(row.settlementStatus),
     };
   }
   async financeReceiptHistory(
@@ -888,6 +937,9 @@ export class SalesService {
       id: row.id,
       source: 'SALES' as const,
       requestId: row.id,
+      trackingNumber: row.contractId,
+      trackingDate: financialDate(row.contract.createdAt),
+      customerId: row.contract.customerId,
       direction: 'RECEIPT' as const,
       title: 'دریافت قرارداد ' + row.contract.contractNumber,
       occurredAt: row.financeConfirmedAt!.toISOString(),
@@ -1005,7 +1057,19 @@ export class SalesService {
     // Preserve recorded legacy idempotent replays; enforce terms for new cheque sales.
     domainCall(() => validateSalesContract(input, true));
     const branchId = branch(actor, requestedBranch);
-    await this.assertTour(input, branchId);
+    let validatedPublishedHotelId: string | undefined;
+    if (
+      this.packageQuotes &&
+      input.services.some((s) => s.metadata?.tourDepartureId)
+    ) {
+      validatedPublishedHotelId = await this.packageQuotes.assertContractSale(
+        input,
+        actor,
+        branchId,
+      );
+    } else if (input.services.some((s) => s.metadata?.packagePublishedSale))
+      throw new BadRequestException('قیمت فروش معتبر نیست.');
+    await this.assertTour(input, branchId, validatedPublishedHotelId);
     await this.assertHotelRoomCapacity(input, branchId);
     const customer = await this.customers.resolveSnapshot(
       input.customerId,
@@ -1053,9 +1117,9 @@ export class SalesService {
       )
         throw new ForbiddenException('مجوز تأیید و ارسال رزرو وجود ندارد.');
       if (
-        typeof input.reason !== 'string' ||
-        !input.reason.trim() ||
-        input.reason.length > 500
+        !isOptionalOperationReason(input.reason) ||
+        !isOptionalOperationReason(input.reason) ||
+        (input.reason ?? '').length > 500
       )
         throw new BadRequestException('دلیل اصلاح قرارداد الزامی است.');
       if (
@@ -1117,7 +1181,58 @@ export class SalesService {
     if (input.paymentTerms)
       input = { ...input, payments: row.payments.map(paymentInput) };
     domainCall(() => validateSalesContract(input, false, categories));
-    await this.assertTour(input, row.branchId);
+    let validatedPublishedHotelId: string | undefined;
+    if (input.services.some((s) => s.metadata?.packagePublishedSale)) {
+      if (!this.packageQuotes)
+        throw new BadRequestException('قیمت فروش معتبر نیست.');
+      const savedQuote = row.services.find(
+        (s) =>
+          (s.metadata as Record<string, unknown> | null)?.packagePublishedSale,
+      )?.metadata as Record<string, unknown> | undefined;
+      const nextQuote = input.services.find(
+        (s) => s.metadata?.packagePublishedSale,
+      )?.metadata?.packagePublishedSale;
+      const oldHotel = row.hotelSelection,
+        nextHotel = input.hotelSelection;
+      const unchanged =
+        oldHotel &&
+        nextHotel &&
+        savedQuote?.packagePublishedSale === nextQuote &&
+        (
+          row.services.find(
+            (s) =>
+              (s.metadata as Record<string, unknown> | null)?.tourDepartureId,
+          )?.metadata as Record<string, unknown> | undefined
+        )?.tourDepartureId ===
+          input.services.find((s) => s.metadata?.tourDepartureId)?.metadata
+            ?.tourDepartureId &&
+        oldHotel.hotelId === nextHotel.hotelId &&
+        oldHotel.checkInDate.toISOString().slice(0, 10) ===
+          nextHotel.checkInDate &&
+        oldHotel.checkOutDate.toISOString().slice(0, 10) ===
+          nextHotel.checkOutDate &&
+        oldHotel.rooms.length === nextHotel.rooms?.length &&
+        oldHotel.rooms.every(
+          (r, j) =>
+            r.roomTypeId === nextHotel.rooms![j]?.roomTypeId &&
+            r.adults === nextHotel.rooms![j]?.adults &&
+            JSON.stringify(r.childAges) ===
+              JSON.stringify(nextHotel.rooms![j]?.childAges),
+        );
+      if (unchanged && typeof nextQuote === 'string')
+        this.packageQuotes.validateContractAmounts(
+          input,
+          JSON.parse(nextQuote).prices,
+        );
+      validatedPublishedHotelId = unchanged
+        ? oldHotel.hotelId
+        : await this.packageQuotes.validateContractSale(
+            input,
+            actor,
+            row.branchId,
+          );
+    }
+    await this.assertTour(input, row.branchId, validatedPublishedHotelId);
     await this.assertHotelRoomCapacity(input, row.branchId);
     for (const passenger of row.passengers) {
       const next = input.passengers.find(
@@ -1188,6 +1303,7 @@ export class SalesService {
         childAgeBands: c.passengers.map((p) => [
           p.customerId,
           p.childAgeBand ?? null,
+          [...p.serviceClientKeys].sort(),
         ]),
         services: c.services.map((s) => ({
           clientKey: s.clientKey,
@@ -1281,6 +1397,16 @@ export class SalesService {
                 input.passengers.filter(
                   (p) => categories[p.customerId] !== 'INF',
                 ).length,
+                Object.fromEntries(
+                  (input.ticketSelections ?? []).map((t) => [
+                    t.serviceClientKey,
+                    input.passengers.filter(
+                      (p) =>
+                        categories[p.customerId] !== 'INF' &&
+                        p.serviceClientKeys.includes(t.serviceClientKey),
+                    ).length,
+                  ]),
+                ),
               );
             },
           }
@@ -1412,6 +1538,16 @@ export class SalesService {
                     expectedTicketSale(service.pricing?.[0], service.metadata),
                   ]),
               ),
+          Object.fromEntries(
+            presented.ticketSelections.map((t) => [
+              t.serviceClientKey,
+              presented.passengersDetail.filter(
+                (p) =>
+                  p.ageCategory !== 'INF' &&
+                  p.serviceClientKeys.includes(t.serviceClientKey),
+              ).length,
+            ]),
+          ),
         )
       : { available: true, unavailableOfferIds: [], createdAllocationIds: [] };
     if (!ticketCheck.available)
@@ -1499,7 +1635,8 @@ export class SalesService {
   ) {
     if (!has(actor, 'sales.contracts.cancel'))
       throw new ForbiddenException('مجوز لغو قرارداد وجود ندارد.');
-    if (!reason?.trim()) throw new BadRequestException('دلیل لغو الزامی است.');
+    if (!isOptionalOperationReason(reason))
+      throw new BadRequestException('دلیل لغو الزامی است.');
     if (!Number.isInteger(version) || version < 1)
       throw new BadRequestException('نسخه معتبر قرارداد الزامی است.');
     const row = await this.repository.findById(id);
@@ -1514,7 +1651,7 @@ export class SalesService {
       version,
       ['DRAFT', 'PENDING_CONFIRMATION', 'CONFIRMED', 'SENT_TO_RESERVATIONS'],
       'CANCELLED',
-      reason.trim(),
+      (reason ?? '').trim(),
       this.context(actor, row.branchId, traceId),
     );
     if (!changed)
@@ -1778,6 +1915,34 @@ export class SalesService {
           'AWAITING_CUSTOMER_AFFAIRS_PUBLIC_CONTRACT' as const,
       },
     };
+  }
+
+  financeReceipt(
+    paymentId: string,
+    contractId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!has(actor, 'finance.read'))
+      throw new ForbiddenException('مجوز مشاهده دریافت‌ها وجود ندارد.');
+    return this.repository.financeReceipt(
+      paymentId,
+      contractId,
+      actor.branchIds,
+    );
+  }
+
+  applyFinanceRefund(
+    tx: Prisma.TransactionClient,
+    input: {
+      paymentId: string;
+      operationId: string;
+      actorId: string;
+      amount: string;
+      currency: string;
+      branchId: string;
+    },
+  ) {
+    return this.repository.applyFinanceRefund(tx, input);
   }
 
   applyFinancePaymentConfirmed(event: {

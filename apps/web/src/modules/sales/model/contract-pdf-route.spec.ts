@@ -33,7 +33,7 @@ describe('Saved contract PDF download route', () => {
   });
   it('downloads actual bytes with private attachment headers from saved output', async () => {
     mocks.fetch.mockImplementation(async (url: string) =>
-      url.includes('/sales/')
+      url.includes('/sales/contracts/')
         ? Response.json({ data: printFixture })
         : new Response('', { status: 403 }),
     );
@@ -56,7 +56,7 @@ describe('Saved contract PDF download route', () => {
   });
   it('reports unavailable renderer without leaking internal errors', async () => {
     mocks.fetch.mockImplementation(async (url: string) =>
-      url.includes('/sales/')
+      url.includes('/sales/contracts/')
         ? Response.json({ data: printFixture })
         : new Response('', { status: 403 }),
     );
@@ -66,5 +66,39 @@ describe('Saved contract PDF download route', () => {
     });
     expect(r.status).toBe(503);
     expect(await r.text()).not.toContain('internal-path-secret');
+  });
+  it('uses consumer-scoped country references for international PDF dates', async () => {
+    mocks.fetch.mockImplementation(async (url: string) => {
+      if (url.endsWith('/output')) return Response.json({ data: printFixture });
+      if (url.endsWith('/selections/sales/cities/tehran'))
+        return Response.json({
+          data: { name: 'Origin', attributes: { countryId: 'ir' } },
+        });
+      if (url.endsWith('/selections/sales/cities/antalya'))
+        return Response.json({
+          data: { name: 'Destination', attributes: { countryId: 'tr' } },
+        });
+      if (url.endsWith('/selections/sales/countries/ir'))
+        return Response.json({ data: { code: 'IR', attributes: {} } });
+      if (url.endsWith('/selections/sales/countries/tr'))
+        return Response.json({ data: { code: 'TR', attributes: {} } });
+      return new Response('', { status: 403 });
+    });
+    mocks.render.mockResolvedValue(Buffer.from('%PDF-test'));
+    const r = await GET(new Request('http://web.test'), {
+      params: Promise.resolve({ id }),
+    });
+    expect(r.status).toBe(200);
+    expect(mocks.render.mock.calls[0]?.[1]).toMatchObject({
+      international: true,
+      names: { tehran: 'Origin', antalya: 'Destination' },
+    });
+    expect(
+      mocks.fetch.mock.calls.every(
+        ([url]) =>
+          !String(url).includes('/master-data/') ||
+          String(url).includes('/selections/sales/'),
+      ),
+    ).toBe(true);
   });
 });

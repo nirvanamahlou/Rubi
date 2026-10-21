@@ -53,4 +53,14 @@ describe('currency popup form', () => {
       'نرخ جدید را می‌توانید در بخش پایین همین فرم ثبت کنید.',
     );
   });
+  it('returns to the profile and reloads history after direct registration, without an approval call', () => {
+    expect(source).toContain('onQuoteSaved(saved, response.data)');
+    expect(source).not.toContain('در انتظار تأیید');
+    expect(source).not.toContain('برای تأیید ارسال');
+    expect(workspace).toContain('onQuoteSaved={(record, rates) =>');
+    expect(workspace).toContain('setSelectedPair(ratePairKey(rates[0]))');
+    expect(workspace).toContain('setSelectedCurrency({ ...record })');
+    expect(workspace).toContain('setCurrencyProfileOpen(true)');
+    expect(workspace).not.toContain('پس از تأیید نرخ');
+  });
 });

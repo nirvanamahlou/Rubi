@@ -399,6 +399,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
       { key: 'symbol', label: 'نماد نمایشی', type: 'text', placeholder: '﷼' },
       {
+        key: 'tomanPerUnit',
+        label: 'قیمت هر واحد ارز به تومان',
+        type: 'number',
+        placeholder: 'مثال برای دلار: 270000',
+      },
+      {
         key: 'decimalDigits',
         label: 'تعداد رقم اعشار',
         type: 'number',
@@ -487,7 +493,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'کد بانک',
         type: 'text',
         placeholder: 'MELLAT',
-        required: true,
       },
       nameField,
       {
@@ -1677,11 +1682,30 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         hint: 'تأمین‌کننده به‌صورت مستقل در تنخواه ثبت می‌شود.',
       },
       {
+        key: 'countryId',
+        label: 'کشور',
+        type: 'text',
+        placeholder: '',
+      },
+      {
+        key: 'cityId',
+        label: 'شهر',
+        type: 'text',
+        placeholder: '',
+      },
+      {
         key: 'address',
         label: 'نشانی',
         type: 'text',
         placeholder: 'نشانی کامل تأمین‌کننده',
       },
+      {
+        key: 'dossierMobile',
+        label: 'شماره همراه',
+        type: 'text',
+        placeholder: '',
+      },
+      { key: 'dossierEmail', label: 'ایمیل', type: 'text', placeholder: '' },
       {
         key: 'primaryPhone',
         label: 'شماره تماس اصلی',

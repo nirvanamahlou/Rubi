@@ -165,7 +165,8 @@ describe('Master Data Operations table alignment', () => {
     expect(
       occurrences(source, 'flex flex-wrap justify-center gap-2'),
     ).toBeGreaterThanOrEqual(3);
-    expect(source).toContain('onDeleted={loadCurrencyHistory}');
+    expect(source).toContain('<CurrencyRateActions');
+    expect(source).toContain('await loadCurrencyHistory()');
     expect(source).toContain('onClick={() => void showAudit(row)}');
   });
 

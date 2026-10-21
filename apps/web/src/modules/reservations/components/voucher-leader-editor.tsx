@@ -45,13 +45,7 @@ async function createLeader(path: string, name: string, phone: string) {
 
 export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
   const [draft, setDraft] = useState<VoucherSettingsV1>(() => {
-    const source = structuredClone(intake);
-    if (
-      !source.workflow.voucherSettings &&
-      source.workflow.supplierFormSettings
-    )
-      source.workflow.voucherSettings = source.workflow.supplierFormSettings;
-    const settings = defaultVoucherSettings(source, {});
+    const settings = defaultVoucherSettings(intake, {});
     const supplier = intake.workflow.sentSupplierFormSettings;
     if (supplier?.brokerId && supplier.brokerId !== settings.brokerId) {
       settings.brokerId = supplier.brokerId;

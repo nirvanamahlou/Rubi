@@ -36,6 +36,36 @@ function row(id: string, extra: Record<string, unknown> = {}) {
 }
 
 describe('MasterDataService accommodation', () => {
+  it('edits a long imported facility without losing text and validates storage limits', async () => {
+    const facility = row(ids.facility, { name: 'ف'.repeat(164) });
+    const update = vi.fn().mockImplementation(async (_resource, _id, data) => ({
+      ...facility,
+      ...data,
+      version: 2,
+    }));
+    const repository = {
+      find: vi.fn().mockResolvedValue(facility),
+      update,
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    await service.update(
+      'facilities',
+      ids.facility,
+      { name: 'ژ'.repeat(500) },
+      1,
+      actor,
+    );
+    expect(update.mock.calls[0]?.[2]).toMatchObject({ name: 'ژ'.repeat(500) });
+    for (const values of [
+      { name: 'ژ'.repeat(501) },
+      { englishName: 'x'.repeat(161) },
+      { category: 'x'.repeat(81) },
+    ])
+      await expect(
+        service.update('facilities', ids.facility, values, 1, actor),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    expect(update).toHaveBeenCalledTimes(1);
+  });
   it('edits imported optional fields, exposes them in profiles and clears explicit blanks', async () => {
     const hotel = row(ids.chain, {
       cityId: ids.city,
@@ -64,6 +94,7 @@ describe('MasterDataService accommodation', () => {
         sourceGalleryImages:
           'https://example.test/one.jpg|https://example.test/two.jpg',
         sourceFeatured: 'false',
+        freeSale: 'false',
         serviceLevel: '',
       },
       1,
@@ -73,6 +104,7 @@ describe('MasterDataService accommodation', () => {
       description: 'updated',
       internalNote: 'new note',
       sourceFeatured: false,
+      freeSale: false,
       serviceLevel: null,
       sourceRefundRules: 'reference policy',
     });
@@ -94,6 +126,9 @@ describe('MasterDataService accommodation', () => {
         1,
         actor,
       ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.update('hotels', ids.chain, { freeSale: 'unknown' }, 1, actor),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(update).toHaveBeenCalledTimes(1);
   });

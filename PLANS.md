@@ -527,3 +527,66 @@ Tool infrastructure #819 is merged and deployed on loopback4300 with green head/
 ## PC-C — ASSISTANT-ORCHESTRATOR-1013
 
 Gated conversation preparation: shared prepared actions, strict bounded planner contract, disabled-by-default POST/BFF and separate memory-only UI component. Synthetic providers only; live UI activation/provider/business pilot remain gated. See docs/tasks/ASSISTANT-ORCHESTRATOR-1013.md. Candidate validation and CI pending.
+
+## CALL-CENTER-PACKAGE-ONE-1019
+
+- [x] Existing Ticket request model, encrypted private revisions and call linking.
+- [x] Active branch-authorized real agents, assignment and explicit unassigned queue.
+- [x] Tasks-owned follow-ups with owner/deadline/priority/result, CAS and due reminders.
+- [x] Manual outcomes, unknown callers, retry-safe persistence and unsaved-draft warnings.
+- [x] Fresh migration, focused/broader tests, API/Web builds and localhost3000 activation.
+- [ ] Owner authenticated UI acceptance and any subsequent publication/merge approval.
+- [ ] Packages two through four: full call search/reporting, Customer/Sales linkage, telephony readiness and actual Issabel/recording integration.
+
+Details and compatibility/runtime handoff: docs/tasks/CALL-CENTER-PACKAGE-ONE-1019.md.
+
+## CALL-CENTER-PACKAGE-TWO-1019
+
+- [x] Bounded contact summaries and separate call/note/request/action loading.
+- [x] Whole-data authorized search/filter, secure exact-phone and whole-word indexes, page-change conflict detection.
+- [x] Explicit Customers-owned candidate lookup/request association and replay-safe authorized referrals.
+- [x] Server reports with explicit scope/time/denominator and no fictional phone KPIs.
+- [x] Shared controls, empty/error/stale states, responsive keyboard/focus checks, tests and builds.
+- [ ] Owner authenticated review of localhost3000; independent PR/merge authorization.
+- [ ] Issabel API, real incoming call routing, recording ingestion, approved sales-conversion definition and optional audited Reporting exports remain subsequent scope.
+
+Evidence and compatibility: docs/tasks/CALL-CENTER-PACKAGE-TWO-1019.md.
+
+## CALL-CENTER-GLOBAL-QUEUE-1019
+
+- [x] Place branch selector in advanced filter grid.
+- [x] Queue all authorized branches independent of contact-list branch, ALL default includes closed.
+- [x] Preserve row branch for details and add explicit open-only view.
+- [x] PostgreSQL branch isolation and Chrome/Edge UI checks.
+- [ ] Owner authenticated review after local activation.
+
+See docs/tasks/CALL-CENTER-GLOBAL-QUEUE-1019.md.
+
+## CALL-CENTER-TELEPHONY-1019
+
+- [x] Versioned provider-neutral canonical contract and explicit unsupported reconciliation.
+- [x] Encrypted durable Inbox/Outbox, root/leg projection, dedupe, bounded retry/dead-letter/replay and audit.
+- [x] Extension/user/branch/team mapping and historical recipient snapshots; unknown/ineligible destination review.
+- [x] Global authenticated attention queue, server tab lease and atomic agent claim/transfer.
+- [x] Non-production authenticated synthetic harness through real Worker/BullMQ processing.
+- [x] Targeted PostgreSQL, Worker, transport-auth and Chrome/Edge UI proofs; local preview.
+- [ ] Owner authenticated acceptance on localhost3000.
+- [ ] Separate future provider adapter after Issabel documents/access, retention policy and real end-to-end latency verification.
+
+Evidence and limitations: docs/tasks/CALL-CENTER-TELEPHONY-1019.md.
+
+## CALL-CENTER-REMOVE-TELEPHONY-PANEL-1019
+
+- [x] Remove the telephony infrastructure/internal-test section from the Call Center workspace.
+- [x] Validate and activate the local Web preview.
+
+The earlier package-three UI test guide requires restoration of this section before its page controls can be used.
+
+## پیش‌شرط بسته چهارم کال سنتر
+
+- [x] ثبت الزام مالک به حفظ آخرین UI/UX تأییدشده و منع افزودن/بازگرداندن بخش فنی/آزمایشی بدون اجازه.
+- [ ] پیش از اجرای بسته چهارم، نسخه و تصاویر مرجع آخرین طراحی تأییدشده ثبت شود.
+- [ ] سازگاری اتصال ایزابل با اجزای موجود بررسی و هر تغییر ضروری رابط پیش از اجرا تأیید شود.
+- [ ] مقایسه بصری/رفتاری و مجوز هر تفاوت در گزارش پذیرش ثبت شود.
+
+مرجع لازم‌الاجرا: [حفظ طراحی کال سنتر](docs/tasks/CALL-CENTER-UI-PRESERVATION.md).

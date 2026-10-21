@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -186,8 +188,9 @@ export function validateOrderFollowUp(
     )
       return 'مقدار مرجوعی باید عددی بیشتر از صفر با حداکثر چهار رقم اعشار باشد.';
     if (!fields.returnedAt) return 'تاریخ مرجوعی را انتخاب کنید.';
-    if (!fields.reason?.trim()) return 'توضیحات مرجوعی را وارد کنید.';
-    if (fields.reason.length > 1000)
+    if (!isOptionalOperationReason(fields.reason))
+      return 'توضیحات مرجوعی را وارد کنید.';
+    if ((fields.reason ?? '').length > 1000)
       return 'توضیحات مرجوعی باید حداکثر ۱۰۰۰ کاراکتر باشد.';
     if (!documents.length)
       return 'مدرک مرجوعی را بارگذاری یا از اسناد انتخاب کنید.';

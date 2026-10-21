@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { strFromU8, unzipSync } from 'fflate';
+import { strFromU8, strToU8, unzipSync } from 'fflate';
 import { createHash } from 'node:crypto';
 
 export const HOTEL_IMPORT_TEMPLATE_VERSION = 'HOTEL_IMPORT_V1' as const;
@@ -24,6 +24,9 @@ export const HOTEL_IMPORT_HEADERS = [
   'وضعیت',
   'پرفروش',
   'یادداشت',
+  'وب‌سایت',
+  'فروش آزاد',
+  'نام فارسی',
 ] as const;
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -41,6 +44,11 @@ const activeContentEntry =
   /(^|\/)(?:vbaProject|embeddings|activeX|ctrlProps|customUI|macrosheets?)(?:\/|\.|$)|oleObject/i;
 const externalDataEntry =
   /(^|\/)(?:externalLinks|queryTables)(?:\/|\.|$)|(^|\/)connections\.xml$/i;
+
+import {
+  FACILITY_NAME_MAX_CHARACTERS,
+  postgresCharacterLength,
+} from './facility-text';
 
 export interface HotelImportSourceRow {
   rowNumber: number;
@@ -63,6 +71,9 @@ export interface HotelImportSourceRow {
   isActive: boolean;
   featuredSource: boolean;
   internalNote: string | null;
+  website: string | null;
+  freeSale: boolean | null;
+  persianName: string | null;
 }
 
 export interface HotelImportValidationIssue {
@@ -83,6 +94,7 @@ export interface ParsedHotelWorkbook {
     formulaCount: 0;
     externalLinkCount: 0;
     macroCount: 0;
+    ignoredWebsiteHyperlinkCount?: number;
     malwareScanStatus: 'UNAVAILABLE';
   };
 }
@@ -175,7 +187,10 @@ function relationshipAttribute(source: string, name: string) {
   return decodeXml(source.match(expression)?.[2] ?? '').trim();
 }
 
-function inspectExternalRelationships(files: Record<string, Uint8Array>) {
+function inspectExternalRelationships(
+  files: Record<string, Uint8Array>,
+  allowedWebsiteLinks: ReadonlySet<string> = new Set(),
+) {
   let externalLinkCount = 0;
   const entries: string[] = [];
   for (const [name, content] of Object.entries(files)) {
@@ -192,6 +207,12 @@ function inspectExternalRelationships(files: Record<string, Uint8Array>) {
     );
     for (const match of xml.matchAll(relationshipExpression)) {
       const attributes = match[1] ?? '';
+      if (
+        allowedWebsiteLinks.has(
+          `${name}:${relationshipAttribute(attributes, 'Id')}`,
+        )
+      )
+        continue;
       const targetMode = relationshipAttribute(
         attributes,
         'TargetMode',
@@ -316,12 +337,20 @@ function isBlankRow(row: ParsedSheetRow) {
 }
 
 function isHeaderRow(row: ParsedSheetRow) {
-  return (
-    row.values.length === HOTEL_IMPORT_HEADERS.length &&
-    HOTEL_IMPORT_HEADERS.every(
-      (header, index) => normalize(row.values[index] ?? '') === header,
-    )
+  return ['نام هتل', 'شهر'].every((header) =>
+    row.values.some((value) => normalize(value ?? '') === header),
   );
+}
+
+function columnName(index: number) {
+  let value = index + 1;
+  let name = '';
+  while (value > 0) {
+    value -= 1;
+    name = String.fromCharCode(65 + (value % 26)) + name;
+    value = Math.floor(value / 26);
+  }
+  return name;
 }
 
 function dataRowsAfterCanonicalHeader(rows: readonly ParsedSheetRow[]) {
@@ -332,6 +361,18 @@ function dataRowsAfterCanonicalHeader(rows: readonly ParsedSheetRow[]) {
     fail('Headerهای Sheet Hotels با HOTEL_IMPORT_V1 مطابقت ندارند.');
 
   const headerIndex = headerIndexes[0] ?? -1;
+  const header = rows[headerIndex]?.values ?? [];
+  const columns = new Map<string, number>();
+  header.forEach((value, index) => {
+    const name = normalize(value ?? '');
+    if (!name) return;
+    if (
+      !HOTEL_IMPORT_HEADERS.some((known) => known === name) ||
+      columns.has(name)
+    )
+      fail('Headerهای Sheet Hotels با HOTEL_IMPORT_V1 مطابقت ندارند.');
+    columns.set(name, index);
+  });
   const preamble = rows.slice(0, headerIndex);
   const nonBlankPreamble = preamble.filter((row) => !isBlankRow(row));
   const directHeader = nonBlankPreamble.length === 0;
@@ -351,7 +392,35 @@ function dataRowsAfterCanonicalHeader(rows: readonly ParsedSheetRow[]) {
   if (!directHeader && !formattedTemplatePreamble)
     fail('ساختار عنوان و راهنمای HOTEL_IMPORT_V1 معتبر نیست.');
 
-  return rows.slice(headerIndex + 1).filter((row) => !isBlankRow(row));
+  return {
+    rows: rows
+      .slice(headerIndex + 1)
+      .filter((row) => !isBlankRow(row))
+      .map((row) => {
+        // Resolve by header, not physical offset: optional columns may be absent
+        // or reordered without moving status/facilities into unrelated fields.
+        if (
+          row.values.some(
+            (value, index) =>
+              normalize(value ?? '') && !normalize(header[index] ?? ''),
+          )
+        )
+          fail('داده در ستونی بدون عنوان معتبر یافت شد.');
+        return {
+          rowNumber: row.rowNumber,
+          values: HOTEL_IMPORT_HEADERS.map((name) => {
+            const index = columns.get(name);
+            return index === undefined ? '' : (row.values[index] ?? '');
+          }),
+        };
+      }),
+    mapping: Object.fromEntries(
+      HOTEL_IMPORT_HEADERS.map((name) => {
+        const index = columns.get(name);
+        return [name, index === undefined ? '' : columnName(index)];
+      }),
+    ) as ParsedHotelWorkbook['mapping'],
+  };
 }
 
 function optional(value: string | undefined) {
@@ -361,6 +430,84 @@ function optional(value: string | undefined) {
 
 function boolValue(value: string | undefined) {
   return ['TRUE', '1', 'بله'].includes(normalize(value ?? '').toUpperCase());
+}
+
+function optionalBoolean(value: string | undefined) {
+  const key = normalize(value ?? '').toUpperCase();
+  if (!key) return null;
+  if (['TRUE', '1', '۱', '١', 'بله'].includes(key)) return true;
+  if (['FALSE', '0', '۰', '٠', 'خیر'].includes(key)) return false;
+  return undefined;
+}
+
+// Excel auto-links typed websites. Accept only inert http(s) hyperlink metadata
+// bound to a Website cell containing that same address; never fetch the target.
+function websiteHyperlinks(files: Record<string, Uint8Array>) {
+  const sheet = files['xl/worksheets/sheet1.xml'];
+  const allowed = new Set<string>();
+  if (!sheet) return { sheet, allowed };
+  const original = strFromU8(sheet);
+  const expression = new RegExp(
+    `<${xmlPrefix}hyperlink\\b([^>]*?)(?:\\/>|>[\\s\\S]*?<\\/${xmlPrefix}hyperlink>)`,
+    'gi',
+  );
+  const links = [...original.matchAll(expression)];
+  if (!links.length) return { sheet, allowed };
+  const clean = original.replace(expression, '');
+  const rows = parseSheet(
+    strToU8(clean),
+    parseSharedStrings(files['xl/sharedStrings.xml']),
+  );
+  const { mapping } = dataRowsAfterCanonicalHeader(rows);
+  const relationshipFile = 'xl/worksheets/_rels/sheet1.xml.rels';
+  const relationships = strFromU8(files[relationshipFile] ?? new Uint8Array());
+  rejectXmlEntities(relationships);
+  const declarations = [
+    ...relationships.matchAll(
+      new RegExp(`<${xmlPrefix}Relationship\\b([^>]*)\\/?\\s*>`, 'gi'),
+    ),
+  ];
+  for (const link of links) {
+    const attrs = link[1] ?? '';
+    const ref = relationshipAttribute(attrs, 'ref');
+    const id = relationshipAttribute(attrs, 'r:id');
+    const matches = declarations.filter(
+      (d) => relationshipAttribute(d[1] ?? '', 'Id') === id,
+    );
+    if (
+      !/^([A-Z]+)([1-9]\d*)$/.test(ref) ||
+      ref.match(/^[A-Z]+/)?.[0] !== mapping['وب‌سایت'] ||
+      !id ||
+      matches.length !== 1
+    )
+      fail('Hyperlink فقط برای سلول وب‌سایت و همان نشانی مجاز است.');
+    const declaration = matches[0]?.[1] ?? '';
+    const target = relationshipAttribute(declaration, 'Target');
+    const type = relationshipAttribute(declaration, 'Type');
+    const value =
+      rows.find((r) => r.rowNumber === Number(ref.match(/\d+$/)?.[0]))?.values[
+        cellColumn(ref) - 1
+      ] ?? '';
+    try {
+      const actual = new URL(target);
+      const expected = new URL(
+        /^https?:\/\//i.test(value) ? value : `${actual.protocol}//${value}`,
+      );
+      if (
+        !/^https?:$/.test(actual.protocol) ||
+        actual.username ||
+        actual.password ||
+        actual.href !== expected.href ||
+        !value ||
+        !type.endsWith('/hyperlink')
+      )
+        throw Error('unsafe');
+    } catch {
+      fail('Hyperlink فقط برای سلول وب‌سایت و همان نشانی مجاز است.');
+    }
+    allowed.add(`${relationshipFile}:${id}`);
+  }
+  return { sheet: strToU8(clean), allowed };
 }
 
 export function parseHotelImportWorkbook(input: {
@@ -433,7 +580,11 @@ export function parseHotelImportWorkbook(input: {
   }
 
   const workbookXml = files['xl/workbook.xml'];
-  const relationshipInspection = inspectExternalRelationships(files);
+  const websiteLinks = websiteHyperlinks(files);
+  const relationshipInspection = inspectExternalRelationships(
+    files,
+    websiteLinks.allowed,
+  );
   const externalLinkCount =
     externalDataPartCount + relationshipInspection.externalLinkCount;
   if (externalLinkCount > 0)
@@ -441,7 +592,7 @@ export function parseHotelImportWorkbook(input: {
       ...externalEntries,
       ...relationshipInspection.entries,
     ]);
-  const hotelSheet = files['xl/worksheets/sheet1.xml'];
+  const hotelSheet = websiteLinks.sheet;
   if (!workbookXml || !hotelSheet)
     fail('ساختار Workbook یا Sheet Hotels یافت نشد.');
   const workbookText = strFromU8(workbookXml);
@@ -454,7 +605,7 @@ export function parseHotelImportWorkbook(input: {
   if (/\bDDE\b|WEBSERVICE\s*\(|HYPERLINK\s*\(/i.test(workbookText))
     fail('Remote Reference یا DDE در Workbook مجاز نیست.');
 
-  const rows = dataRowsAfterCanonicalHeader(
+  const { rows, mapping } = dataRowsAfterCanonicalHeader(
     parseSheet(hotelSheet, parseSharedStrings(files['xl/sharedStrings.xml'])),
   );
 
@@ -470,13 +621,54 @@ export function parseHotelImportWorkbook(input: {
     const suppliedCode = normalize(cells[0] ?? '').toUpperCase();
     const code = suppliedCode || generateHotelCode(englishName, city);
     const status = normalize(cells[15] ?? '') || 'منتشرشده';
+    const website = optional(cells[18]);
+    const freeSale = optionalBoolean(cells[19]);
+    const persianName = optional(cells[20]);
+    if (
+      website &&
+      (website.length > 320 ||
+        !/^(https?:\/\/)?[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}(?::\d+)?(?:[/?#][^\s]*)?$/i.test(
+          website,
+        ))
+    )
+      issues.push({
+        rowNumber,
+        column: 'وب‌سایت',
+        code: 'INVALID_WEBSITE',
+        message: 'وب‌سایت معتبر نیست؛ نشانی دامنه یا http/https وارد کنید.',
+      });
+    if (freeSale === undefined)
+      issues.push({
+        rowNumber,
+        column: 'فروش آزاد',
+        code: 'INVALID_BOOLEAN',
+        message: 'فروش آزاد باید بله، خیر، TRUE، FALSE، ۱ یا ۰ باشد.',
+      });
+    if (postgresCharacterLength(persianName ?? '') > 160)
+      issues.push({
+        rowNumber,
+        column: 'نام فارسی',
+        code: 'VALUE_TOO_LONG',
+        message: 'نام فارسی حداکثر ۱۶۰ نویسه است.',
+      });
     for (const [index, limit] of [
       [1, 160],
       [2, 160],
       [4, 1000],
       [6, 160],
+      [7, 160],
+      [8, 160],
+      [10, 2000],
+      [11, 2000],
+      [12, 2000],
+      [13, 2000],
+      [17, 2000],
     ] as const) {
-      if ((cells[index]?.length ?? 0) > limit)
+      const value = normalize(cells[index] ?? '');
+      if (
+        postgresCharacterLength(index === 7 ? value.toUpperCase() : value) >
+        limit
+      )
         issues.push({
           rowNumber,
           column: HOTEL_IMPORT_HEADERS[index],
@@ -484,6 +676,32 @@ export function parseHotelImportWorkbook(input: {
           message: `${HOTEL_IMPORT_HEADERS[index]}: maximum ${limit} characters.`,
         });
     }
+    const facilities = (cells[9] ?? '')
+      .split('|')
+      .map(normalize)
+      .filter(Boolean);
+    if (
+      facilities.some(
+        (name) => postgresCharacterLength(name) > FACILITY_NAME_MAX_CHARACTERS,
+      )
+    )
+      issues.push({
+        rowNumber,
+        column: 'امکانات',
+        code: 'VALUE_TOO_LONG',
+        message: `Each facility: maximum ${FACILITY_NAME_MAX_CHARACTERS} characters. No text was truncated.`,
+      });
+    const galleryImageSources = (cells[14] ?? '')
+      .split('|')
+      .map(normalize)
+      .filter(Boolean);
+    if (postgresCharacterLength(galleryImageSources.join('|')) > 2000)
+      issues.push({
+        rowNumber,
+        column: 'تصاویر گالری',
+        code: 'VALUE_TOO_LONG',
+        message: 'Gallery image addresses: maximum 2000 characters in total.',
+      });
     if (suppliedCode && !codePattern.test(suppliedCode))
       issues.push({
         rowNumber,
@@ -574,19 +792,19 @@ export function parseHotelImportWorkbook(input: {
       serviceLevel: optional(cells[6]),
       mealServiceCode: optional(cells[7])?.toUpperCase() ?? null,
       defaultRoomType: optional(cells[8]),
-      facilities: (cells[9] ?? '').split('|').map(normalize).filter(Boolean),
+      facilities,
       description: optional(cells[10]),
       refundRules: optional(cells[11]),
       hotelRules: optional(cells[12]),
       mainImageSource: optional(cells[13]),
-      galleryImageSources: (cells[14] ?? '')
-        .split('|')
-        .map(normalize)
-        .filter(Boolean),
+      galleryImageSources,
       sourceStatus: status,
       isActive: status === 'منتشرشده',
       featuredSource: boolValue(cells[16]),
       internalNote: optional(cells[17]),
+      website,
+      freeSale: freeSale ?? null,
+      persianName,
     });
   });
 
@@ -594,18 +812,14 @@ export function parseHotelImportWorkbook(input: {
     rows: result,
     issues,
     warnings,
-    mapping: Object.fromEntries(
-      HOTEL_IMPORT_HEADERS.map((header, index) => [
-        header,
-        String.fromCharCode(65 + index),
-      ]),
-    ) as ParsedHotelWorkbook['mapping'],
+    mapping,
     security: {
       entryCount,
       uncompressedBytes,
       formulaCount: 0,
       externalLinkCount: 0,
       macroCount: 0,
+      ignoredWebsiteHyperlinkCount: websiteLinks.allowed.size,
       malwareScanStatus: 'UNAVAILABLE',
     },
   };

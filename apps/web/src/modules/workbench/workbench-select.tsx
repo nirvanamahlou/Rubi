@@ -12,19 +12,22 @@ export function WorkbenchSelect({
   onValueChange,
   options,
   required = false,
+  disabled = false,
 }: {
   label: string;
   value: string;
   onValueChange: (value: string) => void;
   options: readonly { value: string; label: string }[];
   required?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <Select
       dir="rtl"
-      value={'option:' + value}
+      value={value ? 'option:' + value : ''}
       onValueChange={(next) => onValueChange(next.slice(7))}
       required={required}
+      disabled={disabled}
     >
       <SelectTrigger aria-label={label} className="w-full min-w-0">
         <SelectValue placeholder={label} />

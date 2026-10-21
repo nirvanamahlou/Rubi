@@ -6,17 +6,19 @@ import {
   type SearchOption,
 } from '@/components/ui/search-combobox';
 import { toursApi } from '@/modules/ticket-catalog/api/tours';
-import { masterDataApi } from '@/modules/master-data/api/client';
+import { salesApi } from '../api/client';
 import { selectSalesInsurance } from '../model/sales-insurance';
 import { withSalesHotelDates, type SalesFormState } from '../model/sales-form';
 
 export function SalesTourPicker({
   state,
+  refreshRevision = 0,
   countries,
   cities,
   hotels,
   onChange,
 }: {
+  refreshRevision?: number;
   state: SalesFormState;
   countries: readonly MasterDataRecord[];
   cities: readonly MasterDataRecord[];
@@ -34,11 +36,13 @@ export function SalesTourPicker({
     void toursApi
       .departures()
       .then(({ data }) => {
-        if (alive) setRows(data);
+        if (alive) {
+          setRows(data);
+          setError('');
+        }
       })
       .catch((reason: unknown) => {
         if (alive) {
-          setRows([]);
           setError(
             reason instanceof Error ? reason.message : 'دریافت تور ناموفق بود.',
           );
@@ -50,7 +54,7 @@ export function SalesTourPicker({
     return () => {
       alive = false;
     };
-  }, [open]);
+  }, [open, refreshRevision]);
   const options = salesTourOptions(
     rows,
     state.passengerComposition.adults + state.passengerComposition.children,
@@ -62,7 +66,7 @@ export function SalesTourPicker({
       const insurance = tour.package.insuranceId
         ? selectSalesInsurance(
             (
-              await masterDataApi.detail(
+              await salesApi.reference(
                 'insurance-plans',
                 tour.package.insuranceId,
               )
@@ -85,6 +89,9 @@ export function SalesTourPicker({
         withSalesHotelDates(state, {
           ...state,
           tour,
+          packageSaleQuote: undefined,
+          packageSaleAvailable: undefined,
+          publishedPackageHotelIds: undefined,
           originId: tour.package.originId,
           destinationId: tour.package.destinationId,
           originCountryId,

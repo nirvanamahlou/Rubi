@@ -1,4 +1,10 @@
 import {
+  changedDeniedFields,
+  hasAccessControl,
+  isOptionalOperationReason,
+} from '@nora/contracts';
+import { isUUID } from 'class-validator';
+import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
@@ -23,7 +29,9 @@ function branchOf(actor: AuthenticatedActor, requested?: string): string {
   return branchId;
 }
 
-function redactedRate(row: Record<string, unknown>) {
+function redactedRate(
+  row: Prisma.MasterDraftExchangeRateGetPayload<Record<string, never>>,
+) {
   return {
     id: row.id,
     fromCurrencyId: row.fromCurrencyId,
@@ -194,7 +202,11 @@ export class CurrencyRateService {
             validFrom,
             validTo,
             correctionReason,
-            status: 'DRAFT',
+            // New reference quotes are final on registration, not pending a checker.
+            // Keep the existing finalized-state representation and DB evidence.
+            status: 'APPROVED',
+            approvedByUserId: actor.userId,
+            approvedAt: new Date(),
             isAuthoritative: false,
             createdByUserId: actor.userId,
             updatedByUserId: actor.userId,
@@ -220,8 +232,8 @@ export class CurrencyRateService {
           fromCurrencyCode: from.code,
           toCurrencyCode: to.code,
           createdByUserId: row.createdByUserId,
-          approvedByUserId: null,
-          approvedAt: null,
+          approvedByUserId: row.approvedByUserId,
+          approvedAt: row.approvedAt?.toISOString() ?? null,
         });
       }
       return { data: rows };
@@ -240,6 +252,7 @@ export class CurrencyRateService {
         'ابتدای بازه تاریخچه باید قبل از انتهای آن باشد.',
       );
     const where = {
+      isActive: true,
       ...(query.search?.trim()
         ? {
             OR: [
@@ -335,6 +348,7 @@ export class CurrencyRateService {
         fromCurrencyId,
         toCurrencyId,
         rateType,
+        isActive: true,
         status: MasterCurrencyRateStatus.APPROVED,
         validFrom: { lte: now },
         OR: [{ validTo: null }, { validTo: { gt: now } }],
@@ -353,6 +367,130 @@ export class CurrencyRateService {
     };
   }
 
+  async mutate(
+    id: string,
+    input: { expectedVersion: number; rate?: string; source?: string },
+    operation: 'update' | 'delete',
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ) {
+    const permission =
+      operation === 'delete' ? 'master_data.delete' : 'master_data.update';
+    if (
+      !actor.permissions.includes(permission) ||
+      !actor.permissions.includes('master_data.currency_rate.create') ||
+      !hasAccessControl(
+        actor.permissions,
+        'master-data.resource.exchange-rates',
+      )
+    )
+      throw new ForbiddenException('مجوز لازم برای این عملیات وجود ندارد.');
+    const actorBranchId = branchOf(actor, requestedBranch);
+    if (
+      !isUUID(id) ||
+      !Number.isSafeInteger(input.expectedVersion) ||
+      input.expectedVersion < 1 ||
+      input.expectedVersion > 2147483647
+    )
+      throw new BadRequestException('شناسه یا نسخه نرخ معتبر نیست.');
+    const patch: { rate?: string; source?: string } = {};
+    if (operation === 'update') {
+      if (input.rate !== undefined) {
+        if (
+          typeof input.rate !== 'string' ||
+          !/^\d{1,14}(\.\d{1,10})?$/.test(input.rate) ||
+          !/[1-9]/.test(input.rate)
+        )
+          throw new BadRequestException('مقدار نرخ معتبر نیست.');
+        patch.rate = input.rate;
+      }
+      if (input.source !== undefined) {
+        if (
+          typeof input.source !== 'string' ||
+          input.source.trim().length > 160
+        )
+          throw new BadRequestException('منبع نرخ حداکثر ۱۶۰ نویسه است.');
+        patch.source = input.source.trim() || 'ثبت دستی';
+      }
+      if (!Object.keys(patch).length)
+        throw new BadRequestException('مقدار نرخ معتبر نیست.');
+    }
+    return this.database.client.$transaction(async (tx) => {
+      const before = await tx.masterDraftExchangeRate.findUnique({
+        where: { id },
+      });
+      if (!before || !before.isActive)
+        throw new NotFoundException('نرخ ارز یافت نشد.');
+      if (before.isAuthoritative)
+        throw new ForbiddenException('ویرایش نرخ عملیاتی مجاز نیست.');
+      if (
+        operation === 'update' &&
+        changedDeniedFields(
+          actor.permissions,
+          'field.master-data.exchange-rates',
+          patch,
+          { rate: before.rate.toString(), source: before.source },
+        ).length
+      )
+        throw new ForbiddenException(
+          'ویرایش یک یا چند فیلد اطلاعات پایه محدود شده است.',
+        );
+      const changed = await tx.masterDraftExchangeRate.updateMany({
+        where: {
+          id,
+          version: input.expectedVersion,
+          isActive: true,
+          isAuthoritative: false,
+        },
+        data: {
+          ...(operation === 'delete'
+            ? {
+                isActive: false,
+                deactivatedAt: new Date(),
+                deactivatedByUserId: actor.userId,
+              }
+            : patch),
+          updatedByUserId: actor.userId,
+          version: { increment: 1 },
+        },
+      });
+      if (changed.count !== 1)
+        throw new ConflictException({
+          code: 'CONCURRENT_MODIFICATION',
+          message: 'نرخ هم‌زمان تغییر کرده است.',
+        });
+      const row = await tx.masterDraftExchangeRate.findUniqueOrThrow({
+        where: { id },
+      });
+      await tx.masterDataAuditEvent.create({
+        data: {
+          actorUserId: actor.userId,
+          actorBranchId,
+          action: `master_data.${operation}`,
+          resource: 'exchange-rates',
+          entityId: id,
+          entityVersion: row.version,
+          outcome: AuditOutcome.SUCCESS,
+          beforeSnapshot: JSON.parse(
+            JSON.stringify({
+              ...redactedRate(before),
+              isActive: before.isActive,
+            }),
+          ) as Prisma.InputJsonValue,
+          afterSnapshot: JSON.parse(
+            JSON.stringify({
+              ...redactedRate(row),
+              isActive: row.isActive,
+              deactivatedAt: row.deactivatedAt,
+              deactivatedByUserId: row.deactivatedByUserId,
+            }),
+          ) as Prisma.InputJsonValue,
+        },
+      });
+      return { data: { ...redactedRate(row), isActive: row.isActive } };
+    });
+  }
+
   decide(
     id: string,
     expectedVersion: number,
@@ -361,14 +499,15 @@ export class CurrencyRateService {
     actor: AuthenticatedActor,
     requestedBranch?: string,
   ) {
-    const normalizedReason = reason.trim();
-    if (!normalizedReason)
+    const normalizedReason = (reason ?? '').trim();
+    if (!isOptionalOperationReason(normalizedReason))
       throw new BadRequestException('دلیل تصمیم الزامی است.');
     return this.database.client.$transaction(async (tx) => {
       const before = await tx.masterDraftExchangeRate.findUnique({
         where: { id },
       });
-      if (!before) throw new NotFoundException('نرخ ارز یافت نشد.');
+      if (!before || before.isActive === false)
+        throw new NotFoundException('نرخ ارز یافت نشد.');
       if (before.status !== MasterCurrencyRateStatus.DRAFT)
         throw new ConflictException({
           code: 'CURRENCY_RATE_IMMUTABLE',
@@ -387,6 +526,7 @@ export class CurrencyRateService {
           id,
           version: expectedVersion,
           status: MasterCurrencyRateStatus.DRAFT,
+          isActive: true,
         },
         data: {
           status: nextStatus,

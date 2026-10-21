@@ -73,10 +73,10 @@ describe('Saved contract print output', () => {
     const body = html.slice(html.indexOf('<body>'));
     const labels = [
       'CONTRACT PARTIES',
+      'PASSENGER SERVICES',
       'PASSENGERS & PRICING',
       'FLIGHT INFORMATION',
       'HOTEL INFORMATION',
-      'OTHER SERVICES',
       'APPROVAL & SIGNATURE',
     ];
     for (const label of labels) expect(body).toContain(label);
@@ -131,7 +131,7 @@ describe('Saved contract print output', () => {
     };
     const html = contractPrintHtml(output, printReferences);
     expect(html).toContain('مشتری نمونه');
-    expect(html).toContain('<td>کودک</td>');
+    expect(html).toContain('کودک (<bdi dir="ltr">6-12</bdi>)');
     expect(html).not.toContain('کودک ·');
     expect(html).not.toContain('طرف عملیاتی ساختگی');
     expect(html).not.toContain('OPERATIONAL HOTEL');
@@ -163,7 +163,7 @@ describe('Saved contract print output', () => {
       );
       const html = contractPrintHtml(output, printReferences);
       for (const p of output.contract.passengersDetail)
-        expect(html.split(p.displayNameSnapshot).length - 1).toBe(1);
+        expect(html.split(p.displayNameSnapshot).length - 1).toBe(2);
       expect(html).toContain(contractMoney(String(count * 100000000)));
       expect(html).toContain('thead{display:table-header-group}');
       expect(html).toContain('.financial-summary{break-inside:avoid}');
@@ -182,7 +182,7 @@ describe('Saved contract print output', () => {
       const cols = [...html.matchAll(/<col style="width:(\d+)%">/g)].map(
         (match) => Number(match[1]),
       );
-      expect(cols).toHaveLength(kind === 'person' ? 7 : 8);
+      expect(cols).toHaveLength(6);
       expect(cols.reduce((sum, width) => sum + width, 0)).toBe(100);
       expect(html).toContain('overflow-wrap:anywhere');
     },
@@ -225,10 +225,8 @@ describe('Saved contract print output', () => {
       hotelWebsite: 'https://hotel.example',
     });
     expect(html).toContain('9,007,199,254,740,995.37');
-    expect(html).toContain('50.25 €');
-    expect(html).toContain(
-      '<td class="contract-total"><div><bdi class="money">2.25</bdi></div></td><td></td>',
-    );
+    expect(html).toContain('>50.25</bdi>');
+    expect(html).toContain('<td class="contract-total">ثبت نشده</td><td></td>');
     expect(html).not.toContain('کودک بدون تخت');
     expect(html).not.toContain('DBL');
     expect(html).toContain('SAMPLE HOTEL');
@@ -249,9 +247,7 @@ describe('Saved contract print output', () => {
       hotelLatinName: '<script>',
       hotelWebsite: '<img>',
     });
-    expect(html).toContain(
-      '<td class="contract-total"></td><td><div><bdi class="money">100 $',
-    );
+    expect(html).toContain('<td class="contract-total">ثبت نشده</td><td></td>');
     expect(html).toContain('&lt;script&gt;');
     expect(html).not.toContain('<img>');
   });
@@ -266,8 +262,10 @@ describe('Saved contract print output', () => {
       }),
     );
     const html = contractPrintHtml(output, printReferences);
-    expect(html).toContain('100,000,000');
-    expect(html).toContain('23,456,789.25');
+    expect(html).toContain('123,456,789.25');
+    expect(
+      html.split('PASSENGERS & PRICING')[1]!.split('</table>')[0],
+    ).not.toContain('23,456,789.25');
     expect(html).toContain('font-family:Arial,sans-serif!important');
     expect(html).not.toContain('قیمت تفکیکی مسافر ثبت نشده');
   });
@@ -282,9 +280,10 @@ describe('Saved contract print output', () => {
     expect(html).toContain('$');
     expect(html).toContain('BUSINESS');
     expect(html).toContain('ترانسفر رفت');
+    expect(html).not.toContain('OTHER SERVICES');
     expect(html).not.toContain('<th>کمیسیون</th>');
   });
-  it('shows unrecorded commission only for agency customers without inventing a deduction', () => {
+  it('omits unrecorded commission for agency customers without inventing a deduction', () => {
     const html = contractPrintHtml(
       {
         ...printFixture,
@@ -292,8 +291,8 @@ describe('Saved contract print output', () => {
       },
       printReferences,
     );
-    expect(html).toContain('<th>کمیسیون</th>');
-    expect(html).toContain('هیچ مبلغی بابت آن');
+    expect(html).not.toContain('<th>کمیسیون</th>');
+    expect(html).not.toContain('هیچ مبلغی بابت آن');
     expect(html).toContain('123,456,789.25');
   });
   it('escapes all dynamic content and rejects active logo sources', () => {
@@ -317,7 +316,7 @@ describe('Saved contract print output', () => {
     expect(html).not.toContain('localhost');
     expect(html).toContain('نام و امضای مسافر / نماینده');
     expect(html).toContain('نام و امضای مسئول فروش');
-    expect(html).toContain('قیمت تفکیکی مسافر ثبت نشده');
+    expect(html).toContain('مبلغ پرواز هر مسافر جزئی از مبلغ کل قرارداد است.');
     expect((html.match(/<section/g) || []).length).toBe(6);
   });
   it('formats large decimals without floating point loss', () => {
@@ -350,4 +349,34 @@ it('uses the Jahan Bastan issuer throughout the contract without Niyayesh contac
   expect(html).not.toContain('نیایش');
   expect(html).not.toContain('Nystkt.ir');
   expect(html).not.toContain('niyayeshseir.com');
+});
+
+it('prints aggregate passenger prices as IRR and foreign totals without inventing flight/hotel prices', () => {
+  const output = structuredClone(printFixture);
+  const prices = Object.fromEntries(
+    output.contract.passengersDetail.map((p) => [
+      p.customerId,
+      [
+        { amount: '234567', currencyCode: 'IRR' },
+        { amount: '123.45', currencyCode: 'USD' },
+      ],
+    ]),
+  );
+  output.contract.servicesDetail = output.contract.servicesDetail.map(
+    (s, i) => ({
+      ...s,
+      metadata: {
+        passengerPackagePricingVersion: 1,
+        ...(i === 0 ? { passengerTotalPricesV1: JSON.stringify(prices) } : {}),
+      },
+    }),
+  );
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('<th>قیمت ریالی</th>');
+  expect(html).toContain('234,567');
+  expect(html).toContain('123.45');
+  expect(html).not.toContain('<th>مبلغ پرواز</th>');
+  expect(html).not.toContain(
+    'مبالغ ریالی و ارزی، قیمت کل خدمات هر مسافر هستند.',
+  );
 });

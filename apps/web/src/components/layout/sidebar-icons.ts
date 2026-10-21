@@ -7,6 +7,7 @@ import {
   FileText,
   FileCheck2,
   Headphones,
+  Headset,
   House,
   Inbox,
   LayoutGrid,
@@ -15,7 +16,6 @@ import {
   Plug,
   Send,
   Settings,
-  Sparkles,
   Ticket,
   UserRoundCheck,
   UsersRound,
@@ -28,7 +28,7 @@ export const sidebarIcons: Record<
   NavigationHref | '/sales/pricing' | '/sales/ticket-prices' | '/sales/tours',
   LucideIcon
 > = {
-  '/assistant': Sparkles,
+  '/customer-affairs/call-center': Headset,
   '/workbench': House,
   '/dashboard': LayoutGrid,
   '/sales': FileText,

@@ -321,6 +321,21 @@ describe.skipIf(!process.env.RESERVATION_PURCHASE_QUERY_CONTAINER)(
         from: '2026-10-30',
       });
       expect(noRows.meta.summary.total).toBe(0);
+      Object.assign(h.service, {
+        tickets: { purchaseCapacityInventory: async () => [] },
+      });
+      await h.service.purchaseInbox([branch], { kind: 'FLIGHT' });
+      expect(actualRows).toHaveLength(0);
+      Object.assign(h.service, {
+        tickets: {
+          purchaseCapacityInventory: async () => [
+            { id: 'offer', supplyType: 'FLOATING' },
+          ],
+        },
+      });
+      await h.service.purchaseInbox([branch], { kind: 'FLIGHT' });
+      expect(actualRows).toHaveLength(1);
+      expect(actualRows[0]).toMatchObject({ status: 'UNREGISTERED' });
       h.findMany.mockClear();
       await h.service.purchaseInbox([branch], { contractNumber: 'NO MATCH' });
       expect(h.findMany).not.toHaveBeenCalled();

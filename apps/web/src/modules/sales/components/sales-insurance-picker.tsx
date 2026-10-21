@@ -18,9 +18,11 @@ export function salesInsuranceDisplayName(
 
 export function SalesInsurancePicker({
   value,
+  refreshRevision = 0,
   onChange,
   onReady,
 }: {
+  refreshRevision?: number;
   value?: SalesInsuranceSelection | undefined;
   onChange: (selection: SalesInsuranceSelection) => void;
   onReady: (ready: boolean) => void;
@@ -33,7 +35,10 @@ export function SalesInsurancePicker({
     let cancelled = false;
     loadSalesInsurancePlans()
       .then((items) => {
-        if (!cancelled) setPlans(items);
+        if (!cancelled) {
+          setPlans(items);
+          setError('');
+        }
       })
       .catch((reason: unknown) => {
         if (!cancelled)
@@ -49,7 +54,7 @@ export function SalesInsurancePicker({
     return () => {
       cancelled = true;
     };
-  }, [attempt]);
+  }, [attempt, refreshRevision]);
   const selected = plans.find((plan) => plan.id === value?.id);
   useEffect(() => {
     onReady(!loading && !error && Boolean(selected));

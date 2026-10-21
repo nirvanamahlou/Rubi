@@ -1,3 +1,9 @@
+import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
+import { reservationOutputPassengers } from './reservation-passenger-output';
+import {
+  BrokerPurchaseHistory,
+  BrokerPurchaseHistoryController,
+} from './broker-purchase-history';
 import {
   ReservationHotelSavingsService,
   ReservationHotelSavingsController,
@@ -200,6 +206,27 @@ export class ReservationRequestsController {
     return this.directory!.voucherBrokers(search.slice(0, 100), pageNumber);
   }
 
+  @Get(':id/voucher-currencies')
+  @Header('Cache-Control', 'private, no-store')
+  async voucherCurrencies(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+    @Query('page') page = '1',
+  ) {
+    if (!req.actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    await this.workflow.detail(id, req.actor.branchIds);
+    const pageNumber = Number(page);
+    if (
+      !Number.isSafeInteger(pageNumber) ||
+      pageNumber < 1 ||
+      pageNumber > 1000
+    )
+      throw new BadRequestException('صفحه معتبر نیست.');
+    if (!this.directory) throw new NotFoundException();
+    return this.directory.voucherCurrencies(pageNumber);
+  }
+
   @Get(':id/voucher-brokers/:brokerId/leaders')
   @Header('Cache-Control', 'private, no-store')
   async voucherLeaders(
@@ -263,7 +290,8 @@ export class ReservationRequestsController {
   @Header('Cache-Control', 'private, no-store')
   async issueTicketDocument(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() input: { customerId?: unknown; number?: unknown },
+    @Body()
+    input: { customerId?: unknown; number?: unknown; expectedNumber?: unknown },
     @Req() req: AuthenticatedRequest,
   ) {
     return { data: await this.ticketDocuments!.issue(id, input, req.actor) };
@@ -344,8 +372,16 @@ export class ReservationRequestsController {
   ) {
     if (!req.actor.permissions.includes('reservations.read'))
       throw new ForbiddenException();
+    const intake = await this.workflow.detail(id, req.actor.branchIds);
     return {
-      data: await this.workflow.detail(id, req.actor.branchIds),
+      data: {
+        ...intake,
+        outputPassengers: await reservationOutputPassengers(
+          intake.snapshot,
+          this.customers,
+          req.actor,
+        ),
+      },
       delivery: await this.delivery.read(id),
     };
   }
@@ -642,6 +678,7 @@ export class ReservationRequestsController {
 }
 @Module({
   imports: [
+    PurchaseFxModule,
     FinanceTicketCostModule,
     SalesOperationalAmendmentModule,
     SalesReservationTableModule,
@@ -657,6 +694,7 @@ export class ReservationRequestsController {
     TicketRuntimeModule,
   ],
   controllers: [
+    BrokerPurchaseHistoryController,
     ReservationHotelSavingsController,
     ReservationRequestsController,
     ReservationPassengerFilesController,
@@ -664,6 +702,7 @@ export class ReservationRequestsController {
     ReservationManifestBatchController,
   ],
   providers: [
+    BrokerPurchaseHistory,
     ReservationHotelSavingsService,
     ReservationTicketDocumentsService,
     AuthGuard,

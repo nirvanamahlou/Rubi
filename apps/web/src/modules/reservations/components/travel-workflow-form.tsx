@@ -125,10 +125,7 @@ export function TravelWorkflowForm({
   async function run(operation: TravelWorkflowCommandV1['action']) {
     if (!intake || busy || readOnly) return;
     const operationNote = workflowOperationNote(operation, note);
-    if (
-      !operationNote &&
-      !['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(operation)
-    ) {
+    if (operation === 'NOTE' && !operationNote) {
       setError('توضیح / دلیل عملیات را وارد کنید.');
       return;
     }
@@ -180,6 +177,36 @@ export function TravelWorkflowForm({
       />
     );
   const closed = state.voucherIssued || state.supplierStatus === 'CANCELLED';
+  const issuedForm = Boolean(
+    state.sentSupplierFormSettings ||
+    state.voucherIssued ||
+    (Number.isSafeInteger(state.sentSupplierFormVersion) &&
+      (state.sentSupplierFormVersion ?? 0) > 0),
+  );
+  if (action === 'رزرواسیون' && !editingForm && issuedForm)
+    return (
+      <div className="grid gap-3" dir="rtl">
+        <Button
+          variant="outline"
+          disabled={busy || state.supplierStatus === 'CANCELLED'}
+          onClick={() => setEditingForm(true)}
+        >
+          اصلاح
+        </Button>
+        <TravelDocument
+          downloadLabel="دانلود"
+          intake={{
+            ...intake,
+            workflow: {
+              ...state,
+              ...(state.sentSupplierFormSettings
+                ? { supplierFormSettings: state.sentSupplierFormSettings }
+                : {}),
+            },
+          }}
+        />
+      </div>
+    );
   return (
     <div className="grid gap-4" dir="rtl">
       <p role="status">
@@ -325,53 +352,31 @@ export function TravelWorkflowForm({
             )}
         </>
       )}
-      {action === 'رزرواسیون' &&
-        !editingForm &&
-        (state.sentSupplierFormSettings || state.voucherIssued) && (
-          <>
-            <TravelDocument
-              intake={{
-                ...intake,
-                workflow: {
-                  ...state,
-                  ...(state.sentSupplierFormSettings
-                    ? { supplierFormSettings: state.sentSupplierFormSettings }
-                    : {}),
-                },
-              }}
-            />
-            <Button variant="outline" onClick={() => setEditingForm(true)}>
-              ویرایش تنظیمات فرم رزواسیون
-            </Button>
-          </>
-        )}
       {action === 'رزرواسیون' && editingForm && (
         <Button variant="outline" onClick={() => setEditingForm(false)}>
           بازگشت به فرم صادرشده
         </Button>
       )}
-      {action === 'رزرواسیون' &&
-        (editingForm ||
-          (!state.sentSupplierFormSettings && !state.voucherIssued)) && (
-          <ReservationSettings
-            key={`${id}:${state.version}`}
-            intake={intake}
-            onDirty={() => setSettingsDirty(true)}
-            showDocument
-            onSaved={(workflow) => {
-              setIntake({
-                ...intake,
-                workflow,
-                ...(workflow.appliedContractVersion
-                  ? { contractEditVersion: workflow.appliedContractVersion }
-                  : {}),
-              });
-              setSettingsDirty(false);
-              if (workflow.sentSupplierFormVersion === workflow.version)
-                setEditingForm(false);
-            }}
-          />
-        )}
+      {action === 'رزرواسیون' && (editingForm || !issuedForm) && (
+        <ReservationSettings
+          key={`${id}:${state.version}`}
+          intake={intake}
+          onDirty={() => setSettingsDirty(true)}
+          showDocument
+          onSaved={(workflow) => {
+            setIntake({
+              ...intake,
+              workflow,
+              ...(workflow.appliedContractVersion
+                ? { contractEditVersion: workflow.appliedContractVersion }
+                : {}),
+            });
+            setSettingsDirty(false);
+            if (workflow.sentSupplierFormVersion === workflow.version)
+              setEditingForm(false);
+          }}
+        />
+      )}
       {action === 'Confirmation' &&
         !closed &&
         hasSentReservationForm(state) && (
@@ -385,11 +390,6 @@ export function TravelWorkflowForm({
             }}
           />
         )}
-      {settingsDirty && (
-        <p role="status">
-          تنظیمات تغییر کرده؛ قبل از ارسال یا صدور ذخیره کنید.
-        </p>
-      )}
       {(action === 'واچر' || action === 'Confirmation') &&
         !closed &&
         !hasSentReservationForm(state) && (
@@ -466,18 +466,16 @@ export function TravelWorkflowForm({
               />
             </label>
           )}
-          <label>
-            {action === 'رزرواسیون'
-              ? 'توضیحات ارسال (اختیاری)'
-              : action === 'Confirmation'
-                ? 'یادداشت'
-                : 'توضیح / دلیل عملیات'}
-            <Textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              maxLength={500}
-            />
-          </label>
+          {action !== 'رزرواسیون' && (
+            <label>
+              {action === 'Confirmation' ? 'یادداشت' : 'توضیح / دلیل عملیات'}
+              <Textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                maxLength={500}
+              />
+            </label>
+          )}
           {(action === 'واچر' || action === 'Confirmation') &&
             !state.insuranceIssued && (
               <label className="rounded border border-amber-500 p-3">

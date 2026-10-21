@@ -1,3 +1,5 @@
+import { readPassengerHotelStays } from '@nora/contracts';
+import { salesHotelRoomSummary } from '@nora/contracts';
 export function englishOutputName(
   value: string,
   references: ReservationFormReferences,
@@ -22,6 +24,12 @@ import type {
 } from '@nora/contracts';
 export type ReservationFormIntake = ReservationIntakeV1 & {
   workflow: TravelWorkflowStateV1;
+  /** Minimal request-scoped Customer projection; no DOB or passport numbers. */
+  outputPassengers?: readonly {
+    customerId: string;
+    passportName: string | null;
+    hotelChildAgeBand: 'CHD_2_TO_6' | 'CHD_6_TO_12' | null;
+  }[];
 };
 export type ReservationFormReferences = Record<string, MasterDataRecord>;
 const text = (value: unknown) =>
@@ -54,7 +62,11 @@ export function reservationFormData(
 ) {
   const { snapshot, workflow } = intake;
   const hotel = snapshot.hotelSelection;
+  const roomSummary = hotel?.rooms?.length
+    ? salesHotelRoomSummary(hotel.rooms)
+    : undefined;
   const services = snapshot.serviceSelections;
+  const passengerStays = readPassengerHotelStays(services, hotel);
   const flights = salesContractFlights(
     services,
     snapshot.ticketSelections ?? [],
@@ -78,6 +90,8 @@ export function reservationFormData(
     sex: string;
     age: string;
     hotelChildAgeBand?: string | undefined;
+    checkIn?: string;
+    checkOut?: string;
   }> = ids.map((id) => {
     const person = snapshot.passengerAssignments?.find(
       (p) => p.customerId === id,
@@ -87,18 +101,36 @@ export function reservationFormData(
       ({ ADT: 'ADULT', CHD: 'CHILD', INF: 'INFANT' } as const)[
         person?.ageCategory ?? 'ADT'
       ];
+    const identity = intake.outputPassengers?.find(
+      (person) => person.customerId === id,
+    );
+    const hotelChildAgeBand =
+      age === 'CHILD'
+        ? identity?.hotelChildAgeBand ||
+          (person?.childAgeBand === 'AGE_2_6'
+            ? 'CHD_2_TO_6'
+            : person?.childAgeBand === 'AGE_6_12'
+              ? 'CHD_6_TO_12'
+              : undefined)
+        : undefined;
     return {
       id,
-      name: text(person?.displayNameSnapshot),
+      ...(passengerStays
+        ? {
+            checkIn: reservationFormDate(passengerStays[id]?.checkInDate),
+            checkOut: reservationFormDate(passengerStays[id]?.checkOutDate),
+          }
+        : {}),
+      name: text(identity?.passportName || person?.displayNameSnapshot),
       sex: '-',
-      hotelChildAgeBand: undefined,
+      hotelChildAgeBand,
       age:
         !person && !workflow.ageOverrides[id]
           ? '-'
           : age === 'ADULT'
             ? 'ADL'
             : age === 'CHILD'
-              ? 'CHD'
+              ? reservationPassengerAgeLabel('CHD', hotelChildAgeBand)
               : 'INF',
     };
   });
@@ -169,12 +201,19 @@ export function reservationFormData(
       ].join(' / ') || '-',
     destination: name(city),
     adults: passengers.filter((p) => p.age === 'ADL').length,
-    children: passengers.filter((p) => p.age === 'CHD').length,
-    children2To6: 0,
-    children6To12: 0,
+    children: passengers.filter((p) => p.age.startsWith('CHD')).length,
+    children2To6: passengers.filter((p) => p.hotelChildAgeBand === 'CHD_2_TO_6')
+      .length,
+    children6To12: passengers.filter(
+      (p) => p.hotelChildAgeBand === 'CHD_6_TO_12',
+    ).length,
     childrenUnclassified: passengers.filter((p) => p.age === 'CHD').length,
     infants: passengers.filter((p) => p.age === 'INF').length,
-    rooms: intake.arrangement?.roomCount ?? hotel?.roomCount ?? '-',
+    rooms:
+      roomSummary?.roomCount ??
+      intake.arrangement?.roomCount ??
+      hotel?.roomCount ??
+      '-',
     nights: Number.isInteger(nights) && nights > 0 ? nights : '-',
     leader: text(
       services.find((s) => typeof s.metadata?.tourLeader === 'string')?.metadata
@@ -224,10 +263,20 @@ export function reservationFormData(
     checkIn: reservationFormDate(hotel?.checkInDate),
     checkOut: reservationFormDate(hotel?.checkOutDate),
     double:
-      intake.arrangement?.doubleRoomCount ?? hotel?.doubleRoomCount ?? '-',
+      roomSummary?.doubleRoomCount ??
+      intake.arrangement?.doubleRoomCount ??
+      hotel?.doubleRoomCount ??
+      '-',
     single:
-      intake.arrangement?.singleRoomCount ?? hotel?.singleRoomCount ?? '-',
-    extra: intake.arrangement?.extraBedCount ?? hotel?.extraBedCount ?? '-',
+      roomSummary?.singleRoomCount ??
+      intake.arrangement?.singleRoomCount ??
+      hotel?.singleRoomCount ??
+      '-',
+    extra:
+      roomSummary?.extraBedCount ??
+      intake.arrangement?.extraBedCount ??
+      hotel?.extraBedCount ??
+      '-',
     passengers,
     notes: workflow.note || '',
     brand:

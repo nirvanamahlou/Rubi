@@ -20,6 +20,9 @@ describe('IAM public permission contract', () => {
     expect(IAM_PERMISSION_CODES).toEqual(
       expect.arrayContaining([
         'hr.read',
+        'customer_affairs.call_center.read',
+        'customer_affairs.call_center.calls.create',
+        'customer_affairs.call_center.notes.create',
         'hr.manage',
         'hr.self',
         'sales.contracts.read.own',
@@ -31,8 +34,8 @@ describe('IAM public permission contract', () => {
       ]),
     );
   });
-  it('publishes the version 13 domain permission catalogs without duplicates', () => {
-    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(13);
+  it('publishes the version 15 domain permission catalogs without duplicates', () => {
+    expect(IAM_PERMISSION_CONTRACT_VERSION).toBe(15);
     expect(MASTER_DATA_PERMISSION_CODES).toEqual([
       'master_data.read',
       'master_data.create',

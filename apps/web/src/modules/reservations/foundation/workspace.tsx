@@ -1,4 +1,5 @@
 'use client';
+import { RefreshCw } from 'lucide-react';
 import { HotelSavingsDashboard } from '../components/hotel-purchase-savings';
 import { useQueueNames } from './queue-names';
 import { TableStatusCheckbox, tableFlagColumns } from './table-status-checkbox';
@@ -11,10 +12,7 @@ import {
 } from './reservation-table';
 
 import { Suspense, useState } from 'react';
-import {
-  ContractCorrectionDeepLink,
-  ContractCorrectionHistoryButton,
-} from '../components/contract-correction-history';
+import { ContractCorrectionDeepLink } from '../components/contract-correction-history';
 import { ContractActionPanel } from './action-panel';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -149,6 +147,10 @@ export interface ReservationWorkspaceProps {
   preview?: boolean;
   newRequestCount?: number;
   onDismissNewRequests?: () => void;
+  onRefresh?: () => void;
+  refreshing?: boolean;
+  refreshError?: string;
+  refreshRevision?: number;
 }
 /** Mount after the Sales route handoff. No API calls, credentials, local storage or mock records. */
 export function ReservationOperationsWorkspace({
@@ -161,6 +163,10 @@ export function ReservationOperationsWorkspace({
   preview = false,
   newRequestCount = 0,
   onDismissNewRequests,
+  onRefresh,
+  refreshing = false,
+  refreshError = '',
+  refreshRevision = 0,
 }: ReservationWorkspaceProps) {
   const [section, setSection] = useState<Section>(initialSection);
   const [query, setQuery] = useState<Query>(defaultQuery);
@@ -177,7 +183,7 @@ export function ReservationOperationsWorkspace({
           : state;
   const rawVisibleRows =
     effectiveState === 'SUCCESS' ? accessibleRows(rows, access) : [];
-  const names = useQueueNames(rawVisibleRows);
+  const names = useQueueNames(rawVisibleRows, refreshRevision);
   const visibleRows = names.rows;
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
@@ -424,13 +430,36 @@ export function ReservationOperationsWorkspace({
           {section === 'inbox' && (
             <section className={styles.panel}>
               <div className={styles.panelTitle}>
-                <h2>درخواست‌ها</h2>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2>درخواست‌ها</h2>
+                  {onRefresh && (
+                    <button
+                      type="button"
+                      disabled={refreshing || state === 'LOADING'}
+                      onClick={onRefresh}
+                      className="inline-flex items-center gap-2"
+                    >
+                      <RefreshCw
+                        aria-hidden="true"
+                        className={
+                          refreshing ? 'size-4 animate-spin' : 'size-4'
+                        }
+                      />
+                      {refreshing ? 'در حال دریافت اطلاعات…' : 'دریافت اطلاعات'}
+                    </button>
+                  )}
+                </div>
                 <span>
                   {available
                     ? `${result.total.toLocaleString('fa-IR')} درخواست`
                     : 'در انتظار دریافت از فروش'}
                 </span>
               </div>
+              {refreshError && (
+                <p role="alert" className="text-sm text-destructive">
+                  {refreshError}
+                </p>
+              )}
               <div className={styles.exportBar}>
                 <button
                   type="button"
@@ -866,9 +895,6 @@ export function ReservationOperationsWorkspace({
             request={selected}
           />
         )}
-        {selected?.contractId ? (
-          <ContractCorrectionHistoryButton contractId={selected.contractId} />
-        ) : null}
       </div>
       <Suspense fallback={null}>
         <ContractCorrectionDeepLink />

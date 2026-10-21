@@ -1,7 +1,22 @@
+import { isValidElement } from 'react';
+import { sourceUiText } from '@/i18n/source-text';
+
 export type HrStatusTone = 'neutral' | 'success' | 'warning' | 'danger';
 
-export function hrStatusTone(status: string): HrStatusTone {
-  const label = status.replace(/[\s\u200c]/g, '');
+export function hrStatusText(status: unknown): string {
+  if (typeof status === 'string') return status;
+  if (isValidElement(status)) return sourceUiText(status) ?? 'نامشخص';
+  if (typeof status === 'number' && Number.isFinite(status))
+    return String(status);
+  if (status && typeof status === 'object' && 'label' in status) {
+    const label = status.label;
+    if (typeof label === 'string') return label;
+  }
+  return 'نامشخص';
+}
+
+export function hrStatusTone(status: unknown): HrStatusTone {
+  const label = hrStatusText(status).replace(/[\s\u200c]/g, '');
   if (/ردشده|لغوشده|غیرفعال|تعلیق|منقضی|پایانیافته/.test(label))
     return 'danger';
   if (label === 'تکمیلشده') return 'success';

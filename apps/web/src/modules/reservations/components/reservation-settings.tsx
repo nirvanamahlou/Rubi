@@ -1,8 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { MoneyInput } from '@/components/ui/money-input';
+import {
+  ReservationCurrencySelect,
+  useReservationCurrencies,
+} from './reservation-currencies';
+import { useEffect, useRef, useState } from 'react';
 import {
   voucherTextKeys,
-  voucherNumberKeys,
   voucherFlagKeys,
   type TravelWorkflowStateV1,
   type VoucherSettingsV1,
@@ -25,7 +29,6 @@ import {
 import {
   defaultVoucherSettings,
   voucherTextLabels,
-  voucherNumberLabels,
   voucherFlagLabels,
   type VoucherTextFieldKey,
 } from '../model/voucher-settings';
@@ -100,14 +103,18 @@ export async function loadReservationEditReferences(
   }
   const records = [];
   for (let page = 1; ; page++) {
-    const response = await masterDataApi.list(resource, {
-      search: '',
-      status: 'active',
-      sortBy: 'name',
-      sortDirection: 'asc',
-      page,
-      pageSize: 100,
-    });
+    const response = await masterDataApi.list(
+      resource,
+      {
+        search: '',
+        status: 'active',
+        sortBy: 'name',
+        sortDirection: 'asc',
+        page,
+        pageSize: 100,
+      },
+      'reservations',
+    );
     records.push(...response.data);
     if (!response.data.length || records.length >= response.meta.total)
       return records.map((record) =>
@@ -185,6 +192,7 @@ export function ReservationSettingsForm({
       settings.text.contractPartyName = partyName;
     return settings;
   });
+  const currencyDirectory = useReservationCurrencies(intake.id);
   const [directory, setDirectory] = useState<{
     key: string;
     options: Partial<
@@ -202,6 +210,43 @@ export function ReservationSettingsForm({
   const [past, setPast] = useState<TravelWorkflowStateV1>();
   const [previewDirty, setPreviewDirty] = useState(false);
   const [showFiles, setShowFiles] = useState(false);
+  const priceSource = useRef(
+    draft.hotelPurchasePrices !== undefined ? draft.brokerId : undefined,
+  );
+  const [priceLoading, setPriceLoading] = useState(
+    Boolean(draft.brokerId && draft.hotelPurchasePrices === undefined),
+  );
+  const [priceError, setPriceError] = useState('');
+  useEffect(() => {
+    const brokerId = draft.brokerId;
+    if (!brokerId || priceSource.current === brokerId) return;
+    let live = true;
+    void travelRequest<{
+      data: NonNullable<VoucherSettingsV1['hotelPurchasePrices']>;
+    }>(
+      `reservations/hotel-savings/supplier-form/${intake.id}?brokerId=${encodeURIComponent(brokerId)}`,
+    )
+      .then((response) => {
+        if (!live) return;
+        priceSource.current = brokerId;
+        setDraft((previous) =>
+          previous.brokerId === brokerId
+            ? { ...previous, hotelPurchasePrices: response.data }
+            : previous,
+        );
+        setPreviewDirty(true);
+        setPriceLoading(false);
+        setPriceError('');
+      })
+      .catch(() => {
+        if (!live) return;
+        setPriceLoading(false);
+        setPriceError('دریافت نرخ خرید هتل انجام نشد؛ مبلغ را دستی وارد کنید.');
+      });
+    return () => {
+      live = false;
+    };
+  }, [draft.brokerId, intake.id]);
   const referenceKeys = referenceKeysBySection[section];
   const referenceResourceKey = [
     ...new Set(
@@ -288,8 +333,9 @@ export function ReservationSettingsForm({
       live = false;
     };
   }, [intake.id, intake.workflow.version]);
-  async function save() {
-    if (busy) return;
+  async function save(sendToBroker = showDocument) {
+    if (busy || priceLoading || intake.workflow.supplierStatus === 'CANCELLED')
+      return;
     if (activeDirectory.loading || activeDirectory.error) {
       setError(
         activeDirectory.error ||
@@ -324,7 +370,7 @@ export function ReservationSettingsForm({
       );
       return;
     }
-    if (showDocument && !draft.brokerId) {
+    if (sendToBroker && !draft.brokerId) {
       setError('پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.');
       return;
     }
@@ -334,7 +380,7 @@ export function ReservationSettingsForm({
     let savedWorkflow: TravelWorkflowStateV1 | undefined;
     try {
       let currentVersion = intake.workflow.version;
-      if (showDocument && !intake.workflow.branding) {
+      if (sendToBroker && !intake.workflow.branding) {
         const branded = await travelRequest<{ data: TravelWorkflowStateV1 }>(
           `reservations/requests/${intake.id}/workflow`,
           {
@@ -353,7 +399,7 @@ export function ReservationSettingsForm({
           action: 'SUPPLIER_FORM_SETTINGS',
           applyToContractAndVoucher: false,
           expectedVersion: currentVersion,
-          note: sectionLabels[section] + ' در فرم رزواسیون و مبنای خرید',
+          note: sectionLabels[section] + ' فقط در فرم رزواسیون',
           voucherSettings: {
             ...draft,
             text: {
@@ -380,7 +426,7 @@ export function ReservationSettingsForm({
         },
       );
       savedWorkflow = r.data;
-      const result = showDocument
+      const result = sendToBroker
         ? await sendSavedReservationForm(intake.id, r.data)
         : r;
       onSaved(result.data);
@@ -485,6 +531,10 @@ export function ReservationSettingsForm({
                   ...(referenceKey === 'broker' ? { brokerId: option.id } : {}),
                 };
                 if (referenceKey === 'broker' && draft.brokerId !== option.id) {
+                  priceSource.current = undefined;
+                  next.hotelPurchasePrices = [];
+                  setPriceLoading(true);
+                  setPriceError('');
                   delete next.leaderId;
                   next.text.leaderName = '';
                   next.text.leaderPhone = '';
@@ -540,9 +590,11 @@ export function ReservationSettingsForm({
   };
   const saveButton = (
     <Button
+      type="button"
       onClick={() => void save()}
       disabled={
         busy ||
+        priceLoading ||
         activeDirectory.loading ||
         !selected.length ||
         (showDocument && !draft.brokerId)
@@ -565,6 +617,109 @@ export function ReservationSettingsForm({
           رزواسیون می‌سازد؛ ردهٔ کودک هتل در فرم ارسالی کارگزار چاپ می‌شود.
         </p>
       </header>
+      {message && <p role="status">{message}</p>}
+      {error && (
+        <p role="alert" className="text-destructive">
+          {error}
+        </p>
+      )}
+
+      {(section === 'ALL' || section === 'HOTEL') && (
+        <div className={styles.sectionCard}>
+          <h4>مبلغ هتل در فرم رزواسیون</h4>
+          <p>
+            نرخ خرید کارگزار انتخاب‌شده برای کل اقامت؛ قابل ویرایش پیش از صدور.
+          </p>
+          {priceLoading && <p>در حال دریافت نرخ خرید…</p>}
+          {priceError && <p role="alert">{priceError}</p>}
+          {currencyDirectory.error && (
+            <p role="alert">{currencyDirectory.error}</p>
+          )}
+          {(draft.hotelPurchasePrices?.length
+            ? draft.hotelPurchasePrices
+            : [{ amount: '', currencyCode: '' }]
+          ).map((price, index) => (
+            <div className="grid grid-cols-2 gap-2" key={index}>
+              <label>
+                مبلغ
+                <MoneyInput
+                  aria-label={`مبلغ هتل ${index + 1}`}
+                  value={price.amount}
+                  disabled={busy || priceLoading}
+                  onValueChange={(amount) => {
+                    const prices = [
+                      ...(draft.hotelPurchasePrices?.length
+                        ? draft.hotelPurchasePrices
+                        : [{ amount: '', currencyCode: '' }]),
+                    ];
+                    prices[index] = { ...price, amount };
+                    update({ ...draft, hotelPurchasePrices: prices });
+                  }}
+                />
+              </label>
+              <label>
+                ارز
+                <ReservationCurrencySelect
+                  label={`ارز هتل ${index + 1}`}
+                  value={price.currencyCode}
+                  currencies={currencyDirectory.currencies}
+                  disabled={busy || priceLoading || currencyDirectory.loading}
+                  onChange={(currencyCode) => {
+                    const prices = [
+                      ...(draft.hotelPurchasePrices?.length
+                        ? draft.hotelPurchasePrices
+                        : [{ amount: '', currencyCode: '' }]),
+                    ];
+                    prices[index] = {
+                      ...price,
+                      currencyCode,
+                    };
+                    update({ ...draft, hotelPurchasePrices: prices });
+                  }}
+                />
+              </label>
+            </div>
+          ))}
+          <Button
+            type="button"
+            loading={busy}
+            disabled={
+              busy ||
+              priceLoading ||
+              currencyDirectory.loading ||
+              intake.workflow.supplierStatus === 'CANCELLED' ||
+              activeDirectory.loading ||
+              !selected.length
+            }
+            onClick={() => void save(false)}
+          >
+            ثبت مبلغ فرم
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy || priceLoading}
+            onClick={() =>
+              update({
+                ...draft,
+                hotelPurchasePrices: [
+                  ...(draft.hotelPurchasePrices ?? []),
+                  { amount: '', currencyCode: '' },
+                ],
+              })
+            }
+          >
+            افزودن ارز
+          </Button>
+          <Button
+            variant="outline"
+            disabled={busy || priceLoading}
+            onClick={() => update({ ...draft, hotelPurchasePrices: [] })}
+          >
+            پاک‌کردن مبلغ فرم
+          </Button>
+        </div>
+      )}
       <p
         className={`${styles.hotelSummary} ${
           section === 'ALL' || section === 'HOTEL' ? '' : 'hidden'
@@ -631,33 +786,141 @@ export function ReservationSettingsForm({
           <div className={styles.sectionCard}>
             <h4>تاریخ هتل و نوع اتاق</h4>
             <div className="grid gap-3 sm:grid-cols-3">
-              {primaryTextKeys.map(textField)}
+              {primaryTextKeys
+                .filter((key) => key !== 'roomType' || !draft.rooms?.length)
+                .map(textField)}
             </div>
           </div>
           <div className={styles.sectionCard}>
-            <h4>تعداد اتاق‌ها</h4>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {voucherNumberKeys.map((key) => (
-                <label key={key}>
-                  {voucherNumberLabels[key]}
+            <h4>اتاق‌ها و ترکیب مسافران</h4>
+            {(draft.rooms ?? []).map((room, index) => (
+              <div key={room.ordinal} className="grid gap-2 sm:grid-cols-3">
+                <label>
+                  نوع اتاق {room.ordinal}
                   <Input
-                    type="number"
-                    min={0}
-                    max={1000}
-                    value={draft.numbers[key]}
-                    onChange={(event) =>
+                    value={room.roomTypeNameSnapshot}
+                    onChange={(e) =>
                       update({
                         ...draft,
-                        numbers: {
-                          ...draft.numbers,
-                          [key]: Number(event.target.value),
-                        },
+                        rooms: draft.rooms!.map((r, i) =>
+                          i === index
+                            ? { ...r, roomTypeNameSnapshot: e.target.value }
+                            : r,
+                        ),
                       })
                     }
                   />
                 </label>
-              ))}
-            </div>
+                <label>
+                  بزرگسال
+                  <Input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={room.adults}
+                    onChange={(e) =>
+                      update({
+                        ...draft,
+                        rooms: draft.rooms!.map((r, i) =>
+                          i === index
+                            ? { ...r, adults: Number(e.target.value) }
+                            : r,
+                        ),
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  تعداد کودک
+                  <Input
+                    type="number"
+                    min={0}
+                    max={20}
+                    value={room.childAges.length}
+                    onChange={(e) =>
+                      update({
+                        ...draft,
+                        rooms: draft.rooms!.map((r, i) =>
+                          i === index
+                            ? {
+                                ...r,
+                                childAges: Array.from(
+                                  {
+                                    length: Math.max(
+                                      0,
+                                      Math.min(20, Number(e.target.value)),
+                                    ),
+                                  },
+                                  (_, n) => r.childAges[n] ?? 2,
+                                ),
+                              }
+                            : r,
+                        ),
+                      })
+                    }
+                  />
+                </label>
+                {room.childAges.map((age, child) => (
+                  <label key={child}>
+                    سن کودک {child + 1}
+                    <Input
+                      type="number"
+                      min={0}
+                      max={14}
+                      value={age}
+                      onChange={(e) =>
+                        update({
+                          ...draft,
+                          rooms: draft.rooms!.map((r, i) =>
+                            i === index
+                              ? {
+                                  ...r,
+                                  childAges: r.childAges.map((v, n) =>
+                                    n === child ? Number(e.target.value) : v,
+                                  ),
+                                }
+                              : r,
+                          ),
+                        })
+                      }
+                    />
+                  </label>
+                ))}
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    update({
+                      ...draft,
+                      rooms: draft
+                        .rooms!.filter((_, i) => i !== index)
+                        .map((r, i) => ({ ...r, ordinal: i + 1 })),
+                    })
+                  }
+                >
+                  حذف اتاق
+                </Button>
+              </div>
+            ))}
+            <Button
+              variant="outline"
+              disabled={(draft.rooms?.length ?? 0) >= 50}
+              onClick={() =>
+                update({
+                  ...draft,
+                  rooms: [
+                    ...(draft.rooms ?? []),
+                    {
+                      ordinal: (draft.rooms?.length ?? 0) + 1,
+                      roomTypeNameSnapshot: draft.text.roomType || 'Standard',
+                      adults: 1,
+                      childAges: [],
+                    },
+                  ],
+                })
+              }
+            >
+              افزودن اتاق
+            </Button>
           </div>
         </div>
         <div
@@ -850,17 +1113,11 @@ export function ReservationSettingsForm({
           </div>
         </details>
         <p className={styles.operationalNotice}>
-          این اصلاح فقط در فرم رزواسیون و مبنای خرید ثبت می‌شود و قرارداد فروش
-          را تغییر نمی‌دهد.
+          این اصلاح فقط در فرم رزواسیون ثبت می‌شود و قرارداد فروش را تغییر
+          نمی‌دهد.
         </p>
         {!showDocument && saveButton}
       </fieldset>
-      {message && <p role="status">{message}</p>}
-      {error && (
-        <p role="alert" className="text-destructive">
-          {error}
-        </p>
-      )}
       <details
         className={section === 'ALL' ? '' : 'hidden'}
         onToggle={(event) => setShowFiles(event.currentTarget.open)}

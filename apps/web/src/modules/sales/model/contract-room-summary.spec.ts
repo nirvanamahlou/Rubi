@@ -70,11 +70,9 @@ describe('Purchased room summary in contract output', () => {
       expect(passengers).not.toContain('<th>اتاق</th>');
       expect(passengers).not.toContain('سینگل');
       const hotel = html.split('HOTEL INFORMATION')[1]!.split('</section>')[0]!;
-      expect(hotel).toContain('مجموع 1 اتاق: 1 دبل، 2 تخت اضافه');
+      expect(hotel).not.toContain('اتاق‌های قرارداد:');
       expect(hotel).not.toContain('6 سینگل');
-      expect(
-        html.split('OTHER SERVICES')[1]!.split('</section>')[0],
-      ).not.toContain('اتاق‌های قرارداد:');
+      expect(html).not.toContain('OTHER SERVICES');
       expect(
         html.split('HOTEL INFORMATION')[1]!.split('</section>')[0],
       ).toContain('دوتخته');
@@ -88,4 +86,43 @@ describe('Purchased room summary in contract output', () => {
     );
     expect(contractRoomSummary(null)).toBe('ندارد');
   });
+});
+
+it('prints the actual total rooms, distinct room types/categories and guest counts for every room', () => {
+  const out = structuredClone(printFixture);
+  out.contract.hotelSelection = {
+    ...out.contract.hotelSelection!,
+    roomCount: 99,
+    occupancy: 99,
+    rooms: [
+      {
+        ordinal: 1,
+        roomTypeId: 'deluxe',
+        roomTypeNameSnapshot: 'DELUXE',
+        roomCategory: 'DOUBLE',
+        adults: 2,
+        childAges: [5],
+      },
+      {
+        ordinal: 2,
+        roomTypeId: 'family',
+        roomTypeNameSnapshot: 'FAMILY SUITE',
+        roomCategory: 'FAMILY',
+        adults: 3,
+        childAges: [8, 10],
+      },
+    ],
+  };
+  const hotel = contractPrintHtml(out, printReferences)
+    .split('HOTEL INFORMATION')[1]!
+    .split('</section>')[0]!;
+  expect(hotel).toContain('تعداد اتاق‌ها: <b>2</b>');
+  expect(hotel).toContain('مجموع مهمانان هتل: <b>8</b>');
+  expect(hotel).not.toContain('>99<');
+  expect(hotel).toContain('DELUXE · Double');
+  expect(hotel).toContain('FAMILY SUITE · Family');
+  expect(hotel).toContain('<td>2</td><td>5</td><td>3</td>');
+  expect(hotel).toContain('<td>3</td><td>8, 10</td><td>5</td>');
+  expect(hotel).toContain('تعداد نفرات اتاق');
+  expect(hotel).not.toContain('مبلغ توافق‌شدهٔ اتاق');
 });

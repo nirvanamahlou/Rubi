@@ -1,5 +1,20 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
+  widgetOpen: ['بازکردن دستیار هوشمند', 'Open smart assistant'],
+  widgetClose: ['بستن دستیار هوشمند', 'Close smart assistant'],
+  widgetExpand: ['بزرگ‌کردن پنجره چت', 'Expand chat window'],
+  widgetRestore: ['بازگشت به اندازه عادی', 'Restore chat window'],
+  widgetMoveHint: [
+    'برای جابه‌جایی بکشید؛ با Alt و کلیدهای جهت حرکت دهید و با Alt+Home به جای پیش‌فرض برگردید.',
+    'Drag to reposition; use Alt+arrow keys to move and Alt+Home to restore the default position.',
+  ],
+  widgetTitle: ['دستیار هوشمند نورا', 'Noura smart assistant'],
+  widgetSubtitle: [
+    'از همین صفحه درخواستتان را اجرا کنید',
+    'Run a request from this page',
+  ],
+  widgetFullPanel: ['بازکردن پنل کامل دستیار', 'Open full assistant workspace'],
+  widgetResponse: ['نتیجه درخواست', 'Request result'],
   conversationClarification: {
     ACTION: [
       'خلاصه امروز، تحلیل فروش یا مانده قراردادی را می‌خواهید؟',
@@ -160,6 +175,14 @@ export const assistantCopy = {
   quickDaily: ['خلاصه امروز', 'Today’s summary'],
   quickSales: ['تحلیل فروش', 'Sales analysis'],
   quickReceivables: ['پیگیری مطالبات', 'Receivables follow-up'],
+  chatPolicy: [
+    'فقط متن پیام و تاریخچهٔ نشست به Groq ارسال می‌شود؛ نتایج ERP داخل سامانه می‌مانند.',
+    'Only message text and session history are sent to Groq; ERP results stay in the system.',
+  ],
+  chatDisabled: [
+    'اتصال گفت‌وگو در سرویس فعال نیست؛ از درخواست‌های آماده استفاده کنید.',
+    'Conversation is disabled on the service; use the prepared requests.',
+  ],
   fixedActions: [
     'سه درخواست آماده با ابزارهای خواندنی اجرا می‌شوند؛ گفت‌وگوی آزاد و ارسال داده به مدل غیرفعال است.',
     'The three fixed requests use read-only tools. Free conversation and model data transfer are disabled.',

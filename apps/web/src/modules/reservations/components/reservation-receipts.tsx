@@ -119,14 +119,18 @@ export function ReservationReceipts({ contractId }: { contractId?: string }) {
       .then(async (contractResponse) => {
         const [bankResponse, payerResponse] = await Promise.all([
           masterDataApi
-            .list('banks', {
-              search: '',
-              status: 'all',
-              sortBy: 'name',
-              sortDirection: 'asc',
-              page: 1,
-              pageSize: 100,
-            })
+            .list(
+              'banks',
+              {
+                search: '',
+                status: 'all',
+                sortBy: 'name',
+                sortDirection: 'asc',
+                page: 1,
+                pageSize: 100,
+              },
+              'reservations',
+            )
             .catch(() => ({ data: [] as MasterDataRecord[] })),
           customersApi
             .detail(contractResponse.data.payerCustomerId)

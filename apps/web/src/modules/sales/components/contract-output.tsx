@@ -14,6 +14,7 @@ import {
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { legalEntityBrand } from '@/modules/legal-entities/model/context';
 import { salesApi } from '../api/client';
+import { printCityInternational } from '../model/contract-print-country';
 import {
   contractPrintHtml,
   type ContractPrintReferences,
@@ -37,8 +38,17 @@ export async function loadContractPrint(id: string) {
   await Promise.all(
     keys.map(async ([resource, key]) => {
       try {
-        const { data } = await masterDataApi.detail(resource, key);
+        const { data } = await masterDataApi.detail(resource, key, 'sales');
         refs.names[key] = data.name;
+        if (
+          resource === 'cities' &&
+          (await printCityInternational(
+            data,
+            async (id) =>
+              (await masterDataApi.detail('countries', id, 'sales')).data,
+          ))
+        )
+          refs.international = true;
         if (resource === 'hotels' && data.attributes.starRating != null)
           refs.hotelGrade = String(data.attributes.starRating);
         if (resource === 'hotels') {
@@ -73,7 +83,7 @@ export async function loadContractPrint(id: string) {
 export function ContractOutputButton({
   contractId,
   className,
-  label = 'خروجی قرارداد / PDF',
+  label = 'قرارداد',
 }: {
   contractId: string;
   className?: string;
@@ -81,19 +91,16 @@ export function ContractOutputButton({
 }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [ready, setReady] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [html, setHtml] = useState('');
   const [output, setOutput] = useState<SalesContractOutputV1 | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [error, setError] = useState('');
-  const frame = useRef<HTMLIFrameElement>(null);
   const request = useRef(0);
   async function load() {
     const version = ++request.current;
     setOpen(true);
     setBusy(true);
-    setReady(false);
     setError('');
     setHtml('');
     setOutput(null);
@@ -110,25 +117,6 @@ export function ContractOutputButton({
         );
     } finally {
       if (version === request.current) setBusy(false);
-    }
-  }
-  async function print() {
-    const win = frame.current?.contentWindow;
-    if (!win) return;
-    setError('');
-    try {
-      const faces = await win.document.fonts.load('16px ContractNazanin');
-      if (!faces.length || !win.document.fonts.check('16px ContractNazanin'))
-        throw new Error(
-          'فونت ب‌نازنین روی این دستگاه در دسترس نیست؛ پیش از ذخیره PDF آن را نصب کنید.',
-        );
-      await Promise.all(
-        Array.from(win.document.images).map((img) => img.decode()),
-      );
-      win.focus();
-      win.print();
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'چاپ ناموفق بود.');
     }
   }
   async function download() {
@@ -191,8 +179,7 @@ export function ContractOutputButton({
           <DialogTitle>خروجی قرارداد برای مشتری</DialogTitle>
           <DialogDescription>
             مبلغ‌ها از قرارداد ثبت‌شده خوانده می‌شوند. فایل PDF را مستقیم دانلود
-            کنید یا نسخه را چاپ کنید. این نسخه رسید پرداخت یا فاکتور رسمی
-            مالیاتی نیست.
+            کنید. این نسخه رسید پرداخت یا فاکتور رسمی مالیاتی نیست.
           </DialogDescription>
           {output && (
             <p className="text-sm">
@@ -205,11 +192,6 @@ export function ContractOutputButton({
             شرکت این نسخه، شرکت فعال هنگام تهیه خروجی است. این برگه رسید پرداخت
             یا تأیید نهایی خدمات رزرواسیون نیست؛ صدور رسمی نسخهٔ بایگانی‌شده
             جداگانه انجام می‌شود.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            برای چاپ بدون آدرس سایت و تاریخ مرورگر، در More settings گزینهٔ
-            Headers and footers را خاموش کنید؛ فایل «دانلود PDF» این موارد را
-            ندارد.
           </p>
           {busy && <p role="status">دریافت اطلاعات قرارداد…</p>}
           {warnings.length > 0 && html && (
@@ -225,22 +207,14 @@ export function ContractOutputButton({
           )}
           {html && (
             <iframe
-              ref={frame}
               title="پیش‌نمایش قرارداد ثبت‌شده"
               sandbox="allow-same-origin allow-modals"
               srcDoc={html}
-              onLoad={() => setReady(true)}
               className="min-h-0 w-full flex-1 rounded-xl border bg-muted"
               style={{ height: '60vh', minHeight: 260 }}
             />
           )}
           <div className="flex flex-wrap gap-2">
-            <Button
-              disabled={!html || busy || !ready}
-              onClick={() => void print()}
-            >
-              چاپ
-            </Button>
             <Button
               disabled={!output || busy || downloading}
               onClick={() => void download()}

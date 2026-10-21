@@ -229,7 +229,7 @@ $('excel').addEventListener('change',e=>importFile(e.target.files[0]));$('sheet'
 for(const t of ['dragover','dragenter'])$('dropzone').addEventListener(t,e=>{e.preventDefault();$('dropzone').classList.add('drag');});for(const t of ['dragleave','drop'])$('dropzone').addEventListener(t,e=>{e.preventDefault();$('dropzone').classList.remove('drag');if(t==='drop')importFile(e.dataTransfer.files[0]);});
 for(const key of ['title','date','duration','stays','infantLabel','infantValue','infantUnit','unit','perPage','notes','adjustments','services','fontSize','tableColor'])$(key).addEventListener('input',render);$('showLayers').addEventListener('change',render);$('resetStyle').addEventListener('click',()=>selectTemplate($('template').value));$('reference').addEventListener('click',()=>{state.reference=!state.reference;$('reference').textContent=state.reference?'بازگشت به پکیج':'نمایش مرجع';render();});let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(render,150);});
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
-async function exportPackage(type){
+async function exportPackage(type,publish=false){
  document.activeElement?.blur();state.reference=false;$('reference').textContent='نمایش مرجع';render();if($(type).disabled)return;state.busy=true;updateWarnings();
  const controls=[...document.querySelectorAll('.controls input,.controls textarea,.controls select,.controls button,#reference,#downloadUnit,#downloadFixLayout')],disabledBefore=controls.map(c=>c.disabled);controls.forEach(c=>c.disabled=true);
  const p=profile(),pages=[...document.querySelectorAll('.package-page')],name=($('title').value+' '+$('date').value).replace(/[<>:"/\\|?*\x00-\x1f]/g,'-').trim().slice(0,100)||'package',pdf=type==='pdf'?new jspdf.jsPDF({unit:'pt',format:[p.width*.75,p.height*.75],orientation:'portrait',compress:true}):null,images=[];
@@ -238,10 +238,11 @@ async function exportPackage(type){
   const canvas=await html2canvas(page,{scale:2,backgroundColor:'#fff',logging:false,windowWidth:Math.max(1440,p.width),width:p.width,height:p.height,scrollX:0,scrollY:0});
   if(type==='pdf'){if(i)pdf.addPage([p.width*.75,p.height*.75]);pdf.addImage(canvas.toDataURL('image/jpeg',.98),'JPEG',0,0,p.width*.75,p.height*.75);}else{const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));if(!blob)throw Error('ساخت تصویر ناموفق بود.');images.push(new Uint8Array(await blob.arrayBuffer()));}canvas.width=0;canvas.height=0;
  }
- if(pdf)pdf.save(name+'.pdf');else if(images.length===1)download(new Blob(images,{type:'image/png'}),name+'.png');else download(new Blob([fflate.zipSync(Object.fromEntries(images.map((b,i)=>[name+'-'+(i+1)+'.png',b])),{level:0})],{type:'application/zip'}),name+'-PNG.zip');message('خروجی آماده شد؛ فایل در پوشهٔ دانلود مرورگر قرار می‌گیرد.');
+ if(pdf&&publish)await window.PackageDailyPublisher.publish(pdf.output('blob'),name);else if(pdf)pdf.save(name+'.pdf');else if(images.length===1)download(new Blob(images,{type:'image/png'}),name+'.png');else download(new Blob([fflate.zipSync(Object.fromEntries(images.map((b,i)=>[name+'-'+(i+1)+'.png',b])),{level:0})],{type:'application/zip'}),name+'-PNG.zip');message(publish?'پکیج به پکیج‌های روز ارسال شد.':'خروجی آماده شد؛ فایل در پوشهٔ دانلود مرورگر قرار می‌گیرد.');
  }catch(e){message('خروجی ساخته نشد: '+e.message,true);}finally{stage.remove();state.busy=false;controls.forEach((c,i)=>c.disabled=disabledBefore[i]);updateWarnings();}
 }
 $('downloadUnit').addEventListener('change',()=>{if(state.busy)return;$('unit').value=$('downloadUnit').value;render();});$('downloadFixLayout').addEventListener('click',showLayoutIssue);
 $('png').addEventListener('click',()=>exportPackage('png'));$('pdf').addEventListener('click',()=>exportPackage('pdf'));syncTemplateOptions($('templateCountry').value,$('template').value);drawCards();render();
 
+window.PackageDailyPublisher?.register('png',()=>exportPackage('pdf',true));
 window.PackagePricingBridge?.connect(applyData);

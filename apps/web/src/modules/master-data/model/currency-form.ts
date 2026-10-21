@@ -52,6 +52,13 @@ export function validateCurrencyForm(
       result.errors[key] = 'حداکثر ۱۶۰ نویسه مجاز است.';
   if ((result.values.symbol?.length ?? 0) > 16)
     result.errors.symbol = 'نماد حداکثر ۱۶ نویسه است.';
+  const tomanRate = result.values.tomanPerUnit ?? '';
+  if (
+    tomanRate &&
+    (!/^\d{1,14}(\.\d{1,10})?$/.test(tomanRate) || !/[1-9]/.test(tomanRate))
+  )
+    result.errors.tomanPerUnit =
+      'نرخ مثبت با حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار وارد کنید.';
   if (
     !/^\d$/.test(result.values.decimalDigits ?? '') ||
     Number(result.values.decimalDigits) > 6

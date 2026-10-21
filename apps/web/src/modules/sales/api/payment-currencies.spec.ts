@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MasterDataRecord } from '@nora/contracts';
-import { masterDataApi } from '@/modules/master-data/api/client';
+import { salesApi } from './client';
 import { loadPaymentCurrencies } from './payment-currencies';
 
 afterEach(() => vi.restoreAllMocks());
@@ -13,7 +13,7 @@ const usd = {
 describe('dashboard payment currency reference list', () => {
   it('requests active registered currencies and loads subsequent pages', async () => {
     const list = vi
-      .spyOn(masterDataApi, 'list')
+      .spyOn(salesApi, 'listReferences')
       .mockResolvedValueOnce({
         data: [usd],
         meta: { total: 101, page: 1, pageSize: 100 },
@@ -33,7 +33,7 @@ describe('dashboard payment currency reference list', () => {
     );
   });
   it('does not invent IRR when no currency is available', async () => {
-    vi.spyOn(masterDataApi, 'list').mockResolvedValue({
+    vi.spyOn(salesApi, 'listReferences').mockResolvedValue({
       data: [],
       meta: { total: 0, page: 1, pageSize: 100 },
     });
@@ -41,7 +41,7 @@ describe('dashboard payment currency reference list', () => {
   });
   it('fails on unavailable or incomplete reference loading', async () => {
     const list = vi
-      .spyOn(masterDataApi, 'list')
+      .spyOn(salesApi, 'listReferences')
       .mockRejectedValueOnce(new Error('Unavailable'));
     await expect(loadPaymentCurrencies()).rejects.toThrow();
     list.mockResolvedValue({

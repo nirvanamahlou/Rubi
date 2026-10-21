@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import {
   createHash,
   randomBytes,
@@ -743,7 +744,11 @@ export class DocumentsService {
     };
   }
 
-  /** Messaging verifies conversation membership and message linkage before this narrow read. */
+  /**
+   * Messaging verifies conversation membership and message linkage first. The owner
+   * permits delivery without waiting for antivirus; known infected/quarantined
+   * files remain blocked. This exception never changes general archive access.
+   */
   async downloadMessagingAttachment(
     documentId: string,
     branchId: string,
@@ -765,7 +770,12 @@ export class DocumentsService {
       row.archiveStatus === 'ACTIVE' &&
       row.deletedAt === null &&
       !row.requiresStepUpVerification &&
-      row.currentVersion.scanStatus === 'CLEAN';
+      [
+        'CLEAN',
+        'PENDING_SCAN',
+        'AWAITING_ANTIVIRUS_ADAPTER',
+        'SCAN_FAILED',
+      ].includes(row.currentVersion.scanStatus);
     await this.repository.appendAudit({
       documentId: row.id,
       versionId: row.currentVersion.id,
@@ -777,13 +787,7 @@ export class DocumentsService {
       ipSummary: summarizeIp(metadata.ipAddress),
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
-    if (!allowed) {
-      if (row.currentVersion.scanStatus !== 'CLEAN')
-        throw new ConflictException(
-          'فایل تا پایان اسکن امنیتی قابل دریافت نیست.',
-        );
-      throw new ForbiddenException('دریافت این پیوست مجاز نیست.');
-    }
+    if (!allowed) throw new ForbiddenException('دریافت این پیوست مجاز نیست.');
     return {
       stream: await this.storage.openQuarantined(
         row.currentVersion.storageObjectKey,
@@ -1597,7 +1601,7 @@ export class DocumentsService {
       expectedStatus: 'ACTIVE',
       nextStatus: 'ARCHIVED',
       action: 'documents.archive',
-      reason: dto.reason.trim(),
+      reason: (dto.reason ?? '').trim(),
       actorUserId: actor.userId,
       actorBranchId: row.branchId,
       ownerUserId: row.ownerUserId,
@@ -1638,7 +1642,7 @@ export class DocumentsService {
       expectedStatus: 'ARCHIVED',
       nextStatus: 'ACTIVE',
       action: 'documents.restore',
-      reason: dto.reason.trim(),
+      reason: (dto.reason ?? '').trim(),
       actorUserId: actor.userId,
       actorBranchId: row.branchId,
       ownerUserId: row.ownerUserId,
@@ -1694,7 +1698,7 @@ export class DocumentsService {
       const updatedCount = await this.repository.bulkAction({
         rows,
         action: dto.action,
-        reason: dto.reason.trim(),
+        reason: (dto.reason ?? '').trim(),
         actorUserId: actor.userId,
         ipSummary: summarizeIp(metadata.ipAddress),
         userAgentSummary: summarizeUserAgent(metadata.userAgent),
@@ -1729,7 +1733,7 @@ export class DocumentsService {
         'سند دارای توقف حقوقی است و حذف دائمی آن مجاز نیست.',
       );
     }
-    if (dto.reason.trim().length < 5) {
+    if (!isOptionalOperationReason(dto.reason)) {
       throw new BadRequestException('دلیل حذف دائمی الزامی است.');
     }
     if (row.version !== dto.version) {
@@ -2277,9 +2281,21 @@ export class DocumentsService {
     id: string,
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
+    expectedSource?: {
+      sourceModule: string;
+      sourceEntityType: string;
+      sourceEntityId: string;
+    },
   ): Promise<DocumentFileDelivery> {
     const row = await this.findVisibleDetail(id, actor);
     if (!row || !row.currentVersion)
+      throw new NotFoundException('سند پیدا نشد.');
+    if (
+      expectedSource &&
+      (row.sourceModule !== expectedSource.sourceModule ||
+        row.sourceEntityType !== expectedSource.sourceEntityType ||
+        row.sourceEntityId !== expectedSource.sourceEntityId)
+    )
       throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
     const sensitive =
@@ -2291,7 +2307,7 @@ export class DocumentsService {
       actor.permissions.includes('documents.download') &&
       (!sensitive ||
         (actor.permissions.includes('documents.sensitive.download') &&
-          (metadata.sensitiveReason?.trim().length ?? 0) >= 5)) &&
+          isOptionalOperationReason(metadata.sensitiveReason, 500))) &&
       row.archiveStatus === 'ACTIVE' &&
       row.currentVersion.scanStatus === 'CLEAN';
     const confidentialAccessAllowed = await this.hasConfidentialAccess(
@@ -2403,7 +2419,7 @@ export class DocumentsService {
     const sensitiveAllowed =
       !sensitive ||
       (actor.permissions.includes('documents.sensitive.read') &&
-        (metadata.sensitiveReason?.trim().length ?? 0) >= 5);
+        isOptionalOperationReason(metadata.sensitiveReason, 500));
     const previewable = previewableImageMimeTypes.has(
       row.currentVersion.detectedMimeType,
     );

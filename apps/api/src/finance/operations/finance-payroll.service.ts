@@ -1,3 +1,20 @@
+import { lockCustomerSettlement } from '../../sales/customer-purchase-settlement.public';
+import {
+  lockReceiptFunds,
+  reservedReceiptRefunds,
+} from '../accounting/receipt-funds.public';
+import {
+  receiptAllocationSource,
+  unallocatedReceiptAmount,
+} from '../../sales/sales-receipt-allocation.public';
+import { financialDate } from '../accounting/accounting.financial-events';
+import { assertFinancialProofVersion } from '../../documents/financial-proof.public';
+import { PETTY_KINDS, pettyBalance, lockPettyFund } from './finance.petty-cash';
+import {
+  recordFinancialEvent,
+  isNewAccountingSource,
+} from '../accounting/financial-event.public';
+import { isOptionalOperationReason } from '@nora/contracts';
 import { createHash } from 'node:crypto';
 import { paymentSource } from '../payments/payment-source';
 import {
@@ -17,6 +34,7 @@ import * as validate from '../../hr/hr.validation';
 import { SalesService } from '../../sales/sales.service';
 import { DocumentsService } from '../../documents/documents.service';
 import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
+import { MasterOrganizationDirectory } from '../../master-data/master-organization-directory';
 
 @Injectable()
 export class FinancePayrollService {
@@ -31,6 +49,9 @@ export class FinancePayrollService {
     @Optional()
     @Inject(MasterProcurementDirectory)
     private readonly master?: MasterProcurementDirectory,
+    @Optional()
+    @Inject(MasterOrganizationDirectory)
+    private readonly partners?: MasterOrganizationDirectory,
   ) {}
   async detail(id: string, actor: AuthenticatedActor) {
     if (!actor.permissions.includes('finance.read'))
@@ -57,6 +78,15 @@ export class FinancePayrollService {
       documentId: row.documentId,
       dueAt: row.dueAt.toISOString(),
       kind: row.kind,
+      pettyFundId: row.pettyFundId,
+      pettyBalance:
+        row.kind === 'PETTY_CASH_ADVANCE'
+          ? Object.fromEntries(
+              Object.entries(
+                await pettyBalance(this.database.client, row.id),
+              ).map(([k, v]) => [k, v.toString()]),
+            )
+          : null,
       remainingAmount: row.revisions.at(-1)!.remainingAmount.toString(),
       revisions: row.revisions.map((revision) => ({
         id: revision.id,
@@ -100,12 +130,13 @@ export class FinancePayrollService {
       REJECT: { from: ['NEW', 'UNDER_REVIEW'], to: 'REJECTED' },
       RESUBMIT: { from: ['CORRECTION_REQUIRED'], to: 'NEW' },
       PAY: { from: ['APPROVED', 'PAYING'], to: 'PAYING' },
+      CLOSE: { from: ['APPROVED', 'PAYING', 'PAID'], to: 'CLOSED' },
     };
     const transition = transitions[action];
     if (
       !transition ||
       (['CORRECTION_REQUIRED', 'REJECT', 'RESUBMIT'].includes(action) &&
-        !reason)
+        !isOptionalOperationReason(reason))
     )
       throw new BadRequestException('عملیات یا علت معتبر نیست.');
     if (
@@ -125,6 +156,23 @@ export class FinancePayrollService {
         },
       });
     if (!initial) throw new NotFoundException('درخواست حقوق یافت نشد.');
+    const completed =
+      await this.database.client.financeOperationalRevision.findUnique({
+        where: { id: operationId },
+      });
+    if (completed) {
+      if (completed.fingerprint !== fingerprint || completed.requestId !== id)
+        throw new ConflictException(
+          'شناسه عملیات با اطلاعات دیگری استفاده شده است.',
+        );
+      return this.detail(id, actor);
+    }
+    if (
+      initial.kind === 'PETTY_CASH_RETURN' &&
+      action === 'PAY' &&
+      !actor.permissions.includes('finance.receipt.approve')
+    )
+      throw new ForbiddenException('مجوز تأیید دستی دریافت وجه لازم است.');
     const source = initial.hrRecordId
       ? await this.hr.approvedSource(initial.hrRecordId, actor.branchIds)
       : {
@@ -133,16 +181,16 @@ export class FinancePayrollService {
           amount: initial.amount.toString(),
           currencyCode: initial.currencyCode,
         };
-    if (
-      initial.refundReceiptId &&
-      !(
-        await this.sales?.financeReceiptHistory(
-          { ...actor, branchIds: [initial.branchId] },
-          { id: initial.refundReceiptId },
-          1,
-        )
-      )?.length
-    )
+    const refundReceipt = initial.refundReceiptId
+      ? (
+          await this.sales?.financeReceiptHistory(
+            { ...actor, branchIds: [initial.branchId] },
+            { id: initial.refundReceiptId },
+            1,
+          )
+        )?.[0]
+      : null;
+    if (initial.refundReceiptId && !refundReceipt)
       throw new ConflictException('دریافت مبنای استرداد دیگر تأییدشده نیست.');
     if (
       source.version !== initial.sourceVersion ||
@@ -150,6 +198,19 @@ export class FinancePayrollService {
       source.currencyCode !== initial.currencyCode
     )
       throw new ConflictException('منبع حقوق تغییر کرده است.');
+    let expenseVersionId: string | null = null;
+    if (initial.kind === 'PETTY_CASH_EXPENSE' && action === 'APPROVE') {
+      if (!initial.documentId)
+        throw new ConflictException('مدرک هزینه تنخواه الزامی است.');
+      const proof = await this.documents?.detail(
+        initial.documentId,
+        { ...actor, branchIds: [initial.branchId] },
+        {},
+      );
+      if (!proof?.data.currentVersion.id)
+        throw new ConflictException('نسخه مدرک هزینه در دسترس نیست.');
+      expenseVersionId = proof.data.currentVersion.id;
+    }
     try {
       await this.database.client.$transaction(async (tx) => {
         const replay = await tx.financeOperationalRevision.findUnique({
@@ -162,6 +223,34 @@ export class FinancePayrollService {
             );
           return;
         }
+        if (initial.refundReceiptId) {
+          await lockReceiptFunds(tx, initial.refundReceiptId);
+          const repeated = await tx.financeOperationalRevision.findUnique({
+            where: { id: operationId },
+          });
+          if (repeated) {
+            if (
+              repeated.fingerprint !== fingerprint ||
+              repeated.requestId !== id
+            )
+              throw new ConflictException(
+                'شناسه عملیات با اطلاعات دیگری استفاده شده است.',
+              );
+            return;
+          }
+          const sourceReceipt = await receiptAllocationSource(
+            tx,
+            initial.refundReceiptId,
+            [initial.branchId],
+          );
+          await lockCustomerSettlement(tx, sourceReceipt.contractId, [
+            initial.branchId,
+          ]);
+        }
+        const isPetty = PETTY_KINDS.includes(initial.kind);
+        const fundId = initial.pettyFundId ?? initial.id;
+        if (isPetty)
+          await tx.$queryRaw`SELECT id FROM finance_operational_requests WHERE id=${fundId}::uuid FOR UPDATE`;
         const current = await tx.financeOperationalRequest.findUniqueOrThrow({
           where: { id },
           include: { revisions: { orderBy: { version: 'desc' }, take: 1 } },
@@ -175,7 +264,68 @@ export class FinancePayrollService {
           throw new ForbiddenException(
             'بازارسال فقط توسط درخواست‌کننده مجاز است.',
           );
+        if (
+          isPetty &&
+          action === 'APPROVE' &&
+          current.requesterId === actor.userId
+        )
+          throw new ForbiddenException(
+            'تأیید تنخواه و هزینه آن باید توسط شخص دیگری انجام شود.',
+          );
+        if (action === 'CLOSE') {
+          if (current.kind !== 'PETTY_CASH_ADVANCE')
+            throw new BadRequestException(
+              'بستن حساب فقط برای تنخواه اصلی است.',
+            );
+          const balance = await pettyBalance(tx, current.id);
+          const pending = await tx.financeOperationalRequest.count({
+            where: {
+              pettyFundId: current.id,
+              status: { notIn: ['PAID', 'REJECTED', 'CANCELLED'] },
+            },
+          });
+          if (!balance.available.isZero() || pending)
+            throw new ConflictException(
+              'برای بستن تنخواه، مانده باید صفر و درخواست‌های وابسته تعیین تکلیف شده باشند.',
+            );
+        }
+        const referenceSource =
+          current.pettyFundId && ['PAY', 'APPROVE'].includes(action)
+            ? await lockPettyFund(
+                tx,
+                current.pettyFundId,
+                current.branchId,
+                current.currencyCode,
+              )
+            : current;
+        const referenceDate = referenceSource.createdAt
+          ? financialDate(referenceSource.createdAt)
+          : undefined;
         const last = current.revisions[0]!;
+        if (current.refundReceiptId && action === 'RESUBMIT') {
+          const sourceReceipt = await receiptAllocationSource(
+            tx,
+            current.refundReceiptId,
+            [current.branchId],
+          );
+          const reserved = await reservedReceiptRefunds(
+            tx,
+            current.refundReceiptId,
+          );
+          const outstanding = Prisma.Decimal.max(
+            0,
+            current.amount.sub(last.cumulativePaid),
+          );
+          if (
+            outstanding.gt(
+              unallocatedReceiptAmount(sourceReceipt).sub(reserved),
+            )
+          )
+            throw new ConflictException(
+              'پس از تخصیص و رزرو استرداد، وجه کافی برای بازگشایی درخواست وجود ندارد.',
+            );
+        }
+
         let paidAmount: Prisma.Decimal | null = null,
           accountId: string | null = null,
           methodId: string | null = null,
@@ -186,7 +336,43 @@ export class FinancePayrollService {
         let cumulativePaid = last.cumulativePaid,
           remainingAmount = last.remainingAmount,
           status = transition.to;
+        if (action === 'APPROVE' && current.kind === 'PETTY_CASH_EXPENSE') {
+          const created = await tx.financeOperationalRevision.findFirst({
+            where: { requestId: id, action: 'CREATE' },
+            orderBy: { version: 'asc' },
+          });
+          const snapshot = created?.snapshot as
+            { documentVersionId?: string } | undefined;
+          if (
+            !expenseVersionId ||
+            snapshot?.documentVersionId !== expenseVersionId
+          )
+            throw new ConflictException(
+              'نسخه مدرک هزینه از زمان ثبت تغییر کرده است؛ درخواست اصلاح‌شده ثبت کنید.',
+            );
+          await assertFinancialProofVersion(tx, {
+            documentId: current.documentId!,
+            versionId: expenseVersionId,
+            branchId: current.branchId,
+          });
+          const balance = await pettyBalance(tx, fundId);
+          if (current.amount.gt(balance.available))
+            throw new ConflictException(
+              'هزینه از مانده تأییدشده تنخواه بیشتر است.',
+            );
+          status = 'PAID';
+          cumulativePaid = current.amount;
+          remainingAmount = new Prisma.Decimal(0);
+        }
         if (action === 'PAY') {
+          if (current.kind === 'PETTY_CASH_EXPENSE')
+            throw new BadRequestException(
+              'هزینه تنخواه با تأیید مدرک ثبت می‌شود و پرداخت بانکی دوباره ندارد.',
+            );
+          if (isPetty && input.payingSupplierId)
+            throw new BadRequestException(
+              'عملیات تنخواه باید با حساب واقعی هم‌ارز ثبت شود.',
+            );
           const text = validate.text(input.paidAmount, 'مبلغ پرداخت', 30);
           if (!/^\d{1,20}(\.\d{1,4})?$/.test(text))
             throw new BadRequestException('مبلغ معتبر نیست.');
@@ -213,10 +399,10 @@ export class FinancePayrollService {
           accountId = source.account?.id ?? null;
           payingSupplierId = source.payingSupplierId;
           payingSupplierName = source.payingSupplierName;
-          const method = await this.master?.activeOutgoingPaymentMethod(
-            methodId,
-            tx,
-          );
+          const method =
+            current.kind === 'PETTY_CASH_RETURN'
+              ? await this.master?.activeIncomingPaymentMethod(methodId, tx)
+              : await this.master?.activeOutgoingPaymentMethod(methodId, tx);
           if (!method)
             throw new BadRequestException(
               'حساب هم‌ارز فعال یا روش پرداخت معتبر نیست.',
@@ -234,6 +420,28 @@ export class FinancePayrollService {
             instant.replace('.000Z', 'Z')
           )
             throw new BadRequestException('زمان پرداخت معتبر نیست.');
+          if (isPetty) {
+            const balance = await pettyBalance(tx, fundId);
+            if (
+              current.kind === 'PETTY_CASH_RETURN' &&
+              paidAmount.gt(balance.available)
+            )
+              throw new ConflictException(
+                'مبلغ بازگشت از مانده تنخواه بیشتر است.',
+              );
+            if (current.kind === 'PETTY_CASH_TOPUP') {
+              const fund = await lockPettyFund(
+                tx,
+                fundId,
+                current.branchId,
+                current.currencyCode,
+              );
+              if (balance.available.add(paidAmount).gt(fund.amount))
+                throw new ConflictException(
+                  'شارژ مجدد از سقف نگهداری مصوب تنخواه بیشتر می‌شود.',
+                );
+            }
+          }
           cumulativePaid = cumulativePaid.add(paidAmount);
           remainingAmount = remainingAmount.sub(paidAmount);
           status = remainingAmount.isZero() ? 'PAID' : 'PAYING';
@@ -273,6 +481,102 @@ export class FinancePayrollService {
               null,
           },
         });
+        if (
+          action === 'APPROVE' &&
+          ['PAYROLL', 'COMMISSION', 'ADJUSTMENT'].includes(current.kind) &&
+          (await isNewAccountingSource(tx, current.createdAt))
+        )
+          await recordFinancialEvent(tx, {
+            source: 'OPERATIONAL',
+            recordId: operationId,
+            requestId: id,
+            ...(referenceDate ? { trackingDate: referenceDate } : {}),
+            kind:
+              current.kind === 'PAYROLL'
+                ? 'PAYROLL_NET_APPROVED'
+                : `${current.kind}_APPROVED`,
+            branchId: current.branchId,
+            actorId: actor.userId,
+            occurredAt: new Date(),
+            amount: current.amount.toString(),
+            currency: current.currencyCode,
+            partyId:
+              current.payrollEmployeeId ??
+              current.counterpartyOrganizationId ??
+              id,
+            reference: current.reference,
+          });
+        if (action === 'APPROVE' && current.kind === 'PETTY_CASH_EXPENSE')
+          await recordFinancialEvent(tx, {
+            source: 'OPERATIONAL',
+            recordId: operationId,
+            requestId: id,
+            kind: 'PETTY_CASH_EXPENSE_POSTED',
+            trackingNumber: fundId,
+            ...(referenceDate ? { trackingDate: referenceDate } : {}),
+            branchId: current.branchId,
+            actorId: actor.userId,
+            occurredAt: new Date(),
+            amount: current.amount.toString(),
+            currency: current.currencyCode,
+            partyId: fundId,
+            reference: current.reference,
+          });
+        if (action === 'PAY' && paidAmount && current.refundReceiptId) {
+          if (!this.sales)
+            throw new ConflictException('سرویس تسویه فروش در دسترس نیست.');
+          await this.sales.applyFinanceRefund(tx, {
+            paymentId: current.refundReceiptId,
+            operationId,
+            actorId: actor.userId,
+            amount: paidAmount.toString(),
+            currency: current.currencyCode,
+            branchId: current.branchId,
+          });
+        }
+        const refundBasis = current.refundReceiptId
+          ? await tx.financeAccountingEvent.findUnique({
+              where: { sourceKey: `SALES:${current.refundReceiptId}` },
+            })
+          : null;
+        if (refundBasis && refundBasis.branchId !== current.branchId)
+          throw new ConflictException(
+            'مرجع حسابداری استرداد با شعبه درخواست یکسان نیست.',
+          );
+        if (action === 'PAY' && paidAmount && transferAt)
+          await recordFinancialEvent(tx, {
+            source: 'OPERATIONAL',
+            recordId: operationId,
+            requestId: id,
+            kind: `${current.kind}_PAYMENT`,
+            trackingNumber: isPetty
+              ? fundId
+              : (refundBasis?.trackingNumber ??
+                refundReceipt?.trackingNumber ??
+                id),
+            ...((refundBasis?.trackingDate ??
+            refundReceipt?.trackingDate ??
+            referenceDate)
+              ? {
+                  trackingDate:
+                    refundBasis?.trackingDate ??
+                    refundReceipt?.trackingDate ??
+                    referenceDate!,
+                }
+              : {}),
+            branchId: current.branchId,
+            actorId: actor.userId,
+            occurredAt: transferAt,
+            amount: paidAmount.toString(),
+            currency: current.currencyCode,
+            settlementAccountId: accountId,
+            partyId: isPetty
+              ? fundId
+              : `${current.payrollEmployeeId ?? current.counterpartyOrganizationId ?? refundBasis?.partyId ?? refundReceipt?.customerId ?? current.refundReceiptId ?? id}:${payingSupplierId ?? ''}`,
+            reference:
+              validate.text(input.paymentReference, 'شماره رسید', 160, true) ||
+              null,
+          });
       });
     } catch (error) {
       if (
@@ -310,18 +614,65 @@ export class FinancePayrollService {
       'dueAt',
       'refundReceiptId',
       'documentId',
+      'counterpartyOrganizationId',
+      'counterpartyRole',
+      'pettyFundId',
     ]);
     const id = validate.uuid(input.operationId),
       branchId = validate.uuid(input.branchId),
       kind = validate.text(input.kind, 'نوع درخواست', 24);
     if (!actor.branchIds.includes(branchId))
       throw new ForbiddenException('شعبه خارج از دسترسی است.');
-    if (!['REFUND', 'COMMISSION', 'CHECK', 'ADJUSTMENT'].includes(kind))
+    if (
+      !['REFUND', 'COMMISSION', 'CHECK', 'ADJUSTMENT', ...PETTY_KINDS].includes(
+        kind,
+      )
+    )
       throw new BadRequestException(
         'نوع درخواست عملیاتی معتبر نیست؛ حقوق فقط از منابع انسانی ارسال می‌شود.',
       );
+    const pettyFundId = input.pettyFundId
+      ? validate.uuid(input.pettyFundId)
+      : null;
+    if (
+      ['PETTY_CASH_TOPUP', 'PETTY_CASH_EXPENSE', 'PETTY_CASH_RETURN'].includes(
+        kind,
+      ) !== Boolean(pettyFundId)
+    )
+      throw new BadRequestException(
+        'درخواست هزینه، شارژ یا بازگشت تنخواه باید به تنخواه اصلی متصل باشد.',
+      );
+    if (kind === 'PETTY_CASH_EXPENSE' && !input.documentId)
+      throw new BadRequestException('مدرک هزینه تنخواه الزامی است.');
+    const counterpartyOrganizationId = input.counterpartyOrganizationId
+      ? validate.uuid(input.counterpartyOrganizationId)
+      : null;
+    const counterpartyRole = input.counterpartyRole;
+    let canonicalParty: string | null = null;
+    if (Boolean(counterpartyOrganizationId) !== Boolean(counterpartyRole))
+      throw new BadRequestException(
+        'شناسه و نقش طرف همکاری باید با هم ثبت شوند.',
+      );
+    if (counterpartyOrganizationId) {
+      if (
+        kind === 'REFUND' ||
+        (counterpartyRole !== 'SUPPLIER' && counterpartyRole !== 'BROKER')
+      )
+        throw new BadRequestException(
+          'نوع درخواست یا نقش طرف همکاری معتبر نیست.',
+        );
+      const partner = await this.partners?.cooperationReference(
+        counterpartyOrganizationId,
+        counterpartyRole,
+      );
+      if (!partner?.isActive)
+        throw new BadRequestException(
+          'طرف همکاری فعال با نقش انتخاب‌شده یافت نشد.',
+        );
+      canonicalParty = partner.legalName;
+    }
     const title = validate.text(input.title, 'عنوان', 200),
-      party = validate.text(input.party, 'ذی‌نفع', 200),
+      party = canonicalParty ?? validate.text(input.party, 'ذی‌نفع', 200),
       description = validate.text(input.description, 'توضیحات', 2000, true),
       reference = validate.text(
         input.reference,
@@ -329,6 +680,8 @@ export class FinancePayrollService {
         160,
         true,
       );
+    if (counterpartyOrganizationId && kind === 'CHECK' && !reference.trim())
+      throw new BadRequestException('شماره چک طرف همکاری الزامی است.');
     const text = validate.text(input.amount, 'مبلغ', 30),
       currencyCode = validate.text(input.currencyCode, 'ارز', 3);
     if (
@@ -368,7 +721,18 @@ export class FinancePayrollService {
     const documentId = input.documentId
       ? validate.uuid(input.documentId)
       : null;
+    let documentVersionId: string | null = null;
     if (documentId) {
+      if (counterpartyOrganizationId)
+        await this.documents?.assertOrganizationProofReference(
+          {
+            documentId,
+            organizationId: counterpartyOrganizationId,
+            branchId,
+            allowPendingScan: false,
+          },
+          actor,
+        );
       const document = await this.documents?.detail(
         documentId,
         { ...actor, branchIds: [branchId] },
@@ -384,6 +748,7 @@ export class FinancePayrollService {
         throw new BadRequestException(
           'سند کامل و مجاز با نسخه پاک در همان شعبه لازم است.',
         );
+      documentVersionId = document.data.currentVersion.id;
     }
     const fingerprint = createHash('sha256')
       .update(JSON.stringify({ actor: actor.userId, input }))
@@ -404,21 +769,42 @@ export class FinancePayrollService {
             );
           return { requestId: existing.id, status: existing.status };
         }
-        if (receipt) {
-          const total = await tx.financeOperationalRequest.aggregate({
+        if (pettyFundId)
+          await lockPettyFund(tx, pettyFundId, branchId, currencyCode);
+        if (kind === 'PETTY_CASH_EXPENSE') {
+          const duplicate = await tx.financeOperationalRequest.findFirst({
             where: {
-              refundReceiptId,
+              kind,
+              documentId,
               status: { notIn: ['REJECTED', 'CANCELLED'] },
             },
-            _sum: { amount: true },
           });
+          if (duplicate)
+            throw new ConflictException(
+              'این مدرک قبلاً در یک هزینه تنخواه استفاده شده است.',
+            );
+          if (!documentVersionId || !documentId)
+            throw new ConflictException('نسخه مدرک هزینه در دسترس نیست.');
+          await assertFinancialProofVersion(tx, {
+            documentId,
+            versionId: documentVersionId,
+            branchId,
+          });
+        }
+        if (receipt) {
+          const sourceReceipt = await receiptAllocationSource(tx, receipt.id, [
+            branchId,
+          ]);
+          await lockCustomerSettlement(tx, sourceReceipt.contractId, [
+            branchId,
+          ]);
+          const reserved = await reservedReceiptRefunds(tx, receipt.id);
           if (
-            (total._sum.amount ?? new Prisma.Decimal(0))
-              .add(amount)
-              .gt(receipt.amount)
+            sourceReceipt.currencyCode !== currencyCode ||
+            amount.gt(unallocatedReceiptAmount(sourceReceipt).sub(reserved))
           )
             throw new BadRequestException(
-              'مجموع درخواست‌های استرداد از دریافت تأییدشده بیشتر است.',
+              'مجموع درخواست‌های استرداد از وجه تخصیص‌نیافته دریافت بیشتر است.',
             );
         }
         const row = await tx.financeOperationalRequest.create({
@@ -436,8 +822,15 @@ export class FinancePayrollService {
             dueAt,
             createFingerprint: fingerprint,
             sourceVersion: 1,
+            ...(counterpartyOrganizationId
+              ? {
+                  counterpartyOrganizationId,
+                  counterpartyRole: counterpartyRole as 'SUPPLIER' | 'BROKER',
+                }
+              : {}),
             refundReceiptId,
             documentId,
+            pettyFundId,
           },
         });
         await tx.financeOperationalRevision.create({
@@ -456,7 +849,14 @@ export class FinancePayrollService {
               party,
               reference,
               documentId,
+              documentVersionId,
               refundReceiptId,
+              ...(counterpartyOrganizationId
+                ? {
+                    counterpartyOrganizationId,
+                    counterpartyRole: String(counterpartyRole),
+                  }
+                : {}),
             },
             remainingAmount: amount,
           },

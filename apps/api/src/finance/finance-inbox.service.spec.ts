@@ -10,7 +10,11 @@ import { FinanceInboxService } from './finance-inbox.service';
 const actor = {
   userId: 'finance-user',
   branchIds: ['branch-a'],
-  permissions: ['finance.read', 'hr.connections.finance.receive'],
+  permissions: [
+    'finance.read',
+    'finance.receipt.approve',
+    'hr.connections.finance.receive',
+  ],
 } as unknown as AuthenticatedActor;
 
 const emptyTicketPurchases = () => ({
@@ -398,6 +402,14 @@ describe('FinanceInboxService', () => {
 
   it('approves a persisted Sales receipt through the Sales public service', async () => {
     const sales = {
+      financeReceipt: vi.fn().mockResolvedValue({
+        id: 'payment-1',
+        contractId: 'contract-1',
+        status: 'PENDING_FINANCE_CONFIRMATION',
+        currencyCode: 'IRR',
+        financeReceiptAccountId: null,
+        contract: { branchId: 'branch-a' },
+      }),
       financeInbox: vi.fn().mockResolvedValue([
         {
           paymentId: 'payment-1',
@@ -455,6 +467,14 @@ describe('FinanceInboxService', () => {
 
   it('issues customer document delivery after a confirmed receipt without checking supplier purchases', async () => {
     const sales = {
+      financeReceipt: vi.fn().mockResolvedValue({
+        id: 'payment-1',
+        contractId: 'contract-1',
+        status: 'PENDING_FINANCE_CONFIRMATION',
+        currencyCode: 'IRR',
+        financeReceiptAccountId: null,
+        contract: { branchId: 'branch-a' },
+      }),
       financeInbox: vi.fn().mockResolvedValue([
         {
           paymentId: 'payment-1',
@@ -527,10 +547,19 @@ describe('FinanceInboxService', () => {
         hasConfirmedPayment: true,
       }),
       actor,
+      expect.any(Function),
     );
   });
   it('rejects a Sales receipt approval without a destination account', async () => {
     const sales = {
+      financeReceipt: vi.fn().mockResolvedValue({
+        id: 'payment-1',
+        contractId: 'contract-1',
+        status: 'PENDING_FINANCE_CONFIRMATION',
+        currencyCode: 'IRR',
+        financeReceiptAccountId: null,
+        contract: { branchId: 'branch-a' },
+      }),
       financeInbox: vi.fn().mockResolvedValue([
         {
           paymentId: 'payment-1',
@@ -562,6 +591,14 @@ describe('FinanceInboxService', () => {
 
   it('sends a Sales receipt back for correction with the required reason', async () => {
     const sales = {
+      financeReceipt: vi.fn().mockResolvedValue({
+        id: 'payment-1',
+        contractId: 'contract-1',
+        status: 'PENDING_FINANCE_CONFIRMATION',
+        currencyCode: 'IRR',
+        financeReceiptAccountId: null,
+        contract: { branchId: 'branch-a' },
+      }),
       financeInbox: vi.fn().mockResolvedValue([
         {
           paymentId: 'payment-1',

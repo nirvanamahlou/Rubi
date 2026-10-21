@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { canSelectForWorkflow } from '../common/workflow-selection.policy';
 import { eligibleTicketReturn } from '@nora/contracts';
 import {
   BadRequestException,
@@ -157,6 +158,7 @@ export class TourPublicService {
   async assertSalesSelection(
     input: SalesContractCreateRequest,
     branchId: string,
+    validatedPublishedHotelId?: string,
   ) {
     const links = input.services.filter(
       (service) => service.metadata?.tourDepartureId !== undefined,
@@ -203,7 +205,8 @@ export class TourPublicService {
     if (
       tour.package.hotelIds.length &&
       (!input.hotelSelection ||
-        !tour.package.hotelIds.includes(input.hotelSelection.hotelId))
+        (!tour.package.hotelIds.includes(input.hotelSelection.hotelId) &&
+          validatedPublishedHotelId !== input.hotelSelection.hotelId))
     )
       throw new BadRequestException('هتل را از هتل‌های همین تور انتخاب کنید.');
     if (
@@ -238,7 +241,7 @@ export class TourPublicService {
     }
   }
   async departures(actor: AuthenticatedActor) {
-    this.authorize(actor);
+    if (!canSelectForWorkflow(actor, 'sales')) this.authorize(actor);
     const rows = await this.database.client.tourDeparture.findMany({
       where: {
         branchId: { in: actor.branchIds },

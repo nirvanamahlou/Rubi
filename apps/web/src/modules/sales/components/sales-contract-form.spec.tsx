@@ -1,3 +1,4 @@
+import type { DatePickerProps } from '@/components/ui/date-picker';
 import type * as React from 'react';
 import { emptySalesForm, type SalesFormState } from '../model/sales-form';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -72,11 +73,52 @@ vi.mock('react', async (original) => ({
     return [value, vi.fn()];
   },
 }));
+vi.mock('@/modules/legal-entities/components/legal-entity-context', () => ({
+  useLegalEntityContext: () => ({ context: { legalEntity: null } }),
+}));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+// This suite checks the parent workflow/layout; calendar rendering has its own coverage.
+vi.mock('@/components/ui/date-picker', () => ({
+  DatePicker: (props: DatePickerProps) => (
+    <button
+      type="button"
+      aria-label={props['aria-label']}
+      disabled={props.disabled}
+    >
+      {props.value || 'انتخاب تاریخ'}
+    </button>
+  ),
+}));
 
 describe('compact sales contract form', () => {
+  it('keeps review as a non-submitting screen with an explicit final action', () => {
+    fixture.step = 2;
+    let html: string;
+    try {
+      html = renderToStaticMarkup(<SalesContractForm />);
+    } finally {
+      fixture.step = 0;
+    }
+    expect(html).toContain('ثبت و ارسال به رزرواسیون');
+    expect(html).not.toMatch(/<button[^>]*type="submit"/);
+    expect(html).toMatch(
+      /<button[^>]*type="button"[^>]*>ثبت و ارسال به رزرواسیون<\/button>/,
+    );
+  });
+  it('never offers an implicit submit action while advancing to review', () => {
+    fixture.step = 1;
+    let html: string;
+    try {
+      html = renderToStaticMarkup(<SalesContractForm />);
+    } finally {
+      fixture.step = 0;
+    }
+    expect(html).not.toMatch(/<button[^>]*type="submit"/);
+    expect(html).not.toContain('ثبت و ارسال به رزرواسیون');
+  });
+
   it('explains invalid final-step data without hiding the form', () => {
-    fixture.step = 3;
+    fixture.step = 1;
     let html: string;
     try {
       html = renderToStaticMarkup(<SalesContractForm />);
@@ -87,7 +129,7 @@ describe('compact sales contract form', () => {
     expect(html).toContain('disabled');
   });
   it('shows passenger package prices without catalog/day-sale or service agreement fields', () => {
-    fixture.step = 3;
+    fixture.step = 1;
     fixture.ticketDraft = {
       ...emptySalesForm,
       serviceKinds: ['FLIGHT'],
@@ -125,13 +167,19 @@ describe('compact sales contract form', () => {
       fixture.ticketDraft = null;
     }
     expect(html).toContain('مبلغ کل قرارداد');
-    expect(html).toContain('افزودن مبلغ با ارز دیگر');
+    expect(html).toContain('جمع خودکار قرارداد');
+    expect(html).toContain('قیمت کل خدمات هر مسافر');
+    expect(html).toContain('قیمت ریالی');
+    expect(html).toContain('قیمت ارزی');
+    expect(html).not.toContain('قیمت پرواز Sample');
+    expect(html).not.toContain('قیمت ریالی Sample');
+    expect(html).not.toContain('افزودن مبلغ با ارز دیگر');
     expect(html).not.toContain('قیمت روز فروش بلیط');
     expect(html).not.toContain('مبلغ توافق‌شده با مشتری بلیط');
   });
   it('uses the passenger table for round-trip packages without two agreement prices', () => {
     fixture.roundTrip = true;
-    fixture.step = 3;
+    fixture.step = 1;
     const html = renderToStaticMarkup(<SalesContractForm />);
     fixture.roundTrip = false;
     fixture.step = 0;
@@ -142,7 +190,7 @@ describe('compact sales contract form', () => {
   });
   it('keeps hotel guests and aggregate rooms without asking each guest for an occupancy type', () => {
     fixture.hotel = true;
-    fixture.step = 2;
+    fixture.step = 0;
     const html = renderToStaticMarkup(<SalesContractForm />);
     fixture.hotel = false;
     fixture.step = 0;
@@ -177,6 +225,9 @@ describe('compact sales contract form', () => {
     expect(html).toContain('grid-cols-[minmax(0,1fr)]');
     expect(html).toContain('داشبورد قراردادها');
     expect(html).toContain('مراحل ثبت قرارداد');
+    expect(html).toContain('مرحله 1 از 3');
+    expect(html).not.toContain('از 5');
+    expect(html).not.toContain('جزئیات سفر');
     expect(html).toContain('مسیر سفر');
     expect(html).not.toContain('تعداد مسافران');
     expect(html).not.toContain('type="number"');
@@ -193,14 +244,14 @@ describe('compact sales contract form', () => {
 });
 
 it('offers the expert reservation note on sale pricing rather than only at final submission', () => {
-  fixture.step = 3;
+  fixture.step = 1;
   const html = renderToStaticMarkup(<SalesContractForm />);
   fixture.step = 0;
   expect(html).toContain('یادداشت کارشناس برای رزرواسیون (اختیاری)');
   expect(html).toMatch(/maxlength="500"/i);
   expect(html).not.toContain('در توضیحات درخواست رزرواسیون نمایش داده می‌شود.');
   expect(html).toContain('یادداشت قیمت‌گذاری');
-  fixture.step = 4;
+  fixture.step = 2;
   const final = renderToStaticMarkup(<SalesContractForm />);
   fixture.step = 0;
   expect(final).not.toContain('یادداشت کارشناس برای رزرواسیون (اختیاری)');
@@ -209,7 +260,7 @@ it('offers the expert reservation note on sale pricing rather than only at final
 it('does not block hotel details while the date rate request is still pending', () => {
   fixture.firstDetail = true;
   fixture.zeroIndex = 0;
-  fixture.step = 1;
+  fixture.step = 0;
   fixture.ticketDraft = {
     ...emptySalesForm,
     serviceKinds: ['HOTEL'],
@@ -230,3 +281,218 @@ it('does not block hotel details while the date rate request is still pending', 
     fixture.ticketDraft = null;
   }
 });
+it('keeps flight-only passenger validation independent from stale hotel draft fields', () => {
+  fixture.step = 0;
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    customerId: 'person',
+    departureDate: '2099-10-01',
+    serviceKinds: ['FLIGHT'],
+    passengers: [
+      {
+        customerId: 'person',
+        displayName: 'Synthetic',
+        birthDate: '1990-01-01',
+      },
+    ],
+    hotel: {
+      ...emptySalesForm.hotel,
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: 'old',
+          roomTypeNameSnapshot: 'Old',
+          adults: 1,
+          childAges: [null],
+        },
+      ],
+    },
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    expect(html).not.toContain(
+      'هر مسافر باید حداقل یک خدمت انتخاب‌شده داشته باشد.',
+    );
+    expect(html).toContain('تأیید مسیر و خدمات');
+  } finally {
+    fixture.step = 0;
+    fixture.ticketDraft = null;
+  }
+});
+
+it('keeps hotel room and composition selection available inside a selected tour', () => {
+  fixture.step = 0;
+  fixture.firstDetail = true;
+  fixture.zeroIndex = 0;
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    serviceKinds: ['FLIGHT', 'HOTEL'],
+    tour: {
+      id: 'tour',
+      startsOn: '2099-10-01',
+      endsOn: '2099-10-04',
+      package: {
+        id: 'package',
+        name: 'Synthetic package',
+        hotelIds: ['hotel'],
+      },
+    } as SalesFormState['tour'],
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    expect(html).toContain('جست‌وجو و انتخاب تور');
+    expect(html).toContain('ورود (چک‌این)');
+    expect(html).toContain('خروج (چک‌اوت)');
+  } finally {
+    fixture.step = 0;
+    fixture.firstDetail = false;
+    fixture.zeroIndex = 0;
+    fixture.ticketDraft = null;
+  }
+});
+
+it('keeps tour selection inline without an unrelated standalone flight search calendar', () => {
+  fixture.step = 0;
+  fixture.firstDetail = true;
+  fixture.zeroIndex = 0;
+  const offer = {
+    id: 'offer',
+    version: 1,
+    branchId: 'branch',
+    originId: 'origin',
+    destinationId: 'destination',
+    departureAt: '2099-10-01T10:00:00Z',
+    arrivalAt: '2099-10-01T12:00:00Z',
+    carrierName: 'Synthetic',
+    serviceNumber: 'S1',
+    cabinClassCode: 'ECONOMY' as const,
+    totalCapacity: 10,
+    remainingCapacity: 10,
+    status: 'ACTIVE' as const,
+  };
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    serviceKinds: ['FLIGHT'],
+    originId: 'origin',
+    destinationId: 'destination',
+    departureDate: '2099-10-01',
+    outboundOffer: offer,
+    tour: {
+      id: 'tour',
+      version: 1,
+      branchId: 'branch',
+      startsOn: '2099-10-01',
+      endsOn: '2099-10-04',
+      outboundOfferId: 'offer',
+      outbound: offer,
+      remainingCapacity: 10,
+      packageId: 'package',
+      packageVersion: 1,
+      package: {
+        id: 'package',
+        name: 'Synthetic package',
+        hotelIds: [],
+        version: 1,
+        branchId: 'branch',
+        createdAt: '2099-09-01T00:00:00Z',
+        originId: 'origin',
+        destinationId: 'destination',
+        transferOutbound: false,
+        transferReturn: false,
+        visa: false,
+      },
+    } as SalesFormState['tour'],
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    expect(html).toContain('جست‌وجو و انتخاب تور');
+    expect(html).not.toContain('aria-label="انتخاب تاریخ بلیط رفت و برگشت"');
+    expect(html).not.toContain('جزئیات سفر');
+  } finally {
+    fixture.step = 0;
+    fixture.firstDetail = false;
+    fixture.zeroIndex = 0;
+    fixture.ticketDraft = null;
+  }
+});
+
+it('places combined flight selection and stay dates before identities and hides redundant party counts', () => {
+  fixture.step = 0;
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    roomDrivenGuests: true,
+    serviceKinds: ['FLIGHT', 'HOTEL'],
+    hotel: {
+      ...emptySalesForm.hotel,
+      hotelId: 'hotel',
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: '11111111-1111-4111-8111-111111111111',
+          roomTypeNameSnapshot: 'Double',
+          adults: 2,
+          childAges: [],
+        },
+      ],
+    },
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    const people = html.indexOf('ورود یکجای مشتری و مسافران');
+    expect(people).toBeGreaterThan(0);
+    expect(html.indexOf('تاریخ اقامت مهمانان')).toBeLessThan(people);
+    expect(html.indexOf('جست‌وجوی بلیط‌ها')).toBeLessThan(people);
+    expect(html).not.toContain('انتخاب بلیط پرواز');
+    expect(html).not.toContain('جزئیات سفر');
+    expect(html).not.toContain('>تعداد مسافران</h2>');
+    expect(html).toContain('افزودن مسافر (فقط پرواز)');
+  } finally {
+    fixture.ticketDraft = null;
+    fixture.step = 0;
+  }
+}, 30000);
+
+it('keeps only the service toggle in the transfer card and moves leg choices to passenger rows', () => {
+  fixture.step = 0;
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    serviceKinds: ['TRANSFER'],
+    tripType: 'ROUND_TRIP',
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    const card =
+      [...html.matchAll(/<fieldset[^>]*>[\s\S]*?<\/fieldset>/g)].find((m) =>
+        m[0].includes('ترانسفر'),
+      )?.[0] ?? '';
+    expect(card).toContain('ترانسفر');
+    expect(card.match(/<input/g)).toHaveLength(1);
+    expect(card).not.toContain('تعداد مسافران ترانسفر');
+    expect(card).not.toContain('sales-directions-TRANSFER');
+    expect(html).toContain('ترانسفر رفت');
+    expect(html).toContain('ترانسفر برگشت');
+  } finally {
+    fixture.ticketDraft = null;
+    fixture.step = 0;
+  }
+});
+
+it.each([0, 1, 2])(
+  'uses the same three-step model for the header and navigation at stage %s',
+  (step) => {
+    fixture.step = step;
+    try {
+      const html = renderToStaticMarkup(<SalesContractForm />);
+      expect(html).toContain(`مرحله ${step + 1} از 3`);
+      const progress =
+        html.match(
+          /<ol[^>]*aria-label="مراحل ثبت قرارداد"[\s\S]*?<\/ol>/,
+        )?.[0] ?? '';
+      expect(progress.match(/<li\b/g)).toHaveLength(3);
+      expect(html).not.toContain('جزئیات سفر');
+      expect(html).not.toContain('از 5');
+    } finally {
+      fixture.step = 0;
+    }
+  },
+);

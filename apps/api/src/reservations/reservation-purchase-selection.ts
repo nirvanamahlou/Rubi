@@ -9,6 +9,7 @@ export function purchaseSelectionSql(
   q: ReturnType<typeof parsePurchaseQuery>,
   flights: PurchaseFlightFacts | undefined,
   summary = false,
+  floatingOfferIds?: readonly string[],
 ) {
   const sort = q.direction === 'ASC' ? Prisma.sql`ASC` : Prisma.sql`DESC`;
   const selection = summary
@@ -36,10 +37,11 @@ export function purchaseSelectionSql(
           WHERE NOT EXISTS (SELECT 1 FROM jsonb_array_elements(i.selections) x WHERE x->>'kind' IN ('FLIGHT','TRAIN','BUS'))
             AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(i.tickets) t WHERE t->>'offerId' = o)
       ) s WHERE (${q.kind} = 'ALL' OR s.service->>'kind' = ${q.kind})
+      AND (s.service->>'kind' <> 'FLIGHT' OR ${floatingOfferIds === undefined} OR s.service->'metadata'->>'contractFlightVersion' = '1' OR COALESCE((SELECT t->>'offerId' FROM jsonb_array_elements(i.tickets) t WHERE t->>'serviceClientKey' = s.service->>'clientKey' LIMIT 1), s.service->>'referenceId') IN (SELECT jsonb_array_elements_text(${JSON.stringify(floatingOfferIds ?? [])}::jsonb)))
     ), facts AS (
       SELECT s."id", s.service->>'kind' AS kind, p.version AS "purchaseVersion", p."coveredServiceClientKeys", s.service->>'clientKey' AS "clientKey",
-        CASE WHEN p."createdAt" IS NOT NULL OR h.at IS NOT NULL OR f.registered THEN 'REGISTERED'
-          WHEN s.service->>'kind' = 'FLIGHT' AND NOT ${flights !== undefined} THEN 'UNKNOWN' ELSE 'UNREGISTERED' END AS status,
+        CASE WHEN p."createdAt" IS NOT NULL OR h.at IS NOT NULL OR (f.registered AND ${floatingOfferIds === undefined}) THEN 'REGISTERED'
+          WHEN s.service->>'kind' = 'FLIGHT' AND NOT ${flights !== undefined} AND ${floatingOfferIds === undefined} THEN 'UNKNOWN' ELSE 'UNREGISTERED' END AS status,
         to_char(s."receivedAt" AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "entryAt",
         CASE WHEN s.service->>'kind' = 'FLIGHT' THEN COALESCE(t.ticket->>'departureAt', s.service->'metadata'->>'flightDepartureAt', s.service->'metadata'->>'departureAt', f."departureAt") END AS "departureAt",
         CASE WHEN s.service->>'kind' = 'HOTEL' THEN COALESCE(s.service->'metadata'->>'checkInDate', CASE WHEN s."snapshot"->'hotelSelection'->>'serviceClientKey' = s.service->>'clientKey' THEN s."snapshot"->'hotelSelection'->>'checkInDate' END) END AS "checkInAt",

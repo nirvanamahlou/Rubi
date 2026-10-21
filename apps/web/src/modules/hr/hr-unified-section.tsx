@@ -11,6 +11,7 @@ import { screenMeta, sectionTabs } from './hr.model';
 import {
   hrGroups,
   resolveHrGroup,
+  resolveHrSource,
   type HrGroup,
   type HrSource,
 } from './hr-navigation';
@@ -36,6 +37,7 @@ import { useHrRowSelection } from './hr-row-selection';
 import { needsHrDetail } from './hr-form-model';
 import { reportCellText } from './hr-report-text';
 import ui from './hr-unified.module.css';
+import { HrRadanTools, HrBackupButton } from './hr-radan-tools';
 import { parseSavedHrFilter } from './hr-filters';
 
 export { sourceForRecord } from './hr-record-source';
@@ -65,13 +67,13 @@ function AccessibleHrSection({
   const [groupId, setGroupId] = useState(first.id);
   const group = groups.find((item) => item.id === groupId) ?? first;
   const [sourceTab, setSourceTab] = useState(
-    first.sources.find((item) => item.tab === initialTab)?.tab ??
-      first.sources[0]!.tab,
+    resolveHrSource(first, initialTab).tab,
   );
   const source =
     group.sources.find((item) => item.tab === sourceTab) ?? group.sources[0]!;
   const definition = getHrResource(source.section, source.tab);
   const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState('createdAt');
   const [status, setStatus] = useState('');
   const [branchId, setBranchId] = useState('');
   const [employeeId, setEmployeeId] = useState('');
@@ -85,7 +87,10 @@ function AccessibleHrSection({
   const [notice, setNotice] = useState('');
   const [removing, setRemoving] = useState<HrRecordDto | null>(null);
   const [importing, setImporting] = useState(false);
-  const [calendar, setCalendar] = useState(initialTab === 'roster');
+  const [calendar, setCalendar] = useState(
+    initialTab === 'roster' &&
+      first.sources.some((source) => source.tab === 'shift'),
+  );
   const [busy, setBusy] = useState(false);
   const [expiry, setExpiry] = useState('');
   const [calendarItems, setCalendarItems] = useState<HrRecordDto[]>([]);
@@ -97,6 +102,7 @@ function AccessibleHrSection({
   const requestQuery = {
     section: sourceSection,
     tab: activeTab,
+    sortBy,
     ...(query ? { search: query } : {}),
     ...(status ? { status } : {}),
     ...(employeeId ? { employeeId } : {}),
@@ -224,6 +230,12 @@ function AccessibleHrSection({
           </div>
         </header>
       ) : null}
+      {section === 'time' ? <HrBackupButton store={store} /> : null}
+      <HrRadanTools
+        key={`${source.section}.${source.tab}`}
+        tab={source.tab}
+        store={store}
+      />
       <HrRangeBar
         key={`${range.from}:${range.to}`}
         initialRange={range}
@@ -279,14 +291,18 @@ function AccessibleHrSection({
       <HrPanel
         title={group.label}
         actions={
-          group.id === 'shifts' ? (
+          group.id === 'shifts' &&
+          group.sources.some((item) => item.tab === 'shift') ? (
             <HrTabs
               items={[
                 { id: 'list', label: 'تعریف شیفت' },
                 { id: 'calendar', label: 'تقویم کارکنان' },
               ]}
               value={calendar ? 'calendar' : 'list'}
-              onChange={(id) => setCalendar(id === 'calendar')}
+              onChange={(id) => {
+                setCalendar(id === 'calendar');
+                if (id === 'calendar') setSourceTab('shift');
+              }}
               label="نمای شیفت"
             />
           ) : undefined
@@ -300,6 +316,7 @@ function AccessibleHrSection({
                 value={source.tab}
                 onChange={(event) => {
                   setSourceTab(event.target.value);
+                  setCalendar(false);
                   setPage(1);
                 }}
               >
@@ -365,6 +382,20 @@ function AccessibleHrSection({
               </NativeSearchSelect>
             </label>
           ) : null}
+          <label>
+            مرتب‌سازی بر اساس
+            <NativeSearchSelect
+              value={sortBy}
+              onChange={(event) => {
+                setSortBy(event.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="createdAt">تاریخ ثبت</option>
+              <option value="name">اسم و فامیل</option>
+              <option value="personnelCode">کد پرسنلی</option>
+            </NativeSearchSelect>
+          </label>
           <label>
             وضعیت
             <NativeSearchSelect
@@ -443,6 +474,7 @@ function AccessibleHrSection({
           <HrButton
             onClick={() => {
               setQuery('');
+              setSortBy('createdAt');
               setStatus('');
               setEmployeeId('');
               setBranchId('');

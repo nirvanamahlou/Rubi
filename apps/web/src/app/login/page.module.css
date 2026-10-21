@@ -1,0 +1,23 @@
+.page {
+  /* Physical sides stay fixed when the interface switches between RTL and LTR. */
+  --login-split: 50%;
+
+  background: linear-gradient(
+    to right,
+    #123f8c 0 var(--login-split),
+    #fff var(--login-split) 100%
+  );
+}
+
+@media (min-width: 64rem) {
+  .page {
+    /* Match max-w-5xl, px-4 and the card's two 1px borders. A 1.1:1 grid
+       puts its divider 1/42 of the inner card width away from the midpoint. */
+    --login-card-inner-width: min(calc(100% - 2rem - 2px), calc(64rem - 2px));
+    --login-split: calc(50% - var(--login-card-inner-width) / 42);
+  }
+
+  .page:dir(ltr) {
+    --login-split: calc(50% + var(--login-card-inner-width) / 42);
+  }
+}

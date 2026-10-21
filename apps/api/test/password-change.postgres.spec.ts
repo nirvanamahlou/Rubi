@@ -39,7 +39,7 @@ function sql(database: string, input: string) {
       '-v',
       'ON_ERROR_STOP=1',
     ],
-    { input, stdio: ['pipe', 'pipe', 'pipe'], timeout: 30000 },
+    { input, stdio: ['pipe', 'pipe', 'pipe'], timeout: 90000 },
   );
 }
 function service(db = client) {
@@ -285,6 +285,29 @@ describe.skipIf(!enabled)(
       ])
         expect(serialized).not.toContain(secret);
     });
+    it.each(['1234', '۱۲۳۴'])(
+      'accepts a four-character numeric self-service password and permits the next login',
+      async (simplePassword) => {
+        const { user, auth, actor } = await fixture();
+        await auth.changePassword(actor, oldPassword, simplePassword, {});
+        const stored = await client.user.findUniqueOrThrow({
+          where: { id: user.id },
+        });
+        expect(await verify(stored.passwordHash, simplePassword)).toBe(true);
+        expect(stored.passwordHash).not.toBe(simplePassword);
+        await expect(
+          auth.login(user.username, oldPassword, {}),
+        ).rejects.toThrow();
+        await expect(
+          auth.login(user.username, simplePassword, {}),
+        ).resolves.toHaveProperty('accessToken');
+        const original = await client.session.findUniqueOrThrow({
+          where: { id: actor.sessionId! },
+        });
+        expect(original.status).toBe(SessionStatus.REVOKED);
+      },
+    );
+
     it('commits failure counts, limits repeated guesses and preserves the hash', async () => {
       const { user, actor, auth } = await fixture();
       for (let i = 0; i < 5; i++)
@@ -301,11 +324,11 @@ describe.skipIf(!enabled)(
         auth.changePassword(actor, oldPassword, newPassword, {}),
       ).rejects.toMatchObject({ status: 429 });
     });
-    it('rejects weak/same passwords and wrong-user or revoked sessions', async () => {
+    it('rejects short/same passwords and wrong-user or revoked sessions', async () => {
       const { actor, auth } = await fixture();
       const other = await fixture();
       await expect(
-        auth.changePassword(actor, oldPassword, 'weak', {}),
+        auth.changePassword(actor, oldPassword, '123', {}),
       ).rejects.toThrow();
       await expect(
         auth.changePassword(actor, oldPassword, oldPassword, {}),

@@ -15,6 +15,9 @@ import {
   currentPersianParts,
   formatCustomerDate,
   gregorianParts,
+  parseTypedCustomerDate,
+  formatTypedCustomerDate,
+  typedCustomerDateCaret,
   persianNumber,
   shiftCalendarMonth,
 } from '../model/customer-calendar';
@@ -65,6 +68,8 @@ export function CustomerDateField({
   disabled = false,
   initialOpen = false,
   compact = false,
+  allowTyping = false,
+  minDate,
 }: {
   id: string;
   label: string;
@@ -75,7 +80,12 @@ export function CustomerDateField({
   disabled?: boolean;
   initialOpen?: boolean;
   compact?: boolean;
+  allowTyping?: boolean;
+  minDate?: string | undefined;
 }) {
+  const [typed, setTyped] = useState('');
+  const [typing, setTyping] = useState(false);
+  const [dateError, setDateError] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -148,6 +158,9 @@ export function CustomerDateField({
   }, [compact, open, disabled]);
 
   function selectDate(nextValue: string) {
+    if (nextValue && minDate && nextValue < minDate) return;
+    setTyping(false);
+    setDateError(false);
     if (disabled) return;
     onChange(nextValue);
     setOpen(false);
@@ -164,6 +177,8 @@ export function CustomerDateField({
             : gregorianParts(value);
         setView({ year: nextSelected.year, month: nextSelected.month });
         setCalendarView('days');
+        setTyping(false);
+        setDateError(false);
         onModeChange(nextMode);
       }}
     />
@@ -182,8 +197,58 @@ export function CustomerDateField({
         label={label}
         {...(compact ? { labelClassName: 'sr-only' } : {})}
       >
+        {dateError ? (
+          <p role="alert" className="text-xs text-destructive">
+            تاریخ معتبر و مجاز وارد کنید.
+          </p>
+        ) : null}
         <div className="relative" ref={rootRef}>
           <div className="flex items-center gap-2">
+            {allowTyping ? (
+              <input
+                aria-label={label + ' — ورود تاریخ'}
+                placeholder="YYYY/MM/DD"
+                inputMode="numeric"
+                maxLength={10}
+                dir="ltr"
+                className="h-10 min-w-28 w-32 rounded-md border border-primary/30 px-2 text-xs"
+                disabled={disabled}
+                value={
+                  typing
+                    ? typed
+                    : value
+                      ? (() => {
+                          const p =
+                            mode === 'persian'
+                              ? currentPersianParts(value)
+                              : gregorianParts(value);
+                          return `${p.year}/${String(p.month).padStart(2, '0')}/${String(p.day).padStart(2, '0')}`;
+                        })()
+                      : ''
+                }
+                onChange={(event) => {
+                  const input = event.currentTarget;
+                  const raw = input.value;
+                  const text = formatTypedCustomerDate(raw);
+                  const caret = typedCustomerDateCaret(
+                    raw,
+                    input.selectionStart ?? raw.length,
+                    text,
+                  );
+                  setTyped(text);
+                  setTyping(true);
+                  const iso = parseTypedCustomerDate(text, mode);
+                  const valid = Boolean(iso && (!minDate || iso >= minDate));
+                  setDateError(Boolean(text) && !valid);
+                  onChange(valid ? iso! : '');
+                  requestAnimationFrame(() => {
+                    if (document.activeElement === input)
+                      input.setSelectionRange(caret, caret);
+                  });
+                }}
+              />
+            ) : null}
+
             <button
               ref={triggerRef}
               aria-label={label}
@@ -330,6 +395,7 @@ export function CustomerDateField({
                               day.iso === today &&
                               'border border-primary text-primary',
                           )}
+                          disabled={Boolean(minDate && day.iso < minDate)}
                           key={day.iso}
                           onClick={() => {
                             selectDate(day.iso);

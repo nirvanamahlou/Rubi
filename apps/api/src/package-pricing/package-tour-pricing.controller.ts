@@ -29,6 +29,16 @@ export class PackageTourPricingController {
     private readonly drafts: PackageTourPricingService,
   ) {}
 
+  @Get('sale-catalog')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('sales.contracts.create')
+  saleCatalog(
+    @Query('tourDepartureId', ParseUUIDPipe) tourId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.drafts.saleCatalog(tourId, req.actor);
+  }
+
   @Get()
   @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('package_pricing.read')

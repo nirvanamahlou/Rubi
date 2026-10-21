@@ -230,6 +230,7 @@ export const MASTER_DATA_EDITABLE_FIELDS = {
     'sourceMainImage',
     'sourceGalleryImages',
     'sourceFeatured',
+    'freeSale',
     'website',
     'checkInTime',
     'checkOutTime',
@@ -287,6 +288,8 @@ export const MASTER_DATA_EDITABLE_FIELDS = {
     'displayOrder',
   ],
   suppliers: [
+    'dossierMobile',
+    'dossierEmail',
     'name',
     'englishName',
     'address',
@@ -302,6 +305,9 @@ export const MASTER_DATA_EDITABLE_FIELDS = {
     'displayOrder',
   ],
   brokers: [
+    'dossierMobile',
+    'dossierEmail',
+    'dossierAddress',
     'cityIds',
     'boardText',
     'primaryPhone',

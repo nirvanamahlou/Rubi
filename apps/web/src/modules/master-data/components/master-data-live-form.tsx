@@ -38,6 +38,7 @@ import {
 } from '../api/client';
 import { getMasterDataFormFields } from '../model/form-fields';
 import { supplierEditValues } from '../model/supplier-phone-draft';
+import { MasterDataStoredContact } from './master-data-stored-contact';
 import { validateMasterDataDraft } from '../model/validation';
 import { getReferenceFieldConfig } from '../model/reference-fields';
 import { MasterDataClearableField } from './master-data-clearable-field';
@@ -108,35 +109,37 @@ export function masterDataFormValuesFrom(
   return Object.fromEntries(
     getMasterDataFormFields(definition).map((field) => {
       const value =
-        field.key === 'code'
-          ? record.code
-          : field.key === 'status'
-            ? record.status
-            : field.key === 'name' || field.key === 'displayName'
-              ? record.name
-              : field.key === 'fromCurrencyCode'
-                ? fromCurrencyCode
-                : field.key === 'toCurrencyCode'
-                  ? toCurrencyCode
-                  : field.key === 'airlineCodes'
-                    ? [record.code, record.attributes.icaoCode]
-                        .filter(Boolean)
-                        .join(' / ')
-                    : field.key === 'manufacturerModel'
-                      ? [
-                          record.attributes.manufacturer,
-                          record.attributes.model,
-                        ]
+        definition.key === 'suppliers' && field.key === 'address'
+          ? (record.attributes.dossierAddress ?? record.attributes.address)
+          : field.key === 'code'
+            ? record.code
+            : field.key === 'status'
+              ? record.status
+              : field.key === 'name' || field.key === 'displayName'
+                ? record.name
+                : field.key === 'fromCurrencyCode'
+                  ? fromCurrencyCode
+                  : field.key === 'toCurrencyCode'
+                    ? toCurrencyCode
+                    : field.key === 'airlineCodes'
+                      ? [record.code, record.attributes.icaoCode]
                           .filter(Boolean)
                           .join(' / ')
-                      : field.key === 'includedMeals'
-                        ? record.attributes.includedMealsJson
-                        : field.key === 'transportStatus'
-                          ? (record.attributes.transportStatus ??
-                            (record.status === 'active'
-                              ? 'ACTIVE'
-                              : 'INACTIVE'))
-                          : record.attributes[field.key];
+                      : field.key === 'manufacturerModel'
+                        ? [
+                            record.attributes.manufacturer,
+                            record.attributes.model,
+                          ]
+                            .filter(Boolean)
+                            .join(' / ')
+                        : field.key === 'includedMeals'
+                          ? record.attributes.includedMealsJson
+                          : field.key === 'transportStatus'
+                            ? (record.attributes.transportStatus ??
+                              (record.status === 'active'
+                                ? 'ACTIVE'
+                                : 'INACTIVE'))
+                            : record.attributes[field.key];
       return [
         field.key,
         value === null || value === undefined ? '' : String(value),
@@ -248,6 +251,9 @@ function GenericMasterDataLiveForm({
   const [logoChange, setLogoChange] = useState<MasterDataLogoChange>();
   const [saving, setSaving] = useState(false);
   const [supplierPhoneTouched, setSupplierPhoneTouched] = useState(false);
+  const [partnerContactTouched, setPartnerContactTouched] = useState<
+    ReadonlySet<string>
+  >(new Set());
   const readonly = mode === 'view';
   const focusRestore = useMasterDataDialogFocusRestore();
   const fields = getMasterDataFormFields(definition, mode).filter(
@@ -305,6 +311,14 @@ function GenericMasterDataLiveForm({
         definition.key === 'suppliers' && mode === 'edit'
           ? supplierEditValues(result.values, supplierPhoneTouched)
           : partnerPersistValues(definition.key, mode, record, result.values);
+      if (definition.key === 'suppliers') {
+        persistedValues.dossierVersion = '1';
+        persistedValues.dossierAddress = persistedValues.address ?? '';
+        if (mode === 'edit')
+          for (const key of ['dossierMobile', 'dossierEmail']) {
+            if (!partnerContactTouched.has(key)) delete persistedValues[key];
+          }
+      }
       await onPersist(persistedValues, logoChange);
     } catch (error) {
       setErrors({
@@ -418,6 +432,13 @@ function GenericMasterDataLiveForm({
                   definition.key === 'suppliers' &&
                   field.key === 'serviceCodes';
                 const updateValue = (value: string) => {
+                  if (
+                    field.key === 'dossierMobile' ||
+                    field.key === 'dossierEmail'
+                  )
+                    setPartnerContactTouched(
+                      (current) => new Set([...current, field.key]),
+                    );
                   if (
                     definition.key === 'suppliers' &&
                     field.key === 'primaryPhone'
@@ -613,7 +634,12 @@ function GenericMasterDataLiveForm({
                     }
                     id={controlId}
                     onChange={(event) => updateValue(event.target.value)}
-                    placeholder={field.placeholder}
+                    placeholder={
+                      field.key === 'dossierMobile' ||
+                      field.key === 'dossierEmail'
+                        ? String(record?.attributes[`${field.key}Masked`] ?? '')
+                        : field.placeholder
+                    }
                     readOnly={readonly}
                     required={Boolean(field.required)}
                     type={field.type}
@@ -644,6 +670,20 @@ function GenericMasterDataLiveForm({
                     ) : (
                       control
                     )}
+                    {definition.key === 'suppliers' &&
+                    ['dossierMobile', 'dossierEmail'].includes(field.key) &&
+                    mode === 'edit' ? (
+                      <MasterDataStoredContact
+                        label={field.label}
+                        masked={String(
+                          record?.attributes[`${field.key}Masked`] ?? '',
+                        )}
+                        touched={partnerContactTouched.has(field.key)}
+                        value={values[field.key] ?? ''}
+                        disabled={readonly || saving}
+                        onClear={() => updateValue('')}
+                      />
+                    ) : null}
                     {definition.key === 'suppliers' &&
                     field.key === 'primaryPhone' &&
                     mode === 'edit' &&

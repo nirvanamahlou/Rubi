@@ -1,9 +1,16 @@
+import { recalculateSalesSettlement } from './sales-financial-settlement';
+import {
+  recordFinancialEvent,
+  financialDate,
+} from '../finance/accounting/financial-event.public';
+import { salesHotelRoomSummary } from '@nora/contracts';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import {
   Inject,
   Injectable,
   Optional,
   InternalServerErrorException,
+  ConflictException,
 } from '@nestjs/common';
 import type {
   SalesContractCreateRequest,
@@ -13,11 +20,7 @@ import type {
 import { AuditOutcome, Prisma, type SalesContractStatus } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
-import {
-  calculateSalesBalances,
-  salesFingerprint,
-  passengerAgeCategory,
-} from './sales.domain';
+import { salesFingerprint, passengerAgeCategory } from './sales.domain';
 
 export const salesDetailInclude = {
   passengers: {
@@ -31,7 +34,11 @@ export const salesDetailInclude = {
   ticketSelections: { orderBy: { departureAt: 'asc' } },
   hotelSelection: { include: { rooms: { orderBy: { ordinal: 'asc' } } } },
   priceComponents: { orderBy: { createdAt: 'asc' } },
-  payments: { orderBy: { createdAt: 'asc' } },
+  payments: {
+    include: { refunds: true, allocations: true },
+    orderBy: { createdAt: 'asc' },
+  },
+  receiptAllocations: true,
   reservationRequests: { orderBy: { createdAt: 'desc' } },
 } satisfies Prisma.SalesContractInclude;
 
@@ -140,9 +147,36 @@ export class SalesRepository {
         ...(requestId ? { id: requestId } : {}),
         ...after,
       },
-      include: { contract: { select: { contractNumber: true } } },
+      include: {
+        contract: {
+          select: { contractNumber: true, customerId: true, createdAt: true },
+        },
+      },
       orderBy: [{ financeConfirmedAt: 'desc' }, { id: 'desc' }],
       take,
+    });
+  }
+
+  financeReceipt(
+    paymentId: string,
+    contractId: string,
+    branchIds: readonly string[],
+  ) {
+    return this.database.client.salesContractPaymentEntry.findFirst({
+      where: {
+        id: paymentId,
+        contractId,
+        contract: { branchId: { in: [...branchIds] } },
+      },
+      select: {
+        id: true,
+        contractId: true,
+        status: true,
+        dueAt: true,
+        currencyCode: true,
+        financeReceiptAccountId: true,
+        contract: { select: { branchId: true } },
+      },
     });
   }
 
@@ -150,7 +184,10 @@ export class SalesRepository {
     if (!branchIds.length) return Promise.resolve([]);
     return this.database.client.salesContractPaymentEntry.findMany({
       where: {
-        status: 'PENDING_FINANCE_CONFIRMATION',
+        OR: [
+          { status: 'PENDING_FINANCE_CONFIRMATION' },
+          { status: 'SCHEDULED', dueAt: { lte: new Date() } },
+        ],
         contract: { branchId: { in: [...branchIds] } },
       },
       include: {
@@ -194,11 +231,18 @@ export class SalesRepository {
         branchId: true,
         ownerUserId: true,
         customerNameSnapshot: true,
+        receiptAllocations: {
+          select: { amount: true, currencyCode: true, reversalOfId: true },
+        },
         settlementStatus: true,
         payments: {
           where: { status: 'FINANCE_CONFIRMED' },
-          select: { id: true },
-          take: 1,
+          select: {
+            id: true,
+            amount: true,
+            refunds: { select: { amount: true } },
+            allocations: { select: { amount: true, reversalOfId: true } },
+          },
         },
       },
       orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
@@ -209,18 +253,27 @@ export class SalesRepository {
   financeCustomerDocumentDeliveryFacts(
     contractId: string,
     branchIds: readonly string[],
+    tx?: Prisma.TransactionClient,
   ) {
-    return this.database.client.salesContract.findFirst({
+    return (tx ?? this.database.client).salesContract.findFirst({
       where: { id: contractId, branchId: { in: [...branchIds] } },
       select: {
         id: true,
         branchId: true,
         ownerUserId: true,
+        receiptAllocations: {
+          select: { amount: true, currencyCode: true, reversalOfId: true },
+        },
         settlementStatus: true,
+        status: true,
         payments: {
           where: { status: 'FINANCE_CONFIRMED' },
-          select: { id: true },
-          take: 1,
+          select: {
+            id: true,
+            amount: true,
+            refunds: { select: { amount: true } },
+            allocations: { select: { amount: true, reversalOfId: true } },
+          },
         },
       },
     });
@@ -533,6 +586,9 @@ export class SalesRepository {
               singleRoomCount: hotel.singleRoomCount ?? 0,
               doubleRoomCount: hotel.doubleRoomCount ?? hotel.roomCount,
               extraBedCount: hotel.extraBedCount ?? 0,
+              ...(hotel.rooms?.length
+                ? salesHotelRoomSummary(hotel.rooms)
+                : {}),
               roomTypeId: hotel.roomTypeId,
               ...(hotel.rooms?.length
                 ? {
@@ -541,8 +597,14 @@ export class SalesRepository {
                         ordinal: room.ordinal,
                         roomTypeId: room.roomTypeId,
                         roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                        ...(room.roomCategory
+                          ? { roomCategory: room.roomCategory }
+                          : {}),
                         adults: room.adults,
                         childAges: [...room.childAges],
+                        ...(room.agreedPrice
+                          ? { agreedPrice: { ...room.agreedPrice } }
+                          : {}),
                       })),
                     },
                   }
@@ -639,6 +701,21 @@ export class SalesRepository {
           where: {
             id,
             version,
+            OR: [
+              { customerId: input.customerId },
+              {
+                receiptAllocations: {
+                  none: { reversalOfId: null, reversal: null },
+                },
+                payments: {
+                  none: {
+                    allocations: {
+                      some: { reversalOfId: null, reversal: null },
+                    },
+                  },
+                },
+              },
+            ],
             status: amendment
               ? { not: 'CANCELLED' }
               : { in: ['DRAFT', 'PENDING_CONFIRMATION'] },
@@ -777,6 +854,9 @@ export class SalesRepository {
               singleRoomCount: hotel.singleRoomCount ?? 0,
               doubleRoomCount: hotel.doubleRoomCount ?? hotel.roomCount,
               extraBedCount: hotel.extraBedCount ?? 0,
+              ...(hotel.rooms?.length
+                ? salesHotelRoomSummary(hotel.rooms)
+                : {}),
               roomTypeId: hotel.roomTypeId,
               ...(hotel.rooms?.length
                 ? {
@@ -785,8 +865,14 @@ export class SalesRepository {
                         ordinal: room.ordinal,
                         roomTypeId: room.roomTypeId,
                         roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                        ...(room.roomCategory
+                          ? { roomCategory: room.roomCategory }
+                          : {}),
                         adults: room.adults,
                         childAges: [...room.childAges],
+                        ...(room.agreedPrice
+                          ? { agreedPrice: { ...room.agreedPrice } }
+                          : {}),
                       })),
                     },
                   }
@@ -850,6 +936,7 @@ export class SalesRepository {
             traceId: actor.traceId ?? null,
           },
         });
+        await recalculateSalesSettlement(tx, id, actor.userId, false);
         return true;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -992,10 +1079,78 @@ export class SalesRepository {
             traceId: actor.traceId ?? null,
           },
         });
+        await recalculateSalesSettlement(tx, id, actor.userId, false);
         return true;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
+  }
+
+  /** Public financial command: only a confirmed outgoing refund reduces settlement. */
+  async applyFinanceRefund(
+    tx: Prisma.TransactionClient,
+    input: {
+      paymentId: string;
+      operationId: string;
+      actorId: string;
+      amount: string;
+      currency: string;
+      branchId: string;
+    },
+  ) {
+    const payment = await tx.salesContractPaymentEntry.findFirst({
+      where: {
+        id: input.paymentId,
+        status: 'FINANCE_CONFIRMED',
+        currencyCode: input.currency,
+        contract: { branchId: input.branchId },
+      },
+    });
+    if (!payment)
+      throw new InternalServerErrorException(
+        'Confirmed refund source unavailable.',
+      );
+    await tx.$queryRaw`SELECT id FROM sales_contracts WHERE id=${payment.contractId}::uuid FOR UPDATE`;
+    const previous = await tx.salesPaymentRefund.findUnique({
+      where: { id: input.operationId },
+    });
+    if (previous) {
+      if (
+        previous.paymentId !== input.paymentId ||
+        !previous.amount.eq(input.amount)
+      )
+        throw new InternalServerErrorException('Refund source conflict.');
+      return;
+    }
+    const total = await tx.salesPaymentRefund.aggregate({
+      where: { paymentId: payment.id },
+      _sum: { amount: true },
+    });
+    const allocation = await tx.salesReceiptAllocation.aggregate({
+      where: {
+        sourcePaymentId: payment.id,
+        reversalOfId: null,
+        reversal: null,
+      },
+      _sum: { amount: true },
+    });
+    if (
+      (total._sum.amount ?? new Prisma.Decimal(0))
+        .add(input.amount)
+        .add(allocation._sum.amount ?? 0)
+        .gt(payment.amount)
+    )
+      throw new InternalServerErrorException(
+        'Refund exceeds confirmed receipt.',
+      );
+    await tx.salesPaymentRefund.create({
+      data: {
+        id: input.operationId,
+        paymentId: payment.id,
+        amount: input.amount,
+      },
+    });
+    await recalculateSalesSettlement(tx, payment.contractId, input.actorId);
   }
 
   async applyFinanceConfirmation(event: {
@@ -1010,12 +1165,28 @@ export class SalesRepository {
   }): Promise<'confirmed' | 'replayed' | 'not-found'> {
     return this.database.client.$transaction(
       async (tx) => {
+        await tx.$queryRaw`SELECT id FROM sales_contracts WHERE id=${event.contractId}::uuid FOR UPDATE`;
         const payment = await tx.salesContractPaymentEntry.findFirst({
           where: { id: event.paymentId, contractId: event.contractId },
-          include: { contract: { select: { branchId: true } } },
+          include: {
+            contract: {
+              select: { branchId: true, customerId: true, createdAt: true },
+            },
+          },
         });
         if (!payment) return 'not-found';
-        if (payment.financeConfirmedByRef) return 'replayed';
+        if (payment.financeConfirmedByRef) {
+          if (payment.financeReceiptAccountId !== event.receiptAccountId)
+            throw new ConflictException(
+              'این دریافت قبلاً در حساب دیگری تأیید شده است.',
+            );
+          return 'replayed';
+        }
+        if (
+          payment.status !== 'PENDING_FINANCE_CONFIRMATION' &&
+          !(payment.status === 'SCHEDULED' && payment.dueAt <= new Date())
+        )
+          throw new ConflictException('دریافت در وضعیت بررسی مالی نیست.');
         await tx.salesContractPaymentEntry.update({
           where: { id: payment.id },
           data: {
@@ -1029,50 +1200,11 @@ export class SalesRepository {
             financeReviewedAt: new Date(event.confirmedAt),
           },
         });
-        const [components, payments] = await Promise.all([
-          tx.salesContractPriceComponent.findMany({
-            where: { contractId: event.contractId },
-          }),
-          tx.salesContractPaymentEntry.findMany({
-            where: { contractId: event.contractId },
-          }),
-        ]);
-        const balances = calculateSalesBalances(
-          components.map((item) => ({
-            type: item.type,
-            title: item.title,
-            amount: item.amount.toString(),
-            currencyCode: item.currencyCode,
-          })),
-          payments.map((item) => ({
-            amount: item.amount.toString(),
-            currencyCode: item.currencyCode,
-            status: item.status,
-          })),
+        await recalculateSalesSettlement(
+          tx,
+          event.contractId,
+          event.reviewedByUserId ?? payment.createdByUserId,
         );
-        const hasPaid = balances.some(
-          ({ confirmedPaid }) => confirmedPaid !== '0',
-        );
-        const hasOutstanding = balances.some(
-          ({ outstanding }) =>
-            outstanding !== '0' && !outstanding.startsWith('-'),
-        );
-        const hasOverpaid = balances.some(({ outstanding }) =>
-          outstanding.startsWith('-'),
-        );
-        await tx.salesContract.update({
-          where: { id: event.contractId },
-          data: {
-            settlementStatus: hasOutstanding
-              ? hasPaid
-                ? 'PARTIALLY_SETTLED'
-                : 'UNPAID'
-              : hasOverpaid
-                ? 'OVERPAID'
-                : 'SETTLED',
-            version: { increment: 1 },
-          },
-        });
         if (event.reviewedByUserId)
           await tx.salesContractAuditEvent.create({
             data: {
@@ -1089,6 +1221,22 @@ export class SalesRepository {
               },
             },
           });
+        await recordFinancialEvent(tx, {
+          source: 'SALES',
+          recordId: payment.id,
+          requestId: payment.contractId,
+          trackingNumber: payment.contractId,
+          trackingDate: financialDate(payment.contract.createdAt),
+          kind: 'CUSTOMER_RECEIPT',
+          branchId: payment.contract.branchId,
+          actorId: event.reviewedByUserId ?? payment.createdByUserId,
+          occurredAt: new Date(event.confirmedAt),
+          amount: payment.amount.toString(),
+          currency: payment.currencyCode,
+          settlementAccountId: event.receiptAccountId,
+          partyId: payment.contract.customerId,
+          reference: payment.paymentReference,
+        });
         return 'confirmed';
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -1105,6 +1253,7 @@ export class SalesRepository {
     traceId?: string;
   }): Promise<'corrected' | 'replayed' | 'not-found' | 'conflict'> {
     return this.database.client.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM sales_contracts WHERE id=${event.contractId}::uuid FOR UPDATE`;
       const payment = await tx.salesContractPaymentEntry.findFirst({
         where: { id: event.paymentId, contractId: event.contractId },
         include: { contract: { select: { branchId: true } } },
@@ -1112,12 +1261,16 @@ export class SalesRepository {
       if (!payment || payment.contract.branchId !== event.branchId)
         return 'not-found';
       if (payment.status === 'FINANCE_REJECTED') return 'replayed';
-      if (payment.status !== 'PENDING_FINANCE_CONFIRMATION') return 'conflict';
+      if (
+        payment.status !== 'PENDING_FINANCE_CONFIRMATION' &&
+        !(payment.status === 'SCHEDULED' && payment.dueAt <= new Date())
+      )
+        return 'conflict';
       await tx.salesContractPaymentEntry.update({
         where: { id: payment.id },
         data: {
           status: 'FINANCE_REJECTED',
-          financeDecisionReason: event.reason.trim(),
+          financeDecisionReason: (event.reason ?? '').trim(),
           financeReviewedByUserId: event.reviewedByUserId,
           financeReviewedAt: new Date(event.reviewedAt),
         },
@@ -1129,7 +1282,7 @@ export class SalesRepository {
           actorBranchId: event.branchId,
           action: 'sales.payment.finance_correction_required',
           outcome: 'SUCCESS',
-          reason: event.reason.trim(),
+          reason: (event.reason ?? '').trim(),
           afterSnapshot: {
             paymentId: event.paymentId,
             status: 'FINANCE_REJECTED',

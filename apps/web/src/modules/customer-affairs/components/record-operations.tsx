@@ -577,7 +577,7 @@ export function RecordOperations({
               <FormField label="دلیل شکست">
                 <AffairsSelect
                   name="lostReason"
-                  required
+
                   className="h-11 rounded-xl border border-input bg-surface"
                 >
                   <option value="">انتخاب کنید</option>
@@ -596,7 +596,7 @@ export function RecordOperations({
               </FormField>
             )}
             <FormField label="توضیح تغییر مرحله">
-              <Textarea name="reason" required minLength={3} maxLength={500} />
+              <Textarea name="reason" maxLength={500} />
             </FormField>
             {error && (
               <Alert title="ذخیره نشد" description={error} tone="error" />

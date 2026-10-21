@@ -1,3 +1,9 @@
+import { FinanceReceiptAllocationController } from './receipt-allocation.controller';
+import { FinanceReceiptAllocationService } from './operations/receipt-allocation.service';
+import { FinancialEventDispatcher } from './accounting/financial-event-dispatcher';
+import { BankAccountModule } from './bank-accounts/bank-account.module';
+import { PurchaseFxModule } from './purchase-fx/purchase-fx.service';
+import { FinancePartnerModule } from './partner-finance.module';
 import { AccountingController } from './accounting/accounting.controller';
 import { AccountingTaxController } from './accounting/accounting-tax.controller';
 import { AccountingTaxService } from './accounting/accounting-tax.service';
@@ -26,6 +32,9 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
 
 @Module({
   imports: [
+    BankAccountModule,
+    FinancePartnerModule,
+    PurchaseFxModule,
     IamModule,
     NotificationsModule,
     DocumentsModule,
@@ -38,6 +47,7 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
     AccountingCompletionModule,
   ],
   controllers: [
+    FinanceReceiptAllocationController,
     AccountingTaxController,
     AccountingController,
     FinanceInboxController,
@@ -46,6 +56,8 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
     FinanceRequestsController,
   ],
   providers: [
+    FinanceReceiptAllocationService,
+    FinancialEventDispatcher,
     AccountingTaxService,
     AccountingService,
     AuthGuard,

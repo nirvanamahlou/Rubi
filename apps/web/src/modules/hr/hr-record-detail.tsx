@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { useEffect, useState } from 'react';
 import Link from '@/i18n/link';
 import { getHrResource, type HrRecordDto } from '@nora/contracts';
@@ -19,6 +21,7 @@ import { reportCellText } from './hr-report-text';
 import { isMissionExpense } from './hr-mission-reference';
 import { sourceForRecord } from './hr-record-source';
 import ui from './hr-unified.module.css';
+import { HrTemplateCalendar } from './hr-template-calendar';
 
 export function HrRecordDetail({
   record: initialRecord,
@@ -78,7 +81,10 @@ export function HrRecordDetail({
     [fileUrl],
   );
   const transition = async (status: string) => {
-    if ((status === 'ردشده' || status === 'لغوشده') && !reason.trim()) {
+    if (
+      (status === 'ردشده' || status === 'لغوشده') &&
+      !isOptionalOperationReason(reason)
+    ) {
       setError('دلیل رد یا لغو را وارد کنید.');
       return;
     }
@@ -243,6 +249,24 @@ export function HrRecordDetail({
             {error}
           </p>
         ) : null}
+        {record.data.approvalRoute?.length ? (
+          <HrTable
+            data={{
+              columns: ['مرحله', 'تأییدکننده', 'وضعیت'],
+              rows: record.data.approvalRoute.map((step, index) => [
+                String(index + 1),
+                store.data!.employees.find((e) => e.id === step.employeeId)
+                  ?.name ?? '—',
+                step.decidedAt
+                  ? 'رسیدگی‌شده'
+                  : index === (record.data.approvalStep ?? 0)
+                    ? 'مرحله جاری'
+                    : 'منتظر مرحله قبل',
+              ]),
+              totalLabel: '',
+            }}
+          />
+        ) : null}
         <dl className={ui.properties}>
           {record.data.documentId &&
           !record.values.some(
@@ -327,6 +351,9 @@ export function HrRecordDetail({
           </p>
         ) : null}
         <div className={ui.spaced}>
+          {record.section === 'time' && record.tab === 'shiftTemplates' ? (
+            <HrTemplateCalendar record={record} store={store} />
+          ) : null}
           {childSources.map((child) => {
             const childDefinition = getHrResource(child.section, child.tab)!;
             const items = children.filter(

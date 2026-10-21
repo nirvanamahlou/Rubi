@@ -3,8 +3,12 @@ import { useEffect, useState } from 'react';
 import type { TicketOfferSearchV1, TicketOfferV1 } from '@nora/contracts';
 import { DatePicker } from '@/components/ui/date-picker';
 import { searchTickets } from '../api/ticket-search';
-import { salesFlightToday } from '../model/sales-flight-range';
-import { eligibleReturn, flightDay } from '../model/exact-flight-dates';
+
+import {
+  eligibleReturn,
+  flightDay,
+  pairedReturnDate,
+} from '../model/exact-flight-dates';
 import type { FlightDateRange } from './flight-date-range';
 
 export async function flightCalendarOffers(
@@ -38,7 +42,9 @@ export function FlightTripDates({
   requireFare,
   value,
   onChange,
+  onReturningOffers,
 }: {
+  onReturningOffers?: (offers: TicketOfferV1[]) => void;
   originId: string;
   international?: boolean;
   destinationId: string;
@@ -70,7 +76,7 @@ export function FlightTripDates({
     const controller = new AbortController();
     const timer = setTimeout(() => {
       setError('');
-      const base = { departureFrom: new Date().toISOString() };
+      const base = { departureFrom: '1900-01-01' };
       void Promise.all([
         flightCalendarOffers(
           { ...base, originId, destinationId },
@@ -84,8 +90,10 @@ export function FlightTripDates({
           : Promise.resolve([]),
       ])
         .then(([outbound, returning]) => {
-          if (!controller.signal.aborted)
+          if (!controller.signal.aborted) {
             setResult({ key, outbound, returning });
+            onReturningOffers?.(returning);
+          }
         })
         .catch((cause: unknown) => {
           if (!controller.signal.aborted)
@@ -100,12 +108,18 @@ export function FlightTripDates({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [key, readyRoute, originId, destinationId, roundTrip, attempt]);
+  }, [
+    key,
+    readyRoute,
+    originId,
+    destinationId,
+    roundTrip,
+    attempt,
+    onReturningOffers,
+  ]);
   const current = result.key === key;
   const saleable = (offer: TicketOfferV1) =>
-    offer.status === 'ACTIVE' &&
-    offer.remainingCapacity >= seats &&
-    flightDay(offer) >= salesFlightToday();
+    offer.status === 'ACTIVE' && offer.remainingCapacity >= seats;
   const outbound = current
     ? result.outbound.filter(
         (offer) =>
@@ -152,10 +166,21 @@ export function FlightTripDates({
             gregorianEnglish
             value={value.from}
             markedDates={days}
-            minimumDate={salesFlightToday()}
+
             disabled={!readyRoute}
             aria-label="تاریخ بلیط رفت"
-            onChange={(from) => onChange({ from, to: roundTrip ? '' : from })}
+            onChange={(from) => {
+              const paired = roundTrip
+                ? pairedReturnDate(
+                    outbound.filter((o) => flightDay(o) === from),
+                    current ? result.returning : [],
+                    seats,
+                  )
+                : undefined;
+              if (paired)
+                onChange({ from, to: paired.day }, paired.outboundIds);
+              else onChange({ from, to: roundTrip ? '' : from });
+            }}
           />
         </label>
         {roundTrip ? (
@@ -169,7 +194,7 @@ export function FlightTripDates({
               gregorianEnglish
               value={value.to}
               markedDates={returnDays}
-              minimumDate={value.from || salesFlightToday()}
+              minimumDate={value.from}
               disabled={!readyRoute || !value.from}
               aria-label="تاریخ بلیط برگشت"
               onChange={(to) => {

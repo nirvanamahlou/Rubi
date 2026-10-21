@@ -1,3 +1,5 @@
+import { assertNoActiveReceiptAllocations } from './sales-receipt-allocation.public';
+import { isOptionalOperationReason } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -33,9 +35,9 @@ export class SalesPartyCorrectionService {
       !input ||
       !Number.isSafeInteger(input.version) ||
       input.version < 1 ||
-      typeof input.reason !== 'string' ||
-      !input.reason.trim() ||
-      input.reason.trim().length > 500 ||
+      !isOptionalOperationReason(input.reason) ||
+      !isOptionalOperationReason(input.reason) ||
+      (input.reason ?? '').trim().length > 500 ||
       !/^[0-9a-f-]{36}$/i.test(input.customerId) ||
       input.transferFinancialHistory !== true
     )
@@ -104,6 +106,7 @@ export class SalesPartyCorrectionService {
         });
         if (result.count !== 1)
           throw new ConflictException('قرارداد هم‌زمان تغییر کرد.');
+        if (transfer) await assertNoActiveReceiptAllocations(tx, id);
         // Receipt amounts, currencies, confirmations, bank/check ownership and IDs remain
         // contract-owned. Their current counterparty follows this atomic payer change.
         await tx.salesContractAuditEvent.create({
@@ -113,7 +116,7 @@ export class SalesPartyCorrectionService {
             actorBranchId: row.branchId,
             action: 'sales.contract.updated',
             outcome: 'SUCCESS',
-            reason: input.reason.trim(),
+            reason: (input.reason ?? '').trim(),
             beforeSnapshot: {
               customerId: row.customerId,
               payerCustomerId: row.payerCustomerId,

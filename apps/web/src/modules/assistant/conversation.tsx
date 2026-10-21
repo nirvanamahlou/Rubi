@@ -12,6 +12,13 @@ export const conversationResponseSchema = z.discriminatedUnion('status', [
   z
     .object({
       version: z.literal(1),
+      status: z.literal('REPLY'),
+      text: z.string().trim().min(1).max(2000),
+    })
+    .strict(),
+  z
+    .object({
+      version: z.literal(1),
       status: z.literal('CLARIFY'),
       field: z.enum([
         'ACTION',
@@ -100,9 +107,11 @@ function ConversationSession({
       const result = conversationResponseSchema.parse(await response.json());
       if (controller.signal.aborted) return;
       const answer =
-        result.status === 'CLARIFY'
-          ? c.conversationClarification[result.field][english ? 1 : 0]
-          : t(c.conversationEvidence);
+        result.status === 'REPLY'
+          ? result.text
+          : result.status === 'CLARIFY'
+            ? c.conversationClarification[result.field][english ? 1 : 0]
+            : t(c.conversationEvidence);
       setMessages((previous) =>
         [
           ...previous,

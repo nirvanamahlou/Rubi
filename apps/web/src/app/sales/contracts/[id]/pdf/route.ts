@@ -6,6 +6,7 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { legalEntityBrand } from '@/modules/legal-entities/model/context';
 import type { ContractPrintReferences } from '@/modules/sales/model/contract-print';
 import { renderContractPdf } from '@/modules/sales/server/contract-pdf';
+import { printCityInternational } from '@/modules/sales/model/contract-print-country';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -64,11 +65,26 @@ export async function GET(
       keys.map(async ([resource, key]) => {
         if (!key) return;
         const response = await get(
-          '/master-data/' + resource + '/' + encodeURIComponent(key),
+          '/master-data/selections/sales/' +
+            resource +
+            '/' +
+            encodeURIComponent(key),
         );
         if (!response.ok) return;
         const { data } = (await response.json()) as { data: MasterDataRecord };
         refs.names[key] = data.name;
+        if (
+          resource === 'cities' &&
+          (await printCityInternational(data, async (id) => {
+            const response = await get(
+              '/master-data/selections/sales/countries/' +
+                encodeURIComponent(id),
+            );
+            if (!response.ok) return undefined;
+            return ((await response.json()) as { data: MasterDataRecord }).data;
+          }))
+        )
+          refs.international = true;
         if (resource === 'hotels' && data.attributes.starRating != null)
           refs.hotelGrade = String(data.attributes.starRating);
         if (resource === 'hotels') {

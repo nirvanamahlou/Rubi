@@ -1,5 +1,13 @@
 import type { DisplayLanguage } from '../common/i18n/language';
+import {
+  FACILITY_NAME_MAX_CHARACTERS,
+  postgresCharacterLength,
+} from './facility-text';
 import { randomUUID } from 'node:crypto';
+import {
+  preparePartnerDossier,
+  partnerDossierAccessValues,
+} from './partner-dossier.policy';
 import { brokerCityIds, brokerLeaderDrafts } from './broker-form.policy';
 import { columnFilterWhere } from './catalog-filters';
 import {
@@ -322,6 +330,8 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'englishName',
     'symbol',
     'decimalDigits',
+    'unitsPerUsd',
+    'tomanPerUnit',
     'displayPolicy',
   ],
   'exchange-rates': [
@@ -486,6 +496,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'sourceMainImage',
     'sourceGalleryImages',
     'sourceFeatured',
+    'freeSale',
     'website',
     'checkInTime',
     'checkOutTime',
@@ -532,6 +543,11 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'logoFileReference',
   ],
   suppliers: [
+    'dossierVersion',
+    'dossierEmail',
+    'dossierMobile',
+    'dossierAddress',
+    'dossierImport',
     'name',
     'englishName',
     'address',
@@ -546,6 +562,11 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'logoFileReference',
   ],
   brokers: [
+    'dossierVersion',
+    'dossierEmail',
+    'dossierMobile',
+    'dossierAddress',
+    'dossierImport',
     'cityIds',
     'boardText',
     'primaryPhone',
@@ -659,7 +680,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   'rail-terminals': ['name'],
   currencies: ['code', 'name'],
   'exchange-rates': ['fromCurrencyCode', 'toCurrencyCode', 'rate'],
-  banks: ['code', 'name', 'countryId'],
+  banks: ['name', 'countryId'],
   'bank-branches': ['code', 'name', 'bankId', 'cityId'],
   'payment-methods': ['name', 'channel', 'direction'],
   insurers: ['name', 'countryId'],
@@ -1140,10 +1161,16 @@ export class MasterDataService {
     return resourceOf(value);
   }
 
-  async list(resourceValue: string, query: MasterDataListQuery) {
+  async list(
+    resourceValue: string,
+    query: MasterDataListQuery,
+    selectionOnly = false,
+  ) {
     const resource = resourceOf(resourceValue);
     assertDateRange(query.createdFrom, query.createdTo);
-    const { rows, total } = await this.repository.list(resource, query);
+    const { rows, total } = selectionOnly
+      ? await this.repository.list(resource, query, true)
+      : await this.repository.list(resource, query);
     return {
       data: rows.map((row) => toMasterDataRecord(resource, row)),
       meta: { page: query.page, pageSize: query.pageSize, total },
@@ -1956,6 +1983,16 @@ export class MasterDataService {
         );
       data.displayOrder = order;
     }
+    if (
+      resource === 'banks' &&
+      (data.code === undefined ||
+        data.code === null ||
+        (typeof data.code === 'string' && !data.code.trim()))
+    ) {
+      // Manual bank codes are optional; retain a stable unique internal identity.
+      if (partial) delete data.code;
+      else data.code = await this.generateAutoCode(resource, values);
+    }
     const usesGeneratedCode =
       resource !== 'exchange-rates' &&
       resource !== 'countries' &&
@@ -2598,6 +2635,37 @@ export class MasterDataService {
         data[field] = String(data[field]).trim();
       }
     }
+    if (resource === 'currencies' && Object.hasOwn(data, 'tomanPerUnit')) {
+      const rate =
+        data.tomanPerUnit === null ? '' : String(data.tomanPerUnit).trim();
+      if (!rate) data.tomanPerUnit = null;
+      else {
+        if (!/^\d{1,14}(\.\d{1,10})?$/.test(rate) || !/[1-9]/.test(rate))
+          throw new BadRequestException(
+            'نرخ تومان باید مثبت، حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار باشد.',
+          );
+        data.tomanPerUnit = rate;
+      }
+    }
+    if (resource === 'currencies' && Object.hasOwn(data, 'unitsPerUsd')) {
+      const rate =
+        data.unitsPerUsd === null ? '' : String(data.unitsPerUsd).trim();
+      if (!rate) data.unitsPerUsd = null;
+      else {
+        if (!/^\d{1,14}(\.\d{1,10})?$/.test(rate) || !/[1-9]/.test(rate))
+          throw new BadRequestException(
+            'نرخ هر دلار باید مثبت، حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار باشد.',
+          );
+        const code =
+          data.code ??
+          (partial && entityId
+            ? (await this.repository.find('currencies', entityId))?.code
+            : undefined);
+        if (code === 'USD' && Number(rate) !== 1)
+          throw new BadRequestException('نرخ دلار نسبت به خودش باید یک باشد.');
+        data.unitsPerUsd = rate;
+      }
+    }
     if (resource === 'currencies' && data.decimalDigits !== undefined) {
       const digits = Number(data.decimalDigits);
       if (!Number.isInteger(digits) || digits < 0 || digits > 6)
@@ -2860,6 +2928,21 @@ export class MasterDataService {
         data.includedMeals = [...new Set(includedMeals)];
       }
     }
+    if (resource === 'facilities') {
+      for (const [field, limit] of [
+        ['name', FACILITY_NAME_MAX_CHARACTERS],
+        ['englishName', 160],
+        ['category', 80],
+      ] as const) {
+        if (
+          typeof data[field] === 'string' &&
+          postgresCharacterLength(data[field]) > limit
+        )
+          throw new BadRequestException(
+            `${field}: maximum ${limit} characters.`,
+          );
+      }
+    }
     if (resource === 'facilities' && data.displayOrder !== undefined) {
       const displayOrder =
         data.displayOrder === '' || data.displayOrder === null
@@ -2891,13 +2974,12 @@ export class MasterDataService {
           );
         data[field] = value || null;
       }
-      if (Object.hasOwn(data, 'sourceFeatured')) {
-        const value = String(data.sourceFeatured ?? '').trim();
+      for (const field of ['sourceFeatured', 'freeSale'] as const) {
+        if (!Object.hasOwn(data, field)) continue;
+        const value = String(data[field] ?? '').trim();
         if (!['', 'true', 'false'].includes(value))
-          throw new BadRequestException(
-            'sourceFeatured must be true or false.',
-          );
-        data.sourceFeatured = value === '' ? null : value === 'true';
+          throw new BadRequestException(`${field} must be true or false.`);
+        data[field] = value === '' ? null : value === 'true';
       }
       if (data.isSaleableReference === '') delete data.isSaleableReference;
       else if (data.isSaleableReference !== undefined)
@@ -3239,10 +3321,12 @@ export class MasterDataService {
       delete data.roleCodes;
       data.roles = partial
         ? {
-            deleteMany: {},
-            create: roleCodes.map((roleCode) => ({
-              roleCode,
-              assignedByUserId: actorUserId,
+            deleteMany: { roleCode: { notIn: roleCodes } },
+            connectOrCreate: [...new Set(roleCodes)].map((roleCode) => ({
+              where: {
+                organizationId_roleCode: { organizationId: entityId, roleCode },
+              },
+              create: { roleCode, assignedByUserId: actorUserId },
             })),
           }
         : {
@@ -3661,6 +3745,18 @@ export class MasterDataService {
         delete data.leaderDrafts;
       }
     }
+    if (resource === 'suppliers' || resource === 'brokers') {
+      const dossier = preparePartnerDossier(values, this.contactCrypto);
+      for (const key of [
+        'dossierVersion',
+        'dossierEmail',
+        'dossierMobile',
+        'dossierAddress',
+        'dossierImport',
+      ])
+        delete data[key];
+      if (dossier) data.partnerDossier = dossier;
+    }
     return data;
   }
 
@@ -3674,7 +3770,13 @@ export class MasterDataService {
     const denied = changedDeniedFields(
       actor.permissions,
       `field.master-data.${resource}`,
-      values,
+      // Transport status has its own validator and status-management permission.
+      // It is not an editable-field control in the IAM field catalogue.
+      isMasterTransportFormResource(resource)
+        ? Object.fromEntries(
+            Object.entries(values).filter(([key]) => key !== 'transportStatus'),
+          )
+        : partnerDossierAccessValues(resource, values),
       current,
     );
     if (denied.length)

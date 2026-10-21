@@ -64,6 +64,39 @@ const ticket = {
   currencyCode: 'USD',
 };
 describe('actual contract package margin', () => {
+  it('includes both legs sharing one service and keeps profit unknown until both costs exist', () => {
+    const shared = {
+      ...contract,
+      servicesDetail: [contract.servicesDetail[0]!],
+      hotelSelection: null,
+      priceComponents: [
+        {
+          type: 'BASE' as const,
+          title: 'Sale',
+          amount: '100',
+          currencyCode: 'USD',
+        },
+      ],
+      ticketSelections: [
+        ...contract.ticketSelections,
+        { ...contract.ticketSelections[0]!, offerId: 'return-offer' },
+      ],
+    };
+    const costs = [
+      { ...ticket, unitCost: '10' },
+      { ...ticket, id: 'return-cost', offerId: 'return-offer', unitCost: '20' },
+    ];
+    const complete = contractProfit(shared, null, costs);
+    expect(complete.costs).toHaveLength(2);
+    expect(complete.totals[0]).toMatchObject({
+      salesAmount: '100',
+      purchaseAmount: '60',
+      profitAmount: '40',
+    });
+    const incomplete = contractProfit(shared, null, [costs[0]!]);
+    expect(incomplete.complete).toBe(false);
+    expect(incomplete.totals[0]?.profitAmount).toBeNull();
+  });
   it('allocates each flight total to the sold adult/child seats, rounds once and keeps infant and other contracts out', () => {
     const priced = {
       ...ticket,
@@ -222,4 +255,50 @@ it('keeps the Finance-only Sales projection branch-scoped before presentation', 
     } as never),
   ).rejects.toThrow();
   expect(findById).toHaveBeenCalledOnce();
+});
+
+it('charges four seats out of sixty only once from the capacity purchase', () => {
+  const four = {
+    ...contract,
+    passengersDetail: Array.from({ length: 4 }, () => ({
+      ageCategory: 'ADT',
+      serviceClientKeys: ['flight'],
+    })),
+  } as unknown as SalesContractDetail;
+  const cost = {
+    ...ticket,
+    supplyType: 'COMPANY',
+    seatCount: 60,
+    invoiceAmount: '600',
+    unitCost: '10',
+  };
+  const duplicate = {
+    ...intake,
+    servicePurchases: [
+      ...intake.servicePurchases!,
+      purchase('old-contract-flight', ['flight'], '999', 'USD'),
+    ],
+  } as ReservationIntakeV1;
+  const result = contractProfit(four, duplicate, [cost]);
+  expect(
+    result.costs.find((row) => row.source === 'FINANCE_TICKET')?.amount,
+  ).toBe('40');
+  expect(
+    result.costs.some((row) => row.referenceId === 'old-contract-flight'),
+  ).toBe(false);
+});
+
+it('does not accept a legacy per-contract company cost when the capacity invoice is missing', () => {
+  const legacy = {
+    ...intake,
+    servicePurchases: [
+      ...intake.servicePurchases!,
+      purchase('legacy-company', ['flight'], '999', 'USD'),
+    ],
+  } as ReservationIntakeV1;
+  const result = contractProfit(contract, legacy, [], ['offer']);
+  expect(result.costs.some((row) => row.referenceId === 'legacy-company')).toBe(
+    false,
+  );
+  expect(result.complete).toBe(false);
 });

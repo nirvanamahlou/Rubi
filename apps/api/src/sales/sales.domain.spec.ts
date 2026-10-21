@@ -77,6 +77,44 @@ const draft: SalesContractCreateRequest = {
   ],
 };
 
+it('validates per-person discounts and commissions against the same-currency gross service price', () => {
+  const input = structuredClone(draft),
+    id = input.passengers[0]!.customerId;
+  input.services[0]!.metadata = {
+    automaticFlightRoomTotalV1: true,
+    passengerFlightPricesV1: JSON.stringify({
+      [id]: [{ amount: '200.50', currencyCode: 'USD' }],
+    }),
+    passengerDeductionsV1: JSON.stringify({
+      [id]: {
+        discount: { amount: '10', currencyCode: 'USD' },
+        commission: { amount: '5', currencyCode: 'USD' },
+      },
+    }),
+  };
+  input.priceComponents = [
+    ...input.priceComponents,
+    {
+      type: 'DISCOUNT',
+      title: 'Passenger deductions',
+      amount: '15',
+      currencyCode: 'USD',
+    },
+  ];
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.priceComponents[1]!.amount = '14';
+  expect(() => validateSalesContract(input)).toThrow(
+    'مبلغ کل قرارداد باید برابر',
+  );
+  input.services[0]!.metadata = {
+    ...input.services[0]!.metadata,
+    passengerDeductionsV1: JSON.stringify({
+      [id]: { discount: { amount: '201', currencyCode: 'USD' } },
+    }),
+  };
+  expect(() => validateSalesContract(input)).toThrow();
+});
+
 describe('Sales contract domain', () => {
   it('validates explicit child bands without changing birth dates and rejects them for other categories', () => {
     const input = structuredClone(draft);
@@ -201,8 +239,27 @@ describe('Sales contract domain', () => {
         payerCustomerId: draft.customerId,
       }),
     ).not.toThrow();
+    expect(() =>
+      validateSalesContract({
+        ...draft,
+        buyerContact: {
+          ...buyerContact,
+          postalCode: '',
+          landline: '02112345678',
+        },
+      }),
+    ).not.toThrow();
+    for (const landline of ['', '   ', '02112345678']) {
+      expect(() =>
+        validateSalesContract({
+          ...draft,
+          buyerContact: { ...buyerContact, landline },
+        }),
+      ).not.toThrow();
+    }
     for (const change of [
       { phone: 'bad' },
+      { landline: 'bad' },
       { postalCode: '123' },
       { name: ' ' },
       { address: ' ' },
@@ -748,4 +805,325 @@ describe('hotel room party integrity', () => {
       }),
     ).toThrow();
   });
+});
+
+describe('room agreed sale prices', () => {
+  it('keeps legacy rooms and requires valid foreign amounts within the contract total', () => {
+    const id = '10000000-0000-4000-8000-000000000010';
+    const base: SalesContractCreateRequest = {
+      ...draft,
+      services: [{ clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'Hotel' }],
+      ticketSelections: [],
+      passengers: [{ ...draft.passengers[0]!, serviceClientKeys: ['hotel'] }],
+      hotelSelection: {
+        serviceClientKey: 'hotel',
+        hotelId: 'hotel',
+        hotelNameSnapshot: 'Hotel',
+        cityId: draft.destinationId,
+        checkInDate: '2026-10-01',
+        checkOutDate: '2026-10-03',
+        roomCount: 1,
+        roomTypeId: id,
+        occupancy: 1,
+        inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+        rooms: [
+          {
+            ordinal: 1,
+            roomTypeId: id,
+            roomTypeNameSnapshot: 'Single',
+            adults: 1,
+            childAges: [],
+          },
+        ],
+      },
+    };
+    const hotel = base.hotelSelection!;
+    const priced = (amount: string, currencyCode = 'USD') => ({
+      ...base,
+      hotelSelection: {
+        ...hotel,
+        rooms: [{ ...hotel.rooms![0]!, agreedPrice: { amount, currencyCode } }],
+      },
+    });
+    expect(() => validateSalesContract(base)).not.toThrow();
+    expect(() => validateSalesContract(priced('200.50'))).not.toThrow();
+    expect(() => validateSalesContract(priced('200.51'))).toThrow(
+      'جمع مبالغ اتاق‌ها',
+    );
+    expect(() => validateSalesContract(priced('-10'))).toThrow();
+    expect(() => validateSalesContract(priced('10', 'IRR'))).toThrow();
+  });
+});
+
+it('verifies automatic flight-plus-room totals rather than trusting a submitted grand total', () => {
+  const input = structuredClone(draft),
+    id = input.passengers[0]!.customerId;
+  input.services[0]!.metadata = {
+    automaticFlightRoomTotalV1: true,
+    passengerFlightPricesV1: JSON.stringify({
+      [id]: [{ amount: '200.50', currencyCode: 'USD' }],
+    }),
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.priceComponents = [
+    { type: 'BASE', title: 'Total', amount: '201', currencyCode: 'USD' },
+  ];
+  expect(() => validateSalesContract(input)).toThrow(
+    'مبلغ کل قرارداد باید برابر',
+  );
+  input.services[0]!.metadata = { automaticFlightRoomTotalV1: true };
+  expect(() => validateSalesContract(input)).toThrow('قیمت پرواز هر مسافر');
+});
+
+it('rejects invalid agency commission snapshots at the server boundary', () => {
+  const input = structuredClone(draft);
+  input.services[0]!.metadata = {
+    agencyCommissionV1: JSON.stringify({ adult: '-1', child: '100' }),
+  };
+  expect(() => validateSalesContract(input)).toThrow(
+    'کمیسیون آژانس معتبر نیست.',
+  );
+});
+
+it('accepts fixed agency commission without altering the submitted financial components', () => {
+  const input = structuredClone(draft),
+    before = structuredClone(input.priceComponents);
+  input.services[0]!.metadata = {
+    agencyCommissionV1: JSON.stringify({ adult: '125000', child: '45000' }),
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  expect(input.priceComponents).toEqual(before);
+});
+
+it('allows independent passenger membership for combined flight and hotel contracts', () => {
+  const input = structuredClone(draft);
+  input.services = [
+    ...input.services,
+    {
+      clientKey: 'hotel',
+      kind: 'HOTEL',
+      titleSnapshot: 'Hotel',
+    },
+  ];
+  input.passengers = input.passengers.map((p) => ({
+    ...p,
+    serviceClientKeys: [...p.serviceClientKeys, 'hotel'],
+  }));
+  input.hotelSelection = {
+    serviceClientKey: 'hotel',
+    hotelId: 'hotel',
+    hotelNameSnapshot: 'Hotel',
+    cityId: input.destinationId,
+    checkInDate: '2026-10-01',
+    checkOutDate: '2026-10-03',
+    roomCount: 1,
+    roomTypeId: 'room',
+    occupancy: 1,
+    inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.passengers = [
+    ...input.passengers,
+    {
+      ...input.passengers[0]!,
+      customerId: '10000000-0000-4000-8000-000000000099',
+      serviceClientKeys: ['flight'],
+    },
+  ];
+  expect(() => validateSalesContract(input)).not.toThrow();
+});
+
+it('checks manual per-guest hotel prices against exact automatic contract totals', () => {
+  const input = structuredClone(draft);
+  const id = input.passengers[0]!.customerId;
+  input.services[0]!.metadata = {
+    automaticFlightRoomTotalV1: true,
+    passengerFlightPricesV1: JSON.stringify({
+      [id]: [{ currencyCode: 'USD', amount: '100' }],
+    }),
+  };
+  input.services = [
+    ...input.services,
+    {
+      clientKey: 'hotel',
+      kind: 'HOTEL',
+      titleSnapshot: 'Hotel',
+      metadata: {
+        passengerHotelPricesV1: JSON.stringify({
+          [id]: [{ currencyCode: 'USD', amount: '100.50' }],
+        }),
+      },
+    },
+  ];
+  input.passengers[0]!.serviceClientKeys = [
+    ...input.passengers[0]!.serviceClientKeys,
+    'hotel',
+  ];
+  input.hotelSelection = {
+    serviceClientKey: 'hotel',
+    hotelId: 'hotel',
+    hotelNameSnapshot: 'Hotel',
+    cityId: input.destinationId,
+    checkInDate: '2026-10-01',
+    checkOutDate: '2026-10-03',
+    roomCount: 1,
+    roomTypeId: 'room',
+    occupancy: 1,
+    inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.services.find((s) => s.kind === 'HOTEL')!.metadata = {
+    passengerHotelPricesV1: JSON.stringify({
+      [id]: [{ currencyCode: 'USD', amount: '101' }],
+    }),
+  };
+  expect(() => validateSalesContract(input)).toThrow(
+    'مبلغ کل قرارداد باید برابر',
+  );
+});
+
+it('validates individual hotel stay snapshots without an obsolete override price and rejects flight-only stays', () => {
+  const input = structuredClone(draft),
+    id = input.passengers[0]!.customerId;
+  input.passengers = [
+    { ...input.passengers[0]!, serviceClientKeys: ['flight', 'hotel'] },
+    {
+      ...input.passengers[0]!,
+      customerId: '10000000-0000-4000-8000-000000000099',
+      serviceClientKeys: ['flight'],
+    },
+  ];
+  input.services = [
+    ...input.services,
+    {
+      clientKey: 'hotel',
+      kind: 'HOTEL',
+      titleSnapshot: 'Sample hotel',
+      metadata: {
+        passengerHotelStaysV1: JSON.stringify({
+          [id]: {
+            different: true,
+            checkInDate: '2026-10-02',
+            checkOutDate: '2026-10-05',
+          },
+        }),
+        passengerHotelPricesV1: JSON.stringify({
+          [id]: [{ amount: '10', currencyCode: 'USD' }],
+        }),
+      },
+    },
+  ];
+  input.hotelSelection = {
+    serviceClientKey: 'hotel',
+    hotelId: '10000000-0000-4000-8000-000000000010',
+    hotelNameSnapshot: 'Sample',
+    cityId: input.destinationId,
+    checkInDate: '2026-10-01',
+    checkOutDate: '2026-10-07',
+    roomCount: 1,
+    roomTypeId: '10000000-0000-4000-8000-000000000011',
+    occupancy: 1,
+    inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  const metadata = { ...input.services[1]!.metadata! };
+  input.services[1]!.metadata = metadata;
+  metadata.passengerHotelStaysV1 = JSON.stringify({
+    [input.passengers[1]!.customerId]: {
+      different: true,
+      checkInDate: '2026-10-02',
+      checkOutDate: '2026-10-05',
+    },
+  });
+  expect(() => validateSalesContract(input)).toThrow('اقامت باید فقط');
+  metadata.passengerHotelStaysV1 = JSON.stringify({
+    [id]: {
+      different: true,
+      checkInDate: '2026-10-02',
+      checkOutDate: '2026-10-05',
+    },
+  });
+  delete metadata.passengerHotelPricesV1;
+  expect(() => validateSalesContract(input)).not.toThrow();
+});
+
+it('validates aggregate IRR/foreign prices and deductions without requiring flight-specific prices', () => {
+  const input = structuredClone(draft);
+  const id = input.passengers[0]!.customerId;
+  input.services = input.services.map((s) => ({
+    ...s,
+    metadata: {
+      passengerPackagePricingVersion: 1,
+      passengerTotalPricesV1: JSON.stringify({
+        [id]: [
+          { amount: '100', currencyCode: 'IRR' },
+          { amount: '20', currencyCode: 'USD' },
+        ],
+      }),
+      passengerDeductionsV1: JSON.stringify({
+        [id]: { discount: { amount: '10', currencyCode: 'IRR' } },
+      }),
+    },
+  }));
+  input.passengers = input.passengers.map((p) => ({
+    ...p,
+    agreedPrices: [
+      { amount: '90', currencyCode: 'IRR' },
+      { amount: '20', currencyCode: 'USD' },
+    ],
+  }));
+  input.priceComponents = [
+    {
+      type: 'BASE',
+      title: 'قیمت کل خدمات مسافران',
+      amount: '90',
+      currencyCode: 'IRR',
+    },
+    {
+      type: 'BASE',
+      title: 'قیمت کل خدمات مسافران',
+      amount: '20',
+      currencyCode: 'USD',
+    },
+  ];
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.passengers[0]!.agreedPrices = [
+    { amount: '100', currencyCode: 'IRR' },
+    { amount: '20', currencyCode: 'USD' },
+  ];
+  expect(() => validateSalesContract(input)).toThrow('مبلغ نهایی هر مسافر');
+});
+
+it('accepts city tour and guide using existing OTHER services with explicit passenger assignments', () => {
+  const input = structuredClone(draft);
+  input.services = [
+    ...input.services,
+    {
+      clientKey: 'city-tour',
+      kind: 'OTHER',
+      titleSnapshot: 'گشت شهری',
+      metadata: { additionalServiceRole: 'CITY_TOUR' },
+    },
+    {
+      clientKey: 'tour-guide',
+      kind: 'OTHER',
+      titleSnapshot: 'راهنما',
+      metadata: { additionalServiceRole: 'TOUR_GUIDE' },
+    },
+  ];
+  input.passengers = [
+    {
+      ...input.passengers[0]!,
+      serviceClientKeys: ['flight', 'city-tour', 'tour-guide'],
+    },
+    {
+      ...input.passengers[0]!,
+      customerId: '10000000-0000-4000-8000-000000000005',
+      displayNameSnapshot: 'Second synthetic passenger',
+      serviceClientKeys: ['flight'],
+    },
+  ];
+  const before = structuredClone(input);
+  expect(() => validateSalesContract(input)).not.toThrow();
+  expect(input).toEqual(before);
 });

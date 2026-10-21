@@ -647,7 +647,8 @@ function ReleaseWorkspace({ onOpen }: { onOpen: () => void }) {
           <ShieldCheck className="size-6 text-primary" />
           <h3 className="mt-4 font-bold">استثنای مدیر</h3>
           <p className="mt-2 text-sm leading-7 text-muted-foreground">
-            دلیل، انقضای UTC، تاییدکننده دوم متفاوت و Audit کامل اجباری است.
+            دلیل اختیاری است؛ انقضای UTC، تاییدکننده دوم متفاوت و Audit کامل
+            لازم است.
           </p>
           <Button className="mt-5" onClick={onOpen} type="button">
             فرم Release

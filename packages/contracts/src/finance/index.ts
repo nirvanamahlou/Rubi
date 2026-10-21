@@ -1,3 +1,4 @@
+export * from './accounting-events';
 import type { HotelPurchaseSavingsV1 } from '../travel/hotel-savings';
 export const FINANCE_CONTRACT_VERSION = 'finance.v1-proposal' as const;
 export const FINANCE_API_PREFIX = '/api/v1/finance' as const;
@@ -344,6 +345,7 @@ export const financeWorkflowContracts = {
 } as const;
 
 export type FinanceRequestStatus =
+  | 'CLOSED'
   | 'NEW'
   | 'UNDER_REVIEW'
   | 'CORRECTION_REQUIRED'
@@ -373,6 +375,9 @@ export interface FinanceInboxSourceStateV1 {
 }
 
 export interface FinanceInboxItemV1 {
+  /** Absent in older producers. Internal expense clearance is not a second cash payment. */
+  direction?: 'RECEIPT' | 'PAYMENT' | 'NON_CASH';
+  purchaseFx?: readonly FinancePurchaseFxV1[];
   version: 1;
   id: string;
   source: FinanceInboxSource;
@@ -433,6 +438,7 @@ export interface FinanceInboxItemV1 {
 
 /** Finance owns these confirmed purchase figures; a catalog estimate is never a cost. */
 export interface FinanceTicketCostCommandV1 {
+  purchaseRateToIrr?: string;
   version: 1;
   operationId?: string;
   expectedCostVersion?: number;
@@ -477,6 +483,8 @@ export interface FinancePaidTicketCostV1 {
   currencyCode: string;
   paidAt: string;
 }
+
+export * from './bank-accounts';
 
 export type FinanceSettlementAccountKind = 'BANK' | 'CASH' | 'POS' | 'GATEWAY';
 
@@ -769,3 +777,21 @@ export interface FinanceExportSnapshotV1 {
   totals: readonly { currencyCode: string; amount: string }[];
   warnings: readonly string[];
 }
+
+export interface FinancePurchaseFxV1 {
+  referenceId: string;
+  currencyCode: string;
+  foreignAmount: string;
+  rateToIrr: string | null;
+  source: string | null;
+  baselineAt: string;
+  baselineEquivalent: string | null;
+  paidForeignAmount: string;
+  paidBaselineEquivalent: string | null;
+  actualPaidEquivalent: string | null;
+  realizedGainLoss: string | null;
+  averagePaidRateToIrr?: string | null;
+  gainLossPerUnit?: string | null;
+}
+
+export * from './receipt-allocation';

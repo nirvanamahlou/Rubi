@@ -13,7 +13,12 @@ export interface HrDirectoryResponse {
   hasMore: boolean;
 }
 export interface HrFormReferences {
-  users: { id: string; label: string; branchIds: string[] }[];
+  users: {
+    id: string;
+    label: string;
+    branchIds: string[];
+    unavailableReason?: 'INACTIVE' | 'LINKED';
+  }[];
   currencies: { id: string; code: string; name: string }[];
 }
 export const hrDirectoryLabel = (employee: HrDirectoryEmployee) =>

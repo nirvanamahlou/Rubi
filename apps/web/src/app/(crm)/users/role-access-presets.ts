@@ -1,5 +1,7 @@
 import {
   USER_ACCESS_GROUPS,
+  CALL_CENTER_SALES_EXPERT,
+  CALL_CENTER_SALES_MANAGER,
   USER_ACCESS_SCREENS,
   USER_JOB_TITLES,
   canViewScreen,
@@ -30,6 +32,7 @@ const profiles: Record<
   [USER_JOB_TITLES[1]]: {
     groups: ['workbench', 'customers', 'sales', 'ticket-catalog', 'documents'],
     permissions: [
+      ...CALL_CENTER_SALES_EXPERT,
       ...common,
       ...customerRead,
       ...documentRead,
@@ -226,6 +229,7 @@ profiles['مدیر فروش'] = {
     'reports',
   ],
   permissions: [
+    ...CALL_CENTER_SALES_MANAGER,
     ...profiles[USER_JOB_TITLES[1]]!.permissions.filter(
       (code) =>
         code !== 'sales.contracts.read.own' &&
@@ -259,8 +263,12 @@ export function recommendRoleAccess(
     : (profile?.groups ?? []);
   const screens = USER_ACCESS_SCREENS.filter(
     (screen) =>
-      !screen.inheritFrom &&
-      groups.includes(screen.group) &&
+      ((!screen.inheritFrom && groups.includes(screen.group)) ||
+        (screen.id === 'customer-affairs.call-center' &&
+          (administrator ||
+            !!profile?.permissions.includes(
+              'customer_affairs.call_center.read',
+            )))) &&
       (canAssignAll || canViewScreen(actorPermissions, screen.id)),
   );
   const native = permissions.filter(

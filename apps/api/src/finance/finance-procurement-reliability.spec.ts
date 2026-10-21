@@ -1,3 +1,4 @@
+import { financialEventStore } from '../../test/financial-event-store';
 import { Prisma } from '@nora/database';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
@@ -24,9 +25,15 @@ function fixture(status = 'CORRECTION_REQUIRED', paid = '0') {
     sourceVersion: 2,
     branchId: 'branch-a',
     amount: '150',
+    supplier: { id: 'supplier-1' },
+    handoffCreatedAt: '2026-10-04T10:00:00Z',
     currencyCode: 'IRR',
   };
   const tx = {
+    $queryRaw: vi
+      .fn()
+      .mockResolvedValue([{ at: new Date('2026-10-18T00:00:00Z') }]),
+    financeAccountingEvent: financialEventStore(),
     financeProcurementInvoiceRevision: {
       findFirst: vi.fn().mockResolvedValue({
         version: 1,

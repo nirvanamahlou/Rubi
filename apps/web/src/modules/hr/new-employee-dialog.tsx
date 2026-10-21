@@ -11,6 +11,11 @@ import {
 } from '@/components/ui/overlays';
 import styles from './hr-forms.module.css';
 import { buttonVariants } from '@/components/ui/button';
+import {
+  PersonnelIdentityFields,
+  defaultPersonnelIdentity,
+  personnelIdentityError,
+} from './personnel-identity-fields';
 import { RequiredFieldLabel } from './required-field-label';
 import { HR_GRADE_OPTIONS } from './hr-grade-options';
 
@@ -37,6 +42,11 @@ export const employeeStatuses = ['فعال', 'در حال تکمیل', 'تعلی
 export type NewEmployeeStatus = (typeof employeeStatuses)[number];
 
 export interface NewEmployeeFormValue {
+  identityValues?: string[];
+  contactValues?: string[][];
+  photoFile?: File | undefined;
+  photoValidUntil?: string | undefined;
+  groupId?: string;
   userId?: string;
   firstName: string;
   lastName: string;
@@ -89,6 +99,9 @@ export function validateNewEmployeeForm(
   const lastName = value.lastName.trim();
   const personnelCode = value.personnelCode.trim();
 
+  if (value.photoFile && !value.photoValidUntil)
+    errors.photoFile = 'برای این نوع فایل، تاریخ اعتبار بایگانی را مشخص کنید.';
+
   if (!firstName) errors.firstName = 'نام الزامی است.';
   else if (firstName.length > 80)
     errors.firstName = 'نام باید حداکثر ۸۰ نویسه باشد.';
@@ -132,8 +145,17 @@ function FieldError({
 }
 
 interface NewEmployeeFormProps {
+  personnelMode?: boolean | undefined;
+  cityOptions?: readonly { province: string; city: string }[] | undefined;
+  groupOptions?:
+    readonly { id: string; name: string; branch: string }[] | undefined;
   userOptions?:
-    | readonly { id: string; label: string; branches: readonly string[] }[]
+    | readonly {
+        id: string;
+        label: string;
+        branches: readonly string[];
+        unavailableReason?: 'INACTIVE' | 'LINKED';
+      }[]
     | undefined;
   userOptionsError?: string | undefined;
   existingPersonnelCodes: readonly string[];
@@ -162,6 +184,9 @@ interface NewEmployeeFormProps {
 }
 
 export function NewEmployeeForm({
+  personnelMode = false,
+  cityOptions,
+  groupOptions,
   userOptions,
   userOptionsError,
   existingPersonnelCodes,
@@ -180,6 +205,9 @@ export function NewEmployeeForm({
     () =>
       initialValue ?? {
         ...defaultEmployeeValue,
+        ...(personnelMode
+          ? { identityValues: [...defaultPersonnelIdentity], contactValues: [] }
+          : {}),
         branch: branchOptions[0] ?? '',
         unit: unitOptions[0] ?? '',
         ...(organizationOptions ? { unit: '', position: '', grade: '' } : {}),
@@ -210,6 +238,8 @@ export function NewEmployeeForm({
     );
     return () => window.clearTimeout(timer);
   }, [createdReference]);
+  const [step, setStep] = useState(0);
+  const [identityError, setIdentityError] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [errors, setErrors] = useState<NewEmployeeFormErrors>({});
@@ -218,7 +248,7 @@ export function NewEmployeeForm({
     setValue((current) => ({
       ...current,
       [field]: nextValue,
-      ...(field === 'branch' ? { userId: '' } : {}),
+      ...(field === 'branch' ? { userId: '', groupId: '' } : {}),
       ...(field === 'branch' && organizationOptions
         ? { unit: '', position: '', grade: '' }
         : {}),
@@ -234,8 +264,32 @@ export function NewEmployeeForm({
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const nextErrors = validateNewEmployeeForm(value, existingPersonnelCodes);
+    if (personnelMode) {
+      const identityError = personnelIdentityError(
+        value.identityValues ?? defaultPersonnelIdentity,
+      );
+      setIdentityError(identityError);
+      if (step === 0) {
+        const nameErrors = Object.fromEntries(
+          Object.entries(nextErrors).filter(([key]) =>
+            ['firstName', 'lastName', 'photoFile'].includes(key),
+          ),
+        );
+        setErrors(nameErrors);
+        if (!identityError && !Object.keys(nameErrors).length) setStep(1);
+        return;
+      }
+      if (identityError) {
+        setStep(0);
+        return;
+      }
+    }
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
+      return;
+    }
+    if (personnelMode && step === 1) {
+      setStep(2);
       return;
     }
     if (saving) return;
@@ -244,6 +298,15 @@ export function NewEmployeeForm({
     try {
       await onSubmit({
         ...value,
+        ...(personnelMode
+          ? {
+              identityValues: [
+                value.firstName.trim(),
+                value.lastName.trim(),
+                ...(value.identityValues ?? defaultPersonnelIdentity).slice(2),
+              ],
+            }
+          : {}),
         firstName: value.firstName.trim(),
         lastName: value.lastName.trim(),
         personnelCode: value.personnelCode.trim(),
@@ -270,20 +333,86 @@ export function NewEmployeeForm({
   const currentOptions = (options: readonly string[], current: string) =>
     Array.from(new Set([...options, ...(current ? [current] : [])]));
 
+  const groupControl = groupOptions ? (
+    <label className={styles.fieldLabel}>
+      گروه
+      <NativeSearchSelect
+        value={value.groupId ?? ''}
+        onChange={(event) => update('groupId', event.target.value)}
+      >
+        <option value="">بدون گروه</option>
+        {groupOptions
+          .filter((group) => group.branch === value.branch)
+          .map((group) => (
+            <option key={group.id} value={group.id}>
+              {group.name}
+            </option>
+          ))}
+      </NativeSearchSelect>
+    </label>
+  ) : null;
+
   return (
     <form noValidate onSubmit={submit}>
+      {personnelMode ? (
+        <ol aria-label="مراحل فرم پرسنلی">
+          {['اطلاعات فردی', 'اطلاعات کاربری', 'تایید و ثبت'].map(
+            (label, index) => (
+              <li
+                key={label}
+                aria-current={step === index ? 'step' : undefined}
+              >
+                {label}
+              </li>
+            ),
+          )}
+        </ol>
+      ) : null}
+      {personnelMode && step === 2 ? (
+        <fieldset className={styles.formFieldset}>
+          <legend className={styles.formLegend}>تایید و ثبت</legend>
+          <dl>
+            <dt>نام و نام خانوادگی</dt>
+            <dd>
+              {value.firstName} {value.lastName}
+            </dd>
+            <dt>کد ملی</dt>
+            <dd>{value.identityValues?.[2]}</dd>
+            <dt>شماره‌های تماس</dt>
+            <dd>{value.contactValues?.length ?? 0}</dd>
+            <dt>شعبه</dt>
+            <dd>{value.branch}</dd>
+            <dt>سمت</dt>
+            <dd>{value.position}</dd>
+            <dt>تاریخ شروع</dt>
+            <dd>{value.startedAt}</dd>
+          </dl>
+        </fieldset>
+      ) : null}
       {saveError ? (
         <p role="alert" className={styles.fieldError}>
           {saveError}
         </p>
       ) : null}
 
-      <fieldset className={styles.formFieldset}>
-        <legend className={styles.formLegend}>مشخصات پایه</legend>
+      <fieldset
+        className={styles.formFieldset}
+        hidden={personnelMode && step === 2}
+      >
+        <legend className={styles.formLegend}>
+          {personnelMode
+            ? step === 0
+              ? 'اطلاعات فردی'
+              : 'اطلاعات پرسنلی'
+            : 'مشخصات پایه'}
+        </legend>
         <div className={styles.formGrid}>
           <label
             className={styles.fieldLabel}
             htmlFor="hr-new-employee-first-name"
+            style={
+              personnelMode && step !== 0 ? { display: 'none' } : undefined
+            }
           >
             <RequiredFieldLabel required>نام</RequiredFieldLabel>
             <input
@@ -303,6 +432,9 @@ export function NewEmployeeForm({
           <label
             className={styles.fieldLabel}
             htmlFor="hr-new-employee-last-name"
+            style={
+              personnelMode && step !== 0 ? { display: 'none' } : undefined
+            }
           >
             <RequiredFieldLabel required>نام خانوادگی</RequiredFieldLabel>
             <input
@@ -318,7 +450,38 @@ export function NewEmployeeForm({
             />
             <FieldError errors={errors} field="lastName" />
           </label>
-          <label className={styles.fieldLabel} htmlFor="hr-new-employee-code">
+          {!personnelMode ? groupControl : null}
+          {personnelMode && step === 0 ? (
+            <PersonnelIdentityFields
+              cityOptions={cityOptions}
+              values={value.identityValues ?? [...defaultPersonnelIdentity]}
+              onChange={(identityValues) =>
+                setValue((current) => ({ ...current, identityValues }))
+              }
+              groupControl={groupControl}
+              contacts={value.contactValues ?? []}
+              onContacts={(contactValues) =>
+                setValue((current) => ({ ...current, contactValues }))
+              }
+              photo={value.photoFile}
+              photoValidUntil={value.photoValidUntil}
+              onPhotoValidUntil={(photoValidUntil) =>
+                setValue((current) => ({ ...current, photoValidUntil }))
+              }
+              onPhoto={(photoFile) =>
+                setValue((current) => ({ ...current, photoFile }))
+              }
+              photoValidityError={errors.photoFile ?? ''}
+              error={identityError}
+            />
+          ) : null}
+          <label
+            className={styles.fieldLabel}
+            htmlFor="hr-new-employee-code"
+            style={
+              personnelMode && step !== 1 ? { display: 'none' } : undefined
+            }
+          >
             <RequiredFieldLabel required>کد پرسنلی</RequiredFieldLabel>
             <input
               {...errorProps('personnelCode')}
@@ -337,7 +500,13 @@ export function NewEmployeeForm({
             </small>
             <FieldError errors={errors} field="personnelCode" />
           </label>
-          <label className={styles.fieldLabel} htmlFor="hr-new-employee-type">
+          <label
+            className={styles.fieldLabel}
+            htmlFor="hr-new-employee-type"
+            style={
+              personnelMode && step !== 1 ? { display: 'none' } : undefined
+            }
+          >
             <RequiredFieldLabel required>نوع همکاری</RequiredFieldLabel>
             <NativeSearchSelect
               className={styles.control}
@@ -357,7 +526,10 @@ export function NewEmployeeForm({
         </div>
       </fieldset>
 
-      <fieldset className={styles.formFieldset}>
+      <fieldset
+        className={styles.formFieldset}
+        hidden={personnelMode && step !== 1}
+      >
         <legend className={styles.formLegend}>جایگاه سازمانی</legend>
         {lockAssignment ? (
           <p>
@@ -521,7 +693,10 @@ export function NewEmployeeForm({
         </div>
       </fieldset>
 
-      <fieldset className={styles.formFieldset}>
+      <fieldset
+        className={styles.formFieldset}
+        hidden={personnelMode && step !== 1}
+      >
         <legend className={styles.formLegend}>
           حساب کاربری و وضعیت همکاری
         </legend>
@@ -530,26 +705,37 @@ export function NewEmployeeForm({
           <NativeSearchSelect
             className={styles.control}
             id="hr-employee-user"
+            optionLimit={(userOptions?.length ?? 0) + 2}
             disabled={!userOptions}
             value={value.userId ?? ''}
             onChange={(e) => update('userId', e.target.value)}
           >
             <option value="">بدون حساب کاربری مرتبط</option>
             {value.userId &&
-            !userOptions?.some(
-              (u) => u.id === value.userId && u.branches.includes(value.branch),
-            ) ? (
+            !userOptions?.some((u) => u.id === value.userId) ? (
               <option value={value.userId} disabled>
                 حساب فعلی · {value.userId}
               </option>
             ) : null}
-            {userOptions
-              ?.filter((u) => u.branches.includes(value.branch))
-              .map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.label}
-                </option>
-              ))}
+            {userOptions?.map((u) => (
+              <option
+                key={u.id}
+                value={u.id}
+                disabled={
+                  Boolean(u.unavailableReason) ||
+                  !u.branches.includes(value.branch)
+                }
+              >
+                {u.label}
+                {u.unavailableReason === 'LINKED'
+                  ? ' · مرتبط با کارمند دیگر'
+                  : u.unavailableReason === 'INACTIVE'
+                    ? ' · غیرفعال'
+                    : !u.branches.includes(value.branch)
+                      ? ' · خارج از شعبه انتخاب‌شده'
+                      : ''}
+              </option>
+            ))}
           </NativeSearchSelect>
           {userOptionsError ? (
             <small role="alert">{userOptionsError}</small>
@@ -594,6 +780,16 @@ export function NewEmployeeForm({
       </fieldset>
 
       <div className={styles.modalFooter}>
+        {personnelMode && step > 0 ? (
+          <button
+            className={buttonVariants({ variant: 'outline' })}
+            type="button"
+            disabled={saving}
+            onClick={() => setStep(step - 1)}
+          >
+            قبلی
+          </button>
+        ) : null}
         <button
           className={buttonVariants({ variant: 'outline' })}
           onClick={onCancel}
@@ -606,11 +802,13 @@ export function NewEmployeeForm({
           type="submit"
           disabled={saving}
         >
-          {saving
-            ? 'در حال ذخیره…'
-            : initialValue
-              ? 'ذخیره ویرایش'
-              : 'ثبت کارمند'}
+          {personnelMode && step < 2
+            ? 'بعدی'
+            : saving
+              ? 'در حال ذخیره…'
+              : initialValue
+                ? 'ذخیره ویرایش'
+                : 'ثبت کارمند'}
         </button>
       </div>
     </form>
@@ -618,6 +816,9 @@ export function NewEmployeeForm({
 }
 
 interface NewEmployeeDialogProps {
+  personnelMode?: boolean | undefined;
+  cityOptions?: readonly { province: string; city: string }[] | undefined;
+  groupOptions?: NewEmployeeFormProps['groupOptions'];
   userOptions?: NewEmployeeFormProps['userOptions'];
   userOptionsError?: string | undefined;
   existingPersonnelCodes: readonly string[];
@@ -637,6 +838,9 @@ interface NewEmployeeDialogProps {
 }
 
 export function NewEmployeeDialog({
+  personnelMode,
+  cityOptions,
+  groupOptions,
   userOptions,
   userOptionsError,
   existingPersonnelCodes,
@@ -671,7 +875,11 @@ export function NewEmployeeDialog({
         dir="rtl"
       >
         <DialogTitle>
-          {initialValue ? 'ویرایش کارمند' : 'افزودن کارمند جدید'}
+          {personnelMode
+            ? 'فرم پرسنلی'
+            : initialValue
+              ? 'ویرایش کارمند'
+              : 'افزودن کارمند جدید'}
         </DialogTitle>
         <DialogDescription>
           مشخصات پایه و جایگاه سازمانی کارمند را مطابق فهرست کارکنان تکمیل کنید.
@@ -687,6 +895,9 @@ export function NewEmployeeDialog({
           </div>
         ) : (
           <NewEmployeeForm
+            personnelMode={personnelMode}
+            cityOptions={cityOptions}
+            groupOptions={groupOptions}
             userOptions={userOptions}
             userOptionsError={userOptionsError}
             existingPersonnelCodes={existingPersonnelCodes}

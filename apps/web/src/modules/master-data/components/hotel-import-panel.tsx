@@ -26,7 +26,9 @@ const lookupQuery: MasterDataListQuery = {
   page: 1,
   pageSize: 100,
 };
-async function loadAll(resource: 'countries' | 'cities') {
+export async function loadHotelImportLocations(
+  resource: 'countries' | 'cities',
+) {
   const first = await masterDataApi.list(resource, lookupQuery);
   const records = [...first.data];
   const pages = Math.ceil(first.meta.total / lookupQuery.pageSize);
@@ -65,7 +67,10 @@ export function HotelImportPanel({
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    void Promise.all([loadAll('countries'), loadAll('cities')])
+    void Promise.all([
+      loadHotelImportLocations('countries'),
+      loadHotelImportLocations('cities'),
+    ])
       .then(([countryRecords, cityRecords]) => {
         setCountries(countryRecords);
         setCities(cityRecords);
@@ -185,6 +190,7 @@ export function HotelImportPanel({
           >
             <NativeSearchSelect
               id="hotel-import-country"
+              optionLimit={countries.length + 1}
               disabled={busy !== null}
               className="h-10 w-full rounded-md border border-slate-300 bg-white px-3"
               value={countryId}
@@ -216,6 +222,7 @@ export function HotelImportPanel({
           >
             <NativeSearchSelect
               id="hotel-import-city"
+              optionLimit={scopedCities.length + 1}
               className="h-10 w-full rounded-md border border-slate-300 bg-white px-3"
               value={cityId}
               disabled={busy !== null || !countryId}
@@ -319,6 +326,9 @@ export function HotelImportPanel({
                   <th className="p-2">ردیف</th>
                   <th className="p-2">کد سیستمی</th>
                   <th className="p-2">نام هتل</th>
+                  <th className="p-2">نام فارسی</th>
+                  <th className="p-2">وب‌سایت</th>
+                  <th className="p-2">فروش آزاد</th>
                   <th className="p-2">ستاره</th>
                   <th className="p-2">وضعیت</th>
                 </tr>
@@ -329,6 +339,17 @@ export function HotelImportPanel({
                     <td className="p-2">{row.rowNumber}</td>
                     <td className="p-2 font-mono text-xs">{row.code}</td>
                     <td className="p-2">{row.englishName}</td>
+                    <td className="p-2">{row.persianName || '—'}</td>
+                    <td className="p-2">
+                      <bdi>{row.website || '—'}</bdi>
+                    </td>
+                    <td className="p-2">
+                      {row.freeSale === true
+                        ? 'بله'
+                        : row.freeSale === false
+                          ? 'خیر'
+                          : '—'}
+                    </td>
                     <td className="p-2">{row.starRating ?? '—'}</td>
                     <td className="p-2">{row.duplicate ? 'تکراری' : 'جدید'}</td>
                   </tr>

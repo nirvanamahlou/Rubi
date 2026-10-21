@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { salesApi } from '../api/client';
 import type { SalesContractSummary } from '@nora/contracts';
 import {
+  contractRowClassName,
   formatMoney,
   hasContractDateFilter,
   loadSalesWorkspace,
@@ -10,9 +11,34 @@ import {
   SalesWorkspace,
   ContractListContactRouteDate,
   ContractListAmounts,
+  ContractListNumber,
 } from './sales-workspace';
 
 describe('sales dashboard loading', () => {
+  it('keeps corrected yellow contract-number cells structurally identical to ordinary cells', () => {
+    const render = (reservationContractChanged: boolean) =>
+      renderToStaticMarkup(
+        <table>
+          <tbody>
+            <tr>
+              <ContractListNumber
+                contract={{
+                  contractNumber: 'SYNTHETIC-1',
+                  reservationContractChanged,
+                }}
+              />
+            </tr>
+          </tbody>
+        </table>,
+      );
+    const corrected = render(true);
+    const plain = render(false);
+    expect(corrected).toContain('اصلاح قرارداد توسط رزرواسیون');
+    expect(corrected).not.toMatch(/<p(?:\s|>)/);
+    expect(corrected.replace(/title="[^"]*"/, '')).toBe(
+      plain.replace(/title="[^"]*"/, ''),
+    );
+  });
   it('renders one filter form for contracts and receivables', () => {
     const html = renderToStaticMarkup(<SalesWorkspace />);
     expect(html.match(/<form/g)).toHaveLength(1);
@@ -261,4 +287,23 @@ describe('sales dashboard loading', () => {
     expect(html).not.toContain('در دسترس نیست');
     expect(html).not.toContain('ناموفق');
   });
+});
+
+it('uses finance delivery approval for green rows and removes green on revocation', () => {
+  expect(
+    contractRowClassName({ customerDocumentDeliveryApproved: true }),
+  ).toContain('bg-emerald-100');
+  expect(
+    contractRowClassName({
+      customerDocumentDeliveryApproved: true,
+      reservationContractChanged: true,
+    }),
+  ).not.toContain('bg-amber');
+  expect(
+    contractRowClassName({ customerDocumentDeliveryApproved: false }),
+  ).not.toContain('emerald');
+  expect(contractRowClassName({ reservationContractChanged: true })).toContain(
+    'bg-amber',
+  );
+  expect(contractRowClassName({})).toContain('odd:bg-muted');
 });

@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import {
   compareMarketingDecimals,
   createMarketingMoney,
@@ -231,7 +232,7 @@ export function transitionCampaign(
   }
   if (
     context.actorReference.trim().length < 3 ||
-    context.reason.trim().length < 3
+    !isOptionalOperationReason(context.reason)
   ) {
     throw new MarketingDomainError(
       'MARKETING_VALIDATION_ERROR',
@@ -253,7 +254,7 @@ export function transitionCampaign(
       fromStatus: campaign.status,
       toStatus: target,
       actorReference: context.actorReference,
-      reason: context.reason.trim(),
+      reason: (context.reason ?? '').trim(),
       version: nextVersion,
       occurredAt: context.occurredAt,
     },

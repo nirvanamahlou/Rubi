@@ -1,4 +1,7 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
+import { salesHotelRoomSummary } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { EnglishHotelName } from './english-hotel-name';
@@ -76,6 +79,7 @@ export function initialDraft(request: ReservationIntakeV1): ArrangementDraft {
       hotel?.roomCount ??
       1,
     extraBedCount: current?.extraBedCount ?? hotel?.extraBedCount ?? 0,
+    ...(hotel?.rooms?.length ? salesHotelRoomSummary(hotel.rooms) : {}),
     hotelGuestCustomerIds:
       current?.hotelGuestCustomerIds ??
       (assigned.length ? assigned : request.snapshot.passengerIds),
@@ -182,7 +186,7 @@ export function ReservationInbox() {
     draft.roomCount > 0 &&
     draft.singleRoomCount + draft.doubleRoomCount <= draft.roomCount &&
     draft.hotelGuestCustomerIds.length > 0 &&
-    draft.reason.trim().length > 0;
+    isOptionalOperationReason(draft.reason);
 
   return (
     <div className="grid gap-4">

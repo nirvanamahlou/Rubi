@@ -32,6 +32,7 @@ import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
 import { hrReferenceOptions } from './hr-form-model';
 import { useHrReferenceData } from './hr-reference-data';
 import { useHrFormReferences } from './hr-directory-picker';
+import { hrStatusText } from './hr-presentation';
 import { hrDisplayDate } from './hr-dates';
 
 export function employeeDataset(
@@ -59,7 +60,7 @@ export function employeeDataset(
       item.grade,
       item.manager,
       hrDisplayDate(item.startedAtValue),
-      item.status,
+      hrStatusText(item.status),
     ]),
     recordIds: employees.map((item) => item.id),
     versions: employees.map((item) => item.version),
@@ -71,10 +72,21 @@ export function employeeFormValue(
   store: HrStore,
 ): NewEmployeeFormValue {
   const [firstName, ...last] = employee.name.split(' ');
+  const identity = store.data?.records?.find(
+    (record) =>
+      record.employeeId === employee.id &&
+      record.section === 'employee' &&
+      record.tab === 'identity' &&
+      !record.deletedAt,
+  );
+  const parts =
+    identity && `${identity.values[0]} ${identity.values[1]}` === employee.name
+      ? identity.values
+      : undefined;
   return {
     userId: employee.userId ?? '',
-    firstName: firstName ?? '',
-    lastName: last.join(' '),
+    firstName: parts?.[0] ?? firstName ?? '',
+    lastName: parts?.[1] ?? last.join(' '),
     personnelCode: employee.personnelCode,
     employmentType: employee.kind,
     branch:
@@ -125,6 +137,12 @@ export function HrEmployeeEditor({
   onSaved?: (employee: HrEmployeeDto) => void;
   preferredCompanyId?: string;
 }) {
+  const photoUpload = useRef<{
+    file: File;
+    validUntil: string;
+    branch: string;
+    id: string;
+  } | null>(null);
   const key = useRef(crypto.randomUUID());
   const [newReference, setNewReference] = useState<{
     kind: 'branches' | 'units' | 'positions';
@@ -144,6 +162,32 @@ export function HrEmployeeEditor({
   return (
     <>
       <NewEmployeeDialog
+        personnelMode={!employee && store.data!.capabilities.sensitive}
+        cityOptions={references.data.records
+          .filter(
+            (record) =>
+              record.section === 'employee' &&
+              record.tab === 'identity' &&
+              record.values[8] &&
+              record.values[9],
+          )
+          .map((record) => ({
+            province: record.values[8]!,
+            city: record.values[9]!,
+          }))}
+        groupOptions={references.data.records
+          .filter(
+            (r) =>
+              r.section === 'organization' &&
+              r.tab === 'groups' &&
+              r.status === 'فعال',
+          )
+          .map((r) => ({
+            id: r.id,
+            name: r.values[0] ?? '',
+            branch:
+              companies.find((c) => c.branchId === r.branchId)?.name ?? '',
+          }))}
         onAddReference={(kind, branch) => {
           const companyId = companies.find(
             (company) => company.name === branch,
@@ -168,7 +212,20 @@ export function HrEmployeeEditor({
         existingPersonnelCodes={store
           .data!.employees.filter((item) => item.id !== employee?.id)
           .map((item) => item.personnelCode)}
-        initialValue={employee ? employeeFormValue(employee, store) : undefined}
+        initialValue={
+          employee
+            ? {
+                ...employeeFormValue(employee, store),
+                groupId:
+                  references.data.records.find(
+                    (r) =>
+                      r.employeeId === employee.id &&
+                      r.tab === 'groupMembers' &&
+                      r.status === 'فعال',
+                  )?.parentId ?? '',
+              }
+            : undefined
+        }
         branchOptions={
           employee?.organizationBranchId
             ? [employee.companyName]
@@ -193,12 +250,48 @@ export function HrEmployeeEditor({
           const manager = managers[0];
           if (value.manager !== 'بدون مدیر مستقیم' && managers.length !== 1)
             throw new Error('مدیر مستقیم را از فهرست کارکنان انتخاب کنید.');
+          let photoDocumentId: string | undefined;
+          if (value.photoFile) {
+            if (
+              photoUpload.current?.file === value.photoFile &&
+              photoUpload.current.branch === branch.branchId &&
+              photoUpload.current.validUntil === value.photoValidUntil
+            )
+              photoDocumentId = photoUpload.current.id;
+            else {
+              const { archiveHrFile } = await import('./hr-file-archive');
+              const document = await archiveHrFile({
+                file: value.photoFile,
+                validUntil: value.photoValidUntil,
+                branchId: branch.branchId,
+                entityId: key.current,
+                title: `عکس پرسنلی ${value.firstName} ${value.lastName}`,
+              });
+              photoDocumentId = document.id;
+              photoUpload.current = {
+                validUntil: value.photoValidUntil ?? '',
+                file: value.photoFile,
+                branch: branch.branchId,
+                id: document.id,
+              };
+            }
+          }
           const input = {
+            ...(value.identityValues
+              ? {
+                  identityValues: value.identityValues,
+                  contactValues: value.contactValues ?? [],
+                }
+              : {}),
+            ...(photoDocumentId ? { photoDocumentId } : {}),
+            groupId: value.groupId || null,
             userId: value.userId || null,
             branchId: branch.branchId,
             ...(branch.organizationBranchId
               ? { organizationBranchId: branch.organizationBranchId }
               : {}),
+            firstName: value.firstName,
+            lastName: value.lastName,
             name: `${value.firstName} ${value.lastName}`.trim(),
             kind: value.employmentType,
             unit: value.unit,
@@ -210,6 +303,9 @@ export function HrEmployeeEditor({
           };
           const saved = employee
             ? await hrApi.employees.update(employee.id, {
+                groupId: input.groupId,
+                firstName: input.firstName,
+                lastName: input.lastName,
                 name: input.name,
                 kind: input.kind,
                 status: input.status,
@@ -272,6 +368,23 @@ export function HrEmployees({
   onProfile: (employee: HrEmployeeDto) => void;
 }) {
   const [query, setQuery] = useState('');
+  const [groupId, setGroupId] = useState('');
+  const [sort, setSort] = useState('code');
+  const references = useHrReferenceData(store);
+  const members = useMemo(
+    () =>
+      references.data.records
+        .filter(
+          (r) =>
+            r.section === 'organization' &&
+            r.tab === 'groupMembers' &&
+            r.parentId === groupId &&
+            !r.deletedAt &&
+            r.status === 'فعال',
+        )
+        .map((r) => r.employeeId),
+    [references.data.records, groupId],
+  );
   const [branch, setBranch] = useState('');
   const [unit, setUnit] = useState('');
   const [status, setStatus] = useState('');
@@ -282,25 +395,34 @@ export function HrEmployees({
   const [removing, setRemoving] = useState<HrEmployeeDto | null>(null);
   const filtered = useMemo(
     () =>
-      store.data!.employees.filter(
-        (item) =>
-          item.status !== 'پایان همکاری' &&
-          (!branch ||
-            (item.organizationBranchId || item.branchId) === branch) &&
-          (!unit || item.unit === unit) &&
-          (!status || item.status === status) &&
-          (!query ||
-            normalizeHrText(
-              `${item.name} ${item.personnelCode} ${item.position}`,
-            ).includes(normalizeHrText(query))) &&
-          (!range.from || item.startedAtValue >= range.from) &&
-          (!range.to || item.startedAtValue <= range.to),
-      ),
-    [store.data, branch, unit, status, query, range],
+      store
+        .data!.employees.filter(
+          (item) =>
+            item.status !== 'پایان همکاری' &&
+            (!groupId || members.includes(item.id)) &&
+            (!branch ||
+              (item.organizationBranchId || item.branchId) === branch) &&
+            (!unit || item.unit === unit) &&
+            (!status || hrStatusText(item.status) === status) &&
+            (!query ||
+              normalizeHrText(
+                `${item.name} ${item.personnelCode} ${item.position}`,
+              ).includes(normalizeHrText(query))) &&
+            (!range.from || item.startedAtValue >= range.from) &&
+            (!range.to || item.startedAtValue <= range.to),
+        )
+        .sort((a, b) =>
+          (sort === 'name' ? a.name : a.personnelCode).localeCompare(
+            sort === 'name' ? b.name : b.personnelCode,
+            'fa',
+            { numeric: true },
+          ),
+        ),
+    [store.data, branch, unit, status, query, range, sort, groupId, members],
   );
   const dataset = employeeDataset(filtered, store.data!.branches);
   const selection = useHrRowSelection(
-    JSON.stringify([query, branch, unit, status, range]),
+    JSON.stringify([query, branch, unit, status, range, groupId, sort]),
   );
   const exportDataset = selectedHrDataset(dataset, selection.selectedIds);
   return (
@@ -343,6 +465,38 @@ export function HrEmployees({
             />
           </label>
           <label>
+            گروه
+            <NativeSearchSelect
+              value={groupId}
+              onChange={(e) => setGroupId(e.target.value)}
+            >
+              <option value="">همه گروه‌ها</option>
+              {references.data.records
+                .filter(
+                  (r) =>
+                    r.section === 'organization' &&
+                    r.tab === 'groups' &&
+                    !r.deletedAt &&
+                    r.status === 'فعال',
+                )
+                .map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.values[0]}
+                  </option>
+                ))}
+            </NativeSearchSelect>
+          </label>
+          <label>
+            مرتب‌سازی بر اساس
+            <NativeSearchSelect
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+            >
+              <option value="code">کد پرسنلی</option>
+              <option value="name">اسم و فامیل</option>
+            </NativeSearchSelect>
+          </label>
+          <label>
             وضعیت
             <NativeSearchSelect
               value={status}
@@ -350,7 +504,11 @@ export function HrEmployees({
             >
               <option value="">همه وضعیت‌ها</option>
               {Array.from(
-                new Set(store.data!.employees.map((item) => item.status)),
+                new Set(
+                  store.data!.employees.map((item) =>
+                    hrStatusText(item.status),
+                  ),
+                ),
               ).map((item) => (
                 <option key={item}>{item}</option>
               ))}
@@ -398,6 +556,8 @@ export function HrEmployees({
           <HrButton
             onClick={() => {
               setQuery('');
+              setGroupId('');
+              setSort('code');
               setBranch('');
               setUnit('');
               setStatus('');

@@ -8,8 +8,51 @@ export class MasterProcurementDirectory {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
-  branches(ids: string[]) {
-    return this.database.client.branch.findMany({
+  /** Finance-owned accounts reference this canonical bank, never duplicate it. */
+  async assertBank(id: string, transaction?: Prisma.TransactionClient) {
+    const row = await (
+      transaction ?? this.database.client
+    ).masterBank.findFirst({
+      where: { id, isActive: true },
+      select: { id: true },
+    });
+    if (!row) throw new BadRequestException('بانک انتخاب‌شده معتبر نیست.');
+  }
+  /** Approved operational reference only; never journal-posting authority. */
+  async purchaseRateToIrr(
+    currencyCode: string,
+    at = new Date(),
+    transaction?: Prisma.TransactionClient,
+  ) {
+    for (const rateType of ['SELL', 'REFERENCE'] as const) {
+      const row = await (
+        transaction ?? this.database.client
+      ).masterDraftExchangeRate.findFirst({
+        where: {
+          fromCurrency: { code: currencyCode, isActive: true },
+          toCurrency: { code: 'IRR', isActive: true },
+          rateType,
+          status: 'APPROVED',
+          isActive: true,
+          validFrom: { lte: at },
+          observedAt: { lte: at },
+          approvedAt: { lte: at },
+          OR: [{ validTo: null }, { validTo: { gt: at } }],
+        },
+        orderBy: [{ validFrom: 'desc' }, { approvedAt: 'desc' }, { id: 'asc' }],
+        select: { rate: true, observedAt: true },
+      });
+      if (row)
+        return {
+          rateToIrr: row.rate.toDecimalPlaces(8).toString(),
+          source: 'SYSTEM_' + rateType,
+          observedAt: row.observedAt.toISOString(),
+        };
+    }
+    return null;
+  }
+  branches(ids: string[], transaction?: Prisma.TransactionClient) {
+    return (transaction ?? this.database.client).branch.findMany({
       where: { id: { in: ids }, isActive: true },
       select: { id: true, name: true },
       take: 100,
@@ -23,9 +66,9 @@ export class MasterProcurementDirectory {
       take: 250,
     });
   }
-  async assertCurrency(code: string) {
+  async assertCurrency(code: string, transaction?: Prisma.TransactionClient) {
     if (
-      !(await this.database.client.masterCurrency.findFirst({
+      !(await (transaction ?? this.database.client).masterCurrency.findFirst({
         where: { code, isActive: true },
         select: { id: true },
       }))
@@ -39,6 +82,16 @@ export class MasterProcurementDirectory {
   ) {
     return (transaction ?? this.database.client).masterPaymentMethod.findFirst({
       where: { id, isActive: true, direction: { in: ['PAYMENT', 'BOTH'] } },
+      select: { id: true, name: true },
+    });
+  }
+  /** Public validator for manually confirmed incoming treasury receipts. */
+  activeIncomingPaymentMethod(
+    id: string,
+    transaction?: Prisma.TransactionClient,
+  ) {
+    return (transaction ?? this.database.client).masterPaymentMethod.findFirst({
+      where: { id, isActive: true, direction: { in: ['RECEIPT', 'BOTH'] } },
       select: { id: true, name: true },
     });
   }

@@ -38,6 +38,81 @@ const record = {
   },
 } as unknown as MasterDataRecord;
 describe('broker form', () => {
+  it('shows saved contact masks and address on reopen without treating masks as entered values', () => {
+    const saved = {
+      ...record,
+      attributes: {
+        ...record.attributes,
+        dossierMobileMasked: '***0124',
+        dossierEmailMasked: 'q***@example.test',
+        dossierAddress: 'QA office',
+      },
+    };
+    for (const mode of ['edit', 'view'] as const) {
+      const html = renderToStaticMarkup(
+        createElement(MasterDataBrokerForm, {
+          mode,
+          record: saved,
+          onOpenChange: () => undefined,
+          onPersist: async () => undefined,
+        }),
+      );
+      for (const value of [
+        '***1234',
+        '***0124',
+        'q***@example.test',
+        'QA office',
+      ])
+        expect(html).toContain(value);
+      expect(html).not.toContain('value="***');
+      if (mode === 'edit') expect(html).toContain('بدون تغییر باقی می‌ماند.');
+    }
+    expect(brokerFormValues(saved)).toMatchObject({
+      primaryPhone: '',
+      dossierMobile: '',
+      dossierEmail: '',
+      dossierAddress: 'QA office',
+    });
+  });
+  it('accepts Caps Lock email text without changing its case in the payload', () => {
+    expect(
+      brokerMutationValues(
+        { name: 'Test', dossierEmail: 'Caps.LOCK@EXAMPLE.TEST' },
+        [],
+      ).dossierEmail,
+    ).toBe('Caps.LOCK@EXAMPLE.TEST');
+    const html = renderToStaticMarkup(
+      createElement(MasterDataBrokerForm, {
+        mode: 'create',
+        onOpenChange: () => undefined,
+        onPersist: async () => undefined,
+      }),
+    );
+    const input = html.match(
+      /<input[^>]*id="live-brokers-dossierEmail"[^>]*>/,
+    )?.[0];
+    expect(input).toContain('type="email"');
+    expect(input).toContain('dir="ltr"');
+    expect(input).not.toContain('pattern=');
+  });
+  it('omits blank new optional dossier fields but preserves explicit edit clears', () => {
+    const fresh = brokerMutationValues(brokerFormValues(), []);
+    for (const key of ['dossierMobile', 'dossierEmail', 'dossierAddress'])
+      expect(fresh).not.toHaveProperty(key);
+    expect(fresh.dossierVersion).toBe('1');
+    expect(fresh).not.toHaveProperty('leaderDrafts');
+    expect(fresh).not.toHaveProperty('englishName');
+    expect(fresh).not.toHaveProperty('boardText');
+    const edited = brokerMutationValues(brokerFormValues(record), [], record);
+    expect(edited.dossierMobile).toBe('');
+    expect(edited.dossierEmail).toBe('');
+    expect(
+      brokerMutationValues(
+        { ...brokerFormValues(), dossierEmail: 'qa@example.test' },
+        [],
+      ).dossierEmail,
+    ).toBe('qa@example.test');
+  });
   it('keeps legacy city and airport Board, without putting masked contacts in input values', () => {
     expect(brokerFormValues(record)).toMatchObject({
       cityIds: 'old-city',

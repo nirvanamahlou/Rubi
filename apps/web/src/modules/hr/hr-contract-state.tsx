@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useRef, useState } from 'react';
@@ -188,7 +190,7 @@ export function HrContractState({
                   />
                 </label>
                 <HrButton
-                  disabled={busy || !reason.trim()}
+                  disabled={busy || !isOptionalOperationReason(reason)}
                   onClick={() => void command('ENDED')}
                 >
                   ثبت پایان قرارداد

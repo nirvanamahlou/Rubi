@@ -30,3 +30,56 @@ describe('Passenger whole-package price entry', () => {
     expect(html).toContain('value=""');
   });
 });
+
+it('offers independent rial and optional foreign flight amounts for each passenger', () => {
+  const html = renderToStaticMarkup(
+    <PassengerPackagePrices
+      flight
+      state={{
+        ...emptySalesForm,
+        serviceKinds: ['FLIGHT'],
+        passengers: [
+          {
+            customerId: 'p',
+            displayName: 'PASSPORT NAME',
+            birthDate: '1990-01-01',
+          },
+        ],
+        passengerPrices: {
+          p: [
+            { amount: '100', currencyCode: 'IRR' },
+            { amount: '', currencyCode: 'USD' },
+          ],
+        },
+      }}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(html).toContain('قیمت پرواز هر مسافر');
+  expect(html).toContain('قیمت ریالی PASSPORT NAME');
+  expect(html).toContain('قیمت ارزی PASSPORT NAME');
+  expect(html).not.toContain('مبلغ معتبر با حداکثر');
+});
+
+it('shows editable hotel currency amounts and the age as the second column', () => {
+  const html = renderToStaticMarkup(
+    <PassengerPackagePrices
+      hotel
+      state={{
+        ...emptySalesForm,
+        serviceKinds: ['HOTEL'],
+        hotel: { ...emptySalesForm.hotel, guestCustomerIds: ['p'] },
+        departureDate: '2026-10-19',
+        passengers: [
+          { customerId: 'p', displayName: 'Guest', birthDate: '2020-01-01' },
+        ],
+      }}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(html).toContain('قیمت ارزی Guest');
+  expect(html).toContain('کودک');
+  const heads = [...html.matchAll(/<th[^>]*>(.*?)<\/th>/g)].map((m) => m[1]);
+  expect(heads[1]).toBe('رده سنی');
+  expect(html).not.toContain('سهم ارزی اتاق');
+});

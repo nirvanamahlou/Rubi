@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import {
   BadRequestException,
   ForbiddenException,
@@ -71,7 +72,7 @@ export class B2bOrganizationUserService {
   private validate(input: SaveB2bOrganizationUserDto) {
     if (
       !input.roleName.trim() ||
-      input.reason.trim().length < 5 ||
+      !isOptionalOperationReason(input.reason) ||
       (input.isActive && !input.sections.length)
     )
       throw new BadRequestException(
@@ -146,7 +147,7 @@ export class B2bOrganizationUserService {
           roleName: input.roleName,
           sections: input.sections,
           isActive: input.isActive,
-          reason: input.reason,
+          reason: input.reason ?? '',
         },
         actor.userId,
         undefined,

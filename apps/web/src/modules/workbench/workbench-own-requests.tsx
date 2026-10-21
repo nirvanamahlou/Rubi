@@ -1,7 +1,15 @@
 'use client';
 
-import { Building2, ClipboardCheck, Clock3, FileText } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import {
+  Building2,
+  ClipboardCheck,
+  Clock3,
+  FileText,
+  RefreshCw,
+  UserRound,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import {
   Alert,
@@ -32,43 +40,58 @@ export function WorkbenchOwnRequests() {
   const [selected, setSelected] = useState<WorkbenchRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [refresh, setRefresh] = useState(0);
+  const [mode, setMode] = useState<'all' | 'incoming' | 'outgoing'>('all');
+  const params = useSearchParams();
+  const requestedId = params.get('request');
+  const openedRequest = useRef<string | null>(null);
   useEffect(() => {
     let active = true;
-    void customerAffairsApi
-      .workbenchRequests()
-      .then(({ data }) => {
-        if (active) setRows(data);
-      })
-      .catch((cause) => {
-        if (active)
-          setError(
-            cause instanceof Error ? cause.message : 'درخواست‌ها دریافت نشدند.',
-          );
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    const load = () => {
+      void customerAffairsApi
+        .workbenchRequests()
+        .then(({ data }) => {
+          if (active) {
+            setRows(data);
+            setError('');
+            if (requestedId && openedRequest.current !== requestedId) {
+              const request = data.find((row) => row.id === requestedId);
+              if (request) {
+                openedRequest.current = requestedId;
+                setSelected(request);
+              }
+            }
+          }
+        })
+        .catch((cause) => {
+          if (active)
+            setError(
+              cause instanceof Error
+                ? cause.message
+                : 'درخواست‌ها دریافت نشدند.',
+            );
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    };
+    load();
+    const onFocus = () => load();
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') load();
+    }, 30000);
+    window.addEventListener('focus', onFocus);
     return () => {
       active = false;
+      window.clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
     };
-  }, []);
+  }, [refresh, requestedId]);
   if (loading) return <Skeleton className="h-32" />;
-  if (error)
-    return (
-      <Alert
-        tone="error"
-        title="درخواست‌های من دریافت نشدند"
-        description={error}
-      />
-    );
-  if (!rows.length)
-    return (
-      <EmptyState
-        icon={ClipboardCheck}
-        title="هنوز درخواستی ثبت نکرده‌اید"
-        description="درخواست‌های بین‌واحدی ثبت‌شده از میزکار اینجا پیگیری می‌شوند."
-      />
-    );
+  const visibleRows = rows.filter(
+    (row) =>
+      mode === 'all' || row.direction === mode || row.direction === 'self',
+  );
   return (
     <section
       className="space-y-3"
@@ -76,12 +99,54 @@ export function WorkbenchOwnRequests() {
     >
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-black" id="workbench-own-requests-title">
-          درخواست‌های ثبت‌شده من
+          درخواست‌های میزکار من
         </h2>
-        <Badge>{rows.length.toLocaleString('fa-IR')} مورد</Badge>
+        <div className="flex items-center gap-2">
+          <Badge>{visibleRows.length.toLocaleString('fa-IR')} مورد</Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setRefresh((value) => value + 1)}
+          >
+            <RefreshCw className="size-4" aria-hidden="true" />
+            به‌روزرسانی
+          </Button>
+        </div>
       </div>
+      <div className="flex gap-2" aria-label="فیلتر درخواست‌ها">
+        {(
+          [
+            ['all', 'همه درخواست‌ها'],
+            ['incoming', 'دریافتی'],
+            ['outgoing', 'ارسالی'],
+          ] as const
+        ).map(([value, label]) => (
+          <Button
+            key={value}
+            variant={mode === value ? 'primary' : 'outline'}
+            aria-pressed={mode === value}
+            onClick={() => setMode(value)}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
+      {error ? (
+        <Alert
+          tone="error"
+          title="درخواست‌های من دریافت نشدند"
+          description={error}
+        />
+      ) : null}
+      {!visibleRows.length ? (
+        <EmptyState
+          icon={ClipboardCheck}
+          title="درخواستی در این فهرست نیست"
+          description="درخواست‌های دریافتی و ارسالی شما در همین میزکار نمایش داده می‌شوند."
+        />
+      ) : null}
       <div className="grid gap-4 lg:grid-cols-2">
-        {rows.map((row, index) => (
+        {visibleRows.map((row) => (
           <Card
             className="overflow-hidden border-primary/15 bg-gradient-to-br from-surface via-surface to-primary/5 p-0 shadow-sm"
             key={row.id}
@@ -99,9 +164,26 @@ export function WorkbenchOwnRequests() {
                     <h3 className="mt-1 truncate font-black">{row.subject}</h3>
                   </div>
                 </div>
-                {shouldShowWorkbenchRequestStatus(row.status, index === 0) ? (
+                {shouldShowWorkbenchRequestStatus(
+                  row.status,
+                  row.id === rows[0]?.id,
+                ) ? (
                   <Badge>{workbenchRequestStatusLabel(row.status)}</Badge>
                 ) : null}
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Badge>
+                  {row.direction === 'incoming'
+                    ? 'دریافتی'
+                    : row.direction === 'self'
+                      ? 'برای خودم'
+                      : 'ارسالی'}
+                </Badge>
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <UserRound className="size-3" aria-hidden="true" />
+                  از: {row.senderName || 'ثبت‌کننده'} · به:{' '}
+                  {row.recipientName || row.destinationUnit || 'واحد مقصد'}
+                </span>
               </div>
               <p className="max-h-12 overflow-hidden text-sm leading-6 text-muted-foreground">
                 {row.description || 'شرحی برای این درخواست ثبت نشده است.'}
@@ -161,7 +243,9 @@ export function WorkbenchOwnRequests() {
               <div className="space-y-5 p-6">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-xs text-muted-foreground">
-                    ثبت‌شده از میزکار شما
+                    {selected.direction === 'incoming'
+                      ? 'درخواست دریافتی در میزکار شما'
+                      : 'درخواست ارسالی از میزکار شما'}
                   </span>
                   {shouldShowWorkbenchRequestStatus(
                     selected.status,
@@ -186,6 +270,18 @@ export function WorkbenchOwnRequests() {
                   </dd>
                 </div>
                 <dl className="grid grid-cols-2 gap-3 text-muted-foreground">
+                  <div className="rounded-xl bg-muted/60 p-3">
+                    <dt className="text-xs">فرستنده</dt>
+                    <dd className="mt-1 font-semibold text-foreground">
+                      {selected.senderName || 'ثبت‌کننده'}
+                    </dd>
+                  </div>
+                  <div className="rounded-xl bg-muted/60 p-3">
+                    <dt className="text-xs">گیرنده</dt>
+                    <dd className="mt-1 font-semibold text-foreground">
+                      {selected.recipientName || 'واحد مقصد'}
+                    </dd>
+                  </div>
                   <div className="rounded-xl bg-muted/60 p-3">
                     <dt className="text-xs">واحد مقصد</dt>
                     <dd className="mt-1 font-semibold text-foreground">

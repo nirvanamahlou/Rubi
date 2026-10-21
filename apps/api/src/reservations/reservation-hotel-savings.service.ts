@@ -173,6 +173,40 @@ export function hotelReferencePurchase(
   );
 }
 
+export function supplierHotelPurchasePrices(
+  batches: readonly PackageTourHotelPurchaseBatchV1[],
+  snapshot: SalesReservationRequestV1,
+  ages: readonly number[],
+  brokerId: string,
+  board?: string,
+) {
+  const selected = batches.map((batch) => ({
+    ...batch,
+    rows: batch.rows.filter((row) => row.brokerId === brokerId),
+  }));
+  const currencies = new Set(
+    selected.flatMap((batch) =>
+      batch.rows.flatMap((row) => [
+        row.currencyCode,
+        ...row.roomRates.flatMap(
+          (room) => room.occupancyRates?.map((rate) => rate.currencyCode) ?? [],
+        ),
+      ]),
+    ),
+  );
+  return [...currencies].flatMap((currencyCode) => {
+    if (!currencyCode) return [];
+    const quote = hotelReferencePurchase(
+      selected,
+      snapshot,
+      ages,
+      currencyCode,
+      board,
+    );
+    return quote ? [{ amount: quote.amount, currencyCode }] : [];
+  });
+}
+
 @Injectable()
 export class ReservationHotelSavingsService {
   constructor(
@@ -183,6 +217,51 @@ export class ReservationHotelSavingsService {
     private readonly sales: SalesReservationTableService,
     @Inject(MasterDataService) private readonly master: MasterDataService,
   ) {}
+  async supplierFormPrices(
+    id: string,
+    brokerId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    const intake = await this.db.client.reservationIntake.findFirst({
+      where: { id, branchId: { in: [...actor.branchIds] } },
+    });
+    if (!intake) throw new NotFoundException();
+    const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
+    const hotel = snapshot.hotelSelection;
+    if (!hotel) return { data: [] };
+    const ages = await this.sales.hotelGuestAges(snapshot, actor);
+    if (!ages) return { data: [] };
+    let board: string | undefined;
+    if (hotel.mealServiceId) {
+      const meal = await this.master.detail(
+        'meal-services',
+        hotel.mealServiceId,
+      );
+      board = meal.data.code;
+      if (!board) return { data: [] };
+    }
+    const batches = await this.rates.forTour(
+      intake.branchId,
+      [hotel.hotelId],
+      hotel.checkInDate,
+      hotel.checkOutDate,
+      undefined,
+      undefined,
+      true,
+      true,
+    );
+    return {
+      data: supplierHotelPurchasePrices(
+        batches,
+        snapshot,
+        ages,
+        brokerId,
+        board,
+      ),
+    };
+  }
   async quote(
     snapshot: SalesReservationRequestV1,
     branchId: string,
@@ -463,6 +542,15 @@ export class ReservationHotelSavingsController {
     @Inject(ReservationHotelSavingsService)
     private readonly service: ReservationHotelSavingsService,
   ) {}
+  @Get('supplier-form/:id')
+  @Header('Cache-Control', 'private, no-store')
+  supplierFormPrices(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('brokerId', ParseUUIDPipe) brokerId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.supplierFormPrices(id, brokerId, req.actor);
+  }
   @Get('summary')
   @Header('Cache-Control', 'private, no-store')
   summary(

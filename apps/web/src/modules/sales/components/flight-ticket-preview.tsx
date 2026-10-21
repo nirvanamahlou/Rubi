@@ -10,6 +10,7 @@ import { salesDirections, salesFlightSelection } from '../model/sales-form';
 import {
   ticketPageHtml,
   ticketLayoutStyles,
+  ticketAlignmentStyles,
   type TicketLayoutFlight,
   type TicketLayoutAirline,
 } from '@/components/travel/flight-ticket-layout';
@@ -129,7 +130,7 @@ export function FlightTicketSheet({
   ).join('');
   return (
     <div dir="ltr">
-      <style>{ticketLayoutStyles}</style>
+      <style>{ticketLayoutStyles + ticketAlignmentStyles}</style>
       <div dangerouslySetInnerHTML={{ __html: pages }} />
     </div>
   );

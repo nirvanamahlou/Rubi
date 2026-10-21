@@ -13,6 +13,64 @@ afterEach(() => {
 });
 
 describe('master data browser client', () => {
+  it('updates/deletes a rate through dedicated versioned commands rather than generic mutation', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ data: {} }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await masterDataApi.updateCurrencyRate('rate/id', {
+      expectedVersion: 2,
+      rate: '270000.1234567890',
+      source: 'manual',
+    });
+    await masterDataApi.removeCurrencyRate('rate/id', 3);
+    expect(fetchMock.mock.calls[0]![0]).toContain(
+      '/master-data/currency-rates/rate%2Fid',
+    );
+    expect(fetchMock.mock.calls[0]![1]).toMatchObject({
+      method: 'PATCH',
+      body: JSON.stringify({
+        expectedVersion: 2,
+        rate: '270000.1234567890',
+        source: 'manual',
+      }),
+    });
+    expect(fetchMock.mock.calls[1]![1]).toMatchObject({
+      method: 'DELETE',
+      body: JSON.stringify({ expectedVersion: 3 }),
+    });
+  });
+  it('uses the explicit consuming workflow for choices while keeping administration separate', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [], meta: { total: 0 } }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const query = {
+      search: '',
+      status: 'active' as const,
+      sortBy: 'name' as const,
+      sortDirection: 'asc' as const,
+      page: 1,
+      pageSize: 25,
+    };
+    await masterDataApi.list('cities', query, 'sales');
+    await masterDataApi.detail('cities', 'city/id', 'reservations');
+    await masterDataApi.list('cities', query);
+    expect(fetchMock.mock.calls[0]![0]).toContain(
+      '/master-data/selections/sales/cities?',
+    );
+    expect(fetchMock.mock.calls[1]![0]).toContain(
+      '/master-data/selections/reservations/cities/city%2Fid',
+    );
+    expect(fetchMock.mock.calls[2]![0]).toContain('/master-data/cities?');
+    expect(fetchMock.mock.calls[0]![1]).toMatchObject({
+      cache: 'no-store',
+      credentials: 'include',
+    });
+  });
   it('requests audited contact disclosure without browser caching and in the selected branch', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const controller = new AbortController();

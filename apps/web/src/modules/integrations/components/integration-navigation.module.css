@@ -1,0 +1,110 @@
+.root {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+}
+.groups {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+.group {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 4.5rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  color: var(--muted-foreground);
+  text-align: start;
+  transition:
+    background 150ms,
+    color 150ms;
+}
+.group strong {
+  display: block;
+  font-size: 0.875rem;
+}
+.group small {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: normal;
+}
+.group[aria-current='true'] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.group:not([aria-current]):hover,
+.section:hover {
+  background: var(--muted);
+}
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+.context {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
+}
+.sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.section {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+}
+.section[aria-current='page'] {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--muted);
+  font-weight: bold;
+}
+.help {
+  margin: 0.65rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  line-height: 1.8;
+}
+.help:first-child {
+  margin: 0;
+}
+.group:focus-visible,
+.section:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.group:disabled,
+.section:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+@media (max-width: 767px) {
+  .groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.25rem;
+  }
+  .group {
+    min-height: 4rem;
+    padding: 0.6rem;
+    gap: 0.5rem;
+  }
+  .group strong {
+    font-size: 0.8rem;
+  }
+  .group small {
+    font-size: 0.65rem;
+  }
+  .context {
+    padding: 0.65rem;
+  }
+}

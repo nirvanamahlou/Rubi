@@ -6,6 +6,7 @@ import type { NotificationItemV1, WorkbenchActivityV1 } from '@nora/contracts';
 import {
   Activity,
   ChartNoAxesCombined,
+  PackageOpen,
   ArrowUpLeft,
   Bell,
   CalendarDays,
@@ -58,6 +59,7 @@ import {
 import { WorkbenchFiles } from './workbench-files';
 import { WorkbenchCalendar } from './workbench-calendar';
 import { WorkbenchPerformance } from './workbench-performance';
+import { WorkbenchDailyPackages } from './workbench-daily-packages';
 import { WorkbenchNotes } from './workbench-notes';
 import { WorkbenchFavorites } from './workbench-favorites';
 import { MessageComposer } from './message-composer';
@@ -78,6 +80,7 @@ const tabIcons = [
   FileText,
   Activity,
   ChartNoAxesCombined,
+  PackageOpen,
   StickyNote,
   Star,
   CalendarDays,
@@ -312,7 +315,7 @@ export function WorkbenchWorkspace() {
             >
               <TabsList
                 aria-label="بخش‌های میزکار"
-                className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-2 sm:grid-cols-5 xl:grid-cols-10"
+                className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-2 sm:grid-cols-4 xl:grid-cols-11"
               >
                 {workbenchTabs.map(([id, label], index) => {
                   const Icon = tabIcons[index]!;
@@ -498,6 +501,9 @@ export function WorkbenchWorkspace() {
               </TabsContent>
               <TabsContent value="stars">
                 <WorkbenchFavorites key={home.user.id} user={home.user} />
+              </TabsContent>
+              <TabsContent value="daily-packages">
+                <WorkbenchDailyPackages key={home.user.id} />
               </TabsContent>
               <TabsContent
                 value="notes"

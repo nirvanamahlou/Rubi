@@ -284,7 +284,7 @@ export function HotelBaseRateWorkspace() {
       checkIn,
       checkOut,
       currencyCode,
-      reason: reason.trim(),
+      reason: (reason ?? '').trim(),
       rows,
       ...(editing ? { expectedVersion: editing.currentVersion } : {}),
     };

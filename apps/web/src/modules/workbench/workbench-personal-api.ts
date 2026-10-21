@@ -10,6 +10,9 @@ import type {
   WorkbenchNotesResponseV1,
   WorkbenchNoteV1,
   WorkbenchPerformanceResponseV1,
+  WorkbenchDailyPackagesResponseV1,
+  WorkbenchDailyPackageOptionsV1,
+  DocumentDetailV1,
 } from '@nora/contracts';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -66,6 +69,7 @@ async function requestBlob(
   path: string,
   init?: RequestInit,
   retried = false,
+  fallback = 'دریافت عکس پروفایل انجام نشد.',
 ): Promise<Blob> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی API پیکربندی نشده است.');
@@ -80,7 +84,7 @@ async function requestBlob(
     !retried &&
     (await refreshAuthenticatedSession(base))
   )
-    return requestBlob(path, init, true);
+    return requestBlob(path, init, true, fallback);
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as {
       message?: string | string[];
@@ -88,9 +92,7 @@ async function requestBlob(
     } | null;
     const message = payload?.error?.message ?? payload?.message;
     throw new ProfilePhotoUnavailableError(
-      Array.isArray(message)
-        ? message.join(' ')
-        : (message ?? 'دریافت عکس پروفایل انجام نشد.'),
+      Array.isArray(message) ? message.join(' ') : (message ?? fallback),
       response.status,
     );
   }
@@ -104,6 +106,35 @@ const json = (method: 'POST' | 'PATCH', value: unknown): RequestInit => ({
 });
 
 export const workbenchPersonalApi = {
+  dailyPackageOptions: () =>
+    request<WorkbenchDailyPackageOptionsV1>('/daily-packages/options'),
+  dailyPackages: (query: { branchId: string; date: string; page: number }) =>
+    request<WorkbenchDailyPackagesResponseV1>(
+      `/daily-packages?${new URLSearchParams({ ...query, page: String(query.page) })}`,
+    ),
+  publishDailyPackage: (input: {
+    branchId: string;
+    title: string;
+    file: File;
+    signal?: AbortSignal;
+  }) => {
+    const form = new FormData();
+    form.set('branchId', input.branchId);
+    form.set('title', input.title);
+    form.set('file', input.file);
+    return request<{ data: DocumentDetailV1 }>('/daily-packages', {
+      method: 'POST',
+      body: form,
+      ...(input.signal ? { signal: input.signal } : {}),
+    });
+  },
+  dailyPackageFile: (id: string) =>
+    requestBlob(
+      `/daily-packages/${encodeURIComponent(id)}/file`,
+      undefined,
+      false,
+      'دریافت پکیج انجام نشد.',
+    ),
   procurementFollowUps: () =>
     request<{
       items: {

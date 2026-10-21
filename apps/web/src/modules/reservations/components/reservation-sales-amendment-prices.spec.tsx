@@ -36,7 +36,18 @@ it('edits the contract total rather than just the insurance surcharge for aggreg
     ],
     passengersDetail: [],
     ticketSelections: [],
-    hotelSelection: null,
+    hotelSelection: {
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: 'room',
+          roomTypeNameSnapshot: 'Family',
+          adults: 2,
+          childAges: [4],
+          agreedPrice: { amount: '45', currencyCode: 'EUR' },
+        },
+      ],
+    },
     priceComponents: [
       {
         type: 'BASE',
@@ -57,6 +68,8 @@ it('edits the contract total rather than just the insurance surcharge for aggreg
     />,
   );
   expect(html).toContain('value="1100"');
+  expect(html).toContain('value="45"');
+  expect(html).toContain('Family');
   expect(html).not.toContain('value="100"');
   expect(html).toContain('مبلغ کل قرارداد');
   expect(html).toContain('﷼');

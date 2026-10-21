@@ -8,6 +8,7 @@ import {
   FileCheck2,
   Gauge,
   Headphones,
+  Headset,
   Handshake,
   HeartHandshake,
   House,
@@ -16,7 +17,6 @@ import {
   PackageSearch,
   Settings,
   SlidersHorizontal,
-  Sparkles,
   Ticket,
   UsersRound,
   type LucideIcon,
@@ -39,7 +39,7 @@ export interface HrBreadcrumbLocation {
 }
 
 const iconByHref: Record<NavigationHref, LucideIcon> = {
-  '/assistant': Sparkles,
+  '/customer-affairs/call-center': Headset,
   '/workbench': House,
   '/dashboard': Gauge,
   '/customers': UsersRound,
@@ -87,6 +87,7 @@ export const navigationGroups = [
       '/customer-affairs',
       '/organizations',
       '/marketing',
+      '/customer-affairs/call-center',
     ],
   },
   {
@@ -130,12 +131,6 @@ export const navigationGroups = [
     dotClass: 'bg-[#fb923c]',
     title: 'تنظیمات شرکت',
     hrefs: ['/system', '/master-data', '/integrations'],
-  },
-  {
-    id: 'assistant',
-    dotClass: 'bg-[#a78bfa]',
-    title: 'دستیار هوشمند',
-    hrefs: ['/assistant'],
   },
 ] as const satisfies readonly {
   id: string;

@@ -1,3 +1,5 @@
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadedFile, UseInterceptors } from '@nestjs/common';
 import {
   Body,
   Controller,
@@ -142,5 +144,57 @@ export class HrController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.processWorkflows(body, key, req.actor);
+  }
+  @Post('leave/minutes') minuteLeave(
+    @Body() body: unknown,
+    @Headers('idempotency-key') key: string | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.minuteLeave(body, key, req.actor);
+  }
+  @Get('leave/cardex')
+  @Header('Cache-Control', 'private, no-store')
+  minuteCardex(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.minuteCardex(query, req.actor);
+  }
+  @Post('backup') @Header('Cache-Control', 'private, no-store') backup(
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.backup(req.actor);
+  }
+
+  @Post('payslips/import')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 3 },
+    }),
+  )
+  payslipsImport(
+    @UploadedFile() file: { buffer: Buffer; originalname: string } | undefined,
+    @Body() body: unknown,
+    @Headers('idempotency-key') key: string | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.importPayslips(file, body, key, req.actor);
+  }
+
+  @Post('shifts/:id/calendar') calendar(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Headers('idempotency-key') key: string | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.saveTemplateCalendar(id, body, key, req.actor);
+  }
+  @Post('shifts/:id/assign') assignTemplate(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Headers('idempotency-key') key: string | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.assignTemplate(id, body, key, req.actor);
   }
 }

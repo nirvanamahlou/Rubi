@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useRef, useState } from 'react';
 import type {
@@ -15,6 +17,14 @@ import { FinanceHistoryPanel } from './finance-history-panel';
 import { PayingSupplierPicker } from './paying-supplier-picker';
 
 type Detail = {
+  kind: string;
+  pettyFundId: string | null;
+  pettyBalance: {
+    funded: string;
+    expenses: string;
+    returned: string;
+    available: string;
+  } | null;
   version: number;
   status: string;
   remainingAmount: string;
@@ -32,7 +42,8 @@ const actionLabels: Record<string, string> = {
   CORRECTION_REQUIRED: 'برگشت برای اصلاح',
   REJECT: 'رد درخواست',
   RESUBMIT: 'بازارسال',
-  PAY: 'ثبت پرداخت',
+  PAY: 'ثبت پرداخت یا دریافت',
+  CLOSE: 'بستن تنخواه',
 };
 export function FinancePayrollActions({
   item,
@@ -52,8 +63,13 @@ export function FinancePayrollActions({
   const [accountId, setAccountId] = useState('');
   const [payingSupplierId, setPayingSupplierId] = useState('');
   const foreignPayment =
-    Boolean(item.amount?.currencyCode) && item.amount?.currencyCode !== 'IRR';
+    Boolean(item.amount?.currencyCode) &&
+    item.amount?.currencyCode !== 'IRR' &&
+    !detail?.kind.startsWith('PETTY_CASH_');
   const [methodId, setMethodId] = useState('');
+  const [receiptMethods, setReceiptMethods] = useState<
+    readonly FinancePaymentMethodOptionV1[]
+  >([]);
   const [reference, setReference] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -76,6 +92,27 @@ export function FinancePayrollActions({
       active = false;
     };
   }, [item.sourceReference, item.financeVersion]);
+  useEffect(() => {
+    if (detail?.kind !== 'PETTY_CASH_RETURN') return;
+    let active = true;
+    void apiRequest<{ data: FinancePaymentMethodOptionV1[] }>(
+      '/finance/payment-methods?direction=RECEIPT',
+    )
+      .then((result) => {
+        if (active) setReceiptMethods(result.data);
+      })
+      .catch((cause) => {
+        if (active)
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : 'روش دریافت در دسترس نیست.',
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [detail?.kind]);
   async function act(action: string) {
     if (lock.current || !detail) return;
     if (attempt.current && attempt.current.action !== action) {
@@ -138,7 +175,10 @@ export function FinancePayrollActions({
     }
   }
   const manage = permissions?.includes('finance.request.manage');
-  const canPay = permissions?.includes('finance.payment.create');
+  const canPay =
+    permissions?.includes('finance.payment.create') &&
+    (detail?.kind !== 'PETTY_CASH_RETURN' ||
+      permissions.includes('finance.receipt.approve'));
   const status = detail?.status ?? item.status;
   return (
     <div className="space-y-3 rounded-xl border p-3">
@@ -149,6 +189,18 @@ export function FinancePayrollActions({
         — مانده: {detail?.remainingAmount ?? item.amount?.amount}{' '}
         {currencySymbol(item.amount?.currencyCode ?? '')}
       </p>
+      {detail?.kind === 'PETTY_CASH_ADVANCE' ? (
+        <p>شناسه تنخواه: {item.sourceReference}</p>
+      ) : null}
+      {detail?.pettyBalance ? (
+        <div className="grid gap-2 sm:grid-cols-4" aria-label="خلاصه تنخواه">
+          <p>کل تأمین: {detail.pettyBalance.funded}</p>
+          <p>هزینه تأییدشده: {detail.pettyBalance.expenses}</p>
+          <p>بازگشت وجه: {detail.pettyBalance.returned}</p>
+          <p>مانده نزد مسئول: {detail.pettyBalance.available}</p>
+        </div>
+      ) : null}
+      {detail?.pettyFundId ? <p>تنخواه مرجع: {detail.pettyFundId}</p> : null}
       <label>
         توضیح / علت برگشت
         <Textarea
@@ -165,20 +217,22 @@ export function FinancePayrollActions({
         ) : null}
         {manage && status === 'UNDER_REVIEW' ? (
           <Button disabled={busy} onClick={() => void act('APPROVE')}>
-            تأیید برای پرداخت
+            {detail?.kind === 'PETTY_CASH_EXPENSE'
+              ? 'تأیید مدرک و ثبت هزینه تنخواه'
+              : 'تأیید برای پرداخت یا دریافت'}
           </Button>
         ) : null}
         {manage && ['NEW', 'UNDER_REVIEW'].includes(status) ? (
           <>
             <Button
-              disabled={busy || !reason.trim()}
+              disabled={busy || !isOptionalOperationReason(reason)}
               variant="outline"
               onClick={() => void act('CORRECTION_REQUIRED')}
             >
               برگشت با علت
             </Button>
             <Button
-              disabled={busy || !reason.trim()}
+              disabled={busy || !isOptionalOperationReason(reason)}
               variant="outline"
               onClick={() => void act('REJECT')}
             >
@@ -188,13 +242,24 @@ export function FinancePayrollActions({
         ) : null}
         {manage && status === 'CORRECTION_REQUIRED' ? (
           <Button
-            disabled={busy || !reason.trim()}
+            disabled={busy || !isOptionalOperationReason(reason)}
             onClick={() => void act('RESUBMIT')}
           >
             بازارسال توسط درخواست‌کننده
           </Button>
         ) : null}
       </div>
+      {manage &&
+      detail?.kind === 'PETTY_CASH_ADVANCE' &&
+      ['APPROVED', 'PAYING', 'PAID'].includes(status) ? (
+        <Button
+          disabled={busy}
+          variant="outline"
+          onClick={() => void act('CLOSE')}
+        >
+          بستن تنخواه پس از تسویه
+        </Button>
+      ) : null}
       {canPay && ['APPROVED', 'PAYING'].includes(status) ? (
         <div className="space-y-2">
           <label>
@@ -213,7 +278,9 @@ export function FinancePayrollActions({
             />
           ) : (
             <label>
-              حساب مبدأ
+              {detail?.kind === 'PETTY_CASH_RETURN'
+                ? 'حساب مقصد بازگشت وجه'
+                : 'حساب مبدأ'}
               <select
                 className="block w-full rounded border p-2"
                 value={accountId}
@@ -245,7 +312,10 @@ export function FinancePayrollActions({
               onChange={(event) => setMethodId(event.target.value)}
             >
               <option value="">انتخاب روش</option>
-              {methods.map((method) => (
+              {(detail?.kind === 'PETTY_CASH_RETURN'
+                ? receiptMethods
+                : methods
+              ).map((method) => (
                 <option key={method.id} value={method.id}>
                   {method.name}
                 </option>
@@ -269,7 +339,11 @@ export function FinancePayrollActions({
             }
             onClick={() => void act('PAY')}
           >
-            {busy ? 'در حال ثبت…' : 'ثبت پرداخت جزئی یا تسویه'}
+            {busy
+              ? 'در حال ثبت…'
+              : detail?.kind === 'PETTY_CASH_RETURN'
+                ? 'تأیید دستی دریافت وجه برگشتی'
+                : 'ثبت پرداخت جزئی یا تسویه'}
           </Button>
         </div>
       ) : null}

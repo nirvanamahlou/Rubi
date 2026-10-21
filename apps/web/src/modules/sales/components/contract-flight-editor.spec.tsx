@@ -50,3 +50,20 @@ describe('floating airline selection', () => {
     });
   });
 });
+
+it('composes clocks with the previously selected date', () => {
+  const onChange = vi.fn();
+  const editor = ContractFlightEditor({
+    value: flight,
+    flightDate: '2026-10-19',
+    onChange,
+  });
+  const fields = editor.props.children[2].props.children;
+  expect(fields[2].props.label).toBe('ساعت حرکت');
+  fields[2].props.children.props.onChange({ target: { value: '23:00' } });
+  expect(onChange).toHaveBeenCalledWith({
+    ...flight,
+    departureAt: '2026-10-19T23:00',
+    arrivalAt: '',
+  });
+});

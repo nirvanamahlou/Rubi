@@ -18,6 +18,7 @@ import { getMasterDataDefinition } from '../model/catalog';
 import {
   MasterDataLiveForm,
   partnerPersistValues,
+  masterDataFormValuesFrom,
 } from './master-data-live-form';
 
 function render(
@@ -56,6 +57,57 @@ function render(
 }
 
 describe('real partner form fields', () => {
+  it('reopens supplier canonical address and keeps stored contacts visible without exposing raw values', () => {
+    const record = {
+      id: 'supplier',
+      resource: 'suppliers',
+      code: 'QA',
+      name: 'QA',
+      version: 1,
+      status: 'active',
+      createdAt: '',
+      updatedAt: '',
+      attributes: {
+        address: '',
+        dossierAddress: 'Imported office',
+        primaryPhoneMasked: '***0123',
+        dossierMobileMasked: '***0124',
+        dossierEmailMasked: 'q***@example.test',
+      },
+    } as MasterDataRecord;
+    const definition = getMasterDataDefinition('suppliers');
+    const values = masterDataFormValuesFrom(definition, record);
+    expect(values.address).toBe('Imported office');
+    expect(values.primaryPhone).toBe('');
+    const html = renderToStaticMarkup(
+      createElement(MasterDataLiveForm, {
+        definition,
+        record,
+        mode: 'edit',
+        open: true,
+        onOpenChange: () => undefined,
+        onPersist: async () => undefined,
+      }),
+    );
+    for (const value of [
+      'Imported office',
+      '***0123',
+      '***0124',
+      'q***@example.test',
+    ])
+      expect(html).toContain(value);
+    expect(html).not.toContain('value="***');
+    expect(
+      masterDataFormValuesFrom(definition, {
+        ...record,
+        attributes: {
+          ...record.attributes,
+          address: 'stale',
+          dossierAddress: '',
+        },
+      }).address,
+    ).toBe('');
+  });
   it('removes insurer organization controls while retaining legacy profile context', () => {
     expect(render('insurers')).not.toContain(
       'id="live-insurers-organizationId"',
@@ -73,8 +125,16 @@ describe('real partner form fields', () => {
       if (resource === 'suppliers') {
         expect(html).toContain('id="live-suppliers-name"');
         expect(html).not.toContain('id="live-suppliers-englishName"');
-        expect(html).not.toContain('id="live-suppliers-countryId"');
-        expect(html).not.toContain('id="live-suppliers-cityId"');
+        expect(html).toContain('id="live-suppliers-countryId"');
+        expect(html).toContain('id="live-suppliers-cityId"');
+        expect(html.indexOf('id="live-suppliers-countryId"')).toBeLessThan(
+          html.indexOf('id="live-suppliers-cityId"'),
+        );
+        expect(html.indexOf('id="live-suppliers-cityId"')).toBeLessThan(
+          html.indexOf('id="live-suppliers-address"'),
+        );
+        expect(html).toContain('id="live-suppliers-dossierMobile"');
+        expect(html).toContain('id="live-suppliers-dossierEmail"');
       } else {
         expect(html).toContain('id="live-brokers-englishName"');
         expect(html).toContain('Board');

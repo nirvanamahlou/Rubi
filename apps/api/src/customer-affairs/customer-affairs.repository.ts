@@ -46,6 +46,7 @@ export class CustomerAffairsRepository {
           ...page,
           where: {
             ...cursor,
+            category: { not: 'CALL_CENTER_REQUEST' },
             status: { notIn: ['CLOSED', 'CANCELLED', 'RESOLVED'] },
             OR: [
               { nextActionAt: { lte: now } },
@@ -188,6 +189,7 @@ export class CustomerAffairsRepository {
     page: number,
     pageSize: number,
   ) {
+    where = { AND: [where, { category: { not: 'CALL_CENTER_REQUEST' } }] };
     const [data, total] = await Promise.all([
       this.database.client.customerAffairsTicket.findMany({
         where,
@@ -202,6 +204,7 @@ export class CustomerAffairsRepository {
   }
 
   exportTickets(where: Prisma.CustomerAffairsTicketWhereInput) {
+    where = { AND: [where, { category: { not: 'CALL_CENTER_REQUEST' } }] };
     return this.database.client.customerAffairsTicket.findMany({
       where,
       select: {
@@ -226,6 +229,7 @@ export class CustomerAffairsRepository {
   ) {
     return this.database.client.customerAffairsReferral.findMany({
       where: {
+        category: { not: 'CALL_CENTER_REQUEST' },
         ticket: { branchId: { in: branchIds } },
         status: { in: ['OPEN', 'IN_PROGRESS'] },
         ...(destinationModule ? { destinationModule } : {}),
@@ -300,6 +304,7 @@ export class CustomerAffairsRepository {
       access.ticketsRead
         ? this.database.client.customerAffairsTicket.count({
             where: {
+              category: { not: 'CALL_CENTER_REQUEST' },
               branchId: { in: branchIds },
               status: { notIn: ['CLOSED', 'CANCELLED'] },
             },
@@ -308,6 +313,7 @@ export class CustomerAffairsRepository {
       access.ticketsRead
         ? this.database.client.customerAffairsTicket.count({
             where: {
+              category: { not: 'CALL_CENTER_REQUEST' },
               branchId: { in: branchIds },
               status: { notIn: ['CLOSED', 'CANCELLED'] },
               nextActionAt: { lt: now },
@@ -317,6 +323,7 @@ export class CustomerAffairsRepository {
       access.ticketsRead
         ? this.database.client.customerAffairsTicket.count({
             where: {
+              category: { not: 'CALL_CENTER_REQUEST' },
               branchId: { in: branchIds },
               OR: [
                 { firstResponseBreachedAt: { not: null } },
@@ -371,17 +378,29 @@ export class CustomerAffairsRepository {
       }),
       this.database.client.customerAffairsTicket.groupBy({
         by: ['status'],
-        where: { branchId: { in: branchIds }, ...created },
+        where: {
+          category: { not: 'CALL_CENTER_REQUEST' },
+          branchId: { in: branchIds },
+          ...created,
+        },
         _count: { _all: true },
       }),
       this.database.client.customerAffairsTicket.groupBy({
         by: ['priority'],
-        where: { branchId: { in: branchIds }, ...created },
+        where: {
+          category: { not: 'CALL_CENTER_REQUEST' },
+          branchId: { in: branchIds },
+          ...created,
+        },
         _count: { _all: true },
       }),
       this.database.client.customerAffairsTicket.groupBy({
         by: ['category'],
-        where: { branchId: { in: branchIds }, ...created },
+        where: {
+          category: { not: 'CALL_CENTER_REQUEST' },
+          branchId: { in: branchIds },
+          ...created,
+        },
         _count: { _all: true },
       }),
       this.database.client.customerAffairsSatisfaction.aggregate({
@@ -415,11 +434,15 @@ export class CustomerAffairsRepository {
   workbenchRequests(userId: string, branchIds: string[]) {
     return this.database.client.customerAffairsTicket.findMany({
       where: {
-        createdByUserId: userId,
+        OR: [{ createdByUserId: userId }, { executionOwnerUserId: userId }],
         branchId: { in: branchIds },
         category: { startsWith: 'WORKBENCH_' },
       },
-      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      include: {
+        createdBy: { select: { displayName: true } },
+        executionOwner: { select: { displayName: true } },
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       take: 100,
     });
   }
@@ -428,7 +451,7 @@ export class CustomerAffairsRepository {
     return this.database.client.customerAffairsTicket.findMany({
       where: {
         branchId: { in: branchIds },
-        category: { startsWith: 'WORKBENCH_' },
+        category: { startsWith: 'WORKBENCH_', not: 'WORKBENCH_INTERNAL' },
         executionUnit: { in: ['منابع انسانی', 'سرمایه انسانی', 'اداری'] },
       },
       orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],

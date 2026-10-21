@@ -19,6 +19,7 @@ import {
   MasterDataProfileIdentity,
 } from './master-data-profile-details';
 import { MasterDataLogoCell } from './master-data-logo-cell';
+import { CompanyBankAccounts } from '@/modules/finance/components/company-bank-accounts';
 
 const branchDefinition = getMasterDataDefinition('bank-branches');
 
@@ -110,6 +111,7 @@ export function MasterDataBankProfile({
               }
             />
           </MasterDataDetailSection>
+          <CompanyBankAccounts bankId={bank.id} key={bank.id} />
           <Card className="space-y-3 p-4">
             <h3 className="font-bold">شعب بانک {bank.name}</h3>
             {notice ? <Alert title={notice} /> : null}

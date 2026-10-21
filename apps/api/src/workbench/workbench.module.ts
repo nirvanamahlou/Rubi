@@ -4,6 +4,7 @@ import { DocumentsModule } from '../documents/documents.module';
 import { AuthGuard } from '../iam/auth.guard';
 import { IamModule } from '../iam/iam.module';
 import { WorkbenchController } from './workbench.controller';
+import { WorkbenchDailyPackagesController } from './workbench-daily-packages.controller';
 import { WorkbenchService } from './workbench.service';
 import { WorkbenchPerformanceService } from './workbench-performance.service';
 import { HrModule } from '../hr/hr.module';
@@ -23,7 +24,7 @@ import { TasksModule } from '../tasks/tasks.module';
     SettingsModule,
     TasksModule,
   ],
-  controllers: [WorkbenchController],
+  controllers: [WorkbenchController, WorkbenchDailyPackagesController],
   providers: [AuthGuard, WorkbenchService, WorkbenchPerformanceService],
 })
 export class WorkbenchModule {}

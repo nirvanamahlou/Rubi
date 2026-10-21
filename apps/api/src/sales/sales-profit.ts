@@ -13,6 +13,7 @@ type TicketCost = {
   adultUnitCost: string;
   childUnitCost: string;
   unitCost: string | null;
+  supplyType?: string | null | undefined;
   seatCount?: number | null;
   invoiceAmount?: string | null;
 };
@@ -20,6 +21,7 @@ export function contractProfit(
   contract: SalesContractDetail,
   intake: ReservationIntakeV1 | null,
   ticketCosts: readonly TicketCost[],
+  companyOfferIds: readonly string[] = [],
 ): SalesContractProfitV1 {
   const costs: SalesContractProfitV1['costs'][number][] = [];
   const covered = new Set<string>();
@@ -39,11 +41,30 @@ export function contractProfit(
     )[services.find((s) => s.clientKey === key)?.kind ?? ''] ||
     'خدمت';
   const validKeys = new Set(services.map((s) => s.clientKey));
+  const companyKeys = new Set(
+    contract.ticketSelections
+      .filter(
+        (selection) =>
+          companyOfferIds.includes(selection.offerId) ||
+          ticketCosts.some(
+            (cost) =>
+              cost.offerId === selection.offerId &&
+              cost.supplyType === 'COMPANY',
+          ),
+      )
+      .map((selection) => selection.serviceClientKey),
+  );
   for (const purchase of intake?.servicePurchases ?? []) {
     const keys = purchase.coveredServiceClientKeys?.length
       ? [...purchase.coveredServiceClientKeys]
       : [purchase.serviceClientKey];
-    if (keys.some((key) => !validKeys.has(key) || covered.has(key))) continue;
+    if (
+      keys.some(
+        (key) =>
+          !validKeys.has(key) || covered.has(key) || companyKeys.has(key),
+      )
+    )
+      continue;
     keys.forEach((key) => covered.add(key));
     costs.push({
       serviceClientKeys: keys,
@@ -72,10 +93,14 @@ export function contractProfit(
       });
     covered.add(hotel.serviceClientKey);
   }
+  const flightCoverage = new Map<string, boolean>();
   for (const selection of contract.ticketSelections) {
     if (covered.has(selection.serviceClientKey)) continue;
     const cost = ticketCosts.find((row) => row.offerId === selection.offerId);
-    if (!cost) continue;
+    if (!cost) {
+      flightCoverage.set(selection.serviceClientKey, false);
+      continue;
+    }
     const assigned = contract.passengersDetail.filter((p) =>
       p.serviceClientKeys.includes(selection.serviceClientKey),
     );
@@ -110,8 +135,10 @@ export function contractProfit(
       amount: moneyDecimal(amount),
       currencyCode: cost.currencyCode,
     });
-    covered.add(selection.serviceClientKey);
+    if (!flightCoverage.has(selection.serviceClientKey))
+      flightCoverage.set(selection.serviceClientKey, true);
   }
+  for (const [key, complete] of flightCoverage) if (complete) covered.add(key);
   const missingServiceKeys = services
     .filter((s) => !covered.has(s.clientKey))
     .map((s) => s.clientKey);

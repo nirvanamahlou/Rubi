@@ -44,6 +44,78 @@ beforeEach(() => {
   vi.unstubAllGlobals();
 });
 describe('reservation PDF route', () => {
+  it('downloads the sent price snapshot even if an unsent edit has different amounts', async () => {
+    const sent = {
+      ...intake.workflow.supplierFormSettings!,
+      hotelPurchasePrices: [{ amount: '123.50', currencyCode: 'EUR' }],
+    };
+    const draft = {
+      ...sent,
+      hotelPurchasePrices: [{ amount: '999', currencyCode: 'USD' }],
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json({
+          data: {
+            ...intake,
+            workflow: {
+              ...intake.workflow,
+              supplierFormSettings: draft,
+              sentSupplierFormSettings: sent,
+            },
+          },
+        }),
+      ),
+    );
+    const result = await GET(request(), { params: Promise.resolve({ id }) });
+    expect(result.status).toBe(200);
+    expect(renderer.mock.calls[0]?.[0]).toHaveProperty(
+      'workflow.supplierFormSettings.hotelPurchasePrices',
+      sent.hotelPurchasePrices,
+    );
+  });
+  it('prints exact proposed purchase prices in the English supplier header and never leaks them to vouchers', () => {
+    const settings = {
+      ...intake.workflow.supplierFormSettings!,
+      hotelPurchasePrices: [
+        { amount: '9007199254740993.25', currencyCode: 'EUR' },
+        { amount: '100.50', currencyCode: 'USD' },
+      ],
+    };
+    const priced = {
+      ...intake,
+      workflow: {
+        ...intake.workflow,
+        supplierFormSettings: settings,
+        voucherSettings: settings,
+      },
+    };
+    const html = reservationPdfHtml(
+      priced,
+      {},
+      'data:image/png;base64,c2FmZQ==',
+      '',
+    );
+    expect(html).toContain('9,007,199,254,740,993.25 EUR · 100.50 USD');
+    expect(html.indexOf('PROPOSED PURCHASE PRICE')).toBeGreaterThan(
+      html.indexOf('<span>SUPPLIER</span>'),
+    );
+    expect(html.indexOf('PROPOSED PURCHASE PRICE')).toBeLessThan(
+      html.indexOf('<span>DATE OF ISSUE</span>'),
+    );
+    expect(html).not.toContain('HOTEL TOTAL');
+    const voucherHtml = reservationPdfHtml(
+      priced,
+      {},
+      'data:image/png;base64,c2FmZQ==',
+      '',
+      true,
+    );
+    expect(voucherHtml).not.toContain('PROPOSED PURCHASE PRICE');
+    expect(voucherHtml).not.toContain('9,007,199,254,740,993.25');
+    expect(voucherHtml).not.toContain('100.50');
+  });
   it('stops before rendering or references when workflow read is forbidden', async () => {
     const fetcher = vi
       .fn()

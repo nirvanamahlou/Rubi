@@ -132,6 +132,15 @@ export class TicketReferenceDto {
   @IsOptional() @IsString() @MaxLength(240) label?: string;
 }
 
+export class WorkbenchRequestDto {
+  @IsString() @Length(3, 200) subject!: string;
+  @IsString() @Length(3, 2000) description!: string;
+  @IsIn(['NORMAL', 'HIGH', 'URGENT']) priority!: 'NORMAL' | 'HIGH' | 'URGENT';
+  @IsUUID() organizationUnitId!: string;
+  @IsUUID() executionOwnerUserId!: string;
+  @IsOptional() @IsString() @MaxLength(200) reference?: string;
+}
+
 export class TicketMutationDto {
   @IsString() @Length(3, 200) subject!: string;
   @IsString() @Length(3, 2000) description!: string;
@@ -196,7 +205,7 @@ export class LeadTransitionDto {
     'LOST',
   ])
   stage!: string;
-  @IsString() @Length(3, 500) reason!: string;
+  @IsString() @Length(0, 500) reason = '';
   @IsInt() @Min(1) expectedVersion!: number;
   @IsOptional() @IsString() @MaxLength(80) lostReason?: string;
 }
@@ -219,7 +228,7 @@ export class HandoffDto {
 export class HandoffResponseDto {
   @IsIn(['ACCEPTED', 'RETURNED', 'REJECTED']) status!: string;
   @IsOptional() @IsUUID() salesContractId?: string | null;
-  @IsString() @Length(3, 500) reason!: string;
+  @IsString() @Length(0, 500) reason = '';
 }
 
 export class ReferralDto {
@@ -238,7 +247,7 @@ export class ReferralResponseDto {
 
 export class TicketActionDto {
   @IsInt() @Min(1) expectedVersion!: number;
-  @IsString() @Length(3, 1000) reason!: string;
+  @IsString() @Length(0, 1000) reason = '';
   @IsOptional() @IsString() @MaxLength(1000) resolutionOutcome?: string;
   @IsOptional() @IsString() @MaxLength(500) closeReason?: string;
   @IsOptional() @IsInt() @Min(1) @Max(3) level?: number;
@@ -254,7 +263,7 @@ export class TicketTransitionDto {
   ])
   status!: string;
   @IsInt() @Min(1) expectedVersion!: number;
-  @IsString() @Length(3, 1000) reason!: string;
+  @IsString() @Length(0, 1000) reason = '';
 }
 
 export class SatisfactionDto {

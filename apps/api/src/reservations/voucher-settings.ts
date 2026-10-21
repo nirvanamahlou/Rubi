@@ -15,6 +15,44 @@ export function validateVoucherSettings(
   };
   if (!value || typeof value !== 'object') return fail();
   const v = value as VoucherSettingsV1;
+  if (
+    v.hotelPurchasePrices !== undefined &&
+    (!Array.isArray(v.hotelPurchasePrices) ||
+      v.hotelPurchasePrices.length > 20 ||
+      v.hotelPurchasePrices.some(
+        (p) =>
+          !p ||
+          typeof p.amount !== 'string' ||
+          !/^\d{1,18}(?:\.\d{1,4})?$/.test(p.amount) ||
+          typeof p.currencyCode !== 'string' ||
+          !/^[A-Z]{3}$/.test(p.currencyCode),
+      ) ||
+      new Set(v.hotelPurchasePrices.map((p) => p.currencyCode)).size !==
+        v.hotelPurchasePrices.length)
+  )
+    return fail();
+  if (
+    v.rooms !== undefined &&
+    (!Array.isArray(v.rooms) ||
+      v.rooms.length > 50 ||
+      v.rooms.some(
+        (room, index) =>
+          !room ||
+          room.ordinal !== index + 1 ||
+          typeof room.roomTypeNameSnapshot !== 'string' ||
+          !room.roomTypeNameSnapshot.trim() ||
+          room.roomTypeNameSnapshot.length > 240 ||
+          !Number.isInteger(room.adults) ||
+          room.adults < 1 ||
+          room.adults > 20 ||
+          !Array.isArray(room.childAges) ||
+          room.childAges.length > 20 ||
+          room.childAges.some(
+            (age) => !Number.isInteger(age) || age < 0 || age >= 15,
+          ),
+      ))
+  )
+    return fail();
   if (!v.text || !v.numbers || !v.flags || !Array.isArray(v.passengers))
     return fail();
   const uuid =
@@ -115,6 +153,24 @@ export function validateVoucherSettings(
       return fail();
   }
   return {
+    ...(v.rooms !== undefined
+      ? {
+          rooms: v.rooms.map((room) => ({
+            ordinal: room.ordinal,
+            roomTypeNameSnapshot: room.roomTypeNameSnapshot.trim(),
+            adults: room.adults,
+            childAges: [...room.childAges],
+          })),
+        }
+      : {}),
+    ...(v.hotelPurchasePrices !== undefined
+      ? {
+          hotelPurchasePrices: v.hotelPurchasePrices.map((p) => ({
+            amount: p.amount,
+            currencyCode: p.currencyCode,
+          })),
+        }
+      : {}),
     ...(v.brokerId ? { brokerId: v.brokerId } : {}),
     ...(v.leaderId ? { leaderId: v.leaderId } : {}),
     text: {

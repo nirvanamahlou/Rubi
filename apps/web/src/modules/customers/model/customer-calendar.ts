@@ -289,3 +289,56 @@ export function formatCustomerDate(
     { dateStyle: 'medium', timeZone: 'UTC' },
   ).format(new Date(value));
 }
+
+export function formatTypedCustomerDate(input: string): string {
+  const normalized = input.replace(/[۰-۹٠-٩]/g, (d) =>
+    String(
+      '۰۱۲۳۴۵۶۷۸۹'.includes(d)
+        ? '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)
+        : '٠١٢٣٤٥٦٧٨٩'.indexOf(d),
+    ),
+  );
+  const digits = normalized.replace(/\D/g, '').slice(0, 8);
+  return (
+    digits.slice(0, 4) +
+    (digits.length > 4 ? '/' + digits.slice(4, 6) : '') +
+    (digits.length > 6 ? '/' + digits.slice(6) : '')
+  );
+}
+
+export function typedCustomerDateCaret(
+  raw: string,
+  caret: number,
+  formatted: string,
+): number {
+  if (caret === raw.length) return formatted.length;
+  const digitsBefore = raw.slice(0, caret).replace(/[^0-9۰-۹٠-٩]/g, '').length;
+  let seen = 0;
+  for (let i = 0; i < formatted.length; i++) {
+    if (/\d/.test(formatted[i]!) && ++seen === digitsBefore) return i + 1;
+  }
+  return digitsBefore === 0 ? 0 : formatted.length;
+}
+
+export function parseTypedCustomerDate(
+  input: string,
+  mode: 'persian' | 'gregorian',
+): string | null {
+  const normalized = input
+    .trim()
+    .replace(/[۰-۹٠-٩]/g, (d) =>
+      String(
+        '۰۱۲۳۴۵۶۷۸۹'.includes(d)
+          ? '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)
+          : '٠١٢٣٤٥٦٧٨٩'.indexOf(d),
+      ),
+    );
+  const m = /^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/.exec(normalized);
+  return m
+    ? (mode === 'persian' ? persianDateToIso : gregorianDateToIso)({
+        year: Number(m[1]),
+        month: Number(m[2]),
+        day: Number(m[3]),
+      })
+    : null;
+}

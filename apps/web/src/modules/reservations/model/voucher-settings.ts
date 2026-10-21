@@ -1,3 +1,4 @@
+import { salesHotelRoomSummary } from '@nora/contracts';
 import type { voucherNumberKeys, voucherFlagKeys } from '@nora/contracts';
 import { voucherTextKeys, type VoucherSettingsV1 } from '@nora/contracts';
 import {
@@ -12,7 +13,8 @@ export function defaultVoucherSettings(
   intake: ReservationFormIntake,
   refs: ReservationFormReferences,
 ): VoucherSettingsV1 {
-  const saved = intake.workflow.voucherSettings;
+  const saved =
+    intake.workflow.voucherSettings ?? intake.workflow.sentSupplierFormSettings;
   const d = reservationFormData(intake, refs),
     h = intake.snapshot.hotelSelection;
   const text = Object.fromEntries(
@@ -44,6 +46,16 @@ export function defaultVoucherSettings(
       text[`${prefix}Time`] = f.time;
     }
   const defaults: VoucherSettingsV1 = {
+    ...(h?.rooms?.length
+      ? {
+          rooms: h.rooms.map((room) => ({
+            ordinal: room.ordinal,
+            roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+            adults: room.adults,
+            childAges: [...room.childAges],
+          })),
+        }
+      : {}),
     text,
     numbers: {
       singleRooms: Number(d.single) || 0,
@@ -68,12 +80,28 @@ export function defaultVoucherSettings(
       id: p.id,
       selected: true,
       roomType: text.roomType,
-      age: p.age === 'CHD' ? 'CHD' : p.age === 'INF' ? 'INF' : 'ADL',
-      hotelChildAgeBand: '',
+      age: p.age.startsWith('CHD') ? 'CHD' : p.age === 'INF' ? 'INF' : 'ADL',
+      hotelChildAgeBand: (p.hotelChildAgeBand ?? '') as
+        'CHD_2_TO_6' | 'CHD_6_TO_12' | '',
     })),
   };
   if (!saved) return defaults;
   return {
+    ...(saved.rooms !== undefined
+      ? {
+          rooms: saved.rooms.map((room) => ({
+            ...room,
+            childAges: [...room.childAges],
+          })),
+        }
+      : defaults.rooms
+        ? { rooms: defaults.rooms }
+        : {}),
+    ...(saved.hotelPurchasePrices !== undefined
+      ? {
+          hotelPurchasePrices: saved.hotelPurchasePrices.map((p) => ({ ...p })),
+        }
+      : {}),
     ...(saved.brokerId ? { brokerId: saved.brokerId } : {}),
     ...(saved.leaderId ? { leaderId: saved.leaderId } : {}),
     text: {
@@ -84,11 +112,13 @@ export function defaultVoucherSettings(
         saved.text.contractPartyName ?? text.contractPartyName ?? '',
       leaderLanguage: saved.text.leaderLanguage || 'Persian',
     },
-    numbers: Object.fromEntries(
-      (Object.keys(defaults.numbers) as (keyof typeof defaults.numbers)[]).map(
-        (key) => [key, saved.numbers?.[key] ?? defaults.numbers[key]],
-      ),
-    ) as VoucherSettingsV1['numbers'],
+    numbers: h?.rooms?.length
+      ? defaults.numbers
+      : (Object.fromEntries(
+          (
+            Object.keys(defaults.numbers) as (keyof typeof defaults.numbers)[]
+          ).map((key) => [key, saved.numbers?.[key] ?? defaults.numbers[key]]),
+        ) as VoucherSettingsV1['numbers']),
     flags: Object.fromEntries(
       (Object.keys(defaults.flags) as (keyof typeof defaults.flags)[]).map(
         (key) => [key, saved.flags?.[key] ?? defaults.flags[key]],
@@ -97,6 +127,11 @@ export function defaultVoucherSettings(
     passengers: defaults.passengers.map((passenger) => ({
       ...passenger,
       ...saved.passengers?.find((item) => item.id === passenger.id),
+      hotelChildAgeBand:
+        passenger.hotelChildAgeBand ||
+        saved.passengers?.find((item) => item.id === passenger.id)
+          ?.hotelChildAgeBand ||
+        '',
     })),
   };
 }
@@ -169,9 +204,12 @@ export function voucherFormData(
         ...p,
         age: reservationPassengerAgeLabel(
           setting.age,
-          setting.hotelChildAgeBand,
+          p.hotelChildAgeBand || setting.hotelChildAgeBand,
         ),
-        hotelChildAgeBand: setting.hotelChildAgeBand,
+        hotelChildAgeBand:
+          setting.age === 'CHD'
+            ? p.hotelChildAgeBand || setting.hotelChildAgeBand
+            : '',
         sex:
           setting.sex === 'MALE'
             ? 'Male'
@@ -180,10 +218,21 @@ export function voucherFormData(
               : '-',
       };
     });
+  const roomSummary = v.rooms ? salesHotelRoomSummary(v.rooms) : undefined;
   const nights =
     (Date.parse(v.text.checkOut) - Date.parse(v.text.checkIn)) / 86400000;
   return {
     ...d,
+    ...(v.rooms !== undefined
+      ? {
+          roomBreakdown: v.rooms.map((room) => ({
+            ordinal: room.ordinal,
+            roomType: room.roomTypeNameSnapshot,
+            adults: room.adults,
+            childAges: [...room.childAges],
+          })),
+        }
+      : {}),
     supplier: '0',
     hotel: v.text.hotel || '-',
     destination: v.text.city || '-',
@@ -193,10 +242,22 @@ export function voucherFormData(
     checkIn: voucherDate(v.text.checkIn),
     checkOut: voucherDate(v.text.checkOut),
     rooms:
-      v.numbers.singleRooms + v.numbers.doubleRooms + v.numbers.customRooms,
-    double: v.numbers.doubleRooms,
-    single: v.numbers.singleRooms,
-    extra: v.numbers.extraBeds,
+      v.rooms !== undefined
+        ? v.rooms.length
+        : d.roomBreakdown.length
+          ? d.rooms
+          : v.numbers.singleRooms +
+            v.numbers.doubleRooms +
+            v.numbers.customRooms,
+    double:
+      roomSummary?.doubleRoomCount ??
+      (d.roomBreakdown.length ? d.double : v.numbers.doubleRooms),
+    single:
+      roomSummary?.singleRoomCount ??
+      (d.roomBreakdown.length ? d.single : v.numbers.singleRooms),
+    extra:
+      roomSummary?.extraBedCount ??
+      (d.roomBreakdown.length ? d.extra : v.numbers.extraBeds),
     nights: Number.isInteger(nights) && nights > 0 ? nights : '-',
     leader: v.flags.tourLeader
       ? [v.text.leaderName, v.text.leaderPhone].filter(Boolean).join(' / ') ||
@@ -253,6 +314,9 @@ export function supplierFormData(
           },
           refs,
         ),
+        notes: [settings.text.stayNotes, settings.text.remarks]
+          .filter(Boolean)
+          .join('\n'),
         supplier: englishOutputName(settings.text.broker?.trim() || '-', refs),
         leader: settings.text.leaderLanguage?.trim() || 'Persian',
       }

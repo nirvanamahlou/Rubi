@@ -1,6 +1,85 @@
 import { PROCUREMENT_PERMISSION_SEED_DATA } from './procurement-permission-seed-data';
 
+/** New granular Call Center grants must never be auto-assigned to existing roles by seed. */
+export function isOptInCallCenterPermission(code: string) {
+  return (
+    code.startsWith('customer_affairs.call_center.') &&
+    ![
+      'customer_affairs.call_center.read',
+      'customer_affairs.call_center.calls.create',
+      'customer_affairs.call_center.notes.create',
+      'customer_affairs.call_center.workflow.manage',
+    ].includes(code)
+  );
+}
+
 export const PERMISSION_SEED_DATA = [
+  [
+    'customer_affairs.call_center.scope.v1',
+    'customer_affairs',
+    'محدوده امن کال سنتر نسخه ۱',
+  ],
+  [
+    'customer_affairs.call_center.contacts.read.own',
+    'customer_affairs',
+    'مشاهده مخاطبان و سوابق تحت مسئولیت خود',
+  ],
+  [
+    'customer_affairs.call_center.contacts.read.team',
+    'customer_affairs',
+    'مشاهده مخاطبان و سوابق تیم مجاز',
+  ],
+  [
+    'customer_affairs.call_center.reports.read.own',
+    'customer_affairs',
+    'مشاهده گزارش‌ها و شاخص‌های خود',
+  ],
+  [
+    'customer_affairs.call_center.reports.read.team',
+    'customer_affairs',
+    'مشاهده گزارش‌ها و شاخص‌های تیم مجاز',
+  ],
+  [
+    'customer_affairs.call_center.workflow.manage.team',
+    'customer_affairs',
+    'مدیریت درخواست‌ها و پیگیری‌های تیم مجاز',
+  ],
+  [
+    'customer_affairs.call_center.outbound.own',
+    'customer_affairs',
+    'تماس خروجی از داخلی خود',
+  ],
+  [
+    'customer_affairs.call_center.owner.assign',
+    'customer_affairs',
+    'تخصیص مسئول به مخاطب بدون مسئول',
+  ],
+  [
+    'customer_affairs.call_center.owner.change',
+    'customer_affairs',
+    'تغییر مسئول ثابت مخاطب',
+  ],
+  [
+    'customer_affairs.call_center.owner.history',
+    'customer_affairs',
+    'مشاهده تاریخچهٔ تخصیص و تغییر مسئول',
+  ],
+  [
+    'customer_affairs.call_center.workflow.manage',
+    'customer_affairs',
+    'مدیریت درخواست و پیگیری کال سنتر',
+  ],
+  ['customer_affairs.call_center.read', 'customer_affairs', 'مشاهده کال سنتر'],
+  [
+    'customer_affairs.call_center.calls.create',
+    'customer_affairs',
+    'ثبت تماس کال سنتر',
+  ],
+  [
+    'customer_affairs.call_center.notes.create',
+    'customer_affairs',
+    'ثبت یادداشت کال سنتر',
+  ],
   ...PROCUREMENT_PERMISSION_SEED_DATA,
   ['marketing.read', 'marketing', 'مشاهده مرکز مارکتینگ'],
   ['marketing.process.read', 'marketing', 'مشاهده فرایند یکپارچه مارکتینگ'],

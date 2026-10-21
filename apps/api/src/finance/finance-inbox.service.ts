@@ -1,3 +1,10 @@
+import { financialDate } from './accounting/accounting.financial-events';
+import {
+  recordFinancialEvent,
+  isNewAccountingSource,
+} from './accounting/financial-event.public';
+import { PurchaseFxService } from './purchase-fx/purchase-fx.service';
+import { isOptionalOperationReason } from '@nora/contracts';
 import { randomUUID } from 'node:crypto';
 import { paymentSource } from './payments/payment-source';
 import { MasterProcurementDirectory } from '../master-data/master-procurement-directory';
@@ -69,6 +76,9 @@ export class FinanceInboxService {
     @Optional()
     @Inject(MasterProcurementDirectory)
     private readonly supplierDirectory?: MasterProcurementDirectory,
+    @Optional()
+    @Inject(PurchaseFxService)
+    private readonly purchaseFx?: PurchaseFxService,
   ) {}
 
   history(query: FinanceHistoryQueryV1, actor: AuthenticatedActor) {
@@ -248,6 +258,12 @@ export class FinanceInboxService {
       ...payrollRows.map((row): FinanceInboxItemV1 => ({
         version: 1,
         id: `operational:${row.id}`,
+        direction:
+          row.kind === 'PETTY_CASH_RETURN'
+            ? 'RECEIPT'
+            : row.kind === 'PETTY_CASH_EXPENSE'
+              ? 'NON_CASH'
+              : 'PAYMENT',
         source: row.kind === 'PAYROLL' ? 'HR' : 'FINANCE',
         kind:
           row.kind === 'PAYROLL' ? 'PAYROLL_REQUEST' : 'OPERATIONAL_REQUEST',
@@ -566,7 +582,9 @@ export class FinanceInboxService {
     return {
       version: 1,
       generatedAt: new Date().toISOString(),
-      items,
+      items: this.purchaseFx
+        ? await this.purchaseFx.enrich(items, actor)
+        : items,
       sources: [
         ...sources,
         {
@@ -574,10 +592,83 @@ export class FinanceInboxService {
           connection: 'CONNECTED',
           itemCount: payrollRows.filter((row) => row.kind !== 'PAYROLL').length,
           message:
-            'درخواست‌های عملیاتی استرداد، کمیسیون، چک و اصلاح مالی؛ بدون ثبت خودکار سند حسابداری',
+            'درخواست‌های استرداد، کمیسیون، چک، اصلاح مالی و تنخواه با رویداد حسابداری قابل پیگیری',
         },
       ],
     };
+  }
+
+  purchaseFxQuote(currency: string, actor: AuthenticatedActor) {
+    if (
+      !actor.branchIds.length ||
+      !actor.permissions.some((p) =>
+        [
+          'finance.read',
+          'procurement.quote.manage',
+          'reservations.hotel_purchase.write',
+        ].includes(p),
+      )
+    )
+      throw new ForbiddenException();
+    return this.purchaseFx?.quote(currency) ?? null;
+  }
+  async capturePurchaseFx(
+    referenceId: string,
+    rateToIrr: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('finance.payment.create'))
+      throw new ForbiddenException();
+    const inbox = await this.list(actor);
+    const item = inbox.items.find(
+      (i) =>
+        i.reservationPurchase?.lines.some(
+          (p) => p.purchaseId === referenceId,
+        ) ||
+        (i.ticketPurchase && i.sourceContextReference === referenceId) ||
+        (i.id.startsWith('purchases:invoice:') &&
+          i.sourceReference === referenceId),
+    );
+    if (!item || !this.purchaseFx)
+      throw new NotFoundException('خرید ارزی مجاز یافت نشد.');
+    if (!actor.branchIds.includes(item.branchReference))
+      throw new ForbiddenException();
+    const line = item.reservationPurchase?.lines.find(
+      (p) => p.purchaseId === referenceId,
+    );
+    const amount = line?.amount ?? item.amount?.amount;
+    const currencyCode = line?.currencyCode ?? item.amount?.currencyCode;
+    if (!amount || !currencyCode || currencyCode === 'IRR')
+      throw new BadRequestException('ارز خرید معتبر نیست.');
+    return this.database.client.$transaction(async (tx) => {
+      let invoiceRevisionId: string | undefined;
+      if (item.id.startsWith('purchases:invoice:')) {
+        const revision = await tx.financeProcurementInvoiceRevision.findFirst({
+          where: {
+            sourceId: referenceId,
+            sourceVersion: item.sourceVersion,
+            branchId: item.branchReference,
+          },
+          orderBy: { version: 'asc' },
+        });
+        if (!revision)
+          throw new BadRequestException('ابتدا خرید را تأیید کنید.');
+        invoiceRevisionId = revision.id;
+      }
+      return this.purchaseFx!.capture(tx, {
+        ...(line
+          ? { reservationPurchaseId: referenceId }
+          : item.ticketPurchase
+            ? { ticketCostId: referenceId }
+            : { invoiceRevisionId: invoiceRevisionId! }),
+        branchId: item.branchReference,
+        actorUserId: actor.userId,
+        currencyCode,
+        amount,
+        rateToIrr,
+        baselineAt: new Date(item.createdAt),
+      });
+    });
   }
 
   async listSettlementAccounts(
@@ -602,11 +693,14 @@ export class FinanceInboxService {
     }));
   }
 
-  async listPaymentMethods(actor: AuthenticatedActor) {
+  async listPaymentMethods(
+    actor: AuthenticatedActor,
+    direction: 'PAYMENT' | 'RECEIPT' = 'PAYMENT',
+  ) {
     if (!actor.permissions.includes('finance.payment.create'))
       throw new ForbiddenException('مجوز ثبت پرداخت وجود ندارد.');
     return this.database.client.masterPaymentMethod.findMany({
-      where: { isActive: true, direction: { in: ['PAYMENT', 'BOTH'] } },
+      where: { isActive: true, direction: { in: [direction, 'BOTH'] } },
       select: { id: true, name: true, channel: true },
       orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
     });
@@ -703,7 +797,13 @@ export class FinanceInboxService {
       contractId,
       actor.branchIds,
     );
-    return this.delivery.updateCustomerContract(input, facts, actor);
+    return this.delivery.updateCustomerContract(input, facts, actor, (tx) =>
+      this.sales.financeCustomerDocumentDeliveryFacts(
+        contractId,
+        actor.branchIds,
+        tx,
+      ),
+    );
   }
   async decideReceipt(
     paymentId: string,
@@ -715,17 +815,60 @@ export class FinanceInboxService {
       input?.version !== 1 ||
       !input.contractId ||
       !['APPROVE', 'CORRECTION_REQUIRED'].includes(input.action) ||
-      reason.length > 500 ||
-      (input.action === 'CORRECTION_REQUIRED' && !reason)
+      (reason ?? '').length > 500 ||
+      (input.action === 'CORRECTION_REQUIRED' &&
+        !isOptionalOperationReason(reason))
     )
       throw new BadRequestException('تصمیم مالی معتبر نیست.');
-    const pending = await this.sales.financeInbox(actor);
-    const payment = pending.find(
-      (item) =>
-        item.paymentId === paymentId && item.contractId === input.contractId,
+    if (!actor.permissions.includes('finance.receipt.approve'))
+      throw new ForbiddenException('مجوز تأیید دریافت لازم است.');
+    const receipt = await this.sales.financeReceipt(
+      paymentId,
+      input.contractId,
+      actor,
     );
-    if (!payment)
-      throw new NotFoundException('درخواست دریافت در صف مالی یافت نشد.');
+    if (!receipt)
+      throw new NotFoundException('درخواست دریافت در شعب مجاز یافت نشد.');
+    if (receipt.status === 'FINANCE_CONFIRMED') {
+      if (
+        input.action !== 'APPROVE' ||
+        receipt.financeReceiptAccountId !== input.accountId
+      )
+        throw new ConflictException(
+          'دریافت قبلاً تأیید شده است؛ اصلاح از مسیر استرداد انجام می‌شود.',
+        );
+      if (!input.documentDelivery?.approved)
+        return { status: 'RECEIPT_CONFIRMED' as const };
+      const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+        input.contractId,
+        actor.branchIds,
+      );
+      const current = await this.delivery.readCustomerContract(
+        input.contractId,
+      );
+      const documentDelivery = await this.delivery.updateCustomerContract(
+        {
+          ...input.documentDelivery,
+          expectedVersion:
+            input.documentDelivery.expectedVersion ?? current.version,
+        },
+        facts,
+        actor,
+        (tx) =>
+          this.sales.financeCustomerDocumentDeliveryFacts(
+            input.contractId,
+            actor.branchIds,
+            tx,
+          ),
+      );
+      return { status: 'RECEIPT_CONFIRMED' as const, documentDelivery };
+    }
+    if (
+      receipt.status !== 'PENDING_FINANCE_CONFIRMATION' &&
+      !(receipt.status === 'SCHEDULED' && receipt.dueAt <= new Date())
+    )
+      throw new ConflictException('دریافت در وضعیت بررسی مالی نیست.');
+    const payment = { ...receipt, branchId: receipt.contract.branchId };
     if (input.action === 'APPROVE') {
       if (!input.accountId)
         throw new BadRequestException('حساب مقصد دریافت را انتخاب کنید.');
@@ -774,6 +917,12 @@ export class FinanceInboxService {
           },
           facts,
           actor,
+          (tx) =>
+            this.sales.financeCustomerDocumentDeliveryFacts(
+              input.contractId,
+              actor.branchIds,
+              tx,
+            ),
         );
       }
       return {
@@ -820,8 +969,9 @@ export class FinanceInboxService {
       !Number.isSafeInteger(input.expectedVersion) ||
       input.expectedVersion < 0 ||
       !['APPROVE', 'CORRECTION_REQUIRED'].includes(input.action) ||
-      reason.length > 500 ||
-      (input.action === 'CORRECTION_REQUIRED' && !reason)
+      (reason ?? '').length > 500 ||
+      (input.action === 'CORRECTION_REQUIRED' &&
+        !isOptionalOperationReason(reason))
     )
       throw new BadRequestException('تصمیم فاکتور خرید معتبر نیست.');
     const source = await this.procurement.financeInvoiceSource(
@@ -867,6 +1017,32 @@ export class FinanceInboxService {
             actorUserId: actor.userId,
           },
         });
+        if (input.action === 'APPROVE')
+          await this.purchaseFx?.capture(tx, {
+            invoiceRevisionId: row.id,
+            branchId: source.branchId,
+            actorUserId: actor.userId,
+            currencyCode: source.currencyCode,
+            amount: source.amount,
+            baselineAt: new Date(source.handoffCreatedAt),
+          });
+        if (
+          input.action === 'APPROVE' &&
+          (await isNewAccountingSource(tx, new Date(source.handoffCreatedAt)))
+        )
+          await recordFinancialEvent(tx, {
+            source: 'INVOICE',
+            recordId: row.id,
+            requestId: sourceId,
+            kind: 'SUPPLIER_INVOICE_APPROVED',
+            trackingDate: financialDate(new Date(source.handoffCreatedAt)),
+            branchId: source.branchId,
+            actorId: actor.userId,
+            occurredAt: row.createdAt,
+            amount: source.amount,
+            currency: source.currencyCode,
+            partyId: source.supplier.id,
+          });
         const applied = await this.procurement.applyFinanceResult(
           {
             contract: 'finance.procurement-result.v1',
@@ -925,7 +1101,7 @@ export class FinanceInboxService {
       paidAmount.compare(DecimalValue.zero()) <= 0 ||
       exchangeRate.compare(DecimalValue.zero()) <= 0 ||
       Number.isNaN(transferAt.getTime()) ||
-      reason.length > 500 ||
+      (reason ?? '').length > 500 ||
       (input.paymentReference?.trim().length ?? 0) > 160
     )
       throw new BadRequestException('اطلاعات پرداخت فاکتور خرید معتبر نیست.');
@@ -1014,6 +1190,21 @@ export class FinanceInboxService {
             actorUserId: actor.userId,
           },
         });
+        await recordFinancialEvent(tx, {
+          source: 'INVOICE',
+          recordId: row.id,
+          requestId: sourceId,
+          kind: 'SUPPLIER_PAYMENT',
+          trackingDate: financialDate(new Date(source.handoffCreatedAt)),
+          branchId: source.branchId,
+          actorId: actor.userId,
+          occurredAt: transferAt,
+          amount: paidAmount.toString(),
+          currency: source.currencyCode,
+          settlementAccountId: account?.id ?? null,
+          partyId: `${source.supplier.id}:${payingSupplierId ?? ''}`,
+          reference: row.paymentReference,
+        });
         const applied = await this.procurement.applyFinanceResult(
           {
             contract: 'finance.procurement-result.v1',
@@ -1060,8 +1251,9 @@ export class FinanceInboxService {
       !Number.isSafeInteger(input.expectedVersion) ||
       input.expectedVersion < 1 ||
       !['APPROVE', 'CORRECTION_REQUIRED'].includes(input.action) ||
-      reason.length > 500 ||
-      (input.action === 'CORRECTION_REQUIRED' && !reason)
+      (reason ?? '').length > 500 ||
+      (input.action === 'CORRECTION_REQUIRED' &&
+        !isOptionalOperationReason(reason))
     )
       throw new BadRequestException('تصمیم اصلاح مالی مرجوعی معتبر نیست.');
     const status =

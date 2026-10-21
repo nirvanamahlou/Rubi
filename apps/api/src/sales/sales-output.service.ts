@@ -56,13 +56,29 @@ export class SalesOutputService {
       contract.customerId,
       actor,
     );
+    const passengerNames = await Promise.all(
+      (contract.passengersDetail ?? []).map(async (passenger) => {
+        const { data: person } = await this.customers.maskedDetail(
+          passenger.customerId,
+          actor,
+        );
+        const latin =
+          person.passportFirstName?.trim() && person.passportLastName?.trim()
+            ? `${person.passportFirstName.trim()} ${person.passportLastName.trim()}`
+            : '';
+        return {
+          ...passenger,
+          displayNameSnapshot: latin || passenger.displayNameSnapshot,
+        };
+      }),
+    );
     const users = actor.permissions.includes('iam.users.read')
       ? await this.iam.listUsers()
       : [];
     const output: SalesContractOutputV1 = {
       version: 1,
       generatedAt: new Date().toISOString(),
-      contract,
+      contract: { ...contract, passengersDetail: passengerNames },
       ownerName:
         users.find((user) => user.id === contract.ownerUserId)?.displayName ??
         null,
@@ -73,6 +89,7 @@ export class SalesOutputService {
           customer.addresses.find((a) => a.isPrimary)?.label ??
           null,
         phone: contract.buyerContact?.phone ?? null,
+        landline: contract.buyerContact?.landline ?? null,
         postalCode: contract.buyerContact?.postalCode ?? null,
       },
       company: {

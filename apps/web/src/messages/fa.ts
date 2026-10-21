@@ -77,6 +77,11 @@ export const faMessages = {
 
 export const navigationMessages = [
   {
+    title: 'کال سنتر',
+    href: '/customer-affairs/call-center',
+    description: 'مدیریت تماس‌ها و تاریخچه پیگیری مسافران',
+  },
+  {
     title: 'میزکار من',
     href: '/workbench',
     description: 'اعلان‌ها، فایل‌ها و حساب شخصی من',
@@ -181,11 +186,6 @@ export const navigationMessages = [
     title: 'مکاتبات',
     href: '/correspondence',
     description: 'تولید نامه و دانلود عکس و PDF',
-  },
-  {
-    title: 'دستیار هوشمند',
-    href: '/assistant',
-    description: 'پیش‌بینی، تحلیل و پشتیبانی تصمیم‌های مدیرعامل',
   },
 ] as const;
 

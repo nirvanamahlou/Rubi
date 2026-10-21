@@ -8,10 +8,11 @@ import { CustomerNationalIdProtector } from './customer-national-id';
 import { CustomerRepository } from './customer.repository';
 import { CustomerService } from './customer.service';
 import { CustomersController } from './customers.controller';
+import { CustomerSelectionController } from './customer-selection.controller';
 
 @Module({
   imports: [IamModule],
-  controllers: [CustomersController],
+  controllers: [CustomerSelectionController, CustomersController],
   providers: [
     AuthGuard,
     PermissionGuard,

@@ -1,3 +1,37 @@
+## Facility import lossless text — 2026-10-21
+
+MasterFacility.name widens from varchar160 to varchar500 without changing identities, relations or existing indices. Import preview and final revalidation enforce PostgreSQL character counts and all persisted hotel/reference string limits; accepted facility text is never truncated. Boundary500 with four-byte characters plus an80-character category is verified against the actual compound indexes. Migration20261021100000_facility_name_text is widening-only; retain it on application rollback and never narrow after longer names have been saved. No cross-module ownership/API changes. See tasks/HOTEL-FACILITY-TEXT-1021.md.
+
+## Hotel import optional identity/website/free-sale — 2026-10-20
+
+MasterHotel.freeSale is nullable Boolean reference metadata, independent of isActive, isSaleableReference and sourceFeatured; NULL means unspecified and false must remain false. No backfill or availability/payment policy change. Existing name stores optional Persian name (hotel-name fallback), englishName stores the workbook hotel name, and website keeps its existing nullable320-character text field. An omitted new header on import UPDATE preserves saved values; explicit blanks clear nullable website/freeSale. Generic authorized profile edits preserve omitted fields and audit/version behavior. Apply additive migration20261020180000_hotel_free_sale before API/Web rollout; no operational migration was performed by implementation. Older14/18-column workbooks remain valid.
+
+## Manual per-unit toman reference — 2026-10-18
+
+MasterCurrency.tomanPerUnit is an independent nullable Decimal(24,10):1 unit of
+the row currency=N tomans. Positive finite decimal string; blank clears to NULL.
+The new form/table uses this value only. Legacy unitsPerUsd remains unchanged
+with its original meaning and is never automatically converted/backfilled.
+This reference does not alter purchase FX, settlements or ledger balances.
+
+## Partner360 and manual USD reference rate — 2026-10-17
+
+MasterCurrency.unitsPerUsd is nullable Decimal(24,10), exposed as a decimal string
+through existing Master Data v1 attributes. It means1USD=N record-currency units;
+IRR is rials, not tomans. Positive finite values only; USD itself must equal1.
+Omission preserves, blank clears, CAS/audit remains mandatory. No automatic FX
+snapshot, financial approval, existing transaction or historical rate is changed.
+
+Existing B2B organization/branch/role unique identity now accepts SUPPLIER and
+BROKER separately from AGENCY/CORPORATE_CUSTOMER. Credit flows COUNTERPARTY_TO_US.
+New Finance requests may reference actual MasterOrganization plus its supported
+role through restrictive FKs and a pair CHECK. Legacy free-text parties remain
+unlinked; never backfill by name. The composite lookup starts with organization,
+role and branch. Existing role rows survive identity edits; referenced roles
+cannot be removed. Immutable payment revisions stay in Finance; purchases are
+read through Reservations/Procurement public producers, with per-currency Decimal
+totals, invoice-version ownership and fail-closed reconciliation.
+
 ## Flight total purchase allocation (FLIGHT-TOTAL-CONTRACT-COST-1013)
 
 No storage change: the existing invoiceAmount stores the exact whole-flight purchase; unitCost is its four-decimal per-seat display equivalent. The additive totalCost command is mutually exclusive with unitCost; existing unit commands remain valid. Finance's public recorded-cost projection adds seatCount and invoiceAmount. Sales uses exact invoice × assigned seat count / purchased seat count, rounded once per contract/flight; legacy age-specific records retain prior behavior. Total and unit command retries use the existing canonical invoice/seat fingerprint, CAS and payment lock. Settled-cost publication policy is unchanged.
@@ -823,3 +857,93 @@ SalesContractPassenger.childAgeBand is a nullable contract classification, AGE_2
 ### 2026-10-14 — Sales hotel room breakdown
 
 Optional SalesHotelSelectionInput.rooms carries ordered room products with canonical room-type UUID, name snapshot, adult count and child ages. Normalized sales_contract_hotel_rooms rows belong to Sales hotel selection, with a real room-type FK, unique(parent, ordinal), parent cascade and room-type delete restriction. Existing hotel summary fields remain for compatibility; selections without room rows retain legacy behavior. Room totals and actual ages must match the selected hotel guest identities. Independent visa counts/child ages use scalar service metadata and explicit passenger-service allocations.
+
+### 2026-10-15 — Room agreed sale allocation
+
+Sales room rows optionally store agreed_price JSON with a Decimal amount string and foreign currency code for the whole room stay. Legacy rows remain NULL. When room prices are present, all rooms must be priced; each currency subtotal must fit within the contract net total and is never added as a second price component. New Contract adjusts totals by the room-price delta, preserving amounts allocated to other services. Typed/restored room occupancy is bounded by the flight party and existing age bands; server guest identities must be selected from the flight party, and room composition must match actual hotel guest ages.
+
+### Finance purchase currency baseline — PURCHASE-FX-PROFIT-1017
+
+FinancePurchaseFxSnapshot stores one immutable Decimal(24,8) IRR-per-foreign-unit rate and Decimal(24,4) original purchase amount, currency, source, UTC baseline/capture times and real actor/branch FKs. Exactly one unique FK points to a ReservationServicePurchase, FinanceTicketPurchaseCostRevision or FinanceProcurementInvoiceRevision. PostgreSQL checks finite positive amounts/rates, finite baseline time, non-IRR code and one source; a trigger rejects updates/deletes. There is no historical backfill. Realized operational FX gain = baseline value of foreign units actually paid minus sum of persisted rial payment evidence; unpaid balances never generate realized gain. Currency groups stay separate and null means unknown. These operational rates are not approved accounting posting snapshots and do not create journals.
+
+## HOTEL-SALES-PACKAGE-PREVIEW-1017 — independent package sale snapshots
+
+`PackagePricingTourDraft.roomSaleOverrides` is optional JSON metadata keyed by purchase-row reference, advertised room composition and currency. Amounts use validated canonical decimal strings (IRR integer; other currencies two decimals), following the existing price-field snapshot convention. Values are final per-person package sales, not supplier hotel costs. The server validates batch membership and currency context, preserves omitted legacy fields, uses the existing draft CAS/branch/permission checks, and rejects stale composition overrides at publication. Published currency amounts, commissions and profit are persisted in the existing immutable publication rows; purchase tariffs/history are unchanged. Migration `20261017140000_package_room_sale_overrides` only adds a nullable column. Applied only to an isolated local preview database until user review and later merge/deployment approval.
+
+## 2026-10-18 — Package composition sale snapshots
+
+PACKAGE-SALE-FLOW-1018 adds nullable PackagePricingTourDraft.selectedRoomKeys JSON. Existing drafts/publications keep legacy behavior until explicitly edited. Published roomCode is widened to TEXT and v2 codes encode exact room-type ID, adult count, sorted child age bands and board; legacy codes remain readable. Each publication freezes only selected composition rows and retains the real hotel-rate FK. Purchase bases and source occupancy history are unchanged. Sales stores the canonical sale-only publication references and per-currency price snapshot in existing service metadata; negotiated totals remain separate and a positive difference is a DISCOUNT component. Create and changed-room updates validate through the Package Pricing public producer. Unchanged saved quote/room selections on amendments retain their immutable reference, with discount amounts checked against the stored canonical baseline. No live migration or data rewrite is part of implementation.
+
+
+### Finance accounting events — 2026-10-18
+
+`FinanceAccountingEvent` retains the source owner's public immutable reference, amount/currency, branch, actor, occurrence and tracking date. Branch, actor, settlement account and journal use real FKs; polymorphic source references are public owner identifiers, not consumer table access. A unique source key and canonical fingerprint prevent duplicate or altered capture. Database triggers prohibit source changes/deletion and journal reassignment. `SalesPaymentRefund` is an immutable Sales-owned allocation of an actual Finance operational PAY revision to a confirmed receipt, with real FKs to both records. `FinanceOperationalRequest.pettyFundId` relates petty cash children to their parent fund; parent/branch/currency consistency and unique active expense proof are enforced in the database. Capture and business changes commit atomically. No historic source backfill runs on migration.
+
+## Internal correspondence — 2026-10-18
+
+System Management owns `correspondence_letters` and `correspondence_deliveries`.
+Letters persist the exact editable letter content, stable issued number, ISO letter
+date, UTC timestamps, author User FK and optimistic version. Deliveries have real
+sender/recipient User FKs, status, read time and sender-scoped UUID retry keys.
+One delivery per letter/recipient is maintained; forwarding back to an existing
+recipient updates that inbox entry and marks it unread. System audit retains
+send/edit/forward/delete metadata without letter bodies. A participant-authorized,
+version-checked hard delete removes the letter and all deliveries by cascade.
+No existing documents, accounting, business records or user grants are migrated.
+Only active internal IAM account labels are exposed through its public directory.
+
+
+## MESSAGING-REPLIES-REACTIONS-1018 — 2026-10-18
+
+MessagingMessage has a nullable replyToMessageId; composite FK (replyToMessageId, conversationId) references (id, conversationId) on MessagingMessage, preventing cross-conversation replies at database level. Existing rows remain NULL; no backfill. MessagingMessageReaction is owned by Messaging with real message/user FKs, one row per (messageId,userId), one allowed emoji (👍 ❤️ 😂 😮 🙏), and UTC created/updated timestamps. Explicit set/remove is idempotent and can only affect the authenticated member’s own reaction. The compatible v1 response adds optional replyTo (240-character preview plus minimum sender identity) and grouped reaction counts/member IDs. The producer validates membership/branch before every command or read. Forwarding does not copy source replies or reactions. Migration20261018190000 is additive and must precede API rollout. No other module accesses reaction tables directly.
+
+## 2026-10-18 — Call Center durable contact history
+
+Customer Affairs owns CallCenterContact, CallCenterCall and CallCenterNote.
+Contacts are unique by authorized Branch FK and HMAC of the canonical telephone.
+Calls and notes have restrictive real contact/User FKs; append operations retain
+UTC time and server actor identity. Call UUIDs and note UUIDs are replay keys:
+the same normalized request returns its saved record; changed requests conflict.
+Per-event and per-phone transaction locks serialize concurrent retries and contact
+creation, and audit metadata commits atomically without private text snapshots.
+Private call fields (phone/name/subject/source/operator/summary) and note bodies
+are AES-256-GCM encrypted with row/contact AAD and configured key version. No
+plain telephone, note body, external audio URL or copied Customer row is stored.
+The append-only API exposes no edit/delete command. Source/assigned-team labels
+are call snapshots, not new IAM identities. Lists use one authorized branch,
+50 contacts per page and each complete call/note history; UI explicitly reports
+statistics/search coverage of loaded contacts and offers further pages. The
+first authorized branch is the default, matching Customer Affairs conventions.
+Migration20261018200000 creates three tables/indexes/checks only. Provider webhooks,
+realtime notification and protected recording handoff require a separate unit.
+
+## Call Center package one — 2026-10-19
+
+Customer Affairs reuses CustomerAffairsTicket with reserved CALL_CENTER_REQUEST, nullable restrictive CallCenterContact FK and AES-GCM encrypted title/reason/revision payload plus key version. Its generic support fields are private-content-free labels. Support consumers exclude this category; the CALL_CENTER_NO_SLA policy does not infer a deadline. Existing call status remains historical; nullable outcome/origin/ticket FK introduce independent manual results and request linkage without backfill. Anonymous calls use event-specific HMAC contact fingerprints.
+
+Tasks owns existing AutomationTask follow-ups through a public transaction port. A nullable restrictive callCenterTicketId FK and source-reference check link the task to its real request. Owner is the real User FK; UTC deadline/status and encrypted action/result/name plus revision metadata survive retries. Request/command/task-ID locks, expected versions and same-branch validation prevent conflicting writes and cross-request ID reuse. Notification retirement and revision-scoped claims share the domain transaction. No parallel request/task table or plaintext private-content audit is introduced. Additive migration20261019180000 must precede the updated API. See tasks/CALL-CENTER-PACKAGE-ONE-1019.md.
+
+## 2026-10-19 — Call Center package two
+
+Existing CallCenterCall adds searchTokens (branch-domain HMAC whole words, GIN), sourceToken/unitToken (opaque HMAC), needsCompletion nullable for legacy, and searchVersion0 until backfilled. No plaintext private fields. Indexes on occurredAt/direction/outcome and createdAt/id support bounded reporting and revisions. Migration20261019210000 is additive. Explicit customer association reuses CustomerAffairsTicket.customerId FK; shared phone is not identity, no contact/person auto-merge. CustomerAffairsAuditEvent preserves association actor/time/previous and target IDs. Existing CustomerAffairsReferral and Tasks AutomationTask ownership remain unchanged. See tasks/CALL-CENTER-PACKAGE-TWO-1019.md for index leakage, backfill and report definitions.
+
+## Telephony package-three additions (2026-10-19)
+
+Eight additive tables separate Integrations connection/mapping/inbox/outbox/audit from Customer Affairs telephony session/offer/lease. Every stored identity relationship uses a real FK; root uniqueness is (connectionId, rootFingerprint), ingress uniqueness (connectionId, externalFingerprint), extension uniqueness (connectionId, extension). One session references one existing CallCenterCall. Private canonical events and technical leg/recording state are encrypted; external identity fingerprints are keyed. Claims and mapping versions are CAS-controlled. Synthetic origins are separately labelled and excluded from operational call metrics. The existing origin constraint is widened without rewriting history. Full definitions/retention and custodian-versus-human attribution: tasks/CALL-CENTER-TELEPHONY-1019.md.
+
+
+## UNIFIED-PASSENGER-PRICING-1019 — Sales deductions
+
+Optional `passengerDeductionsV1` JSON string on exactly one existing Sales service contains a passenger-ID map with optional `discount`/`commission` objects, each a nonnegative decimal-string amount and ISO currency code. Only allocated flight/hotel amounts of the same passenger/currency bound the total reduction; no implicit FX, cross-person subsidy or schema change. Existing service price metadata records gross prices; canonical DISCOUNT price components lower payable totals, checked transactionally by Sales validation. Missing metadata is legacy-compatible. Legacy `agencyCommissionV1` remains informational and is not migrated into deductions. Print consumes recorded hotel prices before legacy room shares and does not filter service amounts by currency.
+
+## BANK-ACCOUNTS-1020 — company bank identifiers
+
+FinanceSettlementAccount retains its existing account identity, branch/currency and operational links. Optional bankIdentifiers stores one AES-GCM envelope bound to branch/bank/account; maskedAccountNumber/maskedCardNumber/maskedIban and three HMAC fingerprints support safe lists and branch/bank-scoped uniqueness without plaintext indexes. Nullable additions preserve legacy accounts. Company accounts only; MasterBank FK remains canonical. FinanceBankAccountAudit has real account/User FKs and an append-only trigger; metadata contains masks, version and actor/time evidence, not full identifiers. Migration20261020160000 is additive; no backfill or operational application is performed here. The Master Data bank profile consumes the bounded Finance API; identifiers are never stored in Master Data attributes.
+
+### Receipt allocation — FINANCE-RECEIPT-ALLOCATION-1020 (QA, not yet deployed)
+
+Sales owns immutable SalesReceiptAllocation rows with real source-payment, target-contract, actor and unique reversal FKs. A source receipt can be distributed only within its customer, branch and currency, accounting for actual refunds and Finance-owned pending refund reservations under a shared receipt lock. FinanceAccountingEvent has an optional original-receipt basis FK and immutable base carrying amount/currency for non-cash allocation events. Allocation journals derive the original posted receipt credit account/details/rate and change contract tracking only; there is no second bank movement. Full reversals preserve source rows. Old uncaptured/unposted receipts require reconciliation first. Migration20261020120000 is applied to isolated QA only; this is not yet a deployed capability. See docs/tasks/FINANCE-RECEIPT-ALLOCATION-1020.md for validation and rollout status.
+
+## ISSABEL-ADAPTER-1020 — Integration-owned commands and recordings
+
+Integrations owns IntegrationTelephonyCommand (real connection/User FKs, UUID replay key, encrypted target, extension snapshot, UTC state transitions), IntegrationTelephonyRecording (connection FK, HMAC linked-call identity, encrypted metadata, fixed byte count/SHA256, mandatory expiry) and IntegrationTelephonyRecordingChunk (composite recording/index key, cascade only on parent audio expiry, AES-GCM encrypted base64 audio with row/index AAD and key version). Additive migration20261020150000 introduces no backfill or operational data rewrite. Bytes remain inside PostgreSQL as encrypted payloads, bounded to20MiB per WAV; existing Documents/object-storage ownership is not repurposed. Existing TelephonyEventV1 publishes only opaque recording reference after verified finalization. No browser audio route. Commands serialize before dispatch and never automatically resend after an uncertain socket result. Audio expiry removes bytes and metadata, retaining a minimal audit UUID tombstone that prevents replay resurrection. Domain call records remain owned by Customer Affairs through its existing public projection port. See tasks/ISSABEL-ADAPTER-1020.md.

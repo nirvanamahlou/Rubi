@@ -117,7 +117,10 @@ it('marks only available outbound days and eligible reverse-route return dates w
     ['out'],
   );
   fixture.pickers[0]!.onChange?.('2099-10-01');
-  expect(onChange).toHaveBeenLastCalledWith({ from: '2099-10-01', to: '' });
+  expect(onChange).toHaveBeenLastCalledWith(
+    { from: '2099-10-01', to: '2099-10-03' },
+    ['out'],
+  );
 });
 it('selects unmarked floating dates without an extra toggle or an empty catalog allowlist', () => {
   const onChange = vi.fn();
@@ -266,3 +269,23 @@ it.each([true, false])(
     expect(onChange).not.toHaveBeenCalled();
   },
 );
+
+it('allows changing the suggested return to a manually chosen floating day', () => {
+  const onChange = vi.fn();
+  renderToStaticMarkup(
+    <FlightTripDates
+      originId="origin"
+      destinationId="destination"
+      roundTrip
+      seats={1}
+      requireFare
+      value={{ from: '2099-10-01', to: '2099-10-03' }}
+      onChange={onChange}
+    />,
+  );
+  fixture.pickers[1]!.onChange?.('2099-10-04');
+  expect(onChange).toHaveBeenLastCalledWith(
+    { from: '2099-10-01', to: '2099-10-04' },
+    undefined,
+  );
+});

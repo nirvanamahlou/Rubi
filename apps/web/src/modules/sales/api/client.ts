@@ -4,6 +4,11 @@ import { localizedFetch } from '@/i18n/localized-fetch';
 
 import type {
   HotelRoomRateV1,
+  MasterDataListQuery,
+  MasterDataListResponse,
+  MasterDataRecord,
+  MasterDataResource,
+  PackagePublishedSaleV1,
   SalesContractCreateRequest,
   SalesContractAmendmentV1,
   SalesContractPartyCorrectionV1,
@@ -105,6 +110,22 @@ function queryString(query: SalesContractListQuery): string {
 }
 
 export const salesApi = {
+  listReferences: (
+    resource: MasterDataResource,
+    query: MasterDataListQuery,
+  ) => {
+    const parameters = new URLSearchParams();
+    for (const key of ['search', 'page', 'pageSize'] as const) {
+      if (query[key] !== undefined) parameters.set(key, String(query[key]));
+    }
+    return request<MasterDataListResponse>(
+      `/form-references/${encodeURIComponent(resource)}?${parameters}`,
+    );
+  },
+  reference: (resource: MasterDataResource, id: string) =>
+    request<{ data: MasterDataRecord }>(
+      `/form-references/${encodeURIComponent(resource)}/${encodeURIComponent(id)}`,
+    ),
   priceCorrection: (id: string) =>
     request<{
       version: number;
@@ -197,6 +218,10 @@ export const salesApi = {
   receivables: (query: SalesReceivablesQuery = {}) =>
     request<SalesReceivables>(
       `/receivables?${new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined && value !== '')).toString()}`,
+    ),
+  publishedPackageSales: (tourDepartureId: string) =>
+    request<{ data: PackagePublishedSaleV1[] }>(
+      `/pricing/tour-drafts/sale-catalog?${new URLSearchParams({ tourDepartureId })}`,
     ),
   availableHotelRoomRates: (input: {
     hotelId: string;

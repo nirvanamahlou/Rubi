@@ -35,7 +35,7 @@ import {
   documentsApi,
   DocumentsApiError,
 } from '@/modules/documents/api/client';
-import { agencyClient } from '../api/agency-client';
+import { useDossierBranch } from './use-dossier-branch';
 import { downloadOrganizationXlsx } from '../model/organization-xlsx';
 import { DossierDateFilters } from './dossier-date-filters';
 import {
@@ -82,9 +82,8 @@ export function OrganizationDocumentsPanel({
   compact?: boolean;
 }) {
   const [options, setOptions] = useState<OrganizationDocumentOptions>();
-  const [permissions, setPermissions] = useState<readonly IamPermissionCode[]>(
-    [],
-  );
+  const { permissions, branches, sessionContextKey, sessionError } =
+    useDossierBranch();
   const [branch, setBranch] = useState('');
   const [page, setPage] = useState(1);
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
@@ -110,15 +109,16 @@ export function OrganizationDocumentsPanel({
         setTotal(0);
         return;
       }
-      const session = await agencyClient.session();
-      if (sequence !== request.current) return;
-      setPermissions(session.permissions);
-      if (!canReadOrganizationDocuments(session.permissions))
+      if (!sessionContextKey) {
+        if (sessionError) throw new Error(sessionError);
+        return;
+      }
+      if (!canReadOrganizationDocuments(permissions))
         throw new Error('مجوز فهرست اسناد سازمان را ندارید.');
       const response = await documentsApi.options();
       if (sequence !== request.current) return;
       const accessible = response.data.branches.filter((item) =>
-        session.branches.some((allowed) => allowed.id === item.id),
+        branches.some((allowed) => allowed.id === item.id),
       );
       const selectedBranch =
         accessible.find((item) => item.id === branch)?.id ?? accessible[0]?.id;
@@ -172,7 +172,18 @@ export function OrganizationDocumentsPanel({
     } finally {
       if (sequence === request.current) setLoading(false);
     }
-  }, [organization.id, branch, page, validity, folderLabel, dateRange]);
+  }, [
+    organization.id,
+    branch,
+    page,
+    validity,
+    folderLabel,
+    dateRange,
+    permissions,
+    branches,
+    sessionContextKey,
+    sessionError,
+  ]);
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     return () => {
@@ -205,11 +216,11 @@ export function OrganizationDocumentsPanel({
           >
             <FileText size={20} /> {folderLabel ?? 'اسناد سازمان و همکاری'}
           </h2>
-          {!compact ? (
+          {!compact && folderLabel ? (
             <p className="panel-note">
-              {folderLabel
-                ? 'مشخصات و فایل مدارک این بخش را ثبت کنید؛ نسخه‌ها و دانلود فایل در اسناد و فایل‌ها در دسترس‌اند. این ثبت، تراکنش حسابداری ایجاد نمی‌کند.'
-                : 'قرارداد، الحاقیه، مجوز و تضمین؛ نسخه‌ها و دریافت فایل در آرشیو اسناد در دسترس‌اند.'}
+              مشخصات و فایل مدارک این بخش را ثبت کنید؛ نسخه‌ها و دانلود فایل در
+              اسناد و فایل‌ها در دسترس‌اند. این ثبت، تراکنش حسابداری ایجاد
+              نمی‌کند.
             </p>
           ) : null}
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import type { MasterDataRecord } from '@nora/contracts';
+import type { MasterDataRecord, B2bCooperationRole } from '@nora/contracts';
 import {
   ArrowLeft,
   Building2,
@@ -166,6 +166,9 @@ export function CorporateProfile({
   operations,
   logo,
   overview,
+  cooperationRole,
+  finance,
+  exposure,
 }: {
   organization: MasterDataRecord;
   onClose: () => void;
@@ -182,6 +185,9 @@ export function CorporateProfile({
   ) => ReactNode;
   logo?: ReactNode;
   overview?: ReactNode;
+  cooperationRole?: B2bCooperationRole;
+  finance?: (tab: string) => ReactNode;
+  exposure?: ReactNode;
 }) {
   const screenAllowed = useScreenAccess();
   const tabAllowed = useCallback(
@@ -219,9 +225,13 @@ export function CorporateProfile({
   const inCredit = screen === 'contracts' && tab === 'credit';
   const roles = String(organization.attributes.roleCodes ?? '').split(',');
   const entityLabel =
-    roles.includes('AGENCY') && !roles.includes('CORPORATE_CUSTOMER')
-      ? 'آژانس'
-      : 'سازمان';
+    cooperationRole === 'SUPPLIER'
+      ? 'تأمین‌کننده'
+      : cooperationRole === 'BROKER'
+        ? 'کارگزار'
+        : roles.includes('AGENCY') && !roles.includes('CORPORATE_CUSTOMER')
+          ? 'آژانس'
+          : 'سازمان';
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus({ preventScroll: true });
@@ -321,7 +331,9 @@ export function CorporateProfile({
             onClick={screen === 'home' ? onClose : () => go('home')}
           >
             {screen === 'home'
-              ? 'بازگشت به فهرست مشتریان B2B'
+              ? cooperationRole === 'SUPPLIER' || cooperationRole === 'BROKER'
+                ? 'بازگشت به اطلاعات پایه'
+                : 'بازگشت به فهرست مشتریان B2B'
               : `بازگشت به پرونده ${organization.name}`}
             <ArrowLeft size={18} />
           </button>
@@ -337,7 +349,9 @@ export function CorporateProfile({
           <h2>{organization.name}</h2>
           <div className="org-meta">
             <span className="badge purple">
-              {cooperationLabel(organization.attributes.roleCodes)}
+              {cooperationRole
+                ? entityLabel
+                : cooperationLabel(organization.attributes.roleCodes)}
             </span>
             <span
               className={`badge ${organization.status === 'active' ? 'success' : 'neutral'}`}
@@ -453,7 +467,7 @@ export function CorporateProfile({
                     if (screen === 'organization') focusSection(id);
                   }}
                 >
-                  {label}
+                  {id === 'payments' && finance ? 'پرداخت‌ها' : label}
                 </button>
               ))}
           </nav>
@@ -602,17 +616,23 @@ export function CorporateProfile({
               organizationId={organization.id}
             />
           ) : screen === 'finance' ? (
-            <OrganizationFinancePreview
-              organization={organization}
-              key={organization.id}
-              organizationName={organization.name}
-              tab={tab}
-            />
+            finance ? (
+              finance(tab)
+            ) : (
+              <OrganizationFinancePreview
+                organization={organization}
+                key={organization.id}
+                organizationName={organization.name}
+                tab={tab}
+              />
+            )
           ) : inCredit && creditTab === 'exposure' ? (
-            <CorporateUnavailable
-              title="Exposure و مانده مالی"
-              description="مانده واقعی و اعتبار قابل استفاده پس از اتصال سرویس مالی نمایش داده می‌شود. نمونه‌های مالی را در بخش «مالی و تسویه» ببینید."
-            />
+            (exposure ?? (
+              <CorporateUnavailable
+                title="Exposure و مانده مالی"
+                description="مانده واقعی و اعتبار قابل استفاده پس از اتصال سرویس مالی نمایش داده می‌شود. نمونه‌های مالی را در بخش «مالی و تسویه» ببینید."
+              />
+            ))
           ) : operationalView ? (
             operations(
               operationalView,

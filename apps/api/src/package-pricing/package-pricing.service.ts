@@ -1,3 +1,6 @@
+import { Optional } from '@nestjs/common';
+import { MasterTravelDirectory } from '../master-data/master-travel-directory';
+import { isOptionalOperationReason } from '@nora/contracts';
 import { createHash } from 'node:crypto';
 import {
   BadRequestException,
@@ -9,6 +12,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import type {
+  HotelRegisteredPeriodsQueryV1,
   AuthenticatedActor,
   PackageBannerTemplateCreateInputV1,
   PackageCreateInputV1,
@@ -166,7 +170,45 @@ export class PackagePricingService {
     private readonly hotelPurchases: HotelPurchaseRatesPublicService,
     @Inject(FinanceTicketCostService)
     private readonly flightCosts: FinanceTicketCostService,
+    @Optional()
+    @Inject(MasterTravelDirectory)
+    private readonly directory?: MasterTravelDirectory,
   ) {}
+
+  async hotelRegisteredPeriods(
+    raw: HotelRegisteredPeriodsQueryV1,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('package_pricing.read'))
+      throw new ForbiddenException();
+    const parsed = Joi.object({
+      branchId: uuid,
+      search: Joi.string().trim().max(120).allow(''),
+      from: dateOnly,
+      to: dateOnly,
+      page: Joi.number().integer().min(1).max(10000).default(1),
+    })
+      .unknown(false)
+      .validate(raw);
+    if (parsed.error)
+      throw new BadRequestException('فیلتر بازه‌های هتل معتبر نیست.');
+    const query = parsed.value as HotelRegisteredPeriodsQueryV1;
+    const validDate = (value: string) =>
+      Number.isFinite(Date.parse(value)) &&
+      new Date(value).toISOString().slice(0, 10) === value;
+    if (
+      (query.from && !validDate(query.from)) ||
+      (query.to && !validDate(query.to)) ||
+      (query.from && query.to && query.from > query.to)
+    )
+      throw new BadRequestException('بازه فیلتر نامعتبر است.');
+    if (query.branchId && !actor.branchIds.includes(query.branchId))
+      throw new ForbiddenException();
+    return this.hotelPurchases.registeredPeriods(
+      query.branchId ? [query.branchId] : actor.branchIds,
+      query,
+    );
+  }
 
   async pricingTourDepartures(actor: AuthenticatedActor) {
     return this.tours.pricingDepartures(actor.branchIds);
@@ -188,6 +230,7 @@ export class PackagePricingService {
         tour.endsOn,
         tour.id,
         tour.package.destinationId,
+        true,
       ),
       this.flightCosts.paidCostsForOffers(offerIds, tour.branchId),
     ]);
@@ -200,6 +243,16 @@ export class PackagePricingService {
       tour,
       nights,
       purchaseBatches,
+      ...(this.directory
+        ? {
+            destinationName:
+              (
+                await this.directory.hotelRatePeriodCityNames([
+                  tour.package.destinationId,
+                ])
+              )[0]?.name ?? tour.package.name,
+          }
+        : {}),
       flightPurchaseCosts,
       missingFlightOfferIds: offerIds.filter(
         (id) =>
@@ -526,7 +579,7 @@ export class PackagePricingService {
       .min(1)
       .max(100)
       .validate(rawRules, { convert: false });
-    if (result.error || !reason.trim())
+    if (result.error || !isOptionalOperationReason(reason))
       throw new BadRequestException({ code: 'PACKAGE_VALIDATION_FAILED' });
     const rules = result.value as PackagePricingRuleInputV1[];
     return this.database.client.$transaction(async (tx) => {
@@ -571,7 +624,7 @@ export class PackagePricingService {
           entityType: 'PackagePricingPeriod',
           entityId: periodId,
           entityVersion: version,
-          reason: reason.trim(),
+          reason: (reason ?? '').trim(),
           afterSnapshot: json(rules),
           traceId: traceId ?? null,
         },
@@ -606,7 +659,10 @@ export class PackagePricingService {
       throw new NotFoundException({ code: 'PACKAGE_NOT_FOUND' });
     if (packageRow.version !== input.expectedPackageVersion)
       throw new ConflictException({ code: 'CONCURRENT_MODIFICATION' });
-    if (!/^[A-Z]{3}$/.test(input.outputCurrencyCode) || !input.reason.trim())
+    if (
+      !/^[A-Z]{3}$/.test(input.outputCurrencyCode) ||
+      !isOptionalOperationReason(input.reason)
+    )
       throw new BadRequestException({ code: 'PACKAGE_VALIDATION_FAILED' });
     const period = departure.periods.find(
       ({ id }) => id === input.pricingPeriodId,
@@ -683,7 +739,7 @@ export class PackagePricingService {
             ? json(resolved.fxSnapshot)
             : Prisma.JsonNull,
           createdByUserId: actor.userId,
-          reason: input.reason.trim(),
+          reason: (input.reason ?? '').trim(),
           passengerPrices: {
             create: input.passengerMultipliers.map((item) => ({
               category: item.category,
@@ -715,7 +771,7 @@ export class PackagePricingService {
           entityType: 'PackagePricingPriceVersion',
           entityId: price.id,
           entityVersion: version,
-          reason: input.reason.trim(),
+          reason: (input.reason ?? '').trim(),
           afterSnapshot: json(breakdown),
           traceId: traceId ?? null,
         },
@@ -735,7 +791,7 @@ export class PackagePricingService {
     actor: AuthenticatedActor,
     traceId?: string,
   ) {
-    if (!input.reason.trim())
+    if (!isOptionalOperationReason(input.reason))
       throw new BadRequestException({ code: 'PACKAGE_VALIDATION_FAILED' });
     const record =
       await this.database.client.packagePricingPriceVersion.findFirst({
@@ -799,7 +855,7 @@ export class PackagePricingService {
           entityType: 'PackagePricingPriceVersion',
           entityId: priceVersionId,
           entityVersion: input.expectedPriceVersion,
-          reason: input.reason.trim(),
+          reason: (input.reason ?? '').trim(),
           traceId: traceId ?? null,
         },
       });
@@ -815,7 +871,7 @@ export class PackagePricingService {
     actor: AuthenticatedActor,
     reason: string,
   ) {
-    if (!reason.trim())
+    if (!isOptionalOperationReason(reason))
       throw new BadRequestException({ code: 'PACKAGE_VALIDATION_FAILED' });
     const row = await this.database.client.packagePricingPackage.findFirst({
       where: { id: packageId, branchId: { in: actor.branchIds } },
@@ -850,7 +906,7 @@ export class PackagePricingService {
     reason: string,
     traceId?: string,
   ) {
-    if (!reason.trim())
+    if (!isOptionalOperationReason(reason))
       throw new BadRequestException({ code: 'PACKAGE_VALIDATION_FAILED' });
     const row = await this.database.client.packagePricingPackage.findFirst({
       where: { id: packageId, branchId: { in: actor.branchIds } },
@@ -879,7 +935,7 @@ export class PackagePricingService {
           entityType: 'PackagePricingPackage',
           entityId: packageId,
           entityVersion: expectedVersion + 1,
-          reason: reason.trim(),
+          reason: (reason ?? '').trim(),
           beforeSnapshot: json({ status: row.status, version: row.version }),
           afterSnapshot: json({
             status: 'STOPPED',

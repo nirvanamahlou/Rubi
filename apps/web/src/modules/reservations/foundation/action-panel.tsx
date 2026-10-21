@@ -23,8 +23,6 @@ import type { RequestView } from './model';
 import { statusLabels } from './model';
 import styles from './action-panel.module.css';
 import { ReservationResponsibility } from './responsibility';
-import AccessLink from '@/components/access-link';
-import { purchaseHubHref } from '@/modules/reservation-purchases/model';
 
 export const contractActionGroups = [
   {
@@ -184,27 +182,7 @@ export function ContractActionPanel({
             <h2>{group.title}</h2>
             <div className={styles.buttons}>
               {group.items.map((action) =>
-                action === 'خرید' ? (
-                  request ? (
-                    <AccessLink
-                      key={action}
-                      href={purchaseHubHref(request)}
-                      className={styles.action}
-                      aria-label="خرید خدمات این قرارداد"
-                    >
-                      {action}
-                    </AccessLink>
-                  ) : (
-                    <button
-                      key={action}
-                      type="button"
-                      disabled
-                      className={styles.action}
-                    >
-                      {action}
-                    </button>
-                  )
-                ) : action === 'مفاد' ? (
+                action === 'مفاد' ? (
                   request ? (
                     <a
                       key={action}

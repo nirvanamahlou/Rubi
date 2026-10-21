@@ -121,3 +121,87 @@ it('prints English carrier and supplier plus the explicit NOTICE remarks', () =>
   expect(data.flights[0]?.airline).toBe('AIRLINE');
   expect(data.notes).toBe('NOTICE TEST');
 });
+
+it('keeps supplier-only hotel, passenger and NOTICE changes independent of contract and issued voucher', () => {
+  const intake = {
+    receivedAt: '2026-10-01T00:00:00Z',
+    snapshot: {
+      contractNumber: 'TEST',
+      passengerIds: ['guest'],
+      passengerAssignments: [
+        {
+          customerId: 'guest',
+          displayNameSnapshot: 'Synthetic Guest',
+          ageCategory: 'ADT',
+        },
+      ],
+      serviceSelections: [],
+      hotelSelection: {
+        hotelNameSnapshot: 'CONTRACT HOTEL',
+        roomCount: 1,
+        checkInDate: '2026-10-01',
+        checkOutDate: '2026-10-04',
+      },
+    },
+    workflow: {
+      roomOrder: [],
+      ageOverrides: {},
+      note: 'VOUCHER NOTICE',
+      voucherIssued: true,
+    },
+  } as unknown as ReservationFormIntake;
+  const before = structuredClone(intake.snapshot);
+  const voucherBefore = voucherFormData(intake, {});
+  const form = defaultVoucherSettings(intake, {});
+  Object.assign(form.text, {
+    hotel: 'FORM HOTEL',
+    checkIn: '2026-10-10',
+    checkOut: '2026-10-20',
+    remarks: 'FORM NOTICE',
+  });
+  form.passengers[0]!.age = 'CHD';
+  form.passengers[0]!.hotelChildAgeBand = 'CHD_2_TO_6';
+  intake.workflow.supplierFormSettings = form;
+  const output = supplierFormData(intake, {});
+  expect(output).toMatchObject({
+    hotel: 'FORM HOTEL',
+    checkIn: '10 OCT 2026',
+    checkOut: '20 OCT 2026',
+    notes: 'FORM NOTICE',
+    adults: 0,
+    children: 1,
+  });
+  expect(voucherFormData(intake, {})).toEqual(voucherBefore);
+  expect(defaultVoucherSettings(intake, {}).text.hotel).toBe('CONTRACT HOTEL');
+  expect(intake.snapshot).toEqual(before);
+  expect(intake.workflow.note).toBe('VOUCHER NOTICE');
+});
+it('keeps room composition in the saved supplier revision and output without changing the contract', () => {
+  const intake = {
+    receivedAt: '2026-10-01T00:00:00Z',
+    snapshot: {
+      contractNumber: 'SYNTHETIC',
+      passengerIds: ['p'],
+      passengerAssignments: [],
+      serviceSelections: [],
+      hotelSelection: { hotelNameSnapshot: 'Hotel', roomCount: 1 },
+    },
+    workflow: { roomOrder: [], ageOverrides: {}, note: '' },
+  } as unknown as ReservationFormIntake;
+  const settings = defaultVoucherSettings(intake, {});
+  settings.rooms = [
+    {
+      ordinal: 1,
+      roomTypeNameSnapshot: 'Family Suite',
+      adults: 2,
+      childAges: [4, 10],
+    },
+  ];
+  intake.workflow.supplierFormSettings = settings;
+  const output = supplierFormData(intake, {});
+  expect(output.rooms).toBe(1);
+  expect(output.roomBreakdown).toEqual([
+    { ordinal: 1, roomType: 'Family Suite', adults: 2, childAges: [4, 10] },
+  ]);
+  expect(intake.snapshot.hotelSelection?.roomCount).toBe(1);
+});

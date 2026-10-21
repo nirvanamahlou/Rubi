@@ -59,7 +59,10 @@ export function mealServiceFormValues(
     status: mealServiceStatus(record),
   };
 }
-export function validateMealServiceForm(input: Record<string, string>) {
+export function validateMealServiceForm(
+  input: Record<string, string>,
+  requireCode = true,
+) {
   const values = Object.fromEntries(
     Object.keys(mealServiceFormValues()).map((key) => [
       key,
@@ -68,7 +71,10 @@ export function validateMealServiceForm(input: Record<string, string>) {
   );
   const errors: Record<string, string> = {};
   values.code = values.code!.toUpperCase();
-  if (!/^[A-Z0-9][A-Z0-9_-]{1,31}$/.test(values.code))
+  if (
+    (requireCode || values.code) &&
+    !/^[A-Z0-9][A-Z0-9_-]{1,31}$/.test(values.code)
+  )
     errors.code =
       'کد سرویس باید ۲ تا ۳۲ حرف لاتین، عدد، خط تیره یا زیرخط باشد.';
   if (!values.name || values.name.length > 160)
@@ -98,10 +104,11 @@ export function mealServiceMutationValues(
   input: Record<string, string>,
   record?: MasterDataRecord,
 ) {
-  const result = validateMealServiceForm(input);
+  const result = validateMealServiceForm(input, Boolean(record));
   if (!result.success) throw new Error('فیلدهای وعده/سرویس را اصلاح کنید.');
   if (result.values.status === mealServiceStatus(record))
     delete result.values.status;
   if (record && result.values.code === record.code) delete result.values.code;
+  if (!record && !result.values.code) delete result.values.code;
   return result.values;
 }

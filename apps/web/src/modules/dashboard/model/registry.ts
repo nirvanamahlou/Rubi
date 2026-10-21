@@ -1,3 +1,4 @@
+import { assistantCopy } from '@/i18n/assistant-copy';
 import {
   employeeCommercialKpis,
   employeeCommercialSource,
@@ -2783,6 +2784,14 @@ export const dashboardPages: readonly DashboardPageDefinition[] = [
       : page;
   }),
   ...dashboardDetailPages,
+  {
+    id: 'assistant',
+    title: 'دستیار هوشمند',
+    technicalName: 'AI Assistant',
+    description: assistantCopy.views.overview.description[0],
+    kpiIds: [],
+    visualizations: [],
+  },
 ];
 
 export const dashboardNavigation: readonly DashboardNavigationItem[] = [
@@ -2829,6 +2838,7 @@ export const dashboardNavigation: readonly DashboardNavigationItem[] = [
       { pageId: 'employee-sales-quality' },
     ],
   },
+  { pageId: 'assistant' },
 ] as const;
 
 export const dashboardOpenDecisions = [

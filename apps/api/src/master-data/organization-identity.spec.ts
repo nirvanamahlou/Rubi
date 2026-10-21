@@ -42,6 +42,23 @@ function setup() {
   return { service: new MasterDataService(repository), create, update };
 }
 describe('organization company identity', () => {
+  it('retains existing role rows when editing identity, preserving financial references', async () => {
+    const { service, update } = setup();
+    await service.update(
+      'organizations',
+      orgId,
+      { legalName: 'Updated', roleCodes: 'AGENCY,SUPPLIER' },
+      1,
+      actor,
+    );
+    expect(update.mock.calls[0]?.[2].roles).toEqual({
+      deleteMany: { roleCode: { notIn: ['AGENCY', 'SUPPLIER'] } },
+      connectOrCreate: ['AGENCY', 'SUPPLIER'].map((roleCode) => ({
+        where: { organizationId_roleCode: { organizationId: orgId, roleCode } },
+        create: { roleCode, assignedByUserId: actor.userId },
+      })),
+    });
+  });
   it('normalizes Persian/Arabic digits and exposes the saved value in the public record', async () => {
     const { service, create } = setup();
     const result = await service.create(

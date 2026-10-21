@@ -5,11 +5,13 @@ on:
     branches:
       - main
       - develop
+      - PC-D-Integration
       - 'codex/pc-*'
   pull_request:
     branches:
       - main
       - develop
+      - PC-D-Integration
       - 'codex/pc-*'
   workflow_dispatch:
 
@@ -66,6 +68,9 @@ jobs:
 
       - name: Verify multi-computer CI policy
         run: node --test .github/tests/ci-policy.test.mjs
+
+      - name: Verify bounded PBX recording uploader
+        run: node --test scripts/call-center/upload-issabel-recording.test.mjs
 
       - name: Frozen install
         run: pnpm install --frozen-lockfile
@@ -200,6 +205,21 @@ jobs:
           pnpm --filter @nora/database db:seed
           pnpm --filter @nora/database db:seed
 
+      - name: Prove IAM user unit and company branch data upgrades
+        env:
+          IAM_USER_UNIT_TEST: '1'
+        run: pnpm --filter @nora/database exec vitest run test/iam-user-unit-postgres.spec.ts test/five-company-branches-postgres.spec.ts
+
+      - name: Prove immutable purchase FX snapshots
+        env:
+          PURCHASE_FX_TEST: '1'
+        run: pnpm --filter @nora/database exec vitest run test/purchase-fx-postgres.spec.ts
+
+      - name: Prove hotel rate broker compatibility and foreign keys
+        env:
+          HOTEL_RATE_BROKER_TEST: '1'
+        run: pnpm --filter @nora/database exec vitest run test/hotel-rate-broker-postgres.spec.ts
+
       - name: Prove Marketing CAS, replay and rollback atomicity
         env:
           NORA_RUN_MARKETING_POSTGRES_TESTS: '1'
@@ -208,12 +228,34 @@ jobs:
           pnpm --filter @nora/database build
           pnpm --filter @nora/api exec vitest run src/marketing/marketing-records.postgres.spec.ts
 
+      - name: Prove financial source, refund and petty-cash atomicity
+        env:
+          NORA_RUN_FINANCIAL_EVENT_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run test/financial-events.postgres.spec.ts --maxWorkers=1
+
+      - name: Prove company bank account encryption, CAS and audit atomicity
+        env:
+          NORA_RUN_BANK_ACCOUNT_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run test/bank-accounts.postgres.spec.ts --maxWorkers=1
+
       - name: Prove assistant read-only PostgreSQL and HTTP boundaries
         env:
           NORA_RUN_ASSISTANT_POSTGRES_TESTS: '1'
         run: |
           pnpm --filter @nora/config build
           pnpm --filter @nora/api exec vitest run src/assistant-read/assistant-read.postgres.spec.ts
+
+      - name: Prove partner360 role isolation and manual USD rate persistence
+        env:
+          NORA_RUN_B2B_POSTGRES_TESTS: '1'
+        run: |
+          docker pull postgres:18.1-alpine
+          pnpm --filter @nora/api exec vitest run src/b2b/b2b.postgres.spec.ts --maxWorkers=1
+
+      - name: Prove durable Call Center history, replay and branch isolation
+        env:
+          NORA_RUN_CALL_CENTER_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run src/customer-affairs/call-center.spec.ts src/customer-affairs/call-center-workflow.spec.ts src/customer-affairs/call-center-read.spec.ts src/integrations/telephony.spec.ts src/integrations/issabel/issabel.postgres.spec.ts --maxWorkers=1
 
   build:
     name: Full production build

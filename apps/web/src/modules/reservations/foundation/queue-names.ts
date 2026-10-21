@@ -3,7 +3,10 @@ import { useEffect, useState } from 'react';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import type { RequestView } from './model';
 import { hotelMealLabel, queueMealName } from './queue-meal';
-export function useQueueNames(rows: readonly RequestView[]) {
+export function useQueueNames(
+  rows: readonly RequestView[],
+  refreshRevision = 0,
+) {
   const key = JSON.stringify(
     [
       ...new Set(
@@ -20,6 +23,7 @@ export function useQueueNames(rows: readonly RequestView[]) {
   const [loaded, setLoaded] = useState<{
     key: string;
     names: Record<string, string>;
+    revision: number;
   }>();
   useEffect(() => {
     let active = true;
@@ -34,6 +38,7 @@ export function useQueueNames(rows: readonly RequestView[]) {
           const { data } = await masterDataApi.detail(
             resource as 'hotels' | 'cities' | 'meal-services',
             id!,
+            'reservations',
           );
           const english = data.attributes.englishName;
           if (resource === 'hotels') {
@@ -56,15 +61,17 @@ export function useQueueNames(rows: readonly RequestView[]) {
     void Promise.all(
       Array.from({ length: Math.min(6, entries.length) }, worker),
     ).then(() => {
-      if (active) setLoaded({ key, names });
+      if (active) setLoaded({ key, names, revision: refreshRevision });
     });
     return () => {
       active = false;
     };
-  }, [key]);
+  }, [key, refreshRevision]);
   const names = loaded?.key === key ? loaded.names : {};
   return {
-    ready: key === '[]' || loaded?.key === key,
+    ready:
+      key === '[]' ||
+      (loaded?.key === key && loaded.revision === refreshRevision),
     rows: rows.map((row) => ({
       ...row,
       mealServiceName: queueMealName(row, names),

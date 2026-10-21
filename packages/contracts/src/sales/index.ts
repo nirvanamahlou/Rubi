@@ -190,6 +190,7 @@ export interface SalesPaymentInput extends SalesMoney {
 
 /** Immutable buyer contact details entered for this contract. */
 export interface SalesBuyerContactV1 {
+  landline?: string;
   name: string;
   phone: string;
   address: string;
@@ -265,6 +266,7 @@ export interface SalesBalance extends SalesMoney {
 }
 
 export interface SalesContractSummary {
+  customerDocumentDeliveryApproved?: boolean;
   sellerName?: string | null;
   reservationContractChanged?: boolean;
   id: string;
@@ -326,6 +328,7 @@ export interface SalesContractOutputV1 {
     kind: 'person' | 'organization';
     address: string | null;
     phone?: string | null;
+    landline?: string | null;
     postalCode?: string | null;
   };
   ownerName: string | null;
@@ -508,3 +511,9 @@ export interface SalesContractPartyCorrectionV1 {
 export interface SalesContractAmendmentV1 extends SalesContractUpdateRequest {
   passengerCategories: Readonly<Record<string, SalesPassengerAgeCategory>>;
 }
+
+export * from './passenger-flight-prices';
+
+export * from './agency-commission';
+export * from './passenger-deductions';
+export * from './passenger-total-prices';

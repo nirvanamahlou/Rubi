@@ -40,6 +40,7 @@ export function createErpClient({
   erpAuthBaseUrl = erpBaseUrl,
   fetcher = fetch,
   timeoutMs = 2500,
+  identityTimeoutMs = timeoutMs,
 }) {
   const base = configuredErpOrigin(erpBaseUrl);
   const reportBase = configuredErpOrigin(erpReportsBaseUrl);
@@ -51,6 +52,7 @@ export function createErpClient({
     signal,
     source,
     maxResponseBytes = 512 * 1024,
+    deadlineMs = timeoutMs,
   ) {
     try {
       const response = await fetcher(baseUrl + path, {
@@ -62,7 +64,7 @@ export function createErpClient({
         },
         redirect: 'error',
         cache: 'no-store',
-        signal: AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]),
+        signal: AbortSignal.any([signal, AbortSignal.timeout(deadlineMs)]),
       });
       if ([401, 403].includes(response.status))
         throw new ServiceError(
@@ -101,7 +103,15 @@ export function createErpClient({
         !PERSONAL_TOOLS.some((tool) => tool.id === source)
       )
         throw new ServiceError(400, 'INVALID_TOOL_INPUT');
-      return read('/iam/auth/access', authBase, cookie, signal, source);
+      return read(
+        '/iam/auth/access',
+        authBase,
+        cookie,
+        signal,
+        source,
+        512 * 1024,
+        Math.min(5000, Math.max(1, identityTimeoutMs)),
+      );
     },
     readTool(id, cookie, signal, input = {}) {
       const tool = getTool(id);

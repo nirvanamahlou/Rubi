@@ -11,6 +11,7 @@ import type {
   MasterOrganizationAddressMutationV1,
   MasterOrganizationAddressV1,
 } from '@nora/contracts';
+import { hasAccessControl } from '@nora/contracts';
 import { AuditOutcome, Prisma } from '@nora/database';
 import {
   activityEvent,
@@ -20,6 +21,7 @@ import {
 } from '../common/organization-activity';
 
 import { DatabaseService } from '../database/database.service';
+import { persistPartnerDossier } from './partner-dossier.persistence';
 
 const addressInclude = {
   country: { select: { name: true } },
@@ -93,6 +95,125 @@ function addressRecord(row: {
 
 @Injectable()
 export class MasterOrganizationDirectory {
+  async preparePartnerDossiers(
+    resource: 'suppliers' | 'brokers',
+    branch: string,
+    actor: AuthenticatedActor,
+  ) {
+    this.assertPartnerPreparationAccess(resource, branch, actor);
+    const query = {
+      where: { organizationId: null },
+      select: { id: true, version: true },
+      orderBy: { id: 'asc' },
+      take: 50,
+    } as const;
+    const pending =
+      resource === 'suppliers'
+        ? await this.database.client.masterSupplier.findMany(query)
+        : await this.database.client.masterBroker.findMany(query);
+    for (const item of pending)
+      await this.ensurePartnerDossier(
+        resource,
+        item.id,
+        item.version,
+        branch,
+        actor,
+      );
+    return {
+      prepared: pending.length,
+      remaining:
+        resource === 'suppliers'
+          ? await this.database.client.masterSupplier.count({
+              where: { organizationId: null },
+            })
+          : await this.database.client.masterBroker.count({
+              where: { organizationId: null },
+            }),
+    };
+  }
+
+  private assertPartnerPreparationAccess(
+    resource: 'suppliers' | 'brokers',
+    branch: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !actor.branchIds.includes(branch) ||
+      !actor.permissions.includes('master_data.update') ||
+      !actor.permissions.includes('master_data.create')
+    )
+      throw new ForbiddenException('مجوز اتصال پرونده یا شعبه را ندارید.');
+    if (resource !== 'suppliers' && resource !== 'brokers')
+      throw new BadRequestException('نوع طرف همکاری معتبر نیست.');
+    if (
+      !hasAccessControl(
+        actor.permissions,
+        `master-data.resource.${resource}`,
+      ) ||
+      !hasAccessControl(actor.permissions, 'master-data.resource.organizations')
+    )
+      throw new ForbiddenException(
+        'عملیات این بخش اطلاعات پایه محدود شده است.',
+      );
+  }
+
+  async ensurePartnerDossier(
+    resource: 'suppliers' | 'brokers',
+    id: string,
+    version: number,
+    branch: string,
+    actor: AuthenticatedActor,
+  ) {
+    this.assertPartnerPreparationAccess(resource, branch, actor);
+    return this.database.client.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`partner-dossier:${resource}:${id}`},0))::text`;
+      const before =
+        resource === 'suppliers'
+          ? await tx.masterSupplier.findUnique({ where: { id } })
+          : await tx.masterBroker.findUnique({ where: { id } });
+      if (!before) throw new NotFoundException('طرف همکاری یافت نشد.');
+      if (before.organizationId)
+        return { organizationId: before.organizationId };
+      if (before.version !== version)
+        throw new ConflictException(
+          'رکورد هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
+        );
+      const organizationId = await persistPartnerDossier(
+        tx,
+        resource,
+        { ...before },
+        {},
+        actor.userId,
+        branch,
+      );
+      const data = {
+        organizationId,
+        version: { increment: 1 },
+        updatedByUserId: actor.userId,
+      };
+      const linked =
+        resource === 'suppliers'
+          ? await tx.masterSupplier.updateMany({ where: { id, version }, data })
+          : await tx.masterBroker.updateMany({ where: { id, version }, data });
+      if (linked.count !== 1)
+        throw new ConflictException('رکورد هم‌زمان تغییر کرده است.');
+      await tx.masterDataAuditEvent.create({
+        data: {
+          actorUserId: actor.userId,
+          actorBranchId: branch,
+          action: 'master_data.update',
+          resource,
+          entityId: id,
+          outcome: AuditOutcome.SUCCESS,
+          beforeSnapshot: { organizationId: null },
+          afterSnapshot: { organizationId },
+          entityVersion: version + 1,
+        },
+      });
+      return { organizationId };
+    });
+  }
+
   /** Owner projection includes historical child IDs so deleting a contact does not erase its history. */
   async organizationActivity(
     org: string,
@@ -146,9 +267,35 @@ export class MasterOrganizationDirectory {
     return this.cooperationReference(organizationId, 'AGENCY');
   }
 
+  /** Canonical IDs only; no matching by mutable or translated supplier names. */
+  async partnerFinanceReference(
+    organizationId: string,
+    role: 'SUPPLIER' | 'BROKER',
+  ) {
+    const organization = await this.cooperationReference(organizationId, role);
+    if (!organization)
+      throw new NotFoundException('طرف همکاری با این نقش یافت نشد.');
+    const linked =
+      await this.database.client.masterOrganization.findUniqueOrThrow({
+        where: { id: organizationId },
+        select: {
+          supplier: { select: { id: true } },
+          broker: { select: { id: true } },
+        },
+      });
+    return {
+      organizationId,
+      ambiguousOrganizationRole: Boolean(linked.supplier && linked.broker),
+      organizationPurchaseId:
+        role === 'BROKER' && linked.supplier ? null : organizationId,
+      supplierId: role === 'SUPPLIER' ? (linked.supplier?.id ?? null) : null,
+      brokerId: role === 'BROKER' ? (linked.broker?.id ?? null) : null,
+    };
+  }
+
   async cooperationReference(
     organizationId: string,
-    role: 'AGENCY' | 'CORPORATE_CUSTOMER',
+    role: 'AGENCY' | 'CORPORATE_CUSTOMER' | 'SUPPLIER' | 'BROKER',
   ) {
     return this.database.client.masterOrganization.findFirst({
       where: {
@@ -199,7 +346,11 @@ export class MasterOrganizationDirectory {
         organization: {
           isActive: true,
           roles: {
-            some: { roleCode: { in: ['AGENCY', 'CORPORATE_CUSTOMER'] } },
+            some: {
+              roleCode: {
+                in: ['AGENCY', 'CORPORATE_CUSTOMER', 'SUPPLIER', 'BROKER'],
+              },
+            },
           },
         },
       },

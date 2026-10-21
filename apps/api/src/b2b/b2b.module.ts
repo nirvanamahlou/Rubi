@@ -1,4 +1,8 @@
 import { Module } from '@nestjs/common';
+import {
+  FinancePartnerModule,
+  FinancePartnerService,
+} from '../finance/partner-finance.module';
 import { AgencyPassengerAccessService } from './agency-passenger-access.service';
 import { B2bActivityController } from './b2b-activity.controller';
 import { B2bActivityService } from './b2b-activity.service';
@@ -32,6 +36,7 @@ import { B2bAgreementWorkflowRepository } from './b2b-agreement-workflow.reposit
 import { B2bAgreementWorkflowService } from './b2b-agreement-workflow.service';
 import {
   FINANCE_PARTY_EXPOSURE_PORT,
+  FINANCE_PARTNER_EXPOSURE_PORT,
   UnavailableFinanceExposureAdapter,
 } from './finance-exposure.port';
 import { B2bPhoneVerificationController } from './b2b-phone-verification.controller';
@@ -44,6 +49,7 @@ import { B2bPhoneVerificationStore } from './b2b-phone-verification.store';
 
 @Module({
   imports: [
+    FinancePartnerModule,
     IamModule,
     MasterDataModule,
     DocumentsModule,
@@ -60,6 +66,10 @@ import { B2bPhoneVerificationStore } from './b2b-phone-verification.store';
     B2bPhoneVerificationController,
   ],
   providers: [
+    {
+      provide: FINANCE_PARTNER_EXPOSURE_PORT,
+      useExisting: FinancePartnerService,
+    },
     AgencyPassengerAccessService,
     B2bActivityService,
     B2bCrmConnectionsService,

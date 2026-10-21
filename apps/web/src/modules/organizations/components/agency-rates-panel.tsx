@@ -4,6 +4,7 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   B2bAgencyAgreedRateV1,
+  B2bCooperationRole,
   B2bAgencyProfileDetailsV1,
   B2bAgreedRateKind,
   CreateB2bAgencyAgreedRateRequestV1,
@@ -35,11 +36,13 @@ export function AgencyRatesPanel({
   organizationName = organizationId,
   kind,
   headerActionTargetId,
+  role = 'AGENCY',
 }: {
   organizationId: string;
   organizationName?: string;
   kind: B2bAgreedRateKind;
   headerActionTargetId?: string;
+  role?: B2bCooperationRole;
 }) {
   const { branches, branchId, setBranchId, permissions, sessionError } =
     useDossierBranch();
@@ -67,8 +70,8 @@ export function AgencyRatesPanel({
     setRows([]);
     setProfile(undefined);
     const [rates, details] = await Promise.allSettled([
-      agencyClient.rates(organizationId, branchId),
-      agencyClient.profileDetails(organizationId, branchId),
+      agencyClient.rates(organizationId, branchId, role),
+      agencyClient.profileDetails(organizationId, branchId, role),
     ]);
     if (current !== sequence.current) return;
     if (rates.status === 'fulfilled') setRows(rates.value.data);
@@ -84,7 +87,7 @@ export function AgencyRatesPanel({
       details.status === 'fulfilled' ? details.value.data.profile : undefined,
     );
     setLoading(false);
-  }, [organizationId, branchId]);
+  }, [organizationId, branchId, role]);
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     return () => {
@@ -109,6 +112,7 @@ export function AgencyRatesPanel({
   const create = () =>
     setEditor({
       values: {
+        role,
         branchId,
         kind,
         title: '',
@@ -169,7 +173,11 @@ export function AgencyRatesPanel({
               )
             }
             loadReport={async () => {
-              const result = await agencyClient.rates(organizationId, branchId);
+              const result = await agencyClient.rates(
+                organizationId,
+                branchId,
+                role,
+              );
               return ratesReport(result.data, kind, dateRange, [
                 `سازمان: ${organizationName}`,
                 `شعبه: ${branches.find((b) => b.id === branchId)?.name ?? branchId}`,
@@ -229,6 +237,7 @@ export function AgencyRatesPanel({
                     setEditor({
                       row,
                       values: {
+                        role,
                         branchId,
                         title: row.title,
                         serviceReference: row.serviceReference,
@@ -408,6 +417,7 @@ export function AgencyRatesPanel({
           onClose={close}
           onSave={async () => {
             await agencyClient.deleteRate(organizationId, deleting.id, {
+              role,
               branchId,
               version: deleting.version,
               reason,
@@ -417,8 +427,6 @@ export function AgencyRatesPanel({
           <label className="field sm:col-span-2">
             دلیل حذف
             <Textarea
-              required
-              minLength={5}
               maxLength={500}
               value={reason}
               onChange={(e) => setReason(e.target.value)}

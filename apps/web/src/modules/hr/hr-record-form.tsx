@@ -26,6 +26,7 @@ import {
   hrReferenceOptions,
   parentFieldLabel,
   retiredHrColumns,
+  radanOptionalLabels,
 } from './hr-form-model';
 import { useHrReferenceData } from './hr-reference-data';
 import { useHrFormReferences } from './hr-directory-picker';
@@ -313,6 +314,15 @@ function HrRecordFormFields({
     ),
     وضعیت: ['فعال', 'غیرفعال', 'پیش‌نویس', 'در حال بررسی', 'تکمیل‌شده'],
     کارمند: employees.map((item) => item.name),
+    'عنوان شیفت': data.records
+      .filter(
+        (r) =>
+          r.section === 'time' &&
+          r.tab === 'shiftTemplates' &&
+          r.branchId === branchId &&
+          !r.deletedAt,
+      )
+      .map((r) => r.values[0] ?? ''),
     'واحد درخواست‌کننده': units,
     'واحد درخواست کننده': units,
     واحد: units,
@@ -370,6 +380,9 @@ function HrRecordFormFields({
     (target.source.section === 'expenses' && target.source.tab === 'claims');
   const hiddenLabels = [
     ...retiredHrColumns(target.source.section, target.source.tab),
+    ...(definition.key === 'time.shift' && parentId
+      ? ['ساعت شروع', 'ساعت پایان', 'شناوری ورود', 'حداقل کارکرد']
+      : []),
     ...(target.organizationNode ? ['نام واحد'] : []),
     'شرکت',
     'شرکت یا شعبه',
@@ -394,6 +407,10 @@ function HrRecordFormFields({
   const columns = [
     'شناسه',
     ...definition.columns,
+    ...(definition.key === 'time.biometric' &&
+    store.data!.capabilities.sensitive
+      ? ['رمز عبور شبکه']
+      : []),
     ...(attachmentLabel ? [attachmentLabel] : []),
     ...(showStatus ? ['وضعیت'] : []),
   ];
@@ -638,6 +655,10 @@ function HrRecordFormFields({
               optionsByLabel,
               hiddenLabels,
               optionalLabels: [
+                ...radanOptionalLabels(definition),
+                ...(definition.key === 'time.biometric'
+                  ? ['رمز عبور شبکه']
+                  : []),
                 ...(target.source.section === 'organization' &&
                 target.source.tab === 'branches'
                   ? ['مدیر']
@@ -695,7 +716,33 @@ function HrRecordFormFields({
                   }
                 : {}),
               fieldTypes: {
+                نام: 'text',
+                'نام خانوادگی': 'text',
+                'کد ملی': 'text',
+                'شماره شناسنامه': 'text',
+                'نام پدر': 'text',
+                'شهر محل صدور': 'text',
+                ملیت: 'text',
+                'شماره تماس': 'text',
+                'رمز عبور شبکه': 'password',
+                نشانی: 'textarea',
+                'اجزای کارکرد': 'multi-select',
+                درخواست‌ها: 'multi-select',
+                'روز تقویم': 'date',
+                اولویت: 'number',
+                'طول مرخصی روزانه به دقیقه': 'number',
+                'نام الگو': 'text',
+                'نام روند': 'text',
+                'عنوان تنظیمات': 'text',
+                'عنوان قاعده': 'text',
                 'نام واحد': 'text',
+                'نام گروه': 'text',
+                'نام ساعت کاری': 'text',
+                'نام شیفت': 'text',
+                'ساعت قبل از شروع': 'number',
+                'ساعت بعد از پایان': 'number',
+                'پورت دستگاه': 'number',
+                توضیحات: 'textarea',
                 'نام شعبه': 'text',
                 ...(target.source.section === 'organization'
                   ? { 'عنوان شغل': 'text' as const }
@@ -725,13 +772,19 @@ function HrRecordFormFields({
                 ? {
                     initialValues: [
                       target.record.code,
-                      ...target.record.values,
+                      ...definition.columns.map(
+                        (_, index) => target.record?.values[index] ?? '',
+                      ),
                       ...(attachmentLabel
                         ? [
                             target.record.data.documentId
                               ? `document://${target.record.data.documentId}`
                               : '',
                           ]
+                        : []),
+                      ...(definition.key === 'time.biometric' &&
+                      store.data!.capabilities.sensitive
+                        ? ['']
                         : []),
                       ...(showStatus ? [target.record.status] : []),
                     ],
@@ -918,6 +971,15 @@ function HrRecordFormFields({
                   tab: target.source.tab,
                   values,
                   status,
+                  ...(definition.key === 'time.biometric' &&
+                  store.data!.capabilities.sensitive &&
+                  raw[1 + definition.columns.length]
+                    ? {
+                        privateData: {
+                          networkPassword: raw[1 + definition.columns.length]!,
+                        },
+                      }
+                    : {}),
                   data: extra,
                   ...(employeeId ? { employeeId } : {}),
                   ...(parentId ? { parentId } : {}),
@@ -928,6 +990,9 @@ function HrRecordFormFields({
               const record = target.record
                 ? await store.update(target.record, {
                     values: input.values,
+                    ...(input.privateData
+                      ? { privateData: input.privateData }
+                      : {}),
                     ...(input.status ? { status: input.status } : {}),
                     ...(input.data ? { data: input.data } : {}),
                     ...(isUnit || isApplicant || missionExpense

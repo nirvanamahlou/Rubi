@@ -1,3 +1,6 @@
+import { isOptionalOperationReason } from '@nora/contracts';
+import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
+import { Optional } from '@nestjs/common';
 import { hotelPurchaseSavingsEvidence } from '@nora/contracts';
 import {
   parsePurchaseQuery,
@@ -16,6 +19,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type {
+  PartnerPurchaseSourceV1,
   ReservationArrangementUpdateV1,
   ReservationIntakeV1,
   ReservationServicePurchaseCalculationV1,
@@ -225,6 +229,9 @@ function present(
 export class ReservationsPublicService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Optional()
+    @Inject(TicketPublicService)
+    private readonly tickets?: TicketPublicService,
   ) {}
 
   async receive(
@@ -287,7 +294,60 @@ export class ReservationsPublicService {
       include: intakeInclude,
     });
     if (!row) throw new NotFoundException('درخواست در دسترس نیست.');
-    return present(row);
+    const result = present(row);
+    const types = await Promise.all(
+      (result.snapshot.ticketSelections ?? []).map(
+        async (ticket) =>
+          [
+            ticket.serviceClientKey,
+            await this.tickets?.documentSupply(ticket.offerId, branchIds),
+          ] as const,
+      ),
+    );
+    for (const offerId of result.snapshot.selectedTicketOfferIds ?? []) {
+      if (
+        result.snapshot.ticketSelections?.some(
+          (ticket) => ticket.offerId === offerId,
+        )
+      )
+        continue;
+      const existing = result.snapshot.serviceSelections.find(
+        (service) =>
+          service.kind === 'FLIGHT' && service.referenceId === offerId,
+      );
+      types.push([
+        existing?.clientKey ?? offerId,
+        await this.tickets?.documentSupply(offerId, branchIds),
+      ] as const);
+    }
+    const purchaseServices = [...result.snapshot.serviceSelections];
+    result.snapshot = {
+      ...result.snapshot,
+      serviceSelections: purchaseServices,
+    };
+    for (const [key, type] of types) {
+      const existing = result.snapshot.serviceSelections.find(
+        (service) => service.clientKey === key,
+      );
+      if (existing)
+        existing.metadata = {
+          ...existing.metadata,
+          purchaseSupplyType: type ?? 'UNKNOWN',
+        };
+      else {
+        const ticket = result.snapshot.ticketSelections?.find(
+          (item) => item.serviceClientKey === key,
+        );
+        purchaseServices.push({
+          clientKey: key,
+          kind: 'FLIGHT',
+          referenceId: ticket?.offerId ?? key,
+          titleSnapshot: ticket?.carrierNameSnapshot ?? 'Flight',
+          metadata: { purchaseSupplyType: type ?? 'UNKNOWN' },
+        });
+      }
+    }
+    return result;
   }
 
   /** Service-level filters and ordering run before pagination; branch scope is repeated at hydration. */
@@ -311,12 +371,16 @@ export class ReservationsPublicService {
       } as PurchaseInboxSummary,
     };
     if (!branchIds.length) return { data: [], meta };
+    const inventory = await this.tickets?.purchaseCapacityInventory(branchIds);
+    const floatingOfferIds = inventory
+      ?.filter((offer) => offer.supplyType === 'FLOATING')
+      .map((offer) => offer.id);
     const [summary] = await this.database.client.$queryRaw<
       PurchaseInboxSummary[]
-    >(purchaseSelectionSql(branchIds, q, flights, true));
+    >(purchaseSelectionSql(branchIds, q, flights, true, floatingOfferIds));
     if (summary) meta.summary = summary;
     const selected = await this.database.client.$queryRaw<PurchaseServiceRow[]>(
-      purchaseSelectionSql(branchIds, q, flights),
+      purchaseSelectionSql(branchIds, q, flights, false, floatingOfferIds),
     );
     const services = selected.slice(0, 25);
     if (!services.length) return { data: [], meta };
@@ -330,7 +394,11 @@ export class ReservationsPublicService {
     });
     const authorized = new Set(rows.map((row) => row.id));
     return {
-      data: rows.map(present),
+      data: this.tickets
+        ? await Promise.all(
+            rows.map((row) => this.purchaseContext(row.id, branchIds)),
+          )
+        : rows.map(present),
       meta: {
         ...meta,
         services: services.filter((s) => authorized.has(s.id)),
@@ -338,6 +406,39 @@ export class ReservationsPublicService {
       },
     };
   }
+  /** Branch-scoped descriptors, including replaced purchases with payment evidence. */
+  async partnerFinanceSources(
+    branchId: string,
+    organizationId: string | null,
+    brokerId: string | null,
+  ) {
+    // Determine current revision before filtering party, including reassignment.
+    const rows = await this.database.client.$queryRaw<
+      PartnerPurchaseSourceV1[]
+    >(Prisma.sql`
+      SELECT p.id, 'RESERVATIONS'::text AS source, p.version AS "sourceVersion",
+        p."serviceTitleSnapshot" AS title, COALESCE(i.snapshot->>'contractNumber','') AS reference,
+        p.amount::text AS amount, p."currencyCode",
+        to_char(p."createdAt" AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "createdAt",
+        NULL::text AS "dueAt",
+        NOT EXISTS (SELECT 1 FROM "ReservationServicePurchase" newer
+          WHERE newer."intakeId"=p."intakeId" AND newer.version>p.version
+            AND (newer."serviceClientKey"=p."serviceClientKey"
+              OR newer."coveredServiceClientKeys" ? p."serviceClientKey"
+              OR p."coveredServiceClientKeys" ? newer."serviceClientKey")) AS current
+      FROM "ReservationServicePurchase" p JOIN "ReservationIntake" i ON i.id=p."intakeId"
+      WHERE i."branchId"=${branchId}::uuid
+        AND (p."supplierOrganizationId"=${organizationId}::uuid
+          OR (${brokerId}::uuid IS NOT NULL AND p."supplierBrokerId"=${brokerId}::uuid))
+      ORDER BY p."createdAt" DESC, p.id DESC LIMIT 10001
+    `);
+    if (rows.length > 10000)
+      throw new ConflictException(
+        'تعداد خریدها نیازمند گزارش صفحه‌بندی‌شده است؛ مانده ناقص نمایش داده نمی‌شود.',
+      );
+    return rows;
+  }
+
   /** Branch-scoped descriptors, including replaced purchases with payment evidence. */
   async financeHistoryPurchases(
     branchIds: readonly string[],
@@ -481,8 +582,8 @@ export class ReservationsPublicService {
       !input.hotelGuestCustomerIds.every(
         (value) => typeof value === 'string',
       ) ||
-      !input.reason?.trim() ||
-      input.reason.trim().length > 500
+      !isOptionalOperationReason(input.reason) ||
+      (input.reason ?? '').trim().length > 500
     )
       throw new BadRequestException('ترکیب اتاق یا دلیل تغییر معتبر نیست.');
     const guestIds = [...new Set(input.hotelGuestCustomerIds)];
@@ -525,7 +626,7 @@ export class ReservationsPublicService {
           doubleRoomCount: input.doubleRoomCount,
           extraBedCount: input.extraBedCount,
           hotelGuestCustomerIds: guestIds,
-          reason: input.reason.trim(),
+          reason: (input.reason ?? '').trim(),
           updatedByUserId: userId,
         },
       });

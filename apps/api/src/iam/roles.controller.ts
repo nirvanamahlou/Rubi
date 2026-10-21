@@ -1,6 +1,10 @@
 import { RoleTemplateDto } from './dto/role-template.dto';
 import {
   Body,
+  Delete,
+  Headers,
+  Param,
+  ParseUUIDPipe,
   Controller,
   Get,
   Inject,
@@ -24,6 +28,20 @@ import type { AuthenticatedRequest } from './iam.types';
 @Controller('iam/access-options')
 export class RolesController {
   constructor(@Inject(IamService) private readonly iam: IamService) {}
+  @Get('roles')
+  @RequirePermissions('iam.users.manage')
+  directory(@Req() req: AuthenticatedRequest) {
+    return this.iam.listRoleDirectory(req.actor);
+  }
+  @Delete('roles/:id')
+  @RequirePermissions('iam.users.manage')
+  remove(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Headers('if-match') revision: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.iam.deleteRole(id, revision, req.actor);
+  }
   @Get() @RequirePermissions('iam.roles.read') list() {
     return this.iam.listRolesAndBranches();
   }

@@ -1,0 +1,157 @@
+.panel {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--foreground);
+}
+.details {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  margin-top: 16px;
+}
+.explanation {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--muted-foreground);
+}
+.warning {
+  padding: 12px 16px;
+  border: 1px solid #d5aa35;
+  border-radius: 12px;
+  background: #fff5d6;
+  color: #6b4400;
+  font-size: 13px;
+  line-height: 1.9;
+}
+.warning p {
+  margin: 0;
+  font-weight: 600;
+}
+.warning ul {
+  margin: 6px 0 0;
+  padding-inline-start: 20px;
+  list-style: disc;
+}
+:global(.dark) .warning {
+  background: #382b0c;
+  color: #ffe082;
+}
+.tableFrame {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.totalsTable {
+  width: 100%;
+  min-width: 560px;
+  table-layout: auto;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.totalsTable th,
+.totalsTable td {
+  padding: 14px 16px;
+  text-align: start;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
+  line-height: 1.8;
+}
+.totalsTable thead {
+  background: var(--muted);
+}
+.totalsTable thead th {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.totalsTable tr > :last-child {
+  border-inline-end: 0;
+}
+.totalsTable tbody tr:last-child > * {
+  border-bottom: 0;
+}
+.totalsTable tbody tr:nth-child(even) {
+  background: var(--muted);
+}
+.amount {
+  display: block;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.currencyCode {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+.pending {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.costs {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.costs h3 {
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.costs ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.costs li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+.costDescription {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.costDescription small {
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+.costAmount {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 540px) {
+  .panel {
+    padding: 12px;
+  }
+  .totalsTable th,
+  .totalsTable td {
+    padding: 12px;
+  }
+}

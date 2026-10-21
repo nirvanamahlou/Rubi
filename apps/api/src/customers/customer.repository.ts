@@ -255,6 +255,63 @@ export function toCustomerDetail(
 
 @Injectable()
 export class CustomerRepository {
+  /** Workflow options deliberately exclude contacts, identity documents and dossier fields. */
+  async selectionOptions(
+    branchIds: readonly string[],
+    query: { search: string; kind: string; page: number; pageSize: number },
+    marketing = false,
+  ) {
+    const rows = await this.database.client.customer.findMany({
+      where: {
+        ownerBranchId: { in: [...branchIds] },
+        mergedIntoId: null,
+        isActive: true,
+        ...(query.kind !== 'all'
+          ? {
+              kind:
+                query.kind === 'person'
+                  ? ('PERSON' as const)
+                  : ('ORGANIZATION' as const),
+            }
+          : {}),
+        ...(query.search
+          ? {
+              displayName: {
+                contains: query.search,
+                mode: 'insensitive' as const,
+              },
+            }
+          : {}),
+        ...(marketing
+          ? {
+              isCustomer: true,
+              consents: {
+                some: {
+                  purpose: 'MARKETING' as const,
+                  status: 'GRANTED' as const,
+                },
+              },
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+        displayName: true,
+        consents: {
+          where: { purpose: 'MARKETING' },
+          orderBy: { occurredAt: 'desc' },
+          take: 1,
+          select: { status: true },
+        },
+      },
+      orderBy: [{ displayName: 'asc' }, { id: 'asc' }],
+      skip: (query.page - 1) * query.pageSize,
+      take: query.pageSize,
+    });
+    return rows
+      .filter((row) => !marketing || row.consents[0]?.status === 'GRANTED')
+      .map((row) => ({ id: row.id, displayName: row.displayName }));
+  }
   salesPartyKinds(ids: readonly string[]) {
     return this.database.client.customer.findMany({
       where: { id: { in: [...ids] } },
@@ -266,6 +323,31 @@ export class CustomerRepository {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
+  callCenterCandidates(branchId: string, fingerprints: string[]) {
+    return this.database.client.customer.findMany({
+      where: {
+        ownerBranchId: branchId,
+        mergedIntoId: null,
+        contacts: {
+          some: { type: 'PHONE', valueFingerprint: { in: fingerprints } },
+        },
+      },
+      select: { id: true, displayName: true, isActive: true },
+      orderBy: { id: 'asc' },
+      take: 51,
+    });
+  }
+  async callCenterReference(
+    tx: Prisma.TransactionClient,
+    id: string,
+    branchId: string,
+  ) {
+    await tx.$queryRaw`SELECT id FROM customers WHERE id=${id}::uuid FOR SHARE`;
+    return tx.customer.findFirst({
+      where: { id, ownerBranchId: branchId, mergedIntoId: null },
+      select: { id: true, displayName: true, isActive: true },
+    });
+  }
   async list(branchIds: readonly string[], query: CustomerListQuery) {
     const where: Record<string, unknown> = {
       ownerBranchId: { in: [...branchIds] },
@@ -718,7 +800,7 @@ export class CustomerRepository {
             channel: input.channel.toUpperCase() as CustomerConsentChannel,
             status: input.status.toUpperCase() as CustomerConsentStatus,
             source: input.source.trim(),
-            reason: input.reason.trim(),
+            reason: (input.reason ?? '').trim(),
             occurredAt: input.occurredAt
               ? new Date(input.occurredAt)
               : new Date(),

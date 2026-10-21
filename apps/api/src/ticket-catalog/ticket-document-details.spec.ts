@@ -59,6 +59,37 @@ function fixture() {
   return { service, findFirst, upsert, detail };
 }
 describe('ticket selected airport document projection', () => {
+  it('allows Reservations readers to obtain only same-branch document facts without granting fare or management access', async () => {
+    const s = fixture();
+    const reader = {
+      ...actor,
+      permissions: ['reservations.read'],
+    } as AuthenticatedActor;
+    expect(
+      (await s.service.documentDetails(id, reader)).data.originAirportId,
+    ).toBe(input.originAirportId);
+    expect(s.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id, branchId: { in: [id] } },
+        select: {
+          id: true,
+          originId: true,
+          destinationId: true,
+          originAirportId: true,
+          destinationAirportId: true,
+          economyBaggageKg: true,
+          businessBaggageKg: true,
+        },
+      }),
+    );
+    await expect(
+      s.service.publish(input, reader, id, 'forbidden'),
+    ).rejects.toThrow();
+    s.findFirst.mockResolvedValue(null);
+    await expect(
+      s.service.documentDetails(id, { ...reader, branchIds: ['other'] }),
+    ).rejects.toThrow();
+  });
   it('accepts additive optional airport IDs and rejects malformed references', () => {
     expect(validateTicketOffer(input).originAirportId).toBe(
       input.originAirportId,

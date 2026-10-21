@@ -3,9 +3,6 @@ import { currencySymbol } from '@/lib/currency-symbol';
 
 import {
   Banknote,
-  Clock3,
-  CalendarClock,
-  CircleCheck,
   CalendarCheck,
   FilePlus2,
   FileText,
@@ -48,6 +45,19 @@ import { PassengerCorrectionButton } from './passenger-correction';
 export const DEFAULT_CONTRACT_PAGE_SIZE = 20;
 export const DATE_FILTERED_CONTRACT_PAGE_SIZE = 10_000;
 
+export function contractRowClassName(
+  contract: Pick<
+    SalesContractSummary,
+    'customerDocumentDeliveryApproved' | 'reservationContractChanged'
+  >,
+) {
+  if (contract.customerDocumentDeliveryApproved)
+    return 'group border-t border-emerald-300 bg-emerald-100/70 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/60';
+  return contract.reservationContractChanged
+    ? 'group border-t border-amber-300 bg-amber-100/70 transition-colors hover:bg-amber-100 dark:bg-amber-950/40'
+    : 'group border-t border-border/70 transition-colors odd:bg-muted/[0.12] hover:bg-primary/[0.055]';
+}
+
 export function ContractListContactRouteDate({
   contract,
 }: {
@@ -67,6 +77,33 @@ export function ContractListContactRouteDate({
         })}
       </td>
     </>
+  );
+}
+
+export function ContractListNumber({
+  contract,
+}: {
+  contract: Pick<
+    SalesContractSummary,
+    'contractNumber' | 'reservationContractChanged'
+  >;
+}) {
+  return (
+    <td
+      className="px-4 py-3 font-bold first:pr-5 whitespace-nowrap"
+      title={
+        contract.reservationContractChanged
+          ? [contract.contractNumber, 'اصلاح قرارداد توسط رزرواسیون'].join(
+              ' · ',
+            )
+          : contract.contractNumber
+      }
+    >
+      <div className="inline-flex items-center gap-2 rounded-lg border border-primary/15 bg-primary/[0.055] px-2.5 py-1.5 text-primary shadow-sm">
+        <FileText className="size-3.5" />
+        <span dir="ltr">{contract.contractNumber}</span>
+      </div>
+    </td>
   );
 }
 
@@ -284,57 +321,6 @@ export function SalesWorkspace() {
           refreshVersion={dashboard}
           formatAmount={formatMoney}
         />
-        {dashboard && !loading ? (
-          <Card className="overflow-hidden p-0">
-            <div className="flex items-center gap-3 border-b border-border/70 px-5 py-4">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-                <CheckCheck className="size-5" aria-hidden="true" />
-              </span>
-              <h2 className="font-bold">پیگیری‌های فروش</h2>
-            </div>
-            <dl className="grid gap-3 p-3 sm:grid-cols-3 sm:p-4">
-              {[
-                {
-                  label: 'منتظر تأیید مالی',
-                  value: dashboard.pendingFinancePayments,
-                  icon: Clock3,
-                  tone: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
-                },
-                {
-                  label: 'پیگیری رزرواسیون',
-                  value: dashboard.pendingReservationActions,
-                  icon: CalendarClock,
-                  tone: 'bg-primary/10 text-primary',
-                },
-                {
-                  label: 'تسویه‌شده',
-                  value: dashboard.settledContracts,
-                  icon: CircleCheck,
-                  tone: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-                },
-              ].map(({ label, value, icon: Icon, tone }) => (
-                <div
-                  key={label}
-                  className="flex min-w-0 items-center justify-between gap-4 rounded-xl border border-border/60 bg-muted/20 px-3 py-3"
-                >
-                  <dt className="flex min-w-0 items-center gap-3 text-sm font-medium">
-                    <span
-                      className={`grid size-9 shrink-0 place-items-center rounded-lg ${tone}`}
-                    >
-                      <Icon className="size-4" aria-hidden="true" />
-                    </span>
-                    <span>{label}</span>
-                  </dt>
-                  <dd className="min-w-10 shrink-0 text-center text-2xl font-black tabular-nums text-foreground">
-                    {Number(value).toLocaleString('fa-IR')}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </Card>
-        ) : (
-          <Skeleton className="h-48" />
-        )}
       </div>
       <section
         ref={contractsSearchPanel}
@@ -456,24 +442,10 @@ export function SalesWorkspace() {
               <tbody>
                 {contracts.map((contract) => (
                   <tr
-                    className={
-                      contract.reservationContractChanged
-                        ? 'group border-t border-amber-300 bg-amber-100/70 transition-colors hover:bg-amber-100 dark:bg-amber-950/40'
-                        : 'group border-t border-border/70 transition-colors odd:bg-muted/[0.12] hover:bg-primary/[0.055]'
-                    }
+                    className={contractRowClassName(contract)}
                     key={contract.id}
                   >
-                    <td className="px-4 py-3 font-bold first:pr-5">
-                      <div className="inline-flex items-center gap-2 rounded-lg border border-primary/15 bg-primary/[0.055] px-2.5 py-1.5 text-primary shadow-sm">
-                        <FileText className="size-3.5" />
-                        <span dir="ltr">{contract.contractNumber}</span>
-                      </div>
-                      {contract.reservationContractChanged && (
-                        <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
-                          اصلاح قرارداد توسط رزرواسیون
-                        </p>
-                      )}
-                    </td>
+                    <ContractListNumber contract={contract} />
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className="grid size-8 shrink-0 place-items-center rounded-full border border-sky-500/10 bg-sky-500/10 text-xs font-black text-sky-700 dark:text-sky-300">

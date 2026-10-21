@@ -70,7 +70,11 @@ describe('customer Master Data references', () => {
     );
     expect(result.cities.map((item) => item.id)).toContain('old-city');
     expect(result.countries.map((item) => item.id)).toContain('old-country');
-    expect(detail).toHaveBeenCalledWith('organizations', 'old-org');
-    expect(detail).toHaveBeenCalledWith('cities', 'old-city');
+    expect(detail).toHaveBeenCalledWith(
+      'organizations',
+      'old-org',
+      'customers',
+    );
+    expect(detail).toHaveBeenCalledWith('cities', 'old-city', 'customers');
   });
 });

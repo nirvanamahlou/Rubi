@@ -16,6 +16,7 @@ import {
 } from './navigation';
 
 const expectedRoutes = [
+  '/customer-affairs/call-center',
   '/workbench',
   '/dashboard',
   '/customers',
@@ -38,10 +39,10 @@ const expectedRoutes = [
   '/system',
   '/master-data',
   '/correspondence',
-  '/assistant',
 ];
 
 const expectedTitles = [
+  'کال سنتر',
   'میزکار من',
   'داشبورد',
   'مشتریان B2c',
@@ -64,7 +65,6 @@ const expectedTitles = [
   'مدیریت سیستم',
   'اطلاعات پایه',
   'مکاتبات',
-  'دستیار هوشمند',
 ];
 
 describe('CRM navigation', () => {
@@ -108,6 +108,7 @@ describe('CRM navigation', () => {
       '/customer-affairs',
       '/organizations',
       '/marketing',
+      '/customer-affairs/call-center',
     ]);
     expect(
       groupedNavigationItems
@@ -140,10 +141,11 @@ describe('CRM navigation', () => {
   it('contains the approved routes plus the separate finance inbox in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);
     expect(new Set(navigationItems.map((item) => item.href)).size).toBe(23);
-    expect(groupedNavigationItems.at(-1)?.id).toBe('assistant');
-    expect(groupedNavigationItems.at(-1)?.items.at(-1)?.href).toBe(
-      '/assistant',
-    );
+    expect(
+      groupedNavigationItems
+        .flatMap((group) => group.items)
+        .map((item) => item.href),
+    ).not.toContain('/assistant');
   });
 
   it('uses distinct Persian titles for all navigation items', () => {

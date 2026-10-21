@@ -3,6 +3,36 @@ import { MasterTravelDirectory } from './master-travel-directory';
 import type { MasterDataService } from './master-data.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
+it('accepts the same registered broker for rate saving as voucher selection', async () => {
+  const detail = vi.fn().mockImplementation(async (kind: string) => ({
+    data:
+      kind === 'hotels'
+        ? { id: 'hotel', name: 'Hotel', status: 'active', attributes: {} }
+        : { id: 'broker', name: 'Broker', status: 'active', attributes: {} },
+  }));
+  const directory = new MasterTravelDirectory({ detail } as never);
+  expect(await directory.hotelRateReference('hotel', 'broker')).toEqual({
+    hotelName: 'Hotel',
+    brokerName: 'Broker',
+    brokerSource: 'BROKER',
+  });
+  expect(detail).toHaveBeenCalledWith('brokers', 'broker');
+  expect(detail).not.toHaveBeenCalledWith('organizations', 'broker');
+});
+
+it('rejects an inactive registered broker when saving hotel rates', async () => {
+  const detail = vi.fn().mockImplementation(async (kind: string) => ({
+    data: { status: kind === 'hotels' ? 'active' : 'inactive', attributes: {} },
+  }));
+  await expect(
+    new MasterTravelDirectory({ detail } as never).hotelRateReference(
+      'hotel',
+      'broker',
+    ),
+  ).rejects.toBeInstanceOf(BadRequestException);
+  expect(detail).not.toHaveBeenCalledWith('organizations', 'broker');
+});
+
 it('lists independent active registered brokers without requiring an organization role', async () => {
   const list = vi.fn().mockResolvedValue({
     data: [{ id: 'broker', name: 'Registered', attributes: {} }],

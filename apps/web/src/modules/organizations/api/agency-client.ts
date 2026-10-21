@@ -249,15 +249,23 @@ export const agencyClient = {
       { method: 'DELETE', body: JSON.stringify(input) },
     );
   },
-  profileDetails(organizationId: string, branchId: string) {
+  profileDetails(
+    organizationId: string,
+    branchId: string,
+    role: B2bCooperationRole = 'AGENCY',
+  ) {
     return b2bRequest<{ data: B2bAgencyProfileDetailsV1 }>(
-      `/agencies/${encodeURIComponent(organizationId)}/profile`,
+      `/agencies/${encodeURIComponent(organizationId)}/profile${role === 'AGENCY' ? '' : `?role=${role}`}`,
       { headers: { 'x-branch-id': branchId } },
     );
   },
-  rates(organizationId: string, branchId: string) {
+  rates(
+    organizationId: string,
+    branchId: string,
+    role: B2bCooperationRole = 'AGENCY',
+  ) {
     return b2bRequest<{ data: B2bAgencyAgreedRateV1[] }>(
-      `/agencies/${encodeURIComponent(organizationId)}/agreed-rates`,
+      `/agencies/${encodeURIComponent(organizationId)}/agreed-rates${role === 'AGENCY' ? '' : `?role=${role}`}`,
       { headers: { 'x-branch-id': branchId } },
     );
   },

@@ -2,6 +2,7 @@ import { ACCOUNTING_PERMISSIONS } from '../accounting';
 export * from './user-access';
 export * from './user-access-controls';
 export * from './manual-access';
+export * from './integrations-access';
 import { HR_PERMISSION_CODES } from '../hr';
 import { PROCUREMENT_PERMISSION_CODES } from '../procurement';
 import { CUSTOMER_AFFAIRS_PERMISSIONS } from '../customer-affairs';
@@ -13,7 +14,7 @@ import {
   PORTAL_SECTION_PERMISSIONS,
 } from './manual-access';
 
-export const IAM_PERMISSION_CONTRACT_VERSION = 13 as const;
+export const IAM_PERMISSION_CONTRACT_VERSION = 15 as const;
 export const IAM_STEP_UP_CONTRACT_VERSION = 1 as const;
 
 export const IAM_CORE_PERMISSION_CODES = [

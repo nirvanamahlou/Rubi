@@ -1,4 +1,9 @@
 'use client';
+import {
+  isOptionalOperationReason,
+  B2B_COOPERATION_LABELS,
+} from '@nora/contracts';
+
 import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
@@ -1084,7 +1089,7 @@ export function AgreementWorkflowPanel({
       referenceCheckFailed
     )
       return;
-    if (currentAction.reason.trim().length < 3) {
+    if (!isOptionalOperationReason(currentAction.reason)) {
       setDialogError('توضیح ارسال یا نتیجه بررسی را وارد کنید.');
       return;
     }
@@ -1296,7 +1301,7 @@ export function AgreementWorkflowPanel({
               return agreementReport(all, view, dateRange, [
                 `سازمان: ${organizationName}`,
                 `شعبه: ${branches.find((b) => b.id === branchId)?.name ?? branchId}`,
-                `نقش: ${role === 'AGENCY' ? 'آژانس' : 'مشتری سازمانی'}`,
+                `نقش: ${B2B_COOPERATION_LABELS[role]}`,
               ]);
             }}
           />

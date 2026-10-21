@@ -1,3 +1,4 @@
+import type { DatePickerProps } from '@/components/ui/date-picker';
 import type * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -6,6 +7,7 @@ const fixture = vi.hoisted(() => ({
   route: true,
   dates: true,
   flight: true,
+  searched: true,
   emptyStateCount: 0,
   effects: [] as (() => void | (() => void))[],
 }));
@@ -29,16 +31,31 @@ vi.mock('react', async (original) => ({
       };
     if (value && typeof value === 'object' && 'from' in value && 'to' in value)
       value = fixture.dates ? { from: '2099-10-01', to: '2099-10-10' } : value;
-    if (value === '' && fixture.emptyStateCount++ === 0)
-      value = JSON.stringify(['origin', 'destination', ['OUTBOUND']]);
+    if (value === '') {
+      const index = fixture.emptyStateCount++;
+      const route = JSON.stringify(['origin', 'destination', ['OUTBOUND']]);
+      if (index === 0 && fixture.searched)
+        value = JSON.stringify([
+          route,
+          { from: '2099-10-01', to: '2099-10-10' },
+        ]);
+      if (index === 1) value = route;
+    }
     return [value, vi.fn()];
   },
+}));
+vi.mock('@/components/ui/date-picker', () => ({
+  DatePicker: (props: DatePickerProps) => (
+    <button type="button" aria-label={props['aria-label']}>
+      {props.value}
+    </button>
+  ),
 }));
 const fetcher = vi.fn();
 beforeEach(() => {
   fixture.effects = [];
   fixture.emptyStateCount = 0;
-  fixture.route = fixture.dates = fixture.flight = true;
+  fixture.route = fixture.dates = fixture.flight = fixture.searched = true;
   vi.useFakeTimers();
   fetcher.mockReset().mockResolvedValue({
     ok: true,
@@ -51,7 +68,7 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
-it('starts first-page tickets while still in the route step, and aborts obsolete work on cleanup', async () => {
+it('starts first-page tickets only after Search, and aborts obsolete work on cleanup', async () => {
   const html = renderToStaticMarkup(<SalesContractForm />);
   expect(html).toContain('تعداد مسافران');
   expect(html).toContain('تاریخ بلیط رفت');
@@ -65,7 +82,7 @@ it('starts first-page tickets while still in the route step, and aborts obsolete
   cleanup?.();
   expect(fetcher.mock.calls[0]![1].signal.aborted).toBe(true);
 });
-it.each(['route', 'dates', 'flight'] as const)(
+it.each(['route', 'dates', 'flight', 'searched'] as const)(
   'does not preload before %s is ready',
   async (key) => {
     fixture[key] = false;

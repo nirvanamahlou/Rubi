@@ -20,11 +20,14 @@ function setup(count = 1) {
         return { count };
       }),
     },
-    salesContractHotelSelection: { ...remove },
+    salesContractHotelSelection: { ...remove, create: vi.fn() },
     salesContractTicketSelection: { ...remove },
     salesPassengerServiceAllocation: { ...remove },
     salesContractPassenger: { ...remove },
-    salesContractService: { ...remove },
+    salesContractService: {
+      ...remove,
+      create: vi.fn(async () => ({ id: 'hotel-service' })),
+    },
     salesContractPriceComponent: { ...remove, createMany: vi.fn() },
     salesContractAuditEvent: { create: vi.fn() },
     salesReservationRequest: { create: vi.fn() },
@@ -128,3 +131,118 @@ describe('contract amendment transaction', () => {
     );
   });
 });
+
+it.each([undefined, 'SINGLE' as const])(
+  'persists room price and optional category %s inside the amendment transaction',
+  async (roomCategory) => {
+    const { repository, tx } = setup();
+    const room = {
+      ordinal: 1,
+      roomTypeId: 'room',
+      roomTypeNameSnapshot: 'Single',
+      ...(roomCategory ? { roomCategory } : {}),
+      adults: 1,
+      childAges: [],
+      agreedPrice: { amount: '125.1254', currencyCode: 'USD' },
+    };
+    await repository.updateDraft(
+      'id',
+      {
+        ...input,
+        services: [
+          { clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'Hotel' },
+        ],
+        hotelSelection: {
+          serviceClientKey: 'hotel',
+          hotelId: 'hotel',
+          hotelNameSnapshot: 'Hotel',
+          cityId: 'b',
+          checkInDate: '2099-01-01',
+          checkOutDate: '2099-01-03',
+          roomCount: 1,
+          roomTypeId: 'room',
+          occupancy: 1,
+          inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+          rooms: [room],
+        },
+      },
+      2,
+      'Synthetic',
+      { userId: 'u', branchId: 'b' },
+      amendment,
+    );
+    expect(tx.salesContractHotelSelection.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ rooms: { create: [room] } }),
+      }),
+    );
+  },
+);
+
+it('persists the room occupancy summary from products rather than stale submitted totals', async () => {
+  const { tx, repository } = setup();
+  const rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: 'a',
+      roomTypeNameSnapshot: 'Single',
+      adults: 1,
+      childAges: [],
+    },
+    {
+      ordinal: 2,
+      roomTypeId: 'b',
+      roomTypeNameSnapshot: 'Family',
+      adults: 2,
+      childAges: [6, 8],
+    },
+  ];
+  await repository.updateDraft(
+    'id',
+    {
+      ...input,
+      services: [
+        {
+          clientKey: 'hotel',
+          kind: 'HOTEL',
+          titleSnapshot: 'Hotel',
+        },
+      ],
+      hotelSelection: {
+        serviceClientKey: 'hotel',
+        hotelId: 'h',
+        hotelNameSnapshot: 'Hotel',
+        cityId: 'city',
+        checkInDate: '2099-01-01',
+        checkOutDate: '2099-01-03',
+        roomCount: 2,
+        singleRoomCount: 2,
+        doubleRoomCount: 0,
+        extraBedCount: 0,
+        roomTypeId: 'a',
+        occupancy: 5,
+        inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+        rooms,
+      },
+    },
+    2,
+    'Synthetic',
+    { userId: 'u', branchId: 'b' },
+    amendment,
+  );
+  expect(tx.salesContractHotelSelection.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        roomCount: 2,
+        singleRoomCount: 1,
+        doubleRoomCount: 1,
+        extraBedCount: 2,
+        occupancy: 5,
+      }),
+    }),
+  );
+});
+
+vi.mock('./sales-financial-settlement', () => ({
+  recalculateSalesSettlement: vi.fn().mockResolvedValue(undefined),
+}));

@@ -1,17 +1,12 @@
+import { pricingFlightDate } from './ticket-pricing-display';
 import { currencySymbol } from '@/lib/currency-symbol';
 import type { TicketOfferV1, TicketSalePriceTargetV1 } from '@nora/contracts';
 import { netTicketPrice, type TicketPriceRow } from './ticket-price-rows';
 
-const dateTime = new Intl.DateTimeFormat('fa-IR', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-  hourCycle: 'h23',
-  timeZone: 'Asia/Tehran',
-});
-
 function flightFields(
   offer: TicketOfferV1 | undefined,
   cities: Record<string, string>,
+  cityCountries: Record<string, string> = {},
 ) {
   if (!offer) return ['', '', '', '', '', '', '', ''];
   return [
@@ -19,7 +14,7 @@ function flightFields(
     offer.serviceNumber,
     cities[offer.originId] ?? offer.originId,
     cities[offer.destinationId] ?? offer.destinationId,
-    dateTime.format(new Date(offer.departureAt)),
+    pricingFlightDate(offer, cityCountries, true),
     offer.remainingCapacity.toLocaleString('fa-IR'),
     offer.cabinClassCode,
     offer.status === 'ACTIVE' ? 'فعال' : 'متوقف',
@@ -30,6 +25,7 @@ export function ticketPriceExportRows(
   rows: readonly TicketPriceRow[],
   targets: readonly TicketSalePriceTargetV1[],
   cities: Record<string, string>,
+  cityCountries: Record<string, string> = {},
 ) {
   const activeTargets = targets.filter((target) => target.isActive);
   const headers = [
@@ -98,8 +94,8 @@ export function ticketPriceExportRows(
       return [
         row.returnOfferId ? 'رفت‌وبرگشت' : 'یک‌طرفه',
         path,
-        ...flightFields(row.offer, cities),
-        ...flightFields(row.returning, cities),
+        ...flightFields(row.offer, cities, cityCountries),
+        ...flightFields(row.returning, cities, cityCountries),
         baseAmount,
         baseCurrency,
         direct?.percent ?? (row.base ? '0' : ''),

@@ -4,10 +4,30 @@ import {
   MASTER_DATA_API_PREFIX,
   MASTER_DATA_CONTRACT_VERSION,
   MASTER_DATA_RESOURCES,
+  MASTER_DATA_EDITABLE_FIELDS,
+  USER_ACCESS_FIELD_CONTROLS,
   masterDataEndpoints,
 } from '../src';
 
 describe('master data public contract', () => {
+  it('exposes partner contact controls without granting editable protocol markers', () => {
+    for (const resource of ['suppliers', 'brokers'] as const) {
+      expect(MASTER_DATA_EDITABLE_FIELDS[resource]).toContain('dossierMobile');
+      expect(MASTER_DATA_EDITABLE_FIELDS[resource]).toContain('dossierEmail');
+      expect(MASTER_DATA_EDITABLE_FIELDS[resource]).not.toContain(
+        'dossierVersion',
+      );
+      expect(MASTER_DATA_EDITABLE_FIELDS[resource]).not.toContain(
+        'dossierImport',
+      );
+      expect(
+        USER_ACCESS_FIELD_CONTROLS.some(
+          ({ id }) => id === `field.master-data.${resource}.dossierEmail`,
+        ),
+      ).toBe(true);
+    }
+    expect(MASTER_DATA_EDITABLE_FIELDS.brokers).toContain('dossierAddress');
+  });
   it('publishes a stable versioned resource catalog', () => {
     expect(MASTER_DATA_CONTRACT_VERSION).toBe(14);
     expect(MASTER_DATA_API_PREFIX).toBe('/api/v1/master-data');

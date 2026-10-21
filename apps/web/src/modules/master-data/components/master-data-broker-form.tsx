@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
 import { MasterDataReferenceSelector } from './master-data-reference-selector';
+import { MasterDataStoredContact } from './master-data-stored-contact';
 import {
   brokerFormValues,
   brokerName,
@@ -27,6 +28,9 @@ export function MasterDataBrokerForm({
   const [values, setValues] = useState(() => brokerFormValues(record));
   const [leaders, setLeaders] = useState(() => brokerLeaderValues(record));
   const [phoneTouched, setPhoneTouched] = useState(false);
+  const [contactTouched, setContactTouched] = useState<ReadonlySet<string>>(
+    new Set(),
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const pending = useRef(false);
@@ -39,6 +43,8 @@ export function MasterDataBrokerForm({
       ...(key === 'countryId' ? { cityIds: '' } : {}),
     }));
     if (key === 'primaryPhone') setPhoneTouched(true);
+    if (key === 'dossierMobile' || key === 'dossierEmail')
+      setContactTouched((current) => new Set([...current, key]));
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -59,9 +65,17 @@ export function MasterDataBrokerForm({
     setSaving(true);
     setError('');
     try {
-      await onPersist(
-        brokerMutationValues(values, leaders, record, phoneTouched),
+      const payload = brokerMutationValues(
+        values,
+        leaders,
+        record,
+        phoneTouched,
       );
+      if (record)
+        for (const key of ['dossierMobile', 'dossierEmail']) {
+          if (!contactTouched.has(key)) delete payload[key];
+        }
+      await onPersist(payload);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'ذخیره کارگزار انجام نشد.');
     } finally {
@@ -81,6 +95,9 @@ export function MasterDataBrokerForm({
             ['نام کارگزار', record?.name],
             ['نام انگلیسی کارگزار', values.englishName],
             ['شماره کارگزار', record?.attributes.primaryPhoneMasked],
+            ['شماره همراه', record?.attributes.dossierMobileMasked],
+            ['ایمیل', record?.attributes.dossierEmailMasked],
+            ['نشانی', values.dossierAddress],
             ['Board', values.boardText],
             ['کشور', record?.attributes.countryName],
             ['شهرهای فعالیت', record?.attributes.cityNames],
@@ -119,6 +136,9 @@ export function MasterDataBrokerForm({
             ['name', 'نام کارگزار', 160],
             ['englishName', 'نام انگلیسی کارگزار', 160],
             ['primaryPhone', 'شماره کارگزار', 80],
+            ['dossierAddress', 'نشانی', 500],
+            ['dossierMobile', 'شماره همراه', 80],
+            ['dossierEmail', 'ایمیل', 254],
             ['boardText', 'متن تابلوی استقبال فرودگاه (Board)', 300],
           ].map(([key, label, max]) => (
             <label className="grid gap-2" key={String(key)}>
@@ -126,8 +146,15 @@ export function MasterDataBrokerForm({
               <Input
                 id={`live-brokers-${key}`}
                 disabled={disabled}
+                type={key === 'dossierEmail' ? 'email' : 'text'}
+                autoCapitalize={key === 'dossierEmail' ? 'off' : undefined}
+                autoCorrect={key === 'dossierEmail' ? 'off' : undefined}
+                spellCheck={key === 'dossierEmail' ? false : undefined}
                 dir={
-                  key === 'primaryPhone' || key === 'englishName'
+                  key === 'primaryPhone' ||
+                  key === 'englishName' ||
+                  key === 'dossierEmail' ||
+                  key === 'dossierMobile'
                     ? 'ltr'
                     : undefined
                 }
@@ -136,13 +163,38 @@ export function MasterDataBrokerForm({
                 placeholder={
                   key === 'primaryPhone'
                     ? String(record?.attributes.primaryPhoneMasked ?? '')
-                    : ''
+                    : key === 'dossierMobile' || key === 'dossierEmail'
+                      ? String(record?.attributes[`${key}Masked`] ?? '')
+                      : ''
                 }
                 required={
                   key === 'name' && !String(values.englishName ?? '').trim()
                 }
                 onChange={(e) => change(String(key), e.target.value)}
               />
+              {record &&
+              ['primaryPhone', 'dossierMobile', 'dossierEmail'].includes(
+                String(key),
+              ) ? (
+                <MasterDataStoredContact
+                  label={String(label)}
+                  masked={String(
+                    record.attributes[
+                      key === 'primaryPhone'
+                        ? 'primaryPhoneMasked'
+                        : `${key}Masked`
+                    ] ?? '',
+                  )}
+                  touched={
+                    key === 'primaryPhone'
+                      ? phoneTouched
+                      : contactTouched.has(String(key))
+                  }
+                  value={values[String(key)] ?? ''}
+                  disabled={disabled}
+                  onClear={() => change(String(key), '')}
+                />
+              ) : null}
             </label>
           ))}
           <label className="grid gap-2">

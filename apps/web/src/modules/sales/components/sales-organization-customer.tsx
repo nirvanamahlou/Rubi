@@ -5,7 +5,7 @@ import type { CustomerSummary, MasterDataRecord } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/surfaces';
 import { customersApi } from '@/modules/customers/api/client';
-import { masterDataApi } from '@/modules/master-data/api/client';
+import { salesApi } from '../api/client';
 import { SearchableReference } from './searchable-reference';
 
 export async function loadOrganizationCustomers(
@@ -62,15 +62,17 @@ export async function resolveOrganizationCustomer(
 
 export function SalesOrganizationCustomer({
   onSelected,
+  refreshRevision = 0,
   onBusyChange,
   disabled = false,
   selectedOrganizationId = '',
   onClear,
 }: {
+  refreshRevision?: number;
   selectedOrganizationId?: string;
   onClear?: () => void;
   disabled?: boolean;
-  onSelected: (person: CustomerSummary) => void;
+  onSelected: (person: CustomerSummary) => void | Promise<void>;
   onBusyChange: (busy: boolean) => void;
 }) {
   const [organizations, setOrganizations] = useState<MasterDataRecord[]>([]);
@@ -89,7 +91,7 @@ export function SalesOrganizationCustomer({
       void (async () => {
         const records: MasterDataRecord[] = [];
         for (let page = 1; ; page++) {
-          const response = await masterDataApi.list('organizations', {
+          const response = await salesApi.listReferences('organizations', {
             search: '',
             status: 'active',
             sortBy: 'name',
@@ -123,7 +125,7 @@ export function SalesOrganizationCustomer({
       active = false;
       clearTimeout(timer);
     };
-  }, [retry]);
+  }, [retry, refreshRevision]);
   const select = async () => {
     if (inFlight.current || disabled) return;
     const organization = organizations.find(
@@ -136,7 +138,7 @@ export function SalesOrganizationCustomer({
     setError('');
     try {
       const person = await resolveOrganizationCustomer(organization);
-      onSelected(person);
+      await onSelected(person);
       setCustomers((current) => [
         ...current.filter((item) => item.id !== person.id),
         person,

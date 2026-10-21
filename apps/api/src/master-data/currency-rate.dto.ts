@@ -78,5 +78,14 @@ export class CurrencyRateListDto {
 
 export class CurrencyRateDecisionDto {
   @IsInt() @Min(1) expectedVersion!: number;
-  @IsString() @MaxLength(500) reason!: string;
+  @IsString() @MaxLength(500) reason = '';
+}
+
+export class CurrencyRateVersionDto {
+  @IsInt() @Min(1) @Max(2147483647) expectedVersion!: number;
+}
+
+export class CurrencyRateUpdateDto extends CurrencyRateVersionDto {
+  @IsOptional() @IsString() @Matches(/^\d{1,14}(\.\d{1,10})?$/) rate?: string;
+  @IsOptional() @IsString() @MaxLength(160) source?: string;
 }

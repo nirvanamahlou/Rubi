@@ -1,4 +1,6 @@
 import type { Prisma } from '@nora/database';
+import { persistPartnerDossier } from './partner-dossier.persistence';
+import { hasPartnerPhoneRole } from './partner-phone.persistence';
 import { columnFilterWhere } from './catalog-filters';
 import {
   ConflictException,
@@ -372,7 +374,15 @@ function relations(resource: MasterDataResource): object | undefined {
     return { facilities: { include: { facility: true } } };
   if (resource === 'suppliers')
     return {
-      organization: true,
+      organization: {
+        include: {
+          contacts: {
+            where: { isActive: true },
+            select: { jobTitle: true, phoneMasked: true, emailMasked: true },
+          },
+          addresses: { where: { isPrimary: true, isActive: true }, take: 1 },
+        },
+      },
       primaryContact: {
         select: {
           id: true,
@@ -388,7 +398,15 @@ function relations(resource: MasterDataResource): object | undefined {
     };
   if (resource === 'brokers')
     return {
-      organization: true,
+      organization: {
+        include: {
+          contacts: {
+            where: { isActive: true },
+            select: { jobTitle: true, phoneMasked: true, emailMasked: true },
+          },
+          addresses: { where: { isPrimary: true, isActive: true }, take: 1 },
+        },
+      },
       primaryContact: {
         select: {
           id: true,
@@ -721,6 +739,37 @@ export function toMasterDataRecord(
       })),
     );
   }
+  if (resource === 'suppliers' || resource === 'brokers') {
+    const contacts = (organization?.contacts ?? []) as Record<
+      string,
+      unknown
+    >[];
+    const addresses = (organization?.addresses ?? []) as Record<
+      string,
+      unknown
+    >[];
+    attributes.dossierMobileMasked = String(
+      contacts.find(
+        (c) =>
+          c.isActive !== false && hasPartnerPhoneRole(c.jobTitle, 'mobile'),
+      )?.phoneMasked ?? '',
+    );
+    attributes.dossierEmailMasked = String(
+      contacts.find(
+        (c) => c.isActive !== false && c.jobTitle === 'PARTNER_EMAIL',
+      )?.emailMasked ?? '',
+    );
+    attributes.dossierAddress = String(
+      addresses[0]?.addressLine ?? row.address ?? '',
+    );
+    if (resource === 'suppliers')
+      attributes.address = attributes.dossierAddress;
+    const office = contacts.find(
+      (c) => c.isActive !== false && hasPartnerPhoneRole(c.jobTitle, 'office'),
+    );
+    if (office?.phoneMasked)
+      attributes.primaryPhoneMasked = String(office.phoneMasked);
+  }
   if (resource === 'travel-services') {
     attributes.supplierCount = Number(count?.suppliers ?? 0);
     attributes.brokerCount = Number(count?.brokers ?? 0);
@@ -968,7 +1017,11 @@ export class MasterDataRepository {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
-  async list(resource: MasterDataResource, query: MasterDataListQuery) {
+  async list(
+    resource: MasterDataResource,
+    query: MasterDataListQuery,
+    selectionOnly = false,
+  ) {
     const model = delegate(this.database.client, resource);
     const nameField = nameFields[resource];
     const where: Record<string, unknown> = {};
@@ -1113,7 +1166,19 @@ export class MasterDataRepository {
       where.isActive = query.transportStatus === 'ACTIVE';
     }
     if (query.search) {
-      const direct = searchFields[resource].map((field) => ({
+      const selectionFields = [
+        ...new Set([
+          nameField,
+          codeFields[resource],
+          ...searchFields[resource].filter((field) =>
+            ['name', 'englishName', 'iataCode', 'icaoCode'].includes(field),
+          ),
+          ...(resource === 'organizations' ? ['displayName'] : []),
+        ]),
+      ];
+      const direct = (
+        selectionOnly ? selectionFields : searchFields[resource]
+      ).map((field) => ({
         [field]: { contains: query.search, mode: 'insensitive' },
       }));
       if (resource === 'suppliers' || resource === 'brokers')
@@ -1227,6 +1292,33 @@ export class MasterDataRepository {
   ) {
     return this.database.client.$transaction(async (transaction) => {
       const createData = { ...data };
+      const dossier = createData.partnerDossier as
+        Record<string, unknown> | undefined;
+      delete createData.partnerDossier;
+      if (resource === 'suppliers' || resource === 'brokers') {
+        if (dossier?.import === true) {
+          // Serialize retries of the same import identity without overwriting existing data.
+          const identity = `${resource}:${String(createData.name).normalize('NFKC').trim().toLowerCase()}:${createData.countryId}:${createData.cityId}`;
+          await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${identity}, 0))::text`;
+          const existing = await delegate(transaction, resource).findFirst({
+            where: {
+              name: { equals: String(createData.name), mode: 'insensitive' },
+              countryId: createData.countryId,
+              cityId: createData.cityId,
+            },
+            include: relations(resource),
+          });
+          if (existing) return { ...existing, dossierImportSkipped: true };
+        }
+        createData.organizationId = await persistPartnerDossier(
+          transaction,
+          resource,
+          createData,
+          dossier ?? {},
+          actorUserId,
+          actorBranchId,
+        );
+      }
       const brokerChanges = createData.brokerLeaderChanges;
       delete createData.brokerLeaderChanges;
       if (
@@ -1286,6 +1378,9 @@ export class MasterDataRepository {
     return this.database.client.$transaction(async (transaction) => {
       const model = delegate(transaction, resource);
       const writeData = { ...data };
+      const dossier = writeData.partnerDossier as
+        Record<string, unknown> | undefined;
+      delete writeData.partnerDossier;
       const brokerChanges = writeData.brokerLeaderChanges;
       delete writeData.brokerLeaderChanges;
       const before = await model.findUnique({
@@ -1300,6 +1395,25 @@ export class MasterDataRepository {
         data: { updatedByUserId: actorUserId, version: { increment: 1 } },
       });
       if (claimed.count !== 1) return null;
+
+      if (
+        (resource === 'suppliers' || resource === 'brokers') &&
+        (dossier ||
+          !before.organizationId ||
+          Object.hasOwn(writeData, 'primaryPhoneEncrypted') ||
+          Object.hasOwn(writeData, 'address'))
+      ) {
+        writeData.organizationId = await persistPartnerDossier(
+          transaction,
+          resource,
+          { ...before, ...writeData },
+          dossier ?? {},
+          actorUserId,
+          actorBranchId,
+          Object.hasOwn(writeData, 'primaryPhoneEncrypted'),
+          Object.hasOwn(writeData, 'address'),
+        );
+      }
 
       let row = await model.update({
         where: { id },

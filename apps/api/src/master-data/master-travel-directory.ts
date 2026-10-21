@@ -34,6 +34,20 @@ export class MasterTravelDirectory {
       meta: result.meta,
     };
   }
+  async voucherCurrencies(page: number) {
+    const result = await this.master.list('currencies', {
+      search: '',
+      page,
+      pageSize: 100,
+      status: 'active',
+      sortBy: 'name',
+      sortDirection: 'asc',
+    });
+    return {
+      data: result.data.map(({ id, code, name }) => ({ id, code, name })),
+      meta: result.meta,
+    };
+  }
 
   /** Registered broker contacts for a permission-scoped voucher workflow. */
   voucherLeaders(brokerId: string) {
@@ -204,23 +218,18 @@ export class MasterTravelDirectory {
   }
 
   async hotelRateReference(hotelId: string, brokerId: string) {
-    const [{ data: hotel }, { data: broker }] = await Promise.all([
+    const [{ data: hotel }, broker] = await Promise.all([
       this.master.detail('hotels', hotelId),
-      this.master.detail('organizations', brokerId),
+      this.brokerReference(brokerId),
     ]);
-    if (
-      hotel.status !== 'active' ||
-      broker.status !== 'active' ||
-      !String(broker.attributes.roleCodes ?? '')
-        .split(',')
-        .includes('BROKER')
-    )
+    if (hotel.status !== 'active')
       throw new BadRequestException(
         'هتل و کارگزار باید فعال و کارگزار دارای نقش مربوط باشد.',
       );
     return {
       hotelName: String(hotel.attributes.englishName || hotel.name),
       brokerName: broker.name,
+      brokerSource: broker.source,
     };
   }
 
@@ -269,6 +278,20 @@ export class MasterTravelDirectory {
         'ارز خرید باید از ارزهای فعال اطلاعات پایه باشد.',
       );
     return { code: currency.code, name: currency.name };
+  }
+
+  /** Historical rate metadata can refer to inactive cities; never mutates them. */
+  async hotelRatePeriodCityNames(ids: readonly string[]) {
+    return Promise.all(
+      [...new Set(ids)].map(async (id) => {
+        const { data } = await this.master.detail('cities', id);
+        return {
+          id: data.id,
+          name: data.name,
+          englishName: String(data.attributes.englishName ?? ''),
+        };
+      }),
+    );
   }
 
   async cityReference(cityId: string) {

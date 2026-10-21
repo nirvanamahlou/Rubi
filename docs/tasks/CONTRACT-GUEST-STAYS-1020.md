@@ -1,0 +1,11 @@
+# Contract guest stays — PC-A
+
+Branch codex/pc-a-contract-guest-stays-1020 from develop150f4d8a. Scope is Sales new-contract entry and compatible Reservations/customer document consumption. No migration, permission, dependency or runtime rollout.
+
+For new combined flight/hotel drafts, room adults and child ages drive the flight party (12+ flight adults; under2 infants). Extra flight-only rows use stable independent keys, never hotel membership. Noncombined and legacy drafts retain their former counts. The flight selection and hotel dates precede passenger identity entry. The old detail step omits these repeated flight/hotel sections in this mode.
+
+Each hotel guest inherits the shared stay while locked. Explicit different-stay selection unlocks dates and an individual accommodation amount/currency. Owner confirmed a separate entered price, rather than recalculation by nights. Reuse passengerHotelPricesV1; it replaces that person's existing hotel amount, never creates a second surcharge. Existing per-person service totals perform exact separate-currency aggregation. Default dates keep following shared dates; overrides persist separately. Flight-only persons have neither dates nor hotel amount. Row keys remap to actual customer IDs during identity confirmation and restore through stable slots.
+
+Producer Sales stores backward-compatible passengerHotelStaysV1 JSON on HOTEL service metadata; shared reader validates shape/date order and server domain checks exact hotel membership and required override amount. Missing metadata preserves old documents. Existing metadata persistence and Sales-to-Reservations snapshots carry it without new database columns. Contract output, reservation form and hotel voucher print/display per-passenger dates; flight-only rows show no stay. Existing global room dates remain the baseline, not an implicit individual override.
+
+Tests cover room-driven counts, flight-only keys and service membership, locked/default and manual dates, explicit price, single-count currency totals, forged/missing hotel metadata rejection, and Reservations projection; existing form/room/customer/print regressions retained. Final lint/type/build/hosted checks are reported in PR. No real CRM contracts or customer records were created during verification. Merge/local rollout require further explicit user direction.

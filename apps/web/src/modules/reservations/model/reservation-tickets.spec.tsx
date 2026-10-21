@@ -86,6 +86,17 @@ export const ticketSnapshot: SalesReservationRequestV1 = {
 };
 
 describe('saved reservation passenger tickets', () => {
+  it('reopens saved flight-number overrides for all assigned passengers without changing the Sales snapshot', () => {
+    const before = JSON.stringify(ticketSnapshot);
+    const tickets = reservationTickets(
+      ticketSnapshot,
+      {},
+      { 'out-out': 'B9 4513' },
+    );
+    expect(tickets[0]!.offers[0]!.serviceNumber).toBe('B9 4513');
+    expect(tickets[0]!.offers[1]!.serviceNumber).toBe('TEST-AYT-03');
+    expect(JSON.stringify(ticketSnapshot)).toBe(before);
+  });
   it('reopens identically from serialized saved data and leaves the snapshot intact', () => {
     const saved = JSON.stringify(ticketSnapshot);
     expect(reservationTickets(JSON.parse(saved))).toEqual(

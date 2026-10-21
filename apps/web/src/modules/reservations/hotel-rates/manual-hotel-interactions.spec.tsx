@@ -76,17 +76,11 @@ function choose(label: string, value: string, index = 0) {
   )[index]!;
   (node.props.onChange as (v: string) => void)(value);
 }
-function click(label: string) {
-  const node = nodes(render()).find(
-    (n) => n.type === 'button' && n.props.children === label,
-  )!;
-  (node.props.onClick as () => void)();
-}
+
 const prices = () =>
   row.roomRates.map((r) =>
     r.occupancyRates!.map((rate) => [rate.amount, rate.saleAmount]),
   );
-const saleLabel = (room: string) => `قیمت فروش ${room} دبل`;
 beforeEach(() => {
   hooks.states = [];
   hooks.events = [];
@@ -111,41 +105,6 @@ beforeEach(() => {
     inCityList: true,
     roomRates: [],
   };
-});
-it('applies repeated adjustments to current sale and preserves purchase', () => {
-  input('قیمت پایه Land', '100');
-  input('قیمت پایه Sea', '200');
-  click('انتخاب همهٔ ترکیب‌های قیمت‌دار');
-  input('مقدار تغییر قیمت فروش', '10');
-  click('اعمال روی ترکیب‌های منتخب');
-  expect(prices()).toEqual([[['200.00', '220.00']], [['400.00', '440.00']]]);
-  click('اعمال روی ترکیب‌های منتخب');
-  expect(prices()).toEqual([[['200.00', '242.00']], [['400.00', '484.00']]]);
-  input('قیمت پایه Land', '200');
-  expect(prices()).toEqual([[['400.00', '242.00']], [['400.00', '484.00']]]);
-  click('لغو انتخاب‌ها');
-  const checkbox = nodes(render()).find(
-    (n) => n.type === 'input' && n.props.type === 'checkbox',
-  )!;
-  (checkbox.props.onChange as (e: unknown) => void)({
-    target: { checked: true },
-  });
-  choose('نوع تغییر قیمت فروش', 'AMOUNT');
-  choose('افزایش یا کاهش', 'decrease');
-  input('مقدار تغییر قیمت فروش', '5');
-  click('اعمال روی ترکیب‌های منتخب');
-  expect(prices()).toEqual([[['400.00', '237.00']], [['400.00', '484.00']]]);
-});
-it('rejects negative group sale atomically and does not change any purchase or prior sale', () => {
-  input('قیمت پایه Land', '100');
-  input('قیمت پایه Sea', '200');
-  click('انتخاب همهٔ ترکیب‌های قیمت‌دار');
-  choose('نوع تغییر قیمت فروش', 'AMOUNT');
-  choose('افزایش یا کاهش', 'decrease');
-  input('مقدار تغییر قیمت فروش', '250');
-  click('اعمال روی ترکیب‌های منتخب');
-  expect(prices()).toEqual([[['200.00', '200.00']], [['400.00', '400.00']]]);
-  expect(nodes(render()).some((n) => n.props.role === 'alert')).toBe(true);
 });
 it('marks duplicate composition or invalid child range unsavable instead of keeping stale prices', () => {
   input('قیمت پایه Land', '100');
@@ -180,63 +139,7 @@ it('retains local inputs and synchronizes new dates and currency with valid meta
   expect(valid).toHaveBeenLastCalledWith(false);
   expect(row.roomRates).toHaveLength(0);
 });
-it('edits one sale cell without changing purchase or other rooms and preserves it on reopening', () => {
-  input('قیمت پایه Land', '100');
-  input('قیمت پایه Sea', '200');
-  input(saleLabel('Land'), '235.20');
-  expect(prices()).toEqual([[['200.00', '235.20']], [['400.00', '400.00']]]);
-  hooks.states = [];
-  hooks.effects = [];
-  render();
-  expect(prices()).toEqual([[['200.00', '235.20']], [['400.00', '400.00']]]);
-  input('قیمت پایه Land', '150');
-  expect(prices()).toEqual([[['300.00', '235.20']], [['400.00', '400.00']]]);
-});
-it('keeps raw sale text while typing so intermediate keystrokes do not rewrite the number', () => {
-  input('قیمت پایه Land', '100');
-  for (const value of ['2', '23', '235', '235.', '235.2']) {
-    input(saleLabel('Land'), value);
-    expect(
-      nodes(render()).find((n) => n.props['aria-label'] === saleLabel('Land'))
-        ?.props.value,
-    ).toBe(value);
-  }
-  expect(valid).toHaveBeenLastCalledWith(true);
-  expect(prices()).toEqual([[['200.00', '235.20']]]);
-});
-it('does not silently save an unfinished sale edit and recovers when it is corrected', async () => {
-  input('قیمت پایه Land', '100');
-  input(saleLabel('Land'), '');
-  expect(valid).toHaveBeenLastCalledWith(false);
-  expect(
-    nodes(render()).find((n) => n.props['aria-label'] === saleLabel('Land'))
-      ?.props.value,
-  ).toBe('');
-  input('قیمت پایه Land', '150');
-  expect(valid).toHaveBeenLastCalledWith(false);
-  checkOut = '2026-12-01';
-  render();
-  await Promise.resolve();
-  expect(valid).toHaveBeenLastCalledWith(false);
-  input(saleLabel('Land'), '320');
-  expect(valid).toHaveBeenLastCalledWith(true);
-  expect(prices()).toEqual([[['300.00', '320.00']]]);
-});
-it('selects a row by clicking the table and replaces an invalid sale draft with a group adjustment', () => {
-  input('قیمت پایه Land', '100');
-  input('قیمت پایه Sea', '200');
-  input(saleLabel('Land'), '-1');
-  click('لغو انتخاب‌ها');
-  const tableRow = nodes(render()).find(
-    (n) => n.type === 'tr' && typeof n.props.onClick === 'function',
-  )!;
-  (tableRow.props.onClick as () => void)();
-  input('مقدار تغییر قیمت فروش', '10');
-  click('اعمال روی ترکیب‌های منتخب');
-  expect(valid).toHaveBeenLastCalledWith(true);
-  expect(prices()).toEqual([[['200.00', '220.00']], [['400.00', '400.00']]]);
-});
-it('shares adult/child age compositions and coefficients across every room type', () => {
+it('edits each room coefficient and child composition independently', () => {
   input('قیمت پایه Land', '100');
   input('قیمت پایه Sea', '200');
   input('ضریب ترکیب اتاق', '2.5', 2);
@@ -247,36 +150,88 @@ it('shares adult/child age compositions and coefficients across every room type'
       ['200.00', '200.00'],
       ['250.00', '250.00'],
     ],
-    [
-      ['400.00', '400.00'],
-      ['500.00', '500.00'],
-    ],
+    [['400.00', '400.00']],
   ]);
-  row.roomRates.forEach((room) => {
-    expect(room.occupancyRates![1]).toMatchObject({
-      adults: 2,
-      childAges: [{ min: 4, maxExclusive: 15 }],
-    });
+  expect(row.roomRates[0]!.occupancyRates![1]).toMatchObject({
+    adults: 2,
+    childAges: [{ min: 4, maxExclusive: 15 }],
   });
+  expect(row.roomRates[1]!.occupancyRates).toHaveLength(1);
+  input('ضریب ترکیب اتاق', '3', 3);
+  expect(prices()[0]).toEqual([
+    ['200.00', '200.00'],
+    ['250.00', '250.00'],
+  ]);
+  expect(prices()[1]).toEqual([['600.00', '600.00']]);
 });
 
-it('selects priced rows automatically and preserves explicit deselection', () => {
-  const checks = () =>
-    nodes(render()).filter(
-      (n) => n.type === 'input' && n.props.type === 'checkbox',
-    );
-  expect(checks().every((n) => !n.props.checked)).toBe(true);
+it('has no sale controls and preserves historical sale metadata when editing purchase bases', () => {
   input('قیمت پایه Land', '100');
-  expect(checks().filter((n) => n.props.checked)).toHaveLength(1);
-  input('قیمت پایه Sea', '200');
-  expect(checks().filter((n) => n.props.checked)).toHaveLength(2);
-  const selected = checks().find((n) => n.props.checked)!;
-  (selected.props.onChange as () => void)();
-  expect(checks().filter((n) => n.props.checked)).toHaveLength(1);
+  const rate = row.roomRates[0]!.occupancyRates![0]!;
+  rate.manualPricing!.adjustment = { kind: 'SET', value: '235.20' };
+  rate.saleAmount = '235.20';
+  hooks.states = [];
+  hooks.effects = [];
+  render();
   input('قیمت پایه Land', '150');
-  expect(checks().filter((n) => n.props.checked)).toHaveLength(1);
-  click('لغو انتخاب‌ها');
-  expect(checks().every((n) => !n.props.checked)).toBe(true);
-  click('انتخاب همهٔ ترکیب‌های قیمت‌دار');
-  expect(checks().filter((n) => n.props.checked)).toHaveLength(2);
+  expect(prices()).toEqual([[['300.00', '235.20']]]);
+  expect(
+    nodes(render()).some((n) =>
+      String(n.props['aria-label'] ?? '').includes('فروش'),
+    ),
+  ).toBe(false);
+});
+
+it('restores different coefficients per room and keeps both after save/reopen', () => {
+  input('قیمت پایه Land', '100');
+  input('قیمت پایه Sea', '200');
+  input('ضریب ترکیب اتاق', '3', 3);
+  const saved = structuredClone(row.roomRates);
+  hooks.states = [];
+  hooks.effects = [];
+  render();
+  input('قیمت پایه Land', '150');
+  expect(prices()).toEqual([[['300.00', '300.00']], [['600.00', '600.00']]]);
+  expect(row.roomRates[1]!.occupancyRates).toEqual(saved[1]!.occupancyRates);
+  expect(row.roomRates[1]!.occupancyRates![0]!.manualPricing!.coefficient).toBe(
+    '3',
+  );
+});
+it('adds and removes compositions only in the associated room, including newly linked room types', () => {
+  input('قیمت پایه Land', '100');
+  input('قیمت پایه Sea', '200');
+  const click = (roomId: string, text: string) => {
+    const section = nodes(render()).find(
+      (n) => n.props['data-room-type'] === roomId,
+    )!;
+    const button = nodes(section).find(
+      (n) => n.type === 'button' && n.props.children === text,
+    )!;
+    (button.props.onClick as () => void)();
+  };
+  click('land', 'افزودن ردیف');
+  expect(
+    nodes(render()).filter(
+      (n) => n.type === 'input' && n.props['aria-label'] === 'ضریب ترکیب اتاق',
+    ),
+  ).toHaveLength(7);
+  click('land', 'حذف ردیف');
+  expect(prices()).toEqual([[['400.00', '400.00']]]);
+  expect(row.roomRates[0]!.roomTypeId).toBe('sea');
+  row = {
+    ...row,
+    hotel: {
+      ...row.hotel,
+      roomTypes: [...row.hotel.roomTypes!, { id: 'suite', name: 'Suite' }],
+    },
+  };
+  input('قیمت پایه Suite', '300');
+  expect(
+    row.roomRates.find((r) => r.roomTypeId === 'suite')!.occupancyRates![0]!
+      .amount,
+  ).toBe('600.00');
+  expect(
+    row.roomRates.find((r) => r.roomTypeId === 'sea')!.occupancyRates![0]!
+      .amount,
+  ).toBe('400.00');
 });
