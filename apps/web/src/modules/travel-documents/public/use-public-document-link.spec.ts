@@ -32,14 +32,12 @@ it.each([401, 403, 409, 503])(
 );
 it('uses only credentialed canonical GET data and propagates cancellation', async () => {
   const controller = new AbortController();
-  const fetcher = vi
-    .fn()
-    .mockResolvedValue(
-      Response.json({
-        url: 'https://example.test/d/' + 'a'.repeat(32),
-        html: '<!doctype html><html>saved</html>',
-      }),
-    );
+  const fetcher = vi.fn().mockResolvedValue(
+    Response.json({
+      url: 'https://example.test/d/' + 'a'.repeat(32),
+      html: '<!doctype html><html>saved</html>',
+    }),
+  );
   vi.stubGlobal('fetch', fetcher);
   expect(
     (await readPublicDocumentLink('/saved/pdf?format=share', controller.signal))
