@@ -337,6 +337,15 @@ export function ManualAccessEditor({
                 {title}
               </summary>
               <div className="grid gap-4 p-4">
+                {id === 'integrations' ? (
+                  <p className="text-sm leading-7 text-muted-foreground">
+                    ابتدا ورود به صفحه یکپارچه‌سازی‌ها و سپس بخش‌های موردنیاز را
+                    تیک بزنید. مشاهده با ویرایش متفاوت است؛ برای ایجاد یا ویرایش
+                    سایت، تنظیمات اتصال و دسترسی، مجوز مدیریت تنظیمات و ویرایش
+                    فهرست را هم انتخاب کنید. محدودیت شعبه حفظ می‌شود. این تیک‌ها
+                    ورود به پنل خارجی یا SSO را فعال نمی‌کنند.
+                  </p>
+                ) : null}
                 {buckets
                   .filter((b) => b.values.length)
                   .map((bucket) => (

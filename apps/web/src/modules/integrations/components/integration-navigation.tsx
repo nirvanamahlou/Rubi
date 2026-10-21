@@ -21,10 +21,12 @@ export function IntegrationNavigation({
   section,
   disabled,
   onChange,
+  allowedSections = integrationSections.map(({ id }) => id),
 }: {
   section: IntegrationSection;
   disabled: boolean;
   onChange: (section: IntegrationSection) => void;
+  allowedSections?: readonly IntegrationSection[];
 }) {
   const t = useUiTranslation();
   const current = navigationGroup(section);
@@ -35,6 +37,10 @@ export function IntegrationNavigation({
         className={styles.groups}
       >
         {integrationNavigation.map((group) => {
+          const sections = group.sections.filter((id) =>
+            allowedSections.includes(id),
+          );
+          if (!sections.length) return null;
           const Icon = icons[group.id];
           const active = current.id === group.id;
           return (
@@ -44,7 +50,7 @@ export function IntegrationNavigation({
               aria-current={active ? 'true' : undefined}
               aria-controls="integration-section-navigation"
               disabled={disabled}
-              onClick={() => onChange(group.sections[0])}
+              onClick={() => onChange(sections[0]!)}
               className={styles.group}
             >
               <Icon aria-hidden="true" className={styles.icon} />
@@ -62,18 +68,20 @@ export function IntegrationNavigation({
             aria-label={t('بخش‌های یکپارچه‌سازی')}
             className={styles.sections}
           >
-            {current.sections.map((id) => (
-              <button
-                key={id}
-                type="button"
-                disabled={disabled}
-                aria-current={section === id ? 'page' : undefined}
-                className={styles.section}
-                onClick={() => onChange(id)}
-              >
-                {t(integrationSections.find((item) => item.id === id)!.title)}
-              </button>
-            ))}
+            {current.sections
+              .filter((id) => allowedSections.includes(id))
+              .map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  disabled={disabled}
+                  aria-current={section === id ? 'page' : undefined}
+                  className={styles.section}
+                  onClick={() => onChange(id)}
+                >
+                  {t(integrationSections.find((item) => item.id === id)!.title)}
+                </button>
+              ))}
           </nav>
         ) : null}
         <p className={styles.help}>{t(integrationSectionHelp[section])}</p>

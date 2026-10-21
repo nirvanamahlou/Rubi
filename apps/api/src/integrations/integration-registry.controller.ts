@@ -29,8 +29,9 @@ export class IntegrationRegistryController {
   read(
     @Req() request: AuthenticatedRequest,
     @Query('branchId') branchId: string,
+    @Query('section') section?: string,
   ) {
-    return this.registry.read(request.actor, branchId);
+    return this.registry.read(request.actor, branchId, section);
   }
 
   @Post('registry')
