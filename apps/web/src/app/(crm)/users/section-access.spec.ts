@@ -7,6 +7,28 @@ import {
 import { sectionAccess, changeSectionAccess } from './section-access';
 const empty = { screenIds: [], permissionCodes: [], allowedControlIds: [] };
 describe('complete section selection', () => {
+  it('includes every Integrations page without granting IAM or other settings fields', () => {
+    const section = sectionAccess('integrations', {
+      canAssignAll: true,
+      assignableScreenIds: [],
+      assignableControlIds: [],
+      permissions: [
+        { code: 'system.settings.manage' },
+        { code: 'iam.users.manage' },
+      ],
+    });
+    expect(section.screenIds).toContain('integrations.home');
+    expect(section.screenIds).toContain('system.module.integrations');
+    expect(section.screenIds).toContain('integrations.section.connections');
+    expect(section.screenIds).toHaveLength(10);
+    expect(section.permissionCodes).not.toContain('iam.users.manage');
+    expect(section.allowedControlIds).toContain(
+      'field.system-settings.integrations.registry',
+    );
+    expect(section.allowedControlIds).not.toContain(
+      'field.system-settings.sales.discount',
+    );
+  });
   it('isolates Call Center bulk selection from every Customer Affairs permission', () => {
     const current = {
       screenIds: ['customer-affairs.home'],

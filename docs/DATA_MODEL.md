@@ -1,3 +1,7 @@
+## Country manual GMT offset — 2026-10-21
+
+MasterCountry.gmtOffset is nullable varchar6, canonical signed HH:MM from -12:00 through +14:00 with minute precision. Blank clears; omitted PATCH preserves; legacy countries remain NULL without guessed backfill. This is descriptive reference metadata, not IANA/DST or flight-time authority. Migration20261021120000 adds only a nullable column and matching CHECK with bounded lock wait. Retain column on application rollback. No operational apply/deployment authorized.
+
 ## Facility import lossless text — 2026-10-21
 
 MasterFacility.name widens from varchar160 to varchar500 without changing identities, relations or existing indices. Import preview and final revalidation enforce PostgreSQL character counts and all persisted hotel/reference string limits; accepted facility text is never truncated. Boundary500 with four-byte characters plus an80-character category is verified against the actual compound indexes. Migration20261021100000_facility_name_text is widening-only; retain it on application rollback and never narrow after longer names have been saved. No cross-module ownership/API changes. See tasks/HOTEL-FACILITY-TEXT-1021.md.

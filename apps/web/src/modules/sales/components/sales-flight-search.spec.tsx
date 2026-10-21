@@ -241,3 +241,44 @@ it('sets shared hotel dates from selected registered flights and preserves dates
     checkOutManual: false,
   });
 });
+
+it('continues with confirmed passengers and restored floating flights without another catalog search', () => {
+  fixture.draft = {
+    ...fixture.draft!,
+    originCountryId: '10000000-0000-4000-8000-000000000010',
+    destinationCountryId: '10000000-0000-4000-8000-000000000011',
+    originId: '10000000-0000-4000-8000-000000000002',
+    destinationId: '10000000-0000-4000-8000-000000000003',
+    customerId: 'person',
+    passengerComposition: { adults: 1, children: 0, infants: 0 },
+    passengers: [
+      {
+        customerId: 'person',
+        displayName: 'Synthetic Person',
+        birthDate: '1990-01-01',
+      },
+    ],
+    contractFlights: {
+      OUTBOUND: {
+        carrierName: 'Synthetic',
+        serviceNumber: '119',
+        departureAt: '2099-10-01T00:30:00',
+        arrivalAt: '2099-10-01T03:00:00',
+        cabinClassCode: 'ECONOMY',
+      },
+      RETURN: {
+        carrierName: 'Synthetic',
+        serviceNumber: '120',
+        departureAt: '2099-10-04T01:16:00',
+        arrivalAt: '2099-10-04T08:16:00',
+        cabinClassCode: 'ECONOMY',
+      },
+    },
+  };
+  const html = render();
+  const button = [...html.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)]
+    .map((match) => match[0])
+    .find((markup) => markup.includes('تأیید مسیر و خدمات'));
+  expect(button).toBeDefined();
+  expect(button).not.toContain('disabled');
+});

@@ -64,6 +64,7 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
 import {
+  publishedLoadGroups,
   catalogProductsFromOffers,
   catalogOffer,
   publishedOfferInput,
@@ -931,6 +932,52 @@ function TicketCatalogWorkspace() {
       );
     }
   }
+  const editPublishedLoad = (visibleOffers: readonly TicketOfferV1[]) => {
+    const offers = publishedLoadGroups(
+      visibleOffers,
+      publishedOffers,
+      products,
+    );
+    const offer = visibleOffers[0];
+    if (!offer || !offers.length) {
+      setPublishedProblem('ردیفی برای ویرایش در این جدول وجود ندارد.');
+      return;
+    }
+    const selected = displayedProducts.find(
+      (item) => item.id === `offer:${offer.id}`,
+    );
+    const selectedSegment = selected?.definition.segments[0];
+    const grouped = offers.flatMap((item) => {
+      const product = displayedProducts.find(
+        (candidate) => candidate.id === `offer:${item.id}`,
+      );
+      if (!product || !selectedSegment) return [];
+      const segment = product.definition.segments[0]!;
+      const sameDirection =
+        segment.originCityId === selectedSegment.originCityId &&
+        segment.destinationCityId === selectedSegment.destinationCityId;
+      return [
+        {
+          ...product,
+          definition: {
+            ...product.definition,
+            journeyRole: sameDirection
+              ? ('outbound' as const)
+              : ('return' as const),
+          },
+        },
+      ];
+    });
+    const product = grouped.find((item) => item.id === `offer:${offer.id}`);
+    if (!product || grouped.length !== offers.length) {
+      setPublishedProblem(
+        'اطلاعات فرم این لود آماده نیست؛ فهرست را به‌روزرسانی کنید.',
+      );
+      return;
+    }
+    setOfferForm(null);
+    setForm({ mode: 'edit', product, products: grouped, offers });
+  };
   const renderOfferActions = (offer: TicketOfferV1) => (
     <div className="flex flex-wrap gap-2">
       <Button
@@ -939,6 +986,36 @@ function TicketCatalogWorkspace() {
         onClick={() => setOfferForm({ offer, readOnly: true })}
       >
         مشاهده
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => editPublishedLoad([offer])}
+      >
+        ویرایش لود
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={
+          offer.status !== 'ACTIVE' ||
+          offer.remainingCapacity < 1 ||
+          new Date(offer.departureAt).getTime() <= catalogNow
+        }
+        title={
+          offer.status !== 'ACTIVE'
+            ? 'غیرفعال'
+            : new Date(offer.departureAt).getTime() <= catalogNow
+              ? 'تاریخ گذشته'
+              : offer.remainingCapacity < 1
+                ? 'ظرفیت تکمیل شده'
+                : undefined
+        }
+        onClick={() =>
+          updateCapacityHold({ offer, quantity: 1, requesterName: '' })
+        }
+      >
+        رزرو ظرفیت
       </Button>
       {new Date(offer.departureAt).getTime() > catalogNow ? (
         <div className="flex flex-wrap gap-2">
@@ -971,22 +1048,6 @@ function TicketCatalogWorkspace() {
           >
             <Power className="size-5" aria-hidden />
           </Button>
-          {offer.status === 'ACTIVE' ? (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={offer.remainingCapacity < 1}
-              onClick={() =>
-                updateCapacityHold({
-                  offer,
-                  quantity: 1,
-                  requesterName: '',
-                })
-              }
-            >
-              رزرو ظرفیت
-            </Button>
-          ) : null}
         </div>
       ) : null}
     </div>

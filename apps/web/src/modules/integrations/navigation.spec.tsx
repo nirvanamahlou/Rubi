@@ -5,6 +5,22 @@ import { integrationNavigation, navigationGroup } from './navigation';
 import { IntegrationNavigation } from './components/integration-navigation';
 
 describe('Progressive Integrations navigation', () => {
+  it('shows only assigned sections and keeps a partial group usable', () => {
+    const html = renderToStaticMarkup(
+      <IntegrationNavigation
+        section="health"
+        allowedSections={['health', 'logs']}
+        disabled={false}
+        onChange={() => {}}
+      />,
+    );
+    expect(html).toContain('پیگیری و پایش');
+    expect(html).toContain('سلامت و خطاها');
+    expect(html).toContain('لاگ‌ها و سوابق');
+    expect(html).not.toContain('سایت‌ها و برندها');
+    expect(html).not.toContain('راه‌اندازی اتصال');
+    expect(html).not.toContain('>همگام‌سازی‌ها</button>');
+  });
   it('retains every existing destination exactly once under four entry points', () => {
     const destinations = integrationNavigation.flatMap((group) => [
       ...group.sections,

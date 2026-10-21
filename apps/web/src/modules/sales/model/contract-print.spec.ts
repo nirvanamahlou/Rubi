@@ -380,3 +380,37 @@ it('prints aggregate passenger prices as IRR and foreign totals without inventin
     'مبالغ ریالی و ارزی، قیمت کل خدمات هر مسافر هستند.',
   );
 });
+
+it('uses compact soft Latin names and room types, isolated rial glyphs and left-aligned stay dates', () => {
+  const out = structuredClone(printFixture);
+  out.contract.passengersDetail[0]!.displayNameSnapshot = 'SAMPLE <PASSENGER>';
+  out.contract.hotelSelection!.rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: 'double',
+      roomTypeNameSnapshot: 'DELUXE <ROOM>',
+      adults: 1,
+      childAges: [],
+      agreedPrice: { amount: '1000', currencyCode: 'IRR' },
+    },
+  ];
+  const before = structuredClone(out);
+  const html = contractPrintHtml(out, {
+    ...printReferences,
+    international: true,
+  });
+  expect(html).toContain(
+    'class="passenger-name"><bdi>SAMPLE &lt;PASSENGER&gt;</bdi>',
+  );
+  expect(html).toContain('class="room-type"><bdi>DELUXE &lt;ROOM&gt;');
+  expect(html).toContain(
+    'font-family:"Segoe UI",Tahoma,sans-serif;font-size:8.5pt;font-weight:400',
+  );
+  expect(html).toContain('<span class="currency-symbol" dir="rtl">﷼</span>');
+  expect(html).toContain('font-family:Tahoma,"Segoe UI",sans-serif!important');
+  expect(html).toContain(
+    'class="stay-date-cell"><bdi class="stay-date" dir="ltr">',
+  );
+  expect(html).toContain('.stay-date-cell{text-align:left;direction:ltr}');
+  expect(out).toEqual(before);
+});

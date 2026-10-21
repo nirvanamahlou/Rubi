@@ -8,6 +8,11 @@ import { IamService } from '../iam/iam.service';
 import { SystemManagementService } from '../system-management/system-management.service';
 import { IntegrationRegistryController } from './integration-registry.controller';
 import { IntegrationRegistryService } from './integration-registry.service';
+import {
+  MANUAL_ACCESS_VERSION,
+  screenPermission,
+  integrationScreenId,
+} from '@nora/contracts';
 
 describe('Integration registry HTTP permission contract', () => {
   let app: INestApplication;
@@ -88,6 +93,64 @@ describe('Integration registry HTTP permission contract', () => {
       .post(`/integrations/v1/registry?branchId=${branchId}`)
       .set('Cookie', 'nora_access=test-session')
       .send({})
+      .expect(403);
+    expect(settings.writeSetting).not.toHaveBeenCalled();
+  });
+  it('checks the selected screen at the HTTP boundary and rejects forged selectors', async () => {
+    const reader = {
+      ...actor,
+      permissions: [
+        MANUAL_ACCESS_VERSION,
+        screenPermission('integrations.home'),
+        screenPermission(integrationScreenId('brands')),
+      ],
+    };
+    iam.authenticate.mockResolvedValueOnce(reader);
+    await request(app.getHttpServer())
+      .get(`/integrations/v1/registry?branchId=${branchId}&section=brands`)
+      .set('Cookie', 'nora_access=test-session')
+      .expect(200);
+    settings.resolveSetting.mockClear();
+    iam.authenticate.mockResolvedValueOnce(reader);
+    await request(app.getHttpServer())
+      .get(`/integrations/v1/registry?branchId=${branchId}&section=logs`)
+      .set('Cookie', 'nora_access=test-session')
+      .expect(403);
+    expect(settings.resolveSetting).not.toHaveBeenCalled();
+    iam.authenticate.mockResolvedValueOnce(reader);
+    await request(app.getHttpServer())
+      .get('/integrations/v1/adapters')
+      .set('Cookie', 'nora_access=test-session')
+      .expect(403);
+    await request(app.getHttpServer())
+      .get(`/integrations/v1/registry?branchId=${branchId}&section=unknown`)
+      .set('Cookie', 'nora_access=test-session')
+      .expect(400);
+  });
+  it('does not accept a home-only manual profile or let a viewer initialize the catalogue', async () => {
+    iam.authenticate.mockResolvedValueOnce({
+      ...actor,
+      permissions: [
+        MANUAL_ACCESS_VERSION,
+        screenPermission('integrations.home'),
+      ],
+    });
+    await request(app.getHttpServer())
+      .get(`/integrations/v1/registry?branchId=${branchId}`)
+      .set('Cookie', 'nora_access=test-session')
+      .expect(403);
+    iam.authenticate.mockResolvedValueOnce({
+      ...actor,
+      permissions: [
+        MANUAL_ACCESS_VERSION,
+        'system.settings.manage',
+        screenPermission('integrations.home'),
+        screenPermission(integrationScreenId('brands')),
+      ],
+    });
+    await request(app.getHttpServer())
+      .post(`/integrations/v1/registry/initialize?branchId=${branchId}`)
+      .set('Cookie', 'nora_access=test-session')
       .expect(403);
     expect(settings.writeSetting).not.toHaveBeenCalled();
   });

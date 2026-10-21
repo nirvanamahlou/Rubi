@@ -118,6 +118,7 @@ import {
   salesInternationalTravel,
   salesFlightSelection,
   salesFlightsValid,
+  salesSelectedFlightsReady,
   patchContractFlight,
   salesPayload,
   salesSteps,
@@ -790,7 +791,8 @@ export function SalesContractForm() {
               (age) => age !== null,
             ))) &&
         (!state.serviceKinds.includes('FLIGHT') ||
-          (passengerCounts.seated > 0 && (state.tour || flightDatesReady))) &&
+          (passengerCounts.seated > 0 &&
+            (state.tour || salesSelectedFlightsReady(state)))) &&
         (passengerCounts.infants === 0 || passengerCounts.adults > 0) &&
         (!state.serviceKinds.includes('FLIGHT') || salesFlightsValid(state)) &&
         (!state.serviceKinds.includes('HOTEL') ||
@@ -2222,7 +2224,10 @@ export function SalesContractForm() {
                 role="status"
                 className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900"
               >
-                {passengerStepError}
+                {passengerStepError ??
+                  (!salesFlightsValid(state)
+                    ? 'اطلاعات و ترتیب تاریخ بلیط‌های انتخاب‌شده را بررسی کنید.'
+                    : 'اطلاعات مسیر و خدمات انتخاب‌شده را کامل کنید.')}
               </p>
             ) : null}
           </section>
