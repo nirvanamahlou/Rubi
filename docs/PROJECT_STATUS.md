@@ -6941,3 +6941,9 @@ Optional employee extension is connected to create/edit, employee table/search a
 ## EXACT-PAIRED-RETURN-1021 — candidate
 
 Explicit planned return day from weekly schedules is preserved in catalog source identity and exposed as optional scheduledReturnDate in managed offer projections. Sales narrows existing eligible same-load candidates to that exact Tehran day; missing/ambiguous partners stay manual and manual return changes remain unchanged. No inference from Max days, migration or production writes. Existing legacy source keys remain compatible. Focused regression and complete hosted gates required before owner-authorized develop merge.
+
+## MESSAGE-TEMPLATE-BLANKS-1021 — PC-B
+
+Removed bracketed entry guidance from all Workbench message templates; field labels remain with empty colon values. Visa follow-up and Management inline placeholders now use separate editable blank lines. Existing saved/sent messages untouched. Scoped lint/format and catalogue inspection pass; exact-head hosted type/build/tests required before explicitly authorized develop merge. No API/database/dependency/runtime changes.
+
+English coverage gate found the 33 changed template strings needed translations; existing English templates were updated offline with blank fields. All3 coverage/synchronization tests now pass; derived catalogues synchronized.
