@@ -13,6 +13,10 @@ The user confirms: an authorized team is the manager's **own current HR unit**,
 intersected with authorized active branches. Another unit in the same branch is
 not a team grant. Missing/deleted/inactive units do not expand scope. IAM owns
 account membership; HR's existing public unit port validates active units.
+Unit-owned data includes inactive colleagues who still belong to that unit, so
+their contacts can be supervised/reassigned rather than stranded. Acting accounts
+and new assignment recipients must still be active and independently authorized;
+deactivation never makes an inactive colleague a selectable recipient.
 
 The project's Customer Affairs planning baseline is already recorded in
 [CUSTOMER-AFFAIRS-BACKEND-ROUTING](CUSTOMER-AFFAIRS-BACKEND-ROUTING.md).
@@ -161,3 +165,10 @@ types/build checkpoints passed. Do not report those final retries as passed.
 Draft PR/exact-head hosted quality/test/type/build/database gates and review are
 required before readiness/merge. Source/schema/translation locks freeze and
 release at candidate publication. No merge/deployment is authorized here.
+
+Publication follow-up: PR1020 contains the task. Hosted production build,
+quality/types and PostgreSQL migration/seed gates passed on checkpoint561bd2fa;
+full suite remained queued/running then. Final own-unit inactive-owner/active-target
+regression passes as part of17 real scoped-access tests. The delegation-policy
+unit suite also passes17 tests after retaining the original authority ceiling for
+the hidden restrictive flag. Exact latest-head gates still supersede checkpoints.

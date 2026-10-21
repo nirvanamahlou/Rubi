@@ -349,6 +349,29 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         access.contact(manager, branchId, contactIds[2]!),
       ).rejects.toThrow();
     });
+    it('keeps inactive colleagues within unit-owned history without permitting them as assignment recipients', async () => {
+      await db.user.update({
+        where: { id: peerId },
+        data: { status: 'INACTIVE' },
+      });
+      try {
+        expect(
+          (await access.contact(manager, branchId, contactIds[1]!)).id,
+        ).toBe(contactIds[1]);
+        await expect(
+          owners.save(manager, branchId, contactIds[0]!, {
+            ownerUserId: peerId,
+            expectedVersion: 1,
+          }),
+        ).rejects.toThrow();
+      } finally {
+        await db.user.update({
+          where: { id: peerId },
+          data: { status: 'ACTIVE' },
+        });
+      }
+    });
+
     it('checks server branch scope even for a manager', async () => {
       await expect(
         calls.list(manager, otherBranch, { page: 1, pageSize: 50 }),

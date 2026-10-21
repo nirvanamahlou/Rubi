@@ -34,6 +34,7 @@ export class IamWorkbenchRequestDirectory {
       where: {
         id: actor.userId,
         status: 'ACTIVE',
+        b2bOrganizationUser: null,
         branches: { some: { branchId, branch: { isActive: true } } },
       },
       select: { profile: { select: { organizationUnitId: true } } },
@@ -43,12 +44,21 @@ export class IamWorkbenchRequestDirectory {
     if (tx) {
       await this.units.lock(tx, unitId);
     }
-    const options = await this.options(actor, branchId, tx);
-    return (
-      options.units
-        .find((unit) => unit.id === unitId)
-        ?.users.map((user) => user.id) ?? []
-    );
+    if (
+      !(await this.units.list(branchId, tx)).some((unit) => unit.id === unitId)
+    )
+      return [];
+    // Data responsibility follows current unit membership, not login eligibility:
+    // managers must still be able to reassign an inactive colleague's contacts.
+    // Recipient selection separately retains active-account/branch/native guards.
+    const members = await client.user.findMany({
+      where: {
+        profile: { organizationUnitId: unitId },
+        b2bOrganizationUser: null,
+      },
+      select: { id: true },
+    });
+    return members.map((member) => member.id);
   }
 
   async callCenterOperator(
