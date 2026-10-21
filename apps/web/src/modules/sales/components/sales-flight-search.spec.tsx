@@ -21,6 +21,7 @@ const fixture = vi.hoisted(() => ({
     onReturningOffers: (offers: TicketOfferV1[]) => void;
   },
   search: null as null | (() => void),
+  confirms: [] as (() => void)[],
 }));
 vi.mock('react', async (original) => ({
   ...(await original<typeof React>()),
@@ -52,6 +53,8 @@ vi.mock('@/modules/legal-entities/components/legal-entity-context', () => ({
 vi.mock('@/components/ui/button', async (original) => ({
   ...(await original<typeof ButtonModule>()),
   Button: (props: React.ComponentProps<'button'>) => {
+    if (props['aria-label'] === 'ثبت بلیط شناور')
+      fixture.confirms.push(props.onClick as () => void);
     if (props['aria-label'] === 'جست‌وجوی بلیط‌ها')
       fixture.search = props.onClick as () => void;
     return (
@@ -78,9 +81,6 @@ vi.mock('./sales-people-sheet', () => ({
 }));
 vi.mock('./hotel-stay-dates', () => ({
   HotelStayDates: () => <div>shared hotel stay dates</div>,
-}));
-vi.mock('./contract-flight-editor', () => ({
-  ContractFlightEditor: () => null,
 }));
 
 const out: TicketOfferV1 = {
@@ -115,6 +115,7 @@ const back: TicketOfferV1 = {
 function render() {
   fixture.cursor = 0;
   fixture.pickers = [];
+  fixture.confirms = [];
   return renderToStaticMarkup(<SalesContractForm />);
 }
 beforeEach(() => {
@@ -242,7 +243,7 @@ it('sets shared hotel dates from selected registered flights and preserves dates
   });
 });
 
-it('continues with confirmed passengers and restored floating flights without another catalog search', () => {
+it('confirms overnight floating tickets and enables continuation with confirmed passengers without catalog search', () => {
   fixture.draft = {
     ...fixture.draft!,
     originCountryId: '10000000-0000-4000-8000-000000000010',
@@ -262,8 +263,8 @@ it('continues with confirmed passengers and restored floating flights without an
       OUTBOUND: {
         carrierName: 'Synthetic',
         serviceNumber: '119',
-        departureAt: '2099-10-01T00:30:00',
-        arrivalAt: '2099-10-01T03:00:00',
+        departureAt: '2099-10-01T01:08:00',
+        arrivalAt: '2099-10-01T00:02:00',
         cabinClassCode: 'ECONOMY',
       },
       RETURN: {
@@ -275,7 +276,13 @@ it('continues with confirmed passengers and restored floating flights without an
       },
     },
   };
+  render();
+  expect(fixture.confirms).toHaveLength(2);
+  fixture.confirms[0]!();
+  render();
+  fixture.confirms[1]!();
   const html = render();
+  expect(html).toContain('بلیط شناور ثبت شد.');
   const button = [...html.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)]
     .map((match) => match[0])
     .find((markup) => markup.includes('تأیید مسیر و خدمات'));
