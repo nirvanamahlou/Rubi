@@ -1432,17 +1432,6 @@ export function salesPayload(
         )!;
         const error = passengerHotelStayError(stay);
         if (error) throw Error(error);
-        if (
-          stay.different &&
-          !(
-            state.passengerTotalPricing
-              ? passengerTotalEntries(state)[id]
-              : state.passengerHotelPrices?.[id]
-          )?.some(
-            (p) => p.amount.trim() && /^\d+(?:\.\d{1,4})?$/.test(p.amount),
-          )
-        )
-          throw Error('مبلغ اقامت متفاوت مسافر را وارد کنید.');
         return [
           id,
           {

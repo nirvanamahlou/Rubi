@@ -982,7 +982,7 @@ it('checks manual per-guest hotel prices against exact automatic contract totals
   );
 });
 
-it('validates individual hotel stay snapshots and rejects a flight-only stay or missing override price', () => {
+it('validates individual hotel stay snapshots without an obsolete override price and rejects flight-only stays', () => {
   const input = structuredClone(draft),
     id = input.passengers[0]!.customerId;
   input.passengers = [
@@ -1043,8 +1043,8 @@ it('validates individual hotel stay snapshots and rejects a flight-only stay or 
       checkOutDate: '2026-10-05',
     },
   });
-  metadata.passengerHotelPricesV1 = JSON.stringify({ [id]: [] });
-  expect(() => validateSalesContract(input)).toThrow();
+  delete metadata.passengerHotelPricesV1;
+  expect(() => validateSalesContract(input)).not.toThrow();
 });
 
 it('validates aggregate IRR/foreign prices and deductions without requiring flight-specific prices', () => {
