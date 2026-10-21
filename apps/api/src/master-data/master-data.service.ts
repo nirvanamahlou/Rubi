@@ -289,7 +289,7 @@ function normalizeManufacturerModel(value: unknown): {
 }
 
 const allowedFields: Record<MasterDataResource, readonly string[]> = {
-  countries: ['iso2Code', 'name', 'englishName', 'displayOrder'],
+  countries: ['iso2Code', 'name', 'englishName', 'gmtOffset', 'displayOrder'],
   regions: ['code', 'name', 'englishName', 'countryId'],
   cities: ['code', 'name', 'englishName', 'countryId', 'regionId'],
   airports: [
@@ -1955,6 +1955,22 @@ export class MasterDataService {
       !Object.hasOwn(values, 'code')
     ) {
       data.code = await this.generateAutoCode(resource, values);
+    }
+    if (resource === 'countries' && Object.hasOwn(data, 'gmtOffset')) {
+      const raw = data.gmtOffset;
+      if (raw !== null && typeof raw !== 'string')
+        throw new BadRequestException('اختلاف ساعت با گرینویچ معتبر نیست.');
+      const offset = String(raw ?? '').trim();
+      if (
+        offset &&
+        !/^([+]((0[0-9]|1[0-3]):[0-5][0-9]|14:00)|-((0[0-9]|1[01]):[0-5][0-9]|12:00))$/.test(
+          offset,
+        )
+      )
+        throw new BadRequestException(
+          'اختلاف ساعت را مانند +03:30 و در بازهٔ -12:00 تا +14:00 وارد کنید.',
+        );
+      data.gmtOffset = offset === '-00:00' ? '+00:00' : offset || null;
     }
     if (resource === 'countries' && typeof data.iso2Code === 'string') {
       const iso2Code = data.iso2Code.trim().toUpperCase();

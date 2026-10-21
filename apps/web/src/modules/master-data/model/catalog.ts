@@ -113,6 +113,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: 'Iran',
       },
       {
+        key: 'gmtOffset',
+        label: 'اختلاف ساعت با گرینویچ (GMT)',
+        type: 'text',
+        placeholder: '+03:30',
+      },
+      {
         key: 'displayOrder',
         label: 'ترتیب نمایش',
         type: 'number',
