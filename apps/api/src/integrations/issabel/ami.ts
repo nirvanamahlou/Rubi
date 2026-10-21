@@ -77,6 +77,7 @@ export class AmiClient extends EventEmitter {
       resolve: (value: AmiMessage) => void;
       reject: (reason: Error) => void;
       timer: ReturnType<typeof setTimeout>;
+      login: boolean;
     }
   >();
   get connected() {
@@ -103,8 +104,11 @@ export class AmiClient extends EventEmitter {
           if (message.response && pending) {
             clearTimeout(pending.timer);
             this.pending.delete(message.actionid!);
-            if (message.response === 'Success') pending.resolve(message);
-            else pending.reject(Error('AMI_ACTION_REJECTED'));
+            if (message.response === 'Success') {
+              // Login and the first event can arrive in the same TCP chunk.
+              if (pending.login) this.ready = true;
+              pending.resolve(message);
+            } else pending.reject(Error('AMI_ACTION_REJECTED'));
           }
           if (this.ready && message.event) this.emit('event', message);
         }
@@ -164,7 +168,12 @@ export class AmiClient extends EventEmitter {
         reject(Error('AMI_OUTCOME_UNKNOWN'));
         this.socket?.destroy();
       }, 5000);
-      this.pending.set(id, { resolve, reject, timer });
+      this.pending.set(id, {
+        resolve,
+        reject,
+        timer,
+        login: action === 'Login',
+      });
       this.socket!.write(frame);
     });
   }
