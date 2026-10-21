@@ -1,3 +1,7 @@
+## 2026-10-21 — INTEGRATIONS ACCESS PUBLICATION — PC-D
+
+PR1028 merged into PC-D-Integration at f6cd1cd0 after10 successful exact-head hosted checks and manual security/compatibility review without blockers. The develop promotion branch codex/pc-d-integrations-access-develop-1021 includes develop@93c7a2ea and preserves both peer and Integrations tests. Application delta remains scoped to Integrations access; no new schema/dependency/workflow change relative to develop, user grants, runtime rollout or deployment. Implementation/source locks are released; final merge follows the develop PR checks.
+
 ## 2026-10-21 — INTEGRATIONS-USER-PERMISSIONS-1021 — PC-D
 
 Native user administration exposes independent checkboxes for the nine existing Integrations sections. API section authorization, branch scope, setup/history redaction, limited navigation and drill-down are aligned with the IAM catalogue. Viewing does not grant registry editing; existing native operation/module/field checks, CAS and audit are retained. New manual screens default denied and no user grants are written.119 focused tests, scoped lint, Contracts/API/Web type checks, API/Web production builds (65 routes), translation sync and formatting pass. Local branch codex/pc-d-integrations-user-permissions-1021 uses the already delivered e59988e8 prerequisite, not newer unrelated develop features. No schema/migration/dependency/seed, external SSO, Docker rollout or GitHub publication. See tasks/INTEGRATIONS-USER-PERMISSIONS-1021.fa.md; source locks released with local commit.
