@@ -1,5 +1,4 @@
 import type { NextConfig } from 'next';
-import { publicDocumentContentSecurityPolicy } from './src/modules/travel-documents/server/public-document-headers';
 
 const allowedDevOrigins = (process.env.NORA_ALLOWED_DEV_ORIGINS ?? '')
   .split(',')
@@ -48,7 +47,10 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: publicDocumentContentSecurityPolicy,
+            // Keep configuration standalone: next start does not resolve TS module imports.
+            // The public-document regression checks this against the route's shared policy.
+            value:
+              "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; sandbox allow-popups",
           },
         ],
       },
