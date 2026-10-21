@@ -8771,9 +8771,11 @@ MESSAGE-TEMPLATE-BLANKS-1021 scope includes additive English catalogue entries f
 
 Translation follow-up reserves derived API and standalone catalogue outputs only for deterministic synchronization of the added English template entries.
 
-## FLOATING-FLIGHT-CONFIRM-1021 — PC-A — IN_PROGRESS
+## FLOATING-FLIGHT-CONFIRM-1021 — PC-A — READY_FOR_CI
 
 Reserve ContractFlightEditor explicit local confirmation and focused regressions, floating-flight-times helper and Sales draft-only confirmation feedback. Confirm rebases clocks to selected departure/return day, handles overnight arrival, validates required fields and shows inline result; no inventory write or implicit contract submission. Existing canonical Sales payload/server validation preserved. No migration/dependency/permissions/API changes; owner authorizes develop merge after full gates.
+
+Validation:23 focused tests in4 files pass in an isolated network-disabled disposable container using the current production dependency runtime and reviewed source overlay. Tests exercise actual confirmation buttons, enabled continuation with confirmed passengers, overnight clocks, restored Tehran dates and contract-only payload with no inventory selection. Five additional pure clock/date assertions pass locally. No live service, database or inventory writes; final exact-head hosted gates precede merge.
 
 ## PAST-TICKET-SINGLE-EDIT-1021 — PC-A — IN_PROGRESS
 
