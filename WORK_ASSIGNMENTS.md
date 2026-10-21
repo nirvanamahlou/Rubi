@@ -1,3 +1,7 @@
+## HOTEL-IMPORT-DROPDOWNS-1021 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-hotel-import-dropdowns-1021 from origin/develop f2c54dde. Owner requests all country/city options in hotel Excel-import dropdowns and subsequently explicitly authorizes push/develop merge and production rollout after tests. Reserve hotel-import-panel.tsx and its focused tests/docs only. Existing paginated active geography lookup and country/city FK scope retained; remove only the shared default five-option display cap for these two controls. No shared combobox/default, API, schema/migration, dependency, IAM or operational hotel data changes. Prior hotel-facility repair merged PR1021 and is deployed; its source/schema locks released. Preserve the current PDF-enabled runtime and facility500 schema on backup-gated rollout; any unexpected pending migration blocks activation.
+
 ## HOTEL-FACILITY-TEXT-1021 — PC-B — IN_PROGRESS
 
 Candidate validation:90 focused API tests and4 real PostgreSQL scenarios pass; all181 migrations apply to isolated QA, including500 four-byte-character names plus80-character multibyte category against both existing indexes. API types, scoped lint and Prisma validation pass after regenerating stale shared packages. Local API build initially exhausted host memory; sequential retry and final-head hosted build still pending. Source/schema reservations freeze/release on candidate publication; no operational changes yet. Owner explicitly authorizes backup-gated server rollout after all checks and develop merge.
