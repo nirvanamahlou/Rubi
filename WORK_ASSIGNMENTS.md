@@ -8770,3 +8770,7 @@ MESSAGE-TEMPLATE-BLANKS-1021 ready: bracket hints removed across all units, incl
 MESSAGE-TEMPLATE-BLANKS-1021 scope includes additive English catalogue entries for the 33 changed template texts; required by existing UI coverage. Preserve peer entries and translate offline using existing template translations; no external service or API contract.
 
 Translation follow-up reserves derived API and standalone catalogue outputs only for deterministic synchronization of the added English template entries.
+
+## FLOATING-FLIGHT-CONFIRM-1021 — PC-A — IN_PROGRESS
+
+Reserve ContractFlightEditor explicit local confirmation and focused regressions, floating-flight-times helper and Sales draft-only confirmation feedback. Confirm rebases clocks to selected departure/return day, handles overnight arrival, validates required fields and shows inline result; no inventory write or implicit contract submission. Existing canonical Sales payload/server validation preserved. No migration/dependency/permissions/API changes; owner authorizes develop merge after full gates.

@@ -6955,3 +6955,8 @@ Airport selection is independent of commercial route geography in weekly and adv
 Removed bracketed entry guidance from all Workbench message templates; field labels remain with empty colon values. Visa follow-up and Management inline placeholders now use separate editable blank lines. Existing saved/sent messages untouched. Scoped lint/format and catalogue inspection pass; exact-head hosted type/build/tests required before explicitly authorized develop merge. No API/database/dependency/runtime changes.
 
 English coverage gate found the 33 changed template strings needed translations; existing English templates were updated offline with blank fields. All3 coverage/synchronization tests now pass; derived catalogues synchronized.
+
+
+## FLOATING-FLIGHT-CONFIRM-1021 — candidate
+
+Explicit floating-ticket confirmation normalizes clocks against selected civil flight date and next-day arrival, checks required flight fields and provides inline feedback. Editing clears prior confirmation. Keeps existing contract-only snapshot/payload flow and canonical server validation; never writes company inventory or implicitly submits contract. Focused readiness/payload/overnight regressions and complete hosted gates required before authorized develop merge.

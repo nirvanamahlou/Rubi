@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { TimePicker } from '@/components/ui/time-picker';
 import {
+  confirmFloatingFlight,
   floatingFlightClock,
   floatingFlightTimes,
 } from '../model/floating-flight-times';
@@ -42,7 +43,7 @@ export function ContractFlightEditor({
       </Button>
     );
   const patch = (next: Partial<ContractFlightDraft>) =>
-    onChange({ ...value, ...next });
+    onChange({ ...value, ...next, confirmation: undefined });
   return (
     <section
       aria-label="بلیط شناور این قرارداد"
@@ -103,9 +104,13 @@ export function ContractFlightEditor({
             value={floatingFlightClock(value.departureAt)}
             onChange={(e) =>
               onChange(
-                floatingFlightTimes(flightDate, value, {
-                  departure: e.target.value,
-                }),
+                floatingFlightTimes(
+                  flightDate,
+                  { ...value, confirmation: undefined },
+                  {
+                    departure: e.target.value,
+                  },
+                ),
               )
             }
           />
@@ -117,9 +122,13 @@ export function ContractFlightEditor({
             value={floatingFlightClock(value.arrivalAt)}
             onChange={(e) =>
               onChange(
-                floatingFlightTimes(flightDate, value, {
-                  arrival: e.target.value,
-                }),
+                floatingFlightTimes(
+                  flightDate,
+                  { ...value, confirmation: undefined },
+                  {
+                    arrival: e.target.value,
+                  },
+                ),
               )
             }
           />
@@ -142,6 +151,20 @@ export function ContractFlightEditor({
           />
         </FormField>
       </div>
+      <Button
+        type="button"
+        onClick={() => onChange(confirmFloatingFlight(flightDate, value))}
+      >
+        ثبت بلیط شناور
+      </Button>
+      {value.confirmation === 'saved' ? (
+        <p role="status">بلیط شناور ثبت شد.</p>
+      ) : null}
+      {value.confirmation === 'invalid' ? (
+        <p role="alert" className="text-sm text-destructive">
+          اطلاعات بلیط شناور کامل نیست.
+        </p>
+      ) : null}
     </section>
   );
 }
