@@ -1,4 +1,5 @@
 'use client';
+import { hasScopedCallCenterAccess } from '@nora/contracts';
 import {
   Dialog,
   DialogContent,
@@ -377,7 +378,15 @@ function Content({
           <Plus size={18} /> ثبت تماس جدید
         </button>
       </header>
-      <IssabelDialer branchId={branch} allowed={canCreate && canManage} />
+      <IssabelDialer
+        branchId={branch}
+        allowed={
+          canCreate &&
+          canManage &&
+          (!hasScopedCallCenterAccess(permissions) ||
+            permissions.includes('customer_affairs.call_center.outbound.own'))
+        }
+      />
       <WorkQueue
         branchId={branch}
         actorId={actorId}

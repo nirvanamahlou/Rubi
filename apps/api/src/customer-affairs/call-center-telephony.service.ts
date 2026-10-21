@@ -7,7 +7,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { AuthenticatedActor, TelephonyEventV1 } from '@nora/contracts';
+import {
+  canViewRoute,
+  hasScopedCallCenterAccess,
+  type AuthenticatedActor,
+  type TelephonyEventV1,
+} from '@nora/contracts';
 import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { IamCallCenterDirectory } from '../iam/iam-call-center-directory';
@@ -32,6 +37,12 @@ export class CallCenterTelephonyService {
   authorize(actor: AuthenticatedActor, write = false) {
     if (
       !actor.permissions.includes('customer_affairs.call_center.read') ||
+      (hasScopedCallCenterAccess(actor.permissions) &&
+        !actor.permissions.includes(
+          'customer_affairs.call_center.workflow.manage',
+        )) ||
+      (hasScopedCallCenterAccess(actor.permissions) &&
+        !canViewRoute(actor.permissions, '/customer-affairs/call-center')) ||
       (write &&
         !actor.permissions.includes(
           'customer_affairs.call_center.workflow.manage',
@@ -309,6 +320,17 @@ export class CallCenterTelephonyService {
       select: { call: { select: { contactId: true, id: true } } },
     });
     if (!row) throw new NotFoundException();
+    // A trusted offer authorizes this call, not the customer's historical dossier.
+    if (this.calls.access.scoped(actor))
+      await this.calls.access.contact(
+        actor,
+        (
+          await this.db.client.callCenterContact.findUniqueOrThrow({
+            where: { id: row.call.contactId },
+          })
+        ).branchId,
+        row.call.contactId,
+      );
     const calls = await this.db.client.callCenterCall.findMany({
       where: { contactId: row.call.contactId, id: { not: row.call.id } },
       orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
@@ -469,6 +491,14 @@ export class CallCenterTelephonyService {
         if (row.claimUserId !== actor.userId)
           throw new ConflictException('ابتدا رسیدگی به تماس را بپذیرید.');
         if (input.action === 'TRANSFER') {
+          // New expert access is not a routing/assignment authority.
+          if (
+            hasScopedCallCenterAccess(actor.permissions) &&
+            !actor.permissions.includes(
+              'customer_affairs.call_center.workflow.manage.team',
+            )
+          )
+            throw new ForbiddenException();
           if (!input.targetUserId || input.targetUserId === actor.userId)
             throw new BadRequestException();
           await this.directory.resolve(
@@ -476,6 +506,13 @@ export class CallCenterTelephonyService {
             row.call.contact.branchId,
             input.targetUserId,
           );
+          if (hasScopedCallCenterAccess(actor.permissions))
+            await this.calls.access.recipient(
+              actor,
+              row.call.contact.branchId,
+              input.targetUserId,
+              tx,
+            );
           await tx.callCenterTelephonyOffer.updateMany({
             where: { sessionId: id },
             data: { active: false },

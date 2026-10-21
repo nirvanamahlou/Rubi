@@ -144,6 +144,13 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
   ) {
     this.domain.authorize(actor, true);
     if (
+      !(await this.directory.canOriginate(
+        (await this.connection()).branchId,
+        actor.userId,
+      ))
+    )
+      throw new ForbiddenException();
+    if (
       !actor.permissions.includes('customer_affairs.call_center.calls.create')
     )
       throw new ForbiddenException();
@@ -194,6 +201,15 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
         throw new BadRequestException(
           'Exactly one authorized extension is required.',
         );
+      if (
+        !(await this.directory.eligibleMapping(
+          connection.branchId,
+          actor.userId,
+          mappings[0]!.teamId,
+          tx,
+        ))
+      )
+        throw new ForbiddenException();
       await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${'issabel:rate:' + actor.userId},0))`;
       if (
         (await tx.integrationTelephonyCommand.count({

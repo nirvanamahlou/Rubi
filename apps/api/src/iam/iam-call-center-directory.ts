@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { authenticatedPermissionCodes } from './authenticated-permissions';
+import { canViewRoute, hasScopedCallCenterAccess } from '@nora/contracts';
 
 /** Public, branch-scoped directory. Does not expose roles or personnel data. */
 @Injectable()
@@ -33,6 +34,8 @@ export class IamCallCenterDirectory {
       .filter((user) => {
         const permissions = authenticatedPermissionCodes(user.roles);
         return (
+          (!hasScopedCallCenterAccess(permissions) ||
+            canViewRoute(permissions, '/customer-affairs/call-center')) &&
           permissions.includes('customer_affairs.call_center.read') &&
           permissions.includes('customer_affairs.call_center.workflow.manage')
         );
@@ -59,12 +62,17 @@ export class IamCallCenterDirectory {
     if (!user) return false;
     const permissions = authenticatedPermissionCodes(user.roles);
     return (
-      [
-        'customer_affairs.call_center.read',
-        'customer_affairs.call_center.workflow.manage',
-        'customer_affairs.call_center.calls.create',
-      ] as const
-    ).every((code) => permissions.includes(code));
+      (!hasScopedCallCenterAccess(permissions) ||
+        (permissions.includes('customer_affairs.call_center.outbound.own') &&
+          canViewRoute(permissions, '/customer-affairs/call-center'))) &&
+      (
+        [
+          'customer_affairs.call_center.read',
+          'customer_affairs.call_center.workflow.manage',
+          'customer_affairs.call_center.calls.create',
+        ] as const
+      ).every((code) => permissions.includes(code))
+    );
   }
   async referral(
     tx: Prisma.TransactionClient,

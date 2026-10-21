@@ -1,6 +1,7 @@
 import { ForbiddenException } from '@nestjs/common';
 import {
   MANUAL_ACCESS_VERSION,
+  hasScopedCallCenterAccess,
   canViewScreen,
   type AuthenticatedActor,
 } from '@nora/contracts';
@@ -16,6 +17,12 @@ export function assertManualApiAccess(
     .split('?')[0]!
     .replace(/^\/api(?:\/v\d+)?(?=\/)/, '');
   const rules: Array<[RegExp, string[]]> = [
+    [
+      /^\/customer-affairs\/call-center(?:\/|$)/,
+      hasScopedCallCenterAccess(actor.permissions)
+        ? ['customer-affairs.call-center']
+        : ['customer-affairs.call-center', 'customer-affairs.home'],
+    ],
     [/^\/procurement\/ticket-purchases(?:\/|$)/, ['ticket-purchases.home']],
     [/^\/iam\/(?:users|access-options)(?:\/|$)/, ['system.users']],
     [/^\/workbench\/(?:notes|note-folders)(?:\/|$)/, ['workbench.tab.notes']],

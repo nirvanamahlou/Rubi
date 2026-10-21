@@ -1,7 +1,10 @@
 import { createCipheriv, createHmac, randomBytes } from 'node:crypto';
 
 import { createDatabaseClient } from '../src/client';
-import { PERMISSION_SEED_DATA } from '../src/permission-seed-data';
+import {
+  PERMISSION_SEED_DATA,
+  isOptInCallCenterPermission,
+} from '../src/permission-seed-data';
 import {
   PROCUREMENT_ROLE_SPECS,
   PROCUREMENT_STAFF_PERMISSION_CODES,
@@ -319,7 +322,11 @@ async function seed(): Promise<void> {
         ] as const;
         await Promise.all(
           seededPermissions
-            .filter((permission) => !permission.code.startsWith('procurement.'))
+            .filter(
+              (permission) =>
+                !permission.code.startsWith('procurement.') &&
+                !isOptInCallCenterPermission(permission.code),
+            )
             .map((permission) =>
               transaction.rolePermission.upsert({
                 where: {

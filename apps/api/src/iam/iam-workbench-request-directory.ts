@@ -21,6 +21,58 @@ export class IamWorkbenchRequestDirectory {
     private readonly units: HrWorkbenchRequestUnits,
   ) {}
 
+  /** Authoritative current team: own active HR unit, intersected with this branch. */
+  async callCenterTeam(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const client = tx ?? this.database.client;
+    if (tx)
+      await tx.$queryRaw`SELECT user_id FROM iam_user_profiles WHERE user_id=${actor.userId}::uuid FOR SHARE`;
+    const account = await client.user.findFirst({
+      where: {
+        id: actor.userId,
+        status: 'ACTIVE',
+        branches: { some: { branchId, branch: { isActive: true } } },
+      },
+      select: { profile: { select: { organizationUnitId: true } } },
+    });
+    const unitId = account?.profile?.organizationUnitId;
+    if (!unitId || !actor.branchIds.includes(branchId)) return [];
+    if (tx) {
+      await this.units.lock(tx, unitId);
+    }
+    const options = await this.options(actor, branchId, tx);
+    return (
+      options.units
+        .find((unit) => unit.id === unitId)
+        ?.users.map((user) => user.id) ?? []
+    );
+  }
+
+  async callCenterOperator(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    if (!actor.branchIds.includes(branchId)) throw new ForbiddenException();
+    if (tx) {
+      await tx.$queryRaw`SELECT id FROM iam_users WHERE id=${actor.userId}::uuid FOR SHARE`;
+      await tx.$queryRaw`SELECT "userId" FROM iam_user_branches WHERE "userId"=${actor.userId}::uuid AND "branchId"=${branchId}::uuid FOR SHARE`;
+    }
+    const operator = await (tx ?? this.database.client).user.findFirst({
+      where: {
+        id: actor.userId,
+        status: 'ACTIVE',
+        b2bOrganizationUser: null,
+        branches: { some: { branchId, branch: { isActive: true } } },
+      },
+      select: { id: true },
+    });
+    if (!operator) throw new ForbiddenException();
+  }
+
   /** Minimal Call Center branch selector; no IAM administration authority is implied. */
   async callCenterBranches(actor: AuthenticatedActor) {
     if (!actor.permissions.includes('customer_affairs.call_center.read'))

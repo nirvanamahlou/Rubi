@@ -2,6 +2,7 @@ import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-direc
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -161,7 +162,26 @@ export class CallCenterReadService {
     return { data: await this.directory.callCenterBranches(actor) };
   }
   async teams(actor: AuthenticatedActor, branch: string | undefined) {
-    return this.directory.options(actor, this.workflow.scope(actor, branch));
+    const branchId = this.workflow.scope(actor, branch);
+    const options = await this.directory.options(actor, branchId);
+    if (!this.workflow.access.scoped(actor)) return options;
+    const users = actor.permissions.some((p) =>
+      [
+        'customer_affairs.call_center.contacts.read.team',
+        'customer_affairs.call_center.reports.read.team',
+        'customer_affairs.call_center.workflow.manage.team',
+      ].includes(p),
+    )
+      ? await this.directory.callCenterTeam(actor, branchId)
+      : [actor.userId];
+    return {
+      units: options.units
+        .map((unit) => ({
+          ...unit,
+          users: unit.users.filter((user) => users.includes(user.id)),
+        }))
+        .filter((unit) => unit.users.length > 0),
+    };
   }
   async search(
     actor: AuthenticatedActor,
@@ -170,12 +190,18 @@ export class CallCenterReadService {
   ) {
     const branchId = this.workflow.scope(actor, branch);
     const teamUsers = q.teamId
-      ? ((await this.directory.options(actor, branchId)).units
+      ? ((await this.teams(actor, branchId)).units
           .find((t) => t.id === q.teamId)
           ?.users.map((u) => u.id) ?? [])
       : undefined;
     return this.db.client.$transaction(
       async (tx) => {
+        const scope = await this.workflow.access.sql(
+          actor,
+          branchId,
+          'contacts',
+          tx,
+        );
         const coverage = await tx.callCenterCall.count({
           where: { contact: { branchId }, searchVersion: 0 },
         });
@@ -189,7 +215,7 @@ export class CallCenterReadService {
             'داده‌ها تغییر کرده‌اند؛ فهرست را تازه‌سازی کنید.',
           );
         const latest = Prisma.sql`SELECT x.id FROM customer_affairs_calls x WHERE x.contact_id=c.id ORDER BY x.occurred_at DESC,x.id ASC LIMIT 1`;
-        const predicate = this.conditions(branchId, q, teamUsers);
+        const predicate = Prisma.sql`(${this.conditions(branchId, q, teamUsers)}) AND (${scope})`;
         const matching =
           q.scope === 'ANY'
             ? Prisma.sql`EXISTS(SELECT 1 FROM customer_affairs_calls a WHERE a.contact_id=c.id AND ${predicate})`
@@ -239,6 +265,8 @@ export class CallCenterReadService {
     q: CallCenterHistoryDto,
   ) {
     const branchId = this.workflow.scope(actor, branch);
+    if (this.workflow.access.scoped(actor))
+      await this.workflow.access.contact(actor, branchId, id);
     const contact = await this.db.client.callCenterContact.findFirst({
       where: { id, branchId },
       select: { id: true },
@@ -305,6 +333,7 @@ export class CallCenterReadService {
   }
   async kpis(actor: AuthenticatedActor, branch: string | undefined) {
     const branchId = this.workflow.scope(actor, branch);
+    const scope = await this.workflow.access.sql(actor, branchId, 'reports');
     const now = new Date(),
       day = tehranDay(now),
       week = tehranWeek(now);
@@ -328,7 +357,7 @@ export class CallCenterReadService {
       FROM customer_affairs_calls a
       JOIN customer_affairs_call_contacts c ON c.id=a.contact_id
       WHERE c.branch_id=${branchId}::uuid AND a.occurred_at <= ${now}
-        AND (a.origin IS NULL OR a.origin <> 'SYNTHETIC')`;
+        AND (${scope}) AND (a.origin IS NULL OR a.origin <> 'SYNTHETIC')`;
     const row = rows[0]!;
     return {
       data: {
@@ -358,7 +387,7 @@ export class CallCenterReadService {
     const branchId = this.workflow.scope(actor, branch),
       now = new Date();
     const teamUsers = q.teamId
-      ? ((await this.directory.options(actor, branchId)).units
+      ? ((await this.teams(actor, branchId)).units
           .find((t) => t.id === q.teamId)
           ?.users.map((u) => u.id) ?? [])
       : undefined;
@@ -370,6 +399,32 @@ export class CallCenterReadService {
       throw new BadRequestException('بازه گزارش باید حداکثر ۳۶۶ روز باشد.');
     return this.db.client.$transaction(
       async (tx) => {
+        const scope = await this.workflow.access.sql(
+          actor,
+          branchId,
+          'reports',
+          tx,
+        );
+        let contactIdentityScope = Prisma.sql`TRUE`;
+        if (this.workflow.access.scoped(actor)) {
+          try {
+            contactIdentityScope = await this.workflow.access.sql(
+              actor,
+              branchId,
+              'contacts',
+              tx,
+            );
+          } catch (error) {
+            if (!(error instanceof ForbiddenException)) throw error;
+            contactIdentityScope = Prisma.sql`FALSE`;
+          }
+        }
+        const users = await this.workflow.access.users(
+          actor,
+          branchId,
+          'reports',
+          tx,
+        );
         if (
           await tx.callCenterCall.count({
             where: { contact: { branchId }, searchVersion: 0 },
@@ -384,7 +439,7 @@ export class CallCenterReadService {
           { ...q, from: from.toISOString(), to: to.toISOString() },
           teamUsers,
         );
-        const predicate = Prisma.sql`(${callPredicate}) AND (a.origin IS NULL OR a.origin <> 'SYNTHETIC')`;
+        const predicate = Prisma.sql`(${callPredicate}) AND (${scope}) AND (a.origin IS NULL OR a.origin <> 'SYNTHETIC')`;
         const groups = await tx.$queryRaw<
           Array<{
             direction: string;
@@ -407,7 +462,7 @@ export class CallCenterReadService {
           Array<{ contactId: string; latestId: string; count: bigint }>
         >`WITH ranked AS (SELECT a.contact_id, count(*) AS count
           FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id
-          WHERE ${predicate} AND a.direction='OUTBOUND'
+          WHERE ${predicate} AND (${contactIdentityScope}) AND a.direction='OUTBOUND'
           GROUP BY a.contact_id ORDER BY count(*) DESC,a.contact_id ASC LIMIT 5)
           SELECT ranked.contact_id AS "contactId", detail.id AS "latestId", ranked.count
           FROM ranked JOIN customer_affairs_call_contacts c ON c.id=ranked.contact_id
@@ -427,6 +482,7 @@ export class CallCenterReadService {
             branchId,
             category: 'CALL_CENTER_REQUEST',
             createdAt: { gte: from, lt: to },
+            ...(users ? { executionOwnerUserId: { in: users } } : {}),
           },
           _count: true,
         });
@@ -437,6 +493,7 @@ export class CallCenterReadService {
           to,
           now,
           tehranDay(now),
+          users,
         );
         const labels = [
           'نامشخص',

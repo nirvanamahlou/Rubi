@@ -6,6 +6,8 @@ import {
   USER_ACCESS_SCREENS,
   USER_ACCESS_DENY_CONTROLS,
   canViewScreen,
+  canViewRoute,
+  hasScopedCallCenterAccess,
   hasAccessControl,
   allowAccessControl,
   screenPermission,
@@ -71,7 +73,13 @@ export function manualAccessSelection(
     permissionCodes: [
       ...new Set([...codes.filter((c) => !c.startsWith('ui.')), ...portal]),
     ].sort(),
-    screenIds: USER_ACCESS_SCREENS.filter((s) => canViewScreen(codes, s.id))
+    screenIds: USER_ACCESS_SCREENS.filter(
+      (s) =>
+        canViewScreen(codes, s.id) ||
+        (s.id === 'customer-affairs.call-center' &&
+          !hasScopedCallCenterAccess(codes) &&
+          canViewRoute(codes, s.route)),
+    )
       .map((s) => s.id)
       .sort(),
     allowedControlIds: USER_ACCESS_DENY_CONTROLS.filter(

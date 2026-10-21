@@ -36,6 +36,32 @@ const snapshot = (codes: string[]) =>
   role(MANUAL_ACCESS_ROLE_PREFIX + 'one', codes);
 
 describe('manual access migration and enforcement', () => {
+  it('shows the effective legacy Call Center screen without silently opting existing users into new scope', () => {
+    const codes = [
+      MANUAL_ACCESS_VERSION,
+      'ui.profile',
+      'customer_affairs.call_center.read',
+      'ui.screen.customer-affairs.home',
+    ];
+    const before = user([snapshot(codes)]);
+    const preview = previewManualConversion(before);
+    expect(preview.selection.screenIds).toContain(
+      'customer-affairs.call-center',
+    );
+    expect(preview.selection.permissionCodes).not.toContain(
+      'customer_affairs.call_center.scope.v1',
+    );
+    expect(canViewRoute(codes, '/customer-affairs/call-center')).toBe(true);
+    expect(
+      canViewRoute(
+        manualSnapshotCodes(preview.selection),
+        '/customer-affairs/call-center',
+      ),
+    ).toBe(true);
+    expect(preview.selection.permissionCodes).not.toContain(
+      'customer_affairs.call_center.contacts.read.team',
+    );
+  });
   it('keeps extension permissions visible and pricing operations in their actual section', () => {
     expect(manualSectionForPermission('extension.read')).toBe('system');
     expect(manualSectionForPermission('finance.ticket_pricing.manage')).toBe(

@@ -28,6 +28,8 @@ export class CallCenterCustomerService {
     contactId: string,
   ) {
     const branchId = this.workflow.scope(actor, branch);
+    if (this.workflow.access.scoped(actor))
+      await this.workflow.access.contact(actor, branchId, contactId);
     const call = await this.db.client.callCenterCall.findFirst({
       where: { contactId, contact: { branchId } },
       orderBy: [{ occurredAt: 'desc' }, { id: 'asc' }],
@@ -50,6 +52,15 @@ export class CallCenterCustomerService {
         where: { id, branchId, category: 'CALL_CENTER_REQUEST' },
       });
       if (!row) throw new NotFoundException();
+      if (this.workflow.access.scoped(actor)) await this.workflow.access.request(actor, branchId, id, tx);
+      if (this.workflow.access.scoped(actor))
+        await this.workflow.access.contact(
+          actor,
+          branchId,
+          row.callCenterContactId!,
+          'workflow',
+          tx,
+        );
       // Validate current native Customers permission even on retries and clearing a link.
       if (!actor.permissions.includes('customers.read'))
         throw new BadRequestException('مجوز مشاهده مشتری لازم است.');

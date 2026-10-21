@@ -5,6 +5,7 @@ import {
   masterDataResourceParentScreen,
 } from './user-access-controls';
 import { MANUAL_ACCESS_VERSION } from './manual-access';
+import { hasScopedCallCenterAccess } from './call-center-access';
 
 /** IAM-owned screen catalog consumed by the central Web access controls. */
 export const USER_JOB_TITLES = [
@@ -516,6 +517,13 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
     group: 'customer-affairs',
     title: 'امور مشتریان',
     route: '/customer-affairs',
+  },
+  {
+    id: 'customer-affairs.call-center',
+    group: 'customer-affairs',
+    title: 'مشاهده پنل کال سنتر',
+    route: '/customer-affairs/call-center',
+    inheritFrom: 'customer-affairs.home',
   },
   {
     id: 'reservations.home',
@@ -2309,6 +2317,14 @@ export function canViewScreen(
   if (screen && permissions.includes(USER_ACCESS_ADMIN_PERMISSION)) return true;
   if (!screen || !hasGroupPermission(permissions, screen.group)) return false;
   if (!hasAccessControl(permissions, id)) return false;
+  if (
+    id === 'customer-affairs.call-center' &&
+    hasScopedCallCenterAccess(permissions)
+  )
+    return (
+      !hasManagedAccess(permissions) ||
+      permissions.includes(screenPermission(id))
+    );
   // New controls inherit the actual old route decision, not a newly required grant.
   if (id.startsWith('system.module.') && screen.group === 'system')
     return USER_ACCESS_SCREENS.some(
@@ -2394,6 +2410,14 @@ export function canViewRoute(
   permissions: readonly string[],
   href: string,
 ): boolean {
+  // Preserve existing explicitly granted legacy route behavior without migrating accounts.
+  if (
+    href.split(/[?#]/)[0] === '/customer-affairs/call-center' &&
+    !hasScopedCallCenterAccess(permissions) &&
+    permissions.includes('customer_affairs.call_center.read')
+  ) {
+    return canViewScreen(permissions, 'customer-affairs.home');
+  }
   if (
     href.split(/[?#]/)[0] === '/ticket-purchases' ||
     href.startsWith('/ticket-purchases/')

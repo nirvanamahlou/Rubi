@@ -1,4 +1,5 @@
 /** Stored only in an exclusive per-user role. Never inferred from a job title. */
+export * from './call-center-access';
 export const MANUAL_ACCESS_VERSION = 'ui.manual.v3' as const;
 export const MANUAL_ACCESS_ROLE_PREFIX = 'manual-access-v3-' as const;
 export const MANUAL_NEW_PERMISSIONS = [
@@ -29,6 +30,7 @@ export const MANUAL_ACCESS_SECTIONS = [
   ['workbench', 'میزکار من'],
   ['dashboard', 'داشبورد و دستیار هوشمند'],
   ['customers', 'مشتریان و پرونده مسافر'],
+  ['call-center', 'کال سنتر'],
   ['customer-affairs', 'امور مشتریان و پشتیبانی'],
   ['sales', 'قراردادها و فروش'],
   ['flight-pricing', 'قیمت‌گذاری پرواز'],
@@ -57,6 +59,7 @@ export function manualSectionForScreen(screen: {
   group: string;
   route: string;
 }) {
+  if (screen.route === '/customer-affairs/call-center') return 'call-center';
   if (screen.route.startsWith('/sales/ticket-prices')) return 'flight-pricing';
   if (screen.route.startsWith('/sales/pricing')) return 'packages';
   if (screen.route.startsWith('/sales/tours') || screen.id.includes('.tours'))
@@ -70,6 +73,7 @@ export function manualSectionForScreen(screen: {
 }
 
 export function manualSectionForPermission(code: string): string {
+  if (code.startsWith('customer_affairs.call_center.')) return 'call-center';
   if (code.startsWith('finance.accounting.')) return 'accounting';
   if (code.startsWith('finance.ticket_pricing.')) return 'flight-pricing';
   if (code.startsWith('assistant.')) return 'dashboard';
