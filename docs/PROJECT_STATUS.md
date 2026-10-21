@@ -6981,3 +6981,9 @@ Selected published tickets expose the existing single-offer Edit action for past
 ## CONTRACT-PDF-FOOTER-1021 — PC-A
 
 Contract PDF approval/signatures, notices and issuer contact now form a repeating table footer, with native pagination reserving their height on every page. Compact numeric hotel dates, smaller wrapped flight routes, paired party fields and IRR/IRI print label IRR; canonical data and other UI currency formatting unchanged.32 targeted regressions pass locally using source contracts alias; synthetic Chromium one/four-page output visually checked with no overlap. No API/schema/dependency/runtime changes; exact-head hosted gates required before owner-authorized develop merge.
+
+## TICKET-EXTRA-CITY-1021 — PC-A — ready for CI
+
+Added sales-destination cities now inherit the primary route country and reset when it changes. A scoped CSS selector excludes the whole added-destinations container from the primary two-column field grid; each added city uses the same label/control widths as the city above. Both forward and return route composition/capacity remain intact.219 Ticket Catalog tests pass with one existing skip; scoped lint/format pass. No API/schema/migration/dependency/permission or stored-data changes. User authorizes develop merge and prompt server update after exact-head gates, preserving the current production release, settings and data with backup and immutable Web build.
+
+TICKET-EXTRA-CITY-1021:219 local and219 isolated server-image Ticket Catalog tests pass; all8 hosted gates passed on744df105. Final documentation-only conflict integration is being revalidated; production Web build and backup/guarded activation follow. No source patch, schema or operational-data change in conflict resolution.

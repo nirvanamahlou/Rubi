@@ -250,9 +250,6 @@ export function FlightScheduleForm({
   const [multipleDestinations, setMultipleDestinations] = useState(
     Boolean(defaults.input.saleRoutes?.length),
   );
-  const [routeCountries, setRouteCountries] = useState<Record<number, string>>(
-    {},
-  );
   const [start, setStart] = useState(defaults.start),
     [end, setEnd] = useState(defaults.end);
   const [allowPastDate, setAllowPastDate] = useState(defaults.allowPastDate);
@@ -279,29 +276,37 @@ export function FlightScheduleForm({
   const ref = (kind: Reference['kind'], id: string) =>
     references.find((r) => r.kind === kind && r.id === id);
   const patchSegment = (patch: Partial<Segment>) =>
-    setInput((current) => ({
-      ...current,
-      segments: [{ ...current.segments[0]!, ...patch }],
-      saleRoutes: current.saleRoutes
-        ?.map((r) =>
-          input.journeyRole === 'return'
-            ? {
-                ...r,
-                destinationId: patch.destinationCityId ?? r.destinationId,
-              }
-            : { ...r, originId: patch.originCityId ?? r.originId },
-        )
-        .filter(
-          (r) =>
-            !(
-              r.destinationId ===
-                (patch.destinationCityId ??
-                  current.segments[0]!.destinationCityId) &&
-              r.originId ===
-                (patch.originCityId ?? current.segments[0]!.originCityId)
-            ),
-        ),
-    }));
+    setInput((current) => {
+      const previous = current.segments[0]!;
+      const countryKey = `${saleSide}CountryId` as const;
+      const changedCountry =
+        patch[countryKey] !== undefined &&
+        patch[countryKey] !== previous[countryKey];
+      return {
+        ...current,
+        segments: [{ ...previous, ...patch }],
+        saleRoutes: current.saleRoutes
+          ?.map((route) => ({
+            ...route,
+            ...(changedCountry ? { [saleField]: '' } : {}),
+            ...(current.journeyRole === 'return'
+              ? {
+                  destinationId: patch.destinationCityId ?? route.destinationId,
+                }
+              : { originId: patch.originCityId ?? route.originId }),
+          }))
+          .filter(
+            (route) =>
+              !(
+                route.destinationId &&
+                route.originId &&
+                route.destinationId ===
+                  (patch.destinationCityId ?? previous.destinationCityId) &&
+                route.originId === (patch.originCityId ?? previous.originCityId)
+              ),
+          ),
+      };
+    });
   const picker = (
     id: string,
     label: string,
@@ -491,7 +496,7 @@ export function FlightScheduleForm({
           { countryId: segment[`${side}CountryId`] },
         )}
         {side === saleSide && (
-          <div className="grid gap-2">
+          <div className={styles.extraDestinations}>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -510,31 +515,10 @@ export function FlightScheduleForm({
                   همه مقصدها از ظرفیت همین پرواز استفاده می‌کنند.
                 </p>
                 {(input.saleRoutes ?? []).map((saleRoute, index) => (
-                  <div key={index} className="grid gap-2 rounded-lg border p-2">
-                    {picker(
-                      'sale-country-' + index,
-                      'کشور',
-                      'countries',
-                      'country',
-                      routeCountries[index] ??
-                        ref('city', saleRoute[saleField])?.countryId ??
-                        segment[`${saleSide}CountryId`],
-                      (r) => {
-                        setRouteCountries((c) => ({
-                          ...c,
-                          [index]: r?.id ?? '',
-                        }));
-                        setInput((c) => ({
-                          ...c,
-                          saleRoutes: c.saleRoutes?.map((v, i) =>
-                            i === index ? { ...v, [saleField]: '' } : v,
-                          ),
-                        }));
-                      },
-                    )}
+                  <div key={index} className={styles.extraDestination}>
                     {picker(
                       'sale-destination-' + index,
-                      'مقصد فروش',
+                      'شهر',
                       'cities',
                       'city',
                       saleRoute[saleField],
@@ -546,10 +530,7 @@ export function FlightScheduleForm({
                           ),
                         })),
                       {
-                        countryId:
-                          routeCountries[index] ??
-                          ref('city', saleRoute[saleField])?.countryId ??
-                          segment[`${saleSide}CountryId`],
+                        countryId: segment[`${saleSide}CountryId`],
                       },
                     )}
                     <Button
@@ -562,7 +543,6 @@ export function FlightScheduleForm({
                             (_, i) => i !== index,
                           ),
                         }));
-                        setRouteCountries({});
                       }}
                     >
                       حذف مقصد
@@ -572,7 +552,10 @@ export function FlightScheduleForm({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={(input.saleRoutes?.length ?? 0) >= 20}
+                  disabled={
+                    !segment[`${saleSide}CountryId`] ||
+                    (input.saleRoutes?.length ?? 0) >= 20
+                  }
                   onClick={() =>
                     setInput((c) => ({
                       ...c,
