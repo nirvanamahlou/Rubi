@@ -65,3 +65,17 @@ export function confirmFloatingFlight(
     ? { ...normalized, confirmation: 'saved' }
     : { ...value, confirmation: 'invalid' };
 }
+
+/** Reuse the saved Tehran civil day when a draft is restored without search UI state. */
+export function floatingFlightDate(value: string): string {
+  if (!value) return '';
+  if (!/(?:Z|[+-]\d{2}:\d{2})$/.test(value))
+    return /^(\d{4}-\d{2}-\d{2})T/.exec(value)?.[1] ?? '';
+  if (!Number.isFinite(Date.parse(value))) return '';
+  return new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Tehran',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(value));
+}

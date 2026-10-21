@@ -7,6 +7,7 @@ import { TimePicker } from '@/components/ui/time-picker';
 import {
   confirmFloatingFlight,
   floatingFlightClock,
+  floatingFlightDate,
   floatingFlightTimes,
 } from '../model/floating-flight-times';
 import { SalesThemedSelect } from './sales-themed-select';
@@ -42,6 +43,7 @@ export function ContractFlightEditor({
         افزودن بلیط شناور
       </Button>
     );
+  const date = flightDate || floatingFlightDate(value.departureAt);
   const patch = (next: Partial<ContractFlightDraft>) =>
     onChange({ ...value, ...next, confirmation: undefined });
   return (
@@ -100,12 +102,12 @@ export function ContractFlightEditor({
         <FormField label="ساعت حرکت" required>
           <TimePicker
             aria-label="ساعت حرکت بلیط شناور"
-            disabled={!flightDate}
+            disabled={!date}
             value={floatingFlightClock(value.departureAt)}
             onChange={(e) =>
               onChange(
                 floatingFlightTimes(
-                  flightDate,
+                  date,
                   { ...value, confirmation: undefined },
                   {
                     departure: e.target.value,
@@ -118,12 +120,12 @@ export function ContractFlightEditor({
         <FormField label="ساعت رسیدن" required>
           <TimePicker
             aria-label="ساعت رسیدن بلیط شناور"
-            disabled={!flightDate}
+            disabled={!date}
             value={floatingFlightClock(value.arrivalAt)}
             onChange={(e) =>
               onChange(
                 floatingFlightTimes(
-                  flightDate,
+                  date,
                   { ...value, confirmation: undefined },
                   {
                     arrival: e.target.value,
@@ -153,12 +155,12 @@ export function ContractFlightEditor({
       </div>
       <Button
         type="button"
-        onClick={() => onChange(confirmFloatingFlight(flightDate, value))}
+        onClick={() => onChange(confirmFloatingFlight(date, value))}
       >
         ثبت بلیط شناور
       </Button>
       {value.confirmation === 'saved' &&
-      value.departureAt.startsWith(flightDate + 'T') ? (
+      value.departureAt.startsWith(date + 'T') ? (
         <p role="status">بلیط شناور ثبت شد.</p>
       ) : null}
       {value.confirmation === 'invalid' ? (
