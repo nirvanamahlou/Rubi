@@ -1,3 +1,4 @@
+import { readContractFlightFacts } from '@/modules/sales/model/contract-flight-facts';
 import { languageFromCookies } from '@/i18n/language';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -54,6 +55,7 @@ export async function GET(
     };
     const c = output.contract;
     const refs: ContractPrintReferences = { names: {} };
+    refs.flightFacts = await readContractFlightFacts(output, get);
     const keys = [
       ['cities', c.originId],
       ['cities', c.destinationId],

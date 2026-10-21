@@ -70,3 +70,28 @@ describe('flight ticket placement and English carrier', () => {
     ).toContain('&lt;img onerror=bad&gt;');
   });
 });
+
+it('uses the airport city and IATA instead of the commercial route city on the ticket', () => {
+  const original = structuredClone(data);
+  const html = ticketPageHtml(
+    {
+      ...data,
+      offers: [
+        {
+          ...flight,
+          destinationAirport: {
+            code: 'GZP',
+            name: 'Gazipasa Airport',
+            cityName: 'Gazipasa',
+          },
+        },
+      ],
+    },
+    { teh: 'Tehran', ayt: 'Commercial Antalya' },
+    { name: 'Test', logoDataUrl: '' },
+  );
+  expect(html).toContain('Gazipasa');
+  expect(html).toContain('GZP');
+  expect(html).not.toContain('Commercial Antalya');
+  expect(data).toEqual(original);
+});

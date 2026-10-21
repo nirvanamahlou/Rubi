@@ -40,10 +40,7 @@ export function ReferencePicker({
   const [open, setOpen] = useState(false),
     [search, setSearch] = useState(''),
     [attempt, setAttempt] = useState(0);
-  const enabled =
-    !readOnly &&
-    (resource !== 'cities' || Boolean(countryId)) &&
-    (resource !== 'airports' || Boolean(cityId));
+  const enabled = !readOnly && (resource !== 'cities' || Boolean(countryId));
   const key = JSON.stringify([resource, search, countryId, cityId, attempt]);
   const [result, setResult] = useState<{
     key: string;
@@ -68,7 +65,9 @@ export function ReferencePicker({
               .filter(
                 (item) =>
                   (resource !== 'cities' || item.countryId === countryId) &&
-                  (resource !== 'airports' || item.cityId === cityId),
+                  (resource !== 'airports' ||
+                    !cityId ||
+                    item.cityId === cityId),
               )
               .slice(0, 6),
           });
@@ -133,9 +132,7 @@ export function ReferencePicker({
             placeholder={
               resource === 'cities' && !countryId
                 ? 'ابتدا کشور را انتخاب کنید'
-                : resource === 'airports' && !cityId
-                  ? 'ابتدا شهر را انتخاب کنید'
-                  : 'جست‌وجو و انتخاب…'
+                : 'جست‌وجو و انتخاب…'
             }
             onValueChange={(id) =>
               onSelect(current?.rows.find((row) => row.id === id))
