@@ -3923,5 +3923,8 @@
   "واگذاری دسترسی قدیمی و بدون محدوده کال سنتر از اختیار شما خارج است.": "Delegating legacy unscoped Call Center access exceeds your authority.",
   "کودک (2-6)": "Child (2-6)",
   "کودک (6-12)": "Child (6-12)",
-  "کودک (12-18)": "Child (12-18)"
+  "کودک (12-18)": "Child (12-18)",
+  "انتخاب پرونده در ردیف مسافر": "Select an existing profile in this passenger row",
+  "اطلاعات و ترتیب تاریخ بلیط‌های انتخاب‌شده را بررسی کنید.": "Check the selected flight details and date order.",
+  "اطلاعات مسیر و خدمات انتخاب‌شده را کامل کنید.": "Complete the route and selected service details."
 }
