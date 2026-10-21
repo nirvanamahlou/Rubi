@@ -1,4 +1,3 @@
-import { readPassengerHotelPrices } from './passenger-flight-prices';
 import type { SalesContractCreateRequest, SalesServiceInput } from './index';
 export interface SalesPassengerHotelStayV1 {
   checkInDate: string;
@@ -60,11 +59,8 @@ export function validatePassengerHotelStays(
     Object.keys(stays).some((id) => !guests.some((p) => p.customerId === id))
   )
     throw Error('اقامت باید فقط برای مهمانان هتل ثبت شود.');
-  const prices = readPassengerHotelPrices(input.services, input.passengers);
   for (const p of guests) {
     const stay = stays[p.customerId];
-    if (stay?.different && !prices?.[p.customerId]?.length)
-      throw Error('مبلغ اقامت متفاوت مسافر را وارد کنید.');
     if (!stay) throw Error('تاریخ اقامت مسافر ثبت نشده است.');
     if (
       !stay.different &&
