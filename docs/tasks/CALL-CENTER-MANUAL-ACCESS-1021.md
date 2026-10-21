@@ -144,5 +144,20 @@ data. No operational rollout or rollback is performed in this task.
   serializable`; its output was not trusted. Hand-authored DDL was rehearsed on
   PostgreSQL instead. No load-test or measured QPS claim.
 
-Remaining publication gates: final lint/types/build/check review and task PR to
-develop. Merge/deployment is not authorized by this implementation request.
+## Publication handoff
+
+Integrate released develop e5c7a42d without editing peer Sales source; preserve its
+three child-age translations alongside all 17 Call Center keys and regenerate
+the conflicted offline catalogues. PC-C readiness snapshot 5d3ebb3f is frozen and
+source locks explicitly released; it is not merged here. Its future media paths
+must use the exported domain scope port in integration review; retain its separate
+recordings.read permission when unioning shared catalogues.
+
+Final ordinary IAM suite: 206 pass, 5 optional skips; Contracts191, Web119,
+Call Center PostgreSQL63, isolated IAM PostgreSQL/policy21, seed1 and English
+coverage3 pass. Later compiler retries hit Windows native memory and a bounded
+1536MiB heap limit, without TypeScript diagnostics; earlier complete API/Web
+types/build checkpoints passed. Do not report those final retries as passed.
+Draft PR/exact-head hosted quality/test/type/build/database gates and review are
+required before readiness/merge. Source/schema/translation locks freeze and
+release at candidate publication. No merge/deployment is authorized here.
