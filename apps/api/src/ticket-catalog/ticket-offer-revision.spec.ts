@@ -4,6 +4,7 @@ import type { ProcurementPublicService } from '../procurement/procurement-public
 import {
   TicketPublicService,
   ticketLoadGroupId,
+  scheduledReturnDate,
 } from './ticket-public.service';
 
 const id = '10000000-0000-4000-8000-000000000001';
@@ -613,8 +614,7 @@ describe('published ticket revision', () => {
   );
 });
 
-it('preserves source load identity when an explicit scheduled return date is present', async () => {
-  const { scheduledReturnDate } = await import('./ticket-public.service');
+it('preserves source load identity when an explicit scheduled return date is present', () => {
   const key =
     'ticket-catalog:ticket-load:123e4567-e89b-42d3-a456-426614174000:0:return-date:2026-10-22';
   expect(ticketLoadGroupId(key)).toBe('123e4567-e89b-42d3-a456-426614174000');
