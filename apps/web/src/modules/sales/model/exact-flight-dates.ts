@@ -43,11 +43,13 @@ export function pairedReturnDate(
           back.remainingCapacity >= seats &&
           back.cabinClassCode === out.cabinClassCode &&
           eligibleReturn(out, back) &&
+          (!out.scheduledReturnDate ||
+            flightDay(back) === out.scheduledReturnDate) &&
           (ids.size
             ? ids.has(back.id)
             : Boolean(
                 out.loadGroupId &&
-                out.returnMaxDays != null &&
+                (out.returnMaxDays != null || out.scheduledReturnDate) &&
                 out.loadGroupId === back.loadGroupId,
               )),
       )
@@ -70,10 +72,13 @@ export function pairedReturnOffer(
   const eligible = returning.filter(
     (back) =>
       back.cabinClassCode === outbound.cabinClassCode &&
-      eligibleReturn(outbound, back),
+      eligibleReturn(outbound, back) &&
+      (!outbound.scheduledReturnDate ||
+        flightDay(back) === outbound.scheduledReturnDate),
   );
   const loadPartners =
-    outbound.loadGroupId && outbound.returnMaxDays != null
+    outbound.loadGroupId &&
+    (outbound.returnMaxDays != null || outbound.scheduledReturnDate)
       ? eligible.filter((back) => back.loadGroupId === outbound.loadGroupId)
       : [];
   const pricedIds = new Set(

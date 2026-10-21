@@ -612,3 +612,15 @@ describe('published ticket revision', () => {
     },
   );
 });
+
+it('preserves source load identity when an explicit scheduled return date is present', async () => {
+  const { scheduledReturnDate } = await import('./ticket-public.service');
+  const key =
+    'ticket-catalog:ticket-load:123e4567-e89b-42d3-a456-426614174000:0:return-date:2026-10-22';
+  expect(ticketLoadGroupId(key)).toBe('123e4567-e89b-42d3-a456-426614174000');
+  expect(scheduledReturnDate(key)).toBe('2026-10-22');
+  expect(
+    scheduledReturnDate(key.replace('2026-10-22', '2026-02-30')),
+  ).toBeUndefined();
+  expect(scheduledReturnDate('legacy-key')).toBeUndefined();
+});

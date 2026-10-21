@@ -6936,3 +6936,8 @@ Power status toggle now renders independently of the future-date single-ticket e
 ## HR-EXTENSION-1021 — PC-B — READY_FOR_CI
 
 Optional employee extension is connected to create/edit, employee table/search and existing table exports. Existing HR-owned records store the business extension with real employee FK; employee CAS/transaction/audit and read-only generic-resource protection preserve one active value. Omitted edits preserve and blank clears; Persian/Arabic digits normalize without losing leading zeros. No schema/migration, dependency, IAM or design changes. All35 isolated PostgreSQL HR tests and48 Web checks pass; hosted exact-head gates precede user-authorized develop merge.
+
+
+## EXACT-PAIRED-RETURN-1021 — candidate
+
+Explicit planned return day from weekly schedules is preserved in catalog source identity and exposed as optional scheduledReturnDate in managed offer projections. Sales narrows existing eligible same-load candidates to that exact Tehran day; missing/ambiguous partners stay manual and manual return changes remain unchanged. No inference from Max days, migration or production writes. Existing legacy source keys remain compatible. Focused regression and complete hosted gates required before owner-authorized develop merge.

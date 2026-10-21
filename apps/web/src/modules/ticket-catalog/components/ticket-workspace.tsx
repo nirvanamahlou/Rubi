@@ -679,7 +679,13 @@ function TicketCatalogWorkspace() {
       pendingCreate.current = {
         signature,
         groupId,
-        ids: inputs.map((_, index) => `ticket-load:${groupId}:${index}`),
+        ids: inputs.map(
+          (input, index) =>
+            `ticket-load:${groupId}:${index}` +
+            (input.scheduledReturnDate
+              ? `:return-date:${input.scheduledReturnDate}`
+              : ''),
+        ),
       };
     }
     const createdIds: string[] = [];
