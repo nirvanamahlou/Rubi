@@ -6920,3 +6920,7 @@ Validation:208 Ticket Catalog tests pass (one pre-existing skip), including Tehr
 ## FLIGHT-LOAD-ACTIONS-1021 — PC-A
 
 Restored Edit Load below selected outbound/return details using existing exact-server-group expansion, cached definitions and weekly group editor/save flow. Reserve Capacity remains visible with a disabled reason for inactive, departed or sold-out offers; existing server hold command and eligibility remain unchanged. Single-ticket view/edit and status controls retained; no delete controls added.205 Ticket Catalog regressions pass (one pre-existing skip), scoped lint/format pass. Final Web type/build and exact-head hosted checks gate explicitly authorized develop merge. No API/schema/migration/dependency/permission/runtime or operational-data change. Flight-load model/grid/reference peer work untouched. Source locks release at candidate publication.
+
+## SERVER-REFRESH-CLEANUP-1021 — PC-A
+
+Production cleanup:25 remaining defined offers archived using existing audited TicketPublicService.archiveBatch after verified encrypted database/documents backup; zero blockers and zero unarchived offers after re-query. Historical contracts, allocations and financial data retained. Release candidate integrates develop6e7a1d06 with already-live historical date defaults and Master Data form access comparison so a refresh does not regress either fix. PDF Chromium/B Nazanin runtime retained. Full build, reviewed additive migrations, backup and health/data-volume checks gate application switch; no seed or local3100 change.

@@ -88,7 +88,7 @@ export function flightScheduleDefaults(
       mode: null as 'one-way' | 'round-trip' | null,
       start: '',
       end: '',
-      allowPastDate: false,
+      allowPastDate: true,
       weekdays: [] as WeekdayStay[],
       outboundTime: {
         departure: '',
