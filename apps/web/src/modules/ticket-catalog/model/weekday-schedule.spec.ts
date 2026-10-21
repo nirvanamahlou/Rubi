@@ -197,6 +197,16 @@ describe('weekly flight schedule', () => {
         .filter((p) => p.journeyRole !== 'return')
         .map((p) => p.returnMaxDays),
     ).toEqual([15, 15]);
+    expect(
+      manual
+        .filter((p) => p.journeyRole !== 'return')
+        .map((p) => p.scheduledReturnDate),
+    ).toEqual(['2026-10-05', '2026-10-11']);
+    expect(
+      manual
+        .filter((p) => p.journeyRole === 'return')
+        .every((p) => !p.scheduledReturnDate),
+    ).toBe(true);
     const unlimited = buildWeekdayTickets(
       dates,
       { ...outbound, returnMaxDays: null },

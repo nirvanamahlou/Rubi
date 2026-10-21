@@ -147,6 +147,7 @@ export function buildWeekdayTickets(
       ...template,
       serviceDate: date,
       tripGroupId: group,
+      scheduledReturnDate: undefined,
       segments: [{ ...segment, departureAt, arrivalAt }],
       fare: { ...template.fare },
     };
