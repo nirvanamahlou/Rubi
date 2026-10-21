@@ -1,4 +1,5 @@
 import { readPublicDocument } from '@/modules/travel-documents/server/public-document-store';
+import { publicDocumentContentSecurityPolicy } from '@/modules/travel-documents/server/public-document-headers';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 const headers = {
@@ -7,8 +8,7 @@ const headers = {
   'X-Robots-Tag': 'noindex, nofollow, noarchive',
   'Referrer-Policy': 'no-referrer',
   'X-Frame-Options': 'DENY',
-  'Content-Security-Policy':
-    "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; sandbox allow-popups",
+  'Content-Security-Policy': publicDocumentContentSecurityPolicy,
 };
 export async function GET(
   _request: Request,

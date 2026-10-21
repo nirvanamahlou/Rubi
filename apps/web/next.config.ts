@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { publicDocumentContentSecurityPolicy } from './src/modules/travel-documents/server/public-document-headers';
 
 const allowedDevOrigins = (process.env.NORA_ALLOWED_DEV_ORIGINS ?? '')
   .split(',')
@@ -39,6 +40,15 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value:
               "object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+          },
+        ],
+      },
+      {
+        source: '/d/:token',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: publicDocumentContentSecurityPolicy,
           },
         ],
       },
