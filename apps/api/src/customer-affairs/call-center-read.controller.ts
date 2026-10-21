@@ -43,6 +43,14 @@ export class CallCenterReadController {
   ) {
     return this.service.teams(req.actor, branch);
   }
+  @Get('kpis')
+  @Header('Cache-Control', 'private, no-store')
+  kpis(
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch: string | undefined,
+  ) {
+    return this.service.kpis(req.actor, branch);
+  }
   @Post('search')
   @Header('Cache-Control', 'private, no-store')
   search(

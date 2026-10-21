@@ -127,126 +127,129 @@ const employeeInput = (name: string, extras: Record<string, unknown> = {}) => ({
 describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
   'HR real authenticated PostgreSQL commands',
   () => {
-    beforeAll(async () => {
-      const env = parseEnv(
-        readFileSync(
-          process.env.NORA_HR_TEST_ENV_FILE ?? resolve(process.cwd(), '.env'),
-          'utf8',
-        ),
-      );
-      const url = new URL(env.DATABASE_URL!);
-      if (
-        !['localhost', '127.0.0.1'].includes(url.hostname) ||
-        url.port !== (process.env.NORA_HR_TEST_PORT ?? '55432') ||
-        !/^nora_hr_test_[a-f0-9]{32}$/.test(databaseName)
-      )
-        throw new Error(
-          'Only a randomly named isolated local HR test database is permitted.',
-        );
-      sql('postgres', `CREATE DATABASE "${databaseName}";`);
-      created = true;
-      const migrationsDirectory = resolve(
-        process.cwd(),
-        '../../packages/database/prisma/migrations',
-      );
-      sql(
-        databaseName,
-        readdirSync(migrationsDirectory, { withFileTypes: true })
-          .filter((item) => item.isDirectory())
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map((item) =>
-            readFileSync(
-              resolve(migrationsDirectory, item.name, 'migration.sql'),
-              'utf8',
-            ),
-          )
-          .join('\n'),
-      );
-      url.pathname = `/${databaseName}`;
-      client = createDatabaseClient(url.toString());
-      const database = { client } as DatabaseService;
-      iam = new IamService(
-        database,
-        new JwtService({
-          secret: randomBytes(48).toString('base64'),
-          signOptions: { issuer: 'nora-api', audience: 'nora-web' },
-          verifyOptions: { issuer: 'nora-api', audience: 'nora-web' },
-        }),
-        new MfaTotpService(new ConfigService(env)),
-      );
-      directory = new HrDirectoryService(
-        database,
-        iam,
-        new MasterHrDirectory(database),
-      );
-      service = new HrService(
-        database,
-        iam,
-        new DocumentsService(
-          new DocumentsRepository(
-            database,
-            new NotificationsService(new NotificationsRepository(database)),
+    beforeAll(
+      async () => {
+        const env = parseEnv(
+          readFileSync(
+            process.env.NORA_HR_TEST_ENV_FILE ?? resolve(process.cwd(), '.env'),
+            'utf8',
           ),
-          {} as LocalDocumentStorage,
-          { available: false } as DocumentsScanProcessor,
+        );
+        const url = new URL(env.DATABASE_URL!);
+        if (
+          !['localhost', '127.0.0.1'].includes(url.hostname) ||
+          url.port !== (process.env.NORA_HR_TEST_PORT ?? '55432') ||
+          !/^nora_hr_test_[a-f0-9]{32}$/.test(databaseName)
+        )
+          throw new Error(
+            'Only a randomly named isolated local HR test database is permitted.',
+          );
+        sql('postgres', `CREATE DATABASE "${databaseName}";`);
+        created = true;
+        const migrationsDirectory = resolve(
+          process.cwd(),
+          '../../packages/database/prisma/migrations',
+        );
+        sql(
+          databaseName,
+          readdirSync(migrationsDirectory, { withFileTypes: true })
+            .filter((item) => item.isDirectory())
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((item) =>
+              readFileSync(
+                resolve(migrationsDirectory, item.name, 'migration.sql'),
+                'utf8',
+              ),
+            )
+            .join('\n'),
+        );
+        url.pathname = `/${databaseName}`;
+        client = createDatabaseClient(url.toString());
+        const database = { client } as DatabaseService;
+        iam = new IamService(
+          database,
+          new JwtService({
+            secret: randomBytes(48).toString('base64'),
+            signOptions: { issuer: 'nora-api', audience: 'nora-web' },
+            verifyOptions: { issuer: 'nora-api', audience: 'nora-web' },
+          }),
+          new MfaTotpService(new ConfigService(env)),
+        );
+        directory = new HrDirectoryService(
+          database,
           iam,
+          new MasterHrDirectory(database),
+        );
+        service = new HrService(
+          database,
+          iam,
+          new DocumentsService(
+            new DocumentsRepository(
+              database,
+              new NotificationsService(new NotificationsRepository(database)),
+            ),
+            {} as LocalDocumentStorage,
+            { available: false } as DocumentsScanProcessor,
+            iam,
+            directory,
+          ),
           directory,
-        ),
-        directory,
-      );
-      await client.branch.createMany({
-        data: [
-          { id: branchA, code: 'HR-TEST-A', name: 'Synthetic A' },
-          { id: branchB, code: 'HR-TEST-B', name: 'Synthetic B' },
-        ],
-      });
-      const adminResult = await actor(
-        'hr_test_admin',
-        [
-          ...HR_PERMISSION_CODES,
-          'documents.metadata.read',
-          'documents.hr.read',
-        ],
-        [branchA, branchB],
-      );
-      admin = adminResult.actor;
-      adminCookie = adminResult.cookie;
-      await client.masterCurrency.create({
-        data: {
-          code: 'IRR',
-          name: 'Synthetic Rial',
-          createdByUserId: admin.userId,
-          updatedByUserId: admin.userId,
-        },
-      });
-      const selfResult = await actor('hr_test_self', ['hr.self'], [branchA]);
-      self = selfResult.actor;
-      selfCookie = selfResult.cookie;
-      outsider = (
-        await actor('hr_test_outsider', ['hr.read', 'hr.manage'], [branchB])
-      ).actor;
-      reader = (await actor('hr_test_reader', ['hr.read'], [branchA])).actor;
-      const module = await Test.createTestingModule({
-        controllers: [
-          HrController,
-          HrConnectionsController,
-          HrDirectoryController,
-        ],
-        providers: [
-          AuthGuard,
-          { provide: IamService, useValue: iam },
-          { provide: HrService, useValue: service },
-          { provide: HrDirectoryService, useValue: directory },
-          {
-            provide: HrConnectionsService,
-            useValue: (connections = new HrConnectionsService(database)),
+        );
+        await client.branch.createMany({
+          data: [
+            { id: branchA, code: 'HR-TEST-A', name: 'Synthetic A' },
+            { id: branchB, code: 'HR-TEST-B', name: 'Synthetic B' },
+          ],
+        });
+        const adminResult = await actor(
+          'hr_test_admin',
+          [
+            ...HR_PERMISSION_CODES,
+            'documents.metadata.read',
+            'documents.hr.read',
+          ],
+          [branchA, branchB],
+        );
+        admin = adminResult.actor;
+        adminCookie = adminResult.cookie;
+        await client.masterCurrency.create({
+          data: {
+            code: 'IRR',
+            name: 'Synthetic Rial',
+            createdByUserId: admin.userId,
+            updatedByUserId: admin.userId,
           },
-        ],
-      }).compile();
-      app = module.createNestApplication();
-      app.setGlobalPrefix('api/v1');
-      await app.init();
-    }, 60000);
+        });
+        const selfResult = await actor('hr_test_self', ['hr.self'], [branchA]);
+        self = selfResult.actor;
+        selfCookie = selfResult.cookie;
+        outsider = (
+          await actor('hr_test_outsider', ['hr.read', 'hr.manage'], [branchB])
+        ).actor;
+        reader = (await actor('hr_test_reader', ['hr.read'], [branchA])).actor;
+        const module = await Test.createTestingModule({
+          controllers: [
+            HrController,
+            HrConnectionsController,
+            HrDirectoryController,
+          ],
+          providers: [
+            AuthGuard,
+            { provide: IamService, useValue: iam },
+            { provide: HrService, useValue: service },
+            { provide: HrDirectoryService, useValue: directory },
+            {
+              provide: HrConnectionsService,
+              useValue: (connections = new HrConnectionsService(database)),
+            },
+          ],
+        }).compile();
+        app = module.createNestApplication();
+        app.setGlobalPrefix('api/v1');
+        await app.init();
+      },
+      process.env.NORA_HR_TEST_SLOW_HOST === '1' ? 180000 : 60000,
+    );
     afterAll(async () => {
       if (app) await app.close();
       if (client) await client.$disconnect();
@@ -2308,6 +2311,168 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         ).rejects.toThrow();
         await service.deleteRecord(device.id, String(unchanged.version), admin);
       } finally {
+        if (previousKey === undefined)
+          delete process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
+        else process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 = previousKey;
+      }
+    });
+    it('atomically creates the Radan personnel identity and contacts with replay, permission and rollback guards', async () => {
+      const previousKey = process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
+      process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 =
+        randomBytes(32).toString('base64');
+      const identity = [
+        'Atomic',
+        'Personnel',
+        '0123456789',
+        '',
+        '',
+        '1990-01-02',
+        'مرد',
+        'مجرد',
+        'تهران',
+        'تهران',
+        'کارشناسی',
+        'ایرانی',
+        'نامشخص',
+        'Synthetic private address',
+      ];
+      const input = employeeInput('Atomic Personnel', {
+        firstName: 'Atomic',
+        lastName: 'Personnel',
+        identityValues: identity,
+        contactValues: [
+          ['موبایل', '09123456789'],
+          ['خانه', '02112345678'],
+        ],
+      });
+      const commandKey = key();
+      let id: string | undefined;
+      try {
+        const response = await request(app.getHttpServer())
+          .post('/api/v1/hr/employees')
+          .set('Cookie', adminCookie)
+          .set('Idempotency-Key', commandKey)
+          .send(input)
+          .expect(201);
+        const created = response.body as HrEmployeeDto;
+        id = created.id;
+        expect(
+          (await service.createEmployee(input, commandKey, admin)).id,
+        ).toBe(id);
+        const rows = await client.hrRecord.findMany({
+          where: { employeeId: id, tab: { in: ['identity', 'phones'] } },
+        });
+        expect(rows).toHaveLength(3);
+        const identityRow = rows.find((row) => row.tab === 'identity')!;
+        expect(
+          revealHrValues(
+            identityRow.data,
+            `${branchA}:${id}:employee.identity`,
+          ),
+        ).toEqual(identity);
+        expect(JSON.stringify(rows)).not.toContain(identity[13]);
+        expect(JSON.stringify(created)).not.toContain(identity[2]);
+        expect(
+          (
+            await service.listRecords(
+              { section: 'employee', tab: 'identity', employeeId: id },
+              admin,
+            )
+          ).items[0]?.values,
+        ).toEqual(identity);
+        const audit = await client.hrAuditEvent.findMany({
+          where: { employeeId: id },
+        });
+        expect(JSON.stringify(audit)).not.toContain(identity[13]);
+        const count = await client.hrEmployee.count({
+          where: { name: 'Atomic Personnel' },
+        });
+        await expect(
+          service.createEmployee(
+            { ...input, contactValues: [['موبایل', 'bad']] },
+            key(),
+            admin,
+          ),
+        ).rejects.toThrow();
+        await expect(
+          service.createEmployee(
+            {
+              ...input,
+              contactValues: [
+                ['موبایل', '0912-3456789'],
+                ['موبایل', '۰۹۱۲۳۴۵۶۷۸۹'],
+              ],
+            },
+            key(),
+            admin,
+          ),
+        ).rejects.toThrow();
+        await expect(
+          service.createEmployee(
+            {
+              ...input,
+              identityValues: [
+                ...identity.slice(0, 2),
+                'bad',
+                ...identity.slice(3),
+              ],
+            },
+            key(),
+            admin,
+          ),
+        ).rejects.toThrow();
+        await expect(
+          service.createEmployee(input, key(), {
+            ...admin,
+            permissions: admin.permissions.filter((p) => p !== 'hr.sensitive'),
+          }),
+        ).rejects.toThrow();
+        expect(
+          await client.hrEmployee.count({
+            where: { name: 'Atomic Personnel' },
+          }),
+        ).toBe(count);
+        const longFirstName = 'A'.repeat(81);
+        await expect(
+          service.createEmployee(
+            employeeInput(`${longFirstName} Worker`, {
+              identityValues: [longFirstName, 'Worker', ...identity.slice(2)],
+              contactValues: [],
+            }),
+            key(),
+            admin,
+          ),
+        ).rejects.toThrow();
+        expect(
+          await client.hrEmployee.count({
+            where: { name: `${longFirstName} Worker` },
+          }),
+        ).toBe(0);
+        await expect(
+          service.updateEmployee(
+            id,
+            { version: created.version, identityValues: identity },
+            admin,
+          ),
+        ).rejects.toThrow();
+        await expect(
+          service.createEmployee(
+            { ...input, contactValues: [] },
+            commandKey,
+            admin,
+          ),
+        ).rejects.toThrow();
+      } finally {
+        if (id)
+          await client.hrRecord.updateMany({
+            where: { employeeId: id },
+            data: { deletedAt: new Date() },
+          });
+        if (id)
+          await client.hrEmployee.update({
+            where: { id },
+            data: { deletedAt: new Date() },
+          });
         if (previousKey === undefined)
           delete process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
         else process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 = previousKey;

@@ -382,16 +382,7 @@ function Content({
         branchId={branch}
         actorId={actorId}
         canManage={canManage}
-        incomplete={
-          reportError || report?.data.unindexed
-            ? undefined
-            : report?.data.incomplete
-        }
-        onIncomplete={() => {
-          change('incomplete', 'YES');
-          change('scope', 'ANY');
-          searchInput.current?.focus();
-        }}
+        refreshKey={refresh}
       />
       <section className={styles.filterPanel} aria-label="جست‌وجو و فیلترها">
         <div className={styles.filters}>
@@ -863,74 +854,6 @@ function ReportPanel({
         </p>
       )}
       <ReportHighlights data={r} agents={agents} />
-      <div className={styles.reports}>
-        <div>
-          <h3>جهت، نتیجه و روش ثبت تماس</h3>
-          <table className={`${styles.table} ${styles.centeredTable}`}>
-            <thead>
-              <tr>
-                <th>جهت تماس</th>
-                <th>نتیجه تماس</th>
-                <th>روش ثبت</th>
-                <th>تعداد</th>
-              </tr>
-            </thead>
-            <tbody>
-              {r.groups.map((g, i) => (
-                <tr key={i}>
-                  <td>{g.direction === 'INBOUND' ? 'ورودی' : 'خروجی'}</td>
-                  <td>{outcomes[g.outcome ?? 'UNKNOWN']}</td>
-                  <td>
-                    {g.origin === 'MANUAL'
-                      ? 'دستی'
-                      : g.origin === 'TELEPHONY'
-                        ? 'تلفنی'
-                        : 'نامشخص'}
-                  </td>
-                  <td>{faNumber(g.count)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div>
-          <h3>درخواست‌های ایجادشده در بازه</h3>
-          <p>کل شعبه؛ وضعیت فعلی، مستقل از فیلتر تماس</p>
-          {!r.requests.length && <p>درخواستی در این بازه ثبت نشده است.</p>}
-          {r.requests.map((s) => (
-            <p key={s.status}>
-              {requestLabels[s.status] ?? s.status}: {faNumber(s.count)}
-            </p>
-          ))}
-        </div>
-        <div>
-          <h3>پیگیری‌های شعبه</h3>
-          <p>
-            باز، امروز و عقب‌افتاده: موجودی فعلی کل شعبه؛ انجام‌شده: تاریخ انجام
-            در بازه گزارش.
-          </p>
-          <div className={styles.taskMetrics}>
-            {[
-              ['باز', r.tasks.open],
-              ['امروز', r.tasks.today],
-              ['عقب‌افتاده', r.tasks.overdue],
-              ['انجام‌شده', r.tasks.completed],
-            ].map(([label, value]) => (
-              <article key={label}>
-                <span>{label}</span>
-                <strong>{faNumber(Number(value))}</strong>
-              </article>
-            ))}
-          </div>
-          <p>امروز و عقب‌افتاده زیرمجموعه پیگیری‌های باز هستند.</p>
-          <p>
-            نرخ انجام به‌موقع:{' '}
-            {r.tasks.onTimeRate === null
-              ? 'قابل محاسبه نیست؛ پیگیری انجام‌شده‌ای در بازه وجود ندارد.'
-              : `${faNumber(Math.round(r.tasks.onTimeRate * 100))}٪ (${faNumber(r.tasks.onTime)} از ${faNumber(r.tasks.completed)})`}
-          </p>
-        </div>
-      </div>
 
       <p>
         مخاطب یکتا = گروه شماره در شعبه؛ هر تماس با شماره نامعلوم جداست. زمان
