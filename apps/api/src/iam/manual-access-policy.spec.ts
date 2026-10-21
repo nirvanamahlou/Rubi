@@ -14,6 +14,7 @@ import {
   manualAccessRevision,
   manualSnapshotCodes,
   previewManualConversion,
+  canDelegateCallCenterScopeFlag,
   type ManualAccessUser,
 } from './manual-access-policy';
 
@@ -36,6 +37,44 @@ const snapshot = (codes: string[]) =>
   role(MANUAL_ACCESS_ROLE_PREFIX + 'one', codes);
 
 describe('manual access migration and enforcement', () => {
+  it('does not let an unrelated IAM operator impose the hidden Call Center policy flag', () => {
+    const before = {
+      permissionCodes: ['customer_affairs.call_center.read'],
+      screenIds: ['customer-affairs.call-center'],
+      allowedControlIds: [],
+    };
+    const flagOnly = {
+      ...before,
+      permissionCodes: [
+        ...before.permissionCodes,
+        'customer_affairs.call_center.scope.v1',
+      ],
+    };
+    expect(
+      canDelegateCallCenterScopeFlag(['iam.users.manage'], before, flagOnly),
+    ).toBe(false);
+    expect(
+      canDelegateCallCenterScopeFlag(
+        ['customer_affairs.call_center.read'],
+        before,
+        flagOnly,
+      ),
+    ).toBe(false);
+    expect(
+      canDelegateCallCenterScopeFlag(
+        ['customer_affairs.call_center.read'],
+        before,
+        { ...before, screenIds: [] },
+      ),
+    ).toBe(true);
+    expect(
+      canDelegateCallCenterScopeFlag(
+        ['customer_affairs.call_center.scope.v1'],
+        before,
+        flagOnly,
+      ),
+    ).toBe(true);
+  });
   it('shows the effective legacy Call Center screen without silently opting existing users into new scope', () => {
     const codes = [
       MANUAL_ACCESS_VERSION,

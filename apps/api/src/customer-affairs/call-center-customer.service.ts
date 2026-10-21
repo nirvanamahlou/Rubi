@@ -52,7 +52,8 @@ export class CallCenterCustomerService {
         where: { id, branchId, category: 'CALL_CENTER_REQUEST' },
       });
       if (!row) throw new NotFoundException();
-      if (this.workflow.access.scoped(actor)) await this.workflow.access.request(actor, branchId, id, tx);
+      if (this.workflow.access.scoped(actor))
+        await this.workflow.access.request(actor, branchId, id, tx);
       if (this.workflow.access.scoped(actor))
         await this.workflow.access.contact(
           actor,

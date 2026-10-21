@@ -28,6 +28,7 @@ import {
   manualAccessSelection,
   manualSnapshotCodes,
   previewManualConversion,
+  canDelegateCallCenterScopeFlag,
 } from './manual-access-policy';
 import { readB2bAccessSnapshot } from '../b2b/b2b-access-snapshot.public';
 import type { ManualUserAccessDto } from './dto/manual-user-access.dto';
@@ -302,7 +303,8 @@ export class ManualUserAccessService {
             b2bOrganizationUser: await readB2bAccessSnapshot(tx, operator.id),
           });
           // This sticky, restrictive policy flag adds no operation/data authority.
-          delegable.permissionCodes.push(CALL_CENTER_SCOPED_ACCESS);
+          if (canDelegateCallCenterScopeFlag(authority, before, requested))
+            delegable.permissionCodes.push(CALL_CENTER_SCOPED_ACCESS);
           delegable.allowedControlIds = delegable.allowedControlIds.filter(
             (id) => {
               if (!hasAccessControl(authority, id)) return false;

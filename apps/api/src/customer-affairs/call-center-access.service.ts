@@ -95,7 +95,7 @@ export class CallCenterAccessService {
     const users = await this.users(actor, branchId, purpose, tx);
     if (purpose === 'reports' && users !== null)
       return users.length
-      ? Prisma.sql`(a.created_by_user_id IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))}) OR EXISTS(SELECT 1 FROM call_center_telephony_sessions s WHERE s."callId"=a.id AND s."claimUserId" IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))})))`
+        ? Prisma.sql`(a.created_by_user_id IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))}) OR EXISTS(SELECT 1 FROM call_center_telephony_sessions s WHERE s."callId"=a.id AND s."claimUserId" IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))})))`
         : Prisma.sql`FALSE`;
     return users === null
       ? Prisma.sql`TRUE`
