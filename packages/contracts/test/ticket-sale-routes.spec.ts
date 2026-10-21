@@ -9,7 +9,7 @@ describe('shared flight commercial routes', () => {
     arrivalAt: '2099-01-01T10:00:00Z',
   };
   it('admits only explicit pairs without changing canonical endpoints', () => {
-    const before = structuredClone(outbound);
+    const before = JSON.stringify(outbound);
     expect(
       ticketOfferMatchesRoute(outbound, {
         originId: 'tehran',
@@ -28,7 +28,7 @@ describe('shared flight commercial routes', () => {
         destinationId: 'izmir',
       }),
     ).toBe(false);
-    expect(outbound).toEqual(before);
+    expect(JSON.stringify(outbound)).toBe(before);
   });
   it('accepts an explicit shared reverse route while preserving date limits', () => {
     const returning = {
