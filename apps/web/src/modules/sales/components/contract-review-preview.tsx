@@ -1,4 +1,5 @@
 'use client';
+import { useFlightDocumentFacts } from './use-flight-document-facts';
 import { useMemo } from 'react';
 import { useLegalEntityContext } from '@/modules/legal-entities/components/legal-entity-context';
 import { contractReviewOutput } from '../model/contract-review';
@@ -19,6 +20,20 @@ export function ContractReviewPreview({
 }) {
   const { context } = useLegalEntityContext();
   const company = context?.legalEntity;
+  const flightFacts = useFlightDocumentFacts(
+    [state.outboundOffer, state.returnOffer].flatMap((offer) =>
+      offer
+        ? [
+            {
+              offerId: offer.id,
+              originId: offer.originId,
+              destinationId: offer.destinationId,
+              cabinClassCode: offer.cabinClassCode,
+            },
+          ]
+        : [],
+    ),
+  );
   const preview = useMemo(() => {
     if (!company)
       return { error: 'برای پیش‌نمایش قرارداد، شرکت فعال را انتخاب کنید.' };
@@ -26,6 +41,7 @@ export function ContractReviewPreview({
       const hotel = references.hotels.find((h) => h.id === state.hotel.hotelId);
       const refs: ContractPrintReferences = {
         international: salesInternationalTravel(state),
+        flightFacts,
         names: Object.fromEntries(
           Object.values(references)
             .flat()
@@ -59,7 +75,7 @@ export function ContractReviewPreview({
             : 'اطلاعات قرارداد برای پیش‌نمایش کامل نیست.',
       };
     }
-  }, [state, references, company]);
+  }, [state, references, company, flightFacts]);
   return (
     <section
       className="grid min-w-0 gap-3"

@@ -12,8 +12,10 @@ export type ReservationPdfTicket = Omit<FlightTicketSheetData, 'offers'> & {
   offers: readonly (FlightTicketSheetData['offers'][number] & {
     offerId?: string | undefined;
     baggageKg?: string | null | undefined;
-    originAirport?: { code: string; name: string } | undefined;
-    destinationAirport?: { code: string; name: string } | undefined;
+    originAirport?:
+      { code: string; name: string; cityName?: string } | undefined;
+    destinationAirport?:
+      { code: string; name: string; cityName?: string } | undefined;
     arrivalAt?: string;
     direction: 'OUTBOUND' | 'RETURN';
   })[];

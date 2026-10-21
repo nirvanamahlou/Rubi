@@ -12,8 +12,9 @@ export interface TicketLayoutFlight {
   businessOutput?: boolean;
   contractOnly?: boolean;
   baggageKg?: string | null | undefined;
-  originAirport?: { code: string; name: string } | undefined;
-  destinationAirport?: { code: string; name: string } | undefined;
+  originAirport?: { code: string; name: string; cityName?: string } | undefined;
+  destinationAirport?:
+    { code: string; name: string; cityName?: string } | undefined;
 }
 export interface TicketLayoutData {
   passengerName: string;
@@ -122,7 +123,7 @@ export function ticketPageHtml(
   const carrier = [airline?.code, carrierName(offers[0]?.carrierName || '')]
     .filter(Boolean)
     .join(' — ');
-  const documentInfo = `<section class="document-info"><div><span>E-Ticket No</span><strong>${escape(data.eTicketNumber || '')}</strong></div><div><span>AIRLINE</span><strong>${escape(carrier)}</strong></div><div><span>RLOC</span><strong>${escape(offers.map((offer) => `${city(offer.originId)} → ${city(offer.destinationId)}`).join(' / '))}</strong></div><div><span>DATE OF ISSUE</span><strong>${data.issuedAt && Number.isFinite(Date.parse(data.issuedAt)) ? day(data.issuedAt) : ''}</strong></div></section>`;
+  const documentInfo = `<section class="document-info"><div><span>E-Ticket No</span><strong>${escape(data.eTicketNumber || '')}</strong></div><div><span>AIRLINE</span><strong>${escape(carrier)}</strong></div><div><span>RLOC</span><strong>${escape(offers.map((offer) => `${offer.originAirport?.cityName || offer.originAirport?.name || city(offer.originId)} → ${offer.destinationAirport?.cityName || offer.destinationAirport?.name || city(offer.destinationId)}`).join(' / '))}</strong></div><div><span>DATE OF ISSUE</span><strong>${data.issuedAt && Number.isFinite(Date.parse(data.issuedAt)) ? day(data.issuedAt) : ''}</strong></div></section>`;
   const traveler = [title, data.passengerName].filter(Boolean).join(' ');
   const qr = ticketReferenceQr(data.contractNumber || '');
   const legs = offers
@@ -131,8 +132,16 @@ export function ticketPageHtml(
         ...savedOffer,
         carrierName: carrierName(savedOffer.carrierName),
       };
-      const origin = city(offer.originId),
-        destination = city(offer.destinationId);
+      const origin =
+          offer.originAirport?.cityName ||
+          (offer.originAirport
+            ? offer.originAirport.name
+            : city(offer.originId)),
+        destination =
+          offer.destinationAirport?.cityName ||
+          (offer.destinationAirport
+            ? offer.destinationAirport.name
+            : city(offer.destinationId));
       const direction =
         offer.direction === 'RETURN'
           ? 'RETURN'

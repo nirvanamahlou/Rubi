@@ -181,18 +181,13 @@ export class TicketPublicService {
   ) {}
 
   private async validateAirports(value: TicketOfferCreateV1) {
-    for (const [id, cityId] of [
-      [value.originAirportId, value.originId],
-      [value.destinationAirportId, value.destinationId],
-    ]) {
+    for (const id of [value.originAirportId, value.destinationAirportId]) {
       if (!id) continue;
       if (!this.master)
         throw new BadRequestException('مرجع فرودگاه در دسترس نیست.');
       const { data } = await this.master.detail('airports', id);
-      if (data.status !== 'active' || data.attributes.cityId !== cityId)
-        throw new BadRequestException(
-          'فرودگاه انتخاب‌شده با شهر مسیر مطابقت ندارد.',
-        );
+      if (data.status !== 'active')
+        throw new BadRequestException('مرجع فرودگاه در دسترس نیست.');
     }
   }
 
@@ -236,7 +231,10 @@ export class TicketPublicService {
     // Ticket output consumers need this minimal reference projection, not Catalog administration.
     if (
       !actor.permissions.includes('ticket_catalog.read') &&
-      !actor.permissions.includes('reservations.read')
+      !actor.permissions.includes('reservations.read') &&
+      !actor.permissions.includes('sales.contracts.read.own') &&
+      !actor.permissions.includes('sales.contracts.read.branch') &&
+      !actor.permissions.includes('sales.contracts.read.all')
     )
       throw new ForbiddenException('مجوز مشاهده اطلاعات بلیط وجود ندارد.');
     if (uuid.validate(id).error)

@@ -7,7 +7,7 @@ type SavedOffer = Pick<
   TicketLayoutFlight,
   'originId' | 'destinationId' | 'cabinClassCode' | 'businessOutput'
 > & { offerId?: string | undefined };
-/** Public catalog read adapter. Never replaces the contract's saved route/time/class. */
+/** Selected airport geography is display-only; saved commercial route/time/class stay intact. */
 export async function readTicketDocumentFacts(
   offers: readonly SavedOffer[],
   get: (path: string) => Promise<Response>,
@@ -43,10 +43,7 @@ export async function readTicketDocumentFacts(
           data.destinationId !== offer.destinationId
         )
           return;
-        const airport = async (
-          id: string | null | undefined,
-          cityId: string,
-        ) => {
+        const airport = async (id: string | null | undefined) => {
           if (!id) return undefined;
           const result = await get(
             `/master-data/airports/${encodeURIComponent(id)}`,
@@ -63,20 +60,37 @@ export async function readTicketDocumentFacts(
               };
             };
           };
-          if (!item || item.attributes.cityId !== cityId) return undefined;
+          if (!item) return undefined;
+          const cityId = item.attributes.cityId;
+          let cityName: string | undefined;
+          if (cityId) {
+            const cityResponse = await get(
+              `/master-data/cities/${encodeURIComponent(cityId)}`,
+            ).catch(() => null);
+            if (cityResponse?.ok) {
+              const body = (await cityResponse.json().catch(() => null)) as {
+                data?: {
+                  id: string;
+                  name: string;
+                  attributes: { englishName?: string };
+                };
+              } | null;
+              if (body?.data?.id === cityId)
+                cityName = body.data.attributes.englishName || body.data.name;
+            }
+          }
           const iata = (item.attributes.iataCode || item.code)
             .trim()
             .toUpperCase();
           return {
             code: /^[A-Z]{3}$/.test(iata) ? iata : '—',
             name: item.attributes.englishName || item.name,
+            ...(cityName ? { cityName } : {}),
           };
         };
         const [originAirport, destinationAirport] = await Promise.all([
-          airport(data.originAirportId, offer.originId).catch(() => undefined),
-          airport(data.destinationAirportId, offer.destinationId).catch(
-            () => undefined,
-          ),
+          airport(data.originAirportId).catch(() => undefined),
+          airport(data.destinationAirportId).catch(() => undefined),
         ]);
         facts[offer.offerId!] = {
           originAirport,

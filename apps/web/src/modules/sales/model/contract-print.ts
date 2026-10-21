@@ -1,3 +1,4 @@
+import type { TicketDocumentFacts } from '@/modules/ticket-catalog/public/document-details';
 import { readPassengerTotalPrices } from '@nora/contracts';
 import { readPassengerHotelStays } from '@nora/contracts';
 import { salesRoomDisplayName } from '@nora/contracts';
@@ -22,6 +23,7 @@ import { contractPendingQrHtml } from './contract-pending-qr';
 
 export interface ContractPrintReferences {
   names: Record<string, string>;
+  flightFacts?: Record<string, TicketDocumentFacts>;
   hotelGrade?: string;
   hotelLatinName?: string;
   hotelWebsite?: string;
@@ -365,7 +367,15 @@ export function contractPrintHtml(
       const business =
         c.servicesDetail.find((s) => s.clientKey === t.serviceClientKey)
           ?.metadata?.businessOutput === true;
-      return `<tr><td>${e(name(t.originId))} ← ${e(name(t.destinationId))}<small>${t.direction === 'RETURN' ? 'برگشت' : 'رفت'}${t.source === 'CONTRACT_ONLY' ? ' · شناور، نیازمند تأیید رزرو' : ''}</small></td><td>${e(t.carrierNameSnapshot)}</td><td><bdi>${e(t.serviceNumberSnapshot)}</bdi></td><td>${e(travelDate(t.departureAt))}</td><td>${e(time(t.departureAt))}</td><td>${e(business ? 'BUSINESS' : t.cabinClassCode)}</td></tr>`;
+      const facts = t.offerId ? refs.flightFacts?.[t.offerId] : undefined;
+      const endpoint = (
+        airport: TicketDocumentFacts['originAirport'],
+        id: string,
+      ) =>
+        airport
+          ? `${airport.cityName || airport.name} (${airport.code})`
+          : name(id);
+      return `<tr><td>${e(endpoint(facts?.originAirport, t.originId))} ← ${e(endpoint(facts?.destinationAirport, t.destinationId))}<small>${t.direction === 'RETURN' ? 'برگشت' : 'رفت'}${t.source === 'CONTRACT_ONLY' ? ' · شناور، نیازمند تأیید رزرو' : ''}</small></td><td>${e(t.carrierNameSnapshot)}</td><td><bdi>${e(t.serviceNumberSnapshot)}</bdi></td><td>${e(travelDate(t.departureAt))}</td><td>${e(time(t.departureAt))}</td><td>${e(business ? 'BUSINESS' : t.cabinClassCode)}</td></tr>`;
     })
     .join('');
   const issuerName =
