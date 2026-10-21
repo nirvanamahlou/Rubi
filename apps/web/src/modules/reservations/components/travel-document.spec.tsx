@@ -1,3 +1,4 @@
+import type * as PublicDocumentModule from '@/modules/travel-documents/public/use-public-document-link';
 const qrState = vi.hoisted(() => ({
   current: {
     status: 'ready',
@@ -8,9 +9,7 @@ const qrState = vi.hoisted(() => ({
 vi.mock(
   '@/modules/travel-documents/public/use-public-document-link',
   async (importOriginal) => ({
-    ...(await importOriginal<
-      typeof import('@/modules/travel-documents/public/use-public-document-link')
-    >()),
+    ...(await importOriginal<typeof PublicDocumentModule>()),
     usePublicDocumentLink: () => qrState.current,
   }),
 );
