@@ -157,7 +157,8 @@ export function ContractFlightEditor({
       >
         ثبت بلیط شناور
       </Button>
-      {value.confirmation === 'saved' ? (
+      {value.confirmation === 'saved' &&
+      value.departureAt.startsWith(flightDate + 'T') ? (
         <p role="status">بلیط شناور ثبت شد.</p>
       ) : null}
       {value.confirmation === 'invalid' ? (
