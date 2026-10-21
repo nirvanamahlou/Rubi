@@ -1,3 +1,7 @@
+## DOCUMENT-QR-LINKS-1021 — PC-A — 2026-10-21
+
+Implemented encrypted immutable public document capabilities for contracts, supplier reservation forms, individual passenger tickets and vouchers, matching the owner's explicit no-login/unguessable-link choice. Canonical authorized PDF producers publish separate snapshots; batch tickets remain passenger-isolated, sent settings and existing issuance/cancellation/financial guards remain authoritative. Exact public proxy exception and inert private responses added; no schema/dependency/API domain change.85 focused tests pass, including token isolation/tampering/configuration/public access and canonical form/voucher/ticket publication; full Web lint passes. Full Web typecheck and production build pass; hosted exact-head PR checks remain the merge gate. Runtime canonical origin/private durable directory/key must be configured and backed up for owner-authorized activation; legacy PDFs require regeneration. See tasks/DOCUMENT-QR-LINKS-1021.md. No merge or server/local runtime change yet.
+
 ## AIRCRAFT-INACTIVE-VISIBLE-1021 — PC-B — 2026-10-21
 
 Aircraft default list/export no longer applies a hidden active-only status behind the visible all-status filter. Explicit transport filters, unchanged mutation refresh and inactive badge retained; other resources unchanged.69 focused tests, scoped lint and diff checks pass; types/build and exact-head hosted checks pending before owner-authorized push/develop merge. No schema/API/permission/data/deployment changes. See tasks/AIRCRAFT-INACTIVE-VISIBLE-1021.md.
