@@ -1,3 +1,7 @@
+## AIRCRAFT-INACTIVE-VISIBLE-1021 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-aircraft-inactive-visible-1021 from develop720cabaf. Owner requests aircraft types remain listed after deactivation with inactive status and explicitly authorizes push/develop merge. Reserve transportation workspace list/export query construction, new pure status-filter helper/tests, existing workspace regressions and own status notes. UI already shows transportStatus=all but generic hidden status=active removes inactive aircraft. Only aircraft types use all base statuses; explicit transport status selections and other resources retain their behavior. Existing save/status badge/CAS/permission/API/schema/migration/dependencies unchanged. No operational mutations or deployment. Prior transport locks released; no overlapping active source reservation found. Source locks release on publication.
+
 ## COUNTRY-GMT-1021 — PC-B — IN_PROGRESS
 
 Also reserve the additive countries.gmtOffset editable-field contract consumed by IAM field-control catalogue and Web forms; no implicit grant or existing permission change. Internal read-heavy reference data in existing deployment; no new architecture/scaling/SLO claim. Expand-only nullable column; retain on application rollback.
@@ -8746,6 +8750,10 @@ FLIGHT-LOAD-POWER-1021 — READY_FOR_CI: existing Power control visible for sele
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-extension-1021 from origin/develop397ad411. User requests optional employee extension in create/edit/table, tests, push and develop merge. Reserve HR employee API/dialog/table and focused tests, additive optional employee v1 extension contract plus one read-only internal employee-contact record definition, own docs and related i18n keys/derived outputs. Use existing HR-owned record storage with real employee FK, employee CAS/transaction and audit; no new UI section, schema/migration/dependency/lockfile, IAM or runtime changes. Producer HR returns optional extension; legacy omission preserves it and blank clears. Shared source reservation limited to HR contract/registry/columns and i18n leaves. Prior PR1015 merged/released; no overlapping HR source lock found.
 
 HR-EXTENSION-1021 validation:35 complete isolated PostgreSQL HR tests and48 focused Web checks pass; final2 extension regressions confirm original personnel-field order and leading-zero rendering. Scoped API/Web lint and translation sync pass. No schema/migration/dependency/runtime/operational data change. Reservations freeze/release with publication; exact-head hosted full checks gate authorized develop merge.
+
+## EXACT-PAIRED-RETURN-1021 — PC-A — IN_PROGRESS
+
+Reserve bounded Ticket Catalog scheduled return identity, shared optional TicketOffer preferred return date, API source-key decoder and Sales paired-return consumers/tests. Preserve explicit planned return day in immutable source identity; legacy keys remain compatible and ambiguous records stay manual. No migration/dependency or production-data edits. Producer Web schedule/create key; consumer API search/calendar and Sales date/card. Owner authorizes develop merge after all gates.
 
 ## FLIGHT-AIRPORT-ENDPOINTS-1021 — PC-A — IN_PROGRESS
 

@@ -67,8 +67,7 @@ export interface ProductDisplaySnapshot {
   destination: string;
 }
 export interface ProductInput {
-  saleRoutes?:
-    readonly TicketSaleRouteV1[] | undefined;
+  saleRoutes?: readonly TicketSaleRouteV1[] | undefined;
   economyBaggageKg?: string | null;
   businessBaggageKg?: string | null;
   returnMinDays?: number | null;
@@ -82,6 +81,7 @@ export interface ProductInput {
   /** Gregorian service day. Schedule timestamps remain optional. */
   serviceDate?: string | undefined;
   tripGroupId?: string | undefined;
+  scheduledReturnDate?: string | undefined;
   display?: ProductDisplaySnapshot | undefined;
   segments: readonly Segment[];
   flightClassId: string;

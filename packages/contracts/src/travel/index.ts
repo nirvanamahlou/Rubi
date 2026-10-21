@@ -110,6 +110,8 @@ export {
 export interface TicketOfferV1 {
   /** Additional commercial routes sharing this exact offer/inventory. */
   saleRoutes?: readonly TicketSaleRouteV1[];
+  /** Explicit planned return day from the registered schedule, never inferred from Min/Max. */
+  scheduledReturnDate?: string;
   /** Actual airports chosen in ticket definition; absent on legacy offers. */
   originAirportId?: string | null;
   destinationAirportId?: string | null;

@@ -50,7 +50,7 @@ export function ticketLoadGroupId(
   auditAction?: string | null,
 ) {
   const match =
-    /^ticket-catalog:ticket-load:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):\d+$/i.exec(
+    /^ticket-catalog:ticket-load:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):\d+(?::return-date:\d{4}-\d{2}-\d{2})?$/i.exec(
       createKey ?? '',
     );
   if (match?.[1]) return match[1];
@@ -72,6 +72,15 @@ function selectedRoutesReverse(
     (outbound.originId === returning.destinationId &&
       outbound.destinationId === returning.originId)
   );
+}
+export function scheduledReturnDate(createKey: string | null | undefined) {
+  const day = /:return-date:(\d{4}-\d{2}-\d{2})$/.exec(createKey ?? '')?.[1];
+  if (!day) return undefined;
+  const value = new Date(day + 'T00:00:00Z');
+  return Number.isFinite(value.getTime()) &&
+    value.toISOString().slice(0, 10) === day
+    ? day
+    : undefined;
 }
 const capacityHoldSchema = Joi.object({
   quantity: Joi.number().integer().min(1).max(100000).required(),
@@ -634,6 +643,9 @@ export class TicketPublicService {
               }
             : {}),
           ...(loadGroupId ? { loadGroupId } : {}),
+          ...(scheduledReturnDate(row.createKey)
+            ? { scheduledReturnDate: scheduledReturnDate(row.createKey)! }
+            : {}),
         };
       }),
     };
@@ -762,6 +774,9 @@ export class TicketPublicService {
           originId: query.originId,
           destinationId: query.destinationId,
           ...(loadGroupId ? { loadGroupId } : {}),
+          ...(scheduledReturnDate(row.createKey)
+            ? { scheduledReturnDate: scheduledReturnDate(row.createKey)! }
+            : {}),
         };
       }),
       hasMore: rows.length > 50,

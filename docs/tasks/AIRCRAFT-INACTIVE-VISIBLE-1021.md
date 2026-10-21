@@ -1,0 +1,5 @@
+# AIRCRAFT-INACTIVE-VISIBLE-1021
+
+PC-B; branch codex/pc-b-aircraft-inactive-visible-1021 from develop720cabaf. Aircraft tab and clear filters show all transport statuses but generic status remained active. Backend correctly honors status and excludes inactive rows when no explicit transportStatus is sent. Fix only aircraft list/export base status to all while preserving explicit ACTIVE/INACTIVE/UNDER_REVIEW and all other resource policies. Existing mutation reload and inactive table badge remain unchanged. No API/schema/dependency/IAM or operational data/runtime changes; push/develop merge explicitly authorized, no deployment.
+
+69 focused Web tests pass across status policy, workspace wiring, transport columns/forms/KPIs. Query regressions cover all hidden base states, explicit visible filters, inactive saved-row inclusion and non-aircraft compatibility. Workspace wiring regression covers shared list/export policy, save reload, reset and inactive badge. Scoped lint and diff checks pass; types/build and exact-head hosted checks required before merge. No browser acceptance claim. Source locks release on publication.
