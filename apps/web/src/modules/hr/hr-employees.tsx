@@ -236,7 +236,7 @@ export function HrEmployeeEditor({
         }))}
         userOptionsError={external.error}
         referenceLoading={references.loading || profile.loading}
-        referenceError={references.error || profile.error}
+        referenceError={references.error || profile.error || ''}
         onRetryReferences={() => {
           profile.retry();
           void store.refresh().catch(() => undefined);
