@@ -4,6 +4,7 @@ import {
   transportColumnValue,
 } from '../model/transport-columns';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
+import { transportStatusFilters } from '../model/transport-status-filters';
 import {
   MasterDataDateRangeFilter,
   useMasterDataDateRange,
@@ -425,9 +426,8 @@ export function MasterDataTransportationWorkspace() {
       const response = await masterDataApi.list(resource, {
         ...columnFilters,
         ...dateFilters,
-        ...(transportStatus !== 'all' ? { transportStatus } : {}),
+        ...transportStatusFilters(resource, status, transportStatus),
         search,
-        status,
         sortBy: 'name',
         sortDirection: 'asc',
         page,
@@ -579,10 +579,9 @@ export function MasterDataTransportationWorkspace() {
           ...columnFilters,
           ...dateFilters,
           search,
-          status,
+          ...transportStatusFilters(resource, status, transportStatus),
           sortBy: 'name',
           sortDirection: 'asc',
-          ...(transportStatus !== 'all' ? { transportStatus } : {}),
         },
         columns: [
           ...new Set([

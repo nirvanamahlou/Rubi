@@ -1,3 +1,7 @@
+## AIRCRAFT-INACTIVE-VISIBLE-1021 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-aircraft-inactive-visible-1021 from develop720cabaf. Owner requests aircraft types remain listed after deactivation with inactive status and explicitly authorizes push/develop merge. Reserve transportation workspace list/export query construction, new pure status-filter helper/tests, existing workspace regressions and own status notes. UI already shows transportStatus=all but generic hidden status=active removes inactive aircraft. Only aircraft types use all base statuses; explicit transport status selections and other resources retain their behavior. Existing save/status badge/CAS/permission/API/schema/migration/dependencies unchanged. No operational mutations or deployment. Prior transport locks released; no overlapping active source reservation found. Source locks release on publication.
+
 ## COUNTRY-GMT-1021 — PC-B — IN_PROGRESS
 
 Also reserve the additive countries.gmtOffset editable-field contract consumed by IAM field-control catalogue and Web forms; no implicit grant or existing permission change. Internal read-heavy reference data in existing deployment; no new architecture/scaling/SLO claim. Expand-only nullable column; retain on application rollback.
