@@ -79,6 +79,7 @@ export interface ProductInput {
   /** Gregorian service day. Schedule timestamps remain optional. */
   serviceDate?: string | undefined;
   tripGroupId?: string | undefined;
+  scheduledReturnDate?: string | undefined;
   display?: ProductDisplaySnapshot | undefined;
   segments: readonly Segment[];
   flightClassId: string;

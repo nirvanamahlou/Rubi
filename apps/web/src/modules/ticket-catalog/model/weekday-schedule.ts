@@ -147,6 +147,7 @@ export function buildWeekdayTickets(
       ...template,
       serviceDate: date,
       tripGroupId: group,
+      scheduledReturnDate: undefined,
       segments: [{ ...segment, departureAt, arrivalAt }],
       fare: { ...template.fare },
     };
@@ -169,6 +170,7 @@ export function buildWeekdayTickets(
       outboundTime,
       group,
     );
+    if (pair.returning) going.scheduledReturnDate = pair.returning;
     inputs.push(going);
     if (!pair.returning || !returning) continue;
     const back = make(returning, pair.returning, returnTime, group);

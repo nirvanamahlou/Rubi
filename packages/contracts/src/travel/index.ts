@@ -100,6 +100,8 @@ export {
 } from './ticket-return-window';
 
 export interface TicketOfferV1 {
+  /** Explicit planned return day from the registered schedule, never inferred from Min/Max. */
+  scheduledReturnDate?: string;
   /** Actual airports chosen in ticket definition; absent on legacy offers. */
   originAirportId?: string | null;
   destinationAirportId?: string | null;

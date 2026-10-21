@@ -8751,6 +8751,10 @@ COMPUTER_ID=PC-B; branch codex/pc-b-hr-extension-1021 from origin/develop397ad41
 
 HR-EXTENSION-1021 validation:35 complete isolated PostgreSQL HR tests and48 focused Web checks pass; final2 extension regressions confirm original personnel-field order and leading-zero rendering. Scoped API/Web lint and translation sync pass. No schema/migration/dependency/runtime/operational data change. Reservations freeze/release with publication; exact-head hosted full checks gate authorized develop merge.
 
+## EXACT-PAIRED-RETURN-1021 — PC-A — IN_PROGRESS
+
+Reserve bounded Ticket Catalog scheduled return identity, shared optional TicketOffer preferred return date, API source-key decoder and Sales paired-return consumers/tests. Preserve explicit planned return day in immutable source identity; legacy keys remain compatible and ambiguous records stay manual. No migration/dependency or production-data edits. Producer Web schedule/create key; consumer API search/calendar and Sales date/card. Owner authorizes develop merge after all gates.
+
 ## FLIGHT-AIRPORT-ENDPOINTS-1021 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-flight-airport-endpoints-1021 from origin/develop01f962d0. User explicitly permits airport city differing from commercial origin/destination, requests actual airport city/IATA in ticket and contract flight information only, and develop merge. Reserve Ticket Catalog ReferencePicker/weekly/advanced selectors, airport-reference validator and focused tests; bounded public document-facts reader and shared ticket layout, Sales contract print/reference consumers and regressions; own notes. Keep commercial route IDs, matching, hotel/contract destination, times, capacities and historical snapshots unchanged. Producer/consumer compatibility: no wire/schema change; existing optional airport IDs remain authoritative, minimal branch-authorized document-details may be read by Sales output consumers. Unknown/unavailable airport city stays unguessed with legacy route fallback. Prior source scopes released; no active overlapping source lock found. No migration/dependency, runtime or operational data changes.
