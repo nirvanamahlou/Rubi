@@ -12,6 +12,8 @@ import { TelephonyIntegrationService } from '../telephony.service';
 import { IssabelService } from './issabel.service';
 import { IssabelRecordingsService } from './recordings.service';
 import { normalizeIssabelEvent } from './events';
+import { issabelOptions, type IssabelOptions } from './config';
+import type { AmiMessage } from './ami';
 
 describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
   'Issabel actual PostgreSQL delivery',
@@ -452,6 +454,133 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         await db.integrationTelephonyRecording.count({ where: { id } }),
       ).toBe(0);
       await expect(media.start(input)).rejects.toThrow('retention');
+    });
+    it('persists native sales queue calls across retries/restart and out-of-order projection with zero offers even with mappings', async () => {
+      config.set('ISSABEL_EVENT_MODE', 'NATIVE_QUEUE_CAPTURE');
+      config.set('ISSABEL_INBOUND_QUEUES', 'sales-test');
+      const native = new IssabelService(
+        { client: db } as never,
+        config,
+        domain,
+        new IamCallCenterDirectory({ client: db } as never),
+        events,
+        { canManage: () => true } as never,
+      );
+      const internal = native as unknown as {
+        options: IssabelOptions;
+        incoming(message: AmiMessage): Promise<void>;
+      };
+      internal.options = issabelOptions(config)!;
+      const nativeRoot = 'native-' + randomUUID();
+      const base = {
+        uniqueid: nativeRoot,
+        linkedid: nativeRoot,
+        queue: 'sales-test',
+        calleridnum: '+12025550199',
+      };
+      const before = await db.integrationTelephonyInbox.findMany({
+        where: { connectionId },
+        select: { id: true },
+      });
+      try {
+        await internal.incoming({
+          ...base,
+          event: 'QueueCallerJoin',
+          queue: 'support-test',
+        });
+        expect(
+          await db.integrationTelephonyInbox.count({ where: { connectionId } }),
+        ).toBe(before.length);
+        await internal.incoming({ ...base, event: 'QueueCallerJoin' });
+        // Retry on a fresh adapter object, with correlation reloaded from encrypted DB receipts.
+        const restarted = new IssabelService(
+          { client: db } as never,
+          config,
+          domain,
+          new IamCallCenterDirectory({ client: db } as never),
+          events,
+          {} as never,
+        );
+        const restartedInternal = restarted as unknown as typeof internal;
+        restartedInternal.options = issabelOptions(config)!;
+        await restartedInternal.incoming({ ...base, event: 'QueueCallerJoin' });
+        for (const destuniqueid of [nativeRoot + '.2', nativeRoot + '.3'])
+          await restartedInternal.incoming({
+            ...base,
+            event: 'AgentCalled',
+            destuniqueid,
+          });
+        await restartedInternal.incoming({
+          ...base,
+          event: 'Hangup',
+          uniqueid: nativeRoot + '.2',
+        });
+        await restartedInternal.incoming({
+          ...base,
+          event: 'AgentConnect',
+          destuniqueid: nativeRoot + '.3',
+        });
+        await restartedInternal.incoming({ ...base, event: 'Hangup' });
+        const rows = await db.integrationTelephonyInbox.findMany({
+          where: { connectionId, id: { notIn: before.map((r) => r.id) } },
+          orderBy: { receivedAt: 'desc' },
+        });
+        expect(rows).toHaveLength(5);
+        for (const row of rows) {
+          expect(row.encryptedPayload).not.toContain(base.calleridnum);
+          expect((await events.process(row.id)).processed).toBe(true);
+          expect((await events.process(row.id)).processed).toBe(false);
+        }
+        const rootFingerprint = crypto.fingerprint(
+          `telephony:root:${connectionId}:${nativeRoot}`,
+        );
+        const sessions = await db.callCenterTelephonySession.findMany({
+          where: { connectionId, rootFingerprint },
+          include: { call: true },
+        });
+        expect(sessions).toHaveLength(1);
+        expect(sessions[0]).toMatchObject({
+          state: 'ENDED',
+          completed: false,
+          call: { origin: 'TELEPHONY', needsCompletion: true },
+        });
+        expect(
+          await db.callCenterTelephonyOffer.count({
+            where: { sessionId: sessions[0]!.id },
+          }),
+        ).toBe(0);
+        // Defense in depth: even an extension-bearing canonical input cannot resolve a recipient in capture mode.
+        const defensive = {
+          ...fact('RINGING', 'native-defensive'),
+          rootCallId: 'defensive-' + nativeRoot,
+          externalEventId: randomUUID(),
+        };
+        const receipt = await events.receive(defensive, 'ISSABEL');
+        await events.process(receipt.id);
+        const session = await db.callCenterTelephonySession.findFirstOrThrow({
+          where: {
+            connectionId,
+            rootFingerprint: crypto.fingerprint(
+              `telephony:root:${connectionId}:${defensive.rootCallId}`,
+            ),
+          },
+        });
+        expect(
+          await db.callCenterTelephonyOffer.count({
+            where: { sessionId: session.id },
+          }),
+        ).toBe(0);
+        await expect(
+          native.originate(actor, {
+            id: randomUUID(),
+            connectionId,
+            number: '09120000001',
+          }),
+        ).rejects.toMatchObject({ status: 403 });
+      } finally {
+        config.set('ISSABEL_EVENT_MODE', 'CUSTOM_FACTS');
+        native.onModuleDestroy();
+      }
     });
     it('accepts only the configured relay connection and uses the same durable processing path', async () => {
       const relay = {

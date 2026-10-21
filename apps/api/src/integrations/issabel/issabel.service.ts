@@ -8,6 +8,7 @@ import {
   NotFoundException,
   type OnModuleDestroy,
   type OnModuleInit,
+  HttpException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { AuthenticatedActor } from '@nora/contracts';
@@ -19,6 +20,7 @@ import { IntegrationRegistryService } from '../integration-registry.service';
 import { AmiClient, type AmiMessage } from './ami';
 import { issabelOptions, type IssabelOptions } from './config';
 import { normalizeIssabelEvent } from './events';
+import { nativeEventNames, normalizeNativeQueueEvent } from './native-events';
 
 @Injectable()
 export class IssabelService implements OnModuleInit, OnModuleDestroy {
@@ -97,7 +99,10 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
       branchId: connection?.branchId ?? null,
       eventCoverage: this.gap ? 'GAP' : 'LIVE_ONLY',
       reconciliationSupported: false,
-      outboundAvailable: !!connection?.active && !!this.client?.connected,
+      outboundAvailable:
+        !!connection?.active &&
+        !!this.client?.connected &&
+        !options?.nativeCapture,
     };
   }
   async activate(
@@ -149,6 +154,10 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
       throw new ForbiddenException();
     const connection = await this.connection();
     const options = this.options ?? issabelOptions(this.config)!;
+    if (options.nativeCapture)
+      throw new ForbiddenException(
+        'Native capture does not allow outbound commands.',
+      );
     if (
       input.connectionId !== connection.id ||
       !actor.branchIds.includes(connection.branchId)
@@ -243,8 +252,19 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
     if (!row) throw new NotFoundException();
     return row;
   }
-  private async incoming(message: AmiMessage) {
+  private async incoming(message: AmiMessage, receivedAt = new Date()) {
     const connection = await this.connection();
+    if (this.options?.nativeCapture) {
+      const event = await normalizeNativeQueueEvent(
+        connection.id,
+        message,
+        this.options.inboundQueues,
+        (id) => this.events.acceptedEvent(connection.id, id),
+        receivedAt,
+      );
+      if (event) await this.events.receive(event, 'ISSABEL');
+      return;
+    }
     const actionId = message.actionid;
     if (
       message.event === 'OriginateResponse' &&
@@ -377,6 +397,29 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
       });
     }
   }
+  private async receiveWithRetry(message: AmiMessage, receivedAt: Date) {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await this.incoming(message, receivedAt);
+        return;
+      } catch (error) {
+        const permanent =
+          (error instanceof Error &&
+            error.message === 'NATIVE_TIMESTAMP_INVALID') ||
+          (error instanceof HttpException &&
+            error.getStatus() < 500 &&
+            error.getStatus() !== 429);
+        if (permanent || attempt >= 5 || this.stopped) throw error;
+        await new Promise((resolve) =>
+          setTimeout(
+            resolve,
+            Math.min(10000, 500 * 2 ** attempt) +
+              Math.floor(Math.random() * 250),
+          ),
+        );
+      }
+    }
+  }
   private async tick() {
     if (this.busy || this.stopped || !this.options) return;
     this.busy = true;
@@ -392,10 +435,13 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
         });
         client.on('event', (message: AmiMessage) => {
           if (
-            message.event !== 'UserEvent' &&
-            message.event !== 'OriginateResponse'
+            this.options?.nativeCapture
+              ? !nativeEventNames.has(message.event ?? '')
+              : message.event !== 'UserEvent' &&
+                message.event !== 'OriginateResponse'
           )
             return;
+          const receivedAt = new Date();
           if (++this.queuedEvents > 500) {
             this.queuedEvents--;
             this.gap = true;
@@ -403,7 +449,7 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
             return;
           }
           this.eventTail = this.eventTail
-            .then(() => this.incoming(message))
+            .then(() => this.receiveWithRetry(message, receivedAt))
             .catch(() => {
               this.gap = true;
               this.logger.warn(
@@ -424,7 +470,7 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
         this.state = 'CONNECTED';
       }
       await this.client.ping();
-      await this.dispatch();
+      if (!this.options.nativeCapture) await this.dispatch();
     } catch {
       this.client?.close();
       this.state = 'NOT_CONNECTED';

@@ -276,16 +276,21 @@ export class TelephonyIntegrationService {
           'Telephony connection rate limit exceeded.',
           429,
         );
-      const mapping = event.extension
-        ? await tx.integrationTelephonyMapping.findUnique({
-            where: {
-              connectionId_extension: {
-                connectionId: c.id,
-                extension: event.extension,
+      const captureOnly =
+        provider === 'ISSABEL' &&
+        this.config.get<string>('ISSABEL_EVENT_MODE') ===
+          'NATIVE_QUEUE_CAPTURE';
+      const mapping =
+        event.extension && !captureOnly
+          ? await tx.integrationTelephonyMapping.findUnique({
+              where: {
+                connectionId_extension: {
+                  connectionId: c.id,
+                  extension: event.extension,
+                },
               },
-            },
-          })
-        : null;
+            })
+          : null;
       const eligible = mapping?.active
         ? await this.directory.eligibleMapping(
             c.branchId,
@@ -319,6 +324,31 @@ export class TelephonyIntegrationService {
       });
       return { id, duplicate: false };
     });
+  }
+  /** Integrations-owned receipt lookup for native AMI correlation/restart recovery. */
+  async acceptedEvent(
+    connectionId: string,
+    externalEventId: string,
+  ): Promise<TelephonyEventV1 | null> {
+    const row = await this.db.client.integrationTelephonyInbox.findUnique({
+      where: {
+        connectionId_externalFingerprint: {
+          connectionId,
+          externalFingerprint: this.domain.crypto.fingerprint(
+            `telephony:event:${connectionId}:${externalEventId}`,
+          ),
+        },
+      },
+    });
+    if (!row) return null;
+    // A tombstone must not be mistaken for a new call after private retention expiry.
+    if (!row.encryptedPayload)
+      throw new ConflictException('Telephony correlation expired.');
+    return this.domain.crypto.decrypt<Envelope>(
+      row.encryptedPayload,
+      row.keyVersion,
+      `telephony:inbox:${row.id}`,
+    ).event;
   }
   async pending() {
     // Processed canonical private input expires after seven days; HMAC dedupe tombstones remain.
