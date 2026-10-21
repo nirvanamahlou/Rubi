@@ -406,7 +406,7 @@ it('uses compact soft Latin names and room types, isolated rial glyphs and left-
   expect(html).toContain(
     'font-family:"Segoe UI",Tahoma,sans-serif;font-size:8.5pt;font-weight:400',
   );
-  expect(html).toContain('<span class="currency-symbol" dir="rtl">﷼</span>');
+  expect(html).toContain('<span class="currency-symbol" dir="ltr">IRR</span>');
   expect(html).toContain('font-family:Tahoma,"Segoe UI",sans-serif!important');
   expect(html).toContain(
     'class="stay-date-cell"><bdi class="stay-date" dir="ltr">',
@@ -441,6 +441,23 @@ it('prints actual airport endpoints only in the flight section and preserves the
   expect(html).toContain('مقصد:');
   expect(printFixture).toEqual(before);
   expect(printFixture.contract.destinationId).toBe('antalya');
+});
+
+it('reserves every printed page for approval/footer and keeps compact two-column details', () => {
+  const html = contractPrintHtml(printFixture, {
+    ...printReferences,
+    international: true,
+  });
+  expect(html).toContain('margin:7mm 7mm 12mm');
+  expect(html).toContain('.document-pages>tfoot{display:table-footer-group}');
+  expect(html.match(/class="contract-closing"/g)).toHaveLength(1);
+  expect(html).toContain('grid-template-columns:repeat(2,minmax(0,1fr))');
+  expect(html).toContain('<div>تلفن ثابت: <bdi>—</bdi></div><div>نشانی:');
+  expect(html).toContain('ورود هتل</th>');
+  expect(html).toContain('خروج هتل</th>');
+  expect(html).not.toContain('چک‌این هتل</th>');
+  expect(html).toContain('class="flight-route"');
+  expect(html).toContain('IRR</span>');
 });
 
 it('uses the dedicated public contract capability instead of the pending QR', () => {

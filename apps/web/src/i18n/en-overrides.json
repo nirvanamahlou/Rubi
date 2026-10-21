@@ -3981,5 +3981,7 @@
   "اطلاعات هویتی و تماس الزامی است.": "Identity and contact information is required.",
   "بیش از یک پرونده هویتی ثبت شده است.": "Multiple identity profiles exist.",
   "نسخه اطلاعات هویتی و تماس الزامی است.": "The identity and contact version snapshot is required.",
-  "نسخه اطلاعات هویتی و تماس تغییر کرده است.": "Identity or contact information has changed. Reload the profile."
+  "نسخه اطلاعات هویتی و تماس تغییر کرده است.": "Identity or contact information has changed. Reload the profile.",
+  "ورود هتل": "Hotel check-in",
+  "خروج هتل": "Hotel check-out"
 }
