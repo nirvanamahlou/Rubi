@@ -71,7 +71,6 @@ export function ReservationCurrencySelect({
       optionLimit={currencies.length + 2}
       onValueChange={onChange}
       options={[
-        { value: '', label: 'انتخاب ارز' },
         ...(value && !currencies.some((c) => c.code === value)
           ? [{ value, label: currencySymbol(value) }]
           : []),

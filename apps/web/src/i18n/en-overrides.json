@@ -3902,5 +3902,6 @@
   "نام و اطلاعات هویتی کارمند یکسان نیستند.": "The employee name does not match the identity profile.",
   "فرم پرسنلی": "Personnel form",
   "حذف عکس انتخاب‌شده": "Remove selected photo",
-  "نام، شماره تماس و آدرس مشتری را کامل کنید؛ تلفن ثابت اختیاری است و کد پستی در صورت ورود باید ۱۰ رقم باشد.": "Enter the customer name, contact number and address; landline is optional and a postal code, if entered, must contain ten digits."
+  "نام، شماره تماس و آدرس مشتری را کامل کنید؛ تلفن ثابت اختیاری است و کد پستی در صورت ورود باید ۱۰ رقم باشد.": "Enter the customer name, contact number and address; landline is optional and a postal code, if entered, must contain ten digits.",
+  "ثبت مبلغ فرم": "Save form amount"
 }
