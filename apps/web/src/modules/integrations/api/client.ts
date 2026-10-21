@@ -3,6 +3,7 @@ import type {
   IntegrationExistingAdapterV1,
   IntegrationRegistryV1,
   IntegrationRegistryWriteV1,
+  IntegrationAccessSection,
 } from '@nora/contracts';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -67,10 +68,17 @@ export const integrationsApi = {
       throw new IntegrationsApiError('برای ادامه باید وارد سامانه شوید.', 401);
     return session.user.branches;
   },
-  read: (branchId: string, signal?: AbortSignal) =>
-    request<IntegrationRegistryV1>(`/registry${branchQuery(branchId)}`, {
-      ...(signal ? { signal } : {}),
-    }),
+  read: (
+    branchId: string,
+    signal?: AbortSignal,
+    section?: IntegrationAccessSection,
+  ) =>
+    request<IntegrationRegistryV1>(
+      `/registry${branchQuery(branchId)}${section ? `&section=${section}` : ''}`,
+      {
+        ...(signal ? { signal } : {}),
+      },
+    ),
   initialize: (branchId: string) =>
     request<IntegrationRegistryV1>(
       `/registry/initialize${branchQuery(branchId)}`,
