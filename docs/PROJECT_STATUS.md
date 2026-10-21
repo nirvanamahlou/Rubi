@@ -1,3 +1,7 @@
+## DOCUMENT-QR-LINKS-1021 — PC-A — 2026-10-21
+
+Implemented encrypted immutable public document capabilities for contracts, supplier reservation forms, individual passenger tickets and vouchers, matching the owner's explicit no-login/unguessable-link choice. Canonical authorized PDF producers publish separate snapshots; batch tickets remain passenger-isolated, sent settings and existing issuance/cancellation/financial guards remain authoritative. Exact public proxy exception and inert private responses added; no schema/dependency/API domain change.85 focused tests pass, including token isolation/tampering/configuration/public access and canonical form/voucher/ticket publication; full Web lint passes. Full Web typecheck and production build pass; hosted exact-head PR checks remain the merge gate. Runtime canonical origin/private durable directory/key must be configured and backed up for owner-authorized activation; legacy PDFs require regeneration. See tasks/DOCUMENT-QR-LINKS-1021.md. No merge or server/local runtime change yet.
+
 ## AIRCRAFT-INACTIVE-VISIBLE-1021 — PC-B — 2026-10-21
 
 Aircraft default list/export no longer applies a hidden active-only status behind the visible all-status filter. Explicit transport filters, unchanged mutation refresh and inactive badge retained; other resources unchanged.69 focused tests, scoped lint and diff checks pass; types/build and exact-head hosted checks pending before owner-authorized push/develop merge. No schema/API/permission/data/deployment changes. See tasks/AIRCRAFT-INACTIVE-VISIBLE-1021.md.
@@ -6976,3 +6980,5 @@ Selected published tickets expose the existing single-offer Edit action for past
 ## TICKET-EXTRA-CITY-1021 — PC-A — ready for CI
 
 Added sales-destination cities now inherit the primary route country and reset when it changes. A scoped CSS selector excludes the whole added-destinations container from the primary two-column field grid; each added city uses the same label/control widths as the city above. Both forward and return route composition/capacity remain intact.219 Ticket Catalog tests pass with one existing skip; scoped lint/format pass. No API/schema/migration/dependency/permission or stored-data changes. User authorizes develop merge and prompt server update after exact-head gates, preserving the current production release, settings and data with backup and immutable Web build.
+
+TICKET-EXTRA-CITY-1021:219 local and219 isolated server-image Ticket Catalog tests pass; all8 hosted gates passed on744df105. Final documentation-only conflict integration is being revalidated; production Web build and backup/guarded activation follow. No source patch, schema or operational-data change in conflict resolution.

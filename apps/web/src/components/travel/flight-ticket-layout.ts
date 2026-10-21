@@ -1,4 +1,5 @@
 import { ticketSkyline, ticketWorldMap } from './ticket-artwork';
+import { publicDocumentQr } from '@/modules/travel-documents/public/document-qr';
 import { ticketReferenceQr } from './ticket-reference-qr';
 export interface TicketLayoutFlight {
   originId: string;
@@ -17,6 +18,7 @@ export interface TicketLayoutFlight {
     { code: string; name: string; cityName?: string } | undefined;
 }
 export interface TicketLayoutData {
+  publicDocumentUrl?: string | undefined;
   passengerName: string;
   contractNumber?: string;
   ageCategory?: 'ADT' | 'CHD' | 'INF';
@@ -125,7 +127,9 @@ export function ticketPageHtml(
     .join(' — ');
   const documentInfo = `<section class="document-info"><div><span>E-Ticket No</span><strong>${escape(data.eTicketNumber || '')}</strong></div><div><span>AIRLINE</span><strong>${escape(carrier)}</strong></div><div><span>RLOC</span><strong>${escape(offers.map((offer) => `${offer.originAirport?.cityName || offer.originAirport?.name || city(offer.originId)} → ${offer.destinationAirport?.cityName || offer.destinationAirport?.name || city(offer.destinationId)}`).join(' / '))}</strong></div><div><span>DATE OF ISSUE</span><strong>${data.issuedAt && Number.isFinite(Date.parse(data.issuedAt)) ? day(data.issuedAt) : ''}</strong></div></section>`;
   const traveler = [title, data.passengerName].filter(Boolean).join(' ');
-  const qr = ticketReferenceQr(data.contractNumber || '');
+  const qr =
+    publicDocumentQr(data.publicDocumentUrl) ??
+    ticketReferenceQr(data.contractNumber || '');
   const legs = offers
     .map((savedOffer, index) => {
       const offer = {

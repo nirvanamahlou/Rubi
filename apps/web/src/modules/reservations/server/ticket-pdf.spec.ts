@@ -12,12 +12,33 @@ const brandAssetReader = vi.hoisted(() =>
 );
 vi.mock('@/modules/reservations/server/ticket-pdf', () => ({
   renderTicketPdf: renderer,
+  prepareTicketHtml: async (html: string) => html,
 }));
 vi.mock('@/modules/reservations/server/ticket-pdf-assets', () => ({
   readTicketBrandAsset: brandAssetReader,
 }));
 vi.mock('@/lib/environment', () => ({
   getPublicApiBaseUrl: () => 'http://api.test/api/v1',
+}));
+const publishing = vi.hoisted(() => ({
+  enabled: false,
+  documents: [] as Array<{ url: string; html: string }>,
+}));
+vi.mock('@/modules/travel-documents/server/public-document-store', () => ({
+  createPublicDocument: () => {
+    if (!publishing.enabled) return undefined;
+    const url =
+      'https://example.test/d/' +
+      String(publishing.documents.length).padStart(32, 'a');
+    const entry = { url, html: '' };
+    publishing.documents.push(entry);
+    return {
+      url,
+      save: async (html: string) => {
+        entry.html = html;
+      },
+    };
+  },
 }));
 import { GET } from '@/app/reservations/requests/[id]/tickets/pdf/route';
 import { ticketPdfHtml } from './ticket-pdf-html';
@@ -90,6 +111,8 @@ const request = (query = '') =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  publishing.enabled = false;
+  publishing.documents.length = 0;
   vi.unstubAllGlobals();
 });
 
@@ -570,4 +593,66 @@ it('downloads Jahan tickets with the new bundled logo instead of a stale uploade
   ).toBe(false);
   expect(renderer.mock.calls[0]?.[0]).toContain('جهان باستان');
   expect(renderer.mock.calls[0]?.[0]).not.toContain('نیایش');
+});
+
+it('publishes separate single-passenger snapshots when exporting all issued tickets', async () => {
+  publishing.enabled = true;
+  const second = '00000000-0000-4000-8000-000000000099';
+  const saved = structuredClone(intake);
+  saved.snapshot.passengerIds = [passengerId, second];
+  saved.snapshot.passengerAssignments = [
+    {
+      ...saved.snapshot.passengerAssignments![0]!,
+      displayNameSnapshot: 'ALPHA PERSON',
+    },
+    {
+      ...saved.snapshot.passengerAssignments![0]!,
+      customerId: second,
+      displayNameSnapshot: 'BETA PERSON',
+    },
+  ];
+  saved.ticketDocuments = [passengerId, second].map((customerId, i) => ({
+    customerId,
+    number: String(100000 + i),
+    issuedAt: '2026-10-01T08:00:00Z',
+    source: 'AUTO',
+  }));
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) =>
+      Response.json({
+        data: url.endsWith('/workflow')
+          ? saved
+          : url.endsWith('/passengers') || url.includes('airlines?')
+            ? []
+            : { name: 'CITY', attributes: {} },
+      }),
+    ),
+  );
+  const result = await GET(request('?format=share'), {
+    params: Promise.resolve({ id }),
+  });
+  expect(result.status).toBe(200);
+  expect(publishing.documents).toHaveLength(2);
+  expect(publishing.documents[0]!.html).toContain('ALPHA PERSON');
+  expect(publishing.documents[0]!.html).not.toContain('BETA PERSON');
+  expect(publishing.documents[1]!.html).toContain('BETA PERSON');
+  expect(publishing.documents[1]!.html).not.toContain('ALPHA PERSON');
+  expect(publishing.documents[0]!.html).toContain(publishing.documents[0]!.url);
+  expect(publishing.documents[1]!.html).not.toContain(
+    publishing.documents[0]!.url,
+  );
+  expect(renderer).not.toHaveBeenCalled();
+});
+it('cannot publish a public ticket through an unauthorized request', async () => {
+  publishing.enabled = true;
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(new Response(null, { status: 403 })),
+  );
+  expect(
+    (await GET(request('?format=share'), { params: Promise.resolve({ id }) }))
+      .status,
+  ).toBe(403);
+  expect(publishing.documents).toHaveLength(0);
 });
