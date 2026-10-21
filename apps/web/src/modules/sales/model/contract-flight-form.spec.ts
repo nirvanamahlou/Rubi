@@ -243,3 +243,20 @@ it('restored floating selections are ready without transient catalog search stat
     }),
   ).toBe(true);
 });
+
+it('does not require an unused return when every confirmed passenger excludes that leg', () => {
+  expect(
+    salesSelectedFlightsReady({
+      ...state,
+      tripType: 'ROUND_TRIP',
+      passengers: [
+        {
+          customerId: 'synthetic',
+          displayName: 'Synthetic Person',
+          birthDate: '1990-01-01',
+        },
+      ],
+      passengerFlightDirections: { synthetic: ['OUTBOUND'] },
+    }),
+  ).toBe(true);
+});
