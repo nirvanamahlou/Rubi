@@ -137,6 +137,7 @@ describe('DocumentsService security and persistence flow', () => {
   const repository = {
     list: vi.fn(),
     options: vi.fn(),
+    ensureMasterDataLogoReferences: vi.fn(),
     caseOptions: vi.fn(),
     findDetail: vi.fn(),
     findCaseReference: vi.fn(),
@@ -288,6 +289,141 @@ describe('DocumentsService security and persistence flow', () => {
       {},
     );
   });
+
+  it.each([
+    'present',
+    'missing',
+    'inactive',
+    'wrong-branch',
+    'inactive-owner',
+    'no-permission',
+  ] as const)(
+    'handles %s logo references without granting general Documents access',
+    async (state) => {
+      const values = {
+        documentTypes: [{ id: 'brand', code: 'BRAND_ASSET_TEMPLATE' }],
+        categories: [{ id: 'category', code: 'BRAND_ASSETS' }],
+        branches: [{ id: branchId }],
+        owners: [{ id: actor.userId }],
+      };
+      const missing = { ...values, documentTypes: [], categories: [] };
+      repository.options.mockReset();
+      repository.options.mockResolvedValue(
+        state === 'inactive' ? missing : values,
+      );
+      if (state === 'missing')
+        repository.options.mockResolvedValueOnce(missing);
+      if (state === 'wrong-branch')
+        repository.options.mockResolvedValue({ ...values, branches: [] });
+      if (state === 'inactive-owner')
+        repository.options.mockResolvedValue({ ...values, owners: [] });
+      repository.ensureMasterDataLogoReferences.mockResolvedValue(true);
+      repository.list.mockResolvedValue({ rows: [], total: 0 });
+      const upload = vi.spyOn(service, 'upload').mockResolvedValue({
+        data: { id: 'document', currentVersion: { scanStatus: 'CLEAN' } },
+      } as never);
+      const promise = service.uploadMasterDataLogo(
+        { resource: 'hotels', recordId: 'hotel', title: 'logo' },
+        {
+          buffer: Buffer.from('logo'),
+          size: 4,
+          mimetype: 'image/png',
+          originalname: 'logo.png',
+        },
+        {
+          ...actor,
+          permissions: state === 'no-permission' ? [] : ['master_data.update'],
+        },
+        {},
+      );
+      if (
+        [
+          'inactive',
+          'wrong-branch',
+          'inactive-owner',
+          'no-permission',
+        ].includes(state)
+      ) {
+        await expect(promise).rejects.toBeInstanceOf(
+          state === 'inactive' ? ConflictException : ForbiddenException,
+        );
+        expect(upload).not.toHaveBeenCalled();
+      } else
+        await expect(promise).resolves.toMatchObject({ scanStatus: 'CLEAN' });
+      expect(repository.ensureMasterDataLogoReferences).toHaveBeenCalledTimes(
+        state === 'missing' || state === 'inactive' ? 1 : 0,
+      );
+      upload.mockRestore();
+    },
+  );
+
+  it.each(['CLEAN', 'PENDING_SCAN', 'INFECTED', 'SCAN_FAILED'] as const)(
+    'runs the actual logo upload pipeline with scanner result %s',
+    async (scanStatus) => {
+      const brand = {
+        id: '55555555-5555-4555-8555-555555555555',
+        code: 'BRAND_ASSET_TEMPLATE',
+        domain: 'BRAND',
+        defaultConfidentiality: 'INTERNAL',
+        allowedMimeTypes: ['image/png'],
+        maxFileSizeBytes: 5242880n,
+        requiresExpiry: false,
+      };
+      repository.options.mockResolvedValue({
+        documentTypes: [brand],
+        categories: [{ id: 'category', code: 'BRAND_ASSETS' }],
+        owners: [{ id: actor.userId }],
+        branches: [{ id: branchId }],
+      });
+      repository.list.mockResolvedValue({ rows: [], total: 0 });
+      repository.uploadReferences.mockResolvedValue({
+        documentType: brand,
+        category: { id: 'category' },
+        owner: { id: actor.userId },
+        branch: { id: branchId },
+      });
+      const saved = row({
+        domain: 'BRAND',
+        confidentiality: 'INTERNAL',
+        mimeType: 'image/png',
+        scanStatus,
+      });
+      repository.createUploaded.mockResolvedValue(saved);
+      repository.findDetail.mockResolvedValue(saved);
+      scanProcessor.processVersion.mockResolvedValueOnce(
+        scanStatus !== 'PENDING_SCAN',
+      );
+      const buffer = Buffer.from([
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0,
+      ]);
+      const result = await service.uploadMasterDataLogo(
+        { resource: 'hotels', recordId: 'hotel-a', title: 'hotel logo' },
+        {
+          buffer,
+          size: buffer.length,
+          mimetype: 'image/png',
+          originalname: 'logo.png',
+        },
+        { ...actor, permissions: ['master_data.update'] },
+        {},
+      );
+      expect(result.scanStatus).toBe(scanStatus);
+      expect(storage.putQuarantined).toHaveBeenCalledWith(
+        expect.stringMatching(/^documents\//),
+        buffer,
+      );
+      expect(repository.createUploaded).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sourceModule: 'master-data',
+          sourceEntityType: 'hotels',
+          sourceEntityId: 'hotel-a',
+          detectedMimeType: 'image/png',
+          confidentiality: 'INTERNAL',
+        }),
+      );
+      expect(scanProcessor.processVersion).toHaveBeenCalledOnce();
+    },
+  );
 
   it('uploads a Master Data logo without granting general Documents access to the editor', async () => {
     const masterDataEditor: AuthenticatedActor = {
@@ -470,6 +606,42 @@ describe('DocumentsService security and persistence flow', () => {
       {},
     );
   });
+
+  it.each([
+    'PENDING_SCAN',
+    'AWAITING_ANTIVIRUS_ADAPTER',
+    'INFECTED',
+    'SCAN_FAILED',
+  ] as const)(
+    'denies delivery of a related logo with scan status %s',
+    async (scanStatus) => {
+      const logo = row({
+        domain: 'BRAND',
+        confidentiality: 'INTERNAL',
+        mimeType: 'image/png',
+        scanStatus,
+      });
+      repository.findDetail.mockResolvedValue({
+        ...logo,
+        relations: [
+          {
+            ...logo.relations[0]!,
+            sourceModule: 'master-data',
+            sourceEntityType: 'hotels',
+            sourceEntityId: 'hotel-a',
+          },
+        ],
+      });
+      await expect(
+        service.previewMasterDataLogo(
+          { documentId: logo.id, resource: 'hotels', recordId: 'hotel-a' },
+          { ...actor, permissions: ['master_data.read'] },
+          {},
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(storage.openQuarantined).not.toHaveBeenCalled();
+    },
+  );
 
   it('previews a logo only when the BRAND document belongs to the exact Master Data record', async () => {
     const logoRow = row({

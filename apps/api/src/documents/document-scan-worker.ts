@@ -10,7 +10,7 @@ import { DocumentsRepository } from './documents.repository';
 import { DocumentsScanProcessor } from './documents.scan-processor';
 import { LocalDocumentStorage } from './documents.storage';
 
-/** A Windows host companion for a Linux API. No HTTP server or unrelated workers. */
+/** A real local ClamAV/Defender scanner. No HTTP server or unrelated workers. */
 @Module({
   imports: [ConfigModule.forRoot({ ignoreEnvFile: true })],
   providers: [
@@ -33,7 +33,7 @@ async function main() {
   if (!app.get(DocumentsScanProcessor).available) {
     await app.close();
     throw new Error(
-      'Configure the real Windows Defender adapter before starting this worker.',
+      'Configure a real ClamAV or Windows Defender adapter before starting this worker.',
     );
   }
   if (process.argv.includes('--once')) {

@@ -1,8 +1,8 @@
 import { execFile } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { accessSync, constants, statSync } from 'node:fs';
 import { mkdtemp, rm, rmdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { basename, extname, join } from 'node:path';
+import { basename, extname, isAbsolute, join } from 'node:path';
 
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -16,7 +16,7 @@ export interface LocalAntivirusResult {
 }
 
 export interface DefenderCommandResult {
-  exitCode: number;
+  exitCode: number | null;
   stdout: string;
   stderr: string;
 }
@@ -25,6 +25,24 @@ export type DefenderCommandRunner = (
   command: string,
   args: readonly string[],
 ) => Promise<DefenderCommandResult>;
+
+export function scannerExitCode(
+  error: { code?: unknown; killed?: unknown; signal?: unknown } | null,
+): number | null {
+  if (!error) return 0;
+  if (error.killed || error.signal) return null;
+  return typeof error.code === 'number' ? error.code : null;
+}
+
+function executableFile(candidate: string) {
+  try {
+    if (!isAbsolute(candidate) || !statSync(candidate).isFile()) return false;
+    accessSync(candidate, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function runDefenderCommand(
   command: string,
@@ -37,8 +55,7 @@ function runDefenderCommand(
       { maxBuffer: 1024 * 1024, timeout: 120_000, windowsHide: true },
       (error, stdout, stderr) => {
         resolve({
-          exitCode:
-            typeof error?.code === 'number' ? error.code : error ? 1 : 0,
+          exitCode: scannerExitCode(error),
           stdout,
           stderr,
         });
@@ -47,10 +64,56 @@ function runDefenderCommand(
   });
 }
 
-export function defenderScanStatus(exitCode: number) {
+export function defenderScanStatus(exitCode: number | null) {
   if (exitCode === 0) return 'CLEAN' as const;
   if (exitCode === 2) return 'INFECTED' as const;
   return 'SCAN_FAILED' as const;
+}
+
+export function clamavScanStatus(exitCode: number | null) {
+  if (exitCode === 0) return 'CLEAN' as const;
+  if (exitCode === 1) return 'INFECTED' as const;
+  return 'SCAN_FAILED' as const;
+}
+
+export async function scanBufferWithClamAV(
+  input: { commandPath: string; contents: Buffer; safeFileName: string },
+  runner: DefenderCommandRunner = runDefenderCommand,
+): Promise<LocalAntivirusResult> {
+  // mkdtemp creates a private0700 directory; no user-controlled path or options.
+  const scanRoot = await mkdtemp(join(tmpdir(), 'nora-document-scan-'));
+  const target = join(scanRoot, 'document.bin');
+  let status: LocalAntivirusResult['status'] = 'SCAN_FAILED';
+  let code: number | null = null;
+  try {
+    await writeFile(target, input.contents, { flag: 'wx', mode: 0o600 });
+    const result = await runner(input.commandPath, [
+      '--no-summary',
+      '--infected',
+      '--alert-exceeds-max=yes',
+      '--',
+      target,
+    ]);
+    code = result.exitCode;
+    status = clamavScanStatus(code);
+  } catch {
+    // Spawn, permission, timeout and runner failures never indicate infection/clean.
+  } finally {
+    await rm(target, { force: true }).catch(() => undefined);
+    await rmdir(scanRoot).catch(() => undefined);
+  }
+  return {
+    status,
+    adapterReference: `clamav:${basename(input.commandPath)}`,
+    scannedAt: new Date(),
+    engineVersion: 'ClamAV',
+    threatCode:
+      status === 'INFECTED'
+        ? 'CLAMAV_DETECTED'
+        : status === 'SCAN_FAILED'
+          ? `CLAMAV_EXIT_${code ?? 'PROCESS_FAILED'}`
+          : null,
+  };
 }
 
 export async function scanBufferWithWindowsDefender(
@@ -98,6 +161,7 @@ export async function scanBufferWithWindowsDefender(
 @Injectable()
 export class WindowsDefenderAntivirus {
   private readonly commandPath: string | null;
+  private readonly engine: 'clamav' | 'windows-defender';
 
   constructor(@Inject(ConfigService) config: ConfigService) {
     const mode = config
@@ -112,11 +176,14 @@ export class WindowsDefenderAntivirus {
       'Windows Defender',
       'MpCmdRun.exe',
     );
-    const candidate = configuredCommand || defaultCommand;
+    this.engine = mode === 'clamav' ? 'clamav' : 'windows-defender';
+    const candidate =
+      configuredCommand ||
+      (this.engine === 'clamav' ? '/usr/bin/clamscan' : defaultCommand);
     this.commandPath =
-      mode === 'windows-defender' &&
-      process.platform === 'win32' &&
-      existsSync(candidate)
+      ((mode === 'windows-defender' && process.platform === 'win32') ||
+        (mode === 'clamav' && process.platform === 'linux')) &&
+      executableFile(candidate)
         ? candidate
         : null;
   }
@@ -129,13 +196,18 @@ export class WindowsDefenderAntivirus {
     if (!this.commandPath) {
       return {
         status: 'SCAN_FAILED',
-        adapterReference: 'windows-defender:unavailable',
+        adapterReference: `${this.engine}:unavailable`,
         scannedAt: new Date(),
-        engineVersion: 'Microsoft Defender',
+        engineVersion:
+          this.engine === 'clamav' ? 'ClamAV' : 'Microsoft Defender',
         threatCode: 'ANTIVIRUS_ADAPTER_UNAVAILABLE',
       } satisfies LocalAntivirusResult;
     }
-    return scanBufferWithWindowsDefender({
+    const scan =
+      this.engine === 'clamav'
+        ? scanBufferWithClamAV
+        : scanBufferWithWindowsDefender;
+    return scan({
       commandPath: this.commandPath,
       contents,
       safeFileName,

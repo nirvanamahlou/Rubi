@@ -877,20 +877,37 @@ export class DocumentsService {
     if (file.size < 1 || file.size > MASTER_DATA_LOGO_MAX_BYTES)
       throw new BadRequestException('حجم لوگو باید حداکثر ۵ مگابایت باشد.');
 
-    const values = await this.repository.options(actor.branchIds, ['BRAND']);
+    let values = await this.repository.options(actor.branchIds, ['BRAND']);
     const branch = input.branchId
       ? values.branches.find((item) => item.id === input.branchId)
       : values.branches[0];
     const owner = values.owners.find((item) => item.id === actor.userId);
+    if (!branch || !owner)
+      throw new ForbiddenException(
+        'شعبه یا مالک مجاز برای بارگذاری لوگو مشخص نیست.',
+      );
+    if (
+      !values.documentTypes.some(
+        (item) => item.code === 'BRAND_ASSET_TEMPLATE',
+      ) ||
+      !values.categories.some((item) => item.code === 'BRAND_ASSETS')
+    ) {
+      if (
+        !(await this.repository.ensureMasterDataLogoReferences(
+          actor.userId,
+          branch.id,
+        ))
+      )
+        throw new ForbiddenException('مالک در شعبه انتخاب‌شده معتبر نیست.');
+      values = await this.repository.options(actor.branchIds, ['BRAND']);
+    }
     const documentType = values.documentTypes.find(
       (item) => item.code === 'BRAND_ASSET_TEMPLATE',
     );
     const category = values.categories.find(
       (item) => item.code === 'BRAND_ASSETS',
     );
-    if (!branch)
-      throw new ForbiddenException('شعبه مجاز برای بارگذاری لوگو مشخص نیست.');
-    if (!owner || !documentType || !category)
+    if (!documentType || !category)
       throw new ConflictException(
         'پیش‌نیاز بارگذاری لوگو در آرشیو اسناد کامل نیست.',
       );

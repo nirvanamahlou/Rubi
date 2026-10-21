@@ -1,3 +1,7 @@
+## MASTER-LOGO-SAVE-DISPLAY-1021 — PC-B — 2026-10-21
+
+Read-only Avina diagnosis found missing fixed brand archive references and disabled Linux antivirus. Candidate adds authorized insert-only reference repair (preserves inactive/customized policies), code-only real ClamAV adapter with fail-closed process/exit handling and private temporary cleanup, scan-state save warnings and accessible shared logo-table fallback.133 focused API and27 Web tests plus scoped lint/diff checks pass; final types/build checks pending. No schema/dependencies/migration/IAM grants or operational writes. User requests direct continuation without orchestrator, push only; server installation/activation/deployment and merge are excluded. See tasks/MASTER-LOGO-SAVE-DISPLAY-1021.md for honest scanner/runtime recovery prerequisites.
+
 ## AIRCRAFT-INACTIVE-VISIBLE-1021 — PC-B — 2026-10-21
 
 Aircraft default list/export no longer applies a hidden active-only status behind the visible all-status filter. Explicit transport filters, unchanged mutation refresh and inactive badge retained; other resources unchanged.69 focused tests, scoped lint and diff checks pass; types/build and exact-head hosted checks pending before owner-authorized push/develop merge. No schema/API/permission/data/deployment changes. See tasks/AIRCRAFT-INACTIVE-VISIBLE-1021.md.
