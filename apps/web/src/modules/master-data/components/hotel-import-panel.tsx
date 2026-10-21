@@ -26,7 +26,9 @@ const lookupQuery: MasterDataListQuery = {
   page: 1,
   pageSize: 100,
 };
-async function loadAll(resource: 'countries' | 'cities') {
+export async function loadHotelImportLocations(
+  resource: 'countries' | 'cities',
+) {
   const first = await masterDataApi.list(resource, lookupQuery);
   const records = [...first.data];
   const pages = Math.ceil(first.meta.total / lookupQuery.pageSize);
@@ -65,7 +67,10 @@ export function HotelImportPanel({
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    void Promise.all([loadAll('countries'), loadAll('cities')])
+    void Promise.all([
+      loadHotelImportLocations('countries'),
+      loadHotelImportLocations('cities'),
+    ])
       .then(([countryRecords, cityRecords]) => {
         setCountries(countryRecords);
         setCities(cityRecords);
@@ -185,6 +190,7 @@ export function HotelImportPanel({
           >
             <NativeSearchSelect
               id="hotel-import-country"
+              optionLimit={countries.length + 1}
               disabled={busy !== null}
               className="h-10 w-full rounded-md border border-slate-300 bg-white px-3"
               value={countryId}
@@ -216,6 +222,7 @@ export function HotelImportPanel({
           >
             <NativeSearchSelect
               id="hotel-import-city"
+              optionLimit={scopedCities.length + 1}
               className="h-10 w-full rounded-md border border-slate-300 bg-white px-3"
               value={cityId}
               disabled={busy !== null || !countryId}

@@ -77,6 +77,11 @@ export function flightScheduleDefaults(
         supplyType: 'company' as const,
         companyOwned: true,
       };
+  input.segments = input.segments.map((segment) => ({
+    ...segment,
+    departureZone: 'Asia/Tehran',
+    arrivalZone: 'Asia/Tehran',
+  }));
   if (!initial) {
     return {
       input,
@@ -128,11 +133,8 @@ export function flightScheduleDefaults(
   const leg = (item: ProductInput) => {
     const first = item.segments[0]!;
     const last = item.segments.at(-1)!;
-    const departure = wallDateTime(
-      first.departureAt,
-      first.departureZone || 'UTC',
-    );
-    const arrival = wallDateTime(last.arrivalAt, last.arrivalZone || 'UTC');
+    const departure = wallDateTime(first.departureAt, 'Asia/Tehran');
+    const arrival = wallDateTime(last.arrivalAt, 'Asia/Tehran');
     const arrivalDayOffset = [0, 1, 2].find(
       (offset) => addScheduleDays(departure.date, offset) === arrival.date,
     );
@@ -425,7 +427,8 @@ export function FlightScheduleForm({
               [`${side}CountryId`]: r?.id ?? '',
               [`${side}CityId`]: '',
               [`${side}AirportId`]: '',
-              [side === 'origin' ? 'departureZone' : 'arrivalZone']: 'UTC',
+              [side === 'origin' ? 'departureZone' : 'arrivalZone']:
+                'Asia/Tehran',
             }),
         )}
         {picker(
@@ -438,7 +441,8 @@ export function FlightScheduleForm({
             patchSegment({
               [`${side}CityId`]: r?.id ?? '',
               [`${side}AirportId`]: '',
-              [side === 'origin' ? 'departureZone' : 'arrivalZone']: 'UTC',
+              [side === 'origin' ? 'departureZone' : 'arrivalZone']:
+                'Asia/Tehran',
             }),
           { countryId: segment[`${side}CountryId`] },
         )}
@@ -452,7 +456,7 @@ export function FlightScheduleForm({
             patchSegment({
               [`${side}AirportId`]: r?.id ?? '',
               [side === 'origin' ? 'departureZone' : 'arrivalZone']:
-                r?.timezone ?? 'UTC',
+                'Asia/Tehran',
             }),
           { cityId: segment[`${side}CityId`] },
         )}
@@ -795,10 +799,9 @@ export function FlightScheduleForm({
             </table>
           </div>
           <p className={styles.help}>
-            ساعت رفت به وقت {segment.departureZone} و رسیدن به وقت{' '}
-            {segment.arrivalZone}؛ برای برگشت برعکس. Min و Max فاصلهٔ روزهای
-            مجاز برگشت در فروش هستند. Max پیش‌فرض برای هر رفت، یک روز بیشتر از
-            فاصلهٔ برگشت است و می‌توانید آن را تغییر دهید.
+            ساعت رفت و برگشت به وقت تهران است. Min و Max فاصلهٔ روزهای مجاز
+            برگشت در فروش هستند. Max پیش‌فرض برای هر رفت، یک روز بیشتر از فاصلهٔ
+            برگشت است و می‌توانید آن را تغییر دهید.
           </p>
           <div className={styles.options}>
             <FormField
