@@ -1391,7 +1391,13 @@ export class SalesService {
                 throw new ConflictException('اصلاح ظرفیت بلیت در دسترس نیست.');
               await this.tickets.amend(
                 tx,
-                input.ticketSelections ?? [],
+                (input.ticketSelections ?? []).filter((selection) =>
+                  input.passengers.some(
+                    (p) =>
+                      categories[p.customerId] !== 'INF' &&
+                      p.serviceClientKeys.includes(selection.serviceClientKey),
+                  ),
+                ),
                 row.branchId,
                 id,
                 input.passengers.filter(

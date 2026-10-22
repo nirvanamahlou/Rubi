@@ -8884,3 +8884,9 @@ COMPUTER_ID=PC-A; branch codex/pc-a-load-day-calendar-1022 from develop e2f7441a
 LOAD-DAY-CALENDAR-1022:238 focused tests pass (one existing skip). Source/shared-label locks release with candidate publication. No schema/API/dependency/runtime changes; exact-head hosted gates required before owner-authorized merge.
 
 CONTRACT-CHARTER-INFANTS-1022 integration: all8 hosted quality/types/tests/production-build/PostgreSQL gates passed on add15f78. Latest develop introduced only append conflicts in task/status and English display catalogues; both work items and all unique translations retained, derived catalogues regenerated. Production Sales/API patch unchanged. Revalidate integrated head before authorized merge; no runtime/migration/data writes.
+
+## PASSENGER-SERVICE-AMEND-1022 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-passenger-service-amend-1022 from latest develop. Owner requests per-passenger flight/transfer memberships and different hotel dates in Reservations correction table, canonical amendment persistence and updated downstream documents; authorizes develop merge. Reserve Reservations amendment components/model/tests, passenger table optional columns, bounded Sales amendment/downstream tests as needed and related English/status notes. Prior scoped reservations released. Preserve Sales-owned transaction/version/permissions/inventory and immutable prior documents; no schema/dependency/runtime changes.
+
+PASSENGER-SERVICE-AMEND-1022 scope: reserve Sales amendment capacity selection filter and focused regression. Keep contract flight facts even when everyone deselects a leg; only actual non-infant memberships enter the inventory amend command. Existing command releases removed allocations atomically. No Ticket Catalog invariant relaxed.

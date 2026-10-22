@@ -1,4 +1,5 @@
 'use client';
+import { PassengerServiceEditor } from './passenger-service-editor';
 import { PASSENGER_FLIGHT_PRICES, type SalesMoney } from '@nora/contracts';
 import { amendmentPriceComponents } from './amendment-price-components';
 import { isOptionalOperationReason } from '@nora/contracts';
@@ -481,6 +482,14 @@ export function ReservationSalesAmendment({
         {section === 'CORRECTION' && requestId && (
           <ReservationPassengers
             id={requestId}
+            serviceEditor={(customerId) => (
+              <PassengerServiceEditor
+                draft={draft}
+                customerId={customerId}
+                disabled={busy || saved}
+                onChange={setDraft}
+              />
+            )}
             ageEditor={(customerId) => {
               const passenger = draft.passengers.find(
                 (p) => p.customerId === customerId,
