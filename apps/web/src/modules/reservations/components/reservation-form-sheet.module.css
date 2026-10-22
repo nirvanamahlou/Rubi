@@ -361,3 +361,51 @@
 .jahanLogo {
   max-height: 23mm;
 }
+
+/* Supplier forms paginate naturally; reserve a separate repeating print footer. */
+.supplierPage {
+  position: relative;
+  padding-bottom: 38mm;
+}
+.supplierFooter {
+  position: absolute;
+  bottom: 8.5mm;
+  left: 8.5mm;
+  right: 8.5mm;
+}
+.supplierPage .passengers th,
+.supplierPage .passengers td {
+  padding: 4px 3px;
+  font-size: 8px;
+}
+@page reservationSupplier {
+  size: A4;
+  margin: 8.5mm 8.5mm 34mm;
+  @bottom-right {
+    content: counter(page) ' / ' counter(pages);
+    font: 8pt Arial;
+  }
+}
+@media print {
+  .supplierDocument {
+    page: reservationSupplier;
+  }
+  .supplierPage {
+    break-after: auto;
+    width: auto;
+    padding: 0;
+    min-height: 0;
+  }
+  .supplierFooter {
+    position: fixed;
+    bottom: -27mm;
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding-top: 2mm;
+  }
+}
+
+.supplierDocument {
+  position: relative;
+}

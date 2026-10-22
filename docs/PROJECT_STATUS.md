@@ -7006,3 +7006,8 @@ Create/edit now use the same personnel wizard for sensitive-authorized staff, hy
 ## HR-OPTIONAL-NATIONAL-ID-1022 — PC-B — READY_FOR_CI / 2026-10-22
 
 National ID is optional in the shared create/edit personnel wizard, generic HR identity schema and backend completion validation. Empty/whitespace is accepted; supplied values still require ten normalized digits. Existing encrypted storage, permissions, CAS and unrelated required fields remain unchanged. Focused API8 and Web10 tests pass, including blank, Persian digits and invalid supplied values; PostgreSQL regression covers blank creation and clearing on edit. Final exact-head hosted quality/types/tests/database/build gates precede authorized develop merge. Owner explicitly canceled server deployment after SSH access failed; no server changes, schema/migration/dependency changes or Radan writes.
+
+## RESERVATION-FORM-FOOTER-SERVICES-1022 — PC-A
+
+Supplier reservation output consumes the contract passenger service allocations for outbound/return flights, hotel stay dates, outbound/return transfers and other services. Registered English reference names and English issuer contact are used. Supplier print layout reserves a repeating bottom contact/QR footer with native page counters and natural room/passenger pagination; voucher workflow and public capability guards remain. Forty-six focused regressions pass; final real PDF visual checks and hosted gates remain required before authorized develop merge. No schema/migration/dependency or operational data/runtime change.
+

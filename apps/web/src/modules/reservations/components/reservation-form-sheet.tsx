@@ -169,12 +169,14 @@ export function ReservationFormSheet({
       )
     : [data.passengers];
   const roomAppendices =
-    !settings || settings.flags.hotel
+    voucher && (!settings || settings.flags.hotel)
       ? reservationRoomAppendices(data.roomBreakdown)
       : [];
   const pageCount = pages.length + roomAppendices.length;
   return (
-    <div className={styles.document}>
+    <div
+      className={`${styles.document} ${!voucher ? styles.supplierDocument : ''}`}
+    >
       {pages.map((people, page) => {
         const first = pages
           .slice(0, page)
@@ -182,8 +184,10 @@ export function ReservationFormSheet({
         return (
           <article
             key={page}
-            className={styles.page}
+            className={`${styles.page} ${!voucher ? styles.supplierPage : ''}`}
             dir="ltr"
+            lang="en"
+            translate="no"
             data-reservation-form-page
           >
             <header
@@ -375,15 +379,17 @@ export function ReservationFormSheet({
                       </tr>
                     </thead>
                     <tbody>
-                      {data.roomBreakdown.slice(0, 4).map((r) => (
-                        <tr key={r.ordinal}>
-                          <td>{r.ordinal}</td>
-                          <td dir="auto">{r.roomType}</td>
-                          <td>{r.adults}</td>
-                          <td>{r.childAges.join(', ') || '-'}</td>
-                          <td>{r.adults + r.childAges.length}</td>
-                        </tr>
-                      ))}
+                      {data.roomBreakdown
+                        .slice(0, voucher ? 4 : undefined)
+                        .map((r) => (
+                          <tr key={r.ordinal}>
+                            <td>{r.ordinal}</td>
+                            <td dir="auto">{r.roomType}</td>
+                            <td>{r.adults}</td>
+                            <td>{r.childAges.join(', ') || '-'}</td>
+                            <td>{r.adults + r.childAges.length}</td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 ) : null}
@@ -435,13 +441,15 @@ export function ReservationFormSheet({
                 </tr>
               </tbody>
             </table>
-            <Heading number="05" title="PASSENGERS" note="Passenger MANIFEST" />
+            <Heading number="05" title="PASSENGERS" note="Passenger services" />
             <table className={`${styles.table} ${styles.passengers}`}>
               <colgroup>
                 <col style={{ width: '6%' }} />
-                <col style={{ width: '56%' }} />
-                <col style={{ width: '17%' }} />
-                <col style={{ width: '21%' }} />
+                <col style={{ width: voucher ? '56%' : '20%' }} />
+                <col style={{ width: voucher ? '17%' : '5%' }} />
+                <col style={{ width: voucher ? '21%' : '7%' }} />
+                {!voucher &&
+                  Array.from({ length: 7 }, (_, index) => <col key={index} />)}
               </colgroup>
               <thead>
                 <tr>
@@ -449,12 +457,23 @@ export function ReservationFormSheet({
                   <th>SURNAME / NAME</th>
                   <th>SEX</th>
                   <th>AGE RATE</th>
-                  {data.passengers.some((p) => p.checkIn !== undefined) && (
-                    <>
-                      <th>CHECK-IN</th>
-                      <th>CHECK-OUT</th>
-                    </>
-                  )}
+                  {!voucher &&
+                    [
+                      'FLIGHT OUT',
+                      'FLIGHT BACK',
+                      'CHECK-IN',
+                      'CHECK-OUT',
+                      'TRANSFER OUT',
+                      'TRANSFER BACK',
+                      'OTHER SERVICES',
+                    ].map((label) => <th key={label}>{label}</th>)}
+                  {voucher &&
+                    data.passengers.some((p) => p.checkIn !== undefined) && (
+                      <>
+                        <th>CHECK-IN</th>
+                        <th>CHECK-OUT</th>
+                      </>
+                    )}
                 </tr>
               </thead>
               <tbody>
@@ -465,12 +484,26 @@ export function ReservationFormSheet({
                       <td dir="auto">{p.name}</td>
                       <td>{p.sex}</td>
                       <td>{p.age}</td>
-                      {data.passengers.some((p) => p.checkIn !== undefined) && (
+                      {!voucher && (
                         <>
-                          <td>{p.checkIn ?? '—'}</td>
-                          <td>{p.checkOut ?? '—'}</td>
+                          <td>{p.outboundFlight ? '✓' : '-'}</td>
+                          <td>{p.returnFlight ? '✓' : '-'}</td>
+                          <td>{p.checkIn ?? '-'}</td>
+                          <td>{p.checkOut ?? '-'}</td>
+                          <td>{p.outboundTransfer ? '✓' : '-'}</td>
+                          <td>{p.returnTransfer ? '✓' : '-'}</td>
+                          <td>{p.otherServices}</td>
                         </>
                       )}
+                      {voucher &&
+                        data.passengers.some(
+                          (p) => p.checkIn !== undefined,
+                        ) && (
+                          <>
+                            <td>{p.checkIn ?? '—'}</td>
+                            <td>{p.checkOut ?? '—'}</td>
+                          </>
+                        )}
                     </tr>
                   ))
                 ) : (
@@ -493,34 +526,50 @@ export function ReservationFormSheet({
                 </div>
               )}
             </div>
-            <footer className={styles.footer}>
-              {
-                <div
-                  data-reservation-footer
-                  dangerouslySetInnerHTML={{
-                    __html: reservationFormFooterHtml(
-                      intake.id,
-                      origin,
-                      intake.workflow.branding?.companyCode,
-                      data.brand,
-                      publicDocumentUrl,
-                    ),
-                  }}
-                />
-              }
-              <div>
-                <span>{''}</span>
-              </div>
-              <b>
-                {page + 1} / {pageCount}
-              </b>
-            </footer>
+            {voucher && (
+              <footer className={styles.footer}>
+                {
+                  <div
+                    data-reservation-footer
+                    dangerouslySetInnerHTML={{
+                      __html: reservationFormFooterHtml(
+                        intake.id,
+                        origin,
+                        intake.workflow.branding?.companyCode,
+                        data.brand,
+                        publicDocumentUrl,
+                      ),
+                    }}
+                  />
+                }
+                <div>
+                  <span>{''}</span>
+                </div>
+                <b>{voucher ? `${page + 1} / ${pageCount}` : ''}</b>
+              </footer>
+            )}
           </article>
         );
       })}
+      {!voucher && (
+        <footer className={`${styles.footer} ${styles.supplierFooter}`}>
+          <div
+            data-reservation-footer
+            dangerouslySetInnerHTML={{
+              __html: reservationFormFooterHtml(
+                intake.id,
+                origin,
+                intake.workflow.branding?.companyCode,
+                data.brand,
+                publicDocumentUrl,
+              ),
+            }}
+          />
+        </footer>
+      )}
       {roomAppendices.map((rooms, index) => (
         <article
-          className={styles.page}
+          className={`${styles.page} ${!voucher ? styles.supplierPage : ''}`}
           key={`rooms-${index}`}
           dir="ltr"
           data-reservation-form-page

@@ -53,7 +53,7 @@ export function reservationPdfHtml(
   const table = (heads: string[], rows: unknown[][], extra = '') =>
     `<table class="table ${extra}"><thead><tr>${heads.map((h) => `<th>${escape(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((v) => `<td dir="auto">${escape(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
   const roomAppendices =
-    !settings || settings.flags.hotel
+    voucher && (!settings || settings.flags.hotel)
       ? reservationRoomAppendices(data.roomBreakdown)
       : [];
   const pageCount = pages.length + roomAppendices.length;
@@ -70,13 +70,24 @@ export function reservationPdfHtml(
             : p.age === 'CHD (6-12)'
               ? 'CHD 6-12'
               : p.age,
-          ...(data.passengers.some((p) => p.checkIn !== undefined)
+          ...(!voucher
+            ? [
+                p.outboundFlight ? '✓' : '-',
+                p.returnFlight ? '✓' : '-',
+                p.checkIn ?? '-',
+                p.checkOut ?? '-',
+                p.outboundTransfer ? '✓' : '-',
+                p.returnTransfer ? '✓' : '-',
+                p.otherServices,
+              ]
+            : []),
+          ...(voucher && data.passengers.some((p) => p.checkIn !== undefined)
             ? [p.checkIn ?? '—', p.checkOut ?? '—']
             : []),
         ];
       });
       first += people.length;
-      return `<article class="page" dir="ltr"><header class="${withLetterhead ? 'header' : 'plainHeader'}"><div><h1>${voucher ? 'HOTEL VOUCHER' : 'RESERVATION FORM'}</h1><p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p></div><div class="brand${intake.workflow.branding?.kind === 'OWN' && intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? ' jahanBrand' : ''}">${withLetterhead ? `<img class="${intake.workflow.branding?.kind === 'OWN' ? (intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? 'jahanLogo' : 'logo') : 'agencyLogo'}" src="${logo}" alt=""/>` : ''}</div></header>
+      return `<article class="page" dir="ltr" lang="en"><header class="${withLetterhead ? 'header' : 'plainHeader'}"><div><h1>${voucher ? 'HOTEL VOUCHER' : 'RESERVATION FORM'}</h1><p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p></div><div class="brand${intake.workflow.branding?.kind === 'OWN' && intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? ' jahanBrand' : ''}">${withLetterhead ? `<img class="${intake.workflow.branding?.kind === 'OWN' ? (intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? 'jahanLogo' : 'logo') : 'agencyLogo'}" src="${logo}" alt=""/>` : ''}</div></header>
     ${fields(
       [
         [voucher ? 'BOOKING NO.' : 'REQUEST NO.', data.request],
@@ -135,7 +146,7 @@ export function reservationPdfHtml(
         ? table(
             ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'],
             data.roomBreakdown
-              .slice(0, 4)
+              .slice(0, voucher ? 4 : undefined)
               .map((r) => [
                 r.ordinal,
                 r.roomType,
@@ -154,9 +165,9 @@ export function reservationPdfHtml(
       ${table(['CHECK-IN', 'CHECK-OUT'], [[data.checkIn, data.checkOut]]).replace('<thead>', '<caption>STAY DATES</caption><thead>')}
     </div>
     ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table(['TRANSFER', 'TOUR LEADER', 'EXCURSION'], [[voucher ? data.transfer + ' · Board: ' + (settings?.text.transferBoard?.trim() || '-') : data.transfer, data.leader, data.excursion]])}
-    ${heading('05', 'PASSENGERS', 'Passenger MANIFEST')}${table(['#', 'SURNAME / NAME', 'SEX', 'AGE RATE', ...(data.passengers.some((p) => p.checkIn !== undefined) ? ['CHECK-IN', 'CHECK-OUT'] : [])], rows.length ? rows : [['-', '-', '-', '-']], 'passengers')}
+    ${heading('05', 'PASSENGERS', 'Passenger services')}${table(['#', 'SURNAME / NAME', 'SEX', 'AGE RATE', ...(!voucher ? ['FLIGHT OUT', 'FLIGHT BACK', 'CHECK-IN', 'CHECK-OUT', 'TRANSFER OUT', 'TRANSFER BACK', 'OTHER SERVICES'] : []), ...(voucher && data.passengers.some((p) => p.checkIn !== undefined) ? ['CHECK-IN', 'CHECK-OUT'] : [])], rows.length ? rows : [['-', '-', '-', '-']], 'passengers')}
     ${heading('06', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
-    <footer class="footer"><div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin, intake.workflow.branding?.companyCode, data.brand, publicDocumentUrl)}</div><div><span></span></div><b>${index + 1} / ${pageCount}</b></footer></article>`;
+    <footer class="footer"><div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin, intake.workflow.branding?.companyCode, data.brand, publicDocumentUrl)}</div><div><span></span></div>${voucher ? `<b>${index + 1} / ${pageCount}</b>` : ''}</footer></article>`;
     })
     .join('');
   const appendices = roomAppendices
@@ -174,5 +185,11 @@ export function reservationPdfHtml(
         )}<footer class="footer"><b>${pages.length + index + 1} / ${pageCount}</b></footer></article>`,
     )
     .join('');
-  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:"><title>${escape(data.request)}</title><style>${css}\n@page{size:A4;margin:0}html,body{margin:0;padding:0}.page{margin:0;break-after:page}.page:last-child{break-after:auto}.passengers th:nth-child(2){width:56%}</style></head><body>${sheets}${appendices}</body></html>`;
+  const supplierFooter = !voucher
+    ? (sheets.match(/<footer class="footer">[\s\S]*?<\/footer>/)?.[0] ?? '')
+    : '';
+  const content = voucher
+    ? sheets
+    : sheets.replace(/<footer class="footer">[\s\S]*?<\/footer>/g, '');
+  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:"><title>${escape(data.request)}</title><style>${css}\n@page{size:A4;margin:0}html,body{margin:0;padding:0}.page{margin:0;break-after:page}.page:last-child{break-after:auto}.passengers th:nth-child(2){width:${voucher ? '56%' : '20%'}}${voucher ? '' : '@page reservationSupplier{size:A4;margin:8.5mm 8.5mm 34mm;@bottom-right{content:counter(page) " / " counter(pages);font:8pt Arial}}[data-supplier-form]{page:reservationSupplier}@media print{[data-supplier-form] .page{padding:0;min-height:0;width:auto;break-after:auto}[data-supplier-form] .footer{position:fixed;bottom:-27mm;left:0;right:0;margin:0;padding-top:2mm}}'}</style></head><body${voucher ? '' : ' data-supplier-form'}>${content}${appendices}${supplierFooter}</body></html>`;
 }

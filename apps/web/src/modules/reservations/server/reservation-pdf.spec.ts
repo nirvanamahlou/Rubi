@@ -387,7 +387,7 @@ it('keeps six regular passengers on one supplier form page', () => {
   );
   expect(html.match(/<article class="page"/g)).toHaveLength(1);
   expect(html).toContain('06</td>');
-  expect(html).toContain('1 / 1');
+  expect(html).toContain('counter(pages)');
   expect(html).not.toContain('<th>LEG</th>');
   expect(html).not.toContain('<span>TOUR LEADER</span>');
 });
@@ -599,4 +599,62 @@ it('publishes an issued voucher as its own voucher HTML without a browser PDF pr
   expect(publishing.html).toContain('HOTEL VOUCHER');
   expect(publishing.html).toContain('https://example.test/d/' + 'a'.repeat(32));
   expect(renderer).not.toHaveBeenCalled();
+});
+
+it('prints supplier service allocations from the contract and reserves a repeating footer', () => {
+  const value = structuredClone(intake);
+  value.snapshot.passengerIds = ['a', 'b'];
+  value.snapshot.passengerAssignments = [
+    {
+      customerId: 'a',
+      displayNameSnapshot: 'ALPHA / ONE',
+      ageCategory: 'ADT',
+      serviceClientKeys: ['flight-out', 'hotel', 'transfer-back'],
+    },
+    {
+      customerId: 'b',
+      displayNameSnapshot: 'BETA / TWO',
+      ageCategory: 'ADT',
+      serviceClientKeys: ['flight-back', 'insurance'],
+    },
+  ] as never;
+  value.snapshot.serviceSelections = [
+    {
+      clientKey: 'flight-out',
+      kind: 'FLIGHT',
+      metadata: { direction: 'OUTBOUND' },
+    },
+    {
+      clientKey: 'flight-back',
+      kind: 'FLIGHT',
+      metadata: { direction: 'RETURN' },
+    },
+    { clientKey: 'hotel', kind: 'HOTEL' },
+    {
+      clientKey: 'transfer-back',
+      kind: 'TRANSFER',
+      metadata: { direction: 'RETURN' },
+    },
+    { clientKey: 'insurance', kind: 'INSURANCE' },
+  ] as never;
+  value.snapshot.hotelSelection = {
+    serviceClientKey: 'hotel',
+    hotelId: 'hotel',
+    hotelNameSnapshot: 'SAMPLE HOTEL',
+    checkInDate: '2026-11-01',
+    checkOutDate: '2026-11-04',
+  } as never;
+  value.workflow.supplierFormSettings = defaultVoucherSettings(value, {});
+  value.workflow.supplierFormSettings.flags.withLetterhead = false;
+  const html = reservationPdfHtml(value, {}, '', '');
+  expect(html).toContain('<th>FLIGHT OUT</th>');
+  expect(html).toContain('<th>TRANSFER BACK</th>');
+  expect(html).toContain(
+    'ALPHA / ONE</td><td dir="auto">-</td><td dir="auto">ADL</td><td dir="auto">✓</td><td dir="auto">-</td><td dir="auto">01 NOV 2026',
+  );
+  expect(html).toContain('INSURANCE');
+  expect(html).toContain('position:fixed;bottom:-27mm');
+  expect(html).toContain('margin:8.5mm 8.5mm 34mm');
+  expect(html.match(/data-reservation-contact/g)).toHaveLength(1);
+  expect(html).not.toMatch(/[\u0600-\u06ff]/);
 });

@@ -28,10 +28,10 @@ export function reservationFormFooterHtml(
   const qr = url ? reservationFormQr(url) : null;
   const contact =
     companyCode && companyCode !== 'NIYAYESH_SEIR_SAHAR'
-      ? `<div data-reservation-contact><strong>${escape(companyCode === 'JAHAN_BASTAN' ? 'جهان باستان' : brandName)}</strong></div>`
+      ? `<div data-reservation-contact><strong>${escape(companyCode === 'JAHAN_BASTAN' ? 'Jahan Bastan' : brandName)}</strong></div>`
       : `<div data-reservation-contact><strong>RESERVATIONS CONTACT</strong><span>Nystkt.ir · 021-72075000</span><a href="mailto:${reservationContactEmail}">${reservationContactEmail}</a></div>`;
   const publicQr = publicDocumentQr(publicDocumentUrl);
   if (publicQr)
     return `${contact}<span data-reservation-qr>${publicQr}<small>SCAN TO VIEW DOCUMENT</small></span>`;
-  return `${contact}${qr ? `<a data-reservation-qr href="${escape(url)}" aria-label="مشاهده فرم رزواسیون">${qr}<small>SCAN TO VIEW FORM</small></a>` : ''}`;
+  return `${contact}${qr ? `<a data-reservation-qr href="${escape(url)}" aria-label="View reservation form">${qr}<small>SCAN TO VIEW FORM</small></a>` : ''}`;
 }

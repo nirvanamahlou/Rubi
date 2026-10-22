@@ -37,7 +37,7 @@ export async function prepareReservationHtml(
       origin,
       publicDocumentUrl,
     ),
-    language,
+    voucher ? language : 'en',
   );
   if (font) {
     const fontBytes = await readFile(font);
@@ -111,7 +111,7 @@ export async function renderReservationPdf(
         '--print-to-pdf=' + result,
         pathToFileURL(input).href,
       ],
-      { env, windowsHide: true, timeout: 30000, maxBuffer: 1024 * 1024 },
+      { env, windowsHide: true, timeout: 60000, maxBuffer: 1024 * 1024 },
     );
     // Chrome may return before its child finishes writing the PDF on Windows.
     const deadline = Date.now() + 10_000;
