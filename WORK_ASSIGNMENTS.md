@@ -8890,3 +8890,140 @@ COMPUTER_ID=PC-A; branch codex/pc-a-load-day-calendar-1022 from develop e2f7441a
 LOAD-DAY-CALENDAR-1022:238 focused tests pass (one existing skip). Source/shared-label locks release with candidate publication. No schema/API/dependency/runtime changes; exact-head hosted gates required before owner-authorized merge.
 
 CONTRACT-CHARTER-INFANTS-1022 integration: all8 hosted quality/types/tests/production-build/PostgreSQL gates passed on add15f78. Latest develop introduced only append conflicts in task/status and English display catalogues; both work items and all unique translations retained, derived catalogues regenerated. Production Sales/API patch unchanged. Revalidate integrated head before authorized merge; no runtime/migration/data writes.
+
+## CALL-CENTER-READINESS-1021 — PC-C — READY_FOR_REVIEW
+
+Owner requests completing all provider-independent readiness work and localhost3000 activation while preserving the approved Call Center UI. Branch codex/pc-c-call-center-readiness-1021 from origin/develop550a5dd5. Reserve Integrations telephony/Issabel services/controllers/tests, Customer Affairs telephony public authorization/read contract and KPI regression tests, Worker telephony recovery/tests, scripts/call-center operational tooling and own documentation. Additive backend contracts only; producer Integrations and consumer Customer Affairs authorize media via a public scope check. No UI/layout/style/control changes, no technical/test panel, no dependencies or new schema/migration. Prior Call Center and Issabel source scopes published/released; final-publish integration scope does not overlap new implementation. Preserve all local runtime overlays and unrelated services. Target: bounded authenticated operations metrics, safe retained recording access backend, recoverable media publication, durable provider-neutral event relay tooling, recovery/security/reporting/load evidence and a reproducible operator/pilot runbook. Actual PBX hooks, credentials, historical CDR/CEL reconciliation and live latency remain unverified until real access. No operational fixtures, account grants or real calls. Reference: docs/tasks/CALL-CENTER-UI-PRESERVATION.md. Existing UI baseline: localhost build uLTV0_qicViVV1BxsDKHW (approved KPI/report trim). Source/migration/runtime evidence must precede activation; commit/push only this work unit.
+
+CALL-CENTER-READINESS-1021 bounded shared-file reservation: add only the independent customer_affairs.call_center.recordings.read permission definition in packages/database/src/permission-seed-data.ts; no live seed or account grants. Reserve integrations.module.ts registration for protected backend-only relay/media endpoints. No schema or migration needed. Canonical relay v1 accepts only a server-configured real connection with a separate disabled-by-default credential; it is not an Issabel payload assumption or a UI test harness.
+Shared contract clarification: reserve additive CUSTOMER_AFFAIRS_PERMISSIONS.callCenterRecordingRead in packages/contracts/src/customer-affairs/index.ts, consumed by IAM permission typing and the media guard/seed definition. Existing permission meanings and user grants are unchanged; this is deny-by-default until explicitly assigned. No new UI permission or controls are mounted.
+
+Validation and handoff: 104 targeted tests pass (48 PostgreSQL, 15 protocol/security/state, 7 HTTP, 4 Worker, 20 existing Web, 4 contracts, 6 relay/uploader), plus actual Redis/BullMQ recovery smoke. Scoped lint, typecheck, API/Worker builds and diff checks pass. No Web source changed. Encrypted backup and actual isolated restore preserve 7 calls/5 contacts/2 notes and existing call ciphertext. Only existing additive migration 20261020150000_issabel_adapter applied locally; no new migration or unrelated pending migration. Compatible isolated runtime API4000 and Worker4409 health200, authenticated Worker pending200, protected health401; unchanged approved Web3000 build uLTV0_qicViVV1BxsDKHW HTTP200. Real, relay and synthetic ingress disabled; no account grant or operational fixture. Source reservations freeze/release on task publication. No PR, merge or production deploy. Full evidence/limitations: docs/tasks/CALL-CENTER-READINESS-1021.md.
+
+## AMI-COMPANY-OBSERVE-1021 — PC-C — READY_FOR_REVIEW
+
+Owner supplies Issabel4/Asterisk16/company-LAN AMI and requests connection/event readiness with no UI change and no popup before extension mapping. Stacked on readiness5d3ebb3f to preserve its unmerged tooling; origin/develop f2c54dde checked. Reserve only scripts/call-center/ami-observe* and own task/status notes; reuse existing AMI transport without changing its public contract. No overlap with PC-B CALL-CENTER-MANUAL-ACCESS-1021 IAM/domain scope. Observation-only standalone process never imports database, projection, recipient or Web services and never sends Originate; no production activation, mappings, grants, schema or dependencies. Credentials stay out of Git; company host profile stays private. Source events yield bounded redacted diagnostics only; actual network acceptance deferred to company LAN. Existing strict production TLS policy remains unchanged.
+
+Bounded transport correction reservation: apps/api/src/integrations/issabel/ami.ts only, preserving public API. AMI Login success and its first event may share one TCP packet; readiness must be set before dispatching subsequent frames to avoid dropping that event. No routing/domain/PC-B access files touched. Add loopback regression to observer tests.
+
+AMI-COMPANY-OBSERVE-1021 validation:14 tests pass (7 receiver loopback/privacy/configuration and7 existing AMI/security); PowerShell parser, Node syntax, scoped lint, full API typecheck/build and diff checks pass. Original operational flags remain disabled and Web/API healthy200. No real PBX access claimed. Source reservations freeze/release on commit/push; no PR/merge/production activation performed.
+
+## AMI-NATIVE-INGEST-1021 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C. Owner explicitly requests real AMI events to persist through existing Call Center pipeline, no UI changes and no popup before mapping. Stacked on published observer0ef9b7a5/readiness5d3ebb3f to preserve unmerged runtime prerequisites; fetched origin/develop01f962d0 checked. Reserve Integrations issabel native normalizer/config/service/tests and bounded telephony receive suppression, own task/status notes only. No changes to PC-B manual-access/IAM, PC-D registry controls, schema, migration, dependencies, Web or shared contracts. Real queue events feed canonical v1 Inbox/Outbox and existing public Customer Affairs projection; native inbound queue capture explicitly disables outbound commands and all recipient resolution. Branch/queue approval required before activation. Source evidence: successful isolated AMI authentication and queue-ring/answer/root-hangup observation on2026-10-21, no real persistence yet. No CDR/audio/history claim. Exact runtime compatibility and no-offer evidence required. No PR/merge/production deployment.
+
+AMI-NATIVE-INGEST-1021 completion: implementation READY_FOR_REVIEW; source scope freezes/releases on publication. Owner answer: sales only, queue to be supplied later. No real activation until queue and ERP branch approved.32 distinct focused tests passed (including native socket and real PostgreSQL dedupe/restart/reverse projection/zero-offer defense); API typecheck/build and scoped lint passed.180 existing migrations applied only to disposable PostgreSQL; no migration created or applied operationally. Current localhost Web/API/Worker health200; no runtime replacement. New native mode cannot originate or map popup recipients, even if mappings already exist. No PR/merge/deploy. See docs/tasks/AMI-NATIVE-INGEST-1021.md.
+
+## AMI-SALES-ACTIVATION-1021 — PC-C — LOCAL_ACCEPTED
+
+Owner authorizes local activation and real-call test for verified sales queue1002, no UI change or popup delivery. Base d04ad9b2 native-ingest candidate; origin/develop e1e4909c fetched/checked. Reserve own activation docs and isolated runtime artifact only; reuse released native capture source unchanged unless a bounded defect is found and documented. COMPUTER_ID=PC-C. Preserve approved Web3000 and original API/Worker artifacts, all other worktrees/services. No schema/migration, account grant, mappings, PBX writes, dependency changes or production deployment. Native capture must persist through existing canonical Inbox/Outbox and Worker with null recipients. Existing only local branch is HQ; user confirmation requested. Local connection setup via authorized existing Integrations application service, no direct cross-module table mutation. Secure environment outside Git; live acceptance must verify real call persistence and zero new offers. No PR/merge.
+
+## AMI-SALES-ACTIVATION-1021 — PC-C — LOCAL_ACCEPTED
+
+Queue1002 native inbound capture is active on the compatible local API4000; owner approved HQ storage for the shared sales team. Approved Web3000 and Worker4409 retained. Actual authorized Integrations services configured the real connection without permission/mapping/schema changes. Owner-confirmed real call produced four DONE events and exactly one ENDED TELEPHONY call, zero new popup offers, zero active mappings; operational calls7→8 and preexisting offer count stayed1. Build, typecheck, scoped lint,10 targeted tests and three health checks pass. Details and rollback: docs/tasks/AMI-SALES-ACTIVATION-1021.md. No production deployment/PR/merge; recording retrieval, outage reconciliation and routing remain separate.
+
+## CALL-CENTER-OPERATIONS-1021 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C. Owner requests completing information-independent readiness with approved UI unchanged and zero popup delivery. Base7deea673; fetched origin/develop30358baa. Reserve Integrations Issabel lifecycle service/new private lifecycle helper/tests, native scenario tests, existing readiness CLI/tests, own docs. Bounded central apps/api/src/main.ts reservation only for graceful shutdown hooks, no overlapping active main.ts lock found. Existing canonical contract and Customer Affairs/IAM/PC-B scope unchanged. No schema/migration/dependency, grants, extension mappings, PBX write or outbound activation. Persist sanitized connection incidents using existing Integrations audit and retain unacknowledged coverage gaps; drain already received frames on graceful shutdown. Test concurrent/abandoned/transfer/reconnect and zero recipients against disposable infrastructure; no artificial operational calls. Compatible local backend rollout after checks, approved Web/Worker preserved. No PR/merge/production deploy or external notification.
+
+## CALL-CENTER-OPERATIONS-1021 — PC-C — LOCAL_VERIFIED
+
+Provider-independent operational completion on7deea673: durable sanitized AMI continuity audit, conservative restart/gap visibility, bounded graceful frame drain and API shutdown hooks; existing readiness CLI now fails disconnected/unknown/gap states rather than trusting API health alone.24 selected API/socket/security/real-PostgreSQL tests and4 CLI tests pass; full API types, scoped lint, compatible build and diff checks pass. Local API4000 PID23700 authenticated, old real call and4 DONE receipts preserved, zero real offers and no active mappings. Approved Web3000 build uLTV0_qicViVV1BxsDKHW and Worker4409 unchanged. No schema/dependency/grant/PBX write/production deploy. Legacy rollover gap recorded honestly; no claim of historical backfill or new live multi-call acceptance. Source reservation freezes/releases on commit/push. Remaining externally gated items and evidence: docs/tasks/CALL-CENTER-OPERATIONS-1021.md.
+
+## STICKY-SALES-FOUNDATION-1021 — PC-C — IN_PROGRESS
+
+Owner explicitly requests all SSH-independent sticky-sales implementation: actual answering extension, private phone-to-latest-answer history, decision/fallback policy and tests; approved UI unchanged and native popups remain suppressed. Base2efa0082; fetched develop7b4fa80a. PC-B CALL-CENTER-MANUAL-ACCESS candidate explicitly releases published schema reservations; no later active migration scope found. Reserve sole Migration/schema ownership for one additive Integrations-owned answer history table with real connection/inbox FK and indexed HMAC phone lookup; no changes to IAM/contact ownership or unrelated schema. Reserve native normalization, bounded receive transaction history projection, new sticky store/policy and tests, own docs/data-model notes. Existing canonical v1 extension becomes technical answering extension for native AgentConnect only; native recipient-resolution suppression stays authoritative. Source raw Interface evidence: QueueStatus1002 members use Local/<extension>@from-queue/n; no guessing from MemberName. No public routing endpoint, live routing/AMI write, SSH, caller identity merge, grants, mapping or Web change. Future PBX producer must use explicit authenticated prequeue protocol and preserve capture/recording semantics; installation remains gated. No dependency changes. Additive local migration only after compatible build/disposable DB tests and backup; preserve current capture and rollout safely. Commit/push only, no PR/merge/production deploy.
+
+## STICKY-SALES-FOUNDATION-1021 — PC-C — LOCAL_VERIFIED
+
+Actual answering extension, encrypted HMAC-indexed answer history and internal
+preference/fallback policy completed.26 targeted tests plus API types/lint and
+compatible build pass. Additive migration locally applied after encrypted backup
+validation; API4000 PID14280 authenticated, approved Web/Worker retained, existing
+real call preserved and zero real offers. No new real answering-call acceptance
+claimed. No UI, popup, mapping/grant, PBX write or actual routing activation.
+Source and sole schema/migration reservation freeze/release on commit/push.
+Handoff and remaining SSH/production gates: docs/tasks/STICKY-SALES-FOUNDATION-1021.md.
+
+## CALL-CENTER-COMPLETION-1022 — PC-C — IN_PROGRESS
+
+Owner requests SSH-independent final workflow: retain LAST answering extension,
+manual business completion of durable native calls, explicit unanswered calls in
+existing list, no automatic popup and no design change. Continue unmerged local
+source13d4c5f1 (required native/sticky prerequisites), fetched developd3880878;
+no active overlap in latest assignments for these bounded files. Reserve Customer
+Affairs call completion/projection/read metadata, native adapter, existing Web form
+and dossier action wiring/tests and own docs. Additive optional response metadata
+only, producer/consumer compatible; no schema/migration/dependency/shared contract
+change. Keep incomplete technical contacts recoverable in existing list/filter,
+reuse existing form to complete same call ID rather than creating a manual duplicate.
+No SSH/PBX writes, permissions, mappings, automatic popup, PR/merge/production.
+
+## CALL-CENTER-COMPLETION-1022 — PC-C — LOCAL_VERIFIED
+
+Delivered completion-in-place, explicit unanswered evidence and late-fact handling,
+existing-form recovery with version token/audit and preserved approved design.41 API
+and21 Web tests pass; scoped lint/typechecks and compatible builds pass. Runtime
+API10520/Web9284 activated, Worker unchanged, zero real offers. No schema/dependency,
+permissions/mappings, SSH, PR/merge or production deployment. Source/contract scope
+freezes/releases on commit/push. Handoff: docs/tasks/CALL-CENTER-COMPLETION-1022.md.
+
+## CALL-CENTER-QUEUE-1022 — PC-C — ACTIVE
+
+Owner explicitly requests four queue views ALL, OPEN, CLOSED, MINE in that order.
+Continue approved local b14dce24 prerequisite stack on codex/pc-c-call-center-queue-1022.
+Reserve workflow.tsx, workflow DTO/service/spec and own status/docs. Add CLOSED
+additively to queue producer/consumer; retain legacy API filters for compatibility.
+No ownership, permission, schema, dependency, popup or other design changes.
+
+## CALL-CENTER-QUEUE-1022 — PC-C — LOCAL_VERIFIED
+
+Requested four queue views delivered; additive CLOSED API with scope/count tests.
+13 API +10 Web tests, lint/types/builds pass. Local API4000/Web3000 HTTP200.
+No schema/dependency/ownership/popup change. Bounded reservations release on push.
+
+## CALL-CENTER-CALLER-EDIT-1022 — PC-C — IN_PROGRESS
+
+Owner requests preservation of incoming caller numbers, recovery of the verified October22 10:02 call from encrypted evidence, and row-click modal editing. Base254679d0; released queue/completion reservations checked, clean worktree. Reserve call-center normalization, create/update path, source-backed recovery script, workspace/form tests and own docs. Preserve identity/contact/ownership/technical facts; no guessed area code, no synthetic operational call, no permission expansion or PBX write. Existing user authorization identifies PC-C. Local recovery must be transactional, backed up and idempotent.
+
+## CALL-CENTER-CALLER-EDIT-1022 — PC-C — LOCAL_VERIFIED
+
+Implementation/test/build/local recovery complete. Exact history retained, no
+raw caller logged, no schema/PBX/grant change. Release bounded source reservation
+on commit/push. Evidence in docs/tasks/CALL-CENTER-CALLER-EDIT-1022.md.
+
+## CALL-CENTER-ROW-FORM-1022 — PC-C — IN_PROGRESS
+
+Owner clarification: row click opens prefilled CallForm directly; View retains original responsive dossier. Reserve workspace/call-form and own docs only, clean base5244f062. No backend/data/permissions change. Stop propagation on View and preserve keyboard access.
+
+## CALL-CENTER-ROW-FORM-1022 — PC-C — LOCAL_VERIFIED
+
+Clarified interactions delivered and locally activated after form tests/lint/
+types/build. Release workspace/call-form reservations on push. No backend/data change.
+
+## CALL-CENTER-DOSSIER-ACTIONS-1022 — PC-C — IN_PROGRESS
+
+Owner requests only edit-contact/new-request actions below identity, remove next-action block and dossier duplicate create/filter controls. Reserve workspace/workflow only, clean5c3dc592. Keep WorkQueue controls and backend permissions unchanged; reuse existing request editor and existing-call form.
+
+## CALL-CENTER-DOSSIER-ACTIONS-1022 — PC-C — LOCAL_VERIFIED
+
+Requested dossier actions delivered,13 tests/lint/types/build pass; local Web
+activated. Workspace/workflow source reservation releases on push.
+
+## CALL-CENTER-REQUEST-FLOW-1022 — PC-C — ACTIVE
+
+Owner authorizes request create default-open without status control, focused queue
+request dialog with caller context and completion, sales-manager closure notification.
+Continue965e7cd2 approved local prerequisite stack; prior source scopes released.
+Reserve workflow Web/API DTO/controller/service/spec/client, IAM public recipient
+lookup if needed, and own docs. Preserve encryption/branch/CAS/idempotency and UI
+outside explicitly requested flow. Manager identity clarification pending; no assumed
+recipient, permission expansion, schema/dependency, automatic popup or PBX change.
+
+## CALL-CENTER-REQUEST-FLOW-1022 — PC-C — LOCAL_VERIFIED
+
+Default-open request creation, focused queue caller/request context and encrypted
+completion result delivered. Configurable closure notification path tested; actual
+manager recipient deferred by owner, no delivery configured.15 API/12 Web tests,
+lint/types/builds pass; local API/Web HTTP200. No schema/permission/PBX change.
+Release bounded source/API consumer/IAM directory reservation on commit/push.

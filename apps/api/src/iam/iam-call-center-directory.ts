@@ -100,4 +100,15 @@ export class IamCallCenterDirectory {
       );
     return user;
   }
+  /** Explicit deployment configuration; never infer sales managers from request authors. */
+  async closureRecipients(tx: Prisma.TransactionClient, branchId: string) {
+    const ids = new Set(
+      (process.env.CALL_CENTER_CLOSURE_MANAGER_IDS ?? '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean),
+    );
+    if (!ids.size) return [];
+    return (await this.list(branchId, tx)).filter((user) => ids.has(user.id));
+  }
 }

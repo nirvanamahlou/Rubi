@@ -16,9 +16,14 @@ import { IntegrationRegistryService } from './integration-registry.service';
 import { IssabelService } from './issabel/issabel.service';
 import { IssabelRecordingsService } from './issabel/recordings.service';
 import {
+  TelephonyRelayController,
+  TelephonyRelayGuard,
+} from './telephony-relay.controller';
+import {
   IssabelController,
   IssabelRecordingController,
   IssabelRecordingGuard,
+  TelephonyRecordingReadController,
 } from './issabel/issabel.controller';
 
 @Module({
@@ -29,6 +34,8 @@ import {
     SystemManagementModule,
   ],
   controllers: [
+    TelephonyRelayController,
+    TelephonyRecordingReadController,
     IssabelController,
     IssabelRecordingController,
     TelephonyIntegrationController,
@@ -37,6 +44,7 @@ import {
     IntegrationRegistryController,
   ],
   providers: [
+    TelephonyRelayGuard,
     IssabelService,
     IssabelRecordingsService,
     IssabelRecordingGuard,

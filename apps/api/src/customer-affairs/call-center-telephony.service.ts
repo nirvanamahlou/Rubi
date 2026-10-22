@@ -97,14 +97,7 @@ export class CallCenterTelephonyService {
       const id = randomUUID(),
         callId = randomUUID();
       const raw = event.direction === 'IN' ? event.caller : event.destination;
-      let phone = '';
-      if (raw.kind === 'KNOWN') {
-        try {
-          phone = normalizedCallPhone(raw.value!);
-        } catch {
-          /* Internal/short numbers remain technical-only. */
-        }
-      }
+      const phone = raw.kind === 'KNOWN' ? normalizedCallPhone(raw.value!) : '';
       const phoneFingerprint = this.crypto.fingerprint(
         context.synthetic
           ? `synthetic:${phone || id}`
@@ -169,6 +162,28 @@ export class CallCenterTelephonyService {
         },
       });
     } else {
+      if (
+        previous &&
+        technical.first.occurredAt !== previous.first.occurredAt
+      ) {
+        const call = await tx.callCenterCall.update({
+          where: { id: row.callId },
+          data: { occurredAt: new Date(technical.first.occurredAt) },
+          select: { contactId: true },
+        });
+        // Correct the contact ordering after a delayed earlier ring, without
+        // rewriting operator-entered business data or inventing a call outcome.
+        await tx.$queryRaw`SELECT id FROM customer_affairs_call_contacts WHERE id=${call.contactId}::uuid FOR UPDATE`;
+        const latest = await tx.callCenterCall.aggregate({
+          where: { contactId: call.contactId },
+          _max: { occurredAt: true },
+        });
+        if (latest._max.occurredAt)
+          await tx.callCenterContact.update({
+            where: { id: call.contactId },
+            data: { latestOccurredAt: latest._max.occurredAt },
+          });
+      }
       row = await tx.callCenterTelephonySession.update({
         where: { id: row.id },
         data: {
@@ -179,6 +194,36 @@ export class CallCenterTelephonyService {
           ),
           version: { increment: 1 },
         },
+      });
+    }
+    // Only provider-confirmed unanswered facts affect the business list. A late
+    // answer retracts our provisional label, but never an operator's saved result.
+    const operatorSaved =
+      (technical.unanswered || technical.answered) &&
+      (await tx.customerAffairsAuditEvent.findFirst({
+        where: {
+          entityId: { in: [row.id, row.callId] },
+          action: { in: ['COMPLETE_CALL', 'SAVE'] },
+        },
+        select: { id: true },
+      }));
+    if (
+      !row.completed &&
+      (!operatorSaved || !technical.answered) &&
+      (technical.unanswered || technical.answered)
+    ) {
+      await tx.callCenterCall.updateMany({
+        where: {
+          id: row.callId,
+          outcome: technical.answered ? 'NO_ANSWER' : null,
+        },
+        data: technical.answered
+          ? { outcome: null, status: 'جدید' }
+          : {
+              outcome: 'NO_ANSWER',
+              status: 'بدون پاسخ',
+              needsCompletion: true,
+            },
       });
     }
     // Never offer a terminal/stale ring; mapping snapshots are not retroactively rewritten.
@@ -337,6 +382,35 @@ export class CallCenterTelephonyService {
       take: 3,
     });
     return { data: calls.map((c) => this.calls.presentSummary(c)) };
+  }
+  /** Public media authorization: Integrations never queries Customer Affairs tables. */
+  async authorizeRecording(
+    actor: AuthenticatedActor,
+    connectionId: string,
+    rootFingerprint: string,
+    reference: string,
+    tx: Prisma.TransactionClient = this.db.client,
+  ) {
+    this.authorize(actor);
+    if (
+      !actor.permissions.includes(
+        'customer_affairs.call_center.recordings.read',
+      )
+    )
+      throw new ForbiddenException();
+    const session = await tx.callCenterTelephonySession.findFirst({
+      where: { ...this.scope(actor), connectionId, rootFingerprint },
+      select: { id: true, encryptedTechnical: true, keyVersion: true },
+    });
+    if (!session) throw new NotFoundException();
+    const technical = this.crypto.decrypt<TelephonyTechnical>(
+      session.encryptedTechnical,
+      session.keyVersion,
+      `telephony:${session.id}`,
+    );
+    if (!technical.recordings.includes(reference))
+      throw new NotFoundException();
+    return { sessionId: session.id };
   }
   private scope(
     actor: AuthenticatedActor,
@@ -563,12 +637,19 @@ export class CallCenterTelephonyService {
                 payload,
                 row.call.outcome,
               ),
-              needsCompletion: false,
             },
           });
           await tx.callCenterTelephonySession.update({
             where: { id },
-            data: { completed: true, version: { increment: 1 } },
+            data: {
+              completed: !callSearchMetadata(
+                this.crypto,
+                row.call.contact.branchId,
+                payload,
+                row.call.outcome,
+              ).needsCompletion,
+              version: { increment: 1 },
+            },
           });
         }
       }

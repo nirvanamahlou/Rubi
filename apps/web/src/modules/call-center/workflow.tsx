@@ -22,6 +22,7 @@ import {
 } from './workflow-client';
 import styles from './workflow.module.css';
 import { CallKpiCards } from './kpis';
+import { readApi } from './read-client';
 
 export const requestLabels: Record<string, string> = {
   NEW: 'باز',
@@ -75,7 +76,15 @@ export function WorkflowPanel({
   onChanged,
   calls = [],
   onLinked,
+  dossier = false,
+  newRequestOpen = false,
+  onRequestClose,
+  requestId,
 }: {
+  requestId?: string;
+  dossier?: boolean;
+  newRequestOpen?: boolean;
+  onRequestClose?: () => void;
   branchId: string;
   contactId: string;
   canManage: boolean;
@@ -86,17 +95,25 @@ export function WorkflowPanel({
 }) {
   const [requestPage, setRequestPage] = useState(1),
     [taskPage, setTaskPage] = useState(1);
-  const [pageMeta, setPageMeta] = useState({ total: 0, hasMoreTasks: false });
+  const [pageMeta, setPageMeta] = useState<{
+    total: number;
+    hasMoreTasks: boolean;
+    contactCallCount?: number;
+  }>({ total: 0, hasMoreTasks: false });
   const [requests, setRequests] = useState<RequestCase[]>([]);
+  const [contactCall, setContactCall] = useState<Call | null>(null);
   const [operators, setOperators] = useState<Operator[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
-  const [editor, setEditor] = useState<
+  const [localEditor, setEditor] = useState<
     | { kind: 'request'; item?: RequestCase }
     | { kind: 'task'; request: RequestCase; item?: FollowUp }
     | null
   >(null);
+  const editor =
+    localEditor ??
+    (newRequestOpen && canManage ? { kind: 'request' as const } : null);
   const [view, setView] = useState('ALL');
   useEffect(() => {
     const controller = new AbortController();
@@ -107,12 +124,17 @@ export function WorkflowPanel({
         controller.signal,
         requestPage,
         taskPage,
+        requestId,
       ),
       workflowApi.operators(branchId),
+      requestId
+        ? readApi.calls(branchId, contactId, undefined, controller.signal)
+        : Promise.resolve(null),
     ])
-      .then(([result, options]) => {
+      .then(([result, options, history]) => {
         if (!controller.signal.aborted) {
           setRequests(result.data);
+          setContactCall(history?.data[0] ?? null);
           setPageMeta(
             result.meta ?? { total: result.data.length, hasMoreTasks: false },
           );
@@ -131,7 +153,7 @@ export function WorkflowPanel({
         }
       });
     return () => controller.abort();
-  }, [branchId, contactId, revision, requestPage, taskPage]);
+  }, [branchId, contactId, revision, requestPage, taskPage, requestId]);
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Tehran',
   }).format(new Date());
@@ -159,14 +181,44 @@ export function WorkflowPanel({
     >
       <header>
         <h3>درخواست‌ها و اقدام‌های پیگیری</h3>
-        <button
-          type="button"
-          disabled={!canManage}
-          onClick={() => setEditor({ kind: 'request' })}
-        >
-          درخواست جدید
-        </button>
+        {!dossier && !requestId && (
+          <button
+            type="button"
+            disabled={!canManage}
+            onClick={() => setEditor({ kind: 'request' })}
+          >
+            درخواست جدید
+          </button>
+        )}
       </header>
+      {requestId && !loading && !error && contactCall && (
+        <article className={styles.card} aria-label="اطلاعات مخاطب">
+          <strong>{contactCall.name || 'نام ثبت نشده'}</strong>
+          <p>
+            شماره تماس: <bdi dir="ltr">{contactCall.phone || 'نامشخص'}</bdi>
+          </p>
+          <p>موضوع آخرین تماس: {contactCall.subject || 'ثبت نشده'}</p>
+          <p>
+            منبع: {contactCall.source} · واحد: {contactCall.operator}
+          </p>
+          <p>
+            آخرین تماس: {callDate(contactCall.occurredAt)} · نتیجه:{' '}
+            {contactCall.needsCompletion && !contactCall.outcome
+              ? 'نیازمند تکمیل'
+              : ((
+                  {
+                    ANSWERED: 'گفت‌وگو انجام شد',
+                    NO_ANSWER: 'بدون پاسخ',
+                    BUSY: 'اشغال',
+                    FAILED: 'ناموفق',
+                  } as Record<string, string>
+                )[contactCall.outcome ?? ''] ?? 'نامشخص')}
+          </p>
+          {pageMeta.contactCallCount !== undefined && (
+            <p>تعداد تماس: {faNumber(pageMeta.contactCallCount)}</p>
+          )}
+        </article>
+      )}
       <p>تماس‌های یک شماره می‌توانند مربوط به درخواست‌های متفاوت باشند.</p>
       <nav aria-label="صفحه‌بندی درخواست و اقدام">
         <button
@@ -211,17 +263,19 @@ export function WorkflowPanel({
           اقدام‌های قدیمی‌تر
         </button>
       </nav>
-      <NativeSearchSelect
-        aria-label="نمای پیگیری‌های این مخاطب"
-        value={view}
-        onChange={(event) => setView(event.target.value)}
-      >
-        <option value="ALL">همه درخواست‌های این مخاطب</option>
-        <option value="MINE">کارهای من</option>
-        <option value="TODAY">امروز</option>
-        <option value="OVERDUE">عقب‌افتاده</option>
-        <option value="UNASSIGNED">بدون مسئول</option>
-      </NativeSearchSelect>
+      {!dossier && !requestId && (
+        <NativeSearchSelect
+          aria-label="نمای پیگیری‌های این مخاطب"
+          value={view}
+          onChange={(event) => setView(event.target.value)}
+        >
+          <option value="ALL">همه درخواست‌های این مخاطب</option>
+          <option value="MINE">کارهای من</option>
+          <option value="TODAY">امروز</option>
+          <option value="OVERDUE">عقب‌افتاده</option>
+          <option value="UNASSIGNED">بدون مسئول</option>
+        </NativeSearchSelect>
+      )}
       {loading && <p role="status">در حال دریافت درخواست‌ها…</p>}
       {error && (
         <p role="alert">
@@ -284,12 +338,13 @@ export function WorkflowPanel({
               {priorities[request.priority as keyof typeof priorities]}
             </p>
             {request.reason && <p>{request.reason}</p>}
+            {request.result && <p>نتیجه رسیدگی: {request.result}</p>}
             <button
               type="button"
               disabled={!canManage}
               onClick={() => setEditor({ kind: 'request', item: request })}
             >
-              ویرایش و ارجاع درخواست
+              تکمیل اطلاعات و تغییر وضعیت درخواست
             </button>
             <button
               type="button"
@@ -352,7 +407,8 @@ export function WorkflowPanel({
               {request.privateHistory?.map((entry) => (
                 <p key={entry.version}>
                   {callDate(entry.at)} · {entry.title} ·{' '}
-                  {requestLabels[entry.status]} · {entry.reason}
+                  {requestLabels[entry.status]} · {entry.reason}{' '}
+                  {entry.result && ` · ${entry.result}`}
                 </p>
               ))}
               {request.history.map((entry) => (
@@ -379,14 +435,20 @@ export function WorkflowPanel({
         <WorkflowEditor
           key={editor.kind + (editor.item?.id ?? 'new')}
           editor={editor}
+          contactCall={contactCall ?? calls[0]}
           operators={operators}
           branchId={branchId}
           contactId={contactId}
-          onClose={() => setEditor(null)}
+          onClose={() => {
+            setEditor(null);
+            onRequestClose?.();
+          }}
           onSaved={() => {
+            window.dispatchEvent(new Event('call-center:workflow-changed'));
             setLoading(true);
             setRevision((value) => value + 1);
             setEditor(null);
+            onRequestClose?.();
             onChanged?.();
           }}
         />
@@ -488,9 +550,19 @@ export function WorkQueue({
   const [error, setError] = useState(''),
     [loading, setLoading] = useState(true),
     [selected, setSelected] = useState<{
+      requestId: string;
       contactId: string;
       branchId: string;
     } | null>(null);
+  useEffect(() => {
+    const refresh = () => {
+      setLoading(true);
+      setRevision((value) => value + 1);
+    };
+    window.addEventListener('call-center:workflow-changed', refresh);
+    return () =>
+      window.removeEventListener('call-center:workflow-changed', refresh);
+  }, []);
   useEffect(() => {
     const controller = new AbortController();
     workflowApi
@@ -556,12 +628,9 @@ export function WorkQueue({
             {(
               [
                 ['ALL', 'همه درخواست‌ها'],
-                ['OPEN', 'باز'],
+                ['OPEN', 'درخواست‌های باز'],
+                ['CLOSED', 'درخواست‌های بسته‌شده'],
                 ['MINE', 'کارهای من'],
-                ['TODAY', 'امروز'],
-                ['OVERDUE', 'عقب‌افتاده'],
-                ['UNASSIGNED', 'بدون مسئول'],
-                ['NO_ACTION', 'بدون اقدام بعدی'],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -591,10 +660,6 @@ export function WorkQueue({
                 {data.meta.total.toLocaleString('fa-IR')} درخواست · تاریخ امروز
                 بر اساس تهران
               </p>
-              <p className={styles.hint}>
-                امروز و عقب‌افتاده ممکن است هم‌پوشان باشند. «بدون اقدام بعدی»:
-                درخواست بازِ بدون پیگیری باز؛ منتظر پاسخ مشتری مستثناست.
-              </p>
               {!data.data.length && <p>درخواستی در این صف نیست.</p>}
               <div className={styles.queueRows}>
                 <div className={styles.queueColumns} aria-hidden="true">
@@ -612,6 +677,7 @@ export function WorkQueue({
                     onClick={(event) => {
                       queueTrigger.current = event.currentTarget;
                       setSelected({
+                        requestId: item.id,
                         contactId: item.contactId,
                         branchId: item.branchId,
                       });
@@ -704,12 +770,13 @@ export function WorkQueue({
               dir="rtl"
               className="max-h-[90dvh] max-w-2xl overflow-y-auto"
             >
-              <DialogTitle>رسیدگی به درخواست‌های مخاطب</DialogTitle>
+              <DialogTitle>رسیدگی به درخواست مخاطب</DialogTitle>
               <DialogDescription>
                 درخواست و اقدام‌های مرتبط را بررسی کنید.
               </DialogDescription>
               <WorkflowPanel
-                key={selected.contactId}
+                key={selected.requestId}
+                requestId={selected.requestId}
                 branchId={selected.branchId}
                 actorId={actorId}
                 contactId={selected.contactId}
@@ -727,14 +794,16 @@ export function WorkQueue({
     </>
   );
 }
-function WorkflowEditor({
+export function WorkflowEditor({
   editor,
+  contactCall,
   operators,
   branchId,
   contactId,
   onClose,
   onSaved,
 }: {
+  contactCall?: Call | undefined;
   editor:
     | { kind: 'request'; item?: RequestCase }
     | { kind: 'task'; request: RequestCase; item?: FollowUp };
@@ -776,8 +845,18 @@ function WorkflowEditor({
       priority,
     };
     let payload: unknown;
+    if (editor.kind === 'request' && !editor.item && !owner) {
+      setError('کارشناس مسئول را انتخاب کنید.');
+      return;
+    }
     if (editor.kind === 'request')
-      payload = { ...base, title: value('title'), reason: value('reason') };
+      payload = {
+        ...base,
+        status: editor.item ? status : 'NEW',
+        title: value('title'),
+        reason: value('reason'),
+        ...(editor.item ? { result: value('result') } : {}),
+      };
     else {
       if (!owner) {
         setError('کارشناس مسئول را انتخاب کنید.');
@@ -843,6 +922,13 @@ function WorkflowEditor({
           تغییرات پس از تأیید سرور ذخیره می‌شوند؛ زمان فرم بر اساس منطقه زمانی
           دستگاه است.
         </DialogDescription>
+        {contactCall && (
+          <p>
+            مخاطب: {contactCall.name || 'نام ثبت نشده'} ·{' '}
+            <bdi dir="ltr">{contactCall.phone || 'شماره نامشخص'}</bdi> ·{' '}
+            {contactCall.subject}
+          </p>
+        )}
         <form
           className={styles.form}
           onSubmit={submit}
@@ -871,6 +957,17 @@ function WorkflowEditor({
                     defaultValue={editor.item?.reason}
                   />
                 </label>
+                {editor.item && (
+                  <label>
+                    اطلاعات تکمیلی و نتیجه رسیدگی
+                    <textarea
+                      name="result"
+                      maxLength={1000}
+                      required={status === 'CLOSED'}
+                      defaultValue={editor.item.result}
+                    />
+                  </label>
+                )}
               </>
             ) : (
               <>
@@ -918,35 +1015,37 @@ function WorkflowEditor({
                 }}
               />
             </label>
-            <label>
-              وضعیت
-              <NativeSearchSelect
-                name="status"
-                value={status}
-                disabled={busy}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setStatus(value);
-                  setDirty(true);
-                }}
-              >
-                {Object.entries(
-                  editor.kind === 'request' ? requestLabels : taskLabels,
-                )
-                  .filter(
-                    ([key]) =>
-                      editor.item ||
-                      (editor.kind === 'request'
-                        ? key === 'NEW'
-                        : key === 'OPEN'),
+            {(editor.kind === 'task' || editor.item) && (
+              <label>
+                وضعیت
+                <NativeSearchSelect
+                  name="status"
+                  value={status}
+                  disabled={busy}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setStatus(value);
+                    setDirty(true);
+                  }}
+                >
+                  {Object.entries(
+                    editor.kind === 'request' ? requestLabels : taskLabels,
                   )
-                  .map(([key, title]) => (
-                    <option key={key} value={key}>
-                      {title}
-                    </option>
-                  ))}
-              </NativeSearchSelect>
-            </label>
+                    .filter(
+                      ([key]) =>
+                        editor.item ||
+                        (editor.kind === 'request'
+                          ? key === 'NEW'
+                          : key === 'OPEN'),
+                    )
+                    .map(([key, title]) => (
+                      <option key={key} value={key}>
+                        {title}
+                      </option>
+                    ))}
+                </NativeSearchSelect>
+              </label>
+            )}
             <label>
               اولویت
               <NativeSearchSelect

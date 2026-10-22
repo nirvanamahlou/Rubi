@@ -5,6 +5,8 @@ export interface TelephonyTechnical {
   state: 'RINGING' | 'ANSWERED' | 'ENDED' | 'UNKNOWN';
   legs: Record<string, { state: string; at: string; sequence: number | null }>;
   recordings: string[];
+  answered?: boolean;
+  unanswered?: boolean;
 }
 /** Terminal facts are monotone. Sequence numbers are only comparable within a leg. */
 export function applyTelephonyEvent(
@@ -21,7 +23,20 @@ export function applyTelephonyEvent(
         legs: {},
         recordings: [],
       };
+  // Preserve the earliest known business event even when the recording/end
+  // arrived first. Receipt time is separate and terminal state stays monotone.
+  if (
+    event.kind !== 'RECORDING_READY' &&
+    (next.first.kind === 'RECORDING_READY' ||
+      event.occurredAt < next.first.occurredAt)
+  )
+    next.first = event;
   const legId = `leg:${event.legId ?? event.externalCallId}`;
+  // Answer evidence is sticky even when delivered after a terminal event.
+  if (event.kind === 'ANSWERED' || event.endReason === 'COMPLETED')
+    next.answered = true;
+  if (event.kind === 'ENDED' && event.endReason === 'NO_ANSWER')
+    next.unanswered = true;
   const leg = next.legs[legId];
   const older =
     leg &&

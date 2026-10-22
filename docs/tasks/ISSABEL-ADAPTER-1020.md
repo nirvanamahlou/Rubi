@@ -184,3 +184,7 @@ checks. Scoped API/Web lint and shared builds passed. Integration with current
 develop preserves both HR/Sales translations and coordination records. Final
 exact-head hosted quality, types, build and PostgreSQL checks gate develop merge;
 no live call, playback or installed-PBX compatibility test is claimed.
+
+## 2026-10-21 backend readiness follow-up
+
+The recording-read and operational-readiness limitations above are superseded where explicitly documented in [CALL-CENTER-READINESS-1021](CALL-CENTER-READINESS-1021.md): authenticated scoped byte-range audio delivery and recovery/health/relay tooling are now implemented. No player or technical panel was added, no real provider access was used, and live integration acceptance remains pending.
