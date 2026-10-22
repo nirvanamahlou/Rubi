@@ -8,11 +8,11 @@ import type { voucherFormData } from './voucher-settings';
 
 export const voucherServiceColumns = [
   ['#', 4],
-  ['SURNAME / NAME', 23],
+  ['SURNAME / NAME', 21],
   ['SEX', 5],
   ['AGE RATE', 9],
-  ['FLIGHT OUT', 5],
-  ['FLIGHT RETURN', 5],
+  ['FLIGHT OUT', 6],
+  ['FLIGHT RETURN', 6],
   ['HOTEL CHECK-IN', 12],
   ['HOTEL CHECK-OUT', 12],
   ['TRANSFER OUT', 7],
