@@ -16,11 +16,9 @@ describe('IAM administration safety', () => {
     const database = {
       client: {
         user: {
-          findUnique: vi
-            .fn()
-            .mockResolvedValue({
-              roles: [{ role: { code: 'administrator' } }],
-            }),
+          findUnique: vi.fn().mockResolvedValue({
+            roles: [{ role: { code: 'administrator' } }],
+          }),
         },
         permission: { findMany: vi.fn().mockResolvedValue([]) },
       },
