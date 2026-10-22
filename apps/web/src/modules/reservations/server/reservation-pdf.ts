@@ -26,6 +26,7 @@ export async function prepareReservationHtml(
   _language: DisplayLanguage = 'fa',
   publicDocumentUrl?: string,
 ): Promise<string> {
+  void _language; // Keep the existing caller signature; travel forms are English.
   const { fontPath: font } = await resolveTicketPdfRuntime();
   let html = localizeDocumentHtml(
     reservationPdfHtml(
