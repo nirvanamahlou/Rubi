@@ -471,6 +471,16 @@ export function validateSalesContract(
   const outbound = tickets.find(({ direction }) => direction === 'OUTBOUND');
   const inbound = tickets.find(({ direction }) => direction === 'RETURN');
   if (
+    input.tripType === 'ROUND_TRIP' &&
+    outbound?.source === 'CATALOG' &&
+    inbound?.source === 'CONTRACT_ONLY'
+  )
+    throw new SalesDomainError(
+      'TICKET_NOT_AVAILABLE',
+      'برای بلیت رفت از سهمیه شرکت، بلیت برگشت نیز باید از سهمیه شرکت انتخاب شود.',
+    );
+
+  if (
     tickets.length > 2 ||
     new Set(tickets.map(({ direction }) => direction)).size !==
       tickets.length ||
