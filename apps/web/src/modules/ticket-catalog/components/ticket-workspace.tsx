@@ -1,4 +1,5 @@
 'use client';
+import { loadWeekdayOffers } from '../model/load-weekday-edit';
 import { flightCabinCode } from '../model/flight-cabins';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -285,6 +286,7 @@ function TicketCatalogWorkspace() {
   const [offerForm, setOfferForm] = useState<{
     offer: TicketOfferV1;
     readOnly: boolean;
+    weekdayOffers?: readonly TicketOfferV1[];
   } | null>(null);
   const displayedProducts = useMemo(
     () => catalogProductsFromOffers(products, publishedOffers, references),
@@ -1011,6 +1013,19 @@ function TicketCatalogWorkspace() {
       <Button
         size="sm"
         variant="outline"
+        onClick={() =>
+          setOfferForm({
+            offer,
+            readOnly: false,
+            weekdayOffers: loadWeekdayOffers(offer, publishedOffers, products),
+          })
+        }
+      >
+        ویرایش روز هفته
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
         disabled={
           offer.status !== 'ACTIVE' ||
           offer.remainingCapacity < 1 ||
@@ -1104,9 +1119,11 @@ function TicketCatalogWorkspace() {
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2! max-w-2xl">
           <DialogTitle>
-            {offerForm?.readOnly
-              ? 'مشاهده بلیط ثبت‌شده'
-              : 'ویرایش بلیط ثبت‌شده'}
+            {offerForm?.weekdayOffers
+              ? 'ویرایش روز هفته'
+              : offerForm?.readOnly
+                ? 'مشاهده بلیط ثبت‌شده'
+                : 'ویرایش بلیط ثبت‌شده'}
           </DialogTitle>
           <DialogDescription>
             اطلاعات این بلیط مستقیماً از سرور دریافت می‌شود.
@@ -1116,6 +1133,7 @@ function TicketCatalogWorkspace() {
               key={offerForm.offer.id}
               offer={offerForm.offer}
               readOnly={offerForm.readOnly}
+              weekdayOffers={offerForm.weekdayOffers}
               onSaved={async () => {
                 await refreshPublishedOffers();
                 setOfferForm(null);
