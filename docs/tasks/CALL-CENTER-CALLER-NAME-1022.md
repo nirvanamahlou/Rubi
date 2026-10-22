@@ -9,3 +9,5 @@ Names are trimmed, bounded to160 characters and reject control/bidi characters, 
 Popup default uses saved call name first, otherwise incoming provider name; automatic and manual queue selection share the helper. Polling updates the current technical snapshot but never overwrites an in-progress draft. An operator can edit/clear the default; only the existing explicit SAVE stores it. Historical events without names remain supported; no retrospective backfill.
 
 Validation: API caller-name/native/validation15 tests pass, with8 PostgreSQL tests explicitly skipped (no new real-database claim). Web default helper2 tests pass. API/Web types, scoped ESLint and contracts/API/Web production builds checked. Real PBX CallerIDName-to-browser acceptance requires an authorized incoming call and logged-in operator; no real call, extension mapping, grant, database fixture or PBX activation is performed by this task.
+
+Local runtime: Web3000 HTTP200, build igqcD0ao5lRfjSrJbjLTy/PID27640; API4000 health ok/PID13204 using the same existing runtime env files. No operational env values changed. Native capture safety/recipient configuration remains unchanged. No main/develop merge.
