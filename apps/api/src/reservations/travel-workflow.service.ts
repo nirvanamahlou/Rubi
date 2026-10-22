@@ -1,3 +1,4 @@
+import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
 import {
   salesContractFlights,
@@ -13,6 +14,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -39,6 +41,9 @@ export class TravelWorkflowService {
     private readonly notifications: NotificationsService,
     @Inject(SalesOperationalAmendmentService)
     private readonly amendments: SalesOperationalAmendmentService,
+    @Optional()
+    @Inject(TicketPublicService)
+    private readonly tickets?: TicketPublicService,
   ) {}
   async detail(id: string, branchIds: readonly string[]) {
     if (!/^[0-9a-f-]{36}$/i.test(id)) throw new NotFoundException();
@@ -54,6 +59,16 @@ export class TravelWorkflowService {
     const workflow = row.workflowRevisions[0]?.state as unknown as
       TravelWorkflowStateV1 | undefined;
     const arrangement = row.arrangements[0];
+    const saved = row.snapshot as unknown as SalesReservationRequestV1;
+    const snapshot = this.tickets?.currentSelections
+      ? {
+          ...saved,
+          ticketSelections: await this.tickets.currentSelections(
+            saved.ticketSelections ?? [],
+            row.branchId,
+          ),
+        }
+      : saved;
     return {
       ticketDocuments: (row.ticketDocuments ?? []).map((doc) => ({
         customerId: doc.customerId,
@@ -74,7 +89,7 @@ export class TravelWorkflowService {
       branchId: row.branchId,
       status: 'QUEUED' as const,
       receivedAt: row.receivedAt.toISOString(),
-      snapshot: row.snapshot as unknown as SalesReservationRequestV1,
+      snapshot,
       arrangement: arrangement
         ? {
             version: arrangement.version,

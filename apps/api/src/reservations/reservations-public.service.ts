@@ -295,6 +295,14 @@ export class ReservationsPublicService {
     });
     if (!row) throw new NotFoundException('درخواست در دسترس نیست.');
     const result = present(row);
+    if (this.tickets?.currentSelections)
+      result.snapshot = {
+        ...result.snapshot,
+        ticketSelections: await this.tickets.currentSelections(
+          result.snapshot.ticketSelections ?? [],
+          row.branchId,
+        ),
+      };
     const types = await Promise.all(
       (result.snapshot.ticketSelections ?? []).map(
         async (ticket) =>
@@ -551,7 +559,26 @@ export class ReservationsPublicService {
       take: 100,
       skip: (page - 1) * 100,
     });
-    return rows.map(present);
+    const result = rows.map(present);
+    if (this.tickets?.currentSelections) {
+      for (const branchId of [...new Set(rows.map((row) => row.branchId))]) {
+        const linked = result.filter((item) => item.branchId === branchId);
+        const current = await this.tickets.currentSelections(
+          linked.flatMap((item) => item.snapshot.ticketSelections ?? []),
+          branchId,
+        );
+        let offset = 0;
+        for (const item of linked) {
+          const count = item.snapshot.ticketSelections?.length ?? 0;
+          item.snapshot = {
+            ...item.snapshot,
+            ticketSelections: current.slice(offset, offset + count),
+          };
+          offset += count;
+        }
+      }
+    }
+    return result;
   }
 
   async updateArrangement(
