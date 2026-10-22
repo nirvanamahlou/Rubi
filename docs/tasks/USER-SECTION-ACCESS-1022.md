@@ -39,6 +39,8 @@ The owner subsequently requests a general checkbox rule, not an account-specific
 fix. The shared `completeManualAccessPrerequisites` function is now used by both
 the existing manual editor (single check, group check and role-template choice)
 and the transactional server save boundary:
+The new manual-user creation boundary uses the same normalization before native
+permission/screen delegation checks, so new accounts do not depend on a later edit.
 
 - A checked Call Center view includes its native read guard. A newly selected
   view defaults to own contacts/reports reads only if no explicit scope was

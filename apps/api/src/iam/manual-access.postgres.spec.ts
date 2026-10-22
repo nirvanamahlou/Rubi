@@ -292,6 +292,44 @@ describe.skipIf(!url)(
         expect(canViewRoute(revokedPermissions, '/integrations')).toBe(false);
       }
       expect((await service.read(targetId)).revision).toBe(untouched.revision);
+      const iam = new IamService(
+        { client: db } as DatabaseService,
+        {} as never,
+        {} as never,
+      );
+      const created = await iam.createUser(
+        {
+          username: randomUUID(),
+          displayName: 'Synthetic new-user checked views',
+          password: `Synthetic-Only-${randomUUID()}-Aa9!`,
+          manualAccessV3: true,
+          accessTitle: 'Arbitrary',
+          permissionIds: [],
+          screenIds: [
+            'customer-affairs.call-center',
+            'integrations.section.connections',
+          ],
+          deniedControlIds: [],
+          roleIds: [],
+          branchIds: [],
+        },
+        actor(),
+        {},
+      );
+      const newUser = await db.user.findUniqueOrThrow({
+        where: { id: created.id },
+        include: manualUserInclude,
+      });
+      const newPermissions = authenticatedPermissionCodes(newUser.roles);
+      expect(
+        canViewRoute(newPermissions, '/customer-affairs/call-center'),
+      ).toBe(true);
+      expect(visibleIntegrationSections(newPermissions)).toEqual([
+        'connections',
+      ]);
+      expect(newPermissions).toContain(
+        'customer_affairs.call_center.contacts.read.own',
+      );
     }, 90000);
 
     it('opts only the edited user into sticky Call Center scope and preserves revisions/delegation/audit', async () => {
