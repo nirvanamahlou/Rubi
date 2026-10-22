@@ -62,6 +62,31 @@ function setup(current = record()) {
 }
 
 describe('MasterDataLogoService', () => {
+  it.each(['CLEAN', 'PENDING_SCAN', 'INFECTED', 'SCAN_FAILED'] as const)(
+    'preserves the saved reference and reports scan state %s',
+    async (scanStatus) => {
+      const { service, documents } = setup();
+      documents.uploadMasterDataLogo.mockResolvedValueOnce({
+        id: 'new-document',
+        reused: false,
+        scanStatus,
+      });
+      const result = await service.replace(
+        'airlines',
+        record().id,
+        { title: 'logo', version: 3 },
+        undefined,
+        actor,
+        {},
+      );
+      expect(result.data.attributes.logoFileReference).toBe('new-document');
+      if (scanStatus === 'CLEAN') expect(result.warning).toBeUndefined();
+      else
+        expect(result.warning).toContain(
+          scanStatus === 'PENDING_SCAN' ? 'پس از تکمیل' : 'موفق نبود',
+        );
+    },
+  );
   it('reads only the document currently attached to the selected record', async () => {
     const { service, documents } = setup(
       record({ logoFileReference: 'logo-document' }),

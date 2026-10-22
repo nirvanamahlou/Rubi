@@ -5,6 +5,62 @@ import type { NotificationsService } from '../notifications/notifications.servic
 import { DocumentsRepository } from './documents.repository';
 
 describe('DocumentsRepository source scoping', () => {
+  it.each([true, false])(
+    'initializes only missing fixed brand references when selected membership is %s',
+    async (allowed) => {
+      const types = vi.fn().mockResolvedValue({ count: 1 });
+      const categories = vi.fn().mockResolvedValue({ count: 1 });
+      const user = vi.fn().mockResolvedValue(allowed ? { id: 'user' } : null);
+      const transaction = {
+        user: { findFirst: user },
+        branch: { findFirst: vi.fn().mockResolvedValue({ id: 'branch' }) },
+        documentType: { createMany: types },
+        documentCategory: { createMany: categories },
+      };
+      const repository = new DocumentsRepository(
+        {
+          client: {
+            $transaction: (callback: (value: unknown) => unknown) =>
+              callback(transaction),
+          },
+        } as unknown as DatabaseService,
+        {} as NotificationsService,
+      );
+      expect(
+        await repository.ensureMasterDataLogoReferences('user', 'branch'),
+      ).toBe(allowed);
+      expect(user).toHaveBeenCalledWith({
+        where: {
+          id: 'user',
+          status: 'ACTIVE',
+          branches: { some: { branchId: 'branch' } },
+        },
+        select: { id: true },
+      });
+      if (!allowed) {
+        expect(types).not.toHaveBeenCalled();
+        expect(categories).not.toHaveBeenCalled();
+        return;
+      }
+      expect(types).toHaveBeenCalledWith({
+        skipDuplicates: true,
+        data: [
+          expect.objectContaining({
+            code: 'BRAND_ASSET_TEMPLATE',
+            domain: 'BRAND',
+            defaultConfidentiality: 'INTERNAL',
+            maxFileSizeBytes: 26214400n,
+            requiresExpiry: false,
+          }),
+        ],
+      });
+      expect(categories).toHaveBeenCalledWith({
+        skipDuplicates: true,
+        data: [{ code: 'BRAND_ASSETS', name: 'دارایی‌های برند' }],
+      });
+      // No update/upsert methods exist in this fixture: existing policies cannot be overwritten.
+    },
+  );
   it('locks confidential attempts by document and actor and denies only that actor after five attempts', async () => {
     const queryRaw = vi.fn().mockResolvedValue([]);
     const findFirst = vi.fn().mockResolvedValue(null);

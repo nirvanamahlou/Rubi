@@ -1,4 +1,9 @@
 {
+  "در حال بررسی امنیتی است.": "is undergoing a security scan.",
+  "در حال دریافت لوگوی": "Loading logo for",
+  "شعبه یا مالک مجاز برای بارگذاری لوگو مشخص نیست.": "An authorized branch or owner for the logo upload is missing.",
+  "ممکن نیست:": "is unavailable:",
+  "نمایش لوگوی": "Logo display for",
   "اختلاف ساعت با گرینویچ (GMT)": "GMT offset",
   "اختلاف ساعت (GMT)": "GMT offset",
   "اختلاف ساعت با گرینویچ معتبر نیست.": "Invalid GMT offset.",
