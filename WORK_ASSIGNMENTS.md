@@ -9105,3 +9105,5 @@ COMPUTER_ID=PC-A; branch codex/pc-a-voucher-layout-board-1022 from develop0d91ec
 VOUCHER-LAYOUT-BOARD-1022:28 focused tests and scoped lint pass; synthetic Chromium single-page A4 output visually verified. Existing reservation-pdf assertion updated for dedicated Board cell. Source reservations freeze on publication; local types/build and all exact-head CI gates precede authorized merge. No runtime or stored-data changes.
 
 VOUCHER-LAYOUT-BOARD-1022 CI compatibility: reserve existing room-output-consistency display assertion; voucher Hotel Information now ends with check-in/out while supplier output keeps its previous columns. Local Web typecheck/build pass. Revalidate exact final head; no production code changed by this test correction.
+
+CALL-ANSWER-DIRECTORY-1022 localization: reserve only the two new destination/shared-extension display labels in Web English catalogue and generated API catalogue; regenerate through the existing i18n-sync tool. No other translations or UI behavior change.
