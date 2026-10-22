@@ -8819,6 +8819,12 @@ COMPUTER_ID=PC-A; codex/pc-a-past-ticket-single-edit-1021 from origin/develop303
 
 PAST-TICKET-SINGLE-EDIT-1021 validation:213 Ticket Catalog tests pass with one pre-existing skip; three new tests cover one historical ID/version submission, unchanged historical instants, read-only no-write and date-independent action. No backend guard weakened. Scoped source lock RELEASED with candidate; lint/types/build and exact-head hosted checks gate owner-authorized develop merge. No operational runtime/data changes.
 
+## VOUCHER-SERVICES-1022 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; codex/pc-a-voucher-services-1022 from origin/develop88c45b8c. User requests English voucher with contract-style passenger service table and develop merge. Reserve Reservations voucher-only presentation/data projection helper, voucher model, shared PDF/preview leaves, footer English mode, focused tests and own docs. Keep supplier form, canonical Sales allocations, saved independent voucher settings, issue/release/auth/branch/QR guards unchanged. No API/schema/migration/dependency/runtime or historical data edits. Prior affected QR/output scopes released; no overlapping active target writer found.
+
+Validation:90 focused Web/model/PDF/preview tests pass, with two existing opt-in runtime skips; scoped ESLint passes. Local Chromium synthetic one/two/three-page PDFs verified for English service headers, selected passport names, accurate per-person hotel/transfer allocation, custom-stay shading, QR and no overflow. Source locks freeze/release on publication. Full exact-head hosted types/build/quality/test/database gates precede owner-authorized develop merge. No operational mutation.
+
 ## CONTRACT-PDF-FOOTER-1021 — PC-A — IN_PROGRESS
 
 Reserve Sales contract-print presentation and focused PDF regressions only. User authorizes repeated approval/signature footer, IRR label, compact hotel dates/flight route and two-column parties layout, tests and develop merge. Prior print scopes released; no active overlapping target writer found. No data/API/schema/dependency/runtime changes.
