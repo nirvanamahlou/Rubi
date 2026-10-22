@@ -655,6 +655,6 @@ it('prints supplier service allocations from the contract and reserves a repeati
   expect(html).toContain('INSURANCE');
   expect(html).toContain('position:fixed;height:26mm;display:block;bottom:0');
   expect(html).toContain('margin:8.5mm');
-  expect(html.match(/data-reservation-contact/g)).toHaveLength(1);
+  expect(html.match(/<div data-reservation-contact/g)).toHaveLength(1);
   expect(html).not.toMatch(/[\u0600-\u06ff]/);
 });

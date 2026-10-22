@@ -462,3 +462,10 @@
     right: 0;
   }
 }
+
+@media print {
+  .supplierFooter [data-reservation-footer],
+  .supplierFooter [data-reservation-contact] {
+    display: block;
+  }
+}
