@@ -128,14 +128,11 @@ export class MasterDataLogoService {
       throw error;
     }
 
-    if (uploaded.scanStatus !== 'CLEAN') {
+    if (['INFECTED', 'QUARANTINED'].includes(uploaded.scanStatus)) {
       attached = {
         ...attached,
         warning:
-          uploaded.scanStatus === 'INFECTED' ||
-          uploaded.scanStatus === 'SCAN_FAILED'
-            ? 'فایل لوگو ذخیره شد، اما بررسی امنیتی آن موفق نبود و نمایش داده نمی‌شود؛ فایل سالم را دوباره بارگذاری کنید.'
-            : 'فایل لوگو ذخیره شد؛ نمایش آن پس از تکمیل بررسی امنیتی انجام می‌شود.',
+          'فایل لوگو ذخیره شد، اما بررسی امنیتی آن موفق نبود و نمایش داده نمی‌شود؛ فایل سالم را دوباره بارگذاری کنید.',
       };
     }
     if (!previousLogo || previousLogo === uploaded.id) return attached;

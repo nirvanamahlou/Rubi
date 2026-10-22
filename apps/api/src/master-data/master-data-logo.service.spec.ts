@@ -80,11 +80,9 @@ describe('MasterDataLogoService', () => {
         {},
       );
       expect(result.data.attributes.logoFileReference).toBe('new-document');
-      if (scanStatus === 'CLEAN') expect(result.warning).toBeUndefined();
-      else
-        expect(result.warning).toContain(
-          scanStatus === 'PENDING_SCAN' ? 'پس از تکمیل' : 'موفق نبود',
-        );
+      if (scanStatus === 'INFECTED')
+        expect(result.warning).toContain('موفق نبود');
+      else expect(result.warning).toBeUndefined();
     },
   );
   it('reads only the document currently attached to the selected record', async () => {

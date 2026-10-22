@@ -1,3 +1,7 @@
+## LOGO-SCAN-EXEMPTION-1022 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-logo-scan-exemption-1022 from develop d3880878. Owner explicitly requests removing antivirus only for Master Data logos, retaining all other controls; authorizes tests, push, develop merge and Avina rollout. Reserve bounded Documents logo upload/preview private policy, repository scan-job opt-out and regressions, Master Data logo warnings/tests and own documentation. No schema/dependency/IAM changes. Ordinary Documents remain scan-gated; unscanned logos never become falsely CLEAN. Exact record/branch, PNG/JPEG magic bytes, size, encryption, CAS and audit remain. Prior logo source locks released. No delegation or worker-orchestrator.
+
 ## MASTER-LOGO-SAVE-DISPLAY-1021 — PC-B — PUSHED / SOURCE_RELEASED
 
 2026-10-22: owner explicitly authorizes develop merge, production rollout, real ClamAV installation/activation and logo save/display tests. Reopen only bounded CI translation coverage repairs, own coordination notes and runtime rollout packaging. Preserve current Avina overlays/storage/configuration; backup before changes, verify real-engine clean/infected/failure behavior and restore synthetic test records. No unrelated schema/migration/grants or worker-orchestrator usage.

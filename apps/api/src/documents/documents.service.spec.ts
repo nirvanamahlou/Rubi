@@ -358,7 +358,7 @@ describe('DocumentsService security and persistence flow', () => {
   );
 
   it.each(['CLEAN', 'PENDING_SCAN', 'INFECTED', 'SCAN_FAILED'] as const)(
-    'runs the actual logo upload pipeline with scanner result %s',
+    'keeps logo metadata honest without invoking antivirus (%s)',
     async (scanStatus) => {
       const brand = {
         id: '55555555-5555-4555-8555-555555555555',
@@ -390,9 +390,6 @@ describe('DocumentsService security and persistence flow', () => {
       });
       repository.createUploaded.mockResolvedValue(saved);
       repository.findDetail.mockResolvedValue(saved);
-      scanProcessor.processVersion.mockResolvedValueOnce(
-        scanStatus !== 'PENDING_SCAN',
-      );
       const buffer = Buffer.from([
         0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0,
       ]);
@@ -419,9 +416,10 @@ describe('DocumentsService security and persistence flow', () => {
           sourceEntityId: 'hotel-a',
           detectedMimeType: 'image/png',
           confidentiality: 'INTERNAL',
+          skipAntivirusForMasterDataLogo: true,
         }),
       );
-      expect(scanProcessor.processVersion).toHaveBeenCalledOnce();
+      expect(scanProcessor.processVersion).not.toHaveBeenCalled();
     },
   );
 
@@ -493,6 +491,7 @@ describe('DocumentsService security and persistence flow', () => {
         ]),
       }),
       {},
+      expect.any(Symbol),
     );
     expect(masterDataEditor.permissions).toEqual(['master_data.update']);
     expect(result).toMatchObject({
@@ -607,12 +606,7 @@ describe('DocumentsService security and persistence flow', () => {
     );
   });
 
-  it.each([
-    'PENDING_SCAN',
-    'AWAITING_ANTIVIRUS_ADAPTER',
-    'INFECTED',
-    'SCAN_FAILED',
-  ] as const)(
+  it.each(['INFECTED', 'QUARANTINED'] as const)(
     'denies delivery of a related logo with scan status %s',
     async (scanStatus) => {
       const logo = row({
@@ -640,6 +634,53 @@ describe('DocumentsService security and persistence flow', () => {
         ),
       ).rejects.toBeInstanceOf(ConflictException);
       expect(storage.openQuarantined).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    'PENDING_SCAN',
+    'AWAITING_ANTIVIRUS_ADAPTER',
+    'SCAN_FAILED',
+  ] as const)(
+    'delivers an authorized logo immediately but not through general preview (%s)',
+    async (scanStatus) => {
+      const logo = row({
+        domain: 'BRAND',
+        confidentiality: 'INTERNAL',
+        mimeType: 'image/png',
+        scanStatus,
+      });
+      logo.relations[0]!.sourceModule = 'master-data';
+      logo.relations[0]!.sourceEntityType = 'hotels';
+      logo.relations[0]!.sourceEntityId = 'hotel-a';
+      repository.findDetail.mockResolvedValue(logo);
+      storage.openQuarantined.mockResolvedValue(
+        Readable.from([Buffer.from('png')]),
+      );
+      await expect(
+        service.previewMasterDataLogo(
+          { documentId: logo.id, resource: 'hotels', recordId: 'hotel-a' },
+          { ...actor, permissions: ['master_data.read'] },
+          {},
+        ),
+      ).resolves.toMatchObject({ mimeType: 'image/png' });
+      expect(repository.appendAudit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          reason: 'MASTER_DATA_LOGO_ANTIVIRUS_EXEMPT',
+          outcome: 'SUCCESS',
+        }),
+      );
+      await expect(
+        service.preview(
+          logo.id,
+          {
+            ...actor,
+            permissions: ['documents.brand.read', 'documents.file.read'],
+          },
+          {},
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(storage.openQuarantined).toHaveBeenCalledTimes(1);
     },
   );
 
@@ -1477,6 +1518,10 @@ describe('DocumentsService security and persistence flow', () => {
     expect(result.data.currentVersion.scanStatus).toBe(
       'AWAITING_ANTIVIRUS_ADAPTER',
     );
+    expect(repository.createUploaded.mock.calls[0]?.[0]).not.toHaveProperty(
+      'skipAntivirusForMasterDataLogo',
+    );
+    expect(scanProcessor.processVersion).toHaveBeenCalledOnce();
   });
 
   it('stores an unlinked workbench document for its signed-in owner only', async () => {
