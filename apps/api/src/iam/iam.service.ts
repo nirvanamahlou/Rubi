@@ -28,6 +28,7 @@ import {
   CALL_CENTER_SCOPED_ACCESS,
   hasScopedCallCenterAccess,
   mustScopeCallCenter,
+  completeManualAccessPrerequisites,
 } from '@nora/contracts';
 import {
   createHash,
@@ -2328,7 +2329,19 @@ export class IamService implements IamStepUpPort {
       throw new BadRequestException(
         'مجوز نمایشی از کاتالوگ بخش‌ها انتخاب می‌شود.',
       );
-    for (const id of dto.screenIds) {
+    const completed = dto.manualAccessV3
+      ? completeManualAccessPrerequisites({
+          permissionCodes: permissions.map(({ code }) => code),
+          screenIds: dto.screenIds,
+          allowedControlIds: [],
+        })
+      : {
+          permissionCodes: permissions.map(({ code }) => code),
+          screenIds: dto.screenIds,
+        };
+    if (!isAdministrator)
+      this.assertPermissionCodesAssignable(completed.permissionCodes, actor);
+    for (const id of completed.screenIds) {
       if (!USER_ACCESS_SCREENS.some((s) => s.id === id))
         throw new BadRequestException('زیربخش انتخاب‌شده معتبر نیست.');
       if (
@@ -2369,8 +2382,8 @@ export class IamService implements IamStepUpPort {
     return {
       title: dto.accessTitle,
       permissionIds,
-      permissionCodes: permissions.map(({ code }) => code),
-      screenIds: dto.screenIds,
+      permissionCodes: completed.permissionCodes,
+      screenIds: completed.screenIds,
       deniedControlIds,
       managed: true,
       canAssignAll: isAdministrator,
