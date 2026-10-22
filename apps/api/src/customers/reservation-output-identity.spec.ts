@@ -84,13 +84,11 @@ it('does not fabricate incomplete passport identity or a band without a travel d
 it.each(['M', 'F', null, undefined, 'invalid'])(
   'exposes registered gender %s without inferring from names',
   async (gender) => {
-    const find = vi
-      .fn()
-      .mockResolvedValue({
-        passportFirstName: 'EXAMPLE',
-        passportLastName: 'PERSON',
-        gender,
-      });
+    const find = vi.fn().mockResolvedValue({
+      passportFirstName: 'EXAMPLE',
+      passportLastName: 'PERSON',
+      gender,
+    });
     const service = new CustomerService(
       { find } as never,
       {} as never,
