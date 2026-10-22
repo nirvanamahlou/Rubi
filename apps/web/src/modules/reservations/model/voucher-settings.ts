@@ -346,14 +346,18 @@ export function supplierFormData(
                   outboundTransfer: saved.services.outboundTransfer,
                   returnTransfer: saved.services.returnTransfer,
                   checkIn: saved.services.hotel
-                    ? voucherDate(settings.text.checkIn)
+                    ? person.checkIn && person.checkIn !== '-'
+                      ? person.checkIn
+                      : voucherDate(settings.text.checkIn)
                     : '-',
                   checkOut: saved.services.hotel
-                    ? voucherDate(settings.text.checkOut)
+                    ? person.checkOut && person.checkOut !== '-'
+                      ? person.checkOut
+                      : voucherDate(settings.text.checkOut)
                     : '-',
                 }
               : {}),
-            ...(room
+            ...(room && saved?.services?.hotel !== false
               ? {
                   name: `${person.name} / ROOM ${room.ordinal} - ${englishOutputName(room.roomTypeNameSnapshot, refs)}`,
                 }
