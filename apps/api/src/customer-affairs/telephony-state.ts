@@ -6,6 +6,7 @@ export interface TelephonyTechnical {
   legs: Record<string, { state: string; at: string; sequence: number | null }>;
   recordings: string[];
   answered?: boolean;
+  lastAnswer?: { extension: string; at: string };
   unanswered?: boolean;
 }
 /** Terminal facts are monotone. Sequence numbers are only comparable within a leg. */
@@ -37,6 +38,13 @@ export function applyTelephonyEvent(
     next.answered = true;
   if (event.kind === 'ENDED' && event.endReason === 'NO_ANSWER')
     next.unanswered = true;
+  if (
+    event.kind === 'ANSWERED' &&
+    event.extension &&
+    (!next.lastAnswer ||
+      Date.parse(event.occurredAt) > Date.parse(next.lastAnswer.at))
+  )
+    next.lastAnswer = { extension: event.extension, at: event.occurredAt };
   const leg = next.legs[legId];
   const older =
     leg &&

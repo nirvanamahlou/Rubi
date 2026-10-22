@@ -34,6 +34,12 @@ export interface CallEvent {
   recordings: { id: string; url: string; title: string }[];
 }
 export interface Call extends CallEvent {
+  answerRecipient?: {
+    extension: string;
+    label: string;
+    shared: boolean;
+    answeredAt: string;
+  };
   needsCompletion?: boolean | null;
   ticketId?: string | null;
   outcome?: string | null;

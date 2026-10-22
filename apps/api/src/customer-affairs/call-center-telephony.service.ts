@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { HrCallAnswerDirectory } from '../hr/hr-call-answer-directory';
 import {
   BadRequestException,
   ConflictException,
@@ -33,6 +34,8 @@ export class CallCenterTelephonyService {
     @Inject(CallCenterService) private readonly calls: CallCenterService,
     @Inject(IamCallCenterDirectory)
     private readonly directory: IamCallCenterDirectory,
+    @Inject(HrCallAnswerDirectory)
+    private readonly answerDirectory?: HrCallAnswerDirectory,
   ) {}
   authorize(actor: AuthenticatedActor, write = false) {
     if (
@@ -193,6 +196,42 @@ export class CallCenterTelephonyService {
             `telephony:${row.id}`,
           ),
           version: { increment: 1 },
+        },
+      });
+    }
+    if (
+      this.answerDirectory &&
+      technical.lastAnswer &&
+      technical.lastAnswer.at !== previous?.lastAnswer?.at
+    ) {
+      const call = await tx.callCenterCall.findUniqueOrThrow({
+        where: { id: row.callId },
+      });
+      const old = this.calls.presentCall(call);
+      const answerRecipient = await this.answerDirectory.resolve(
+        context.branchId,
+        technical.lastAnswer.extension,
+        technical.lastAnswer.at,
+        tx,
+        event.connectionId,
+      );
+      const payload = {
+        phone: old.phone,
+        name: old.name,
+        subject: old.subject,
+        source: old.source,
+        note: old.note,
+        operator: `داخلی ${answerRecipient.extension}`,
+        answerRecipient,
+      };
+      await tx.callCenterCall.update({
+        where: { id: row.callId },
+        data: {
+          encryptedPayload: this.crypto.encrypt(
+            payload,
+            `call:${row.callId}:${call.contactId}`,
+          ),
+          keyVersion: this.crypto.keyVersion,
         },
       });
     }
@@ -474,7 +513,7 @@ export class CallCenterTelephonyService {
           callerName:
             t.first.direction === 'IN' ? (t.first.callerName ?? null) : null,
           destination: t.first.destination,
-          extension: t.first.extension,
+          extension: t.lastAnswer?.extension ?? t.first.extension,
           occurredAt: t.first.occurredAt,
           receivedAt: t.receivedAt,
           legs: Object.keys(t.legs).length,
@@ -624,6 +663,9 @@ export class CallCenterTelephonyService {
             subject: input.subject.trim(),
             source: old.source,
             operator: old.operator,
+            ...(old.answerRecipient
+              ? { answerRecipient: old.answerRecipient }
+              : {}),
             note: input.note?.trim() ?? '',
           };
           await tx.callCenterCall.update({

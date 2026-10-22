@@ -79,3 +79,30 @@ describe('existing call form completion', () => {
     expect(html).not.toContain('value="NO_ANSWER" selected=""');
   });
 });
+
+it('shows the server-confirmed answer read-only without exposing a manual selector', () => {
+  const call = {
+    ...previewCalls()[0]!,
+    completionToken: 'a'.repeat(64),
+    operator: 'داخلی 203',
+    answerRecipient: {
+      extension: '203',
+      label: 'Person A / Person B — داخلی 203 (مشترک)',
+      shared: true,
+      answeredAt: '2026-10-22T10:00:00Z',
+    },
+  };
+  const html = renderToStaticMarkup(
+    <CallForm
+      branchId="test"
+      event={call}
+      previous={call}
+      onSave={async () => {}}
+      onClose={() => {}}
+      busy={false}
+    />,
+  );
+  expect(html).toContain('Person A / Person B');
+  expect(html).toContain('type="hidden" name="operator" value="داخلی 203"');
+  expect(html).not.toMatch(/<select[^>]*name="operator"/);
+});

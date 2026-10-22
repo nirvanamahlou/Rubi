@@ -62,3 +62,39 @@ describe('telephony root and leg state', () => {
     expect(b.recordings).toEqual(['opaque']);
   });
 });
+
+it('uses only confirmed answers and retains the latest answer across late events', () => {
+  const ring = applyTelephonyEvent(
+    null,
+    { ...e, extension: '100' },
+    new Date(),
+  );
+  expect(ring.lastAnswer).toBeUndefined();
+  const answer = applyTelephonyEvent(
+    ring,
+    {
+      ...e,
+      kind: 'ANSWERED',
+      extension: '203',
+      occurredAt: '2026-10-19T00:02:00Z',
+    },
+    new Date(),
+  );
+  const late = applyTelephonyEvent(
+    answer,
+    {
+      ...e,
+      kind: 'ANSWERED',
+      extension: '101',
+      occurredAt: '2026-10-19T00:01:00Z',
+    },
+    new Date(),
+  );
+  expect(late.lastAnswer?.extension).toBe('203');
+  const end = applyTelephonyEvent(
+    late,
+    { ...e, kind: 'ENDED', extension: '100', terminalForCall: true },
+    new Date(),
+  );
+  expect(end.lastAnswer?.extension).toBe('203');
+});
