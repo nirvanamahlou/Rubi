@@ -279,7 +279,11 @@ export class CallCenterWorkflowService
       branchId: { in: branchIds },
       category: CATEGORY,
       callCenterContactId: { not: null },
-      ...(value !== 'ALL' ? { status: { not: 'CLOSED' } } : {}),
+      ...(value === 'CLOSED'
+        ? { status: 'CLOSED' }
+        : value !== 'ALL'
+          ? { status: { not: 'CLOSED' } }
+          : {}),
       ...(value === 'MINE'
         ? {
             OR: [
@@ -311,6 +315,7 @@ export class CallCenterWorkflowService
     const views = [
       'ALL',
       'OPEN',
+      'CLOSED',
       'MINE',
       'TODAY',
       'OVERDUE',

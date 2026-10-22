@@ -556,12 +556,9 @@ export function WorkQueue({
             {(
               [
                 ['ALL', 'همه درخواست‌ها'],
-                ['OPEN', 'باز'],
+                ['OPEN', 'درخواست‌های باز'],
+                ['CLOSED', 'درخواست‌های بسته‌شده'],
                 ['MINE', 'کارهای من'],
-                ['TODAY', 'امروز'],
-                ['OVERDUE', 'عقب‌افتاده'],
-                ['UNASSIGNED', 'بدون مسئول'],
-                ['NO_ACTION', 'بدون اقدام بعدی'],
               ] as const
             ).map(([value, label]) => (
               <button

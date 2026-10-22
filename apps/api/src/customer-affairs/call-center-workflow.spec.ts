@@ -559,6 +559,16 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         status: 'CLOSED',
         title: 'Synthetic closed request',
       });
+      const closed = await workflow.queue(multi, branchId, 'CLOSED', 1);
+      expect(closed.data.some((r) => r.id === id)).toBe(true);
+      expect(closed.data.every((r) => r.status === 'CLOSED')).toBe(true);
+      expect(closed.meta.total).toBe(one.meta.counts.CLOSED);
+      expect(one.meta.counts.ALL).toBe(
+        one.meta.counts.OPEN! + one.meta.counts.CLOSED!,
+      );
+      const restricted = await workflow.queue(actor, otherBranch, 'CLOSED', 1);
+      expect(restricted.data.some((r) => r.id === id)).toBe(false);
+      expect(restricted.meta.total).toBeLessThan(closed.meta.total);
       expect(
         (await workflow.queue(multi, branchId, 'OPEN', 1)).data.some(
           (r) => r.id === id,

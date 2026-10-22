@@ -8722,3 +8722,17 @@ and21 Web tests pass; scoped lint/typechecks and compatible builds pass. Runtime
 API10520/Web9284 activated, Worker unchanged, zero real offers. No schema/dependency,
 permissions/mappings, SSH, PR/merge or production deployment. Source/contract scope
 freezes/releases on commit/push. Handoff: docs/tasks/CALL-CENTER-COMPLETION-1022.md.
+
+## CALL-CENTER-QUEUE-1022 — PC-C — ACTIVE
+
+Owner explicitly requests four queue views ALL, OPEN, CLOSED, MINE in that order.
+Continue approved local b14dce24 prerequisite stack on codex/pc-c-call-center-queue-1022.
+Reserve workflow.tsx, workflow DTO/service/spec and own status/docs. Add CLOSED
+additively to queue producer/consumer; retain legacy API filters for compatibility.
+No ownership, permission, schema, dependency, popup or other design changes.
+
+## CALL-CENTER-QUEUE-1022 — PC-C — LOCAL_VERIFIED
+
+Requested four queue views delivered; additive CLOSED API with scope/count tests.
+13 API +10 Web tests, lint/types/builds pass. Local API4000/Web3000 HTTP200.
+No schema/dependency/ownership/popup change. Bounded reservations release on push.

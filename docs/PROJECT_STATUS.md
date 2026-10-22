@@ -6919,3 +6919,15 @@ tests, scoped lint, types and compatible API/Web builds pass. Local Web3000 buil
 dzjznuaksuBZxlUxzuRJI/API4000 healthy and AMI connected;3 existing real calls and zero
 offers preserved. No migration, grants, mappings, PBX write or production rollout.
 Details/limits: docs/tasks/CALL-CENTER-COMPLETION-1022.md. Reservations release on push.
+
+## CALL-CENTER-QUEUE-1022 — PC-C — LOCAL_VERIFIED
+
+Queue now shows ALL, OPEN, CLOSED, MINE in requested order with explicit Persian
+request labels. CLOSED filter/count enforced on server within actor branch scope.
+13 PostgreSQL workflow tests and 10 Web client tests pass; scoped lint, API types,
+API build and Web production build/typecheck pass. Existing CSS optimizer warning
+in unrelated generated selector remains; no CSS changed by this unit.
+Local API4000 PID22316 and Web3000 PID18892 healthy (HTTP200), Web build
+UtbxiGwvkjRS4HhYLnjYo in .next-queue-1022. Three ended real calls, zero popup offers
+preserved. No migration, assignment rule change or production deployment.
+See docs/tasks/CALL-CENTER-QUEUE-1022.md; reservations release on push.

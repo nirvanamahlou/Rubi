@@ -14,7 +14,16 @@ import { Type } from 'class-transformer';
 
 export class CallCenterQueueDto {
   @IsOptional()
-  @IsIn(['ALL', 'OPEN', 'MINE', 'TODAY', 'OVERDUE', 'UNASSIGNED', 'NO_ACTION'])
+  @IsIn([
+    'ALL',
+    'OPEN',
+    'CLOSED',
+    'MINE',
+    'TODAY',
+    'OVERDUE',
+    'UNASSIGNED',
+    'NO_ACTION',
+  ])
   view = 'ALL';
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100000) page = 1;
 }
