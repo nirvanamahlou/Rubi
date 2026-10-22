@@ -537,3 +537,15 @@
 .page[data-voucher] {
   padding: 7mm;
 }
+
+.roomBreakdown th:nth-child(2),
+.roomBreakdown td:nth-child(2) {
+  width: 48%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.differentStay {
+  background: #d3dae2;
+  border: 1.5px solid #69798a;
+  font-weight: bold;
+}
