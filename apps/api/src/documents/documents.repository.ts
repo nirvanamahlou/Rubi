@@ -1077,6 +1077,7 @@ export class DocumentsRepository {
   }
 
   async createUploaded(input: {
+    skipAntivirusForMasterDataLogo?: boolean;
     documentId: string;
     versionId: string;
     storageObjectKey: string;
@@ -1162,15 +1163,17 @@ export class DocumentsRepository {
           },
         });
       }
-      await transaction.documentQuarantine.create({
-        data: {
-          versionId: input.versionId,
-          reasonCode: 'ANTIVIRUS_ADAPTER_UNAVAILABLE',
-        },
-      });
-      await transaction.documentProcessingJob.create({
-        data: { versionId: input.versionId, jobType: 'ANTIVIRUS_SCAN' },
-      });
+      if (!input.skipAntivirusForMasterDataLogo) {
+        await transaction.documentQuarantine.create({
+          data: {
+            versionId: input.versionId,
+            reasonCode: 'ANTIVIRUS_ADAPTER_UNAVAILABLE',
+          },
+        });
+        await transaction.documentProcessingJob.create({
+          data: { versionId: input.versionId, jobType: 'ANTIVIRUS_SCAN' },
+        });
+      }
       await transaction.document.update({
         where: { id: input.documentId },
         data: { currentVersionId: input.versionId, currentVersionNumber: 1 },
@@ -1183,7 +1186,9 @@ export class DocumentsRepository {
           actorBranchId: input.actorBranchId,
           action: 'documents.upload',
           outcome: AuditOutcome.SUCCESS,
-          reason: 'UPLOAD_ACCEPTED_TO_QUARANTINE',
+          reason: input.skipAntivirusForMasterDataLogo
+            ? 'MASTER_DATA_LOGO_ANTIVIRUS_EXEMPT'
+            : 'UPLOAD_ACCEPTED_TO_QUARANTINE',
           ipSummary: input.ipSummary,
           userAgentSummary: input.userAgentSummary,
         },

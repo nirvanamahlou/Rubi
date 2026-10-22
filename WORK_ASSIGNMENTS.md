@@ -1,3 +1,7 @@
+## LOGO-SCAN-EXEMPTION-1022 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-logo-scan-exemption-1022 from develop d3880878. Owner explicitly requests removing antivirus only for Master Data logos, retaining all other controls; authorizes tests, push, develop merge and Avina rollout. Reserve bounded Documents logo upload/preview private policy, repository scan-job opt-out and regressions, Master Data logo warnings/tests and own documentation. No schema/dependency/IAM changes. Ordinary Documents remain scan-gated; unscanned logos never become falsely CLEAN. Exact record/branch, PNG/JPEG magic bytes, size, encryption, CAS and audit remain. Prior logo source locks released. No delegation or worker-orchestrator.
+
 ## LOGO-PRODUCTION-PROOF-1022 — PC-B — COMPLETE / SOURCE_RELEASED
 
 Production functional acceptance complete: bank+hotel native HTTPS create/upload/reopen/replace/download-byte comparison and independent browser image rendering pass. Own two synthetic records removed via native CAS APIs, their logo documents archived; no business record/logo changed. Final HTTPS API health and scanner/updater zero-restart checks pass. No operational migration/seed. CDN403 signature-refresh caveat remains explicit; no automatic-update success claimed. Documentation-only reservation released on publication.
