@@ -8831,6 +8831,12 @@ COMPUTER_ID=PC-A; codex/pc-a-voucher-services-1022 from origin/develop88c45b8c. 
 
 Validation:90 focused Web/model/PDF/preview tests pass, with two existing opt-in runtime skips; scoped ESLint passes. Local Chromium synthetic one/two/three-page PDFs verified for English service headers, selected passport names, accurate per-person hotel/transfer allocation, custom-stay shading, QR and no overflow. Source locks freeze/release on publication. Full exact-head hosted types/build/quality/test/database gates precede owner-authorized develop merge. No operational mutation.
 
+## AVINA-DEVELOP-1022 — PC-A — COMPLETE / RELEASED
+
+COMPUTER_ID=PC-A; codex/pc-a-avina-develop-1022 from aa537c6e. Owner explicitly authorizes latest develop rollout on avinaofficial.ir to show contract/voucher updates. Reserve private deployment scripts and own evidence only; pin exact source, preserve API/Web/Worker settings, standalone scanner/signature services and all mounts. No lockfile/migration changes from running73ad base; no seed/direct business writes. Verified encrypted DB/documents/private-public-artifact backup, isolated build/PDF smoke and guarded health/rollback precede cutover. No active build/rollout detected; no source/schema/dependency edits.
+
+AVINA-DEVELOP-1022 completed: published aa537c6e583c8aea8171c550c654f4f7679d4c7f to API/Web/Worker after immutable build and120 isolated synthetic tests, including real contract/voucher PDF rendering. Encrypted DB/documents/private-config/public-artifact backup verified at /opt/rubi/backups/before-aa537c6e583c-20261022T083921Z. No migration/seed;306 existing table counts preserved. HTTPS login/API200, five assets200, three route auth guards, API401 and unknown public document404 pass. Environment hashes and all data mounts preserved; PostgreSQL/Redis/scanner/signature containers unchanged. Source hashes match release and app restarts remain zero. Operational lock RELEASED; no cleanup or business-record edits.
+
 ## CONTRACT-PDF-FOOTER-1021 — PC-A — IN_PROGRESS
 
 Reserve Sales contract-print presentation and focused PDF regressions only. User authorizes repeated approval/signature footer, IRR label, compact hotel dates/flight route and two-column parties layout, tests and develop merge. Prior print scopes released; no active overlapping target writer found. No data/API/schema/dependency/runtime changes.
