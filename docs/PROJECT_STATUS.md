@@ -1,3 +1,7 @@
+## USER-SECTION-ACCESS-1022 — PC-B — 2026-10-22
+
+Production access repair for the two owner-named users: dedicated screen ticks were saved, but four old Call Center native permissions existed only in seed, not the deployed catalogue. Inserted only those missing choices, then used the existing IAM manual service/CAS/audit to add the selected section's four missing operations to those two users; sticky scope, all other ticks and19 other role fingerprints remain unchanged. Actual Call Center reads pass for both users in five branches; Integrations reads for all nine sections were already allowed. No global seed, other-user grant, session impersonation, password reset or application restart. Additive insert-only migration and regression prevent a seedless-deployment recurrence.37 focused tests plus real PostgreSQL18 repeated-apply preservation proof pass. See [evidence and recovery](tasks/USER-SECTION-ACCESS-1022.md).
+
 ## MASTER-LOGO-SAVE-DISPLAY-1021 — PC-B — 2026-10-21
 
 Published implementation e18b81f9; API/Web production builds and Web full type check pass, including all65 Web routes.133 API and27 Web tests and scoped lint/format/diff checks pass. Source reservations released. No real-engine/production acceptance, merge, scanner installation or runtime activation; direct continuation respected after user excludes orchestrator.
