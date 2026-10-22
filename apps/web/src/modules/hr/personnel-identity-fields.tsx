@@ -32,7 +32,7 @@ const digits = (value: string) =>
     String(c.charCodeAt(0) - (c >= '۰' ? 1776 : 1632)),
   );
 export function personnelIdentityError(values: readonly string[]) {
-  if (!/^\d{10}$/.test(digits(values[2]?.trim() ?? '')))
+  if (values[2]?.trim() && !/^\d{10}$/.test(digits(values[2].trim())))
     return 'کد ملی باید ده رقم باشد.';
   if (values[9] && !values[8]) return 'ابتدا استان را انتخاب کنید.';
   return '';
@@ -137,7 +137,6 @@ export function PersonnelIdentityFields({
                       : index === 13
                         ? 'آدرس'
                         : label}
-                  {index === 2 ? ' *' : ''}
                   {index === 5 ? (
                     <DatePicker
                       value={values[index] ?? ''}
@@ -166,7 +165,6 @@ export function PersonnelIdentityFields({
                     <input
                       className={styles.control}
                       value={values[index] ?? ''}
-                      required={index === 2}
                       inputMode={
                         index === 2 || index === 3 ? 'numeric' : 'text'
                       }

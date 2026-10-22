@@ -147,8 +147,7 @@ export function getHrResource(
     required:
       index === 0 ||
       label === 'کارمند' ||
-      (key === 'employee.identity' &&
-        ['نام خانوادگی', 'کد ملی'].includes(label)) ||
+      (key === 'employee.identity' && label === 'نام خانوادگی') ||
       (key === 'employee.phones' && label === 'شماره تماس') ||
       (key === 'requests.approvalStages' && label === 'اولویت') ||
       (key === 'requests.procedures' && label === 'درخواست‌ها') ||

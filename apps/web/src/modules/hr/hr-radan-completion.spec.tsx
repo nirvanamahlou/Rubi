@@ -41,9 +41,10 @@ describe('Radan fields in existing HR surfaces', () => {
     expect(getHrResource('time', 'minuteLedger')?.readOnly).toBe(true);
     expect(getHrResource('payroll', 'importedPayslips')?.readOnly).toBe(true);
   });
-  it('requires identity names and national code without changing old contract rules', () => {
+  it('requires identity names while allowing an optional national code without changing contract rules', () => {
     const definition = getHrResource('employee', 'identity')!;
-    expect(radanOptionalLabels(definition)).not.toContain('کد ملی');
+    expect(radanOptionalLabels(definition)).toContain('کد ملی');
+    expect(radanOptionalLabels(definition)).not.toContain('نام خانوادگی');
     expect(radanOptionalLabels(definition)).toContain('تحصیلات');
     expect(radanOptionalLabels(getHrResource('contracts', 'active')!)).toEqual(
       [],
