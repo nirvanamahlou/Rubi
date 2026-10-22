@@ -1,5 +1,6 @@
 /** Stored only in an exclusive per-user role. Never inferred from a job title. */
 export * from './call-center-access';
+export * from './manual-access-prerequisites';
 export const MANUAL_ACCESS_VERSION = 'ui.manual.v3' as const;
 export const MANUAL_ACCESS_ROLE_PREFIX = 'manual-access-v3-' as const;
 export const MANUAL_NEW_PERMISSIONS = [

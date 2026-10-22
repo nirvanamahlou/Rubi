@@ -5,6 +5,8 @@ import {
   MANUAL_ACCESS_ROLE_PREFIX,
   CALL_CENTER_SCOPED_ACCESS,
   MANUAL_NEW_PERMISSIONS,
+  canViewRoute,
+  visibleIntegrationSections,
   type AuthenticatedActor,
 } from '@nora/contracts';
 import {
@@ -214,6 +216,82 @@ describe.skipIf(!url)(
       expect(authenticatedPermissionCodes(restored.roles)).toContain(
         'customers.update',
       );
+    }, 90000);
+
+    it('completes checked page prerequisites for arbitrary users, preserving revocation and other accounts', async () => {
+      const untouched = await service.read(targetId);
+      for (let n = 0; n < 3; n++) {
+        const subject = await db.user.create({
+          data: {
+            username: randomUUID(),
+            displayName: 'Synthetic independent access user',
+            passwordHash: 'not-a-login',
+          },
+        });
+        const before = await service.read(subject.id);
+        await service.save(
+          subject.id,
+          {
+            revision: before.revision,
+            title: 'No title-based grants',
+            screenIds: [
+              'customer-affairs.call-center',
+              'integrations.section.connections',
+            ],
+            permissionCodes: [],
+            allowedControlIds: [],
+          },
+          actor(),
+        );
+        const stored = await db.user.findUniqueOrThrow({
+          where: { id: subject.id },
+          include: manualUserInclude,
+        });
+        const permissions = authenticatedPermissionCodes(stored.roles);
+        expect(canViewRoute(permissions, '/customer-affairs/call-center')).toBe(
+          true,
+        );
+        expect(canViewRoute(permissions, '/integrations')).toBe(true);
+        expect(visibleIntegrationSections(permissions)).toEqual([
+          'connections',
+        ]);
+        expect(permissions).toEqual(
+          expect.arrayContaining([
+            'customer_affairs.call_center.read',
+            'customer_affairs.call_center.contacts.read.own',
+            'customer_affairs.call_center.reports.read.own',
+            CALL_CENTER_SCOPED_ACCESS,
+          ]),
+        );
+        expect(permissions).not.toContain(
+          'customer_affairs.call_center.contacts.read.team',
+        );
+        expect(permissions).not.toContain(
+          'customer_affairs.call_center.calls.create',
+        );
+        const checked = await service.read(subject.id);
+        await service.save(
+          subject.id,
+          {
+            revision: checked.revision,
+            title: checked.title,
+            screenIds: [],
+            permissionCodes: [],
+            allowedControlIds: [],
+          },
+          actor(),
+        );
+        const revoked = await db.user.findUniqueOrThrow({
+          where: { id: subject.id },
+          include: manualUserInclude,
+        });
+        const revokedPermissions = authenticatedPermissionCodes(revoked.roles);
+        expect(
+          canViewRoute(revokedPermissions, '/customer-affairs/call-center'),
+        ).toBe(false);
+        expect(canViewRoute(revokedPermissions, '/integrations')).toBe(false);
+      }
+      expect((await service.read(targetId)).revision).toBe(untouched.revision);
     }, 90000);
 
     it('opts only the edited user into sticky Call Center scope and preserves revisions/delegation/audit', async () => {

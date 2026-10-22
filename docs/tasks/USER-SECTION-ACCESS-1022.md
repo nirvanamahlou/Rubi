@@ -35,8 +35,24 @@ native choices with `ON CONFLICT (code) DO NOTHING`. It does not grant or remove
 any role/user permission, overwrite custom labels or rerun the global seed.
 Existing installations can apply it repeatedly without privilege expansion.
 
-Already-saved partial selections remain partial until their owner explicitly
-chooses the missing operations. No historical blanket backfill is performed.
+The owner subsequently requests a general checkbox rule, not an account-specific
+fix. The shared `completeManualAccessPrerequisites` function is now used by both
+the existing manual editor (single check, group check and role-template choice)
+and the transactional server save boundary:
+
+- A checked Call Center view includes its native read guard. A newly selected
+  view defaults to own contacts/reports reads only if no explicit scope was
+  selected. It never invents team visibility, write, ownership or outbound grants.
+- Selecting an Integrations child includes its root; a newly selected root alone
+  includes the brands view. No sibling, settings operation or field is granted.
+- Every added prerequisite passes the existing delegation ceiling and revision
+  checks. A caller cannot gain authority by omitting prerequisites from the DTO.
+- Existing legacy Call Center users retain scope on unrelated saves; deliberately
+  removed own/team scopes are not restored. No existing-account blanket backfill
+  or account-name-based authorization rule is added.
+- The DTO/routes, role isolation, audit, UI design and organizational boundaries
+  remain unchanged. The shared producer/consumer change requires API and Web
+  rollout together; Git merge alone does not deploy it to Avina.
 
 ## Authorized production repair
 
@@ -61,6 +77,19 @@ were changed. Catalogue registration makes the choices available for subsequent
 explicit admin selection; it does not assign them automatically to administrators.
 
 ## Verification and limits
+
+General-rule follow-up: all208 Contracts tests pass, including five prerequisite
+regressions; all101 prior user-editor regressions pass and the expanded6-test save
+suite passes with three arbitrary user IDs. Real isolated PostgreSQL runs all187
+migrations without seed and all6 IAM persistence tests pass, including three new
+arbitrary users' checkbox save/revocation and unchanged unrelated-account revision.
+The21 focused IAM policy/administration regressions also pass. The original2
+catalogue tests and repeated-apply PostgreSQL proof remain valid. Scoped lint and
+formatting pass; full hosted exact-head gates are still required before merge.
+
+The first local PostgreSQL attempt ran while Docker was stopped/starting. Once
+the existing QA container was ready, the new empty database migrated and passed;
+no operational database was used and no timeout or security gate was relaxed.
 
 - Database tests2, IAM policy/authenticated-permission tests31, Web full-section
   selection tests4:37 pass. Scoped ESLint/format/diff checks pass.
