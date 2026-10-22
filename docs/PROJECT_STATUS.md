@@ -1,3 +1,9 @@
+## USER-SECTION-ACCESS-1022 — PC-B — 2026-10-22
+
+Owner requests a general rule for every selected user and push/develop merge. Shared editor/server prerequisite normalization now completes new Call Center own-read and Integrations root/child selections without team/write escalation, account-name conditions or an existing-user backfill. Full208 Contracts, prior101 Web user-editor, expanded6 Web save,6 real PostgreSQL IAM persistence (187 migrations) and21 IAM policy/administration tests pass. UI/API producer and consumer must roll out together after exact-head hosted checks. No additional production mutation in this follow-up.
+
+Production access repair for the two owner-named users: dedicated screen ticks were saved, but four old Call Center native permissions existed only in seed, not the deployed catalogue. Inserted only those missing choices, then used the existing IAM manual service/CAS/audit to add the selected section's four missing operations to those two users; sticky scope, all other ticks and19 other role fingerprints remain unchanged. Actual Call Center reads pass for both users in five branches; Integrations reads for all nine sections were already allowed. No global seed, other-user grant, session impersonation, password reset or application restart. Additive insert-only migration and regression prevent a seedless-deployment recurrence.37 focused tests plus real PostgreSQL18 repeated-apply preservation proof pass. See [evidence and recovery](tasks/USER-SECTION-ACCESS-1022.md).
+
 ## LOGO-SCAN-EXEMPTION-1022 — PC-B — 2026-10-22
 
 ## RESERVATION-FORM-FOOTER-SERVICES-1022 — PC-A
