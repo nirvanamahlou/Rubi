@@ -192,6 +192,7 @@ describe('linked load current schedule across contract and issued ticket reads',
             {
               ...selection,
               serviceClientKey: 'second-out',
+              departureAt: '2026-11-01T15:00:00.000Z',
               quotedPrice: { amount: '999', currencyCode: 'EUR' },
             },
           ],
@@ -208,6 +209,14 @@ describe('linked load current schedule across contract and issued ticket reads',
       quotedPrice: { amount: '999', currencyCode: 'EUR' },
     });
     expect(f.findMany).toHaveBeenCalledOnce();
+    f.findMany.mockResolvedValue([]);
+    const historical = await f.reservations.list(['branch']);
+    expect(historical[0]?.snapshot.ticketSelections?.[0]?.departureAt).toBe(
+      selection.departureAt,
+    );
+    expect(historical[1]?.snapshot.ticketSelections?.[0]?.departureAt).toBe(
+      '2026-11-01T15:00:00.000Z',
+    );
   });
   it('keeps missing/foreign offer snapshots and never queries inventory for a floating-only contract', async () => {
     const f = fixture();

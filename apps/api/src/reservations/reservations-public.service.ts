@@ -567,28 +567,15 @@ export class ReservationsPublicService {
           linked.flatMap((item) => item.snapshot.ticketSelections ?? []),
           branchId,
         );
-        const byOffer = new Map(
-          current.map((ticket) => [ticket.offerId, ticket]),
-        );
-        for (const item of linked)
+        let offset = 0;
+        for (const item of linked) {
+          const count = item.snapshot.ticketSelections?.length ?? 0;
           item.snapshot = {
             ...item.snapshot,
-            ticketSelections: (item.snapshot.ticketSelections ?? []).map(
-              (ticket) => {
-                const fresh = byOffer.get(ticket.offerId);
-                return fresh
-                  ? {
-                      ...ticket,
-                      departureAt: fresh.departureAt,
-                      arrivalAt: fresh.arrivalAt,
-                      carrierNameSnapshot: fresh.carrierNameSnapshot,
-                      serviceNumberSnapshot: fresh.serviceNumberSnapshot,
-                      cabinClassCode: fresh.cabinClassCode,
-                    }
-                  : ticket;
-              },
-            ),
+            ticketSelections: current.slice(offset, offset + count),
           };
+          offset += count;
+        }
       }
     }
     return result;
