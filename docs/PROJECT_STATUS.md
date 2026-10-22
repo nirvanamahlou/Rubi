@@ -6,6 +6,10 @@ Production access repair for the two owner-named users: dedicated screen ticks w
 
 ## LOGO-SCAN-EXEMPTION-1022 — PC-B — 2026-10-22
 
+## RESERVATION-PASSENGER-SEX-1022 — PC-A
+
+Customer's branch-authorized reservationOutputIdentity adds registered M/F/null gender to its minimal request-scoped output. Reservation and hotel voucher map it to Male/Female in preview and canonical PDF; missing/unknown gender stays a dash and saved explicit MALE/FEMALE form settings retain precedence. Legacy blank settings fall back to registered identity. No inferred gender, raw DOB/passport exposure, schema/migration/dependency or operational data/runtime changes. Producer Customers and consumer Reservations ship together; optional Web projection remains compatible with older API responses.33 focused Web regressions pass; API/type/build and final hosted gates precede user-authorized develop merge.
+
 ## RESERVATION-FORM-FOOTER-SERVICES-1022 — PC-A
 
 Supplier reservation output consumes the contract passenger service allocations for outbound/return flights, hotel stay dates, outbound/return transfers and other services. Registered English reference names and English issuer contact are used. Supplier print layout reserves a repeating bottom contact/QR footer with native page counters and natural room/passenger pagination; voucher workflow and public capability guards remain. Forty-six focused regressions pass; final real PDF visual checks and hosted gates remain required before authorized develop merge. No schema/migration/dependency or operational data/runtime change.

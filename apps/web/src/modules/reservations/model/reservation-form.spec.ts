@@ -1,3 +1,9 @@
+import {
+  defaultVoucherSettings,
+  supplierFormData,
+  voucherFormData,
+} from './voucher-settings';
+import { reservationPdfHtml } from '../server/reservation-pdf-html';
 import { describe, expect, it } from 'vitest';
 import {
   reservationFormData,
@@ -192,4 +198,55 @@ it('preserves individual hotel dates and no stay for a flight-only passenger', (
     '02 OCT 2026',
   );
   expect(result.passengers.find((p) => p.id === 'b')?.checkIn).toBe('-');
+});
+
+it('carries registered genders to both supplier and voucher PDF output with legacy blank fallback', () => {
+  const value = structuredClone(input);
+  value.outputPassengers = [
+    {
+      customerId: 'a',
+      passportName: 'EXAMPLE / A',
+      hotelChildAgeBand: null,
+      gender: 'M',
+    },
+    {
+      customerId: 'b',
+      passportName: 'EXAMPLE / B',
+      hotelChildAgeBand: null,
+      gender: 'F',
+    },
+  ];
+  const settings = defaultVoucherSettings(value, {});
+  settings.flags.withLetterhead = false;
+  // Historical settings contain a blank sex; the authoritative identity supplies it.
+  settings.passengers.forEach((p) => {
+    p.sex = '';
+  });
+  value.workflow.supplierFormSettings = structuredClone(settings);
+  value.workflow.voucherSettings = structuredClone(settings);
+  for (const model of [supplierFormData(value), voucherFormData(value, {})]) {
+    expect(model.passengers.find((p) => p.id === 'a')?.sex).toBe('Male');
+    expect(model.passengers.find((p) => p.id === 'b')?.sex).toBe('Female');
+  }
+  for (const voucher of [false, true]) {
+    const html = reservationPdfHtml(value, {}, '', '', voucher);
+    expect(html).toContain('>Male</td>');
+    expect(html).toContain('>Female</td>');
+  }
+  const missing = structuredClone(value);
+  delete missing.outputPassengers;
+  expect(supplierFormData(missing).passengers.every((p) => p.sex === '-')).toBe(
+    true,
+  );
+  expect(
+    voucherFormData(missing, {}).passengers.every((p) => p.sex === '-'),
+  ).toBe(true);
+  value.workflow.voucherSettings.passengers.find((p) => p.id === 'b')!.sex =
+    'MALE';
+  expect(
+    voucherFormData(value, {}).passengers.find((p) => p.id === 'b')?.sex,
+  ).toBe('Male');
+  expect(reservationPdfHtml(value, {}, '', '', true)).not.toContain(
+    '>Female</td>',
+  );
 });
