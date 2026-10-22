@@ -1,3 +1,4 @@
+import { reservationPdfHtml } from '../server/reservation-pdf-html';
 import { expect, it } from 'vitest';
 import {
   defaultVoucherSettings,
@@ -204,4 +205,47 @@ it('keeps room composition in the saved supplier revision and output without cha
     { ordinal: 1, roomType: 'Family Suite', adults: 2, childAges: [4, 10] },
   ]);
   expect(intake.snapshot.hotelSelection?.roomCount).toBe(1);
+});
+
+it('keeps passenger services and room allocation in the supplier revision only', () => {
+  const intake = {
+    receivedAt: '2026-10-01T00:00:00Z',
+    snapshot: {
+      passengerIds: ['p'],
+      passengerAssignments: [],
+      serviceSelections: [],
+      hotelSelection: { hotelNameSnapshot: 'Hotel', roomCount: 1 },
+    },
+    workflow: { roomOrder: [], ageOverrides: {}, note: '' },
+  } as unknown as ReservationFormIntake;
+  const before = JSON.stringify(intake.snapshot);
+  const settings = defaultVoucherSettings(intake, {});
+  settings.text.checkIn = '2026-11-01';
+  settings.text.checkOut = '2026-11-04';
+  settings.rooms = [
+    { ordinal: 1, roomTypeNameSnapshot: 'Double', adults: 2, childAges: [] },
+  ];
+  settings.passengers[0]!.roomOrdinal = 1;
+  settings.passengers[0]!.services = {
+    outboundFlight: true,
+    returnFlight: false,
+    outboundTransfer: false,
+    returnTransfer: true,
+    hotel: true,
+  };
+  intake.workflow.supplierFormSettings = settings;
+  const result = supplierFormData(intake, {});
+  expect(result.passengers[0]).toMatchObject({
+    outboundFlight: true,
+    returnFlight: false,
+    outboundTransfer: false,
+    returnTransfer: true,
+    checkIn: '01 NOV 2026',
+  });
+  expect(result.passengers[0]!.name).toContain('ROOM 1 - Double');
+  expect(
+    reservationPdfHtml(intake, {}, 'data:image/png;base64,AAAA', '', false),
+  ).toContain('ROOM 1 - Double');
+  expect(JSON.stringify(intake.snapshot)).toBe(before);
+  expect(voucherFormData(intake, {}).passengers[0]!.outboundFlight).toBe(false);
 });

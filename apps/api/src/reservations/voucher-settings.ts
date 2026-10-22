@@ -135,6 +135,29 @@ export function validateVoucherSettings(
   )
     return fail();
   for (const p of v.passengers) {
+    if (
+      p.roomOrdinal !== undefined &&
+      (!Number.isInteger(p.roomOrdinal) ||
+        !v.rooms?.some((room) => room.ordinal === p.roomOrdinal))
+    )
+      return fail();
+    if (
+      p.services !== undefined &&
+      (!p.services ||
+        typeof p.services !== 'object' ||
+        [
+          'outboundFlight',
+          'returnFlight',
+          'outboundTransfer',
+          'returnTransfer',
+          'hotel',
+        ].some(
+          (key) =>
+            typeof p.services?.[key as keyof NonNullable<typeof p.services>] !==
+            'boolean',
+        ))
+    )
+      return fail();
     if (p.sex !== undefined && !['MALE', 'FEMALE', ''].includes(p.sex))
       return fail();
     if (
@@ -191,6 +214,18 @@ export function validateVoucherSettings(
       id: p.id,
       selected: p.selected,
       roomType: p.roomType.trim(),
+      ...(p.roomOrdinal !== undefined ? { roomOrdinal: p.roomOrdinal } : {}),
+      ...(p.services !== undefined
+        ? {
+            services: {
+              outboundFlight: p.services.outboundFlight,
+              returnFlight: p.services.returnFlight,
+              outboundTransfer: p.services.outboundTransfer,
+              returnTransfer: p.services.returnTransfer,
+              hotel: p.services.hotel,
+            },
+          }
+        : {}),
       age: p.age,
       hotelChildAgeBand: p.hotelChildAgeBand ?? '',
       sex: p.sex ?? '',

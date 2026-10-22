@@ -636,6 +636,15 @@ export interface VoucherSettingsV1 {
     id: string;
     selected: boolean;
     roomType: string;
+    /** Supplier-form revision only; canonical contract allocations are untouched. */
+    roomOrdinal?: number | undefined;
+    services?: {
+      outboundFlight: boolean;
+      returnFlight: boolean;
+      outboundTransfer: boolean;
+      returnTransfer: boolean;
+      hotel: boolean;
+    };
     age: 'ADL' | 'CHD' | 'INF';
     /** Hotel-only split for a child. Ticket age remains CHD. */
     hotelChildAgeBand?: 'CHD_2_TO_6' | 'CHD_6_TO_12' | '';

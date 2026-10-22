@@ -891,6 +891,16 @@ export function ReservationSettingsForm({
                   onClick={() =>
                     update({
                       ...draft,
+                      passengers: draft.passengers.map((person) => ({
+                        ...person,
+                        roomOrdinal:
+                          person.roomOrdinal === index + 1
+                            ? undefined
+                            : person.roomOrdinal &&
+                                person.roomOrdinal > index + 1
+                              ? person.roomOrdinal - 1
+                              : person.roomOrdinal,
+                      })),
                       rooms: draft
                         .rooms!.filter((_, i) => i !== index)
                         .map((r, i) => ({ ...r, ordinal: i + 1 })),
@@ -947,6 +957,12 @@ export function ReservationSettingsForm({
                   <th>انتخاب</th>
                   <th>مسافر</th>
                   <th>نوع اتاق</th>
+                  <th>اتاق</th>
+                  <th>بلیط رفت</th>
+                  <th>بلیط برگشت</th>
+                  <th>ترانسفر رفت</th>
+                  <th>ترانسفر برگشت</th>
+                  <th>هتل</th>
                   <th>رده بلیط</th>
                   <th>رده کودک هتل</th>
                   <th>جنسیت</th>
@@ -994,6 +1010,73 @@ export function ReservationSettingsForm({
                         }
                       />
                     </td>
+                    <td>
+                      <ReservationSelect
+                        ariaLabel={`اتاق مسافر ${i + 1}`}
+                        value={p.roomOrdinal?.toString() ?? ''}
+                        options={[
+                          { value: emptySelectValue, label: 'انتخاب اتاق' },
+                          ...(draft.rooms ?? []).map((room) => ({
+                            value: String(room.ordinal),
+                            label: `${room.ordinal} - ${room.roomTypeNameSnapshot}`,
+                          })),
+                        ]}
+                        onValueChange={(value) =>
+                          update({
+                            ...draft,
+                            passengers: draft.passengers.map((person, index) =>
+                              index === i
+                                ? {
+                                    ...person,
+                                    roomOrdinal: value
+                                      ? Number(value)
+                                      : undefined,
+                                  }
+                                : person,
+                            ),
+                          })
+                        }
+                      />
+                    </td>
+                    {(
+                      [
+                        'outboundFlight',
+                        'returnFlight',
+                        'outboundTransfer',
+                        'returnTransfer',
+                        'hotel',
+                      ] as const
+                    ).map((key) => (
+                      <td key={key}>
+                        <input
+                          type="checkbox"
+                          aria-label={`${key} ${i + 1}`}
+                          checked={p.services?.[key] ?? false}
+                          onChange={(event) =>
+                            update({
+                              ...draft,
+                              passengers: draft.passengers.map(
+                                (person, index) =>
+                                  index === i
+                                    ? {
+                                        ...person,
+                                        services: {
+                                          outboundFlight: false,
+                                          returnFlight: false,
+                                          outboundTransfer: false,
+                                          returnTransfer: false,
+                                          hotel: false,
+                                          ...person.services,
+                                          [key]: event.target.checked,
+                                        },
+                                      }
+                                    : person,
+                              ),
+                            })
+                          }
+                        />
+                      </td>
+                    ))}
                     <td>
                       <ReservationSelect
                         ariaLabel={`رده سنی مسافر ${i + 1}`}

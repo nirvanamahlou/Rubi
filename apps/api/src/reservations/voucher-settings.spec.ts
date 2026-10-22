@@ -232,3 +232,28 @@ it('preserves modern room composition and rejects invalid child ages', () => {
   expect(result.rooms![0]!.childAges[0]).toBe(4);
   expect(() => validateVoucherSettings(value, ['p'])).toThrow();
 });
+
+it('preserves validated form services and room membership and rejects foreign rooms', () => {
+  const value = settings();
+  value.rooms = [
+    { ordinal: 1, roomTypeNameSnapshot: 'Double', adults: 2, childAges: [] },
+  ];
+  value.passengers[0]!.roomOrdinal = 1;
+  value.passengers[0]!.services = {
+    outboundFlight: true,
+    returnFlight: false,
+    outboundTransfer: false,
+    returnTransfer: true,
+    hotel: true,
+  };
+  expect(validateVoucherSettings(value, ['p']).passengers[0]).toMatchObject({
+    roomOrdinal: 1,
+    services: value.passengers[0]!.services,
+  });
+  value.passengers[0]!.roomOrdinal = 2;
+  expect(() => validateVoucherSettings(value, ['p'])).toThrow();
+  value.passengers[0]!.roomOrdinal = 1;
+  (value.passengers[0]!.services as unknown as Record<string, unknown>).hotel =
+    'yes';
+  expect(() => validateVoucherSettings(value, ['p'])).toThrow();
+});
