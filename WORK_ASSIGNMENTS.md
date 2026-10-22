@@ -8782,3 +8782,17 @@ completion result delivered. Configurable closure notification path tested; actu
 manager recipient deferred by owner, no delivery configured.15 API/12 Web tests,
 lint/types/builds pass; local API/Web HTTP200. No schema/permission/PBX change.
 Release bounded source/API consumer/IAM directory reservation on commit/push.
+
+## CALL-CENTER-DOSSIER-CARDS-1022 — PC-C — ACTIVE
+
+Owner authorizes simplified dossier history/request cards and removal of pagination
+buttons/link controls. Isolated worktree from643955c8 preserves active caller-name
+work in readiness checkout. Reserve workspace/workflow/client-side dossier helpers
+and tests/docs only; no API/schema/permission changes. Keep historical rows reachable
+through incremental scroll loading; show closure time from recorded state transition.
+
+## CALL-CENTER-DOSSIER-CARDS-1022 — PC-C — LOCAL_VERIFIED
+
+Requested dossier cards/navigation cleanup complete.4 tests, scoped lint/types and
+Web production build pass; local Web3000 HTTP200. Existing backend/caller-name runtime
+preserved. No data/schema/grant changes. Bounded source reservation releases on push.

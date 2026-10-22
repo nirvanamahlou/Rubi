@@ -6971,3 +6971,17 @@ zero pending dispatch and zero real offers preserved. Worker unchanged.
 No schema/migration/grants, extension mapping, PBX write or production deployment.
 Authenticated visual acceptance remains for owner login. Scope releases on push.
 Details: docs/tasks/CALL-CENTER-REQUEST-FLOW-1022.md.
+
+## CALL-CENTER-DOSSIER-CARDS-1022 — PC-C — LOCAL_VERIFIED
+
+Dossier history/page navigation controls removed; older calls/requests remain
+reachable by incremental scroll loading. Request cards show title, reason, owner,
+priority, status, opening/closing timestamps and edit action in owner order.
+Closure display preserves actual transition timestamp across closed-record edits.
+Four focused tests, scoped lint and Web typecheck/65-route production build pass.
+Existing unrelated generated CSS warning remains. Local Web3000 PID27164 uses
+.next-dossier-cards build L17oytV9cIHcE7nhw_aQH, HTTP200. API4000 remains healthy
+without restart. Runtime preserves separately completed caller-name work; source
+unit isolated from concurrent readiness checkout on643955c8. No API/schema/data,
+permissions, telephone popup or PBX changes. Authenticated visual acceptance pending
+owner login. Source reservations release on push. Handoff: tasks/CALL-CENTER-DOSSIER-CARDS-1022.md.
