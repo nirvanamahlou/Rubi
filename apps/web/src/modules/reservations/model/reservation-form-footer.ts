@@ -15,7 +15,7 @@ export function reservationFormFooterHtml(
   companyCode?: string,
   brandName = '',
   publicDocumentUrl?: string,
-  english = false,
+  english = true,
 ) {
   let url = '';
   if (/^[0-9a-f-]{36}$/i.test(id) && origin) {

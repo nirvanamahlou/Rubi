@@ -92,6 +92,11 @@ export function reservationFormData(
     hotelChildAgeBand?: string | undefined;
     checkIn?: string;
     checkOut?: string;
+    outboundFlight: boolean;
+    returnFlight: boolean;
+    outboundTransfer: boolean;
+    returnTransfer: boolean;
+    otherServices: string;
   }> = ids.map((id) => {
     const person = snapshot.passengerAssignments?.find(
       (p) => p.customerId === id,
@@ -113,12 +118,52 @@ export function reservationFormData(
               ? 'CHD_6_TO_12'
               : undefined)
         : undefined;
+    const allocated = services.filter((service) =>
+      person?.serviceClientKeys?.includes(service.clientKey),
+    );
+    const direction = (service: (typeof services)[number]) =>
+      service.metadata?.direction ??
+      flights.find((flight) => flight.serviceClientKey === service.clientKey)
+        ?.direction ??
+      (/(?:^|[-_])(?:out|outbound)$/.test(service.clientKey)
+        ? 'OUTBOUND'
+        : /(?:^|[-_])(?:return|back|in)$/.test(service.clientKey)
+          ? 'RETURN'
+          : undefined);
+    const has = (kind: 'FLIGHT' | 'TRANSFER', leg: string) =>
+      allocated.some(
+        (service) => service.kind === kind && direction(service) === leg,
+      );
+    const hotelGuest =
+      !!hotel && !!person?.serviceClientKeys?.includes(hotel.serviceClientKey);
+    const stay = passengerStays
+      ? passengerStays[id]
+      : hotelGuest
+        ? hotel
+        : undefined;
     return {
       id,
-      ...(passengerStays
+      outboundFlight: has('FLIGHT', 'OUTBOUND'),
+      returnFlight: has('FLIGHT', 'RETURN'),
+      outboundTransfer: has('TRANSFER', 'OUTBOUND'),
+      returnTransfer: has('TRANSFER', 'RETURN'),
+      otherServices:
+        [
+          ...new Set(
+            allocated
+              .filter(
+                (service) =>
+                  !['FLIGHT', 'HOTEL', 'TRANSFER'].includes(service.kind) ||
+                  (service.kind === 'TRANSFER' && !direction(service)),
+              )
+              .map((service) => service.kind),
+          ),
+        ].join(' / ') || '-',
+
+      ...(passengerStays || stay
         ? {
-            checkIn: reservationFormDate(passengerStays[id]?.checkInDate),
-            checkOut: reservationFormDate(passengerStays[id]?.checkOutDate),
+            checkIn: reservationFormDate(stay?.checkInDate),
+            checkOut: reservationFormDate(stay?.checkOutDate),
           }
         : {}),
       name: text(identity?.passportName || person?.displayNameSnapshot),
@@ -282,13 +327,13 @@ export function reservationFormData(
     brand:
       workflow.branding?.kind === 'OWN' &&
       workflow.branding.companyCode === 'JAHAN_BASTAN'
-        ? 'جهان باستان'
+        ? 'Jahan Bastan'
         : (workflow.branding?.name ?? ''),
   };
 }
 /** Estimate wrapped name rows so long names get room without shrinking or clipping. */
-export function reservationPassengerPages(
-  passengers: ReturnType<typeof reservationFormData>['passengers'],
+export function reservationPassengerPages<T extends { name: string }>(
+  passengers: T[],
   pageUnits = 10,
 ) {
   const pages: (typeof passengers)[] = [[]];

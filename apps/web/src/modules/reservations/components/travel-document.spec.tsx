@@ -231,7 +231,7 @@ it.each([false, true])(
     );
     expect(html).toContain('/brand/jahan-bastan-transparent.png');
     expect(html).toContain('jahanLogo');
-    expect(html).toContain('جهان باستان');
+    expect(html).toContain('Jahan Bastan');
     expect(html).not.toContain('نیایش');
     expect(html).not.toContain('niyayehseir.com');
   },
