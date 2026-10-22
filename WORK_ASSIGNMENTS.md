@@ -8871,3 +8871,9 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-form-footer-services-1022 from o
 
 RESERVATION-FORM-FOOTER-SERVICES-1022: final real single/three-page PDFs visually verified including all continuation footers;46 focused regressions, scoped lint and Web build/typecheck passed before final layout parity. Latest-head checks/CI required before user-authorized develop merge; no operational deployment/data change. Source reservation freezes on publication.
 
+
+## LOAD-DAY-CALENDAR-1022 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-load-day-calendar-1022 from develop e2f7441a. Owner authorizes same-weekday editing across the selected load range, automatic equal Min/Max with independent manual overrides, Gregorian customer birth/passport dates and different-stay label, tests and develop merge. Reserve Ticket Catalog workspace/published form/weekday model and focused tests, Sales people/guest-stay components, Customers calendar defaults/formatters and tests, scoped English entries/derived catalogues, own documentation. Prior matching published source reservations released. Reuse existing atomic reviseOfferBatch with per-row IDs/versions, branch/allocation guards and UTC storage; no schema/API/dependency/IAM/runtime or operational data changes. Selected weekday edits preserve dates, other weekdays and opposite direction. No deployment requested.
+
+LOAD-DAY-CALENDAR-1022:238 focused tests pass (one existing skip). Source/shared-label locks release with candidate publication. No schema/API/dependency/runtime changes; exact-head hosted gates required before owner-authorized merge.

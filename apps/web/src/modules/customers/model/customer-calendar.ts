@@ -286,7 +286,11 @@ export function formatCustomerDate(
   if (!value) return 'ثبت نشده';
   return new Intl.DateTimeFormat(
     mode === 'persian' ? 'fa-IR-u-ca-persian' : 'en-GB',
-    { dateStyle: 'medium', timeZone: 'UTC' },
+    {
+      dateStyle: 'medium',
+      timeZone: 'UTC',
+      calendar: mode === 'persian' ? 'persian' : 'gregory',
+    },
   ).format(new Date(value));
 }
 

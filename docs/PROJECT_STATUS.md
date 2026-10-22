@@ -7020,3 +7020,7 @@ Supplier reservation output consumes the contract passenger service allocations 
 
 Final PDF proof: real Chromium six-passenger single A4 page and eighty-passenger three A4 pages produced successfully; all three continuation images inspected. Contact, email and QR repeat at the bottom with a30mm table-footer reservation and foreground fixed footer, without overlapping passenger rows; native page counters are correct. Registered English names and service allocation checks remain. Local Web production build and typecheck passed; latest scoped checks and hosted final-head checks gate merge.
 
+
+## LOAD-DAY-CALENDAR-1022 — PC-A — candidate
+
+Selected load weekday action uses the existing atomic versioned batch command across the same load/direction and Tehran weekday. Keeps each date, unchanged per-flight class/capacity/limits and other weekdays. Flight clocks and overnight arrival remain editable. New schedules default both return bounds to the planned interval; each can be overridden independently, saved edit values remain. Customer/Sales birthday and passport calendars default Gregorian with explicit Gregorian month formatting, manual switching retained. Different hotel stay caption is c.in , cout متفاوت.238 focused tests pass (one existing skip); lint/types/build and exact-head hosted gates precede user-authorized develop merge. No schema, migration, dependency, permission or operational data/runtime changes. Source locks release on candidate publication.
