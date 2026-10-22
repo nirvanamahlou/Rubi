@@ -422,12 +422,18 @@ export class CallCenterWorkflowService
     contactId: string,
     page = 1,
     taskPage = 1,
+    requestId?: string,
   ) {
     const branchId = this.scope(actor, branch);
     return this.db.client.$transaction(async (tx) => {
       await this.contact(tx, contactId, branchId);
       const rows = await tx.customerAffairsTicket.findMany({
-        where: { branchId, callCenterContactId: contactId, category: CATEGORY },
+        where: {
+          branchId,
+          callCenterContactId: contactId,
+          category: CATEGORY,
+          ...(requestId ? { id: requestId } : {}),
+        },
         include: { executionOwner: { select: { displayName: true } } },
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         skip: (page - 1) * 10,
@@ -441,7 +447,12 @@ export class CallCenterWorkflowService
       );
       const tasks = taskResult.rows;
       const total = await tx.customerAffairsTicket.count({
-        where: { branchId, callCenterContactId: contactId, category: CATEGORY },
+        where: {
+          branchId,
+          callCenterContactId: contactId,
+          category: CATEGORY,
+          ...(requestId ? { id: requestId } : {}),
+        },
       });
       const history = await tx.customerAffairsAuditEvent.findMany({
         where: {
@@ -453,7 +464,19 @@ export class CallCenterWorkflowService
         take: 100,
       });
       return {
-        meta: { page, taskPage, total, hasMoreTasks: taskResult.hasMore },
+        meta: {
+          page,
+          taskPage,
+          total,
+          hasMoreTasks: taskResult.hasMore,
+          ...(requestId
+            ? {
+                contactCallCount: await tx.callCenterCall.count({
+                  where: { contactId },
+                }),
+              }
+            : {}),
+        },
         data: rows.map((row) => ({
           id: row.id,
           version: row.version,
@@ -476,6 +499,12 @@ export class CallCenterWorkflowService
             row.callCenterKeyVersion!,
             `request:${row.id}:${contactId}`,
           ).reason,
+          result:
+            this.crypto.decrypt<{ result?: string }>(
+              row.callCenterPayload!,
+              row.callCenterKeyVersion!,
+              `request:${row.id}:${contactId}`,
+            ).result ?? '',
           status: row.status,
           priority: row.priority,
           ownerId: row.executionOwnerUserId,
@@ -561,6 +590,12 @@ export class CallCenterWorkflowService
       if (!current && input.status !== 'NEW')
         throw new BadRequestException('درخواست تازه باید باز باشد.');
       if (
+        input.status === 'CLOSED' &&
+        input.result !== undefined &&
+        !input.result.trim()
+      )
+        throw new BadRequestException('نتیجه رسیدگی را وارد کنید.');
+      if (
         input.ownerId &&
         (!current || current.executionOwnerUserId !== input.ownerId)
       )
@@ -577,7 +612,10 @@ export class CallCenterWorkflowService
         );
       const now = new Date();
       const previousPrivate = current
-        ? this.crypto.decrypt<{ history?: Prisma.InputJsonValue[] }>(
+        ? this.crypto.decrypt<{
+            history?: Prisma.InputJsonValue[];
+            result?: string;
+          }>(
             current.callCenterPayload!,
             current.callCenterKeyVersion!,
             `request:${input.id}:${contactId}`,
@@ -590,6 +628,7 @@ export class CallCenterWorkflowService
           actorId: actor.userId,
           title: input.title.trim(),
           reason: input.reason.trim(),
+          result: input.result?.trim() ?? previousPrivate?.result ?? '',
           status: input.status,
           ownerId: input.ownerId ?? null,
           version: (current?.version ?? 0) + 1,
@@ -607,6 +646,7 @@ export class CallCenterWorkflowService
           {
             title: input.title.trim(),
             reason: input.reason.trim(),
+            result: input.result?.trim() ?? previousPrivate?.result ?? '',
             history: privateHistory,
           },
           `request:${input.id}:${contactId}`,
@@ -674,6 +714,17 @@ export class CallCenterWorkflowService
           input.id,
           'درخواست کال سنتر به شما ارجاع شد',
         );
+      if (current && current.status !== 'CLOSED' && input.status === 'CLOSED') {
+        const recipients = await this.directory.closureRecipients(tx, branchId);
+        for (const recipient of recipients)
+          await this.notify(
+            tx,
+            recipient.id,
+            actor.userId,
+            input.id,
+            'درخواست کال سنتر رسیدگی و بسته شد',
+          );
+      }
     });
     return this.list(actor, branchId, contactId);
   }

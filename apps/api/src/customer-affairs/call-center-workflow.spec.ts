@@ -10,12 +10,18 @@ import { CallCenterCrypto } from './call-center.crypto';
 import { CallCenterService } from './call-center.service';
 import { CallCenterWorkflowService } from './call-center-workflow.service';
 import type { CallCenterRequestDto } from './call-center-workflow.dto';
-import { CallCenterFollowUpDto } from './call-center-workflow.dto';
+import {
+  CallCenterFollowUpDto,
+  CallCenterRequestDto as RequestInput,
+} from './call-center-workflow.dto';
 import { IamCallCenterDirectory } from '../iam/iam-call-center-directory';
 import { CallCenterTasksService } from '../tasks/call-center-tasks.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
 describe('Call Center workflow input', () => {
+  it('defaults a new request to open', () => {
+    expect(plainToInstance(RequestInput, {}).status).toBe('NEW');
+  });
   it('requires canonical identifiers, bounded priority and a real date', async () => {
     expect(
       (
@@ -649,6 +655,105 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           (row) => row.id === waiting.id,
         ),
       ).toBe(false);
+    });
+    it('loads a selected request and closes it with encrypted result and one configured manager notification', async () => {
+      const previous = process.env.CALL_CENTER_CLOSURE_MANAGER_IDS;
+      const item = {
+        ...request,
+        id: randomUUID(),
+        commandId: randomUUID(),
+        ownerId: userId,
+        expectedVersion: 0,
+      };
+      try {
+        delete process.env.CALL_CENTER_CLOSURE_MANAGER_IDS;
+        expect(
+          await db.$transaction((tx) =>
+            directory.closureRecipients(tx, branchId),
+          ),
+        ).toEqual([]);
+        process.env.CALL_CENTER_CLOSURE_MANAGER_IDS = `${userId},${inactiveId},${randomUUID()},${userId}`;
+        expect(
+          await db.$transaction((tx) =>
+            directory.closureRecipients(tx, otherBranch),
+          ),
+        ).toEqual([]);
+        await workflow.saveRequest(actor, branchId, contactId, item);
+        const selected = await workflow.list(
+          actor,
+          branchId,
+          contactId,
+          1,
+          1,
+          item.id,
+        );
+        expect(selected.data.map((row) => row.id)).toEqual([item.id]);
+        expect(selected.meta.total).toBe(1);
+        expect(selected.meta.contactCallCount).toBeGreaterThan(0);
+        expect(
+          (await workflow.list(actor, branchId, contactId, 1, 1, randomUUID()))
+            .data,
+        ).toEqual([]);
+        await expect(
+          workflow.list(actor, otherBranch, contactId, 1, 1, item.id),
+        ).rejects.toThrow();
+        const closed = {
+          ...item,
+          commandId: randomUUID(),
+          expectedVersion: 1,
+          status: 'CLOSED',
+          reason: 'Synthetic resolution',
+          result: 'Synthetic private completion',
+        };
+        await expect(
+          workflow.saveRequest(actor, branchId, contactId, {
+            ...closed,
+            commandId: randomUUID(),
+            result: '',
+          }),
+        ).rejects.toThrow();
+        await workflow.saveRequest(actor, branchId, contactId, closed);
+        await workflow.saveRequest(actor, branchId, contactId, closed);
+        const refreshed = await workflow.list(
+          actor,
+          branchId,
+          contactId,
+          1,
+          1,
+          item.id,
+        );
+        expect(refreshed.data[0]).toMatchObject({
+          status: 'CLOSED',
+          result: closed.result,
+        });
+        expect(refreshed.data[0]?.privateHistory).toHaveLength(2);
+        const notices = await db.notification.findMany({
+          where: {
+            entityId: item.id,
+            title: 'درخواست کال سنتر رسیدگی و بسته شد',
+          },
+        });
+        expect(notices).toHaveLength(1);
+        expect(notices[0]?.recipientUserId).toBe(userId);
+        expect(JSON.stringify(notices)).not.toContain(closed.result);
+        await workflow.saveRequest(actor, branchId, contactId, {
+          ...closed,
+          commandId: randomUUID(),
+          expectedVersion: 2,
+        });
+        expect(
+          await db.notification.count({
+            where: {
+              entityId: item.id,
+              title: 'درخواست کال سنتر رسیدگی و بسته شد',
+            },
+          }),
+        ).toBe(1);
+      } finally {
+        if (previous === undefined)
+          delete process.env.CALL_CENTER_CLOSURE_MANAGER_IDS;
+        else process.env.CALL_CENTER_CLOSURE_MANAGER_IDS = previous;
+      }
     });
   },
 );

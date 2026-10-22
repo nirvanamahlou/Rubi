@@ -8764,3 +8764,21 @@ Owner requests only edit-contact/new-request actions below identity, remove next
 
 Requested dossier actions delivered,13 tests/lint/types/build pass; local Web
 activated. Workspace/workflow source reservation releases on push.
+
+## CALL-CENTER-REQUEST-FLOW-1022 — PC-C — ACTIVE
+
+Owner authorizes request create default-open without status control, focused queue
+request dialog with caller context and completion, sales-manager closure notification.
+Continue965e7cd2 approved local prerequisite stack; prior source scopes released.
+Reserve workflow Web/API DTO/controller/service/spec/client, IAM public recipient
+lookup if needed, and own docs. Preserve encryption/branch/CAS/idempotency and UI
+outside explicitly requested flow. Manager identity clarification pending; no assumed
+recipient, permission expansion, schema/dependency, automatic popup or PBX change.
+
+## CALL-CENTER-REQUEST-FLOW-1022 — PC-C — LOCAL_VERIFIED
+
+Default-open request creation, focused queue caller/request context and encrypted
+completion result delivered. Configurable closure notification path tested; actual
+manager recipient deferred by owner, no delivery configured.15 API/12 Web tests,
+lint/types/builds pass; local API/Web HTTP200. No schema/permission/PBX change.
+Release bounded source/API consumer/IAM directory reservation on commit/push.

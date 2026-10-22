@@ -6952,3 +6952,22 @@ Only edit-contact/new-request below identity; removed NextAction and repeated
 completion controls; dossier hides duplicate create/filter controls while shared
 queue remains unchanged.13 tests, scoped lint/typecheck and65-route build pass.
 Local Web .next-dossier-actions activated; no backend/data/schema change.
+
+## CALL-CENTER-REQUEST-FLOW-1022 — PC-C — LOCAL_VERIFIED
+
+New request hides status and defaults to NEW/open. Queue opens the selected request
+with latest caller context and total call count, independent of request pagination.
+Existing editor now stores encrypted completion result/history; save refreshes queue.
+Closure notification path is transactional/idempotent and recipient-configurable
+through IAM; owner deferred manager identity, so operational delivery remains off.
+Notification subject remains generic to avoid copying private title into plaintext
+notification storage; request title is visible in authorized details.
+15 isolated PostgreSQL/DTO +12 Web tests pass, scoped lint/API types and API/Web
+production builds pass. Exact optional prop type fixed after first Web typecheck;
+final65-route build succeeds. Existing unrelated generated CSS warning remains.
+Local API4000 PID28456 (dist-request-flow) and Web3000 PID27796 (.next-request-flow,
+build8qOQnW-RxrF89sguzsMM3) both HTTP200. Four real ended calls/17 DONE receipts,
+zero pending dispatch and zero real offers preserved. Worker unchanged.
+No schema/migration/grants, extension mapping, PBX write or production deployment.
+Authenticated visual acceptance remains for owner login. Scope releases on push.
+Details: docs/tasks/CALL-CENTER-REQUEST-FLOW-1022.md.
