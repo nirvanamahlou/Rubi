@@ -80,6 +80,7 @@ export function defaultVoucherSettings(
       id: p.id,
       selected: true,
       roomType: text.roomType,
+      sex: p.sex === 'Male' ? 'MALE' : p.sex === 'Female' ? 'FEMALE' : '',
       age: p.age.startsWith('CHD') ? 'CHD' : p.age === 'INF' ? 'INF' : 'ADL',
       hotelChildAgeBand: (p.hotelChildAgeBand ?? '') as
         'CHD_2_TO_6' | 'CHD_6_TO_12' | '',
@@ -215,7 +216,7 @@ export function voucherFormData(
             ? 'Male'
             : setting.sex === 'FEMALE'
               ? 'Female'
-              : '-',
+              : p.sex,
       };
     });
   const roomSummary = v.rooms ? salesHotelRoomSummary(v.rooms) : undefined;

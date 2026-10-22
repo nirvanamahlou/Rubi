@@ -6,6 +6,10 @@ Production access repair for the two owner-named users: dedicated screen ticks w
 
 ## LOGO-SCAN-EXEMPTION-1022 — PC-B — 2026-10-22
 
+## RESERVATION-PASSENGER-SEX-1022 — PC-A
+
+Customer's branch-authorized reservationOutputIdentity adds registered M/F/null gender to its minimal request-scoped output. Reservation and hotel voucher map it to Male/Female in preview and canonical PDF; missing/unknown gender stays a dash and saved explicit MALE/FEMALE form settings retain precedence. Legacy blank settings fall back to registered identity. No inferred gender, raw DOB/passport exposure, schema/migration/dependency or operational data/runtime changes. Producer Customers and consumer Reservations ship together; optional Web projection remains compatible with older API responses.33 focused Web regressions pass; API/type/build and final hosted gates precede user-authorized develop merge.
+
 ## RESERVATION-FORM-FOOTER-SERVICES-1022 — PC-A
 
 Supplier reservation output consumes the contract passenger service allocations for outbound/return flights, hotel stay dates, outbound/return transfers and other services. Registered English reference names and English issuer contact are used. Supplier print layout reserves a repeating bottom contact/QR footer with native page counters and natural room/passenger pagination; voucher workflow and public capability guards remain. Forty-six focused regressions pass; final real PDF visual checks and hosted gates remain required before authorized develop merge. No schema/migration/dependency or operational data/runtime change.
@@ -7038,6 +7042,10 @@ Company-inventory outbound selections in round trips reject floating returns in 
 ## LOAD-DAY-CALENDAR-1022 — PC-A — candidate
 
 Selected load weekday action uses the existing atomic versioned batch command across the same load/direction and Tehran weekday. Keeps each date, unchanged per-flight class/capacity/limits and other weekdays. Flight clocks and overnight arrival remain editable. New schedules default both return bounds to the planned interval; each can be overridden independently, saved edit values remain. Customer/Sales birthday and passport calendars default Gregorian with explicit Gregorian month formatting, manual switching retained. Different hotel stay caption is c.in , cout متفاوت.238 focused tests pass (one existing skip); lint/types/build and exact-head hosted gates precede user-authorized develop merge. No schema, migration, dependency, permission or operational data/runtime changes. Source locks release on candidate publication.
+
+## PASSENGER-SERVICE-AMEND-1022 — PC-A — candidate
+
+Per-passenger correction table now includes flight/transfer membership switches and different hotel check-in/out dates. Reuses canonical Sales amendment, exact versions, inventory command and downstream snapshot publication. Passenger service keys and complete hotel stay metadata drive existing contract, reservation form and voucher renderers. Transfer counts update with membership; inventory command excludes zero-seat legs so existing allocations release while contract flight facts remain for later reactivation. Existing permissions, saved document history and customer identity stay guarded. Six initial interaction/model tests pass, related voucher/output regression and lint/type/build/full hosted checks gate explicitly authorized develop merge. No schema/migration/dependency/runtime or operational changes. Source locks freeze/release on candidate publication.
 
 Integration with merged voucher-services PR1057 retains its independent voucher renderer/component and service allocation/English regressions. Supplier reservation pagination delegates voucher rendering to the preserved implementation; both outputs remain covered.44 combined supplier/voucher regressions pass. No voucher feature is removed; revalidate final head before merge.
 
