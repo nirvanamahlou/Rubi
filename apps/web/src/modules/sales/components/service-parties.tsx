@@ -86,7 +86,7 @@ export function ServiceParties({
     // Keep passenger links aligned when children are inserted before infant slots.
     const assignments: NonNullable<SalesFormState['hotelChildAssignments']> =
       Object.fromEntries(
-        Object.entries(state.hotelChildAssignments ?? {})
+        Object.entries(limited ? (state.hotelChildAssignments ?? {}) : {})
           .filter(([ordinal]) =>
             next.some((room) => String(room.ordinal) === ordinal),
           )
