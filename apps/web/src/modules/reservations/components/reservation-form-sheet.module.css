@@ -448,3 +448,17 @@
     display: none;
   }
 }
+
+@media print {
+  .supplierFooter [data-reservation-contact] {
+    position: absolute;
+    top: 4mm;
+    left: 0;
+    line-height: 1.3;
+  }
+  .supplierFooter [data-reservation-qr] {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+}
