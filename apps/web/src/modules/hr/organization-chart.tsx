@@ -252,7 +252,8 @@ export function validateOrganizationNodeForm(
     capacity < 0 ||
     capacity > 9999
   )
-    errors.positionCapacity = 'ظرفیت سمت باید عددی بین صفر تا ۹۹۹۹ باشد.';
+    errors.positionCapacity =
+      'ظرفیت عنوان شغلی باید عددی بین صفر تا ۹۹۹۹ باشد.';
   if (!value.effectiveFrom) errors.effectiveFrom = 'تاریخ اثر الزامی است.';
 
   return errors;
@@ -494,7 +495,9 @@ export function OrganizationNodeForm({
             </NativeSearchSelect>
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-org-capacity">
-            <RequiredFieldLabel required>ظرفیت سمت‌ها</RequiredFieldLabel>
+            <RequiredFieldLabel required>
+              ظرفیت عنوان‌های شغلی
+            </RequiredFieldLabel>
             <input
               {...errorProps('positionCapacity')}
               className={styles.control}
@@ -513,7 +516,8 @@ export function OrganizationNodeForm({
             />
             {initialNode?.catalogSource ? (
               <small className={styles.fieldHint}>
-                ظرفیت از مجموع سمت‌های ثبت‌شده برای این ساختار محاسبه می‌شود.
+                ظرفیت از مجموع عنوان‌های شغلی ثبت‌شده برای این ساختار محاسبه
+                می‌شود.
               </small>
             ) : null}
             <FieldError errors={errors} field="positionCapacity" />
@@ -700,7 +704,8 @@ export function OrganizationChart({
               {node.kind === 'MANAGEMENT' ? 'مدیریت' : 'واحد سازمانی'}
             </span>
             <span>
-              {new Intl.NumberFormat('fa-IR').format(node.positionCapacity)} سمت
+              {new Intl.NumberFormat('fa-IR').format(node.positionCapacity)}{' '}
+              عنوان شغلی
             </span>
             <span>{node.status}</span>
           </div>
@@ -764,7 +769,8 @@ export function OrganizationNodeDialog({
           {initialNode ? 'ویرایش گره سازمانی' : 'افزودن گره سازمانی'}
         </DialogTitle>
         <DialogDescription>
-          ارتباط شعبه، والد، مسئول و ظرفیت سمت‌های این گره را در چارت مشخص کنید.
+          ارتباط شعبه، والد، مسئول و ظرفیت عنوان‌های شغلی این گره را در چارت
+          مشخص کنید.
         </DialogDescription>
         <OrganizationNodeForm
           initialNode={initialNode}

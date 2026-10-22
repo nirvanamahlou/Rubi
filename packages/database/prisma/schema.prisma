@@ -3594,6 +3594,8 @@ model DocumentProcessingJob {
 
 // HR-005: additive HR boundary; immutable event/ledger rows, soft-deleted aggregates.
 model HrEmployee {
+  jobTitleId             String?                     @map("job_title_id") @db.Uuid
+  jobTitle               HrRecord?                   @relation("HrEmployeeJobTitle", fields: [jobTitleId], references: [id], onDelete: Restrict)
   financePayrollRequests FinanceOperationalRequest[]
   procurementRequests    ProcurementRequest[]        @relation("ProcurementRequestRequesterEmployee")
   organizationBranchId   String?                     @map("organization_branch_id") @db.Uuid
@@ -3628,11 +3630,16 @@ model HrEmployee {
   @@unique([id, branchId])
   @@index([branchId, deletedAt, name])
   @@index([managerId])
+  @@index([jobTitleId])
   @@index([organizationBranchId, branchId])
   @@map("hr_employees")
 }
 
 model HrRecord {
+  jobTitleId                String?                       @map("job_title_id") @db.Uuid
+  jobTitle                  HrRecord?                     @relation("HrAssignmentJobTitle", fields: [jobTitleId], references: [id], onDelete: Restrict)
+  jobTitleAssignments       HrRecord[]                    @relation("HrAssignmentJobTitle")
+  jobTitleEmployees         HrEmployee[]                  @relation("HrEmployeeJobTitle")
   telephonyMappings         IntegrationTelephonyMapping[]
   userProfiles              IamUserProfile[]              @relation("IamUserOrganizationUnit")
   financeOperationalRequest FinanceOperationalRequest?
@@ -3670,6 +3677,7 @@ model HrRecord {
   @@index([branchId, section, tab, deletedAt, createdAt])
   @@index([employeeId, section, tab])
   @@index([parentId, branchId])
+  @@index([jobTitleId])
   @@index([effectiveAt, appliedAt])
   @@map("hr_records")
 }

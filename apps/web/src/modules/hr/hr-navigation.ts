@@ -46,7 +46,7 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
     group('structure', 'ساختار سازمانی', [
       source('organization', 'branches', 'شعبه‌ها'),
       source('organization', 'units', 'واحدها'),
-      source('organization', 'positions', 'شغل و سمت'),
+      source('organization', 'positions', 'عنوان‌های شغلی'),
       source('organization', 'grades', 'رده‌ها'),
     ]),
     group('groups', 'گروه‌های کارکنان', [

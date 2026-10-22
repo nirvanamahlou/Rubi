@@ -16,6 +16,7 @@ export const HR_RADAN_COMPLETION_COLUMNS = {
     'ملیت',
     'وضعیت نظام وظیفه',
     'نشانی',
+    'کد پستی',
   ],
   'employee.phones': ['نوع شماره تماس', 'شماره تماس'],
   'time.calculationSettings': [

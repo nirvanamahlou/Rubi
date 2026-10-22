@@ -45,6 +45,8 @@ export function validateCompletionValues(
     if (read(label) && !options.includes(read(label)))
       throw new BadRequestException(`${label} معتبر نیست.`);
   if (key === 'employee.identity') {
+    if (read('کد پستی') && !/^\d{10}$/.test(v.digits(read('کد پستی'))))
+      throw new BadRequestException('کد پستی باید ده رقم باشد.');
     if (read('کد ملی') && !/^\d{10}$/.test(v.digits(read('کد ملی'))))
       throw new BadRequestException('کد ملی باید ده رقم باشد.');
     if (

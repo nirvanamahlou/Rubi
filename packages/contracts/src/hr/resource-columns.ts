@@ -894,7 +894,7 @@ export const HR_RESOURCE_COLUMNS = {
   ],
   'organization.positions': [
     'عنوان سمت',
-    'عنوان شغل',
+    'عنوان شغلی',
     'واحد',
     'رده',
     'ظرفیت',

@@ -363,6 +363,9 @@ function HrRecordFormFields({
         }
       : {}),
   };
+  const isJobTitle =
+    target.source.section === 'organization' &&
+    target.source.tab === 'positions';
   const isUnit =
     target.source.section === 'organization' && target.source.tab === 'units';
   const isApplicant =
@@ -493,33 +496,36 @@ function HrRecordFormFields({
           {nodePicker}
           {allowInlineCreate &&
           target.source.tab !== 'branches' &&
-          target.source.tab !== 'units' ? (
+          target.source.tab !== 'units' &&
+          !isJobTitle ? (
             <button type="button" onClick={() => openReference('branches')}>
               افزودن شعبه
             </button>
           ) : null}
-          <label className={ui.field}>
-            <RequiredFieldLabel required>شرکت / شعبه</RequiredFieldLabel>
-            <NativeSearchSelect
-              disabled={Boolean(target.parent || (target.record && !isUnit))}
-              value={companyId || branchId}
-              onChange={(event) => {
-                const selectedCompany = companies.find(
-                  (item) => item.id === event.target.value,
-                );
-                setCompanyId(event.target.value);
-                setBranchId(selectedCompany?.branchId ?? event.target.value);
-                setEmployeeId('');
-                setParentId('');
-              }}
-            >
-              {companies.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name}
-                </option>
-              ))}
-            </NativeSearchSelect>
-          </label>
+          {!isJobTitle ? (
+            <label className={ui.field}>
+              <RequiredFieldLabel required>شرکت / شعبه</RequiredFieldLabel>
+              <NativeSearchSelect
+                disabled={Boolean(target.parent || (target.record && !isUnit))}
+                value={companyId || branchId}
+                onChange={(event) => {
+                  const selectedCompany = companies.find(
+                    (item) => item.id === event.target.value,
+                  );
+                  setCompanyId(event.target.value);
+                  setBranchId(selectedCompany?.branchId ?? event.target.value);
+                  setEmployeeId('');
+                  setParentId('');
+                }}
+              >
+                {companies.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
+              </NativeSearchSelect>
+            </label>
+          ) : null}
           {definition.employeeRequired ? (
             <label className={ui.field}>
               <RequiredFieldLabel required>کارمند</RequiredFieldLabel>
@@ -719,6 +725,8 @@ function HrRecordFormFields({
                 نام: 'text',
                 'نام خانوادگی': 'text',
                 'کد ملی': 'text',
+                'کد پستی': 'text',
+                'عنوان شغلی': 'text',
                 'شماره شناسنامه': 'text',
                 'نام پدر': 'text',
                 'شهر محل صدور': 'text',
@@ -868,7 +876,7 @@ function HrRecordFormFields({
                     ].includes(field),
                   ),
                 ),
-                ...(company?.organizationBranchId
+                ...(!isJobTitle && company?.organizationBranchId
                   ? { organizationBranchId: company.organizationBranchId }
                   : {}),
               };
@@ -1039,13 +1047,13 @@ function HrRecordFormFields({
                       ? 'شرکت و شعبه'
                       : newReference.kind === 'units'
                         ? 'واحد سازمانی'
-                        : 'شغل و سمت',
+                        : 'عنوان‌های شغلی',
                   action:
                     newReference.kind === 'branches'
                       ? 'افزودن شعبه'
                       : newReference.kind === 'units'
                         ? 'افزودن واحد'
-                        : 'افزودن سمت',
+                        : 'افزودن عنوان شغلی',
                 },
                 preferredCompanyId: companyId,
               }}
@@ -1060,8 +1068,8 @@ function HrRecordFormFields({
                 }
                 if (newReference.label) {
                   const value =
-                    newReference.label === 'عنوان شغل'
-                      ? valueOf(record, 'عنوان شغل')
+                    newReference.kind === 'positions'
+                      ? record.values[1] || record.values[0] || ''
                       : (record.values[0] ?? '');
                   setCreatedReference({
                     id: record.id,
