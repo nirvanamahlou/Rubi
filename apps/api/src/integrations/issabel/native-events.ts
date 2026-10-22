@@ -17,7 +17,7 @@ export const nativeEventId = (root: string, kind: string, leg = '') =>
     .update(JSON.stringify(['ami-native-v1', root, kind, leg]))
     .digest('hex');
 const phone = (value: string | undefined): TelephonyNumberV1 => {
-  if (value && /^\+?\d{7,15}$/.test(value)) return { kind: 'KNOWN', value };
+  if (value && /^\+?\d{3,15}$/.test(value)) return { kind: 'KNOWN', value };
   return {
     kind: /^(anonymous|restricted|withheld|private)$/i.test(value ?? '')
       ? 'WITHHELD'

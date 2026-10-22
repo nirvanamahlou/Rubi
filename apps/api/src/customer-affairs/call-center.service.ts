@@ -31,7 +31,7 @@ export function normalizedCallPhone(value: string) {
   if (phone.startsWith('+98')) phone = '0' + phone.slice(3);
   if (/^98\d{10}$/.test(phone)) phone = '0' + phone.slice(2);
   if (/^9\d{9}$/.test(phone)) phone = '0' + phone;
-  if (!/^(?:0\d{10}|\+[1-9]\d{7,14})$/.test(phone))
+  if (!/^(?:\d{1,15}|\+[1-9]\d{1,14})$/.test(phone))
     throw new BadRequestException('شماره تماس معتبر نیست.');
   return phone;
 }
@@ -224,7 +224,11 @@ export class CallCenterService {
         await tx.$queryRaw`SELECT id FROM call_center_telephony_sessions WHERE "callId"=${input.id}::uuid FOR UPDATE`;
         await tx.$queryRaw`SELECT id FROM customer_affairs_calls WHERE id=${input.id}::uuid FOR UPDATE`;
         const existing = await tx.callCenterCall.findFirst({
-          where: { id: input.id, contact: { branchId }, origin: 'TELEPHONY' },
+          where: {
+            id: input.id,
+            contact: { branchId },
+            origin: { not: 'SYNTHETIC' },
+          },
           include: { telephonySession: true },
         });
         if (!existing) throw new NotFoundException();
@@ -247,10 +251,7 @@ export class CallCenterService {
           },
         });
         if (replay) return existing;
-        if (
-          presented.completionToken !== input.completionToken ||
-          !existing.needsCompletion
-        )
+        if (presented.completionToken !== input.completionToken)
           throw new ConflictException(
             'اطلاعات تماس تغییر کرده است؛ دوباره بررسی کنید.',
           );

@@ -6931,3 +6931,11 @@ Local API4000 PID22316 and Web3000 PID18892 healthy (HTTP200), Web build
 UtbxiGwvkjRS4HhYLnjYo in .next-queue-1022. Three ended real calls, zero popup offers
 preserved. No migration, assignment rule change or production deployment.
 See docs/tasks/CALL-CENTER-QUEUE-1022.md; reservations release on push.
+
+## CALL-CENTER-CALLER-EDIT-1022 — PC-C — LOCAL_VERIFIED
+
+Preserve local numeric callers, restore owner-requested10:02 caller from encrypted
+original evidence, row-click dossier modal and same-record edit with existing
+permissions/CAS/audit.6 API unit +9 Web +10 disposable PostgreSQL tests pass;
+scoped lint/types and compatible builds pass. API/Web activated locally; AMI
+reconnected, no migration or production deployment. See tasks/CALL-CENTER-CALLER-EDIT-1022.md.

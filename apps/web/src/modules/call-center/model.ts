@@ -66,7 +66,7 @@ export function normalizePhone(value: string) {
   return phone;
 }
 export function validPhone(value: string) {
-  return /^(?:0\d{10}|\+[1-9]\d{7,14})$/.test(normalizePhone(value));
+  return /^(?:\d{1,15}|\+[1-9]\d{1,14})$/.test(normalizePhone(value));
 }
 export function saveCall(calls: Call[], call: Call): Call[] {
   if (

@@ -636,7 +636,14 @@ function Content({
                 </thead>
                 <tbody>
                   {result?.data.map((row) => (
-                    <tr key={row.id} data-selected={selected?.id === row.id}>
+                    <tr
+                      key={row.id}
+                      data-selected={selected?.id === row.id}
+                      onClick={() => {
+                        if (!loading && !error) setSelected(row);
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <td data-label="نام مخاطب">
                         {row.latest.name || 'مخاطب ناشناس'}
                       </td>
@@ -760,6 +767,18 @@ function Content({
                 ? 'تکمیل اطلاعات تماس'
                 : 'ثبت تماس پیگیری'}
             </button>
+            <button
+              className={styles.followUp}
+              disabled={
+                !canCreate ||
+                !canManage ||
+                busy ||
+                selected.latest.origin === 'SYNTHETIC'
+              }
+              onClick={() => void complete(selected.latest.id)}
+            >
+              ویرایش اطلاعات ثبت‌شده
+            </button>
             <History
               key={`${selected.id}:${selected.latest.id}:${historyRevision}`}
               onComplete={complete}
@@ -811,14 +830,8 @@ function DossierFrame({
   children: ReactNode;
   onClose: () => void;
 }) {
-  // Keep the dossier mounted in the same surface while an editor contains a draft.
-  const [compact] = useState(
-    () =>
-      typeof window !== 'undefined' &&
-      window.matchMedia('(max-width: 1200px)').matches,
-  );
   const restoreFocus = useDialogReturnFocus();
-  return compact ? (
+  return (
     <Dialog
       open
       onOpenChange={(open) => {
@@ -837,8 +850,6 @@ function DossierFrame({
         <div className={styles.workspace}>{children}</div>
       </DialogContent>
     </Dialog>
-  ) : (
-    <aside className={`${styles.panel} ${styles.history}`}>{children}</aside>
   );
 }
 function ReportPanel({
@@ -1068,8 +1079,7 @@ function History({
               </p>
               <details>
                 <summary>شرح تماس و اطلاعات ثبت</summary>
-                {c.origin === 'TELEPHONY' &&
-                  c.needsCompletion &&
+                {c.origin !== 'SYNTHETIC' &&
                   permissions.includes(
                     'customer_affairs.call_center.calls.create',
                   ) &&

@@ -8736,3 +8736,13 @@ No ownership, permission, schema, dependency, popup or other design changes.
 Requested four queue views delivered; additive CLOSED API with scope/count tests.
 13 API +10 Web tests, lint/types/builds pass. Local API4000/Web3000 HTTP200.
 No schema/dependency/ownership/popup change. Bounded reservations release on push.
+
+## CALL-CENTER-CALLER-EDIT-1022 — PC-C — IN_PROGRESS
+
+Owner requests preservation of incoming caller numbers, recovery of the verified October22 10:02 call from encrypted evidence, and row-click modal editing. Base254679d0; released queue/completion reservations checked, clean worktree. Reserve call-center normalization, create/update path, source-backed recovery script, workspace/form tests and own docs. Preserve identity/contact/ownership/technical facts; no guessed area code, no synthetic operational call, no permission expansion or PBX write. Existing user authorization identifies PC-C. Local recovery must be transactional, backed up and idempotent.
+
+## CALL-CENTER-CALLER-EDIT-1022 — PC-C — LOCAL_VERIFIED
+
+Implementation/test/build/local recovery complete. Exact history retained, no
+raw caller logged, no schema/PBX/grant change. Release bounded source reservation
+on commit/push. Evidence in docs/tasks/CALL-CENTER-CALLER-EDIT-1022.md.

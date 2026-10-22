@@ -5,6 +5,7 @@ import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CallCenterCrypto } from '../../customer-affairs/call-center.crypto';
+import { recoverStoredCaller } from '../../customer-affairs/call-center-recover-caller';
 import { CallCenterService } from '../../customer-affairs/call-center.service';
 import type { CallCenterCallDto } from '../../customer-affairs/call-center.dto';
 import { CallCenterTelephonyService } from '../../customer-affairs/call-center-telephony.service';
@@ -988,6 +989,53 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         status: 403,
       });
     });
+    it('preserves local caller and safely recovers legacy blank caller once', async () => {
+      const calls = new CallCenterService({ client: db } as never, crypto);
+      const root = randomUUID();
+      const e = {
+        ...fact('RINGING'),
+        rootCallId: root,
+        externalCallId: root,
+        caller: { kind: 'KNOWN' as const, value: '22334455' },
+      };
+      const sid = await db.$transaction((tx) =>
+        domain.project(tx, e, {
+          branchId,
+          creatorId: userId,
+          synthetic: false,
+          receivedAt: new Date(),
+          recipient: null,
+        }),
+      );
+      const session = await db.callCenterTelephonySession.findUniqueOrThrow({
+        where: { id: sid },
+      });
+      const c = (await calls.getCall(session.callId, actor, branchId)).data;
+      expect(c.phone).toBe('22334455');
+      const row = await db.callCenterCall.findUniqueOrThrow({
+        where: { id: c.id },
+      });
+      const payload = crypto.decrypt<Record<string, string>>(
+        row.encryptedPayload,
+        row.keyVersion,
+        `call:${row.id}:${row.contactId}`,
+      );
+      payload.phone = '';
+      await db.callCenterCall.update({
+        where: { id: c.id },
+        data: {
+          encryptedPayload: crypto.encrypt(
+            payload,
+            `call:${row.id}:${row.contactId}`,
+          ),
+        },
+      });
+      expect((await recoverStoredCaller(db, crypto, c.id)).changed).toBe(true);
+      expect((await recoverStoredCaller(db, crypto, c.id)).changed).toBe(false);
+      expect((await calls.getCall(c.id, actor, branchId)).data.phone).toBe(
+        '22334455',
+      );
+    });
     it('completes one durable call with retry/CAS, scoped access and no offers; preserves operator data after late facts', async () => {
       const calls = new CallCenterService({ client: db } as never, crypto);
       const rootId = randomUUID();
@@ -1094,6 +1142,29 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         branchId,
       );
       expect(completed.data.needsCompletion).toBe(false);
+      const edited = await calls.create(
+        {
+          ...input,
+          completionToken: completed.data.completionToken,
+          source: 'سایت',
+          subject: 'Updated completed call',
+        },
+        actor,
+        branchId,
+      );
+      expect(edited.data.id).toBe(session.callId);
+      expect(edited.data.subject).toBe('Updated completed call');
+      await expect(
+        calls.create(
+          {
+            ...input,
+            completionToken: completed.data.completionToken,
+            subject: 'Stale overwrite',
+          },
+          actor,
+          branchId,
+        ),
+      ).rejects.toMatchObject({ status: 409 });
       await project({
         ...event,
         kind: 'ENDED',
@@ -1115,7 +1186,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         await db.customerAffairsAuditEvent.count({
           where: { entityId: session.callId, action: 'COMPLETE_CALL' },
         }),
-      ).toBe(2);
+      ).toBe(3);
       const pendingRoot = randomUUID();
       const pendingEvent = {
         ...event,

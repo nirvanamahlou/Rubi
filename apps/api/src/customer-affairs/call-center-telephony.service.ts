@@ -86,14 +86,7 @@ export class CallCenterTelephonyService {
       const id = randomUUID(),
         callId = randomUUID();
       const raw = event.direction === 'IN' ? event.caller : event.destination;
-      let phone = '';
-      if (raw.kind === 'KNOWN') {
-        try {
-          phone = normalizedCallPhone(raw.value!);
-        } catch {
-          /* Internal/short numbers remain technical-only. */
-        }
-      }
+      const phone = raw.kind === 'KNOWN' ? normalizedCallPhone(raw.value!) : '';
       const phoneFingerprint = this.crypto.fingerprint(
         context.synthetic
           ? `synthetic:${phone || id}`
