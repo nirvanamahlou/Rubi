@@ -329,15 +329,25 @@ export function VoucherFormSheet({
                   <colgroup>
                     <col
                       style={{
-                        width: data.roomBreakdown.length ? '54%' : '34%',
+                        width: data.roomBreakdown.length ? '30%' : '24%',
                       }}
                     />
-                    <col style={{ width: '19%' }} />
-                    <col style={{ width: '12%' }} />
-                    <col style={{ width: '15%' }} />
+                    <col style={{ width: '16%' }} />
+                    <col style={{ width: '6%' }} />
+                    <col style={{ width: '10%' }} />
                     {!data.roomBreakdown.length && (
-                      <col style={{ width: '20%' }} />
+                      <col style={{ width: '16%' }} />
                     )}
+                    <col
+                      style={{
+                        width: data.roomBreakdown.length ? '19%' : '14%',
+                      }}
+                    />
+                    <col
+                      style={{
+                        width: data.roomBreakdown.length ? '19%' : '14%',
+                      }}
+                    />
                   </colgroup>
                   <thead>
                     <tr>
@@ -347,6 +357,8 @@ export function VoucherFormSheet({
                         'STAR',
                         'SERVICE',
                         ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
+                        'CHECK-IN',
+                        'CHECK-OUT',
                       ].map((t) => (
                         <th key={t}>{t}</th>
                       ))}
@@ -361,6 +373,8 @@ export function VoucherFormSheet({
                       {!data.roomBreakdown.length && (
                         <td dir="auto">{data.roomType}</td>
                       )}
+                      <td>{data.checkIn}</td>
+                      <td>{data.checkOut}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -393,51 +407,24 @@ export function VoucherFormSheet({
                     </tbody>
                   </table>
                 ) : null}
-                <div className={styles.accommodationBreakdown}>
-                  <table className={styles.table}>
-                    <caption>STAY DATES</caption>
-                    <thead>
-                      <tr>
-                        <th>CHECK-IN</th>
-                        <th>CHECK-OUT</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>{data.checkIn}</td>
-                        <td>{data.checkOut}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
               </>
             )}
-            <Heading
-              number="04"
-              title="TOUR SERVICES"
-              note="Leader & excursion"
-            />
+            <Heading number="04" title="TOUR SERVICES" note="Leader & board" />
             <table className={styles.table}>
               <thead>
                 <tr>
                   <th>TRANSFER</th>
                   <th>TOUR LEADER</th>
-                  <th>EXCURSION</th>
+                  <th>BOARD</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>
-                    {data.transfer}
-                    {voucher && (
-                      <>
-                        {' '}
-                        · Board: {settings?.text.transferBoard?.trim() || '-'}
-                      </>
-                    )}
-                  </td>
+                  <td>{data.transfer}</td>
                   <td dir="auto">{data.leader}</td>
-                  <td dir="auto">{data.excursion}</td>
+                  <td dir="auto">
+                    {settings?.text.transferBoard?.trim() || '-'}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -479,7 +466,12 @@ export function VoucherFormSheet({
                                   : undefined
                               }
                             >
-                              {cell}
+                              {passengerServices[person.id]!.different &&
+                              [6, 7].includes(column) ? (
+                                <strong>{cell}</strong>
+                              ) : (
+                                cell
+                              )}
                             </td>
                           ))}
                         </tr>

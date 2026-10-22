@@ -489,6 +489,16 @@
 
 .voucherServices th {
   font-size: 7px;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.page[data-voucher] .summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.6fr) max-content;
+}
+.page[data-voucher] .summary > div:last-child b {
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 
 /* Voucher service columns add detail; compact spacing keeps the complete form inside A4. */

@@ -57,6 +57,7 @@ function render() {
           flight('out-b', 20),
           flight('return-a', 12, true),
         ],
+        references: [{ kind: 'city', id: 'a', name: 'تهران', active: true }],
         cityName: (id) => id,
         refreshing: false,
         onRefresh: vi.fn(),
@@ -148,4 +149,22 @@ it('hides both load tables when either endpoint is cleared after searching', () 
     target: { value: '' },
   });
   expect(tables()).toHaveLength(0);
+});
+
+it('defaults and resets the origin to Tehran but preserves a manual city choice', () => {
+  const field = () =>
+    render().find(
+      (n) =>
+        n.props.id === 'load-origin' && typeof n.props.onChange === 'function',
+    )!;
+  expect(field().props.value).toBe('a');
+  (field().props.onChange as (event: unknown) => void)({
+    target: { value: 'b' },
+  });
+  expect(field().props.value).toBe('b');
+  click('پاک‌کردن فیلترها');
+  expect(field().props.value).toBe('a');
+  expect(render().some((n) => n.props.id === 'load-origin-country')).toBe(
+    false,
+  );
 });

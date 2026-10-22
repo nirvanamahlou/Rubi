@@ -135,6 +135,8 @@ export function voucherPdfHtml(
         'STAR',
         'SERVICE',
         ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
+        'CHECK-IN',
+        'CHECK-OUT',
       ],
       [
         [
@@ -143,6 +145,8 @@ export function voucherPdfHtml(
           data.stars,
           data.meal,
           ...(!data.roomBreakdown.length ? [data.roomType] : []),
+          data.checkIn,
+          data.checkOut,
         ],
       ],
     )}
@@ -166,10 +170,7 @@ export function voucherPdfHtml(
           )
         : ''
     }
-    <div class="accommodationBreakdown">
-      ${table(['CHECK-IN', 'CHECK-OUT'], [[data.checkIn, data.checkOut]]).replace('<thead>', '<caption>STAY DATES</caption><thead>')}
-    </div>
-    ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table(['TRANSFER', 'TOUR LEADER', 'EXCURSION'], [[voucher ? data.transfer + ' · Board: ' + (settings?.text.transferBoard?.trim() || '-') : data.transfer, data.leader, data.excursion]])}
+    ${heading('04', 'TOUR SERVICES', 'Leader & board')}${table(['TRANSFER', 'TOUR LEADER', 'BOARD'], [[data.transfer, data.leader, settings?.text.transferBoard?.trim() || '-']])}
     ${heading('05', voucher ? 'PASSENGER SERVICES' : 'PASSENGERS', 'Passenger manifest')}${
       voucher
         ? table(

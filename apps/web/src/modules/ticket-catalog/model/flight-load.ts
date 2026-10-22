@@ -3,6 +3,7 @@ import {
   ticketOfferRoutes,
   ticketCalendarDate,
   type TicketOfferV1,
+  type TicketSaleRouteV1,
 } from '@nora/contracts';
 import type { Reference } from './catalog';
 
@@ -164,4 +165,37 @@ export function disjointFlightLoadLegs(
 ) {
   const returnIds = new Set(returns.map((offer) => offer.id));
   return outbounds.filter((offer) => !returnIds.has(offer.id));
+}
+
+/** Charter history is independent of date/status/search filters, including sale routes. */
+export function charterLoadCities(
+  offers: readonly TicketOfferV1[],
+  origin = '',
+  history: readonly TicketSaleRouteV1[] = [],
+) {
+  const routes = [
+    ...offers.filter(isCompanyLoadOffer).flatMap(ticketOfferRoutes),
+    ...history,
+  ];
+  return {
+    origins: [...new Set(routes.map((route) => route.originId))],
+    destinations: [
+      ...new Set(
+        routes
+          .filter((route) => !origin || route.originId === origin)
+          .map((route) => route.destinationId),
+      ),
+    ],
+  };
+}
+export function tehranLoadOrigin(references: readonly Reference[]) {
+  return (
+    references.find(
+      (ref) =>
+        ref.kind === 'city' &&
+        ref.active &&
+        (ref.code?.toUpperCase() === 'THR' ||
+          ['تهران', 'tehran'].includes(ref.name.trim().toLowerCase())),
+    )?.id ?? ''
+  );
 }

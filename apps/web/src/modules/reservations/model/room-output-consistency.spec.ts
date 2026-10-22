@@ -111,7 +111,11 @@ it('keeps mixed room occupancies consistent in reservation, voucher and customer
     expect(html).not.toContain('DBL · DOUBLE');
     expect(html).not.toContain('SGL · SINGLE');
     expect(html).not.toContain('<th>SERVICE</th><th>ROOM TYPE</th>');
-    expect(html).toContain('<th>SERVICE</th></tr>');
+    expect(html).toContain(
+      voucher
+        ? '<th>SERVICE</th><th>CHECK-IN</th><th>CHECK-OUT</th></tr>'
+        : '<th>SERVICE</th></tr>',
+    );
   }
   expect(contractRoomSummary(output.contract.hotelSelection)).toBe(
     'مجموع 3 اتاق: 1 سینگل، 2 دبل، 2 تخت اضافه',

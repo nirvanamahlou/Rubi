@@ -328,7 +328,9 @@ it('renders voucher booking references and a separated summary without letterhea
   expect(html).toContain('<section class="bookingSection">');
   expect(html).toContain('ROOM TYPE');
   expect(html).toContain('TRANSFER');
-  expect(html).toContain('Board: BROKER BOARD');
+  expect(html).toContain('<th>BOARD</th>');
+  expect(html).toContain('>BROKER BOARD</td>');
+  expect(html).not.toContain('Board:');
   expect(html).toContain('SYNTHETIC VOUCHER NOTICE');
   expect(html).toContain('Reservation@niyayehseir.com');
   expect(html).not.toContain('Country:');
