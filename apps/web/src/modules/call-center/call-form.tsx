@@ -120,7 +120,11 @@ export function CallForm({
       >
         <DialogTitle className="flex items-center gap-2 pe-9">
           <PhoneIncoming className="text-blue-500" />
-          {event.direction === 'INBOUND' ? 'ثبت تماس جدید' : 'ثبت تماس پیگیری'}
+          {completing
+            ? 'ویرایش اطلاعات تماس'
+            : event.direction === 'INBOUND'
+              ? 'ثبت تماس جدید'
+              : 'ثبت تماس پیگیری'}
         </DialogTitle>
         <DialogDescription>
           {callDate(event.occurredAt)} ·{' '}
@@ -287,7 +291,7 @@ export function CallForm({
             )}
             <footer>
               <button className={styles.primary}>
-                <Check size={16} /> ثبت تماس
+                <Check size={16} /> {completing ? 'ذخیره تغییرات' : 'ثبت تماس'}
               </button>
               <button
                 type="button"

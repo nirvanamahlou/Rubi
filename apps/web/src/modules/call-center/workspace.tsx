@@ -640,9 +640,44 @@ function Content({
                       key={row.id}
                       data-selected={selected?.id === row.id}
                       onClick={() => {
-                        if (!loading && !error) setSelected(row);
+                        if (
+                          !loading &&
+                          !error &&
+                          canCreate &&
+                          canManage &&
+                          !busy &&
+                          row.latest.origin !== 'SYNTHETIC'
+                        )
+                          void complete(row.latest.id);
                       }}
-                      style={{ cursor: 'pointer' }}
+                      tabIndex={
+                        canCreate &&
+                        canManage &&
+                        !loading &&
+                        !error &&
+                        !busy &&
+                        row.latest.origin !== 'SYNTHETIC'
+                          ? 0
+                          : undefined
+                      }
+                      onKeyDown={(event) => {
+                        if (
+                          event.target === event.currentTarget &&
+                          (event.key === 'Enter' || event.key === ' ') &&
+                          canCreate &&
+                          canManage &&
+                          !loading &&
+                          !error &&
+                          !busy &&
+                          row.latest.origin !== 'SYNTHETIC'
+                        ) {
+                          event.preventDefault();
+                          void complete(row.latest.id);
+                        }
+                      }}
+                      style={{
+                        cursor: canCreate && canManage ? 'pointer' : undefined,
+                      }}
                     >
                       <td data-label="نام مخاطب">
                         {row.latest.name || 'مخاطب ناشناس'}
@@ -678,7 +713,10 @@ function Content({
                           className={styles.view}
                           data-cc-focus-anchor
                           disabled={loading || !!error}
-                          onClick={() => setSelected(row)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelected(row);
+                          }}
                           aria-label={`مشاهده تاریخچه ${row.latest.name || 'مخاطب ناشناس'}`}
                         >
                           <Eye size={14} /> مشاهده
@@ -830,8 +868,13 @@ function DossierFrame({
   children: ReactNode;
   onClose: () => void;
 }) {
+  const [compact] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 1200px)').matches,
+  );
   const restoreFocus = useDialogReturnFocus();
-  return (
+  return compact ? (
     <Dialog
       open
       onOpenChange={(open) => {
@@ -850,6 +893,8 @@ function DossierFrame({
         <div className={styles.workspace}>{children}</div>
       </DialogContent>
     </Dialog>
+  ) : (
+    <aside className={`${styles.panel} ${styles.history}`}>{children}</aside>
   );
 }
 function ReportPanel({

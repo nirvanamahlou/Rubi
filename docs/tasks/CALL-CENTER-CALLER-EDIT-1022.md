@@ -34,3 +34,12 @@ restart gap remains honestly recorded. Original artifacts retained for rollback.
 No migration or production deployment. Authenticated browser acceptance not yet
 performed; login and API health verified independently. Local operational backup:
 F:/Projects/Rubi/backups/caller-recovery-1022-encrypted.json (never commit).
+
+## CALL-CENTER-ROW-FORM-1022
+
+Owner clarified two independent actions: row click/Enter/Space opens the existing
+CallForm with persisted data and concurrency token directly; View stops bubbling
+and opens the original responsive dossier (desktop aside/mobile dialog). Existing
+form layout retained; edit title/save label distinguish existing record editing.
+Read/create/workflow scope remains unchanged. No backend/schema/data changes.
+Scoped lint, Web types and2 existing form tests pass.

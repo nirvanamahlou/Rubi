@@ -8746,3 +8746,12 @@ Owner requests preservation of incoming caller numbers, recovery of the verified
 Implementation/test/build/local recovery complete. Exact history retained, no
 raw caller logged, no schema/PBX/grant change. Release bounded source reservation
 on commit/push. Evidence in docs/tasks/CALL-CENTER-CALLER-EDIT-1022.md.
+
+## CALL-CENTER-ROW-FORM-1022 — PC-C — IN_PROGRESS
+
+Owner clarification: row click opens prefilled CallForm directly; View retains original responsive dossier. Reserve workspace/call-form and own docs only, clean base5244f062. No backend/data/permissions change. Stop propagation on View and preserve keyboard access.
+
+## CALL-CENTER-ROW-FORM-1022 — PC-C — LOCAL_VERIFIED
+
+Clarified interactions delivered and locally activated after form tests/lint/
+types/build. Release workspace/call-form reservations on push. No backend/data change.

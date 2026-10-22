@@ -6939,3 +6939,9 @@ original evidence, row-click dossier modal and same-record edit with existing
 permissions/CAS/audit.6 API unit +9 Web +10 disposable PostgreSQL tests pass;
 scoped lint/types and compatible builds pass. API/Web activated locally; AMI
 reconnected, no migration or production deployment. See tasks/CALL-CENTER-CALLER-EDIT-1022.md.
+
+## CALL-CENTER-ROW-FORM-1022 — PC-C — LOCAL_VERIFIED
+
+Row click opens prefilled edit form directly; View independently retains previous
+responsive dossier.2 form tests/lint/types/build pass. Compatible Web build
+.next-row-form activated; Backend unchanged. See tasks/CALL-CENTER-CALLER-EDIT-1022.md.
