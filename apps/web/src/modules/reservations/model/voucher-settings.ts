@@ -227,18 +227,18 @@ export function voucherFormData(
       ? {
           roomBreakdown: v.rooms.map((room) => ({
             ordinal: room.ordinal,
-            roomType: room.roomTypeNameSnapshot,
+            roomType: englishOutputName(room.roomTypeNameSnapshot, refs),
             adults: room.adults,
             childAges: [...room.childAges],
           })),
         }
       : {}),
     supplier: '0',
-    hotel: v.text.hotel || '-',
-    destination: v.text.city || '-',
+    hotel: englishOutputName(v.text.hotel || '-', refs),
+    destination: englishOutputName(v.text.city || '-', refs),
     stars: v.text.stars || '-',
-    meal: v.text.meal || '-',
-    roomType: v.text.roomType || '-',
+    meal: englishOutputName(v.text.meal || '-', refs),
+    roomType: englishOutputName(v.text.roomType || '-', refs),
     checkIn: voucherDate(v.text.checkIn),
     checkOut: voucherDate(v.text.checkOut),
     rooms:
