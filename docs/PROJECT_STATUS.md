@@ -6980,3 +6980,14 @@ permission, schema, migration, routing or PBX activation.17 focused tests pass;
 8 database cases skipped explicitly. Types/lint and production builds checked;
 actual PBX/browser acceptance remains for an authorized real call.
 See tasks/CALL-CENTER-CALLER-NAME-1022.md.
+
+## STICKY-SALES-PREFLIGHT-1022 — PC-C
+
+SSH-independent last-answerer preparation adds bounded read-only QueueStatus
+projection and permission-checked internal preview with1s deadline/8-work cap.
+Unknown inherited wrap-up policy blocks preference; no value was guessed/configured.
+57 distinct tests pass (10 disposable PostgreSQL), scoped lint/types/API build.
+No Web/runtime/schema/PBX change, no popup or public routing endpoint. Real20s
+fallback remains an SSH-dependent installation and controlled-call acceptance gate.
+See tasks/STICKY-SALES-PREFLIGHT-1022.md. Source branch:
+codex/pc-c-sticky-sales-preflight-1022, approved local prerequisite base d83600a3.

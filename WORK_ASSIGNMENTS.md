@@ -8788,3 +8788,22 @@ Release bounded source/API consumer/IAM directory reservation on commit/push.
 Owner explicitly requests Caller ID name as the default existing popup contact-name value. Reserve optional callerName internal contract/validation, Issabel native/custom adapters, authorized encrypted technical snapshot and popup default helper/tests only. Preserve saved/operator names, no new UI, schema, grant or PBX activation. Stack on643955c8; preceding request-flow reservation released. Producer/consumer ship together; absent field remains backward-compatible. No main/develop merge authority.
 
 17 focused tests, types, scoped lint and contracts/API/Web builds pass;8 PostgreSQL cases explicitly skipped. Local Web3000 HTTP200 build igqcD0ao5lRfjSrJbjLTy and API4000 health ok (PID13204); existing config reused. No real-call/browser acceptance claimed. Source reservation releases on push.
+
+## STICKY-SALES-PREFLIGHT-1022 — PC-C — ACTIVE
+
+Owner authorizes all SSH-independent preparation for last-answerer routing with
+20-second fallback to queue1002. Base d83600a3 preserves approved local stack;
+previous scoped reservations released. Reserve issabel/ami.ts, new queue snapshot
+and decision coordinator/tests, IssabelService internal preview and own docs.
+No Web, schema, dependency, public endpoint, popup, runtime restart or PBX write.
+Read-only QueueStatus candidate collection must not infer unknown queue policy;
+actual prequeue hook, recording continuity and activation await SSH inspection.
+
+## STICKY-SALES-PREFLIGHT-1022 — PC-C — VERIFIED
+
+Read-only bounded QueueStatus collection, explicit inherited wrap-up policy and
+permission-aware internal preview implemented.57 distinct tests pass including
+10 disposable PostgreSQL scenarios. No schema/dependency/Web/runtime/PBX change;
+no public endpoint or popup activation. SSH-dependent hook/real-call acceptance
+remain pending. Scoped reservation releases on commit/push. Details:
+docs/tasks/STICKY-SALES-PREFLIGHT-1022.md.

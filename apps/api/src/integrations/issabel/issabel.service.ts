@@ -22,6 +22,9 @@ import { issabelOptions, type IssabelOptions } from './config';
 import { normalizeIssabelEvent } from './events';
 import { nativeEventNames, normalizeNativeQueueEvent } from './native-events';
 import { AmiContinuity } from './continuity';
+import { queueWrapupPolicy } from './queue-snapshot';
+import { fallback } from './sticky-sales';
+import { StickyPreviewBudget } from './sticky-preview';
 
 @Injectable()
 export class IssabelService implements OnModuleInit, OnModuleDestroy {
@@ -40,6 +43,7 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
   private continuity?: AmiContinuity;
   private running?: Promise<void>;
   private shutdownDeadline = Infinity;
+  private readonly stickyPreviewBudget = new StickyPreviewBudget();
   constructor(
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(ConfigService) private readonly config: ConfigService,
@@ -52,6 +56,49 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
     @Inject(IntegrationRegistryService)
     private readonly registry: IntegrationRegistryService,
   ) {}
+  /** Server-only dry decision; never connected to a controller or PBX dial action. */
+  async previewPreviousAgent(
+    actor: AuthenticatedActor,
+    queue: string,
+    phone: string,
+  ) {
+    const options = this.options;
+    if (!options) throw new ForbiddenException();
+    return this.stickyPreviewBudget.run(queue, async (signal) => {
+      // Reuse Integrations' branch/permission/connection checks before querying AMI.
+      await this.events.preferredAgent(
+        actor,
+        options.connectionId,
+        queue,
+        phone,
+        null,
+      );
+      if (signal.aborted) return fallback(queue, 'LOOKUP_TIMEOUT');
+      const wrapup = queueWrapupPolicy(
+        this.config.get<string>('ISSABEL_STICKY_QUEUE_WRAPUP_SECONDS_JSON'),
+        queue,
+      );
+      if (wrapup === null) return fallback(queue, 'QUEUE_POLICY_UNVERIFIED');
+      const client = this.client;
+      if (!client?.connected || this.stopped)
+        return fallback(queue, 'AVAILABILITY_UNKNOWN');
+      const snapshot = await client.queueSnapshot(queue, wrapup);
+      if (signal.aborted) return fallback(queue, 'LOOKUP_TIMEOUT');
+      if (client !== this.client || !client.connected)
+        return fallback(queue, 'AVAILABILITY_UNKNOWN');
+      const decision = await this.events.preferredAgent(
+        actor,
+        options.connectionId,
+        queue,
+        phone,
+        snapshot,
+      );
+      if (signal.aborted) return fallback(queue, 'LOOKUP_TIMEOUT');
+      if (this.stopped || client !== this.client || !client.connected)
+        return fallback(queue, 'AVAILABILITY_UNKNOWN');
+      return decision;
+    });
+  }
   onModuleInit() {
     try {
       this.options = issabelOptions(this.config);
