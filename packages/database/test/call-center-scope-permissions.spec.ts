@@ -33,7 +33,10 @@ describe('Call Center opt-in catalogue', () => {
       code.startsWith('customer_affairs.call_center.'),
     ).map(([code]) => code);
     expect(codes).toContain('customer_affairs.call_center.scope.v1');
-    expect(codes.filter(isOptInCallCenterPermission)).toHaveLength(10);
+    expect(codes.filter(isOptInCallCenterPermission)).toContain(
+      'customer_affairs.call_center.recordings.read',
+    );
+    expect(codes.filter(isOptInCallCenterPermission)).toHaveLength(11);
     expect(
       codes.filter((code) => !isOptInCallCenterPermission(code)).sort(),
     ).toEqual([

@@ -22,6 +22,7 @@ export const CALL_CENTER_STATUSES = [
   'نهایی شده',
 ] as const;
 export class CallCenterCallDto {
+  @IsOptional() @IsString() @Matches(/^[a-f0-9]{64}$/) completionToken?: string;
   @IsOptional() @IsUUID() ticketId?: string;
   @IsOptional()
   @IsIn(['ANSWERED', 'NO_ANSWER', 'BUSY', 'FAILED'])

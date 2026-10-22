@@ -6,6 +6,8 @@ export interface IssabelOptions extends AmiOptions {
   context: string;
   technology: 'SIP' | 'PJSIP';
   prefixes: string[];
+  nativeCapture: boolean;
+  inboundQueues: string[];
 }
 export function issabelOptions(config: ConfigService): IssabelOptions | null {
   if (config.get<string>('ISSABEL_ENABLED') !== 'true') return null;
@@ -21,7 +23,25 @@ export function issabelOptions(config: ConfigService): IssabelOptions | null {
     context: value('OUTBOUND_CONTEXT') || 'nora-erp-outbound',
     technology: (value('CHANNEL_TECHNOLOGY') || 'PJSIP') as 'SIP' | 'PJSIP',
     prefixes: value('ALLOWED_PREFIXES').split(',').filter(Boolean),
+    nativeCapture: value('EVENT_MODE') === 'NATIVE_QUEUE_CAPTURE',
+    inboundQueues: value('INBOUND_QUEUES')
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean),
   };
+  const octets = options.host.split('.').map(Number);
+  const privateHost =
+    /^\d{1,3}(\.\d{1,3}){3}$/.test(options.host) &&
+    octets.every((v) => Number.isInteger(v) && v >= 0 && v <= 255) &&
+    (octets[0] === 10 ||
+      (octets[0] === 192 && octets[1] === 168) ||
+      (octets[0] === 172 && octets[1]! >= 16 && octets[1]! <= 31));
+  // Explicit local-company-network capture; production retains TLS/loopback policy.
+  const localCompanyCapture =
+    options.nativeCapture &&
+    privateHost &&
+    config.get<string>('NODE_ENV') === 'development' &&
+    value('COMPANY_NETWORK') === 'true';
   if (
     !/^[0-9a-f-]{36}$/i.test(options.connectionId) ||
     !options.host ||
@@ -32,11 +52,19 @@ export function issabelOptions(config: ConfigService): IssabelOptions | null {
     !options.secret ||
     /[\r\n\0]/.test(options.username + options.secret) ||
     (!options.tls &&
-      !['127.0.0.1', '::1', 'localhost'].includes(options.host)) ||
+      !['127.0.0.1', '::1', 'localhost'].includes(options.host) &&
+      !localCompanyCapture) ||
     !['SIP', 'PJSIP'].includes(options.technology) ||
     !/^[a-zA-Z0-9_-]{1,64}$/.test(options.context) ||
-    options.prefixes.length === 0 ||
-    options.prefixes.some((p) => !/^\+?\d{1,8}$/.test(p))
+    (!options.nativeCapture && options.prefixes.length === 0) ||
+    options.prefixes.some((p) => !/^\+?\d{1,8}$/.test(p)) ||
+    !['', 'CUSTOM_FACTS', 'NATIVE_QUEUE_CAPTURE'].includes(
+      value('EVENT_MODE'),
+    ) ||
+    (options.nativeCapture &&
+      (options.inboundQueues.length === 0 ||
+        options.inboundQueues.length > 100 ||
+        options.inboundQueues.some((q) => !/^[a-zA-Z0-9_.:-]{1,100}$/.test(q))))
   )
     throw Error('ISSABEL_INVALID_CONFIGURATION');
   return options;

@@ -23,12 +23,14 @@ export interface FollowUp {
   }[];
 }
 export interface RequestCase {
+  result?: string;
   customerId?: string | null;
   privateHistory: {
     at: string;
     actorId: string;
     title: string;
     reason: string;
+    result?: string;
     status: string;
     ownerId: string | null;
     version: number;
@@ -100,12 +102,17 @@ export const workflowApi = {
     signal?: AbortSignal,
     page = 1,
     taskPage = 1,
+    requestId?: string,
   ) =>
     callCenterRequest<{
       data: RequestCase[];
-      meta?: { total: number; hasMoreTasks: boolean };
+      meta?: {
+        total: number;
+        hasMoreTasks: boolean;
+        contactCallCount?: number;
+      };
     }>(
-      `/contacts/${contact}/requests?page=${page}&taskPage=${taskPage}`,
+      `/contacts/${contact}/requests?page=${page}&taskPage=${taskPage}${requestId ? `&requestId=${requestId}` : ''}`,
       branch,
       signal ? { signal } : {},
     ),

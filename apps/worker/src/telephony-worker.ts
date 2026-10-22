@@ -23,10 +23,24 @@ export class TelephonyWorker implements OnModuleInit, OnModuleDestroy {
     const secret = this.config.get<string>('TELEPHONY_WORKER_SECRET');
     if (!base || !secret || secret.length < 32)
       throw new Error('Telephony worker is not configured.');
+    const target = new URL(base);
+    if (
+      (target.protocol !== 'https:' &&
+        !(
+          target.protocol === 'http:' &&
+          ['localhost', '127.0.0.1', '[::1]'].includes(target.hostname)
+        )) ||
+      target.username ||
+      target.password ||
+      target.search ||
+      target.hash
+    )
+      throw new Error('Telephony worker requires HTTPS or loopback.');
     const response = await fetch(
       `${base.replace(/\/$/, '')}/internal/telephony-worker/${path}`,
       {
         method,
+        redirect: 'error',
         headers: { authorization: `Bearer ${secret}` },
         signal: AbortSignal.timeout(10000),
       },

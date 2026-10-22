@@ -42,6 +42,7 @@ export function CallForm({
   busy: boolean;
 }) {
   const restoreFocus = useDialogReturnFocus();
+  const completing = Boolean(event.completionToken);
   const [error, setError] = useState('');
   const [dirty, setDirty] = useState(false);
   const [requests, setRequests] = useState<RequestCase[]>([]);
@@ -85,7 +86,9 @@ export function CallForm({
       await onSave({
         ...event,
         phone: value('phone'),
-        direction: value('direction') as Call['direction'],
+        direction: completing
+          ? event.direction
+          : (value('direction') as Call['direction']),
         name: value('name'),
         subject: value('subject'),
         source: value('source'),
@@ -117,7 +120,11 @@ export function CallForm({
       >
         <DialogTitle className="flex items-center gap-2 pe-9">
           <PhoneIncoming className="text-blue-500" />
-          {event.direction === 'INBOUND' ? 'ثبت تماس جدید' : 'ثبت تماس پیگیری'}
+          {completing
+            ? 'ویرایش اطلاعات تماس'
+            : event.direction === 'INBOUND'
+              ? 'ثبت تماس جدید'
+              : 'ثبت تماس پیگیری'}
         </DialogTitle>
         <DialogDescription>
           {callDate(event.occurredAt)} ·{' '}
@@ -142,7 +149,7 @@ export function CallForm({
                     type="tel"
                     placeholder="شماره مخفی یا نامعلوم: خالی بگذارید"
                     defaultValue={event.phone}
-                    readOnly={Boolean(event.phone)}
+                    readOnly={Boolean(event.phone) || completing}
                     maxLength={24}
                     autoComplete="off"
                   />
@@ -188,7 +195,7 @@ export function CallForm({
                     optionLimit={50}
                     disabled={busy}
                     name="source"
-                    defaultValue="نامشخص"
+                    defaultValue={completing ? previous?.source : 'نامشخص'}
                   >
                     {sources.map((source) => (
                       <option key={source} value={source}>
@@ -206,7 +213,7 @@ export function CallForm({
                     optionLimit={50}
                     disabled={busy}
                     name="operator"
-                    defaultValue="نامشخص"
+                    defaultValue={completing ? previous?.operator : 'نامشخص'}
                   >
                     {operators.map((operator) => (
                       <option key={operator} value={operator}>
@@ -223,7 +230,7 @@ export function CallForm({
                     aria-label="نتیجه تماس"
                     className={styles.control}
                     disabled={busy}
-                    defaultValue=""
+                    defaultValue={completing ? (previous?.outcome ?? '') : ''}
                   >
                     <option value="">نتیجه تماس را انتخاب کنید</option>
                     {Object.entries(outcomeLabels).map(([key, title]) => (
@@ -241,7 +248,7 @@ export function CallForm({
                     aria-label="درخواست مرتبط"
                     className={styles.control}
                     disabled={busy}
-                    defaultValue=""
+                    defaultValue={completing ? (previous?.ticketId ?? '') : ''}
                   >
                     <option value="">بدون اتصال؛ پس از ثبت تعیین می‌کنم</option>
                     {requests
@@ -258,6 +265,7 @@ export function CallForm({
                 موضوع تماس *
                 <input
                   name="subject"
+                  defaultValue={completing ? previous?.subject : ''}
                   required
                   placeholder="موضوع همین تماس"
                   maxLength={200}
@@ -267,6 +275,7 @@ export function CallForm({
                 شرح تماس
                 <textarea
                   name="note"
+                  defaultValue={completing ? previous?.note : ''}
                   maxLength={2000}
                   placeholder="نیاز مسافر، نتیجه گفت‌وگو و اقدام بعدی..."
                 />
@@ -282,7 +291,7 @@ export function CallForm({
             )}
             <footer>
               <button className={styles.primary}>
-                <Check size={16} /> ثبت تماس
+                <Check size={16} /> {completing ? 'ذخیره تغییرات' : 'ثبت تماس'}
               </button>
               <button
                 type="button"

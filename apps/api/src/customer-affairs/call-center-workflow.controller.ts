@@ -95,7 +95,14 @@ export class CallCenterWorkflowController {
     @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-branch-id') branch?: string,
   ) {
-    return this.service.list(req.actor, branch, id, query.page, query.taskPage);
+    return this.service.list(
+      req.actor,
+      branch,
+      id,
+      query.page,
+      query.taskPage,
+      query.requestId,
+    );
   }
   @Post('contacts/:id/requests')
   @Header('Cache-Control', 'private, no-store')

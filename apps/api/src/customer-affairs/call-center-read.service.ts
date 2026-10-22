@@ -141,6 +141,15 @@ export class CallCenterReadService {
       _sum: { version: true },
     });
     const tasks = await callCenterTaskRevision(tx, branch);
+    const telephony = await tx.callCenterTelephonySession.aggregate({
+      where: { call: { contact: { branchId: branch } } },
+      _sum: { version: true },
+    });
+    const completions = await tx.customerAffairsAuditEvent.aggregate({
+      where: { branchId: branch, action: { in: ['COMPLETE_CALL', 'SAVE'] } },
+      _count: true,
+      _max: { occurredAt: true },
+    });
     const filters = Object.fromEntries(
       Object.entries(q).filter(([key]) => key !== 'page' && key !== 'revision'),
     );
@@ -149,6 +158,8 @@ export class CallCenterReadService {
         branch,
         filters,
         calls,
+        completions,
+        telephony,
         requests,
         tasks,
         teamUsers: teamUsers?.slice().sort(),

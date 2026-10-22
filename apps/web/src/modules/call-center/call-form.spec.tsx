@@ -1,0 +1,81 @@
+import { describe, expect, it, vi } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
+import type { ReactNode, SelectHTMLAttributes } from 'react';
+import { CallForm } from './call-form';
+import { previewCalls } from './fixture-data';
+
+vi.mock('@/components/ui/overlays', () => {
+  const Wrapper = ({ children }: { children: ReactNode }) => (
+    <div>{children}</div>
+  );
+  return {
+    Dialog: Wrapper,
+    DialogContent: Wrapper,
+    DialogTitle: Wrapper,
+    DialogDescription: Wrapper,
+  };
+});
+vi.mock('@/components/ui/native-search-select', () => ({
+  NativeSearchSelect: ({
+    optionLimit: _limit,
+    ...props
+  }: SelectHTMLAttributes<HTMLSelectElement> & { optionLimit?: number }) => {
+    void _limit;
+    return <select {...props} />;
+  },
+}));
+describe('existing call form completion', () => {
+  it('restores saved business fields while retaining the same technical identity', () => {
+    const call = {
+      ...previewCalls()[0]!,
+      completionToken: 'a'.repeat(64),
+      subject: 'Saved subject',
+      note: 'Saved note',
+      source: 'سایت',
+      operator: 'فروش داخلی',
+      outcome: 'NO_ANSWER',
+    };
+    const html = renderToStaticMarkup(
+      <CallForm
+        branchId="test"
+        event={call}
+        previous={call}
+        onSave={async () => {}}
+        onClose={() => {}}
+        busy={false}
+      />,
+    );
+    expect(html).toContain('value="Saved subject"');
+    expect(html).toContain('Saved note</textarea>');
+    expect(html).toContain('value="NO_ANSWER" selected=""');
+    expect(html).toContain('value="سایت" selected=""');
+    expect(html).toMatch(/readonly=""/i);
+  });
+  it('does not copy previous conversation notes/result into a new follow-up', () => {
+    const previous = {
+      ...previewCalls()[0]!,
+      subject: 'Old subject',
+      note: 'Old private note',
+      outcome: 'NO_ANSWER',
+    };
+    const html = renderToStaticMarkup(
+      <CallForm
+        branchId="test"
+        event={{
+          id: 'new',
+          phone: previous.phone,
+          direction: 'OUTBOUND',
+          occurredAt: previous.occurredAt,
+          recordings: [],
+        }}
+        previous={previous}
+        onSave={async () => {}}
+        onClose={() => {}}
+        busy={false}
+      />,
+    );
+    expect(html).not.toContain('Old private note');
+    expect(html).not.toContain('value="Old subject"');
+    expect(html).not.toContain('value="NO_ANSWER" selected=""');
+  });
+});

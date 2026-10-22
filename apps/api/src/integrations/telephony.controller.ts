@@ -47,6 +47,11 @@ export class TelephonyIntegrationController {
   operations(@Req() req: AuthenticatedRequest) {
     return this.service.operations(req.actor);
   }
+  @Get('health')
+  @Header('Cache-Control', 'private, no-store')
+  health(@Req() req: AuthenticatedRequest) {
+    return this.service.health(req.actor);
+  }
   @Post('connections')
   configure(
     @Req() req: AuthenticatedRequest,

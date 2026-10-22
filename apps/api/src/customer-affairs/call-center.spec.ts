@@ -34,7 +34,10 @@ describe('Call Center private payloads', () => {
   it('normalizes equivalent Iranian numbers and rejects malformed phones', () => {
     expect(normalizedCallPhone('+98 (912) 000-0001')).toBe('09120000001');
     expect(normalizedCallPhone('٠٩١٢٠٠٠٠٠٠١')).toBe('09120000001');
+    expect(normalizedCallPhone('۲۲۳۳۴۴۵۵')).toBe('22334455');
+    expect(normalizedCallPhone('123')).toBe('123');
     expect(() => normalizedCallPhone('123abc')).toThrow();
+    expect(() => normalizedCallPhone('1'.repeat(16))).toThrow();
   });
   it('encrypts private values with row identity and detects tampering/substitution', () => {
     const encoded = crypto.encrypt(

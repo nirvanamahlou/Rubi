@@ -32,7 +32,7 @@ export function normalizedCallPhone(value: string) {
   if (phone.startsWith('+98')) phone = '0' + phone.slice(3);
   if (/^98\d{10}$/.test(phone)) phone = '0' + phone.slice(2);
   if (/^9\d{9}$/.test(phone)) phone = '0' + phone;
-  if (!/^(?:0\d{10}|\+[1-9]\d{7,14})$/.test(phone))
+  if (!/^(?:\d{1,15}|\+[1-9]\d{1,14})$/.test(phone))
     throw new BadRequestException('شماره تماس معتبر نیست.');
   return phone;
 }
@@ -84,6 +84,10 @@ export class CallCenterService {
       occurredAt: row.occurredAt.toISOString(),
       ticketId: row.ticketId,
       outcome: row.outcome,
+      needsCompletion: row.needsCompletion,
+      completionToken: this.crypto.fingerprint(
+        JSON.stringify([row.id, row.encryptedPayload, row.outcome, row.status]),
+      ),
       origin: row.origin,
       createdByUserId: row.createdByUserId,
       createdAt: row.createdAt.toISOString(),
@@ -103,6 +107,8 @@ export class CallCenterService {
       direction: call.direction,
       status: call.status,
       outcome: call.outcome,
+      needsCompletion: call.needsCompletion,
+      completionToken: call.completionToken,
       origin: call.origin,
       occurredAt: call.occurredAt,
       ticketId: call.ticketId,
@@ -164,6 +170,18 @@ export class CallCenterService {
       meta: { branchId, total, page, pageSize },
     };
   }
+  async getCall(id: string, actor: AuthenticatedActor, requested?: string) {
+    const branchId = this.branch(
+      actor,
+      requested,
+      'customer_affairs.call_center.read',
+    );
+    const row = await this.database.client.callCenterCall.findFirst({
+      where: { id, contact: await this.access.where(actor, branchId) },
+    });
+    if (!row) throw new NotFoundException();
+    return { data: this.presentCall(row) };
+  }
   async create(
     input: CallCenterCallDto,
     actor: AuthenticatedActor,
@@ -202,6 +220,127 @@ export class CallCenterService {
       }),
     );
     const row = await this.database.client.$transaction(async (tx) => {
+      if (input.completionToken) {
+        if (
+          !actor.permissions.includes(
+            'customer_affairs.call_center.workflow.manage',
+          )
+        )
+          throw new ForbiddenException();
+        // Same lock order as the telephony form; preserve technical fields and origin.
+        await tx.$queryRaw`SELECT id FROM call_center_telephony_sessions WHERE "callId"=${input.id}::uuid FOR UPDATE`;
+        await tx.$queryRaw`SELECT id FROM customer_affairs_calls WHERE id=${input.id}::uuid FOR UPDATE`;
+        const existing = await tx.callCenterCall.findFirst({
+          where: {
+            id: input.id,
+            contact: { branchId },
+            origin: { not: 'SYNTHETIC' },
+          },
+          include: { telephonySession: true },
+        });
+        if (!existing) throw new NotFoundException();
+        if (this.access.scoped(actor))
+          await this.access.contact(
+            actor,
+            branchId,
+            existing.contactId,
+            'workflow',
+            tx,
+          );
+        const presented = this.presentCall(existing);
+        if (
+          payload.phone !== presented.phone ||
+          input.direction !== existing.direction ||
+          occurredAt.getTime() !== existing.occurredAt.getTime()
+        )
+          throw new BadRequestException('اطلاعات فنی تماس قابل تغییر نیست.');
+        const traceId = this.crypto.fingerprint(
+          JSON.stringify([input.completionToken, requestFingerprint]),
+        );
+        const replay = await tx.customerAffairsAuditEvent.findFirst({
+          where: {
+            entityId: input.id,
+            action: 'COMPLETE_CALL',
+            actorUserId: actor.userId,
+            traceId,
+          },
+        });
+        if (replay) return existing;
+        if (presented.completionToken !== input.completionToken)
+          throw new ConflictException(
+            'اطلاعات تماس تغییر کرده است؛ دوباره بررسی کنید.',
+          );
+        if (
+          existing.telephonySession?.claimUserId &&
+          existing.telephonySession.claimUserId !== actor.userId
+        )
+          throw new ConflictException(
+            'کارشناس دیگری مسئول تکمیل این تماس است.',
+          );
+        if (input.ticketId) {
+          if (this.access.scoped(actor))
+            await this.access.request(actor, branchId, input.ticketId, tx);
+          await tx.$queryRaw`SELECT id FROM customer_affairs_tickets WHERE id=${input.ticketId}::uuid FOR SHARE`;
+          const ticket = await tx.customerAffairsTicket.findFirst({
+            where: {
+              id: input.ticketId,
+              branchId,
+              callCenterContactId: existing.contactId,
+              category: 'CALL_CENTER_REQUEST',
+              status: { not: 'CLOSED' },
+            },
+          });
+          if (!ticket)
+            throw new BadRequestException(
+              'درخواست باز و متعلق به همین مخاطب را انتخاب کنید.',
+            );
+        }
+        const outcome = input.outcome ?? existing.outcome;
+        const metadata = callSearchMetadata(
+          this.crypto,
+          branchId,
+          payload,
+          outcome,
+        );
+        const saved = await tx.callCenterCall.update({
+          where: { id: input.id },
+          data: {
+            ...metadata,
+            outcome,
+            ticketId: input.ticketId ?? existing.ticketId,
+            encryptedPayload: this.crypto.encrypt(
+              payload,
+              `call:${input.id}:${existing.contactId}`,
+            ),
+            keyVersion: this.crypto.keyVersion,
+            status:
+              outcome === 'NO_ANSWER'
+                ? 'بدون پاسخ'
+                : existing.status === 'بدون پاسخ'
+                  ? 'جدید'
+                  : existing.status,
+          },
+        });
+        await tx.callCenterTelephonySession.updateMany({
+          where: { callId: input.id },
+          data: {
+            completed: !metadata.needsCompletion,
+            version: { increment: 1 },
+          },
+        });
+        await tx.customerAffairsAuditEvent.create({
+          data: {
+            branchId,
+            actorUserId: actor.userId,
+            entityType: 'CALL_CENTER_CALL',
+            entityId: input.id,
+            action: 'COMPLETE_CALL',
+            version: (existing.telephonySession?.version ?? 0) + 1,
+            traceId,
+          },
+        });
+        return saved;
+      }
       // Serialize the stable event ID, including conflicting retries from another phone/branch.
       await tx.$queryRaw(
         Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${'call-center:call:' + input.id},0))`,
