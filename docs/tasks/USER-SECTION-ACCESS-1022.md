@@ -69,12 +69,17 @@ explicit admin selection; it does not assign them automatically to administrator
   remain unchanged. The test transaction rolls back; no operational database used.
 - First local Web run used stale ignored Contracts output; rebuilding the existing
   Contracts package made the unchanged tests pass. No test assertion/gate weakened.
+- Database full typecheck/build attempts hit the explicit1024MiB local heap limit;
+  these are not reported as passing. No production TypeScript source changed;
+  exact-head hosted type/build gates remain required for this migration/test PR.
 - Actual production `CallCenterService.list` succeeds for both users across all
   five authorized branches, including the real IAM/HR scope ports and decryptor.
   Registry reads similarly succeed for all nine Integrations sections. Results
   retain no returned contact/customer content in Git.
 - Browser evidence is explicitly synthetic read-only actor injection with actual
   saved grants, not a real user login. No fabricated token or session was created.
+  At1440px, both links have nonempty visible rectangles for both stored accounts
+  after expanding their existing navigation groups.
 - Final HTTPS API health and login return200. No call, note, request, outbound
   telephone operation or third-party integration write was performed as a test.
 - Hosted exact-head quality/full-tests/build/migration checks remain publication
