@@ -1,5 +1,4 @@
 'use client';
-import { hasScopedCallCenterAccess } from '@nora/contracts';
 import {
   Dialog,
   DialogContent,

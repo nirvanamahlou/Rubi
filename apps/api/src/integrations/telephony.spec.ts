@@ -352,10 +352,15 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       });
       expect(
         (await domain.snapshot(actor)).data.some((r) => r.id === row.id),
-      ).toBe(false);
+      ).toBe(true);
       expect(
         await db.callCenterCall.findUnique({ where: { id: row.callId } }),
-      ).not.toBeNull();
+      ).toMatchObject({ needsCompletion: true });
+      expect(
+        await db.callCenterTelephonySession.findUnique({
+          where: { id: row.id },
+        }),
+      ).toMatchObject({ completed: false });
       await expect(
         domain.snapshot({ ...actor, permissions: [] }),
       ).rejects.toThrow();
