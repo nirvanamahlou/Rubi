@@ -1,0 +1,9 @@
+# Avina latest-develop deployment — 2026-10-22
+
+AVINA-DEVELOP-1022 completed: published aa537c6e583c8aea8171c550c654f4f7679d4c7f to API/Web/Worker after immutable build and120 isolated synthetic tests, including real contract/voucher PDF rendering. Encrypted DB/documents/private-config/public-artifact backup verified at /opt/rubi/backups/before-aa537c6e583c-20261022T083921Z. No migration/seed;306 existing table counts preserved. HTTPS login/API200, five assets200, three route auth guards, API401 and unknown public document404 pass. Environment hashes and all data mounts preserved; PostgreSQL/Redis/scanner/signature containers unchanged. Source hashes match release and app restarts remain zero. Operational lock RELEASED; no cleanup or business-record edits.
+
+Source: aa537c6e583c8aea8171c550c654f4f7679d4c7f (includes contract PDF PR1043 and English voucher service-table PR1057). Image: rubi-production:aa537c6e583c8aea8171c550c654f4f7679d4c7f. Web working directory remains /workspace/apps/web; new public assets mount uses the pinned release. PDF wrapper and B Nazanin path retained and actual PDFs generated in a temporary network-disabled container with synthetic fixtures only.
+
+Prior mixed API logo-exemption overlay and Web/Worker73ad images remain available for rollback. Standalone scanner/signature updater continue unchanged, with ordinary-document scanning and private volumes preserved. No claims about external signature-CDN refresh status. No tests wrote live business data. Private deployment scripts, keys and actual artifacts remain out of Git.
+
+Verification completed at2026-10-22T08:41:21Z; Web build ID tV6l3a6uolms8XQPzr448. A fresh page reload and newly downloaded PDFs use the updated templates; previously published immutable document capabilities retain their existing snapshot.
