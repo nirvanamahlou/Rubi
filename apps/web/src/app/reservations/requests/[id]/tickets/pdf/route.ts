@@ -10,7 +10,11 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { reservationTickets } from '@/modules/reservations/model/reservation-tickets';
 import { readTicketBrandAsset } from '@/modules/reservations/server/ticket-pdf-assets';
 import { ticketPdfHtml } from '@/modules/reservations/server/ticket-pdf-html';
-import { renderTicketPdf } from '@/modules/reservations/server/ticket-pdf';
+import { createPublicDocument } from '@/modules/travel-documents/server/public-document-store';
+import {
+  renderTicketPdf,
+  prepareTicketHtml,
+} from '@/modules/reservations/server/ticket-pdf';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -288,6 +292,44 @@ export async function GET(
       logoDataUrl =
         'data:image/png;base64,' +
         (await readTicketBrandAsset(asset)).toString('base64');
+    }
+    const language = languageFromCookies(request.headers.get('cookie'));
+    let sharingEnabled = false;
+    const published: Array<{ passengerId: string; url: string; html: string }> =
+      [];
+    for (const ticket of tickets) {
+      if (!ticket.issued || !ticket.eTicketNumber) continue;
+      const share = createPublicDocument();
+      if (!share) continue;
+      sharingEnabled = true;
+      ticket.publicDocumentUrl = share.url;
+      const html = await prepareTicketHtml(
+        ticketPdfHtml(
+          [ticket],
+          cityNames,
+          {
+            name: branding.name,
+            logoDataUrl,
+            companyCode: branding.companyCode ?? '',
+          },
+          airlineLogos,
+        ),
+        language,
+      );
+      await share.save(html);
+      published.push({ passengerId: ticket.passengerId, url: share.url, html });
+    }
+    if (parameters.get('format') === 'share') {
+      if (!sharingEnabled)
+        return Response.json(
+          { code: 'PUBLIC_DOCUMENTS_DISABLED' },
+          { status: 503, headers: responseHeaders },
+        );
+      if (!published.length) return fail('Public documents unavailable', 409);
+      return Response.json(
+        { ...published[0], documents: published },
+        { headers: responseHeaders },
+      );
     }
     const html = ticketPdfHtml(
       tickets,

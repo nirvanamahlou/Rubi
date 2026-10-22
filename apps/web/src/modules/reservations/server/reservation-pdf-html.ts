@@ -21,6 +21,7 @@ export function reservationPdfHtml(
   css: string,
   voucher = false,
   origin = '',
+  publicDocumentUrl?: string,
 ) {
   const settings = voucher
     ? intake.workflow.voucherSettings
@@ -155,7 +156,7 @@ export function reservationPdfHtml(
     ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table(['TRANSFER', 'TOUR LEADER', 'EXCURSION'], [[voucher ? data.transfer + ' · Board: ' + (settings?.text.transferBoard?.trim() || '-') : data.transfer, data.leader, data.excursion]])}
     ${heading('05', 'PASSENGERS', 'Passenger MANIFEST')}${table(['#', 'SURNAME / NAME', 'SEX', 'AGE RATE', ...(data.passengers.some((p) => p.checkIn !== undefined) ? ['CHECK-IN', 'CHECK-OUT'] : [])], rows.length ? rows : [['-', '-', '-', '-']], 'passengers')}
     ${heading('06', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
-    <footer class="footer"><div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin, intake.workflow.branding?.companyCode, data.brand)}</div><div><span></span></div><b>${index + 1} / ${pageCount}</b></footer></article>`;
+    <footer class="footer"><div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin, intake.workflow.branding?.companyCode, data.brand, publicDocumentUrl)}</div><div><span></span></div><b>${index + 1} / ${pageCount}</b></footer></article>`;
     })
     .join('');
   const appendices = roomAppendices

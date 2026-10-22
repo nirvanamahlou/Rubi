@@ -9,7 +9,11 @@ import type {
   ReservationFormIntake,
   ReservationFormReferences,
 } from '@/modules/reservations/model/reservation-form';
-import { renderReservationPdf } from '@/modules/reservations/server/reservation-pdf';
+import { createPublicDocument } from '@/modules/travel-documents/server/public-document-store';
+import {
+  renderReservationPdf,
+  prepareReservationHtml,
+} from '@/modules/reservations/server/reservation-pdf';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 const headers = {
@@ -173,6 +177,30 @@ export async function GET(
       ),
       'utf8',
     );
+    const share = createPublicDocument();
+    const language = languageFromCookies(request.headers.get('cookie'));
+    if (share) {
+      const html = await prepareReservationHtml(
+        intake,
+        refs,
+        logo,
+        css,
+        voucher,
+        '',
+        language,
+        share.url,
+      );
+      await share.save(html);
+      if (new URL(request.url).searchParams.get('format') === 'share')
+        return Response.json({ url: share.url, html }, { headers });
+    } else if (new URL(request.url).searchParams.get('format') === 'share')
+      return Response.json(
+        {
+          message: 'Public documents unavailable',
+          code: 'PUBLIC_DOCUMENTS_DISABLED',
+        },
+        { status: 503, headers },
+      );
     const bytes = await renderReservationPdf(
       intake,
       refs,
@@ -180,7 +208,8 @@ export async function GET(
       css,
       voucher,
       new URL(request.url).origin,
-      languageFromCookies(request.headers.get('cookie')),
+      language,
+      share?.url,
     );
     const name = intake.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_');
     return new Response(new Uint8Array(bytes), {

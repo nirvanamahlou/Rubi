@@ -1,4 +1,9 @@
 {
+  "در حال بررسی امنیتی است.": "is undergoing a security scan.",
+  "در حال دریافت لوگوی": "Loading logo for",
+  "شعبه یا مالک مجاز برای بارگذاری لوگو مشخص نیست.": "An authorized branch or owner for the logo upload is missing.",
+  "ممکن نیست:": "is unavailable:",
+  "نمایش لوگوی": "Logo display for",
   "اختلاف ساعت با گرینویچ (GMT)": "GMT offset",
   "اختلاف ساعت (GMT)": "GMT offset",
   "اختلاف ساعت با گرینویچ معتبر نیست.": "Invalid GMT offset.",
@@ -3974,5 +3979,14 @@
   "افزودن مقصد فروش": "Add sales destination",
   "ثبت بلیط شناور": "Confirm floating ticket",
   "بلیط شناور ثبت شد.": "Floating ticket confirmed.",
-  "اطلاعات بلیط شناور کامل نیست.": "Complete the floating ticket details."
+  "اطلاعات بلیط شناور کامل نیست.": "Complete the floating ticket details.",
+  "آماده‌سازی بارکد انجام نشد؛ دوباره فرم را باز کنید.": "The document QR code could not be prepared. Reopen the form and try again.",
+  "در حال آماده‌سازی بارکد مدرک…": "Preparing the document QR code…",
+  "دریافت بلیط انجام نشد.": "The ticket could not be retrieved.",
+  "اطلاعات هویتی و تماس الزامی است.": "Identity and contact information is required.",
+  "بیش از یک پرونده هویتی ثبت شده است.": "Multiple identity profiles exist.",
+  "نسخه اطلاعات هویتی و تماس الزامی است.": "The identity and contact version snapshot is required.",
+  "نسخه اطلاعات هویتی و تماس تغییر کرده است.": "Identity or contact information has changed. Reload the profile.",
+  "ورود هتل": "Hotel check-in",
+  "خروج هتل": "Hotel check-out"
 }

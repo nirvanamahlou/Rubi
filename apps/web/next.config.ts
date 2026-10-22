@@ -43,6 +43,18 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: '/d/:token',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            // Keep configuration standalone: next start does not resolve TS module imports.
+            // The public-document regression checks this against the route's shared policy.
+            value:
+              "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; sandbox allow-popups",
+          },
+        ],
+      },
+      {
         source: '/procurement-optimized.html',
         headers: [
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },

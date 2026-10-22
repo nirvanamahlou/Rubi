@@ -31,6 +31,13 @@ import { sourceForRecord } from './hr-record-source';
 import ui from './hr-unified.module.css';
 import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
 import { needsHrDetail } from './hr-form-model';
+import {
+  HrEmployeeSummary,
+  employeeSummaryFields,
+} from './hr-employee-summary';
+import { useHrEmployeeRecords } from './hr-employee-records';
+import { useHrReferenceData } from './hr-reference-data';
+import { useHrFormReferences } from './hr-directory-picker';
 
 interface LeaveBalances {
   employeeId: string;
@@ -50,6 +57,12 @@ export function HrEmployeeProfile({
   onForm: (target: HrFormTarget) => void;
   onSelect: (record: HrRecordDto, source: HrSource) => void;
 }) {
+  const profile = useHrEmployeeRecords(employee.id, store.revision);
+  const references = useHrReferenceData(store);
+  const external = useHrFormReferences(employee.id);
+  const userLabel = external.data?.users.find(
+    (u) => u.id === employee.userId,
+  )?.label;
   const first = resolveHrGroup(employeeGroups, initialTab);
   const [groupId, setGroupId] = useState(first.id);
   const group = employeeGroups.find((item) => item.id === groupId) ?? first;
@@ -125,26 +138,14 @@ export function HrEmployeeProfile({
   const data =
     source.tab === 'summary'
       ? {
-          columns: [
-            'کد پرسنلی',
-            'نام و نام خانوادگی',
-            'شرکت',
-            'واحد',
-            'سمت',
-            'رده',
-            'وضعیت',
-          ],
-          rows: [
-            [
-              employee.personnelCode,
-              employee.name,
-              employee.companyName,
-              employee.unit,
-              employee.position,
-              employee.grade,
-              employee.status,
-            ],
-          ],
+          columns: ['مشخصات', 'مقدار'],
+          rows: employeeSummaryFields(
+            employee,
+            profile.records ?? [],
+            references.data.records,
+            store.data!.capabilities.sensitive,
+            userLabel,
+          ),
           totalLabel: '',
         }
       : source.tab === 'requests'
@@ -358,27 +359,22 @@ export function HrEmployeeProfile({
           </label>
         </div>
         {source.tab === 'summary' ? (
-          <dl className={ui.properties}>
-            {[
-              ['نام و نام خانوادگی', employee.name],
-              ['کد پرسنلی', employee.personnelCode],
-              ['شرکت', branch],
-              ['واحد', employee.unit],
-              ['نوع همکاری', employee.kind],
-              ['سمت', employee.position],
-              ['رده', employee.grade],
-              ['مدیر مستقیم', employee.manager],
-              [
-                'تاریخ شروع',
-                new Date(employee.startedAtValue).toLocaleDateString('fa-IR'),
-              ],
-            ].map(([label, value]) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
+          profile.loading ? (
+            <p role="status">در حال دریافت اطلاعات…</p>
+          ) : profile.error ? (
+            <div role="alert">
+              {profile.error}
+              <HrButton onClick={profile.retry}>تلاش دوباره</HrButton>
+            </div>
+          ) : (
+            <HrEmployeeSummary
+              employee={employee}
+              records={profile.records ?? []}
+              references={references.data.records}
+              sensitive={store.data!.capabilities.sensitive}
+              userLabel={userLabel}
+            />
+          )
         ) : source.tab === 'audit' ? (
           store.data!.capabilities.audit ? (
             <HrAudit store={store} employeeId={employee.id} />

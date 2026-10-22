@@ -43,6 +43,7 @@ export type NewEmployeeStatus = (typeof employeeStatuses)[number];
 
 export interface NewEmployeeFormValue {
   extension?: string;
+  profileRecords?: { id: string; version: number }[];
   identityValues?: string[];
   contactValues?: string[][];
   photoFile?: File | undefined;
@@ -789,12 +790,13 @@ export function NewEmployeeForm({
             <NativeSearchSelect
               className={styles.control}
               id="hr-new-employee-status"
+              disabled={lockAssignment}
               name="status"
               onChange={(event) => update('status', event.target.value)}
               required
               value={value.status}
             >
-              {employeeStatuses.map((option) => (
+              {currentOptions(employeeStatuses, value.status).map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
