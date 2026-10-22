@@ -280,6 +280,42 @@ export class TicketPublicService {
     }));
   }
 
+  /** Current operational facts for already-authorized linked contracts, including sold/stopped offers. */
+  async currentSelections(
+    selections: readonly SalesTicketSelectionInput[],
+    branchId: string,
+  ): Promise<SalesTicketSelectionInput[]> {
+    if (!selections.length) return [];
+    const offers = await this.database.client.ticketPublishedOffer.findMany({
+      where: {
+        id: { in: [...new Set(selections.map((s) => s.offerId))] },
+        branchId,
+      },
+      select: {
+        id: true,
+        departureAt: true,
+        arrivalAt: true,
+        carrierName: true,
+        serviceNumber: true,
+        cabinClassCode: true,
+      },
+    });
+    const byId = new Map(offers.map((offer) => [offer.id, offer]));
+    return selections.map((selection) => {
+      const offer = byId.get(selection.offerId);
+      return offer
+        ? {
+            ...selection,
+            departureAt: offer.departureAt.toISOString(),
+            arrivalAt: offer.arrivalAt.toISOString(),
+            carrierNameSnapshot: offer.carrierName,
+            serviceNumberSnapshot: offer.serviceNumber,
+            cabinClassCode: offer.cabinClassCode,
+          }
+        : { ...selection };
+    });
+  }
+
   async documentSupply(id: string, branchIds: readonly string[]) {
     const row = await this.database.client.ticketPublishedOffer.findFirst({
       where: { id, branchId: { in: [...branchIds] } },

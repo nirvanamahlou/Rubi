@@ -7035,3 +7035,6 @@ Selected load weekday action uses the existing atomic versioned batch command ac
 
 Integration with merged voucher-services PR1057 retains its independent voucher renderer/component and service allocation/English regressions. Supplier reservation pagination delegates voucher rendering to the preserved implementation; both outputs remain covered.44 combined supplier/voucher regressions pass. No voucher feature is removed; revalidate final head before merge.
 
+## LOAD-CONTRACT-TICKET-SYNC-1022 — PC-A — READY_FOR_CI
+
+Authorized current Sales detail/output, reservation panel/purchase context and issued ticket downloads resolve operational flight clocks, carrier, number and class through Ticket Catalog using exact offer IDs and owning branch. Sold/stopped offers remain readable for linked contracts. Saved quotes, financial amounts, alternate sale-route endpoints, issuance numbers and immutable historical/QR artifacts remain intact. Existing draft confirmation refreshes operational clocks before reserve.51 focused API tests pass (one existing opt-in skip), strengthened five projection regressions, scoped lint, API typecheck and API build pass. No schema/migration/dependency/runtime changes or deployment. Exact-head hosted gates precede owner-authorized develop merge.

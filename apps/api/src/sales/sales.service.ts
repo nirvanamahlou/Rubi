@@ -1021,6 +1021,11 @@ export class SalesService {
       ),
       this.buyerCrypto,
     );
+    if (this.tickets.currentSelections)
+      detail.ticketSelections = await this.tickets.currentSelections(
+        detail.ticketSelections,
+        row.branchId,
+      );
     return {
       data: mayReadPayments ? detail : { ...detail, payments: [] },
     };
@@ -1510,6 +1515,11 @@ export class SalesService {
     await this.customers.resolveSnapshot(row.customerId, actor);
     await this.customers.assertPassengers(row.passengers, actor);
     const presented = presentSalesContract(row, undefined, this.buyerCrypto);
+    if (this.tickets.currentSelections)
+      presented.ticketSelections = await this.tickets.currentSelections(
+        presented.ticketSelections,
+        row.branchId,
+      );
     await this.assertPresentedHotelRoomCapacity(presented);
     const seatCount = presented.passengersDetail.filter(
       ({ ageCategory }) => ageCategory !== 'INF',
