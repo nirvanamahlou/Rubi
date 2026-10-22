@@ -7020,6 +7020,11 @@ Selected published tickets expose the existing single-offer Edit action for past
 
 Voucher preview and PDF share the same read-only per-passenger service projection and English headers: outbound/return flights, individual hotel dates, outbound/return transfer and other allocated services. Preserve selected passenger order, passport names, hotel child bands, independent voucher dates/flags and different-stay dates; flight-only passengers have blank hotel cells. Existing supplier form and issuance/release/branch/public-QR guards remain. English Master Data names and English issuer footer are used; PDF stays English regardless of staff UI locale. No financial amounts added. Compact voucher-only spacing and weighted pagination keep synthetic one/two/three-page output within A4, including four room types and long names.90 focused tests and scoped lint pass, two opt-in runtime skips; final hosted types/build/full gates required before authorized merge. No schema/API/dependency/runtime or data changes.
 
+
+## CHARTER-LOAD-FILTERS-1022 — PC-A
+
+Charter load removes the origin-country filter and defaults/resets origin city to Tehran using its registered city reference. Destination choices use only branch-authorized company/legacy charter route history, including past/paused/archived tickets and sale aliases, scoped to selected origin. Archived inventory remains excluded from load results. A read-only managed route projection contains no fares or capacity.218 Web and12 API checks plus scoped lint pass; final hosted quality/types/full tests/build/database gates precede authorized develop merge. No schema/migration/dependency or runtime deployment.
+
 ## CONTRACT-PDF-FOOTER-1021 — PC-A
 
 Contract PDF approval/signatures, notices and issuer contact now form a repeating table footer, with native pagination reserving their height on every page. Compact numeric hotel dates, smaller wrapped flight routes, paired party fields and IRR/IRI print label IRR; canonical data and other UI currency formatting unchanged.32 targeted regressions pass locally using source contracts alias; synthetic Chromium one/four-page output visually checked with no overlap. No API/schema/dependency/runtime changes; exact-head hosted gates required before owner-authorized develop merge.

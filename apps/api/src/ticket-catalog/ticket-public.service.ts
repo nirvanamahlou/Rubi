@@ -611,6 +611,37 @@ export class TicketPublicService {
     );
   }
 
+  async charterRoutes(actor: AuthenticatedActor) {
+    this.require(actor, 'ticket_catalog.manage');
+    const rows = await this.database.client.ticketPublishedOffer.findMany({
+      where: {
+        branchId: { in: actor.branchIds },
+        OR: [{ supplyType: 'COMPANY' }, { supplyType: null }],
+      },
+      select: {
+        originId: true,
+        destinationId: true,
+        saleRoutes: { select: { originId: true, destinationId: true } },
+      },
+    });
+    const routes = new Map<
+      string,
+      { originId: string; destinationId: string }
+    >();
+    for (const row of rows) {
+      for (const route of [
+        { originId: row.originId, destinationId: row.destinationId },
+        ...row.saleRoutes,
+      ]) {
+        routes.set(
+          JSON.stringify([route.originId, route.destinationId]),
+          route,
+        );
+      }
+    }
+    return { version: 1 as const, data: [...routes.values()] };
+  }
+
   async managed(actor: AuthenticatedActor, page = 1, includePast = false) {
     this.require(actor, 'ticket_catalog.manage');
     if (!Number.isInteger(page) || page < 1 || page > 10000)

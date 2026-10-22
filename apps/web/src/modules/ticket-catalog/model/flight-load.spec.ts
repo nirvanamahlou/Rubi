@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { TicketOfferV1 } from '@nora/contracts';
 import {
   companyFlightLegs,
+  charterLoadCities,
+  tehranLoadOrigin,
   disjointFlightLoadLegs,
   countryFlightLoadOffers,
   currentCompanyLoadOffers,
@@ -288,4 +290,43 @@ it('finds the same load through its second commercial destination without multip
   expect(
     companyFlightLegs([shared], { ...filter, origin: 'c', destination: 'b' }),
   ).toEqual([]);
+});
+
+it('keeps past and paused charter destinations and sale routes, excludes external supply and unrelated origins', () => {
+  const flights = [
+    offer('old', '2020-01-01', {
+      status: 'PAUSED',
+      saleRoutes: [{ originId: 'a', destinationId: 'alias' }],
+    }),
+    offer('external', '2099-01-01', {
+      supplyType: 'API',
+      destinationId: 'external',
+    }),
+    offer('floating', '2099-01-01', {
+      supplyType: 'FLOATING',
+      destinationId: 'float',
+    }),
+    offer('elsewhere', '2099-01-01', { originId: 'c', destinationId: 'd' }),
+  ];
+  expect(
+    charterLoadCities(flights, 'a', [
+      { originId: 'a', destinationId: 'archived' },
+      { originId: 'a', destinationId: 'b' },
+    ]).destinations,
+  ).toEqual(['b', 'alias', 'archived']);
+  expect(
+    tehranLoadOrigin([
+      { kind: 'city', id: 'thr', name: 'تهران', active: true },
+    ]),
+  ).toBe('thr');
+  expect(
+    tehranLoadOrigin([
+      { kind: 'city', id: 'thr', name: 'Tehran', active: true, code: 'THR' },
+    ]),
+  ).toBe('thr');
+  expect(
+    tehranLoadOrigin([
+      { kind: 'city', id: 'wrong', name: 'تهران', active: false },
+    ]),
+  ).toBe('');
 });
