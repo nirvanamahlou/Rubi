@@ -48,7 +48,7 @@ export function employeeDataset(
       'شماره داخلی',
       'نوع همکاری',
       'شرکت و واحد',
-      'سمت',
+      'عنوان شغلی',
       'رده',
       'مدیر مستقیم',
       'تاریخ شروع',
@@ -91,7 +91,9 @@ export function employeeFormValue(
     ...(store.data!.capabilities?.sensitive
       ? {
           identityValues: identity
-            ? [...identity.values]
+            ? defaultPersonnelIdentity.map(
+                (value, index) => identity.values[index] ?? value,
+              )
             : [...defaultPersonnelIdentity],
           contactValues: store
             .data!.records.filter(
@@ -148,7 +150,7 @@ export function employeeOrganizationOptions(data: HrBootstrapDto) {
     return {
       branch: company.name,
       units: options['واحد'] ?? [],
-      positions: options['سمت'] ?? [],
+      positions: options['عنوان شغلی'] ?? [],
       grades: options['رده'] ?? [],
     };
   });
@@ -333,6 +335,17 @@ export function HrEmployeeEditor({
             kind: value.employmentType,
             unit: value.unit,
             position: value.position,
+            ...(references.data.jobTitles?.find(
+              (title) =>
+                title.name === value.position && title.status === 'فعال',
+            )
+              ? {
+                  jobTitleId: references.data.jobTitles.find(
+                    (title) =>
+                      title.name === value.position && title.status === 'فعال',
+                  )!.id,
+                }
+              : {}),
             grade: value.grade,
             managerId: manager?.id ?? null,
             startedAtValue: value.startedAt,
@@ -354,6 +367,21 @@ export function HrEmployeeEditor({
                 lastName: input.lastName,
                 name: input.name,
                 kind: input.kind,
+                ...(input.unit !== employee.unit ? { unit: input.unit } : {}),
+                ...(input.position !== employee.position
+                  ? {
+                      position: input.position,
+                      ...(input.jobTitleId
+                        ? { jobTitleId: input.jobTitleId }
+                        : {}),
+                    }
+                  : {}),
+                ...(input.grade !== employee.grade
+                  ? { grade: input.grade }
+                  : {}),
+                ...(input.managerId !== employee.managerId
+                  ? { managerId: input.managerId }
+                  : {}),
                 status: input.status,
                 ...(input.userId !== employee.userId
                   ? { userId: input.userId }
@@ -379,13 +407,13 @@ export function HrEmployeeEditor({
                   ? 'شرکت و شعبه'
                   : newReference.kind === 'units'
                     ? 'واحد سازمانی'
-                    : 'شغل و سمت',
+                    : 'عنوان‌های شغلی',
               action:
                 newReference.kind === 'branches'
                   ? 'افزودن شعبه'
                   : newReference.kind === 'units'
                     ? 'افزودن واحد'
-                    : 'افزودن سمت',
+                    : 'افزودن عنوان شغلی',
             },
             ...(newReference.companyId
               ? { preferredCompanyId: newReference.companyId }
@@ -397,7 +425,10 @@ export function HrEmployeeEditor({
             setCreatedReference({
               id: record.id,
               kind: newReference.kind,
-              value: record.values[0] ?? '',
+              value:
+                newReference.kind === 'positions'
+                  ? record.values[1] || record.values[0] || ''
+                  : (record.values[0] ?? ''),
             });
             setNewReference(null);
           }}
@@ -507,7 +538,7 @@ export function HrEmployees({
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="نام، کد پرسنلی یا سمت"
+              placeholder="نام، کد پرسنلی یا عنوان شغلی"
             />
           </label>
           <label>

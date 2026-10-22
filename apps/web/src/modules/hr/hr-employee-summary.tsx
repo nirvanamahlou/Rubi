@@ -29,7 +29,7 @@ export function employeeSummaryFields(
     ['نوع همکاری', employee.kind],
     ['شرکت', employee.companyName],
     ['واحد', employee.unit],
-    ['سمت', employee.position],
+    ['عنوان شغلی', employee.position],
     ['رده شغلی', employee.grade],
     ['مدیر مستقیم', employee.manager],
     ['تاریخ شروع', hrDisplayDate(employee.startedAtValue)],

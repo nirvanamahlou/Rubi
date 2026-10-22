@@ -25,17 +25,19 @@ export function retiredHrColumns(section: string, tab: string): string[] {
     ? ['تاریخ اثر']
     : key === 'organization.units'
       ? ['مدیر', 'واحد والد']
-      : key === 'lifecycle.promotion'
-        ? ['سمت فعلی', 'رده فعلی']
-        : key === 'contracts.active'
-          ? ['موضوع و تعهدات', 'مرجع حل اختلاف']
-          : key === 'time.shift'
-            ? ['تقویم تعطیلات']
-            : key === 'recruitment.interviews'
-              ? ['عنوان شغل']
-              : key === 'assets.list'
-                ? ['شماره سریال']
-                : [];
+      : key === 'organization.positions'
+        ? ['عنوان سمت', 'واحد', 'رده', 'ظرفیت', 'تاریخ اثر']
+        : key === 'lifecycle.promotion'
+          ? ['سمت فعلی', 'رده فعلی']
+          : key === 'contracts.active'
+            ? ['موضوع و تعهدات', 'مرجع حل اختلاف']
+            : key === 'time.shift'
+              ? ['تقویم تعطیلات']
+              : key === 'recruitment.interviews'
+                ? ['عنوان شغل']
+                : key === 'assets.list'
+                  ? ['شماره سریال']
+                  : [];
 }
 
 export function parentFieldLabel(section: string, tab: string): string {
@@ -96,7 +98,15 @@ export function hrReferenceOptions(
     )
     .map((e) => e.name);
   const units = titles('organization', 'units');
-  const positions = titles('organization', 'positions');
+  const positions = data.jobTitles
+    ? [
+        ...new Set(
+          data.jobTitles
+            .filter((title) => title.status === 'فعال')
+            .map((title) => title.name),
+        ),
+      ]
+    : titles('organization', 'positions');
   const grades = [
     ...new Set([...HR_GRADE_OPTIONS, ...titles('organization', 'grades')]),
   ];
@@ -120,7 +130,7 @@ export function hrReferenceOptions(
     ],
     units,
   );
-  bind(['سمت', 'سمت فعلی', 'سمت جدید'], positions);
+  bind(['عنوان شغلی', 'سمت', 'سمت فعلی', 'سمت جدید'], positions);
   bind(['رده', 'رده شغلی', 'رده فعلی', 'رده جدید'], grades);
   bind(
     [
@@ -163,21 +173,18 @@ export function hrReferenceOptions(
   bind(['فرصت شغلی', 'برنامه جذب'], titles('recruitment', 'staffing'));
   bind(
     ['عنوان شغل'],
-    Array.from(
-      new Set(
-        eligible
-          .filter(
-            (record) =>
-              record.section === 'organization' && record.tab === 'positions',
-          )
-          .map(
-            (record) =>
-              recordValue(record, 'عنوان شغل') ||
-              recordValue(record, 'عنوان سمت'),
-          )
-          .filter(Boolean),
-      ),
-    ),
+    data.jobTitles
+      ? positions
+      : [
+          ...new Set(
+            eligible
+              .filter(
+                (r) => r.section === 'organization' && r.tab === 'positions',
+              )
+              .map((r) => r.values[1] || r.values[0] || '')
+              .filter(Boolean),
+          ),
+        ],
   );
   bind(['تقویم تعطیلات'], titles('time', 'holidays', 'تقویم'));
   bind(
@@ -204,8 +211,10 @@ export function hrReferenceOptions(
     [...titles('assets', 'vehicles'), ...titles('fleet', 'vehicles')],
   );
   // Names/titles on definition forms create catalog entries rather than reference themselves.
-  if (section === 'organization' && tab === 'positions')
+  if (section === 'organization' && tab === 'positions') {
     delete options['عنوان شغل'];
+    delete options['عنوان شغلی'];
+  }
   if (section === 'time' && tab === 'leavePolicies')
     delete options['نوع مرخصی'];
   return {
@@ -254,6 +263,7 @@ export function radanOptionalLabels(
   return [
     ...Object.keys(HR_RADAN_COMPLETION_COLUMNS),
     'organization.groups',
+    'organization.positions',
     'organization.groupMembers',
     'time.workingHours',
     'time.shiftTemplates',

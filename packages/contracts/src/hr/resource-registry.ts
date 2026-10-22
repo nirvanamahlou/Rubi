@@ -145,7 +145,8 @@ export function getHrResource(
                 ? 'decimal'
                 : 'text',
     required:
-      index === 0 ||
+      (index === 0 && key !== 'organization.positions') ||
+      (key === 'organization.positions' && label === 'عنوان شغلی') ||
       label === 'کارمند' ||
       (key === 'employee.identity' && label === 'نام خانوادگی') ||
       (key === 'employee.phones' && label === 'شماره تماس') ||
@@ -173,11 +174,14 @@ export function getHrResource(
         ['از تاریخ', 'تا تاریخ', 'نوع دورکاری'].includes(label)) ||
       (key === 'time.biometric' &&
         ['آدرس دستگاه', 'نوع دستگاه'].includes(label)),
-    maxLength: ['اجزای کارکرد', 'درخواست‌ها'].includes(label)
-      ? 8000
-      : /شرح|تعهدات|بازخورد|توضیح/.test(label)
-        ? 4000
-        : 500,
+    maxLength:
+      key === 'organization.positions' && label === 'عنوان شغلی'
+        ? 160
+        : ['اجزای کارکرد', 'درخواست‌ها'].includes(label)
+          ? 8000
+          : /شرح|تعهدات|بازخورد|توضیح/.test(label)
+            ? 4000
+            : 500,
   }));
   return {
     key,

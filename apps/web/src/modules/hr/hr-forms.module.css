@@ -299,3 +299,69 @@
     gap: 18px;
   }
 }
+
+.contactsModal {
+  width: min(calc(100vw - 32px), 560px);
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+}
+.contactFields {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) minmax(0, 2fr);
+  gap: 16px;
+  align-items: end;
+}
+.contactFields select {
+  min-height: 42px;
+}
+.contactList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.contactList li {
+  display: grid;
+  grid-template-columns: minmax(70px, 1fr) minmax(0, 2fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.contactType {
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+.contactNumber {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  text-align: end;
+}
+.contactsModal .modalFooter {
+  position: static;
+  bottom: auto;
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 480px) {
+  .contactFields {
+    grid-template-columns: 1fr;
+  }
+  .contactsModal {
+    padding: 20px;
+  }
+  .contactList li {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+}

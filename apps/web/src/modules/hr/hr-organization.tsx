@@ -5,6 +5,7 @@ import { OrganizationChart, type OrganizationNode } from './organization-chart';
 import { HrButton, HrConfirmDelete, HrPanel, HrTabs } from './hr-controls';
 import type { HrFormTarget } from './hr-record-form';
 import type { HrStore } from './hr-store';
+import { HrJobTitles } from './hr-job-titles';
 import { HrUnifiedSection } from './hr-unified-section';
 import { sourceForRecord } from './hr-record-source';
 import type { HrSource } from './hr-navigation';
@@ -129,7 +130,7 @@ export function HrOrganization({
         label="گروه‌های ساختار سازمانی"
         items={[
           { id: 'structure', label: 'چارت، شرکت‌ها و واحدها' },
-          { id: 'jobs', label: 'شغل و سمت' },
+          { id: 'jobs', label: 'عنوان‌های شغلی' },
         ]}
         value={group}
         onChange={(id) => {
@@ -148,7 +149,7 @@ export function HrOrganization({
                 { id: 'groups', label: 'گروه‌های کارکنان' },
                 { id: 'groupMembers', label: 'اعضای گروه' },
               ]
-            : [{ id: 'positions', label: 'شغل و سمت' }]
+            : [{ id: 'positions', label: 'عنوان‌های شغلی' }]
         }
         value={view}
         onChange={setView}
@@ -192,6 +193,8 @@ export function HrOrganization({
             }}
           />
         </HrPanel>
+      ) : view === 'positions' ? (
+        <HrJobTitles store={store} onForm={onForm} />
       ) : (
         <HrUnifiedSection
           embedded
