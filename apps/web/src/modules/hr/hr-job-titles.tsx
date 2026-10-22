@@ -1,7 +1,14 @@
 'use client';
 import { useState } from 'react';
 import type { HrRecordDto } from '@nora/contracts';
-import { HrButton, HrConfirmDelete, HrPanel, HrStatus } from './hr-controls';
+import {
+  HrButton,
+  HrConfirmDelete,
+  HrPanel,
+  HrTable,
+  HrExportButton,
+  HrPdfButton,
+} from './hr-controls';
 import { useHrReferenceData } from './hr-reference-data';
 import type { HrStore } from './hr-store';
 import type { HrSource } from './hr-navigation';
@@ -36,15 +43,28 @@ export function HrJobTitles({
       name: r.values[1] || r.values[0] || '',
       status: r.status,
     }));
+  const filtered = titles.filter((title) =>
+    normalizeHrText(title.name).includes(normalizeHrText(search)),
+  );
+  const dataset = {
+    columns: ['عنوان شغلی', 'وضعیت'],
+    rows: filtered.map((title) => [title.name, title.status]),
+    recordIds: filtered.map((title) => title.id),
+    totalLabel: '',
+  };
   return (
     <HrPanel
       title="عنوان‌های شغلی"
       actions={
-        store.data!.capabilities.write ? (
-          <HrButton primary onClick={() => onForm({ source })}>
-            افزودن عنوان شغلی
-          </HrButton>
-        ) : null
+        <>
+          <HrExportButton data={dataset} name="hr-job-titles" />
+          <HrPdfButton data={dataset} title="عنوان‌های شغلی" />
+          {store.data!.capabilities.write ? (
+            <HrButton primary onClick={() => onForm({ source })}>
+              افزودن عنوان شغلی
+            </HrButton>
+          ) : null}
+        </>
       }
     >
       <label className={ui.field}>
@@ -55,46 +75,33 @@ export function HrJobTitles({
         />
       </label>
       {references.error ? <p role="alert">{references.error}</p> : null}
-      <div className={ui.tableScroll}>
-        <table className={ui.table}>
-          <thead>
-            <tr>
-              <th>عنوان شغلی</th>
-              <th>وضعیت</th>
-              <th>عملیات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {titles
-              .filter((title) =>
-                normalizeHrText(title.name).includes(normalizeHrText(search)),
-              )
-              .map((title) => {
+      <HrTable
+        data={dataset}
+        {...(store.data!.capabilities.write
+          ? {
+              rowActions: (index: number) => {
+                const title = filtered[index]!;
                 const record = owned.find((r) => r.id === title.id);
-                return (
-                  <tr key={title.id}>
-                    <td>{title.name}</td>
-                    <td>
-                      <HrStatus>{title.status}</HrStatus>
-                    </td>
-                    <td>
-                      {store.data!.capabilities.write && record ? (
-                        <div className={ui.actions}>
-                          <HrButton onClick={() => onForm({ source, record })}>
-                            ویرایش
-                          </HrButton>
-                          <HrButton onClick={() => setRemoving(record)}>
-                            حذف
-                          </HrButton>
-                        </div>
-                      ) : null}
-                    </td>
-                  </tr>
-                );
-              })}
-          </tbody>
-        </table>
-      </div>
+                return record ? (
+                  <>
+                    <HrButton
+                      aria-label={`ویرایش ${title.name}`}
+                      onClick={() => onForm({ source, record })}
+                    >
+                      ویرایش
+                    </HrButton>
+                    <HrButton
+                      aria-label={`حذف ${title.name}`}
+                      onClick={() => setRemoving(record)}
+                    >
+                      حذف
+                    </HrButton>
+                  </>
+                ) : null;
+              },
+            }
+          : {})}
+      />
       {removing ? (
         <HrConfirmDelete
           title={removing.values[1] || removing.values[0] || removing.code}
