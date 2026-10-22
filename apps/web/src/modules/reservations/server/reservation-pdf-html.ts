@@ -1,3 +1,4 @@
+import { voucherPdfHtml } from './voucher-pdf-html';
 import { reservationFormFooterHtml } from '../model/reservation-form-footer';
 import { reservationFormPriceText } from '../model/reservation-form-price';
 import { supplierFormData, voucherFormData } from '../model/voucher-settings';
@@ -23,6 +24,16 @@ export function reservationPdfHtml(
   origin = '',
   publicDocumentUrl?: string,
 ) {
+  if (voucher)
+    return voucherPdfHtml(
+      intake,
+      refs,
+      logo,
+      css,
+      true,
+      origin,
+      publicDocumentUrl,
+    );
   const settings = voucher
     ? intake.workflow.voucherSettings
     : intake.workflow.supplierFormSettings;

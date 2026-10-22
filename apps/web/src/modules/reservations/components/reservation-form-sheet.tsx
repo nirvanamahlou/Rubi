@@ -1,4 +1,5 @@
 'use client';
+import { VoucherFormSheet } from './voucher-form-sheet';
 import { reservationFormPriceText } from '../model/reservation-form-price';
 import { loadOutputReferences } from '../model/output-references';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -202,6 +203,16 @@ export function ReservationFormSheet({
       ? reservationRoomAppendices(data.roomBreakdown)
       : [];
   const pageCount = pages.length + roomAppendices.length;
+  if (voucher)
+    return (
+      <VoucherFormSheet
+        intake={intake}
+        logo={logo}
+        references={references}
+        voucher
+        publicDocumentUrl={publicDocumentUrl}
+      />
+    );
   return (
     <div
       className={`${styles.document} ${!voucher ? styles.supplierDocument : ''}`}

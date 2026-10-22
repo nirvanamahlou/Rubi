@@ -1,5 +1,11 @@
 ## LOGO-EXEMPTION-PRODUCTION-PROOF-1022 — PC-B — COMPLETE / SOURCE_RELEASED
 
+## RESERVATION-FORM-FOOTER-SERVICES-1022 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-form-footer-services-1022 from origin/develop73ad32b5. Reserve Reservations form data/footer, sheet/CSS, PDF HTML/preparation and focused output/runtime tests; own status notes. User requests repeating bottom contact footer, current contract passenger-service allocation matrix and English supplier form, and explicitly authorizes develop merge after checks. Existing saved snapshots, voucher behavior, QR capability publication/permissions and manual settings remain authoritative. Read-only Sales snapshot consumption; no API/schema/migration/dependency/runtime or operational data change. Prior affected Reservations/public-document source reservations are released; no active overlapping writer found.
+
+RESERVATION-FORM-FOOTER-SERVICES-1022: final real single/three-page PDFs visually verified including all continuation footers;46 focused regressions, scoped lint and Web build/typecheck passed before final layout parity. Latest-head checks/CI required before user-authorized develop merge; no operational deployment/data change. Source reservation freezes on publication.
+
 COMPUTER_ID=PC-B; branch codex/pc-b-logo-exemption-production-proof-1022 from merged develop e2f7441a. Reserve/release only this task's production acceptance/status notes; no source/schema/dependency/runtime mutation. Native HTTPS bank+hotel save/reopen/replace and immediate previews (74ms/70ms), no scan jobs, exemption audit, MIME/size/CAS/anonymous denials and browser hotel-table logo rendering pass. Own two test records removed via native APIs and logo documents archived. Final source/operational evidence is recorded on PR1051 and server-private rollout artifacts.
 
 ## LOGO-SCAN-EXEMPTION-1022 — PC-B — COMPLETE / SOURCE_RELEASED
@@ -8819,6 +8825,12 @@ COMPUTER_ID=PC-A; codex/pc-a-past-ticket-single-edit-1021 from origin/develop303
 
 PAST-TICKET-SINGLE-EDIT-1021 validation:213 Ticket Catalog tests pass with one pre-existing skip; three new tests cover one historical ID/version submission, unchanged historical instants, read-only no-write and date-independent action. No backend guard weakened. Scoped source lock RELEASED with candidate; lint/types/build and exact-head hosted checks gate owner-authorized develop merge. No operational runtime/data changes.
 
+## VOUCHER-SERVICES-1022 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; codex/pc-a-voucher-services-1022 from origin/develop88c45b8c. User requests English voucher with contract-style passenger service table and develop merge. Reserve Reservations voucher-only presentation/data projection helper, voucher model, shared PDF/preview leaves, footer English mode, focused tests and own docs. Keep supplier form, canonical Sales allocations, saved independent voucher settings, issue/release/auth/branch/QR guards unchanged. No API/schema/migration/dependency/runtime or historical data edits. Prior affected QR/output scopes released; no overlapping active target writer found.
+
+Validation:90 focused Web/model/PDF/preview tests pass, with two existing opt-in runtime skips; scoped ESLint passes. Local Chromium synthetic one/two/three-page PDFs verified for English service headers, selected passport names, accurate per-person hotel/transfer allocation, custom-stay shading, QR and no overflow. Source locks freeze/release on publication. Full exact-head hosted types/build/quality/test/database gates precede owner-authorized develop merge. No operational mutation.
+
 ## CONTRACT-PDF-FOOTER-1021 — PC-A — IN_PROGRESS
 
 Reserve Sales contract-print presentation and focused PDF regressions only. User authorizes repeated approval/signature footer, IRR label, compact hotel dates/flight route and two-column parties layout, tests and develop merge. Prior print scopes released; no active overlapping target writer found. No data/API/schema/dependency/runtime changes.
@@ -8864,12 +8876,6 @@ HR-UNIFIED-EMPLOYEE-1021:52 focused Web regressions and scoped API/Web lint pass
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-optional-national-id-1022 from develop29517a40. Owner authorizes optional national ID in HR forms/API, tests, push/develop merge and server deployment. Reserve HR resource required-field contract, personnel form validation and focused tests, own docs. Producer/consumer ship together; supplied nonblank IDs retain ten-digit validation and private encryption. No schema/dependency changes. Deployment must inspect actual target, preserve configuration/data and back up before pending migrations. No orchestrator/sub-agents or Radan writes.
 
 HR-OPTIONAL-NATIONAL-ID-1022: owner canceled deployment; scope is push and develop merge only. API8/Web10 and scoped API/Web lint pass. Existing PostgreSQL private-profile create/edit regression now covers blank creation, setting a valid code and clearing it. No SSH/server mutations. Final hosted checks gate merge; source/contract locks freeze on publication.
-
-## RESERVATION-FORM-FOOTER-SERVICES-1022 — PC-A — IN_PROGRESS
-
-COMPUTER_ID=PC-A; branch codex/pc-a-reservation-form-footer-services-1022 from origin/develop73ad32b5. Reserve Reservations form data/footer, sheet/CSS, PDF HTML/preparation and focused output/runtime tests; own status notes. User requests repeating bottom contact footer, current contract passenger-service allocation matrix and English supplier form, and explicitly authorizes develop merge after checks. Existing saved snapshots, voucher behavior, QR capability publication/permissions and manual settings remain authoritative. Read-only Sales snapshot consumption; no API/schema/migration/dependency/runtime or operational data change. Prior affected Reservations/public-document source reservations are released; no active overlapping writer found.
-
-RESERVATION-FORM-FOOTER-SERVICES-1022: final real single/three-page PDFs visually verified including all continuation footers;46 focused regressions, scoped lint and Web build/typecheck passed before final layout parity. Latest-head checks/CI required before user-authorized develop merge; no operational deployment/data change. Source reservation freezes on publication.
 
 ## CONTRACT-CHARTER-INFANTS-1022 — PC-A — RESERVED
 

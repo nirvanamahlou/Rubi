@@ -23,7 +23,7 @@ export async function prepareReservationHtml(
   css: string,
   voucher = false,
   origin = '',
-  language: DisplayLanguage = 'fa',
+  _language: DisplayLanguage = 'fa',
   publicDocumentUrl?: string,
 ): Promise<string> {
   const { fontPath: font } = await resolveTicketPdfRuntime();
@@ -37,7 +37,7 @@ export async function prepareReservationHtml(
       origin,
       publicDocumentUrl,
     ),
-    voucher ? language : 'en',
+    'en',
   );
   if (font) {
     const fontBytes = await readFile(font);
