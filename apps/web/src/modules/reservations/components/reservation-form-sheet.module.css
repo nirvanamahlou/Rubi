@@ -380,7 +380,7 @@
 }
 @page reservationSupplier {
   size: A4;
-  margin: 8.5mm 8.5mm 34mm;
+  margin: 8.5mm;
   @bottom-right {
     content: counter(page) ' / ' counter(pages);
     font: 8pt Arial;
@@ -398,7 +398,11 @@
   }
   .supplierFooter {
     position: fixed;
-    bottom: -27mm;
+    height: 26mm;
+    display: block;
+    bottom: 0;
+    z-index: 10;
+    background: white;
     left: 0;
     right: 0;
     margin: 0;
@@ -408,4 +412,39 @@
 
 .supplierDocument {
   position: relative;
+}
+
+@media print {
+  .supplierFooter > [data-reservation-footer] {
+    position: absolute;
+    top: 2mm;
+    left: 0;
+    right: 0;
+  }
+}
+
+.pagination {
+  width: 100%;
+  border-collapse: collapse;
+}
+.pagination > tbody > tr > td {
+  padding: 0;
+}
+.pagination > tbody > tr {
+  break-inside: auto;
+}
+.pagination > tfoot {
+  display: table-footer-group;
+}
+.pagination > tfoot tr {
+  break-inside: avoid;
+}
+.pagination > tfoot td {
+  height: 30mm;
+  padding: 0;
+}
+@media screen {
+  .pagination > tfoot {
+    display: none;
+  }
 }

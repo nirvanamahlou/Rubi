@@ -653,8 +653,8 @@ it('prints supplier service allocations from the contract and reserves a repeati
     'ALPHA / ONE</td><td dir="auto">-</td><td dir="auto">ADL</td><td dir="auto">✓</td><td dir="auto">-</td><td dir="auto">01 NOV 2026',
   );
   expect(html).toContain('INSURANCE');
-  expect(html).toContain('position:fixed;bottom:-27mm');
-  expect(html).toContain('margin:8.5mm 8.5mm 34mm');
+  expect(html).toContain('position:fixed;height:26mm;display:block;bottom:0');
+  expect(html).toContain('margin:8.5mm');
   expect(html.match(/data-reservation-contact/g)).toHaveLength(1);
   expect(html).not.toMatch(/[\u0600-\u06ff]/);
 });

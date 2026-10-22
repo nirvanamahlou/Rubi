@@ -8868,3 +8868,6 @@ HR-OPTIONAL-NATIONAL-ID-1022: owner canceled deployment; scope is push and devel
 ## RESERVATION-FORM-FOOTER-SERVICES-1022 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-form-footer-services-1022 from origin/develop73ad32b5. Reserve Reservations form data/footer, sheet/CSS, PDF HTML/preparation and focused output/runtime tests; own status notes. User requests repeating bottom contact footer, current contract passenger-service allocation matrix and English supplier form, and explicitly authorizes develop merge after checks. Existing saved snapshots, voucher behavior, QR capability publication/permissions and manual settings remain authoritative. Read-only Sales snapshot consumption; no API/schema/migration/dependency/runtime or operational data change. Prior affected Reservations/public-document source reservations are released; no active overlapping writer found.
+
+RESERVATION-FORM-FOOTER-SERVICES-1022: final real single/three-page PDFs visually verified including all continuation footers;46 focused regressions, scoped lint and Web build/typecheck passed before final layout parity. Latest-head checks/CI required before user-authorized develop merge; no operational deployment/data change. Source reservation freezes on publication.
+

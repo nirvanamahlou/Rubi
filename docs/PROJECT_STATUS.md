@@ -7017,3 +7017,6 @@ National ID is optional in the shared create/edit personnel wizard, generic HR i
 
 Supplier reservation output consumes the contract passenger service allocations for outbound/return flights, hotel stay dates, outbound/return transfers and other services. Registered English reference names and English issuer contact are used. Supplier print layout reserves a repeating bottom contact/QR footer with native page counters and natural room/passenger pagination; voucher workflow and public capability guards remain. Forty-six focused regressions pass; final real PDF visual checks and hosted gates remain required before authorized develop merge. No schema/migration/dependency or operational data/runtime change.
 
+
+Final PDF proof: real Chromium six-passenger single A4 page and eighty-passenger three A4 pages produced successfully; all three continuation images inspected. Contact, email and QR repeat at the bottom with a30mm table-footer reservation and foreground fixed footer, without overlapping passenger rows; native page counters are correct. Registered English names and service allocation checks remain. Local Web production build and typecheck passed; latest scoped checks and hosted final-head checks gate merge.
+
