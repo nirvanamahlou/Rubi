@@ -6945,3 +6945,10 @@ reconnected, no migration or production deployment. See tasks/CALL-CENTER-CALLER
 Row click opens prefilled edit form directly; View independently retains previous
 responsive dossier.2 form tests/lint/types/build pass. Compatible Web build
 .next-row-form activated; Backend unchanged. See tasks/CALL-CENTER-CALLER-EDIT-1022.md.
+
+## CALL-CENTER-DOSSIER-ACTIONS-1022 — PC-C — LOCAL_VERIFIED
+
+Only edit-contact/new-request below identity; removed NextAction and repeated
+completion controls; dossier hides duplicate create/filter controls while shared
+queue remains unchanged.13 tests, scoped lint/typecheck and65-route build pass.
+Local Web .next-dossier-actions activated; no backend/data/schema change.

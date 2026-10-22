@@ -8755,3 +8755,12 @@ Owner clarification: row click opens prefilled CallForm directly; View retains o
 
 Clarified interactions delivered and locally activated after form tests/lint/
 types/build. Release workspace/call-form reservations on push. No backend/data change.
+
+## CALL-CENTER-DOSSIER-ACTIONS-1022 — PC-C — IN_PROGRESS
+
+Owner requests only edit-contact/new-request actions below identity, remove next-action block and dossier duplicate create/filter controls. Reserve workspace/workflow only, clean5c3dc592. Keep WorkQueue controls and backend permissions unchanged; reuse existing request editor and existing-call form.
+
+## CALL-CENTER-DOSSIER-ACTIONS-1022 — PC-C — LOCAL_VERIFIED
+
+Requested dossier actions delivered,13 tests/lint/types/build pass; local Web
+activated. Workspace/workflow source reservation releases on push.

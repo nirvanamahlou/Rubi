@@ -43,3 +43,14 @@ and opens the original responsive dossier (desktop aside/mobile dialog). Existin
 form layout retained; edit title/save label distinguish existing record editing.
 Read/create/workflow scope remains unchanged. No backend/schema/data changes.
 Scoped lint, Web types and2 existing form tests pass.
+
+## CALL-CENTER-DOSSIER-ACTIONS-1022
+
+Identity header now has only edit-contact and new-request actions in owner order.
+Removed NextAction component and its request fetch, advisory phone text and repeated
+completion/edit actions from history. Dossier request list hides create button and
+view filter; shared WorkQueue controls remain. Header create controls existing
+WorkflowEditor with actual selected contact/branch, existing permission and save/
+close handling; no new API, data mutation or permission rule.13 client/form tests,
+Web typecheck and scoped lint pass. Compatible local Web build/health recorded
+in status. Authenticated visual acceptance remains unclaimed.

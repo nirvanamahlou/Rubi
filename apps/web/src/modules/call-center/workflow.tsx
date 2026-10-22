@@ -75,7 +75,13 @@ export function WorkflowPanel({
   onChanged,
   calls = [],
   onLinked,
+  dossier = false,
+  newRequestOpen = false,
+  onRequestClose,
 }: {
+  dossier?: boolean;
+  newRequestOpen?: boolean;
+  onRequestClose?: () => void;
   branchId: string;
   contactId: string;
   canManage: boolean;
@@ -92,11 +98,14 @@ export function WorkflowPanel({
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
-  const [editor, setEditor] = useState<
+  const [localEditor, setEditor] = useState<
     | { kind: 'request'; item?: RequestCase }
     | { kind: 'task'; request: RequestCase; item?: FollowUp }
     | null
   >(null);
+  const editor =
+    localEditor ??
+    (newRequestOpen && canManage ? { kind: 'request' as const } : null);
   const [view, setView] = useState('ALL');
   useEffect(() => {
     const controller = new AbortController();
@@ -159,13 +168,15 @@ export function WorkflowPanel({
     >
       <header>
         <h3>درخواست‌ها و اقدام‌های پیگیری</h3>
-        <button
-          type="button"
-          disabled={!canManage}
-          onClick={() => setEditor({ kind: 'request' })}
-        >
-          درخواست جدید
-        </button>
+        {!dossier && (
+          <button
+            type="button"
+            disabled={!canManage}
+            onClick={() => setEditor({ kind: 'request' })}
+          >
+            درخواست جدید
+          </button>
+        )}
       </header>
       <p>تماس‌های یک شماره می‌توانند مربوط به درخواست‌های متفاوت باشند.</p>
       <nav aria-label="صفحه‌بندی درخواست و اقدام">
@@ -211,17 +222,19 @@ export function WorkflowPanel({
           اقدام‌های قدیمی‌تر
         </button>
       </nav>
-      <NativeSearchSelect
-        aria-label="نمای پیگیری‌های این مخاطب"
-        value={view}
-        onChange={(event) => setView(event.target.value)}
-      >
-        <option value="ALL">همه درخواست‌های این مخاطب</option>
-        <option value="MINE">کارهای من</option>
-        <option value="TODAY">امروز</option>
-        <option value="OVERDUE">عقب‌افتاده</option>
-        <option value="UNASSIGNED">بدون مسئول</option>
-      </NativeSearchSelect>
+      {!dossier && (
+        <NativeSearchSelect
+          aria-label="نمای پیگیری‌های این مخاطب"
+          value={view}
+          onChange={(event) => setView(event.target.value)}
+        >
+          <option value="ALL">همه درخواست‌های این مخاطب</option>
+          <option value="MINE">کارهای من</option>
+          <option value="TODAY">امروز</option>
+          <option value="OVERDUE">عقب‌افتاده</option>
+          <option value="UNASSIGNED">بدون مسئول</option>
+        </NativeSearchSelect>
+      )}
       {loading && <p role="status">در حال دریافت درخواست‌ها…</p>}
       {error && (
         <p role="alert">
@@ -382,11 +395,15 @@ export function WorkflowPanel({
           operators={operators}
           branchId={branchId}
           contactId={contactId}
-          onClose={() => setEditor(null)}
+          onClose={() => {
+            setEditor(null);
+            onRequestClose?.();
+          }}
           onSaved={() => {
             setLoading(true);
             setRevision((value) => value + 1);
             setEditor(null);
+            onRequestClose?.();
             onChanged?.();
           }}
         />

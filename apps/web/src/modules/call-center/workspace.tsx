@@ -59,7 +59,6 @@ import { CallForm } from './call-form';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './workspace.module.css';
 import { ReportHighlights } from './report-highlights';
-import { NextAction } from './next-action';
 const outcomes: Record<string, string> = {
   ANSWERED: 'گفت‌وگو انجام شد',
   NO_ANSWER: 'بدون پاسخ',
@@ -194,6 +193,7 @@ function Content({
     () => onDirty(Object.values(noteDrafts).some((v) => !!v.trim())),
     [noteDrafts, onDirty],
   );
+  const [newRequestOpen, setNewRequestOpen] = useState(false);
   const [selected, setSelected] = useState<ContactSummary | null>(null),
     [draft, setDraft] = useState<CallEvent | null>(null),
     [busy, setBusy] = useState(false);
@@ -715,6 +715,7 @@ function Content({
                           disabled={loading || !!error}
                           onClick={(event) => {
                             event.stopPropagation();
+                            setNewRequestOpen(false);
                             setSelected(row);
                           }}
                           aria-label={`مشاهده تاریخچه ${row.latest.name || 'مخاطب ناشناس'}`}
@@ -780,33 +781,9 @@ function Content({
                 یادداشت ثبت‌نشده این مخاطب حفظ شده است.
               </p>
             )}
-            <p className={styles.formHint}>
-              شماره تلفن به‌تنهایی تأیید هویت نیست.
-            </p>
             <button
               className={styles.followUp}
               data-cc-focus-anchor
-              disabled={
-                !canCreate ||
-                busy ||
-                (selected.latest.origin === 'TELEPHONY' &&
-                  !!selected.latest.needsCompletion &&
-                  !canManage)
-              }
-              onClick={() =>
-                selected.latest.origin === 'TELEPHONY' &&
-                selected.latest.needsCompletion
-                  ? void complete(selected.latest.id)
-                  : open(selected.latest.phone, 'OUTBOUND')
-              }
-            >
-              {selected.latest.origin === 'TELEPHONY' &&
-              selected.latest.needsCompletion
-                ? 'تکمیل اطلاعات تماس'
-                : 'ثبت تماس پیگیری'}
-            </button>
-            <button
-              className={styles.followUp}
               disabled={
                 !canCreate ||
                 !canManage ||
@@ -815,11 +792,19 @@ function Content({
               }
               onClick={() => void complete(selected.latest.id)}
             >
-              ویرایش اطلاعات ثبت‌شده
+              ویرایش اطلاعات مخاطب
+            </button>
+            <button
+              className={styles.followUp}
+              disabled={!canManage}
+              onClick={() => setNewRequestOpen(true)}
+            >
+              درخواست جدید
             </button>
             <History
               key={`${selected.id}:${selected.latest.id}:${historyRevision}`}
-              onComplete={complete}
+              newRequestOpen={newRequestOpen}
+              onRequestClose={() => setNewRequestOpen(false)}
               branch={branch}
               contact={selected}
               text={noteDrafts[selected.id] ?? ''}
@@ -965,9 +950,11 @@ function History({
   text,
   setText,
   onNoteSaved,
-  onComplete,
+  newRequestOpen,
+  onRequestClose,
 }: {
-  onComplete: (id: string) => Promise<void>;
+  newRequestOpen: boolean;
+  onRequestClose: () => void;
   branch: string;
   contact: ContactSummary;
   actorId: string;
@@ -1053,18 +1040,6 @@ function History({
   }
   return (
     <>
-      <NextAction
-        key={contact.id}
-        branch={branch}
-        contactId={contact.id}
-        revision={retry}
-        onOpen={() => {
-          setSection('requests');
-          sectionControls.current
-            ?.querySelector<HTMLButtonElement>('[data-section="requests"]')
-            ?.focus();
-        }}
-      />
       <div
         ref={sectionControls}
         className={styles.dossierTabs}
@@ -1124,21 +1099,6 @@ function History({
               </p>
               <details>
                 <summary>شرح تماس و اطلاعات ثبت</summary>
-                {c.origin !== 'SYNTHETIC' &&
-                  permissions.includes(
-                    'customer_affairs.call_center.calls.create',
-                  ) &&
-                  permissions.includes(
-                    'customer_affairs.call_center.workflow.manage',
-                  ) && (
-                    <button
-                      type="button"
-                      className={styles.view}
-                      onClick={() => void onComplete(c.id)}
-                    >
-                      تکمیل اطلاعات تماس
-                    </button>
-                  )}
                 <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                   {c.note || 'بدون شرح'}
                 </p>
@@ -1172,6 +1132,9 @@ function History({
       </div>
       <div id="cc-dossier-requests" hidden={section !== 'requests'}>
         <WorkflowPanel
+          dossier
+          newRequestOpen={newRequestOpen}
+          onRequestClose={onRequestClose}
           branchId={branch}
           contactId={contact.id}
           actorId={actorId}
