@@ -18,6 +18,7 @@ it('resolves only request members, once per ID, at the trip date', async () => {
   const reservationOutputIdentity = vi.fn(async (id: string) => ({
     customerId: id,
     passportName: 'TEST / ' + id,
+    gender: id === 'a' ? 'M' : 'F',
     hotelChildAgeBand: null,
   }));
   const result = await reservationOutputPassengers(
@@ -26,6 +27,7 @@ it('resolves only request members, once per ID, at the trip date', async () => {
     actor,
   );
   expect(result.map((row) => row.customerId)).toEqual(['a', 'b']);
+  expect(result.map((row) => row.gender)).toEqual(['M', 'F']);
   expect(reservationOutputIdentity.mock.calls.map((call) => call[0])).toEqual([
     'a',
     'b',

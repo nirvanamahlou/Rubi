@@ -28,6 +28,7 @@ export type ReservationFormIntake = ReservationIntakeV1 & {
   outputPassengers?: readonly {
     customerId: string;
     passportName: string | null;
+    gender?: 'M' | 'F' | null;
     hotelChildAgeBand: 'CHD_2_TO_6' | 'CHD_6_TO_12' | null;
   }[];
 };
@@ -167,7 +168,12 @@ export function reservationFormData(
           }
         : {}),
       name: text(identity?.passportName || person?.displayNameSnapshot),
-      sex: '-',
+      sex:
+        identity?.gender === 'M'
+          ? 'Male'
+          : identity?.gender === 'F'
+            ? 'Female'
+            : '-',
       hotelChildAgeBand,
       age:
         !person && !workflow.ageOverrides[id]

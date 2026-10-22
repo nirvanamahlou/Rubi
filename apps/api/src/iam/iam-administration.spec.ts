@@ -12,6 +12,74 @@ const actor = {
 };
 
 describe('IAM administration safety', () => {
+  it('completes the same checked views during new manual-user creation', async () => {
+    const database = {
+      client: {
+        user: {
+          findUnique: vi.fn().mockResolvedValue({
+            roles: [{ role: { code: 'administrator' } }],
+          }),
+        },
+        permission: { findMany: vi.fn().mockResolvedValue([]) },
+      },
+    };
+    const service = new IamService(database as never, {} as never, {} as never);
+    const managed = service as unknown as {
+      managedAccess(
+        dto: unknown,
+        actor: unknown,
+      ): Promise<{ permissionCodes: string[]; screenIds: string[] }>;
+    };
+    const result = await managed.managedAccess(
+      {
+        manualAccessV3: true,
+        accessTitle: 'Arbitrary',
+        permissionIds: [],
+        screenIds: [
+          'customer-affairs.call-center',
+          'integrations.section.connections',
+        ],
+        deniedControlIds: [],
+      },
+      actor,
+    );
+    expect(result.permissionCodes.sort()).toEqual([
+      'customer_affairs.call_center.contacts.read.own',
+      'customer_affairs.call_center.read',
+      'customer_affairs.call_center.reports.read.own',
+    ]);
+    expect(result.screenIds).toEqual(
+      expect.arrayContaining([
+        'integrations.home',
+        'integrations.section.connections',
+        'customer-affairs.call-center',
+      ]),
+    );
+  });
+  it('rejects derived new-user view prerequisites beyond the delegator authority', async () => {
+    const database = {
+      client: {
+        user: { findUnique: vi.fn().mockResolvedValue({ roles: [] }) },
+        permission: { findMany: vi.fn().mockResolvedValue([]) },
+      },
+    };
+    const service = new IamService(database as never, {} as never, {} as never);
+    const managed = service as unknown as {
+      managedAccess(dto: unknown, actor: unknown): Promise<unknown>;
+    };
+    await expect(
+      managed.managedAccess(
+        {
+          manualAccessV3: true,
+          accessTitle: 'Arbitrary',
+          permissionIds: [],
+          screenIds: ['customer-affairs.call-center'],
+          deniedControlIds: [],
+        },
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
   it('cannot delegate legacy broad Call Center authority from a scoped expert grant', async () => {
     const database = {
       client: {

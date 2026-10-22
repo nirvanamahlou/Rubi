@@ -1,4 +1,14 @@
+## USER-SECTION-ACCESS-1022 — PC-B — 2026-10-22
+
+Owner requests a general rule for every selected user and push/develop merge. Shared editor/server prerequisite normalization now completes new Call Center own-read and Integrations root/child selections without team/write escalation, account-name conditions or an existing-user backfill. Full208 Contracts, prior101 Web user-editor, expanded6 Web save,6 real PostgreSQL IAM persistence (187 migrations) and21 IAM policy/administration tests pass. UI/API producer and consumer must roll out together after exact-head hosted checks. No additional production mutation in this follow-up.
+
+Production access repair for the two owner-named users: dedicated screen ticks were saved, but four old Call Center native permissions existed only in seed, not the deployed catalogue. Inserted only those missing choices, then used the existing IAM manual service/CAS/audit to add the selected section's four missing operations to those two users; sticky scope, all other ticks and19 other role fingerprints remain unchanged. Actual Call Center reads pass for both users in five branches; Integrations reads for all nine sections were already allowed. No global seed, other-user grant, session impersonation, password reset or application restart. Additive insert-only migration and regression prevent a seedless-deployment recurrence.37 focused tests plus real PostgreSQL18 repeated-apply preservation proof pass. See [evidence and recovery](tasks/USER-SECTION-ACCESS-1022.md).
+
 ## LOGO-SCAN-EXEMPTION-1022 — PC-B — 2026-10-22
+
+## RESERVATION-PASSENGER-SEX-1022 — PC-A
+
+Customer's branch-authorized reservationOutputIdentity adds registered M/F/null gender to its minimal request-scoped output. Reservation and hotel voucher map it to Male/Female in preview and canonical PDF; missing/unknown gender stays a dash and saved explicit MALE/FEMALE form settings retain precedence. Legacy blank settings fall back to registered identity. No inferred gender, raw DOB/passport exposure, schema/migration/dependency or operational data/runtime changes. Producer Customers and consumer Reservations ship together; optional Web projection remains compatible with older API responses.33 focused Web regressions pass; API/type/build and final hosted gates precede user-authorized develop merge.
 
 ## RESERVATION-FORM-FOOTER-SERVICES-1022 — PC-A
 
@@ -7033,6 +7043,10 @@ Company-inventory outbound selections in round trips reject floating returns in 
 
 Selected load weekday action uses the existing atomic versioned batch command across the same load/direction and Tehran weekday. Keeps each date, unchanged per-flight class/capacity/limits and other weekdays. Flight clocks and overnight arrival remain editable. New schedules default both return bounds to the planned interval; each can be overridden independently, saved edit values remain. Customer/Sales birthday and passport calendars default Gregorian with explicit Gregorian month formatting, manual switching retained. Different hotel stay caption is c.in , cout متفاوت.238 focused tests pass (one existing skip); lint/types/build and exact-head hosted gates precede user-authorized develop merge. No schema, migration, dependency, permission or operational data/runtime changes. Source locks release on candidate publication.
 
+## PASSENGER-SERVICE-AMEND-1022 — PC-A — candidate
+
+Per-passenger correction table now includes flight/transfer membership switches and different hotel check-in/out dates. Reuses canonical Sales amendment, exact versions, inventory command and downstream snapshot publication. Passenger service keys and complete hotel stay metadata drive existing contract, reservation form and voucher renderers. Transfer counts update with membership; inventory command excludes zero-seat legs so existing allocations release while contract flight facts remain for later reactivation. Existing permissions, saved document history and customer identity stay guarded. Six initial interaction/model tests pass, related voucher/output regression and lint/type/build/full hosted checks gate explicitly authorized develop merge. No schema/migration/dependency/runtime or operational changes. Source locks freeze/release on candidate publication.
+
 Integration with merged voucher-services PR1057 retains its independent voucher renderer/component and service allocation/English regressions. Supplier reservation pagination delegates voucher rendering to the preserved implementation; both outputs remain covered.44 combined supplier/voucher regressions pass. No voucher feature is removed; revalidate final head before merge.
 
 
@@ -7141,3 +7155,7 @@ ID prefill; preserved PC-B scoped authorization in new read/edit/detail paths.
 Owner authorizes hosted CI repair, develop merge only after all checks pass and
 latest-develop local rollout. HR source requested because local HR tables are empty.
 See tasks/CALL-CENTER-FINAL-PUBLISH-1022.md and final release receipt.
+
+## LOAD-CONTRACT-TICKET-SYNC-1022 — PC-A — READY_FOR_CI
+
+Authorized current Sales detail/output, reservation panel/purchase context and issued ticket downloads resolve operational flight clocks, carrier, number and class through Ticket Catalog using exact offer IDs and owning branch. Sold/stopped offers remain readable for linked contracts. Saved quotes, financial amounts, alternate sale-route endpoints, issuance numbers and immutable historical/QR artifacts remain intact. Existing draft confirmation refreshes operational clocks before reserve.51 focused API tests pass (one existing opt-in skip), strengthened five projection regressions, scoped lint, API typecheck and API build pass. No schema/migration/dependency/runtime changes or deployment. Exact-head hosted gates precede owner-authorized develop merge.

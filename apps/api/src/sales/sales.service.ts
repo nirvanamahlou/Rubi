@@ -1021,6 +1021,11 @@ export class SalesService {
       ),
       this.buyerCrypto,
     );
+    if (this.tickets.currentSelections)
+      detail.ticketSelections = await this.tickets.currentSelections(
+        detail.ticketSelections,
+        row.branchId,
+      );
     return {
       data: mayReadPayments ? detail : { ...detail, payments: [] },
     };
@@ -1391,7 +1396,13 @@ export class SalesService {
                 throw new ConflictException('اصلاح ظرفیت بلیت در دسترس نیست.');
               await this.tickets.amend(
                 tx,
-                input.ticketSelections ?? [],
+                (input.ticketSelections ?? []).filter((selection) =>
+                  input.passengers.some(
+                    (p) =>
+                      categories[p.customerId] !== 'INF' &&
+                      p.serviceClientKeys.includes(selection.serviceClientKey),
+                  ),
+                ),
                 row.branchId,
                 id,
                 input.passengers.filter(
@@ -1510,6 +1521,11 @@ export class SalesService {
     await this.customers.resolveSnapshot(row.customerId, actor);
     await this.customers.assertPassengers(row.passengers, actor);
     const presented = presentSalesContract(row, undefined, this.buyerCrypto);
+    if (this.tickets.currentSelections)
+      presented.ticketSelections = await this.tickets.currentSelections(
+        presented.ticketSelections,
+        row.branchId,
+      );
     await this.assertPresentedHotelRoomCapacity(presented);
     const seatCount = presented.passengersDetail.filter(
       ({ ageCategory }) => ageCategory !== 'INF',
