@@ -8699,3 +8699,26 @@ real call preserved and zero real offers. No new real answering-call acceptance
 claimed. No UI, popup, mapping/grant, PBX write or actual routing activation.
 Source and sole schema/migration reservation freeze/release on commit/push.
 Handoff and remaining SSH/production gates: docs/tasks/STICKY-SALES-FOUNDATION-1021.md.
+
+## CALL-CENTER-COMPLETION-1022 — PC-C — IN_PROGRESS
+
+Owner requests SSH-independent final workflow: retain LAST answering extension,
+manual business completion of durable native calls, explicit unanswered calls in
+existing list, no automatic popup and no design change. Continue unmerged local
+source13d4c5f1 (required native/sticky prerequisites), fetched developd3880878;
+no active overlap in latest assignments for these bounded files. Reserve Customer
+Affairs call completion/projection/read metadata, native adapter, existing Web form
+and dossier action wiring/tests and own docs. Additive optional response metadata
+only, producer/consumer compatible; no schema/migration/dependency/shared contract
+change. Keep incomplete technical contacts recoverable in existing list/filter,
+reuse existing form to complete same call ID rather than creating a manual duplicate.
+No SSH/PBX writes, permissions, mappings, automatic popup, PR/merge/production.
+
+## CALL-CENTER-COMPLETION-1022 — PC-C — LOCAL_VERIFIED
+
+Delivered completion-in-place, explicit unanswered evidence and late-fact handling,
+existing-form recovery with version token/audit and preserved approved design.41 API
+and21 Web tests pass; scoped lint/typechecks and compatible builds pass. Runtime
+API10520/Web9284 activated, Worker unchanged, zero real offers. No schema/dependency,
+permissions/mappings, SSH, PR/merge or production deployment. Source/contract scope
+freezes/releases on commit/push. Handoff: docs/tasks/CALL-CENTER-COMPLETION-1022.md.

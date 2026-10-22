@@ -26,6 +26,7 @@ export type Status = (typeof statuses)[number];
 export type Direction = 'INBOUND' | 'OUTBOUND';
 /** Module-local UI input, not a published provider API contract. Times are UTC ISO. */
 export interface CallEvent {
+  completionToken?: string;
   id: string;
   phone: string;
   occurredAt: string;
@@ -33,6 +34,7 @@ export interface CallEvent {
   recordings: { id: string; url: string; title: string }[];
 }
 export interface Call extends CallEvent {
+  needsCompletion?: boolean | null;
   ticketId?: string | null;
   outcome?: string | null;
   origin?: string | null;

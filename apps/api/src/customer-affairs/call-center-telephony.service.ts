@@ -192,6 +192,36 @@ export class CallCenterTelephonyService {
         },
       });
     }
+    // Only provider-confirmed unanswered facts affect the business list. A late
+    // answer retracts our provisional label, but never an operator's saved result.
+    const operatorSaved =
+      (technical.unanswered || technical.answered) &&
+      (await tx.customerAffairsAuditEvent.findFirst({
+        where: {
+          entityId: { in: [row.id, row.callId] },
+          action: { in: ['COMPLETE_CALL', 'SAVE'] },
+        },
+        select: { id: true },
+      }));
+    if (
+      !row.completed &&
+      (!operatorSaved || !technical.answered) &&
+      (technical.unanswered || technical.answered)
+    ) {
+      await tx.callCenterCall.updateMany({
+        where: {
+          id: row.callId,
+          outcome: technical.answered ? 'NO_ANSWER' : null,
+        },
+        data: technical.answered
+          ? { outcome: null, status: 'جدید' }
+          : {
+              outcome: 'NO_ANSWER',
+              status: 'بدون پاسخ',
+              needsCompletion: true,
+            },
+      });
+    }
     // Never offer a terminal/stale ring; mapping snapshots are not retroactively rewritten.
     if (
       context.recipient &&
@@ -577,12 +607,19 @@ export class CallCenterTelephonyService {
                 payload,
                 row.call.outcome,
               ),
-              needsCompletion: false,
             },
           });
           await tx.callCenterTelephonySession.update({
             where: { id },
-            data: { completed: true, version: { increment: 1 } },
+            data: {
+              completed: !callSearchMetadata(
+                this.crypto,
+                row.call.contact.branchId,
+                payload,
+                row.call.outcome,
+              ).needsCompletion,
+              version: { increment: 1 },
+            },
           });
         }
       }

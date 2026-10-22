@@ -6,6 +6,7 @@ import type { AuthenticatedActor } from '@nora/contracts';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CallCenterCrypto } from '../../customer-affairs/call-center.crypto';
 import { CallCenterService } from '../../customer-affairs/call-center.service';
+import type { CallCenterCallDto } from '../../customer-affairs/call-center.dto';
 import { CallCenterTelephonyService } from '../../customer-affairs/call-center-telephony.service';
 import { IamCallCenterDirectory } from '../../iam/iam-call-center-directory';
 import { TelephonyIntegrationService } from '../telephony.service';
@@ -986,6 +987,164 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       await expect(events.receive(relay, 'RELAY')).rejects.toMatchObject({
         status: 403,
       });
+    });
+    it('completes one durable call with retry/CAS, scoped access and no offers; preserves operator data after late facts', async () => {
+      const calls = new CallCenterService({ client: db } as never, crypto);
+      const rootId = randomUUID();
+      const event = {
+        ...fact('RINGING'),
+        rootCallId: rootId,
+        externalCallId: rootId,
+        legId: rootId,
+        externalEventId: randomUUID(),
+        extension: null,
+      };
+      const project = (e: typeof event) =>
+        db.$transaction((tx) =>
+          domain.project(tx, e, {
+            branchId,
+            creatorId: userId,
+            synthetic: false,
+            receivedAt: new Date(),
+            recipient: null,
+          }),
+        );
+      const sessionId = await project(event);
+      const session = await db.callCenterTelephonySession.findUniqueOrThrow({
+        where: { id: sessionId },
+      });
+      await project({
+        ...event,
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'UNKNOWN',
+      });
+      expect(
+        (await calls.getCall(session.callId, actor, branchId)).data.outcome,
+      ).toBeNull();
+      await project({
+        ...event,
+        kind: 'ENDED',
+        terminalForCall: false,
+        endReason: 'NO_ANSWER',
+      });
+      let stored = (await calls.getCall(session.callId, actor, branchId)).data;
+      expect(stored).toMatchObject({
+        outcome: 'NO_ANSWER',
+        needsCompletion: true,
+        status: 'بدون پاسخ',
+      });
+      await project({ ...event, kind: 'ANSWERED', endReason: null });
+      stored = (await calls.getCall(session.callId, actor, branchId)).data;
+      expect(stored.outcome).toBeNull();
+      const input = {
+        id: stored.id,
+        phone: stored.phone,
+        occurredAt: stored.occurredAt,
+        completionToken: stored.completionToken,
+        direction: 'INBOUND' as const,
+        name: 'Synthetic caller',
+        subject: 'Synthetic completion',
+        source: 'نامشخص',
+        operator: 'فروش داخلی',
+        note: 'Retain this draft',
+        outcome: 'ANSWERED',
+        status: 'جدید' as const,
+      };
+      const before = await db.callCenterCall.count();
+      await expect(
+        calls.create({ ...input, phone: '+12025550166' }, actor, branchId),
+      ).rejects.toMatchObject({ status: 400 });
+      await expect(
+        calls.create(input, { ...actor, branchIds: [] }, branchId),
+      ).rejects.toMatchObject({ status: 403 });
+      await expect(
+        calls.create(
+          input,
+          {
+            ...actor,
+            permissions: [
+              'customer_affairs.call_center.read',
+              'customer_affairs.call_center.calls.create',
+            ],
+          },
+          branchId,
+        ),
+      ).rejects.toMatchObject({ status: 403 });
+      const partial = await calls.create(input, actor, branchId);
+      expect(partial.data).toMatchObject({
+        id: session.callId,
+        needsCompletion: true,
+        note: 'Retain this draft',
+        origin: 'TELEPHONY',
+      });
+      expect((await calls.create(input, actor, branchId)).data.id).toBe(
+        session.callId,
+      );
+      await expect(
+        calls.create({ ...input, subject: 'Concurrent edit' }, actor, branchId),
+      ).rejects.toMatchObject({ status: 409 });
+      const completed = await calls.create(
+        {
+          ...input,
+          completionToken: partial.data.completionToken,
+          source: 'سایت',
+        },
+        actor,
+        branchId,
+      );
+      expect(completed.data.needsCompletion).toBe(false);
+      await project({
+        ...event,
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'NO_ANSWER',
+      });
+      expect(
+        (await calls.getCall(session.callId, actor, branchId)).data,
+      ).toMatchObject({
+        outcome: 'ANSWERED',
+        note: 'Retain this draft',
+        needsCompletion: false,
+      });
+      expect(await db.callCenterCall.count()).toBe(before);
+      expect(
+        await db.callCenterTelephonyOffer.count({ where: { sessionId } }),
+      ).toBe(0);
+      expect(
+        await db.customerAffairsAuditEvent.count({
+          where: { entityId: session.callId, action: 'COMPLETE_CALL' },
+        }),
+      ).toBe(2);
+      const pendingRoot = randomUUID();
+      const pendingEvent = {
+        ...event,
+        rootCallId: pendingRoot,
+        externalCallId: pendingRoot,
+        legId: pendingRoot,
+      };
+      const pendingId = await project(pendingEvent);
+      const pending = await db.callCenterTelephonySession.findUniqueOrThrow({
+        where: { id: pendingId },
+      });
+      const pendingCall = (await calls.getCall(pending.callId, actor, branchId))
+        .data;
+      const pendingInput: CallCenterCallDto = {
+        ...input,
+        id: pending.callId,
+        completionToken: pendingCall.completionToken,
+      };
+      delete pendingInput.outcome;
+      await calls.create(pendingInput, actor, branchId);
+      await project({
+        ...pendingEvent,
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'NO_ANSWER',
+      });
+      expect(
+        (await calls.getCall(pending.callId, actor, branchId)).data,
+      ).toMatchObject({ outcome: 'NO_ANSWER', needsCompletion: true });
     });
   },
 );

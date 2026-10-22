@@ -32,6 +32,19 @@ const setup = () => {
   return { receipts, lookup, receive };
 };
 describe('native queue capture', () => {
+  it('uses explicit abandonment evidence and never infers no answer from an isolated hangup', async () => {
+    const { receive } = setup();
+    await receive('QueueCallerJoin');
+    expect((await receive('Hangup'))?.endReason).toBe('UNKNOWN');
+    const abandoned = await receive('QueueCallerAbandon');
+    expect(abandoned).toMatchObject({
+      kind: 'ENDED',
+      endReason: 'NO_ANSWER',
+      terminalForCall: false,
+    });
+    expect(await receive('QueueCallerAbandon')).toEqual(abandoned);
+    expect(await receive('QueueCallerAbandon', { queue: 'other' })).toBeNull();
+  });
   it('learns only observed answered Interface and preserves multiple answered transfer legs', async () => {
     expect(
       answeredExtension({

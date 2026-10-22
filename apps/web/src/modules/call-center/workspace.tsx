@@ -60,7 +60,6 @@ import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './workspace.module.css';
 import { ReportHighlights } from './report-highlights';
 import { NextAction } from './next-action';
-import { IssabelDialer } from './issabel-dialer';
 const outcomes: Record<string, string> = {
   ANSWERED: 'گفت‌وگو انجام شد',
   NO_ANSWER: 'بدون پاسخ',
@@ -174,6 +173,10 @@ function Content({
   onDirty: (value: boolean) => void;
 }) {
   const [advanced, setAdvanced] = useState(false);
+  const [completionPrevious, setCompletionPrevious] = useState<Call | null>(
+    null,
+  );
+  const [historyRevision, setHistoryRevision] = useState(0);
   const searchInput = useRef<HTMLInputElement>(null);
   const [filters, setFilters] = useState<SearchFilters>(emptySearch),
     [page, setPage] = useState(1),
@@ -299,6 +302,7 @@ function Content({
     setRefresh((v) => v + 1);
   }
   function open(phone = '', direction: CallEvent['direction'] = 'INBOUND') {
+    setCompletionPrevious(null);
     setDraft({
       id: crypto.randomUUID(),
       phone,
@@ -307,16 +311,34 @@ function Content({
       recordings: [],
     });
   }
+  async function complete(id: string) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const { data } = await callCenterApi.get(branch, id);
+      setCompletionPrevious(data);
+      setDraft(data);
+    } catch (e) {
+      setMessage(reasonText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
   async function save(call: Call) {
     if (busy) return;
     setBusy(true);
     try {
       const r = await callCenterApi.create(branch, call);
+      setHistoryRevision((v) => v + 1);
       setDraft(null);
       setMessage(
         'تماس ذخیره شد؛ برای نمایش ترتیب جدید فهرست را تازه‌سازی کنید.',
       );
-      if (selected && selected.id === r.data.contactId)
+      if (
+        selected &&
+        selected.id === r.data.contactId &&
+        (!call.completionToken || selected.latest.id === r.data.id)
+      )
         setSelected({ ...selected, latest: r.data });
     } finally {
       setBusy(false);
@@ -377,7 +399,6 @@ function Content({
           <Plus size={18} /> ثبت تماس جدید
         </button>
       </header>
-      <IssabelDialer branchId={branch} allowed={canCreate && canManage} />
       <WorkQueue
         branchId={branch}
         actorId={actorId}
@@ -640,7 +661,9 @@ function Content({
                           className={styles.badge}
                           data-outcome={row.latest.outcome}
                         >
-                          {outcomes[row.latest.outcome ?? 'UNKNOWN']}
+                          {row.latest.needsCompletion && !row.latest.outcome
+                            ? 'نیازمند تکمیل'
+                            : outcomes[row.latest.outcome ?? 'UNKNOWN']}
                         </span>
                       </td>
                       <td data-label="جزئیات">
@@ -718,13 +741,28 @@ function Content({
             <button
               className={styles.followUp}
               data-cc-focus-anchor
-              disabled={!canCreate}
-              onClick={() => open(selected.latest.phone, 'OUTBOUND')}
+              disabled={
+                !canCreate ||
+                busy ||
+                (selected.latest.origin === 'TELEPHONY' &&
+                  !!selected.latest.needsCompletion &&
+                  !canManage)
+              }
+              onClick={() =>
+                selected.latest.origin === 'TELEPHONY' &&
+                selected.latest.needsCompletion
+                  ? void complete(selected.latest.id)
+                  : open(selected.latest.phone, 'OUTBOUND')
+              }
             >
-              ثبت تماس پیگیری
+              {selected.latest.origin === 'TELEPHONY' &&
+              selected.latest.needsCompletion
+                ? 'تکمیل اطلاعات تماس'
+                : 'ثبت تماس پیگیری'}
             </button>
             <History
-              key={`${selected.id}:${selected.latest.id}`}
+              key={`${selected.id}:${selected.latest.id}:${historyRevision}`}
+              onComplete={complete}
               branch={branch}
               contact={selected}
               text={noteDrafts[selected.id] ?? ''}
@@ -753,9 +791,10 @@ function Content({
           branchId={branch}
           event={draft}
           previous={
-            selected?.latest.phone === draft.phone
+            completionPrevious ??
+            (selected?.latest.phone === draft.phone
               ? { ...selected.latest, note: '', recordings: [] }
-              : undefined
+              : undefined)
           }
           onSave={save}
           onClose={() => setDraft(null)}
@@ -870,7 +909,9 @@ function History({
   text,
   setText,
   onNoteSaved,
+  onComplete,
 }: {
+  onComplete: (id: string) => Promise<void>;
   branch: string;
   contact: ContactSummary;
   actorId: string;
@@ -1027,6 +1068,22 @@ function History({
               </p>
               <details>
                 <summary>شرح تماس و اطلاعات ثبت</summary>
+                {c.origin === 'TELEPHONY' &&
+                  c.needsCompletion &&
+                  permissions.includes(
+                    'customer_affairs.call_center.calls.create',
+                  ) &&
+                  permissions.includes(
+                    'customer_affairs.call_center.workflow.manage',
+                  ) && (
+                    <button
+                      type="button"
+                      className={styles.view}
+                      onClick={() => void onComplete(c.id)}
+                    >
+                      تکمیل اطلاعات تماس
+                    </button>
+                  )}
                 <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                   {c.note || 'بدون شرح'}
                 </p>

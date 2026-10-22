@@ -7,6 +7,7 @@ export const nativeEventNames = new Set([
   'QueueCallerJoin',
   'AgentCalled',
   'AgentConnect',
+  'QueueCallerAbandon',
   'Hangup',
 ]);
 const identity = (value: string | undefined): value is string =>
@@ -57,12 +58,11 @@ export async function normalizeNativeQueueEvent(
   const anchor = await lookup(anchorId);
   // Do not manufacture calls from unrelated Hangups or a partially observed queue.
   if (!anchor && message.event !== 'QueueCallerJoin') return null;
-  const kind =
-    message.event === 'Hangup'
-      ? 'ENDED'
-      : message.event === 'AgentConnect'
-        ? 'ANSWERED'
-        : 'RINGING';
+  const kind = ['Hangup', 'QueueCallerAbandon'].includes(message.event!)
+    ? 'ENDED'
+    : message.event === 'AgentConnect'
+      ? 'ANSWERED'
+      : 'RINGING';
   const destinationLeg = message.destuniqueid;
   if (
     ['AgentCalled', 'AgentConnect'].includes(message.event!) &&
@@ -74,7 +74,10 @@ export async function normalizeNativeQueueEvent(
     message.event === 'QueueCallerJoin'
       ? anchorId
       : kind === 'ENDED'
-        ? nativeEventId(root, 'end')
+        ? nativeEventId(
+            root,
+            message.event === 'QueueCallerAbandon' ? 'abandon' : 'end',
+          )
         : kind === 'ANSWERED'
           ? firstAnswer && firstAnswer.legId !== destinationLeg
             ? nativeEventId(root, 'answer', destinationLeg)
@@ -107,8 +110,15 @@ export async function normalizeNativeQueueEvent(
     queue: message.queue ?? anchor?.queue ?? null,
     occurredAt,
     sequence: null,
-    terminalForCall: kind === 'ENDED',
-    endReason: kind === 'ENDED' ? (answered ? 'COMPLETED' : 'UNKNOWN') : null,
+    terminalForCall: message.event === 'Hangup',
+    endReason:
+      kind === 'ENDED'
+        ? answered
+          ? 'COMPLETED'
+          : message.event === 'QueueCallerAbandon'
+            ? 'NO_ANSWER'
+            : 'UNKNOWN'
+        : null,
     recordingReference: null,
   };
 }
