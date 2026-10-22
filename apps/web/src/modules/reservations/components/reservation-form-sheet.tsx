@@ -1,4 +1,11 @@
 'use client';
+import {
+  voucherPassengerServices,
+  voucherPassengerCells,
+  voucherServiceColumns,
+  voucherPassengerPageUnits,
+} from '../model/voucher-passenger-services';
+
 import { reservationFormPriceText } from '../model/reservation-form-price';
 import { loadOutputReferences } from '../model/output-references';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -149,6 +156,9 @@ export function ReservationFormSheet({
   const data = voucher
     ? voucherFormData(intake, references)
     : supplierFormData(intake, references);
+  const passengerServices: ReturnType<typeof voucherPassengerServices> = voucher
+    ? voucherPassengerServices(intake, data)
+    : {};
   const settings = voucher
     ? intake.workflow.voucherSettings
     : intake.workflow.supplierFormSettings;
@@ -160,12 +170,7 @@ export function ReservationFormSheet({
   const pages = voucher
     ? reservationPassengerPages(
         data.passengers,
-        settings
-          ? Math.max(
-              6,
-              8 - Math.ceil(Object.values(settings.text).join('').length / 350),
-            )
-          : 10,
+        voucherPassengerPageUnits(settings, data.notes),
       )
     : [data.passengers];
   const roomAppendices =
@@ -174,7 +179,7 @@ export function ReservationFormSheet({
       : [];
   const pageCount = pages.length + roomAppendices.length;
   return (
-    <div className={styles.document}>
+    <div className={styles.document} lang={voucher ? 'en' : undefined}>
       {pages.map((people, page) => {
         const first = pages
           .slice(0, page)
@@ -183,6 +188,7 @@ export function ReservationFormSheet({
           <article
             key={page}
             className={styles.page}
+            data-voucher={voucher || undefined}
             dir="ltr"
             data-reservation-form-page
           >
@@ -435,51 +441,112 @@ export function ReservationFormSheet({
                 </tr>
               </tbody>
             </table>
-            <Heading number="05" title="PASSENGERS" note="Passenger MANIFEST" />
-            <table className={`${styles.table} ${styles.passengers}`}>
-              <colgroup>
-                <col style={{ width: '6%' }} />
-                <col style={{ width: '56%' }} />
-                <col style={{ width: '17%' }} />
-                <col style={{ width: '21%' }} />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>SURNAME / NAME</th>
-                  <th>SEX</th>
-                  <th>AGE RATE</th>
-                  {data.passengers.some((p) => p.checkIn !== undefined) && (
-                    <>
-                      <th>CHECK-IN</th>
-                      <th>CHECK-OUT</th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {people.length ? (
-                  people.map((p, i) => (
-                    <tr key={p.id}>
-                      <td>{String(first + i + 1).padStart(2, '0')}</td>
-                      <td dir="auto">{p.name}</td>
-                      <td>{p.sex}</td>
-                      <td>{p.age}</td>
+            {voucher ? (
+              <>
+                <Heading
+                  number="05"
+                  title="PASSENGER SERVICES"
+                  note="Passenger manifest"
+                />
+                <table className={styles.table + ' ' + styles.voucherServices}>
+                  <colgroup>
+                    {voucherServiceColumns.map(([label, width]) => (
+                      <col key={label} style={{ width: width + '%' }} />
+                    ))}
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      {voucherServiceColumns.map(([label]) => (
+                        <th key={label}>{label}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {people.length ? (
+                      people.map((person, i) => (
+                        <tr key={person.id}>
+                          {voucherPassengerCells(
+                            person,
+                            passengerServices[person.id]!,
+                            first + i + 1,
+                          ).map((cell, column) => (
+                            <td
+                              key={column}
+                              className={
+                                passengerServices[person.id]!.different &&
+                                [6, 7].includes(column)
+                                  ? styles.differentStay
+                                  : undefined
+                              }
+                            >
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={voucherServiceColumns.length}>—</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </>
+            ) : (
+              <>
+                <Heading
+                  number="05"
+                  title="PASSENGERS"
+                  note="Passenger MANIFEST"
+                />
+                <table className={`${styles.table} ${styles.passengers}`}>
+                  <colgroup>
+                    <col style={{ width: '6%' }} />
+                    <col style={{ width: '56%' }} />
+                    <col style={{ width: '17%' }} />
+                    <col style={{ width: '21%' }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>SURNAME / NAME</th>
+                      <th>SEX</th>
+                      <th>AGE RATE</th>
                       {data.passengers.some((p) => p.checkIn !== undefined) && (
                         <>
-                          <td>{p.checkIn ?? '—'}</td>
-                          <td>{p.checkOut ?? '—'}</td>
+                          <th>CHECK-IN</th>
+                          <th>CHECK-OUT</th>
                         </>
                       )}
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4}>-</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {people.length ? (
+                      people.map((p, i) => (
+                        <tr key={p.id}>
+                          <td>{String(first + i + 1).padStart(2, '0')}</td>
+                          <td dir="auto">{p.name}</td>
+                          <td>{p.sex}</td>
+                          <td>{p.age}</td>
+                          {data.passengers.some(
+                            (p) => p.checkIn !== undefined,
+                          ) && (
+                            <>
+                              <td>{p.checkIn ?? '—'}</td>
+                              <td>{p.checkOut ?? '—'}</td>
+                            </>
+                          )}
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4}>-</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </>
+            )}
             <Heading number="06" title="NOTICE" note="Notes & confirmation" />
             <div className={voucher ? styles.voucherClosing : undefined}>
               <div className={styles.notice}>
@@ -504,6 +571,7 @@ export function ReservationFormSheet({
                       intake.workflow.branding?.companyCode,
                       data.brand,
                       publicDocumentUrl,
+                      voucher,
                     ),
                   }}
                 />

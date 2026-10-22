@@ -6,6 +6,89 @@ import { DocumentsRepository } from './documents.repository';
 
 describe('DocumentsRepository source scoping', () => {
   it.each([true, false])(
+    'creates scan jobs only for nonexempt uploads (logo=%s)',
+    async (exempt) => {
+      const create = () => ({ create: vi.fn().mockResolvedValue({}) });
+      const transaction = {
+        document: {
+          ...create(),
+          update: vi.fn(),
+          findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'doc' }),
+        },
+        documentVersion: create(),
+        documentRelation: create(),
+        documentQuarantine: create(),
+        documentProcessingJob: create(),
+        documentAuditEvent: create(),
+      };
+      const repository = new DocumentsRepository(
+        {
+          client: {
+            $transaction: (callback: (value: unknown) => unknown) =>
+              callback(transaction),
+          },
+        } as unknown as DatabaseService,
+        {
+          createWithinTransaction: vi.fn().mockResolvedValue(undefined),
+        } as unknown as NotificationsService,
+      );
+      await repository.createUploaded({
+        documentId: 'doc',
+        versionId: 'version',
+        storageObjectKey: 'private/key',
+        title: 'logo',
+        description: null,
+        documentTypeId: 'type',
+        categoryId: 'category',
+        branchId: 'branch',
+        ownerUserId: 'actor',
+        sourceModule: 'master-data',
+        sourceEntityType: 'hotels',
+        sourceEntityId: 'hotel',
+        sourceDisplayLabel: 'Hotel',
+        confidentiality: 'INTERNAL',
+        requiresStepUpVerification: false,
+        confidentialAccessCodeHash: null,
+        confidentialAccessCodeSalt: null,
+        validUntil: null,
+        originalFileName: 'logo.png',
+        safeDownloadName: 'logo.png',
+        detectedMimeType: 'image/png',
+        extension: 'png',
+        sizeBytes: 12,
+        sha256: 'a'.repeat(64),
+        versionNote: 'logo',
+        actorUserId: 'actor',
+        actorBranchId: 'branch',
+        ipSummary: '',
+        userAgentSummary: '',
+        ...(exempt ? { skipAntivirusForMasterDataLogo: true } : {}),
+      });
+      expect(transaction.documentProcessingJob.create).toHaveBeenCalledTimes(
+        exempt ? 0 : 1,
+      );
+      expect(transaction.documentQuarantine.create).toHaveBeenCalledTimes(
+        exempt ? 0 : 1,
+      );
+      expect(transaction.documentVersion.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            scanStatus: 'AWAITING_ANTIVIRUS_ADAPTER',
+          }),
+        }),
+      );
+      expect(transaction.documentAuditEvent.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            reason: exempt
+              ? 'MASTER_DATA_LOGO_ANTIVIRUS_EXEMPT'
+              : 'UPLOAD_ACCEPTED_TO_QUARANTINE',
+          }),
+        }),
+      );
+    },
+  );
+  it.each([true, false])(
     'initializes only missing fixed brand references when selected membership is %s',
     async (allowed) => {
       const types = vi.fn().mockResolvedValue({ count: 1 });

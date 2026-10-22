@@ -83,8 +83,62 @@ export function ServiceParties({
       children: ages.filter((a) => a !== null && a >= 2 && a < 12).length,
       infants: ages.filter((a) => a !== null && a < 2).length,
     };
+    // Keep passenger links aligned when children are inserted before infant slots.
+    const assignments: NonNullable<SalesFormState['hotelChildAssignments']> =
+      Object.fromEntries(
+        Object.entries(limited ? (state.hotelChildAssignments ?? {}) : {})
+          .filter(([ordinal]) =>
+            next.some((room) => String(room.ordinal) === ordinal),
+          )
+          .map(([ordinal, keys]) => [ordinal, [...keys]]),
+      );
+    if (limited) {
+      for (const room of next) {
+        const previous = rooms.find((r) => r.ordinal === room.ordinal);
+        const keys = state.hotelChildAssignments?.[String(room.ordinal)];
+        if (!previous || !keys) continue;
+        if (
+          previous.childAges.length === room.childAges.length &&
+          previous.childAges.every(
+            (age, i) =>
+              (age !== null && age < 2) ===
+              (room.childAges[i] !== null && room.childAges[i]! < 2),
+          )
+        )
+          continue;
+        const consumed = new Set<number>();
+        assignments[String(room.ordinal)] = room.childAges.map((age) => {
+          const index = previous.childAges.findIndex(
+            (oldAge, i) => oldAge === age && !consumed.has(i),
+          );
+          if (index < 0) return null;
+          consumed.add(index);
+          return keys[index] ?? null;
+        });
+      }
+      const usedKeys = new Set(Object.values(assignments).flat());
+      for (const room of next) {
+        const keys =
+          assignments[String(room.ordinal)] ?? room.childAges.map(() => null);
+        room.childAges.forEach((age, i) => {
+          if (age === null || age >= 2 || keys[i]) return;
+          const choice = childChoices.find(
+            (c) => c.key.startsWith('infant:') && !usedKeys.has(c.key),
+          );
+          if (choice) {
+            keys[i] = choice.key;
+            usedKeys.add(choice.key);
+          }
+        });
+        assignments[String(room.ordinal)] = keys;
+      }
+    }
     const linked = syncHotelChildSelections(
-      { ...state, hotel: { ...state.hotel, rooms: next } },
+      {
+        ...state,
+        hotelChildAssignments: assignments,
+        hotel: { ...state.hotel, rooms: next },
+      },
       salesTravelDate(state),
     );
     patch({
@@ -322,7 +376,8 @@ export function ServiceParties({
                     0,
                     Math.min(20, party.total - othersUsed.total - r.adults),
                   )
-                : 20;
+                : 20 -
+                  r.childAges.filter((age) => age !== null && age < 2).length;
               const rate = rates.find((v) => v.roomTypeId === r.roomTypeId);
               return (
                 <div
@@ -386,7 +441,7 @@ export function ServiceParties({
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <label>
-                      بزرگسال اتاق
+                      تعداد بزرگسال اتاق
                       <Input
                         type="number"
                         min={1}
@@ -403,32 +458,108 @@ export function ServiceParties({
                       />
                     </label>
                     <label>
-                      کودک اتاق
+                      تعداد کودک اتاق
                       <Input
                         type="number"
                         min={0}
                         max={maxChildren}
-                        value={r.childAges.length}
+                        value={
+                          r.childAges.filter((age) => age === null || age >= 2)
+                            .length
+                        }
                         onChange={(e) =>
                           update({
-                            childAges: Array.from(
-                              {
-                                length: Math.max(
-                                  0,
-                                  Math.min(
-                                    maxChildren,
-                                    Number(e.target.value) || 0,
+                            childAges: [
+                              ...Array.from(
+                                {
+                                  length: Math.max(
+                                    0,
+                                    Math.min(
+                                      maxChildren,
+                                      Number(e.target.value) || 0,
+                                    ),
                                   ),
-                                ),
-                              },
-                              (_, j) => r.childAges[j] ?? null,
-                            ),
+                                },
+                                (_, j) =>
+                                  r.childAges.filter(
+                                    (age) => age === null || age >= 2,
+                                  )[j] ?? null,
+                              ),
+                              ...r.childAges.filter(
+                                (age) => age !== null && age < 2,
+                              ),
+                            ],
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      تعداد نوزاد اتاق
+                      <Input
+                        type="number"
+                        min={0}
+                        max={
+                          limited
+                            ? Math.min(
+                                20 -
+                                  r.childAges.filter(
+                                    (age) => age === null || age >= 2,
+                                  ).length,
+                                Math.max(0, party.infants - othersUsed.infants),
+                              )
+                            : 20 -
+                              r.childAges.filter(
+                                (age) => age === null || age >= 2,
+                              ).length
+                        }
+                        value={
+                          r.childAges.filter((age) => age !== null && age < 2)
+                            .length
+                        }
+                        onChange={(e) =>
+                          update({
+                            childAges: [
+                              ...r.childAges.filter(
+                                (age) => age === null || age >= 2,
+                              ),
+                              ...Array.from(
+                                {
+                                  length: Math.max(
+                                    0,
+                                    Math.min(
+                                      Math.min(
+                                        20 -
+                                          r.childAges.filter(
+                                            (age) => age === null || age >= 2,
+                                          ).length,
+                                        limited
+                                          ? Math.max(
+                                              0,
+                                              party.infants -
+                                                othersUsed.infants,
+                                            )
+                                          : 20,
+                                      ),
+                                      Number(e.target.value) || 0,
+                                    ),
+                                  ),
+                                },
+                                (_, j) =>
+                                  r.childAges.filter(
+                                    (age) => age !== null && age < 2,
+                                  )[j] ?? 0,
+                              ),
+                            ],
                           })
                         }
                       />
                     </label>
                   </div>
                   {r.childAges.map((age, j) => {
+                    const infant = age !== null && age < 2;
+                    const ageOrdinal = r.childAges
+                      .slice(0, j + 1)
+                      .filter((a) => (a !== null && a < 2) === infant).length;
                     const selected =
                       state.hotelChildAssignments?.[String(r.ordinal)]?.[j] ??
                       '';
@@ -505,13 +636,13 @@ export function ServiceParties({
                     ) : (
                       <PassengerAgeField
                         key={j}
-                        label={'سن کودک ' + (j + 1)}
+                        label={(infant ? 'سن نوزاد ' : 'سن کودک ') + ageOrdinal}
+                        infant={infant}
                         value={age}
-                        includeInfants
                         onChange={(value) =>
                           update({
                             childAges: r.childAges.map((a, index) =>
-                              index === j ? value : a,
+                              index === j ? (infant ? (value ?? 0) : value) : a,
                             ),
                           })
                         }

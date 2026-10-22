@@ -300,3 +300,32 @@ it('confirms overnight floating tickets through the button and builds a contract
   expect(salesContractOnlyFlights(payload.services)).toHaveLength(2);
   expect(JSON.stringify(payload)).not.toContain('confirmation');
 });
+
+it('rejects a floating return after a company-inventory outbound', () => {
+  const outboundOffer = {
+    id: 'company',
+    originId,
+    destinationId,
+    departureAt: '2026-10-01T06:00:00Z',
+    arrivalAt: '2026-10-01T08:00:00Z',
+    carrierName: 'Air',
+    serviceNumber: '123',
+    cabinClassCode: 'ECONOMY',
+    availableCapacity: 10,
+    remainingCapacity: 10,
+  } as unknown as NonNullable<SalesFormState['outboundOffer']>;
+  const mixed: SalesFormState = {
+    ...state,
+    tripType: 'ROUND_TRIP',
+    outboundOffer,
+    contractFlights: {
+      RETURN: {
+        ...draft,
+        departureAt: '2026-10-02T10:30:00',
+        arrivalAt: '2026-10-02T13:30:00',
+      },
+    },
+  };
+  expect(salesFlightsValid(mixed)).toBe(false);
+  expect(salesSelectedFlightsReady(mixed)).toBe(false);
+});

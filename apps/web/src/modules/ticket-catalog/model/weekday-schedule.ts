@@ -16,7 +16,7 @@ export interface WeekdayStay {
   stayDays: number;
 }
 export const defaultReturnMaxDays = (stayDays: number) =>
-  Math.min(365, stayDays + 1);
+  Math.min(365, stayDays);
 
 export interface ScheduleDate {
   outbound: string;
@@ -107,6 +107,7 @@ export function buildWeekdayTickets(
   batchId: string,
   toUtc: (wall: string, zone: string) => string,
   automaticReturnMax = false,
+  automaticReturnMin = false,
 ): ProductInput[] {
   if (!validReturnWindow(outbound.returnMinDays, outbound.returnMaxDays))
     throw new Error('بازه حداقل و حداکثر روزهای برگشت معتبر نیست.');
@@ -158,12 +159,25 @@ export function buildWeekdayTickets(
         ? batchId + ':' + pair.outbound
         : undefined;
     const going = make(
-      automaticReturnMax && pair.returning
+      (automaticReturnMax || automaticReturnMin) && pair.returning
         ? {
             ...outbound,
-            returnMaxDays: defaultReturnMaxDays(
-              (dateMillis(pair.returning) - dateMillis(pair.outbound)) / DAY,
-            ),
+            ...(automaticReturnMax
+              ? {
+                  returnMaxDays: defaultReturnMaxDays(
+                    (dateMillis(pair.returning) - dateMillis(pair.outbound)) /
+                      DAY,
+                  ),
+                }
+              : {}),
+            ...(automaticReturnMin
+              ? {
+                  returnMinDays: defaultReturnMaxDays(
+                    (dateMillis(pair.returning) - dateMillis(pair.outbound)) /
+                      DAY,
+                  ),
+                }
+              : {}),
           }
         : outbound,
       pair.outbound,
