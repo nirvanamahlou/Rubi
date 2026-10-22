@@ -1,4 +1,6 @@
 {
+  "اتاق مسافر": "Passenger room",
+  "انتخاب اتاق": "Select room",
   "نرخ تومان باید مثبت، حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار باشد.": "The toman rate must be positive, with at most 14 integer digits and 10 decimal places.",
   "قیمت هر واحد ارز به تومان": "Price per currency unit in tomans",
   "قیمت هر واحد به تومان": "Price per unit in tomans",

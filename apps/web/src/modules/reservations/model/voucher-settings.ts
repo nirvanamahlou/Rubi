@@ -83,6 +83,13 @@ export function defaultVoucherSettings(
       id: p.id,
       selected: true,
       roomType: text.roomType,
+      services: {
+        outboundFlight: p.outboundFlight,
+        returnFlight: p.returnFlight,
+        outboundTransfer: p.outboundTransfer,
+        returnTransfer: p.returnTransfer,
+        hotel: Boolean(p.checkIn && p.checkIn !== '-'),
+      },
       sex: p.sex === 'Male' ? 'MALE' : p.sex === 'Female' ? 'FEMALE' : '',
       age: p.age.startsWith('CHD') ? 'CHD' : p.age === 'INF' ? 'INF' : 'ADL',
       hotelChildAgeBand: (p.hotelChildAgeBand ?? '') as
@@ -136,9 +143,9 @@ export function defaultVoucherSettings(
       ...passenger,
       ...saved.passengers?.find((item) => item.id === passenger.id),
       hotelChildAgeBand:
-        passenger.hotelChildAgeBand ||
         saved.passengers?.find((item) => item.id === passenger.id)
-          ?.hotelChildAgeBand ||
+          ?.hotelChildAgeBand ??
+        passenger.hotelChildAgeBand ??
         '',
     })),
   };
@@ -212,11 +219,11 @@ export function voucherFormData(
         ...p,
         age: reservationPassengerAgeLabel(
           setting.age,
-          p.hotelChildAgeBand || setting.hotelChildAgeBand,
+          setting.hotelChildAgeBand || p.hotelChildAgeBand,
         ),
         hotelChildAgeBand:
           setting.age === 'CHD'
-            ? p.hotelChildAgeBand || setting.hotelChildAgeBand
+            ? setting.hotelChildAgeBand || p.hotelChildAgeBand
             : '',
         sex:
           setting.sex === 'MALE'
@@ -336,10 +343,58 @@ export function supplierFormData(
         notes: [settings.text.stayNotes, settings.text.remarks]
           .filter(Boolean)
           .join('\n'),
+        passengers: voucherFormData(
+          {
+            ...intake,
+            workflow: { ...intake.workflow, voucherSettings: settings },
+          },
+          refs,
+        ).passengers.map((person) => {
+          const saved = settings.passengers.find((p) => p.id === person.id);
+          const room = settings.rooms?.find(
+            (r) => r.ordinal === saved?.roomOrdinal,
+          );
+          return {
+            ...person,
+            hotelChildAgeBand: person.hotelChildAgeBand,
+            ...(saved?.services
+              ? {
+                  outboundFlight: saved.services.outboundFlight,
+                  returnFlight: saved.services.returnFlight,
+                  outboundTransfer: saved.services.outboundTransfer,
+                  returnTransfer: saved.services.returnTransfer,
+                  checkIn: saved.services.hotel
+                    ? person.checkIn && person.checkIn !== '-'
+                      ? person.checkIn
+                      : voucherDate(settings.text.checkIn)
+                    : '-',
+                  checkOut: saved.services.hotel
+                    ? person.checkOut && person.checkOut !== '-'
+                      ? person.checkOut
+                      : voucherDate(settings.text.checkOut)
+                    : '-',
+                }
+              : {}),
+            ...(room && saved?.services?.hotel !== false
+              ? {
+                  name: `${person.name} / ROOM ${room.ordinal} - ${englishOutputName(room.roomTypeNameSnapshot, refs)}`,
+                }
+              : {}),
+          };
+        }),
         supplier: englishOutputName(settings.text.broker?.trim() || '-', refs),
         leader: settings.text.leaderLanguage?.trim() || 'Persian',
       }
-    : { ...reservationFormData(intake, refs), leader: 'Persian' };
+    : {
+        ...reservationFormData(intake, refs),
+        passengers: reservationFormData(intake, refs).passengers.map(
+          (person) => ({
+            ...person,
+            hotelChildAgeBand: person.hotelChildAgeBand,
+          }),
+        ),
+        leader: 'Persian',
+      };
 }
 
 /** Stored ISO dates must use the same Gregorian display in previews and PDFs. */
