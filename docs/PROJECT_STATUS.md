@@ -7175,3 +7175,5 @@ Employee creation/editing uses one optional encrypted postal slot and active sha
 ## CALL-ANSWER-DIRECTORY-1022 — implementation in validation
 
 Confirmed answering extension now resolves a branch-scoped HR person/unit display, with explicit shared-extension semantics and encrypted per-call snapshots. Existing form uses that trusted destination without manual selection; completion preserves it server-side. A private connection-scoped bootstrap list supports the owner-supplied screenshots only while local HR is empty. No migration, permission or ownership assignment. Runtime/hosted gates pending; see tasks/CALL-ANSWER-DIRECTORY-1022.md.
+
+CALL-ANSWER-DIRECTORY-1022 local implementation validated and activated:31 API/3 form tests, scoped lint/types/builds pass;16 private staff mappings verified,3000/4000/4409 healthy. No migration, ownership/grant change or historical rewrite. PR1068 hosted gates pending; a subsequent real incoming call remains operational acceptance. Scoped source reservations released on publication.
