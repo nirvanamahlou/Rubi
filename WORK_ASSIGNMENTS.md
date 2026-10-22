@@ -1,4 +1,10 @@
-## LOGO-SCAN-EXEMPTION-1022 — PC-B — IN_PROGRESS
+## LOGO-EXEMPTION-PRODUCTION-PROOF-1022 — PC-B — COMPLETE / SOURCE_RELEASED
+
+COMPUTER_ID=PC-B; branch codex/pc-b-logo-exemption-production-proof-1022 from merged develop e2f7441a. Reserve/release only this task's production acceptance/status notes; no source/schema/dependency/runtime mutation. Native HTTPS bank+hotel save/reopen/replace and immediate previews (74ms/70ms), no scan jobs, exemption audit, MIME/size/CAS/anonymous denials and browser hotel-table logo rendering pass. Own two test records removed via native APIs and logo documents archived. Final source/operational evidence is recorded on PR1051 and server-private rollout artifacts.
+
+## LOGO-SCAN-EXEMPTION-1022 — PC-B — COMPLETE / SOURCE_RELEASED
+
+PR1051 merged normally as e2f7441a after all8 latest exact-head checks passed.215 API and27 logo Web tests pass;7 unrelated Web tests and complete hosted suites also pass after one transient5s timeout retry without policy/source changes. Backed-up API-only rollout preserves the current73ad32b5 application base, Web/Worker, other-document ClamAV and all private config/volumes. No operational migration/seed. Functional production acceptance and own synthetic cleanup pass; bounded source locks released.
 
 COMPUTER_ID=PC-B; branch codex/pc-b-logo-scan-exemption-1022 from develop d3880878. Owner explicitly requests removing antivirus only for Master Data logos, retaining all other controls; authorizes tests, push, develop merge and Avina rollout. Reserve bounded Documents logo upload/preview private policy, repository scan-job opt-out and regressions, Master Data logo warnings/tests and own documentation. No schema/dependency/IAM changes. Ordinary Documents remain scan-gated; unscanned logos never become falsely CLEAN. Exact record/branch, PNG/JPEG magic bytes, size, encryption, CAS and audit remain. Prior logo source locks released. No delegation or worker-orchestrator.
 

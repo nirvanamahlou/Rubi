@@ -1,5 +1,7 @@
 ## LOGO-SCAN-EXEMPTION-1022 — PC-B — 2026-10-22
 
+Production complete: PR1051 merged at e2f7441a after8 green exact-head checks.215 API and27 Web tests, scoped lint and local API build pass; hosted complete quality/types/build/tests/database gates pass. One unrelated Web timeout retried successfully with no source/policy weakening. Verified fresh encrypted backup precedes API-only overlay on current73ad32b5; other application services, private configuration/storage and antivirus for ordinary Documents preserved. Real bank+hotel upload/reopen/replace/immediate preview/no-job/audit and type/size/CAS/anonymous denials pass; fresh browser renders hotel-table logo. Own two synthetic records removed and logo documents archived. Source reservations released; no migration/seed or business-record changes.
+
 Owner authorizes a logo-only antivirus exception, tests, develop merge and Avina rollout. Native logo uploads retain PNG/JPEG/type/size/policy/branch/owner checks and encrypted private storage but create no scan jobs; explicit audit records exemption without claiming CLEAN. Only exact-record logo preview permits unscanned/pending/failed status; known infected/quarantined and ordinary archive delivery remain blocked. CAS/cleanup/permissions unchanged.215 focused API tests and scoped lint pass; build, exact-head CI and backed-up production acceptance pending. No schema/dependencies/migration or orchestrator. See tasks/LOGO-SCAN-EXEMPTION-1022.md.
 
 ## MASTER-LOGO-SAVE-DISPLAY-1021 — PC-B — 2026-10-21
