@@ -449,6 +449,8 @@ export class CallCenterTelephonyService {
         call: this.calls.presentCall(row.call),
         technical: {
           caller: t.first.caller,
+          callerName:
+            t.first.direction === 'IN' ? (t.first.callerName ?? null) : null,
           destination: t.first.destination,
           extension: t.first.extension,
           occurredAt: t.first.occurredAt,

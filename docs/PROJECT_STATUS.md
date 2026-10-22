@@ -6971,3 +6971,12 @@ zero pending dispatch and zero real offers preserved. Worker unchanged.
 No schema/migration/grants, extension mapping, PBX write or production deployment.
 Authenticated visual acceptance remains for owner login. Scope releases on push.
 Details: docs/tasks/CALL-CENTER-REQUEST-FLOW-1022.md.
+## CALL-CENTER-CALLER-NAME-1022 — PC-C
+
+Optional encrypted incoming CallerIDName now reaches the existing attention popup
+as a default only when the saved name is empty. Operator edits remain stable under
+polling; agent-leg names never replace the external anchor name. No new layout,
+permission, schema, migration, routing or PBX activation.17 focused tests pass;
+8 database cases skipped explicitly. Types/lint and production builds checked;
+actual PBX/browser acceptance remains for an authorized real call.
+See tasks/CALL-CENTER-CALLER-NAME-1022.md.

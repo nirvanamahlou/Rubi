@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { TelephonyEventV1, TelephonyNumberV1 } from '@nora/contracts';
 import type { AmiMessage } from './ami';
+import { issabelCallerName } from './caller-name';
 
 /** Native queue capture only. No inferred dialplan, extension owner or outbound call. */
 export const nativeEventNames = new Set([
@@ -93,6 +94,10 @@ export async function normalizeNativeQueueEvent(
     occurredAt = new Date(Number(message.timestamp) * 1000).toISOString();
   }
   const answered = kind === 'ENDED' ? firstAnswer : null;
+  // Never use a later agent leg's display name as the external caller's name.
+  const callerName = anchor
+    ? anchor.callerName
+    : issabelCallerName(message.calleridname);
   return {
     schemaVersion: 1,
     connectionId,
@@ -103,6 +108,7 @@ export async function normalizeNativeQueueEvent(
     kind,
     direction: 'IN',
     caller: anchor?.caller ?? phone(message.calleridnum),
+    ...(callerName ? { callerName } : {}),
     destination: anchor?.destination ?? { kind: 'UNKNOWN', value: null },
     companyLine: null,
     // Technical answer evidence only. Native ingress independently suppresses recipients.

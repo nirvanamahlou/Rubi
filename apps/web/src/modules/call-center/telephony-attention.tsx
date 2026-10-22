@@ -13,6 +13,7 @@ import { callCenterRequest, CallCenterHttpError } from './client';
 import { workflowApi, type Operator } from './workflow-client';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './telephony.module.css';
+import { telephonyDraftName } from './telephony-draft';
 export interface AttentionCall {
   id: string;
   callId: string;
@@ -25,6 +26,7 @@ export interface AttentionCall {
   call: { phone: string; name: string; subject: string; note: string };
   technical: {
     caller: { kind: string; value: string | null };
+    callerName?: string | null;
     destination: { kind: string; value: string | null };
     extension: string | null;
     occurredAt: string;
@@ -147,7 +149,7 @@ function Attention({ branch }: { branch: string }) {
             seen.current.add(incoming.id);
             setCurrent(incoming);
             setDraft({
-              name: incoming.call.name,
+              name: telephonyDraftName(incoming),
               subject: incoming.call.subject,
               note: incoming.call.note,
             });
@@ -217,7 +219,7 @@ function Attention({ branch }: { branch: string }) {
     }
     setCurrent(row);
     setDraft({
-      name: row.call.name,
+      name: telephonyDraftName(row),
       subject: row.call.subject,
       note: row.call.note,
     });

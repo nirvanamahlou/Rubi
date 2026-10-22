@@ -8782,3 +8782,7 @@ completion result delivered. Configurable closure notification path tested; actu
 manager recipient deferred by owner, no delivery configured.15 API/12 Web tests,
 lint/types/builds pass; local API/Web HTTP200. No schema/permission/PBX change.
 Release bounded source/API consumer/IAM directory reservation on commit/push.
+
+## CALL-CENTER-CALLER-NAME-1022 — PC-C — ACTIVE
+
+Owner explicitly requests Caller ID name as the default existing popup contact-name value. Reserve optional callerName internal contract/validation, Issabel native/custom adapters, authorized encrypted technical snapshot and popup default helper/tests only. Preserve saved/operator names, no new UI, schema, grant or PBX activation. Stack on643955c8; preceding request-flow reservation released. Producer/consumer ship together; absent field remains backward-compatible. No main/develop merge authority.

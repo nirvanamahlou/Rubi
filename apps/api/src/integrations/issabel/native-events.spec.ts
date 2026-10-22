@@ -32,6 +32,33 @@ const setup = () => {
   return { receipts, lookup, receive };
 };
 describe('native queue capture', () => {
+  it('does not replace missing external caller name with an agent name', async () => {
+    const { receive } = setup();
+    await receive('QueueCallerJoin');
+    expect(
+      (
+        await receive('AgentCalled', {
+          calleridname: 'Agent name',
+          destuniqueid: 'agent-leg',
+        })
+      )?.callerName,
+    ).toBeUndefined();
+  });
+  it('preserves incoming caller name across agent legs', async () => {
+    const { receive } = setup();
+    expect(
+      (await receive('QueueCallerJoin', { calleridname: 'شرکت نمونه' }))
+        ?.callerName,
+    ).toBe('شرکت نمونه');
+    expect(
+      (
+        await receive('AgentCalled', {
+          calleridname: 'Agent name',
+          destuniqueid: 'leg-2',
+        })
+      )?.callerName,
+    ).toBe('شرکت نمونه');
+  });
   it('uses explicit abandonment evidence and never infers no answer from an isolated hangup', async () => {
     const { receive } = setup();
     await receive('QueueCallerJoin');
