@@ -262,3 +262,40 @@ it('stores the actual hourly remote interval in UTC and clears stale hourly minu
   expect(data.startsAt).toBe('2026-10-20T00:00:00.000Z');
   expect(data.endsAt).toBe('2026-10-21T23:59:59.999Z');
 });
+
+describe('optional HR national ID', () => {
+  it('accepts blank and valid IDs while rejecting malformed supplied IDs', () => {
+    const schema = getHrResource('employee', 'identity')!;
+    const values = [
+      'Synthetic',
+      'Worker',
+      '',
+      '',
+      '',
+      '',
+      'مرد',
+      'مجرد',
+      '',
+      '',
+      'نامشخص',
+      'ایرانی',
+      'نامشخص',
+      '',
+    ];
+    expect(schema.fields[2]?.required).toBe(false);
+    for (const id of ['', '   ', '0123456789', '۰۱۲۳۴۵۶۷۸۹'])
+      expect(() =>
+        recordValues(
+          values.map((v, i) => (i === 2 ? id : v)),
+          schema,
+        ),
+      ).not.toThrow();
+    for (const id of ['123', 'abcdefghij', '01234567890'])
+      expect(() =>
+        recordValues(
+          values.map((v, i) => (i === 2 ? id : v)),
+          schema,
+        ),
+      ).toThrow();
+  });
+});

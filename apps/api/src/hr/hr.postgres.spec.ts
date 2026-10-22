@@ -2594,7 +2594,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       const identity = [
         'Unified',
         'Worker',
-        '0123456789',
+        '',
         '',
         '',
         '1990-01-02',
@@ -2636,7 +2636,12 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           version: created.version,
           firstName: 'Edited',
           lastName: 'Worker',
-          identityValues: ['Edited', ...identity.slice(1)],
+          identityValues: [
+            'Edited',
+            identity[1]!,
+            '0123456789',
+            ...identity.slice(3),
+          ],
           contactValues: [['محل کار', '02187654321']],
           profileRecords: snapshot,
           extension: '0019',
@@ -2755,6 +2760,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
             version: edited.version,
             profileRecords: fresh,
             contactValues: [],
+            identityValues: ['Edited', ...identity.slice(1)],
           },
           admin,
         );
