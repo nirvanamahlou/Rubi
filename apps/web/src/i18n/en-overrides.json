@@ -3988,5 +3988,9 @@
   "نسخه اطلاعات هویتی و تماس الزامی است.": "The identity and contact version snapshot is required.",
   "نسخه اطلاعات هویتی و تماس تغییر کرده است.": "Identity or contact information has changed. Reload the profile.",
   "ورود هتل": "Hotel check-in",
-  "خروج هتل": "Hotel check-out"
+  "خروج هتل": "Hotel check-out",
+  "تعداد بزرگسال اتاق": "Room adult count",
+  "تعداد کودک اتاق": "Room child count",
+  "تعداد نوزاد اتاق": "Room infant count",
+  "برای بلیت رفت از سهمیه شرکت، بلیت برگشت نیز باید از سهمیه شرکت انتخاب شود.": "A company-inventory outbound flight requires a company-inventory return flight."
 }

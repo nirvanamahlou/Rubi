@@ -117,6 +117,7 @@ import {
   emptySalesForm,
   salesInternationalTravel,
   salesFlightSelection,
+  salesReturnRequiresInventory,
   salesFlightsValid,
   salesSelectedFlightsReady,
   patchContractFlight,
@@ -1005,18 +1006,21 @@ export function SalesContractForm() {
         {flightDirections.includes('RETURN') &&
         salesFlightSeats(state, 'RETURN') > 0 ? (
           <section className="grid gap-3 min-w-0">
-            <ContractFlightEditor
-              flightDate={flightRange.to}
-              international={salesInternationalTravel(state)}
-              airlines={references.airlines}
-              value={state.contractFlights?.RETURN}
-              onChange={(value) =>
-                patchState((current) =>
-                  patchContractFlight(current, 'RETURN', value),
-                )
-              }
-            />
-            {!state.contractFlights?.RETURN ? (
+            {!salesReturnRequiresInventory(state) && (
+              <ContractFlightEditor
+                flightDate={flightRange.to}
+                international={salesInternationalTravel(state)}
+                airlines={references.airlines}
+                value={state.contractFlights?.RETURN}
+                onChange={(value) =>
+                  patchState((current) =>
+                    patchContractFlight(current, 'RETURN', value),
+                  )
+                }
+              />
+            )}
+            {!state.contractFlights?.RETURN ||
+            salesReturnRequiresInventory(state) ? (
               <>
                 {!flightDirections.includes('OUTBOUND') ||
                 salesFlightSelection(state, 'OUTBOUND') ? (
