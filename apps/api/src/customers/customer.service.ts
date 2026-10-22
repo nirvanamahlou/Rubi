@@ -736,6 +736,7 @@ export class CustomerService {
     return {
       customerId: id,
       passportName: first && last ? `${last} / ${first}` : null,
+      gender: row.gender === 'M' || row.gender === 'F' ? row.gender : null,
       hotelChildAgeBand,
     };
   }
