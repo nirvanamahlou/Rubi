@@ -7300,3 +7300,21 @@ WorkflowEditor status/priority now use a scoped Radix Select with44px options, s
 Responsible-agent selector now uses the existing SearchCombobox with scoped styling consistent with request status/priority: search icon, person icons, neutral unassigned row,48px options and selected check. Permitted operators, ownerId FormData and missing historical-owner fallback remain unchanged. Query changes do not mark the form dirty; Escape while owner search is expanded closes only that menu, preserving the parent dialog. Existing10 form/search tests and scoped lint pass; final build/browser verification gates runtime activation. No shared selector/API/schema/dependency/permission edits, no business records saved. Source based on local107f56de; concurrent outbound source work preserved. No develop merge requested.
 
 Final proof:10 focused tests, scoped ESLint, formatting, full TypeScript and production Web build65 routes pass. Authenticated browser verified name filtering, selected check, Escape preserving dialog/owner, and cancellation after search without a false unsaved prompt; no business submission. Final Web3000 PID1692 uses .next-owner-final-1024 with popup flag false; API/Worker preserved. Previous own Web processes stopped; screenshot outside Git. Source reservation released on push.
+Optional encrypted incoming CallerIDName now reaches the existing attention popup
+as a default only when the saved name is empty. Operator edits remain stable under
+polling; agent-leg names never replace the external anchor name. No new layout,
+permission, schema, migration, routing or PBX activation.17 focused tests pass;
+8 database cases skipped explicitly. Types/lint and production builds checked;
+actual PBX/browser acceptance remains for an authorized real call.
+See tasks/CALL-CENTER-CALLER-NAME-1022.md.
+
+## STICKY-SALES-PREFLIGHT-1022 — PC-C
+
+SSH-independent last-answerer preparation adds bounded read-only QueueStatus
+projection and permission-checked internal preview with1s deadline/8-work cap.
+Unknown inherited wrap-up policy blocks preference; no value was guessed/configured.
+57 distinct tests pass (10 disposable PostgreSQL), scoped lint/types/API build.
+No Web/runtime/schema/PBX change, no popup or public routing endpoint. Real20s
+fallback remains an SSH-dependent installation and controlled-call acceptance gate.
+See tasks/STICKY-SALES-PREFLIGHT-1022.md. Source branch:
+codex/pc-c-sticky-sales-preflight-1022, approved local prerequisite base d83600a3.

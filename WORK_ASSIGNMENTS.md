@@ -9247,3 +9247,23 @@ Branch codex/pc-c-call-request-selects-1024 from approved local8f10b186. User re
 ## CALL-OWNER-SELECT-1024 — PC-C — COMPLETE / SOURCE_RELEASED
 
 Owner requests modern responsible-agent dropdown matching status/priority. Base107f56de; reserve OwnerSelect-only integration in workflow.tsx, new scoped owner-select component/styles and own docs. Retain shared SearchCombobox keyboard/search behavior, ownerId FormData, permitted operator source and legacy-owner fallback. No shared selector, CallForm, backend, grants or dependency edits; active outbound work preserved in separate checkout. Only previous own Web3000 runtime7744 may be replaced after checks; no develop merge requested.
+17 focused tests, types, scoped lint and contracts/API/Web builds pass;8 PostgreSQL cases explicitly skipped. Local Web3000 HTTP200 build igqcD0ao5lRfjSrJbjLTy and API4000 health ok (PID13204); existing config reused. No real-call/browser acceptance claimed. Source reservation releases on push.
+
+## STICKY-SALES-PREFLIGHT-1022 — PC-C — ACTIVE
+
+Owner authorizes all SSH-independent preparation for last-answerer routing with
+20-second fallback to queue1002. Base d83600a3 preserves approved local stack;
+previous scoped reservations released. Reserve issabel/ami.ts, new queue snapshot
+and decision coordinator/tests, IssabelService internal preview and own docs.
+No Web, schema, dependency, public endpoint, popup, runtime restart or PBX write.
+Read-only QueueStatus candidate collection must not infer unknown queue policy;
+actual prequeue hook, recording continuity and activation await SSH inspection.
+
+## STICKY-SALES-PREFLIGHT-1022 — PC-C — VERIFIED
+
+Read-only bounded QueueStatus collection, explicit inherited wrap-up policy and
+permission-aware internal preview implemented.57 distinct tests pass including
+10 disposable PostgreSQL scenarios. No schema/dependency/Web/runtime/PBX change;
+no public endpoint or popup activation. SSH-dependent hook/real-call acceptance
+remain pending. Scoped reservation releases on commit/push. Details:
+docs/tasks/STICKY-SALES-PREFLIGHT-1022.md.
