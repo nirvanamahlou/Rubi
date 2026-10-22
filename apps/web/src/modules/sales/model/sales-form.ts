@@ -532,7 +532,16 @@ export function salesSelectedFlightsReady(state: SalesFormState): boolean {
   return salesFlightsValid(state);
 }
 
+export function salesReturnRequiresInventory(state: SalesFormState): boolean {
+  return (
+    state.tripType === 'ROUND_TRIP' &&
+    salesFlightSelection(state, 'OUTBOUND')?.source === 'CATALOG'
+  );
+}
+
 export function salesFlightsValid(state: SalesFormState): boolean {
+  if (salesReturnRequiresInventory(state) && state.contractFlights?.RETURN)
+    return false;
   const directions = salesDirections(state, 'FLIGHT').filter(
     (d) =>
       !state.passengers.length ||

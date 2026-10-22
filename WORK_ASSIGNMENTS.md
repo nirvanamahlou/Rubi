@@ -8871,8 +8871,16 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-form-footer-services-1022 from o
 
 RESERVATION-FORM-FOOTER-SERVICES-1022: final real single/three-page PDFs visually verified including all continuation footers;46 focused regressions, scoped lint and Web build/typecheck passed before final layout parity. Latest-head checks/CI required before user-authorized develop merge; no operational deployment/data change. Source reservation freezes on publication.
 
+## CONTRACT-CHARTER-INFANTS-1022 — PC-A — RESERVED
+
+COMPUTER_ID=PC-A; branch codex/pc-a-contract-charter-infants-1022 from origin/develop73ad32b5. User authorizes company-inventory outbound round trips to require company-inventory return, per-room infant controls creating passenger rows, explicit room count labels, tests and develop merge. Reserve Sales form flight guards/editors, room composition/guest-slot models and focused tests, bounded shared/API validation if needed and additive English/offline catalogue entries. Reuse existing room child-age representation for infants where compatible; no migration/dependency or runtime/data writes. Producer/consumer compatibility preserves legacy payload shape. Check current active reservations before any expanded shared scope; source freezes at publication.
+
+CONTRACT-CHARTER-INFANTS-1022 candidate: focused Web77 and final room9 tests pass. No migration/runtime write. Local API/type/build and exact-head CI gate owner-authorized develop merge; bounded source locks freeze with publication.
+
 ## LOAD-DAY-CALENDAR-1022 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-load-day-calendar-1022 from develop e2f7441a. Owner authorizes same-weekday editing across the selected load range, automatic equal Min/Max with independent manual overrides, Gregorian customer birth/passport dates and different-stay label, tests and develop merge. Reserve Ticket Catalog workspace/published form/weekday model and focused tests, Sales people/guest-stay components, Customers calendar defaults/formatters and tests, scoped English entries/derived catalogues, own documentation. Prior matching published source reservations released. Reuse existing atomic reviseOfferBatch with per-row IDs/versions, branch/allocation guards and UTC storage; no schema/API/dependency/IAM/runtime or operational data changes. Selected weekday edits preserve dates, other weekdays and opposite direction. No deployment requested.
 
 LOAD-DAY-CALENDAR-1022:238 focused tests pass (one existing skip). Source/shared-label locks release with candidate publication. No schema/API/dependency/runtime changes; exact-head hosted gates required before owner-authorized merge.
+
+CONTRACT-CHARTER-INFANTS-1022 integration: all8 hosted quality/types/tests/production-build/PostgreSQL gates passed on add15f78. Latest develop introduced only append conflicts in task/status and English display catalogues; both work items and all unique translations retained, derived catalogues regenerated. Production Sales/API patch unchanged. Revalidate integrated head before authorized merge; no runtime/migration/data writes.
