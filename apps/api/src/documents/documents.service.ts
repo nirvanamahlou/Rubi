@@ -106,6 +106,8 @@ export interface SystemContractTemplateDocumentResult {
 }
 
 const MASTER_DATA_LOGO_MAX_BYTES = 5 * 1024 * 1024;
+// Server-only capability: never accepted from a DTO or HTTP query.
+const masterDataLogoScanExemption = Symbol('master-data-logo-antivirus-exempt');
 
 function masterDataLogoMarker(file: UploadedDocumentFile): string {
   const bytes = createHash('sha256')
@@ -932,7 +934,10 @@ export class DocumentsService {
         actor.userId,
       )
     ).rows.find((item) => item.currentVersion?.versionNote === versionNote);
-    if (duplicate?.currentVersion) {
+    if (
+      duplicate?.currentVersion &&
+      !['INFECTED', 'QUARANTINED'].includes(duplicate.currentVersion.scanStatus)
+    ) {
       try {
         // A saved metadata reference is not proof that its encrypted object
         // survived a storage move. Never reuse a missing or corrupt object.
@@ -973,6 +978,7 @@ export class DocumentsService {
       file,
       masterDataLogoActor(actor),
       metadata,
+      masterDataLogoScanExemption,
     );
     return {
       id: uploaded.data.id,
@@ -1060,14 +1066,18 @@ export class DocumentsService {
       row.archiveStatus !== 'ACTIVE' ||
       row.documentType.domain !== 'BRAND' ||
       row.confidentiality !== 'INTERNAL' ||
+      !row.currentVersion ||
+      Number(row.currentVersion.sizeBytes) < 1 ||
+      Number(row.currentVersion.sizeBytes) > MASTER_DATA_LOGO_MAX_BYTES ||
       !ownsReference
     )
       throw new ForbiddenException('لوگوی این رکورد قابل مشاهده نیست.');
     try {
-      return await this.preview(
+      return await this.previewFile(
         row.id,
         masterDataLogoActor(actor, 'documents.file.read'),
         metadata,
+        row,
       );
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT')
@@ -1782,6 +1792,7 @@ export class DocumentsService {
     file: UploadedDocumentFile | undefined,
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
+    scanPolicy?: typeof masterDataLogoScanExemption,
   ): Promise<{ data: DocumentDetailV1 }> {
     if (!file) throw new BadRequestException('انتخاب فایل الزامی است.');
     if (!actor.branchIds.includes(dto.branchId)) {
@@ -1983,8 +1994,14 @@ export class DocumentsService {
         actorBranchId: dto.branchId,
         ipSummary: summarizeIp(metadata.ipAddress),
         userAgentSummary: summarizeUserAgent(metadata.userAgent),
+        ...(scanPolicy === masterDataLogoScanExemption
+          ? { skipAntivirusForMasterDataLogo: true }
+          : {}),
       });
-      if (await this.scanProcessor.processVersion(versionId)) {
+      if (
+        scanPolicy !== masterDataLogoScanExemption &&
+        (await this.scanProcessor.processVersion(versionId))
+      ) {
         const scanned = await this.repository.findDetail(
           documentId,
           actor.branchIds,
@@ -2424,7 +2441,16 @@ export class DocumentsService {
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ): Promise<DocumentFileDelivery> {
-    const row = await this.findVisibleDetail(id, actor);
+    return this.previewFile(id, actor, metadata);
+  }
+
+  private async previewFile(
+    id: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+    authorizedLogo?: DocumentDetailRow,
+  ): Promise<DocumentFileDelivery> {
+    const row = authorizedLogo ?? (await this.findVisibleDetail(id, actor));
     if (!row || !row.currentVersion)
       throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
@@ -2440,11 +2466,17 @@ export class DocumentsService {
     const previewable = previewableImageMimeTypes.has(
       row.currentVersion.detectedMimeType,
     );
+    // Only previewMasterDataLogo can supply this exact, already authorized row.
+    // Unscanned is not CLEAN; general archive preview never gets this exception.
+    const scanAllowed =
+      row.currentVersion.scanStatus === 'CLEAN' ||
+      (authorizedLogo !== undefined &&
+        !['INFECTED', 'QUARANTINED'].includes(row.currentVersion.scanStatus));
     const baseAllowed =
       actor.permissions.includes('documents.file.read') &&
       sensitiveAllowed &&
       row.archiveStatus === 'ACTIVE' &&
-      row.currentVersion.scanStatus === 'CLEAN' &&
+      scanAllowed &&
       previewable;
     const confidentialAccessAllowed = await this.hasConfidentialAccess(
       row,
@@ -2457,16 +2489,15 @@ export class DocumentsService {
         : true;
     const allowed = baseAllowed && confidentialAccessAllowed && stepUpAllowed;
 
-    const denialReason =
-      row.currentVersion.scanStatus !== 'CLEAN'
-        ? 'PREVIEW_SCAN_BLOCKED'
-        : !previewable
-          ? 'PREVIEW_TYPE_UNSUPPORTED'
-          : baseAllowed && !confidentialAccessAllowed
-            ? 'CONFIDENTIAL_CODE_REQUIRED'
-            : baseAllowed && row.requiresStepUpVerification
-              ? 'PREVIEW_STEP_UP_DENIED'
-              : 'PREVIEW_POLICY_DENIED';
+    const denialReason = !scanAllowed
+      ? 'PREVIEW_SCAN_BLOCKED'
+      : !previewable
+        ? 'PREVIEW_TYPE_UNSUPPORTED'
+        : baseAllowed && !confidentialAccessAllowed
+          ? 'CONFIDENTIAL_CODE_REQUIRED'
+          : baseAllowed && row.requiresStepUpVerification
+            ? 'PREVIEW_STEP_UP_DENIED'
+            : 'PREVIEW_POLICY_DENIED';
     await this.repository.appendAudit({
       documentId: row.id,
       versionId: row.currentVersion.id,
@@ -2474,12 +2505,16 @@ export class DocumentsService {
       actorBranchId: row.branchId,
       action: 'documents.file.preview',
       outcome: allowed ? 'SUCCESS' : 'FAILURE',
-      reason: allowed ? metadata.sensitiveReason?.trim() || null : denialReason,
+      reason: allowed
+        ? authorizedLogo
+          ? 'MASTER_DATA_LOGO_ANTIVIRUS_EXEMPT'
+          : metadata.sensitiveReason?.trim() || null
+        : denialReason,
       ipSummary: summarizeIp(metadata.ipAddress),
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
 
-    if (row.currentVersion.scanStatus !== 'CLEAN') {
+    if (!scanAllowed) {
       throw new ConflictException(
         'پیش‌نمایش تا پایان اسکن امنیتی فعال نمی‌شود.',
       );
