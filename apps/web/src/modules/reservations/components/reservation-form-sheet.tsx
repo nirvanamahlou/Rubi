@@ -1,11 +1,5 @@
 'use client';
-import {
-  voucherPassengerServices,
-  voucherPassengerCells,
-  voucherServiceColumns,
-  voucherPassengerPageUnits,
-} from '../model/voucher-passenger-services';
-
+import { VoucherFormSheet } from './voucher-form-sheet';
 import { reservationFormPriceText } from '../model/reservation-form-price';
 import { loadOutputReferences } from '../model/output-references';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -13,7 +7,12 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { reservationFormFooterHtml } from '../model/reservation-form-footer';
 import Image from '@/i18n/image';
 import { voucherFormData, supplierFormData } from '../model/voucher-settings';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import {
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import type { MasterDataResource } from '@nora/contracts';
 import { salesContractFlights } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
@@ -140,6 +139,30 @@ function Heading({
 const subscribeOrigin = () => () => {};
 const browserOrigin = () => window.location.origin;
 const serverOrigin = () => '';
+function PageFlow({
+  voucher,
+  children,
+}: {
+  voucher: boolean;
+  children: ReactNode;
+}) {
+  return voucher ? (
+    <>{children}</>
+  ) : (
+    <table className={styles.pagination}>
+      <tbody>
+        <tr>
+          <td>{children}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>&nbsp;</td>
+        </tr>
+      </tfoot>
+    </table>
+  );
+}
 export function ReservationFormSheet({
   intake,
   logo,
@@ -156,9 +179,6 @@ export function ReservationFormSheet({
   const data = voucher
     ? voucherFormData(intake, references)
     : supplierFormData(intake, references);
-  const passengerServices: ReturnType<typeof voucherPassengerServices> = voucher
-    ? voucherPassengerServices(intake, data)
-    : {};
   const settings = voucher
     ? intake.workflow.voucherSettings
     : intake.workflow.supplierFormSettings;
@@ -170,111 +190,103 @@ export function ReservationFormSheet({
   const pages = voucher
     ? reservationPassengerPages(
         data.passengers,
-        voucherPassengerPageUnits(settings, data.notes),
+        settings
+          ? Math.max(
+              6,
+              8 - Math.ceil(Object.values(settings.text).join('').length / 350),
+            )
+          : 10,
       )
     : [data.passengers];
   const roomAppendices =
-    !settings || settings.flags.hotel
+    voucher && (!settings || settings.flags.hotel)
       ? reservationRoomAppendices(data.roomBreakdown)
       : [];
   const pageCount = pages.length + roomAppendices.length;
+  if (voucher)
+    return (
+      <VoucherFormSheet
+        intake={intake}
+        logo={logo}
+        references={references}
+        voucher
+        publicDocumentUrl={publicDocumentUrl}
+      />
+    );
   return (
-    <div className={styles.document} lang={voucher ? 'en' : undefined}>
-      {pages.map((people, page) => {
-        const first = pages
-          .slice(0, page)
-          .reduce((total, items) => total + items.length, 0);
-        return (
-          <article
-            key={page}
-            className={styles.page}
-            data-voucher={voucher || undefined}
-            dir="ltr"
-            data-reservation-form-page
-          >
-            <header
-              className={
-                settings?.flags.withLetterhead === false
-                  ? styles.plainHeader
-                  : styles.header
-              }
+    <div
+      className={`${styles.document} ${!voucher ? styles.supplierDocument : ''}`}
+    >
+      <PageFlow voucher={voucher}>
+        {pages.map((people, page) => {
+          const first = pages
+            .slice(0, page)
+            .reduce((total, items) => total + items.length, 0);
+          return (
+            <article
+              key={page}
+              className={`${styles.page} ${!voucher ? styles.supplierPage : ''}`}
+              dir="ltr"
+              lang="en"
+              translate="no"
+              data-reservation-form-page
             >
-              <div>
-                <h1>{voucher ? 'HOTEL VOUCHER' : 'RESERVATION FORM'}</h1>
-                <p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p>
-              </div>
-              <div
-                className={`${styles.brand} ${intake.workflow.branding?.kind === 'OWN' && intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? styles.jahanBrand : ''}`}
+              <header
+                className={
+                  settings?.flags.withLetterhead === false
+                    ? styles.plainHeader
+                    : styles.header
+                }
               >
-                {logo && settings?.flags.withLetterhead !== false && (
-                  <Image
-                    className={
-                      intake.workflow.branding?.kind === 'OWN'
-                        ? intake.workflow.branding.companyCode ===
-                          'JAHAN_BASTAN'
-                          ? styles.jahanLogo
-                          : styles.logo
-                        : styles.agencyLogo
-                    }
-                    src={
-                      logo === '/brand/niyayesh-seir-full.png'
-                        ? '/brand/niyayesh.png'
-                        : logo
-                    }
-                    alt={data.brand}
-                    width={196}
-                    height={64}
-                    unoptimized
-                  />
-                )}
-              </div>
-            </header>
-            <div
-              className={`${styles.meta} ${!voucher ? styles.metaWithPrice : ''}`}
-            >
-              {[
-                [voucher ? 'BOOKING NO.' : 'REQUEST NO.', data.request],
-                ['SUPPLIER', data.supplier],
-                ...(!voucher
-                  ? [
-                      [
-                        'PROPOSED PURCHASE PRICE',
-                        reservationFormPriceText(
-                          settings?.hotelPurchasePrices ?? [],
-                          'code',
-                        ) || '-',
-                      ],
-                    ]
-                  : []),
-                [voucher ? 'BOOKING DATE' : 'DATE OF ISSUE', data.issueDate],
-                ['SERVICES', data.services],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <span>{label}</span>
-                  <b dir="auto">{value}</b>
+                <div>
+                  <h1>{voucher ? 'HOTEL VOUCHER' : 'RESERVATION FORM'}</h1>
+                  <p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p>
                 </div>
-              ))}
-            </div>
-            <section className={styles.bookingSection}>
-              <Heading
-                number="01"
-                title="BOOKING SUMMARY"
-                note="Reservation details"
-              />
-              <div className={styles.summary}>
+                <div
+                  className={`${styles.brand} ${intake.workflow.branding?.kind === 'OWN' && intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? styles.jahanBrand : ''}`}
+                >
+                  {logo && settings?.flags.withLetterhead !== false && (
+                    <Image
+                      className={
+                        intake.workflow.branding?.kind === 'OWN'
+                          ? intake.workflow.branding.companyCode ===
+                            'JAHAN_BASTAN'
+                            ? styles.jahanLogo
+                            : styles.logo
+                          : styles.agencyLogo
+                      }
+                      src={
+                        logo === '/brand/niyayesh-seir-full.png'
+                          ? '/brand/niyayesh.png'
+                          : logo
+                      }
+                      alt={data.brand}
+                      width={196}
+                      height={64}
+                      unoptimized
+                    />
+                  )}
+                </div>
+              </header>
+              <div
+                className={`${styles.meta} ${!voucher ? styles.metaWithPrice : ''}`}
+              >
                 {[
-                  ['ADULTS', data.adults],
-                  ['CHILDREN 6-12', data.children6To12],
-                  ['CHILDREN 2-6', data.children2To6],
-                  ...(data.childrenUnclassified
-                    ? [['CHILDREN (UNSPECIFIED)', data.childrenUnclassified]]
+                  [voucher ? 'BOOKING NO.' : 'REQUEST NO.', data.request],
+                  ['SUPPLIER', data.supplier],
+                  ...(!voucher
+                    ? [
+                        [
+                          'PROPOSED PURCHASE PRICE',
+                          reservationFormPriceText(
+                            settings?.hotelPurchasePrices ?? [],
+                            'code',
+                          ) || '-',
+                        ],
+                      ]
                     : []),
-                  ['INFANTS', data.infants],
-                  ['DESTINATION', data.destination],
-                  [
-                    'ROOMS / NIGHTS',
-                    `${data.rooms} ROOMS / ${data.nights} NIGHTS`,
-                  ],
+                  [voucher ? 'BOOKING DATE' : 'DATE OF ISSUE', data.issueDate],
+                  ['SERVICES', data.services],
                 ].map(([label, value]) => (
                   <div key={label}>
                     <span>{label}</span>
@@ -282,253 +294,258 @@ export function ReservationFormSheet({
                   </div>
                 ))}
               </div>
-            </section>
-            <Heading
-              number="02"
-              title="FLIGHT INFORMATION"
-              note="Departure & return · Tehran time"
-            />
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  {['AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'].map((t) => (
-                    <th key={t}>{t}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {(data.flights.length
-                  ? data.flights
-                  : [
-                      {
-                        leg: '-',
-                        airline: '-',
-                        number: '-',
-                        date: '-',
-                        time: '-',
-                      },
-                    ]
-                ).map((f, i) => (
-                  <tr key={i}>
-                    <td dir="auto">{f.airline}</td>
-                    <td>{f.number}</td>
-                    <td>{f.date}</td>
-                    <td>{f.time}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {(!settings || settings.flags.hotel) && (
-              <>
+              <section className={styles.bookingSection}>
                 <Heading
-                  number="03"
-                  title="HOTEL INFORMATION"
-                  note="Accommodation"
+                  number="01"
+                  title="BOOKING SUMMARY"
+                  note="Reservation details"
                 />
-                <table className={styles.table}>
-                  <colgroup>
-                    <col
-                      style={{
-                        width: data.roomBreakdown.length ? '54%' : '34%',
-                      }}
-                    />
-                    <col style={{ width: '19%' }} />
-                    <col style={{ width: '12%' }} />
-                    <col style={{ width: '15%' }} />
-                    {!data.roomBreakdown.length && (
-                      <col style={{ width: '20%' }} />
-                    )}
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      {[
-                        'HOTEL',
-                        'CITY',
-                        'STAR',
-                        'SERVICE',
-                        ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
-                      ].map((t) => (
-                        <th key={t}>{t}</th>
-                      ))}
+                <div className={styles.summary}>
+                  {[
+                    ['ADULTS', data.adults],
+                    ['CHILDREN 6-12', data.children6To12],
+                    ['CHILDREN 2-6', data.children2To6],
+                    ...(data.childrenUnclassified
+                      ? [['CHILDREN (UNSPECIFIED)', data.childrenUnclassified]]
+                      : []),
+                    ['INFANTS', data.infants],
+                    ['DESTINATION', data.destination],
+                    [
+                      'ROOMS / NIGHTS',
+                      `${data.rooms} ROOMS / ${data.nights} NIGHTS`,
+                    ],
+                  ].map(([label, value]) => (
+                    <div key={label}>
+                      <span>{label}</span>
+                      <b dir="auto">{value}</b>
+                    </div>
+                  ))}
+                </div>
+              </section>
+              <Heading
+                number="02"
+                title="FLIGHT INFORMATION"
+                note="Departure & return · Tehran time"
+              />
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    {['AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'].map((t) => (
+                      <th key={t}>{t}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data.flights.length
+                    ? data.flights
+                    : [
+                        {
+                          leg: '-',
+                          airline: '-',
+                          number: '-',
+                          date: '-',
+                          time: '-',
+                        },
+                      ]
+                  ).map((f, i) => (
+                    <tr key={i}>
+                      <td dir="auto">{f.airline}</td>
+                      <td>{f.number}</td>
+                      <td>{f.date}</td>
+                      <td>{f.time}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td dir="auto">{data.hotel}</td>
-                      <td dir="auto">{data.destination}</td>
-                      <td>{data.stars}</td>
-                      <td dir="auto">{data.meal}</td>
+                  ))}
+                </tbody>
+              </table>
+              {(!settings || settings.flags.hotel) && (
+                <>
+                  <Heading
+                    number="03"
+                    title="HOTEL INFORMATION"
+                    note="Accommodation"
+                  />
+                  <table className={styles.table}>
+                    <colgroup>
+                      <col
+                        style={{
+                          width: data.roomBreakdown.length ? '54%' : '34%',
+                        }}
+                      />
+                      <col style={{ width: '19%' }} />
+                      <col style={{ width: '12%' }} />
+                      <col style={{ width: '15%' }} />
                       {!data.roomBreakdown.length && (
-                        <td dir="auto">{data.roomType}</td>
+                        <col style={{ width: '20%' }} />
                       )}
-                    </tr>
-                  </tbody>
-                </table>
-                {data.roomBreakdown.length ? (
-                  <table className={`${styles.table} ${styles.roomBreakdown}`}>
-                    <caption>ROOM QUANTITIES BY TYPE</caption>
+                    </colgroup>
                     <thead>
                       <tr>
                         {[
-                          'ROOM',
-                          'ROOM TYPE',
-                          'ADULTS',
-                          'CHILD AGES',
-                          'GUESTS',
+                          'HOTEL',
+                          'CITY',
+                          'STAR',
+                          'SERVICE',
+                          ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
                         ].map((t) => (
                           <th key={t}>{t}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {data.roomBreakdown.slice(0, 4).map((r) => (
-                        <tr key={r.ordinal}>
-                          <td>{r.ordinal}</td>
-                          <td dir="auto">{r.roomType}</td>
-                          <td>{r.adults}</td>
-                          <td>{r.childAges.join(', ') || '-'}</td>
-                          <td>{r.adults + r.childAges.length}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : null}
-                <div className={styles.accommodationBreakdown}>
-                  <table className={styles.table}>
-                    <caption>STAY DATES</caption>
-                    <thead>
                       <tr>
-                        <th>CHECK-IN</th>
-                        <th>CHECK-OUT</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>{data.checkIn}</td>
-                        <td>{data.checkOut}</td>
+                        <td dir="auto">{data.hotel}</td>
+                        <td dir="auto">{data.destination}</td>
+                        <td>{data.stars}</td>
+                        <td dir="auto">{data.meal}</td>
+                        {!data.roomBreakdown.length && (
+                          <td dir="auto">{data.roomType}</td>
+                        )}
                       </tr>
                     </tbody>
                   </table>
-                </div>
-              </>
-            )}
-            <Heading
-              number="04"
-              title="TOUR SERVICES"
-              note="Leader & excursion"
-            />
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>TRANSFER</th>
-                  <th>TOUR LEADER</th>
-                  <th>EXCURSION</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    {data.transfer}
-                    {voucher && (
-                      <>
-                        {' '}
-                        · Board: {settings?.text.transferBoard?.trim() || '-'}
-                      </>
-                    )}
-                  </td>
-                  <td dir="auto">{data.leader}</td>
-                  <td dir="auto">{data.excursion}</td>
-                </tr>
-              </tbody>
-            </table>
-            {voucher ? (
-              <>
-                <Heading
-                  number="05"
-                  title="PASSENGER SERVICES"
-                  note="Passenger manifest"
-                />
-                <table className={styles.table + ' ' + styles.voucherServices}>
-                  <colgroup>
-                    {voucherServiceColumns.map(([label, width]) => (
-                      <col key={label} style={{ width: width + '%' }} />
-                    ))}
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      {voucherServiceColumns.map(([label]) => (
-                        <th key={label}>{label}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {people.length ? (
-                      people.map((person, i) => (
-                        <tr key={person.id}>
-                          {voucherPassengerCells(
-                            person,
-                            passengerServices[person.id]!,
-                            first + i + 1,
-                          ).map((cell, column) => (
-                            <td
-                              key={column}
-                              className={
-                                passengerServices[person.id]!.different &&
-                                [6, 7].includes(column)
-                                  ? styles.differentStay
-                                  : undefined
-                              }
-                            >
-                              {cell}
-                            </td>
+                  {data.roomBreakdown.length ? (
+                    <table
+                      className={`${styles.table} ${styles.roomBreakdown}`}
+                    >
+                      <caption>ROOM QUANTITIES BY TYPE</caption>
+                      <thead>
+                        <tr>
+                          {[
+                            'ROOM',
+                            'ROOM TYPE',
+                            'ADULTS',
+                            'CHILD AGES',
+                            'GUESTS',
+                          ].map((t) => (
+                            <th key={t}>{t}</th>
                           ))}
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={voucherServiceColumns.length}>—</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </>
-            ) : (
-              <>
-                <Heading
-                  number="05"
-                  title="PASSENGERS"
-                  note="Passenger MANIFEST"
-                />
-                <table className={`${styles.table} ${styles.passengers}`}>
-                  <colgroup>
-                    <col style={{ width: '6%' }} />
-                    <col style={{ width: '56%' }} />
-                    <col style={{ width: '17%' }} />
-                    <col style={{ width: '21%' }} />
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>SURNAME / NAME</th>
-                      <th>SEX</th>
-                      <th>AGE RATE</th>
-                      {data.passengers.some((p) => p.checkIn !== undefined) && (
+                      </thead>
+                      <tbody>
+                        {data.roomBreakdown
+                          .slice(0, voucher ? 4 : undefined)
+                          .map((r) => (
+                            <tr key={r.ordinal}>
+                              <td>{r.ordinal}</td>
+                              <td dir="auto">{r.roomType}</td>
+                              <td>{r.adults}</td>
+                              <td>{r.childAges.join(', ') || '-'}</td>
+                              <td>{r.adults + r.childAges.length}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  ) : null}
+                  <div className={styles.accommodationBreakdown}>
+                    <table className={styles.table}>
+                      <caption>STAY DATES</caption>
+                      <thead>
+                        <tr>
+                          <th>CHECK-IN</th>
+                          <th>CHECK-OUT</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>{data.checkIn}</td>
+                          <td>{data.checkOut}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+              <Heading
+                number="04"
+                title="TOUR SERVICES"
+                note="Leader & excursion"
+              />
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>TRANSFER</th>
+                    <th>TOUR LEADER</th>
+                    <th>EXCURSION</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      {data.transfer}
+                      {voucher && (
+                        <>
+                          {' '}
+                          · Board: {settings?.text.transferBoard?.trim() || '-'}
+                        </>
+                      )}
+                    </td>
+                    <td dir="auto">{data.leader}</td>
+                    <td dir="auto">{data.excursion}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <Heading
+                number="05"
+                title="PASSENGERS"
+                note="Passenger services"
+              />
+              <table className={`${styles.table} ${styles.passengers}`}>
+                <colgroup>
+                  <col style={{ width: '6%' }} />
+                  <col style={{ width: voucher ? '56%' : '20%' }} />
+                  <col style={{ width: voucher ? '17%' : '5%' }} />
+                  <col style={{ width: voucher ? '21%' : '7%' }} />
+                  {!voucher &&
+                    Array.from({ length: 7 }, (_, index) => (
+                      <col key={index} />
+                    ))}
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>SURNAME / NAME</th>
+                    <th>SEX</th>
+                    <th>AGE RATE</th>
+                    {!voucher &&
+                      [
+                        'FLIGHT OUT',
+                        'FLIGHT BACK',
+                        'CHECK-IN',
+                        'CHECK-OUT',
+                        'TRANSFER OUT',
+                        'TRANSFER BACK',
+                        'OTHER SERVICES',
+                      ].map((label) => <th key={label}>{label}</th>)}
+                    {voucher &&
+                      data.passengers.some((p) => p.checkIn !== undefined) && (
                         <>
                           <th>CHECK-IN</th>
                           <th>CHECK-OUT</th>
                         </>
                       )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {people.length ? (
-                      people.map((p, i) => (
-                        <tr key={p.id}>
-                          <td>{String(first + i + 1).padStart(2, '0')}</td>
-                          <td dir="auto">{p.name}</td>
-                          <td>{p.sex}</td>
-                          <td>{p.age}</td>
-                          {data.passengers.some(
+                  </tr>
+                </thead>
+                <tbody>
+                  {people.length ? (
+                    people.map((p, i) => (
+                      <tr key={p.id}>
+                        <td>{String(first + i + 1).padStart(2, '0')}</td>
+                        <td dir="auto">{p.name}</td>
+                        <td>{p.sex}</td>
+                        <td>{p.age}</td>
+                        {!voucher && (
+                          <>
+                            <td>{p.outboundFlight ? '✓' : '-'}</td>
+                            <td>{p.returnFlight ? '✓' : '-'}</td>
+                            <td>{p.checkIn ?? '-'}</td>
+                            <td>{p.checkOut ?? '-'}</td>
+                            <td>{p.outboundTransfer ? '✓' : '-'}</td>
+                            <td>{p.returnTransfer ? '✓' : '-'}</td>
+                            <td>{p.otherServices}</td>
+                          </>
+                        )}
+                        {voucher &&
+                          data.passengers.some(
                             (p) => p.checkIn !== undefined,
                           ) && (
                             <>
@@ -536,59 +553,73 @@ export function ReservationFormSheet({
                               <td>{p.checkOut ?? '—'}</td>
                             </>
                           )}
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={4}>-</td>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </>
-            )}
-            <Heading number="06" title="NOTICE" note="Notes & confirmation" />
-            <div className={voucher ? styles.voucherClosing : undefined}>
-              <div className={styles.notice}>
-                <span>SPECIAL REQUESTS / REMARKS</span>
-                <p dir="auto">{data.notes || '\u00a0'}</p>
-                <div />
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4}>-</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              <Heading number="06" title="NOTICE" note="Notes & confirmation" />
+              <div className={voucher ? styles.voucherClosing : undefined}>
+                <div className={styles.notice}>
+                  <span>SPECIAL REQUESTS / REMARKS</span>
+                  <p dir="auto">{data.notes || '\u00a0'}</p>
+                  <div />
+                </div>
+                {voucher && (
+                  <div className={styles.stamp}>
+                    <strong>STAMP</strong>
+                  </div>
+                )}
               </div>
               {voucher && (
-                <div className={styles.stamp}>
-                  <strong>STAMP</strong>
-                </div>
+                <footer className={styles.footer}>
+                  {
+                    <div
+                      data-reservation-footer
+                      dangerouslySetInnerHTML={{
+                        __html: reservationFormFooterHtml(
+                          intake.id,
+                          origin,
+                          intake.workflow.branding?.companyCode,
+                          data.brand,
+                          publicDocumentUrl,
+                        ),
+                      }}
+                    />
+                  }
+                  <div>
+                    <span>{''}</span>
+                  </div>
+                  <b>{voucher ? `${page + 1} / ${pageCount}` : ''}</b>
+                </footer>
               )}
-            </div>
-            <footer className={styles.footer}>
-              {
-                <div
-                  data-reservation-footer
-                  dangerouslySetInnerHTML={{
-                    __html: reservationFormFooterHtml(
-                      intake.id,
-                      origin,
-                      intake.workflow.branding?.companyCode,
-                      data.brand,
-                      publicDocumentUrl,
-                      voucher,
-                    ),
-                  }}
-                />
-              }
-              <div>
-                <span>{''}</span>
-              </div>
-              <b>
-                {page + 1} / {pageCount}
-              </b>
-            </footer>
-          </article>
-        );
-      })}
+            </article>
+          );
+        })}
+      </PageFlow>
+      {!voucher && (
+        <footer className={`${styles.footer} ${styles.supplierFooter}`}>
+          <div
+            data-reservation-footer
+            dangerouslySetInnerHTML={{
+              __html: reservationFormFooterHtml(
+                intake.id,
+                origin,
+                intake.workflow.branding?.companyCode,
+                data.brand,
+                publicDocumentUrl,
+              ),
+            }}
+          />
+        </footer>
+      )}
       {roomAppendices.map((rooms, index) => (
         <article
-          className={styles.page}
+          className={`${styles.page} ${!voucher ? styles.supplierPage : ''}`}
           key={`rooms-${index}`}
           dir="ltr"
           data-reservation-form-page

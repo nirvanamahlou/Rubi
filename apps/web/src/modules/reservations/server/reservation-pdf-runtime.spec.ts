@@ -23,7 +23,8 @@ it.runIf(process.env.RESERVATION_PDF_RUNTIME_SMOKE === '1')(
         passengerAssignments: ids.map((customerId, index) => ({
           customerId,
           displayNameSnapshot: `SYNTHETIC PASSENGER ${index + 1}`,
-          ageCategory: 'ADL',
+          ageCategory: 'ADT',
+          serviceClientKeys: [],
         })),
         serviceSelections: [],
         hotelSelection: null,
@@ -75,10 +76,45 @@ it.runIf(process.env.RESERVATION_PDF_RUNTIME_SMOKE === '1')(
       expect(info.status).toBe(0);
       expect(info.stdout).toMatch(/^Pages:\s+1$/m);
       expect(info.stdout).toMatch(/^Page size:.*\(A4\)/m);
+      const large = structuredClone(intake);
+      large.snapshot.passengerIds = Array.from(
+        { length: 80 },
+        (_, i) => 'guest-' + i,
+      );
+      large.workflow.roomOrder = [...large.snapshot.passengerIds];
+      large.snapshot.passengerAssignments = large.snapshot.passengerIds.map(
+        (customerId, i) => ({
+          customerId,
+          displayNameSnapshot: `SYNTHETIC GUEST ${String(i + 1).padStart(3, '0')}`,
+          ageCategory: 'ADT',
+          serviceClientKeys: [],
+        }),
+      ) as never;
+      large.workflow.supplierFormSettings = defaultVoucherSettings(large, {});
+      const multi = await renderReservationPdf(
+        large,
+        {},
+        `data:image/png;base64,${logo.toString('base64')}`,
+        css,
+        false,
+        'https://example.test',
+      );
+      await writeFile(
+        join(tmpdir(), 'reservation-multipage-footer.pdf'),
+        multi,
+      );
+      const multiInfo = spawnSync('pdfinfo', ['-'], {
+        input: multi,
+        encoding: 'utf8',
+      });
+      expect(multiInfo.status).toBe(0);
+      expect(
+        Number(multiInfo.stdout.match(/^Pages:\s+(\d+)/m)?.[1]),
+      ).toBeGreaterThan(1);
     } finally {
       if (previousFont === undefined) delete process.env.SALES_PDF_NAZANIN_PATH;
       else process.env.SALES_PDF_NAZANIN_PATH = previousFont;
     }
   },
-  60_000,
+  180_000,
 );
