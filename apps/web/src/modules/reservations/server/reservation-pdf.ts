@@ -37,7 +37,7 @@ export async function prepareReservationHtml(
       origin,
       publicDocumentUrl,
     ),
-    language,
+    voucher ? 'en' : language,
   );
   if (font) {
     const fontBytes = await readFile(font);
