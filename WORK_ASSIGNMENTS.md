@@ -9027,3 +9027,13 @@ completion result delivered. Configurable closure notification path tested; actu
 manager recipient deferred by owner, no delivery configured.15 API/12 Web tests,
 lint/types/builds pass; local API/Web HTTP200. No schema/permission/PBX change.
 Release bounded source/API consumer/IAM directory reservation on commit/push.
+
+## CALL-CENTER-FINAL-PUBLISH-1022 — PC-C — ACTIVE
+
+Owner explicitly authorizes final local ERP stack publication, CI repair until all
+checks pass, develop merge and local rollout. Source643955c8 merged into current
+develop3cde6df3 with PC-B scoped authorization retained. Owner also explicitly
+approves independent snapshot/completion of active Caller ID unit; original dirty
+worktree preserved. Reserve only integration fixes to these changed files, CI,
+release docs and local build artifacts. HR export is read-only outside Git and
+awaits owner source decision because operational local HR has zero rows.

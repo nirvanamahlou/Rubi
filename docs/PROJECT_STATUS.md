@@ -7133,3 +7133,11 @@ zero pending dispatch and zero real offers preserved. Worker unchanged.
 No schema/migration/grants, extension mapping, PBX write or production deployment.
 Authenticated visual acceptance remains for owner login. Scope releases on push.
 Details: docs/tasks/CALL-CENTER-REQUEST-FLOW-1022.md.
+
+## CALL-CENTER-FINAL-PUBLISH-1022 — PC-C — RELEASE_CANDIDATE
+
+Combined approved local call-center stack with current develop and optional Caller
+ID prefill; preserved PC-B scoped authorization in new read/edit/detail paths.
+Owner authorizes hosted CI repair, develop merge only after all checks pass and
+latest-develop local rollout. HR source requested because local HR tables are empty.
+See tasks/CALL-CENTER-FINAL-PUBLISH-1022.md and final release receipt.

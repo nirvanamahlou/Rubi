@@ -177,7 +177,7 @@ export class CallCenterService {
       'customer_affairs.call_center.read',
     );
     const row = await this.database.client.callCenterCall.findFirst({
-      where: { id, contact: { branchId } },
+      where: { id, contact: await this.access.where(actor, branchId) },
     });
     if (!row) throw new NotFoundException();
     return { data: this.presentCall(row) };
@@ -239,6 +239,14 @@ export class CallCenterService {
           include: { telephonySession: true },
         });
         if (!existing) throw new NotFoundException();
+        if (this.access.scoped(actor))
+          await this.access.contact(
+            actor,
+            branchId,
+            existing.contactId,
+            'workflow',
+            tx,
+          );
         const presented = this.presentCall(existing);
         if (
           payload.phone !== presented.phone ||
@@ -270,6 +278,8 @@ export class CallCenterService {
             'کارشناس دیگری مسئول تکمیل این تماس است.',
           );
         if (input.ticketId) {
+          if (this.access.scoped(actor))
+            await this.access.request(actor, branchId, input.ticketId, tx);
           await tx.$queryRaw`SELECT id FROM customer_affairs_tickets WHERE id=${input.ticketId}::uuid FOR SHARE`;
           const ticket = await tx.customerAffairsTicket.findFirst({
             where: {

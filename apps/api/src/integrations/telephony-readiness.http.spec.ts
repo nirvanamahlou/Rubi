@@ -20,15 +20,13 @@ describe('telephony readiness HTTP boundary', () => {
     TELEPHONY_RELAY_SECRET: secret,
     TELEPHONY_RELAY_CONNECTION_ID: id,
   });
-  const read = vi
-    .fn()
-    .mockResolvedValue({
-      audio: Buffer.from([1, 2]),
-      start: 1,
-      end: 2,
-      size: 44,
-      partial: true,
-    });
+  const read = vi.fn().mockResolvedValue({
+    audio: Buffer.from([1, 2]),
+    start: 1,
+    end: 2,
+    size: 44,
+    partial: true,
+  });
   const receive = vi.fn().mockResolvedValue({ id, duplicate: false });
   beforeAll(async () => {
     const module = await Test.createTestingModule({

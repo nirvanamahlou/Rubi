@@ -88,15 +88,13 @@ describe('telephony readiness boundaries', () => {
       expect(() => recordingRange(range, 100)).toThrow();
   });
   it('serves audio privately and forwards the current actor/range to the authorization service', async () => {
-    const read = vi
-      .fn()
-      .mockResolvedValue({
-        partial: true,
-        start: 1,
-        end: 2,
-        size: 44,
-        audio: Buffer.from([1, 2]),
-      });
+    const read = vi.fn().mockResolvedValue({
+      partial: true,
+      start: 1,
+      end: 2,
+      size: 44,
+      audio: Buffer.from([1, 2]),
+    });
     const controller = new TelephonyRecordingReadController({ read } as never);
     const response = {
       set: vi.fn(),
