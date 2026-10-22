@@ -170,7 +170,7 @@ describe('Legacy HR preview and migration regression fixtures', () => {
       'نوع همکاری',
       'شعبه',
       'واحد',
-      'سمت',
+      'عنوان شغلی',
       'رده شغلی',
       'مدیر مستقیم',
       'تاریخ شروع',
@@ -232,7 +232,7 @@ describe('Legacy HR preview and migration regression fixtures', () => {
       firstName: 'نام الزامی است.',
       lastName: 'نام خانوادگی الزامی است.',
       personnelCode: 'این کد پرسنلی قبلاً استفاده شده است.',
-      position: 'سمت الزامی است.',
+      position: 'عنوان شغلی الزامی است.',
       startedAt: 'تاریخ شروع همکاری الزامی است.',
     });
     expect(
@@ -273,7 +273,7 @@ describe('Legacy HR preview and migration regression fixtures', () => {
     expect(chart).toContain('عملیات سفر');
     expect(chart.match(/ویرایش /g)?.length ?? 0).toBe(5);
     expect(chart.match(/حذف /g)?.length ?? 0).toBe(5);
-    expect(chart).toContain('۲ سمت');
+    expect(chart).toContain('۲ عنوان شغلی');
     expect(chart).toContain('data-edge-count="3"');
 
     const form = renderToStaticMarkup(
@@ -296,7 +296,7 @@ describe('Legacy HR preview and migration regression fixtures', () => {
       'شعبه',
       'واحد والد',
       'مسئول / مدیر',
-      'ظرفیت سمت‌ها',
+      'ظرفیت عنوان‌های شغلی',
       'تاریخ اثر',
     ])
       expect(form).toContain(label);
@@ -384,7 +384,7 @@ describe('Legacy HR preview and migration regression fixtures', () => {
       name: 'عنوان ساختار الزامی است.',
       branch: 'شعبه الزامی است.',
       parentId: 'واحد سازمانی باید یک والد داشته باشد.',
-      positionCapacity: 'ظرفیت سمت باید عددی بین صفر تا ۹۹۹۹ باشد.',
+      positionCapacity: 'ظرفیت عنوان شغلی باید عددی بین صفر تا ۹۹۹۹ باشد.',
       effectiveFrom: 'تاریخ اثر الزامی است.',
     });
   });

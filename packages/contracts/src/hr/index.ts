@@ -19,6 +19,7 @@ export const HR_PERMISSION_CODES = [
 ] as const;
 
 export interface HrEmployeeDto {
+  jobTitleId?: string | null;
   extension?: string;
   id: string;
   personnelCode: string;
@@ -40,6 +41,7 @@ export interface HrEmployeeDto {
 }
 
 export interface HrRecordDto {
+  jobTitleId?: string | null;
   id: string;
   code: string;
   branchId: string;
@@ -110,6 +112,7 @@ export interface HrContractStateCommand {
 }
 
 export interface HrEmployeeCreate {
+  jobTitleId?: string;
   /** Internal business phone extension; omit to preserve on edit, blank/null clears. */
   extension?: string | null;
   /** Optional atomic private personnel profile, using the existing identity/phone schemas. */
@@ -170,6 +173,8 @@ export interface HrNotificationDto {
   readAt: string | null;
 }
 export interface HrBootstrapDto {
+  /** Shared non-sensitive catalogue; operational records retain branch authorization. */
+  jobTitles?: { id: string; name: string; status: string }[];
   employees: HrEmployeeDto[];
   records: HrRecordDto[];
   capabilities: {

@@ -155,6 +155,12 @@ export function recordValues(
     ...value,
     ...Array(Math.max(0, schema.columns.length - value.length)).fill(''),
   ];
+  if (
+    schema.key === 'organization.positions' &&
+    !padded[1] &&
+    typeof padded[0] === 'string'
+  )
+    padded[1] = padded[0];
   return validateCompletionValues(
     schema.key,
     schema.columns,

@@ -106,7 +106,7 @@ export const hrHubCards: readonly HrHubCard[] = [
   {
     id: 'organization',
     title: 'ساختار سازمانی',
-    description: 'شعبه، واحد، شغل، سمت، مدیر مستقیم و چارت تاریخی',
+    description: 'شعبه، واحد، عنوان شغلی، مدیر مستقیم و چارت تاریخی',
     icon: Building2,
     tone: 'cyan',
     pills: ['HR03', 'HR04', 'HR05'],
@@ -259,7 +259,7 @@ export const sectionTabs: Readonly<
     { id: 'orgchart', label: 'چارت سازمانی', icon: Network },
     { id: 'branches', label: 'شعبه‌ها', icon: Building2 },
     { id: 'units', label: 'واحدها', icon: Building2 },
-    { id: 'positions', label: 'شغل و سمت', icon: WalletCards },
+    { id: 'positions', label: 'عنوان‌های شغلی', icon: WalletCards },
   ],
   recruitment: [
     { id: 'staffing', label: 'برنامه نیروی انسانی', icon: BarChart3 },
@@ -390,7 +390,7 @@ export const screenMeta: Readonly<
   organization: {
     title: 'ساختار سازمانی',
     description:
-      'شعبه، واحد، شغل، سمت، مدیر مستقیم و چارت تاریخی مبتنی بر تاریخ اثر',
+      'شعبه، واحد، عنوان شغلی، مدیر مستقیم و چارت تاریخی مبتنی بر تاریخ اثر',
   },
   recruitment: {
     title: 'جذب و استخدام',

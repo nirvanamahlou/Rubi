@@ -59,6 +59,7 @@ const employeeExtensionProjection = {
   take: 1,
 } as const;
 const employeeKeys = [
+  'jobTitleId',
   'extension',
   'identityValues',
   'contactValues',
@@ -269,6 +270,7 @@ export class HrService {
     return {
       id: row.id,
       personnelCode: row.personnelCode,
+      jobTitleId: row.jobTitleId,
       extension: String(
         (row.records?.[0]?.values as string[] | undefined)?.[0] ?? '',
       ),
@@ -375,6 +377,7 @@ export class HrService {
       tab: row.tab,
       employeeId: row.employeeId,
       parentId: row.parentId,
+      jobTitleId: row.jobTitleId,
       columns: [...schema.columns],
       values: sensitive ? schema.columns.map(() => '••••') : values,
       status: row.status,
@@ -395,27 +398,43 @@ export class HrService {
       this.has(actor, 'hr.manage') && this.has(actor, 'hr.approve')
         ? await this.applyDue(actor)
         : [];
-    const [employees, records, recordCount, options] = await Promise.all([
-      this.database.client.hrEmployee.findMany({
-        where: this.employeeScope(actor),
-        include: {
-          manager: { select: { name: true } },
-          organizationBranch: true,
-          records: employeeExtensionProjection,
-        },
-        orderBy: { name: 'asc' },
-        take: 2000,
-      }),
-      this.database.client.hrRecord.findMany({
-        where: this.recordScope(actor),
-        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-        take: 500,
-      }),
-      this.database.client.hrRecord.count({ where: this.recordScope(actor) }),
-      this.iam.listRolesAndBranches(),
-    ]);
+    const [employees, records, recordCount, options, jobTitles] =
+      await Promise.all([
+        this.database.client.hrEmployee.findMany({
+          where: this.employeeScope(actor),
+          include: {
+            manager: { select: { name: true } },
+            organizationBranch: true,
+            records: employeeExtensionProjection,
+          },
+          orderBy: { name: 'asc' },
+          take: 2000,
+        }),
+        this.database.client.hrRecord.findMany({
+          where: this.recordScope(actor),
+          orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+          take: 500,
+        }),
+        this.database.client.hrRecord.count({ where: this.recordScope(actor) }),
+        this.iam.listRolesAndBranches(),
+        this.database.client.hrRecord.findMany({
+          where: {
+            section: 'organization',
+            tab: 'positions',
+            employeeId: null,
+            deletedAt: null,
+          },
+          select: { id: true, values: true, status: true },
+          orderBy: { id: 'asc' },
+        }),
+      ]);
     await this.auditRead(actor, 'bootstrap', records.length);
     return {
+      jobTitles: jobTitles.map((row) => ({
+        id: row.id,
+        name: (row.values as string[])[1] || (row.values as string[])[0] || '',
+        status: row.status,
+      })),
       employees: employees.map((row) => this.employeeDto(row)),
       records: await this.recordDtos(records, actor),
       recordCount,
@@ -833,6 +852,87 @@ export class HrService {
       saved.version,
     );
   }
+  private async employeeJobTitle(
+    tx: Tx,
+    input: Record<string, unknown>,
+    existing?: Employee,
+  ) {
+    if (
+      input.jobTitleId === undefined &&
+      (input.position === undefined || input.position === existing?.position)
+    )
+      return undefined;
+    // Legacy clients may create their historical free-text title; the current editor sends a catalogue ID.
+    if (input.jobTitleId === undefined && !existing) return undefined;
+    const name = validate.text(
+      input.position ?? existing?.position,
+      'عنوان شغلی',
+    );
+    const title =
+      input.jobTitleId === undefined
+        ? null
+        : await tx.hrRecord.findFirst({
+            where: {
+              section: 'organization',
+              tab: 'positions',
+              employeeId: null,
+              deletedAt: null,
+              status: 'فعال',
+              id: validate.uuid(input.jobTitleId, 'عنوان شغلی'),
+            },
+          });
+    // Name-only edits resolve the canonical catalogue without accepting an arbitrary assignment.
+    const candidates =
+      input.jobTitleId === undefined
+        ? await tx.hrRecord.findMany({
+            where: {
+              section: 'organization',
+              tab: 'positions',
+              employeeId: null,
+              deletedAt: null,
+              status: 'فعال',
+            },
+            orderBy: { id: 'asc' },
+          })
+        : title
+          ? [title]
+          : [];
+    const result = candidates.find(
+      (row) =>
+        ((row.values as string[])[1] || (row.values as string[])[0]) === name,
+    );
+    if (!result)
+      throw new BadRequestException('عنوان شغلی فعال را از فهرست انتخاب کنید.');
+    return result;
+  }
+  private async validateEmployeeUnit(
+    tx: Tx,
+    value: unknown,
+    employee: Employee,
+  ) {
+    const unit = validate.text(value, 'واحد', 160, true);
+    if (!unit) return '';
+    const rows = await tx.hrRecord.findMany({
+      where: {
+        section: 'organization',
+        tab: 'units',
+        branchId: employee.branchId,
+        deletedAt: null,
+        status: 'فعال',
+      },
+    });
+    if (
+      !rows.some(
+        (row) =>
+          (row.values as string[])[0] === unit &&
+          (!(row.data as HrWorkflowData).organizationBranchId ||
+            (row.data as HrWorkflowData).organizationBranchId ===
+              employee.organizationBranchId),
+      )
+    )
+      throw new BadRequestException('واحد فعال همان شرکت را انتخاب کنید.');
+    return unit;
+  }
   private async insertEmployee(
     tx: Tx,
     input: Record<string, unknown>,
@@ -840,9 +940,11 @@ export class HrService {
     photoDocumentId: string | null = null,
   ) {
     const branchId = this.branch(actor, input.branchId);
+    const jobTitle = await this.employeeJobTitle(tx, input);
     const row = await tx.hrEmployee.create({
       data: {
         branchId,
+        jobTitleId: jobTitle?.id ?? null,
         userId: await this.userReference(input.userId, branchId),
         photoDocumentId,
         organizationBranchId: input.organizationBranchId
@@ -859,7 +961,7 @@ export class HrService {
         name: validate.text(input.name, 'نام'),
         kind: validate.text(input.kind, 'نوع همکاری', 80),
         unit: input.unit ? validate.text(input.unit, 'واحد') : '',
-        position: validate.text(input.position, 'سمت'),
+        position: validate.text(input.position, 'عنوان شغلی'),
         grade: validate.text(input.grade, 'رده', 40),
         managerId: await this.manager(tx, input.managerId, branchId, actor),
         startedAt: validate.isoDate(input.startedAtValue),
@@ -873,6 +975,7 @@ export class HrService {
       data: {
         branchId,
         employeeId: row.id,
+        jobTitleId: jobTitle?.id ?? null,
         code: `HR-ASG-${randomUUID().slice(0, 12).toUpperCase()}`,
         section: 'employee',
         tab: 'assignment',
@@ -996,6 +1099,14 @@ export class HrService {
       }
     }
   }
+  private compatibleIdentityInput(value: unknown, row?: RecordRow) {
+    if (!Array.isArray(value) || value.length !== 14 || !row) return value;
+    const previous = revealHrValues(
+      row.data,
+      `${row.branchId}:${row.employeeId ?? row.parentId}:employee.identity`,
+    );
+    return [...value, previous[14] ?? ''];
+  }
   private async insertPersonnelProfile(
     tx: Tx,
     employee: Employee,
@@ -1005,7 +1116,10 @@ export class HrService {
   ) {
     const identitySchema = validate.resource('employee', 'identity');
     const identity = validate.recordValues(
-      input.identityValues,
+      this.compatibleIdentityInput(
+        input.identityValues,
+        existing.find((row) => row.tab === 'identity'),
+      ),
       identitySchema,
     );
     this.nameParts({ firstName: identity[0], lastName: identity[1] });
@@ -1181,18 +1295,12 @@ export class HrService {
       const existing = await this.employee(tx, id, actor);
       if (existing.version !== expected)
         throw new ConflictException('نسخه کارمند تغییر کرده است.');
-      for (const key of [
-        'branchId',
-        'unit',
-        'position',
-        'grade',
-        'managerId',
-        'startedAtValue',
-      ])
+      for (const key of ['branchId', 'startedAtValue'])
         if (input[key] !== undefined)
           throw new BadRequestException(
             'تغییر انتصاب باید از گردش ارتقا یا انتقال با تاریخ اثر ثبت شود.',
           );
+      const jobTitle = await this.employeeJobTitle(tx, input, existing);
       const data: Prisma.HrEmployeeUncheckedUpdateManyInput = {
         version: { increment: 1 },
       };
@@ -1203,6 +1311,21 @@ export class HrService {
             key,
             key === 'personnelCode' ? 50 : key === 'kind' ? 80 : 160,
           );
+      if (jobTitle) data.jobTitleId = jobTitle.id;
+      if (input.unit !== undefined && input.unit !== existing.unit)
+        data.unit = await this.validateEmployeeUnit(tx, input.unit, existing);
+      if (input.position !== undefined)
+        data.position = validate.text(input.position, 'عنوان شغلی');
+      if (input.grade !== undefined)
+        data.grade = validate.text(input.grade, 'رده', 40);
+      if (input.managerId !== undefined)
+        data.managerId = await this.manager(
+          tx,
+          input.managerId,
+          existing.branchId,
+          actor,
+          id,
+        );
       const nameParts = this.nameParts(input);
       if (nameParts) data.name = nameParts.join(' ');
       if (input.status !== undefined && input.status !== existing.status)
@@ -1235,6 +1358,64 @@ export class HrService {
       });
       if (changed.count !== 1)
         throw new ConflictException('نسخه کارمند تغییر کرده است.');
+      const assignmentChanged =
+        input.jobTitleId !== undefined ||
+        ['unit', 'position', 'grade', 'managerId'].some(
+          (key) =>
+            input[key] !== undefined &&
+            input[key] !== existing[key as keyof Employee],
+        );
+      if (assignmentChanged) {
+        const current = await tx.hrEmployee.findUniqueOrThrow({
+          where: { id },
+        });
+        const effectiveAt = new Date();
+        const assignment = await tx.hrRecord.create({
+          data: {
+            branchId: existing.branchId,
+            employeeId: id,
+            jobTitleId: current.jobTitleId,
+            section: 'employee',
+            tab: 'assignment',
+            code: `HR-ASG-${randomUUID()}`,
+            values: [
+              current.branchId,
+              current.unit,
+              current.position,
+              current.managerId ?? '',
+              effectiveAt.toISOString().slice(0, 10),
+            ],
+            effectiveAt,
+            appliedAt: effectiveAt,
+            status: current.status,
+          },
+        });
+        await this.audit(
+          tx,
+          actor,
+          {
+            branchId: existing.branchId,
+            employeeId: id,
+            recordId: assignment.id,
+          },
+          'employee.assignment.correct',
+          {
+            before: {
+              unit: existing.unit,
+              position: existing.position,
+              grade: existing.grade,
+              managerId: existing.managerId,
+            },
+            after: {
+              unit: current.unit,
+              position: current.position,
+              grade: current.grade,
+              managerId: current.managerId,
+            },
+          },
+          expected + 1,
+        );
+      }
       await this.setEmployeeExtension(tx, existing, input.extension, actor);
       if (privateProfile) {
         const records = await tx.hrRecord.findMany({
@@ -2160,7 +2341,9 @@ export class HrService {
           : await this.values(
               tx,
               schema,
-              input.values ?? row.values,
+              schema.key === 'employee.identity'
+                ? this.compatibleIdentityInput(input.values ?? row.values, row)
+                : (input.values ?? row.values),
               employee,
               row.branchId,
               data,
@@ -2907,6 +3090,7 @@ export class HrService {
     if (data.managerId !== undefined) change.managerId = managerId;
     if (row.tab === 'promotion') {
       change.position = validate.text(values[3], 'سمت');
+      change.jobTitleId = null;
       change.grade = validate.text(values[4], 'رده', 40);
     }
     if (row.tab === 'transfer') {
@@ -2962,6 +3146,7 @@ export class HrService {
       data: {
         branchId: updated.branchId,
         employeeId: updated.id,
+        jobTitleId: updated.jobTitleId,
         section: 'employee',
         tab: 'assignment',
         code: `HR-ASG-${randomUUID().slice(0, 12)}`,

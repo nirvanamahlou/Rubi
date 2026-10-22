@@ -126,7 +126,7 @@ export function validateNewEmployeeForm(
     errors.personnelCode = 'این کد پرسنلی قبلاً استفاده شده است.';
 
   if (!value.branch.trim()) errors.branch = 'شعبه را انتخاب کنید.';
-  if (!value.position.trim()) errors.position = 'سمت الزامی است.';
+  if (!value.position.trim()) errors.position = 'عنوان شغلی الزامی است.';
   if (!value.grade.trim()) errors.grade = 'رده شغلی الزامی است.';
   if (!value.startedAt) errors.startedAt = 'تاریخ شروع همکاری الزامی است.';
 
@@ -386,7 +386,7 @@ export function NewEmployeeForm({
             <dd>{value.contactValues?.length ?? 0}</dd>
             <dt>شعبه</dt>
             <dd>{value.branch}</dd>
-            <dt>سمت</dt>
+            <dt>عنوان شغلی</dt>
             <dd>{value.position}</dd>
             <dt>تاریخ شروع</dt>
             <dd>{value.startedAt}</dd>
@@ -557,12 +557,6 @@ export function NewEmployeeForm({
         hidden={personnelMode && step !== 1}
       >
         <legend className={styles.formLegend}>جایگاه سازمانی</legend>
-        {lockAssignment ? (
-          <p>
-            تغییر سمت، رده، واحد و مدیر از بخش تغییرات شغلی با تاریخ اثر ثبت
-            می‌شود.
-          </p>
-        ) : null}
         <div className={styles.formGrid}>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-branch">
             <RequiredFieldLabel required>شعبه</RequiredFieldLabel>
@@ -594,7 +588,7 @@ export function NewEmployeeForm({
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-unit">
             <RequiredFieldLabel>واحد</RequiredFieldLabel>
-            {onAddReference && !lockAssignment ? (
+            {onAddReference ? (
               <button
                 type="button"
                 onClick={() => onAddReference('units', value.branch)}
@@ -606,7 +600,6 @@ export function NewEmployeeForm({
               className={styles.control}
               id="hr-new-employee-unit"
               {...errorProps('unit')}
-              disabled={lockAssignment}
               name="unit"
               onChange={(event) => update('unit', event.target.value)}
               value={value.unit}
@@ -627,13 +620,13 @@ export function NewEmployeeForm({
             className={styles.fieldLabel}
             htmlFor="hr-new-employee-position"
           >
-            <RequiredFieldLabel required>سمت</RequiredFieldLabel>
-            {onAddReference && !lockAssignment ? (
+            <RequiredFieldLabel required>عنوان شغلی</RequiredFieldLabel>
+            {onAddReference ? (
               <button
                 type="button"
                 onClick={() => onAddReference('positions', value.branch)}
               >
-                افزودن سمت
+                افزودن عنوان شغلی
               </button>
             ) : null}
             {organizationOptions ? (
@@ -641,18 +634,19 @@ export function NewEmployeeForm({
                 {...errorProps('position')}
                 className={styles.control}
                 id="hr-new-employee-position"
-                disabled={lockAssignment}
                 name="position"
                 required
                 value={value.position}
                 onChange={(event) => update('position', event.target.value)}
               >
-                <option value="">انتخاب سمت</option>
+                <option value="">انتخاب عنوان شغلی</option>
                 {currentOptions(
                   organization?.positions ?? [],
                   value.position,
                 ).map((option) => (
-                  <option key={option}>{option}</option>
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
                 ))}
               </NativeSearchSelect>
             ) : (
@@ -660,7 +654,6 @@ export function NewEmployeeForm({
                 {...errorProps('position')}
                 className={styles.control}
                 id="hr-new-employee-position"
-                disabled={lockAssignment}
                 maxLength={120}
                 name="position"
                 onChange={(event) => update('position', event.target.value)}
@@ -677,7 +670,6 @@ export function NewEmployeeForm({
               {...errorProps('grade')}
               className={styles.control}
               id="hr-new-employee-grade"
-              disabled={lockAssignment}
               name="grade"
               onChange={(event) => update('grade', event.target.value)}
               required
@@ -703,7 +695,6 @@ export function NewEmployeeForm({
             <NativeSearchSelect
               className={styles.control}
               id="hr-new-employee-manager"
-              disabled={lockAssignment}
               name="manager"
               onChange={(event) => update('manager', event.target.value)}
               value={value.manager}
@@ -775,7 +766,6 @@ export function NewEmployeeForm({
             <RequiredFieldLabel required>تاریخ شروع</RequiredFieldLabel>
             <DatePicker
               {...errorProps('startedAt')}
-              disabled={lockAssignment}
               id="hr-new-employee-started-at"
               name="startedAt"
               onChange={(nextValue) => update('startedAt', nextValue)}
@@ -913,7 +903,7 @@ export function NewEmployeeDialog({
         </DialogDescription>
         {waitingForInitialCatalog ? (
           <div role={referenceError ? 'alert' : 'status'}>
-            <p>{referenceError || 'دریافت واحدها و سمت‌ها…'}</p>
+            <p>{referenceError || 'دریافت واحدها و عنوان‌های شغلی…'}</p>
             {referenceError && onRetryReferences ? (
               <button type="button" onClick={onRetryReferences}>
                 تلاش دوباره

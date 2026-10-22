@@ -413,7 +413,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         data: { deletedAt: new Date() },
       });
     });
-    it('loses exactly one stale concurrent edit and forbids direct job assignment changes', async () => {
+    it('loses exactly one stale concurrent edit and rejects unknown job titles', async () => {
       const outcomes = await Promise.allSettled([
         service.updateEmployee(
           employee.id,
@@ -439,7 +439,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           { version: 2, position: 'Forged promotion' },
           admin,
         ),
-      ).rejects.toThrow('تاریخ اثر');
+      ).rejects.toThrow('عنوان شغلی');
     });
     it('allows self leave requests only for the linked employee and rejects unauthorized approval', async () => {
       const body = {
@@ -2477,7 +2477,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
             identityRow.data,
             `${branchA}:${id}:employee.identity`,
           ),
-        ).toEqual(identity);
+        ).toEqual([...identity, '']);
         expect(JSON.stringify(rows)).not.toContain(identity[13]);
         expect(JSON.stringify(created)).not.toContain(identity[2]);
         expect(
@@ -2487,7 +2487,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
               admin,
             )
           ).items[0]?.values,
-        ).toEqual(identity);
+        ).toEqual([...identity, '']);
         const audit = await client.hrAuditEvent.findMany({
           where: { employeeId: id },
         });
@@ -2641,6 +2641,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
             identity[1]!,
             '0123456789',
             ...identity.slice(3),
+            '۰۱۲۳۴۵۶۷۸۹',
           ],
           contactValues: [['محل کار', '02187654321']],
           profileRecords: snapshot,
@@ -2725,6 +2726,16 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
             admin,
           ),
         ).rejects.toThrow();
+        const beforeLegacy = rows.find((r) => r.tab === 'identity')!;
+        const legacyEdit = await service.updateRecord(
+          beforeLegacy.id,
+          {
+            version: beforeLegacy.version,
+            values: input.identityValues.slice(0, 14),
+          },
+          admin,
+        );
+        expect(legacyEdit.values[14]).toBe('۰۱۲۳۴۵۶۷۸۹');
         const currentSnapshot = rows.map(({ id, version }) => ({
           id,
           version,
@@ -2768,7 +2779,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           (await privateRows()).filter((r) => r.tab === 'phones'),
         ).toHaveLength(0);
         // Legacy public partial edits preserve private information.
-        await service.updateEmployee(
+        const partial = await service.updateEmployee(
           id,
           { version: cleared.version, extension: '0020' },
           admin,
@@ -2776,6 +2787,36 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         expect(
           (await privateRows()).find((r) => r.tab === 'identity'),
         ).toBeDefined();
+        const finalRecords = await privateRows();
+        const finalIdentity = finalRecords.find((r) => r.tab === 'identity')!;
+        expect(
+          revealHrValues(
+            finalIdentity.data,
+            `${branchA}:${id}:employee.identity`,
+          )[14],
+        ).toBe('۰۱۲۳۴۵۶۷۸۹');
+        await service.updateEmployee(
+          id,
+          {
+            version: partial.version,
+            identityValues: ['Edited', ...identity.slice(1), ''],
+            contactValues: [],
+            profileRecords: finalRecords.map(({ id, version }) => ({
+              id,
+              version,
+            })),
+          },
+          admin,
+        );
+        const emptyPostal = (await privateRows()).find(
+          (r) => r.tab === 'identity',
+        )!;
+        expect(
+          revealHrValues(
+            emptyPostal.data,
+            `${branchA}:${id}:employee.identity`,
+          )[14],
+        ).toBe('');
       } finally {
         vi.restoreAllMocks();
         if (id) {
@@ -2792,6 +2833,188 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           delete process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
         else process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 = previousKey;
       }
+    });
+    it('shares only job-title metadata across branches and atomically corrects employee assignments with canonical references', async () => {
+      const branchAdmin = { ...admin, branchIds: [branchA] };
+      const title = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'positions',
+          branchId: branchB,
+          values: ['', 'Shared synthetic title', '', '', '', ''],
+          status: 'فعال',
+        },
+        key(),
+        outsider,
+      );
+      const unit = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'units',
+          branchId: branchA,
+          values: ['Synthetic corrected unit', '', '', '', '', ''],
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      const foreignUnit = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'units',
+          branchId: branchB,
+          values: ['Synthetic foreign unit', '', '', '', '', ''],
+          status: 'فعال',
+        },
+        key(),
+        outsider,
+      );
+      const catalogue = (await service.bootstrap(branchAdmin)).jobTitles!;
+      expect(catalogue.find((t) => t.id === title.id)).toEqual({
+        id: title.id,
+        name: 'Shared synthetic title',
+        status: 'فعال',
+      });
+      expect(
+        (
+          await service.listRecords(
+            { section: 'organization', tab: 'positions' },
+            branchAdmin,
+          )
+        ).items.some((r) => r.id === title.id),
+      ).toBe(false);
+      await expect(
+        service.updateRecord(
+          title.id,
+          { version: title.version, values: title.values },
+          branchAdmin,
+        ),
+      ).rejects.toThrow();
+      const target = await service.createEmployee(
+        employeeInput('Synthetic job correction', {
+          position: 'Shared synthetic title',
+          jobTitleId: title.id,
+        }),
+        key(),
+        admin,
+      );
+      expect(
+        await client.hrRecord.findFirst({
+          where: {
+            employeeId: target.id,
+            tab: 'assignment',
+            jobTitleId: title.id,
+          },
+        }),
+      ).not.toBeNull();
+      const before = await client.hrRecord.count({
+        where: { employeeId: target.id, tab: 'assignment' },
+      });
+      const input = {
+        version: target.version,
+        unit: unit.values[0],
+        grade: 'مدیر',
+        managerId: employee.id,
+      };
+      await expect(
+        service.updateEmployee(
+          target.id,
+          { ...input, unit: foreignUnit.values[0] },
+          admin,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.updateEmployee(target.id, input, reader),
+      ).rejects.toThrow();
+      await expect(
+        service.updateEmployee(target.id, input, outsider),
+      ).rejects.toThrow();
+      await expect(
+        service.updateEmployee(
+          target.id,
+          { ...input, branchId: branchB },
+          admin,
+        ),
+      ).rejects.toThrow();
+      const response = await request(app.getHttpServer())
+        .patch(`/api/v1/hr/employees/${target.id}`)
+        .set('Cookie', adminCookie)
+        .send(input)
+        .expect(200);
+      const corrected = response.body as HrEmployeeDto;
+      expect(corrected).toMatchObject({
+        unit: 'Synthetic corrected unit',
+        grade: 'مدیر',
+        managerId: employee.id,
+        position: 'Shared synthetic title',
+      });
+      expect(
+        await client.hrRecord.count({
+          where: { employeeId: target.id, tab: 'assignment' },
+        }),
+      ).toBe(before + 1);
+      const audit = await client.hrAuditEvent.findFirst({
+        where: { employeeId: target.id, action: 'employee.assignment.correct' },
+      });
+      expect(audit?.changes).toMatchObject({
+        before: { grade: 'G4' },
+        after: { grade: 'مدیر', unit: 'Synthetic corrected unit' },
+      });
+      await expect(
+        service.updateEmployee(target.id, input, admin),
+      ).rejects.toThrow();
+      const ownTitle = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'positions',
+          branchId: branchA,
+          values: ['', 'Second synthetic title', '', '', '', ''],
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      const changed = await service.updateEmployee(
+        target.id,
+        {
+          version: corrected.version,
+          position: 'Second synthetic title',
+          jobTitleId: ownTitle.id,
+        },
+        admin,
+      );
+      expect(changed.position).toBe('Second synthetic title');
+      expect(
+        await client.hrRecord.findFirst({
+          where: {
+            employeeId: target.id,
+            tab: 'assignment',
+            jobTitleId: ownTitle.id,
+          },
+        }),
+      ).not.toBeNull();
+      const titleRow = await client.hrRecord.findUniqueOrThrow({
+        where: { id: ownTitle.id },
+      });
+      await client.hrRecord.update({
+        where: { id: ownTitle.id },
+        data: { status: 'غیرفعال' },
+      });
+      await expect(
+        service.updateEmployee(
+          target.id,
+          {
+            version: changed.version,
+            position: 'Second synthetic title',
+            jobTitleId: ownTitle.id,
+          },
+          admin,
+        ),
+      ).rejects.toThrow();
+      await client.hrRecord.update({
+        where: { id: ownTitle.id },
+        data: { status: titleRow.status },
+      });
     });
     it('persists Radan identity encrypted and never returns ciphertext or private audit values', async () => {
       const previousKey = process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
@@ -2830,7 +3053,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           key(),
           admin,
         );
-        expect(record.values).toEqual(values);
+        expect(record.values).toEqual([...values, '']);
         expect(
           (
             await client.hrEmployee.findUniqueOrThrow({

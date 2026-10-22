@@ -88,7 +88,7 @@ function store(sensitive = true) {
 describe('unified employee form and complete details', () => {
   it('hydrates private identity, typed contacts and version snapshot without changing the stored names', () => {
     const initial = employeeFormValue(employee, store());
-    expect(initial.identityValues).toEqual(identity);
+    expect(initial.identityValues).toEqual([...identity, '']);
     expect(initial.contactValues).toEqual([
       ['موبایل', '09123456789'],
       ['خانه', '02112345678'],
