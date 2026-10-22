@@ -726,9 +726,10 @@ export function ReservationSettingsForm({
         }`}
       >
         تعداد اتاق:{' '}
-        {draft.numbers.singleRooms +
-          draft.numbers.doubleRooms +
-          draft.numbers.customRooms}{' '}
+        {draft.rooms?.length ??
+          draft.numbers.singleRooms +
+            draft.numbers.doubleRooms +
+            draft.numbers.customRooms}{' '}
         · تعداد شب:{' '}
         {draft.text.checkIn && draft.text.checkOut
           ? Math.max(
