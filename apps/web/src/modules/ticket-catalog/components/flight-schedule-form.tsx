@@ -245,7 +245,8 @@ export function FlightScheduleForm({
     defaults.mode,
   );
   const [advanced, setAdvanced] = useState(false);
-  const [maxEdited, setMaxEdited] = useState(false);
+  const [maxEdited, setMaxEdited] = useState(editing);
+  const [minEdited, setMinEdited] = useState(editing);
   const [input, setInput] = useState<ProductInput>(defaults.input);
   const [multipleDestinations, setMultipleDestinations] = useState(
     Boolean(defaults.input.saleRoutes?.length),
@@ -408,6 +409,7 @@ export function FlightScheduleForm({
         batchId.current,
         scheduleToUtc,
         !maxEdited,
+        !minEdited,
       )
         .map((definition) =>
           editing && (initials?.length ?? 0) <= 1
@@ -885,8 +887,9 @@ export function FlightScheduleForm({
                                 max={365}
                                 step={1}
                                 value={
-                                  field === 'returnMaxDays' &&
-                                  !maxEdited &&
+                                  !(field === 'returnMaxDays'
+                                    ? maxEdited
+                                    : minEdited) &&
                                   weekdays.length > 0 &&
                                   weekdays.every((w) =>
                                     Number.isFinite(w.stayDays),
@@ -901,6 +904,7 @@ export function FlightScheduleForm({
                                 onChange={(event) => {
                                   if (field === 'returnMaxDays')
                                     setMaxEdited(true);
+                                  else setMinEdited(true);
                                   setInput((c) => ({
                                     ...c,
                                     [field]:
@@ -922,7 +926,7 @@ export function FlightScheduleForm({
           </div>
           <p className={styles.help}>
             ساعت رفت و برگشت به وقت تهران است. Min و Max فاصلهٔ روزهای مجاز
-            برگشت در فروش هستند. Max پیش‌فرض برای هر رفت، یک روز بیشتر از فاصلهٔ
+            برگشت در فروش هستند. Min و Max پیش‌فرض برای هر رفت، برابر فاصلهٔ
             برگشت است و می‌توانید آن را تغییر دهید.
           </p>
           <div className={styles.options}>

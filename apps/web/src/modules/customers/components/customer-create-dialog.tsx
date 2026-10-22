@@ -17,7 +17,7 @@ export function CustomerCreateDialog({
   returnFocusRef: RefObject<HTMLElement | null>;
 }) {
   const [calendarMode, setCalendarMode] =
-    useState<CustomerCalendarMode>('persian');
+    useState<CustomerCalendarMode>('gregorian');
 
   return (
     <CustomerDrawer

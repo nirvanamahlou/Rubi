@@ -124,7 +124,7 @@ export function guestStayColumns(
                 })
               }
             />
-            چک‌این هتل متفاوت
+            c.in , cout متفاوت
           </label>
         );
       },
