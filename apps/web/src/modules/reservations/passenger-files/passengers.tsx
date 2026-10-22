@@ -32,10 +32,12 @@ export function ReservationPassengers({
   id,
   readOnly = false,
   ageEditor,
+  serviceEditor,
 }: {
   id: string;
   readOnly?: boolean;
   ageEditor?: (customerId: string) => ReactNode;
+  serviceEditor?: (customerId: string) => ReactNode;
 }) {
   const [rows, setRows] = useState<PassengerName[]>([]);
   const [canEdit, setCanEdit] = useState(false);
@@ -217,6 +219,7 @@ export function ReservationPassengers({
               <th>ملیت</th>
               <th>کشور محل تولد</th>
               <th>عملیات</th>
+              {serviceEditor && <th>خدمات مسافر</th>}
             </tr>
           </thead>
           <tbody>
@@ -389,6 +392,7 @@ export function ReservationPassengers({
                       </Button>
                     </form>
                   </td>
+                  {serviceEditor && <td>{serviceEditor(row.id)}</td>}
                 </tr>
               );
             })}

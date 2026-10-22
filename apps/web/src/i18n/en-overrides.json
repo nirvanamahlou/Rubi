@@ -3997,5 +3997,6 @@
   "تعداد بزرگسال اتاق": "Room adult count",
   "تعداد کودک اتاق": "Room child count",
   "تعداد نوزاد اتاق": "Room infant count",
-  "برای بلیت رفت از سهمیه شرکت، بلیت برگشت نیز باید از سهمیه شرکت انتخاب شود.": "A company-inventory outbound flight requires a company-inventory return flight."
+  "برای بلیت رفت از سهمیه شرکت، بلیت برگشت نیز باید از سهمیه شرکت انتخاب شود.": "A company-inventory outbound flight requires a company-inventory return flight.",
+  "خدمات مسافر": "Passenger services"
 }
