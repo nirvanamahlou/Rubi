@@ -436,23 +436,16 @@ export function ReservationFormSheet({
                       </tbody>
                     </table>
                   ) : null}
-                  <div className={styles.accommodationBreakdown}>
-                    <table className={styles.table}>
-                      <caption>STAY DATES</caption>
-                      <thead>
-                        <tr>
-                          <th>CHECK-IN</th>
-                          <th>CHECK-OUT</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>{data.checkIn}</td>
-                          <td>{data.checkOut}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                  <table className={styles.table}>
+                    <tbody>
+                      <tr>
+                        <th>CHECK-IN</th>
+                        <td>{data.checkIn}</td>
+                        <th>CHECK-OUT</th>
+                        <td>{data.checkOut}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </>
               )}
               <Heading
@@ -537,8 +530,24 @@ export function ReservationFormSheet({
                           <>
                             <td>{p.outboundFlight ? '✓' : '-'}</td>
                             <td>{p.returnFlight ? '✓' : '-'}</td>
-                            <td>{p.checkIn ?? '-'}</td>
-                            <td>{p.checkOut ?? '-'}</td>
+                            <td
+                              className={
+                                p.differentStay
+                                  ? styles.differentStay
+                                  : undefined
+                              }
+                            >
+                              {p.checkIn ?? '-'}
+                            </td>
+                            <td
+                              className={
+                                p.differentStay
+                                  ? styles.differentStay
+                                  : undefined
+                              }
+                            >
+                              {p.checkOut ?? '-'}
+                            </td>
                             <td>{p.outboundTransfer ? '✓' : '-'}</td>
                             <td>{p.returnTransfer ? '✓' : '-'}</td>
                             <td>{p.otherServices}</td>

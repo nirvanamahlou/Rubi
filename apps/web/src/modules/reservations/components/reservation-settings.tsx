@@ -219,7 +219,12 @@ export function ReservationSettingsForm({
   const [priceError, setPriceError] = useState('');
   useEffect(() => {
     const brokerId = draft.brokerId;
-    if (!brokerId || priceSource.current === brokerId) return;
+    if (
+      !brokerId ||
+      priceSource.current === brokerId ||
+      draft.hotelPurchasePrices?.some((p) => p.amount.trim())
+    )
+      return;
     let live = true;
     void travelRequest<{
       data: NonNullable<VoucherSettingsV1['hotelPurchasePrices']>;
@@ -246,7 +251,7 @@ export function ReservationSettingsForm({
     return () => {
       live = false;
     };
-  }, [draft.brokerId, intake.id]);
+  }, [draft.brokerId, draft.hotelPurchasePrices, intake.id]);
   const referenceKeys = referenceKeysBySection[section];
   const referenceResourceKey = [
     ...new Set(
@@ -532,8 +537,11 @@ export function ReservationSettingsForm({
                 };
                 if (referenceKey === 'broker' && draft.brokerId !== option.id) {
                   priceSource.current = undefined;
-                  next.hotelPurchasePrices = [];
-                  setPriceLoading(true);
+                  const keepAmount = draft.hotelPurchasePrices?.some((p) =>
+                    p.amount.trim(),
+                  );
+                  if (!keepAmount) next.hotelPurchasePrices = [];
+                  setPriceLoading(!keepAmount);
                   setPriceError('');
                   delete next.leaderId;
                   next.text.leaderName = '';
@@ -609,14 +617,6 @@ export function ReservationSettingsForm({
   );
   return (
     <section className={styles.form}>
-      <header className={styles.formHeader}>
-        <span>ویرایش نسخهٔ رزواسیون</span>
-        <h3>{sectionLabels[section]}</h3>
-        <p>
-          اطلاعات همین بخش را اصلاح کنید. هر ذخیره یک نسخهٔ مستقل در سابقهٔ فرم
-          رزواسیون می‌سازد؛ ردهٔ کودک هتل در فرم ارسالی کارگزار چاپ می‌شود.
-        </p>
-      </header>
       {message && <p role="status">{message}</p>}
       {error && (
         <p role="alert" className="text-destructive">
@@ -625,7 +625,7 @@ export function ReservationSettingsForm({
       )}
 
       {(section === 'ALL' || section === 'HOTEL') && (
-        <div className={styles.sectionCard}>
+        <div className={`${styles.sectionCard} ${styles.amountCard}`}>
           <h4>مبلغ هتل در فرم رزواسیون</h4>
           <p>
             نرخ خرید کارگزار انتخاب‌شده برای کل اقامت؛ قابل ویرایش پیش از صدور.
@@ -718,6 +718,13 @@ export function ReservationSettingsForm({
           >
             پاک‌کردن مبلغ فرم
           </Button>
+          {section === 'ALL' && (
+            <fieldset
+              disabled={busy || intake.workflow.supplierStatus === 'CANCELLED'}
+            >
+              {textField('broker')}
+            </fieldset>
+          )}
         </div>
       )}
       <p
@@ -745,7 +752,7 @@ export function ReservationSettingsForm({
         disabled={busy || intake.workflow.supplierStatus === 'CANCELLED'}
         className="grid gap-4"
       >
-        {(section === 'ALL' || section === 'OTHER') && textField('broker')}
+        {section === 'OTHER' && textField('broker')}
         {showDocument && draft.brokerId && (
           <div className="grid gap-3">
             {

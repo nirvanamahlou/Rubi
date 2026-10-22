@@ -1,3 +1,4 @@
+import { salesRoomDisplayName } from '@nora/contracts';
 import { readPassengerHotelStays } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
 export function englishOutputName(
@@ -14,7 +15,11 @@ export function englishOutputName(
   return typeof match?.attributes.englishName === 'string' &&
     match.attributes.englishName.trim()
     ? match.attributes.englishName.trim()
-    : value;
+    : typeof match?.name === 'string' &&
+        /[A-Za-z]/.test(match.name) &&
+        !/[\u0600-\u06ff]/.test(match.name)
+      ? match.name.trim()
+      : value;
 }
 import { salesContractFlights } from '@nora/contracts';
 import type {
@@ -91,6 +96,7 @@ export function reservationFormData(
     sex: string;
     age: string;
     hotelChildAgeBand?: string | undefined;
+    differentStay?: boolean;
     checkIn?: string;
     checkOut?: string;
     outboundFlight: boolean;
@@ -163,6 +169,9 @@ export function reservationFormData(
 
       ...(passengerStays || stay
         ? {
+            differentStay: Boolean(
+              stay && 'different' in stay && stay.different === true,
+            ),
             checkIn: reservationFormDate(stay?.checkInDate),
             checkOut: reservationFormDate(stay?.checkOutDate),
           }
@@ -287,7 +296,12 @@ export function reservationFormData(
       }).format(new Date(f.departureAt)),
     })),
     hotel: text(
-      hotelRecord?.attributes.englishName || hotel?.hotelNameSnapshot,
+      hotelRecord?.attributes.englishName ||
+        (typeof hotelRecord?.name === 'string' &&
+        /[A-Za-z]/.test(hotelRecord.name) &&
+        !/[\u0600-\u06ff]/.test(hotelRecord.name)
+          ? hotelRecord.name
+          : hotel?.hotelNameSnapshot),
     ),
     stars: text(
       String(
@@ -304,9 +318,12 @@ export function reservationFormData(
         ),
     roomBreakdown: (hotel?.rooms ?? []).map((r) => ({
       ordinal: r.ordinal,
-      roomType: references[r.roomTypeId]
-        ? name(references[r.roomTypeId])
-        : r.roomTypeNameSnapshot,
+      roomType: salesRoomDisplayName({
+        ...r,
+        roomTypeNameSnapshot: references[r.roomTypeId]
+          ? name(references[r.roomTypeId])
+          : r.roomTypeNameSnapshot,
+      }),
       adults: r.adults,
       childAges: [...r.childAges],
     })),

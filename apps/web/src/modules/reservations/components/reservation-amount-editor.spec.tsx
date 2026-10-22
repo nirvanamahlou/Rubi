@@ -65,7 +65,7 @@ const intake = {
   workflow: { version: 5, supplierStatus: 'DRAFT' },
 } as unknown as ReservationFormIntake;
 const saved = vi.fn();
-function render(cancelled = false) {
+function render(cancelled = false, section: 'HOTEL' | 'ALL' = 'HOTEL') {
   h.index = 0;
   return ReservationSettingsForm({
     intake: cancelled
@@ -76,7 +76,7 @@ function render(cancelled = false) {
       : intake,
     refs: {} as ReservationFormReferences,
     showDocument: true,
-    section: 'HOTEL',
+    section,
     onSaved: saved,
     onDirty: vi.fn(),
   });
@@ -145,4 +145,38 @@ it('keeps amount saving disabled for cancelled requests', async () => {
   (action!.props.onClick as () => void)();
   await Promise.resolve();
   expect(h.request).not.toHaveBeenCalled();
+});
+
+it('preserves entered amount and currency when choosing a broker after the amount', () => {
+  render(false, 'ALL');
+  const index = h.states.findIndex(
+    (v) => v && typeof v === 'object' && 'options' in v,
+  );
+  h.states[index] = {
+    key: 'airlines,hotels,brokers',
+    options: {
+      hotels: [],
+      airlines: [],
+      brokers: [
+        {
+          id: 'broker',
+          label: 'Supplier',
+          searchText: 'Supplier',
+          aliases: ['Supplier'],
+        },
+      ],
+    },
+    loading: false,
+    error: '',
+  };
+  const picker = elements(render(false, 'ALL')).find(
+    (n) =>
+      n.props.label === 'کارگزار' &&
+      typeof n.props.onValueChange === 'function',
+  );
+  expect(picker).toBeDefined();
+  (picker!.props.onValueChange as (id: string) => void)('broker');
+  expect(
+    (h.states[0] as { hotelPurchasePrices: unknown }).hotelPurchasePrices,
+  ).toEqual([{ amount: '1250000.50', currencyCode: 'IRR' }]);
 });

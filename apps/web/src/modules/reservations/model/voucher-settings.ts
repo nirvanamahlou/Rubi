@@ -1,3 +1,4 @@
+import { salesRoomCategoryLabel } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
 import type { voucherNumberKeys, voucherFlagKeys } from '@nora/contracts';
 import { voucherTextKeys, type VoucherSettingsV1 } from '@nora/contracts';
@@ -50,7 +51,9 @@ export function defaultVoucherSettings(
       ? {
           rooms: h.rooms.map((room) => ({
             ordinal: room.ordinal,
-            roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+            roomTypeNameSnapshot:
+              d.roomBreakdown.find((r) => r.ordinal === room.ordinal)
+                ?.roomType || room.roomTypeNameSnapshot,
             adults: room.adults,
             childAges: [...room.childAges],
           })),
@@ -109,6 +112,10 @@ export function defaultVoucherSettings(
       ...(Object.fromEntries(
         voucherTextKeys.map((key) => [key, saved.text?.[key] ?? text[key]]),
       ) as VoucherSettingsV1['text']),
+      hotel:
+        saved.text.hotel === h?.hotelNameSnapshot
+          ? text.hotel
+          : englishOutputName(saved.text.hotel || text.hotel, refs),
       contractPartyName:
         saved.text.contractPartyName ?? text.contractPartyName ?? '',
       leaderLanguage: saved.text.leaderLanguage || 'Persian',
@@ -228,7 +235,18 @@ export function voucherFormData(
       ? {
           roomBreakdown: v.rooms.map((room) => ({
             ordinal: room.ordinal,
-            roomType: englishOutputName(room.roomTypeNameSnapshot, refs),
+            roomType: (() => {
+              const value = englishOutputName(room.roomTypeNameSnapshot, refs);
+              const original = intake.snapshot.hotelSelection?.rooms?.find(
+                (r) => r.ordinal === room.ordinal,
+              );
+              const label = original?.roomCategory
+                ? salesRoomCategoryLabel(original.roomCategory, original.adults)
+                : '';
+              return label && !value.endsWith(' · ' + label)
+                ? value + ' · ' + label
+                : value;
+            })(),
             adults: room.adults,
             childAges: [...room.childAges],
           })),

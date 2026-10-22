@@ -8899,6 +8899,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-contract-charter-infants-1022 from origin/de
 
 CONTRACT-CHARTER-INFANTS-1022 candidate: focused Web77 and final room9 tests pass. No migration/runtime write. Local API/type/build and exact-head CI gate owner-authorized develop merge; bounded source locks freeze with publication.
 
+## RESERVATION-FORM-REFINE-1022 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-form-refine-1022 from develop6ff47e69. Owner authorizes removing highlighted supplier-form instruction/status copy, preserving manual hotel amount on broker selection, registered English hotel names, clearer amount/broker UI, larger room-type plus category display, hotel-section stay dates and bold different-stay output, tests and develop merge. Reserve Reservations settings/workflow UI, supplier form model/preview/PDF/CSS and targeted regressions, related English entries and own status notes. Prior matching source reservations published/released. Keep voucher independence, exact currencies, versioning, permissions and immutable sent documents. No schema/dependency/runtime changes.
+
 ## LOAD-DAY-CALENDAR-1022 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-load-day-calendar-1022 from develop e2f7441a. Owner authorizes same-weekday editing across the selected load range, automatic equal Min/Max with independent manual overrides, Gregorian customer birth/passport dates and different-stay label, tests and develop merge. Reserve Ticket Catalog workspace/published form/weekday model and focused tests, Sales people/guest-stay components, Customers calendar defaults/formatters and tests, scoped English entries/derived catalogues, own documentation. Prior matching published source reservations released. Reuse existing atomic reviseOfferBatch with per-row IDs/versions, branch/allocation guards and UTC storage; no schema/API/dependency/IAM/runtime or operational data changes. Selected weekday edits preserve dates, other weekdays and opposite direction. No deployment requested.

@@ -250,3 +250,13 @@ it('carries registered genders to both supplier and voucher PDF output with lega
     '>Female</td>',
   );
 });
+
+it('uses the registered English primary hotel name when no separate English alias exists', () => {
+  const before = JSON.stringify(input);
+  expect(
+    reservationFormData(input, {
+      h: { name: 'REGISTERED HOTEL', attributes: {} } as never,
+    }).hotel,
+  ).toBe('REGISTERED HOTEL');
+  expect(JSON.stringify(input)).toBe(before);
+});

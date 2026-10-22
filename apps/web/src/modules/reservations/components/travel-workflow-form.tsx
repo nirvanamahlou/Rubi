@@ -65,12 +65,6 @@ export function workflowOperationNote(
       : '')
   );
 }
-const labels = {
-  NEW: 'درخواست جدید',
-  REQUESTED: 'در انتظار کارگزار',
-  CONFIRMED: 'آماده صدور واچر هتل',
-  CANCELLED: 'ابطال‌شده',
-};
 
 export function TravelWorkflowForm({
   id,
@@ -85,7 +79,7 @@ export function TravelWorkflowForm({
   const [editingForm, setEditingForm] = useState(false);
   const [leaderEditorOpen, setLeaderEditorOpen] = useState(false);
   const [intake, setIntake] = useState<WorkflowIntake>();
-  const [delivery, setDelivery] = useState<TravelDeliveryAuthorizationV1>();
+  const [, setDelivery] = useState<TravelDeliveryAuthorizationV1>();
   const [brandKind, setBrandKind] = useState<'OWN' | 'AGENCY'>('OWN');
   const [agencyId, setAgencyId] = useState('');
   const [search, setSearch] = useState('');
@@ -209,24 +203,6 @@ export function TravelWorkflowForm({
     );
   return (
     <div className="grid gap-4" dir="rtl">
-      <p role="status">
-        {state.voucherIssued
-          ? 'واچر صادر شد؛ عملیات رزرواسیون پایان یافت.'
-          : labels[state.supplierStatus]}{' '}
-        · نسخه {state.version}
-      </p>
-      <p className="text-sm">
-        تحویل مدارک به فروش:{' '}
-        {delivery?.approved
-          ? 'تأیید مالی ثبت شده'
-          : 'قفل؛ در انتظار تأیید مالی'}
-      </p>
-      {action === 'رزرواسیون' && (
-        <p className="text-sm text-muted-foreground">
-          قفل مالی فقط مربوط به تحویل مدارک به فروش است؛ دریافت فرم رزرواسیون
-          برای کارگزار نیاز به تأیید مالی ندارد.
-        </p>
-      )}
       {error && (
         <p role="alert" className="text-destructive">
           {error}

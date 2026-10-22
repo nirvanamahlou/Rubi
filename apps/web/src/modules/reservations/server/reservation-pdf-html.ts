@@ -61,8 +61,13 @@ export function reservationPdfHtml(
     `<div class="heading"><b>${n}</b><strong>${title}</strong><span>${note}</span></div>`;
   const fields = (items: unknown[][], cls: string) =>
     `<div class="${cls}">${items.map(([k, v]) => `<div><span>${escape(k)}</span><b dir="auto">${escape(v)}</b></div>`).join('')}</div>`;
-  const table = (heads: string[], rows: unknown[][], extra = '') =>
-    `<table class="table ${extra}"><thead><tr>${heads.map((h) => `<th>${escape(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((v) => `<td dir="auto">${escape(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  const table = (
+    heads: string[],
+    rows: unknown[][],
+    extra = '',
+    different: readonly boolean[] = [],
+  ) =>
+    `<table class="table ${extra}"><thead><tr>${heads.map((h) => `<th>${escape(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r, rowIndex) => `<tr>${r.map((v, cellIndex) => `<td${different[rowIndex] && ['CHECK-IN', 'CHECK-OUT'].includes(heads[cellIndex] ?? '') ? ' class="differentStay"' : ''} dir="auto">${escape(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
   const roomAppendices =
     voucher && (!settings || settings.flags.hotel)
       ? reservationRoomAppendices(data.roomBreakdown)
@@ -172,11 +177,33 @@ export function reservationPdfHtml(
           )
         : ''
     }
-    <div class="accommodationBreakdown">
-      ${table(['CHECK-IN', 'CHECK-OUT'], [[data.checkIn, data.checkOut]]).replace('<thead>', '<caption>STAY DATES</caption><thead>')}
-    </div>
+    <table class="table"><tbody><tr><th>CHECK-IN</th><td>${escape(data.checkIn)}</td><th>CHECK-OUT</th><td>${escape(data.checkOut)}</td></tr></tbody></table>
     ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table(['TRANSFER', 'TOUR LEADER', 'EXCURSION'], [[voucher ? data.transfer + ' · Board: ' + (settings?.text.transferBoard?.trim() || '-') : data.transfer, data.leader, data.excursion]])}
-    ${heading('05', 'PASSENGERS', 'Passenger services')}${table(['#', 'SURNAME / NAME', 'SEX', 'AGE RATE', ...(!voucher ? ['FLIGHT OUT', 'FLIGHT BACK', 'CHECK-IN', 'CHECK-OUT', 'TRANSFER OUT', 'TRANSFER BACK', 'OTHER SERVICES'] : []), ...(voucher && data.passengers.some((p) => p.checkIn !== undefined) ? ['CHECK-IN', 'CHECK-OUT'] : [])], rows.length ? rows : [['-', '-', '-', '-']], 'passengers')}
+    ${heading('05', 'PASSENGERS', 'Passenger services')}${table(
+      [
+        '#',
+        'SURNAME / NAME',
+        'SEX',
+        'AGE RATE',
+        ...(!voucher
+          ? [
+              'FLIGHT OUT',
+              'FLIGHT BACK',
+              'CHECK-IN',
+              'CHECK-OUT',
+              'TRANSFER OUT',
+              'TRANSFER BACK',
+              'OTHER SERVICES',
+            ]
+          : []),
+        ...(voucher && data.passengers.some((p) => p.checkIn !== undefined)
+          ? ['CHECK-IN', 'CHECK-OUT']
+          : []),
+      ],
+      rows.length ? rows : [['-', '-', '-', '-']],
+      'passengers',
+      people.map((p) => p.differentStay === true),
+    )}
     ${heading('06', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
     <footer class="footer"><div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin, intake.workflow.branding?.companyCode, data.brand, publicDocumentUrl)}</div><div><span></span></div>${voucher ? `<b>${index + 1} / ${pageCount}</b>` : ''}</footer></article>`;
     })
