@@ -295,6 +295,14 @@ export class ReservationsPublicService {
     });
     if (!row) throw new NotFoundException('درخواست در دسترس نیست.');
     const result = present(row);
+    if (this.tickets?.currentSelections)
+      result.snapshot = {
+        ...result.snapshot,
+        ticketSelections: await this.tickets.currentSelections(
+          result.snapshot.ticketSelections ?? [],
+          row.branchId,
+        ),
+      };
     const types = await Promise.all(
       (result.snapshot.ticketSelections ?? []).map(
         async (ticket) =>
@@ -551,7 +559,39 @@ export class ReservationsPublicService {
       take: 100,
       skip: (page - 1) * 100,
     });
-    return rows.map(present);
+    const result = rows.map(present);
+    if (this.tickets?.currentSelections) {
+      for (const branchId of [...new Set(rows.map((row) => row.branchId))]) {
+        const linked = result.filter((item) => item.branchId === branchId);
+        const current = await this.tickets.currentSelections(
+          linked.flatMap((item) => item.snapshot.ticketSelections ?? []),
+          branchId,
+        );
+        const byOffer = new Map(
+          current.map((ticket) => [ticket.offerId, ticket]),
+        );
+        for (const item of linked)
+          item.snapshot = {
+            ...item.snapshot,
+            ticketSelections: (item.snapshot.ticketSelections ?? []).map(
+              (ticket) => {
+                const fresh = byOffer.get(ticket.offerId);
+                return fresh
+                  ? {
+                      ...ticket,
+                      departureAt: fresh.departureAt,
+                      arrivalAt: fresh.arrivalAt,
+                      carrierNameSnapshot: fresh.carrierNameSnapshot,
+                      serviceNumberSnapshot: fresh.serviceNumberSnapshot,
+                      cabinClassCode: fresh.cabinClassCode,
+                    }
+                  : ticket;
+              },
+            ),
+          };
+      }
+    }
+    return result;
   }
 
   async updateArrangement(
