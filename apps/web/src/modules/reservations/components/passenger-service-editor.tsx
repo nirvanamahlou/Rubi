@@ -150,14 +150,14 @@ export function PassengerServiceEditor({
           </label>
           <SalesDatePicker
             calendarSystem="gregorian"
-            label="چک‌این هتل"
+            aria-label="چک‌این هتل"
             value={stay.checkInDate}
             disabled={disabled || !stay.different}
             onChange={(checkInDate) => updateStay({ ...stay, checkInDate })}
           />
           <SalesDatePicker
             calendarSystem="gregorian"
-            label="چک‌اوت هتل"
+            aria-label="چک‌اوت هتل"
             value={stay.checkOutDate}
             disabled={disabled || !stay.different}
             onChange={(checkOutDate) => updateStay({ ...stay, checkOutDate })}
