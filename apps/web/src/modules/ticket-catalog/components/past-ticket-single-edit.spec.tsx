@@ -2,7 +2,11 @@ import type * as ReactModule from 'react';
 import type { TicketOfferV1 } from '@nora/contracts';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
-const mocks = vi.hoisted(() => ({ revise: vi.fn(), saved: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  batch: vi.fn(),
+  revise: vi.fn(),
+  saved: vi.fn(),
+}));
 vi.mock('react', async (importOriginal) => {
   const actual = await importOriginal<typeof ReactModule>();
   return {
@@ -15,7 +19,9 @@ vi.mock('react', async (importOriginal) => {
     ],
   };
 });
-vi.mock('../api/tours', () => ({ toursApi: { reviseOffer: mocks.revise } }));
+vi.mock('../api/tours', () => ({
+  toursApi: { reviseOfferBatch: mocks.batch, reviseOffer: mocks.revise },
+}));
 import { PublishedOfferForm } from './published-offer-form';
 const offer = {
   id: 'past-flight',
@@ -34,6 +40,7 @@ const offer = {
 } as TicketOfferV1;
 beforeEach(() => {
   mocks.revise.mockReset().mockResolvedValue({});
+  mocks.batch.mockReset().mockResolvedValue({});
   mocks.saved.mockReset().mockResolvedValue(undefined);
 });
 it('submits exactly the selected historical ticket id and version without moving its dates', async () => {
@@ -78,4 +85,35 @@ it('exposes the single edit action independently of the departure date', () => {
   expect(source).toContain(
     'new Date(offer.departureAt).getTime() <= catalogNow',
   );
+});
+
+it('uses the atomic batch command for same-weekday edits, preserving versions and dates', async () => {
+  const next = {
+    ...offer,
+    id: 'next',
+    version: 8,
+    departureAt: '2000-01-08T08:00:00.000Z',
+    arrivalAt: '2000-01-08T10:00:00.000Z',
+  };
+  const form = PublishedOfferForm({
+    offer,
+    readOnly: false,
+    weekdayOffers: [offer, next],
+    onSaved: mocks.saved,
+  });
+  form.props.onSubmit({ preventDefault: vi.fn() });
+  await vi.waitFor(() => expect(mocks.saved).toHaveBeenCalledOnce());
+  expect(mocks.revise).not.toHaveBeenCalled();
+  expect(mocks.batch).toHaveBeenCalledExactlyOnceWith([
+    expect.objectContaining({
+      id: offer.id,
+      expectedVersion: 7,
+      offer: expect.objectContaining({ departureAt: offer.departureAt }),
+    }),
+    expect.objectContaining({
+      id: 'next',
+      expectedVersion: 8,
+      offer: expect.objectContaining({ departureAt: next.departureAt }),
+    }),
+  ]);
 });

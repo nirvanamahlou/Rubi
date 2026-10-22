@@ -78,7 +78,7 @@ export function SalesPeopleSheet({
   const draft = normalizeSalesPeopleDraft(
     savedDraft ?? initialSalesPeopleDraft(state),
   );
-  const [calendar, setCalendar] = useState<CustomerCalendarMode>('persian');
+  const [calendar, setCalendar] = useState<CustomerCalendarMode>('gregorian');
   const [lookup, setLookup] = useState<string | null>(null);
   const [lookupInRow, setLookupInRow] = useState(false);
   const [clearKey, setClearKey] = useState<string | null>(null);
