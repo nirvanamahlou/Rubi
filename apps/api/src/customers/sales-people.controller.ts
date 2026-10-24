@@ -76,7 +76,7 @@ export class SalesPeopleController {
   ) {
     const actor = this.service.salesEntryActor(req.actor);
     if (dto.kind !== 'person') throw new BadRequestException();
-    return this.service.create(dto, actor, branch, trace);
+    return this.service.createForSales(dto, actor, branch, trace);
   }
   @Patch(':id')
   async update(

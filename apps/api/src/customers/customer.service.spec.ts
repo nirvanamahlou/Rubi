@@ -421,6 +421,52 @@ describe('CustomerService', () => {
     });
   });
 
+  it('creates a contract passenger without national ID but keeps directory creation strict', async () => {
+    const repository = {
+      create: vi.fn().mockResolvedValue(row),
+    } as unknown as CustomerRepository;
+    const { service, nationalIdProtector } = createService(repository);
+    const input = { ...mutation };
+    delete input.nationalId;
+    await service.createForSales(input, {
+      ...actor,
+      permissions: ['sales.contracts.create'],
+    });
+    expect(repository.create).toHaveBeenCalledOnce();
+    expect(vi.mocked(repository.create).mock.calls[0]?.[0]).not.toHaveProperty(
+      'nationalIdFingerprint',
+    );
+    expect(nationalIdProtector.protect).not.toHaveBeenCalled();
+    await expect(service.create(input, actor)).rejects.toMatchObject({
+      response: { code: 'CUSTOMER_NATIONAL_ID_REQUIRED' },
+    });
+    await expect(
+      service.createForSales(input, { ...actor, permissions: [] }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+  it('still protects a supplied national ID and requires a contract passenger birth date', async () => {
+    const repository = {
+      create: vi.fn().mockResolvedValue(row),
+    } as unknown as CustomerRepository;
+    const { service, nationalIdProtector } = createService(repository);
+    const salesActor: AuthenticatedActor = {
+      ...actor,
+      permissions: ['sales.contracts.create'],
+    };
+    await service.createForSales(mutation, salesActor);
+    expect(nationalIdProtector.protect).toHaveBeenCalledWith(
+      mutation.nationalId,
+    );
+    const input = { ...mutation };
+    delete input.nationalId;
+    delete input.birthDate;
+    await expect(
+      service.createForSales(input, salesActor),
+    ).rejects.toMatchObject({
+      response: { code: 'CUSTOMER_PASSENGER_BIRTH_DATE_REQUIRED' },
+    });
+  });
+
   it('rejects a person create without national ID', async () => {
     const repository = { create: vi.fn() } as unknown as CustomerRepository;
     const { service } = createService(repository);

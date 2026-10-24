@@ -214,6 +214,7 @@ export function CustomerEntrySheet({
   visibleFields,
   columnOrder,
   columnLabels,
+  optionalFields = [],
   calendarSwitchInBirthDateHeader = false,
   extraColumns = [],
   topScrollbar = false,
@@ -237,6 +238,8 @@ export function CustomerEntrySheet({
   /** Optional leading fields; all other visible columns retain their default order. */
   columnOrder?: readonly EntryField[];
   columnLabels?: Partial<Record<EntryField, string>>;
+  /** Host-specific optional identity fields; defaults preserve the directory form. */
+  optionalFields?: readonly EntryField[];
   calendarSwitchInBirthDateHeader?: boolean;
 }) {
   const upperScroll = useRef<HTMLDivElement>(null);
@@ -514,11 +517,12 @@ export function CustomerEntrySheet({
                                       ? '\\+?[0-9]{10,15}'
                                       : undefined
                           }
-                          required={[
-                            'firstName',
-                            'lastName',
-                            'nationalId',
-                          ].includes(field)}
+                          required={
+                            !optionalFields.includes(field) &&
+                            ['firstName', 'lastName', 'nationalId'].includes(
+                              field,
+                            )
+                          }
                           type={
                             field === 'email'
                               ? 'email'

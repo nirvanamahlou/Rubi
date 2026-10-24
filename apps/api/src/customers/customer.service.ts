@@ -150,6 +150,7 @@ function prepareMutation(
   update: boolean,
   protectedNationalId?: ProtectedNationalId,
   protectedPassportNumber?: ProtectedPassportNumber,
+  nationalIdOptional = false,
 ) {
   const roles = new Set(input.roles);
   if (!roles.size)
@@ -165,6 +166,7 @@ function prepareMutation(
     );
   if (
     !update &&
+    !nationalIdOptional &&
     input.kind === 'person' &&
     roles.has('passenger') &&
     !protectedNationalId
@@ -821,6 +823,28 @@ export class CustomerService {
     requestedBranch?: string,
     traceId?: string,
   ) {
+    return this.createRecord(input, actor, requestedBranch, traceId, false);
+  }
+
+  /** Contract-entry policy only; callers cannot opt in through a request DTO. */
+  async createForSales(
+    input: CustomerMutationRequest,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+    traceId?: string,
+  ) {
+    const salesActor = this.salesEntryActor(actor);
+    if (input.kind !== 'person') throw new BadRequestException();
+    return this.createRecord(input, salesActor, requestedBranch, traceId, true);
+  }
+
+  private async createRecord(
+    input: CustomerMutationRequest,
+    actor: AuthenticatedActor,
+    requestedBranch: string | undefined,
+    traceId: string | undefined,
+    nationalIdOptional: boolean,
+  ) {
     this.assertMutationFields(input, actor);
     let row;
     try {
@@ -836,6 +860,7 @@ export class CustomerService {
                 input.passportNumber,
               )
             : undefined,
+          nationalIdOptional,
         ),
         actor.userId,
         branchOf(actor, requestedBranch),

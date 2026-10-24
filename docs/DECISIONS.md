@@ -610,3 +610,8 @@ Owner explicitly authorizes the entire new-contract person workflow under sales.
 ## 2026-10-24 — Immediate raster image preview (IMAGE-PREVIEW-NO-SCAN-WAIT-1024)
 
 Owner requests removing antivirus wait from uploaded photo preview. This supersedes the general CLEAN-only rule solely for authenticated JPEG/PNG preview, including PREVIEW step-up grants. Permit explicit non-infected scan states without relabeling them CLEAN. All existing branch, domain, file-read, confidentiality, archive and step-up checks remain. Infected/quarantined images remain blocked. Download, template execution and non-image delivery retain their original scan requirements. Existing MIME detection, response isolation and browser rasterization remain in place. No migration or scanner shutdown.
+
+
+## 2026-10-24 — Optional national ID in New Contract only
+
+SALES-OPTIONAL-NATIONAL-ID-1024: owner explicitly scopes optional national ID to New Contract. Customers-owned createForSales applies this policy only after validating contract-create, screen and actor branch access; general directory create remains strict. Missing ID is omitted (never fabricated), provided IDs retain normalization/protection/uniqueness. Sales entry relaxes national-ID required attributes through an opt-in shared component prop, leaving default consumers unchanged. Birth date/passport and all other identity rules remain. Uncertain no-ID creation requires choosing the existing record instead of unsafe automatic re-creation. No schema/migration or permission grant changes.
