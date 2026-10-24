@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     );
   try {
     const response = await fetch(
-      base + '/reservations/requests/issued-tickets?' + query,
+      base + '/reservations/requests/service-report?' + query,
       {
         headers: {
           cookie: request.headers.get('cookie') ?? '',

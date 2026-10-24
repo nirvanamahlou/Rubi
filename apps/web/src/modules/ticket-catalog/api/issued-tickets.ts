@@ -6,6 +6,16 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import type { IssuedTicketQuery } from '../model/issued-tickets';
 const row = z.object({
+  serviceKind: z.string().optional(),
+  serviceTitle: z.string().optional(),
+  hotelId: z.string().optional(),
+  hotelName: z.string().optional(),
+  checkInDate: z.string().optional(),
+  checkOutDate: z.string().optional(),
+  reportStatus: z.string().optional(),
+  direction: z.string().optional(),
+  flightNumber: z.string().optional(),
+  arrivalAt: z.string().optional(),
   id: z.string(),
   contractNumber: z.string(),
   passengerDisplayName: z.string(),
@@ -18,8 +28,8 @@ const row = z.object({
   airlineId: z.string(),
   airline: z.string(),
   issuedAt: z.string().datetime(),
-  departureAt: z.string().datetime(),
-  status: z.enum(['issued', 'voided']),
+  departureAt: z.string(),
+  status: z.enum(['issued', 'voided', 'allocated']),
 });
 export function issuedReportQuery(query: IssuedTicketQuery) {
   if (!query.issuedFrom || !query.issuedTo || query.issuedFrom > query.issuedTo)
@@ -70,10 +80,21 @@ export async function loadReservationIssuedTickets(
   query: IssuedTicketQuery,
 ) {
   const response = await reportFetch(
-    'issued-tickets?' + issuedReportQuery(query),
+    'service-report?' + issuedReportQuery(query),
     signal,
   );
-  return z.object({ data: z.array(row) }).parse(await response.json()).data;
+  return z
+    .object({
+      data: z.array(row),
+      options: z
+        .object({
+          origins: z.array(z.object({ id: z.string(), name: z.string() })),
+          destinations: z.array(z.object({ id: z.string(), name: z.string() })),
+          hotels: z.array(z.object({ id: z.string(), name: z.string() })),
+        })
+        .optional(),
+    })
+    .parse(await response.json());
 }
 export async function downloadIssuedTicketReport(
   query: IssuedTicketQuery,
@@ -83,7 +104,7 @@ export async function downloadIssuedTicketReport(
   const response = await reportFetch(
     format === 'pdf'
       ? '/ticket-catalog/issued/export/pdf?' + params
-      : 'issued-tickets/export?' + params,
+      : 'service-report/export?' + params,
   );
   const contentType = response.headers.get('content-type') ?? '';
   const expected =
