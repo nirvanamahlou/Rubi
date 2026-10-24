@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   Param,
   ParseUUIDPipe,
   Req,
@@ -22,13 +23,21 @@ export class SalesAgencyCustomerController {
     private readonly directory: MasterSalesDirectory,
     @Inject(CustomerService) private readonly customers: CustomerService,
   ) {}
-  @Post(':organizationId')
-  async resolve(
+  @Get(':organizationId/contact')
+  async contact(
     @Param('organizationId', ParseUUIDPipe) organizationId: string,
     @Req() request: AuthenticatedRequest,
     @Headers('x-branch-id') branchId?: string,
-    @Headers('x-request-id') traceId?: string,
   ) {
+    this.assertAccess(request, branchId);
+    return this.directory.agencyBuyerContact(
+      organizationId,
+      request.actor,
+      branchId,
+    );
+  }
+
+  private assertAccess(request: AuthenticatedRequest, branchId?: string) {
     if (
       !request.actor.permissions.includes('sales.contracts.create') ||
       !canViewRoute(request.actor.permissions, '/sales/contracts/new') ||
@@ -36,6 +45,15 @@ export class SalesAgencyCustomerController {
       (branchId && !request.actor.branchIds.includes(branchId))
     )
       throw new ForbiddenException();
+  }
+  @Post(':organizationId')
+  async resolve(
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-branch-id') branchId?: string,
+    @Headers('x-request-id') traceId?: string,
+  ) {
+    this.assertAccess(request, branchId);
     const { data } = await this.directory.detail(
       'organizations',
       organizationId,

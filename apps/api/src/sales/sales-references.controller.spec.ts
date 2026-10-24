@@ -26,6 +26,7 @@ import { PermissionGuard } from '../iam/permission.guard';
 import { MasterDataController } from '../master-data/master-data.controller';
 import { MasterDataService } from '../master-data/master-data.service';
 import { MasterSalesDirectory } from '../master-data/master-sales-directory';
+import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
 import { SalesReferencesController } from './sales-references.controller';
 
 describe('contract references without Master Data administration', () => {
@@ -63,6 +64,7 @@ describe('contract references without Master Data administration', () => {
         AuthGuard,
         PermissionGuard,
         MasterSalesDirectory,
+        { provide: MasterOrganizationDirectory, useValue: {} },
         { provide: MasterDataService, useValue: { list, detail } },
         {
           provide: IamService,

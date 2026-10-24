@@ -5,6 +5,7 @@ import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   HotelRoomRateV1,
   CustomerSummary,
+  SalesBuyerContactV1,
   MasterDataListQuery,
   MasterDataListResponse,
   MasterDataRecord,
@@ -111,6 +112,10 @@ function queryString(query: SalesContractListQuery): string {
 }
 
 export const salesApi = {
+  agencyBuyerContact: (organizationId: string) =>
+    request<{ data: SalesBuyerContactV1 }>(
+      `/agency-customers/${encodeURIComponent(organizationId)}/contact`,
+    ),
   resolveAgencyCustomer: (organizationId: string) =>
     request<{ data: CustomerSummary }>(
       `/agency-customers/${encodeURIComponent(organizationId)}`,
