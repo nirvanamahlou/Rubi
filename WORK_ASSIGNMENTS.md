@@ -9098,6 +9098,12 @@ HR-JOB-TITLES-PROFILE-1022 verification checkpoint:37 isolated real PostgreSQL/H
 
 HR-JOB-TITLES-PROFILE-1022 bounded UI compatibility: reserve optional HrTable per-row actions rendering for the shared catalogue, retaining existing selection, exports and pagination instead of replacing them with an unpaged bespoke table. Existing callers and mutation authorization remain unchanged.
 
+## CALL-ANSWER-DIRECTORY-1022 — PC-C — ACTIVE
+
+Owner requests automatic answered person/unit/extension in existing CallForm from supplied HR screenshots. Extension203 explicitly shared: show all matched staff, never infer individual identity or ownership. Base678bb685. Reserve new bounded HR public answer-directory projection/tests, Customer Affairs technical answer snapshot/projection/save/form wiring and focused tests; own docs. Existing active HR editor and dossier-card scopes untouched. No schema, dependency, IAM grants, popup activation or PBX routing. Producer HR public port and consumer CA ship together; optional encrypted snapshot stays backward-compatible. Screenshot-derived local directory, if used, stays private and connection-scoped outside Git; HR records are not fabricated. Existing authenticated branch gates remain authoritative.
+
+CALL-ANSWER-DIRECTORY-1022 — LOCAL_VERIFIED:31 API/3 form tests, scoped lint/types/builds pass; private16-person mapping verified. Local3000/4000 activated; no historical data rewrite. Freeze/release source scope on publication; PR1068 exact-head gates and subsequent real-call acceptance tracked separately.
+
 ## VOUCHER-LAYOUT-BOARD-1022 — PC-A — RESERVED
 
 COMPUTER_ID=PC-A; branch codex/pc-a-voucher-layout-board-1022 from develop0d91ec49. Owner authorizes voucher hotel stay dates inside section03, bold different passenger stay dates, unbroken flight return labels, dedicated Board column and one-line room/night summary, tests and develop merge. Reserve voucher preview/HTML renderer and bounded shared document CSS, voucher passenger projection/tests and own status notes. Previous voucher sources released upon merged1056/1057; active passenger-amendment work stays outside this display-only scope. Preserve canonical services/dates, permissions, supplier-form output, pagination and branding. No API/schema/dependency/runtime changes or deployment.
@@ -9105,6 +9111,8 @@ COMPUTER_ID=PC-A; branch codex/pc-a-voucher-layout-board-1022 from develop0d91ec
 VOUCHER-LAYOUT-BOARD-1022:28 focused tests and scoped lint pass; synthetic Chromium single-page A4 output visually verified. Existing reservation-pdf assertion updated for dedicated Board cell. Source reservations freeze on publication; local types/build and all exact-head CI gates precede authorized merge. No runtime or stored-data changes.
 
 VOUCHER-LAYOUT-BOARD-1022 CI compatibility: reserve existing room-output-consistency display assertion; voucher Hotel Information now ends with check-in/out while supplier output keeps its previous columns. Local Web typecheck/build pass. Revalidate exact final head; no production code changed by this test correction.
+
+CALL-ANSWER-DIRECTORY-1022 localization: reserve only the two new destination/shared-extension display labels in Web English catalogue and generated API catalogue; regenerate through the existing i18n-sync tool. No other translations or UI behavior change.
 
 ## ISSUED-SERVICE-REPORT-1022 — PC-A — READY_FOR_CI
 

@@ -1,3 +1,4 @@
+import type { CallAnswerRecipient } from '../hr/hr-call-answer-directory';
 import { callSearchMetadata } from './call-center-search';
 import {
   BadRequestException,
@@ -39,7 +40,7 @@ export function normalizedCallPhone(value: string) {
 type PrivateCall = Pick<
   CallCenterCallDto,
   'phone' | 'name' | 'subject' | 'source' | 'operator' | 'note'
->;
+> & { answerRecipient?: CallAnswerRecipient };
 type StoredCall = Prisma.CallCenterCallGetPayload<Record<string, never>>;
 type StoredNote = Prisma.CallCenterNoteGetPayload<Record<string, never>>;
 
@@ -104,6 +105,9 @@ export class CallCenterService {
       subject: call.subject,
       source: call.source,
       operator: call.operator,
+      ...(call.answerRecipient
+        ? { answerRecipient: call.answerRecipient }
+        : {}),
       direction: call.direction,
       status: call.status,
       outcome: call.outcome,
@@ -294,6 +298,10 @@ export class CallCenterService {
             throw new BadRequestException(
               'درخواست باز و متعلق به همین مخاطب را انتخاب کنید.',
             );
+        }
+        if (presented.answerRecipient) {
+          payload.operator = presented.operator;
+          payload.answerRecipient = presented.answerRecipient;
         }
         const outcome = input.outcome ?? existing.outcome;
         const metadata = callSearchMetadata(

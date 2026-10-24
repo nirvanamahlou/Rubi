@@ -206,21 +206,36 @@ export function CallForm({
                 </label>
                 <label>
                   وصل شده به
-                  <NativeSearchSelect
-                    onChange={() => setDirty(true)}
-                    aria-label="وصل شده به"
-                    className={styles.control}
-                    optionLimit={50}
-                    disabled={busy}
-                    name="operator"
-                    defaultValue={completing ? previous?.operator : 'نامشخص'}
-                  >
-                    {operators.map((operator) => (
-                      <option key={operator} value={operator}>
-                        {operator}
-                      </option>
-                    ))}
-                  </NativeSearchSelect>
+                  {completing && previous?.answerRecipient ? (
+                    <>
+                      <input
+                        aria-label="وصل شده به"
+                        readOnly
+                        value={previous.answerRecipient.label}
+                      />
+                      <input
+                        type="hidden"
+                        name="operator"
+                        value={previous.operator}
+                      />
+                    </>
+                  ) : (
+                    <NativeSearchSelect
+                      onChange={() => setDirty(true)}
+                      aria-label="وصل شده به"
+                      className={styles.control}
+                      optionLimit={50}
+                      disabled={busy}
+                      name="operator"
+                      defaultValue={completing ? previous?.operator : 'نامشخص'}
+                    >
+                      {operators.map((operator) => (
+                        <option key={operator} value={operator}>
+                          {operator}
+                        </option>
+                      ))}
+                    </NativeSearchSelect>
+                  )}
                 </label>
                 <label>
                   نتیجه تماس (اختیاری)
