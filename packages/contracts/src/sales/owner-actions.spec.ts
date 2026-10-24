@@ -1,3 +1,4 @@
+import type { AuthenticatedActor } from '../iam';
 import { expect, it } from 'vitest';
 import {
   hasSalesContractSelfService,
@@ -8,13 +9,21 @@ import {
   MANUAL_ACCESS_VERSION,
   screenPermission,
 } from '../iam';
-const actor = {
-  userId: 'owner',
-  branchIds: ['branch'],
-  permissions: ['sales.contracts.create'],
-};
+const actor: Pick<AuthenticatedActor, 'userId' | 'branchIds' | 'permissions'> =
+  {
+    userId: 'owner',
+    branchIds: ['branch'],
+    permissions: ['sales.contracts.create'],
+  };
 it('allows a contract creator to operate only their own contracts in an allowed branch', () => {
   expect(hasSalesContractSelfService(actor.permissions)).toBe(true);
+  expect(
+    hasSalesContractSelfService([
+      MANUAL_ACCESS_VERSION,
+      'sales.contracts.create',
+      screenPermission('sales.new-contract'),
+    ]),
+  ).toBe(true);
   expect(
     canSelfServeSalesContract(actor, {
       ownerUserId: 'owner',
