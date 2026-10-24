@@ -642,7 +642,7 @@ describe('DocumentsService security and persistence flow', () => {
     'AWAITING_ANTIVIRUS_ADAPTER',
     'SCAN_FAILED',
   ] as const)(
-    'delivers an authorized logo immediately but not through general preview (%s)',
+    'delivers authorized raster logos immediately through both preview paths (%s)',
     async (scanStatus) => {
       const logo = row({
         domain: 'BRAND',
@@ -679,8 +679,8 @@ describe('DocumentsService security and persistence flow', () => {
           },
           {},
         ),
-      ).rejects.toBeInstanceOf(ConflictException);
-      expect(storage.openQuarantined).toHaveBeenCalledTimes(1);
+      ).resolves.toMatchObject({ mimeType: 'image/png' });
+      expect(storage.openQuarantined).toHaveBeenCalledTimes(2);
     },
   );
 
@@ -705,7 +705,7 @@ describe('DocumentsService security and persistence flow', () => {
     storage.openQuarantined.mockResolvedValue(
       Readable.from([Buffer.from('png')]),
     );
-    const reader = {
+    const reader: AuthenticatedActor = {
       ...actor,
       permissions: ['master_data.read'] as AuthenticatedActor['permissions'],
     };
@@ -1304,6 +1304,45 @@ describe('DocumentsService security and persistence flow', () => {
     expect(repository.audit).not.toHaveBeenCalled();
   });
 
+  it.each(['PREVIEW', 'DOWNLOAD'] as const)(
+    'keeps step-up verification while removing only the preview scan wait (%s)',
+    async (purpose) => {
+      repository.findDetail.mockResolvedValue(
+        row({
+          mimeType: 'image/jpeg',
+          scanStatus: 'PENDING_SCAN',
+          requiresStepUpVerification: true,
+          confidentiality: 'INTERNAL',
+        }),
+      );
+      repository.createAccessGrant.mockResolvedValue(undefined);
+      iamStepUp.verifyStepUp.mockResolvedValue(undefined);
+      const reader: AuthenticatedActor = {
+        ...actor,
+        permissions: [
+          ...actor.permissions,
+          'documents.file.read',
+          'documents.download',
+        ],
+      };
+      const request = service.createAccessGrant(
+        row().id,
+        { code: '123456', purpose },
+        reader,
+        {},
+      );
+      if (purpose === 'PREVIEW') {
+        await expect(request).resolves.toMatchObject({
+          data: { purpose: 'PREVIEW' },
+        });
+        expect(iamStepUp.verifyStepUp).toHaveBeenCalled();
+      } else {
+        await expect(request).rejects.toBeInstanceOf(ForbiddenException);
+        expect(iamStepUp.verifyStepUp).not.toHaveBeenCalled();
+      }
+    },
+  );
+
   it('uses the configured document-link lifetime for access grants', async () => {
     const protectedActor: AuthenticatedActor = {
       ...actor,
@@ -1834,33 +1873,72 @@ describe('DocumentsService security and persistence flow', () => {
     expect(storage.openQuarantined).not.toHaveBeenCalled();
   });
 
-  it('fails closed when an image preview has not passed its security scan', async () => {
-    const previewActor: AuthenticatedActor = {
-      ...actor,
-      permissions: [
-        ...actor.permissions,
-        'documents.file.read',
-        'documents.sensitive.read',
-      ],
-    };
-    repository.findDetail.mockResolvedValue(
-      row({ mimeType: 'image/jpeg', scanStatus: 'PENDING_SCAN' }),
-    );
-    repository.appendAudit.mockResolvedValue({});
+  it.each(['INFECTED', 'QUARANTINED'] as const)(
+    'blocks an image preview marked %s',
+    async (scanStatus) => {
+      const previewActor: AuthenticatedActor = {
+        ...actor,
+        permissions: [
+          ...actor.permissions,
+          'documents.file.read',
+          'documents.sensitive.read',
+        ],
+      };
+      repository.findDetail.mockResolvedValue(
+        row({ mimeType: 'image/jpeg', scanStatus }),
+      );
+      repository.appendAudit.mockResolvedValue({});
 
-    await expect(
-      service.preview(row().id, previewActor, {
-        sensitiveReason: 'بررسی پرونده',
-      }),
-    ).rejects.toBeInstanceOf(ConflictException);
-    expect(repository.appendAudit).toHaveBeenCalledWith(
-      expect.objectContaining({
-        outcome: 'FAILURE',
-        reason: 'PREVIEW_SCAN_BLOCKED',
-      }),
-    );
-    expect(storage.openQuarantined).not.toHaveBeenCalled();
-  });
+      await expect(
+        service.preview(row().id, previewActor, {
+          sensitiveReason: 'بررسی پرونده',
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(repository.appendAudit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          outcome: 'FAILURE',
+          reason: 'PREVIEW_SCAN_BLOCKED',
+        }),
+      );
+      expect(storage.openQuarantined).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    'PENDING_SCAN',
+    'AWAITING_ANTIVIRUS_ADAPTER',
+    'SCAN_FAILED',
+  ] as const)(
+    'previews a permitted image without waiting for the scanner (%s)',
+    async (scanStatus) => {
+      const image = row({
+        mimeType: 'image/jpeg',
+        scanStatus,
+        confidentiality: 'INTERNAL',
+      });
+      repository.findDetail.mockResolvedValue(image);
+      storage.openQuarantined.mockResolvedValue(
+        Readable.from([Buffer.from('jpg')]),
+      );
+      const reader: AuthenticatedActor = {
+        ...actor,
+        permissions: [...actor.permissions, 'documents.file.read'],
+      };
+      await expect(
+        service.preview(image.id, reader, {}),
+      ).resolves.toMatchObject({ mimeType: 'image/jpeg' });
+      expect(image.currentVersion?.scanStatus).toBe(scanStatus);
+      expect(repository.appendAudit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'documents.file.preview',
+          outcome: 'SUCCESS',
+        }),
+      );
+      await expect(service.preview(image.id, actor, {})).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    },
+  );
 
   it('accepts an empty reason with sensitive preview permission', async () => {
     const previewActor: AuthenticatedActor = {

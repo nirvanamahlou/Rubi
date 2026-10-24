@@ -24,6 +24,7 @@ import { TicketDatePicker } from './ticket-date-picker';
 import { ManifestTemplatePicker } from './manifest-template-picker';
 import { loadWeekdayRevisions } from '../model/load-weekday-edit';
 import { TicketBaggageFields } from './ticket-baggage-fields';
+import { ReferencePicker } from './reference-picker';
 export function tehranWallTime(instant: string) {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Tehran',
@@ -64,6 +65,12 @@ export function PublishedOfferForm({
     tehranWallTime(offer.arrivalAt),
   );
   const [draft, setDraft] = useState(publishedOfferInput(offer));
+  const [airline, setAirline] = useState<Reference | undefined>({
+    id: `registered-carrier:${offer.id}`,
+    kind: 'airline',
+    name: offer.carrierName,
+    active: true,
+  });
   const [departure, setDeparture] = useState(initialDeparture);
   const [arrival, setArrival] = useState(initialArrival);
   const [cities, setCities] = useState<Reference[]>([]);
@@ -111,7 +118,7 @@ export function PublishedOfferForm({
   }, []);
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (readOnly || savingRef.current) return;
+    if (readOnly || savingRef.current || !draft.carrierName.trim()) return;
     savingRef.current = true;
     setSaving(true);
     setProblem('');
@@ -238,21 +245,20 @@ export function PublishedOfferForm({
             </Select>
           </FormField>
         ))}
-        <FormField label="ایرلاین">
-          <Input
-            required
-            maxLength={160}
-            value={draft.carrierName}
-            readOnly={readOnly}
-            disabled={saving}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                carrierName: event.target.value,
-              }))
-            }
-          />
-        </FormField>
+        <ReferencePicker
+          id={`published-airline-${offer.id}`}
+          label="ایرلاین"
+          resource="airlines"
+          value={airline}
+          readOnly={readOnly || saving}
+          onSelect={(reference) => {
+            setAirline(reference);
+            setDraft((current) => ({
+              ...current,
+              carrierName: reference?.name ?? '',
+            }));
+          }}
+        />
         <FormField label="شماره پرواز">
           <Input
             required
@@ -388,7 +394,11 @@ export function PublishedOfferForm({
         }
       />
       {readOnly ? null : (
-        <Button type="submit" loading={saving} disabled={saving}>
+        <Button
+          type="submit"
+          loading={saving}
+          disabled={saving || !draft.carrierName.trim()}
+        >
           ذخیره تغییرات
         </Button>
       )}

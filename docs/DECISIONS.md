@@ -605,3 +605,8 @@ Owner explicitly permits unit, job title, grade and direct-manager correction fr
 
 ## 2026-10-24 — Contract-only person entry authorization
 Owner explicitly authorizes the entire new-contract person workflow under sales.contracts.create and visibility of /sales/contracts/new. Customers exposes a bounded sales/people entry adapter using its existing validation/encryption/branch/CAS/audit producer. It derives request-local read/create/update/sensitive/contact and Customer field capabilities solely for those actions; general Customers administration remains unchanged and no grants are stored. Role/status/merge/archive and organization mutation remain outside this adapter. Active agency resolution stays on the existing Sales reference endpoint.
+
+
+## 2026-10-24 — Immediate raster image preview (IMAGE-PREVIEW-NO-SCAN-WAIT-1024)
+
+Owner requests removing antivirus wait from uploaded photo preview. This supersedes the general CLEAN-only rule solely for authenticated JPEG/PNG preview, including PREVIEW step-up grants. Permit explicit non-infected scan states without relabeling them CLEAN. All existing branch, domain, file-read, confidentiality, archive and step-up checks remain. Infected/quarantined images remain blocked. Download, template execution and non-image delivery retain their original scan requirements. Existing MIME detection, response isolation and browser rasterization remain in place. No migration or scanner shutdown.
