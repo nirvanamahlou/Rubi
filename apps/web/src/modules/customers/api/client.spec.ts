@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { customersApi, customerErrorMessage } from './client';
+import { customersApi, salesPeopleApi, customerErrorMessage } from './client';
 
 const originalBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 afterEach(() => {
@@ -230,4 +230,42 @@ it('shows actual validation fields in Persian while retaining business errors', 
       },
     }),
   ).toBe('پرونده موجود است.');
+});
+
+it('routes new-contract person operations to the bounded Sales workflow surface', async () => {
+  process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValue({ ok: true, json: async () => ({ data: null }) });
+  vi.stubGlobal('fetch', fetchMock);
+  await salesPeopleApi.detail('person', 'customer-verification');
+  await salesPeopleApi.create({
+    kind: 'person',
+    displayName: 'Synthetic Person',
+    firstName: 'Synthetic',
+    lastName: 'Person',
+    roles: ['passenger'],
+  });
+  await salesPeopleApi.update('person', {
+    kind: 'person',
+    displayName: 'Synthetic Person',
+    version: 1,
+    roles: ['passenger'],
+  });
+  await salesPeopleApi.addContact('person', {
+    type: 'phone',
+    value: '09120000000',
+    version: 1,
+  });
+  expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+    'http://localhost:4000/api/v1/sales/people/person',
+    'http://localhost:4000/api/v1/sales/people',
+    'http://localhost:4000/api/v1/sales/people/person',
+    'http://localhost:4000/api/v1/sales/people/person/contacts',
+  ]);
+  for (const call of fetchMock.mock.calls)
+    expect(call[1]).toMatchObject({
+      credentials: 'include',
+      cache: 'no-store',
+    });
 });

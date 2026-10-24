@@ -1,5 +1,7 @@
 import {
   canViewRoute,
+  CUSTOMER_EDITABLE_FIELDS,
+  allowAccessControl,
   hotelAgeOn,
   isOptionalOperationReason,
 } from '@nora/contracts';
@@ -407,6 +409,33 @@ export class CustomerService {
     @Inject(CustomerNationalIdProtector)
     private readonly nationalIdProtector: CustomerNationalIdProtector,
   ) {}
+
+  /** Request-local capabilities for the owner-authorized new-contract person workflow. */
+  salesEntryActor(actor: AuthenticatedActor): AuthenticatedActor {
+    if (
+      !actor.permissions.includes('sales.contracts.create') ||
+      !canViewRoute(actor.permissions, '/sales/contracts/new') ||
+      !actor.branchIds.length
+    )
+      throw new ForbiddenException();
+    return {
+      ...actor,
+      permissions: [
+        ...new Set([
+          ...actor.permissions.filter(
+            (p) => !p.startsWith('ui.deny.field.customers.'),
+          ),
+          'customers.read',
+          'customers.create',
+          'customers.update',
+          'customers.sensitive.read',
+          ...CUSTOMER_EDITABLE_FIELDS.map((field) =>
+            allowAccessControl(`field.customers.${field}`),
+          ),
+        ]),
+      ] as AuthenticatedActor['permissions'],
+    };
+  }
 
   private async present(
     row: CustomerRow,

@@ -6,7 +6,7 @@ import type {
   SalesBuyerContactV1,
 } from '@nora/contracts';
 import {
-  customersApi,
+  salesPeopleApi as customersApi,
   CustomersApiError,
   isValidIranianNationalId,
   normalizeNationalId,

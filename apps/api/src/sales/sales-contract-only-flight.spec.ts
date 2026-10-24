@@ -356,3 +356,50 @@ describe('Contract-only flights remain outside ticket inventory', () => {
     },
   );
 });
+
+it('allows a contract creator to submit only their own branch draft without separate confirmation grants', async () => {
+  const saved = row();
+  const repository = {
+    findById: vi.fn().mockResolvedValue(saved),
+    transition: vi.fn().mockResolvedValue(true),
+  };
+  const service = new SalesService(
+    repository as unknown as SalesRepository,
+    {
+      resolveSnapshot: vi.fn(),
+      assertPassengers: vi.fn(),
+    } as unknown as SalesCustomersPublicAdapter,
+    {
+      reserve: vi.fn(),
+      release: vi.fn(),
+    } as unknown as SalesTicketAvailabilityPort,
+  );
+  const creator = {
+    ...actor,
+    permissions: ['sales.contracts.create'],
+  } as AuthenticatedActor;
+  await service.confirm('contract', 1, null, creator, 'entry-submit');
+  await expect(service.detail('contract', creator)).resolves.toHaveProperty(
+    'data.contractNumber',
+    'SAMPLE',
+  );
+  expect(repository.transition).toHaveBeenCalledOnce();
+  await expect(
+    service.confirm(
+      'contract',
+      1,
+      null,
+      { ...creator, userId: 'other' },
+      'other-submit',
+    ),
+  ).rejects.toThrow();
+  await expect(
+    service.confirm(
+      'contract',
+      1,
+      null,
+      { ...creator, branchIds: ['other'] },
+      'wrong-branch',
+    ),
+  ).rejects.toThrow();
+});

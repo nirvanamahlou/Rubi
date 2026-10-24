@@ -4,7 +4,7 @@ import {
 } from './sales-financial-settlement';
 import { financialDate } from '../finance/accounting/financial-event.public';
 import { PackageTourPricingService } from '../package-pricing/package-tour-pricing.service';
-import { isOptionalOperationReason } from '@nora/contracts';
+import { canViewRoute, isOptionalOperationReason } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
 import type { DisplayLanguage } from '../common/i18n/language';
 import { IamFinanceDirectory } from '../iam/iam-finance-directory';
@@ -624,6 +624,13 @@ export class SalesService {
   }
 
   private assertRead(row: SalesContractRow, actor: AuthenticatedActor): void {
+    if (
+      has(actor, 'sales.contracts.create') &&
+      canViewRoute(actor.permissions, '/sales/contracts/new') &&
+      row.ownerUserId === actor.userId &&
+      actor.branchIds.includes(row.branchId)
+    )
+      return;
     if (has(actor, 'sales.contracts.read.all')) return;
     if (
       has(actor, 'sales.contracts.read.branch') &&
@@ -1490,10 +1497,13 @@ export class SalesService {
     idempotencyKey: string | undefined,
     traceId?: string,
   ) {
-    if (
-      !has(actor, 'sales.contracts.confirm') ||
-      !has(actor, 'sales.reservation_request.create')
-    )
+    const entryCreator =
+      has(actor, 'sales.contracts.create') &&
+      canViewRoute(actor.permissions, '/sales/contracts/new');
+    const fullConfirmation =
+      has(actor, 'sales.contracts.confirm') &&
+      has(actor, 'sales.reservation_request.create');
+    if (!fullConfirmation && !entryCreator)
       throw new ForbiddenException('مجوز تأیید و ارسال رزرو وجود ندارد.');
     if (!idempotencyKey?.trim())
       throw new BadRequestException('Idempotency-Key الزامی است.');
@@ -1505,7 +1515,15 @@ export class SalesService {
         code: 'SALES_CONTRACT_NOT_FOUND',
         message: 'قرارداد یافت نشد.',
       });
-    this.assertRead(row, actor);
+    if (!fullConfirmation) {
+      if (
+        row.ownerUserId !== actor.userId ||
+        !actor.branchIds.includes(row.branchId) ||
+        (!['DRAFT', 'PENDING_CONFIRMATION'].includes(row.status) &&
+          row.confirmIdempotencyKey !== idempotencyKey)
+      )
+        throw new ForbiddenException();
+    } else this.assertRead(row, actor);
     const fingerprint = salesFingerprint({ id, version });
     if (row.confirmIdempotencyKey === idempotencyKey) {
       if (row.confirmRequestFingerprint !== fingerprint)
@@ -1637,7 +1655,15 @@ export class SalesService {
       });
     }
     return {
-      ...(await this.detail(id, actor)),
+      ...(await this.detail(
+        id,
+        fullConfirmation
+          ? actor
+          : {
+              ...actor,
+              permissions: [...actor.permissions, 'sales.contracts.read.own'],
+            },
+      )),
       meta: { reservationRequest: snapshot, idempotentReplay: false },
     };
   }
