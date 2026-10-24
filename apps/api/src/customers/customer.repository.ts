@@ -523,6 +523,46 @@ export class CustomerRepository {
     }) as unknown as Promise<CustomerAuditRow[]>;
   }
 
+  async resolveSalesOrganization(
+    organizationId: string,
+    displayName: string,
+    branchId: string,
+    actorUserId: string,
+    traceId?: string,
+  ) {
+    return this.database.client.$transaction(async (transaction) => {
+      const key = JSON.stringify(['sales-agency', branchId, organizationId]);
+      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`;
+      const rows = await transaction.customer.findMany({
+        where: {
+          organizationId,
+          ownerBranchId: branchId,
+          kind: 'ORGANIZATION',
+          mergedIntoId: null,
+        },
+        include: detailInclude,
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      });
+      const active = rows.find((row) => row.isActive && row.isCustomer);
+      if (active) return active as unknown as CustomerRow;
+      if (rows.length) return null;
+      return this.create(
+        {
+          kind: 'ORGANIZATION',
+          organizationId,
+          displayName,
+          isCustomer: true,
+          isPassenger: false,
+          isActive: true,
+        },
+        actorUserId,
+        branchId,
+        traceId,
+        transaction,
+      );
+    });
+  }
+
   async create(
     data: Record<string, unknown>,
     actorUserId: string,

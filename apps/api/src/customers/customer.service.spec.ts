@@ -1,3 +1,4 @@
+import { MANUAL_ACCESS_VERSION } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -861,5 +862,72 @@ describe('CustomerService', () => {
       response: { code: 'CUSTOMER_SENSITIVE_DECRYPTION_FAILED' },
     });
     expect(repository.auditSensitiveRead).not.toHaveBeenCalled();
+  });
+});
+
+describe('Sales workflow agency creation permission', () => {
+  const salesActor = {
+    ...actor,
+    permissions: [
+      MANUAL_ACCESS_VERSION,
+      'sales.contracts.create',
+      'ui.screen.sales.new-contract',
+    ],
+  };
+  it('allows a contract creator without customer read/create permissions and returns only a summary', async () => {
+    const resolveSalesOrganization = vi.fn().mockResolvedValue({
+      ...row,
+      kind: 'ORGANIZATION',
+      organizationId: 'org',
+    });
+    const { service } = createService({ resolveSalesOrganization } as never);
+    const result = await service.resolveSalesOrganization(
+      { id: 'org', name: 'Agency' },
+      salesActor,
+    );
+    expect(result.data.kind).toBe('organization');
+    expect(result.data).not.toHaveProperty('contacts');
+    expect(resolveSalesOrganization).toHaveBeenCalledWith(
+      'org',
+      'Agency',
+      actor.branchIds[0],
+      actor.userId,
+      undefined,
+    );
+  });
+  it('denies read-only users, explicit screen denies, empty branches and unassigned branch requests before writing', async () => {
+    const resolveSalesOrganization = vi.fn();
+    const { service } = createService({ resolveSalesOrganization } as never);
+    for (const user of [
+      { ...salesActor, permissions: ['sales.contracts.read.own'] },
+      {
+        ...salesActor,
+        permissions: [...salesActor.permissions, 'ui.deny.sales.new-contract'],
+      },
+      { ...salesActor, branchIds: [] },
+    ]) {
+      await expect(
+        service.resolveSalesOrganization({ id: 'org', name: 'Agency' }, user),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    }
+    await expect(
+      service.resolveSalesOrganization(
+        { id: 'org', name: 'Agency' },
+        salesActor,
+        'outside',
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(resolveSalesOrganization).not.toHaveBeenCalled();
+  });
+  it('keeps inactive dossier conflicts explicit', async () => {
+    const { service } = createService({
+      resolveSalesOrganization: vi.fn().mockResolvedValue(null),
+    } as never);
+    await expect(
+      service.resolveSalesOrganization(
+        { id: 'org', name: 'Agency' },
+        salesActor,
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 });

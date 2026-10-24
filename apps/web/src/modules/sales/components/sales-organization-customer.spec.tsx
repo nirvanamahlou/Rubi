@@ -26,11 +26,6 @@ const customer = {
   roles: ['customer'],
   status: 'active',
 } as CustomerSummary;
-const page = (data: CustomerSummary[], total = data.length) => ({
-  data,
-  meta: { total },
-});
-
 describe('Sales organization customer public connection', () => {
   it('loads every agency page using only the contract reference endpoint', async () => {
     const second = { ...organization, id: 'second-agency' };
@@ -47,64 +42,29 @@ describe('Sales organization customer public connection', () => {
       expect.objectContaining({ page: 2, status: 'active', pageSize: 100 }),
     );
   });
-  it('reuses an existing organization customer across paginated results without creating another profile', async () => {
+  it('resolves the selected agency through the bounded Sales endpoint without customer-directory permissions', async () => {
     const api = {
-      list: vi
-        .fn()
-        .mockResolvedValueOnce(
-          page([{ ...customer, id: 'other', organizationId: 'other-org' }], 2),
-        )
-        .mockResolvedValueOnce(page([customer], 2)),
-      create: vi.fn(),
+      resolveAgencyCustomer: vi.fn().mockResolvedValue({ data: customer }),
     };
     expect(await resolveOrganizationCustomer(organization, api)).toBe(customer);
-    expect(api.list).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        kind: 'organization',
-        branchId: 'all',
-        page: 2,
-      }),
+    expect(api.resolveAgencyCustomer).toHaveBeenCalledExactlyOnceWith(
+      organization.id,
     );
-    expect(api.create).not.toHaveBeenCalled();
   });
-  it('creates only a Customer profile linked to the existing stable organization ID', async () => {
+  it('preserves server conflicts and refuses inactive organization selection', async () => {
     const api = {
-      list: vi.fn().mockResolvedValue(page([])),
-      create: vi.fn().mockResolvedValue({ data: customer }),
-    };
-    expect(await resolveOrganizationCustomer(organization, api)).toBe(customer);
-    expect(api.create).toHaveBeenCalledExactlyOnceWith({
-      kind: 'organization',
-      organizationId: organization.id,
-      displayName: organization.name,
-      roles: ['customer'],
-    });
-  });
-  it('does not duplicate an inactive customer profile', async () => {
-    const api = {
-      list: vi
+      resolveAgencyCustomer: vi
         .fn()
-        .mockResolvedValue(page([{ ...customer, status: 'inactive' }])),
-      create: vi.fn(),
+        .mockRejectedValue(new Error('inactive profile')),
     };
     await expect(
       resolveOrganizationCustomer(organization, api),
-    ).rejects.toThrow('پرونده این سازمان موجود است');
-    expect(api.create).not.toHaveBeenCalled();
-  });
-  it('fails closed on unavailable public data or permission failure', async () => {
-    const api = {
-      list: vi.fn().mockRejectedValue(new Error('Forbidden')),
-      create: vi.fn(),
-    };
-    await expect(
-      resolveOrganizationCustomer(organization, api),
-    ).rejects.toThrow('Forbidden');
-    expect(api.create).not.toHaveBeenCalled();
+    ).rejects.toThrow('inactive profile');
+    api.resolveAgencyCustomer.mockClear();
     await expect(
       resolveOrganizationCustomer({ ...organization, status: 'inactive' }, api),
     ).rejects.toThrow('سازمان فعال');
+    expect(api.resolveAgencyCustomer).not.toHaveBeenCalled();
   });
   it('preserves passengers and sends the legal customer ID, never the organization ID as customer ID', () => {
     const state = {
