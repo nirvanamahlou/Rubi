@@ -17463,5 +17463,8 @@
   "ویرایش اطلاعات تماس": "Edit call information",
   "ویرایش اطلاعات مخاطب": "Edit contact information",
   "— داخلی": "— Extension",
-  "(مشترک)": "(shared)"
+  "(مشترک)": "(shared)",
+  "یادداشت قرارداد": "Contract notice",
+  "یادداشت قرارداد / Notice (اختیاری)": "Contract notice (optional)",
+  "یادداشتی که در پایین قرارداد چاپ می‌شود": "Note printed at the bottom of the contract"
 }
