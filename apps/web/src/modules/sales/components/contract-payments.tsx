@@ -1,6 +1,6 @@
 'use client';
-import { hasSalesContractSelfService } from '@nora/contracts';
-import { useAccessPermissions } from '@/modules/iam/access-context';
+import { canSelfServeSalesContract } from '@nora/contracts';
+import { useAccessActor } from '@/modules/iam/access-context';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { SalesThemedSelect } from './sales-themed-select';
 import { PaymentDocuments } from './payment-documents';
@@ -174,8 +174,11 @@ export function ContractPayments({
   onSaved: () => void;
   onSearchContracts: (reference: string) => void;
 }) {
-  const selfService = hasSalesContractSelfService(useAccessPermissions() ?? []);
+  const actor = useAccessActor();
   const [contract, setContract] = useState<SalesContractDetail | null>(null);
+  const selfService = Boolean(
+    actor && contract && canSelfServeSalesContract(actor, contract),
+  );
   const [payment, setPayment] = useState(empty);
   const [banks, setBanks] = useState<readonly MasterDataRecord[]>([]);
   const [currencies, setCurrencies] = useState<readonly MasterDataRecord[]>([]);

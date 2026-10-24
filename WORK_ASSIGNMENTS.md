@@ -9333,3 +9333,7 @@ CONTRACT-OWNER-ACTIONS-1024 scope completion: reserve ContractPriceCorrectionSer
 ## FLIGHT-ONLY-CALENDAR-DOTS-1024 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-flight-only-calendar-dots-1024 from develop63d735662. User requests inventory calendar dots without HOTEL, then explicitly extends to selecting tickets without published sale prices, and develop merge. Reserve only SalesContractForm calendar/picker/paired-return fare prerequisite opt-outs, focused flight calendar/search/card/price payload regressions and own docs. Reuse existing no-fare modes; active inventory/capacity/route/return constraints and explicit contract sale-price validation remain. No shared API/schema/migration/dependency/i18n/permissions/runtime or operational data changes. Existing relevant source scopes published/released; no active overlapping writer found.
+
+## CONTRACT-OWNER-ACTION-CONTEXT-1024 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; follow-up to owner-authorized CONTRACT-OWNER-ACTIONS-1024 before production activation. Reserve Sales action UI owner/branch context and regressions plus own docs. Use existing shared owner predicate with the actual contract row, preserving native Finance price-only amendment routing on other owners' contracts. Keep backend grants/guards unchanged. User's develop merge and server rollout authorization continues; no migration/dependency/data change. Prior task source published/released, no overlapping UI writer found. Exact-head gates precede merge and final rollout.

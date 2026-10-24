@@ -1,5 +1,5 @@
 'use client';
-import { hasSalesContractSelfService } from '@nora/contracts';
+import { canSelfServeSalesContract } from '@nora/contracts';
 import { ContractPriceCorrection } from './contract-price-correction';
 import { useEffect, useRef, useState } from 'react';
 import type {
@@ -15,7 +15,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/overlays';
-import { useAccessPermissions } from '@/modules/iam/access-context';
+import {
+  useAccessActor,
+  useAccessPermissions,
+} from '@/modules/iam/access-context';
 import { SalesApiError, salesApi } from '../api/client';
 import { PassengerCorrectionHistory } from './passenger-correction-history';
 
@@ -248,15 +251,22 @@ function CorrectionForm({
 
 export function PassengerCorrectionButton({
   contractId,
+  ownerUserId,
+  branchId,
   status,
   onSaved,
 }: {
   contractId: string;
+  ownerUserId: string;
+  branchId: string;
   status: string;
   onSaved: () => void;
 }) {
   const permissions = useAccessPermissions();
-  const selfService = hasSalesContractSelfService(permissions ?? []);
+  const actor = useAccessActor();
+  const selfService = Boolean(
+    actor && canSelfServeSalesContract(actor, { ownerUserId, branchId }),
+  );
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   if (
