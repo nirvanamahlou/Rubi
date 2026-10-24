@@ -1,3 +1,7 @@
+import {
+  canSelfServeSalesContract,
+  hasSalesContractSelfService,
+} from '@nora/contracts';
 import { recalculateSalesSettlement } from '../sales-financial-settlement';
 import { isOptionalOperationReason } from '@nora/contracts';
 import {
@@ -43,23 +47,27 @@ export class ContractPriceCorrectionService {
     private readonly directory: IamReservationsDirectory,
   ) {}
   private async authorize(actor: AuthenticatedActor) {
-    if (!(await this.directory.canCorrectContractPrice(actor.userId)))
+    const native = await this.directory.canCorrectContractPrice(actor.userId);
+    if (!native && !hasSalesContractSelfService(actor.permissions))
       throw new ForbiddenException('مجوز ویرایش قیمت قرارداد وجود ندارد.');
+    return native;
   }
   async form(id: string, actor: AuthenticatedActor) {
-    await this.authorize(actor);
+    const native = await this.authorize(actor);
     const row = await this.db.client.salesContract.findFirst({
       where: { id, branchId: { in: actor.branchIds } },
       include: { priceComponents: true },
     });
     if (!row) throw new NotFoundException('قرارداد یافت نشد.');
+    if (!native && !canSelfServeSalesContract(actor, row))
+      throw new ForbiddenException('مجوز ویرایش قیمت قرارداد وجود ندارد.');
     return {
       version: row.version,
       totals: contractCurrencyTotals(row.priceComponents),
     };
   }
   async save(id: string, input: unknown, actor: AuthenticatedActor) {
-    await this.authorize(actor);
+    const native = await this.authorize(actor);
     if (!input || typeof input !== 'object') throw new BadRequestException();
     const value = input as {
       expectedVersion: number;
@@ -94,6 +102,8 @@ export class ContractPriceCorrectionService {
         include: { priceComponents: true },
       });
       if (!row) throw new NotFoundException('قرارداد یافت نشد.');
+      if (!native && !canSelfServeSalesContract(actor, row))
+        throw new ForbiddenException('مجوز ویرایش قیمت قرارداد وجود ندارد.');
       if (
         ![
           'CONFIRMED',
