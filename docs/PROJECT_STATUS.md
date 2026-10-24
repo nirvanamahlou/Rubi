@@ -6,6 +6,14 @@ Owner scopes optional national ID to New Contract only. Sales people entry and q
 
 Owner temporarily disables blocking hotel guest/room composition and tariff capacity checks in Sales UI, API save/update and confirmation through one shared policy. Structural room IDs/ordinals, stay/service/price integrity and actual passenger allocations remain; unavailable tariff matches never fabricate quotes. Optional buyer landline accepts short digit sequences and an optional leading plus; mobile and postal-code checks remain. Targeted API66 and Web64 tests, types/lint/build, full exact-head CI gate owner-authorized develop merge and encrypted-backup production rollout. No schema/migration/dependency or data deletion. Retained strict capacity algorithm has separate enabled-policy regressions for future explicit restoration. Source locks release at publication.
 
+## CALL-ANSWER-ACCESS-1024 — implementation pending
+
+Approved answered-contact visibility and shared responsibility rules are recorded in
+docs/tasks/CALL-ANSWER-ACCESS-1024.md. Read-only diagnosis identifies single-owner
+scope and last-answer-only display. User confirms production access exists only
+on another PC; no permission, application, schema or runtime change is claimed.
+Private staff mapping is retained outside Git for handoff. Source locks released.
+
 ## TICKET-AIRLINE-LOGO-BACKGROUND-1024 — PC-A
 
 Shared passenger-ticket preview/print/PDF renderer composites airline logos against the ticket background, eliminating white rectangular backing without rewriting uploaded assets. Styling is scoped to airline marks; agency logo, safe image sources and issuance/data paths stay unchanged. 31 focused ticket tests pass. Isolated Chromium pixel QA confirms white backing equals the tinted ticket background and colored mark remains. Lint/types/build and exact-head hosted gates precede user-authorized develop merge. No schema/API/migration/dependency/runtime change. Source locks release at publication.
