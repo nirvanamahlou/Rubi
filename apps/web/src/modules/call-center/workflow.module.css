@@ -266,6 +266,26 @@
 .queue header button {
   margin: 0;
 }
+.queue header .queueAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px;
+  min-height: 40px;
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--surface, #fff);
+  border: 1px solid var(--cc-border, var(--border));
+  color: var(--cc-ink, var(--foreground));
+}
+.queue header .queueAction:hover {
+  background: var(--muted, #eef5ff);
+  border-color: #1875e5;
+}
 .queue p {
   margin-block: 4px;
 }

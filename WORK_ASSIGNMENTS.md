@@ -9167,3 +9167,9 @@ Branch codex/pc-c-call-request-selects-1024 from approved local8f10b186. User re
 ## CALL-OWNER-SELECT-1024 — PC-C — COMPLETE / SOURCE_RELEASED
 
 Owner requests modern responsible-agent dropdown matching status/priority. Base107f56de; reserve OwnerSelect-only integration in workflow.tsx, new scoped owner-select component/styles and own docs. Retain shared SearchCombobox keyboard/search behavior, ownerId FormData, permitted operator source and legacy-owner fallback. No shared selector, CallForm, backend, grants or dependency edits; active outbound work preserved in separate checkout. Only previous own Web3000 runtime7744 may be replaced after checks; no develop merge requested.
+
+## CALL-QUEUE-BUTTONS-1024 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. Explicit user request aligns queue collapse/refresh buttons with contact search advanced/reset buttons. Reserve workflow.tsx queue header and scoped workflow.module.css plus own status notes. Base2482c7e2; no API, shared selector, schema or runtime ownership changes. Concurrent source/runtime preserved. No PR/merge requested.
+
+CALL-QUEUE-BUTTONS-1024 — COMPLETE / SOURCE_RELEASED: scoped lint,2 workflow tests, full TypeScript and65-route Web build pass. Browser verified collapse/expand, refresh and matching visual treatment. Explicitly authorized Web3000 replacement now PID21488, .next-queue-1024; popup hold false, API/Worker untouched. No migration or PR/merge.
