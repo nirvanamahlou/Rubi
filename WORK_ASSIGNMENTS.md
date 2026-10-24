@@ -9367,6 +9367,7 @@ COMPUTER_ID=PC-A; follow-up to owner-authorized CONTRACT-OWNER-ACTIONS-1024 befo
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-checkin-departure-day-1024 from origin/develop. Owner requests automatic flight-linked hotel check-in on outbound departure day and develop merge. Reserve withSalesHotelDates and focused date regressions plus own docs. Prefer outbound calendar day over package start; ignore the obsolete next-day flag for flight-linked automatic check-in, retain explicit manual dates and checkout policy. No active overlapping date writer found; published prior Sales scopes released. No API/schema/migration/dependency/runtime changes or production deployment.
 
 HOTEL-CHECKIN-DEPARTURE-DAY-1024 scope completion: reserve PublishedPackageSale date hydration and its focused regression so asynchronous package loading cannot overwrite the flight-day check-in. Keep exact date matching/quote invalidation and package-only hydration unchanged.
+
 ## CALL-QUEUE-BUTTONS-1024 — PC-C — RESERVED
 
 COMPUTER_ID=PC-C. Explicit user request aligns queue collapse/refresh buttons with contact search advanced/reset buttons. Reserve workflow.tsx queue header and scoped workflow.module.css plus own status notes. Base2482c7e2; no API, shared selector, schema or runtime ownership changes. Concurrent source/runtime preserved. No PR/merge requested.
@@ -9392,6 +9393,7 @@ Explicit user request removes NEW/open as a selectable request status and defaul
 Runtime compatibility: API4000 currently serves clean published unified8a5cac76 from call-center-unified-1024, which includes openOnly request paging. Preserve its existing optional DTO/list predicate in the three touched runtime classes. Prepare a separate ignored runtime artifact copied from the current API build and replace only these three compiled classes; preserve all other outbound/recording/routing artifacts. No writes to peer checkout. Activation of the peer-owned4000 service requires coordination after tests.
 
 CALL-REQUEST-PENDING-DEFAULT-1024 — COMPLETE / SOURCE_RELEASED: 30 PostgreSQL API tests on isolated database and5 Web tests pass, alongside scoped lint, full API/Web typecheck and builds (65 Web routes). Browser verifies exactly three statuses, pending-agent selected, no open option; cancelled without business mutation. After verifying the prior API source was clean/published, activated a separate artifact preserving unified8a5cac76 and replacing only the three tested classes; peer source untouched. API4000 PID10388 retains original CWD/development collector policy; Web3000 PID18492 uses .next-request-pending-1024. Popup enablement remains false, Worker untouched. This completes the runtime coordination precaution above. No migration, PR or merge. Screenshot outside Git: F:/DevData/Temp/call-request-pending-1024.png.
+
 # CALL-EXTENSION-ALIASES-1024 — PC-C — RESERVED
 
 Owner supplies second extensions for three existing staff members. Base develop
