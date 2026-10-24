@@ -9243,3 +9243,7 @@ changes. Source candidate only; main/develop and production remain untouched.
 ## CALL-REQUEST-SELECTS-1024 — PC-C — COMPLETE / SOURCE_RELEASED
 
 Branch codex/pc-c-call-request-selects-1024 from approved local8f10b186. User requests minimal modern status/priority dropdown UX. Reserve only WorkflowEditor status/priority rendering, new scoped request-choice component/styles and own docs. Preserve active OUTBOUND-CALL-POPUP work in separate publish checkout; no CallForm/telephony/shared selector/API/schema/dependency edits. Existing request creation defaults and save contracts stay unchanged. No develop merge authorized for this task.
+
+## CALL-OWNER-SELECT-1024 — PC-C — COMPLETE / SOURCE_RELEASED
+
+Owner requests modern responsible-agent dropdown matching status/priority. Base107f56de; reserve OwnerSelect-only integration in workflow.tsx, new scoped owner-select component/styles and own docs. Retain shared SearchCombobox keyboard/search behavior, ownerId FormData, permitted operator source and legacy-owner fallback. No shared selector, CallForm, backend, grants or dependency edits; active outbound work preserved in separate checkout. Only previous own Web3000 runtime7744 may be replaced after checks; no develop merge requested.
