@@ -1189,7 +1189,9 @@ function History({
           </details>
         ))}
         <ScrollContinuation
-          enabled={section === 'notes' && !!noteNext && !notesLoading && !noteError}
+          enabled={
+            section === 'notes' && !!noteNext && !notesLoading && !noteError
+          }
           onMore={() => {
             setNotesLoading(true);
             setNoteAfter(noteNext!);

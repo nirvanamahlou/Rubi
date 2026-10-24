@@ -17,13 +17,11 @@ describe('dossier recording authorization', () => {
   function setup() {
     const tx = {
       callCenterCall: {
-        findFirst: vi
-          .fn()
-          .mockResolvedValue({
-            id: 'call',
-            contactId: 'contact',
-            contact: { branchId: 'branch' },
-          }),
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'call',
+          contactId: 'contact',
+          contact: { branchId: 'branch' },
+        }),
       },
       callCenterTelephonySession: {
         findUnique: vi.fn().mockResolvedValue(null),
