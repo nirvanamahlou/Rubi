@@ -102,6 +102,7 @@ export class CallCenterWorkflowController {
       query.page,
       query.taskPage,
       query.requestId,
+      query.openOnly === 'true',
     );
   }
   @Post('contacts/:id/requests')

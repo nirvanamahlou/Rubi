@@ -23,6 +23,8 @@ import {
 import styles from './workflow.module.css';
 import { CallKpiCards } from './kpis';
 import { readApi } from './read-client';
+import { DossierRequestCard } from './dossier-request-card';
+import { ScrollContinuation } from './scroll-continuation';
 
 export const requestLabels: Record<string, string> = {
   NEW: 'باز',
@@ -133,7 +135,16 @@ export function WorkflowPanel({
     ])
       .then(([result, options, history]) => {
         if (!controller.signal.aborted) {
-          setRequests(result.data);
+          setRequests((previous) =>
+            dossier && requestPage > 1
+              ? [
+                  ...previous.filter(
+                    (item) => !result.data.some((next) => next.id === item.id),
+                  ),
+                  ...result.data,
+                ]
+              : result.data,
+          );
           setContactCall(history?.data[0] ?? null);
           setPageMeta(
             result.meta ?? { total: result.data.length, hasMoreTasks: false },
@@ -153,7 +164,15 @@ export function WorkflowPanel({
         }
       });
     return () => controller.abort();
-  }, [branchId, contactId, revision, requestPage, taskPage, requestId]);
+  }, [
+    branchId,
+    contactId,
+    revision,
+    requestPage,
+    taskPage,
+    requestId,
+    dossier,
+  ]);
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Tehran',
   }).format(new Date());
@@ -180,7 +199,7 @@ export function WorkflowPanel({
       aria-label="درخواست‌ها و اقدام‌های پیگیری"
     >
       <header>
-        <h3>درخواست‌ها و اقدام‌های پیگیری</h3>
+        <h3>{dossier ? 'درخواست‌ها' : 'درخواست‌ها و اقدام‌های پیگیری'}</h3>
         {!dossier && !requestId && (
           <button
             type="button"
@@ -219,50 +238,54 @@ export function WorkflowPanel({
           )}
         </article>
       )}
-      <p>تماس‌های یک شماره می‌توانند مربوط به درخواست‌های متفاوت باشند.</p>
-      <nav aria-label="صفحه‌بندی درخواست و اقدام">
-        <button
-          disabled={loading || requestPage === 1}
-          onClick={() => {
-            setLoading(true);
-            setRequestPage((v) => v - 1);
-            setTaskPage(1);
-          }}
-        >
-          درخواست‌های قبلی
-        </button>
-        <span>
-          {requestPage} / {Math.max(1, Math.ceil(pageMeta.total / 10))}
-        </span>
-        <button
-          disabled={loading || requestPage * 10 >= pageMeta.total}
-          onClick={() => {
-            setLoading(true);
-            setRequestPage((v) => v + 1);
-            setTaskPage(1);
-          }}
-        >
-          درخواست‌های بعدی
-        </button>
-        <button
-          disabled={loading || taskPage === 1}
-          onClick={() => {
-            setLoading(true);
-            setTaskPage((v) => v - 1);
-          }}
-        >
-          اقدام‌های جدیدتر
-        </button>
-        <button
-          disabled={loading || !pageMeta.hasMoreTasks}
-          onClick={() => {
-            setLoading(true);
-            setTaskPage((v) => v + 1);
-          }}
-        >
-          اقدام‌های قدیمی‌تر
-        </button>
-      </nav>
+      {!dossier && (
+        <p>تماس‌های یک شماره می‌توانند مربوط به درخواست‌های متفاوت باشند.</p>
+      )}
+      {!dossier && (
+        <nav aria-label="صفحه‌بندی درخواست و اقدام">
+          <button
+            disabled={loading || requestPage === 1}
+            onClick={() => {
+              setLoading(true);
+              setRequestPage((v) => v - 1);
+              setTaskPage(1);
+            }}
+          >
+            درخواست‌های قبلی
+          </button>
+          <span>
+            {requestPage} / {Math.max(1, Math.ceil(pageMeta.total / 10))}
+          </span>
+          <button
+            disabled={loading || requestPage * 10 >= pageMeta.total}
+            onClick={() => {
+              setLoading(true);
+              setRequestPage((v) => v + 1);
+              setTaskPage(1);
+            }}
+          >
+            درخواست‌های بعدی
+          </button>
+          <button
+            disabled={loading || taskPage === 1}
+            onClick={() => {
+              setLoading(true);
+              setTaskPage((v) => v - 1);
+            }}
+          >
+            اقدام‌های جدیدتر
+          </button>
+          <button
+            disabled={loading || !pageMeta.hasMoreTasks}
+            onClick={() => {
+              setLoading(true);
+              setTaskPage((v) => v + 1);
+            }}
+          >
+            اقدام‌های قدیمی‌تر
+          </button>
+        </nav>
+      )}
       {!dossier && !requestId && (
         <NativeSearchSelect
           aria-label="نمای پیگیری‌های این مخاطب"
@@ -295,142 +318,164 @@ export function WorkflowPanel({
       {!loading && !error && !visible.length && (
         <p>درخواستی در این نما وجود ندارد.</p>
       )}
-      {!loading && !error && requests.length > 0 && calls.length > 0 && (
-        <details>
-          <summary>اتصال تماس‌ها به درخواست</summary>
-          {calls.map((call) => (
-            <CallRequestLink
-              key={call.id + (call.ticketId ?? '')}
-              call={call}
-              requests={requests}
-              branchId={branchId}
-              disabled={!canManage}
-              onLinked={(id, ticket) => onLinked?.(id, ticket)}
-            />
-          ))}
-        </details>
-      )}
-      {!loading &&
+      {!dossier &&
+        !loading &&
         !error &&
-        visible.map((request) => (
-          <article key={request.id} className={styles.card}>
-            <strong>{request.title}</strong>
-            <RequestReferral
-              branch={branchId}
+        requests.length > 0 &&
+        calls.length > 0 && (
+          <details>
+            <summary>اتصال تماس‌ها به درخواست</summary>
+            {calls.map((call) => (
+              <CallRequestLink
+                key={call.id + (call.ticketId ?? '')}
+                call={call}
+                requests={requests}
+                branchId={branchId}
+                disabled={!canManage}
+                onLinked={(id, ticket) => onLinked?.(id, ticket)}
+              />
+            ))}
+          </details>
+        )}
+      {!error &&
+        visible.map((request) =>
+          dossier ? (
+            <DossierRequestCard
+              key={request.id}
               request={request}
-              operators={operators}
-              disabled={!canManage}
-              onChanged={() => onChanged?.()}
+              canManage={canManage}
+              onEdit={() => setEditor({ kind: 'request', item: request })}
             />
-            <RequestCustomer
-              key={request.id + ':' + request.version}
-              branch={branchId}
-              contact={contactId}
-              request={request}
-              onChanged={() => {
-                setLoading(true);
-                setRevision((v) => v + 1);
-              }}
-            />
-            <p>
-              {requestLabels[request.status]} ·{' '}
-              {request.ownerName ?? 'بدون مسئول'} ·{' '}
-              {priorities[request.priority as keyof typeof priorities]}
-            </p>
-            {request.reason && <p>{request.reason}</p>}
-            {request.result && <p>نتیجه رسیدگی: {request.result}</p>}
-            <button
-              type="button"
-              disabled={!canManage}
-              onClick={() => setEditor({ kind: 'request', item: request })}
-            >
-              تکمیل اطلاعات و تغییر وضعیت درخواست
-            </button>
-            <button
-              type="button"
-              disabled={!canManage || request.status === 'CLOSED'}
-              onClick={() => setEditor({ kind: 'task', request })}
-            >
-              اقدام بعدی
-            </button>
-            {request.followUps.map((task) => (
-              <div
-                key={task.id}
-                className={styles.task}
-                data-overdue={
-                  task.status === 'OPEN' && Date.parse(task.dueAt) < Date.now()
-                }
+          ) : (
+            <article key={request.id} className={styles.card}>
+              <strong>{request.title}</strong>
+              <RequestReferral
+                branch={branchId}
+                request={request}
+                operators={operators}
+                disabled={!canManage}
+                onChanged={() => onChanged?.()}
+              />
+              <RequestCustomer
+                key={request.id + ':' + request.version}
+                branch={branchId}
+                contact={contactId}
+                request={request}
+                onChanged={() => {
+                  setLoading(true);
+                  setRevision((v) => v + 1);
+                }}
+              />
+              <p>
+                {requestLabels[request.status]} ·{' '}
+                {request.ownerName ?? 'بدون مسئول'} ·{' '}
+                {priorities[request.priority as keyof typeof priorities]}
+              </p>
+              {request.reason && <p>{request.reason}</p>}
+              {request.result && <p>نتیجه رسیدگی: {request.result}</p>}
+              <button
+                type="button"
+                disabled={!canManage}
+                onClick={() => setEditor({ kind: 'request', item: request })}
               >
-                <strong>{task.action}</strong>
-                <p>
-                  {taskLabels[task.status]} ·{' '}
-                  {task.ownerName ??
-                    operators.find((user) => user.id === task.ownerId)
-                      ?.displayName ??
-                    'مسئول قبلی'}{' '}
-                  · {priorities[task.priority as keyof typeof priorities]}
-                </p>
-                <time dateTime={task.dueAt}>{callDate(task.dueAt)}</time>
-                {task.status === 'OPEN' &&
-                  Date.parse(task.dueAt) < Date.now() && (
-                    <span> · موعد گذشته</span>
-                  )}
-                {task.result && <p>{task.result}</p>}
-                <button
-                  type="button"
-                  disabled={
-                    !canManage ||
-                    task.status !== 'OPEN' ||
-                    request.status === 'CLOSED'
-                  }
-                  onClick={() =>
-                    setEditor({ kind: 'task', request, item: task })
+                تکمیل اطلاعات و تغییر وضعیت درخواست
+              </button>
+              <button
+                type="button"
+                disabled={!canManage || request.status === 'CLOSED'}
+                onClick={() => setEditor({ kind: 'task', request })}
+              >
+                اقدام بعدی
+              </button>
+              {request.followUps.map((task) => (
+                <div
+                  key={task.id}
+                  className={styles.task}
+                  data-overdue={
+                    task.status === 'OPEN' &&
+                    Date.parse(task.dueAt) < Date.now()
                   }
                 >
-                  ویرایش / ثبت نتیجه
-                </button>
-                <details>
-                  <summary>تاریخچه اقدام</summary>
-                  {task.history.map((entry) => (
-                    <p key={entry.version}>
-                      {callDate(entry.at)} · {taskLabels[entry.status]} · موعد{' '}
-                      {callDate(entry.dueAt)} ·{' '}
-                      {operators.find((user) => user.id === entry.ownerId)
-                        ?.displayName ?? entry.ownerId}
-                    </p>
-                  ))}
-                </details>
-              </div>
-            ))}
-            <details>
-              <summary>تاریخچه درخواست</summary>
-              {request.privateHistory?.map((entry) => (
-                <p key={entry.version}>
-                  {callDate(entry.at)} · {entry.title} ·{' '}
-                  {requestLabels[entry.status]} · {entry.reason}{' '}
-                  {entry.result && ` · ${entry.result}`}
-                </p>
+                  <strong>{task.action}</strong>
+                  <p>
+                    {taskLabels[task.status]} ·{' '}
+                    {task.ownerName ??
+                      operators.find((user) => user.id === task.ownerId)
+                        ?.displayName ??
+                      'مسئول قبلی'}{' '}
+                    · {priorities[task.priority as keyof typeof priorities]}
+                  </p>
+                  <time dateTime={task.dueAt}>{callDate(task.dueAt)}</time>
+                  {task.status === 'OPEN' &&
+                    Date.parse(task.dueAt) < Date.now() && (
+                      <span> · موعد گذشته</span>
+                    )}
+                  {task.result && <p>{task.result}</p>}
+                  <button
+                    type="button"
+                    disabled={
+                      !canManage ||
+                      task.status !== 'OPEN' ||
+                      request.status === 'CLOSED'
+                    }
+                    onClick={() =>
+                      setEditor({ kind: 'task', request, item: task })
+                    }
+                  >
+                    ویرایش / ثبت نتیجه
+                  </button>
+                  <details>
+                    <summary>تاریخچه اقدام</summary>
+                    {task.history.map((entry) => (
+                      <p key={entry.version}>
+                        {callDate(entry.at)} · {taskLabels[entry.status]} · موعد{' '}
+                        {callDate(entry.dueAt)} ·{' '}
+                        {operators.find((user) => user.id === entry.ownerId)
+                          ?.displayName ?? entry.ownerId}
+                      </p>
+                    ))}
+                  </details>
+                </div>
               ))}
-              {request.history.map((entry) => (
-                <p key={entry.id}>
-                  {callDate(entry.at)} · نسخه {entry.version} ·{' '}
-                  {entry.action === 'REQUEST_CREATED'
-                    ? 'ایجاد درخواست'
-                    : entry.action === 'REQUEST_UPDATED'
-                      ? 'تغییر درخواست'
-                      : entry.action === 'CUSTOMER_LINKED'
-                        ? 'اصلاح ارتباط مشتری'
-                        : entry.action === 'REFERRED'
-                          ? 'ارجاع درخواست'
-                          : 'ثبت اقدام پیگیری'}{' '}
-                  ·{' '}
-                  {operators.find((user) => user.id === entry.actorId)
-                    ?.displayName ?? entry.actorId}
-                </p>
-              ))}
-            </details>
-          </article>
-        ))}
+              <details>
+                <summary>تاریخچه درخواست</summary>
+                {request.privateHistory?.map((entry) => (
+                  <p key={entry.version}>
+                    {callDate(entry.at)} · {entry.title} ·{' '}
+                    {requestLabels[entry.status]} · {entry.reason}{' '}
+                    {entry.result && ` · ${entry.result}`}
+                  </p>
+                ))}
+                {request.history.map((entry) => (
+                  <p key={entry.id}>
+                    {callDate(entry.at)} · نسخه {entry.version} ·{' '}
+                    {entry.action === 'REQUEST_CREATED'
+                      ? 'ایجاد درخواست'
+                      : entry.action === 'REQUEST_UPDATED'
+                        ? 'تغییر درخواست'
+                        : entry.action === 'CUSTOMER_LINKED'
+                          ? 'اصلاح ارتباط مشتری'
+                          : entry.action === 'REFERRED'
+                            ? 'ارجاع درخواست'
+                            : 'ثبت اقدام پیگیری'}{' '}
+                    ·{' '}
+                    {operators.find((user) => user.id === entry.actorId)
+                      ?.displayName ?? entry.actorId}
+                  </p>
+                ))}
+              </details>
+            </article>
+          ),
+        )}
+      {dossier && (
+        <ScrollContinuation
+          enabled={!loading && !error && requestPage * 10 < pageMeta.total}
+          onMore={() => {
+            setLoading(true);
+            setRequestPage((value) => value + 1);
+          }}
+        />
+      )}
       {editor && (
         <WorkflowEditor
           key={editor.kind + (editor.item?.id ?? 'new')}
@@ -446,6 +491,7 @@ export function WorkflowPanel({
           onSaved={() => {
             window.dispatchEvent(new Event('call-center:workflow-changed'));
             setLoading(true);
+            if (dossier) setRequestPage(1);
             setRevision((value) => value + 1);
             setEditor(null);
             onRequestClose?.();

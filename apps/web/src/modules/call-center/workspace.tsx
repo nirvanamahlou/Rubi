@@ -1,4 +1,6 @@
 'use client';
+import { ScrollContinuation } from './scroll-continuation';
+import { RecordingDownload } from './recording-download';
 import {
   Dialog,
   DialogContent,
@@ -986,7 +988,16 @@ function History({
       .calls(branch, contact.id, callAfter, c.signal)
       .then((r) => {
         if (c.signal.aborted) return;
-        setCalls(r.data);
+        setCalls((previous) =>
+          callAfter
+            ? [
+                ...previous.filter(
+                  (item) => !r.data.some((next) => next.id === item.id),
+                ),
+                ...r.data,
+              ]
+            : r.data,
+        );
         setCallNext(r.meta.next);
         setLoading(false);
         setError('');
@@ -1005,7 +1016,16 @@ function History({
       .notes(branch, contact.id, noteAfter, c.signal)
       .then((r) => {
         if (c.signal.aborted) return;
-        setNotes(r.data);
+        setNotes((previous) =>
+          noteAfter
+            ? [
+                ...previous.filter(
+                  (item) => !r.data.some((next) => next.id === item.id),
+                ),
+                ...r.data,
+              ]
+            : r.data,
+        );
         setNoteNext(r.meta.next);
         setNotesLoading(false);
         setNoteError('');
@@ -1105,30 +1125,24 @@ function History({
                 <p>
                   زمان ثبت: {c.createdAt ? callDate(c.createdAt) : 'نامشخص'}
                 </p>
+                <RecordingDownload
+                  callId={c.id}
+                  branchId={branch}
+                  allowed={permissions.includes(
+                    'customer_affairs.call_center.recordings.read',
+                  )}
+                />
               </details>
             </li>
           ))}
         </ol>
-        <div className={styles.pagination}>
-          <button
-            disabled={!callAfter || loading}
-            onClick={() => {
-              setLoading(true);
-              setCallAfter(undefined);
-            }}
-          >
-            جدیدترین تماس‌ها
-          </button>
-          <button
-            disabled={!callNext || loading}
-            onClick={() => {
-              setLoading(true);
-              setCallAfter(callNext!);
-            }}
-          >
-            تماس‌های قدیمی‌تر
-          </button>
-        </div>
+        <ScrollContinuation
+          enabled={section === 'calls' && !!callNext && !loading && !error}
+          onMore={() => {
+            setLoading(true);
+            setCallAfter(callNext!);
+          }}
+        />
       </div>
       <div id="cc-dossier-requests" hidden={section !== 'requests'}>
         <WorkflowPanel
@@ -1174,26 +1188,15 @@ function History({
             </p>
           </details>
         ))}
-        <div className={styles.pagination}>
-          <button
-            disabled={!noteAfter || notesLoading}
-            onClick={() => {
-              setNotesLoading(true);
-              setNoteAfter(undefined);
-            }}
-          >
-            یادداشت‌های جدید
-          </button>
-          <button
-            disabled={!noteNext || notesLoading}
-            onClick={() => {
-              setNotesLoading(true);
-              setNoteAfter(noteNext!);
-            }}
-          >
-            یادداشت‌های قدیمی‌تر
-          </button>
-        </div>
+        <ScrollContinuation
+          enabled={
+            section === 'notes' && !!noteNext && !notesLoading && !noteError
+          }
+          onMore={() => {
+            setNotesLoading(true);
+            setNoteAfter(noteNext!);
+          }}
+        />
         <form className={styles.note} onSubmit={save}>
           <label htmlFor="cc-note">یادداشت جدید</label>
           <textarea

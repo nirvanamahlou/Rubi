@@ -8,6 +8,8 @@ export interface IssabelOptions extends AmiOptions {
   prefixes: string[];
   nativeCapture: boolean;
   inboundQueues: string[];
+  outboundPeers: string[];
+  outboundExtensions: string[];
 }
 export function issabelOptions(config: ConfigService): IssabelOptions | null {
   if (config.get<string>('ISSABEL_ENABLED') !== 'true') return null;
@@ -24,6 +26,14 @@ export function issabelOptions(config: ConfigService): IssabelOptions | null {
     technology: (value('CHANNEL_TECHNOLOGY') || 'PJSIP') as 'SIP' | 'PJSIP',
     prefixes: value('ALLOWED_PREFIXES').split(',').filter(Boolean),
     nativeCapture: value('EVENT_MODE') === 'NATIVE_QUEUE_CAPTURE',
+    outboundPeers: value('OUTBOUND_PEERS')
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean),
+    outboundExtensions: value('OUTBOUND_EXTENSIONS')
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean),
     inboundQueues: value('INBOUND_QUEUES')
       .split(',')
       .map((v) => v.trim())
@@ -54,6 +64,12 @@ export function issabelOptions(config: ConfigService): IssabelOptions | null {
     (!options.tls &&
       !['127.0.0.1', '::1', 'localhost'].includes(options.host) &&
       !localCompanyCapture) ||
+    options.outboundPeers.length > 100 ||
+    options.outboundPeers.some(
+      (p) => !/^(SIP|PJSIP)\/[a-zA-Z0-9_.-]{1,64}$/.test(p),
+    ) ||
+    options.outboundExtensions.length > 500 ||
+    options.outboundExtensions.some((p) => !/^\d{2,10}$/.test(p)) ||
     !['SIP', 'PJSIP'].includes(options.technology) ||
     !/^[a-zA-Z0-9_-]{1,64}$/.test(options.context) ||
     (!options.nativeCapture && options.prefixes.length === 0) ||

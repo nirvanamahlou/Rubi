@@ -1,7 +1,3 @@
-## CONTRACT-ONLY-ACCESS-1024 — PC-A — READY_FOR_REVIEW
-
-COMPUTER_ID=PC-A; branch codex/pc-a-contract-only-access-1024 from develop ee06dd336. User explicitly authorizes complete new-contract workflow for contract-only actors, including agency selection, customer/passenger identity/SSR, test, develop merge and Avina API/Web rollout. Reserve Customers-owned bounded sales/people controller/module/public authorization helper and tests, Customer client workflow adapter/public entry, three Sales people consumer imports and tests, bounded SalesService.confirm own-draft submission and regression, own docs. New-contract create + visible route + actor branches authorize only person list/lookup/detail/create/update/contact operations needed by this form; existing producer validates DTOs, protects identity, enforces branch/CAS and audits with original user. Field denies for general Customer administration do not disable this explicitly authorized workflow; no persistent role/user grant, status/merge/archive/admin or cross-branch expansion. Prior agency task merged/released; preserve its active-reference resolver. 49 focused API and50 Sales Web plus11 Customer-client/selection tests pass, including manual contract-only HTTP entry, no global customer grant, agency resolver and own-draft confirmation. No schema/migration/dependency change. Deployment must preserve current private config/storage and concurrent release, back up and verify health/contract-only paths.
-
 ## HOTEL-PASSENGER-PURCHASE-1024 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-passenger-purchase-1024 from origin/develop1168321a. User requests per-passenger nightly hotel purchase, contractual-night totals, optional unpriced guests and explicit develop merge. Reserve Reservations hotel purchase Web/model/tests, existing API hotelPassengerPurchase validator/record-batch regressions, bounded additive Web/API English labels if required and own docs. Existing passengerPrices wire and JSON revision storage remain; producer validates a nonempty subset of assigned hotel passengers and recalculates exact Decimal totals. Finance consumes the existing purchase revision with only recorded totals; no direct cross-module writes, schema/migration/dependency, sale allocation or operational runtime changes. No overlapping active purchase source owner found; prior form/gender tasks merged and locks released. Preserve full-service batch coverage, CAS/idempotency, supplier/currency/branch permissions, legacy formula reads and FX evidence. Delivered guest name/category/nightly editor and exact contractual-night subtotal, restoration of saved passenger prices, subset validation and canonical guest-name evidence. Web13 and translation3 tests pass; API/Finance29 tests pass including atomic partial hotel batch and untouched transfer counts. Types/lint/build and final hosted gates precede merge. No production rollout or live purchase submitted.
@@ -9,6 +5,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-hotel-passenger-purchase-1024 from origin/de
 ## RESERVATION-CORRECTION-LABEL-1024 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-correction-label-1024 from develop c6f12fb3. Owner requests removing purple corrected-cell styling and retaining only a red Corrected caption beneath the contract number, with develop merge. Reserve Reservations foundation workspace JSX/CSS, existing focused rendering regression and own status notes. Preserve correction detection/pending state, status colors, selected rows, notes, history, all actions and permissions. Prior target source locks published/released; no schema/API/migration/dependency/runtime/data changes. Local rendering26 tests pass including the corrected-label regression; an existing multi-status render exceeds the unchanged5s Windows timeout on isolated retry. Hosted full checks remain mandatory. Source locks freeze/release on publication; final checks precede authorized merge.
+
+## CONTRACT-ONLY-ACCESS-1024 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-contract-only-access-1024 from develop ee06dd336. User explicitly authorizes complete new-contract workflow for contract-only actors, including agency selection, customer/passenger identity/SSR, test, develop merge and Avina API/Web rollout. Reserve Customers-owned bounded sales/people controller/module/public authorization helper and tests, Customer client workflow adapter/public entry, three Sales people consumer imports and tests, bounded SalesService.confirm own-draft submission and regression, own docs. New-contract create + visible route + actor branches authorize only person list/lookup/detail/create/update/contact operations needed by this form; existing producer validates DTOs, protects identity, enforces branch/CAS and audits with original user. Field denies for general Customer administration do not disable this explicitly authorized workflow; no persistent role/user grant, status/merge/archive/admin or cross-branch expansion. Prior agency task merged/released; preserve its active-reference resolver. 49 focused API and50 Sales Web plus11 Customer-client/selection tests pass, including manual contract-only HTTP entry, no global customer grant, agency resolver and own-draft confirmation. No schema/migration/dependency change. Deployment must preserve current private config/storage and concurrent release, back up and verify health/contract-only paths.
 
 ## RESERVATION-FORM-SERVICES-1022 — PC-A — READY_FOR_REVIEW
 
@@ -9136,6 +9136,65 @@ CALL-ANSWER-DIRECTORY-1022 localization: reserve only the two new destination/sh
 
 COMPUTER_ID=PC-A; branch codex/pc-a-issued-service-report-1022 from develop cb9426eb. Owner authorizes explicit search, issued route choices, travel/issuance date filtering, all contract service kinds including hotel-specific reporting, tests and develop merge. Reserve Ticket Catalog issued report UI/model/client/PDF and Reservations-owned report query/projection/controller/workbook/tests, related English overrides/derived catalogues and own docs. Existing issued endpoint stays compatible; additive service-report read endpoint composes only authorized branch intake snapshots/latest workflow and ticket documents. Allocated services are explicitly distinguished from actual issued documents. No schema/migration/dependency/permissions or operational writes/deployment. Prior overlapping report reservations published/released; preserve unrelated active supplier-form work.
 
+## RECORDING-READINESS-1024 — PC-C — LOCAL_VERIFIED
+
+Owner authorizes SSH-independent audio preparation/tests and complete approved
+Call Center local3000 rollout, preserving UI and disabled popups. Base develop
+1168321a includes answered destination and PC-B contact scope. Integrate released
+e3bc3910 download and cd561146 dossier cards without reverting those newer changes.
+Reserve existing uploader/new encrypted recording spool/tests, call-scoped media
+public authorization/controller/service/tests, approved dossier files and own docs.
+No dependency, migration, grants, real PBX access or production rollout. Prior
+source locks published/released; additive media producer/consumer ship together.
+
+46 targeted checks, scoped lint, types and API/Web builds pass. Local3000/4000
+activated with existing Worker4409 preserved; real five-call/21-receipt aggregate
+unchanged, zero real offers. Explicit Web popup hold false. No operational test
+audio or schema/data/grant change. Collector remains unconfigured pending verified
+remote access/correlation/retention. Scope releases on push; see own task report.
+
+## DOSSIER-NOTES-NAVIGATION-1024 — PC-C — LOCAL_VERIFIED
+
+Explicit owner request removes latest/older notes buttons only. Base51c25b94
+preserves full approved local stack and disabled popups. Reserve workspace notes
+pagination wiring and own docs; reuse released ScrollContinuation for incremental
+access to older notes without new buttons. No API/schema/permission/CSS changes.
+
+Nine relevant Web tests, scoped lint and production build/TypeScript pass.
+Web3000 activated with popup hold false; API/Worker untouched. Login returns200.
+Source scope releases on push; no migration, grants or production deployment.
+
+## CALL-DESTINATION-OPTIONS-1024 — PC-C — LOCAL_VERIFIED
+
+Owner requests position/unit-name-extension display and all supplied staff choices
+in the existing connected-to field. Base7d4c7f03 preserves final notes/audio stack.
+Reserve HR public answer directory/options and tests, bounded Call Center public
+options route/service, form/client/tests and own docs. Minimal branch-authorized
+business directory only; no HR private fields, ownership or popup mapping. Private
+16-person source stays outside Git. No schema, grants, dependency or CSS changes.
+
+22 targeted tests pass (12 API,10 Web), scoped lint, API types and API/Web builds.
+Compiled private projection verifies16/16 choices and two shared203 entries.
+Local3000/4000 activated; anonymous directory401, login/health200. Popups held off.
+Scope releases on push; see tasks/CALL-DESTINATION-OPTIONS-1024.md.
+
+## OUTBOUND-CALL-POPUP-1024 — PC-C — ACTIVE
+
+Owner explicitly approves hiding linked-request input unless same contact has open
+requests, clearer label, and the approved CallForm for inbound/outbound notifications.
+Branch codex/pc-c-outbound-call-popup-1024 from released8f10b186 local stack.
+Reserve CallForm, operational attention wrapper, bounded telephony contact projection,
+opt-in native notification/outbound adapter, focused tests and own docs/i18n.
+Preserve native queue routing and ownership, permissions, shared-extension ambiguity;
+no inferred user mapping, public broadcast, schema or dependency change.
+Operational enablement requires verified extension-to-user mapping and trunk evidence.
+
+OUTBOUND-CALL-POPUP-1024 scope clarification: reserve additive offer-scoped read
+and bounded SAVE fields in telephony controller/DTO, preserving claim/lease/version
+and ordinary request ACL. Existing call/contact ownership grants remain unchanged.
+Reserve bounded i18n labels including missing labels in the three released local
+base commits so the complete approved stack passes inventory. No dependency lock.
+
 ## AGENCY-CONTRACT-SUBMIT-1024 — PC-A — VERIFIED
 
 COMPUTER_ID=PC-A; branch codex/pc-a-agency-contract-submit-1024 from develop4273d4bf. Owner explicitly authorizes every contract creator to select/register an active agency customer in new contracts, tests, develop merge and Avina rollout. Reserve Sales agency selector/client, new bounded Sales agency-customer controller and sales.module central registration, Customers public workflow method/repository atomic resolver and focused tests, own docs. Producer Customers owns creation/audit/branch transaction; Sales validates active MasterSalesDirectory organization reference and consumes only its public service. No direct foreign table access. Existing general Customer permissions remain; endpoint grants only create-or-reuse of linked agency buyer, no role/status/contact edits. Prior1073 source reservation released at merged publication; no overlapping writer found. No schema/migration/dependency change.
@@ -9154,4 +9213,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-delivery-permit-1024 from develo
 
 Base origin/develop1168321a; branch codex/pc-c-call-attention-hide-1024. Owner explicitly requests temporary removal of the floating telephony calls/session/retry widget and develop merge only after all checks pass. Reserve only TelephonyAttention import/mount in central apps/web/src/components/layout/app-shell.tsx and own documentation. Existing shell reservations are historical/released; preserve all other layout and manual call forms. No backend, API, permission, schema, dependency or operational runtime change. Future local work is allowed; reactivation on develop requires a new explicit user request. No unrelated local call-center commits are included.
 
+OUTBOUND-CALL-POPUP-1024 — implementation VERIFIED; scope released on push. Production rollout awaits verified user mappings/trunk and release PC.27 PostgreSQL,20 adapter/projection,8 Web tests pass; API/Web builds and types/lint pass.
+
 AGENCY-CONTRACT-SUBMIT-1024 localization: reserve generated API English catalogue for the existing inactive-agency-profile error moved from Web to Customers API. Reuse its existing translation; no other labels or language policy change. No active overlapping catalogue writer found in latest task assignments.
+
+## SALES-AUTO-TICKET-PAIR-1024 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-auto-ticket-pair-1024 from origin/develop2196e7c7. User requests automatic exact-date ticket results without Search, registered outbound/return pairing with manual return override and develop merge. Reserve Sales contract form and focused search/form tests plus own notes. Existing public ticket search, registered pair/capacity/fare guards, cancellation and pricing contracts remain unchanged. No schema/API/dependency/migration/data/runtime changes; no active overlapping Sales source writer found. Prior source locks released; preserve unrelated work and require exact-head CI before authorized merge.

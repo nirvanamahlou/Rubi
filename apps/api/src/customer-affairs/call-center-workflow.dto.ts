@@ -58,6 +58,7 @@ export class CallCenterFollowUpDto {
   @IsString() @Length(0, 1000) result!: string;
 }
 export class CallCenterRequestPageDto {
+  @IsOptional() @IsIn(['true']) openOnly?: string;
   @IsOptional() @IsUUID('4') requestId?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100000) page = 1;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100000) taskPage = 1;
