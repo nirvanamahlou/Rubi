@@ -9236,3 +9236,7 @@ AGENCY-CONTRACT-SUBMIT-1024 localization: reserve generated API English catalogu
 ## SALES-AUTO-TICKET-PAIR-1024 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-sales-auto-ticket-pair-1024 from origin/develop2196e7c7. User requests automatic exact-date ticket results without Search, registered outbound/return pairing with manual return override and develop merge. Reserve Sales contract form and focused search/form tests plus own notes. Existing public ticket search, registered pair/capacity/fare guards, cancellation and pricing contracts remain unchanged. No schema/API/dependency/migration/data/runtime changes; no active overlapping Sales source writer found. Prior source locks released; preserve unrelated work and require exact-head CI before authorized merge.
+
+## TICKET-AIRLINE-LOGO-BACKGROUND-1024 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-ticket-airline-logo-background-1024 from latest origin/develop. User requests removal of white airline-logo rectangles in passenger tickets and develop merge. Reserve shared travel flight-ticket HTML/CSS renderer and focused presentation regressions plus own status notes. Apply airline-only background compositing in shared preview/print/PDF template; uploaded logo bytes, agency branding, ticket data, safe-image validation and issuance logic remain unchanged. No active overlapping renderer owner found; prior source locks released. No API/schema/migration/dependency or operational runtime changes. Exact-head CI gates authorized merge.
