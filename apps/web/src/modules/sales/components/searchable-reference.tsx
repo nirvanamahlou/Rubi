@@ -43,7 +43,7 @@ export function SearchableReference({
     <FormField
       id={id}
       label={label}
-      labelClassName={hideLabel ? 'sr-only' : undefined}
+      labelClassName={hideLabel ? 'sr-only' : ''}
       required={!hideLabel}
     >
       <SearchCombobox
