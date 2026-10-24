@@ -260,3 +260,39 @@ it('uses the registered English primary hotel name when no separate English alia
   ).toBe('REGISTERED HOTEL');
   expect(JSON.stringify(input)).toBe(before);
 });
+
+it('omits generic OTHER while retaining actual named and typed passenger services', () => {
+  const value = structuredClone(input);
+  value.snapshot.serviceSelections = [
+    { clientKey: 'generic', kind: 'OTHER', titleSnapshot: 'OTHER' },
+    { clientKey: 'named', kind: 'OTHER', titleSnapshot: 'CITY TOUR' },
+    { clientKey: 'visa', kind: 'VISA', titleSnapshot: 'Visa' },
+  ];
+  value.snapshot.passengerAssignments =
+    value.snapshot.passengerAssignments!.map((p) => ({
+      ...p,
+      serviceClientKeys: ['generic', 'named', 'visa'],
+    }));
+  expect(reservationFormData(value).passengers[0]?.otherServices).toBe(
+    'CITY TOUR / VISA',
+  );
+  value.snapshot.serviceSelections = [value.snapshot.serviceSelections[0]!];
+  expect(reservationFormData(value).passengers[0]?.otherServices).toBe('-');
+});
+
+it('prints a manually completed missing gender only in the saved supplier form', () => {
+  const value = structuredClone(input);
+  value.workflow.supplierFormSettings = defaultVoucherSettings(value, {});
+  value.workflow.supplierFormSettings.flags.withLetterhead = false;
+  value.workflow.supplierFormSettings.passengers.find(
+    (p) => p.id === 'a',
+  )!.sex = 'FEMALE';
+  expect(
+    supplierFormData(value).passengers.find((p) => p.id === 'a')?.sex,
+  ).toBe('Female');
+  expect(reservationPdfHtml(value, {}, '', '')).toContain('>Female</td>');
+  expect(
+    voucherFormData(value, {}).passengers.find((p) => p.id === 'a')?.sex,
+  ).toBe('-');
+  expect(value.outputPassengers).toBeUndefined();
+});

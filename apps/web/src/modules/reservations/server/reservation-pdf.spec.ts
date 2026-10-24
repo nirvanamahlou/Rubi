@@ -650,7 +650,11 @@ it('prints supplier service allocations from the contract and reserves a repeati
   value.workflow.supplierFormSettings.flags.withLetterhead = false;
   const html = reservationPdfHtml(value, {}, '', '');
   expect(html).toContain('<th>FLIGHT OUT</th>');
-  expect(html).toContain('<th>TRANSFER BACK</th>');
+  expect(html).toContain('<th>TRF IN</th>');
+  expect(html).toContain('<th>TRF OUT</th>');
+  expect(html).not.toContain('FLIGHT INFORMATION');
+  expect(html).toContain('class="roomsNights"');
+  expect(html).toContain('table hotelInformation');
   expect(html).toContain(
     'ALPHA / ONE</td><td dir="auto">-</td><td dir="auto">ADL</td><td dir="auto">✓</td><td dir="auto">-</td><td dir="auto">01 NOV 2026',
   );

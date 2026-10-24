@@ -163,7 +163,18 @@ export function reservationFormData(
                   !['FLIGHT', 'HOTEL', 'TRANSFER'].includes(service.kind) ||
                   (service.kind === 'TRANSFER' && !direction(service)),
               )
-              .map((service) => service.kind),
+              .map((service) =>
+                service.kind === 'OTHER'
+                  ? service.titleSnapshot?.trim() &&
+                    !/^(?:other|other services)$/i.test(
+                      service.titleSnapshot.trim(),
+                    ) &&
+                    !/[\u0600-\u06ff]/.test(service.titleSnapshot)
+                    ? service.titleSnapshot.trim()
+                    : ''
+                  : service.kind,
+              )
+              .filter(Boolean),
           ),
         ].join(' / ') || '-',
 

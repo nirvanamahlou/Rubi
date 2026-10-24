@@ -1149,7 +1149,33 @@ export function ReservationSettingsForm({
                         <span>—</span>
                       )}
                     </td>
-                    <td>{p.sex || '—'}</td>
+                    <td>
+                      <ReservationSelect
+                        ariaLabel={`جنسیت مسافر ${i + 1}`}
+                        value={p.sex || emptySelectValue}
+                        options={[
+                          { value: emptySelectValue, label: '—' },
+                          { value: 'MALE', label: 'Male' },
+                          { value: 'FEMALE', label: 'Female' },
+                        ]}
+                        onValueChange={(sex) =>
+                          update({
+                            ...draft,
+                            passengers: draft.passengers.map((v, j) =>
+                              j === i
+                                ? {
+                                    ...v,
+                                    sex:
+                                      sex === emptySelectValue
+                                        ? ''
+                                        : (sex as 'MALE' | 'FEMALE'),
+                                  }
+                                : v,
+                            ),
+                          })
+                        }
+                      />
+                    </td>
                     <td>{p.birthDate || '—'}</td>
                     <td>{p.documentNumber || '—'}</td>
                   </tr>
