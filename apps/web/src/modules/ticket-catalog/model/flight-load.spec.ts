@@ -330,3 +330,22 @@ it('keeps past and paused charter destinations and sale routes, excludes externa
     ]),
   ).toBe('');
 });
+
+it('finds the same shared-capacity flight for each configured commercial destination without duplicating stock', () => {
+  const flight = offer('shared', '2099-10-10', {
+    saleRoutes: [
+      { originId: 'a', destinationId: 'bodrum' },
+      { originId: 'a', destinationId: 'izmir' },
+    ],
+  });
+  for (const destination of ['b', 'bodrum', 'izmir']) {
+    const rows = companyFlightLegs([flight], { ...filter, destination });
+    expect(rows.map((row) => row.id)).toEqual(['shared']);
+    expect(flightLoadTotals(rows)).toEqual({
+      total: 50,
+      remaining: 43,
+      sold: 5,
+      reserved: 2,
+    });
+  }
+});

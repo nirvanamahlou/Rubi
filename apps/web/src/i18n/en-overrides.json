@@ -4013,5 +4013,16 @@
   "ارتباط شعبه، والد، مسئول و ظرفیت عنوان‌های شغلی این گره را در چارت مشخص کنید.": "Set the branch, parent, owner and job-title capacity for this chart node.",
   "ظرفیت از مجموع عنوان‌های شغلی ثبت‌شده برای این ساختار محاسبه می‌شود.": "Capacity is calculated from the job titles registered for this structure.",
   "ظرفیت عنوان شغلی باید عددی بین صفر تا ۹۹۹۹ باشد.": "Job-title capacity must be a number between 0 and 9999.",
-  "ظرفیت عنوان‌های شغلی": "Job-title capacity"
+  "ظرفیت عنوان‌های شغلی": "Job-title capacity",
+  "گزارش خدمات مسافران": "Passenger services report",
+  "نوع خدمت": "Service type",
+  "همه هتل‌ها": "All hotels",
+  "صدور / ثبت درخواست": "Issuance / request registration",
+  "حرکت / ورود هتل": "Departure / hotel check-in",
+  "سفر از تاریخ": "Travel from",
+  "سفر تا تاریخ": "Travel to",
+  "تخصیص‌یافته": "Allocated",
+  "وضعیت خدمت": "Service status",
+  "تعداد خدمات در گزارش": "Services in report",
+  "وضعیت تخصیص خدمت و صدور مدرک جداگانه نمایش داده می‌شود.": "Service allocation and document issuance are shown separately."
 }

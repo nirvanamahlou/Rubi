@@ -5976,6 +5976,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Delivered four dependent country/city filters, bidirectional endpoint choices and display grouping relative to selected route without changing stored contract direction or export IDs. City/country IDs and labels come through public Master Data references; legacy unknown countries stay unknown. Removed old airline-specific introduction. 24 Web and 32 API tests/scoped lint passed; contracts build and API/Web typecheck/build checked before PR (stale local Prisma output regenerated without a database connection). No migration/dependencies/data changes. Bounded locks release with commit and authorized develop merge follows CI.
 
+## CHARTER-ALIAS-CITIES-1022 — PC-A — VERIFIED
+
+COMPUTER_ID=PC-A; branch codex/pc-a-charter-alias-cities-1022 from develop43e2899c. Owner requests all configured alternate destinations in charter load and develop merge. Production read-only aggregate confirms Izmir/Bodrum routes persist; live7478be1d predates merged1067 route-history reader. Reserve flight-load-grid city dropdown limits and focused interaction/model regressions, own status notes. Show every available city in scrollable dropdown without changing shared combobox or inventory. Prior1067 reservation released; no active overlap. No API/schema/dependency/runtime/deployment changes.
+
+Validation:30 targeted model/UI/search regressions, scoped ESLint and diff checks pass. Source reservation releases on publication; final exact-head quality/types/full tests/build/database gates precede merge.
+
 ## CHARTER-LOAD-FILTERS-1022 — PC-A — VERIFIED
 
 COMPUTER_ID=PC-A; branch codex/pc-a-charter-load-filters-1022 from origin/develop95e74c4a. Owner requests removal of origin-country load filter, Tehran default/reset origin and only current/historical charter destinations, tests and develop merge. Reserve flight-load model/grid and their tests, bounded task/status docs. No active overlapping writer found; preserve backend scope, archived offers, route aliases, inventory and date semantics. No schema/dependency/runtime changes; the bounded read-only API extension is described below.
@@ -9107,3 +9113,7 @@ VOUCHER-LAYOUT-BOARD-1022:28 focused tests and scoped lint pass; synthetic Chrom
 VOUCHER-LAYOUT-BOARD-1022 CI compatibility: reserve existing room-output-consistency display assertion; voucher Hotel Information now ends with check-in/out while supplier output keeps its previous columns. Local Web typecheck/build pass. Revalidate exact final head; no production code changed by this test correction.
 
 CALL-ANSWER-DIRECTORY-1022 localization: reserve only the two new destination/shared-extension display labels in Web English catalogue and generated API catalogue; regenerate through the existing i18n-sync tool. No other translations or UI behavior change.
+
+## ISSUED-SERVICE-REPORT-1022 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-issued-service-report-1022 from develop cb9426eb. Owner authorizes explicit search, issued route choices, travel/issuance date filtering, all contract service kinds including hotel-specific reporting, tests and develop merge. Reserve Ticket Catalog issued report UI/model/client/PDF and Reservations-owned report query/projection/controller/workbook/tests, related English overrides/derived catalogues and own docs. Existing issued endpoint stays compatible; additive service-report read endpoint composes only authorized branch intake snapshots/latest workflow and ticket documents. Allocated services are explicitly distinguished from actual issued documents. No schema/migration/dependency/permissions or operational writes/deployment. Prior overlapping report reservations published/released; preserve unrelated active supplier-form work.
