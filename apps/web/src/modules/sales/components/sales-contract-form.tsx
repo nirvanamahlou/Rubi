@@ -14,6 +14,14 @@ import {
 } from 'lucide-react';
 import { restoreContractDraft } from '../model/restore-contract-draft';
 import { useAccessActor } from '@/modules/iam/access-context';
+import { documentsApi } from '@/modules/documents/api/client';
+import { createdPaymentIds } from '../model/creation-payment-receipts';
+import {
+  paymentEvidenceForm,
+  validatePaymentEvidenceFile,
+} from '../model/payment-evidence';
+import { PaymentDocuments } from './payment-documents';
+import type { SalesContractDetail } from '@nora/contracts';
 import type { TicketOfferV1 } from '@nora/contracts';
 import { PublishedPackageSale } from './published-package-sale';
 import { readPassengerHotelPrices } from '@nora/contracts';
@@ -80,6 +88,7 @@ import {
 import { SalesChequeCalculator } from './sales-cheque-calculator';
 import { ContractTotalPrices } from './contract-total-prices';
 import { ContractServiceSummary } from './contract-service-summary';
+import { SalesDatePicker } from './sales-date-picker';
 import { SalesPaymentPlan } from './sales-payment-plan';
 import { Button, buttonVariants } from '@/components/ui/button';
 
@@ -230,6 +239,15 @@ export function SalesContractForm() {
   const [futureFrom, setFutureFrom] = useState(() => new Date().toISOString());
   const [draftState, setState] = useState<SalesFormState>(freshSalesDraft);
   const state = useMemo<SalesFormState>(() => {
+    if (draftState.legacyContract)
+      return {
+        ...draftState,
+        passengerTotalPricing: false,
+        automaticComponentPricing: false,
+        priceEntryMode: 'CONTRACT_TOTAL',
+        serviceKinds: ['OTHER'],
+        passengers: [],
+      };
     if (isTicketOnlyContract(draftState))
       return ticketOnlySaleDefaults({
         ...draftState,
@@ -331,6 +349,10 @@ export function SalesContractForm() {
   const [error, setError] = useState('');
   const [savedNumber, setSavedNumber] = useState('');
   const [savedId, setSavedId] = useState('');
+  const [receiptFiles, setReceiptFiles] = useState<(File | null)[]>([]);
+  const [savedContract, setSavedContract] =
+    useState<SalesContractDetail | null>(null);
+  const [receiptError, setReceiptError] = useState('');
   const [returnCalendar, setReturnCalendar] = useState<{
     route: string;
     offers: TicketOfferV1[];
@@ -784,6 +806,16 @@ export function SalesContractForm() {
     }
   })();
   const canContinue = (() => {
+    if (step === 0 && state.legacyContract)
+      return (
+        !passengerStepError &&
+        Boolean(
+          state.originId &&
+          state.destinationId &&
+          state.originId !== state.destinationId &&
+          state.departureDate,
+        )
+      );
     if (step === 0)
       return Boolean(
         passengerStepError === null &&
@@ -863,6 +895,12 @@ export function SalesContractForm() {
       );
       if (submission.current.fingerprint !== fingerprint)
         submission.current = { fingerprint, key: browserRandomUuid() };
+      const options = receiptFiles.some(Boolean)
+        ? (await documentsApi.options()).data
+        : null;
+      if (options)
+        for (const file of receiptFiles)
+          if (file) validatePaymentEvidenceFile(options, file);
       const response = await salesApi.create(payload, submission.current.key);
       if (response.data.status !== 'SENT_TO_RESERVATIONS')
         await salesApi.confirm(response.data.id, response.data.version);
@@ -870,6 +908,40 @@ export function SalesContractForm() {
         globalThis.sessionStorage?.removeItem(draftStorageKey);
       setSavedNumber(response.data.contractNumber);
       setSavedId(response.data.id);
+      setSavedContract(response.data);
+      if (options) {
+        let ids: string[];
+        try {
+          ids = createdPaymentIds(
+            payload.payments ?? [],
+            response.data.payments,
+          );
+        } catch (reason) {
+          setReceiptError(
+            reason instanceof Error
+              ? reason.message
+              : 'ثبت مدرک پرداخت ناموفق بود.',
+          );
+          return;
+        }
+        for (let i = 0; i < receiptFiles.length; i++) {
+          const file = receiptFiles[i];
+          if (!file) continue;
+          try {
+            if (!ids[i]) throw Error('پرداخت متعلق به این قرارداد نیست.');
+            await documentsApi.upload(
+              paymentEvidenceForm(response.data, ids[i]!, options, file),
+            );
+          } catch (reason) {
+            setReceiptError(
+              reason instanceof Error
+                ? reason.message
+                : 'ثبت مدرک پرداخت ناموفق بود.',
+            );
+            break;
+          }
+        }
+      }
     } catch (reason) {
       setError(
         reason instanceof Error ? reason.message : 'ثبت قرارداد ناموفق بود.',
@@ -1151,6 +1223,23 @@ export function SalesContractForm() {
         <Button className="mt-6" onClick={() => router.push('/sales')}>
           بازگشت به فروش
         </Button>
+        {receiptError && (
+          <Alert
+            tone="warning"
+            title="قرارداد ثبت شد؛ رسیدهای پرداخت را بررسی کنید."
+            description={receiptError}
+          />
+        )}
+        {receiptError &&
+          savedContract &&
+          savedContract.payments.map((p) => (
+            <PaymentDocuments
+              key={p.id}
+              contract={savedContract}
+              paymentId={p.id}
+              expanded
+            />
+          ))}
         {savedId && (
           <div className="mt-4">
             <ContractOutputButton contractId={savedId} />
@@ -1235,7 +1324,38 @@ export function SalesContractForm() {
         <Alert tone="error" title="عملیات کامل نشد" description={error} />
       ) : null}
       <Card className="min-w-0 rounded-2xl border-border/80 p-4 shadow-sm sm:p-6 lg:p-8">
-        <PublishedPackageSale state={state} onChange={setState} />
+        {step === 0 && (
+          <label className="mb-4 flex items-center gap-2 rounded-xl border p-3">
+            <input
+              type="checkbox"
+              checked={state.legacyContract === true}
+              disabled={busy}
+              onChange={(e) => {
+                const legacyContract = e.target.checked;
+                setPeopleDraft(null);
+                setPeopleDirty(true);
+                patchState({
+                  legacyContract,
+                  ...(legacyContract
+                    ? {
+                        serviceKinds: ['OTHER'],
+                        passengers: [],
+                        firstPassengerIsCustomer: false,
+                        passengerTotalPricing: false,
+                        automaticComponentPricing: false,
+                        tour: undefined,
+                        packageSaleQuote: undefined,
+                      }
+                    : {}),
+                });
+              }}
+            />
+            قرارداد قدیمی
+          </label>
+        )}
+        {!state.legacyContract && (
+          <PublishedPackageSale state={state} onChange={setState} />
+        )}
         {step === 0 ? (
           <div className="grid gap-5">
             <h2 className="text-sm font-bold">مسیر سفر</h2>
@@ -1307,7 +1427,15 @@ export function SalesContractForm() {
             </div>
           </div>
         ) : null}
-        {step === 0 ? (
+        {step === 0 && state.legacyContract && (
+          <FormField label="تاریخ سفر" required>
+            <SalesDatePicker
+              value={state.departureDate}
+              onChange={(departureDate) => patchState({ departureDate })}
+            />
+          </FormField>
+        )}
+        {step === 0 && !state.legacyContract ? (
           <div className="mt-6 grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">
             <h2 className="text-sm font-bold">خدمات قرارداد</h2>
             {state.tour ? (
@@ -1461,6 +1589,7 @@ export function SalesContractForm() {
           </div>
         ) : null}
         {step === 0 &&
+        !state.legacyContract &&
         !usesRoomDrivenGuests(state) &&
         state.serviceKinds.some((k) => k !== 'HOTEL' && k !== 'VISA') ? (
           <section className="mt-5 grid gap-3 border-t border-border pt-4">
@@ -1553,7 +1682,7 @@ export function SalesContractForm() {
             </div>
           </section>
         ) : null}
-        {step === 0 && (
+        {step === 0 && !state.legacyContract && (
           <ServiceParties
             state={state}
             patch={patchState}
@@ -2269,11 +2398,13 @@ export function SalesContractForm() {
                 currencies={references.currencies}
                 onChange={(contractPrices) => patchState({ contractPrices })}
               />
-              <PassengerServicePrices
-                state={state}
-                currencies={references.currencies}
-                onChange={patchState}
-              />
+              {!state.legacyContract && (
+                <PassengerServicePrices
+                  state={state}
+                  currencies={references.currencies}
+                  onChange={patchState}
+                />
+              )}
               <InsuranceExtraSummary state={state} />
               <SalesChequeCalculator
                 state={pricedState}
@@ -2284,8 +2415,23 @@ export function SalesContractForm() {
                 payments={state.payments}
                 currencies={references.currencies}
                 banks={references.banks}
-                disabled={!state.passengers.length}
+                disabled={
+                  busy || (!state.legacyContract && !state.passengers.length)
+                }
                 onChange={(payments) => patchState({ payments })}
+                receiptFiles={receiptFiles}
+                onReceiptChange={(index, file) =>
+                  setReceiptFiles((files) => {
+                    const next = [...files];
+                    next[index] = file;
+                    return next;
+                  })
+                }
+                onRemove={(index) =>
+                  setReceiptFiles((files) =>
+                    files.filter((_, i) => i !== index),
+                  )
+                }
               />
               <FormField label="یادداشت قرارداد / Notice (اختیاری)">
                 <Textarea

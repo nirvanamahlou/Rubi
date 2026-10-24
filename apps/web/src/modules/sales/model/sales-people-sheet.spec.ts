@@ -1334,3 +1334,37 @@ it.each(['1', '021', '1234567', '+123'])(
     expect(() => validateSalesPeopleDraft(state, draft)).not.toThrow();
   },
 );
+
+it('saves a legacy customer without creating a passenger or requiring date of birth', async () => {
+  const legacyState = { ...state, legacyContract: true };
+  const draft = initialSalesPeopleDraft(legacyState);
+  draft.buyerContact = {
+    name: 'Synthetic Buyer',
+    phone: '09120000000',
+    address: 'Synthetic address',
+    postalCode: '',
+  };
+  draft.rows.primary = {
+    values: {
+      ...emptyPeopleValues(),
+      firstName: 'Synthetic',
+      lastName: 'Buyer',
+      phone: '09120000000',
+    },
+  };
+  const create = vi.fn(async (input: CustomerMutationRequest) => {
+    expect(input.roles).toEqual(['customer']);
+    return { data: detail('buyer', { birthDate: null }) };
+  });
+  const result = await saveSalesPeopleDraft(legacyState, draft, vi.fn(), {
+    create,
+    addContact: vi.fn(async () => ({
+      data: detail('buyer', { birthDate: null }),
+    })),
+  } as never);
+  expect(create).toHaveBeenCalledTimes(1);
+  expect(create.mock.calls[0]?.[0]).toMatchObject({ roles: ['customer'] });
+  expect(result.patch.customerId).toBe('buyer');
+  expect(result.patch.passengers).toEqual([]);
+  expect(passengerSlotKeys(legacyState)).toEqual([]);
+});

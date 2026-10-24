@@ -13,6 +13,8 @@ export function salesPassengerStepError(
   hotelCapacityError: string | null,
 ): string | null {
   if (!state.customerId) return 'مشتری قرارداد را مشخص کنید.';
+  if (state.legacyContract)
+    return peopleDirty ? 'اطلاعات مشتری را تأیید کنید.' : null;
   if (!state.passengers.length) return 'حداقل یک مسافر اضافه کنید.';
   if (peopleDirty)
     return 'اطلاعات جدول را با دکمه «ثبت و تأیید افراد» تأیید کنید.';

@@ -235,9 +235,25 @@ export function validateSalesContract(
       'RETURN_TICKET_INVALID',
       'تاریخ بازگشت نباید قبل از رفت باشد.',
     );
+  const legacyContract = input.services.some(
+    (s) => s.metadata?.legacyContractV1 === true,
+  );
+  if (
+    legacyContract &&
+    (input.services.length !== 1 ||
+      input.services[0]?.kind !== 'OTHER' ||
+      input.services[0]?.clientKey !== 'legacy-contract' ||
+      input.passengers.length ||
+      input.ticketSelections?.length ||
+      input.hotelSelection)
+  )
+    throw new SalesDomainError(
+      'SALES_CONTRACT_INVALID',
+      'ساختار قرارداد قدیمی معتبر نیست.',
+    );
   if (
     !input.services.length ||
-    !input.passengers.length ||
+    (!legacyContract && !input.passengers.length) ||
     (!input.priceComponents.length &&
       !input.services.every(
         (service) =>

@@ -88,13 +88,15 @@ export function initialSalesPeopleDraft(
     mode:
       state.customerKind === 'organization'
         ? 'organization'
-        : state.firstPassengerIsCustomer === false && state.buyerContact
+        : state.legacyContract ||
+            (state.firstPassengerIsCustomer === false && state.buyerContact)
           ? 'person'
           : 'first-passenger',
     rows,
     separateCustomer:
-      state.firstPassengerIsCustomer === false &&
-      Boolean(state.buyerContact) &&
+      (state.legacyContract ||
+        (state.firstPassengerIsCustomer === false &&
+          Boolean(state.buyerContact))) &&
       state.customerKind !== 'organization',
     ...(state.buyerContact ? { buyerContact: state.buyerContact } : {}),
     organization:
@@ -128,21 +130,24 @@ export function normalizeSalesPeopleDraft(
     rows: { ...draft.rows, ...(payer ? { p0: payer, primary: payer } : {}) },
   };
 }
-export const passengerSlotKeys = (state: SalesFormState) => [
-  ...Array.from(
-    {
-      length:
-        salesPassengerCounts(state).total -
-        (usesRoomDrivenGuests(state)
-          ? (state.flightOnlyPassengers?.length ?? 0)
-          : 0),
-    },
-    (_, index) => 'p' + index,
-  ),
-  ...(usesRoomDrivenGuests(state)
-    ? (state.flightOnlyPassengers ?? []).map((p) => p.key)
-    : []),
-];
+export const passengerSlotKeys = (state: SalesFormState) =>
+  state.legacyContract
+    ? []
+    : [
+        ...Array.from(
+          {
+            length:
+              salesPassengerCounts(state).total -
+              (usesRoomDrivenGuests(state)
+                ? (state.flightOnlyPassengers?.length ?? 0)
+                : 0),
+          },
+          (_, index) => 'p' + index,
+        ),
+        ...(usesRoomDrivenGuests(state)
+          ? (state.flightOnlyPassengers ?? []).map((p) => p.key)
+          : []),
+      ];
 export const peopleRow = (draft: SalesPeopleDraft, key: string): PeopleRow =>
   draft.rows[key] ?? { values: emptyPeopleValues() };
 export function selectedPeopleRow(person: CustomerDetail): PeopleRow {
@@ -400,7 +405,8 @@ export function validateSalesPeopleDraft(
   draft: SalesPeopleDraft,
 ) {
   const keys = passengerSlotKeys(state);
-  if (!keys.length) throw new Error('تعداد مسافران را در مرحله اول مشخص کنید.');
+  if (!state.legacyContract && !keys.length)
+    throw new Error('تعداد مسافران را در مرحله اول مشخص کنید.');
   if (draft.buyerContact) {
     const buyer = draft.buyerContact;
     if (
@@ -499,8 +505,9 @@ export function validateSalesPeopleDraft(
     birthDate: peopleRow(draft, key).values.birthDate,
   }));
   if (
-    !salesTravelDate(state) ||
-    !salesPassengerCompositionMatches({ ...state, passengers })
+    !state.legacyContract &&
+    (!salesTravelDate(state) ||
+      !salesPassengerCompositionMatches({ ...state, passengers }))
   )
     throw new Error(
       'تاریخ تولد همه مسافران را کامل کنید؛ تعداد بزرگسال، کودک و نوزاد باید با مرحله اول یکسان باشد.',
