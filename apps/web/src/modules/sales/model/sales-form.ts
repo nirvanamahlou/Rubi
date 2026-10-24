@@ -1135,12 +1135,29 @@ export function salesHotelDate(
   return shifted.toISOString().slice(0, 10);
 }
 
+export function salesOutboundHotelCheckIn(state: SalesFormState): string {
+  if (!salesDirections(state, 'FLIGHT').includes('OUTBOUND')) return '';
+  const departureAt = salesFlightSelection(state, 'OUTBOUND')?.departureAt;
+  return salesHotelDate(
+    departureAt ||
+      (state.departureDate
+        ? `${state.departureDate}T00:00:00+03:30`
+        : undefined),
+    0,
+  );
+}
+
 export function withSalesHotelDates(
   previous: SalesFormState,
   next: SalesFormState,
 ): SalesFormState {
-  const suggestion = (state: SalesFormState, field: 'checkIn' | 'checkOut') =>
-    state.tour && state.packageSaleAvailable
+  const suggestion = (state: SalesFormState, field: 'checkIn' | 'checkOut') => {
+    // Flight-linked automatic check-in follows the outbound day, including
+    // overnight flights. A package start or a legacy next-day draft flag
+    // must not silently add a night; explicit manual dates remain below.
+    const flightCheckIn = salesOutboundHotelCheckIn(state);
+    if (field === 'checkIn' && flightCheckIn) return flightCheckIn;
+    return state.tour && state.packageSaleAvailable
       ? field === 'checkIn'
         ? salesHotelDate(
             state.tour.startsOn + 'T00:00:00+03:30',
@@ -1161,6 +1178,7 @@ export function withSalesHotelDates(
             : undefined,
           field === 'checkIn' ? (state.hotelArrivesNextDay ? 1 : 0) : -1,
         );
+  };
   const hotel = { ...next.hotel };
   for (const field of ['checkIn', 'checkOut'] as const) {
     const manualKey = field === 'checkIn' ? 'checkInManual' : 'checkOutManual';

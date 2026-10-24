@@ -78,6 +78,7 @@ export function SalesPeopleSheet({
   const draft = normalizeSalesPeopleDraft(
     savedDraft ?? initialSalesPeopleDraft(state),
   );
+  const showAcquaintance = draft.mode !== 'organization';
   const [calendar, setCalendar] = useState<CustomerCalendarMode>('gregorian');
   const [lookup, setLookup] = useState<string | null>(null);
   const [lookupInRow, setLookupInRow] = useState(false);
@@ -89,6 +90,7 @@ export function SalesPeopleSheet({
   const [methodsError, setMethodsError] = useState('');
   const [methodsRetry, setMethodsRetry] = useState(0);
   useEffect(() => {
+    if (!showAcquaintance) return;
     let active = true;
     loadSalesAcquaintanceMethods()
       .then((items) => {
@@ -106,7 +108,7 @@ export function SalesPeopleSheet({
     return () => {
       active = false;
     };
-  }, [methodsRetry, refreshRevision]);
+  }, [methodsRetry, refreshRevision, showAcquaintance]);
   const [error, setError] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const inFlight = useRef(false);
@@ -568,11 +570,11 @@ export function SalesPeopleSheet({
       {error ? (
         <Alert tone="error" title="ثبت افراد کامل نشد" description={error} />
       ) : null}
-      {methodsLoading ? (
+      {showAcquaintance && methodsLoading ? (
         <p role="status" className="text-xs text-muted-foreground">
           در حال دریافت نحوه‌های آشنایی…
         </p>
-      ) : methodsError || !acquaintanceMethods.length ? (
+      ) : showAcquaintance && (methodsError || !acquaintanceMethods.length) ? (
         <div className="flex items-center gap-2 text-sm">
           <p role={methodsError ? 'alert' : 'status'}>
             {methodsError ||
@@ -803,34 +805,39 @@ export function SalesPeopleSheet({
               onChange={(event) => changeBuyer('address', event.target.value)}
             />
           </FormField>
-          <FormField label="نحوه آشنایی با ما" required>
-            <SalesThemedSelect
-              label="نحوه آشنایی برای کل قرارداد"
-              value={
-                draft.acquaintanceMethodId ??
-                peopleRow(draft, 'p0').values.acquaintanceMethodId ??
-                ''
-              }
-              disabled={
-                busy ||
-                methodsLoading ||
-                Boolean(methodsError) ||
-                !acquaintanceMethods.length
-              }
-              options={[
-                { value: '', label: 'انتخاب نحوه آشنایی' },
-                ...acquaintanceMethods.map((item) => ({
-                  value: item.id,
-                  label: item.name,
-                })),
-              ]}
-              onValueChange={(acquaintanceMethodId) =>
-                change(
-                  setSalesPeopleAcquaintanceMethod(draft, acquaintanceMethodId),
-                )
-              }
-            />
-          </FormField>
+          {showAcquaintance ? (
+            <FormField label="نحوه آشنایی با ما" required>
+              <SalesThemedSelect
+                label="نحوه آشنایی برای کل قرارداد"
+                value={
+                  draft.acquaintanceMethodId ??
+                  peopleRow(draft, 'p0').values.acquaintanceMethodId ??
+                  ''
+                }
+                disabled={
+                  busy ||
+                  methodsLoading ||
+                  Boolean(methodsError) ||
+                  !acquaintanceMethods.length
+                }
+                options={[
+                  { value: '', label: 'انتخاب نحوه آشنایی' },
+                  ...acquaintanceMethods.map((item) => ({
+                    value: item.id,
+                    label: item.name,
+                  })),
+                ]}
+                onValueChange={(acquaintanceMethodId) =>
+                  change(
+                    setSalesPeopleAcquaintanceMethod(
+                      draft,
+                      acquaintanceMethodId,
+                    ),
+                  )
+                }
+              />
+            </FormField>
+          ) : null}
           <FormField label="تلفن ثابت مشتری" id="sales-buyer-landline">
             <Input
               id="sales-buyer-landline"

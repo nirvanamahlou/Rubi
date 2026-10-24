@@ -1,3 +1,7 @@
+## HOTEL-CHECKIN-DEPARTURE-DAY-1024 — PC-A
+
+Automatic flight-linked hotel check-in uses the outbound Tehran departure day, including floating flights before detail completion and overnight arrivals. Package-start hydration and legacy next-day draft flags cannot override it; explicit manual dates, checkout and hotel-only/package-only behavior remain. Published quote matching still rejects mismatched stay dates. 38 targeted model/UI tests pass; affected types/lint/build and all exact-head hosted checks gate owner-authorized develop merge. No API/schema/migration/dependency or runtime/data change; no production rollout requested.
+
 ## CONTRACT-OWNER-ACTION-CONTEXT-1024 — PC-A
 
 Follow-up before owner-actions rollout: output/payment/amendment UI uses the current actor and actual contract owner/branch, matching the already-merged backend predicate. Creator-only users do not get another owner’s amendment entry; native Finance/read-all users retain their existing price-only form on other owners’ contracts. No backend, grants, schema, migration or dependency change. Focused UI tests, types/lint/build and exact-head hosted gates precede owner-authorized merge and final server release.
@@ -7388,3 +7392,7 @@ Sales pricing/payment now offers an optional1000-character contract notice, sepa
 ## FLIGHT-ONLY-CALENDAR-DOTS-1024 — PC-A
 
 Flight-only new contracts now use the existing optional-fare calendar/card/pair modes, matching mixed hotel contracts. Active available inventory dates remain marked without standalone/pair sale prices; unpriced one-way and round-trip load partners can be selected. Existing seat-capacity, route/return interval and final manually entered contract-price validation remain; published fares still populate defaults when present.49 focused calendar/search/card/pair/pricing regressions pass, including manual price preservation and inventory identity in the payload. Scoped lint and production build/typecheck plus eight final hosted gates precede owner-authorized develop merge. No API/schema/migration/dependency/permission/runtime or operational data changes. Bounded source locks freeze/release on publication.
+
+## CONTRACT-MONEY-WORDS-1024 — PC-A
+
+New Contract passenger pricing now shows exact amount-in-words below IRR, foreign amount, discount and commission inputs with the selected currency and Persian/English grammar. Localized formatting supports18 integer digits and4 decimal places without whole-value floating-point conversion; empty/invalid values omit the hint and stored monetary strings stay unchanged. Agency mode hides acquaintance selection/loading/error, skips its lookup and ignores hidden contract-wide acquaintance propagation while retaining individual profile values. Personal customer behavior remains.87 focused money/UI/people/language tests and scoped lint pass; full Web type/build and final hosted eight checks gate owner-authorized develop merge. No schema/API/migration/dependency/shared MoneyInput/runtime or operational changes. Source locks freeze/release on publication.

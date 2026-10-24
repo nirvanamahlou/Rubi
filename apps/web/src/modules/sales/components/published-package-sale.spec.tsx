@@ -141,3 +141,19 @@ it('preserves explicitly manual hotel dates instead of silently quoting a differ
   expect(state.hotel.checkIn).toBe('2026-10-02');
   expect(state.packageSaleQuote).toBeUndefined();
 });
+
+it('does not replace outbound-day check-in with a next-day published package stay', async () => {
+  state = {
+    ...state,
+    serviceKinds: ['FLIGHT', 'HOTEL'],
+    departureDate: '2026-09-30',
+    hotelArrivesNextDay: true,
+  };
+  render();
+  await Promise.resolve();
+  render();
+  render();
+  expect(state.hotel.checkIn).toBe('2026-09-30');
+  expect(state.hotel.checkOut).toBe(price.checkOut);
+  expect(state.packageSaleQuote).toBeUndefined();
+});

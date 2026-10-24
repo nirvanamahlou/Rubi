@@ -307,13 +307,13 @@ it('derives floating hotel dates from selected calendar days before flight ident
   ).toBe('');
 });
 
-it('moves the whole hotel stay check-in to tomorrow only when requested', () => {
+it('ignores the legacy next-day flag for automatic flight-linked check-in', () => {
   const current = selected();
   const next = withSalesHotelDates(current, {
     ...current,
     hotelArrivesNextDay: true,
   });
-  expect(next.hotel.checkIn).toBe('2026-09-11');
+  expect(next.hotel.checkIn).toBe('2026-09-10');
   expect(next.hotel.checkOut).toBe(current.hotel.checkOut);
   expect(
     withSalesHotelDates(next, { ...next, hotelArrivesNextDay: false }).hotel
@@ -326,3 +326,44 @@ vi.mock('@nora/contracts', async (original) => ({
   ...(await original<typeof Contracts>()),
   enforceSalesHotelCapacity: () => true,
 }));
+
+it('uses outbound departure day for overnight flights even when the package starts tomorrow', () => {
+  const outboundOffer = {
+    ...offer('2026-10-24T19:00:00Z'),
+    arrivalAt: '2026-10-25T02:00:00Z',
+  };
+  const next = withSalesHotelDates(base, {
+    ...base,
+    outboundOffer,
+    hotelArrivesNextDay: true,
+    packageSaleAvailable: true,
+    tour: { startsOn: '2026-10-25', endsOn: '2026-10-30' } as NonNullable<
+      SalesFormState['tour']
+    >,
+  });
+  expect(next.hotel.checkIn).toBe('2026-10-24');
+  expect(next.hotel.checkOut).toBe('2026-10-30');
+  const manual = {
+    ...next,
+    hotel: { ...next.hotel, checkIn: '2026-10-25', checkInManual: true },
+  };
+  expect(withSalesHotelDates(next, manual).hotel.checkIn).toBe('2026-10-25');
+});
+
+it('uses the selected outbound day before floating flight details are complete with a legacy next-day flag', () => {
+  const next = withSalesHotelDates(base, {
+    ...base,
+    departureDate: '2026-10-24',
+    hotelArrivesNextDay: true,
+    contractFlights: {
+      OUTBOUND: {
+        departureAt: '',
+        arrivalAt: '',
+        carrierName: '',
+        serviceNumber: '',
+        cabinClassCode: 'ECONOMY',
+      },
+    },
+  });
+  expect(next.hotel.checkIn).toBe('2026-10-24');
+});

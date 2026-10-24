@@ -109,7 +109,7 @@ describe('Contract-only flight form and consumers', () => {
     expect(
       withSalesHotelDates(next, { ...next, hotelArrivesNextDay: true }).hotel
         .checkIn,
-    ).toBe('2026-10-02');
+    ).toBe('2026-10-01');
     expect(
       patchContractFlight(state, 'OUTBOUND', undefined).contractFlights,
     ).toEqual({});
