@@ -7021,6 +7021,12 @@ Selected published tickets expose the existing single-offer Edit action for past
 Voucher preview and PDF share the same read-only per-passenger service projection and English headers: outbound/return flights, individual hotel dates, outbound/return transfer and other allocated services. Preserve selected passenger order, passport names, hotel child bands, independent voucher dates/flags and different-stay dates; flight-only passengers have blank hotel cells. Existing supplier form and issuance/release/branch/public-QR guards remain. English Master Data names and English issuer footer are used; PDF stays English regardless of staff UI locale. No financial amounts added. Compact voucher-only spacing and weighted pagination keep synthetic one/two/three-page output within A4, including four room types and long names.90 focused tests and scoped lint pass, two opt-in runtime skips; final hosted types/build/full gates required before authorized merge. No schema/API/dependency/runtime or data changes.
 
 
+## PASSENGER-COLUMNS-1024 — PC-A
+
+Reservation passenger identity table reserves separate190px age and160px gender columns, keeping stacked child age/accommodation selectors within their own cell. Horizontal scrolling is contained by the table wrapper rather than expanding the dialog. Read-only passenger output and amendment/identity save behavior remain unchanged. No API/schema/dependency/runtime change; targeted regression checks and exact-head hosted gates precede authorized develop merge.
+
+Validation:4 existing passenger identity/age regressions pass; scoped ESLint and diff checks pass. Source reservation releases on publication. Full exact-head hosted lint/types/tests/build/PostgreSQL gates precede merge.
+
 ## CHARTER-ALIAS-CITIES-1022 — PC-A
 
 Charter origin/destination selectors now show every available route city instead of the shared five-option limit. Regression covers six destinations including Izmir/Bodrum and searching the same shared-capacity flight for each alternate destination without duplicating stock. Production read-only aggregate confirms both configured destinations persist; live7478be1d predates merged1067, which already adds sale-route/history choices. No operational data or deployment change. Hosted gates precede authorized develop merge.
