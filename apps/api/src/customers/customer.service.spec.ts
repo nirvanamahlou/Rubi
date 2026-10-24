@@ -932,3 +932,36 @@ describe('Sales workflow agency creation permission', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 });
+
+it('derives bounded request-only customer entry capabilities for a contract-only actor', () => {
+  const { service } = createService({} as CustomerRepository);
+  const creator = {
+    ...actor,
+    permissions: [
+      MANUAL_ACCESS_VERSION,
+      'sales.contracts.create',
+      'ui.screen.sales.new-contract',
+      'ui.allow.sales.new-contract',
+      'ui.deny.field.customers.passportNumber',
+    ],
+  } as AuthenticatedActor;
+  const scoped = service.salesEntryActor(creator);
+  expect(scoped.userId).toBe(creator.userId);
+  expect(scoped.branchIds).toEqual(creator.branchIds);
+  expect(scoped.permissions).toContain('customers.create');
+  expect(scoped.permissions).toContain('customers.sensitive.read');
+  expect(scoped.permissions).not.toContain(
+    'ui.deny.field.customers.passportNumber',
+  );
+  expect(scoped.permissions).not.toContain('customers.merge');
+  expect(creator.permissions).not.toContain('customers.create');
+  expect(creator.permissions).toContain(
+    'ui.deny.field.customers.passportNumber',
+  );
+  expect(() =>
+    service.salesEntryActor({ ...creator, branchIds: [] }),
+  ).toThrow();
+  expect(() =>
+    service.salesEntryActor({ ...actor, permissions: [] }),
+  ).toThrow();
+});

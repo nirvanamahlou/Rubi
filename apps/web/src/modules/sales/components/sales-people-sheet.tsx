@@ -12,7 +12,7 @@ import { Input, FormField } from '@/components/ui/form-controls';
 import { Alert } from '@/components/ui/surfaces';
 import {
   CustomerEntrySheet,
-  customersApi,
+  salesPeopleApi as customersApi,
   type CustomerCalendarMode,
   type CustomerEntryRow,
   type EntryField,

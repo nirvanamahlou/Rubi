@@ -9,7 +9,7 @@ export {
   CustomerCalendarSwitch,
   type CustomerCalendarMode,
 } from '../components/customer-date-field';
-export { customersApi, CustomersApiError } from '../api/client';
+export { customersApi, salesPeopleApi, CustomersApiError } from '../api/client';
 export {
   isValidIranianNationalId,
   normalizeNationalId,

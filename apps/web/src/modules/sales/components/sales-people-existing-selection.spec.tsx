@@ -32,7 +32,7 @@ vi.mock('react', async (original) => ({
 }));
 vi.mock('@/modules/customers/public/entry', async (original) => ({
   ...(await original<typeof Entry>()),
-  customersApi: { detail: fixture.detail },
+  salesPeopleApi: { detail: fixture.detail },
   CustomerEntrySheet: (props: { rows: Entry.CustomerEntryRow[] }) => {
     fixture.rows = props.rows;
     return (
