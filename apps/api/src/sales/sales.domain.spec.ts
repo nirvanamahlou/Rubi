@@ -1135,3 +1135,49 @@ it('accepts city tour and guide using existing OTHER services with explicit pass
   expect(() => validateSalesContract(input)).not.toThrow();
   expect(input).toEqual(before);
 });
+
+describe('legacy customer-only contract', () => {
+  const legacy = (): SalesContractCreateRequest => ({
+    ...draft,
+    tripType: 'ONE_WAY',
+    returnNotBefore: null,
+    services: [
+      {
+        clientKey: 'legacy-contract',
+        kind: 'OTHER',
+        titleSnapshot: 'Legacy contract',
+        metadata: { legacyContractV1: true },
+      },
+    ],
+    passengers: [],
+    ticketSelections: [],
+    hotelSelection: null,
+    priceComponents: [
+      {
+        type: 'BASE',
+        title: 'Agreed total',
+        amount: '100',
+        currencyCode: 'IRR',
+      },
+    ],
+    payments: [],
+  });
+  it('accepts an explicitly marked customer-only contract without fake passengers or tickets', () => {
+    expect(() => validateSalesContract(legacy(), true)).not.toThrow();
+  });
+  it('keeps normal passenger validation and forbids mixing legacy marker with operational passengers or flights', () => {
+    expect(() => validateSalesContract({ ...draft, passengers: [] })).toThrow();
+    expect(() =>
+      validateSalesContract({ ...legacy(), passengers: draft.passengers }),
+    ).toThrow();
+    expect(() =>
+      validateSalesContract({
+        ...legacy(),
+        services: [...legacy().services, ...draft.services],
+      }),
+    ).toThrow();
+    expect(() =>
+      validateSalesContract({ ...legacy(), priceComponents: [] }),
+    ).toThrow();
+  });
+});

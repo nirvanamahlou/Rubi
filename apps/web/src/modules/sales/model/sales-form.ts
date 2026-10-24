@@ -127,6 +127,7 @@ export const salesAdditionalServices = {
 } as const;
 
 export interface SalesFormState {
+  legacyContract?: boolean;
   additionalServices?: (keyof typeof salesAdditionalServices)[];
   roomDrivenGuests?: boolean;
   flightOnlyPassengers?: { key: string; age: number }[];
@@ -1278,6 +1279,51 @@ export function salesTravelDate(state: SalesFormState): string {
 export function salesPayload(
   state: SalesFormState,
 ): SalesContractCreateRequest {
+  if (state.legacyContract) {
+    const totalState = {
+      ...state,
+      passengerTotalPricing: false,
+      automaticComponentPricing: false,
+      packageSaleQuote: undefined,
+      passengerDeductions: {},
+    };
+    return {
+      customerId: state.customerId,
+      payerCustomerId: state.customerId,
+      ...(state.buyerContact ? { buyerContact: state.buyerContact } : {}),
+      tripType: 'ONE_WAY',
+      originId: state.originId,
+      destinationId: state.destinationId,
+      departureDate: state.departureDate,
+      services: [
+        {
+          clientKey: 'legacy-contract',
+          kind: 'OTHER',
+          titleSnapshot: 'قرارداد قدیمی',
+          metadata: {
+            legacyContractV1: true,
+            reservationNote: state.reservationNote || '',
+            contractNotice: state.contractNotice || '',
+          },
+        },
+      ],
+      passengers: [],
+      ticketSelections: [],
+      hotelSelection: null,
+      priceComponents: salesChequeComponents(
+        contractSaleComponents(totalState),
+        state.paymentTerms,
+      ),
+      payments: state.payments.map((p) => ({
+        ...p,
+        dueAt: new Date(p.dueAt).toISOString(),
+      })),
+      ...(state.paymentTerms !== undefined
+        ? { paymentTerms: state.paymentTerms }
+        : {}),
+      pricingNotes: state.pricingNotes || null,
+    };
+  }
   state = syncHotelChildSelections(state, salesTravelDate(state));
   state = withFirstPassengerCustomer(state);
   const roomPartyError = salesRoomPartyError(state);

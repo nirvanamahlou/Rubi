@@ -725,3 +725,58 @@ describe('explicit visa applicants', () => {
     expect(() => salesPayload({ ...state, visaApplicantIds: [] })).toThrow();
   });
 });
+
+describe('legacy contract payload', () => {
+  it('uses only manually agreed totals and drops prior operational passengers and selections', () => {
+    const state = {
+      ...emptySalesForm,
+      legacyContract: true,
+      customerId: 'buyer',
+      customerName: 'Buyer',
+      originId: 'origin',
+      destinationId: 'destination',
+      departureDate: '2026-10-01',
+      serviceKinds: ['FLIGHT' as const],
+      passengerTotalPricing: true,
+      automaticComponentPricing: true,
+      contractPrices: [
+        { amount: '100', currencyCode: 'IRR' },
+        { amount: '50', currencyCode: 'USD' },
+      ],
+      passengers: [
+        {
+          customerId: 'old-person',
+          displayName: 'Old person',
+          birthDate: '1990-01-01',
+        },
+      ],
+      payments: [
+        {
+          amount: '40',
+          currencyCode: 'IRR',
+          method: 'CASH' as const,
+          dueAt: '2026-10-01',
+        },
+        {
+          amount: '60',
+          currencyCode: 'IRR',
+          method: 'BANK_TRANSFER' as const,
+          dueAt: '2026-10-02',
+        },
+      ],
+    };
+    const payload = salesPayload(state);
+    expect(payload.customerId).toBe('buyer');
+    expect(payload.passengers).toEqual([]);
+    expect(payload.ticketSelections).toEqual([]);
+    expect(payload.hotelSelection).toBeNull();
+    expect(payload.services[0]?.metadata?.legacyContractV1).toBe(true);
+    expect(
+      payload.priceComponents.map((p) => [p.currencyCode, p.amount]),
+    ).toEqual([
+      ['IRR', '100'],
+      ['USD', '50'],
+    ]);
+    expect(payload.payments).toHaveLength(2);
+  });
+});

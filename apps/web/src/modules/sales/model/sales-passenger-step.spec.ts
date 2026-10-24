@@ -127,3 +127,12 @@ it('preserves identity confirmation, customer, date and age-composition checks',
     ),
   ).toContain('ترکیب ثبت‌شده');
 });
+
+it('legacy mode validates its customer confirmation without asking for passengers', () => {
+  const state = { ...base(), legacyContract: true, passengers: [] };
+  expect(salesPassengerStepError(state, false, null)).toBeNull();
+  expect(salesPassengerStepError(state, true, null)).not.toBeNull();
+  expect(
+    salesPassengerStepError({ ...state, customerId: '' }, false, null),
+  ).not.toBeNull();
+});
