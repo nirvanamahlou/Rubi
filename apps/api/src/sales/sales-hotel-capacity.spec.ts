@@ -1,3 +1,4 @@
+import type * as Contracts from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 
 import type {
@@ -312,3 +313,9 @@ describe('heterogeneous room validation', () => {
     ).rejects.toThrow('ظرفیت یکی از اتاق‌ها کافی نیست.');
   });
 });
+
+// Exercise the retained strict algorithm separately from the current temporary policy.
+vi.mock('@nora/contracts', async (original) => ({
+  ...(await original<typeof Contracts>()),
+  enforceSalesHotelCapacity: () => true,
+}));

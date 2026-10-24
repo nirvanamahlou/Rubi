@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import type * as Contracts from '@nora/contracts';
+import { describe, expect, it, vi } from 'vitest';
 import type { HotelRoomRateV1, TicketOfferV1 } from '@nora/contracts';
 import {
   emptySalesForm,
@@ -319,3 +320,9 @@ it('moves the whole hotel stay check-in to tomorrow only when requested', () => 
       .checkIn,
   ).toBe('2026-09-10');
 });
+
+// Exercise the retained strict algorithm separately from the current temporary policy.
+vi.mock('@nora/contracts', async (original) => ({
+  ...(await original<typeof Contracts>()),
+  enforceSalesHotelCapacity: () => true,
+}));

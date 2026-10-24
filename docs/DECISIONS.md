@@ -610,3 +610,7 @@ Owner explicitly authorizes the entire new-contract person workflow under sales.
 ## 2026-10-24 — Immediate raster image preview (IMAGE-PREVIEW-NO-SCAN-WAIT-1024)
 
 Owner requests removing antivirus wait from uploaded photo preview. This supersedes the general CLEAN-only rule solely for authenticated JPEG/PNG preview, including PREVIEW step-up grants. Permit explicit non-infected scan states without relabeling them CLEAN. All existing branch, domain, file-read, confidentiality, archive and step-up checks remain. Infected/quarantined images remain blocked. Download, template execution and non-image delivery retain their original scan requirements. Existing MIME detection, response isolation and browser rasterization remain in place. No migration or scanner shutdown.
+
+## 2026-10-24 — Temporary Sales hotel capacity exception
+
+Owner explicitly disables blocking hotel room capacity and guest-age/composition matching while room capacities are incomplete. Shared Sales policy governs Web save and API save/confirmation. Actual passenger allocations, valid room IDs/ordinals, stay dates and money checks stay authoritative; absent tariff matches do not create quotes or erase negotiated prices. Re-enabling requires a new owner request. Agency buyer landlines accept any nonempty digit sequence (optional leading +), without a minimum national-number length; mobile number validation remains unchanged. Owner also authorizes develop merge and production rollout.
