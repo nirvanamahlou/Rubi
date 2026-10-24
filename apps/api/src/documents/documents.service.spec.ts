@@ -705,7 +705,7 @@ describe('DocumentsService security and persistence flow', () => {
     storage.openQuarantined.mockResolvedValue(
       Readable.from([Buffer.from('png')]),
     );
-    const reader = {
+    const reader: AuthenticatedActor = {
       ...actor,
       permissions: ['master_data.read'] as AuthenticatedActor['permissions'],
     };
@@ -1317,7 +1317,7 @@ describe('DocumentsService security and persistence flow', () => {
       );
       repository.createAccessGrant.mockResolvedValue(undefined);
       iamStepUp.verifyStepUp.mockResolvedValue(undefined);
-      const reader = {
+      const reader: AuthenticatedActor = {
         ...actor,
         permissions: [
           ...actor.permissions,
@@ -1920,7 +1920,7 @@ describe('DocumentsService security and persistence flow', () => {
       storage.openQuarantined.mockResolvedValue(
         Readable.from([Buffer.from('jpg')]),
       );
-      const reader = {
+      const reader: AuthenticatedActor = {
         ...actor,
         permissions: [...actor.permissions, 'documents.file.read'],
       };
