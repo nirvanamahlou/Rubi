@@ -1,4 +1,6 @@
 'use client';
+import { hasSalesContractSelfService } from '@nora/contracts';
+import { useAccessPermissions } from '@/modules/iam/access-context';
 import { currencySymbol } from '@/lib/currency-symbol';
 
 import {
@@ -179,6 +181,7 @@ export function paymentReferenceSearchQuery(
 
 export function SalesWorkspace() {
   const contractsSearchPanel = useRef<HTMLElement>(null);
+  const selfService = hasSalesContractSelfService(useAccessPermissions() ?? []);
   const [paymentContractId, setPaymentContractId] = useState<string | null>(
     null,
   );
@@ -537,7 +540,9 @@ export function SalesWorkspace() {
                           onSaved={() => void load()}
                         />
                         <Button
-                          permission="sales.payments.read"
+                          {...(selfService
+                            ? {}
+                            : { permission: 'sales.payments.read' })}
                           size="sm"
                           variant="outline"
                           className="h-8 min-w-0 bg-surface px-2 text-xs shadow-sm"

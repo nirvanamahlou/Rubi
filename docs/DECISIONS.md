@@ -619,3 +619,7 @@ SALES-OPTIONAL-NATIONAL-ID-1024: owner explicitly scopes optional national ID to
 ## 2026-10-24 — Temporary Sales hotel capacity exception
 
 Owner explicitly disables blocking hotel room capacity and guest-age/composition matching while room capacities are incomplete. Shared Sales policy governs Web save and API save/confirmation. Actual passenger allocations, valid room IDs/ordinals, stay dates and money checks stay authoritative; absent tariff matches do not create quotes or erase negotiated prices. Re-enabling requires a new owner request. Agency buyer landlines accept any nonempty digit sequence (optional leading +), without a minimum national-number length; mobile number validation remains unchanged. Owner also authorizes develop merge and production rollout.
+
+## 2026-10-24 — Contract owner self-service
+
+Owner authorizes visible Sales contract-area users to export, amend and record additional payments for their own contracts in their allowed branches, without separate export/update/payment grants. Existing explicit screen denies, broader native permissions, contract state/CAS/idempotency and payment validation stay authoritative. This grants no receipt approval, financial release, payer transfer or access to other owners' contracts. The old flight/room party equality error follows the already-approved temporary hotel-capacity policy. Develop merge and production rollout explicitly authorized.

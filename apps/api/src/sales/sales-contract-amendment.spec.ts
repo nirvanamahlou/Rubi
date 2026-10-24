@@ -98,6 +98,7 @@ function setup() {
     reservationRequests: [],
   };
   const repo = {
+    findUserDisplayNames: vi.fn().mockResolvedValue([]),
     findById: vi.fn(async () => row),
     updateDraft: vi.fn(async (...args: unknown[]) => {
       void args;

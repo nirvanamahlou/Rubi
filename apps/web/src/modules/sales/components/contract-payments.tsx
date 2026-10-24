@@ -1,4 +1,6 @@
 'use client';
+import { hasSalesContractSelfService } from '@nora/contracts';
+import { useAccessPermissions } from '@/modules/iam/access-context';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { SalesThemedSelect } from './sales-themed-select';
 import { PaymentDocuments } from './payment-documents';
@@ -172,6 +174,7 @@ export function ContractPayments({
   onSaved: () => void;
   onSearchContracts: (reference: string) => void;
 }) {
+  const selfService = hasSalesContractSelfService(useAccessPermissions() ?? []);
   const [contract, setContract] = useState<SalesContractDetail | null>(null);
   const [payment, setPayment] = useState(empty);
   const [banks, setBanks] = useState<readonly MasterDataRecord[]>([]);
@@ -428,7 +431,10 @@ export function ContractPayments({
           }}
         >
           <DialogTrigger asChild>
-            <Button permission="sales.payments.create" disabled={!contract}>
+            <Button
+              {...(selfService ? {} : { permission: 'sales.payments.create' })}
+              disabled={!contract}
+            >
               افزودن پرداخت
             </Button>
           </DialogTrigger>
@@ -608,7 +614,9 @@ export function ContractPayments({
               </div>
               {!savedPaymentId ? (
                 <Button
-                  permission="sales.payments.create"
+                  {...(selfService
+                    ? {}
+                    : { permission: 'sales.payments.create' })}
                   type="submit"
                   loading={busy}
                   disabled={!contract || !validCurrency}

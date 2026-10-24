@@ -1,3 +1,4 @@
+import { canSelfServeSalesContract } from '@nora/contracts';
 import {
   Module,
   Injectable,
@@ -52,6 +53,7 @@ export class SalesOperationalAmendmentService {
       !row ||
       !actor.branchIds.includes(row.branchId) ||
       !(
+        canSelfServeSalesContract(actor, row) ||
         actor.permissions.includes('sales.contracts.update.branch') ||
         (actor.permissions.includes('sales.contracts.update.own') &&
           row.ownerUserId === actor.userId)

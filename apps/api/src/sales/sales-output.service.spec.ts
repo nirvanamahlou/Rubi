@@ -211,3 +211,26 @@ it('uses passport Latin names for contract output without mutating the saved con
     'Wrong display name',
   );
 });
+
+it('allows a creator to output their own contract without separate export/legal-directory grants', async () => {
+  const t = setup();
+  await expect(
+    t.service.prepare('contract', {
+      ...actor,
+      permissions: ['sales.contracts.create'],
+    }),
+  ).resolves.toHaveProperty('data');
+});
+it('rejects another owner or branch for creator-only output without recording output', async () => {
+  for (const change of [{ ownerUserId: 'other' }, { branchId: 'other' }]) {
+    const t = setup();
+    t.sales.detail.mockResolvedValue({ data: { ...t.contract, ...change } });
+    await expect(
+      t.service.prepare('contract', {
+        ...actor,
+        permissions: ['sales.contracts.create'],
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(t.repo.recordOutputPreview).not.toHaveBeenCalled();
+  }
+});

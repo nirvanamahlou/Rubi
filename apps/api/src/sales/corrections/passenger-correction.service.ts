@@ -1,3 +1,4 @@
+import { canSelfServeSalesContract } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -61,10 +62,15 @@ export class PassengerCorrectionService {
     private readonly crypto: PassengerCorrectionCrypto,
   ) {}
   private canWrite(
-    row: { ownerUserId: string; assignedUserId: string | null },
+    row: {
+      ownerUserId: string;
+      assignedUserId: string | null;
+      branchId: string;
+    },
     actor: AuthenticatedActor,
   ) {
     return (
+      canSelfServeSalesContract(actor, row) ||
       actor.permissions.includes('sales.contracts.update.branch') ||
       (actor.permissions.includes('sales.contracts.update.own') &&
         row.ownerUserId === actor.userId)
@@ -77,6 +83,7 @@ export class PassengerCorrectionService {
     });
     if (!row) throw new NotFoundException('قرارداد یافت نشد.');
     const readable =
+      canSelfServeSalesContract(actor, row) ||
       actor.permissions.includes('reservations.read') ||
       actor.permissions.includes('sales.contracts.read.all') ||
       actor.permissions.includes('sales.contracts.read.branch') ||

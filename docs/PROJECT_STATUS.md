@@ -1,3 +1,7 @@
+## CONTRACT-OWNER-ACTIONS-1024 — PC-A
+
+Contract-area access now enables output, amendment and payment entry for the creator’s own contract in an allowed branch through one shared owner-scoped capability. Native broader grants remain; no role data is changed. Output reuses Sales scope before identity/branding reads; correction and payment commands retain state, CAS, idempotency, money and Finance-only payer-transfer/approval guards. UI action availability uses the same capability. The legacy room/flight equality blocker follows the existing temporary capacity policy. Targeted ownership/branch/explicit-screen-deny regressions and 211 shared tests, API/Web types/lint/build and exact-head hosted gates precede owner-authorized develop merge and encrypted-backup production rollout. No schema/migration/dependency. Source locks release on publication.
+
 ## 2026-10-24 — SALES-OPTIONAL-NATIONAL-ID-1024 — PC-A
 
 Owner scopes optional national ID to New Contract only. Sales people entry and quick-create omit blank IDs and remove national-ID required attributes; existing customer-to-passenger role promotion accepts no ID. Customers-owned sales create adapter validates contract access and keeps directory create strict, supplied ID encryption/uniqueness and birth/passport rules. No-ID ambiguous retries stop until the existing record is selected. API117 and Web200 related tests pass. Affected lint/types/build and full exact-head CI gate owner-authorized develop merge. No schema/migration/dependency/runtime or operational changes.

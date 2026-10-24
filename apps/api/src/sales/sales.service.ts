@@ -1,3 +1,7 @@
+import {
+  canSelfServeSalesContract,
+  hasSalesContractSelfService,
+} from '@nora/contracts';
 import { enforceSalesHotelCapacity } from '@nora/contracts';
 import {
   hasConfirmedReceiptFunds,
@@ -653,6 +657,7 @@ export class SalesService {
   }
 
   private assertUpdate(row: SalesContractRow, actor: AuthenticatedActor): void {
+    if (canSelfServeSalesContract(actor, row)) return;
     if (
       has(actor, 'sales.contracts.update.branch') &&
       actor.branchIds.includes(row.branchId)
@@ -1018,12 +1023,15 @@ export class SalesService {
         message: 'قرارداد یافت نشد.',
       });
     this.assertRead(row, actor);
-    const mayReadPayments = has(actor, 'sales.payments.read');
-    const creators = mayReadPayments
-      ? await this.repository.findUserDisplayNames(
-          row.payments.map(({ createdByUserId }) => createdByUserId),
-        )
-      : [];
+    const mayReadPayments =
+      has(actor, 'sales.payments.read') ||
+      canSelfServeSalesContract(actor, row);
+    const creators =
+      mayReadPayments && row.payments.length
+        ? await this.repository.findUserDisplayNames(
+            row.payments.map(({ createdByUserId }) => createdByUserId),
+          )
+        : [];
     const detail = presentSalesContract(
       row,
       new Map(
@@ -1448,7 +1456,10 @@ export class SalesService {
     idempotencyKey: string | undefined,
     traceId?: string,
   ) {
-    if (!has(actor, 'sales.payments.create'))
+    if (
+      !has(actor, 'sales.payments.create') &&
+      !hasSalesContractSelfService(actor.permissions)
+    )
       throw new ForbiddenException('مجوز ثبت پرداخت وجود ندارد.');
     if (!idempotencyKey?.trim())
       throw new BadRequestException('Idempotency-Key الزامی است.');
@@ -1461,6 +1472,11 @@ export class SalesService {
         message: 'قرارداد یافت نشد.',
       });
     this.assertRead(row, actor);
+    if (
+      !has(actor, 'sales.payments.create') &&
+      !canSelfServeSalesContract(actor, row)
+    )
+      throw new ForbiddenException('مجوز ثبت پرداخت وجود ندارد.');
     domainCall(() => validateSalesPayment(input));
     if (
       (row.paymentTerms as unknown as SalesContractDetail['paymentTerms'])

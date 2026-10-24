@@ -1,4 +1,6 @@
 'use client';
+import { hasSalesContractSelfService } from '@nora/contracts';
+import { useAccessPermissions } from '@/modules/iam/access-context';
 import { readPublicDocumentLink } from '@/modules/travel-documents/public/use-public-document-link';
 import { readContractFlightFacts } from '../model/contract-flight-facts';
 import { localizedFetch } from '@/i18n/localized-fetch';
@@ -105,6 +107,7 @@ export function ContractOutputButton({
   className?: string;
   label?: string;
 }) {
+  const selfService = hasSalesContractSelfService(useAccessPermissions() ?? []);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -172,7 +175,7 @@ export function ContractOutputButton({
   return (
     <>
       <Button
-        permission="sales.export"
+        {...(selfService ? {} : { permission: 'sales.export' })}
         size="sm"
         variant="outline"
         className={className}

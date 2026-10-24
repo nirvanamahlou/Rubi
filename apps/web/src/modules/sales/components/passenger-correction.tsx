@@ -1,4 +1,5 @@
 'use client';
+import { hasSalesContractSelfService } from '@nora/contracts';
 import { ContractPriceCorrection } from './contract-price-correction';
 import { useEffect, useRef, useState } from 'react';
 import type {
@@ -255,19 +256,21 @@ export function PassengerCorrectionButton({
   onSaved: () => void;
 }) {
   const permissions = useAccessPermissions();
+  const selfService = hasSalesContractSelfService(permissions ?? []);
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   if (
     !['CONFIRMED', 'SENT_TO_RESERVATIONS', 'IN_PROGRESS', 'COMPLETED'].includes(
       status,
     ) ||
-    !permissions?.some(
-      (p) =>
-        p === 'sales.contracts.update.branch' ||
-        p === 'sales.contracts.update.own' ||
-        p === 'finance.read' ||
-        p === 'sales.contracts.read.all',
-    )
+    (!selfService &&
+      !permissions?.some(
+        (p) =>
+          p === 'sales.contracts.update.branch' ||
+          p === 'sales.contracts.update.own' ||
+          p === 'finance.read' ||
+          p === 'sales.contracts.read.all',
+      ))
   )
     return null;
   return (
@@ -295,6 +298,7 @@ export function PassengerCorrectionButton({
             تاریخ تولد، مشخصات پاسپورت و توضیحات رزرواسیون
           </DialogDescription>
           {open &&
+          !selfService &&
           !permissions?.some(
             (p) =>
               p === 'sales.contracts.update.branch' ||
