@@ -7346,3 +7346,7 @@ API/Web types, scoped lint, production builds and format/diff checks pass. All18
 existing migrations applied only to new isolated nora_ci. No operational data,
 runtime, schema, grants or PBX writes; no main/develop merge. Release manifest:
 tasks/CALL-CENTER-UNIFIED-1024.md. Scoped reservations release on publication.
+
+## CONTRACT-NOTICE-1024 — PC-A
+
+Sales pricing/payment now offers an optional1000-character contract notice, separate from internal reservation/pricing notes. Existing first-service JSON metadata stores its trimmed text without schema changes. Draft preview and saved contract HTML/PDF share one escaped, multiline notice section after hotel details and before signatures; blank/legacy records omit it.86 focused model/UI tests pass, and actual Chromium PDF generation passes. Poppler-rendered synthetic A4 output was visually reviewed after tightening notice spacing; the three-line notice and signatures fit one page without clipping. Full Web types/lint/build and eight exact-head hosted gates precede the owner-authorized develop merge. No production rollout, migration, dependency or operational data changes. Source locks frozen/released at publication.
