@@ -241,6 +241,7 @@ export interface SalesFormState {
   pricingNotes: string;
   paymentTerms?: SalesPaymentTerms | null;
   reservationNote?: string;
+  contractNotice?: string;
   passengerPrices?: Record<string, SalesMoney[]>;
   passengerTotalPricing?: boolean;
   agencyCommission?: AgencyCommissionV1;
@@ -1766,12 +1767,18 @@ export function salesPayload(
     returnNotBefore:
       state.tripType === 'ROUND_TRIP' ? salesTravelDate(state) : null,
     services: services.map((service, index) =>
-      index === 0 && state.reservationNote?.trim()
+      index === 0 &&
+      (state.reservationNote?.trim() || state.contractNotice?.trim())
         ? {
             ...service,
             metadata: {
               ...service.metadata,
-              reservationNote: state.reservationNote.trim(),
+              ...(state.reservationNote?.trim()
+                ? { reservationNote: state.reservationNote.trim() }
+                : {}),
+              ...(state.contractNotice?.trim()
+                ? { contractNotice: state.contractNotice.trim() }
+                : {}),
             },
           }
         : service,

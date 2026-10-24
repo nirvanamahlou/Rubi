@@ -251,6 +251,8 @@ it('offers the expert reservation note on sale pricing rather than only at final
   expect(html).toMatch(/maxlength="500"/i);
   expect(html).not.toContain('در توضیحات درخواست رزرواسیون نمایش داده می‌شود.');
   expect(html).toContain('یادداشت قیمت‌گذاری');
+  expect(html).toContain('یادداشت قرارداد / Notice (اختیاری)');
+  expect(html).toMatch(/maxlength="1000"/i);
   fixture.step = 2;
   const final = renderToStaticMarkup(<SalesContractForm />);
   fixture.step = 0;

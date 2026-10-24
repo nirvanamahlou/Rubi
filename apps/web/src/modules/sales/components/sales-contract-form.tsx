@@ -2300,6 +2300,17 @@ export function SalesContractForm() {
                 disabled={!state.passengers.length}
                 onChange={(payments) => patchState({ payments })}
               />
+              <FormField label="یادداشت قرارداد / Notice (اختیاری)">
+                <Textarea
+                  maxLength={1000}
+                  rows={4}
+                  value={state.contractNotice ?? ''}
+                  onChange={(event) =>
+                    patchState({ contractNotice: event.target.value })
+                  }
+                  placeholder="یادداشتی که در پایین قرارداد چاپ می‌شود"
+                />
+              </FormField>
               <FormField label="یادداشت کارشناس برای رزرواسیون (اختیاری)">
                 <Textarea
                   maxLength={500}

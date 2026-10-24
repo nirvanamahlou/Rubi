@@ -116,6 +116,13 @@ export function contractPrintHtml(
   );
   const c = output.contract,
     e = escapeContractText;
+  const contractNotice = c.servicesDetail
+    .map((service) => service.metadata?.contractNotice)
+    .find(
+      (notice): notice is string =>
+        typeof notice === 'string' && Boolean(notice.trim()),
+    )
+    ?.trim();
   const travelDate = (value: string) =>
     refs.international && Number.isFinite(Date.parse(value))
       ? new Intl.DateTimeFormat('en-GB', {
@@ -455,6 +462,9 @@ export function contractPrintHtml(
   .hotel-room-summary{display:flex;gap:8mm;align-items:center;margin:1mm 0;padding:.6mm 1.5mm;background:#f4f8fc;border:1px solid #dce6ee;font-size:9pt}.hotel-rooms th{background:#e6f1f2}
   .flight-route{font-size:8pt;line-height:1.15;overflow-wrap:anywhere}.contract-closing{break-inside:avoid;page-break-inside:avoid}.footer-qr svg{width:18mm;height:18mm}
   .document-pages{table-layout:fixed;font-size:inherit}.document-content,.document-footer{border:0;padding:0;text-align:inherit}.document-pages>tbody>tr{break-inside:auto;page-break-inside:auto}.document-pages>tfoot{display:table-footer-group}.document-footer{padding-top:3mm}.contract-closing{background:#fff}
+  .contract-notice{break-inside:avoid;margin-top:1.5mm;padding:1mm 2mm;background:#f8fafc;border-right:1mm solid #15999e;text-align:right;font-size:8.5pt}
+  .contract-notice h3{margin:0 0 .5mm;font-size:9pt;break-after:avoid}.contract-notice h3 span{font-family:Arial,sans-serif;font-size:8pt;margin-right:2mm;color:#536b85}
+  .contract-notice p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.3;orphans:2;widows:2}
 </style></head><body><article class="document"><table class="document-pages"><tbody><tr><td class="document-content">
 
   <header><div class="brand${output.company.code === 'JAHAN_BASTAN' ? ' jahan-brand' : ''}">${logo}<div>${e(issuerName)}</div><small>${e(output.company.code === 'JAHAN_BASTAN' ? 'JAHAN BASTAN' : (output.company.latinName ?? ''))}</small></div><div class="title"><h1>قرارداد فروش خدمات مسافرتی</h1><p class="subtitle" dir="ltr">TRAVEL SERVICES CONTRACT</p></div></header>
@@ -467,6 +477,7 @@ export function contractPrintHtml(
   <section>${heading(4, 'FLIGHT INFORMATION', 'اطلاعات پرواز')}<table><thead><tr><th>مسیر</th><th>ایرلاین</th><th>شماره</th><th>تاریخ</th><th>ساعت</th><th>کلاس</th></tr></thead><tbody>${flights || '<tr><td colspan="6">پرواز در این قرارداد انتخاب نشده است.</td></tr>'}</tbody></table></section>
   <section>${heading(5, 'HOTEL INFORMATION', 'اطلاعات هتل')}${hotel ? `<table><thead><tr><th style="width:30%">نام هتل</th><th>درجه</th><th>خدمات</th><th>ورود</th><th>خروج</th>${mixedRoomTypes ? '' : '<th>نوع اتاق</th>'}</tr></thead><tbody><tr><td><bdi>${e(refs.hotelLatinName ?? 'ثبت نشده')}</bdi><small><bdi>${e(refs.hotelWebsite ?? 'وب‌سایت ثبت نشده')}</bdi></small></td><td>${e(refs.hotelGrade)}</td><td>${e(name(hotel.mealServiceId))}</td><td class="stay-date-cell"><bdi class="stay-date" dir="ltr">${e(stayDate(hotel.checkInDate))}</bdi></td><td class="stay-date-cell"><bdi class="stay-date" dir="ltr">${e(stayDate(hotel.checkOutDate))}</bdi></td>${mixedRoomTypes ? '' : `<td class="room-type"><bdi>${e(room)}</bdi></td>`}</tr></tbody></table><div class="hotel-room-summary"><span>تعداد اتاق‌ها: <b>${e(roomCount)}</b></span><span>مجموع مهمانان هتل: <b>${e(roomGuestCount)}</b></span></div>${hotel.rooms?.length ? `<table class="hotel-rooms"><colgroup>${(showRoomPrices ? [6, 30, 10, 16, 14, 24] : [8, 40, 12, 20, 20]).map((width) => `<col width="${width}%">`).join('')}</colgroup><thead><tr><th>اتاق</th><th>نوع و دسته‌بندی اتاق</th><th>بزرگسال</th><th>سن کودکان</th><th>تعداد نفرات اتاق</th>${showRoomPrices ? '<th>مبلغ توافق‌شدهٔ اتاق</th>' : ''}</tr></thead><tbody>${hotel.rooms.map((r) => `<tr><td>${e(r.ordinal)}</td><td class="room-type"><bdi>${e(salesRoomDisplayName(r))}</bdi></td><td>${e(r.adults)}</td><td>${e(r.childAges.join(', ') || '—')}</td><td>${e(r.adults + r.childAges.length)}</td>${showRoomPrices ? `<td>${r.agreedPrice ? '<bdi class="money">' + contractMoney(r.agreedPrice.amount) + ' ' + contractCurrency(r.agreedPrice.currencyCode) + '</bdi>' : '—'}</td>` : ''}</tr>`).join('')}</tbody></table>` : ''}` : 'هتل در این قرارداد انتخاب نشده است.'}</section>
 
+${contractNotice ? `<section class="contract-notice"><h3>یادداشت قرارداد <span dir="ltr">NOTICE</span></h3><p>${e(contractNotice)}</p></section>` : ''}
 </td></tr></tbody><tfoot><tr><td class="document-footer">  <div class="contract-closing"><section>${heading(6, 'APPROVAL & SIGNATURE', 'تأیید و امضا')}<div class="signatures"><div>نام و امضای مسافر / نماینده<span class="signature-line">....................................</span></div><div>نام و امضای مسئول فروش<span class="signature-line">....................................</span></div></div></section>
   <div class="customer-terms">
     <p>در صورت تأیید نشدن هتل درخواستی، هتل مشابه جایگزین می‌گردد.</p>

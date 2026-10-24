@@ -205,6 +205,32 @@ describe('Saved contract print output', () => {
     expect(terms).toBeLessThan(html.indexOf('<footer>'));
     expect(html).toContain('.customer-terms{font-size:8.5pt;line-height:1.35');
   });
+  it('prints a saved plain-text notice once at the bottom before signatures and escapes HTML', () => {
+    const output = structuredClone(printFixture);
+    output.contract.servicesDetail[0]!.metadata = {
+      ...output.contract.servicesDetail[0]!.metadata,
+      contractNotice: '  توافق فروش\n<script>alert(1)</script> & مهم  ',
+    };
+    const html = contractPrintHtml(output, printReferences);
+    const notice = html.indexOf('<section class="contract-notice">');
+    expect(notice).toBeGreaterThan(html.indexOf('HOTEL INFORMATION'));
+    expect(notice).toBeLessThan(html.indexOf('<tfoot>'));
+    expect(html.match(/<section class="contract-notice">/g)).toHaveLength(1);
+    expect(html).toContain(
+      'توافق فروش\n&lt;script&gt;alert(1)&lt;/script&gt; &amp; مهم',
+    );
+    expect(html).not.toContain('<script>alert(1)</script>');
+  });
+  it.each([null, '', '   ', false])(
+    'omits empty or invalid saved notice %s',
+    (notice) => {
+      const output = structuredClone(printFixture);
+      output.contract.servicesDetail[0]!.metadata = { contractNotice: notice };
+      expect(contractPrintHtml(output, printReferences)).not.toContain(
+        '<section class="contract-notice">',
+      );
+    },
+  );
   it('separates passenger IRR and foreign amounts, sums each currency and prints hotel references', () => {
     const output = structuredClone(printFixture);
     output.contract.passengersDetail = output.contract.passengersDetail.map(
