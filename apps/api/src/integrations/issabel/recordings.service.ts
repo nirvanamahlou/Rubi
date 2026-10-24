@@ -338,8 +338,34 @@ export class IssabelRecordingsService implements OnModuleInit, OnModuleDestroy {
     });
     return { id, state: 'COMPLETE', sizeBytes: row.sizeBytes };
   }
-  async read(actor: AuthenticatedActor, id: string, range?: string) {
-    this.domain.authorize(actor);
+  async forCall(actor: AuthenticatedActor, callId: string) {
+    const context = await this.domain.callRecordingContext(actor, callId);
+    if (!context) return { data: [] };
+    const ids = context.references.flatMap((reference) => {
+      const match = /^issabel-recording:([0-9a-f-]{36})$/i.exec(reference);
+      return match ? [match[1]!] : [];
+    });
+    const rows = await this.db.client.integrationTelephonyRecording.findMany({
+      where: {
+        id: { in: ids },
+        connectionId: context.connectionId,
+        rootFingerprint: context.rootFingerprint,
+        state: 'COMPLETE',
+        expiresAt: { gt: new Date() },
+        connection: { branchId: { in: [...actor.branchIds] } },
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      select: { id: true, sizeBytes: true },
+    });
+    return { data: rows };
+  }
+  async read(
+    actor: AuthenticatedActor,
+    id: string,
+    range?: string,
+    callId?: string,
+  ) {
+    if (!callId) this.domain.authorize(actor);
     if (
       !actor.permissions.includes(
         'customer_affairs.call_center.recordings.read',
@@ -357,13 +383,27 @@ export class IssabelRecordingsService implements OnModuleInit, OnModuleDestroy {
           },
         });
         if (!row) throw new NotFoundException();
-        await this.domain.authorizeRecording(
-          actor,
-          row.connectionId,
-          row.rootFingerprint,
-          `issabel-recording:${id}`,
-          tx,
-        );
+        if (callId) {
+          const context = await this.domain.callRecordingContext(
+            actor,
+            callId,
+            tx,
+          );
+          if (
+            !context ||
+            context.connectionId !== row.connectionId ||
+            context.rootFingerprint !== row.rootFingerprint ||
+            !context.references.includes(`issabel-recording:${id}`)
+          )
+            throw new NotFoundException();
+        } else
+          await this.domain.authorizeRecording(
+            actor,
+            row.connectionId,
+            row.rootFingerprint,
+            `issabel-recording:${id}`,
+            tx,
+          );
         const bytes = recordingRange(range, row.sizeBytes);
         await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${'telephony:media-read:' + actor.userId},0))`;
         const recent = await tx.integrationTelephonyAudit.count({

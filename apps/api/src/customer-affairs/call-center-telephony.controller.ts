@@ -39,6 +39,14 @@ export class CallCenterTelephonyController {
   ) {
     return this.service.history(req.actor, id);
   }
+  @Get(':id')
+  @Header('Cache-Control', 'private, no-store')
+  read(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.read(req.actor, id);
+  }
   @Post('lease')
   lease(@Req() req: AuthenticatedRequest, @Body() input: TelephonyLeaseDto) {
     return this.service.lease(req.actor, input.tabId, input.release);

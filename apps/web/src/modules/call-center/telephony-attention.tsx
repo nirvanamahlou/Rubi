@@ -14,6 +14,7 @@ import { workflowApi, type Operator } from './workflow-client';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './telephony.module.css';
 import { telephonyDraftName } from './telephony-draft';
+import { OperationalCallPopup } from './operational-call-popup';
 export interface AttentionCall {
   id: string;
   callId: string;
@@ -48,6 +49,9 @@ const states: Record<string, string> = {
 };
 export function TelephonyAttention() {
   const actor = useAccessActor();
+  // Explicit local rollout hold: no automatic attention UI before owner activation.
+  if (process.env.NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED === 'false')
+    return null;
   const allowed =
     !!actor?.permissions.includes(
       'customer_affairs.call_center.workflow.manage',
@@ -78,8 +82,8 @@ function Attention({ branch }: { branch: string }) {
     [busy, setBusy] = useState(false),
     [operators, setOperators] = useState<Operator[]>([]),
     [target, setTarget] = useState('');
-  const tab = useRef(''),
-    currentRef = useRef<AttentionCall | null>(null),
+  const [tab] = useState(() => crypto.randomUUID());
+  const currentRef = useRef<AttentionCall | null>(null),
     button = useRef<HTMLButtonElement>(null),
     seen = useRef(new Set<string>());
   useUnsavedGuard(dirty);
@@ -87,15 +91,14 @@ function Attention({ branch }: { branch: string }) {
     currentRef.current = current;
   }, [current]);
   useEffect(() => {
-    tab.current = crypto.randomUUID();
     return () => {
       void callCenterRequest('/telephony/lease', branch, {
         method: 'POST',
-        body: JSON.stringify({ tabId: tab.current, release: true }),
+        body: JSON.stringify({ tabId: tab, release: true }),
         keepalive: true,
       }).catch(() => {});
     };
-  }, [branch]);
+  }, [branch, tab]);
   useEffect(() => {
     if (blocked) return;
     let disposed = false;
@@ -109,7 +112,7 @@ function Attention({ branch }: { branch: string }) {
           branch,
           {
             method: 'POST',
-            body: JSON.stringify({ tabId: tab.current, release: !visible }),
+            body: JSON.stringify({ tabId: tab, release: !visible }),
             signal: abort.signal,
           },
         );
@@ -181,7 +184,7 @@ function Attention({ branch }: { branch: string }) {
       abort.abort();
       clearTimeout(timer);
     };
-  }, [branch, page, blocked]);
+  }, [branch, page, blocked, tab]);
   const currentId = current?.id,
     currentBranch = current?.branchId;
   useEffect(() => {
@@ -240,7 +243,7 @@ function Attention({ branch }: { branch: string }) {
           method: 'POST',
           body: JSON.stringify({
             version: current.version,
-            tabId: tab.current,
+            tabId: tab,
             action: kind,
             ...(kind === 'SAVE' ? draft : {}),
             ...(kind === 'TRANSFER' ? { targetUserId: target } : {}),
@@ -279,7 +282,23 @@ function Attention({ branch }: { branch: string }) {
           <RotateCcw size={14} /> تلاش مجدد
         </button>
       )}
-      <Dialog open={open} onOpenChange={(value) => setOpen(value)}>
+      {open && current && !current.synthetic && (
+        <OperationalCallPopup
+          key={current.id}
+          row={current}
+          tabId={tab}
+          leader={leader}
+          onClose={() => {
+            setOpen(false);
+            setCurrent(null);
+            setDirty(false);
+          }}
+        />
+      )}
+      <Dialog
+        open={open && (!current || current.synthetic)}
+        onOpenChange={(value) => setOpen(value)}
+      >
         <DialogContent
           className={styles.dialog}
           onCloseAutoFocus={(event) => {

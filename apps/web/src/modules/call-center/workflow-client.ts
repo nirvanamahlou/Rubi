@@ -103,6 +103,7 @@ export const workflowApi = {
     page = 1,
     taskPage = 1,
     requestId?: string,
+    openOnly = false,
   ) =>
     callCenterRequest<{
       data: RequestCase[];
@@ -112,7 +113,7 @@ export const workflowApi = {
         contactCallCount?: number;
       };
     }>(
-      `/contacts/${contact}/requests?page=${page}&taskPage=${taskPage}${requestId ? `&requestId=${requestId}` : ''}`,
+      `/contacts/${contact}/requests?page=${page}&taskPage=${taskPage}${requestId ? `&requestId=${requestId}` : ''}${openOnly ? '&openOnly=true' : ''}`,
       branch,
       signal ? { signal } : {},
     ),

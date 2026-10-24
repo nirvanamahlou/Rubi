@@ -36,7 +36,7 @@ export class CallCenterCallDto {
   @IsString() @Length(0, 100) name!: string;
   @IsString() @Length(1, 200) subject!: string;
   @IsString() @Length(1, 80) source!: string;
-  @IsString() @Length(1, 100) operator!: string;
+  @IsString() @Length(1, 800) operator!: string;
   @IsIn(CALL_CENTER_STATUSES) status!: (typeof CALL_CENTER_STATUSES)[number];
   @IsString() @Length(0, 2000) note!: string;
 }
