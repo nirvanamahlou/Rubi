@@ -1,3 +1,7 @@
+## 2026-10-24 — SALES-OPTIONAL-NATIONAL-ID-1024 — PC-A
+
+Owner scopes optional national ID to New Contract only. Sales people entry and quick-create omit blank IDs and remove national-ID required attributes; existing customer-to-passenger role promotion accepts no ID. Customers-owned sales create adapter validates contract access and keeps directory create strict, supplied ID encryption/uniqueness and birth/passport rules. No-ID ambiguous retries stop until the existing record is selected. API117 and Web200 related tests pass. Affected lint/types/build and full exact-head CI gate owner-authorized develop merge. No schema/migration/dependency/runtime or operational changes.
+
 ## SALES-ROOM-CONTACT-FLEXIBILITY-1024 — PC-A
 
 Owner temporarily disables blocking hotel guest/room composition and tariff capacity checks in Sales UI, API save/update and confirmation through one shared policy. Structural room IDs/ordinals, stay/service/price integrity and actual passenger allocations remain; unavailable tariff matches never fabricate quotes. Optional buyer landline accepts short digit sequences and an optional leading plus; mobile and postal-code checks remain. Targeted API66 and Web64 tests, types/lint/build, full exact-head CI gate owner-authorized develop merge and encrypted-backup production rollout. No schema/migration/dependency or data deletion. Retained strict capacity algorithm has separate enabled-policy regressions for future explicit restoration. Source locks release at publication.

@@ -125,7 +125,7 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     ).toEqual([
       'نام انگلیسی مطابق پاسپورت *',
       'نام خانوادگی انگلیسی مطابق پاسپورت *',
-      'کد ملی *',
+      'کد ملی',
     ]);
     expect(html).toMatch(/id="sales-entry-p\d+-passport-first-name"/);
     expect(html).toMatch(/id="sales-entry-p\d+-national-id"/);
@@ -136,7 +136,10 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     expect(html).toContain('انقضای پاسپورت');
     expect(html).not.toContain('نام *');
     expect(html).not.toContain('نام خانوادگی *');
-    expect(html).toContain('کد ملی *');
+    expect(html).toContain('کد ملی');
+    expect(
+      html.match(/<input[^>]*id="sales-entry-p\d+-national-id"[^>]*>/)?.[0],
+    ).not.toContain('required');
     expect(html).toContain('جنسیت *');
   });
 });

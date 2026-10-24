@@ -68,15 +68,18 @@ describe('combined sales people step', () => {
       ).passengers,
     ).toEqual([]);
   });
-  it('creates requested roles and requires national ID for customers too', () => {
+  it('creates requested roles with optional national ID', () => {
     expect(salesPersonInput(draft, 'customer').roles).toEqual(['customer']);
     expect(salesPersonInput(draft, 'passenger').roles).toEqual(['passenger']);
     expect(
       salesPersonInput({ ...draft, alsoPassenger: true }, 'customer').roles,
     ).toEqual(['customer', 'passenger']);
-    expect(() =>
+    expect(
       salesPersonInput({ ...draft, nationalId: '' }, 'customer'),
-    ).toThrow('۱۰ رقم');
+    ).not.toHaveProperty('nationalId');
+    expect(
+      salesPersonInput({ ...draft, nationalId: '' }, 'passenger'),
+    ).not.toHaveProperty('nationalId');
   });
   it('requires a passenger birthdate and names before calling the API', async () => {
     const api = { create: vi.fn() };
@@ -88,8 +91,8 @@ describe('combined sales people step', () => {
     ).rejects.toThrow('نام');
     expect(api.create).not.toHaveBeenCalled();
   });
-  it.each(['', '123456789', '12345678901', '12345x7890'])(
-    'rejects missing or non-ten-digit passenger national ID %s before API',
+  it.each(['123456789', '12345678901', '12345x7890'])(
+    'rejects a supplied non-ten-digit passenger national ID %s before API',
     async (nationalId) => {
       const api = { create: vi.fn() };
       await expect(
@@ -167,7 +170,7 @@ describe('combined sales people step', () => {
       ).passengers,
     ).toHaveLength(10);
   });
-  it('renders numbered passenger rows with mandatory national ID and a removable draft', () => {
+  it('renders numbered passenger rows with optional national ID and a removable draft', () => {
     const html = renderToStaticMarkup(
       <SalesPersonCreate
         mode="passenger"

@@ -19,7 +19,7 @@ let actor: AuthenticatedActor;
 const service = {
   salesEntryActor: CustomerService.prototype.salesEntryActor,
   list: vi.fn().mockResolvedValue({ data: [] }),
-  create: vi.fn().mockResolvedValue({ data: { id: person } }),
+  createForSales: vi.fn().mockResolvedValue({ data: { id: person } }),
   update: vi.fn().mockResolvedValue({ data: { id: person } }),
   detail: vi.fn().mockResolvedValue({ data: { id: person, kind: 'person' } }),
   registrationLookup: vi.fn().mockResolvedValue({ data: null }),

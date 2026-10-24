@@ -338,7 +338,7 @@ export function peopleCreateInput(
     throw new Error('نام و نام خانوادگی لاتین پاسپورت را کامل کنید.');
   const nationalId = normalizeNationalId(v.nationalId);
   if (
-    (passenger || nationalId) &&
+    nationalId &&
     (!/^\d{10}$/.test(nationalId) || !isValidIranianNationalId(nationalId))
   )
     throw new Error('کد ملی معتبر ۱۰رقمی وارد کنید.');
@@ -436,15 +436,6 @@ export function validateSalesPeopleDraft(
         `${label}: نتیجه ثبت قبلی نیازمند بررسی است؛ پرونده موجود را انتخاب کنید.`,
       );
     validatePassport(row);
-    if (
-      key !== 'primary' &&
-      row.profile &&
-      !row.profile.roles?.includes('passenger') &&
-      !row.values.nationalId.trim()
-    )
-      throw new Error(
-        `${label}: برای ثبت مشتری به‌عنوان مسافر، کد ملی معتبر را وارد کنید.`,
-      );
     if (international && key !== 'primary') {
       const v = row.values;
       if (
@@ -577,11 +568,7 @@ export async function saveSalesPeopleDraft(
   ]) {
     let row = peopleRow(current, key);
     if (!row.reviewRequired && !(row.person && !row.profile)) continue;
-    if (
-      key === 'primary' &&
-      !row.person &&
-      !normalizeNationalId(row.values.nationalId)
-    )
+    if (!row.person && !normalizeNationalId(row.values.nationalId))
       throw new Error(
         'نتیجه ثبت مشتری قطعی نیست؛ پرونده موجود مشتری را انتخاب کنید تا ثبت تکراری انجام نشود.',
       );

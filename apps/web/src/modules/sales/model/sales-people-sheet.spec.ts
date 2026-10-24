@@ -313,7 +313,7 @@ describe('fixed Sales people-entry slots', () => {
       const previousId = draft.rows.p0!.values.nationalId;
       const values = {
         ...draft.rows.p0!.values,
-        nationalId: '',
+        nationalId: national('009000009'),
         firstName: 'Corrected',
       };
       draft.rows.p0 = {
@@ -1007,8 +1007,44 @@ describe('contract buyer independent from passengers', () => {
   });
 });
 
+describe('optional contract national ID', () => {
+  it('saves multiple passenger rows without manufacturing national IDs', async () => {
+    const draft = filled();
+    for (const row of Object.values(draft.rows)) row.values.nationalId = '';
+    const create = vi.fn(async (input: CustomerMutationRequest) => ({
+      data: detail('passenger-' + input.birthDate, {
+        ...input,
+        roles: input.roles,
+      }),
+    }));
+    const saved = await saveSalesPeopleDraft(state, draft, vi.fn(), {
+      create,
+      addContact: vi.fn(),
+    });
+    expect(saved.patch.passengers).toHaveLength(4);
+    expect(create).toHaveBeenCalledTimes(4);
+    for (const [input] of create.mock.calls)
+      expect(input).not.toHaveProperty('nationalId');
+  });
+  it('does not blindly retry uncertain passenger creation without national ID', async () => {
+    const draft = filled();
+    draft.rows.p0!.values.nationalId = '';
+    draft.rows.p0!.reviewRequired = true;
+    const api = {
+      create: vi.fn(),
+      registrationLookup: vi.fn(),
+      addContact: vi.fn(),
+    };
+    await expect(
+      saveSalesPeopleDraft(state, draft, vi.fn(), api),
+    ).rejects.toThrow('ثبت تکراری');
+    expect(api.create).not.toHaveBeenCalled();
+    expect(api.registrationLookup).not.toHaveBeenCalled();
+  });
+});
+
 describe('customer-only purchase identity safety', () => {
-  it('requires passenger identity when promoting a customer-only record into a passenger slot', () => {
+  it('allows a customer-only record without national ID in a contract passenger slot', () => {
     const one = {
       ...state,
       passengerComposition: { adults: 1, children: 0, infants: 0 },
@@ -1022,7 +1058,7 @@ describe('customer-only purchase identity safety', () => {
       ...initialSalesPeopleDraft(one),
       rows: { p0: selectedPeopleRow(person) },
     };
-    expect(() => validateSalesPeopleDraft(one, draft)).toThrow('کد ملی');
+    expect(() => validateSalesPeopleDraft(one, draft)).not.toThrow();
   });
   it('does not retry an uncertain customer-only creation without a safe identity match', async () => {
     const one = {

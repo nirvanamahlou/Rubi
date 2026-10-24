@@ -891,6 +891,7 @@ export function SalesPeopleSheet({
       </div>
 
       <CustomerEntrySheet
+        optionalFields={['nationalId']}
         topScrollbar
         extraColumns={[
           ...(state.serviceKinds.includes('FLIGHT')
@@ -951,13 +952,14 @@ export function SalesPeopleSheet({
         columnLabels={
           passportIdentity
             ? {
+                nationalId: 'کد ملی',
                 passportFirstName: 'نام انگلیسی مطابق پاسپورت *',
                 passportLastName: 'نام خانوادگی انگلیسی مطابق پاسپورت *',
                 birthDate: 'تاریخ تولد *',
                 passportNumber: 'شماره پاسپورت *',
                 passportExpiryDate: 'انقضای پاسپورت *',
               }
-            : { birthDate: 'تاریخ تولد *' }
+            : { nationalId: 'کد ملی', birthDate: 'تاریخ تولد *' }
         }
         salesDatePolicy
         calendarSwitchInBirthDateHeader
