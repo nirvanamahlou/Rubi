@@ -7416,3 +7416,12 @@ Final proof:5 focused form tests, scoped lint, full TypeScript and65-route build
 Explicit owner change removes selectable NEW/open status. Request creation/editor now starts IN_PROGRESS (waiting agent), with only IN_PROGRESS, WAITING_CUSTOMER and CLOSED choices; legacy NEW renders as waiting agent in queue, cards/history and next action. API DTO default is IN_PROGRESS, and legacy NEW write input canonicalizes only after original command fingerprint/replay validation; new requests in waiting-customer/closed states remain invalid. No shared ticket enum or old audit/data rewrite. Pending contact filter includes both persisted legacy NEW and IN_PROGRESS, maintaining branch/resource predicates. Preserve current runtime's published openOnly paging in touched classes. Disposable nora_call_request_pending_1024 DB receives existing migrations only; no operational schema change. Web tests pass; final API/SQL/build/browser gates below.
 
 Final verification:30 API PostgreSQL tests on the dedicated disposable database and5 Web tests pass; scoped lint, full API/Web TypeScript and builds pass (65 Web routes). Authenticated browser checks the three-option status dropdown with waiting-agent selected and no open option, then cancels without saving. Screenshot: F:/DevData/Temp/call-request-pending-1024.png (outside Git). Local Web3000 PID18492 and API4000 PID10388 active. API artifact preserves the published unified8a5cac76 build except the three tested classes, retains original runtime CWD and development AMI policy; Worker and disabled popup setting preserved. API readiness confirms reachability and anonymous operations denied; live AMI acceptance was not repeated. No operational migration, customer mutation, mapping/grant change or PR/merge. Source scope released on push; when integrating newer develop, retain its already-existing openOnly paging and apply only this status delta.
+# CALL-EXTENSION-ALIASES-1024 — PC-C — LOCAL_VERIFIED
+
+Owner-supplied secondary extensions for three existing staff added to the approved
+private empty-HR bootstrap directory. Compiled public options/answer lookup verifies
+all six aliases,19 total choices and unchanged shared-extension handling. Six
+directory regressions pass. Runtime reads the file per lookup, so no restart/build
+or historical rewrite. No personnel data committed, schema/grant/PBX change or
+operational test call. See tasks/CALL-EXTENSION-ALIASES-1024.md for handoff.
+

@@ -9376,3 +9376,22 @@ Explicit user request removes NEW/open as a selectable request status and defaul
 Runtime compatibility: API4000 currently serves clean published unified8a5cac76 from call-center-unified-1024, which includes openOnly request paging. Preserve its existing optional DTO/list predicate in the three touched runtime classes. Prepare a separate ignored runtime artifact copied from the current API build and replace only these three compiled classes; preserve all other outbound/recording/routing artifacts. No writes to peer checkout. Activation of the peer-owned4000 service requires coordination after tests.
 
 CALL-REQUEST-PENDING-DEFAULT-1024 — COMPLETE / SOURCE_RELEASED: 30 PostgreSQL API tests on isolated database and5 Web tests pass, alongside scoped lint, full API/Web typecheck and builds (65 Web routes). Browser verifies exactly three statuses, pending-agent selected, no open option; cancelled without business mutation. After verifying the prior API source was clean/published, activated a separate artifact preserving unified8a5cac76 and replacing only the three tested classes; peer source untouched. API4000 PID10388 retains original CWD/development collector policy; Web3000 PID18492 uses .next-request-pending-1024. Popup enablement remains false, Worker untouched. This completes the runtime coordination precaution above. No migration, PR or merge. Screenshot outside Git: F:/DevData/Temp/call-request-pending-1024.png.
+# CALL-EXTENSION-ALIASES-1024 — PC-C — RESERVED
+
+Owner supplies second extensions for three existing staff members. Base develop
+69d80458; branch codex/pc-c-call-extension-aliases-1024. Reserve private local
+answer-directory configuration and own handoff notes only. Existing public HR
+projection supports multiple internalContact records and private rows per person.
+No source/runtime/schema/permission/PBX changes. Preserve position/unit and all
+unrelated rows, back up before updating and verify all six destination options
+and confirmed-answer resolutions against the actual configured branch/connection.
+Real personnel names and extension assignments remain outside Git. HR is empty
+in that branch, so the existing approved bootstrap file is currently authoritative.
+
+# CALL-EXTENSION-ALIASES-1024 — PC-C — VERIFIED / SOURCE_RELEASED_ON_PUSH
+
+Private mapping updated after identical backup; all six owner-supplied extensions
+resolve to the correct people and appear once in the19-choice public directory.
+Existing shared-extension choices retained. Six directory tests pass. No source,
+schema, user grant, PBX, business-record write or runtime restart. Private personnel
+assignments remain outside Git. Details: docs/tasks/CALL-EXTENSION-ALIASES-1024.md.
