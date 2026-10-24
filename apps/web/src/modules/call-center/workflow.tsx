@@ -1,4 +1,5 @@
 'use client';
+import { RequestChoice } from './request-choice';
 import { RequestReferral } from './request-referral';
 import { RequestCustomer } from './request-customer';
 import { useDialogReturnFocus } from './use-dialog-focus';
@@ -1064,51 +1065,41 @@ export function WorkflowEditor({
             {(editor.kind === 'task' || editor.item) && (
               <label>
                 وضعیت
-                <NativeSearchSelect
+                <RequestChoice
+                  label="وضعیت"
                   name="status"
                   value={status}
                   disabled={busy}
-                  onChange={(event) => {
-                    const value = event.target.value;
+                  onValueChange={(value) => {
                     setStatus(value);
                     setDirty(true);
                   }}
-                >
-                  {Object.entries(
-                    editor.kind === 'request' ? requestLabels : taskLabels,
-                  )
-                    .filter(
+                  options={Object.fromEntries(
+                    Object.entries(
+                      editor.kind === 'request' ? requestLabels : taskLabels,
+                    ).filter(
                       ([key]) =>
                         editor.item ||
                         (editor.kind === 'request'
                           ? key === 'NEW'
                           : key === 'OPEN'),
-                    )
-                    .map(([key, title]) => (
-                      <option key={key} value={key}>
-                        {title}
-                      </option>
-                    ))}
-                </NativeSearchSelect>
+                    ),
+                  )}
+                />
               </label>
             )}
             <label>
               اولویت
-              <NativeSearchSelect
+              <RequestChoice
+                label="اولویت"
                 value={priority}
                 disabled={busy}
-                onChange={(event) => {
-                  const value = event.target.value;
+                onValueChange={(value) => {
                   setPriority(value);
                   setDirty(true);
                 }}
-              >
-                {Object.entries(priorities).map(([key, title]) => (
-                  <option key={key} value={key}>
-                    {title}
-                  </option>
-                ))}
-              </NativeSearchSelect>
+                options={priorities}
+              />
             </label>
             {error && <p role="alert">{error}</p>}
             <footer>

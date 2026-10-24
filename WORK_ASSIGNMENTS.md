@@ -9159,3 +9159,7 @@ business directory only; no HR private fields, ownership or popup mapping. Priva
 Compiled private projection verifies16/16 choices and two shared203 entries.
 Local3000/4000 activated; anonymous directory401, login/health200. Popups held off.
 Scope releases on push; see tasks/CALL-DESTINATION-OPTIONS-1024.md.
+
+## CALL-REQUEST-SELECTS-1024 — PC-C — COMPLETE / SOURCE_RELEASED
+
+Branch codex/pc-c-call-request-selects-1024 from approved local8f10b186. User requests minimal modern status/priority dropdown UX. Reserve only WorkflowEditor status/priority rendering, new scoped request-choice component/styles and own docs. Preserve active OUTBOUND-CALL-POPUP work in separate publish checkout; no CallForm/telephony/shared selector/API/schema/dependency edits. Existing request creation defaults and save contracts stay unchanged. No develop merge authorized for this task.
