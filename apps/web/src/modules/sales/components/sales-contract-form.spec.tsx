@@ -496,3 +496,34 @@ it.each([0, 1, 2])(
     }
   },
 );
+
+it.each([
+  [false, '1960-01-01', false],
+  [true, '1960-01-01', true],
+  [true, '2000-01-01', false],
+] as const)(
+  'scopes the age-insurance notice to selected insurance and the current passenger (%s, %s)',
+  (insured, birthDate, visible) => {
+    fixture.step = 0;
+    fixture.ticketDraft = {
+      ...emptySalesForm,
+      serviceKinds: insured ? ['OTHER', 'INSURANCE'] : ['OTHER'],
+      departureDate: '2030-10-01',
+      passengers: [
+        { customerId: 'current', displayName: 'Synthetic Current', birthDate },
+      ],
+      insuranceExtraToman: { removed: '100' },
+    };
+    try {
+      const html = renderToStaticMarkup(<SalesContractForm />);
+      expect(html.includes('هزینه بیمه ممکن است بیشتر باشد.')).toBe(visible);
+      expect(html.includes('هزینه اضافه بیمه همین مسافر')).toBe(visible);
+      expect(html).not.toContain(
+        'در صورت انتخاب بیمه، فیلد هزینه اضافه فعال می‌شود.',
+      );
+    } finally {
+      fixture.ticketDraft = null;
+      fixture.step = 0;
+    }
+  },
+);
