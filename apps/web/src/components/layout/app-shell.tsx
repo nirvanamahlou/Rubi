@@ -1,5 +1,4 @@
 'use client';
-import { TelephonyAttention } from '@/modules/call-center/telephony-attention';
 import { assistantDashboardHref } from '@/modules/assistant/dashboard-location';
 import { FloatingAssistant } from '@/modules/assistant/floating-assistant';
 
@@ -744,7 +743,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <PageBreadcrumbProvider>
           <AppShellContent>{children}</AppShellContent>
           <FloatingAssistant />
-          <TelephonyAttention />
         </PageBreadcrumbProvider>
       </LegalEntityProvider>
     </AccessProvider>
