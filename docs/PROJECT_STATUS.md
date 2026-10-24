@@ -7300,6 +7300,8 @@ WorkflowEditor status/priority now use a scoped Radix Select with44px options, s
 Responsible-agent selector now uses the existing SearchCombobox with scoped styling consistent with request status/priority: search icon, person icons, neutral unassigned row,48px options and selected check. Permitted operators, ownerId FormData and missing historical-owner fallback remain unchanged. Query changes do not mark the form dirty; Escape while owner search is expanded closes only that menu, preserving the parent dialog. Existing10 form/search tests and scoped lint pass; final build/browser verification gates runtime activation. No shared selector/API/schema/dependency/permission edits, no business records saved. Source based on local107f56de; concurrent outbound source work preserved. No develop merge requested.
 
 Final proof:10 focused tests, scoped ESLint, formatting, full TypeScript and production Web build65 routes pass. Authenticated browser verified name filtering, selected check, Escape preserving dialog/owner, and cancellation after search without a false unsaved prompt; no business submission. Final Web3000 PID1692 uses .next-owner-final-1024 with popup flag false; API/Worker preserved. Previous own Web processes stopped; screenshot outside Git. Source reservation released on push.
+## CALL-CENTER-CALLER-NAME-1022 — preserved source-branch validation
+
 Optional encrypted incoming CallerIDName now reaches the existing attention popup
 as a default only when the saved name is empty. Operator edits remain stable under
 polling; agent-leg names never replace the external anchor name. No new layout,
@@ -7318,3 +7320,15 @@ No Web/runtime/schema/PBX change, no popup or public routing endpoint. Real20s
 fallback remains an SSH-dependent installation and controlled-call acceptance gate.
 See tasks/STICKY-SALES-PREFLIGHT-1022.md. Source branch:
 codex/pc-c-sticky-sales-preflight-1022, approved local prerequisite base d83600a3.
+
+## CALL-CENTER-UNIFIED-1024 — PC-C — SOURCE_CANDIDATE_VERIFIED
+
+Consolidated released request choices/owner search and sticky preview onto develop
+b4e069f9, which already includes outbound/audio/dossier/directory work. Preserved
+global attention removal and existing capture/mapping configuration. Repaired
+Node observer TS loading and strengthened stale partial-save access regression.
+API216 ordinary, PostgreSQL76, Web53 and tools23 checks pass (per-run counts);
+API/Web types, scoped lint, production builds and format/diff checks pass. All189
+existing migrations applied only to new isolated nora_ci. No operational data,
+runtime, schema, grants or PBX writes; no main/develop merge. Release manifest:
+tasks/CALL-CENTER-UNIFIED-1024.md. Scoped reservations release on publication.

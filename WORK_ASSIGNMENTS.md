@@ -9247,6 +9247,8 @@ Branch codex/pc-c-call-request-selects-1024 from approved local8f10b186. User re
 ## CALL-OWNER-SELECT-1024 — PC-C — COMPLETE / SOURCE_RELEASED
 
 Owner requests modern responsible-agent dropdown matching status/priority. Base107f56de; reserve OwnerSelect-only integration in workflow.tsx, new scoped owner-select component/styles and own docs. Retain shared SearchCombobox keyboard/search behavior, ownerId FormData, permitted operator source and legacy-owner fallback. No shared selector, CallForm, backend, grants or dependency edits; active outbound work preserved in separate checkout. Only previous own Web3000 runtime7744 may be replaced after checks; no develop merge requested.
+## CALL-CENTER-CALLER-NAME-1022 — preserved source-branch validation
+
 17 focused tests, types, scoped lint and contracts/API/Web builds pass;8 PostgreSQL cases explicitly skipped. Local Web3000 HTTP200 build igqcD0ao5lRfjSrJbjLTy and API4000 health ok (PID13204); existing config reused. No real-call/browser acceptance claimed. Source reservation releases on push.
 
 ## STICKY-SALES-PREFLIGHT-1022 — PC-C — ACTIVE
@@ -9267,3 +9269,13 @@ permission-aware internal preview implemented.57 distinct tests pass including
 no public endpoint or popup activation. SSH-dependent hook/real-call acceptance
 remain pending. Scoped reservation releases on commit/push. Details:
 docs/tasks/STICKY-SALES-PREFLIGHT-1022.md.
+
+## CALL-CENTER-UNIFIED-1024 — PC-C — VERIFIED / SOURCE_RELEASED_ON_PUSH
+
+Independent source consolidation complete. Bounded integration repairs also cover
+scripts/call-center/ami-observe.mjs and the existing call-center-access PostgreSQL
+test: use the installed TS loader and assert partial versus complete saves without
+weakening access. API216, PG76, Web53 and tools23 checks pass; types/lint/builds pass.
+No dependency/schema/runtime/configuration changes or operational data writes.
+No main/develop merge. See docs/tasks/CALL-CENTER-UNIFIED-1024.md for provenance,
+initial failed checks, final evidence and outstanding activation/manual-test gates.

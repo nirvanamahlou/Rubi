@@ -506,6 +506,23 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         tabId,
         subject: 'Completed offered call',
       });
+      const partial = await db.callCenterTelephonySession.findUniqueOrThrow({
+        where: { id },
+      });
+      expect(partial.completed).toBe(false);
+      await expect(
+        access.contact(expert, branchId, contactIds[1]!),
+      ).rejects.toThrow();
+      await telephony.action(expert, id, {
+        action: 'SAVE',
+        version: partial.version,
+        tabId,
+        name: 'Synthetic offered caller',
+        subject: 'Completed offered call',
+        source: 'Synthetic source',
+        operator: 'Synthetic unit',
+        outcome: 'ANSWERED',
+      });
       expect(
         (
           await db.callCenterTelephonySession.findUniqueOrThrow({
