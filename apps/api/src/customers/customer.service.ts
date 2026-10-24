@@ -1,4 +1,8 @@
-import { hotelAgeOn, isOptionalOperationReason } from '@nora/contracts';
+import {
+  canViewRoute,
+  hotelAgeOn,
+  isOptionalOperationReason,
+} from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -755,6 +759,33 @@ export class CustomerService {
       throw new ForbiddenException();
     return this.repository.salesPartyKinds(ids);
   }
+  /** Sales-only create/reuse of an agency buyer; no general Customer write grant. */
+  async resolveSalesOrganization(
+    organization: { id: string; name: string },
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+    traceId?: string,
+  ) {
+    if (
+      !actor.permissions.includes('sales.contracts.create') ||
+      !canViewRoute(actor.permissions, '/sales/contracts/new')
+    )
+      throw new ForbiddenException();
+    const branchId = branchOf(actor, requestedBranch);
+    const row = await this.repository.resolveSalesOrganization(
+      organization.id,
+      organization.name,
+      branchId,
+      actor.userId,
+      traceId,
+    );
+    if (!row)
+      throw new ConflictException(
+        'پرونده این سازمان موجود است؛ فعال‌سازی یا نقش مشتری را در بخش مشتریان اصلاح کنید.',
+      );
+    return { data: toCustomerSummary(row) };
+  }
+
   async create(
     input: CustomerMutationRequest,
     actor: AuthenticatedActor,
