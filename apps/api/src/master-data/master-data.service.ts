@@ -1307,6 +1307,32 @@ export class MasterDataService {
     return { data: { id, phone, email, nationalId } };
   }
 
+  async salesOrganizationPhones(
+    organizationId: string,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ) {
+    const branchId = branchOf(actor, requestedBranch);
+    const contacts =
+      await this.repository.salesOrganizationContacts(organizationId);
+    return Promise.all(
+      contacts.map(async (contact) => {
+        const phone = this.contactCrypto.decrypt('phone', {
+          encrypted: contact.phoneEncrypted,
+          encryptionIv: contact.phoneEncryptionIv,
+          encryptionAuthTag: contact.phoneEncryptionAuthTag,
+          encryptionKeyVersion: contact.phoneEncryptionKeyVersion,
+        });
+        await this.repository.recordSensitiveContactRead({
+          contactId: contact.id,
+          actorUserId: actor.userId,
+          actorBranchId: branchId,
+        });
+        return phone;
+      }),
+    );
+  }
+
   async organizationSupplierSummary() {
     return { data: await this.repository.organizationSupplierSummary() };
   }

@@ -1628,6 +1628,21 @@ export class MasterDataRepository {
     });
   }
 
+  async salesOrganizationContacts(organizationId: string) {
+    return this.database.client.masterOrganizationContact.findMany({
+      where: { organizationId, isActive: true },
+      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
+      take: 10,
+      select: {
+        id: true,
+        phoneEncrypted: true,
+        phoneEncryptionIv: true,
+        phoneEncryptionAuthTag: true,
+        phoneEncryptionKeyVersion: true,
+      },
+    });
+  }
+
   async organizationSupplierSummary() {
     const client = this.database.client;
     const [
