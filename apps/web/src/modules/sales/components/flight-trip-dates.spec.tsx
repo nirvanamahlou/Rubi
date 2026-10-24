@@ -9,6 +9,8 @@ const fixture = vi.hoisted(() => ({
   returning: [] as TicketOfferV1[],
   pickers: [] as DatePickerProps[],
   loaded: true,
+  roundTrip: true,
+  requireFare: true,
 }));
 vi.mock('react', async (original) => ({
   ...(await original<typeof React>()),
@@ -23,9 +25,9 @@ vi.mock('react', async (original) => ({
               ? JSON.stringify({
                   originId: 'origin',
                   destinationId: 'destination',
-                  roundTrip: true,
+                  roundTrip: fixture.roundTrip,
                   seats: 1,
-                  requireFare: true,
+                  requireFare: fixture.requireFare,
                 })
               : '',
             outbound: fixture.outbound,
@@ -80,6 +82,8 @@ beforeEach(() => {
   vi.mocked(searchTickets).mockReset();
   fixture.pickers = [];
   fixture.loaded = true;
+  fixture.roundTrip = true;
+  fixture.requireFare = true;
   fixture.outbound = [
     outbound,
     {
@@ -94,6 +98,38 @@ beforeEach(() => {
     { ...returning, id: 'late', departureAt: '2099-10-05T08:00:00Z' },
   ];
 });
+it.each([false, true])(
+  'marks unpriced inventory dates for flight-only contracts (round trip=%s)',
+  (roundTrip) => {
+    fixture.roundTrip = roundTrip;
+    fixture.requireFare = false;
+    fixture.outbound = fixture.outbound.map((offer) => ({
+      ...offer,
+      standaloneSalePrice: null,
+      roundTripSalePrices: [],
+    }));
+    fixture.returning = fixture.returning.map((offer) => ({
+      ...offer,
+      standaloneSalePrice: null,
+      roundTripSalePrices: [],
+    }));
+    renderToStaticMarkup(
+      <FlightTripDates
+        originId="origin"
+        destinationId="destination"
+        roundTrip={roundTrip}
+        seats={1}
+        requireFare={false}
+        value={{ from: '2099-10-01', to: '' }}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(fixture.pickers[0]!.markedDates).toEqual(['2099-10-01']);
+    expect(fixture.pickers[0]!.availableDates).toBeUndefined();
+    if (roundTrip)
+      expect(fixture.pickers[1]!.markedDates).toEqual(['2099-10-03']);
+  },
+);
 it('marks only available outbound days and eligible reverse-route return dates with red dots', () => {
   const onChange = vi.fn();
   renderToStaticMarkup(

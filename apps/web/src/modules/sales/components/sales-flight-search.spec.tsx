@@ -4,7 +4,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, expect, it, vi } from 'vitest';
 import type { TicketOfferV1 } from '@nora/contracts';
 import type { FlightDateRange } from './flight-date-range';
-import { emptySalesForm, type SalesFormState } from '../model/sales-form';
+import {
+  emptySalesForm,
+  salesFlightsValid,
+  type SalesFormState,
+} from '../model/sales-form';
 import { SalesContractForm } from './sales-contract-form';
 
 const fixture = vi.hoisted(() => ({
@@ -15,10 +19,12 @@ const fixture = vi.hoisted(() => ({
     selectedId: string;
     onSelect: (offer: TicketOfferV1) => void;
     query: { originId: string };
+    requireStandaloneFare?: boolean;
   }[],
   dates: null as null | {
     onChange: (range: FlightDateRange) => void;
     onReturningOffers: (offers: TicketOfferV1[]) => void;
+    requireFare: boolean;
   },
   confirms: [] as (() => void)[],
 }));
@@ -126,6 +132,43 @@ beforeEach(() => {
     passengerComposition: { adults: 2, children: 0, infants: 0 },
   };
 });
+it.each(['ONE_WAY', 'ROUND_TRIP'] as const)(
+  'selects unpriced flight-only inventory without a hotel (%s)',
+  (tripType) => {
+    fixture.draft = { ...fixture.draft!, tripType };
+    const unpricedOut = {
+      ...out,
+      standaloneSalePrice: null,
+      roundTripSalePrices: [],
+    };
+    const unpricedBack = {
+      ...back,
+      standaloneSalePrice: null,
+      roundTripSalePrices: [],
+    };
+    render();
+    expect(fixture.dates!.requireFare).toBe(false);
+    fixture.dates!.onReturningOffers([unpricedBack]);
+    fixture.dates!.onChange({
+      from: '2099-10-01',
+      to: tripType === 'ROUND_TRIP' ? '2099-10-04' : '2099-10-01',
+    });
+    render();
+    expect(fixture.pickers[0]!.requireStandaloneFare).toBe(false);
+    fixture.pickers[0]!.onSelect(unpricedOut);
+    render();
+    const selected = fixture.cells.find((c): c is SalesFormState =>
+      Boolean(c && typeof c === 'object' && 'serviceKinds' in c),
+    )!;
+    expect(selected.ticket.outboundOfferId).toBe('out');
+    if (tripType === 'ROUND_TRIP') {
+      expect(selected.ticket.returnOfferId).toBe('back');
+      expect(fixture.pickers[1]!.requireStandaloneFare).toBe(false);
+    }
+    expect(salesFlightsValid(selected)).toBe(true);
+    expect(selected.servicePricing?.['flight-outbound']).toBeUndefined();
+  },
+);
 it('shows exact-date cards automatically, selects the registered return, and allows manual return changes', () => {
   render();
   expect(fixture.pickers).toHaveLength(0);
