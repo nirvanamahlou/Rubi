@@ -530,7 +530,10 @@ export interface FinanceBankOptionV1 {
 }
 
 export type FinanceCustomerDocumentDeliveryBasisV1 =
-  'AFTER_RECEIPT' | 'FULL_SETTLEMENT' | 'MANAGER_EXCEPTION';
+  | 'AFTER_RECEIPT'
+  | 'FULL_SETTLEMENT'
+  | 'MANAGER_EXCEPTION'
+  | 'RESERVATION_PERMISSION';
 
 export interface FinanceCustomerDocumentDeliveryAuthorizationV1 {
   version: number;
@@ -543,6 +546,7 @@ export interface FinanceCustomerDocumentDeliveryAuthorizationV1 {
 }
 
 export interface FinanceCustomerDocumentDeliveryCandidateV1 {
+  canApproveReservationDelivery?: boolean;
   contractId: string;
   contractNumber: string;
   branchId: string;

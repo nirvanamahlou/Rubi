@@ -187,11 +187,16 @@ export function hotelPassengerPurchase(
   const unique = new Map(prices.map((price) => [price.customerId, price]));
   if (
     unique.size !== prices.length ||
-    assigned.length !== prices.length ||
-    assigned.some((passenger) => !unique.has(passenger.customerId))
+    prices.length === 0 ||
+    prices.some(
+      (price) =>
+        !assigned.some(
+          (passenger) => passenger.customerId === price.customerId,
+        ),
+    )
   )
     throw new BadRequestException(
-      'برای تمام مسافران هتل دقیقاً یک قیمت شبانه وارد کنید.',
+      'حداقل یک قیمت شبانه برای مسافران همین هتل وارد کنید؛ مسافر تکراری مجاز نیست.',
     );
   let nights: number;
   try {
@@ -199,19 +204,21 @@ export function hotelPassengerPurchase(
   } catch {
     throw new BadRequestException('تاریخ ورود و خروج هتل معتبر نیست.');
   }
-  const passengerPrices = assigned.map((passenger) => {
-    const nightlyAmount = moneyDecimal(
-      moneyUnits(unique.get(passenger.customerId)!.nightlyAmount),
-    );
-    return {
-      customerId: passenger.customerId,
-      passengerName:
-        passenger.displayNameSnapshot?.trim() || passenger.customerId,
-      nightlyAmount,
-      nights,
-      totalAmount: moneyDecimal(moneyUnits(nightlyAmount) * BigInt(nights)),
-    };
-  });
+  const passengerPrices = assigned
+    .filter((passenger) => unique.has(passenger.customerId))
+    .map((passenger) => {
+      const nightlyAmount = moneyDecimal(
+        moneyUnits(unique.get(passenger.customerId)!.nightlyAmount),
+      );
+      return {
+        customerId: passenger.customerId,
+        passengerName:
+          passenger.displayNameSnapshot?.trim() || passenger.customerId,
+        nightlyAmount,
+        nights,
+        totalAmount: moneyDecimal(moneyUnits(nightlyAmount) * BigInt(nights)),
+      };
+    });
   return {
     passengerPrices,
     amount: moneyDecimal(

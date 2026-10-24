@@ -1,4 +1,10 @@
 {
+  "قیمت هر شب": "Price per night",
+  "حداقل یک قیمت خرید مسافر را وارد کنید.": "Enter a purchase price for at least one passenger.",
+  "کارگزار، ارز، تاریخ اقامت و حداقل یک قیمت خرید مسافر را تکمیل کنید.": "Select the hotel supplier and currency, check the stay dates, and enter a purchase price for at least one passenger.",
+  "قیمت‌های خالی در جمع خرید محاسبه نمی‌شوند؛ مبلغ هر مسافر در تعداد شب قرارداد ضرب می‌شود.": "Blank prices are excluded. Each passenger nightly price is multiplied by the contractual stay nights.",
+  "حداقل یک قیمت شبانه برای مسافران همین هتل وارد کنید؛ مسافر تکراری مجاز نیست.": "Enter a nightly price for at least one passenger assigned to this hotel. Duplicate passengers are not allowed.",
+
   "اتاق مسافر": "Passenger room",
   "انتخاب اتاق": "Select room",
   "نرخ تومان باید مثبت، حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار باشد.": "The toman rate must be positive, with at most 14 integer digits and 10 decimal places.",

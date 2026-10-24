@@ -8,6 +8,25 @@ import { customersApi } from '@/modules/customers/api/client';
 import { salesApi } from '../api/client';
 import { SearchableReference } from './searchable-reference';
 
+export async function loadSalesOrganizations(
+  api: Pick<typeof salesApi, 'listReferences'> = salesApi,
+) {
+  const records: MasterDataRecord[] = [];
+  for (let page = 1; ; page++) {
+    const response = await api.listReferences('organizations', {
+      search: '',
+      status: 'active',
+      sortBy: 'name',
+      sortDirection: 'asc',
+      page,
+      pageSize: 100,
+    });
+    records.push(...response.data);
+    if (!response.data.length || records.length >= response.meta.total)
+      return records;
+  }
+}
+
 export async function loadOrganizationCustomers(
   api: Pick<typeof customersApi, 'list'> = customersApi,
 ) {
@@ -89,24 +108,9 @@ export function SalesOrganizationCustomer({
       setLoading(true);
       setError('');
       void (async () => {
-        const records: MasterDataRecord[] = [];
-        for (let page = 1; ; page++) {
-          const response = await salesApi.listReferences('organizations', {
-            search: '',
-            status: 'active',
-            sortBy: 'name',
-            sortDirection: 'asc',
-            page,
-            pageSize: 100,
-          });
-          records.push(...response.data);
-          if (!response.data.length || records.length >= response.meta.total)
-            break;
-        }
-        const people = await loadOrganizationCustomers();
+        const records = await loadSalesOrganizations();
         if (active) {
           setOrganizations(records);
-          setCustomers(people);
         }
       })()
         .catch((reason: unknown) => {
@@ -182,6 +186,7 @@ export function SalesOrganizationCustomer({
           label="سازمان / آژانس"
           value={organizationId}
           options={organizations}
+          showAllOptionsOnOpen
           disabled={busy || disabled}
           onChange={(id) => {
             setOrganizationId(id);

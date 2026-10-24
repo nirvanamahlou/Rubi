@@ -60,7 +60,7 @@ describe('reservations workspace access and states', () => {
     expect(source).toContain('<ContractCorrectionDeepLink />');
     expect(source).not.toContain('ContractCorrectionHistoryButton');
   });
-  it('marks corrected contracts with text and purple light/dark queue styling', () => {
+  it('marks corrected contracts only with a red caption below the contract number', () => {
     const html = renderToStaticMarkup(
       <ReservationOperationsWorkspace
         state="SUCCESS"
@@ -76,12 +76,11 @@ describe('reservations workspace access and states', () => {
       new URL('./workspace.module.css', import.meta.url),
       'utf8',
     );
-    expect(css).toContain('td:is(:nth-child(2), :nth-child(3))');
-    expect(css).not.toContain("tr[data-corrected='true'] td {");
-    expect(css).toMatch(/data-corrected='true'[\s\S]*?#f3e8ff/);
-    expect(css).toMatch(
-      /:global\(\.dark\)[^{}]*data-corrected='true'[\s\S]*?#3b0764/,
+    expect(html).toMatch(
+      /TEST-test-request<small class="[^"]*correctedLabel[^"]*">اصلاح‌شده<\/small>/,
     );
+    expect(css).not.toContain("tr[data-corrected='true']");
+    expect(css).toMatch(/\.correctedLabel\s*\{[^}]*color: #dc2626/);
   });
   it.each([
     'LOADING',
