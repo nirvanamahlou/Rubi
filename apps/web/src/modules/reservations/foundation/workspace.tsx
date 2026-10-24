@@ -781,7 +781,7 @@ export function ReservationOperationsWorkspace({
                                   {value}
                                   {row.correctedAt &&
                                   row.salesCorrectionPending !== false ? (
-                                    <small className="block font-bold">
+                                    <small className={styles.correctedLabel}>
                                       اصلاح‌شده
                                     </small>
                                   ) : null}
