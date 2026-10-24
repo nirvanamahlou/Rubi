@@ -64,3 +64,12 @@ Integration repair scope includes the observer and this existing access test;
 no production permission/completion rule was weakened. Both source reservations
 are released on publication. Hosted CI and authenticated visual/real-call
 acceptance are not claimed by these local results.
+
+## Authorized release continuation
+
+Owner now requests develop merge only after all hosted CI checks succeed, followed
+by local Web3000/API4000 activation. Reserve own release notes, conflict resolution
+with newer develop and bounded CI repairs. Preserve the approved global attention
+hold, existing private runtime environment and single AMI collector. No PBX routing
+or operational mapping/grant change. Keep prior API/Web artifacts for rollback;
+verify current schema compatibility before replacing the local runtime.

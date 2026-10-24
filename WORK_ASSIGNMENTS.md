@@ -8,6 +8,12 @@ COMPUTER_ID=PC-A; codex/pc-a-agency-contact-fill-1024 from develop ee06dd33. Own
 
 Implementation complete: selected active agency details use the Sales-only contact endpoint with phone-only decryption and existing sensitive-read audit, primary active address and fallback for absent fields. Existing mock fixtures updated for the new producer dependency; no manual tests executed at owner request. Scoped API/Web lint and formatting pass. Local typecheck is unavailable because shared node_modules links lack Nest dependencies and generated current Contracts; hosted build/quality gates remain authoritative. Source locks freeze on publication; encrypted backup and health verification required for authorized rollout.
 
+## TICKET-EDIT-AIRLINE-1024 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; codex/pc-a-ticket-edit-airline-1024 from origin/develop. Owner requests existing-airline selection in registered-ticket edit and develop merge. Reserve only PublishedOfferForm airline input and own status notes; reuse the existing searchable active Master Data ReferencePicker, preserving registered legacy display, single/weekday CAS commands, view-only and dates/capacity/baggage. No shared contract, API, schema, migration, dependency, permission or deployment changes. No overlapping active owner found. No additional manual test suite; scoped lint/format and mandatory hosted gates before authorized merge. Insert notes below the stable agency section to preserve concurrent top additions.
+
+Implemented shared searchable active-airline picker in both single and weekday registered-offer editors, preserving existing carrier display and read-only/saving state. Clearing selection disables submission and cannot write an empty carrier. No free-text carrier input remains in this editor; all replacement values come from the existing reference directory. Scoped lint/format and hosted full checks gate merge; no manual test suite or server deployment requested for this unit. Source reservation freezes/releases on publication.
+
 ## HOTEL-PASSENGER-PURCHASE-1024 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-passenger-purchase-1024 from origin/develop1168321a. User requests per-passenger nightly hotel purchase, contractual-night totals, optional unpriced guests and explicit develop merge. Reserve Reservations hotel purchase Web/model/tests, existing API hotelPassengerPurchase validator/record-batch regressions, bounded additive Web/API English labels if required and own docs. Existing passengerPrices wire and JSON revision storage remain; producer validates a nonempty subset of assigned hotel passengers and recalculates exact Decimal totals. Finance consumes the existing purchase revision with only recorded totals; no direct cross-module writes, schema/migration/dependency, sale allocation or operational runtime changes. No overlapping active purchase source owner found; prior form/gender tasks merged and locks released. Preserve full-service batch coverage, CAS/idempotency, supplier/currency/branch permissions, legacy formula reads and FX evidence. Delivered guest name/category/nightly editor and exact contractual-night subtotal, restoration of saved passenger prices, subset validation and canonical guest-name evidence. Web13 and translation3 tests pass; API/Finance29 tests pass including atomic partial hotel batch and untouched transfer counts. Types/lint/build and final hosted gates precede merge. No production rollout or live purchase submitted.
@@ -9230,6 +9236,7 @@ AGENCY-CONTRACT-SUBMIT-1024 localization: reserve generated API English catalogu
 ## SALES-AUTO-TICKET-PAIR-1024 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-sales-auto-ticket-pair-1024 from origin/develop2196e7c7. User requests automatic exact-date ticket results without Search, registered outbound/return pairing with manual return override and develop merge. Reserve Sales contract form and focused search/form tests plus own notes. Existing public ticket search, registered pair/capacity/fare guards, cancellation and pricing contracts remain unchanged. No schema/API/dependency/migration/data/runtime changes; no active overlapping Sales source writer found. Prior source locks released; preserve unrelated work and require exact-head CI before authorized merge.
+
 # CALL-CENTER-UNIFIED-1024 — PC-C — RESERVED
 
 Owner requests consolidation of the final Call Center source. Base origin/develop
@@ -9247,6 +9254,7 @@ Branch codex/pc-c-call-request-selects-1024 from approved local8f10b186. User re
 ## CALL-OWNER-SELECT-1024 — PC-C — COMPLETE / SOURCE_RELEASED
 
 Owner requests modern responsible-agent dropdown matching status/priority. Base107f56de; reserve OwnerSelect-only integration in workflow.tsx, new scoped owner-select component/styles and own docs. Retain shared SearchCombobox keyboard/search behavior, ownerId FormData, permitted operator source and legacy-owner fallback. No shared selector, CallForm, backend, grants or dependency edits; active outbound work preserved in separate checkout. Only previous own Web3000 runtime7744 may be replaced after checks; no develop merge requested.
+
 ## CALL-CENTER-CALLER-NAME-1022 — preserved source-branch validation
 
 17 focused tests, types, scoped lint and contracts/API/Web builds pass;8 PostgreSQL cases explicitly skipped. Local Web3000 HTTP200 build igqcD0ao5lRfjSrJbjLTy and API4000 health ok (PID13204); existing config reused. No real-call/browser acceptance claimed. Source reservation releases on push.
@@ -9279,3 +9287,7 @@ weakening access. API216, PG76, Web53 and tools23 checks pass; types/lint/builds
 No dependency/schema/runtime/configuration changes or operational data writes.
 No main/develop merge. See docs/tasks/CALL-CENTER-UNIFIED-1024.md for provenance,
 initial failed checks, final evidence and outstanding activation/manual-test gates.
+
+## TICKET-AIRLINE-LOGO-BACKGROUND-1024 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-ticket-airline-logo-background-1024 from latest origin/develop. User requests removal of white airline-logo rectangles in passenger tickets and develop merge. Reserve shared travel flight-ticket HTML/CSS renderer and focused presentation regressions plus own status notes. Apply airline-only background compositing in shared preview/print/PDF template; uploaded logo bytes, agency branding, ticket data, safe-image validation and issuance logic remain unchanged. No active overlapping renderer owner found; prior source locks released. No API/schema/migration/dependency or operational runtime changes. Exact-head CI gates authorized merge.
