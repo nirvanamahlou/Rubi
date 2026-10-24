@@ -479,6 +479,7 @@ export class CallCenterWorkflowService
     page = 1,
     taskPage = 1,
     requestId?: string,
+    openOnly = false,
   ) {
     const branchId = this.scope(actor, branch);
     return this.db.client.$transaction(async (tx) => {
@@ -494,6 +495,7 @@ export class CallCenterWorkflowService
           callCenterContactId: contactId,
           category: CATEGORY,
           ...(requestId ? { id: requestId } : {}),
+          ...(openOnly ? { status: { not: 'CLOSED' } } : {}),
         },
         include: { executionOwner: { select: { displayName: true } } },
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
@@ -519,6 +521,7 @@ export class CallCenterWorkflowService
           callCenterContactId: contactId,
           category: CATEGORY,
           ...(requestId ? { id: requestId } : {}),
+          ...(openOnly ? { status: { not: 'CLOSED' } } : {}),
         },
       });
       const history = await tx.customerAffairsAuditEvent.findMany({
@@ -639,6 +642,9 @@ export class CallCenterWorkflowService
         }))
       )
         return;
+      // Preserve the original command fingerprint for retries from older clients.
+      // NEW no longer represents a separate operational request state.
+      if (input.status === 'NEW') input = { ...input, status: 'IN_PROGRESS' };
       const current = await tx.customerAffairsTicket.findFirst({
         where: { id: input.id },
       });
@@ -662,8 +668,10 @@ export class CallCenterWorkflowService
         throw new BadRequestException('دلیل بستن یا بازگشایی را وارد کنید.');
       if (current?.status === 'CLOSED' && input.status === 'WAITING_CUSTOMER')
         throw new BadRequestException('ابتدا درخواست را بازگشایی کنید.');
-      if (!current && input.status !== 'NEW')
-        throw new BadRequestException('درخواست تازه باید باز باشد.');
+      if (!current && input.status !== 'IN_PROGRESS')
+        throw new BadRequestException(
+          'درخواست تازه باید منتظر اقدام کارشناس باشد.',
+        );
       if (
         input.status === 'CLOSED' &&
         input.result !== undefined &&

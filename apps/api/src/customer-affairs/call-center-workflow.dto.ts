@@ -38,7 +38,9 @@ export class CallCenterRequestDto {
   @IsUUID('4') id!: string;
   @IsInt() @Min(0) expectedVersion!: number;
   @IsString() @Length(1, 160) title!: string;
-  @IsIn(['NEW', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'CLOSED']) status = 'NEW';
+  // NEW is a legacy input alias; the service persists IN_PROGRESS instead.
+  @IsIn(['NEW', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'CLOSED']) status =
+    'IN_PROGRESS';
   @IsOptional() @IsUUID() ownerId?: string | null;
   @IsIn(['NORMAL', 'HIGH', 'URGENT']) priority!: string;
   @IsString() @Length(0, 500) reason!: string;
@@ -58,6 +60,7 @@ export class CallCenterFollowUpDto {
   @IsString() @Length(0, 1000) result!: string;
 }
 export class CallCenterRequestPageDto {
+  @IsOptional() @IsIn(['true']) openOnly?: string;
   @IsOptional() @IsUUID('4') requestId?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100000) page = 1;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100000) taskPage = 1;

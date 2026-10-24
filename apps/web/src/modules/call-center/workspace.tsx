@@ -55,6 +55,7 @@ import {
   WorkQueue,
   WorkflowPanel,
   requestLabels,
+  requestStatusOptions,
   taskLabels,
 } from './workflow';
 import { CallForm } from './call-form';
@@ -549,7 +550,7 @@ function Content({
                 label="وضعیت درخواست"
                 value={filters.requestStatus}
                 onChange={(v) => change('requestStatus', v)}
-                options={Object.entries(requestLabels)}
+                options={Object.entries(requestStatusOptions)}
               />
               <Select
                 label="پیگیری مخاطب"

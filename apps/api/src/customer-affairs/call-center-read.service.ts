@@ -114,7 +114,7 @@ export class CallCenterReadService {
     }
     if (q.requestStatus)
       terms.push(
-        Prisma.sql`EXISTS(SELECT 1 FROM customer_affairs_tickets r WHERE r.call_center_contact_id=c.id AND r.branch_id=c.branch_id AND r.status=${q.requestStatus} AND r.category='CALL_CENTER_REQUEST')`,
+        Prisma.sql`EXISTS(SELECT 1 FROM customer_affairs_tickets r WHERE r.call_center_contact_id=c.id AND r.branch_id=c.branch_id AND ${q.requestStatus === 'IN_PROGRESS' || q.requestStatus === 'NEW' ? Prisma.sql`r.status IN ('NEW', 'IN_PROGRESS')` : Prisma.sql`r.status=${q.requestStatus}`} AND r.category='CALL_CENTER_REQUEST')`,
       );
     const now = new Date();
     if (q.followUp)

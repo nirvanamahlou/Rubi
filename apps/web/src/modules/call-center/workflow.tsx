@@ -29,11 +29,14 @@ import { readApi } from './read-client';
 import { DossierRequestCard } from './dossier-request-card';
 import { ScrollContinuation } from './scroll-continuation';
 
-export const requestLabels: Record<string, string> = {
-  NEW: 'باز',
+export const requestStatusOptions: Record<string, string> = {
   IN_PROGRESS: 'منتظر اقدام کارشناس',
   WAITING_CUSTOMER: 'منتظر پاسخ مشتری',
   CLOSED: 'بسته‌شده',
+};
+export const requestLabels: Record<string, string> = {
+  NEW: requestStatusOptions.IN_PROGRESS!,
+  ...requestStatusOptions,
 };
 export const taskLabels: Record<string, string> = {
   OPEN: 'باز',
@@ -844,7 +847,11 @@ export function WorkflowEditor({
     [dirty, setDirty] = useState(false);
   const [owner, setOwner] = useState(editor.item?.ownerId ?? '');
   const [status, setStatus] = useState(
-    editor.item?.status ?? (editor.kind === 'task' ? 'OPEN' : 'NEW'),
+    editor.kind === 'request'
+      ? editor.item?.status && editor.item.status !== 'NEW'
+        ? editor.item.status
+        : 'IN_PROGRESS'
+      : (editor.item?.status ?? 'OPEN'),
   );
   const [priority, setPriority] = useState(editor.item?.priority ?? 'NORMAL');
   const stableId = useRef(editor.item?.id ?? crypto.randomUUID());
@@ -877,7 +884,7 @@ export function WorkflowEditor({
     if (editor.kind === 'request')
       payload = {
         ...base,
-        status: editor.item ? status : 'NEW',
+        status: editor.item ? status : 'IN_PROGRESS',
         title: value('title'),
         reason: value('reason'),
         ...(editor.item ? { result: value('result') } : {}),
@@ -1064,12 +1071,14 @@ export function WorkflowEditor({
                   }}
                   options={Object.fromEntries(
                     Object.entries(
-                      editor.kind === 'request' ? requestLabels : taskLabels,
+                      editor.kind === 'request'
+                        ? requestStatusOptions
+                        : taskLabels,
                     ).filter(
                       ([key]) =>
                         editor.item ||
                         (editor.kind === 'request'
-                          ? key === 'NEW'
+                          ? key === 'IN_PROGRESS'
                           : key === 'OPEN'),
                     ),
                   )}

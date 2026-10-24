@@ -94,9 +94,11 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       const url = new URL(process.env.DATABASE_URL ?? '');
       if (
         !['localhost', '127.0.0.1'].includes(url.hostname) ||
-        !['/nora_call_center_package_one_test_1019', '/nora_ci'].includes(
-          url.pathname,
-        )
+        ![
+          '/nora_call_center_package_one_test_1019',
+          '/nora_ci',
+          '/nora_call_request_pending_1024',
+        ].includes(url.pathname)
       )
         throw Error('Disposable database only');
       db = createDatabaseClient(url.toString());
@@ -269,6 +271,30 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         priority: 'NORMAL',
         reason: '',
       });
+      for (const status of ['IN_PROGRESS', 'NEW']) {
+        // Only the synthetic fixture is changed to represent pre-upgrade rows.
+        await db.customerAffairsTicket.update({
+          where: { id: ticketId },
+          data: { status },
+        });
+        const pending = await read.search(actor, branchId, {
+          ...new CallCenterSearchDto(),
+          requestStatus: 'IN_PROGRESS',
+        });
+        expect(pending.data.map((row) => row.id)).toEqual([contactId]);
+        expect(
+          (
+            await read.search(
+              { ...actor, branchIds: [branchId, otherBranch] },
+              otherBranch,
+              {
+                ...new CallCenterSearchDto(),
+                requestStatus: 'IN_PROGRESS',
+              },
+            )
+          ).meta.total,
+        ).toBe(0);
+      }
       const input = {
         commandId: randomUUID(),
         expectedVersion: 1,
