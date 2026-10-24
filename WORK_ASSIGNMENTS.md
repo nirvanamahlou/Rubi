@@ -9145,3 +9145,6 @@ COMPUTER_ID=PC-A; base origin/develop1168321a; branch codex/pc-a-sales-agency-ac
 ## CALL-ATTENTION-HIDE-1024 — PC-C — IMPLEMENTED / SOURCE_RELEASED
 
 Base origin/develop1168321a; branch codex/pc-c-call-attention-hide-1024. Owner explicitly requests temporary removal of the floating telephony calls/session/retry widget and develop merge only after all checks pass. Reserve only TelephonyAttention import/mount in central apps/web/src/components/layout/app-shell.tsx and own documentation. Existing shell reservations are historical/released; preserve all other layout and manual call forms. No backend, API, permission, schema, dependency or operational runtime change. Future local work is allowed; reactivation on develop requires a new explicit user request. No unrelated local call-center commits are included.
+
+AGENCY-CONTRACT-SUBMIT-1024 localization: reserve generated API English catalogue for the existing inactive-agency-profile error moved from Web to Customers API. Reuse its existing translation; no other labels or language policy change. No active overlapping catalogue writer found in latest task assignments.
+
