@@ -50,3 +50,25 @@ it('does not expose another owner or branch through the creator-only amendment b
     ).not.toContain('اصلاح');
   }
 });
+
+it('hides owner-only output on another owner or branch while retaining the new-contract completion action', () => {
+  for (const contract of [
+    { ownerUserId: 'other', branchId: 'branch' },
+    { ownerUserId: 'owner', branchId: 'other' },
+  ]) {
+    expect(
+      renderToStaticMarkup(
+        <ContractOutputButton contractId="synthetic" {...contract} />,
+      ),
+    ).not.toContain('<button');
+  }
+  expect(
+    renderToStaticMarkup(
+      <ContractOutputButton
+        contractId="synthetic"
+        ownerUserId="owner"
+        branchId="branch"
+      />,
+    ),
+  ).toContain('<button');
+});

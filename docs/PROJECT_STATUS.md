@@ -1,6 +1,6 @@
 ## CONTRACT-OWNER-ACTION-CONTEXT-1024 — PC-A
 
-Follow-up before owner-actions rollout: amendment UI uses the current actor and actual contract owner/branch, matching the already-merged backend predicate. Creator-only users do not get another owner’s amendment entry; native Finance/read-all users retain their existing price-only form on other owners’ contracts. No backend, grants, schema, migration or dependency change. Focused UI tests, types/lint/build and exact-head hosted gates precede owner-authorized merge and final server release.
+Follow-up before owner-actions rollout: output/payment/amendment UI uses the current actor and actual contract owner/branch, matching the already-merged backend predicate. Creator-only users do not get another owner’s amendment entry; native Finance/read-all users retain their existing price-only form on other owners’ contracts. No backend, grants, schema, migration or dependency change. Focused UI tests, types/lint/build and exact-head hosted gates precede owner-authorized merge and final server release.
 
 ## CONTRACT-OWNER-ACTIONS-1024 — PC-A
 

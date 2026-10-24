@@ -1,6 +1,12 @@
 'use client';
-import { hasSalesContractSelfService } from '@nora/contracts';
-import { useAccessPermissions } from '@/modules/iam/access-context';
+import {
+  canSelfServeSalesContract,
+  hasSalesContractSelfService,
+} from '@nora/contracts';
+import {
+  useAccessActor,
+  useAccessPermissions,
+} from '@/modules/iam/access-context';
 import { readPublicDocumentLink } from '@/modules/travel-documents/public/use-public-document-link';
 import { readContractFlightFacts } from '../model/contract-flight-facts';
 import { localizedFetch } from '@/i18n/localized-fetch';
@@ -100,14 +106,25 @@ export async function loadContractPrint(id: string) {
 
 export function ContractOutputButton({
   contractId,
+  ownerUserId,
+  branchId,
   className,
   label = 'قرارداد',
 }: {
   contractId: string;
+  ownerUserId?: string;
+  branchId?: string;
   className?: string;
   label?: string;
 }) {
-  const selfService = hasSalesContractSelfService(useAccessPermissions() ?? []);
+  const permissions = useAccessPermissions();
+  const actor = useAccessActor();
+  const selfService =
+    ownerUserId && branchId
+      ? Boolean(
+          actor && canSelfServeSalesContract(actor, { ownerUserId, branchId }),
+        )
+      : hasSalesContractSelfService(permissions ?? []);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState(false);
