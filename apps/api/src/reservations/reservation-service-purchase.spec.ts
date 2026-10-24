@@ -162,9 +162,12 @@ it('accepts the hotel embedded in a legacy reservation snapshot', () => {
   });
 });
 
-it.each([false, true, 'split'])(
+it.each([false, true, 'split', 'partial'])(
   'records hotel and both transfer directions atomically (formula=%s)',
-  async (formula) => {
+  async (mode) => {
+    const partial = mode === 'partial';
+    const formula = partial ? false : mode;
+    const hotelAmount = partial ? '300' : '450';
     const create = vi.fn().mockResolvedValue({});
     const updateMany = vi.fn().mockResolvedValue({ count: 1 });
     const database = {
@@ -242,8 +245,8 @@ it.each([false, true, 'split'])(
       version: 1,
       status: 'AVAILABLE',
       referenceAmount: '500',
-      actualAmount: '450',
-      savingsAmount: '50',
+      actualAmount: hotelAmount,
+      savingsAmount: partial ? '200' : '50',
       currencyCode: 'IRR',
     };
     const savings = { quote: vi.fn().mockResolvedValue(hotelSavings) };
@@ -257,7 +260,7 @@ it.each([false, true, 'split'])(
         serviceClientKey: 'hotel',
         coveredServiceClientKeys: ['hotel'],
         supplierOrganizationId: valid.supplierOrganizationId,
-        amount: '450',
+        amount: hotelAmount,
         currencyCode: 'IRR',
         pricingCalculation: { baseAmount: '100', factor: '1.5' },
       },
@@ -324,7 +327,7 @@ it.each([false, true, 'split'])(
                 serviceClientKey: 'hotel',
                 coveredServiceClientKeys: ['hotel'],
                 supplierOrganizationId: valid.supplierOrganizationId,
-                amount: '450',
+                amount: hotelAmount,
                 currencyCode: 'IRR',
                 passengerPrices: [
                   {
@@ -335,7 +338,7 @@ it.each([false, true, 'split'])(
                     customerId: '22222222-2222-4222-8222-222222222222',
                     nightlyAmount: '50',
                   },
-                ],
+                ].slice(0, partial ? 1 : 2),
               },
               {
                 serviceClientKey: 'outbound',
@@ -365,16 +368,17 @@ it.each([false, true, 'split'])(
     const transfer = create.mock.calls[1]![0].data;
     expect(hotel.passengerPrices.hotelSavings).toEqual(hotelSavings);
     expect(transfer.passengerPrices.hotelSavings).toBeUndefined();
-    if (!formula) expect(hotel.passengerPrices.passengers).toHaveLength(2);
+    if (!formula)
+      expect(hotel.passengerPrices.passengers).toHaveLength(partial ? 1 : 2);
     expect(savings.quote).toHaveBeenLastCalledWith(
       expect.anything(),
       'branch-1',
       'IRR',
       expect.anything(),
-      '450',
+      hotelAmount,
     );
     expect(hotel.batchId).toBe(transfer.batchId);
-    expect(hotel.amount).toBe('450');
+    expect(hotel.amount).toBe(hotelAmount);
     expect(hotel.serviceTitleSnapshot).toBe('Royal Wings');
     expect(transfer.serviceTitleSnapshot).toBe(
       formula === 'split' ? 'Outbound' : 'ترانسفر رفت‌وبرگشت',
@@ -749,7 +753,7 @@ it('single hotel purchase uses contractual nights even after different form-only
   const guest = '11111111-1111-4111-8111-111111111111';
   const create = vi.fn().mockResolvedValue({ id: 'purchase', version: 1 });
   const snapshot = {
-    passengerIds: [guest],
+    passengerIds: [guest, '22222222-2222-4222-8222-222222222222'],
     serviceSelections: [
       { clientKey: 'hotel-1', kind: 'HOTEL', titleSnapshot: 'Hotel' },
     ],
@@ -826,4 +830,50 @@ it('single hotel purchase uses contractual nights even after different form-only
     }),
   );
   expect(snapshot.hotelSelection.checkInDate).toBe('2026-10-01');
+});
+
+it('accepts a nonempty hotel guest subset but rejects duplicate and foreign guests', () => {
+  const snapshot = {
+    passengerIds: ['one', 'two', 'not-hotel'],
+    passengerAssignments: [
+      {
+        customerId: 'one',
+        displayNameSnapshot: 'One',
+        serviceClientKeys: ['hotel'],
+      },
+      {
+        customerId: 'two',
+        displayNameSnapshot: 'Two',
+        serviceClientKeys: ['hotel'],
+      },
+      { customerId: 'not-hotel', serviceClientKeys: ['flight'] },
+    ],
+    hotelSelection: {
+      serviceClientKey: 'hotel',
+      checkInDate: '2026-10-01',
+      checkOutDate: '2026-10-08',
+    },
+  } as never;
+  const price = { customerId: 'one', nightlyAmount: '12.3456' };
+  expect(hotelPassengerPurchase(snapshot, 'hotel', [price])).toEqual({
+    amount: '86.4192',
+    passengerPrices: [
+      {
+        customerId: 'one',
+        passengerName: 'One',
+        nightlyAmount: '12.3456',
+        nights: 7,
+        totalAmount: '86.4192',
+      },
+    ],
+  });
+  expect(() => hotelPassengerPurchase(snapshot, 'hotel', [])).toThrow();
+  expect(() =>
+    hotelPassengerPurchase(snapshot, 'hotel', [price, price]),
+  ).toThrow();
+  expect(() =>
+    hotelPassengerPurchase(snapshot, 'hotel', [
+      { ...price, customerId: 'not-hotel' },
+    ]),
+  ).toThrow();
 });
