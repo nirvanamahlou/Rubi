@@ -624,6 +624,13 @@ export class SalesService {
   }
 
   private assertRead(row: SalesContractRow, actor: AuthenticatedActor): void {
+    if (
+      has(actor, 'sales.contracts.create') &&
+      canViewRoute(actor.permissions, '/sales/contracts/new') &&
+      row.ownerUserId === actor.userId &&
+      actor.branchIds.includes(row.branchId)
+    )
+      return;
     if (has(actor, 'sales.contracts.read.all')) return;
     if (
       has(actor, 'sales.contracts.read.branch') &&

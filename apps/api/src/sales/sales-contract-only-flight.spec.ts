@@ -379,6 +379,10 @@ it('allows a contract creator to submit only their own branch draft without sepa
     permissions: ['sales.contracts.create'],
   } as AuthenticatedActor;
   await service.confirm('contract', 1, null, creator, 'entry-submit');
+  await expect(service.detail('contract', creator)).resolves.toHaveProperty(
+    'data.contractNumber',
+    'SAMPLE',
+  );
   expect(repository.transition).toHaveBeenCalledOnce();
   await expect(
     service.confirm(
