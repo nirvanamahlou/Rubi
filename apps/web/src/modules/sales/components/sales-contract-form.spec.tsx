@@ -441,7 +441,7 @@ it('places combined flight selection and stay dates before identities and hides 
     const people = html.indexOf('ورود یکجای مشتری و مسافران');
     expect(people).toBeGreaterThan(0);
     expect(html.indexOf('تاریخ اقامت مهمانان')).toBeLessThan(people);
-    expect(html.indexOf('جست‌وجوی بلیط‌ها')).toBeLessThan(people);
+    expect(html).not.toContain('جست‌وجوی بلیط‌ها');
     expect(html).not.toContain('انتخاب بلیط پرواز');
     expect(html).not.toContain('جزئیات سفر');
     expect(html).not.toContain('>تعداد مسافران</h2>');

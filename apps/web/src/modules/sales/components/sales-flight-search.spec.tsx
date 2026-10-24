@@ -20,7 +20,6 @@ const fixture = vi.hoisted(() => ({
     onChange: (range: FlightDateRange) => void;
     onReturningOffers: (offers: TicketOfferV1[]) => void;
   },
-  search: null as null | (() => void),
   confirms: [] as (() => void)[],
 }));
 vi.mock('react', async (original) => ({
@@ -55,8 +54,6 @@ vi.mock('@/components/ui/button', async (original) => ({
   Button: (props: React.ComponentProps<'button'>) => {
     if (props['aria-label'] === 'ثبت بلیط شناور')
       fixture.confirms.push(props.onClick as () => void);
-    if (props['aria-label'] === 'جست‌وجوی بلیط‌ها')
-      fixture.search = props.onClick as () => void;
     return (
       <button type="button" disabled={props.disabled}>
         {props.children}
@@ -129,15 +126,18 @@ beforeEach(() => {
     passengerComposition: { adults: 2, children: 0, infants: 0 },
   };
 });
-it('waits for Search, selects the registered return, and keeps outbound when manually changing return date', () => {
+it('shows exact-date cards automatically, selects the registered return, and allows manual return changes', () => {
   render();
-  fixture.dates!.onReturningOffers([back]);
-  fixture.dates!.onChange({ from: '2099-10-01', to: '2099-10-06' });
-  const beforeSearch = render();
   expect(fixture.pickers).toHaveLength(0);
-  expect(beforeSearch).not.toContain('جزئیات سفر');
-  fixture.search!();
+  fixture.dates!.onReturningOffers([back]);
+  fixture.dates!.onChange({ from: '2099-10-01', to: '' });
+  render();
+  expect(fixture.pickers).toHaveLength(0);
+  fixture.dates!.onChange({ from: '2099-10-01', to: '2099-10-06' });
   const searched = render();
+  expect(fixture.pickers).toHaveLength(1);
+  expect(searched).not.toContain('جست‌وجوی بلیط‌ها');
+  expect(searched).not.toContain('جزئیات سفر');
   expect(searched.indexOf('flight cards')).toBeLessThan(
     searched.indexOf('passenger table'),
   );
@@ -156,9 +156,7 @@ it('waits for Search, selects the registered return, and keeps outbound when man
 
   fixture.dates!.onChange({ from: '2099-10-01', to: '2099-10-06' });
   render();
-  expect(fixture.pickers).toHaveLength(0);
-  fixture.search!();
-  render();
+  expect(fixture.pickers).toHaveLength(2);
   expect(fixture.pickers[0]?.selectedId).toBe('out');
   expect(fixture.pickers[1]?.selectedId).toBe('');
   const alternative = {
@@ -172,8 +170,6 @@ it('waits for Search, selects the registered return, and keeps outbound when man
   expect(fixture.pickers[1]?.selectedId).toBe('manual');
   fixture.dates!.onChange({ from: '2099-10-02', to: '2099-10-06' });
   render();
-  fixture.search!();
-  render();
   expect(fixture.pickers[0]?.selectedId).toBe('');
 });
 
@@ -181,8 +177,6 @@ it('clears the old return and both pair quotes when the next outbound has no eli
   render();
   fixture.dates!.onReturningOffers([back]);
   fixture.dates!.onChange({ from: '2099-10-01', to: '2099-10-04' });
-  render();
-  fixture.search!();
   render();
   fixture.pickers[0]!.onSelect(out);
   render();
@@ -227,8 +221,6 @@ it('sets shared hotel dates from selected registered flights and preserves dates
   render();
   fixture.dates!.onReturningOffers([back]);
   fixture.dates!.onChange({ from: '2099-10-01', to: '2099-10-06' });
-  render();
-  fixture.search!();
   render();
   fixture.pickers[0]!.onSelect(out);
   render();

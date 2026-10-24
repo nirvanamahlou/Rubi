@@ -202,7 +202,6 @@ function HotelCountField({
 export function SalesContractForm() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [searchedFlightKey, setSearchedFlightKey] = useState('');
   const [flightRange, setFlightRange] = useState<FlightDateRange>({
     from: '',
     to: '',
@@ -296,16 +295,13 @@ export function SalesContractForm() {
   ]);
   const flightDatesReady =
     flightRangeRoute === flightRouteKey && salesFlightRangeReady(flightRange);
-  const flightSearchKey = JSON.stringify([flightRouteKey, flightRange]);
-  const flightSearchReady =
-    flightDatesReady && searchedFlightKey === flightSearchKey;
   const canPrefetchTickets = Boolean(
     state.originId &&
     state.destinationId &&
     state.originId !== state.destinationId &&
     state.serviceKinds.includes('FLIGHT') &&
     !state.contractFlights?.OUTBOUND &&
-    flightSearchReady,
+    flightDatesReady,
   );
   useEffect(() => {
     if (!canPrefetchTickets) return;
@@ -908,7 +904,7 @@ export function SalesContractForm() {
                     salesInternationalTravel(state) ? 'gregorian' : 'persian'
                   }
                   prepared={preparedTickets}
-                  enabled={flightSearchReady}
+                  enabled={flightDatesReady}
                   originLabel={
                     references.cities.find((city) => city.id === state.originId)
                       ?.name ?? 'مبدأ'
@@ -949,9 +945,6 @@ export function SalesContractForm() {
                     if (paired) {
                       const range = { ...flightRange, to: flightDay(paired) };
                       setFlightRange(range);
-                      setSearchedFlightKey(
-                        JSON.stringify([flightRouteKey, range]),
-                      );
                     }
                     const pricingState = {
                       ...state,
@@ -1029,7 +1022,7 @@ export function SalesContractForm() {
                     calendarSystem={
                       salesInternationalTravel(state) ? 'gregorian' : 'persian'
                     }
-                    enabled={flightSearchReady}
+                    enabled={flightDatesReady}
                     originLabel={
                       references.cities.find(
                         (city) => city.id === state.destinationId,
@@ -1584,7 +1577,6 @@ export function SalesContractForm() {
                   : { from: '', to: '' }
               }
               onChange={(range, outboundIds) => {
-                setSearchedFlightKey('');
                 setFlightDateOutboundIds(outboundIds);
                 setFlightRangeRoute(flightRouteKey);
                 setFlightRange(range);
@@ -1625,16 +1617,7 @@ export function SalesContractForm() {
                 });
               }}
             />
-            <Button
-              type="button"
-              className="mt-3"
-              aria-label="جست‌وجوی بلیط‌ها"
-              disabled={!flightDatesReady || busy}
-              onClick={() => setSearchedFlightKey(flightSearchKey)}
-            >
-              جست‌وجوی بلیط‌ها
-            </Button>
-            {flightSearchReady ||
+            {flightDatesReady ||
             state.contractFlights?.OUTBOUND ||
             state.contractFlights?.RETURN ? (
               <div className="mt-4">{flightDetails}</div>
