@@ -1,6 +1,6 @@
 ## SALES-AUTO-TICKET-PAIR-1024 — PC-A
 
-Sales ticket cards search automatically once valid route-scoped trip dates are selected, without a Search button. Existing registered return partner selection, price/capacity checks, manual return/date override and stale-selection reset remain. Focused40 tests cover automatic cards, incomplete dates, registered pairing, manual return changes and hotel/floating-flight compatibility. Web types/lint/build and full exact-head hosted CI gate the user-authorized develop merge. No API/schema/migration/dependency/runtime change. Source locks release at publication.
+Sales ticket cards search automatically once valid route-scoped trip dates are selected, without a Search button. Existing registered return partner selection, price/capacity checks, manual return/date override and stale-selection reset remain. Focused44 tests cover automatic prefetch/abort and cards, incomplete dates, registered pairing, manual return changes and hotel/floating-flight compatibility. Web types/lint/build and full exact-head hosted CI gate the user-authorized develop merge. No API/schema/migration/dependency/runtime change. Source locks release at publication.
 
 ## RESERVATION-DELIVERY-PERMIT-1024 — PC-A
 
