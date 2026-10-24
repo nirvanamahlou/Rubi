@@ -1123,6 +1123,10 @@ function History({
                   {c.note || 'بدون شرح'}
                 </p>
                 <p>
+                  وصل شده به:{' '}
+                  {c.answerRecipient?.label || c.operator || 'نامشخص'}
+                </p>
+                <p>
                   زمان ثبت: {c.createdAt ? callDate(c.createdAt) : 'نامشخص'}
                 </p>
                 <RecordingDownload
@@ -1189,7 +1193,9 @@ function History({
           </details>
         ))}
         <ScrollContinuation
-          enabled={section === 'notes' && !!noteNext && !notesLoading && !noteError}
+          enabled={
+            section === 'notes' && !!noteNext && !notesLoading && !noteError
+          }
           onMore={() => {
             setNotesLoading(true);
             setNoteAfter(noteNext!);
