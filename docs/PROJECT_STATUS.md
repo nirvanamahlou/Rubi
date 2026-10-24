@@ -7301,3 +7301,44 @@ SALES-AGENCY-ACCESS-1024 validation: Web12 and API HTTP18 tests, scoped API/Web 
 ## CALL-ATTENTION-HIDE-1024 — PC-C — 2026-10-24
 
 Removed only the global TelephonyAttention mount/import from the authenticated shell, as explicitly requested. This suppresses the floating calls/session-error/retry widget and its frontend polling/popups; manual call forms, backend AMI capture and stored calls remain unchanged. Component source remains available for later local work. Reintroducing this UI on develop requires a fresh explicit user request, documented in CALL-CENTER-UI-PRESERVATION. Separate branch from develop1168321a excludes unpublished local dossier/audio/destination changes. No migration, dependency or runtime change. Scoped ESLint and7 existing navigation/manual-call/draft regressions pass; PR1074 tracks the authorized merge, gated by all final-head hosted checks including full typecheck/build. Local Web production build (webpack,65 routes) and full TypeScript pass after resolving worktree dependency links. Original eight hosted checks passed; concurrent develop documentation conflicts were resolved preserving both owners and all final-head checks must rerun. Source reservation released on publication; any CI repair remains bounded to this change.
+## CALL-REQUEST-SELECTS-1024 — PC-C — 2026-10-24
+
+WorkflowEditor status/priority now use a scoped Radix Select with44px options, subtle semantic icons, selected check, visible focus, RTL/LTR and collision-aware portal. No search for these small fixed choice sets. Values, mutation contracts, disabled/busy behavior and implicit NEW for new requests remain. Scoped lint,2 request-form regressions, full Web typecheck and production webpack build65 routes pass. Existing unrelated accounting bundling warnings remain. Authenticated browser checks on3000 verified both menus, arrow navigation/Escape, focus return and unchanged selection; no business form saved. Screenshot outside repository. Branch from approved local8f10b186 preserves local dossier/audio/destination work; concurrent outbound-call source edits remain untouched in publish checkout. Web3000 now runs this checkout build (PID7744); API/Worker unchanged, popup flag remains false. Temporary3001 preview stopped. No dependency/migration/permission/operational data changes. Branch push only; no develop PR/merge authorized for this UI task.
+
+## CALL-OWNER-SELECT-1024 — PC-C — 2026-10-24
+
+Responsible-agent selector now uses the existing SearchCombobox with scoped styling consistent with request status/priority: search icon, person icons, neutral unassigned row,48px options and selected check. Permitted operators, ownerId FormData and missing historical-owner fallback remain unchanged. Query changes do not mark the form dirty; Escape while owner search is expanded closes only that menu, preserving the parent dialog. Existing10 form/search tests and scoped lint pass; final build/browser verification gates runtime activation. No shared selector/API/schema/dependency/permission edits, no business records saved. Source based on local107f56de; concurrent outbound source work preserved. No develop merge requested.
+
+Final proof:10 focused tests, scoped ESLint, formatting, full TypeScript and production Web build65 routes pass. Authenticated browser verified name filtering, selected check, Escape preserving dialog/owner, and cancellation after search without a false unsaved prompt; no business submission. Final Web3000 PID1692 uses .next-owner-final-1024 with popup flag false; API/Worker preserved. Previous own Web processes stopped; screenshot outside Git. Source reservation released on push.
+## CALL-CENTER-CALLER-NAME-1022 — preserved source-branch validation
+
+Optional encrypted incoming CallerIDName now reaches the existing attention popup
+as a default only when the saved name is empty. Operator edits remain stable under
+polling; agent-leg names never replace the external anchor name. No new layout,
+permission, schema, migration, routing or PBX activation.17 focused tests pass;
+8 database cases skipped explicitly. Types/lint and production builds checked;
+actual PBX/browser acceptance remains for an authorized real call.
+See tasks/CALL-CENTER-CALLER-NAME-1022.md.
+
+## STICKY-SALES-PREFLIGHT-1022 — PC-C
+
+SSH-independent last-answerer preparation adds bounded read-only QueueStatus
+projection and permission-checked internal preview with1s deadline/8-work cap.
+Unknown inherited wrap-up policy blocks preference; no value was guessed/configured.
+57 distinct tests pass (10 disposable PostgreSQL), scoped lint/types/API build.
+No Web/runtime/schema/PBX change, no popup or public routing endpoint. Real20s
+fallback remains an SSH-dependent installation and controlled-call acceptance gate.
+See tasks/STICKY-SALES-PREFLIGHT-1022.md. Source branch:
+codex/pc-c-sticky-sales-preflight-1022, approved local prerequisite base d83600a3.
+
+## CALL-CENTER-UNIFIED-1024 — PC-C — SOURCE_CANDIDATE_VERIFIED
+
+Consolidated released request choices/owner search and sticky preview onto develop
+b4e069f9, which already includes outbound/audio/dossier/directory work. Preserved
+global attention removal and existing capture/mapping configuration. Repaired
+Node observer TS loading and strengthened stale partial-save access regression.
+API216 ordinary, PostgreSQL76, Web53 and tools23 checks pass (per-run counts);
+API/Web types, scoped lint, production builds and format/diff checks pass. All189
+existing migrations applied only to new isolated nora_ci. No operational data,
+runtime, schema, grants or PBX writes; no main/develop merge. Release manifest:
+tasks/CALL-CENTER-UNIFIED-1024.md. Scoped reservations release on publication.

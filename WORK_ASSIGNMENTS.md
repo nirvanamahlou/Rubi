@@ -9237,6 +9237,57 @@ AGENCY-CONTRACT-SUBMIT-1024 localization: reserve generated API English catalogu
 
 COMPUTER_ID=PC-A; branch codex/pc-a-sales-auto-ticket-pair-1024 from origin/develop2196e7c7. User requests automatic exact-date ticket results without Search, registered outbound/return pairing with manual return override and develop merge. Reserve Sales contract form and focused search/form tests plus own notes. Existing public ticket search, registered pair/capacity/fare guards, cancellation and pricing contracts remain unchanged. No schema/API/dependency/migration/data/runtime changes; no active overlapping Sales source writer found. Prior source locks released; preserve unrelated work and require exact-head CI before authorized merge.
 
+# CALL-CENTER-UNIFIED-1024 — PC-C — RESERVED
+
+Owner requests consolidation of the final Call Center source. Base origin/develop
+b4e069f9; isolated codex/pc-c-call-center-unified-1024. Reserve only integration
+of released 107f56de, 2482c7e2 and b108273e, affected Call Center/Issabel tests and
+own release documentation. Existing outbound/audio/dossier/answer-directory changes
+are already ancestors of develop. Preserve the removed global attention mount.
+No grants, mappings, PBX writes, runtime restart, database migration or dependency
+changes. Source candidate only; main/develop and production remain untouched.
+
+## CALL-REQUEST-SELECTS-1024 — PC-C — COMPLETE / SOURCE_RELEASED
+
+Branch codex/pc-c-call-request-selects-1024 from approved local8f10b186. User requests minimal modern status/priority dropdown UX. Reserve only WorkflowEditor status/priority rendering, new scoped request-choice component/styles and own docs. Preserve active OUTBOUND-CALL-POPUP work in separate publish checkout; no CallForm/telephony/shared selector/API/schema/dependency edits. Existing request creation defaults and save contracts stay unchanged. No develop merge authorized for this task.
+
+## CALL-OWNER-SELECT-1024 — PC-C — COMPLETE / SOURCE_RELEASED
+
+Owner requests modern responsible-agent dropdown matching status/priority. Base107f56de; reserve OwnerSelect-only integration in workflow.tsx, new scoped owner-select component/styles and own docs. Retain shared SearchCombobox keyboard/search behavior, ownerId FormData, permitted operator source and legacy-owner fallback. No shared selector, CallForm, backend, grants or dependency edits; active outbound work preserved in separate checkout. Only previous own Web3000 runtime7744 may be replaced after checks; no develop merge requested.
+
+## CALL-CENTER-CALLER-NAME-1022 — preserved source-branch validation
+
+17 focused tests, types, scoped lint and contracts/API/Web builds pass;8 PostgreSQL cases explicitly skipped. Local Web3000 HTTP200 build igqcD0ao5lRfjSrJbjLTy and API4000 health ok (PID13204); existing config reused. No real-call/browser acceptance claimed. Source reservation releases on push.
+
+## STICKY-SALES-PREFLIGHT-1022 — PC-C — ACTIVE
+
+Owner authorizes all SSH-independent preparation for last-answerer routing with
+20-second fallback to queue1002. Base d83600a3 preserves approved local stack;
+previous scoped reservations released. Reserve issabel/ami.ts, new queue snapshot
+and decision coordinator/tests, IssabelService internal preview and own docs.
+No Web, schema, dependency, public endpoint, popup, runtime restart or PBX write.
+Read-only QueueStatus candidate collection must not infer unknown queue policy;
+actual prequeue hook, recording continuity and activation await SSH inspection.
+
+## STICKY-SALES-PREFLIGHT-1022 — PC-C — VERIFIED
+
+Read-only bounded QueueStatus collection, explicit inherited wrap-up policy and
+permission-aware internal preview implemented.57 distinct tests pass including
+10 disposable PostgreSQL scenarios. No schema/dependency/Web/runtime/PBX change;
+no public endpoint or popup activation. SSH-dependent hook/real-call acceptance
+remain pending. Scoped reservation releases on commit/push. Details:
+docs/tasks/STICKY-SALES-PREFLIGHT-1022.md.
+
+## CALL-CENTER-UNIFIED-1024 — PC-C — VERIFIED / SOURCE_RELEASED_ON_PUSH
+
+Independent source consolidation complete. Bounded integration repairs also cover
+scripts/call-center/ami-observe.mjs and the existing call-center-access PostgreSQL
+test: use the installed TS loader and assert partial versus complete saves without
+weakening access. API216, PG76, Web53 and tools23 checks pass; types/lint/builds pass.
+No dependency/schema/runtime/configuration changes or operational data writes.
+No main/develop merge. See docs/tasks/CALL-CENTER-UNIFIED-1024.md for provenance,
+initial failed checks, final evidence and outstanding activation/manual-test gates.
+
 ## TICKET-AIRLINE-LOGO-BACKGROUND-1024 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-ticket-airline-logo-background-1024 from latest origin/develop. User requests removal of white airline-logo rectangles in passenger tickets and develop merge. Reserve shared travel flight-ticket HTML/CSS renderer and focused presentation regressions plus own status notes. Apply airline-only background compositing in shared preview/print/PDF template; uploaded logo bytes, agency branding, ticket data, safe-image validation and issuance logic remain unchanged. No active overlapping renderer owner found; prior source locks released. No API/schema/migration/dependency or operational runtime changes. Exact-head CI gates authorized merge.
