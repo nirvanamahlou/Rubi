@@ -519,3 +519,5 @@ export * from './passenger-deductions';
 export * from './passenger-total-prices';
 
 export * from './hotel-capacity-policy';
+
+export * from './owner-actions';

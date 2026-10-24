@@ -1,3 +1,4 @@
+import { salesRoomPartyError } from './sales-room-prices';
 import { expect, it } from 'vitest';
 import { emptySalesForm, salesHotelCapacityError } from './sales-form';
 it('temporarily permits unmatched guest/room combinations without inventing a rate', () => {
@@ -26,4 +27,11 @@ it('temporarily permits unmatched guest/room combinations without inventing a ra
     },
   };
   expect(salesHotelCapacityError(state, [])).toBeNull();
+  expect(
+    salesRoomPartyError({
+      ...state,
+      serviceKinds: ['FLIGHT', 'HOTEL'],
+      passengerComposition: { adults: 5, children: 2, infants: 1 },
+    }),
+  ).toBeNull();
 });

@@ -1,3 +1,7 @@
+import {
+  canSelfServeSalesContract,
+  hasSalesContractSelfService,
+} from '@nora/contracts';
 import { createHash } from 'node:crypto';
 import {
   ConflictException,
@@ -31,14 +35,25 @@ export class SalesOutputService {
     traceId?: string,
   ): Promise<{ data: SalesContractOutputV1 }> {
     if (
-      !actor.permissions.includes('sales.export') ||
-      !actor.permissions.includes('legal-entity.read')
+      !(
+        actor.permissions.includes('sales.export') &&
+        actor.permissions.includes('legal-entity.read')
+      ) &&
+      !hasSalesContractSelfService(actor.permissions)
     )
       throw new ForbiddenException(
         'مجوز خروجی قرارداد و مشاهده شرکت فعال لازم است.',
       );
     // Reuse the existing own/assigned/branch/all contract-read policy.
     const { data: contract } = await this.sales.detail(id, actor);
+    if (
+      !(
+        actor.permissions.includes('sales.export') &&
+        actor.permissions.includes('legal-entity.read')
+      ) &&
+      !canSelfServeSalesContract(actor, contract)
+    )
+      throw new ForbiddenException('قرارداد خارج از دامنه دسترسی است.');
     if (['DRAFT', 'PENDING_CONFIRMATION'].includes(contract.status))
       throw new ConflictException(
         'قرارداد را پیش از تهیه خروجی نهایی تأیید کنید.',

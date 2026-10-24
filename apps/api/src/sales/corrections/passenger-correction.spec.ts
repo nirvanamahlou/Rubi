@@ -317,3 +317,20 @@ describe('contract-specific passenger correction', () => {
     );
   });
 });
+it('allows a contract-area creator to read and edit their own passenger correction without separate grants', async () => {
+  const t = setup();
+  const creator = {
+    ...actor,
+    permissions: ['sales.contracts.create'],
+  } as AuthenticatedActor;
+  await expect(t.service.contract(id, creator)).resolves.toHaveProperty(
+    'id',
+    id,
+  );
+  await expect(t.service.contract(id, creator, true)).resolves.toHaveProperty(
+    'id',
+    id,
+  );
+  t.row.ownerUserId = 'other';
+  await expect(t.service.contract(id, creator, true)).rejects.toThrow();
+});

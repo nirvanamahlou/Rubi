@@ -1,3 +1,4 @@
+import { canSelfServeSalesContract } from '@nora/contracts';
 import { assertNoActiveReceiptAllocations } from './sales-receipt-allocation.public';
 import { isOptionalOperationReason } from '@nora/contracts';
 import {
@@ -67,6 +68,7 @@ export class SalesPartyCorrectionService {
         if (
           !actor.branchIds.includes(row.branchId) ||
           !(
+            canSelfServeSalesContract(actor, row) ||
             actor.permissions.includes('sales.contracts.update.branch') ||
             (actor.permissions.includes('sales.contracts.update.own') &&
               row.ownerUserId === actor.userId)

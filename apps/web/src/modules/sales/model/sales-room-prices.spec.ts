@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import type * as Contracts from '@nora/contracts';
+import { describe, it, expect, vi } from 'vitest';
 import { emptySalesForm, type SalesFormState } from './sales-form';
 import {
   salesRoomPartyError,
@@ -168,3 +169,9 @@ it('rejects rooms below the flight party as well as above it', () => {
     }),
   ).toBeTruthy();
 });
+
+// Keep the dormant strict validation covered for an explicit future re-enable.
+vi.mock('@nora/contracts', async (original) => ({
+  ...(await original<typeof Contracts>()),
+  enforceSalesHotelCapacity: () => true,
+}));
