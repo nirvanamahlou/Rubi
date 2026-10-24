@@ -6,7 +6,10 @@ import {
   type PackagePublishedSaleV1,
 } from '@nora/contracts';
 import { salesApi } from '../api/client';
-import type { SalesFormState } from '../model/sales-form';
+import {
+  salesOutboundHotelCheckIn,
+  type SalesFormState,
+} from '../model/sales-form';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { currencySymbol } from '@/lib/currency-symbol';
 
@@ -46,7 +49,11 @@ export function PublishedPackageSale({
                         hotel: {
                           ...current.hotel,
                           ...(current.hotel.checkInManual === false
-                            ? { checkIn: r.data[0].checkIn }
+                            ? {
+                                checkIn:
+                                  salesOutboundHotelCheckIn(current) ||
+                                  r.data[0].checkIn,
+                              }
                             : {}),
                           ...(current.hotel.checkOutManual === false
                             ? { checkOut: r.data[0].checkOut }
