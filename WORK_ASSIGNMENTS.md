@@ -9230,3 +9230,13 @@ AGENCY-CONTRACT-SUBMIT-1024 localization: reserve generated API English catalogu
 ## SALES-AUTO-TICKET-PAIR-1024 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-sales-auto-ticket-pair-1024 from origin/develop2196e7c7. User requests automatic exact-date ticket results without Search, registered outbound/return pairing with manual return override and develop merge. Reserve Sales contract form and focused search/form tests plus own notes. Existing public ticket search, registered pair/capacity/fare guards, cancellation and pricing contracts remain unchanged. No schema/API/dependency/migration/data/runtime changes; no active overlapping Sales source writer found. Prior source locks released; preserve unrelated work and require exact-head CI before authorized merge.
+# CALL-CENTER-UNIFIED-1024 — PC-C — RESERVED
+
+Owner requests consolidation of the final Call Center source. Base origin/develop
+b4e069f9; isolated codex/pc-c-call-center-unified-1024. Reserve only integration
+of released 107f56de, 2482c7e2 and b108273e, affected Call Center/Issabel tests and
+own release documentation. Existing outbound/audio/dossier/answer-directory changes
+are already ancestors of develop. Preserve the removed global attention mount.
+No grants, mappings, PBX writes, runtime restart, database migration or dependency
+changes. Source candidate only; main/develop and production remain untouched.
+
