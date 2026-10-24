@@ -1,4 +1,6 @@
 {
+  "درخواست تازه باید منتظر اقدام کارشناس باشد.": "A new request must be awaiting agent action.",
+  "وصل شده به:": "Connected to:",
   "در حال بررسی امنیتی است.": "is undergoing a security scan.",
   "در حال دریافت لوگوی": "Loading logo for",
   "شعبه یا مالک مجاز برای بارگذاری لوگو مشخص نیست.": "An authorized branch or owner for the logo upload is missing.",

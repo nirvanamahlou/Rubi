@@ -1,3 +1,15 @@
+## CALL-CENTER-FINAL-1024 — PC-C — IN_PROGRESS
+
+Bounded CI repair reserves the two missing Call Center English labels in Web overrides and the matching offline API catalogue. Local verification:141 API tests (including isolated PostgreSQL),48 Web tests, API typecheck/build and65-route Web build pass. Hosted quality/build/database gates passed; translation coverage exposed these two omissions. All hosted gates must pass again on the repaired head before merge.
+
+Owner authorizes consolidating today's Call Center changes, push/PR to develop, merge only after all CI/CD checks pass and latest-develop local3000/API4000 rollout. Base origin/develop921d7e3c. Reserve integration of released queue/history/direction/default-request UI/API commits, extension/access handoff docs, company capture and historical recovery candidates, their integration/CI repairs and own release notes. Preserve all other develop changes, existing private local settings/data and the hidden global attention widget. No new permissions, verified-source claims, PBX routing or production activation; company/CDR capture remains disabled pending verified inventories/access. No new schema/dependencies. Checkpoint old runtime for rollback and retain Worker4409.
+
+## CALL-RECOVERY-1024 — PC-C — HANDOFF_REQUIRED
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-recovery-1024 from develop1293550e. User approves initial seven-day recovery, automatic overlapping catch-up, idempotent history without live popups, no guessed attribution. Reserve Integrations-owned recovery coordinator/journal/tests, bounded private recovery ingress in telephony.service.ts and its tests, and own docs. No public endpoint, schema/migration/dependency, UI, production configuration or runtime change. Producer CDR access/schema unknown; explicit source adapter and verified stage-two authorization are activation gates. Existing Call Center source reservations released; do not include prior unmerged CALL-DOMAIN source. Preserve UI-preservation policy and unchanged ordinary live-ingress clock checks.
+
+Backend candidate complete; source locks release on publication. Related97 tests including isolated PostgreSQL pass; expanded recovery13 checks pass separately. Scoped lint, full API typecheck/TypeScript build pass against locally built current Contracts. No runtime/source adapter activation or merge; production source and access gates remain explicit in docs/tasks/CALL-RECOVERY-1024.md.
+
 ## SALES-OPTIONAL-NATIONAL-ID-1024 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-optional-national-id-1024 from origin/develop@7329a8802. Owner explicitly scopes optional national ID to New Contract and authorizes develop merge. Reserve Sales people sheet/create/model/tests, bounded opt-in optionalFields prop in CustomerEntrySheet (defaults unchanged), Customers public sales-only create adapter/service/controller/tests and own docs. Shared producer Customers exposes trusted sales create with optional missing national ID; general Customers create, provided-ID validation/encryption/uniqueness and all permissions remain unchanged. Keep birth/passport/SSR requirements and prevent ambiguous retries without a safe identity. No active overlapping source lock found; no schema/migration/dependency/runtime deployment or operational writes. Customers API117/Web200 tests pass; affected lint/types/build and exact-head full CI gate authorized merge. Bounded locks release with this candidate.
@@ -5,6 +17,16 @@ COMPUTER_ID=PC-A; branch codex/pc-a-optional-national-id-1024 from origin/develo
 ## SALES-CURRENCY-LABELS-1024 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-currency-labels-1024 from origin/develop@63d735662. Owner authorizes removing visible currency headings/asterisks from New Contract passenger service price rows and develop merge. Reserve passenger-service-prices.tsx, bounded opt-in hideLabel on SalesCurrencySelect/SearchableReference (defaults unchanged), own docs. Keep accessible names, selection behavior, active currency validation, amounts and all other forms unchanged. No active overlapping target lock found. Presentation only, no API/schema/migration/dependency/runtime change. Existing selector/price tests11 pass; affected lint and full hosted typecheck/build/test gates precede authorized merge. Bounded source locks released with candidate.
+
+## CALL-ANSWER-ACCESS-1024 — PC-C — HANDOFF_REQUIRED
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-answer-access-1024 from develop63d73566. User explicitly delegates Call Center answered-contact access, shared/transfer responsibility, unit-manager scope, executive/demo all-unit/branch access and production historical application, excluding local restrictions. Personnel account configuration remains outside Git. Current source inspection identifies single-owner access and last-answer-only projection; durable many-person evidence and an isolated tested backfill are required. User confirms no production connection on this device; continuation belongs on the server-connected PC. No application source, schema, operational IAM/database mutation or runtime restart occurred. Proposed source reservations released; only this design handoff is delivered. See docs/tasks/CALL-ANSWER-ACCESS-1024.md.
+
+## CALL-DOMAIN-1024 — PC-C — HANDOFF_REQUIRED
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-domain-1024 from develop e6f81c54. Explicit user delegation covers all company inbound queues/extensions and employee external outbound, excluding internal calls; unanswered destination manager plus executive/demo; answered-extension organizational attribution. Reserve Issabel native capture/config/tests and Customer Affairs technical evidence/tests with own docs. No schema, dependency, UI, operational grants, PBX routing or runtime mutation. Stage-two authorization implementation and verified production inventory remain release dependencies. See docs/tasks/CALL-DOMAIN-1024.md.
+
+Source candidate implemented and locks released: explicit opt-in company capture, verified trunk origin, persisted root identity, outbound fallback legs, all-answer/destination technical evidence. 72 tests pass; 11 PostgreSQL tests skipped. Scoped lint, full API typecheck and TypeScript build pass against current locally built Contracts. Not activated locally or on production; organizational assignment/access enforcement remains pending stage two and must precede rollout.
 
 ## IMAGE-PREVIEW-NO-SCAN-WAIT-1024 — PC-A — READY_FOR_REVIEW
 
@@ -9353,3 +9375,49 @@ COMPUTER_ID=PC-A; follow-up to owner-authorized CONTRACT-OWNER-ACTIONS-1024 befo
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-checkin-departure-day-1024 from origin/develop. Owner requests automatic flight-linked hotel check-in on outbound departure day and develop merge. Reserve withSalesHotelDates and focused date regressions plus own docs. Prefer outbound calendar day over package start; ignore the obsolete next-day flag for flight-linked automatic check-in, retain explicit manual dates and checkout policy. No active overlapping date writer found; published prior Sales scopes released. No API/schema/migration/dependency/runtime changes or production deployment.
 
 HOTEL-CHECKIN-DEPARTURE-DAY-1024 scope completion: reserve PublishedPackageSale date hydration and its focused regression so asynchronous package loading cannot overwrite the flight-day check-in. Keep exact date matching/quote invalidation and package-only hydration unchanged.
+
+## CALL-QUEUE-BUTTONS-1024 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. Explicit user request aligns queue collapse/refresh buttons with contact search advanced/reset buttons. Reserve workflow.tsx queue header and scoped workflow.module.css plus own status notes. Base2482c7e2; no API, shared selector, schema or runtime ownership changes. Concurrent source/runtime preserved. No PR/merge requested.
+
+CALL-QUEUE-BUTTONS-1024 — COMPLETE / SOURCE_RELEASED: scoped lint,2 workflow tests, full TypeScript and65-route Web build pass. Browser verified collapse/expand, refresh and matching visual treatment. Explicitly authorized Web3000 replacement now PID21488, .next-queue-1024; popup hold false, API/Worker untouched. No migration or PR/merge.
+
+## CALL-HISTORY-RECIPIENT-1024 — PC-C — RESERVED
+
+Explicit user request adds connected-to display between description and creation time in dossier call history. Reserve workspace.tsx history rendering and own docs only. Use existing call answerRecipient.label and operator fallback as in completion popup; no directory fetch, history rewrite, API/schema/grants or popup change. Base67eb56f2; prior source scope released. Own Web3000 PID21488 may be refreshed with this scoped build; concurrent runtimes must be preserved. No PR/merge requested.
+
+CALL-HISTORY-RECIPIENT-1024 — COMPLETE / SOURCE_RELEASED:10 existing model/form tests, scoped ESLint, full TypeScript and65-route Web production build pass. Browser verifies real stored answer label between description and created timestamp without saving business data. Own Web3000 PID16032 runs .next-history-recipient-1024; popup hold false, API/Worker preserved. No migration or PR/merge.
+
+## CALL-DIRECTION-READONLY-1024 — PC-C — RESERVED
+
+Explicit request locks direction in existing-call edit/completion, displaying persisted technical direction. Reserve CallForm direction control and focused regression assertions plus own docs. Backend existing completion identity check must retain immutable direction; no API/schema changes planned. New manual call direction selection retained. Base24987bdc; prior own source released; peer CallForm has no local edits. Own Web3000 PID16032 may refresh; popup hold false. No PR/merge requested.
+
+CALL-DIRECTION-READONLY-1024 — COMPLETE / SOURCE_RELEASED:5 focused form tests, scoped ESLint, full TypeScript and65-route production build pass. Authenticated browser verifies persisted inbound type is a non-settable text field and cancels without saving. Own Web3000 PID23844 runs .next-direction-readonly-1024; popup hold false, API/Worker preserved. Existing backend immutable direction guard verified in source. No migration or PR/merge.
+
+## CALL-REQUEST-PENDING-DEFAULT-1024 — PC-C — RESERVED
+
+Explicit user request removes NEW/open as a selectable request status and defaults creation to IN_PROGRESS (waiting agent). Reserve Call Center workflow DTO/save service/read status predicate and targeted tests; Web workflow/editor, dossier status labels/filter choices and tests, plus own docs. Legacy NEW input remains accepted only as compatibility alias to IN_PROGRESS after command replay validation; no shared enum or stored historical audit rewrite. Pending filter includes legacy NEW records. New Web/API ship together; no migration/dependency/grants or PBX/popups. Base92cff036 retains approved local UI. Preserve peer outbound work and verify running API source before activation. No PR/merge requested.
+
+Runtime compatibility: API4000 currently serves clean published unified8a5cac76 from call-center-unified-1024, which includes openOnly request paging. Preserve its existing optional DTO/list predicate in the three touched runtime classes. Prepare a separate ignored runtime artifact copied from the current API build and replace only these three compiled classes; preserve all other outbound/recording/routing artifacts. No writes to peer checkout. Activation of the peer-owned4000 service requires coordination after tests.
+
+CALL-REQUEST-PENDING-DEFAULT-1024 — COMPLETE / SOURCE_RELEASED: 30 PostgreSQL API tests on isolated database and5 Web tests pass, alongside scoped lint, full API/Web typecheck and builds (65 Web routes). Browser verifies exactly three statuses, pending-agent selected, no open option; cancelled without business mutation. After verifying the prior API source was clean/published, activated a separate artifact preserving unified8a5cac76 and replacing only the three tested classes; peer source untouched. API4000 PID10388 retains original CWD/development collector policy; Web3000 PID18492 uses .next-request-pending-1024. Popup enablement remains false, Worker untouched. This completes the runtime coordination precaution above. No migration, PR or merge. Screenshot outside Git: F:/DevData/Temp/call-request-pending-1024.png.
+
+# CALL-EXTENSION-ALIASES-1024 — PC-C — RESERVED
+
+Owner supplies second extensions for three existing staff members. Base develop
+69d80458; branch codex/pc-c-call-extension-aliases-1024. Reserve private local
+answer-directory configuration and own handoff notes only. Existing public HR
+projection supports multiple internalContact records and private rows per person.
+No source/runtime/schema/permission/PBX changes. Preserve position/unit and all
+unrelated rows, back up before updating and verify all six destination options
+and confirmed-answer resolutions against the actual configured branch/connection.
+Real personnel names and extension assignments remain outside Git. HR is empty
+in that branch, so the existing approved bootstrap file is currently authoritative.
+
+# CALL-EXTENSION-ALIASES-1024 — PC-C — VERIFIED / SOURCE_RELEASED_ON_PUSH
+
+Private mapping updated after identical backup; all six owner-supplied extensions
+resolve to the correct people and appear once in the19-choice public directory.
+Existing shared-extension choices retained. Six directory tests pass. No source,
+schema, user grant, PBX, business-record write or runtime restart. Private personnel
+assignments remain outside Git. Details: docs/tasks/CALL-EXTENSION-ALIASES-1024.md.

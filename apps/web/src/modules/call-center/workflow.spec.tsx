@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { ReactNode, SelectHTMLAttributes } from 'react';
-import { WorkflowEditor } from './workflow';
+import {
+  WorkflowEditor,
+  requestLabels,
+  requestStatusOptions,
+} from './workflow';
 import type { RequestCase } from './workflow-client';
 
 vi.mock('@/components/ui/overlays', () => {
@@ -32,6 +36,14 @@ const props = {
   onSaved: () => {},
 };
 describe('request workflow form', () => {
+  it('offers only actionable request states and presents legacy open as waiting for agent', () => {
+    expect(Object.keys(requestStatusOptions)).toEqual([
+      'IN_PROGRESS',
+      'WAITING_CUSTOMER',
+      'CLOSED',
+    ]);
+    expect(requestLabels.NEW).toBe(requestLabels.IN_PROGRESS);
+  });
   it('does not expose a status selector when creating a new request', () => {
     const html = renderToStaticMarkup(
       <WorkflowEditor {...props} editor={{ kind: 'request' }} />,

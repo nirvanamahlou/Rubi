@@ -14,6 +14,7 @@ import { SystemManagementModule } from '../system-management/system-management.m
 import { IntegrationRegistryController } from './integration-registry.controller';
 import { IntegrationRegistryService } from './integration-registry.service';
 import { IssabelService } from './issabel/issabel.service';
+import { IssabelRecoveryService } from './issabel/recovery.service';
 import { IssabelRecordingsService } from './issabel/recordings.service';
 import {
   TelephonyRelayController,
@@ -46,6 +47,7 @@ import {
   providers: [
     TelephonyRelayGuard,
     IssabelService,
+    IssabelRecoveryService,
     IssabelRecordingsService,
     IssabelRecordingGuard,
     TelephonyIntegrationService,

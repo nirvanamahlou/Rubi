@@ -55,6 +55,7 @@ import {
   WorkQueue,
   WorkflowPanel,
   requestLabels,
+  requestStatusOptions,
   taskLabels,
 } from './workflow';
 import { CallForm } from './call-form';
@@ -549,7 +550,7 @@ function Content({
                 label="وضعیت درخواست"
                 value={filters.requestStatus}
                 onChange={(v) => change('requestStatus', v)}
-                options={Object.entries(requestLabels)}
+                options={Object.entries(requestStatusOptions)}
               />
               <Select
                 label="پیگیری مخاطب"
@@ -1121,6 +1122,10 @@ function History({
                 <summary>شرح تماس و اطلاعات ثبت</summary>
                 <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                   {c.note || 'بدون شرح'}
+                </p>
+                <p>
+                  وصل شده به:{' '}
+                  {c.answerRecipient?.label || c.operator || 'نامشخص'}
                 </p>
                 <p>
                   زمان ثبت: {c.createdAt ? callDate(c.createdAt) : 'نامشخص'}

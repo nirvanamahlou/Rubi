@@ -6,6 +6,7 @@ import { RequestCustomer } from './request-customer';
 import { useDialogReturnFocus } from './use-dialog-focus';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -28,11 +29,14 @@ import { readApi } from './read-client';
 import { DossierRequestCard } from './dossier-request-card';
 import { ScrollContinuation } from './scroll-continuation';
 
-export const requestLabels: Record<string, string> = {
-  NEW: 'باز',
+export const requestStatusOptions: Record<string, string> = {
   IN_PROGRESS: 'منتظر اقدام کارشناس',
   WAITING_CUSTOMER: 'منتظر پاسخ مشتری',
   CLOSED: 'بسته‌شده',
+};
+export const requestLabels: Record<string, string> = {
+  NEW: requestStatusOptions.IN_PROGRESS!,
+  ...requestStatusOptions,
 };
 export const taskLabels: Record<string, string> = {
   OPEN: 'باز',
@@ -616,18 +620,26 @@ export function WorkQueue({
             type="button"
             aria-expanded={!collapsed}
             aria-controls="cc-queue-body"
+            className={styles.queueAction}
             onClick={() => setCollapsed((value) => !value)}
           >
+            {collapsed ? (
+              <ChevronDown size={16} aria-hidden="true" />
+            ) : (
+              <ChevronUp size={16} aria-hidden="true" />
+            )}
             {collapsed ? 'نمایش صف' : 'جمع کردن صف'}
           </button>
           <button
             type="button"
+            className={styles.queueAction}
             onClick={() => (
               setLoading(true),
               setError(''),
               setRevision((value) => value + 1)
             )}
           >
+            <RotateCcw size={16} aria-hidden="true" />
             به‌روزرسانی
           </button>
         </header>
@@ -835,7 +847,11 @@ export function WorkflowEditor({
     [dirty, setDirty] = useState(false);
   const [owner, setOwner] = useState(editor.item?.ownerId ?? '');
   const [status, setStatus] = useState(
-    editor.item?.status ?? (editor.kind === 'task' ? 'OPEN' : 'NEW'),
+    editor.kind === 'request'
+      ? editor.item?.status && editor.item.status !== 'NEW'
+        ? editor.item.status
+        : 'IN_PROGRESS'
+      : (editor.item?.status ?? 'OPEN'),
   );
   const [priority, setPriority] = useState(editor.item?.priority ?? 'NORMAL');
   const stableId = useRef(editor.item?.id ?? crypto.randomUUID());
@@ -868,7 +884,7 @@ export function WorkflowEditor({
     if (editor.kind === 'request')
       payload = {
         ...base,
-        status: editor.item ? status : 'NEW',
+        status: editor.item ? status : 'IN_PROGRESS',
         title: value('title'),
         reason: value('reason'),
         ...(editor.item ? { result: value('result') } : {}),
@@ -1055,12 +1071,14 @@ export function WorkflowEditor({
                   }}
                   options={Object.fromEntries(
                     Object.entries(
-                      editor.kind === 'request' ? requestLabels : taskLabels,
+                      editor.kind === 'request'
+                        ? requestStatusOptions
+                        : taskLabels,
                     ).filter(
                       ([key]) =>
                         editor.item ||
                         (editor.kind === 'request'
-                          ? key === 'NEW'
+                          ? key === 'IN_PROGRESS'
                           : key === 'OPEN'),
                     ),
                   )}

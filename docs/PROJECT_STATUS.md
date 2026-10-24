@@ -1,3 +1,7 @@
+## CALL-CENTER-FINAL-1024 — PC-C — CI_CANDIDATE
+
+PR1098 consolidates today's released Call Center changes on develop921d7e3c, authored by Amin-tech11.141 API tests with disposable PostgreSQL and48 Web tests pass; API typecheck/build and65-route Web build pass. Hosted quality/build/database passed; missing English translations for two new Call Center messages are repaired before re-running all gates. No operational migration, new grants or automatic company/CDR capture activation. Real CDR adapter and server access-scope rollout remain separate handoffs; private runtime configuration and hidden global attention widget are preserved.
+
 ## HOTEL-CHECKIN-DEPARTURE-DAY-1024 — PC-A
 
 Automatic flight-linked hotel check-in uses the outbound Tehran departure day, including floating flights before detail completion and overnight arrivals. Package-start hydration and legacy next-day draft flags cannot override it; explicit manual dates, checkout and hotel-only/package-only behavior remain. Published quote matching still rejects mismatched stay dates. 38 targeted model/UI tests pass; affected types/lint/build and all exact-head hosted checks gate owner-authorized develop merge. No API/schema/migration/dependency or runtime/data change; no production rollout requested.
@@ -10,6 +14,14 @@ Follow-up before owner-actions rollout: output/payment/amendment UI uses the cur
 
 Contract-area access now enables output, amendment and payment entry for the creator’s own contract in an allowed branch through one shared owner-scoped capability. Native broader grants remain; no role data is changed. Output reuses Sales scope before identity/branding reads; correction and payment commands retain state, CAS, idempotency, money and Finance-only payer-transfer/approval guards. UI action availability uses the same capability. The legacy room/flight equality blocker follows the existing temporary capacity policy. Targeted ownership/branch/explicit-screen-deny regressions and 211 shared tests, API/Web types/lint/build and exact-head hosted gates precede owner-authorized develop merge and encrypted-backup production rollout. No schema/migration/dependency. Source locks release on publication.
 
+## 2026-10-24 — CALL-DOMAIN-1024 — PC-C — HANDOFF_REQUIRED
+
+Opt-in company-wide SIP/PJSIP inbound capture now accepts verified company trunks, all queues and configured employee destinations; internal-origin calls are excluded. Employee external outbound fallback legs retain one root identity. Encrypted technical state retains all confirmed answering extensions and destination evidence without granting access. User confirms unanswered destination-unit manager plus executive/demo; unknown/unmanaged destinations executive/demo only. Enforcement and final organization assignment are NOT implemented by this candidate: stage-two account/unit mapping and access changes remain release dependencies. 72 tests pass, 11 PostgreSQL tests skipped; scoped lint, API typecheck/TypeScript build pass using current locally built Contracts. No migration, runtime restart, operational write, server activation or develop merge. Production deployment belongs to another PC; see docs/tasks/CALL-DOMAIN-1024.md.
+
+## 2026-10-24 — CALL-RECOVERY-1024 — PC-C
+
+Historical recovery source port/coordinator and append-only durable checkpoints implemented: initial seven days, overlap, bounded windows, retry without cursor advancement on incomplete projection/retention gap. Private historical ingress preserves live clock policy, deduplicates by deterministic receipt and original root, creates no popup recipient and excludes old answers from sticky routing. Source adapter is deliberately absent because actual read-only CDR access/schema is unknown. No runtime activation, grants, migration, dependency, UI or production change. Final access/organizational policy and actual CDR/CEL normalization remain activation dependencies; this is prepared backend, not completed operational recovery. See docs/tasks/CALL-RECOVERY-1024.md.
+
 ## 2026-10-24 — SALES-OPTIONAL-NATIONAL-ID-1024 — PC-A
 
 Owner scopes optional national ID to New Contract only. Sales people entry and quick-create omit blank IDs and remove national-ID required attributes; existing customer-to-passenger role promotion accepts no ID. Customers-owned sales create adapter validates contract access and keeps directory create strict, supplied ID encryption/uniqueness and birth/passport rules. No-ID ambiguous retries stop until the existing record is selected. API117 and Web200 related tests pass. Affected lint/types/build and full exact-head CI gate owner-authorized develop merge. No schema/migration/dependency/runtime or operational changes.
@@ -17,6 +29,14 @@ Owner scopes optional national ID to New Contract only. Sales people entry and q
 ## SALES-ROOM-CONTACT-FLEXIBILITY-1024 — PC-A
 
 Owner temporarily disables blocking hotel guest/room composition and tariff capacity checks in Sales UI, API save/update and confirmation through one shared policy. Structural room IDs/ordinals, stay/service/price integrity and actual passenger allocations remain; unavailable tariff matches never fabricate quotes. Optional buyer landline accepts short digit sequences and an optional leading plus; mobile and postal-code checks remain. Targeted API66 and Web64 tests, types/lint/build, full exact-head CI gate owner-authorized develop merge and encrypted-backup production rollout. No schema/migration/dependency or data deletion. Retained strict capacity algorithm has separate enabled-policy regressions for future explicit restoration. Source locks release at publication.
+
+## CALL-ANSWER-ACCESS-1024 — implementation pending
+
+Approved answered-contact visibility and shared responsibility rules are recorded in
+docs/tasks/CALL-ANSWER-ACCESS-1024.md. Read-only diagnosis identifies single-owner
+scope and last-answer-only display. User confirms production access exists only
+on another PC; no permission, application, schema or runtime change is claimed.
+Private staff mapping is retained outside Git for handoff. Source locks released.
 
 ## TICKET-AIRLINE-LOGO-BACKGROUND-1024 — PC-A
 
@@ -7396,3 +7416,35 @@ Flight-only new contracts now use the existing optional-fare calendar/card/pair 
 ## CONTRACT-MONEY-WORDS-1024 — PC-A
 
 New Contract passenger pricing now shows exact amount-in-words below IRR, foreign amount, discount and commission inputs with the selected currency and Persian/English grammar. Localized formatting supports18 integer digits and4 decimal places without whole-value floating-point conversion; empty/invalid values omit the hint and stored monetary strings stay unchanged. Agency mode hides acquaintance selection/loading/error, skips its lookup and ignores hidden contract-wide acquaintance propagation while retaining individual profile values. Personal customer behavior remains.87 focused money/UI/people/language tests and scoped lint pass; full Web type/build and final hosted eight checks gate owner-authorized develop merge. No schema/API/migration/dependency/shared MoneyInput/runtime or operational changes. Source locks freeze/release on publication.
+
+## CALL-QUEUE-BUTTONS-1024 — PC-C — 2026-10-24
+
+Queue collapse/expand and refresh actions now match contact search advanced/reset controls:40px minimum height,15px semibold labels,8px spacing/corners, neutral border/surface and blue hover. Decorative16px chevrons/refresh icons; existing callbacks, focus outline and expanded/controls semantics preserved. Scoped ESLint and2 existing workflow tests pass. Initial full build found concurrent external contracts drift in unrelated finance; isolated ignored Web dependency links to this checkout's matching contracts, preserving peer dependencies. Final build and local browser checks recorded below. No API/schema/grants/data changes, no PR/merge requested. User explicitly authorized replacing current Web3000 after build; API/Worker and popup hold preserved.
+
+Final verification: full TypeScript and65-route webpack build pass after moving the temporary dependency backup outside the TS source scan. Web3000 PID21488 serves .next-queue-1024, explicitly authorized replacement of22992; popup hold false. Authenticated browser verifies collapse/expand and refresh, with both button groups visually compared; screenshot F:/DevData/Temp/call-queue-buttons-1024.png outside Git. No operational form submitted. Source scope released on push.
+
+## CALL-HISTORY-RECIPIENT-1024 — PC-C — 2026-10-24
+
+Dossier history now displays connected-to between call description and created time using the existing answerRecipient.label snapshot, with saved operator and unknown fallback, matching completion popup precedence. No current directory lookup or historical attribution changes. Ten existing model/form tests and scoped lint pass. Final Web build and browser evidence below. No API/schema/grants or popup activation; source based on approved local67eb56f2.
+
+Final verification:10 focused tests, scoped lint, full TypeScript and65-route build pass. Browser confirms saved recipient label appears immediately after description and before registration time. Own local Web3000 replaced with PID16032 (.next-history-recipient-1024), popup hold false. Screenshot F:/DevData/Temp/call-history-recipient-1024.png outside Git. No business mutations or migration; source released on push.
+
+## CALL-DIRECTION-READONLY-1024 — PC-C — 2026-10-24
+
+Existing-call completion/edit displays persisted event.direction as a read-only labelled input instead of a selectable direction. Latest call fetched by existing edit endpoint remains authoritative; previous conversation direction cannot override it. Hidden form value and submit technical identity stay consistent. New manual calls retain direction choice. Existing API completion rejects direction changes before mutation, so no backend change, schema or runtime API replacement needed. Focused INBOUND/OUTBOUND regressions and final validation below; no popup activation or PR/merge requested.
+
+Final proof:5 focused form tests, scoped lint, full TypeScript and65-route build pass. Browser confirms read-only direction for an existing real telephony call; cancelled without changes. Transient authorized-list read retried successfully. Screenshot F:/DevData/Temp/call-direction-readonly-1024.png outside Git. Own Web3000 PID23844, .next-direction-readonly-1024 with popup hold false; API/Worker preserved. No schema, grants or data mutation; source released on push.
+
+## CALL-REQUEST-PENDING-DEFAULT-1024 — PC-C — 2026-10-24
+
+Explicit owner change removes selectable NEW/open status. Request creation/editor now starts IN_PROGRESS (waiting agent), with only IN_PROGRESS, WAITING_CUSTOMER and CLOSED choices; legacy NEW renders as waiting agent in queue, cards/history and next action. API DTO default is IN_PROGRESS, and legacy NEW write input canonicalizes only after original command fingerprint/replay validation; new requests in waiting-customer/closed states remain invalid. No shared ticket enum or old audit/data rewrite. Pending contact filter includes both persisted legacy NEW and IN_PROGRESS, maintaining branch/resource predicates. Preserve current runtime's published openOnly paging in touched classes. Disposable nora_call_request_pending_1024 DB receives existing migrations only; no operational schema change. Web tests pass; final API/SQL/build/browser gates below.
+
+Final verification:30 API PostgreSQL tests on the dedicated disposable database and5 Web tests pass; scoped lint, full API/Web TypeScript and builds pass (65 Web routes). Authenticated browser checks the three-option status dropdown with waiting-agent selected and no open option, then cancels without saving. Screenshot: F:/DevData/Temp/call-request-pending-1024.png (outside Git). Local Web3000 PID18492 and API4000 PID10388 active. API artifact preserves the published unified8a5cac76 build except the three tested classes, retains original runtime CWD and development AMI policy; Worker and disabled popup setting preserved. API readiness confirms reachability and anonymous operations denied; live AMI acceptance was not repeated. No operational migration, customer mutation, mapping/grant change or PR/merge. Source scope released on push; when integrating newer develop, retain its already-existing openOnly paging and apply only this status delta.
+# CALL-EXTENSION-ALIASES-1024 — PC-C — LOCAL_VERIFIED
+
+Owner-supplied secondary extensions for three existing staff added to the approved
+private empty-HR bootstrap directory. Compiled public options/answer lookup verifies
+all six aliases,19 total choices and unchanged shared-extension handling. Six
+directory regressions pass. Runtime reads the file per lookup, so no restart/build
+or historical rewrite. No personnel data committed, schema/grant/PBX change or
+operational test call. See tasks/CALL-EXTENSION-ALIASES-1024.md for handoff.

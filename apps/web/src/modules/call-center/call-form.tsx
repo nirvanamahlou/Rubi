@@ -246,18 +246,37 @@ export function CallForm({
               <div className={styles.formGrid}>
                 <label>
                   نوع تماس
-                  <NativeSearchSelect
-                    onChange={() => setDirty(true)}
-                    aria-label="نوع تماس"
-                    className={styles.control}
-                    optionLimit={50}
-                    disabled={busy}
-                    name="direction"
-                    defaultValue={event.direction}
-                  >
-                    <option value="INBOUND">ورودی ـ تماس به شرکت</option>
-                    <option value="OUTBOUND">خروجی ـ تماس از شرکت</option>
-                  </NativeSearchSelect>
+                  {completing ? (
+                    <>
+                      <input
+                        aria-label="نوع تماس"
+                        readOnly
+                        value={
+                          event.direction === 'INBOUND'
+                            ? 'ورودی ـ تماس به شرکت'
+                            : 'خروجی ـ تماس از شرکت'
+                        }
+                      />
+                      <input
+                        type="hidden"
+                        name="direction"
+                        value={event.direction}
+                      />
+                    </>
+                  ) : (
+                    <NativeSearchSelect
+                      onChange={() => setDirty(true)}
+                      aria-label="نوع تماس"
+                      className={styles.control}
+                      optionLimit={50}
+                      disabled={busy}
+                      name="direction"
+                      defaultValue={event.direction}
+                    >
+                      <option value="INBOUND">ورودی ـ تماس به شرکت</option>
+                      <option value="OUTBOUND">خروجی ـ تماس از شرکت</option>
+                    </NativeSearchSelect>
+                  )}
                 </label>
                 <label>
                   منبع آشنایی
