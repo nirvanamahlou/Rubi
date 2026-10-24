@@ -423,6 +423,51 @@ export class CallCenterTelephonyService {
     return { data: calls.map((c) => this.calls.presentSummary(c)) };
   }
   /** Public media authorization: Integrations never queries Customer Affairs tables. */
+  async callRecordingContext(
+    actor: AuthenticatedActor,
+    callId: string,
+    tx: Prisma.TransactionClient = this.db.client,
+  ) {
+    if (
+      !actor.permissions.includes(
+        'customer_affairs.call_center.recordings.read',
+      )
+    )
+      throw new ForbiddenException();
+    const call = await tx.callCenterCall.findFirst({
+      where: {
+        id: callId,
+        contact: { branchId: { in: [...actor.branchIds] } },
+      },
+      select: {
+        id: true,
+        contactId: true,
+        contact: { select: { branchId: true } },
+      },
+    });
+    if (!call) throw new NotFoundException();
+    await this.calls.access.contact(
+      actor,
+      call.contact.branchId,
+      call.contactId,
+      'contacts',
+      tx,
+    );
+    const session = await tx.callCenterTelephonySession.findUnique({
+      where: { callId },
+    });
+    if (!session) return null;
+    const technical = this.crypto.decrypt<TelephonyTechnical>(
+      session.encryptedTechnical,
+      session.keyVersion,
+      `telephony:${session.id}`,
+    );
+    return {
+      connectionId: session.connectionId,
+      rootFingerprint: session.rootFingerprint,
+      references: technical.recordings,
+    };
+  }
   async authorizeRecording(
     actor: AuthenticatedActor,
     connectionId: string,

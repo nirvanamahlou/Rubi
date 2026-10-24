@@ -398,6 +398,57 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       expect(partial.partial).toBe(true);
       expect(partial.audio.equals(audio.subarray(32760, 32781))).toBe(true);
       expect((await media.read(listener, id)).audio.equals(audio)).toBe(true);
+      const session = await db.callCenterTelephonySession.findFirstOrThrow({
+        where: {
+          connectionId,
+          rootFingerprint: crypto.fingerprint(
+            `telephony:root:${connectionId}:${root}`,
+          ),
+        },
+      });
+      const offers = await db.callCenterTelephonyOffer.findMany({
+        where: { sessionId: session.id, active: true },
+        select: { id: true },
+      });
+      await db.callCenterTelephonyOffer.updateMany({
+        where: { id: { in: offers.map((o) => o.id) } },
+        data: { active: false },
+      });
+      try {
+        await expect(media.read(listener, id)).rejects.toMatchObject({
+          status: 404,
+        });
+        expect(await media.forCall(listener, session.callId)).toEqual({
+          data: [{ id, sizeBytes: audio.length }],
+        });
+        expect(
+          (
+            await media.read(listener, id, undefined, session.callId)
+          ).audio.equals(audio),
+        ).toBe(true);
+        await expect(
+          media.forCall(actor, session.callId),
+        ).rejects.toMatchObject({ status: 403 });
+        await expect(
+          media.forCall({ ...listener, branchIds: [] }, session.callId),
+        ).rejects.toMatchObject({ status: 404 });
+        await expect(
+          media.read(listener, id, undefined, randomUUID()),
+        ).rejects.toMatchObject({ status: 404 });
+        await expect(
+          media.read(
+            { ...listener, branchIds: [] },
+            id,
+            undefined,
+            session.callId,
+          ),
+        ).rejects.toMatchObject({ status: 404 });
+      } finally {
+        await db.callCenterTelephonyOffer.updateMany({
+          where: { id: { in: offers.map((o) => o.id) } },
+          data: { active: true },
+        });
+      }
       await expect(
         media.read(listener, id, 'bytes=999999-'),
       ).rejects.toMatchObject({ status: 416 });
@@ -410,7 +461,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         await db.integrationTelephonyAudit.count({
           where: { entityId: id, action: 'RECORDING_READ' },
         }),
-      ).toBe(2);
+      ).toBe(3);
       const health = await events.health(actor);
       expect(health.unpublishedRecordings).toBe(0);
       expect(health.unknownCommands).toBe(1);
@@ -422,7 +473,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         events.health({ ...actor, permissions: [] }),
       ).rejects.toMatchObject({ status: 403 });
       await db.integrationTelephonyAudit.createMany({
-        data: Array.from({ length: 57 }, () => ({
+        data: Array.from({ length: 56 }, () => ({
           connectionId,
           entityId: id,
           actorUserId: userId,
@@ -446,6 +497,9 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       });
       await expect(media.read(listener, id)).rejects.toMatchObject({
         status: 404,
+      });
+      expect(await media.forCall(listener, session.callId)).toEqual({
+        data: [],
       });
       await media.prune();
       expect(

@@ -48,6 +48,8 @@ const states: Record<string, string> = {
 };
 export function TelephonyAttention() {
   const actor = useAccessActor();
+  // Explicit local rollout hold: no automatic attention UI before owner activation.
+  if (process.env.NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED === 'false') return null;
   const allowed =
     !!actor?.permissions.includes(
       'customer_affairs.call_center.workflow.manage',

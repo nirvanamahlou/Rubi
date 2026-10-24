@@ -9117,3 +9117,20 @@ CALL-ANSWER-DIRECTORY-1022 localization: reserve only the two new destination/sh
 ## ISSUED-SERVICE-REPORT-1022 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-issued-service-report-1022 from develop cb9426eb. Owner authorizes explicit search, issued route choices, travel/issuance date filtering, all contract service kinds including hotel-specific reporting, tests and develop merge. Reserve Ticket Catalog issued report UI/model/client/PDF and Reservations-owned report query/projection/controller/workbook/tests, related English overrides/derived catalogues and own docs. Existing issued endpoint stays compatible; additive service-report read endpoint composes only authorized branch intake snapshots/latest workflow and ticket documents. Allocated services are explicitly distinguished from actual issued documents. No schema/migration/dependency/permissions or operational writes/deployment. Prior overlapping report reservations published/released; preserve unrelated active supplier-form work.
+
+## RECORDING-READINESS-1024 — PC-C — LOCAL_VERIFIED
+
+Owner authorizes SSH-independent audio preparation/tests and complete approved
+Call Center local3000 rollout, preserving UI and disabled popups. Base develop
+1168321a includes answered destination and PC-B contact scope. Integrate released
+e3bc3910 download and cd561146 dossier cards without reverting those newer changes.
+Reserve existing uploader/new encrypted recording spool/tests, call-scoped media
+public authorization/controller/service/tests, approved dossier files and own docs.
+No dependency, migration, grants, real PBX access or production rollout. Prior
+source locks published/released; additive media producer/consumer ship together.
+
+46 targeted checks, scoped lint, types and API/Web builds pass. Local3000/4000
+activated with existing Worker4409 preserved; real five-call/21-receipt aggregate
+unchanged, zero real offers. Explicit Web popup hold false. No operational test
+audio or schema/data/grant change. Collector remains unconfigured pending verified
+remote access/correlation/retention. Scope releases on push; see own task report.
