@@ -13,6 +13,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { restoreContractDraft } from '../model/restore-contract-draft';
+import { useAccessActor } from '@/modules/iam/access-context';
 import type { TicketOfferV1 } from '@nora/contracts';
 import { PublishedPackageSale } from './published-package-sale';
 import { readPassengerHotelPrices } from '@nora/contracts';
@@ -199,8 +200,23 @@ function HotelCountField({
     </label>
   );
 }
+function freshSalesDraft(): SalesFormState {
+  return {
+    ...emptySalesForm,
+    automaticComponentPricing: true,
+    roomDrivenGuests: true,
+    passengerHotelPrices: {},
+    servicePricing: {},
+    priceEntryMode: 'CONTRACT_TOTAL',
+  };
+}
 export function SalesContractForm() {
   const router = useRouter();
+  const actor = useAccessActor();
+  const draftStorageKey = actor
+    ? `nora.sales.contract.draft.v2:${actor.userId}:${actor.sessionId}`
+    : null;
+  const [restoredDraftKey, setRestoredDraftKey] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [flightRange, setFlightRange] = useState<FlightDateRange>({
     from: '',
@@ -212,14 +228,7 @@ export function SalesContractForm() {
   const [preparedTickets, setPreparedTickets] =
     useState<PreparedTicketSearch>();
   const [futureFrom, setFutureFrom] = useState(() => new Date().toISOString());
-  const [draftState, setState] = useState<SalesFormState>({
-    ...emptySalesForm,
-    automaticComponentPricing: true,
-    roomDrivenGuests: true,
-    passengerHotelPrices: {},
-    servicePricing: {},
-    priceEntryMode: 'CONTRACT_TOTAL',
-  });
+  const [draftState, setState] = useState<SalesFormState>(freshSalesDraft);
   const state = useMemo<SalesFormState>(() => {
     if (isTicketOnlyContract(draftState))
       return ticketOnlySaleDefaults({
@@ -376,6 +385,25 @@ export function SalesContractForm() {
   ) =>
     setState((current) => {
       const patch = typeof update === 'function' ? update(current) : update;
+      if (patch.serviceKinds && !patch.serviceKinds.includes('INSURANCE'))
+        patch.insuranceExtraToman = {};
+      else if (patch.passengers) {
+        const eligible = new Set(
+          patch.passengers
+            .filter((person) =>
+              passengerOverSixty(
+                person.birthDate,
+                salesTravelDate({ ...current, ...patch }),
+              ),
+            )
+            .map((person) => person.customerId),
+        );
+        patch.insuranceExtraToman = Object.fromEntries(
+          Object.entries(current.insuranceExtraToman ?? {}).filter(([id]) =>
+            eligible.has(id),
+          ),
+        );
+      }
       if (
         patch.hotel?.rooms &&
         current.priceEntryMode === 'CONTRACT_TOTAL' &&
@@ -447,33 +475,39 @@ export function SalesContractForm() {
     });
 
   useEffect(() => {
-    const saved = globalThis.localStorage?.getItem(
-      'nora.sales.contract.draft.v1',
-    );
-    const restoreTimer = saved
-      ? globalThis.setTimeout(() => {
-          try {
-            const parsed = JSON.parse(saved) as Partial<SalesFormState>;
-            const restored = restoreContractDraft(parsed);
-            if (restored.serviceKinds.includes('FLIGHT'))
-              restored.serviceKinds = restored.serviceKinds.filter(
-                (kind) => kind !== 'BUS' && kind !== 'TRAIN',
-              );
-            setState(
-              ticketOnlySaleDefaults({
-                ...restored,
-                servicePricing: restored.servicePricing ?? {},
-              } as SalesFormState),
-            );
-          } catch {
-            globalThis.localStorage.removeItem('nora.sales.contract.draft.v1');
-          }
-        }, 0)
-      : undefined;
+    if (!draftStorageKey) return;
+    // Unowned legacy drafts must never be attributed to the next signed-in user.
+    globalThis.localStorage?.removeItem('nora.sales.contract.draft.v1');
+    const saved = globalThis.sessionStorage?.getItem(draftStorageKey);
+    const restoreTimer = globalThis.setTimeout(() => {
+      try {
+        const parsed = saved
+          ? (JSON.parse(saved) as Partial<SalesFormState>)
+          : freshSalesDraft();
+        const restored = restoreContractDraft(parsed);
+        if (restored.serviceKinds.includes('FLIGHT'))
+          restored.serviceKinds = restored.serviceKinds.filter(
+            (kind) => kind !== 'BUS' && kind !== 'TRAIN',
+          );
+        setState(
+          ticketOnlySaleDefaults({
+            ...restored,
+            servicePricing: restored.servicePricing ?? {},
+          } as SalesFormState),
+        );
+      } catch {
+        globalThis.sessionStorage?.removeItem(draftStorageKey);
+        setState(freshSalesDraft());
+      } finally {
+        setPeopleDraft(null);
+        setPeopleDirty(false);
+        setRestoredDraftKey(draftStorageKey);
+      }
+    }, 0);
     return () => {
       if (restoreTimer !== undefined) globalThis.clearTimeout(restoreTimer);
     };
-  }, []);
+  }, [draftStorageKey]);
   useEffect(() => {
     const controller = new AbortController();
     void loadSalesReferences(undefined, controller.signal)
@@ -509,11 +543,9 @@ export function SalesContractForm() {
     return () => controller.abort();
   }, [referenceRefresh.revision]);
   useEffect(() => {
-    globalThis.localStorage?.setItem(
-      'nora.sales.contract.draft.v1',
-      JSON.stringify(state),
-    );
-  }, [state]);
+    if (!draftStorageKey || restoredDraftKey !== draftStorageKey) return;
+    globalThis.sessionStorage?.setItem(draftStorageKey, JSON.stringify(state));
+  }, [state, draftStorageKey, restoredDraftKey]);
 
   useEffect(() => {
     if (
@@ -834,7 +866,8 @@ export function SalesContractForm() {
       const response = await salesApi.create(payload, submission.current.key);
       if (response.data.status !== 'SENT_TO_RESERVATIONS')
         await salesApi.confirm(response.data.id, response.data.version);
-      globalThis.localStorage?.removeItem('nora.sales.contract.draft.v1');
+      if (draftStorageKey)
+        globalThis.sessionStorage?.removeItem(draftStorageKey);
       setSavedNumber(response.data.contractNumber);
       setSavedId(response.data.id);
     } catch (reason) {
@@ -2167,8 +2200,11 @@ export function SalesContractForm() {
               </fieldset>
             ) : null}
             {state.passengers
-              .filter((p) =>
-                passengerOverSixty(p.birthDate, salesTravelDate(state)),
+              .filter(
+                (p) =>
+                  state.serviceKinds.includes('INSURANCE') &&
+                  !peopleDirty &&
+                  passengerOverSixty(p.birthDate, salesTravelDate(state)),
               )
               .map((person) => (
                 <section
