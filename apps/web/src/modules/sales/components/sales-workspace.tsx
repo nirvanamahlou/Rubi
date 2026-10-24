@@ -536,6 +536,8 @@ export function SalesWorkspace() {
                       <div className="grid min-w-72 grid-cols-4 gap-1.5">
                         <PassengerCorrectionButton
                           contractId={contract.id}
+                          ownerUserId={contract.ownerUserId}
+                          branchId={contract.branchId}
                           status={contract.status}
                           onSaved={() => void load()}
                         />
