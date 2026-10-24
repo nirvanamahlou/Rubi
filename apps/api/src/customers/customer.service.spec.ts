@@ -118,15 +118,13 @@ const row = {
 describe('current identity for authorized contract output', () => {
   it('returns current spelling and birthday without decrypting document numbers', async () => {
     const repository = {
-      find: vi
-        .fn()
-        .mockResolvedValue({
-          ...row,
-          kind: 'PERSON',
-          passportFirstName: 'CURRENT',
-          passportLastName: 'PASSENGER',
-          birthDate: new Date('1991-02-03T00:00:00Z'),
-        }),
+      find: vi.fn().mockResolvedValue({
+        ...row,
+        kind: 'PERSON',
+        passportFirstName: 'CURRENT',
+        passportLastName: 'PASSENGER',
+        birthDate: new Date('1991-02-03T00:00:00Z'),
+      }),
       auditSensitiveRead: vi.fn(),
     } as unknown as CustomerRepository;
     const { service, nationalIdProtector } = createService(repository);

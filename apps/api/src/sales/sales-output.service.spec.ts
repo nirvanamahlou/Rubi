@@ -34,13 +34,11 @@ function setup() {
   const sales = { detail: vi.fn().mockResolvedValue({ data: contract }) };
   const repo = { recordOutputPreview: vi.fn().mockResolvedValue({}) };
   const customers = {
-    salesOutputIdentity: vi
-      .fn()
-      .mockResolvedValue({
-        displayName: null,
-        passportName: null,
-        birthDate: null,
-      }),
+    salesOutputIdentity: vi.fn().mockResolvedValue({
+      displayName: null,
+      passportName: null,
+      birthDate: null,
+    }),
     maskedDetail: vi
       .fn()
       .mockResolvedValue({ data: { kind: 'person', addresses: [] } }),
