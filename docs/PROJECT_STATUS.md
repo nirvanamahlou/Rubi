@@ -4,6 +4,10 @@ COMPUTER_ID=PC-A; codex/pc-a-agency-contact-fill-1024 from develop ee06dd33. Own
 
 Implementation complete: selected active agency details use the Sales-only contact endpoint with phone-only decryption and existing sensitive-read audit, primary active address and fallback for absent fields. Existing mock fixtures updated for the new producer dependency; no manual tests executed at owner request. Scoped API/Web lint and formatting pass. Local typecheck is unavailable because shared node_modules links lack Nest dependencies and generated current Contracts; hosted build/quality gates remain authoritative. Source locks freeze on publication; encrypted backup and health verification required for authorized rollout.
 
+## SALES-AUTO-TICKET-PAIR-1024 — PC-A
+
+Sales ticket cards search automatically once valid route-scoped trip dates are selected, without a Search button. Existing registered return partner selection, price/capacity checks, manual return/date override and stale-selection reset remain. Focused44 tests cover automatic prefetch/abort and cards, incomplete dates, registered pairing, manual return changes and hotel/floating-flight compatibility. Web types/lint/build and full exact-head hosted CI gate the user-authorized develop merge. No API/schema/migration/dependency/runtime change. Source locks release at publication.
+
 ## RESERVATION-DELIVERY-PERMIT-1024 — PC-A
 
 Owner-approved Reservations document-delivery override is an additive customer-delivery basis, not payment/settlement approval. Finance cards show the saved basis and actual reason. Dedicated Finance-owned read/command ports accept only reservations.documents.manage in the actor's branches and the RESERVATION_PERMISSION basis, with required5–500-character reason, append-only version/actor/time, transaction lock and fresh Sales cancellation facts. A Reservations contract action consumes this minimal port without granting Finance queue/payment access; only capable Finance actors see the new basis choice there. Another active authorization cannot be replaced; Reservations revokes only its own pathway while Finance keeps revocation authority. Manager exception, confirmed receipt and settlement controls remain. API31, Web29 and shared-contract208 tests pass; API/Web typecheck, scoped lint and production builds pass. Exact-head full hosted CI gates authorized develop merge. No schema/migration/dependency, user-role grants, operational data or runtime rollout. Bounded source locks release on publication; policy exception documented in DECISIONS and travel architecture.
@@ -87,6 +91,19 @@ Hotel import country/city controls opt into all loaded options instead of the sh
 ## HOTEL-FACILITY-TEXT-1021 — PC-B — 2026-10-21
 
 Production commit failure traced to a164-character facility inserted into varchar160. Candidate widens facility name to500 without truncation and validates per-reference/hotel storage bounds before commit, retaining optional blanks and atomic audit.90 focused API tests and4 actual PostgreSQL scenarios pass; all181 migrations applied to disposable QA. Further types/build/final-head CI and backup-gated authorized production deployment are pending. No real hotel import or production schema change performed yet. See tasks/HOTEL-FACILITY-TEXT-1021.md.
+
+## RECORDING-READINESS-1024 — PC-C — LOCAL_VERIFIED / 2026-10-24
+
+Approved dossier/download UI composed with current develop staff-answer and scoped
+contact permissions. Audio manifests/downloads enforce own/team contact visibility;
+existing attention access remains unchanged. Finalized nested WAV uploader and
+encrypted bounded/retryable collector spool prepared without guessing CDR schema
+or enabling remote fetch.46 targeted checks, scoped lint/types/API/Web builds pass.
+Local3000/4000 healthy, Worker4409 preserved; explicit popup hold disabled attention.
+Five real ended calls/21 DONE receipts and zero real offers retained. Actual audio
+ingestion, remote access/correlation and owner retention/permissions remain external
+gates. No operational migration, grants, synthetic audio, PR/merge or production
+deployment. See tasks/RECORDING-READINESS-1024.md for limits and local build receipt.
 
 ## HOTEL-IMPORT-COLUMNS-1020 — PC-B — 2026-10-20
 
@@ -7221,6 +7238,37 @@ Voucher preview and PDF put check-in/out in the Hotel Information table, replace
 
 Issued-ticket workspace has explicit Search/Enter with separate draft/applied filters, persistent issued-route choices even for empty dates, service-kind/hotel selectors and separate issuance/request or travel/check-in date bases. All ten contract service kinds read authorized Reservations snapshots; hotel-only guests and individual stored stays are retained. Only actual ticket documents are marked issued; other allocations have an explicit allocated status. Latest nonflight allocations avoid duplicated amendments while actual ticket history remains. Route summaries count flight segments only; PDF/Excel consume the same applied server filters. No schema/migration/dependency/runtime/operational-data changes. Targeted API10 and Ticket Catalog223 tests plus search interaction pass; exact-head hosted quality/types/tests/database/build gates precede owner-authorized develop merge. Bounded source reservations release on candidate publication.
 
+
+## DOSSIER-NOTES-NAVIGATION-1024 — PC-C — LOCAL_VERIFIED
+
+Owner-requested latest/older notes buttons removed from dossier notes only.
+Existing incremental continuation appends deduplicated older notes; saving a note
+resets to latest server page. No API/schema/permission/style changes. Nine relevant
+Web tests and scoped lint pass; final build/local activation receipt follows.
+
+Final Web build/TypeScript passes (65 routes). Local3000 serves
+.next-notes-navigation-1024, PID19480, login HTTP200. Explicit popup hold retained;
+API/Worker and operational data unchanged. Authenticated visual review requires
+owner login. Source scope releases on push; no migration or grants.
+
+## CALL-DESTINATION-OPTIONS-1024 — PC-C — LOCAL_VERIFIED
+
+Connected-to field uses authorized HR public staff choices with position/unit -
+full name - extension. Private16-person source completed from owner-supplied position
+column, kept outside Git. All16 options verified; shared203 has both people;
+automatic answer uses the same label while preserving historical snapshots.
+22 API/Web tests, scoped lint/types/builds pass. Local3000/4000 activated and healthy;
+explicit popup hold remains false. No schema, grants, ownership or PBX routing.
+See tasks/CALL-DESTINATION-OPTIONS-1024.md for evidence. Scope releases on push.
+
+## OUTBOUND-CALL-POPUP-1024 — PC-C — LOCAL_VERIFIED / ROLLOUT_PENDING
+
+Same approved CallForm for real offered calls; linked requests hidden without open
+same-contact authorized choices. Native outgoing dial capture is explicit allowlist
+only; native notifications opt in to existing active user mappings.27 isolated PG,
+20 adapter/projection and8 Web checks pass; API/Web types and lint pass. Production
+activation requires verified extension/user/trunk configuration on the release PC.
+See tasks/OUTBOUND-CALL-POPUP-1024.md; no real PBX routing/ownership/schema changes.
 
 ## AGENCY-CONTRACT-SUBMIT-1024 — PC-A
 

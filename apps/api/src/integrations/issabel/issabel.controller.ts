@@ -158,6 +158,31 @@ export class TelephonyRecordingReadController {
     @Inject(IssabelRecordingsService)
     private readonly service: IssabelRecordingsService,
   ) {}
+  @Get('calls/:callId')
+  @Header('Cache-Control', 'private, no-store')
+  forCall(
+    @Req() req: AuthenticatedRequest,
+    @Param('callId', ParseUUIDPipe) callId: string,
+  ) {
+    return this.service.forCall(req.actor, callId);
+  }
+  @Get('calls/:callId/:id/audio')
+  async download(
+    @Req() req: AuthenticatedRequest,
+    @Param('callId', ParseUUIDPipe) callId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() response: Response,
+  ) {
+    const result = await this.service.read(req.actor, id, undefined, callId);
+    response.set({
+      'Cache-Control': 'private, no-store',
+      'Content-Type': 'audio/wav',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Disposition': `attachment; filename="recording-${id}.wav"`,
+      'Content-Length': String(result.audio.length),
+    });
+    response.status(200).send(result.audio);
+  }
   @Get(':id/audio')
   async audio(
     @Req() req: AuthenticatedRequest & Request,

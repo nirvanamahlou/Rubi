@@ -58,6 +58,12 @@ export async function callCenterRequest<T>(
 }
 const request = callCenterRequest;
 export const callCenterApi = {
+  destinations: (branchId: string, signal: AbortSignal) =>
+    request<{ data: { label: string; extension: string }[] }>(
+      '/destination-options',
+      branchId,
+      { signal },
+    ),
   get: (branchId: string, id: string) =>
     request<{ data: Call }>(`/calls/${encodeURIComponent(id)}`, branchId),
   list: (branchId: string, page = 1, signal?: AbortSignal) =>

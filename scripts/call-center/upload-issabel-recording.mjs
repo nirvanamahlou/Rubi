@@ -1,25 +1,78 @@
 // Run on a trusted PBX-side machine only after StopMixMonitor has closed the file.
 import { createHash } from 'node:crypto';
-import { open, realpath } from 'node:fs/promises';
+import { open, realpath, lstat } from 'node:fs/promises';
 import { resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+export async function readRecording(file, env = process.env) {
+  if (
+    typeof file !== 'string' ||
+    file.length > 512 ||
+    !file
+      .split('/')
+      .every((part) => /^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/.test(part)) ||
+    !file.endsWith('.wav')
+  )
+    throw Error('Invalid relative WAV path.');
+  if (!env.ISSABEL_RECORDING_DIRECTORY)
+    throw Error('Recording directory required.');
+  const root = await realpath(env.ISSABEL_RECORDING_DIRECTORY);
+  let path = root;
+  for (const part of file.split('/')) {
+    path = resolve(path, part);
+    if ((await lstat(path)).isSymbolicLink())
+      throw Error('Recording links are not allowed.');
+  }
+  const canonical = await realpath(path);
+  const rel = relative(root, canonical);
+  if (rel.startsWith('..') || isAbsolute(rel))
+    throw Error('Recording outside approved directory.');
+  const handle = await open(canonical, 'r');
+  try {
+    const before = await handle.stat();
+    if (!before.isFile() || before.size < 44 || before.size > 20971520)
+      throw Error('Recording size is unsupported.');
+    const audio = Buffer.alloc(before.size);
+    let offset = 0;
+    while (offset < audio.length) {
+      const part = await handle.read(
+        audio,
+        offset,
+        audio.length - offset,
+        offset,
+      );
+      if (!part.bytesRead) throw Error('Recording was truncated.');
+      offset += part.bytesRead;
+    }
+    const after = await handle.stat();
+    if (
+      before.size !== after.size ||
+      before.mtimeMs !== after.mtimeMs ||
+      before.ctimeMs !== after.ctimeMs
+    )
+      throw Error('Recording is not finalized.');
+    if (
+      audio.toString('ascii', 0, 4) !== 'RIFF' ||
+      audio.toString('ascii', 8, 12) !== 'WAVE' ||
+      audio.readUInt32LE(4) !== audio.length - 8
+    )
+      throw Error('Finalized RIFF WAV recording required.');
+    return { audio, sha256: createHash('sha256').update(audio).digest('hex') };
+  } finally {
+    await handle.close();
+  }
+}
+
 export async function uploadRecording(
-  { file, rootCallId, externalCallId, direction },
+  { file, rootCallId, externalCallId, direction, expectedSha256 },
   env = process.env,
 ) {
   if (
-    !/^[A-Za-z0-9_.-]+\.wav$/.test(file ?? '') ||
     !/^[A-Za-z0-9_.:-]{1,128}$/.test(rootCallId ?? '') ||
     !/^[A-Za-z0-9_.:-]{1,128}$/.test(externalCallId ?? '') ||
     !['IN', 'OUT'].includes(direction)
   )
     throw Error('Invalid recording arguments.');
-  const root = await realpath(env.ISSABEL_RECORDING_DIRECTORY ?? '');
-  const path = await realpath(resolve(root, file));
-  const rel = relative(root, path);
-  if (rel.startsWith('..') || isAbsolute(rel))
-    throw Error('Recording outside approved directory.');
   const url = new URL(env.ISSABEL_RECORDING_API_URL ?? '');
   if (
     (url.protocol !== 'https:' &&
@@ -36,36 +89,9 @@ export async function uploadRecording(
   const token = env.ISSABEL_RECORDING_UPLOAD_SECRET;
   if (!token || token.length < 32)
     throw Error('Private recording credential is required.');
-  const handle = await open(path, 'r');
-  let audio;
-  try {
-    const before = await handle.stat();
-    if (!before.isFile() || before.size < 44 || before.size > 20971520)
-      throw Error('Recording size is unsupported.');
-    audio = Buffer.alloc(before.size);
-    let offset = 0;
-    while (offset < audio.length) {
-      const part = await handle.read(
-        audio,
-        offset,
-        audio.length - offset,
-        offset,
-      );
-      if (!part.bytesRead) throw Error('Recording was truncated.');
-      offset += part.bytesRead;
-    }
-    const after = await handle.stat();
-    if (before.size !== after.size || before.mtimeMs !== after.mtimeMs)
-      throw Error('Recording is not finalized.');
-  } finally {
-    await handle.close();
-  }
-  if (
-    audio.toString('ascii', 0, 4) !== 'RIFF' ||
-    audio.toString('ascii', 8, 12) !== 'WAVE'
-  )
-    throw Error('WAV recording required.');
-  const sha256 = createHash('sha256').update(audio).digest('hex');
+  const { audio, sha256 } = await readRecording(file, env);
+  if (expectedSha256 && sha256 !== expectedSha256)
+    throw Error('Recording content changed.');
   const identity = createHash('sha256')
     .update(JSON.stringify([rootCallId, externalCallId, direction, sha256]))
     .digest('hex');
@@ -88,12 +114,23 @@ export async function uploadRecording(
           },
         );
         if (response.ok) {
-          await response.body?.cancel();
+          const receipt = await response.json();
+          if (
+            path.endsWith('/chunks')
+              ? receipt.ok !== true
+              : receipt.id !== id ||
+                (path.endsWith('/complete')
+                  ? receipt.state !== 'COMPLETE'
+                  : !['UPLOADING', 'COMPLETE'].includes(receipt.state))
+          )
+            throw Error('Invalid upload receipt.');
           return;
         }
-        if (response.status < 500 && response.status !== 429)
-          throw Error(`Upload rejected (${response.status}).`);
         await response.body?.cancel();
+        if (response.status < 500 && response.status !== 429)
+          throw Object.assign(Error(`Upload rejected (${response.status}).`), {
+            status: response.status,
+          });
       } catch (error) {
         if (
           error instanceof Error &&
@@ -102,7 +139,12 @@ export async function uploadRecording(
           throw error;
       }
       if (attempt < 2)
-        await new Promise((done) => setTimeout(done, 500 * 2 ** attempt));
+        await new Promise((done) =>
+          setTimeout(
+            done,
+            500 * 2 ** attempt + Math.floor(Math.random() * 250),
+          ),
+        );
     }
     throw Error(
       'Recording upload unavailable; keep the local file and retry later.',

@@ -17,8 +17,8 @@ describe('HR call answer directory', () => {
       '2026-10-22T10:00:00Z',
     );
     expect(result.shared).toBe(true);
-    expect(result.label).toContain('Person A (Sales)');
-    expect(result.label).toContain('Person B (Visa)');
+    expect(result.label).toContain('Sales - Person A - 203');
+    expect(result.label).toContain('Visa - Person B - 203');
     expect(result).not.toHaveProperty('userId');
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -42,7 +42,57 @@ describe('HR call answer directory', () => {
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { privateAnswerDirectory } from './hr-call-answer-directory';
+import {
+  privateAnswerDirectory,
+  callDestinationLabel,
+} from './hr-call-answer-directory';
+
+it('formats recorded job title, department, full name and extension in requested order', () => {
+  expect(
+    callDestinationLabel({
+      position: 'کارشناس',
+      unit: 'شرکت آزمایشی / فروش',
+      name: 'کارمند آزمایشی',
+      extension: '404',
+    }),
+  ).toBe('کارشناس فروش - کارمند آزمایشی - 404');
+});
+
+it('lists distinct employees on shared extensions using only the requested active branch', async () => {
+  const findMany = vi.fn().mockResolvedValue([
+    {
+      name: 'Person A',
+      unit: 'Company / Sales',
+      position: 'Expert',
+      records: [{ values: ['203'] }],
+    },
+    {
+      name: 'Person B',
+      unit: 'Company / Visa',
+      position: 'Manager',
+      records: [{ values: ['203'] }],
+    },
+  ]);
+  const directory = new HrCallAnswerDirectory({
+    client: { hrEmployee: { findMany } },
+  } as unknown as DatabaseService);
+  expect(await directory.options('branch-a')).toEqual([
+    { label: 'Expert Sales - Person A - 203', extension: '203' },
+    { label: 'Manager Visa - Person B - 203', extension: '203' },
+  ]);
+  expect(findMany.mock.calls[0]?.[0].where).toEqual({
+    branchId: 'branch-a',
+    status: 'فعال',
+    deletedAt: null,
+  });
+});
+
+it('does not resurrect the private snapshot when HR contains inactive or deleted employees', async () => {
+  const directory = new HrCallAnswerDirectory({
+    client: { hrEmployee: { findMany: async () => [], count: async () => 1 } },
+  } as unknown as DatabaseService);
+  expect(await directory.options('branch-a', 'pbx-a')).toEqual([]);
+});
 
 it('scopes a private bootstrap directory to the exact PBX connection and branch', () => {
   const dir = mkdtempSync(join(tmpdir(), 'answer-directory-'));

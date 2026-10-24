@@ -21,6 +21,7 @@ import { AmiClient, type AmiMessage } from './ami';
 import { issabelOptions, type IssabelOptions } from './config';
 import { normalizeIssabelEvent } from './events';
 import { nativeEventNames, normalizeNativeQueueEvent } from './native-events';
+import { outboundEventNames, normalizeNativeOutbound } from './native-outbound';
 import { AmiContinuity } from './continuity';
 
 @Injectable()
@@ -316,6 +317,18 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
   private async incoming(message: AmiMessage, receivedAt = new Date()) {
     const connection = await this.connection();
     if (this.options?.nativeCapture) {
+      const outbound = await normalizeNativeOutbound(
+        connection.id,
+        message,
+        this.options.outboundExtensions,
+        this.options.outboundPeers,
+        (id) => this.events.acceptedEvent(connection.id, id),
+        receivedAt,
+      );
+      if (outbound) {
+        await this.events.receive(outbound, 'ISSABEL');
+        return;
+      }
       const event = await normalizeNativeQueueEvent(
         connection.id,
         message,
@@ -502,7 +515,8 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
           if (this.stopped) return;
           if (
             this.options?.nativeCapture
-              ? !nativeEventNames.has(message.event ?? '')
+              ? !nativeEventNames.has(message.event ?? '') &&
+                !outboundEventNames.has(message.event ?? '')
               : message.event !== 'UserEvent' &&
                 message.event !== 'OriginateResponse'
           )

@@ -54,6 +54,15 @@ export class CallCenterController {
   ) {
     return this.service.create(input, req.actor, branch);
   }
+  @Get('destination-options')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('customer_affairs.call_center.calls.create')
+  destinationOptions(
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch: string | undefined,
+  ) {
+    return this.service.destinationOptions(req.actor, branch);
+  }
   @Get('calls/:id')
   @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('customer_affairs.call_center.read')
