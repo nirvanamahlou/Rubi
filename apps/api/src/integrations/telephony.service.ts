@@ -9,7 +9,7 @@ import {
   HttpException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { AuthenticatedActor, TelephonyEventV1 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import { IamCallCenterDirectory } from '../iam/iam-call-center-directory';
@@ -26,6 +26,7 @@ import {
 type Envelope = {
   event: TelephonyEventV1;
   recipient: { userId: string; version: number; teamId: string | null } | null;
+  historical?: true;
 };
 @Injectable()
 export class TelephonyIntegrationService {
@@ -219,6 +220,43 @@ export class TelephonyIntegrationService {
   }
   /** Adapter-facing in-process port. There is deliberately no public provider webhook. */
   async receive(input: TelephonyEventV1, provider?: 'ISSABEL' | 'RELAY') {
+    return this.receiveInternal(input, provider, false);
+  }
+  /** Only a verified server-side recovery adapter may call this port. No HTTP route. */
+  async receiveRecovered(input: TelephonyEventV1) {
+    if (this.config.get<string>('ISSABEL_RECOVERY_ENABLED') !== 'true')
+      throw new ForbiddenException('Telephony recovery is disabled.');
+    // Separate receipt namespace from AMI, but retain the identical PBX root so
+    // live/recovered evidence projects into one call. Never replay a live offer.
+    const event = validateTelephonyEvent(
+      input,
+      { maxAgeSeconds: 0, maxFutureSeconds: 0 },
+      new Date(),
+      false,
+    );
+    const receipt = await this.receiveInternal(
+      {
+        ...event,
+        externalEventId:
+          'cdr-recovery:' +
+          createHash('sha256').update(event.externalEventId).digest('hex'),
+      },
+      'ISSABEL',
+      true,
+    );
+    await this.process(receipt.id);
+    const row = await this.db.client.integrationTelephonyInbox.findUnique({
+      where: { id: receipt.id },
+      select: { status: true },
+    });
+    if (row?.status !== 'DONE')
+      throw new ConflictException('Recovery projection is incomplete.');
+  }
+  private async receiveInternal(
+    input: TelephonyEventV1,
+    provider: 'ISSABEL' | 'RELAY' | undefined,
+    recovery: boolean,
+  ) {
     const c = await this.db.client.integrationTelephonyConnection.findUnique({
       where: { id: input.connectionId },
     });
@@ -239,6 +277,8 @@ export class TelephonyIntegrationService {
     // Validate structure before hashing; already accepted receipts remain retryable
     // after the ingress age window. New identities still obey the clock policy.
     const event = validateTelephonyEvent(input, c, new Date(), false);
+    if (!recovery && event.externalEventId.startsWith('cdr-recovery:'))
+      throw new BadRequestException('Reserved recovery identity.');
     const crypto = this.domain.crypto,
       externalFingerprint = crypto.fingerprint(
         `telephony:event:${c.id}:${event.externalEventId}`,
@@ -259,7 +299,12 @@ export class TelephonyIntegrationService {
           throw new ConflictException('Event identity collision.');
         return { id: prior.id, duplicate: true };
       }
-      validateTelephonyEvent(event, c);
+      if (recovery) {
+        // Historical age is allowed only on the private recovery port. Future
+        // timestamps remain forbidden; ordinary ingress keeps its original policy.
+        if (Date.parse(event.occurredAt) > Date.now())
+          throw new BadRequestException('Recovery event is in the future.');
+      } else validateTelephonyEvent(event, c);
       const count = await tx.integrationTelephonyInbox.count({
         where: {
           connectionId: c.id,
@@ -286,6 +331,7 @@ export class TelephonyIntegrationService {
         this.config.get<string>('ISSABEL_EVENT_MODE') ===
           'NATIVE_QUEUE_CAPTURE';
       const mapping =
+        !recovery &&
         event.extension &&
         (!captureOnly ||
           this.config.get<string>('ISSABEL_USER_NOTIFICATIONS_ENABLED') ===
@@ -309,6 +355,7 @@ export class TelephonyIntegrationService {
         : false;
       const envelope: Envelope = {
         event,
+        ...(recovery ? { historical: true as const } : {}),
         recipient:
           eligible && mapping
             ? {
@@ -330,7 +377,8 @@ export class TelephonyIntegrationService {
           dispatch: { create: {} },
         },
       });
-      if (captureOnly) await recordNativeAnswer(tx, crypto, event, id);
+      if (captureOnly && !recovery)
+        await recordNativeAnswer(tx, crypto, event, id);
       return { id, duplicate: false };
     });
   }
@@ -453,7 +501,7 @@ export class TelephonyIntegrationService {
           creatorId: row.connection.createdByUserId,
           synthetic: row.connection.synthetic,
           receivedAt: row.receivedAt,
-          recipient: envelope.recipient,
+          recipient: envelope.historical ? null : envelope.recipient,
         });
         await tx.integrationTelephonyAudit.create({
           data: {
