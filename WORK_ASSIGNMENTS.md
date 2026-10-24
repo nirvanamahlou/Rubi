@@ -1,5 +1,7 @@
 ## CALL-CENTER-FINAL-1024 — PC-C — IN_PROGRESS
 
+Bounded CI repair reserves the two missing Call Center English labels in Web overrides and the matching offline API catalogue. Local verification:141 API tests (including isolated PostgreSQL),48 Web tests, API typecheck/build and65-route Web build pass. Hosted quality/build/database gates passed; translation coverage exposed these two omissions. All hosted gates must pass again on the repaired head before merge.
+
 Owner authorizes consolidating today's Call Center changes, push/PR to develop, merge only after all CI/CD checks pass and latest-develop local3000/API4000 rollout. Base origin/develop921d7e3c. Reserve integration of released queue/history/direction/default-request UI/API commits, extension/access handoff docs, company capture and historical recovery candidates, their integration/CI repairs and own release notes. Preserve all other develop changes, existing private local settings/data and the hidden global attention widget. No new permissions, verified-source claims, PBX routing or production activation; company/CDR capture remains disabled pending verified inventories/access. No new schema/dependencies. Checkpoint old runtime for rollback and retain Worker4409.
 
 ## CALL-RECOVERY-1024 — PC-C — HANDOFF_REQUIRED

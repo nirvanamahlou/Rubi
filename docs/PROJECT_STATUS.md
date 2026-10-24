@@ -1,3 +1,7 @@
+## CALL-CENTER-FINAL-1024 — PC-C — CI_CANDIDATE
+
+PR1098 consolidates today's released Call Center changes on develop921d7e3c, authored by Amin-tech11.141 API tests with disposable PostgreSQL and48 Web tests pass; API typecheck/build and65-route Web build pass. Hosted quality/build/database passed; missing English translations for two new Call Center messages are repaired before re-running all gates. No operational migration, new grants or automatic company/CDR capture activation. Real CDR adapter and server access-scope rollout remain separate handoffs; private runtime configuration and hidden global attention widget are preserved.
+
 ## HOTEL-CHECKIN-DEPARTURE-DAY-1024 — PC-A
 
 Automatic flight-linked hotel check-in uses the outbound Tehran departure day, including floating flights before detail completion and overnight arrivals. Package-start hydration and legacy next-day draft flags cannot override it; explicit manual dates, checkout and hotel-only/package-only behavior remain. Published quote matching still rejects mismatched stay dates. 38 targeted model/UI tests pass; affected types/lint/build and all exact-head hosted checks gate owner-authorized develop merge. No API/schema/migration/dependency or runtime/data change; no production rollout requested.
