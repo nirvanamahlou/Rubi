@@ -286,7 +286,10 @@ export class TelephonyIntegrationService {
         this.config.get<string>('ISSABEL_EVENT_MODE') ===
           'NATIVE_QUEUE_CAPTURE';
       const mapping =
-        event.extension && !captureOnly
+        event.extension &&
+        (!captureOnly ||
+          this.config.get<string>('ISSABEL_USER_NOTIFICATIONS_ENABLED') ===
+            'true')
           ? await tx.integrationTelephonyMapping.findUnique({
               where: {
                 connectionId_extension: {

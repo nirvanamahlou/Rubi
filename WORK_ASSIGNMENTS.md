@@ -9159,3 +9159,20 @@ business directory only; no HR private fields, ownership or popup mapping. Priva
 Compiled private projection verifies16/16 choices and two shared203 entries.
 Local3000/4000 activated; anonymous directory401, login/health200. Popups held off.
 Scope releases on push; see tasks/CALL-DESTINATION-OPTIONS-1024.md.
+
+## OUTBOUND-CALL-POPUP-1024 — PC-C — ACTIVE
+
+Owner explicitly approves hiding linked-request input unless same contact has open
+requests, clearer label, and the approved CallForm for inbound/outbound notifications.
+Branch codex/pc-c-outbound-call-popup-1024 from released8f10b186 local stack.
+Reserve CallForm, operational attention wrapper, bounded telephony contact projection,
+opt-in native notification/outbound adapter, focused tests and own docs/i18n.
+Preserve native queue routing and ownership, permissions, shared-extension ambiguity;
+no inferred user mapping, public broadcast, schema or dependency change.
+Operational enablement requires verified extension-to-user mapping and trunk evidence.
+
+OUTBOUND-CALL-POPUP-1024 scope clarification: reserve additive offer-scoped read
+and bounded SAVE fields in telephony controller/DTO, preserving claim/lease/version
+and ordinary request ACL. Existing call/contact ownership grants remain unchanged.
+Reserve bounded i18n labels including missing labels in the three released local
+base commits so the complete approved stack passes inventory. No dependency lock.

@@ -189,6 +189,65 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       workflow?.onModuleDestroy();
       await db?.$disconnect();
     });
+    it('filters closed requests before paging without changing the default dossier history', async () => {
+      const contact = (
+        await calls.create(
+          {
+            id: randomUUID(),
+            phone: '+12025550067',
+            name: 'Test',
+            subject: 'Test',
+            source: 'Website',
+            operator: 'Test',
+            direction: 'INBOUND',
+            status: 'جدید',
+            occurredAt: new Date().toISOString(),
+            note: '',
+          },
+          actor,
+          branchId,
+        )
+      ).data.contactId;
+      for (let index = 0; index < 11; index++) {
+        const id = randomUUID();
+        await workflow.saveRequest(actor, branchId, contact, {
+          ...request,
+          id,
+          commandId: randomUUID(),
+          title: `Closed ${index}`,
+        });
+        await workflow.saveRequest(actor, branchId, contact, {
+          ...request,
+          id,
+          commandId: randomUUID(),
+          expectedVersion: 1,
+          title: `Closed ${index}`,
+          status: 'CLOSED',
+          result: 'Resolved',
+          reason: 'Resolved',
+        });
+      }
+      await workflow.saveRequest(actor, branchId, contact, {
+        ...request,
+        id: randomUUID(),
+        commandId: randomUUID(),
+        title: 'Open test request',
+      });
+      const open = await workflow.list(
+        actor,
+        branchId,
+        contact,
+        1,
+        1,
+        undefined,
+        true,
+      );
+      expect(open.meta.total).toBe(1);
+      expect(open.data.map((row) => row.title)).toEqual(['Open test request']);
+      expect((await workflow.list(actor, branchId, contact)).meta.total).toBe(
+        12,
+      );
+    });
     it('publishes active authorized same-branch identities only', async () => {
       expect(await directory.list(branchId)).toEqual([
         { id: userId, displayName: 'Synthetic operator' },

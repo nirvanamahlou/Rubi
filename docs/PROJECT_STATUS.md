@@ -7232,3 +7232,12 @@ automatic answer uses the same label while preserving historical snapshots.
 22 API/Web tests, scoped lint/types/builds pass. Local3000/4000 activated and healthy;
 explicit popup hold remains false. No schema, grants, ownership or PBX routing.
 See tasks/CALL-DESTINATION-OPTIONS-1024.md for evidence. Scope releases on push.
+
+## OUTBOUND-CALL-POPUP-1024 — PC-C — LOCAL_VERIFIED / ROLLOUT_PENDING
+
+Same approved CallForm for real offered calls; linked requests hidden without open
+same-contact authorized choices. Native outgoing dial capture is explicit allowlist
+only; native notifications opt in to existing active user mappings.27 isolated PG,
+20 adapter/projection and8 Web checks pass; API/Web types and lint pass. Production
+activation requires verified extension/user/trunk configuration on the release PC.
+See tasks/OUTBOUND-CALL-POPUP-1024.md; no real PBX routing/ownership/schema changes.

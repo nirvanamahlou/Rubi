@@ -512,6 +512,95 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       ).toBe(0);
       await expect(media.start(input)).rejects.toThrow('retention');
     });
+    it('offers outbound calls only to the mapped user and prefills contact identity without old notes', async () => {
+      const calls = new CallCenterService({ client: db } as never, crypto);
+      const saved = await calls.create(
+        {
+          id: randomUUID(),
+          phone: '+12025550088',
+          name: 'Existing test contact',
+          subject: 'Previous conversation',
+          source: 'Website',
+          operator: 'Test operator',
+          note: 'Do not copy this note',
+          direction: 'INBOUND',
+          status: 'جدید',
+          occurredAt: new Date(Date.now() - 60000).toISOString(),
+        },
+        actor,
+        branchId,
+      );
+      config.set('ISSABEL_EVENT_MODE', 'NATIVE_QUEUE_CAPTURE');
+      config.set('ISSABEL_USER_NOTIFICATIONS_ENABLED', 'true');
+      try {
+        const event = {
+          ...fact('RINGING', 'outbound-popup'),
+          externalEventId: randomUUID(),
+          externalCallId: randomUUID(),
+          rootCallId: null,
+          direction: 'OUT' as const,
+          extension: '101',
+          caller: { kind: 'KNOWN' as const, value: '101' },
+          destination: { kind: 'KNOWN' as const, value: '+12025550088' },
+        };
+        const receipt = await events.receive(event, 'ISSABEL');
+        await events.process(receipt.id);
+        const snapshot = await domain.snapshot(actor);
+        const offered = snapshot.incoming.find(
+          (r) => r.call.contactId === saved.data.contactId,
+        );
+        expect(offered).toBeDefined();
+        expect(offered!.call).toMatchObject({
+          direction: 'OUTBOUND',
+          phone: '+12025550088',
+          name: 'Existing test contact',
+          source: 'Website',
+          subject: '',
+          note: '',
+        });
+        const other = await domain.snapshot({ ...actor, userId: randomUUID() });
+        expect(other.incoming.some((r) => r.id === offered!.id)).toBe(false);
+        await expect(
+          domain.read({ ...actor, userId: randomUUID() }, offered!.id),
+        ).rejects.toThrow();
+        const tabId = randomUUID();
+        await domain.lease(actor, tabId);
+        await domain.action(actor, offered!.id, {
+          action: 'CLAIM',
+          tabId,
+          version: offered!.version,
+        });
+        expect(
+          (await domain.snapshot(actor)).incoming.find(
+            (r) => r.id === offered!.id,
+          )?.claimed,
+        ).toBe(true);
+        const detail = await domain.read(actor, offered!.id);
+        await domain.action(actor, offered!.id, {
+          action: 'SAVE',
+          tabId,
+          version: detail.version,
+          name: 'Existing test contact',
+          source: 'Website',
+          operator: 'Test operator',
+          subject: 'New outbound conversation',
+          note: 'New note',
+          outcome: 'ANSWERED',
+        });
+        const updated = await domain.read(actor, offered!.id);
+        expect(updated.call).toMatchObject({
+          phone: '+12025550088',
+          name: 'Existing test contact',
+          subject: 'New outbound conversation',
+          note: 'New note',
+          outcome: 'ANSWERED',
+          origin: 'TELEPHONY',
+        });
+      } finally {
+        config.set('ISSABEL_USER_NOTIFICATIONS_ENABLED', 'false');
+        config.set('ISSABEL_EVENT_MODE', 'CUSTOM_FACTS');
+      }
+    });
     it('persists native sales queue calls across retries/restart and out-of-order projection with zero offers even with mappings', async () => {
       config.set('ISSABEL_EVENT_MODE', 'NATIVE_QUEUE_CAPTURE');
       config.set('ISSABEL_INBOUND_QUEUES', 'sales-test');

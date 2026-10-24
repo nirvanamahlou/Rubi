@@ -479,6 +479,7 @@ export class CallCenterWorkflowService
     page = 1,
     taskPage = 1,
     requestId?: string,
+    openOnly = false,
   ) {
     const branchId = this.scope(actor, branch);
     return this.db.client.$transaction(async (tx) => {
@@ -494,6 +495,7 @@ export class CallCenterWorkflowService
           callCenterContactId: contactId,
           category: CATEGORY,
           ...(requestId ? { id: requestId } : {}),
+          ...(openOnly ? { status: { not: 'CLOSED' } } : {}),
         },
         include: { executionOwner: { select: { displayName: true } } },
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
@@ -519,6 +521,7 @@ export class CallCenterWorkflowService
           callCenterContactId: contactId,
           category: CATEGORY,
           ...(requestId ? { id: requestId } : {}),
+          ...(openOnly ? { status: { not: 'CLOSED' } } : {}),
         },
       });
       const history = await tx.customerAffairsAuditEvent.findMany({

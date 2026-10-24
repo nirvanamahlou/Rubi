@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/overlays';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { callCenterApi } from './client';
+import { LinkedRequestField } from './linked-request-field';
 import {
   callDate,
   validPhone,
@@ -45,7 +46,14 @@ export function CallForm({
   const completing = Boolean(event.completionToken);
   const [error, setError] = useState('');
   const [dirty, setDirty] = useState(false);
-  const [requests, setRequests] = useState<RequestCase[]>([]);
+  const [requestState, setRequestState] = useState<{
+    contact: string;
+    rows: RequestCase[];
+  } | null>(null);
+  const requests =
+    requestState?.contact === `${branchId}:${previous?.contactId}`
+      ? requestState.rows
+      : [];
   const [destinationState, setDestinationState] = useState<{
     branch: string;
     labels: string[];
@@ -81,9 +89,41 @@ export function CallForm({
     const controller = new AbortController();
     if (previous?.contactId)
       workflowApi
-        .list(branchId, previous.contactId, controller.signal)
-        .then((result) => {
-          if (!controller.signal.aborted) setRequests(result.data);
+        .list(
+          branchId,
+          previous.contactId,
+          controller.signal,
+          1,
+          1,
+          undefined,
+          true,
+        )
+        .then(async (result) => {
+          const rows = [...result.data];
+          for (
+            let page = 2;
+            rows.length < (result.meta?.total ?? rows.length);
+            page++
+          ) {
+            if (controller.signal.aborted) return;
+            if (page > 100) throw Error('REQUEST_OPTIONS_LIMIT');
+            const next = await workflowApi.list(
+              branchId,
+              previous.contactId!,
+              controller.signal,
+              page,
+              1,
+              undefined,
+              true,
+            );
+            if (!next.data.length) break;
+            rows.push(...next.data);
+          }
+          if (!controller.signal.aborted)
+            setRequestState({
+              contact: `${branchId}:${previous?.contactId}`,
+              rows: [...new Map(rows.map((row) => [row.id, row])).values()],
+            });
         })
         .catch(() => {
           if (!controller.signal.aborted)
@@ -114,8 +154,10 @@ export function CallForm({
     }
     setError('');
     try {
+      const { ticketId: priorTicket, ...eventData } = event as Call;
+      void priorTicket;
       await onSave({
-        ...event,
+        ...eventData,
         phone: value('phone'),
         direction: completing
           ? event.direction
@@ -313,26 +355,12 @@ export function CallForm({
                     ))}
                   </NativeSearchSelect>
                 </label>
-                <label>
-                  درخواست مرتبط
-                  <NativeSearchSelect
-                    onChange={() => setDirty(true)}
-                    name="ticketId"
-                    aria-label="درخواست مرتبط"
-                    className={styles.control}
-                    disabled={busy}
-                    defaultValue={completing ? (previous?.ticketId ?? '') : ''}
-                  >
-                    <option value="">بدون اتصال؛ پس از ثبت تعیین می‌کنم</option>
-                    {requests
-                      .filter((request) => request.status !== 'CLOSED')
-                      .map((request) => (
-                        <option key={request.id} value={request.id}>
-                          {request.title}
-                        </option>
-                      ))}
-                  </NativeSearchSelect>
-                </label>
+                <LinkedRequestField
+                  requests={requests}
+                  busy={busy}
+                  selected={completing ? (previous?.ticketId ?? '') : ''}
+                  onChange={() => setDirty(true)}
+                />
               </div>
               <label>
                 موضوع تماس *
