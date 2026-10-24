@@ -552,8 +552,10 @@ export async function saveSalesPeopleDraft(
 ) {
   draft = normalizeSalesPeopleDraft(draft);
   const contractAcquaintanceMethodId =
-    draft.acquaintanceMethodId ??
-    peopleRow(draft, 'p0').values.acquaintanceMethodId;
+    draft.mode === 'organization'
+      ? undefined
+      : (draft.acquaintanceMethodId ??
+        peopleRow(draft, 'p0').values.acquaintanceMethodId);
   if (contractAcquaintanceMethodId)
     draft = setSalesPeopleAcquaintanceMethod(
       draft,

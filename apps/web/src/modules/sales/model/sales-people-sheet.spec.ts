@@ -785,10 +785,11 @@ describe('fixed Sales people-entry slots', () => {
     );
     expect(result.patch.hotel.guestCustomerIds).toHaveLength(4);
   });
-  it('preserves an organization payer independently from passengers', async () => {
+  it('preserves an organization payer and ignores its hidden contract acquaintance choice', async () => {
     const draft = {
       ...filled(),
       mode: 'organization' as const,
+      acquaintanceMethodId: 'stale-personal-selection',
       organization: {
         id: 'agency-customer',
         displayName: 'Synthetic Agency',
@@ -804,6 +805,11 @@ describe('fixed Sales people-entry slots', () => {
     const result = await saveSalesPeopleDraft(state, draft, vi.fn(), api);
     expect(result.patch.customerId).toBe('agency-customer');
     expect(result.patch.firstPassengerIsCustomer).toBe(false);
+    expect(
+      api.create.mock.calls.every(
+        ([input]) => input.acquaintanceMethodId === undefined,
+      ),
+    ).toBe(true);
     expect(
       api.create.mock.calls.every(
         ([input]) => input.roles.join() === 'passenger',
