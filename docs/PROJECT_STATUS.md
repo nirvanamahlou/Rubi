@@ -14,6 +14,10 @@ Owner temporarily disables blocking hotel guest/room composition and tariff capa
 
 Shared passenger-ticket preview/print/PDF renderer composites airline logos against the ticket background, eliminating white rectangular backing without rewriting uploaded assets. Styling is scoped to airline marks; agency logo, safe image sources and issuance/data paths stay unchanged. 31 focused ticket tests pass. Isolated Chromium pixel QA confirms white backing equals the tinted ticket background and colored mark remains. Lint/types/build and exact-head hosted gates precede user-authorized develop merge. No schema/API/migration/dependency/runtime change. Source locks release at publication.
 
+## 2026-10-24 — SALES-CURRENCY-LABELS-1024 — PC-A
+
+New Contract passenger-service prices hide repeated currency headings and their asterisks for foreign price, discount and commission. Accessible labels and the three currency selectors remain; defaults in other forms are unchanged. Existing selector/price tests11 pass. Affected lint plus full exact-head hosted types/build/test gate owner-authorized develop merge. Presentation only; no API, monetary policy, schema/migration, dependency or runtime deployment.
+
 ## 2026-10-24 — IMAGE-PREVIEW-NO-SCAN-WAIT-1024 — PC-A
 
 Immediate authenticated JPEG/PNG preview no longer waits for an unavailable/pending/failed scanner; scan states are preserved. Protected images still require the same access/step-up grants, with PREVIEW issuance aligned; infected/quarantined images are blocked. Full Documents suites: API 212 and Web 38 tests pass, including new immediate-preview and download/step-up regressions. No schema, migration, dependency, operational writes or runtime deployment. Owner authorizes develop merge after exact-head checks.
