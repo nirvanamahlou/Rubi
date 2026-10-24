@@ -1,11 +1,17 @@
 'use client';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useState, type ReactNode } from 'react';
-import { ticketCalendarDate, type TicketOfferV1 } from '@nora/contracts';
+import {
+  ticketCalendarDate,
+  type TicketOfferV1,
+  type TicketSaleRouteV1,
+} from '@nora/contracts';
 import { Button, FormField, Input } from '@/components/ui';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
   companyFlightLegs,
+  charterLoadCities,
+  tehranLoadOrigin,
   disjointFlightLoadLegs,
   countryFlightLoadOffers,
   currentCompanyLoadOffers,
@@ -17,12 +23,18 @@ import {
   flightLoadTotals,
   type FlightLoadFilter,
 } from '../model/flight-load';
+import { toursApi } from '../api/tours';
 import { TicketDatePicker } from './ticket-date-picker';
 import { scheduleWeekdays } from '../model/weekday-schedule';
 import styles from './flight-load-grid.module.css';
 import type { Reference } from '../model/catalog';
-import { asReference, listReferences } from '../api/references';
+import {
+  asReference,
+  listReferences,
+  getActiveCityReference,
+} from '../api/references';
 
+const emptyReferences: readonly Reference[] = [];
 const cabinLabels = { ECONOMY: 'اکونومی', BUSINESS: 'بیزینس', FIRST: 'فرست' };
 const time = (value: string) =>
   new Intl.DateTimeFormat('en-GB', {
@@ -48,7 +60,7 @@ const initial = (): FlightLoadFilter => ({
 });
 export function FlightLoadGrid({
   offers,
-  references = [],
+  references = emptyReferences,
   cityName,
   refreshing,
   onRefresh,
@@ -61,9 +73,60 @@ export function FlightLoadGrid({
   onRefresh: () => void;
   renderActions: (offer: TicketOfferV1) => ReactNode;
 }) {
-  const [filter, setFilter] = useState(initial);
-  const [originCountry, setOriginCountry] = useState('');
-  const [searchedOriginCountry, setSearchedOriginCountry] = useState('');
+  const [storedFilter, setFilter] = useState(initial);
+  const [originChosen, setOriginChosen] = useState(false);
+  const [defaultOrigin, setDefaultOrigin] = useState<Reference[]>([]);
+  const tehranId = tehranLoadOrigin([...references, ...defaultOrigin]);
+  const filter = {
+    ...storedFilter,
+    origin: originChosen ? storedFilter.origin : tehranId,
+  };
+  const [historyRoutes, setHistoryRoutes] = useState<
+    readonly TicketSaleRouteV1[]
+  >([]);
+  useEffect(() => {
+    let cancelled = false;
+    void toursApi
+      .charterRoutes()
+      .then((result) => {
+        if (!cancelled) setHistoryRoutes(result.data);
+      })
+      .catch(() => {
+        if (!cancelled)
+          setCountryProblem('دریافت بلیط‌های قابل فروش ناموفق بود.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [offers]);
+  const [historyCities, setHistoryCities] = useState<Reference[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const ids = [
+      ...new Set(
+        historyRoutes.flatMap((route) => [route.originId, route.destinationId]),
+      ),
+    ];
+    void Promise.all(
+      ids
+        .filter(
+          (id) =>
+            !references.some((ref) => ref.kind === 'city' && ref.id === id),
+        )
+        .map((id) => getActiveCityReference(id).catch(() => undefined)),
+    ).then((rows) => {
+      if (!cancelled)
+        setHistoryCities(rows.filter((row): row is Reference => Boolean(row)));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [historyRoutes, references]);
+  const cityReference = (id: string) =>
+    [...references, ...defaultOrigin, ...historyCities].find(
+      (ref) => ref.kind === 'city' && ref.id === id,
+    );
+  const cityLabel = (id: string) => cityReference(id)?.name ?? cityName(id);
   const [country, setCountry] = useState('');
   const [searchedCountry, setSearchedCountry] = useState('');
   const [countries, setCountries] = useState<Reference[]>([]);
@@ -91,14 +154,30 @@ export function FlightLoadGrid({
       cancelled = true;
     };
   }, []);
-  const cityCountry = (id: string) =>
-    references.find((r) => r.kind === 'city' && r.id === id)?.countryId;
-  const countryOffers = countryFlightLoadOffers(
-    offers,
-    references,
-    country,
-    originCountry,
-  );
+  useEffect(() => {
+    if (tehranLoadOrigin(references)) return;
+    let cancelled = false;
+    void (async () => {
+      for (const search of ['تهران', 'Tehran']) {
+        const result = await listReferences('cities', search, 1);
+        const refs = result.data.flatMap((record) => {
+          const ref = asReference(record);
+          return ref ? [ref] : [];
+        });
+        if (tehranLoadOrigin(refs)) {
+          if (!cancelled) setDefaultOrigin(refs);
+          return;
+        }
+      }
+    })().catch(() => {
+      if (!cancelled) setCountryProblem('دریافت مرجع اطلاعات پایه ممکن نشد.');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [references]);
+  const cityCountry = (id: string) => cityReference(id)?.countryId;
+  const countryOffers = countryFlightLoadOffers(offers, references, country);
   const [searched, setSearched] = useState<FlightLoadFilter>();
   const [hasSearched, setHasSearched] = useState(false);
   const [searchedCurrent, setSearchedCurrent] = useState(false);
@@ -115,12 +194,7 @@ export function FlightLoadGrid({
     : offers;
   const outboundCandidates = searched
     ? companyFlightLegs(
-        countryFlightLoadOffers(
-          loadOffers,
-          references,
-          searchedCountry,
-          searchedOriginCountry,
-        ),
+        countryFlightLoadOffers(loadOffers, references, searchedCountry),
         searched,
       )
     : [];
@@ -132,33 +206,34 @@ export function FlightLoadGrid({
     filter.carrier,
   );
   const outbounds = disjointFlightLoadLegs(outboundCandidates, returns);
+  const { origins, destinations } = charterLoadCities(
+    offers,
+    filter.origin,
+    historyRoutes,
+  );
   const originCities = [
-    ...new Set(
-      company
-        .filter(
-          (offer) =>
-            !originCountry || cityCountry(offer.originId) === originCountry,
-        )
-        .map((offer) => offer.originId),
-    ),
+    ...new Set([...origins, ...(tehranId ? [tehranId] : [])]),
   ];
   const returning = returns.find((offer) => offer.id === returnId);
-  const cities = [
-    ...new Set(
-      company
-        .filter(
-          (offer) => !country || cityCountry(offer.destinationId) === country,
-        )
-        .map((offer) => offer.destinationId),
-    ),
-  ];
+  const cities = destinations.filter(
+    (id) => !country || cityCountry(id) === country,
+  );
   const change = (field: keyof FlightLoadFilter, value: string) => {
-    setFilter((c) => {
+    if (field === 'origin') setOriginChosen(true);
+    setFilter((stored) => {
+      const c = { ...stored, origin: filter.origin };
       const next = changeFlightLoadFilter(
         validDates ? { ...c, ...validFlightLoadDates(countryOffers, c) } : c,
         field,
         value,
       );
+      if (
+        field === 'origin' &&
+        !charterLoadCities(offers, value, historyRoutes).destinations.includes(
+          next.destination,
+        )
+      )
+        next.destination = '';
       return validDates && (field === 'origin' || field === 'destination')
         ? { ...next, ...validFlightLoadDates(countryOffers, next) }
         : next;
@@ -434,27 +509,11 @@ export function FlightLoadGrid({
             onChange={(value) => change('to', value)}
           />
         </FormField>
-        <FormField label="کشور مبدأ" id="load-origin-country">
-          <NativeSearchSelect
-            id="load-origin-country"
-            value={originCountry}
-            onChange={(event) => {
-              setOriginCountry(event.target.value);
-              change('origin', '');
-            }}
-          >
-            <option value="">همه</option>
-            {countries.map((ref) => (
-              <option key={ref.id} value={ref.id}>
-                {ref.name}
-              </option>
-            ))}
-          </NativeSearchSelect>
-        </FormField>
         {selectFilter(
           'origin',
           'شهر مبدأ',
-          originCities.map((id) => [id, cityName(id)]),
+          originCities.map((id) => [id, cityLabel(id)]),
+          originCities.length + 1,
         )}
         <FormField label="کشور مقصد" id="load-country">
           <NativeSearchSelect
@@ -476,7 +535,8 @@ export function FlightLoadGrid({
         {selectFilter(
           'destination',
           'شهر مقصد',
-          cities.map((id) => [id, cityName(id)]),
+          cities.map((id) => [id, cityLabel(id)]),
+          cities.length + 1,
         )}
         {selectFilter(
           'carrier',
@@ -528,7 +588,6 @@ export function FlightLoadGrid({
             setSearched({ ...searchFilter });
             setSearchedCurrent(validDates);
             setSearchedCountry(country);
-            setSearchedOriginCountry(originCountry);
             setOutboundId('');
             setReturnId('');
           }}
@@ -550,8 +609,7 @@ export function FlightLoadGrid({
           variant="outline"
           onClick={() => {
             setCountry('');
-            setOriginCountry('');
-            setSearchedOriginCountry('');
+            setOriginChosen(false);
             setSearchedCountry('');
             setFilter(initial());
             setValidDates(false);

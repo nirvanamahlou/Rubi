@@ -5,6 +5,7 @@ import type { TicketOfferV1 } from '@nora/contracts';
 import { canonicalTestTree } from '@/i18n/test-tree';
 import { FlightLoadGrid } from './flight-load-grid';
 import styles from './flight-load-grid.module.css';
+import { searchOptions } from '@/components/ui/search-combobox';
 
 const hooks = vi.hoisted(() => ({ states: [] as unknown[], index: 0 }));
 vi.mock('react', async (original) => ({
@@ -53,10 +54,20 @@ function render() {
     canonicalTestTree(
       FlightLoadGrid({
         offers: [
-          flight('out-a', 10),
+          {
+            ...flight('out-a', 10),
+            saleRoutes: [
+              'bodrum',
+              'izmir',
+              'kusadasi',
+              'istanbul',
+              'ankara',
+            ].map((destinationId) => ({ originId: 'a', destinationId })),
+          },
           flight('out-b', 20),
           flight('return-a', 12, true),
         ],
+        references: [{ kind: 'city', id: 'a', name: 'تهران', active: true }],
         cityName: (id) => id,
         refreshing: false,
         onRefresh: vi.fn(),
@@ -148,4 +159,60 @@ it('hides both load tables when either endpoint is cleared after searching', () 
     target: { value: '' },
   });
   expect(tables()).toHaveLength(0);
+});
+
+it('defaults and resets the origin to Tehran but preserves a manual city choice', () => {
+  const field = () =>
+    render().find(
+      (n) =>
+        n.props.id === 'load-origin' && typeof n.props.onChange === 'function',
+    )!;
+  expect(field().props.value).toBe('a');
+  (field().props.onChange as (event: unknown) => void)({
+    target: { value: 'b' },
+  });
+  expect(field().props.value).toBe('b');
+  click('پاک‌کردن فیلترها');
+  expect(field().props.value).toBe('a');
+  expect(render().some((n) => n.props.id === 'load-origin-country')).toBe(
+    false,
+  );
+});
+
+it('shows all primary and alternate charter destinations, including Bodrum and Izmir, without the shared five-option truncation', () => {
+  const field = render().find(
+    (n) =>
+      n.props.id === 'load-destination' &&
+      typeof n.props.onChange === 'function',
+  )!;
+  const options = nodes(field.props.children as ReactNode)
+    .filter((n) => n.type === 'option')
+    .map((n) => ({
+      value: String(n.props.value),
+      label: n.props.children as ReactNode,
+    }));
+  expect(options.map((o) => o.value)).toEqual([
+    '',
+    'b',
+    'bodrum',
+    'izmir',
+    'kusadasi',
+    'istanbul',
+    'ankara',
+  ]);
+  expect(
+    searchOptions(options, '', field.props.optionLimit as number).map(
+      (o) => o.value,
+    ),
+  ).toEqual(options.map((o) => o.value));
+  (field.props.onChange as (event: unknown) => void)({
+    target: { value: 'izmir' },
+  });
+  click('جست‌وجو');
+  expect(
+    render().some(
+      (n) =>
+        n.type === 'input' && String(n.props['aria-label']).includes(' out-a '),
+    ),
+  ).toBe(true);
 });

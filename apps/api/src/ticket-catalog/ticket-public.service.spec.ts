@@ -479,3 +479,45 @@ it('projects branch-scoped manifest inventory from active allocations and unexpi
     }),
   );
 });
+
+describe('charter route history', () => {
+  it('reads only branch-authorized company/legacy routes, keeps archived history and deduplicates aliases', async () => {
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        originId: 'a',
+        destinationId: 'b',
+        saleRoutes: [{ originId: 'a', destinationId: 'alias' }],
+      },
+      { originId: 'a', destinationId: 'b', saleRoutes: [] },
+    ]);
+    const service = new TicketPublicService(
+      { client: { ticketPublishedOffer: { findMany } } } as never,
+      {} as never,
+    );
+    expect(await service.charterRoutes(actor)).toEqual({
+      version: 1,
+      data: [
+        { originId: 'a', destinationId: 'b' },
+        { originId: 'a', destinationId: 'alias' },
+      ],
+    });
+    const query = findMany.mock.calls[0]![0];
+    expect(query.where).toEqual({
+      branchId: { in: ['branch-1'] },
+      OR: [{ supplyType: 'COMPANY' }, { supplyType: null }],
+    });
+    expect(query.select).toEqual({
+      originId: true,
+      destinationId: true,
+      saleRoutes: { select: { originId: true, destinationId: true } },
+    });
+    findMany.mockClear();
+    await expect(
+      service.charterRoutes({
+        branchIds: ['branch-2'],
+        permissions: [],
+      } as never),
+    ).rejects.toThrow();
+    expect(findMany).not.toHaveBeenCalled();
+  });
+});

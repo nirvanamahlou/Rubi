@@ -5976,6 +5976,20 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Delivered four dependent country/city filters, bidirectional endpoint choices and display grouping relative to selected route without changing stored contract direction or export IDs. City/country IDs and labels come through public Master Data references; legacy unknown countries stay unknown. Removed old airline-specific introduction. 24 Web and 32 API tests/scoped lint passed; contracts build and API/Web typecheck/build checked before PR (stale local Prisma output regenerated without a database connection). No migration/dependencies/data changes. Bounded locks release with commit and authorized develop merge follows CI.
 
+## CHARTER-ALIAS-CITIES-1022 — PC-A — VERIFIED
+
+COMPUTER_ID=PC-A; branch codex/pc-a-charter-alias-cities-1022 from develop43e2899c. Owner requests all configured alternate destinations in charter load and develop merge. Production read-only aggregate confirms Izmir/Bodrum routes persist; live7478be1d predates merged1067 route-history reader. Reserve flight-load-grid city dropdown limits and focused interaction/model regressions, own status notes. Show every available city in scrollable dropdown without changing shared combobox or inventory. Prior1067 reservation released; no active overlap. No API/schema/dependency/runtime/deployment changes.
+
+Validation:30 targeted model/UI/search regressions, scoped ESLint and diff checks pass. Source reservation releases on publication; final exact-head quality/types/full tests/build/database gates precede merge.
+
+## CHARTER-LOAD-FILTERS-1022 — PC-A — VERIFIED
+
+COMPUTER_ID=PC-A; branch codex/pc-a-charter-load-filters-1022 from origin/develop95e74c4a. Owner requests removal of origin-country load filter, Tehran default/reset origin and only current/historical charter destinations, tests and develop merge. Reserve flight-load model/grid and their tests, bounded task/status docs. No active overlapping writer found; preserve backend scope, archived offers, route aliases, inventory and date semantics. No schema/dependency/runtime changes; the bounded read-only API extension is described below.
+
+CHARTER-LOAD-FILTERS-1022 scope extension: reserve bounded TicketPublicService charter-route history reader/controller and tests plus tours client. Existing management hides archived tickets; read-only branch/permission-scoped route projection includes archived history without re-exposing archived inventory or prices. Optional independent endpoint uses existing TicketSaleRouteV1; no contract/schema/migration changes.
+
+Validation:218 Ticket Catalog Web tests passed (one existing opt-in skip),12 API tests including history projection/permission/branch query, scoped ESLint. Final hosted full quality/types/tests/build/PostgreSQL gates precede merge. Reservations release on candidate publication; no deployment.
+
 ## CHARTER-LOAD-TODAY-DEFAULT-0930 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-charter-load-today-default-0930 from origin/develop. Reserve Ticket flight-load UI/CSS/model/tests and bounded docs. Valid dates checked by default; explicit search remains required, range starts today in Tehran and ends at latest matching not-yet-departed charter flight. Exclude departed/in-progress flights from valid mode; manual history retains both legs. Full blue selected rows and shorter charter load title. No API/schema/migration/dependency changes. Prior locks released; merge/local update authorized.
