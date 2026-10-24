@@ -127,6 +127,55 @@ export class ReservationRequestsController {
     if (!this.ticketDocuments) throw new NotFoundException();
     return this.ticketDocuments.report(query, req.actor!);
   }
+  @Get('service-report')
+  @Header('Cache-Control', 'private, no-store')
+  serviceReport(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!this.ticketDocuments) throw new NotFoundException();
+    return this.ticketDocuments.serviceReport(query, req.actor!);
+  }
+  @Get('service-report/export')
+  @Header('Cache-Control', 'private, no-store')
+  async serviceReportExport(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!this.ticketDocuments) throw new NotFoundException();
+    const { data } = await this.ticketDocuments.serviceReport(
+      query,
+      req.actor!,
+    );
+    const columns = [
+      ['contractNumber', 'شماره قرارداد'],
+      ['passengerDisplayName', 'مسافر'],
+      ['serviceKind', 'نوع خدمت'],
+      ['serviceTitle', 'خدمت'],
+      ['reportStatus', 'وضعیت خدمت'],
+      ['ticketNumber', 'شماره بلیط'],
+      ['origin', 'مبدأ'],
+      ['destination', 'مقصد'],
+      ['departureAt', 'زمان رفت'],
+      ['arrivalAt', 'زمان رسیدن'],
+      ['airline', 'ایرلاین'],
+      ['flightNumber', 'شماره پرواز'],
+      ['direction', 'رفت / برگشت'],
+      ['hotelName', 'هتل'],
+      ['checkInDate', 'ورود هتل'],
+      ['checkOutDate', 'خروج هتل'],
+    ] as const;
+    return new StreamableFile(
+      buildIssuedTicketWorkbook(
+        data.map((r) => columns.map(([k]) => String(r[k] ?? ''))),
+        columns.map(([, label]) => label),
+      ),
+      {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        disposition: 'attachment; filename="service-report.xlsx"',
+      },
+    );
+  }
   @Get('purchases')
   @Header('Cache-Control', 'private, no-store')
   async purchaseInbox(
