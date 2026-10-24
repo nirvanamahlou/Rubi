@@ -9305,3 +9305,23 @@ COMPUTER_ID=PC-A; branch codex/pc-a-ticket-airline-logo-background-1024 from lat
 ## SALES-ROOM-CONTACT-FLEXIBILITY-1024 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-sales-room-contact-flexibility-1024 from develop7329a8802. Owner explicitly requests digit-only short agency buyer landlines, temporary nonblocking hotel capacity/guest-composition checks, develop merge and production rollout. Reserve Sales Web people/form validators and API domain/service with targeted tests, bounded shared Sales capacity-policy export, policy/status notes. Producer/consumer ship together. Retain room identity/ordinal/date/service/price validation, actual passenger assignments, ticket inventory and exact manual pricing; no fabricated hotel quotes. No migration/dependency change, no data deletion. User-approved temporary exception recorded before implementation; prior source locks released and no active overlap found. Build/test exact head and encrypted-backup deployment health guards required.
+
+# CALL-EXTENSION-ALIASES-1024 — PC-C — RESERVED
+
+Owner supplies second extensions for three existing staff members. Base develop
+69d80458; branch codex/pc-c-call-extension-aliases-1024. Reserve private local
+answer-directory configuration and own handoff notes only. Existing public HR
+projection supports multiple internalContact records and private rows per person.
+No source/runtime/schema/permission/PBX changes. Preserve position/unit and all
+unrelated rows, back up before updating and verify all six destination options
+and confirmed-answer resolutions against the actual configured branch/connection.
+Real personnel names and extension assignments remain outside Git. HR is empty
+in that branch, so the existing approved bootstrap file is currently authoritative.
+
+# CALL-EXTENSION-ALIASES-1024 — PC-C — VERIFIED / SOURCE_RELEASED_ON_PUSH
+
+Private mapping updated after identical backup; all six owner-supplied extensions
+resolve to the correct people and appear once in the19-choice public directory.
+Existing shared-extension choices retained. Six directory tests pass. No source,
+schema, user grant, PBX, business-record write or runtime restart. Private personnel
+assignments remain outside Git. Details: docs/tasks/CALL-EXTENSION-ALIASES-1024.md.

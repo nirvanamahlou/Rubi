@@ -7356,3 +7356,12 @@ API/Web types, scoped lint, production builds and format/diff checks pass. All18
 existing migrations applied only to new isolated nora_ci. No operational data,
 runtime, schema, grants or PBX writes; no main/develop merge. Release manifest:
 tasks/CALL-CENTER-UNIFIED-1024.md. Scoped reservations release on publication.
+# CALL-EXTENSION-ALIASES-1024 — PC-C — LOCAL_VERIFIED
+
+Owner-supplied secondary extensions for three existing staff added to the approved
+private empty-HR bootstrap directory. Compiled public options/answer lookup verifies
+all six aliases,19 total choices and unchanged shared-extension handling. Six
+directory regressions pass. Runtime reads the file per lookup, so no restart/build
+or historical rewrite. No personnel data committed, schema/grant/PBX change or
+operational test call. See tasks/CALL-EXTENSION-ALIASES-1024.md for handoff.
+
