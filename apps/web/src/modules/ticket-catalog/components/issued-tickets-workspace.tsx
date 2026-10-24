@@ -589,7 +589,7 @@ export function ConnectedIssuedTicketsWorkspace() {
   }, [range]);
   return (
     <IssuedTicketsWorkspace
-      reportOptions={reportOptions}
+      {...(reportOptions ? { reportOptions } : {})}
       tickets={tickets}
       loading={loading}
       error={error}

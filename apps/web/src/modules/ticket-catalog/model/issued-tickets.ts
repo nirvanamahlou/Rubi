@@ -2,16 +2,16 @@ export type IssuedTicketStatus =
   'issued' | 'changed' | 'refunded' | 'voided' | 'allocated';
 
 export interface IssuedTicketReadModel {
-  direction?: string;
-  flightNumber?: string;
-  arrivalAt?: string;
-  serviceKind?: string;
-  serviceTitle?: string;
-  hotelId?: string;
-  hotelName?: string;
-  checkInDate?: string;
-  checkOutDate?: string;
-  reportStatus?: string;
+  direction?: string | undefined;
+  flightNumber?: string | undefined;
+  arrivalAt?: string | undefined;
+  serviceKind?: string | undefined;
+  serviceTitle?: string | undefined;
+  hotelId?: string | undefined;
+  hotelName?: string | undefined;
+  checkInDate?: string | undefined;
+  checkOutDate?: string | undefined;
+  reportStatus?: string | undefined;
   id: string;
   contractNumber: string;
   passengerDisplayName: string;
@@ -29,9 +29,9 @@ export interface IssuedTicketReadModel {
 }
 
 export interface IssuedTicketQuery {
-  serviceKind?: string;
-  hotelId?: string;
-  dateBasis?: string;
+  serviceKind?: string | undefined;
+  hotelId?: string | undefined;
+  dateBasis?: string | undefined;
   search: string;
   contractNumber: string;
   passenger: string;
