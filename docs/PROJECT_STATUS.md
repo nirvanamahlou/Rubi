@@ -1,3 +1,7 @@
+## HOTEL-CHECKIN-DEPARTURE-DAY-1024 — PC-A
+
+Automatic flight-linked hotel check-in uses the outbound Tehran departure day, including floating flights before detail completion and overnight arrivals. Package-start hydration and legacy next-day draft flags cannot override it; explicit manual dates, checkout and hotel-only/package-only behavior remain. Published quote matching still rejects mismatched stay dates. 38 targeted model/UI tests pass; affected types/lint/build and all exact-head hosted checks gate owner-authorized develop merge. No API/schema/migration/dependency or runtime/data change; no production rollout requested.
+
 ## CONTRACT-OWNER-ACTION-CONTEXT-1024 — PC-A
 
 Follow-up before owner-actions rollout: output/payment/amendment UI uses the current actor and actual contract owner/branch, matching the already-merged backend predicate. Creator-only users do not get another owner’s amendment entry; native Finance/read-all users retain their existing price-only form on other owners’ contracts. No backend, grants, schema, migration or dependency change. Focused UI tests, types/lint/build and exact-head hosted gates precede owner-authorized merge and final server release.
