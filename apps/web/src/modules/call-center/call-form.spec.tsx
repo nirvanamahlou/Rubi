@@ -25,6 +25,39 @@ vi.mock('@/components/ui/native-search-select', () => ({
   },
 }));
 describe('existing call form completion', () => {
+  it.each([
+    ['INBOUND', 'ورودی ـ تماس به شرکت'],
+    ['OUTBOUND', 'خروجی ـ تماس از شرکت'],
+  ] as const)(
+    'locks the saved %s direction when editing a call',
+    (direction, label) => {
+      const call = {
+        ...previewCalls()[0]!,
+        completionToken: 'a'.repeat(64),
+        direction,
+      };
+      const html = renderToStaticMarkup(
+        <CallForm
+          branchId="test"
+          event={call}
+          previous={{
+            ...call,
+            direction: direction === 'INBOUND' ? 'OUTBOUND' : 'INBOUND',
+          }}
+          onSave={async () => {}}
+          onClose={() => {}}
+          busy={false}
+        />,
+      );
+      expect(html).toContain(
+        `aria-label="نوع تماس" readOnly="" value="${label}"`,
+      );
+      expect(html).toContain(
+        `type="hidden" name="direction" value="${direction}"`,
+      );
+      expect(html).not.toMatch(/<select[^>]*name="direction"/);
+    },
+  );
   it('restores saved business fields while retaining the same technical identity', () => {
     const call = {
       ...previewCalls()[0]!,
@@ -77,6 +110,7 @@ describe('existing call form completion', () => {
     expect(html).not.toContain('Old private note');
     expect(html).not.toContain('value="Old subject"');
     expect(html).not.toContain('value="NO_ANSWER" selected=""');
+    expect(html).toMatch(/<select[^>]*name="direction"/);
   });
 });
 
