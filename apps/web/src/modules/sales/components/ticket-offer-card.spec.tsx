@@ -23,6 +23,20 @@ const offer: TicketOfferV1 = {
   status: 'ACTIVE',
 };
 describe('readable sales ticket card', () => {
+  it('allows an unpriced contract ticket while still enforcing seat capacity', () => {
+    const render = (requiredSeats: number) =>
+      renderToStaticMarkup(
+        <TicketOfferCard
+          offer={offer}
+          requiredSeats={requiredSeats}
+          selected={false}
+          requireStandaloneFare={false}
+          onSelect={vi.fn()}
+        />,
+      );
+    expect(render(12)).not.toContain('disabled=""');
+    expect(render(13)).toContain('disabled=""');
+  });
   it.each([
     [2, 12],
     [12, 2],

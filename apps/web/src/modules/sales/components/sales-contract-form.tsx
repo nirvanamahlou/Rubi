@@ -956,11 +956,7 @@ export function SalesContractForm() {
                   exactDay={flightRange.from}
                   allowedOfferIds={flightDateOutboundIds}
                   requiredSeats={salesFlightSeats(state, 'OUTBOUND')}
-                  requireStandaloneFare={
-                    !state.tour &&
-                    !state.serviceKinds.includes('HOTEL') &&
-                    !state.serviceKinds.includes('TOUR')
-                  }
+                  requireStandaloneFare={false}
                   acceptAnyRoundTripFare={flightDirections.includes('RETURN')}
                   selectedId={state.ticket.outboundOfferId}
                   onSelect={(offer) => {
@@ -971,8 +967,7 @@ export function SalesContractForm() {
                             offer,
                             returnCalendar.offers,
                             salesFlightSeats(state, 'RETURN'),
-                            !state.serviceKinds.includes('HOTEL') &&
-                              !state.serviceKinds.includes('TOUR'),
+                            false,
                           )
                         : undefined;
                     if (paired) {
@@ -1074,11 +1069,7 @@ export function SalesContractForm() {
                     }}
                     exactDay={flightRange.to}
                     requiredSeats={salesFlightSeats(state, 'RETURN')}
-                    requireStandaloneFare={
-                      !state.tour &&
-                      !state.serviceKinds.includes('HOTEL') &&
-                      !state.serviceKinds.includes('TOUR')
-                    }
+                    requireStandaloneFare={false}
                     {...(state.outboundOffer
                       ? { roundTripOutbound: state.outboundOffer }
                       : {})}
@@ -1599,11 +1590,7 @@ export function SalesContractForm() {
                   salesFlightSeats(state, d),
                 ),
               )}
-              requireFare={
-                !state.tour &&
-                !state.serviceKinds.includes('HOTEL') &&
-                !state.serviceKinds.includes('TOUR')
-              }
+              requireFare={false}
               value={
                 flightRangeRoute === flightRouteKey
                   ? flightRange
