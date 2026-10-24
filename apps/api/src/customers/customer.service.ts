@@ -1,5 +1,6 @@
 import {
   canViewRoute,
+  hasSalesContractSelfService,
   CUSTOMER_EDITABLE_FIELDS,
   allowAccessControl,
   hotelAgeOn,
@@ -744,6 +745,37 @@ export class CustomerService {
         message: 'مشتری یافت نشد.',
       });
     return { data: toCustomerDetail(row, false) };
+  }
+
+  /** Sales output calls this only for passengers of an already-authorized contract. */
+  async salesOutputIdentity(
+    id: string,
+    actor: AuthenticatedActor,
+    traceId?: string,
+  ) {
+    if (
+      !actor.permissions.includes('sales.export') &&
+      !hasSalesContractSelfService(actor.permissions)
+    )
+      throw new ForbiddenException();
+    const row = await this.repository.find(id, actor.branchIds);
+    if (!row || row.kind !== 'PERSON')
+      throw new NotFoundException('مشتری یافت نشد.');
+    await this.repository.auditSensitiveRead(
+      row.id,
+      actor.userId,
+      row.ownerBranchId,
+      'customer-verification',
+      traceId,
+    );
+    return {
+      displayName: row.displayName,
+      passportName:
+        row.passportFirstName?.trim() && row.passportLastName?.trim()
+          ? `${row.passportFirstName.trim()} ${row.passportLastName.trim()}`
+          : null,
+      birthDate: row.birthDate?.toISOString().slice(0, 10) ?? null,
+    };
   }
 
   /** Request-scoped Reservations output; never exposes raw DOB or document numbers. */

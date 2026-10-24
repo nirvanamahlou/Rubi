@@ -173,6 +173,38 @@ describe('canonical Sales amendment', () => {
     await options.reserve({});
     expect(tickets.amend).toHaveBeenCalledWith({}, [], 'branch', id, 1, {});
   });
+  it('updates gross/deduction metadata without resetting issued execution or payment evidence', async () => {
+    const { service, repo } = setup();
+    const metadata = {
+      ...input.services[0]!.metadata,
+      passengerTotalPricesV1: JSON.stringify({
+        [person]: [{ amount: '120', currencyCode: 'USD' }],
+      }),
+      passengerDeductionsV1: JSON.stringify({
+        [person]: {
+          commission: { amount: '5', currencyCode: 'USD' },
+          discount: { amount: '10', currencyCode: 'USD' },
+        },
+      }),
+    };
+    const next = {
+      ...input,
+      services: [{ ...input.services[0]!, metadata }],
+      passengers: input.passengers.map((p) => ({
+        ...p,
+        agreedPrices: [{ amount: '105', currencyCode: 'USD' }],
+      })),
+      priceComponents: [{ ...input.priceComponents[0]!, amount: '105' }],
+    };
+    await service.update(id, next, actor, undefined, next.passengerCategories);
+    expect(
+      (repo.updateDraft.mock.calls[0]?.[5] as { snapshot: unknown }).snapshot,
+    ).toBeUndefined();
+    const saved = repo.updateDraft.mock
+      .calls[0]?.[1] as SalesContractAmendmentV1;
+    expect(saved.services[0]!.metadata).toEqual(metadata);
+    expect(saved).not.toHaveProperty('payments');
+  });
   it('changes exact sale amounts while retaining payment evidence and operational state', async () => {
     const { service, repo } = setup();
     const next = {

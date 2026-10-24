@@ -119,6 +119,7 @@ export function ReservationPassengers({
       );
       setLoading(true);
       setRevision((value) => value + 1);
+      window.dispatchEvent(new Event('reservation-workflow-changed'));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'ذخیره انجام نشد.');
     } finally {

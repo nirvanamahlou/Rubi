@@ -111,7 +111,7 @@ export function TravelDocument({
           '/pdf?' +
           new URLSearchParams({ ...(voucher ? { kind: 'voucher' } : {}) })
       : undefined,
-    JSON.stringify(state),
+    JSON.stringify([state, intake.snapshot]),
   );
   const sheet = (
     <ReservationFormSheet

@@ -36,7 +36,7 @@ import {
 } from '../passenger-files/client';
 
 export function ReservationTickets({
-  request,
+  request: suppliedRequest,
   branding = null,
   salesContractId,
   onClose,
@@ -46,6 +46,19 @@ export function ReservationTickets({
   salesContractId?: string;
   onClose: () => void;
 }) {
+  const [currentRequest, setCurrentRequest] =
+    useState<ReservationIntakeV1 | null>(null);
+  const [revision, setRevision] = useState(0);
+  const request =
+    currentRequest?.id === suppliedRequest.id
+      ? currentRequest
+      : suppliedRequest;
+  useEffect(() => {
+    const refresh = () => setRevision((v) => v + 1);
+    window.addEventListener('reservation-workflow-changed', refresh);
+    return () =>
+      window.removeEventListener('reservation-workflow-changed', refresh);
+  }, []);
   const { logo, error: logoError } = useTravelLogo(branding);
   const canEdit =
     useAccessPermissions()?.includes('reservations.documents.manage') ?? false;
@@ -166,13 +179,16 @@ export function ReservationTickets({
   const [warning, setWarning] = useState('');
   useEffect(() => {
     let active = true;
-    void travelRequest<{ data: { workflow: TravelWorkflowStateV1 } }>(
+    void travelRequest<{
+      data: ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
+    }>(
       salesContractId
         ? `sales/contracts/${salesContractId}/travel-documents`
         : `reservations/requests/${request.id}/workflow`,
     )
       .then(({ data }) => {
         if (!active) return;
+        if (data.snapshot) setCurrentRequest(data);
         setFlightNumbers(data.workflow.ticketFlightNumbers ?? {});
         setFlightNumbersReady(flightContextKey);
       })
@@ -187,7 +203,13 @@ export function ReservationTickets({
     return () => {
       active = false;
     };
-  }, [request.id, salesContractId, flightContextKey]);
+  }, [
+    request.id,
+    salesContractId,
+    flightContextKey,
+    revision,
+    suppliedRequest,
+  ]);
   const [printAll, setPrintAll] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [printDocument, setPrintDocument] = useState('');
@@ -202,7 +224,7 @@ export function ReservationTickets({
             ...(salesContractId ? { salesContractId } : {}),
           })
       : undefined,
-    JSON.stringify([request.contractVersion, documents, flightNumbers]),
+    JSON.stringify([request.snapshot, documents, flightNumbers]),
   );
   const documentUrl = (passengerId: string) =>
     shared?.documents?.find((item) => item.passengerId === passengerId)?.url;

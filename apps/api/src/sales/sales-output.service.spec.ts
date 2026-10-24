@@ -34,6 +34,13 @@ function setup() {
   const sales = { detail: vi.fn().mockResolvedValue({ data: contract }) };
   const repo = { recordOutputPreview: vi.fn().mockResolvedValue({}) };
   const customers = {
+    salesOutputIdentity: vi
+      .fn()
+      .mockResolvedValue({
+        displayName: null,
+        passportName: null,
+        birthDate: null,
+      }),
     maskedDetail: vi
       .fn()
       .mockResolvedValue({ data: { kind: 'person', addresses: [] } }),
@@ -194,18 +201,17 @@ it('uses passport Latin names for contract output without mutating the saved con
       displayNameSnapshot: 'Wrong display name',
     },
   ] as never;
-  t.customers.maskedDetail.mockImplementation(
-    async (id: string) =>
-      ({
-        data:
-          id === 'passenger'
-            ? { passportFirstName: 'PASSPORT', passportLastName: 'SURNAME' }
-            : { kind: 'person', addresses: [] },
-      }) as never,
-  );
+  t.customers.salesOutputIdentity.mockResolvedValue({
+    displayName: 'CURRENT NAME',
+    passportName: 'PASSPORT SURNAME',
+    birthDate: '1991-02-03',
+  } as never);
   const result = await t.service.prepare('contract', actor);
   expect(result.data.contract.passengersDetail[0]?.displayNameSnapshot).toBe(
     'PASSPORT SURNAME',
+  );
+  expect(result.data.contract.passengersDetail[0]?.birthDate).toBe(
+    '1991-02-03',
   );
   expect(t.contract.passengersDetail[0]?.displayNameSnapshot).toBe(
     'Wrong display name',

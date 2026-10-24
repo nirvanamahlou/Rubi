@@ -418,10 +418,15 @@ export class ReservationRequestsController {
   async workflowDetail(
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,
+    @Query('historical') historical?: string,
   ) {
     if (!req.actor.permissions.includes('reservations.read'))
       throw new ForbiddenException();
-    const intake = await this.workflow.detail(id, req.actor.branchIds);
+    const intake = await this.workflow.detail(
+      id,
+      req.actor.branchIds,
+      historical !== '1',
+    );
     return {
       data: {
         ...intake,

@@ -509,6 +509,9 @@ export interface ReservationTableSummaryV1 {
   debtForeign: string | null;
 }
 export interface TravelWorkflowStateV1 {
+  /** Server-owned base for rebasing current output; never accepted in a workflow command. */
+  outputSourceSnapshot?: SalesReservationRequestV1;
+
   tableFlags?: Partial<Record<ReservationTableFlagKey, ReservationTableFlagV1>>;
   version: number;
   supplierStatus: 'NEW' | 'REQUESTED' | 'CONFIRMED' | 'CANCELLED';

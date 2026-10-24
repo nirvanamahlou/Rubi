@@ -1,3 +1,4 @@
+import { refreshWorkflowExecution } from './workflow-current-execution';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
 import {
@@ -45,7 +46,11 @@ export class TravelWorkflowService {
     @Inject(TicketPublicService)
     private readonly tickets?: TicketPublicService,
   ) {}
-  async detail(id: string, branchIds: readonly string[]) {
+  async detail(
+    id: string,
+    branchIds: readonly string[],
+    currentOutput = false,
+  ) {
     if (!/^[0-9a-f-]{36}$/i.test(id)) throw new NotFoundException();
     const row = await this.database.client.reservationIntake.findFirst({
       where: { id, branchId: { in: [...branchIds] } },
@@ -59,7 +64,14 @@ export class TravelWorkflowService {
     const workflow = row.workflowRevisions[0]?.state as unknown as
       TravelWorkflowStateV1 | undefined;
     const arrangement = row.arrangements[0];
-    const saved = row.snapshot as unknown as SalesReservationRequestV1;
+    const original = row.snapshot as unknown as SalesReservationRequestV1;
+    const saved = currentOutput
+      ? await this.amendments.currentExecution(
+          this.database.client,
+          original,
+          branchIds,
+        )
+      : original;
     const snapshot = this.tickets?.currentSelections
       ? {
           ...saved,
@@ -76,16 +88,18 @@ export class TravelWorkflowService {
         source: doc.source as 'AUTO' | 'MANUAL',
         issuedAt: doc.issuedAt.toISOString(),
       })),
-      contractEditVersion: await this.amendments.versionFor(
-        this.database.client,
-        row.contractId,
-        branchIds,
-      ),
+      contractEditVersion: currentOutput
+        ? snapshot.contractVersion
+        : await this.amendments.versionFor(
+            this.database.client,
+            row.contractId,
+            branchIds,
+          ),
       salesOwnerUserId: row.salesOwnerUserId,
       id: row.id,
       requestId: row.requestId,
       contractId: row.contractId,
-      contractVersion: row.contractVersion,
+      contractVersion: snapshot.contractVersion,
       branchId: row.branchId,
       status: 'QUEUED' as const,
       receivedAt: row.receivedAt.toISOString(),
@@ -109,7 +123,13 @@ export class TravelWorkflowService {
             updatedByUserId: arrangement.updatedByUserId,
           }
         : null,
-      workflow: workflow ?? initialTravelWorkflow(),
+      workflow: currentOutput
+        ? refreshWorkflowExecution(
+            workflow ?? initialTravelWorkflow(),
+            original,
+            snapshot,
+          )
+        : (workflow ?? initialTravelWorkflow()),
     };
   }
   async contractVersions(id: string, branchIds: readonly string[]) {
@@ -140,7 +160,7 @@ export class TravelWorkflowService {
     });
     if (!row)
       throw new NotFoundException('درخواست هنوز به رزرواسیون نرسیده است.');
-    return this.detail(row.id, branchIds);
+    return this.detail(row.id, branchIds, true);
   }
   async update(
     id: string,
@@ -149,7 +169,15 @@ export class TravelWorkflowService {
   ) {
     if (!actor.permissions.includes('reservations.documents.manage'))
       throw new ForbiddenException('مجوز عملیات مدارک وجود ندارد.');
-    const intake = await this.detail(id, actor.branchIds);
+    const currentOutput = [
+      'SUPPLIER_FORM_SETTINGS',
+      'VOUCHER_SETTINGS',
+      'REQUEST_SUPPLIER',
+      'CONFIRM_SUPPLIER',
+      'ISSUE_VOUCHER',
+      'TICKET_FLIGHT_NUMBERS',
+    ].includes(command?.action);
+    const intake = await this.detail(id, actor.branchIds, currentOutput);
     let branding: TravelWorkflowStateV1['branding'] = null;
     if (command?.action === 'BRANDING') {
       if (command.branding?.kind === 'OWN') {
@@ -206,7 +234,7 @@ export class TravelWorkflowService {
       let next: TravelWorkflowStateV1;
       try {
         next = transitionTravelWorkflow(
-          state,
+          currentOutput ? intake.workflow : state,
           command,
           intake.snapshot.passengerIds,
           command.action === 'TICKET_FLIGHT_NUMBERS'

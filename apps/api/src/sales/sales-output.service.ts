@@ -73,17 +73,18 @@ export class SalesOutputService {
     );
     const passengerNames = await Promise.all(
       (contract.passengersDetail ?? []).map(async (passenger) => {
-        const { data: person } = await this.customers.maskedDetail(
+        const person = await this.customers.salesOutputIdentity(
           passenger.customerId,
           actor,
+          traceId,
         );
-        const latin =
-          person.passportFirstName?.trim() && person.passportLastName?.trim()
-            ? `${person.passportFirstName.trim()} ${person.passportLastName.trim()}`
-            : '';
         return {
           ...passenger,
-          displayNameSnapshot: latin || passenger.displayNameSnapshot,
+          displayNameSnapshot:
+            person.passportName ||
+            person.displayName ||
+            passenger.displayNameSnapshot,
+          birthDate: person.birthDate ?? passenger.birthDate,
         };
       }),
     );

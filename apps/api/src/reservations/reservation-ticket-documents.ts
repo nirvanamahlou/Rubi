@@ -237,7 +237,7 @@ export class ReservationTicketDocumentsService {
   async choices(id: string, actor: AuthenticatedActor) {
     if (!actor.permissions.includes('reservations.read'))
       throw new ForbiddenException();
-    const intake = await this.workflow.detail(id, actor.branchIds);
+    const intake = await this.workflow.detail(id, actor.branchIds, true);
     if (intake.workflow.supplierStatus === 'CANCELLED')
       throw new BadRequestException('درخواست ابطال شده است.');
     const flights = salesContractFlights(
