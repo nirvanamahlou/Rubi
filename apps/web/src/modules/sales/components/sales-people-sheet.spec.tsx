@@ -16,6 +16,28 @@ vi.mock('./sales-date-picker', () => ({
 }));
 
 describe('Sales uses the Customers entry spreadsheet', () => {
+  it('omits acquaintance selection and its loading messages for agency contracts', () => {
+    const html = renderToStaticMarkup(
+      <SalesPeopleSheet
+        state={{
+          ...emptySalesForm,
+          customerKind: 'organization',
+          customerId: 'agency',
+          customerName: 'Synthetic Agency',
+        }}
+        draft={null}
+        onDraftChange={vi.fn()}
+        onConfirmed={vi.fn()}
+        onBusyChange={vi.fn()}
+        onAddInfant={vi.fn()}
+        onTravelDateChange={vi.fn()}
+      />,
+    );
+    expect(html).not.toContain('نحوه آشنایی');
+    expect(html).not.toContain('نحوه‌های آشنایی');
+    expect(html).toContain('Synthetic Agency');
+    expect(html).toContain('id="sales-entry-p0-first-name"');
+  });
   it('renders every requested passenger row immediately with the same columns', () => {
     const html = renderToStaticMarkup(
       <SalesPeopleSheet
@@ -274,4 +296,23 @@ it('shows the city tour, guide and existing visa toggles together above the pass
   expect(
     toggles.filter((input) => input.includes('checked')).length,
   ).toBeGreaterThanOrEqual(3);
+});
+
+it('legacy contracts show customer controls without passenger spreadsheet or composition', () => {
+  const html = renderToStaticMarkup(
+    <SalesPeopleSheet
+      state={{ ...emptySalesForm, legacyContract: true }}
+      draft={null}
+      onDraftChange={vi.fn()}
+      onConfirmed={vi.fn()}
+      onBusyChange={vi.fn()}
+      onAddInfant={vi.fn()}
+      onTravelDateChange={vi.fn()}
+    />,
+  );
+  expect(html).toContain('مشتری قرارداد قدیمی');
+  expect(html).not.toContain('<table');
+  expect(html).not.toContain('مشتری طرف حساب همان مسافر اول است');
+  expect(html).not.toContain('ردیف مسافر');
+  expect(html).toContain('نام مشتری');
 });

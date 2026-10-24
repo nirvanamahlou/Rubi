@@ -127,6 +127,7 @@ export const salesAdditionalServices = {
 } as const;
 
 export interface SalesFormState {
+  legacyContract?: boolean;
   additionalServices?: (keyof typeof salesAdditionalServices)[];
   roomDrivenGuests?: boolean;
   flightOnlyPassengers?: { key: string; age: number }[];
@@ -1134,12 +1135,29 @@ export function salesHotelDate(
   return shifted.toISOString().slice(0, 10);
 }
 
+export function salesOutboundHotelCheckIn(state: SalesFormState): string {
+  if (!salesDirections(state, 'FLIGHT').includes('OUTBOUND')) return '';
+  const departureAt = salesFlightSelection(state, 'OUTBOUND')?.departureAt;
+  return salesHotelDate(
+    departureAt ||
+      (state.departureDate
+        ? `${state.departureDate}T00:00:00+03:30`
+        : undefined),
+    0,
+  );
+}
+
 export function withSalesHotelDates(
   previous: SalesFormState,
   next: SalesFormState,
 ): SalesFormState {
-  const suggestion = (state: SalesFormState, field: 'checkIn' | 'checkOut') =>
-    state.tour && state.packageSaleAvailable
+  const suggestion = (state: SalesFormState, field: 'checkIn' | 'checkOut') => {
+    // Flight-linked automatic check-in follows the outbound day, including
+    // overnight flights. A package start or a legacy next-day draft flag
+    // must not silently add a night; explicit manual dates remain below.
+    const flightCheckIn = salesOutboundHotelCheckIn(state);
+    if (field === 'checkIn' && flightCheckIn) return flightCheckIn;
+    return state.tour && state.packageSaleAvailable
       ? field === 'checkIn'
         ? salesHotelDate(
             state.tour.startsOn + 'T00:00:00+03:30',
@@ -1160,6 +1178,7 @@ export function withSalesHotelDates(
             : undefined,
           field === 'checkIn' ? (state.hotelArrivesNextDay ? 1 : 0) : -1,
         );
+  };
   const hotel = { ...next.hotel };
   for (const field of ['checkIn', 'checkOut'] as const) {
     const manualKey = field === 'checkIn' ? 'checkInManual' : 'checkOutManual';
@@ -1278,6 +1297,51 @@ export function salesTravelDate(state: SalesFormState): string {
 export function salesPayload(
   state: SalesFormState,
 ): SalesContractCreateRequest {
+  if (state.legacyContract) {
+    const totalState = {
+      ...state,
+      passengerTotalPricing: false,
+      automaticComponentPricing: false,
+      packageSaleQuote: undefined,
+      passengerDeductions: {},
+    };
+    return {
+      customerId: state.customerId,
+      payerCustomerId: state.customerId,
+      ...(state.buyerContact ? { buyerContact: state.buyerContact } : {}),
+      tripType: 'ONE_WAY',
+      originId: state.originId,
+      destinationId: state.destinationId,
+      departureDate: state.departureDate,
+      services: [
+        {
+          clientKey: 'legacy-contract',
+          kind: 'OTHER',
+          titleSnapshot: 'قرارداد قدیمی',
+          metadata: {
+            legacyContractV1: true,
+            reservationNote: state.reservationNote || '',
+            contractNotice: state.contractNotice || '',
+          },
+        },
+      ],
+      passengers: [],
+      ticketSelections: [],
+      hotelSelection: null,
+      priceComponents: salesChequeComponents(
+        contractSaleComponents(totalState),
+        state.paymentTerms,
+      ),
+      payments: state.payments.map((p) => ({
+        ...p,
+        dueAt: new Date(p.dueAt).toISOString(),
+      })),
+      ...(state.paymentTerms !== undefined
+        ? { paymentTerms: state.paymentTerms }
+        : {}),
+      pricingNotes: state.pricingNotes || null,
+    };
+  }
   state = syncHotelChildSelections(state, salesTravelDate(state));
   state = withFirstPassengerCustomer(state);
   const roomPartyError = salesRoomPartyError(state);

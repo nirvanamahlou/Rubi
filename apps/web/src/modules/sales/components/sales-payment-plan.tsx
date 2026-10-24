@@ -42,7 +42,13 @@ export function SalesPaymentPlan({
   disabled = false,
   allowChecks = true,
   onChange,
+  receiptFiles,
+  onReceiptChange,
+  onRemove,
 }: {
+  receiptFiles?: readonly (File | null)[];
+  onReceiptChange?: (index: number, file: File | null) => void;
+  onRemove?: (index: number) => void;
   payments: SalesPaymentInput[];
   currencies: readonly SalesCurrency[];
   banks: readonly MasterDataRecord[];
@@ -184,6 +190,7 @@ export function SalesPaymentPlan({
                         onChange(
                           payments.filter((_, position) => position !== index),
                         );
+                        onRemove?.(index);
                         setRemoving(null);
                       }}
                     >
@@ -250,6 +257,22 @@ export function SalesPaymentPlan({
                     }
                   />
                 </FormField>
+                {onReceiptChange && (
+                  <FormField label="رسید پرداخت (اختیاری)">
+                    <input
+                      key={`${index}-${receiptFiles?.[index]?.name ?? ''}-${receiptFiles?.[index]?.lastModified ?? ''}`}
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/png"
+                      disabled={disabled}
+                      onChange={(event) =>
+                        onReceiptChange(index, event.target.files?.[0] ?? null)
+                      }
+                    />
+                    {receiptFiles?.[index] && (
+                      <p>{receiptFiles[index]!.name}</p>
+                    )}
+                  </FormField>
+                )}
                 <p className="mt-2 text-xs text-muted-foreground">
                   پس از ثبت قرارداد، از «پرداخت‌ها و اقساط» می‌توانید مدرک هر
                   پرداخت را بارگذاری کنید.

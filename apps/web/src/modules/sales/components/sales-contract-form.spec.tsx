@@ -529,3 +529,30 @@ it.each([
     }
   },
 );
+
+it('legacy flow keeps travel context and enables its next step without passenger counts or table', () => {
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    legacyContract: true,
+    customerId: 'buyer',
+    customerName: 'Synthetic Buyer',
+    originId: 'origin',
+    destinationId: 'destination',
+    departureDate: '2026-10-01',
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    expect(html).toContain('قرارداد قدیمی');
+    expect(html).toContain('مسیر سفر');
+    expect(html).toContain('تاریخ سفر');
+    expect(html).not.toContain('تعداد مسافران');
+    expect(html).not.toContain('<table');
+    const next = [...html.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)].find(
+      (match) => match[0].includes('تأیید مسیر و خدمات'),
+    )?.[0];
+    expect(next).toBeDefined();
+    expect(next).not.toMatch(/ disabled(?:=|>|\s)/);
+  } finally {
+    fixture.ticketDraft = null;
+  }
+});

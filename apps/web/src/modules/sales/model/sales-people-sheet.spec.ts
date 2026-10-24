@@ -785,10 +785,11 @@ describe('fixed Sales people-entry slots', () => {
     );
     expect(result.patch.hotel.guestCustomerIds).toHaveLength(4);
   });
-  it('preserves an organization payer independently from passengers', async () => {
+  it('preserves an organization payer and ignores its hidden contract acquaintance choice', async () => {
     const draft = {
       ...filled(),
       mode: 'organization' as const,
+      acquaintanceMethodId: 'stale-personal-selection',
       organization: {
         id: 'agency-customer',
         displayName: 'Synthetic Agency',
@@ -804,6 +805,11 @@ describe('fixed Sales people-entry slots', () => {
     const result = await saveSalesPeopleDraft(state, draft, vi.fn(), api);
     expect(result.patch.customerId).toBe('agency-customer');
     expect(result.patch.firstPassengerIsCustomer).toBe(false);
+    expect(
+      api.create.mock.calls.every(
+        ([input]) => input.acquaintanceMethodId === undefined,
+      ),
+    ).toBe(true);
     expect(
       api.create.mock.calls.every(
         ([input]) => input.roles.join() === 'passenger',
@@ -1328,3 +1334,37 @@ it.each(['1', '021', '1234567', '+123'])(
     expect(() => validateSalesPeopleDraft(state, draft)).not.toThrow();
   },
 );
+
+it('saves a legacy customer without creating a passenger or requiring date of birth', async () => {
+  const legacyState = { ...state, legacyContract: true };
+  const draft = initialSalesPeopleDraft(legacyState);
+  draft.buyerContact = {
+    name: 'Synthetic Buyer',
+    phone: '09120000000',
+    address: 'Synthetic address',
+    postalCode: '',
+  };
+  draft.rows.primary = {
+    values: {
+      ...emptyPeopleValues(),
+      firstName: 'Synthetic',
+      lastName: 'Buyer',
+      phone: '09120000000',
+    },
+  };
+  const create = vi.fn(async (input: CustomerMutationRequest) => {
+    expect(input.roles).toEqual(['customer']);
+    return { data: detail('buyer', { birthDate: null }) };
+  });
+  const result = await saveSalesPeopleDraft(legacyState, draft, vi.fn(), {
+    create,
+    addContact: vi.fn(async () => ({
+      data: detail('buyer', { birthDate: null }),
+    })),
+  } as never);
+  expect(create).toHaveBeenCalledTimes(1);
+  expect(create.mock.calls[0]?.[0]).toMatchObject({ roles: ['customer'] });
+  expect(result.patch.customerId).toBe('buyer');
+  expect(result.patch.passengers).toEqual([]);
+  expect(passengerSlotKeys(legacyState)).toEqual([]);
+});

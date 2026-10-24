@@ -4063,5 +4063,13 @@
   "دریافت مجوز انجام نشد.": "Unable to retrieve the authorization.",
   "مدیر با دلیل، تأییدکنندهٔ دوم و تاریخ انقضا، یا مجوز رزرواسیون با دلیل.": "Manager exception with a reason, second approver and expiry, or Reservations authorization with a reason.",
   "مجوز تحویل مدارک": "Document delivery authorization",
-  "مسیرهای مجاز: تأیید دریافت مشتری، تسویه کامل قرارداد، یا استثنای مدیر با دلیل، تأییدکنندهٔ دوم و تاریخ انقضا، یا مجوز رزرواسیون با دلیل.": "Allowed pathways: confirmed customer receipt, full settlement, manager exception with reason, second approver and expiry, or Reservations authorization with a reason."
+  "مسیرهای مجاز: تأیید دریافت مشتری، تسویه کامل قرارداد، یا استثنای مدیر با دلیل، تأییدکنندهٔ دوم و تاریخ انقضا، یا مجوز رزرواسیون با دلیل.": "Allowed pathways: confirmed customer receipt, full settlement, manager exception with reason, second approver and expiry, or Reservations authorization with a reason.",
+  "قرارداد قدیمی": "Legacy contract",
+  "تاریخ قرارداد قدیمی": "Legacy contract date",
+  "مشتری قرارداد قدیمی": "Legacy contract customer",
+  "اطلاعات مشتری را تأیید کنید.": "Confirm the customer details.",
+  "ساختار قرارداد قدیمی معتبر نیست.": "The legacy contract structure is invalid.",
+  "رسید پرداخت (اختیاری)": "Payment receipt (optional)",
+  "قرارداد ثبت شد؛ رسیدهای پرداخت را بررسی کنید.": "The contract was saved; check the payment receipts.",
+  "ثبت مدرک پرداخت ناموفق بود.": "The payment receipt could not be saved."
 }
