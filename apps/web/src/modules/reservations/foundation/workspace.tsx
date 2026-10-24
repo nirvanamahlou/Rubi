@@ -727,7 +727,15 @@ export function ReservationOperationsWorkspace({
                     <thead>
                       <tr>
                         {reservationColumns.map((column) => (
-                          <th key={column} scope="col">
+                          <th
+                            key={column}
+                            scope="col"
+                            data-room-category={
+                              ['SGL', 'DBL', 'EXT', 'FAM/TPL'].includes(
+                                column,
+                              ) || undefined
+                            }
+                          >
                             {column}
                           </th>
                         ))}
@@ -760,6 +768,9 @@ export function ReservationOperationsWorkspace({
                           {reservationCells(row).map((value, index) => (
                             <td
                               key={reservationColumns[index]}
+                              data-room-category={
+                                (index >= 5 && index <= 8) || undefined
+                              }
                               data-has-note={index === 1 && !!row.hasNotes}
                               title={
                                 index === 1 && row.hasNotes
@@ -786,10 +797,10 @@ export function ReservationOperationsWorkspace({
                                     </small>
                                   ) : null}
                                 </button>
-                              ) : index === 9 || index === 10 ? (
+                              ) : index === 10 || index === 11 ? (
                                 <HotelTableAction
                                   row={row}
-                                  confirmation={index === 10}
+                                  confirmation={index === 11}
                                   canManage={access.permissions.includes(
                                     'reservations.documents.manage',
                                   )}
@@ -804,10 +815,10 @@ export function ReservationOperationsWorkspace({
                                     'reservations.documents.manage',
                                   )}
                                 />
-                              ) : index === 11 || index === 44 ? (
+                              ) : index === 12 || index === 45 ? (
                                 <ContractTableAction
                                   row={row}
-                                  cancel={index === 44}
+                                  cancel={index === 45}
                                   access={access}
                                 />
                               ) : (

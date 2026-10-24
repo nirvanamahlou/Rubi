@@ -93,6 +93,7 @@ export interface RequestView {
   singleRooms?: number | undefined;
   doubleRooms?: number | undefined;
   extraBeds?: number | undefined;
+  familyTripleRooms?: number | undefined;
   hotelRequested?: boolean | undefined;
   voucherReady?: boolean | undefined;
   hotelConfirmed?: boolean | undefined;

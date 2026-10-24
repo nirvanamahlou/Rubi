@@ -1,4 +1,4 @@
-import { salesHotelRoomSummary } from '@nora/contracts';
+import { reservationRoomCategoryCounts } from './room-category-counts';
 import { z } from 'zod';
 import { voucherActionAvailable } from '../model/voucher-readiness';
 import type { LoginResponse } from '@nora/contracts';
@@ -98,6 +98,9 @@ const snapshotSchema = z.object({
           z.object({
             adults: z.number().int().positive(),
             childAges: z.array(z.number().int().min(0).max(14)),
+            roomCategory: z
+              .enum(['SINGLE', 'DOUBLE', 'DOUBLE_EXTRA', 'TRIPLE', 'FAMILY'])
+              .optional(),
           }),
         )
         .max(50)
@@ -217,7 +220,7 @@ export function decodeIntake(
       seen.add(row.id);
       const snapshot = row.snapshot;
       const roomSummary = snapshot.hotelSelection?.rooms?.length
-        ? salesHotelRoomSummary(snapshot.hotelSelection.rooms)
+        ? reservationRoomCategoryCounts(snapshot.hotelSelection.rooms)
         : undefined;
       const knownKinds = [
         'FLIGHT',
@@ -359,6 +362,7 @@ export function decodeIntake(
           roomSummary?.extraBedCount ??
           row.arrangement?.extraBedCount ??
           snapshot.hotelSelection?.extraBedCount,
+        familyTripleRooms: roomSummary?.familyTripleRoomCount,
         hotelRequested: ['REQUESTED', 'CONFIRMED'].includes(
           row.workflow?.supplierStatus ?? '',
         ),

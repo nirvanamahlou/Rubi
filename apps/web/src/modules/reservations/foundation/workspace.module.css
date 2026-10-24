@@ -573,10 +573,17 @@
   gap: 12px;
   margin: 12px 0;
 }
-.requestTable td:nth-child(n + 15):nth-child(-n + 19) {
+.requestTable td:nth-child(n + 16):nth-child(-n + 20) {
   max-width: 230px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.requestTable th[data-room-category],
+.requestTable td[data-room-category] {
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  box-sizing: border-box;
 }
 .exportBar small {
   color: var(--muted-foreground);

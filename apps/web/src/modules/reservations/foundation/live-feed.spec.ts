@@ -410,8 +410,41 @@ it('derives canonical room counts despite stale arrangement and summary fields',
   );
   expect(rows[0]).toMatchObject({
     roomCount: 3,
-    singleRooms: 1,
+    singleRooms: 2,
+    doubleRooms: 0,
+    extraBeds: 0,
+    familyTripleRooms: 1,
+  });
+});
+
+it('preserves room categories through decoding and exports a separate family/triple counter', () => {
+  const source = intake();
+  const rows = decodeIntake(
+    envelope([
+      {
+        ...source,
+        snapshot: {
+          ...source.snapshot,
+          hotelSelection: {
+            hotelNameSnapshot: 'Synthetic hotel',
+            checkInDate: '2026-10-01',
+            rooms: [
+              { adults: 2, childAges: [5, 8], roomCategory: 'DOUBLE' },
+              { adults: 2, childAges: [], roomCategory: 'DOUBLE_EXTRA' },
+              { adults: 3, childAges: [], roomCategory: 'TRIPLE' },
+              { adults: 4, childAges: [7], roomCategory: 'FAMILY' },
+            ],
+          },
+        },
+      },
+    ] as never),
+    session,
+  );
+  expect(rows[0]).toMatchObject({
+    roomCount: 4,
+    singleRooms: 0,
     doubleRooms: 2,
-    extraBeds: 2,
+    extraBeds: 1,
+    familyTripleRooms: 2,
   });
 });
