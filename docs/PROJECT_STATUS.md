@@ -7424,4 +7424,3 @@ all six aliases,19 total choices and unchanged shared-extension handling. Six
 directory regressions pass. Runtime reads the file per lookup, so no restart/build
 or historical rewrite. No personnel data committed, schema/grant/PBX change or
 operational test call. See tasks/CALL-EXTENSION-ALIASES-1024.md for handoff.
-
