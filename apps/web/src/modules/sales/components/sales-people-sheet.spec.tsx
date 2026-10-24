@@ -297,3 +297,22 @@ it('shows the city tour, guide and existing visa toggles together above the pass
     toggles.filter((input) => input.includes('checked')).length,
   ).toBeGreaterThanOrEqual(3);
 });
+
+it('legacy contracts show customer controls without passenger spreadsheet or composition', () => {
+  const html = renderToStaticMarkup(
+    <SalesPeopleSheet
+      state={{ ...emptySalesForm, legacyContract: true }}
+      draft={null}
+      onDraftChange={vi.fn()}
+      onConfirmed={vi.fn()}
+      onBusyChange={vi.fn()}
+      onAddInfant={vi.fn()}
+      onTravelDateChange={vi.fn()}
+    />,
+  );
+  expect(html).toContain('مشتری قرارداد قدیمی');
+  expect(html).not.toContain('<table');
+  expect(html).not.toContain('مشتری طرف حساب همان مسافر اول است');
+  expect(html).not.toContain('ردیف مسافر');
+  expect(html).toContain('نام مشتری');
+});

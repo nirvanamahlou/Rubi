@@ -100,6 +100,8 @@ export interface SalesServiceInput {
   titleSnapshot: string;
   status?:
     'SELECTED' | 'AWAITING_PUBLIC_API' | 'NEEDS_RESERVATION_CONFIRMATION';
+  /** legacyContractV1=true is reserved for the sole OTHER legacy-contract service:
+   * customer-only totals, zero passengers/selections; ordinary reservation dispatch remains. */
   metadata?: Readonly<Record<string, string | number | boolean | null>>;
 }
 
