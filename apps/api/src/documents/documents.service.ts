@@ -281,6 +281,15 @@ function isWorkbenchFeedbackAttachment(row: DocumentListRow): boolean {
 }
 
 const previewableImageMimeTypes = new Set(['image/jpeg', 'image/png']);
+// Preview is a raster-only, authenticated delivery path; scan status is unchanged.
+function imagePreviewScanAllowed(status: string): boolean {
+  return [
+    'CLEAN',
+    'PENDING_SCAN',
+    'AWAITING_ANTIVIRUS_ADAPTER',
+    'SCAN_FAILED',
+  ].includes(status);
+}
 const scrypt = promisify(scryptCallback);
 
 const configuredMimeTypes: Readonly<Record<string, readonly string[]>> = {
@@ -2246,7 +2255,9 @@ export class DocumentsService {
       !hasPurposePermission ||
       !previewable ||
       row.archiveStatus !== 'ACTIVE' ||
-      row.currentVersion.scanStatus !== 'CLEAN'
+      !(dto.purpose === 'PREVIEW'
+        ? imagePreviewScanAllowed(row.currentVersion.scanStatus)
+        : row.currentVersion.scanStatus === 'CLEAN')
     ) {
       await this.auditAccessGrantFailure(
         row,
@@ -2466,12 +2477,7 @@ export class DocumentsService {
     const previewable = previewableImageMimeTypes.has(
       row.currentVersion.detectedMimeType,
     );
-    // Only previewMasterDataLogo can supply this exact, already authorized row.
-    // Unscanned is not CLEAN; general archive preview never gets this exception.
-    const scanAllowed =
-      row.currentVersion.scanStatus === 'CLEAN' ||
-      (authorizedLogo !== undefined &&
-        !['INFECTED', 'QUARANTINED'].includes(row.currentVersion.scanStatus));
+    const scanAllowed = imagePreviewScanAllowed(row.currentVersion.scanStatus);
     const baseAllowed =
       actor.permissions.includes('documents.file.read') &&
       sensitiveAllowed &&
@@ -2515,9 +2521,7 @@ export class DocumentsService {
     });
 
     if (!scanAllowed) {
-      throw new ConflictException(
-        'پیش‌نمایش تا پایان اسکن امنیتی فعال نمی‌شود.',
-      );
+      throw new ConflictException('مشاهده محتوای این سند مجاز نیست.');
     }
     if (!previewable) {
       throw new UnsupportedMediaTypeException(

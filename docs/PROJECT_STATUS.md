@@ -1,3 +1,7 @@
+## 2026-10-24 — IMAGE-PREVIEW-NO-SCAN-WAIT-1024 — PC-A
+
+Immediate authenticated JPEG/PNG preview no longer waits for an unavailable/pending/failed scanner; scan states are preserved. Protected images still require the same access/step-up grants, with PREVIEW issuance aligned; infected/quarantined images are blocked. Full Documents suites: API 212 and Web 38 tests pass, including new immediate-preview and download/step-up regressions. No schema, migration, dependency, operational writes or runtime deployment. Owner authorizes develop merge after exact-head checks.
+
 ## AGENCY-CONTACT-FILL-1024 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; codex/pc-a-agency-contact-fill-1024 from develop ee06dd33. Owner authorizes selected agency contact autofill and immediate production release, explicitly skips manual tests. Reserve Sales agency controller/client/helper and its existing mock compatibility, bounded Master Data-owned phone/address projection through MasterSalesDirectory, contact service/repository and own docs. Producer returns only selected active agency phone/landline/address/postal code to branch-authorized contract creators; existing sensitive-read audit retained, no general Customer/B2B/Master Data permission grants. No overlapping active source writer found. No schema, migration, dependency or operational business-data changes. Required hosted CI remains; no manual test invocation. Build, encrypted backup and deployment health checks precede release.
