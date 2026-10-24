@@ -7210,3 +7210,15 @@ Voucher preview and PDF put check-in/out in the Hotel Information table, replace
 
 Issued-ticket workspace has explicit Search/Enter with separate draft/applied filters, persistent issued-route choices even for empty dates, service-kind/hotel selectors and separate issuance/request or travel/check-in date bases. All ten contract service kinds read authorized Reservations snapshots; hotel-only guests and individual stored stays are retained. Only actual ticket documents are marked issued; other allocations have an explicit allocated status. Latest nonflight allocations avoid duplicated amendments while actual ticket history remains. Route summaries count flight segments only; PDF/Excel consume the same applied server filters. No schema/migration/dependency/runtime/operational-data changes. Targeted API10 and Ticket Catalog223 tests plus search interaction pass; exact-head hosted quality/types/tests/database/build gates precede owner-authorized develop merge. Bounded source reservations release on candidate publication.
 
+
+## DOSSIER-NOTES-NAVIGATION-1024 — PC-C — LOCAL_VERIFIED
+
+Owner-requested latest/older notes buttons removed from dossier notes only.
+Existing incremental continuation appends deduplicated older notes; saving a note
+resets to latest server page. No API/schema/permission/style changes. Nine relevant
+Web tests and scoped lint pass; final build/local activation receipt follows.
+
+Final Web build/TypeScript passes (65 routes). Local3000 serves
+.next-notes-navigation-1024, PID19480, login HTTP200. Explicit popup hold retained;
+API/Worker and operational data unchanged. Authenticated visual review requires
+owner login. Source scope releases on push; no migration or grants.

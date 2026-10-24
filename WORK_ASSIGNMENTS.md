@@ -9134,3 +9134,14 @@ activated with existing Worker4409 preserved; real five-call/21-receipt aggregat
 unchanged, zero real offers. Explicit Web popup hold false. No operational test
 audio or schema/data/grant change. Collector remains unconfigured pending verified
 remote access/correlation/retention. Scope releases on push; see own task report.
+
+## DOSSIER-NOTES-NAVIGATION-1024 — PC-C — LOCAL_VERIFIED
+
+Explicit owner request removes latest/older notes buttons only. Base51c25b94
+preserves full approved local stack and disabled popups. Reserve workspace notes
+pagination wiring and own docs; reuse released ScrollContinuation for incremental
+access to older notes without new buttons. No API/schema/permission/CSS changes.
+
+Nine relevant Web tests, scoped lint and production build/TypeScript pass.
+Web3000 activated with popup hold false; API/Worker untouched. Login returns200.
+Source scope releases on push; no migration, grants or production deployment.

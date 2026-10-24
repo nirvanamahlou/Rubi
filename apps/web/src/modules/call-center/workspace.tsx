@@ -1016,7 +1016,16 @@ function History({
       .notes(branch, contact.id, noteAfter, c.signal)
       .then((r) => {
         if (c.signal.aborted) return;
-        setNotes(r.data);
+        setNotes((previous) =>
+          noteAfter
+            ? [
+                ...previous.filter(
+                  (item) => !r.data.some((next) => next.id === item.id),
+                ),
+                ...r.data,
+              ]
+            : r.data,
+        );
         setNoteNext(r.meta.next);
         setNotesLoading(false);
         setNoteError('');
@@ -1179,26 +1188,13 @@ function History({
             </p>
           </details>
         ))}
-        <div className={styles.pagination}>
-          <button
-            disabled={!noteAfter || notesLoading}
-            onClick={() => {
-              setNotesLoading(true);
-              setNoteAfter(undefined);
-            }}
-          >
-            یادداشت‌های جدید
-          </button>
-          <button
-            disabled={!noteNext || notesLoading}
-            onClick={() => {
-              setNotesLoading(true);
-              setNoteAfter(noteNext!);
-            }}
-          >
-            یادداشت‌های قدیمی‌تر
-          </button>
-        </div>
+        <ScrollContinuation
+          enabled={section === 'notes' && !!noteNext && !notesLoading && !noteError}
+          onMore={() => {
+            setNotesLoading(true);
+            setNoteAfter(noteNext!);
+          }}
+        />
         <form className={styles.note} onSubmit={save}>
           <label htmlFor="cc-note">یادداشت جدید</label>
           <textarea
