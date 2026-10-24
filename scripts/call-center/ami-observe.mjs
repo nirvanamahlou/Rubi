@@ -2,7 +2,18 @@
 import { createHmac, randomBytes } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
-import { AmiClient } from '../../apps/api/src/integrations/issabel/ami.ts';
+import { createRequire } from 'node:module';
+
+// Reuse API's existing TS loader: the transport now has extensionless TS imports
+// and parameter properties that Node's native type stripping cannot execute.
+const apiRequire = createRequire(
+  new URL('../../apps/api/package.json', import.meta.url),
+);
+const { require: requireTypeScript } = apiRequire('tsx/cjs/api');
+const { AmiClient } = requireTypeScript(
+  '../../apps/api/src/integrations/issabel/ami.ts',
+  import.meta.url,
+);
 
 const events = new Set([
   'Newchannel',

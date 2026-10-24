@@ -1,3 +1,4 @@
+import { enforceSalesHotelCapacity } from '@nora/contracts';
 import {
   usesRoomDrivenGuests,
   passengerHotelStay,
@@ -688,6 +689,7 @@ export function salesHotelCapacityError(
   state: SalesFormState,
   roomRates: readonly HotelRoomRateV1[],
 ): string | null {
+  if (!enforceSalesHotelCapacity()) return null;
   state = syncHotelChildSelections(state, salesTravelDate(state));
   if (!state.serviceKinds.includes('HOTEL')) return null;
   if (state.hotel.rooms?.length) {

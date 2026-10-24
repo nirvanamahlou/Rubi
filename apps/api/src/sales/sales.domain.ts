@@ -1,3 +1,4 @@
+import { enforceSalesHotelCapacity } from '@nora/contracts';
 import { validatePassengerHotelStays } from '@nora/contracts';
 import {
   readPassengerTotalPrices,
@@ -207,7 +208,7 @@ export function validateSalesContract(
       (buyer.landline !== undefined &&
         (typeof buyer.landline !== 'string' ||
           (buyer.landline.trim() !== '' &&
-            !/^\+?[0-9]{10,15}$/.test(buyer.landline.trim())))) ||
+            !/^\+?[0-9]+$/.test(buyer.landline.trim())))) ||
       (input.payerCustomerId && input.payerCustomerId !== input.customerId)
     )
       throw new SalesDomainError(
@@ -685,8 +686,9 @@ export function validateSalesContract(
         .sort((a, b) => (a ?? -1) - (b ?? -1));
       if (
         hotel.roomTypeId !== hotel.rooms[0]?.roomTypeId ||
-        expected.length !== actual.length ||
-        expected.some((a, i) => a !== actual[i])
+        (enforceSalesHotelCapacity() &&
+          (expected.length !== actual.length ||
+            expected.some((a, i) => a !== actual[i])))
       )
         throw new SalesDomainError(
           'SALES_HOTEL_INVALID',

@@ -517,3 +517,5 @@ export * from './passenger-flight-prices';
 export * from './agency-commission';
 export * from './passenger-deductions';
 export * from './passenger-total-prices';
+
+export * from './hotel-capacity-policy';

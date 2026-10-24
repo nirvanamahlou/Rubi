@@ -1305,3 +1305,26 @@ it('rejects a malformed nonempty optional landline', () => {
   };
   expect(() => validateSalesPeopleDraft(state, draft)).toThrow('تلفن ثابت');
 });
+
+it.each(['1', '021', '1234567', '+123'])(
+  'accepts short numeric agency landline %s',
+  (landline) => {
+    const draft = {
+      ...filled(),
+      mode: 'organization' as const,
+      organization: {
+        id: 'agency',
+        displayName: 'Synthetic Agency',
+        organizationId: null,
+      },
+      buyerContact: {
+        name: 'Synthetic Agency',
+        phone: '09120000000',
+        address: 'Synthetic address',
+        postalCode: '',
+        landline,
+      },
+    };
+    expect(() => validateSalesPeopleDraft(state, draft)).not.toThrow();
+  },
+);

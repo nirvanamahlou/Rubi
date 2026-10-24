@@ -2,6 +2,10 @@
 
 Owner scopes optional national ID to New Contract only. Sales people entry and quick-create omit blank IDs and remove national-ID required attributes; existing customer-to-passenger role promotion accepts no ID. Customers-owned sales create adapter validates contract access and keeps directory create strict, supplied ID encryption/uniqueness and birth/passport rules. No-ID ambiguous retries stop until the existing record is selected. API117 and Web200 related tests pass. Affected lint/types/build and full exact-head CI gate owner-authorized develop merge. No schema/migration/dependency/runtime or operational changes.
 
+## SALES-ROOM-CONTACT-FLEXIBILITY-1024 — PC-A
+
+Owner temporarily disables blocking hotel guest/room composition and tariff capacity checks in Sales UI, API save/update and confirmation through one shared policy. Structural room IDs/ordinals, stay/service/price integrity and actual passenger allocations remain; unavailable tariff matches never fabricate quotes. Optional buyer landline accepts short digit sequences and an optional leading plus; mobile and postal-code checks remain. Targeted API66 and Web64 tests, types/lint/build, full exact-head CI gate owner-authorized develop merge and encrypted-backup production rollout. No schema/migration/dependency or data deletion. Retained strict capacity algorithm has separate enabled-policy regressions for future explicit restoration. Source locks release at publication.
+
 ## TICKET-AIRLINE-LOGO-BACKGROUND-1024 — PC-A
 
 Shared passenger-ticket preview/print/PDF renderer composites airline logos against the ticket background, eliminating white rectangular backing without rewriting uploaded assets. Styling is scoped to airline marks; agency logo, safe image sources and issuance/data paths stay unchanged. 31 focused ticket tests pass. Isolated Chromium pixel QA confirms white backing equals the tinted ticket background and colored mark remains. Lint/types/build and exact-head hosted gates precede user-authorized develop merge. No schema/API/migration/dependency/runtime change. Source locks release at publication.
@@ -15,6 +19,12 @@ Immediate authenticated JPEG/PNG preview no longer waits for an unavailable/pend
 COMPUTER_ID=PC-A; codex/pc-a-agency-contact-fill-1024 from develop ee06dd33. Owner authorizes selected agency contact autofill and immediate production release, explicitly skips manual tests. Reserve Sales agency controller/client/helper and its existing mock compatibility, bounded Master Data-owned phone/address projection through MasterSalesDirectory, contact service/repository and own docs. Producer returns only selected active agency phone/landline/address/postal code to branch-authorized contract creators; existing sensitive-read audit retained, no general Customer/B2B/Master Data permission grants. No overlapping active source writer found. No schema, migration, dependency or operational business-data changes. Required hosted CI remains; no manual test invocation. Build, encrypted backup and deployment health checks precede release.
 
 Implementation complete: selected active agency details use the Sales-only contact endpoint with phone-only decryption and existing sensitive-read audit, primary active address and fallback for absent fields. Existing mock fixtures updated for the new producer dependency; no manual tests executed at owner request. Scoped API/Web lint and formatting pass. Local typecheck is unavailable because shared node_modules links lack Nest dependencies and generated current Contracts; hosted build/quality gates remain authoritative. Source locks freeze on publication; encrypted backup and health verification required for authorized rollout.
+
+## SALES-INSURANCE-SCOPE-1024 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-insurance-scope-1024 from current origin/develop. Owner authorizes insurance-off warning removal, current-contract passenger isolation, develop merge and Avina rollout. Reserve Sales contract warning and per-user/session/tab browser draft persistence, bounded insurance warning selector and own docs. Preserve pricing validation and selected-insurance age surcharge; suppress stale unconfirmed passenger notices and never restore unowned shared browser drafts. Existing scoped actor context is read only; no grants/schema/migrations/dependencies/API/business data mutation. No overlapping active target source writer found; prior Sales source reservations released on publication. No extra manual test suite; lint/format/full hosted gates plus encrypted backup/build/health for authorized deployment.
+
+Implemented insurance-selected + confirmed-current-passenger notice gating, discarded surcharge entries when insurance is deselected or passenger identities change, and replaced the shared unowned browser draft with per-user/session/tab sessionStorage. Legacy shared drafts are not restored and are cleared on entry; hydration gates saving to prevent overwriting a restored draft. Existing render regression covers insurance off, eligible current passenger, young replacement and stale removed-person surcharge. No manual test suite; scoped lint/format and hosted gates before merge. Build/backup/health precede authorized Avina rollout.
 
 ## TICKET-EDIT-AIRLINE-1024 — PC-A — READY_FOR_CI
 
@@ -7305,3 +7315,44 @@ SALES-AGENCY-ACCESS-1024 validation: Web12 and API HTTP18 tests, scoped API/Web 
 ## CALL-ATTENTION-HIDE-1024 — PC-C — 2026-10-24
 
 Removed only the global TelephonyAttention mount/import from the authenticated shell, as explicitly requested. This suppresses the floating calls/session-error/retry widget and its frontend polling/popups; manual call forms, backend AMI capture and stored calls remain unchanged. Component source remains available for later local work. Reintroducing this UI on develop requires a fresh explicit user request, documented in CALL-CENTER-UI-PRESERVATION. Separate branch from develop1168321a excludes unpublished local dossier/audio/destination changes. No migration, dependency or runtime change. Scoped ESLint and7 existing navigation/manual-call/draft regressions pass; PR1074 tracks the authorized merge, gated by all final-head hosted checks including full typecheck/build. Local Web production build (webpack,65 routes) and full TypeScript pass after resolving worktree dependency links. Original eight hosted checks passed; concurrent develop documentation conflicts were resolved preserving both owners and all final-head checks must rerun. Source reservation released on publication; any CI repair remains bounded to this change.
+## CALL-REQUEST-SELECTS-1024 — PC-C — 2026-10-24
+
+WorkflowEditor status/priority now use a scoped Radix Select with44px options, subtle semantic icons, selected check, visible focus, RTL/LTR and collision-aware portal. No search for these small fixed choice sets. Values, mutation contracts, disabled/busy behavior and implicit NEW for new requests remain. Scoped lint,2 request-form regressions, full Web typecheck and production webpack build65 routes pass. Existing unrelated accounting bundling warnings remain. Authenticated browser checks on3000 verified both menus, arrow navigation/Escape, focus return and unchanged selection; no business form saved. Screenshot outside repository. Branch from approved local8f10b186 preserves local dossier/audio/destination work; concurrent outbound-call source edits remain untouched in publish checkout. Web3000 now runs this checkout build (PID7744); API/Worker unchanged, popup flag remains false. Temporary3001 preview stopped. No dependency/migration/permission/operational data changes. Branch push only; no develop PR/merge authorized for this UI task.
+
+## CALL-OWNER-SELECT-1024 — PC-C — 2026-10-24
+
+Responsible-agent selector now uses the existing SearchCombobox with scoped styling consistent with request status/priority: search icon, person icons, neutral unassigned row,48px options and selected check. Permitted operators, ownerId FormData and missing historical-owner fallback remain unchanged. Query changes do not mark the form dirty; Escape while owner search is expanded closes only that menu, preserving the parent dialog. Existing10 form/search tests and scoped lint pass; final build/browser verification gates runtime activation. No shared selector/API/schema/dependency/permission edits, no business records saved. Source based on local107f56de; concurrent outbound source work preserved. No develop merge requested.
+
+Final proof:10 focused tests, scoped ESLint, formatting, full TypeScript and production Web build65 routes pass. Authenticated browser verified name filtering, selected check, Escape preserving dialog/owner, and cancellation after search without a false unsaved prompt; no business submission. Final Web3000 PID1692 uses .next-owner-final-1024 with popup flag false; API/Worker preserved. Previous own Web processes stopped; screenshot outside Git. Source reservation released on push.
+## CALL-CENTER-CALLER-NAME-1022 — preserved source-branch validation
+
+Optional encrypted incoming CallerIDName now reaches the existing attention popup
+as a default only when the saved name is empty. Operator edits remain stable under
+polling; agent-leg names never replace the external anchor name. No new layout,
+permission, schema, migration, routing or PBX activation.17 focused tests pass;
+8 database cases skipped explicitly. Types/lint and production builds checked;
+actual PBX/browser acceptance remains for an authorized real call.
+See tasks/CALL-CENTER-CALLER-NAME-1022.md.
+
+## STICKY-SALES-PREFLIGHT-1022 — PC-C
+
+SSH-independent last-answerer preparation adds bounded read-only QueueStatus
+projection and permission-checked internal preview with1s deadline/8-work cap.
+Unknown inherited wrap-up policy blocks preference; no value was guessed/configured.
+57 distinct tests pass (10 disposable PostgreSQL), scoped lint/types/API build.
+No Web/runtime/schema/PBX change, no popup or public routing endpoint. Real20s
+fallback remains an SSH-dependent installation and controlled-call acceptance gate.
+See tasks/STICKY-SALES-PREFLIGHT-1022.md. Source branch:
+codex/pc-c-sticky-sales-preflight-1022, approved local prerequisite base d83600a3.
+
+## CALL-CENTER-UNIFIED-1024 — PC-C — SOURCE_CANDIDATE_VERIFIED
+
+Consolidated released request choices/owner search and sticky preview onto develop
+b4e069f9, which already includes outbound/audio/dossier/directory work. Preserved
+global attention removal and existing capture/mapping configuration. Repaired
+Node observer TS loading and strengthened stale partial-save access regression.
+API216 ordinary, PostgreSQL76, Web53 and tools23 checks pass (per-run counts);
+API/Web types, scoped lint, production builds and format/diff checks pass. All189
+existing migrations applied only to new isolated nora_ci. No operational data,
+runtime, schema, grants or PBX writes; no main/develop merge. Release manifest:
+tasks/CALL-CENTER-UNIFIED-1024.md. Scoped reservations release on publication.

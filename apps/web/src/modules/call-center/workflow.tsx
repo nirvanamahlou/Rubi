@@ -1,4 +1,6 @@
 'use client';
+import { OwnerSelect } from './owner-select';
+import { RequestChoice } from './request-choice';
 import { RequestReferral } from './request-referral';
 import { RequestCustomer } from './request-customer';
 import { useDialogReturnFocus } from './use-dialog-focus';
@@ -38,38 +40,6 @@ export const taskLabels: Record<string, string> = {
   CANCELLED: 'لغوشده',
 };
 const priorities = { NORMAL: 'عادی', HIGH: 'بالا', URGENT: 'فوری' };
-function OwnerSelect({
-  operators,
-  value,
-  disabled,
-  onChange,
-}: {
-  operators: Operator[];
-  value: string;
-  disabled?: boolean;
-  onChange?: (value: string) => void;
-}) {
-  return (
-    <NativeSearchSelect
-      aria-label="کارشناس مسئول"
-      name="ownerId"
-      value={value}
-      disabled={disabled}
-      onChange={(event) => onChange?.(event.target.value)}
-      optionLimit={100}
-    >
-      <option value="">بدون مسئول</option>
-      {value && !operators.some((user) => user.id === value) && (
-        <option value={value}>مسئول قبلی؛ برای ارجاع جدید انتخاب کنید</option>
-      )}
-      {operators.map((user) => (
-        <option key={user.id} value={user.id}>
-          {user.displayName}
-        </option>
-      ))}
-    </NativeSearchSelect>
-  );
-}
 export function WorkflowPanel({
   branchId,
   contactId,
@@ -956,6 +926,16 @@ export function WorkflowEditor({
     >
       <DialogContent
         onCloseAutoFocus={restoreFocus}
+        onEscapeKeyDown={(event) => {
+          // Radix observes Escape before the search input closes its own menu.
+          const target = event.target;
+          if (
+            target instanceof Element &&
+            target.matches('[role="combobox"][aria-expanded="true"]') &&
+            target.closest('[data-call-owner-select]')
+          )
+            event.preventDefault();
+        }}
         dir="rtl"
         className="max-h-[90dvh] overflow-y-auto"
       >
@@ -1064,51 +1044,41 @@ export function WorkflowEditor({
             {(editor.kind === 'task' || editor.item) && (
               <label>
                 وضعیت
-                <NativeSearchSelect
+                <RequestChoice
+                  label="وضعیت"
                   name="status"
                   value={status}
                   disabled={busy}
-                  onChange={(event) => {
-                    const value = event.target.value;
+                  onValueChange={(value) => {
                     setStatus(value);
                     setDirty(true);
                   }}
-                >
-                  {Object.entries(
-                    editor.kind === 'request' ? requestLabels : taskLabels,
-                  )
-                    .filter(
+                  options={Object.fromEntries(
+                    Object.entries(
+                      editor.kind === 'request' ? requestLabels : taskLabels,
+                    ).filter(
                       ([key]) =>
                         editor.item ||
                         (editor.kind === 'request'
                           ? key === 'NEW'
                           : key === 'OPEN'),
-                    )
-                    .map(([key, title]) => (
-                      <option key={key} value={key}>
-                        {title}
-                      </option>
-                    ))}
-                </NativeSearchSelect>
+                    ),
+                  )}
+                />
               </label>
             )}
             <label>
               اولویت
-              <NativeSearchSelect
+              <RequestChoice
+                label="اولویت"
                 value={priority}
                 disabled={busy}
-                onChange={(event) => {
-                  const value = event.target.value;
+                onValueChange={(value) => {
                   setPriority(value);
                   setDirty(true);
                 }}
-              >
-                {Object.entries(priorities).map(([key, title]) => (
-                  <option key={key} value={key}>
-                    {title}
-                  </option>
-                ))}
-              </NativeSearchSelect>
+                options={priorities}
+              />
             </label>
             {error && <p role="alert">{error}</p>}
             <footer>

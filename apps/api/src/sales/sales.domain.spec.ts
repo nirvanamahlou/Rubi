@@ -249,6 +249,14 @@ describe('Sales contract domain', () => {
         },
       }),
     ).not.toThrow();
+    for (const landline of ['1', '021', '1234567', '+123']) {
+      expect(() =>
+        validateSalesContract({
+          ...draft,
+          buyerContact: { ...buyerContact, landline },
+        }),
+      ).not.toThrow();
+    }
     for (const landline of ['', '   ', '02112345678']) {
       expect(() =>
         validateSalesContract({
@@ -797,7 +805,7 @@ describe('hotel room party integrity', () => {
           rooms: [{ ...hotel.rooms![0]!, adults: 2 }],
         },
       }),
-    ).toThrow();
+    ).not.toThrow();
     expect(() =>
       validateSalesContract({
         ...input,

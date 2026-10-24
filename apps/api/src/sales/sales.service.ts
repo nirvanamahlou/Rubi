@@ -1,3 +1,4 @@
+import { enforceSalesHotelCapacity } from '@nora/contracts';
 import {
   hasConfirmedReceiptFunds,
   netSalesPayments,
@@ -502,6 +503,7 @@ export class SalesService {
     input: SalesContractCreateRequest,
     branchId: string,
   ): Promise<void> {
+    if (!enforceSalesHotelCapacity()) return;
     const hotel = input.hotelSelection;
     if (!hotel) return;
     if (!this.hotelRates)
@@ -555,6 +557,7 @@ export class SalesService {
   private async assertPresentedHotelRoomCapacity(
     contract: SalesContractDetail,
   ): Promise<void> {
+    if (!enforceSalesHotelCapacity()) return;
     const hotel = contract.hotelSelection;
     if (!hotel) return;
     if (!this.hotelRates)
