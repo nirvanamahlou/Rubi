@@ -5976,6 +5976,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Delivered four dependent country/city filters, bidirectional endpoint choices and display grouping relative to selected route without changing stored contract direction or export IDs. City/country IDs and labels come through public Master Data references; legacy unknown countries stay unknown. Removed old airline-specific introduction. 24 Web and 32 API tests/scoped lint passed; contracts build and API/Web typecheck/build checked before PR (stale local Prisma output regenerated without a database connection). No migration/dependencies/data changes. Bounded locks release with commit and authorized develop merge follows CI.
 
+## PASSENGER-COLUMNS-1024 — PC-A — VERIFIED
+
+COMPUTER_ID=PC-A; branch codex/pc-a-passenger-columns-1024 from develop1168321a. Owner requests reservation passenger age/gender controls not overlap and develop merge. Reserve only passenger-files/passengers.tsx and passengers.module.css and own status notes. No active overlapping writer on these display-only files; preserve amendment/identity logic. Explicit bounded cell widths and contained horizontal scroll; no API/schema/dependency/runtime change.
+
+Validation:4 existing passenger identity/age regressions pass; scoped ESLint and diff checks pass. Source reservation releases on publication. Full exact-head hosted lint/types/tests/build/PostgreSQL gates precede merge.
+
 ## CHARTER-ALIAS-CITIES-1022 — PC-A — VERIFIED
 
 COMPUTER_ID=PC-A; branch codex/pc-a-charter-alias-cities-1022 from develop43e2899c. Owner requests all configured alternate destinations in charter load and develop merge. Production read-only aggregate confirms Izmir/Bodrum routes persist; live7478be1d predates merged1067 route-history reader. Reserve flight-load-grid city dropdown limits and focused interaction/model regressions, own status notes. Show every available city in scrollable dropdown without changing shared combobox or inventory. Prior1067 reservation released; no active overlap. No API/schema/dependency/runtime/deployment changes.
