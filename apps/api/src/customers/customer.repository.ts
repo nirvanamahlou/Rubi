@@ -532,7 +532,7 @@ export class CustomerRepository {
   ) {
     return this.database.client.$transaction(async (transaction) => {
       const key = JSON.stringify(['sales-agency', branchId, organizationId]);
-      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`;
+      await transaction.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${key}, 0))`;
       const rows = await transaction.customer.findMany({
         where: {
           organizationId,
