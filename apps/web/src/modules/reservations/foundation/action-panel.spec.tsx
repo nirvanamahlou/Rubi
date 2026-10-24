@@ -43,7 +43,7 @@ describe('selected contract actions', () => {
 
   it('keeps remaining actions visible and disabled without a selection', () => {
     const html = renderToStaticMarkup(<ContractActionPanel />);
-    expect(html.match(/disabled=""/g) ?? []).toHaveLength(14);
+    expect(html.match(/disabled=""/g) ?? []).toHaveLength(15);
     for (const label of [
       'واچر',
       'فرم رزواسیون',
@@ -71,7 +71,7 @@ describe('selected contract actions', () => {
     expect(html).toContain('SYNTH-01');
     expect(html.match(/disabled=""/g)).toHaveLength(1);
     expect(html).toMatch(/disabled=""[^>]*aria-label="واچر"/);
-    expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(13);
+    expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(14);
     expect(html).not.toContain('href="/ticket-purchases?');
     expect(html).toContain('href="/contracts/terms.pdf"');
     expect(html).toContain('download="مفاد.pdf"');

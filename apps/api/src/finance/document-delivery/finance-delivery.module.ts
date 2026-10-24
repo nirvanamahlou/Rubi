@@ -14,6 +14,7 @@ import { NotificationsService } from '../../notifications/notifications.service'
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   Module,
@@ -486,13 +487,30 @@ export class FinanceDeliveryService {
       !Number.isSafeInteger(command.expectedVersion) ||
       command.expectedVersion < 0 ||
       typeof command.approved !== 'boolean' ||
-      !['AFTER_RECEIPT', 'FULL_SETTLEMENT', 'MANAGER_EXCEPTION'].includes(
-        basis,
-      ) ||
+      ![
+        'AFTER_RECEIPT',
+        'FULL_SETTLEMENT',
+        'MANAGER_EXCEPTION',
+        'RESERVATION_PERMISSION',
+      ].includes(basis) ||
       !isOptionalOperationReason(reason) ||
       (reason ?? '').length > 500
     )
       throw new BadRequestException('مجوز تحویل مدارک مشتری معتبر نیست.');
+    if (basis === 'RESERVATION_PERMISSION') {
+      if (
+        !actor.permissions.includes('reservations.documents.manage') &&
+        !(
+          command.approved === false &&
+          actor.permissions.includes('finance.financial_release.approve')
+        )
+      )
+        throw new ForbiddenException('مجوز صدور رزرواسیون لازم است.');
+      if (reason.length < 5 || reason.length > 500)
+        throw new BadRequestException(
+          'دلیل مجوز رزرواسیون باید بین ۵ تا ۵۰۰ نویسه باشد.',
+        );
+    }
     const validateFinancialFacts = () => {
       if (command.approved && facts.cancelled)
         throw new BadRequestException('قرارداد لغوشده مجوز تحویل نمی‌گیرد.');
@@ -561,6 +579,20 @@ export class FinanceDeliveryService {
         });
       if ((current?.version ?? 0) !== command.expectedVersion)
         throw new ConflictException('مجوز تحویل مدارک هم‌زمان تغییر کرده است.');
+      if (
+        basis === 'RESERVATION_PERMISSION' &&
+        current?.approved &&
+        current.basis !== basis
+      )
+        throw new ConflictException('مجوز فعلی از مسیر دیگری صادر شده است.');
+      if (
+        basis === 'RESERVATION_PERMISSION' &&
+        !command.approved &&
+        current?.basis !== basis
+      )
+        throw new ForbiddenException(
+          'رزرواسیون فقط مجوز ثبت‌شدهٔ خودش را لغو می‌کند.',
+        );
       const expiry =
         basis === 'MANAGER_EXCEPTION' && command.exceptionExpiresAt
           ? new Date(command.exceptionExpiresAt)
