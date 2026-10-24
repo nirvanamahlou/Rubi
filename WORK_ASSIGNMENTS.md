@@ -9191,6 +9191,12 @@ and ordinary request ACL. Existing call/contact ownership grants remain unchange
 Reserve bounded i18n labels including missing labels in the three released local
 base commits so the complete approved stack passes inventory. No dependency lock.
 
+## AGENCY-CONTRACT-SUBMIT-1024 — PC-A — VERIFIED
+
+COMPUTER_ID=PC-A; branch codex/pc-a-agency-contract-submit-1024 from develop4273d4bf. Owner explicitly authorizes every contract creator to select/register an active agency customer in new contracts, tests, develop merge and Avina rollout. Reserve Sales agency selector/client, new bounded Sales agency-customer controller and sales.module central registration, Customers public workflow method/repository atomic resolver and focused tests, own docs. Producer Customers owns creation/audit/branch transaction; Sales validates active MasterSalesDirectory organization reference and consumes only its public service. No direct foreign table access. Existing general Customer permissions remain; endpoint grants only create-or-reuse of linked agency buyer, no role/status/contact edits. Prior1073 source reservation released at merged publication; no overlapping writer found. No schema/migration/dependency change.
+
+Validation:48 targeted API tests (HTTP authorization/active-reference/branch cases, Customer policy and transaction/audit reuse) and8 Web tests pass, scoped lint/diff checks pass. Source reservations freeze on publication; exact-head hosted gates precede authorized merge and paired API/Web rollout. No production test writes.
+
 ## SALES-AGENCY-ACCESS-1024 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; base origin/develop1168321a; branch codex/pc-a-sales-agency-access-1024. User authorizes agency picker visibility for contract creators, develop merge and production rollout. Reserve SalesOrganizationCustomer, SearchableReference option-limit forwarding, focused Sales directory/UI tests and own documentation only. The authenticated Sales form-reference projection already grants contract creators active organization labels without Master Data administration; remove the UI dependency on the general customer directory for displaying those labels. Customer creation, sensitive contact access, branch and explicit screen-deny policies remain enforced. No schema, migration, dependency, IAM catalogue or organization producer change. No overlapping active source writer found.
@@ -9204,3 +9210,5 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-delivery-permit-1024 from develo
 Base origin/develop1168321a; branch codex/pc-c-call-attention-hide-1024. Owner explicitly requests temporary removal of the floating telephony calls/session/retry widget and develop merge only after all checks pass. Reserve only TelephonyAttention import/mount in central apps/web/src/components/layout/app-shell.tsx and own documentation. Existing shell reservations are historical/released; preserve all other layout and manual call forms. No backend, API, permission, schema, dependency or operational runtime change. Future local work is allowed; reactivation on develop requires a new explicit user request. No unrelated local call-center commits are included.
 
 OUTBOUND-CALL-POPUP-1024 — implementation VERIFIED; scope released on push. Production rollout awaits verified user mappings/trunk and release PC.27 PostgreSQL,20 adapter/projection,8 Web tests pass; API/Web builds and types/lint pass.
+
+AGENCY-CONTRACT-SUBMIT-1024 localization: reserve generated API English catalogue for the existing inactive-agency-profile error moved from Web to Customers API. Reuse its existing translation; no other labels or language policy change. No active overlapping catalogue writer found in latest task assignments.

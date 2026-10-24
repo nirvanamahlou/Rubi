@@ -4681,6 +4681,7 @@
   "پروفایل عملیاتی شعبه فعال نیست.": "The operational profile of the branch is not active.",
   "پروفایل مورد انتظار یافت نشد؛ دوباره بارگذاری کنید.": "The expected profile was not found; Reload.",
   "پرونده انتخاب‌شده معتبر یا در دسترس شما نیست.": "The selected file is not valid or available to you.",
+  "پرونده این سازمان موجود است؛ فعال‌سازی یا نقش مشتری را در بخش مشتریان اصلاح کنید.": "The file of this organization is available; Modify the customer's activation or role in the Customers section.",
   "پرونده خرید پیدا نشد.": "Purchase file not found.",
   "پرونده دارای رکورد وابسته فعال است.": "The file has an active dependent record.",
   "پرونده سازمان پیدا نشد.": "The organization file was not found.",

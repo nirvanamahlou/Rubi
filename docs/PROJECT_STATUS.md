@@ -7260,6 +7260,10 @@ only; native notifications opt in to existing active user mappings.27 isolated P
 activation requires verified extension/user/trunk configuration on the release PC.
 See tasks/OUTBOUND-CALL-POPUP-1024.md; no real PBX routing/ownership/schema changes.
 
+## AGENCY-CONTRACT-SUBMIT-1024 — PC-A
+
+New-contract agency selection uses a dedicated authenticated Sales create-or-reuse command instead of general Customer list/create permissions. Sales validates an active Master Data agency; Customers owns branch-scoped transaction locking, immutable creation audit and reuse. Existing inactive/noncustomer dossiers remain explicit conflicts. Explicit screen denies and branch access remain enforced; no broad Customer grants or sensitive-contact permission changes.48 API and8 Web tests plus scoped lint pass. No migration/dependency changes; final hosted gates precede user-authorized develop merge and Avina deployment.
+
 ## SALES-AGENCY-ACCESS-1024 — PC-A — 2026-10-24
 
 Contract agency labels now load independently through the existing authenticated Sales form-reference directory; a missing general Customers read grant no longer hides that list. The agency picker opts into all loaded options instead of five, retaining search and scrolling. Existing customer resolve/create, branch, sensitive contact and explicit screen-deny authorization are unchanged. Tests: Web12 and API HTTP18 passed; scoped Web lint passed. No schema/migration/dependency changes. Full type/build and exact-head CI gate authorized develop merge; production remains unchanged pending verified rollout.

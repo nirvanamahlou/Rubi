@@ -347,3 +347,78 @@ describe('CustomerRepository', () => {
     });
   });
 });
+
+describe('Sales agency customer resolution', () => {
+  const setup = (rows: unknown[]) => {
+    const transaction = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      customer: {
+        findMany: vi.fn().mockResolvedValue(rows),
+        create: vi.fn().mockResolvedValue({ ...row, kind: 'ORGANIZATION' }),
+      },
+      customerStatusHistory: { create: vi.fn() },
+      customerAuditEvent: { create: vi.fn() },
+    };
+    const repository = new CustomerRepository({
+      client: {
+        $transaction: async (work: (tx: unknown) => unknown) =>
+          work(transaction),
+      },
+    } as never);
+    return { repository, transaction };
+  };
+  it('takes a transaction lock, scopes reuse to the current branch, and returns an existing active buyer', async () => {
+    const { repository, transaction: tx } = setup([row]);
+    expect(
+      await repository.resolveSalesOrganization(
+        'org',
+        'Agency',
+        'branch',
+        'actor',
+      ),
+    ).toBe(row);
+    expect(tx.$queryRaw).toHaveBeenCalledOnce();
+    expect(tx.customer.findMany.mock.calls[0]![0].where).toEqual({
+      organizationId: 'org',
+      ownerBranchId: 'branch',
+      kind: 'ORGANIZATION',
+      mergedIntoId: null,
+    });
+    expect(tx.customer.create).not.toHaveBeenCalled();
+  });
+  it('creates only a linked organization buyer and its audit/status history within the locked transaction', async () => {
+    const { repository, transaction: tx } = setup([]);
+    await repository.resolveSalesOrganization(
+      'org',
+      'Agency',
+      'branch',
+      'actor',
+      'trace',
+    );
+    expect(tx.customer.create.mock.calls[0]![0].data).toMatchObject({
+      kind: 'ORGANIZATION',
+      organizationId: 'org',
+      displayName: 'Agency',
+      isCustomer: true,
+      isPassenger: false,
+      ownerBranchId: 'branch',
+      createdByUserId: 'actor',
+    });
+    expect(tx.customerStatusHistory.create).toHaveBeenCalledOnce();
+    expect(tx.customerAuditEvent.create).toHaveBeenCalledOnce();
+  });
+  it('does not duplicate or reactivate an inactive/noncustomer dossier', async () => {
+    for (const patch of [{ isActive: false }, { isCustomer: false }]) {
+      const { repository, transaction: tx } = setup([{ ...row, ...patch }]);
+      expect(
+        await repository.resolveSalesOrganization(
+          'org',
+          'Agency',
+          'branch',
+          'actor',
+        ),
+      ).toBeNull();
+      expect(tx.customer.create).not.toHaveBeenCalled();
+    }
+  });
+});
