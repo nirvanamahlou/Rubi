@@ -244,6 +244,7 @@ export function PassengerServicePrices({
                   </td>
                   <td className="min-w-36 space-y-1 p-2">
                     <SalesCurrencySelect
+                      hideLabel
                       label="نوع ارز"
                       currencies={foreignCurrencies}
                       value={fx.currencyCode}
@@ -287,6 +288,7 @@ export function PassengerServicePrices({
                     return (
                       <td key={kind} className="min-w-28 space-y-1 p-2">
                         <SalesCurrencySelect
+                          hideLabel
                           label={'ارز ' + label}
                           currencies={currencies}
                           value={currencyCode}
