@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { CustomerSummary, MasterDataRecord } from '@nora/contracts';
 import {
+  loadSalesOrganizations,
   resolveOrganizationCustomer,
   SalesOrganizationCustomer,
 } from './sales-organization-customer';
@@ -31,6 +32,21 @@ const page = (data: CustomerSummary[], total = data.length) => ({
 });
 
 describe('Sales organization customer public connection', () => {
+  it('loads every agency page using only the contract reference endpoint', async () => {
+    const second = { ...organization, id: 'second-agency' };
+    const api = {
+      listReferences: vi
+        .fn()
+        .mockResolvedValueOnce({ data: [organization], meta: { total: 2 } })
+        .mockResolvedValueOnce({ data: [second], meta: { total: 2 } }),
+    };
+    expect(await loadSalesOrganizations(api)).toEqual([organization, second]);
+    expect(api.listReferences).toHaveBeenNthCalledWith(
+      2,
+      'organizations',
+      expect.objectContaining({ page: 2, status: 'active', pageSize: 100 }),
+    );
+  });
   it('reuses an existing organization customer across paginated results without creating another profile', async () => {
     const api = {
       list: vi
