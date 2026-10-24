@@ -6,6 +6,7 @@ import { RequestCustomer } from './request-customer';
 import { useDialogReturnFocus } from './use-dialog-focus';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -616,18 +617,26 @@ export function WorkQueue({
             type="button"
             aria-expanded={!collapsed}
             aria-controls="cc-queue-body"
+            className={styles.queueAction}
             onClick={() => setCollapsed((value) => !value)}
           >
+            {collapsed ? (
+              <ChevronDown size={16} aria-hidden="true" />
+            ) : (
+              <ChevronUp size={16} aria-hidden="true" />
+            )}
             {collapsed ? 'نمایش صف' : 'جمع کردن صف'}
           </button>
           <button
             type="button"
+            className={styles.queueAction}
             onClick={() => (
               setLoading(true),
               setError(''),
               setRevision((value) => value + 1)
             )}
           >
+            <RotateCcw size={16} aria-hidden="true" />
             به‌روزرسانی
           </button>
         </header>

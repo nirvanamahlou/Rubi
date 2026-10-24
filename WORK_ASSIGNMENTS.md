@@ -9351,3 +9351,8 @@ COMPUTER_ID=PC-A; follow-up to owner-authorized CONTRACT-OWNER-ACTIONS-1024 befo
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-checkin-departure-day-1024 from origin/develop. Owner requests automatic flight-linked hotel check-in on outbound departure day and develop merge. Reserve withSalesHotelDates and focused date regressions plus own docs. Prefer outbound calendar day over package start; ignore the obsolete next-day flag for flight-linked automatic check-in, retain explicit manual dates and checkout policy. No active overlapping date writer found; published prior Sales scopes released. No API/schema/migration/dependency/runtime changes or production deployment.
 
 HOTEL-CHECKIN-DEPARTURE-DAY-1024 scope completion: reserve PublishedPackageSale date hydration and its focused regression so asynchronous package loading cannot overwrite the flight-day check-in. Keep exact date matching/quote invalidation and package-only hydration unchanged.
+## CALL-QUEUE-BUTTONS-1024 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. Explicit user request aligns queue collapse/refresh buttons with contact search advanced/reset buttons. Reserve workflow.tsx queue header and scoped workflow.module.css plus own status notes. Base2482c7e2; no API, shared selector, schema or runtime ownership changes. Concurrent source/runtime preserved. No PR/merge requested.
+
+CALL-QUEUE-BUTTONS-1024 — COMPLETE / SOURCE_RELEASED: scoped lint,2 workflow tests, full TypeScript and65-route Web build pass. Browser verified collapse/expand, refresh and matching visual treatment. Explicitly authorized Web3000 replacement now PID21488, .next-queue-1024; popup hold false, API/Worker untouched. No migration or PR/merge.
