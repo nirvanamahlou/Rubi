@@ -779,6 +779,9 @@ export class FinanceInboxService {
     return Promise.all(
       candidates.map(async (candidate) => ({
         ...candidate,
+        canApproveReservationDelivery: actor.permissions.includes(
+          'reservations.documents.manage',
+        ),
         delivery: await this.delivery.readCustomerContract(
           candidate.contractId,
         ),
@@ -786,6 +789,39 @@ export class FinanceInboxService {
     );
   }
 
+  async reservationDocumentDelivery(
+    contractId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('reservations.documents.manage'))
+      throw new ForbiddenException('مجوز صدور رزرواسیون لازم است.');
+    await this.sales.financeCustomerDocumentDeliveryFacts(
+      contractId,
+      actor.branchIds,
+    );
+    return this.delivery.readCustomerContract(contractId);
+  }
+  async decideReservationDocumentDelivery(
+    contractId: string,
+    input: FinanceCustomerDocumentDeliveryCommandV1,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('reservations.documents.manage'))
+      throw new ForbiddenException('مجوز صدور رزرواسیون لازم است.');
+    if (input?.basis !== 'RESERVATION_PERMISSION')
+      throw new BadRequestException('مبنای مجوز رزرواسیون معتبر نیست.');
+    const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+      contractId,
+      actor.branchIds,
+    );
+    return this.delivery.updateCustomerContract(input, facts, actor, (tx) =>
+      this.sales.financeCustomerDocumentDeliveryFacts(
+        contractId,
+        actor.branchIds,
+        tx,
+      ),
+    );
+  }
   async decideCustomerDocumentDelivery(
     contractId: string,
     input: FinanceCustomerDocumentDeliveryCommandV1,

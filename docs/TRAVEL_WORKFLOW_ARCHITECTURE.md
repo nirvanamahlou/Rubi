@@ -282,3 +282,7 @@ The contract's initial page contains route, service/room composition, editable f
 
 ## 2026-10-24 — Partial passenger hotel purchase
 Owner supersedes the all-guests-priced requirement: hotel purchase accepts a nonempty subset of assigned hotel passengers. Each entered positive nightly amount is multiplied by contractual hotel nights; blank guests are omitted, never recorded as zero. Only the recorded subset total goes to the existing Finance inbox revision. Duplicate/foreign guests and tampered totals remain rejected. Later edits are complete replacement cost revisions with previous prices restored in the editor, not additive duplicate requests. Legacy service-formula revisions remain readable.
+
+## استثنای مجوز رزرواسیون — 2026-10-24
+
+طبق تأیید صریح مالک، کاربر دارای مجوز صدور رزرواسیون می‌تواند با دلیل اجباری، تحویل مدارک مشتری را بدون تأیید دریافت یا تسویه کامل مجاز کند. مالک رکورد و گردش ثبت همچنان Finance است؛ مبنای مستقل RESERVATION_PERMISSION، نسخه، شعبه، ثبت مسئول و تاریخ، دلیل و کنترل لغو قرارداد حفظ می‌شوند. این مسیر مجوز پرداخت یا دسترسی عمومی مالی ایجاد نمی‌کند و تأیید مالی دیگری لازم ندارد. جزئیات در تصمیم RESERVATION-DELIVERY-PERMIT-1024 ثبت شده است.
