@@ -1,0 +1,125 @@
+.trigger.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+  margin: 6px 0 0;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 14px;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    border-color 120ms,
+    box-shadow 120ms;
+}
+.trigger:hover {
+  border-color: #609ee8;
+}
+.trigger:focus-visible,
+.trigger[data-state='open'] {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+.trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.chevron {
+  color: var(--muted-foreground);
+  display: flex;
+}
+.trigger[data-state='open'] .chevron {
+  transform: rotate(180deg);
+}
+.menu {
+  z-index: 100;
+  width: var(--radix-select-trigger-width);
+  max-height: var(--radix-select-content-available-height);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: 0 12px 36px #0f172a20;
+  font-family: inherit;
+}
+.viewport {
+  padding: 5px;
+}
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 14px;
+  line-height: 1.6;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+.option[data-state='checked'] {
+  background: #3b82f610;
+  font-weight: 600;
+}
+.option[data-highlighted] {
+  background: #3b82f61c;
+  box-shadow: inset 0 0 0 1px #3b82f650;
+}
+.check {
+  display: flex;
+  margin-inline-start: auto;
+  width: 16px;
+  color: #3981dc;
+}
+.symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #64748b12;
+  color: #64748b;
+}
+.symbol[data-value='NEW'],
+.symbol[data-value='OPEN'] {
+  background: #3b82f614;
+  color: #3981dc;
+}
+.symbol[data-value='IN_PROGRESS'],
+.symbol[data-value='HIGH'] {
+  background: #d9770614;
+  color: #b77916;
+}
+.symbol[data-value='WAITING_CUSTOMER'] {
+  background: #8b5cf614;
+  color: #9070c9;
+}
+.symbol[data-value='CLOSED'],
+.symbol[data-value='COMPLETED'] {
+  background: #10b98114;
+  color: #179477;
+}
+.symbol[data-value='URGENT'] {
+  background: #e11d4812;
+  color: #d65370;
+}
+@media (prefers-reduced-motion: reduce) {
+  .trigger {
+    transition: none;
+  }
+}

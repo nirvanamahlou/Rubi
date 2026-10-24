@@ -62,6 +62,8 @@ describe('request workflow form', () => {
     expect(html).toContain('Saved request');
     expect(html).toContain('Saved completion');
     expect(html).toContain('name="status"');
-    expect(html).toContain('value="CLOSED" selected=""');
+    expect(html).toContain('aria-label="وضعیت"');
+    expect(html).toContain('بسته‌شده');
+    expect(html).toContain('data-value="HIGH"');
   });
 });
