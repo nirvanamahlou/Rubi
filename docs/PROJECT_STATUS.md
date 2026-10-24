@@ -1,3 +1,7 @@
+## TICKET-AIRLINE-LOGO-BACKGROUND-1024 — PC-A
+
+Shared passenger-ticket preview/print/PDF renderer composites airline logos against the ticket background, eliminating white rectangular backing without rewriting uploaded assets. Styling is scoped to airline marks; agency logo, safe image sources and issuance/data paths stay unchanged. 31 focused ticket tests pass. Isolated Chromium pixel QA confirms white backing equals the tinted ticket background and colored mark remains. Lint/types/build and exact-head hosted gates precede user-authorized develop merge. No schema/API/migration/dependency/runtime change. Source locks release at publication.
+
 ## AGENCY-CONTACT-FILL-1024 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; codex/pc-a-agency-contact-fill-1024 from develop ee06dd33. Owner authorizes selected agency contact autofill and immediate production release, explicitly skips manual tests. Reserve Sales agency controller/client/helper and its existing mock compatibility, bounded Master Data-owned phone/address projection through MasterSalesDirectory, contact service/repository and own docs. Producer returns only selected active agency phone/landline/address/postal code to branch-authorized contract creators; existing sensitive-read audit retained, no general Customer/B2B/Master Data permission grants. No overlapping active source writer found. No schema, migration, dependency or operational business-data changes. Required hosted CI remains; no manual test invocation. Build, encrypted backup and deployment health checks precede release.
