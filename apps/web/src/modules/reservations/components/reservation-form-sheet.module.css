@@ -559,3 +559,12 @@
   border: 1.5px solid #69798a;
   font-weight: bold;
 }
+
+/* Supplier form emphasis without enlarging the booking-summary row. */
+.roomsNights b {
+  font-size: 9px;
+  overflow-wrap: normal;
+}
+.hotelInformation tbody td {
+  font-weight: 600;
+}

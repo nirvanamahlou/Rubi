@@ -60,7 +60,7 @@ export function reservationPdfHtml(
   const heading = (n: string, title: string, note: string) =>
     `<div class="heading"><b>${n}</b><strong>${title}</strong><span>${note}</span></div>`;
   const fields = (items: unknown[][], cls: string) =>
-    `<div class="${cls}">${items.map(([k, v]) => `<div><span>${escape(k)}</span><b dir="auto">${escape(v)}</b></div>`).join('')}</div>`;
+    `<div class="${cls}">${items.map(([k, v]) => `<div${k === 'ROOMS / NIGHTS' ? ' class="roomsNights"' : ''}><span>${escape(k)}</span><b dir="auto">${escape(v)}</b></div>`).join('')}</div>`;
   const table = (
     heads: string[],
     rows: unknown[][],
@@ -138,7 +138,7 @@ export function reservationPdfHtml(
       ],
       'summary',
     )}
-    </section>${heading('02', 'FLIGHT INFORMATION', 'Departure & return · Tehran time')}${table(['AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'], data.flights.length ? data.flights.map((f) => [f.airline, f.number, f.date, f.time]) : [['-', '-', '-', '-']])}
+    </section>
     ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
       [
         'HOTEL',
@@ -156,6 +156,7 @@ export function reservationPdfHtml(
           ...(!data.roomBreakdown.length ? [data.roomType] : []),
         ],
       ],
+      'hotelInformation',
     )}
     ${
       data.roomBreakdown.length
@@ -191,8 +192,8 @@ export function reservationPdfHtml(
               'FLIGHT BACK',
               'CHECK-IN',
               'CHECK-OUT',
-              'TRANSFER OUT',
-              'TRANSFER BACK',
+              'TRF IN',
+              'TRF OUT',
               'OTHER SERVICES',
             ]
           : []),

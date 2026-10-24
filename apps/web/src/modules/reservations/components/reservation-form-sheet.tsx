@@ -288,7 +288,14 @@ export function ReservationFormSheet({
                   [voucher ? 'BOOKING DATE' : 'DATE OF ISSUE', data.issueDate],
                   ['SERVICES', data.services],
                 ].map(([label, value]) => (
-                  <div key={label}>
+                  <div
+                    key={label}
+                    className={
+                      label === 'ROOMS / NIGHTS'
+                        ? styles.roomsNights
+                        : undefined
+                    }
+                  >
                     <span>{label}</span>
                     <b dir="auto">{value}</b>
                   </div>
@@ -315,48 +322,20 @@ export function ReservationFormSheet({
                       `${data.rooms} ROOMS / ${data.nights} NIGHTS`,
                     ],
                   ].map(([label, value]) => (
-                    <div key={label}>
+                    <div
+                      key={label}
+                      className={
+                        label === 'ROOMS / NIGHTS'
+                          ? styles.roomsNights
+                          : undefined
+                      }
+                    >
                       <span>{label}</span>
                       <b dir="auto">{value}</b>
                     </div>
                   ))}
                 </div>
               </section>
-              <Heading
-                number="02"
-                title="FLIGHT INFORMATION"
-                note="Departure & return · Tehran time"
-              />
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    {['AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'].map((t) => (
-                      <th key={t}>{t}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {(data.flights.length
-                    ? data.flights
-                    : [
-                        {
-                          leg: '-',
-                          airline: '-',
-                          number: '-',
-                          date: '-',
-                          time: '-',
-                        },
-                      ]
-                  ).map((f, i) => (
-                    <tr key={i}>
-                      <td dir="auto">{f.airline}</td>
-                      <td>{f.number}</td>
-                      <td>{f.date}</td>
-                      <td>{f.time}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
               {(!settings || settings.flags.hotel) && (
                 <>
                   <Heading
@@ -364,7 +343,9 @@ export function ReservationFormSheet({
                     title="HOTEL INFORMATION"
                     note="Accommodation"
                   />
-                  <table className={styles.table}>
+                  <table
+                    className={`${styles.table} ${styles.hotelInformation}`}
+                  >
                     <colgroup>
                       <col
                         style={{
@@ -505,8 +486,8 @@ export function ReservationFormSheet({
                         'FLIGHT BACK',
                         'CHECK-IN',
                         'CHECK-OUT',
-                        'TRANSFER OUT',
-                        'TRANSFER BACK',
+                        'TRF IN',
+                        'TRF OUT',
                         'OTHER SERVICES',
                       ].map((label) => <th key={label}>{label}</th>)}
                     {voucher &&

@@ -1,3 +1,7 @@
+## 2026-10-24 — RESERVATION-FORM-POLISH-1024 — PC-A
+
+Supplier reservation preview/PDF removes the separate flight table while retaining each passenger's flight allocation. Transfer headers are TRF IN / TRF OUT; generic OTHER values are omitted while named English services remain. Room/night summary is slightly smaller and hotel table values use semibold. Registered request-scoped gender reaches output; an existing versioned form-only gender field is now editable for missing/corrected form data. Voucher flight layout is unchanged. Focused45 tests pass; synthetic one-page and three-page A4 PDFs rendered and all pages visually reviewed, with repeated footer and no clipped columns. Full affected checks/exact-head CI gate authorized develop merge and encrypted-backup Avina deployment. No schema, migration, dependency or permission changes.
+
 ## CALL-CENTER-FINAL-1024 — PC-C — CI_CANDIDATE
 
 PR1098 consolidates today's released Call Center changes on develop921d7e3c, authored by Amin-tech11.141 API tests with disposable PostgreSQL and48 Web tests pass; API typecheck/build and65-route Web build pass. Hosted quality/build/database passed; missing English translations for two new Call Center messages are repaired before re-running all gates. No operational migration, new grants or automatic company/CDR capture activation. Real CDR adapter and server access-scope rollout remain separate handoffs; private runtime configuration and hidden global attention widget are preserved.
