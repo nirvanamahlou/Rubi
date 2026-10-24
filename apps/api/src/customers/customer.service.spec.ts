@@ -115,6 +115,44 @@ const row = {
   _count: { relationships: 0 },
 };
 
+describe('current identity for authorized contract output', () => {
+  it('returns current spelling and birthday without decrypting document numbers', async () => {
+    const repository = {
+      find: vi.fn().mockResolvedValue({
+        ...row,
+        kind: 'PERSON',
+        passportFirstName: 'CURRENT',
+        passportLastName: 'PASSENGER',
+        birthDate: new Date('1991-02-03T00:00:00Z'),
+      }),
+      auditSensitiveRead: vi.fn(),
+    } as unknown as CustomerRepository;
+    const { service, nationalIdProtector } = createService(repository);
+    const reader: AuthenticatedActor = {
+      ...actor,
+      permissions: ['sales.export'],
+    };
+    expect(
+      await service.salesOutputIdentity(row.id, reader, 'trace'),
+    ).toMatchObject({
+      passportName: 'CURRENT PASSENGER',
+      birthDate: '1991-02-03',
+    });
+    expect(repository.find).toHaveBeenCalledWith(row.id, reader.branchIds);
+    expect(repository.auditSensitiveRead).toHaveBeenCalledWith(
+      row.id,
+      reader.userId,
+      row.ownerBranchId,
+      'customer-verification',
+      'trace',
+    );
+    expect(nationalIdProtector.decrypt).not.toHaveBeenCalled();
+    await expect(
+      service.salesOutputIdentity(row.id, { ...reader, permissions: [] }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+});
+
 describe('CustomerService', () => {
   it('enforces positive manual field grants on actual updates, even without legacy deny tokens', async () => {
     const repository = {

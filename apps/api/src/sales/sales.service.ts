@@ -1334,7 +1334,16 @@ export class SalesService {
           titleSnapshot: s.titleSnapshot,
           status: s.status,
           referenceId: s.referenceId,
-          metadata: s.metadata,
+          metadata: Object.fromEntries(
+            Object.entries(s.metadata ?? {}).filter(
+              ([key]) =>
+                ![
+                  'passengerTotalPricesV1',
+                  'passengerDeductionsV1',
+                  'passengerFlightPricesV1',
+                ].includes(key),
+            ),
+          ),
         })),
       });
     const changedExecution =

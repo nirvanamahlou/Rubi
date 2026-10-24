@@ -1,4 +1,5 @@
 'use client';
+import { AmendmentPassengerPriceTable } from './amendment-passenger-price-table';
 import { PassengerServiceEditor } from './passenger-service-editor';
 import { PASSENGER_FLIGHT_PRICES, type SalesMoney } from '@nora/contracts';
 import { amendmentPriceComponents } from './amendment-price-components';
@@ -63,6 +64,7 @@ export function ReservationSalesAmendment({
   );
   const [refs, setRefs] = useState<Record<string, MasterDataRecord[]>>({});
   const [error, setError] = useState('');
+  const [priceError, setPriceError] = useState('');
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [direction, setDirection] = useState<SalesTicketDirection>('OUTBOUND');
@@ -114,6 +116,11 @@ export function ReservationSalesAmendment({
       live = false;
     };
   }, []);
+  const passengerPricing =
+    draft.services.length > 0 &&
+    draft.services.every(
+      (s) => s.metadata?.passengerPackagePricingVersion === 1,
+    );
   const automaticPricing = draft.services.some(
     (s) => s.metadata?.automaticFlightRoomTotalV1 === true,
   );
@@ -175,6 +182,10 @@ export function ReservationSalesAmendment({
       });
   }
   async function submit() {
+    if (priceError) {
+      setError(priceError);
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -577,165 +588,193 @@ export function ReservationSalesAmendment({
               </div>
             ))}
 
-            {hotel?.rooms?.map((room, index) => (
-              <div
-                key={room.ordinal}
-                className="grid gap-2 rounded-xl border p-3 sm:grid-cols-2"
-              >
-                <strong>
-                  {room.ordinal} · {room.roomTypeNameSnapshot}
-                </strong>
-                <label>
-                  قیمت اتاق
-                  <Input
-                    dir="ltr"
-                    inputMode="decimal"
-                    value={room.agreedPrice?.amount ?? ''}
-                    onChange={(e) =>
-                      changeHotel({
-                        rooms: hotel.rooms!.map((r, i) =>
-                          i === index
-                            ? {
-                                ...r,
-                                agreedPrice: {
-                                  amount: e.target.value,
-                                  currencyCode:
-                                    r.agreedPrice?.currencyCode ?? '',
-                                },
-                              }
-                            : r,
-                        ),
-                      })
-                    }
-                  />
-                </label>
-                <div>
-                  <SearchableReference
-                    label="ارز اتاق"
-                    value={
-                      refs.currencies?.find(
-                        (c) => c.code === room.agreedPrice?.currencyCode,
-                      )?.id ?? ''
-                    }
-                    options={(refs.currencies ?? []).filter(
-                      (c) => c.code !== 'IRR',
-                    )}
-                    onChange={(id) => {
-                      const code = refs.currencies?.find(
-                        (c) => c.id === id,
-                      )?.code;
-                      if (code)
+            {!passengerPricing &&
+              hotel?.rooms?.map((room, index) => (
+                <div
+                  key={room.ordinal}
+                  className="grid gap-2 rounded-xl border p-3 sm:grid-cols-2"
+                >
+                  <strong>
+                    {room.ordinal} · {room.roomTypeNameSnapshot}
+                  </strong>
+                  <label>
+                    قیمت اتاق
+                    <Input
+                      dir="ltr"
+                      inputMode="decimal"
+                      value={room.agreedPrice?.amount ?? ''}
+                      onChange={(e) =>
                         changeHotel({
                           rooms: hotel.rooms!.map((r, i) =>
                             i === index
                               ? {
                                   ...r,
                                   agreedPrice: {
-                                    amount: r.agreedPrice?.amount ?? '0',
-                                    currencyCode: code,
+                                    amount: e.target.value,
+                                    currencyCode:
+                                      r.agreedPrice?.currencyCode ?? '',
                                   },
                                 }
                               : r,
                           ),
-                        });
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-
-            {draft.services.some(
-              (s) =>
-                s.pricing?.length &&
-                s.metadata?.passengerPackagePricingVersion !== 1 &&
-                s.metadata?.contractPackagePricingVersion !== 1,
-            )
-              ? draft.services.map((s) => (
-                  <div
-                    key={s.clientKey}
-                    className="grid gap-2 rounded-xl border p-3"
-                  >
-                    <strong>{s.titleSnapshot}</strong>
-                    {s.pricing?.map((v, i) => (
-                      <label key={v.currencyCode}>
-                        {currencySymbol(v.currencyCode ?? '')} ·{' '}
-                        {v.agreed.basis === 'NIGHT' ? 'هر شب' : 'مبلغ کل'}
-                        <Input
-                          dir="ltr"
-                          inputMode="decimal"
-                          value={v.agreed.amount}
-                          onChange={(e) =>
-                            patch({
-                              services: draft.services.map((t) =>
-                                t.clientKey === s.clientKey
-                                  ? {
-                                      ...t,
-                                      pricing: (t.pricing ?? []).map((p, j) =>
-                                        i === j
-                                          ? {
-                                              ...p,
-                                              agreed: {
-                                                ...p.agreed,
-                                                amount: e.target.value,
-                                              },
-                                              daySale: {
-                                                ...p.agreed,
-                                                amount: e.target.value,
-                                              },
-                                            }
-                                          : p,
-                                      ),
-                                    }
-                                  : t,
-                              ),
-                            })
-                          }
-                        />
-                      </label>
-                    ))}
+                        })
+                      }
+                    />
+                  </label>
+                  <div>
+                    <SearchableReference
+                      label="ارز اتاق"
+                      value={
+                        refs.currencies?.find(
+                          (c) => c.code === room.agreedPrice?.currencyCode,
+                        )?.id ?? ''
+                      }
+                      options={(refs.currencies ?? []).filter(
+                        (c) => c.code !== 'IRR',
+                      )}
+                      onChange={(id) => {
+                        const code = refs.currencies?.find(
+                          (c) => c.id === id,
+                        )?.code;
+                        if (code)
+                          changeHotel({
+                            rooms: hotel.rooms!.map((r, i) =>
+                              i === index
+                                ? {
+                                    ...r,
+                                    agreedPrice: {
+                                      amount: r.agreedPrice?.amount ?? '0',
+                                      currencyCode: code,
+                                    },
+                                  }
+                                : r,
+                            ),
+                          });
+                      }}
+                    />
                   </div>
-                ))
-              : draft.passengers.some((p) => p.agreedPrices?.length)
-                ? draft.passengers.map((p, i) => (
-                    <div
-                      key={p.customerId}
-                      className="grid gap-2 rounded-xl border p-3 md:grid-cols-3"
-                    >
-                      <strong>{p.displayNameSnapshot}</strong>
-                      {p.agreedPrices?.map((v) => (
-                        <label key={v.currencyCode}>
-                          {currencySymbol(v.currencyCode ?? '')}
+                </div>
+              ))}
+
+            {passengerPricing ? (
+              <AmendmentPassengerPriceTable
+                draft={draft}
+                currencies={(refs.currencies ?? []).map((c) => ({
+                  code: c.code ?? '',
+                  name: c.name,
+                  status: c.status,
+                }))}
+                onChange={(next) => setDraft(next)}
+                onError={setPriceError}
+              />
+            ) : (
+              <>
+                {draft.services.some(
+                  (s) =>
+                    s.pricing?.length &&
+                    s.metadata?.passengerPackagePricingVersion !== 1 &&
+                    s.metadata?.contractPackagePricingVersion !== 1,
+                )
+                  ? draft.services.map((s) => (
+                      <div
+                        key={s.clientKey}
+                        className="grid gap-2 rounded-xl border p-3"
+                      >
+                        <strong>{s.titleSnapshot}</strong>
+                        {s.pricing?.map((v, i) => (
+                          <label key={v.currencyCode}>
+                            {currencySymbol(v.currencyCode ?? '')} ·{' '}
+                            {v.agreed.basis === 'NIGHT' ? 'هر شب' : 'مبلغ کل'}
+                            <Input
+                              dir="ltr"
+                              inputMode="decimal"
+                              value={v.agreed.amount}
+                              onChange={(e) =>
+                                patch({
+                                  services: draft.services.map((t) =>
+                                    t.clientKey === s.clientKey
+                                      ? {
+                                          ...t,
+                                          pricing: (t.pricing ?? []).map(
+                                            (p, j) =>
+                                              i === j
+                                                ? {
+                                                    ...p,
+                                                    agreed: {
+                                                      ...p.agreed,
+                                                      amount: e.target.value,
+                                                    },
+                                                    daySale: {
+                                                      ...p.agreed,
+                                                      amount: e.target.value,
+                                                    },
+                                                  }
+                                                : p,
+                                          ),
+                                        }
+                                      : t,
+                                  ),
+                                })
+                              }
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    ))
+                  : draft.passengers.some((p) => p.agreedPrices?.length)
+                    ? draft.passengers.map((p, i) => (
+                        <div
+                          key={p.customerId}
+                          className="grid gap-2 rounded-xl border p-3 md:grid-cols-3"
+                        >
+                          <strong>{p.displayNameSnapshot}</strong>
+                          {p.agreedPrices?.map((v) => (
+                            <label key={v.currencyCode}>
+                              {currencySymbol(v.currencyCode ?? '')}
+                              <Input
+                                dir="ltr"
+                                inputMode="decimal"
+                                value={v.amount}
+                                onChange={(e) =>
+                                  passengerPrice(
+                                    i,
+                                    v.currencyCode,
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                            </label>
+                          ))}
+                        </div>
+                      ))
+                    : draft.priceComponents.map((p, i) => (
+                        <label key={i}>
+                          {p.title} · {currencySymbol(p.currencyCode ?? '')}
                           <Input
                             dir="ltr"
                             inputMode="decimal"
-                            value={v.amount}
+                            value={p.amount}
+                            readOnly={automaticPricing}
                             onChange={(e) =>
-                              passengerPrice(i, v.currencyCode, e.target.value)
+                              patch({
+                                priceComponents: draft.priceComponents.map(
+                                  (v, j) =>
+                                    j === i
+                                      ? { ...v, amount: e.target.value }
+                                      : v,
+                                ),
+                              })
                             }
                           />
                         </label>
                       ))}
-                    </div>
-                  ))
-                : draft.priceComponents.map((p, i) => (
-                    <label key={i}>
-                      {p.title} · {currencySymbol(p.currencyCode ?? '')}
-                      <Input
-                        dir="ltr"
-                        inputMode="decimal"
-                        value={p.amount}
-                        readOnly={automaticPricing}
-                        onChange={(e) =>
-                          patch({
-                            priceComponents: draft.priceComponents.map(
-                              (v, j) =>
-                                j === i ? { ...v, amount: e.target.value } : v,
-                            ),
-                          })
-                        }
-                      />
-                    </label>
-                  ))}
+              </>
+            )}
+            {priceError && (
+              <p role="alert" className="text-destructive">
+                {priceError}
+              </p>
+            )}
             <div className="flex flex-wrap gap-4">
               {draft.priceComponents.map((p, i) => (
                 <span key={i}>
@@ -757,7 +796,12 @@ export function ReservationSalesAmendment({
           />
         </label>
         <Button
-          disabled={busy || saved || !isOptionalOperationReason(draft.reason)}
+          disabled={
+            busy ||
+            saved ||
+            !!priceError ||
+            !isOptionalOperationReason(draft.reason)
+          }
           onClick={() => void submit()}
         >
           {busy ? 'در حال ثبت…' : 'ثبت اصلاح قرارداد'}

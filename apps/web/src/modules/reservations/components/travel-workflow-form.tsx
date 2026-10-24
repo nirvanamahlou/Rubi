@@ -92,12 +92,21 @@ export function TravelWorkflowForm({
   const [ticket, setTicket] = useState(false);
   const [order, setOrder] = useState<string[]>([]);
   const [ages, setAges] = useState<TravelWorkflowStateV1['ageOverrides']>({});
+  const [dataRevision, setDataRevision] = useState(0);
+  useEffect(() => {
+    const refresh = () => {
+      if (!settingsDirty) setDataRevision((v) => v + 1);
+    };
+    window.addEventListener('reservation-workflow-changed', refresh);
+    return () =>
+      window.removeEventListener('reservation-workflow-changed', refresh);
+  }, [settingsDirty]);
   useEffect(() => {
     let active = true;
     void travelRequest<{
       data: WorkflowIntake;
       delivery: TravelDeliveryAuthorizationV1;
-    }>(`reservations/requests/${id}/workflow`)
+    }>(`reservations/requests/${id}/workflow${readOnly ? '?historical=1' : ''}`)
       .then((result) => {
         if (!active) return;
         setIntake(result.data);
@@ -115,7 +124,7 @@ export function TravelWorkflowForm({
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, dataRevision, readOnly]);
   async function run(operation: TravelWorkflowCommandV1['action']) {
     if (!intake || busy || readOnly) return;
     const operationNote = workflowOperationNote(operation, note);
