@@ -115,6 +115,34 @@ export function hotelPurchaseTotal(
   return total;
 }
 
+/** Blank guests remain unpriced; only explicitly entered positive nightly prices form the revision. */
+export function hotelPassengerPurchaseInput(
+  passengers: readonly Passenger[],
+  nightly: Readonly<Record<string, string>>,
+  nights: number,
+) {
+  if (!Number.isSafeInteger(nights) || nights <= 0)
+    throw new Error('تاریخ اقامت معتبر نیست');
+  const passengerPrices = passengers
+    .filter((person) => nightly[person.id]?.trim())
+    .map((person) => {
+      const amount = moneyUnits(nightly[person.id]!);
+      if (amount <= 0n)
+        throw new Error('قیمت هر شب هر مسافر باید مبلغی مثبت باشد.');
+      return { customerId: person.id, nightlyAmount: moneyDecimal(amount) };
+    });
+  if (!passengerPrices.length)
+    throw new Error('حداقل یک قیمت خرید مسافر را وارد کنید.');
+  const amount = moneyDecimal(
+    passengerPrices.reduce(
+      (sum, price) => sum + moneyUnits(price.nightlyAmount) * BigInt(nights),
+      0n,
+    ),
+  );
+  moneyUnits(amount);
+  return { passengerPrices, amount };
+}
+
 export function SupplierFormPurchaseContext({
   request,
 }: {
@@ -219,11 +247,16 @@ export function ReservationHotelPurchase({
       ? { id: hotelPurchase.currencyCode, name: hotelPurchase.currencyCode }
       : null,
   );
-  const [hotelBase, setHotelBase] = useState(
-    hotelPurchase?.pricingCalculation?.baseAmount ?? '',
-  );
-  const [hotelFactor, setHotelFactor] = useState(
-    hotelPurchase?.pricingCalculation?.factor ?? '1',
+  const hotelPassengers = hotel
+    ? reservationHotelPassengers(request.snapshot, hotel.clientKey)
+    : [];
+  const [nightlyPrices, setNightlyPrices] = useState<Record<string, string>>(
+    () =>
+      Object.fromEntries(
+        (hotelPurchase?.passengerPrices ?? [])
+          .filter((price) => price.nightlyAmount !== undefined)
+          .map((price) => [price.customerId, price.nightlyAmount!]),
+      ),
   );
   type TransferDraft = {
     supplier: Option | null;
@@ -307,11 +340,11 @@ export function ReservationHotelPurchase({
   let hotelTotal = '';
 
   try {
-    hotelTotal = reservationServicePurchaseTotal(
-      hotelBase,
-      hotelFactor,
+    hotelTotal = hotelPassengerPurchaseInput(
+      hotelPassengers,
+      nightlyPrices,
       nights,
-    );
+    ).amount;
   } catch {
     /* Validated on save. */
   }
@@ -347,7 +380,7 @@ export function ReservationHotelPurchase({
       if (hotel) {
         if (!hotelSupplier || !hotelCurrency || !nights || !hotelTotal)
           throw new Error(
-            'کارگزار، ارز، قیمت پایه، ضریب و تاریخ اقامت قرارداد را تکمیل کنید.',
+            'کارگزار، ارز، تاریخ اقامت و حداقل یک قیمت خرید مسافر را تکمیل کنید.',
           );
         purchases.push({
           serviceClientKey: hotel.clientKey,
@@ -358,7 +391,11 @@ export function ReservationHotelPurchase({
           ...(fxRates[hotelCurrency.id]
             ? { purchaseRateToIrr: fxRates[hotelCurrency.id] }
             : {}),
-          pricingCalculation: { baseAmount: hotelBase, factor: hotelFactor },
+          passengerPrices: hotelPassengerPurchaseInput(
+            hotelPassengers,
+            nightlyPrices,
+            nights,
+          ).passengerPrices,
         });
       }
       if (transfers.length) {
@@ -493,24 +530,65 @@ export function ReservationHotelPurchase({
           <p className="text-xs text-muted-foreground">
             اقامت قرارداد: {checkIn || '—'} تا {checkOut || '—'}
           </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <FormField label="قیمت پایه هتل">
-              <MoneyInput
-                aria-label="قیمت پایه هتل"
-                value={hotelBase}
-                onValueChange={setHotelBase}
-              />
-            </FormField>
-            <FormField label="ضریب هتل">
-              <MoneyInput
-                aria-label="ضریب هتل"
-                value={hotelFactor}
-                onValueChange={setHotelFactor}
-              />
-            </FormField>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr>
+                  <th>مسافر</th>
+                  <th>رده سنی</th>
+                  <th>قیمت هر شب</th>
+                  <th>جمع خرید</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hotelPassengers.map((person) => {
+                  let total = '';
+                  try {
+                    if (nightlyPrices[person.id]?.trim())
+                      total = hotelPurchaseTotal(
+                        nightlyPrices[person.id]!,
+                        'NIGHT',
+                        checkIn,
+                        checkOut,
+                      );
+                  } catch {
+                    /* Keep invalid input visible for correction. */
+                  }
+                  return (
+                    <tr key={person.id}>
+                      <td className="p-2">{person.name}</td>
+                      <td className="p-2">
+                        {person.age === 'CHD'
+                          ? 'کودک'
+                          : person.age === 'INF'
+                            ? 'نوزاد'
+                            : 'بزرگسال'}
+                      </td>
+                      <td className="p-2">
+                        <MoneyInput
+                          aria-label={`قیمت هر شب ${person.name}`}
+                          value={nightlyPrices[person.id] ?? ''}
+                          onValueChange={(value) =>
+                            setNightlyPrices((previous) => ({
+                              ...previous,
+                              [person.id]: value,
+                            }))
+                          }
+                        />
+                      </td>
+                      <td className="p-2">
+                        {total ? formatSalesMoney(total) : '—'}{' '}
+                        {hotelCurrency?.id ?? ''}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          <p className="text-sm text-muted-foreground">
-            قیمت پایه × ضریب × {nights || '—'} شب قرارداد
+          <p className="text-xs text-muted-foreground">
+            قیمت‌های خالی در جمع خرید محاسبه نمی‌شوند؛ مبلغ هر مسافر در تعداد شب
+            قرارداد ضرب می‌شود.
           </p>
           {hotelPurchase && (
             <p className="text-sm">
