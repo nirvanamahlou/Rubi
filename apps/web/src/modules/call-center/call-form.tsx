@@ -11,11 +11,11 @@ import {
   DialogTitle,
 } from '@/components/ui/overlays';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
+import { callCenterApi } from './client';
 import {
   callDate,
   validPhone,
   sources,
-  operators,
   type Call,
   type CallEvent,
 } from './model';
@@ -46,6 +46,37 @@ export function CallForm({
   const [error, setError] = useState('');
   const [dirty, setDirty] = useState(false);
   const [requests, setRequests] = useState<RequestCase[]>([]);
+  const [destinationState, setDestinationState] = useState<{
+    branch: string;
+    labels: string[];
+    error: string;
+  } | null>(null);
+  const destinationsLoading = destinationState?.branch !== branchId;
+  const destinations = destinationsLoading ? [] : destinationState.labels;
+  const destinationError = destinationsLoading ? '' : destinationState.error;
+  const [destinationRetry, setDestinationRetry] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    callCenterApi
+      .destinations(branchId, controller.signal)
+      .then((result) => {
+        if (!controller.signal.aborted)
+          setDestinationState({
+            branch: branchId,
+            labels: result.data.map((row) => row.label),
+            error: '',
+          });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setDestinationState({
+            branch: branchId,
+            labels: [],
+            error: 'دریافت فهرست کارکنان انجام نشد.',
+          });
+      });
+    return () => controller.abort();
+  }, [branchId, destinationRetry]);
   useEffect(() => {
     const controller = new AbortController();
     if (previous?.contactId)
@@ -220,21 +251,48 @@ export function CallForm({
                       />
                     </>
                   ) : (
-                    <NativeSearchSelect
-                      onChange={() => setDirty(true)}
-                      aria-label="وصل شده به"
-                      className={styles.control}
-                      optionLimit={50}
-                      disabled={busy}
-                      name="operator"
-                      defaultValue={completing ? previous?.operator : 'نامشخص'}
-                    >
-                      {operators.map((operator) => (
-                        <option key={operator} value={operator}>
-                          {operator}
-                        </option>
-                      ))}
-                    </NativeSearchSelect>
+                    <>
+                      <NativeSearchSelect
+                        onChange={() => setDirty(true)}
+                        aria-label="وصل شده به"
+                        className={styles.control}
+                        optionLimit={50}
+                        disabled={busy}
+                        aria-busy={destinationsLoading}
+                        name="operator"
+                        defaultValue={
+                          completing ? previous?.operator : 'نامشخص'
+                        }
+                      >
+                        {[
+                          ...new Set([
+                            'نامشخص',
+                            ...(completing && previous?.operator
+                              ? [previous.operator]
+                              : []),
+                            ...destinations,
+                          ]),
+                        ].map((operator) => (
+                          <option key={operator} value={operator}>
+                            {operator}
+                          </option>
+                        ))}
+                      </NativeSearchSelect>
+                      {destinationError && (
+                        <span role="status">
+                          {destinationError}{' '}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDestinationState(null);
+                              setDestinationRetry((value) => value + 1);
+                            }}
+                          >
+                            تلاش مجدد
+                          </button>
+                        </span>
+                      )}
+                    </>
                   )}
                 </label>
                 <label>

@@ -7222,3 +7222,13 @@ Final Web build/TypeScript passes (65 routes). Local3000 serves
 .next-notes-navigation-1024, PID19480, login HTTP200. Explicit popup hold retained;
 API/Worker and operational data unchanged. Authenticated visual review requires
 owner login. Source scope releases on push; no migration or grants.
+
+## CALL-DESTINATION-OPTIONS-1024 — PC-C — LOCAL_VERIFIED
+
+Connected-to field uses authorized HR public staff choices with position/unit -
+full name - extension. Private16-person source completed from owner-supplied position
+column, kept outside Git. All16 options verified; shared203 has both people;
+automatic answer uses the same label while preserving historical snapshots.
+22 API/Web tests, scoped lint/types/builds pass. Local3000/4000 activated and healthy;
+explicit popup hold remains false. No schema, grants, ownership or PBX routing.
+See tasks/CALL-DESTINATION-OPTIONS-1024.md for evidence. Scope releases on push.

@@ -9145,3 +9145,17 @@ access to older notes without new buttons. No API/schema/permission/CSS changes.
 Nine relevant Web tests, scoped lint and production build/TypeScript pass.
 Web3000 activated with popup hold false; API/Worker untouched. Login returns200.
 Source scope releases on push; no migration, grants or production deployment.
+
+## CALL-DESTINATION-OPTIONS-1024 — PC-C — LOCAL_VERIFIED
+
+Owner requests position/unit-name-extension display and all supplied staff choices
+in the existing connected-to field. Base7d4c7f03 preserves final notes/audio stack.
+Reserve HR public answer directory/options and tests, bounded Call Center public
+options route/service, form/client/tests and own docs. Minimal branch-authorized
+business directory only; no HR private fields, ownership or popup mapping. Private
+16-person source stays outside Git. No schema, grants, dependency or CSS changes.
+
+22 targeted tests pass (12 API,10 Web), scoped lint, API types and API/Web builds.
+Compiled private projection verifies16/16 choices and two shared203 entries.
+Local3000/4000 activated; anonymous directory401, login/health200. Popups held off.
+Scope releases on push; see tasks/CALL-DESTINATION-OPTIONS-1024.md.

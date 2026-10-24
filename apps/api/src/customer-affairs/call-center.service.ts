@@ -17,6 +17,7 @@ import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { CallCenterCrypto } from './call-center.crypto';
 import { CallCenterAccessService } from './call-center-access.service';
+import { HrCallAnswerDirectory } from '../hr/hr-call-answer-directory';
 import type {
   CallCenterCallDto,
   CallCenterListDto,
@@ -54,7 +55,29 @@ export class CallCenterService {
       database,
       undefined as never,
     ),
+    @Inject(HrCallAnswerDirectory)
+    private readonly answerDirectory: HrCallAnswerDirectory = new HrCallAnswerDirectory(
+      database,
+    ),
   ) {}
+
+  async destinationOptions(
+    actor: AuthenticatedActor,
+    requested: string | undefined,
+  ) {
+    const branchId = this.branch(
+      actor,
+      requested,
+      'customer_affairs.call_center.calls.create',
+    );
+    await this.access.where(actor, branchId);
+    return {
+      data: await this.answerDirectory.options(
+        branchId,
+        process.env.ISSABEL_CONNECTION_ID,
+      ),
+    };
+  }
 
   private branch(
     actor: AuthenticatedActor,
