@@ -10,6 +10,9 @@ export interface IssabelOptions extends AmiOptions {
   inboundQueues: string[];
   outboundPeers: string[];
   outboundExtensions: string[];
+  companyCapture: boolean;
+  companyExtensions: string[];
+  inboundPeers: string[];
 }
 export function issabelOptions(config: ConfigService): IssabelOptions | null {
   if (config.get<string>('ISSABEL_ENABLED') !== 'true') return null;
@@ -26,6 +29,15 @@ export function issabelOptions(config: ConfigService): IssabelOptions | null {
     technology: (value('CHANNEL_TECHNOLOGY') || 'PJSIP') as 'SIP' | 'PJSIP',
     prefixes: value('ALLOWED_PREFIXES').split(',').filter(Boolean),
     nativeCapture: value('EVENT_MODE') === 'NATIVE_QUEUE_CAPTURE',
+    companyCapture: value('CAPTURE_SCOPE') === 'COMPANY',
+    companyExtensions: value('COMPANY_EXTENSIONS')
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean),
+    inboundPeers: value('INBOUND_PEERS')
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean),
     outboundPeers: value('OUTBOUND_PEERS')
       .split(',')
       .map((v) => v.trim())
@@ -64,6 +76,18 @@ export function issabelOptions(config: ConfigService): IssabelOptions | null {
     (!options.tls &&
       !['127.0.0.1', '::1', 'localhost'].includes(options.host) &&
       !localCompanyCapture) ||
+    !['', 'COMPANY'].includes(value('CAPTURE_SCOPE')) ||
+    (options.companyCapture &&
+      (!options.nativeCapture ||
+        !options.companyExtensions.length ||
+        !options.inboundPeers.length ||
+        !options.outboundPeers.length)) ||
+    options.companyExtensions.length > 500 ||
+    options.companyExtensions.some((p) => !/^\d{2,10}$/.test(p)) ||
+    options.inboundPeers.length > 100 ||
+    options.inboundPeers.some(
+      (p) => !/^(SIP|PJSIP)\/[a-zA-Z0-9_.-]{1,64}$/.test(p),
+    ) ||
     options.outboundPeers.length > 100 ||
     options.outboundPeers.some(
       (p) => !/^(SIP|PJSIP)\/[a-zA-Z0-9_.-]{1,64}$/.test(p),
@@ -78,6 +102,7 @@ export function issabelOptions(config: ConfigService): IssabelOptions | null {
       value('EVENT_MODE'),
     ) ||
     (options.nativeCapture &&
+      !options.companyCapture &&
       (options.inboundQueues.length === 0 ||
         options.inboundQueues.length > 100 ||
         options.inboundQueues.some((q) => !/^[a-zA-Z0-9_.:-]{1,100}$/.test(q))))

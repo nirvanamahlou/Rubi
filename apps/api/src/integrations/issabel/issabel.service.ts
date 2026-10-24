@@ -22,6 +22,10 @@ import { issabelOptions, type IssabelOptions } from './config';
 import { normalizeIssabelEvent } from './events';
 import { nativeEventNames, normalizeNativeQueueEvent } from './native-events';
 import { outboundEventNames, normalizeNativeOutbound } from './native-outbound';
+import {
+  companyInboundEvents,
+  normalizeCompanyInbound,
+} from './company-inbound';
 import { AmiContinuity } from './continuity';
 import { queueWrapupPolicy } from './queue-snapshot';
 import { fallback } from './sticky-sales';
@@ -367,13 +371,27 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
       const outbound = await normalizeNativeOutbound(
         connection.id,
         message,
-        this.options.outboundExtensions,
+        this.options.companyCapture
+          ? this.options.companyExtensions
+          : this.options.outboundExtensions,
         this.options.outboundPeers,
         (id) => this.events.acceptedEvent(connection.id, id),
         receivedAt,
       );
       if (outbound) {
         await this.events.receive(outbound, 'ISSABEL');
+        return;
+      }
+      if (this.options.companyCapture) {
+        const inbound = await normalizeCompanyInbound(
+          connection.id,
+          message,
+          this.options.inboundPeers,
+          this.options.companyExtensions,
+          (id) => this.events.acceptedEvent(connection.id, id),
+          receivedAt,
+        );
+        if (inbound) await this.events.receive(inbound, 'ISSABEL');
         return;
       }
       const event = await normalizeNativeQueueEvent(
@@ -563,7 +581,11 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
           if (
             this.options?.nativeCapture
               ? !nativeEventNames.has(message.event ?? '') &&
-                !outboundEventNames.has(message.event ?? '')
+                !outboundEventNames.has(message.event ?? '') &&
+                !(
+                  this.options.companyCapture &&
+                  companyInboundEvents.has(message.event ?? '')
+                )
               : message.event !== 'UserEvent' &&
                 message.event !== 'OriginateResponse'
           )

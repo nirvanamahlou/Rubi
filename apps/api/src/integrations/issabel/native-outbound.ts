@@ -40,20 +40,36 @@ export async function normalizeNativeOutbound(
       !identity(message.destuniqueid))
   )
     return null;
-  // Only the initial trunk leg belongs to this adapter; transfers/fallbacks need a separate contract.
-  if (
+  // Parallel/fallback trunks retain one call root. Every additional leg needs its
+  // own persisted DialBegin; an orphan DialEnd cannot establish a destination.
+  const additionalLeg =
     anchor &&
     message.event !== 'Hangup' &&
-    anchor.legId !== message.destuniqueid
+    anchor.legId !== message.destuniqueid;
+  const legAnchorId = nativeEventId(
+    root,
+    'outbound-leg',
+    message.destuniqueid ?? '',
+  );
+  if (
+    additionalLeg &&
+    message.event !== 'DialBegin' &&
+    !(await lookup(legAnchorId))
   )
     return null;
   const number = message.dialstring?.split('/');
   if (
-    !anchor &&
+    message.event === 'DialBegin' &&
     (!number ||
       number.length !== 2 ||
       number[0] !== destination?.[2] ||
       !/^\+?\d{7,15}$/.test(number[1]!))
+  )
+    return null;
+  if (
+    anchor &&
+    message.event === 'DialBegin' &&
+    number?.[1] !== anchor.destination.value
   )
     return null;
   const kind =
@@ -64,7 +80,9 @@ export async function normalizeNativeOutbound(
         : 'ENDED';
   const id =
     message.event === 'DialBegin'
-      ? anchorId
+      ? additionalLeg
+        ? legAnchorId
+        : anchorId
       : nativeEventId(
           root,
           `outbound-${message.event}`,

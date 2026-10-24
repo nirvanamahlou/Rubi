@@ -96,4 +96,25 @@ describe('native outbound phone calls', () => {
       terminalForCall: false,
     });
   });
+  it('retains a verified fallback trunk leg without creating a second call root', async () => {
+    const { receive } = setup();
+    const first = await receive();
+    await receive({ event: 'DialEnd', dialstatus: 'BUSY' });
+    const next = await receive({ destuniqueid: 'fallback' });
+    expect(next?.externalEventId).not.toBe(first?.externalEventId);
+    expect(next?.rootCallId).toBe(first?.rootCallId);
+    expect(
+      await receive({
+        event: 'DialEnd',
+        destuniqueid: 'fallback',
+        dialstatus: 'ANSWER',
+      }),
+    ).toMatchObject({ kind: 'ANSWERED' });
+    expect(
+      await receive({
+        destuniqueid: 'other-phone',
+        dialstring: 'trunk-test/12025550999',
+      }),
+    ).toBeNull();
+  });
 });
