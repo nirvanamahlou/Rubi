@@ -19,8 +19,8 @@ import { CallCenterTasksService } from '../tasks/call-center-tasks.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
 describe('Call Center workflow input', () => {
-  it('defaults a new request to open', () => {
-    expect(plainToInstance(RequestInput, {}).status).toBe('NEW');
+  it('defaults a new request to waiting for agent action', () => {
+    expect(plainToInstance(RequestInput, {}).status).toBe('IN_PROGRESS');
   });
   it('requires canonical identifiers, bounded priority and a real date', async () => {
     expect(
@@ -95,6 +95,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           '/nora_call_center_package_one_test_1019',
           '/nora_call_center_test_1018',
           '/nora_ci',
+          '/nora_call_request_pending_1024',
         ].includes(url.pathname)
       )
         throw Error('Disposable database required');
@@ -290,6 +291,8 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       const row = await db.customerAffairsTicket.findUniqueOrThrow({
         where: { id: request.id },
       });
+      // Legacy NEW clients retain replay safety but cannot persist NEW anymore.
+      expect(row.status).toBe('IN_PROGRESS');
       expect(row.callCenterPayload).not.toContain(request.title);
       expect(row.subject).not.toBe(request.title);
       expect(
@@ -308,6 +311,53 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           title: 'Changed retry',
         }),
       ).rejects.toThrow();
+    });
+    it('creates in waiting-agent state and rejects new waiting-customer or closed requests', async () => {
+      const isolatedContact = (
+        await calls.create(
+          {
+            id: randomUUID(),
+            phone: '+12025550068',
+            name: 'Synthetic',
+            subject: 'Synthetic',
+            source: 'Website',
+            operator: 'Synthetic',
+            direction: 'INBOUND',
+            status: 'جدید',
+            occurredAt: new Date().toISOString(),
+            note: '',
+          },
+          actor,
+          branchId,
+        )
+      ).data.contactId;
+      const input = {
+        ...request,
+        id: randomUUID(),
+        commandId: randomUUID(),
+        status: 'IN_PROGRESS',
+      };
+      await workflow.saveRequest(actor, branchId, isolatedContact, input);
+      expect(
+        (
+          await db.customerAffairsTicket.findUniqueOrThrow({
+            where: { id: input.id },
+          })
+        ).status,
+      ).toBe('IN_PROGRESS');
+      for (const status of ['WAITING_CUSTOMER', 'CLOSED']) {
+        const id = randomUUID();
+        await expect(
+          workflow.saveRequest(actor, branchId, isolatedContact, {
+            ...input,
+            id,
+            commandId: randomUUID(),
+            status,
+            reason: 'Synthetic reason',
+          }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(await db.customerAffairsTicket.count({ where: { id } })).toBe(0);
+      }
     });
     it('enforces resource branch, workflow permission and optimistic request versions', async () => {
       await expect(

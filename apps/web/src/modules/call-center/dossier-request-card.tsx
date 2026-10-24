@@ -46,7 +46,7 @@ export function DossierRequestCard({
         وضعیت:{' '}
         {(
           {
-            NEW: 'باز',
+            NEW: 'منتظر اقدام کارشناس',
             IN_PROGRESS: 'منتظر اقدام کارشناس',
             WAITING_CUSTOMER: 'منتظر پاسخ مشتری',
             CLOSED: 'بسته‌شده',

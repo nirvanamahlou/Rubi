@@ -68,5 +68,6 @@ describe('dossier request summary', () => {
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
     expect(html.match(/<button/g)).toHaveLength(1);
     expect(html).not.toContain('تاریخ و ساعت بسته شدن');
+    expect(html).toContain('منتظر اقدام کارشناس');
   });
 });
