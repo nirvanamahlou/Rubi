@@ -9356,3 +9356,9 @@ HOTEL-CHECKIN-DEPARTURE-DAY-1024 scope completion: reserve PublishedPackageSale 
 COMPUTER_ID=PC-C. Explicit user request aligns queue collapse/refresh buttons with contact search advanced/reset buttons. Reserve workflow.tsx queue header and scoped workflow.module.css plus own status notes. Base2482c7e2; no API, shared selector, schema or runtime ownership changes. Concurrent source/runtime preserved. No PR/merge requested.
 
 CALL-QUEUE-BUTTONS-1024 — COMPLETE / SOURCE_RELEASED: scoped lint,2 workflow tests, full TypeScript and65-route Web build pass. Browser verified collapse/expand, refresh and matching visual treatment. Explicitly authorized Web3000 replacement now PID21488, .next-queue-1024; popup hold false, API/Worker untouched. No migration or PR/merge.
+
+## CALL-HISTORY-RECIPIENT-1024 — PC-C — RESERVED
+
+Explicit user request adds connected-to display between description and creation time in dossier call history. Reserve workspace.tsx history rendering and own docs only. Use existing call answerRecipient.label and operator fallback as in completion popup; no directory fetch, history rewrite, API/schema/grants or popup change. Base67eb56f2; prior source scope released. Own Web3000 PID21488 may be refreshed with this scoped build; concurrent runtimes must be preserved. No PR/merge requested.
+
+CALL-HISTORY-RECIPIENT-1024 — COMPLETE / SOURCE_RELEASED:10 existing model/form tests, scoped ESLint, full TypeScript and65-route Web production build pass. Browser verifies real stored answer label between description and created timestamp without saving business data. Own Web3000 PID16032 runs .next-history-recipient-1024; popup hold false, API/Worker preserved. No migration or PR/merge.
