@@ -8796,3 +8796,18 @@ through incremental scroll loading; show closure time from recorded state transi
 Requested dossier cards/navigation cleanup complete.4 tests, scoped lint/types and
 Web production build pass; local Web3000 HTTP200. Existing backend/caller-name runtime
 preserved. No data/schema/grant changes. Bounded source reservation releases on push.
+
+## CALL-RECORDING-DOWNLOAD-1024 — PC-C — LOCAL_VERIFIED
+
+Explicit owner authorization: add dossier history audio-download button below
+registration time, trailing icon (left in fa/right in en), real authorized download.
+Base cd561146 preserves latest dossier UI; runtime caller-name stack retained by
+scoped file copies. Reserve workspace/new audio UI/client/tests, Customer Affairs
+public media authorization, Integrations media service/controller/spec and own docs.
+Additive call-scoped media contract ships producer/consumer together; existing
+attention scope unchanged. No grant, migration, dependency, PBX or popup activation.
+
+21 targeted tests, scoped API/Web lint, TypeScript and production builds pass.
+Live preview switch awaits coordination: concurrent work replaced3000/4000 during
+build; existing processes preserved. Real PBX audio ingestion remains pending.
+Bounded source reservation releases on push. See own task document for evidence.

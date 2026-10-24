@@ -1,3 +1,13 @@
+## CALL-RECORDING-DOWNLOAD-1024 — PC-C — LOCAL_VERIFIED / 2026-10-24
+
+Requested dossier audio-download action follows registration time, with localized
+trailing icon and authorized encrypted-media download. Additive call-scoped routes
+require call visibility and recordings.read without popup offers; legacy attention
+scope remains unchanged.21 targeted tests, API/Web scoped lint, TypeScript and builds
+pass. No migration/grant/PBX/popup changes. Live preview replacement awaits
+coordination with concurrent3000/4000 owner; real PBX audio ingestion and authenticated
+company-recording acceptance remain pending. See tasks/CALL-RECORDING-DOWNLOAD-1024.md.
+
 ## HOTEL-IMPORT-COLUMNS-1020 — PC-B — 2026-10-20
 
 User requests website/free-sale/Persian-name columns in the supplied hotel import template and explicitly approves push/develop merge after tests. Extended17-column download and additive preview/profile/edit mapping reuse existing name/website and one nullable freeSale Boolean, independent of active/saleable/featured.88 focused tests pass (76 API,3 real PostgreSQL,9 Web/English); Prisma validation/API types/scoped lint pass. Original template columns/guide remain unchanged. Legacy14/18 UPDATE preserves omitted new fields; Excel website links must exactly match their Website cells and are never fetched. A reproduced default5s transaction expiry is corrected with bounded120s import commit/reference caching, retaining atomicity. All179 migrations applied to disposable QA only; exact-head hosted gates remain mandatory. No operational migration/import/deployment or3100 restart. Apply additive20261020180000 migration after backup before API/Web rollout. See tasks/HOTEL-IMPORT-COLUMNS-1020.md and final PR evidence.

@@ -1,5 +1,6 @@
 'use client';
 import { ScrollContinuation } from './scroll-continuation';
+import { RecordingDownload } from './recording-download';
 import {
   Dialog,
   DialogContent,
@@ -1115,6 +1116,13 @@ function History({
                 <p>
                   زمان ثبت: {c.createdAt ? callDate(c.createdAt) : 'نامشخص'}
                 </p>
+                <RecordingDownload
+                  callId={c.id}
+                  branchId={branch}
+                  allowed={permissions.includes(
+                    'customer_affairs.call_center.recordings.read',
+                  )}
+                />
               </details>
             </li>
           ))}
