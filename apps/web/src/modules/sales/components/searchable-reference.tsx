@@ -20,6 +20,7 @@ export function salesReferenceDisplayName(
 
 export function SearchableReference({
   label,
+  hideLabel = false,
   value,
   options,
   onChange,
@@ -28,6 +29,7 @@ export function SearchableReference({
   showAllOptionsOnOpen = false,
 }: {
   label: string;
+  hideLabel?: boolean;
   value: string;
   options: readonly (Pick<MasterDataRecord, 'id' | 'name' | 'code'> &
     Partial<MasterDataRecord>)[];
@@ -38,7 +40,12 @@ export function SearchableReference({
 }) {
   const id = useId();
   return (
-    <FormField id={id} label={label} required>
+    <FormField
+      id={id}
+      label={label}
+      labelClassName={hideLabel ? 'sr-only' : ''}
+      required={!hideLabel}
+    >
       <SearchCombobox
         id={id}
         label={label}
