@@ -513,6 +513,7 @@ export function FlightLoadGrid({
           'origin',
           'شهر مبدأ',
           originCities.map((id) => [id, cityLabel(id)]),
+          originCities.length + 1,
         )}
         <FormField label="کشور مقصد" id="load-country">
           <NativeSearchSelect
@@ -535,6 +536,7 @@ export function FlightLoadGrid({
           'destination',
           'شهر مقصد',
           cities.map((id) => [id, cityLabel(id)]),
+          cities.length + 1,
         )}
         {selectFilter(
           'carrier',
