@@ -866,7 +866,7 @@ describe('CustomerService', () => {
 });
 
 describe('Sales workflow agency creation permission', () => {
-  const salesActor = {
+  const salesActor: AuthenticatedActor = {
     ...actor,
     permissions: [
       MANUAL_ACCESS_VERSION,
@@ -898,14 +898,15 @@ describe('Sales workflow agency creation permission', () => {
   it('denies read-only users, explicit screen denies, empty branches and unassigned branch requests before writing', async () => {
     const resolveSalesOrganization = vi.fn();
     const { service } = createService({ resolveSalesOrganization } as never);
-    for (const user of [
+    const deniedActors: AuthenticatedActor[] = [
       { ...salesActor, permissions: ['sales.contracts.read.own'] },
       {
         ...salesActor,
         permissions: [...salesActor.permissions, 'ui.deny.sales.new-contract'],
       },
       { ...salesActor, branchIds: [] },
-    ]) {
+    ];
+    for (const user of deniedActors) {
       await expect(
         service.resolveSalesOrganization({ id: 'org', name: 'Agency' }, user),
       ).rejects.toBeInstanceOf(ForbiddenException);
