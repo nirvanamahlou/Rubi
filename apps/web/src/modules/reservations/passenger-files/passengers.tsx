@@ -209,8 +209,8 @@ export function ReservationPassengers({
               <th>نام خانوادگی</th>
               <th>نام لاتین پاسپورت</th>
               <th>نام خانوادگی لاتین پاسپورت</th>
-              <th>رده سنی</th>
-              <th>جنسیت</th>
+              <th className={styles.ageColumn}>رده سنی</th>
+              <th className={styles.genderColumn}>جنسیت</th>
               <th>تاریخ تولد</th>
               <th>شماره ملی</th>
               <th>شماره پاسپورت</th>
@@ -278,12 +278,12 @@ export function ReservationPassengers({
                       form={`passenger-${row.id}`}
                     />
                   </td>
-                  <td>
+                  <td className={styles.ageColumn}>
                     {ageEditor
                       ? ageEditor(row.id)
                       : (row.ageCategory ?? 'ثبت نشده')}
                   </td>
-                  <td>
+                  <td className={styles.genderColumn}>
                     <NativeSearchSelect
                       aria-label={`جنسیت مسافر ${index + 1}`}
                       value={row.gender ?? ''}
