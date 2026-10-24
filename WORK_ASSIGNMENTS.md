@@ -9362,3 +9362,9 @@ CALL-QUEUE-BUTTONS-1024 — COMPLETE / SOURCE_RELEASED: scoped lint,2 workflow t
 Explicit user request adds connected-to display between description and creation time in dossier call history. Reserve workspace.tsx history rendering and own docs only. Use existing call answerRecipient.label and operator fallback as in completion popup; no directory fetch, history rewrite, API/schema/grants or popup change. Base67eb56f2; prior source scope released. Own Web3000 PID21488 may be refreshed with this scoped build; concurrent runtimes must be preserved. No PR/merge requested.
 
 CALL-HISTORY-RECIPIENT-1024 — COMPLETE / SOURCE_RELEASED:10 existing model/form tests, scoped ESLint, full TypeScript and65-route Web production build pass. Browser verifies real stored answer label between description and created timestamp without saving business data. Own Web3000 PID16032 runs .next-history-recipient-1024; popup hold false, API/Worker preserved. No migration or PR/merge.
+
+## CALL-DIRECTION-READONLY-1024 — PC-C — RESERVED
+
+Explicit request locks direction in existing-call edit/completion, displaying persisted technical direction. Reserve CallForm direction control and focused regression assertions plus own docs. Backend existing completion identity check must retain immutable direction; no API/schema changes planned. New manual call direction selection retained. Base24987bdc; prior own source released; peer CallForm has no local edits. Own Web3000 PID16032 may refresh; popup hold false. No PR/merge requested.
+
+CALL-DIRECTION-READONLY-1024 — COMPLETE / SOURCE_RELEASED:5 focused form tests, scoped ESLint, full TypeScript and65-route production build pass. Authenticated browser verifies persisted inbound type is a non-settable text field and cancels without saving. Own Web3000 PID23844 runs .next-direction-readonly-1024; popup hold false, API/Worker preserved. Existing backend immutable direction guard verified in source. No migration or PR/merge.
