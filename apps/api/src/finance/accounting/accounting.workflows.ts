@@ -339,6 +339,7 @@ async function fxBasis(tx: Tx, book: Book, e: Event) {
     difference: difference.toString(),
     paymentJournalId: pj.id,
     revaluationLineIds: revaluations.map((r) => r.id),
+    priorSettlementIds: settlements.map((r) => r.id),
   };
 }
 
@@ -414,6 +415,7 @@ export async function captureWorkflow(
   p: Facts,
   actor: AuthenticatedActor,
 ) {
+  if (!book.active || !book.allowsPosting) fail('دفتر اجازه ثبت سند ندارد.');
   const kind = v.text(p.kind, 32, true);
   if (!kinds.includes(kind)) fail('نوع فرایند معتبر نیست.');
   const sourceId = v.uuid(p.sourceId)!,
@@ -1084,11 +1086,7 @@ export async function cancelWorkflow(
   if (v.text(p.reason, 2000, true).length < 10)
     fail('دلیل مستند لغو لازم است.');
   if (r.cancelled) return r;
-  if (
-    r.kind === 'FX_SETTLEMENT' &&
-    (await consumed(tx, r.sourceEventId!)).gt(0)
-  )
-    fail('ابتدا استرداد یا زیان متکی بر این تسویه را برگشت دهید.');
+  if (r.kind === 'FX_SETTLEMENT') await assertFxUnreferenced(tx, r);
   if (r.journalId) {
     const j = await tx.accountingJournal.findUniqueOrThrow({
       where: { id: r.journalId },
@@ -1304,8 +1302,7 @@ export async function workflowPostingContext(
     const original = await tx.accountingWorkflow.findFirst({
       where: { journalId: journal.reversalOfId, kind: 'FX_SETTLEMENT' },
     });
-    if (original && (await consumed(tx, original.sourceEventId!)).gt(0))
-      fail('ابتدا استرداد یا زیان متکی بر این تسویه را برگشت دهید.');
+    if (original) await assertFxUnreferenced(tx, original);
   }
   const r = await tx.accountingWorkflow.findFirst({
     where: { journalId: journal.id, bookId: book.id },
@@ -1396,4 +1393,19 @@ export async function assertRevenueEditable(
     fail(
       'پیش از اصلاح قیمت یا ابطال قرارداد، مبنای درآمد و سند آن را لغو یا برگشت دهید.',
     );
+}
+
+async function assertFxUnreferenced(tx: Tx, r: Entry) {
+  if ((await consumed(tx, r.sourceEventId!)).gt(0))
+    fail('ابتدا استرداد یا زیان متکی بر این تسویه را برگشت دهید.');
+  if (
+    (
+      await active(tx, {
+        bookId: r.bookId,
+        kind: 'FX_SETTLEMENT',
+        facts: { path: ['priorSettlementIds'], array_contains: [r.id] },
+      })
+    ).length
+  )
+    fail('ابتدا مبنا و سند تسویه ارزی پرداخت‌های بعدی این خرید را برگشت دهید.');
 }

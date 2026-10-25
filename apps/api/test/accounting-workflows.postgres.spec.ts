@@ -453,6 +453,7 @@ describe.skipIf(!url)(
       foreign = '100',
       costRate = '1',
       payRate = '1',
+      paid = foreign,
     ) {
       const requestId = randomUUID(),
         occurredAt = new Date('2026-10-20T08:00:00Z');
@@ -489,7 +490,7 @@ describe.skipIf(!url)(
             occurredAt:
               index === 0 ? new Date('2026-10-18T08:00:00Z') : occurredAt,
             trackingDate: '2026-10-18',
-            amount: foreign,
+            amount: index === 0 ? foreign : paid,
             currency,
           }),
         );
@@ -710,6 +711,107 @@ describe.skipIf(!url)(
       });
       expect(
         liability.reduce((n, l) => n + Number(l.credit) - Number(l.debit), 0),
+      ).toBe(0);
+    });
+    it('retains the exact partial carrying basis and blocks reversing an earlier settlement used by a later payment', async () => {
+      const e = await payment('USD', '100', '10', '12', '40');
+      const first = await command(
+        'workflow-create',
+        evidence('FX_SETTLEMENT', e.id),
+      );
+      expect((first.facts as Record<string, unknown>).carrying).toBe('400');
+      const firstJournal = await command('workflow-journal', {
+        id: first.id,
+        typeId,
+        lossAccountId: profitLossId,
+      });
+      await post(String(firstJournal.id));
+      const rate = await db.accountingFxSnapshot.create({
+        data: {
+          bookId,
+          currency: 'USD',
+          rate: '11',
+          source: 'Synthetic second payment rate',
+          validFrom: new Date('2026-01-01'),
+          validTo: new Date('2026-12-31'),
+          status: 'APPROVED',
+          makerId,
+          approverId: checkerId,
+        },
+      });
+      const secondId = await db.$transaction((tx) =>
+        recordFinancialEvent(tx, {
+          source: 'INVOICE',
+          recordId: randomUUID(),
+          requestId: e.requestId,
+          kind: 'SUPPLIER_PAYMENT',
+          branchId,
+          actorId: makerId,
+          occurredAt: new Date('2026-10-21T08:00:00Z'),
+          trackingDate: '2026-10-18',
+          amount: '60',
+          currency: 'USD',
+        }),
+      );
+      const paymentJournal = await command('financial-event-journal', {
+        eventId: secondId,
+        typeId,
+        debitAccountId: creditId,
+        creditAccountId: debitId,
+        fxSnapshotId: rate.id,
+      });
+      await post(String(paymentJournal.id));
+      const second = await command(
+        'workflow-create',
+        evidence('FX_SETTLEMENT', secondId),
+      );
+      expect(second.facts).toMatchObject({
+        carrying: '600',
+        actual: '660',
+        difference: '60',
+        priorSettlementIds: [first.id],
+      });
+      const original = await db.accountingJournal.findUniqueOrThrow({
+        where: { id: String(firstJournal.id) },
+      });
+      const reversal = await command(
+        'reverse',
+        {
+          id: original.id,
+          periodId: original.periodId,
+          typeId,
+          documentDate: '2026-10-25',
+        },
+        original.version,
+      );
+      await expect(post(String(reversal.id))).rejects.toThrow();
+    });
+    it('does not reserve a financial source in a book that disallows posting', async () => {
+      const c = await contract();
+      await db.accountingBook.update({
+        where: { id: bookId },
+        data: { allowsPosting: false },
+      });
+      try {
+        await expect(
+          command(
+            'workflow-create',
+            evidence('REVENUE', c.id, {
+              sourceVersion: c.version,
+              currency: 'IRR',
+              mode: 'PRINCIPAL',
+              fulfilled: true,
+            }),
+          ),
+        ).rejects.toThrow();
+      } finally {
+        await db.accountingBook.update({
+          where: { id: bookId },
+          data: { allowsPosting: true },
+        });
+      }
+      expect(
+        await db.accountingWorkflow.count({ where: { contractId: c.id } }),
       ).toBe(0);
     });
   },
