@@ -25,13 +25,15 @@ export const radanReports = [
   ['arpa', 'گزارش آرپا'],
 ] as const;
 export type RadanReportId = (typeof radanReports)[number][0];
-export const unavailableRadanReports = new Set<string>([
-  'calculation',
-  'forgiveness',
-  'arpa',
-]);
+export const unavailableRadanReports = new Set<string>(['forgiveness', 'arpa']);
 export interface RadanReportFilters {
   employeeId: string;
+  employeeIds?: readonly string[];
+  groupIds?: readonly string[];
+  contractTypes?: readonly string[];
+  coefficients?: readonly string[];
+  from?: string;
+  to?: string;
   groupId: string;
   contractType: string;
   sort: string;
@@ -59,6 +61,18 @@ export function buildRadanReport(
     totalLabel: '۰ رکورد',
   });
   if (unavailableRadanReports.has(id)) return empty(['کارمند', 'نتیجه']);
+  const groupIds =
+    filters.groupIds ?? (filters.groupId ? [filters.groupId] : null);
+  const employeeIds = filters.employeeIds?.length
+    ? filters.employeeIds
+    : filters.employeeId
+      ? [filters.employeeId]
+      : [];
+  const contractTypes = filters.contractTypes?.length
+    ? filters.contractTypes
+    : filters.contractType
+      ? [filters.contractType]
+      : [];
   // Caller supplies only authorized records. Group membership uses canonical employee/parent FKs.
   const members = new Set(
     references
@@ -66,7 +80,7 @@ export function buildRadanReport(
         (r) =>
           r.section === 'organization' &&
           r.tab === 'groupMembers' &&
-          r.parentId === filters.groupId &&
+          groupIds?.includes(r.parentId ?? '') &&
           r.status === 'فعال' &&
           !r.deletedAt,
       )
@@ -78,31 +92,43 @@ export function buildRadanReport(
         (r) =>
           r.section === 'contracts' &&
           r.tab === 'active' &&
-          r.values[r.columns.indexOf('نوع قرارداد')] === filters.contractType &&
+          contractTypes.includes(
+            r.values[r.columns.indexOf('نوع قرارداد')] ?? '',
+          ) &&
           !['لغوشده', 'ردشده', 'غیرفعال'].includes(r.status) &&
-          !r.deletedAt,
+          !r.deletedAt &&
+          (!filters.to ||
+            !r.values[r.columns.indexOf('تاریخ شروع')] ||
+            r.values[r.columns.indexOf('تاریخ شروع')]! <= filters.to) &&
+          (!filters.from ||
+            !r.values[r.columns.indexOf('تاریخ پایان')] ||
+            r.values[r.columns.indexOf('تاریخ پایان')]! >= filters.from),
       )
       .map((r) => r.employeeId),
   );
   const people = employees
     .filter(
       (e) =>
-        (!filters.employeeId || e.id === filters.employeeId) &&
-        (!filters.groupId || members.has(e.id)) &&
-        (!filters.contractType || contracts.has(e.id)),
+        (!employeeIds.length || employeeIds.includes(e.id)) &&
+        (groupIds === null || members.has(e.id)) &&
+        (!contractTypes.length || contracts.has(e.id)),
     )
     .sort((a, b) =>
       (filters.sort === 'name'
         ? a.name
-        : filters.sort === 'lastName'
-          ? a.name.split(' ').slice(1).join(' ')
-          : a.personnelCode
+        : filters.sort === 'identification'
+          ? a.id
+          : filters.sort === 'lastName'
+            ? a.name.split(' ').slice(1).join(' ')
+            : a.personnelCode
       ).localeCompare(
         filters.sort === 'name'
           ? b.name
-          : filters.sort === 'lastName'
-            ? b.name.split(' ').slice(1).join(' ')
-            : b.personnelCode,
+          : filters.sort === 'identification'
+            ? b.id
+            : filters.sort === 'lastName'
+              ? b.name.split(' ').slice(1).join(' ')
+              : b.personnelCode,
         'fa',
         { numeric: true },
       ),
@@ -123,7 +149,7 @@ export function buildRadanReport(
         'کد پرسنلی',
         'نام و نام خانوادگی',
         'واحد',
-        'سمت',
+        'عنوان شغلی',
         'نوع همکاری',
         'وضعیت',
       ],
@@ -170,11 +196,190 @@ export function buildRadanReport(
         : filters.unit === 'minutes' || id.includes('Minutes')
           ? String(n)
           : Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0');
+  const requestMinutes = (row: HrRecordDto): number | null => {
+    const read = (label: string) =>
+      row.values[row.columns.indexOf(label)] ?? '';
+    const start = (row.data.startsAt ?? read('از تاریخ')).slice(0, 10),
+      end = (row.data.endsAt ?? read('تا تاریخ')).slice(0, 10);
+    if (
+      (filters.from && start && start < filters.from) ||
+      (filters.to && end && end > filters.to)
+    )
+      return null;
+    return typeof row.data.minutes === 'number' &&
+      Number.isFinite(row.data.minutes) &&
+      row.data.minutes >= 0
+      ? row.data.minutes
+      : null;
+  };
   const attendance = source.filter(
     (r) => r.section === 'time' && r.tab === 'attendance',
   );
   const date = (r: HrRecordDto) =>
     r.values[r.columns.indexOf('تاریخ کارکرد')] ?? r.effectiveAt ?? '';
+  if (id === 'presence') {
+    return {
+      columns: ['کد پرسنلی', 'کارمند', 'وضعیت حضور', 'آخرین تردد', 'نوع تردد'],
+      recordIds: people.map((person) => person.id),
+      totalLabel: String(people.length),
+      rows: people.map((person) => {
+        const last = source
+          .filter(
+            (row) =>
+              row.employeeId === person.id &&
+              row.section === 'time' &&
+              row.tab === 'checkins',
+          )
+          .sort(
+            (a, b) =>
+              (
+                b.data.startsAt ?? `${b.values[1]}T${b.values[2]}`
+              ).localeCompare(
+                a.data.startsAt ?? `${a.values[1]}T${a.values[2]}`,
+              ) || b.id.localeCompare(a.id),
+          )[0];
+        const kind = last?.values[last.columns.indexOf('نوع تردد')];
+        return [
+          person.personnelCode,
+          person.name,
+          kind === 'ورود' ? 'حاضر' : kind === 'خروج' ? 'خارج شده' : 'بدون تردد',
+          last
+            ? (last.data.startsAt ?? `${last.values[1]} ${last.values[2]}`)
+            : '—',
+          kind ?? '—',
+        ];
+      }),
+    };
+  }
+  if (id === 'general') {
+    const columns = filters.coefficients?.length
+      ? [...filters.coefficients]
+      : ['کارکرد', 'تاخیر', 'تعجیل', 'اضافه کار'];
+    const approved = source.filter((row) =>
+      ['تأییدشده', 'تاییدشده', 'فعال', 'آماده شروع'].includes(row.status),
+    );
+    const sum = (
+      rows: readonly HrRecordDto[],
+      read: (row: HrRecordDto) => number | null,
+      missingIsZero = false,
+    ) =>
+      !rows.length
+        ? missingIsZero
+          ? 0
+          : null
+        : rows.some((row) => read(row) === null)
+          ? null
+          : rows.reduce((total, row) => total + read(row)!, 0);
+    const selectedPeople = people.filter((person) =>
+      source.some((row) => row.employeeId === person.id),
+    );
+    return {
+      columns: ['کارمند', ...columns],
+      recordIds: selectedPeople.map((person) => person.id),
+      totalLabel: String(selectedPeople.length),
+      rows: selectedPeople.map((person) => {
+        const ownAttendance = attendance.filter(
+          (row) => row.employeeId === person.id,
+        );
+        return [
+          person.name,
+          ...columns.map((column) => {
+            const key = (
+              {
+                کارکرد: 'workedMinutes',
+                تاخیر: 'lateMinutes',
+                تأخیر: 'lateMinutes',
+                تعجیل: 'earlyMinutes',
+                'اضافه کار': 'overtimeMinutes',
+              } as Record<
+                string,
+                | 'workedMinutes'
+                | 'lateMinutes'
+                | 'earlyMinutes'
+                | 'overtimeMinutes'
+              >
+            )[column];
+            if (key)
+              return format(sum(ownAttendance, (row) => metric(row, key)));
+            const calculated = (
+              {
+                'جمعه کاری': 'fridayMinutes',
+                'اضافه کار / اضافه کار روز تعطیل': 'holidayOvertimeMinutes',
+              } as Record<string, string>
+            )[column];
+            if (calculated)
+              return format(
+                sum(ownAttendance, (row) => {
+                  const value = row.data.calculationMetrics?.[calculated];
+                  return typeof value === 'number' &&
+                    Number.isFinite(value) &&
+                    value >= 0
+                    ? value
+                    : null;
+                }),
+              );
+            const parts = column.split(' / '),
+              component = parts[0];
+            if (['مرخصی', 'ماموریت', 'دورکاری'].includes(component ?? '')) {
+              const requests = approved
+                .filter(
+                  (row) =>
+                    row.employeeId === person.id &&
+                    (component === 'مرخصی'
+                      ? ['leave', 'radanLeave'].includes(row.tab)
+                      : component === 'ماموریت'
+                        ? ['mission', 'radanMission'].includes(row.tab)
+                        : row.tab === 'remote'),
+                )
+                .filter((row) => {
+                  const read = (label: string) =>
+                    row.values[row.columns.indexOf(label)] ?? '';
+                  const mode =
+                    read('نوع مدت') ||
+                    read('نوع دورکاری') ||
+                    (row.columns.includes('تعداد روز') ? 'روزانه' : '');
+                  const kind = (read('نوع مرخصی') || read('نوع مأموریت'))
+                    .replaceAll('‌', ' ')
+                    .replaceAll(
+                      String.fromCharCode(0x0623),
+                      String.fromCharCode(0x0627),
+                    );
+                  return (
+                    (!parts[1] || mode === parts[1]) &&
+                    (!parts[2] || kind === parts[2])
+                  );
+                });
+              return format(sum(requests, requestMinutes, true));
+            }
+            return '—';
+          }),
+        ];
+      }),
+    };
+  }
+  if (id === 'calculation')
+    return {
+      columns: [
+        'کارمند',
+        'تاریخ کارکرد',
+        'آخرین محاسبه',
+        'مبنای محاسبات',
+        'تنظیمات',
+        'وضعیت',
+      ],
+      rows: attendance.map((row) => [
+        people.find((person) => person.id === row.employeeId)?.name ?? '—',
+        date(row),
+        row.updatedAt,
+        row.data.calculationBasis ?? '—',
+        references.find(
+          (config) => config.id === row.data.calculationSettingsId,
+        )?.values[0] ?? '—',
+        row.status,
+      ]),
+      recordIds: attendance.map((row) => row.id),
+      totalLabel: String(attendance.length),
+    };
   if (['leave', 'mission', 'remote'].includes(id)) {
     const match = source.filter((r) =>
       id === 'leave'
@@ -199,9 +404,9 @@ export function buildRadanReport(
           return [
             e.name,
             format(
-              own.some((r) => typeof r.data.minutes !== 'number')
+              own.some((r) => requestMinutes(r) === null)
                 ? null
-                : own.reduce((sum, r) => sum + r.data.minutes!, 0),
+                : own.reduce((sum, r) => sum + requestMinutes(r)!, 0),
             ),
           ];
         }),
@@ -241,7 +446,14 @@ export function buildRadanReport(
           : ['present', 'presence'].includes(id)
             ? id === 'presence' || r.status === 'حاضر'
             : id.startsWith('incomplete')
-              ? Boolean(r.data.exceptionCodes?.length)
+              ? r.data.exceptionCodes?.some((code) =>
+                  [
+                    'ورود تکراری',
+                    'خروج بدون ورود',
+                    'خروج ثبت نشده',
+                    'نوع تردد ناشناخته',
+                  ].includes(code),
+                ) === true
               : true,
   );
   if (id === 'overtime') {
@@ -253,9 +465,9 @@ export function buildRadanReport(
         .filter((e) => overtime.some((r) => r.employeeId === e.id))
         .map((e) => {
           const own = overtime.filter((r) => r.employeeId === e.id);
-          const total = own.some((r) => typeof r.data.minutes !== 'number')
+          const total = own.some((r) => requestMinutes(r) === null)
             ? null
-            : own.reduce((sum, r) => sum + r.data.minutes!, 0);
+            : own.reduce((sum, r) => sum + requestMinutes(r)!, 0);
           return [e.name, format(total)];
         });
       return {
@@ -272,7 +484,7 @@ export function buildRadanReport(
       rows: overtime.map((r) => [
         people.find((e) => e.id === r.employeeId)?.name ?? '—',
         r.effectiveAt ?? '',
-        format(r.data.minutes ?? null),
+        format(requestMinutes(r)),
         r.status,
       ]),
       recordIds: overtime.map((r) => r.id),

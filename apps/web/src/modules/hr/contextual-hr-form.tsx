@@ -3,7 +3,14 @@ import { hrFieldLabel } from './hr-form-model';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { ExternalLink, Upload } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
 import { persianDateToIso } from './hr-dates';
 export { persianDateToIso } from './hr-dates';
@@ -413,6 +420,17 @@ const deviceFormOrder = [
   'نوع دستگاه',
 ];
 
+const workingHoursLabels: Record<string, string> = {
+  'نام ساعت کاری': 'نام ساعت کاری',
+  توضیحات: 'توضیحات ساعت کاری',
+  'ساعت شروع': 'زمان آغاز',
+  'ساعت پایان': 'زمان پایان',
+  'روز پایان': 'روز پایان',
+  'ساعت قبل از شروع': 'چند ساعت قبل از زمان آغاز',
+  'ساعت بعد از پایان': 'چند ساعت بعد از زمان پایان',
+  رنگ: 'رنگ',
+  'تعریف ضرایب پیش‌فرض': 'تعریف ضرایب پیشفرض',
+};
 function buildInitialFormValues(
   context: ContextualHrFormContext,
   fields: readonly ContextualHrField[],
@@ -456,6 +474,26 @@ function buildInitialFormValues(
       initial[contract.id] =
         context.contractNumbersByEmployee?.[initial[employeeField.id] ?? ''] ??
         '';
+  }
+  if (context.section === 'time' && context.tab === 'workingHours') {
+    for (const field of fields) {
+      if (
+        field.label === 'تعریف ضرایب پیش‌فرض' &&
+        context.mode === 'create' &&
+        context.initialValues?.[fields.indexOf(field)] === undefined
+      )
+        initial[field.id] = 'خیر';
+      if (initial[field.id]) continue;
+      const fallback: Record<string, string> = {
+        رنگ: '#000000',
+        'تعریف ضرایب پیش‌فرض': 'خیر',
+        'روز پایان': 'همان روز',
+        'ساعت قبل از شروع': '0',
+        'ساعت بعد از پایان': '0',
+      };
+      if (fallback[field.label] !== undefined)
+        initial[field.id] = fallback[field.label]!;
+    }
   }
   return initial;
 }
@@ -525,6 +563,12 @@ export function ContextualHrForm({
         context.section !== 'time' ||
         context.tab !== 'biometric' ||
         deviceFormOrder.includes(field.label),
+    )
+    .filter(
+      ({ field }) =>
+        context.section !== 'time' ||
+        context.tab !== 'workingHours' ||
+        field.label in workingHoursLabels,
     )
     .sort((a, b) =>
       context.section === 'time' && context.tab === 'biometric'
@@ -816,6 +860,11 @@ export function ContextualHrForm({
                 (context.tab === 'biometric' && field.label === 'شناسه'))
             )
               return null;
+            const workingHours =
+              context.section === 'time' && context.tab === 'workingHours';
+            const displayLabel = workingHours
+              ? (workingHoursLabels[field.label] ?? field.label)
+              : hrFieldLabel(field.label);
             const inputId = `hr-${context.section}-${context.tab}-${field.id}`;
             const errorId = `${inputId}-error`;
             const commonProps = {
@@ -841,175 +890,220 @@ export function ContextualHrForm({
                 !context.editableLabels?.includes(field.label)) ||
               context.presetValues?.[field.label] !== undefined;
             return (
-              <label
-                className={styles.fieldLabel}
-                htmlFor={inputId}
-                key={field.id}
-              >
-                <RequiredFieldLabel required={field.required}>
-                  {hrFieldLabel(field.label)}
-                </RequiredFieldLabel>
-                {context.onCreateReference &&
-                !context.skipCreateReferenceLabels?.includes(field.label) &&
-                /^(عنوان شغل|عنوان سمت|نام سمت|سمت|سمت جدید|واحد|واحد درخواست‌کننده|واحد درخواست کننده|واحد مقصد|شعبه مقصد|شرکت مقصد|کارمند)$/.test(
-                  field.label,
-                ) ? (
-                  <button
-                    type="button"
-                    className={buttonVariants({
-                      variant: 'outline',
-                      size: 'sm',
-                    })}
-                    onClick={() => context.onCreateReference?.(field.label)}
-                  >
-                    افزودن {field.label}
-                  </button>
+              <Fragment key={field.id}>
+                {workingHours &&
+                ['ساعت شروع', 'ساعت قبل از شروع'].includes(field.label) ? (
+                  <h3 className={styles.fullWidth}>
+                    {field.label === 'ساعت شروع'
+                      ? 'ساعت کاری'
+                      : 'محدوده تردد پرسنل'}
+                  </h3>
                 ) : null}
-                {field.type === 'multi-select' ? (
-                  <select
-                    {...commonProps}
-                    multiple
-                    disabled={readOnly}
-                    value={(() => {
-                      try {
-                        return JSON.parse(
-                          derivedValues[field.id] || '[]',
-                        ) as string[];
-                      } catch {
-                        return [];
-                      }
-                    })()}
-                    onChange={(event) =>
-                      update(
-                        field.id,
-                        JSON.stringify(
-                          Array.from(
-                            event.target.selectedOptions,
-                            (option) => option.value,
-                          ),
-                        ),
-                      )
-                    }
-                  >
-                    {(field.options ?? []).map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                ) : field.type === 'select' ? (
-                  <NativeSearchSelect
-                    {...commonProps}
-                    disabled={readOnly}
-                    onChange={(event) => update(field.id, event.target.value)}
-                    value={derivedValues[field.id] ?? ''}
-                  >
-                    <option value="">انتخاب {field.label}</option>
-                    {Array.from(
-                      new Set(
-                        [
-                          ...(field.options ?? []),
-                          values[field.id] ?? '',
-                        ].filter(Boolean),
-                      ),
-                    ).map((option) => (
-                      <option key={option}>{option}</option>
-                    ))}
-                  </NativeSearchSelect>
-                ) : field.type === 'combobox' ? (
-                  <>
+                <label
+                  className={styles.fieldLabel}
+                  htmlFor={inputId}
+                  key={field.id}
+                >
+                  <RequiredFieldLabel required={field.required}>
+                    {displayLabel}
+                  </RequiredFieldLabel>
+                  {context.onCreateReference &&
+                  !context.skipCreateReferenceLabels?.includes(field.label) &&
+                  /^(عنوان شغل|عنوان سمت|نام سمت|سمت|سمت جدید|واحد|واحد درخواست‌کننده|واحد درخواست کننده|واحد مقصد|شعبه مقصد|شرکت مقصد|کارمند)$/.test(
+                    field.label,
+                  ) ? (
+                    <button
+                      type="button"
+                      className={buttonVariants({
+                        variant: 'outline',
+                        size: 'sm',
+                      })}
+                      onClick={() => context.onCreateReference?.(field.label)}
+                    >
+                      افزودن {field.label}
+                    </button>
+                  ) : null}
+                  {workingHours && field.label === 'تعریف ضرایب پیش‌فرض' ? (
                     <input
                       {...commonProps}
-                      list={`${inputId}-options`}
-                      readOnly={readOnly}
+                      type="checkbox"
+                      required={false}
+                      checked={derivedValues[field.id] === 'بله'}
+                      onChange={(event) =>
+                        update(field.id, event.target.checked ? 'بله' : 'خیر')
+                      }
+                    />
+                  ) : workingHours && field.label === 'رنگ' ? (
+                    <input
+                      {...commonProps}
+                      type="color"
+                      value={derivedValues[field.id] || '#000000'}
                       onChange={(event) => update(field.id, event.target.value)}
-                      placeholder={`انتخاب یا تایپ ${field.label}`}
+                    />
+                  ) : field.type === 'multi-select' ? (
+                    <select
+                      {...commonProps}
+                      multiple
+                      disabled={readOnly}
+                      value={(() => {
+                        try {
+                          return JSON.parse(
+                            derivedValues[field.id] || '[]',
+                          ) as string[];
+                        } catch {
+                          return [];
+                        }
+                      })()}
+                      onChange={(event) =>
+                        update(
+                          field.id,
+                          JSON.stringify(
+                            Array.from(
+                              event.target.selectedOptions,
+                              (option) => option.value,
+                            ),
+                          ),
+                        )
+                      }
+                    >
+                      {(field.options ?? []).map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  ) : field.type === 'select' ? (
+                    <NativeSearchSelect
+                      {...commonProps}
+                      disabled={readOnly}
+                      onChange={(event) => update(field.id, event.target.value)}
+                      value={derivedValues[field.id] ?? ''}
+                    >
+                      <option value="">انتخاب {field.label}</option>
+                      {Array.from(
+                        new Set(
+                          [
+                            ...(field.options ?? []),
+                            values[field.id] ?? '',
+                          ].filter(Boolean),
+                        ),
+                      ).map((option) => (
+                        <option key={option}>{option}</option>
+                      ))}
+                    </NativeSearchSelect>
+                  ) : field.type === 'combobox' ? (
+                    <>
+                      <input
+                        {...commonProps}
+                        list={`${inputId}-options`}
+                        readOnly={readOnly}
+                        onChange={(event) =>
+                          update(field.id, event.target.value)
+                        }
+                        placeholder={`انتخاب یا تایپ ${field.label}`}
+                        value={derivedValues[field.id] ?? ''}
+                      />
+                      <datalist id={`${inputId}-options`}>
+                        {(field.options ?? []).map((option) => (
+                          <option key={option} value={option} />
+                        ))}
+                      </datalist>
+                    </>
+                  ) : field.type === 'date' ? (
+                    <DatePicker
+                      {...commonProps}
+                      className={styles.dateControl!}
+                      onChange={(value) => update(field.id, value)}
+                      placeholder={`انتخاب ${field.label}`}
+                      readOnly={readOnly}
                       value={derivedValues[field.id] ?? ''}
                     />
-                    <datalist id={`${inputId}-options`}>
-                      {(field.options ?? []).map((option) => (
-                        <option key={option} value={option} />
-                      ))}
-                    </datalist>
-                  </>
-                ) : field.type === 'date' ? (
-                  <DatePicker
-                    {...commonProps}
-                    className={styles.dateControl!}
-                    onChange={(value) => update(field.id, value)}
-                    placeholder={`انتخاب ${field.label}`}
-                    readOnly={readOnly}
-                    value={derivedValues[field.id] ?? ''}
-                  />
-                ) : field.type === 'file' ? (
-                  <>
-                    {context.branchId && !readOnly ? (
-                      <HrArchiveDocumentPicker
-                        branchId={context.branchId}
-                        value={values[field.id] ?? ''}
-                        onChange={(next) => update(field.id, next)}
+                  ) : field.type === 'file' ? (
+                    <>
+                      {context.branchId && !readOnly ? (
+                        <HrArchiveDocumentPicker
+                          branchId={context.branchId}
+                          value={values[field.id] ?? ''}
+                          onChange={(next) => update(field.id, next)}
+                        />
+                      ) : null}
+                      <input
+                        {...commonProps}
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png,image/webp"
+                        required={field.required && !values[field.id]}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (!file) return;
+                          setFileLoading(true);
+                          void storeHrAttachment(file)
+                            .then((reference) => update(field.id, reference))
+                            .catch((error: unknown) =>
+                              setErrors((current) => ({
+                                ...current,
+                                [field.id]:
+                                  error instanceof Error
+                                    ? error.message
+                                    : 'بارگذاری فایل انجام نشد.',
+                              })),
+                            )
+                            .finally(() => setFileLoading(false));
+                        }}
+                        type="file"
                       />
-                    ) : null}
+                      <small className={styles.fieldHint}>
+                        <Upload aria-hidden="true" size={13} />{' '}
+                        {parseHrAttachmentReference(values[field.id] ?? '')
+                          ?.name ?? 'PDF، DOC، DOCX یا تصویر تا ۵ مگابایت'}
+                      </small>
+                    </>
+                  ) : field.type === 'textarea' ? (
+                    <textarea
+                      {...commonProps}
+                      className={`${styles.control} ${styles.textArea}`}
+                      onChange={(event) => update(field.id, event.target.value)}
+                      rows={3}
+                      value={derivedValues[field.id] ?? ''}
+                    />
+                  ) : (
                     <input
                       {...commonProps}
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png,image/webp"
-                      required={field.required && !values[field.id]}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (!file) return;
-                        setFileLoading(true);
-                        void storeHrAttachment(file)
-                          .then((reference) => update(field.id, reference))
-                          .catch((error: unknown) =>
-                            setErrors((current) => ({
-                              ...current,
-                              [field.id]:
-                                error instanceof Error
-                                  ? error.message
-                                  : 'بارگذاری فایل انجام نشد.',
-                            })),
-                          )
-                          .finally(() => setFileLoading(false));
-                      }}
-                      type="file"
+                      autoFocus={index === 1}
+                      min={field.type === 'number' ? '0' : undefined}
+                      step={
+                        workingHours &&
+                        ['ساعت قبل از شروع', 'ساعت بعد از پایان'].includes(
+                          field.label,
+                        )
+                          ? '0.01'
+                          : undefined
+                      }
+                      max={
+                        workingHours &&
+                        ['ساعت قبل از شروع', 'ساعت بعد از پایان'].includes(
+                          field.label,
+                        )
+                          ? '48'
+                          : undefined
+                      }
+                      onChange={(event) => update(field.id, event.target.value)}
+                      placeholder={field.placeholder}
+                      readOnly={readOnly}
+                      type={field.type}
+                      value={derivedValues[field.id] ?? ''}
                     />
+                  )}
+                  {readOnly ? (
                     <small className={styles.fieldHint}>
-                      <Upload aria-hidden="true" size={13} />{' '}
-                      {parseHrAttachmentReference(values[field.id] ?? '')
-                        ?.name ?? 'PDF، DOC، DOCX یا تصویر تا ۵ مگابایت'}
+                      این مقدار به‌صورت خودکار تکمیل می‌شود.
                     </small>
-                  </>
-                ) : field.type === 'textarea' ? (
-                  <textarea
-                    {...commonProps}
-                    className={`${styles.control} ${styles.textArea}`}
-                    onChange={(event) => update(field.id, event.target.value)}
-                    rows={3}
-                    value={derivedValues[field.id] ?? ''}
-                  />
-                ) : (
-                  <input
-                    {...commonProps}
-                    autoFocus={index === 1}
-                    min={field.type === 'number' ? '0' : undefined}
-                    onChange={(event) => update(field.id, event.target.value)}
-                    placeholder={field.placeholder}
-                    readOnly={readOnly}
-                    type={field.type}
-                    value={derivedValues[field.id] ?? ''}
-                  />
-                )}
-                {readOnly ? (
-                  <small className={styles.fieldHint}>
-                    این مقدار به‌صورت خودکار تکمیل می‌شود.
-                  </small>
-                ) : null}
-                {errors[field.id] ? (
-                  <small className={styles.fieldError} id={errorId}>
-                    {errors[field.id]}
-                  </small>
-                ) : null}
-              </label>
+                  ) : null}
+                  {errors[field.id] ? (
+                    <small className={styles.fieldError} id={errorId}>
+                      {errors[field.id]}
+                    </small>
+                  ) : null}
+                </label>
+              </Fragment>
             );
           })}
         </div>

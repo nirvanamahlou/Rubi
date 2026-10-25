@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { getHrResource } from '@nora/contracts';
 import { persianCalendarMonths } from './hr-template-calendar';
 import { minuteText } from './hr-radan-tools';
+import { HrLeaveBalance } from './hr-leave-balance';
 import { hrReferenceOptions, radanOptionalLabels } from './hr-form-model';
 import { hrGroups, employeeGroups } from './hr-navigation';
 
@@ -126,4 +127,98 @@ it('renders a write-only password input in the device form, not in table columns
     label: 'دستگاه',
     sources: [{ section: 'time', tab: 'biometric', label: 'دستگاه' }],
   });
+});
+
+it('renders the nine observed working-hour controls with stable stored positions', () => {
+  const definition = getHrResource('time', 'workingHours')!;
+  const html = renderToStaticMarkup(
+    <ContextualHrForm
+      context={{
+        section: 'time',
+        tab: 'workingHours',
+        title: 'ساعت کار',
+        description: '',
+        columns: ['شناسه', ...definition.columns, 'وضعیت'],
+        mode: 'create',
+        optionalLabels: radanOptionalLabels(definition),
+        optionsByLabel: {
+          'روز پایان': ['همان روز', 'یک روز بعد', 'دو روز بعد'],
+          'تعریف ضرایب پیش‌فرض': ['بله', 'خیر'],
+        },
+        fieldTypes: { توضیحات: 'textarea' },
+      }}
+      onCancel={() => {}}
+      onSubmit={() => {}}
+    />,
+  );
+  expect(html).not.toContain('>شناسه<');
+  expect(html).not.toContain('>وضعیت<');
+  for (const label of [
+    'توضیحات ساعت کاری',
+    'زمان آغاز',
+    'زمان پایان',
+    'محدوده تردد پرسنل',
+    'چند ساعت قبل از زمان آغاز',
+    'چند ساعت بعد از زمان پایان',
+  ])
+    expect(html).toContain(label);
+  expect(html).toContain('type="color"');
+  expect(html).toContain('value="#000000"');
+  expect(html).toContain('type="checkbox"');
+  expect(html).not.toContain('checked=""');
+  expect(hrGroups.time!.find((g) => g.id === 'workingHours')?.label).toBe(
+    'ساعت کار',
+  );
+  expect(hrGroups.time!.find((g) => g.id === 'leaveBalance')?.label).toBe(
+    'مانده مرخصی',
+  );
+});
+
+it('exposes the five observed leave views and separates monthly grants from independent transfer thresholds', () => {
+  const store = {
+    data: {
+      records: [],
+      employees: [],
+      branchIds: [],
+      branches: [],
+      capabilities: { write: true, approve: true },
+    },
+    revision: 0,
+  } as unknown as HrStore;
+  const grant = renderToStaticMarkup(<HrLeaveBalance store={store} />);
+  for (const title of [
+    'افزودن مانده مرخصی',
+    'کاردکس مانده مرخصی',
+    'گزارش مانده مرخصی',
+    'انتقال مرخصی کاربر',
+    'انتقال مرخصی عمومی',
+  ])
+    expect(grant).toContain(title);
+  expect(grant).toContain('value="16:20"');
+  expect(grant).toContain('value="all" selected=""');
+  expect(grant).toContain('فرم مانده مرخصی');
+  expect(grant).not.toContain('نوع مرخصی');
+  const transfer = renderToStaticMarkup(
+    <HrLeaveBalance store={store} initialView="generalTransfer" />,
+  );
+  expect(transfer).toContain('انتقال از سال');
+  expect(transfer).toContain('مانده مرخصی بیشتر از');
+  expect(transfer).toContain('مانده مرخصی کمتر از');
+  expect(transfer.match(/value="00:00"/g)).toHaveLength(8);
+  expect(transfer).not.toContain('عنوان قاعده');
+  expect(transfer).not.toContain('نوع مرخصی');
+  for (const initialView of ['cardex', 'report', 'userTransfer']) {
+    const html = renderToStaticMarkup(
+      <HrLeaveBalance store={store} initialView={initialView} />,
+    );
+    for (const field of [
+      'جست‌وجو',
+      'مرتب‌سازی',
+      'کد پرسنلی',
+      'اسم و فامیل',
+      'انتخاب صفحه',
+    ])
+      expect(html).toContain(field);
+    if (initialView !== 'userTransfer') expect(html).toContain('انتخاب سال');
+  }
 });

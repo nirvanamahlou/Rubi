@@ -14,6 +14,7 @@ import {
   jalaliYear,
   selection,
   transferSplit,
+  validateCompletionValues,
 } from './hr-radan-completion.domain';
 import { HR_RADAN_REQUEST_TYPES } from '@nora/contracts';
 import { isOptionalOperationReason } from '@nora/contracts';
@@ -1349,6 +1350,23 @@ export class HrService {
       }
     }
   }
+  private compatibleTimeInput(value: unknown, row: RecordRow) {
+    const legacy =
+      row.section === 'time'
+        ? (
+            { workingHours: 8, leaveTransferRules: 9 } as Record<string, number>
+          )[row.tab]
+        : undefined;
+    if (
+      legacy !== undefined &&
+      Array.isArray(value) &&
+      value.length === legacy &&
+      Array.isArray(row.values) &&
+      row.values.length > legacy
+    )
+      return [...value, ...row.values.slice(legacy)];
+    return value;
+  }
   private compatibleIdentityInput(value: unknown, row?: RecordRow) {
     if (!Array.isArray(value) || value.length !== 14 || !row) return value;
     const previous = revealHrValues(
@@ -2623,7 +2641,7 @@ export class HrService {
               schema,
               schema.key === 'employee.identity'
                 ? this.compatibleIdentityInput(input.values ?? row.values, row)
-                : (input.values ?? row.values),
+                : this.compatibleTimeInput(input.values ?? row.values, row),
               employee,
               row.branchId,
               data,
@@ -4534,6 +4552,7 @@ export class HrService {
       'duration',
       'type',
       'ruleId',
+      'transfer',
     ]);
     if (
       !Array.isArray(input.employeeIds) ||
@@ -4544,21 +4563,77 @@ export class HrService {
       throw new BadRequestException('یک تا صد کارمند یکتا انتخاب کنید.');
     const year = jalaliYear(input.year),
       type = validate.text(input.type, 'نوع مرخصی', 80);
+    if (input.ruleId && input.transfer)
+      throw new BadRequestException('یک روش انتقال انتخاب کنید.');
+    let inlineRule: string[] | undefined;
+    if (input.transfer !== undefined) {
+      const transfer = validate.object(input.transfer, [
+        'greaterThan',
+        'lessThan',
+        'greaterCarry',
+        'greaterBurn',
+        'greaterBuyback',
+        'lessCarry',
+        'lessBurn',
+        'lessBuyback',
+      ]);
+      inlineRule = [
+        'انتقال عمومی مرخصی',
+        String(year),
+        ...[
+          'greaterThan',
+          'greaterCarry',
+          'greaterBurn',
+          'greaterBuyback',
+          'lessCarry',
+          'lessBurn',
+          'lessBuyback',
+          'lessThan',
+        ].map((field) => validate.text(transfer[field], field, 12)),
+      ];
+      validateCompletionValues(
+        'time.leaveTransferRules',
+        getHrResource('time', 'leaveTransferRules')!.columns,
+        inlineRule,
+      );
+    }
+    if ((inlineRule || input.ruleId) && year === 1600)
+      throw new BadRequestException('سال مقصد خارج از محدوده مجاز است.');
     return this.command(
       actor,
       key,
       { operation: 'leave.minutes', input },
       async (tx) => {
         const ids: string[] = [];
-        for (const id of input.employeeIds as unknown[]) {
+        const inlineRules = new Map<string, RecordRow>();
+        for (const id of [...(input.employeeIds as string[])].sort()) {
           const employee = await this.employee(tx, validate.uuid(id), actor);
           await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${employee.id + ':minute-leave'}, 0))::text`;
-          if (input.ruleId) {
-            const rule = await this.record(
-              tx,
-              validate.uuid(input.ruleId),
-              actor,
-            );
+          if (input.ruleId || inlineRule) {
+            let rule = inlineRules.get(employee.branchId);
+            if (!rule && inlineRule) {
+              rule = await tx.hrRecord.create({
+                data: {
+                  branchId: employee.branchId,
+                  section: 'time',
+                  tab: 'leaveTransferRules',
+                  code: `HR-TRANSFER-${randomUUID()}`,
+                  values: inlineRule,
+                  data: {},
+                  status: 'فعال',
+                },
+              });
+              inlineRules.set(employee.branchId, rule);
+              await this.audit(
+                tx,
+                actor,
+                { branchId: employee.branchId, recordId: rule.id },
+                'leave.transfer.configure',
+                { year },
+                1,
+              );
+            }
+            rule ??= await this.record(tx, validate.uuid(input.ruleId), actor);
             if (
               rule.branchId !== employee.branchId ||
               rule.section !== 'time' ||
@@ -4588,6 +4663,8 @@ export class HrService {
               year,
               type,
             );
+            if (inlineRule && balance === 0)
+              throw new ConflictException('مانده صفر قابل انتقال نیست.');
             if (balance < 0)
               throw new ConflictException('مانده منفی قابل انتقال نیست.');
             const split = transferSplit(balance, rule.values as string[]);
@@ -4666,6 +4743,205 @@ export class HrService {
       },
     );
   }
+  async attendanceReportData(
+    query: Record<string, unknown>,
+    actor: AuthenticatedActor,
+  ) {
+    validate.object(query, ['from', 'to']);
+    this.readable(actor);
+    const from = query.from
+      ? validate.isoDate(query.from).toISOString().slice(0, 10)
+      : '';
+    const to = query.to
+      ? validate.isoDate(query.to).toISOString().slice(0, 10)
+      : '';
+    if (from && to && from > to)
+      throw new BadRequestException('پایان باید پس از شروع باشد.');
+    return this.database.client.$transaction(
+      async (tx) => {
+        const employees = await tx.hrEmployee.findMany({
+          where: this.employeeScope(actor),
+          take: 10001,
+          orderBy: [{ personnelCode: 'asc' }, { id: 'asc' }],
+        });
+        if (employees.length > 10000)
+          throw new ConflictException('فهرست پرسنل بیش از حد مجاز است.');
+        const scope: Prisma.HrRecordWhereInput = {
+          AND: [
+            this.recordScope(actor),
+            {
+              OR: [
+                { employeeId: null },
+                { employee: this.employeeScope(actor) },
+              ],
+            },
+          ],
+        };
+        const eventSources = [
+          ['time', 'attendance'],
+          ['time', 'checkins'],
+          ['time', 'leave'],
+          ['time', 'remote'],
+          ['time', 'overtime'],
+          ['requests', 'leave'],
+          ['requests', 'radanLeave'],
+          ['requests', 'radanMission'],
+          ['expenses', 'mission'],
+        ];
+        const eventFilters: Prisma.HrRecordWhereInput[] = eventSources.map(
+          ([section, tab]) => {
+            const columns = getHrResource(section!, tab!)!.columns;
+            const startIndex = columns.findIndex((label) =>
+              ['از تاریخ', 'تاریخ کارکرد', 'تاریخ تردد', 'تاریخ'].includes(
+                label,
+              ),
+            );
+            const endIndex = columns.includes('تا تاریخ')
+              ? columns.indexOf('تا تاریخ')
+              : startIndex;
+            const dates: Prisma.HrRecordWhereInput[] = [];
+            if (from)
+              dates.push(
+                endIndex >= 0
+                  ? { values: { path: [String(endIndex)], gte: from } }
+                  : { effectiveAt: { gte: new Date(from) } },
+              );
+            if (to)
+              dates.push(
+                startIndex >= 0
+                  ? { values: { path: [String(startIndex)], lte: to } }
+                  : { effectiveAt: { lte: new Date(to) } },
+              );
+            return { section: section!, tab: tab!, AND: dates };
+          },
+        );
+        const [operational, references] = await Promise.all([
+          tx.hrRecord.findMany({
+            where: { AND: [scope, { OR: eventFilters }] },
+            take: 100001,
+            orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+          }),
+          tx.hrRecord.findMany({
+            where: {
+              AND: [scope],
+              OR: [
+                {
+                  section: 'time',
+                  tab: {
+                    in: [
+                      'shift',
+                      'calculationSettings',
+                      'leavePolicies',
+                      'biometric',
+                    ],
+                  },
+                },
+                {
+                  section: 'requests',
+                  tab: { in: ['patterns', 'patternAssignments'] },
+                },
+                { section: 'contracts', tab: 'active' },
+                {
+                  section: 'organization',
+                  tab: { in: ['groups', 'groupMembers'] },
+                },
+              ],
+            },
+            take: 50001,
+            orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+          }),
+        ]);
+        if (operational.length > 100000 || references.length > 50000)
+          throw new ConflictException('حجم گزارش بیش از حد مجاز است.');
+        return {
+          employees: employees.map((employee) => this.employeeDto(employee)),
+          records: await this.recordDtos(operational, actor),
+          references: await this.recordDtos(references, actor),
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        maxWait: 10000,
+        timeout: 30000,
+      },
+    );
+  }
+  async leavePersonnel(actor: AuthenticatedActor) {
+    const items = await this.database.client.hrEmployee.findMany({
+      where: this.employeeScope(actor),
+      take: 10001,
+      orderBy: [{ personnelCode: 'asc' }, { id: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        personnelCode: true,
+        unit: true,
+        branchId: true,
+      },
+    });
+    if (items.length > 10000)
+      throw new ConflictException('فهرست پرسنل بیش از حد مجاز است.');
+    return { items };
+  }
+  async leaveReport(query: Record<string, unknown>, actor: AuthenticatedActor) {
+    validate.object(query, ['employeeIds', 'year']);
+    this.readable(actor);
+    const year = jalaliYear(query.year);
+    const ids = validate
+      .text(query.employeeIds, 'پرسنل', 3700)
+      .split(',')
+      .map((id) => validate.uuid(id));
+    if (!ids.length || ids.length > 100 || new Set(ids).size !== ids.length)
+      throw new BadRequestException('یک تا صد کارمند یکتا انتخاب کنید.');
+    return this.database.client.$transaction(
+      async (tx) => {
+        const employees = await tx.hrEmployee.findMany({
+          where: { AND: [this.employeeScope(actor), { id: { in: ids } }] },
+          select: { id: true, name: true, personnelCode: true },
+        });
+        if (employees.length !== ids.length)
+          throw new NotFoundException('پرسنل انتخاب‌شده در دسترس نیست.');
+        const records = await tx.hrRecord.findMany({
+          where: {
+            AND: [
+              this.recordScope(actor),
+              { employee: this.employeeScope(actor) },
+            ],
+            employeeId: { in: ids },
+            section: 'time',
+            tab: 'minuteLedger',
+            status: 'تأییدشده',
+            deletedAt: null,
+          },
+          take: 100001,
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        });
+        if (records.length > 100000)
+          throw new ConflictException('حجم گزارش بیش از حد مجاز است.');
+        const selected = records.filter(
+          (row) => Number((row.values as string[])[1]) === year,
+        );
+        return {
+          year,
+          items: employees.map((employee) => ({
+            ...employee,
+            balanceMinutes: selected
+              .filter((row) => row.employeeId === employee.id)
+              .reduce(
+                (sum, row) => sum + Number((row.values as string[])[5]),
+                0,
+              ),
+          })),
+          records: await this.recordDtos(selected, actor),
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        maxWait: 10000,
+        timeout: 30000,
+      },
+    );
+  }
   async minuteCardex(
     query: Record<string, unknown>,
     actor: AuthenticatedActor,
@@ -4684,6 +4960,8 @@ export class HrService {
         section: 'time',
         tab: 'minuteLedger',
         deletedAt: null,
+        status: 'تأییدشده',
+        AND: [this.recordScope(actor)],
       },
       take: 10001,
       orderBy: { createdAt: 'asc' },

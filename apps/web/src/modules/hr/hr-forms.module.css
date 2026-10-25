@@ -387,3 +387,22 @@
   opacity: 0.5;
   cursor: wait;
 }
+
+.fullWidth {
+  grid-column: 1 / -1;
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+.control[type='checkbox'] {
+  width: 18px;
+  min-height: 18px;
+  height: 18px;
+  align-self: flex-start;
+  padding: 0;
+  accent-color: var(--primary);
+}
+.control[type='color'] {
+  padding: 4px;
+  cursor: pointer;
+}

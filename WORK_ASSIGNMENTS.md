@@ -9474,6 +9474,18 @@ HR-EMPLOYEE-CASE-WORKFLOWS-1025 compatibility scope: include HR-owned report sou
 
 HR-EMPLOYEE-CASE-WORKFLOWS-1025 validation: focused employee-bound create/edit, optional entry, view permissions, legacy routing and shared job-title rendering regressions pass. Existing legacy hub fixture now explicitly excludes the removed lifecycle entry. Final hosted quality/types/full tests/build/database gates precede merge; scoped source/translation locks release after verified develop merge. No migration/dependency/runtime changes.
 
+## HR-ATTENDANCE-REPORTS-1025 — PC-B — RESERVED
+
+2026-10-25 owner renewed the attendance reports request while HR-TIME-LEAVE-PARITY-1025 was active. Co-delivery on `codex/pc-b-hr-time-leave-parity-1025` avoids overlapping HR service/controller/form locks. Reserve HR report projection/UI/selector/schema/reference hook helpers/tests and HR unified CSS control rules and contracts HR index, own translations/status/task notes. HR API producer supplies a bounded, consistent, authorized attendance snapshot to HR Web; no infrastructure reporting ownership or other module tables change. Existing API remains compatible; new GET /hr/reports/attendance-data is private/no-store. Current Radan inspection confirms all21 forms,52 coefficient tree nodes,10 contract categories, report-specific sorting and units. No Radan inputs selected or report run; output columns and proprietary calculation engines are unobserved. No migration/dependency/deploy. Do not fabricate forgiveness/ARPA results or zero-fill unknown metrics.
+
+## HR-TIME-LEAVE-PARITY-1025 — PC-B — RESERVED
+
+2026-10-25: COMPUTER_ID=PC-B; branch `codex/pc-b-hr-time-leave-parity-1025`, base origin/develop `4cdacfc640672bcc989afb48e3419e66801b0f0f`. User authorizes read-only Radan inspection, HR implementation, tests, push and normal develop merge. No Radan writes or deployment.
+
+Scope/locks: HR Web time navigation, contextual working-hours form, new leave-balance workspace, HR minute-leave service/domain/validation/controller tests; contracts HR completion/legacy compatibility; own i18n overrides/generated catalogs; task/status docs. No migration, schema, dependency or lockfile changes. Producer HR API and consumer HR Web remain owned by PC-B. Existing minute-leave command gains optional inline transfer configuration; existing ruleId clients and nine-column historical rules remain compatible. New independent lower threshold appends to JSON values without shifting existing columns. Transactions, idempotency, branch/person permissions and conservation remain mandatory. No overlap with released HR-DEVICE-FORM / employee-case work.
+
+Observed five leave pages and nine working-hours inputs in authenticated Radan on 2026-10-25. Personnel lists empty: per-user transfer dialog and generated report output are unobserved, never fabricate them or create Radan records. Individual employee leave requests remain in employee profiles.
+
 ## HR-DEVICE-FORM-1025 — PC-B — RESERVED
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-device-form-1025 from develop1b21687c. User resumed the authorized device crawl after signing in. Fresh read-only Radan device-list observation confirms name/address/type required, description/port/network password optional; type choices V800, Radan, ZK, TF8000, V210. Reserve HR time navigation, live record form/device-only contextual rendering and focused existing regressions, own notes/translations. Existing branch/permission, encrypted write-only password and canonical record column positions remain intact. No schema/dependency/API/provider/runtime/Radan writes. Distinct copy-cleanup PR1107 remains independently gated; integrate its develop merge before publication.
