@@ -65,7 +65,9 @@ export interface CallAnswerRecipient {
   extension: string;
   label: string;
   shared: boolean;
-  answeredAt: string;
+  answeredAt: string | null;
+  observedAt?: string;
+  labelSource?: 'CURRENT_DIRECTORY';
 }
 
 export function callDestinationLabel(row: {

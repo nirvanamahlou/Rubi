@@ -7578,3 +7578,6 @@ CALL-CENTER-RELEASE-1025 publication: https://github.com/nirvanamahlou/Rubi/pull
 
 ## 2026-10-25 — STICKY-TEN-SECONDS-1025 — PC-C
 User-approved previous-agent ringing budget is now10 seconds before queue1002 fallback in the prepared internal routing decision. Selector/contract,3 regression suites and SSH handoff docs updated.20 tests, scoped lint and affected API typecheck/build pass. Physical timer installation still awaits real PBX SSH/setup acceptance; no UI/runtime/PBX mutation.
+
+## 2026-10-25 — CALL-DESTINATION-HISTORY-1025 — PC-C
+Missing outbound staff labels traced to answer-only identity snapshots. New outbound calls capture originator label at creation without inventing answer evidence; authorized legacy history/get views resolve missing labels from provider-confirmed extension and HR directory. Full historical snapshots and ownership preserved.56 tests and scoped lint/API build pass; read-only local sample12/12 recovered. No schema/UI/PBX change; local API updated, Web preserved.

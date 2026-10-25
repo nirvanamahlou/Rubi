@@ -9623,3 +9623,8 @@ CALL-CENTER-RELEASE-1025 — SOURCE_RELEASED / PR1114 PENDING CI: integration an
 User changes previous sales agent ringing budget20s to10s before fallback to sales queue1002. Reserve sticky-sales.ts and its preview/service/PostgreSQL expectations, sticky-sales handoff docs and own status. No PBX access has been supplied; update prepared decision contract without claiming an installed timer. No UI/schema/dependency changes.
 
 STICKY-TEN-SECONDS-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: ringSeconds10 prepared and verified;20 tests and scoped lint/typecheck/build pass. No UI, migration, runtime or PBX write. Real timer requires installation and controlled PBX test.
+
+## CALL-DESTINATION-HISTORY-1025 — PC-C — IN_PROGRESS
+Reserve Call Center service/read/telephony projections and related tests, own docs. Investigate missing outbound staff labels, preserve historical identity snapshots and branch/access boundaries; no UI layout, ownership or PBX change. Authorized local read inspection and runtime fix after checks; no schema/dependency changes.
+
+CALL-DESTINATION-HISTORY-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: missing label cause fixed for new outbound and legacy authorized history/get;56 tests and targeted lint/types/API build pass. Exact screenshot sample verified in browser on3000. No data repair write, ownership, UI layout or PBX change.

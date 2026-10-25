@@ -311,7 +311,10 @@ export class CallCenterReadService {
         take: q.pageSize + 1,
       });
       return {
-        data: rows.slice(0, q.pageSize).map((r) => this.calls.presentCall(r)),
+        data: await this.calls.hydrateDestinations(
+          branchId,
+          rows.slice(0, q.pageSize).map((r) => this.calls.presentCall(r)),
+        ),
         meta: {
           next: rows.length > q.pageSize ? rows[q.pageSize - 1]!.id : null,
         },
