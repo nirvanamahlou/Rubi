@@ -2,6 +2,10 @@
 
 Owner-authorized completion adds immutable purchase outcome/manual refund/write-off evidence, explicit principal versus agent earned revenue, actual imported gross payroll with net-accrual deduplication, and supplier payment realised FX carrying adjustments without a second bank line. Existing forms remain; an inline financial-event panel captures evidence and creates drafts through existing independent approval/posting. Sales price/cancel guard, period-close blockers, source FKs and additive migrations20261025120000/20261025120100. No orchestration, bank connection, tax-rate inference or main-data fixtures. Published in PR1110. Local related regression34 and Web/i18n10 tests pass; exact code heade2cfce6e passes hosted full quality (types/lint/format), production API/Web build, fresh PostgreSQL18 migrations/seeds and20 financial-event/workflow integration tests (including8 new workflow scenarios). Full-suite/exact-final-head gates remain mandatory before merge. PR merge state is the source publication record; a persistent local receipt under AppData/Local/Nora/deployments records actual3100 image, backup and preserved counts after cutover. Reservations release on PR1110 merge. Rules and source/inference boundaries: docs/tasks/FINANCIAL-WORKFLOWS-COMPLETION-1025.md.
 
+## LEGACY-CONTRACT-TOTAL-1025 — PC-A
+
+Historical new-contract pricing now uses a single customer-name table with separate rial/foreign gross totals, discount and commission. Canonical total pricing and existing aggregate service/capacity metadata remain; no personal passengers are invented and prior saved records stay unchanged. Return pairing disambiguates recurring original loads with registered pair IDs and handles delayed calendar reads without overwriting manual returns. Targeted Sales model/render/domain, translations, types/lint/build and exact-head full CI gate owner-authorized develop merge and encrypted-backup Avina rollout. No migration/dependency change.
+
 
 ## 2026-10-25 — FLIGHT-WEEKDAY-PURCHASE-1025 — PC-A
 
@@ -7482,6 +7486,10 @@ HR-DASHBOARD-CHARTS-1025 verification:38 isolated PostgreSQL/HTTP HR checks,12 f
 ## HR-ORG-CHART-NODES-1025 — PC-B — IMPLEMENTED / VALIDATING
 
 The live organization chart adds real departments and explicit employee nodes through its per-node side toolbar. Employee nodes bind existing personnel IDs and same-company parent department/employee records; removing a chart member never archives the personnel record or changes their official assignment. Create forms no longer require selecting an already-existing unit. Existing canonical department editing/deletion and dependency guards remain intact; parent editing is available for both supported node kinds. Pointer/touch move handles and arrow keys persist bounded diagram offsets through existing versioned/audited HR record commands, retain connector alignment and restore server state after save conflicts. Truncated bootstrap loads the complete permitted reference set before enabling the chart. No migration/dependency/runtime/server or Radan changes.153 HR Web checks and40 isolated PostgreSQL/HTTP checks pass at the implementation checkpoint; final source checks and hosted gates remain required.
+
+## HR-EMPLOYEE-CASE-WORKFLOWS-1025 — PC-B
+
+Employee profiles now own optional job-change, exit, leave and employment contract workflows using the existing canonical forms, versioned records, parent/employee FKs and approvals. Standalone lifecycle/contracts cards and the leave group in time are removed; historical URLs lead to the employee list or the selected employee case and retain the requested tab. Shared leave transfer configuration remains in time settings. Current profile summary/edit is presented before secondary metrics; range/revision-keyed loading prevents stale workflow rows after changes. Source-level view permissions and read-only resources remain respected. Historical position keys are relabelled as job titles in forms, details and datasets without moving persisted columns or changing backend contracts. Report/record source discovery retains moved leave/cardex metadata. Focused validation underway; full checks precede authorized develop merge. No migration, dependency, runtime or Radan writes.
 
 ## HR-DEVICE-FORM-1025 — PC-B
 

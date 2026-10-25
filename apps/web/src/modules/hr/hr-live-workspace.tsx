@@ -77,6 +77,7 @@ export function HrLiveWorkspace({
       ? (workspaceAliases[workspaceId] ?? 'home')
       : normalizeSection(sectionId),
     workspaceId === 'leaves' ? 'leave' : tabId,
+    employeeId,
   );
   const { section } = location;
   const tab = location.tab;
@@ -152,6 +153,9 @@ export function HrLiveWorkspace({
         <Link href="/hr" aria-current={section === 'home' ? 'page' : undefined}>
           <LayoutGrid size={17} aria-hidden="true" /> همه بخش‌ها
         </Link>
+        {section === 'employee' ? (
+          <Link href="/hr?section=employees">کارکنان</Link>
+        ) : null}
         {section !== 'home' ? (
           <label className={ui.sectionPicker}>
             <NativeSearchSelect
@@ -228,13 +232,15 @@ export function HrLiveWorkspace({
         <HrEmployees
           store={store}
           onProfile={(item) =>
-            router.push(`/hr?section=employee&employee=${item.id}`)
+            router.push(
+              `/hr?section=employee&employee=${item.id}${tab ? `&tab=${encodeURIComponent(tab)}` : ''}`,
+            )
           }
         />
       ) : section === 'employee' ? (
         employee ? (
           <HrEmployeeProfile
-            key={employee.id}
+            key={`${employee.id}:${tab ?? ''}`}
             employee={employee}
             initialTab={tab}
             store={store}

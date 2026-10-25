@@ -6,8 +6,9 @@ import { allHrRecords } from './hr-store';
 export function useHrEmployeeRecords(
   employeeId: string | undefined,
   revision: number,
+  range?: { from: string; to: string },
 ) {
-  const key = JSON.stringify([employeeId, revision]);
+  const key = JSON.stringify([employeeId, revision, range?.from, range?.to]);
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<{
     key: string;
@@ -17,7 +18,11 @@ export function useHrEmployeeRecords(
   useEffect(() => {
     if (!employeeId) return;
     let active = true;
-    void allHrRecords({ employeeId })
+    void allHrRecords({
+      employeeId,
+      ...(range?.from ? { from: range.from } : {}),
+      ...(range?.to ? { to: range.to } : {}),
+    })
       .then((records) => {
         if (active) setResult({ key, records });
       })
@@ -34,7 +39,7 @@ export function useHrEmployeeRecords(
     return () => {
       active = false;
     };
-  }, [employeeId, key, attempt]);
+  }, [employeeId, key, attempt, range?.from, range?.to]);
   const current = result?.key === key ? result : undefined;
   return {
     records: current?.records,

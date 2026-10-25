@@ -128,6 +128,7 @@ export const salesAdditionalServices = {
 
 export interface SalesFormState {
   legacyContract?: boolean;
+  legacyDeductions?: { discount?: SalesMoney; commission?: SalesMoney };
   additionalServices?: (keyof typeof salesAdditionalServices)[];
   roomDrivenGuests?: boolean;
   flightOnlyPassengers?: { key: string; age: number }[];
@@ -1315,41 +1316,63 @@ export function legacySalesPricingServices(
   ];
 }
 
+/** Historical prices belong to the customer contract, never to individual services. */
+export function legacyContractPriceComponents(
+  state: SalesFormState,
+): SalesPriceComponentInput[] {
+  const totals = new Map<string, bigint>();
+  const components: SalesPriceComponentInput[] = [];
+  for (const price of state.contractPrices ?? []) {
+    if (!price.amount.trim()) continue;
+    if (
+      !/^[A-Z]{3}$/.test(price.currencyCode) ||
+      totals.has(price.currencyCode)
+    )
+      throw Error('ارز مبلغ قرارداد باید معتبر و یکتا باشد.');
+    const amount = moneyUnits(price.amount);
+    totals.set(price.currencyCode, amount);
+    if (amount > 0n)
+      components.push({ ...price, type: 'BASE', title: 'مبلغ کل قرارداد' });
+  }
+  if (!components.length) throw Error('مبلغ کل قرارداد را وارد کنید.');
+  for (const kind of ['discount', 'commission'] as const) {
+    const price = state.legacyDeductions?.[kind];
+    if (!price?.amount.trim()) continue;
+    const amount = moneyUnits(price.amount);
+    if (
+      !/^[A-Z]{3}$/.test(price.currencyCode) ||
+      amount > (totals.get(price.currencyCode) ?? 0n)
+    )
+      throw Error(
+        'تخفیف و کمیسیون نباید از مبلغ قرارداد در همان ارز بیشتر باشد.',
+      );
+    totals.set(
+      price.currencyCode,
+      (totals.get(price.currencyCode) ?? 0n) - amount,
+    );
+    if (amount > 0n)
+      components.push({
+        ...price,
+        type: 'DISCOUNT',
+        title: kind === 'discount' ? 'تخفیف قرارداد' : 'کمیسیون قرارداد',
+      });
+  }
+  return components;
+}
+
 export function salesPayload(
   state: SalesFormState,
   aggregateLegacy = false,
 ): SalesContractCreateRequest {
   if (state.legacyContract) {
-    const legacyPrices =
-      state.servicePricing && Object.keys(state.servicePricing).length
-        ? servicePriceComponents(
-            legacySalesPricingServices(state).map((s) => ({
-              ...s,
-              pricing: state.servicePricing?.[s.clientKey] ?? [],
-            })),
-            {
-              checkInDate: state.hotel.checkIn,
-              checkOutDate: state.hotel.checkOut,
-            },
-          )
-        : null;
-    const totals = new Map<string, bigint>();
-    for (const p of legacyPrices ?? [])
-      totals.set(
-        p.currencyCode,
-        (totals.get(p.currencyCode) ?? 0n) +
-          (p.type === 'DISCOUNT' ? -1n : 1n) * moneyUnits(p.amount),
-      );
     const plain = {
       ...state,
       legacyContract: false,
       priceEntryMode: 'CONTRACT_TOTAL' as const,
-      contractPrices: legacyPrices
-        ? [...totals].map(([currencyCode, amount]) => ({
-            currencyCode,
-            amount: moneyDecimal(amount),
-          }))
-        : (state.contractPrices ?? []),
+      contractPrices: (state.contractPrices ?? []).filter((p) =>
+        p.amount.trim(),
+      ),
+      servicePricing: {},
       passengers: [],
       passengerTotalPricing: false,
       automaticComponentPricing: false,
@@ -1399,19 +1422,10 @@ export function salesPayload(
         occupancy: party.adults + party.children + party.infants,
       };
     }
-    if (state.servicePricing && Object.keys(state.servicePricing).length) {
-      for (const service of services) {
-        const metadata = { ...service.metadata };
-        delete metadata.contractPackagePricingVersion;
-        delete metadata.includedWithoutCharge;
-        service.metadata = metadata;
-        service.pricing = state.servicePricing[service.clientKey] ?? [];
-      }
-      payload.priceComponents = salesChequeComponents(
-        servicePriceComponents(services, payload.hotelSelection) ?? [],
-        state.paymentTerms,
-      );
-    }
+    payload.priceComponents = salesChequeComponents(
+      legacyContractPriceComponents(state),
+      state.paymentTerms,
+    );
     return { ...payload, services };
   }
   state = syncHotelChildSelections(state, salesTravelDate(state));

@@ -1,3 +1,7 @@
+## LEGACY-CONTRACT-TOTAL-1025 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-legacy-contract-total-1025 from develop cb4657ceb. Owner replaces historical per-service pricing with one customer-name table of gross IRR/foreign totals and discount/commission deductions. Reserve Sales form/model/new legacy-total component and focused API/model/render regressions, additive local draft field only, own docs/English catalogues if needed. Preserve V2 service parties, real catalog selections/capacity and canonical contract-total validation; no fake passengers. Also reserve exact-flight-dates/picker consumer and tests for registered return auto-selection while retaining manual replacement. Existing sources released; no overlapping active writer found. Sales Web604 plus13 return checks and API65 domain tests pass; Web typecheck and scoped lint pass. Full Sales607/one skip pass with translation coverage timing out under local disk pressure; isolated coverage rerun pending. Local production compilation passed but cache persistence hit disk exhaustion; exact-head hosted build/test gates remain required. Source locks freeze/release with candidate. No schema/migration/dependency/permission change. Owner authorizes develop merge and Avina server update after exact-head gates and encrypted backup.
+
 ## FLIGHT-WEEKDAY-PURCHASE-1025 — PC-A — READY_FOR_CI
 
 ## LEGACY-CAPACITY-AMEND-1025 — PC-A — READY_FOR_CI
@@ -9473,6 +9477,14 @@ HR-ORG-CHART-NODES-1025 transfer compatibility: current employee company/branch 
 HR-ORG-CHART-NODES-1025 final targeted recheck: the real PostgreSQL concurrent duplicate/company-transfer case passes on the final scoped uniqueness logic. Historical nodes remain intact, current-company re-attachment succeeds, and mismatched descendant company changes remain rejected. Temporary database/container cleanup is restricted to the recorded task-owned ID. Hosted exact-head checks remain the final merge gate.
 
 HR-ORG-CHART-NODES-1025 bounded compatibility reservation: retain authorized IAM fallback roots/options independently for each branch lacking a configured organization company, even when another branch has companies. Reserve the HR-owned hr-live-data.ts company projection and chart-root regression only; this restores existing legacy branch choices without granting access or changing IAM. Existing current-task source reservation reopens only for this fix and freezes again on publication.
+
+## HR-EMPLOYEE-CASE-WORKFLOWS-1025 — PC-B — RESERVED
+
+COMPUTER_ID=PC-B; branch codex/pc-b-hr-employee-case-workflows-1025 from developcb4657ce. User authorizes employee-centred profile display/edit and optional job changes, exit, leave and employment contract workflows. Remove standalone lifecycle/contracts navigation and the leave group from time; preserve canonical resources, existing forms/approval effects/history and backend scopes. Reserve HR navigation/model/live workspace, employee profile/summary/list, contextual/record form presentation, corresponding focused regressions, own translations/generated catalogue/status/task notes. Relabel historical position field keys only at presentation boundaries as job titles, keeping canonical payload positions stable. No database/schema/dependency/IAM grants/runtime/Radan changes; no orchestrator/sub-agents. Existing published HR source locks released.
+
+HR-EMPLOYEE-CASE-WORKFLOWS-1025 compatibility scope: include HR-owned report source discovery and record-source labels so moving leave out of the time menu does not remove leave/cardex reporting or canonical record detail metadata. No report engine/API contracts change.
+
+HR-EMPLOYEE-CASE-WORKFLOWS-1025 validation: focused employee-bound create/edit, optional entry, view permissions, legacy routing and shared job-title rendering regressions pass. Existing legacy hub fixture now explicitly excludes the removed lifecycle entry. Final hosted quality/types/full tests/build/database gates precede merge; scoped source/translation locks release after verified develop merge. No migration/dependency/runtime changes.
 
 ## HR-DEVICE-FORM-1025 — PC-B — RESERVED
 

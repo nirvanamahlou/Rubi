@@ -368,7 +368,7 @@ it('uses the selected outbound day before floating flight details are complete w
   expect(next.hotel.checkIn).toBe('2026-10-24');
 });
 
-it('preserves aggregate legacy flight/hotel dates, age counts, real offer links and separate service prices without passenger identities', () => {
+it('preserves aggregate legacy flight/hotel dates, age counts, real offer links and a single customer total without passenger identities', () => {
   const current = selected();
   const price = {
     version: 1 as const,
@@ -406,6 +406,7 @@ it('preserves aggregate legacy flight/hotel dates, age counts, real offer links 
         },
       ],
     },
+    contractPrices: [{ currencyCode: 'USD', amount: '250' }],
     servicePricing: {
       'flight-outbound': [price],
       'flight-return': [price],
@@ -439,5 +440,5 @@ it('preserves aggregate legacy flight/hotel dates, age counts, real offer links 
     payload.priceComponents
       .filter((p) => p.type === 'BASE')
       .map((p) => p.amount),
-  ).toEqual(['100', '100', '100']);
+  ).toEqual(['250']);
 });

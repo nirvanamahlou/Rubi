@@ -1,4 +1,5 @@
 'use client';
+import { hrFieldLabel } from './hr-form-model';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { ExternalLink, Upload } from 'lucide-react';
@@ -295,7 +296,7 @@ export function buildContextualHrFields(
         type: fieldType(label),
         required: !optionalField(label),
         ...(options ? { options } : {}),
-        placeholder: `ورود ${label}`,
+        placeholder: `ورود ${hrFieldLabel(label)}`,
       };
     });
 }
@@ -662,7 +663,7 @@ export function ContextualHrForm({
             field.required &&
             !derivedValues[field.id]?.trim(),
         )
-        .map((field) => [field.id, `${field.label} الزامی است.`]),
+        .map((field) => [field.id, `${hrFieldLabel(field.label)} الزامی است.`]),
     );
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
@@ -846,7 +847,7 @@ export function ContextualHrForm({
                 key={field.id}
               >
                 <RequiredFieldLabel required={field.required}>
-                  {field.label}
+                  {hrFieldLabel(field.label)}
                 </RequiredFieldLabel>
                 {context.onCreateReference &&
                 !context.skipCreateReferenceLabels?.includes(field.label) &&
