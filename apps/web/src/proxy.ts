@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 const ACCESS_COOKIE = 'nora_access';
+const REFRESH_COOKIE = 'nora_refresh';
 
 export function proxy(request: NextRequest) {
   if (
@@ -20,7 +21,13 @@ export function proxy(request: NextRequest) {
     // A stale access cookie must never prevent reauthentication.
     return NextResponse.next();
   }
-  if (!hasAccessCookie) {
+  // Protected API handlers remain authoritative. A refresh cookie only allows
+  // the browser shell to mount and recover its expired short-lived access token.
+  const canRecover = Boolean(request.cookies.get(REFRESH_COOKIE)?.value);
+  if (
+    !hasAccessCookie &&
+    (!canRecover || request.nextUrl.pathname.startsWith('/api/'))
+  ) {
     if (request.nextUrl.pathname.startsWith('/api/assistant/'))
       return NextResponse.json(
         { error: { code: 'UNAUTHENTICATED' } },

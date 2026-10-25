@@ -76,7 +76,12 @@ function sql(database: string, input: string) {
       '-v',
       'ON_ERROR_STOP=1',
     ],
-    { input, encoding: 'utf8', stdio: 'pipe', timeout: 60000 },
+    {
+      input,
+      encoding: 'utf8',
+      stdio: 'pipe',
+      timeout: process.env.NORA_HR_TEST_SLOW_HOST === '1' ? 120000 : 60000,
+    },
   );
 }
 async function actor(
@@ -3805,6 +3810,497 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         where: { id: first.id },
         data: { deletedAt: new Date() },
       });
+    });
+    it('runs inline transfers atomically across branches and reports exact scoped balances through HTTP', async () => {
+      const first = await service.createEmployee(
+        employeeInput('Leave parity A'),
+        key(),
+        admin,
+      );
+      const second = await service.createEmployee(
+        employeeInput('Leave parity B', { branchId: branchB }),
+        key(),
+        admin,
+      );
+      const grant = {
+        employeeIds: [first.id, second.id],
+        year: 1405,
+        months: [1],
+        duration: '11:00',
+        type: 'استحقاقی',
+      };
+      await expect(
+        service.minuteLeave(
+          { ...grant, employeeIds: [first.id, first.id.toUpperCase()] },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('یکتا');
+      await service.minuteLeave(grant, key(), admin);
+      const draft = await client.hrRecord.create({
+        data: {
+          branchId: branchA,
+          employeeId: first.id,
+          section: 'time',
+          tab: 'minuteLedger',
+          code: `DRAFT-${key()}`,
+          values: [first.name, '1405', '1', 'استحقاقی', 'تخصیص', '9999', ''],
+          data: {},
+          status: 'پیش‌نویس',
+        },
+      });
+      const snapshot = await request(app.getHttpServer())
+        .get('/api/v1/hr/leave/report')
+        .set('Cookie', adminCookie)
+        .query({ year: 1405, employeeIds: [first.id, second.id].join(',') })
+        .expect(200);
+      expect(snapshot.headers['cache-control']).toBe('private, no-store');
+      expect(
+        snapshot.body.items.map(
+          (item: { balanceMinutes: number }) => item.balanceMinutes,
+        ),
+      ).toEqual([660, 660]);
+      expect(
+        snapshot.body.records.some(
+          (row: { id: string }) => row.id === draft.id,
+        ),
+      ).toBe(false);
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: first.id, year: 1405 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(660);
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/leave/report')
+        .set('Cookie', adminCookie)
+        .query({
+          year: 1405,
+          employeeIds: `${first.id},${first.id.toUpperCase()}`,
+        })
+        .expect(400);
+      const scoped = { ...admin, branchIds: [branchA] };
+      expect(
+        (await service.leavePersonnel(scoped)).items.some(
+          (item) => item.id === second.id,
+        ),
+      ).toBe(false);
+      await expect(
+        service.leaveReport({ year: 1405, employeeIds: second.id }, scoped),
+      ).rejects.toThrow();
+      await expect(
+        service.leaveReport(
+          { year: 1405, employeeIds: `${first.id},${first.id}` },
+          admin,
+        ),
+      ).rejects.toThrow();
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/leave/personnel')
+        .expect(401);
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/leave/report')
+        .set('Cookie', selfCookie)
+        .query({ year: 1405, employeeIds: first.id })
+        .expect(404);
+      const transfer = {
+        greaterThan: '10:00',
+        lessThan: '08:00',
+        greaterCarry: '08:00',
+        greaterBurn: '02:00',
+        greaterBuyback: '01:00',
+        lessCarry: '06:00',
+        lessBurn: '00:00',
+        lessBuyback: '00:00',
+      };
+      const command = {
+        employeeIds: [first.id, second.id],
+        year: 1405,
+        type: 'استحقاقی',
+        transfer,
+      };
+      const ruleCount = await client.hrRecord.count({
+        where: { tab: 'leaveTransferRules' },
+      });
+      await service.minuteLeave(
+        { ...grant, employeeIds: [second.id], duration: '01:00' },
+        key(),
+        admin,
+      );
+      await expect(service.minuteLeave(command, key(), admin)).rejects.toThrow(
+        'مجموع',
+      );
+      expect(
+        await client.hrRecord.count({ where: { tab: 'leaveTransferRules' } }),
+      ).toBe(ruleCount);
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: first.id, year: 1405 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(660);
+      const token = key();
+      const successful = { ...command, employeeIds: [first.id] };
+      await request(app.getHttpServer())
+        .post('/api/v1/hr/leave/minutes')
+        .set('Cookie', adminCookie)
+        .set('Idempotency-Key', token)
+        .send(successful)
+        .expect(201);
+      await request(app.getHttpServer())
+        .post('/api/v1/hr/leave/minutes')
+        .set('Cookie', adminCookie)
+        .set('Idempotency-Key', token)
+        .send(successful)
+        .expect(201);
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: first.id, year: 1405 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(0);
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: first.id, year: 1406 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(480);
+      expect(
+        await client.hrRecord.count({ where: { tab: 'leaveTransferRules' } }),
+      ).toBe(ruleCount + 1);
+      await expect(
+        service.minuteLeave(successful, key(), admin),
+      ).rejects.toThrow('صفر');
+      await expect(
+        service.minuteLeave(
+          {
+            ...command,
+            employeeIds: [second.id],
+            transfer: { ...transfer, lessThan: '11:00' },
+          },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('حد پایین');
+      await expect(
+        service.minuteLeave(
+          { ...command, employeeIds: [second.id], year: 1600 },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('سال مقصد');
+      await expect(service.minuteLeave(command, key(), self)).rejects.toThrow();
+      const lower = await service.createEmployee(
+        employeeInput('Leave lower branch'),
+        key(),
+        admin,
+      );
+      await service.minuteLeave(
+        { ...grant, employeeIds: [lower.id], duration: '06:00' },
+        key(),
+        admin,
+      );
+      await service.minuteLeave(
+        { ...command, employeeIds: [lower.id] },
+        key(),
+        admin,
+      );
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: lower.id, year: 1406 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(360);
+      const boundary = await service.createEmployee(
+        employeeInput('Leave boundary'),
+        key(),
+        admin,
+      );
+      await service.minuteLeave(
+        { ...grant, employeeIds: [boundary.id], duration: '08:00' },
+        key(),
+        admin,
+      );
+      await expect(
+        service.minuteLeave(
+          { ...command, employeeIds: [boundary.id] },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('محدوده');
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: boundary.id, year: 1405 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(480);
+      await client.hrRecord.update({
+        where: { id: draft.id },
+        data: { deletedAt: new Date() },
+      });
+    });
+    it('reads complete scoped attendance report data including overlapping requests and undated references', async () => {
+      const batch = Array.from({ length: 2001 }, (_, index) => ({
+        id: key(),
+        personnelCode: `ZZREPORT-${index.toString().padStart(4, '0')}`,
+        branchId: branchA,
+        name: 'Synthetic report personnel',
+        kind: 'تمام‌وقت',
+        unit: 'عملیات',
+        position: 'کارشناس',
+        grade: 'G4',
+        startedAt: new Date('2024-01-01'),
+      }));
+      await client.hrEmployee.createMany({ data: batch });
+      const target = batch.at(-1)!;
+      const foreign = await service.createEmployee(
+        employeeInput('Report other branch', { branchId: branchB }),
+        key(),
+        admin,
+      );
+      const fixture = async (
+        section: string,
+        tab: string,
+        values: string[],
+        employeeId: string | null = target.id,
+        extra: Record<string, unknown> = {},
+      ) =>
+        client.hrRecord.create({
+          data: {
+            branchId: branchA,
+            employeeId,
+            section,
+            tab,
+            code: `REPORT-${key()}`,
+            values,
+            status: 'فعال',
+            data: {},
+            ...extra,
+          },
+        });
+      const group = await fixture(
+        'organization',
+        'groups',
+        ['Report group', ''],
+        null,
+      );
+      const membership = await fixture(
+        'organization',
+        'groupMembers',
+        ['Synthetic report personnel'],
+        target.id,
+        { parentId: group.id },
+      );
+      const attendance = await fixture(
+        'time',
+        'attendance',
+        [target.name, '2026-10-20', '', '8:00', '10', '0'],
+        target.id,
+        {
+          effectiveAt: new Date('2026-10-20'),
+          data: {
+            workedMinutes: 480,
+            lateMinutes: 10,
+            earlyMinutes: 0,
+            overtimeMinutes: 0,
+          },
+          status: 'حاضر',
+        },
+      );
+      const overlap = await fixture(
+        'time',
+        'remote',
+        [target.name, '2026-09-30', '2026-10-02', 'روزانه', '', ''],
+        target.id,
+        {
+          effectiveAt: new Date('2026-09-30'),
+          data: {
+            startsAt: '2026-09-30T00:00:00.000Z',
+            endsAt: '2026-10-02T23:59:00.000Z',
+          },
+        },
+      );
+      const missionValues = [
+        target.name,
+        'Synthetic destination',
+        '2026-09-30',
+        '2026-10-02',
+        'Synthetic mission',
+        '',
+      ];
+      const legacyMission = await fixture('time', 'mission', missionValues);
+      const mission = await fixture('expenses', 'mission', missionValues);
+      const futureMission = await fixture('time', 'mission', [
+        target.name,
+        'Synthetic destination',
+        '2027-01-01',
+        '2027-01-02',
+        '',
+        '',
+      ]);
+      const future = await fixture(
+        'time',
+        'attendance',
+        [target.name, '2027-01-01', '', '8:00', '0', '0'],
+        target.id,
+        { effectiveAt: new Date('2027-01-01') },
+      );
+      const result = await request(app.getHttpServer())
+        .get('/api/v1/hr/reports/attendance-data')
+        .set('Cookie', adminCookie)
+        .query({ from: '2026-10-01', to: '2026-10-31' })
+        .expect(200);
+      expect(result.headers['cache-control']).toBe('private, no-store');
+      expect(result.body.employees.length).toBeGreaterThan(2000);
+      expect(
+        result.body.employees.some(
+          (person: { id: string }) => person.id === target.id,
+        ),
+      ).toBe(true);
+      const ids = result.body.records.map((row: { id: string }) => row.id);
+      expect(ids).toContain(attendance.id);
+      expect(ids).toContain(overlap.id);
+      expect(ids).toContain(legacyMission.id);
+      expect(ids).toContain(mission.id);
+      expect(ids).not.toContain(futureMission.id);
+      expect(ids).not.toContain(future.id);
+      expect(
+        result.body.references.some(
+          (row: { id: string }) => row.id === group.id,
+        ),
+      ).toBe(true);
+      expect(
+        result.body.references.some(
+          (row: { id: string }) => row.id === membership.id,
+        ),
+      ).toBe(true);
+      const scoped = await service.attendanceReportData(
+        { from: '2026-10-01', to: '2026-10-31' },
+        { ...admin, branchIds: [branchA] },
+      );
+      expect(scoped.employees.some((person) => person.id === foreign.id)).toBe(
+        false,
+      );
+      expect(scoped.records.every((row) => row.branchId === branchA)).toBe(
+        true,
+      );
+      const selfResult = await request(app.getHttpServer())
+        .get('/api/v1/hr/reports/attendance-data')
+        .set('Cookie', selfCookie)
+        .query({ from: '2026-10-01', to: '2026-10-31' })
+        .expect(200);
+      expect(
+        selfResult.body.employees.some(
+          (person: { id: string }) => person.id === target.id,
+        ),
+      ).toBe(false);
+      expect(
+        selfResult.body.records.some(
+          (row: { id: string }) => row.id === attendance.id,
+        ),
+      ).toBe(false);
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/reports/attendance-data')
+        .expect(401);
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/reports/attendance-data')
+        .set('Cookie', adminCookie)
+        .query({ from: '2026-11-01', to: '2026-10-01' })
+        .expect(400);
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/reports/attendance-data')
+        .set('Cookie', adminCookie)
+        .query({ to: 'wrong-date' })
+        .expect(400);
+      await client.hrRecord.updateMany({
+        where: {
+          id: {
+            in: [
+              group.id,
+              membership.id,
+              attendance.id,
+              overlap.id,
+              future.id,
+              legacyMission.id,
+              mission.id,
+              futureMission.id,
+            ],
+          },
+        },
+        data: { deletedAt: new Date() },
+      });
+      await client.hrEmployee.updateMany({
+        where: { id: { in: batch.map((person) => person.id) } },
+        data: { deletedAt: new Date() },
+      });
+    });
+    it('preserves appended working-hour and transfer fields when legacy clients edit older payload lengths', async () => {
+      const hours = await service.createRecord(
+        {
+          section: 'time',
+          tab: 'workingHours',
+          branchId: branchA,
+          status: 'فعال',
+          values: [
+            'Legacy editor',
+            '',
+            '08:00',
+            '16:00',
+            'همان روز',
+            '0',
+            '0',
+            '#000000',
+            'بله',
+          ],
+        },
+        key(),
+        admin,
+      );
+      const updatedHours = await service.updateRecord(
+        hours.id,
+        { version: hours.version, values: hours.values.slice(0, 8) },
+        admin,
+      );
+      expect(updatedHours.values[8]).toBe('بله');
+      const rule = await service.createRecord(
+        {
+          section: 'time',
+          tab: 'leaveTransferRules',
+          branchId: branchA,
+          status: 'فعال',
+          values: [
+            'Legacy rule',
+            '1405',
+            '10:00',
+            '08:00',
+            '02:00',
+            '01:00',
+            '06:00',
+            '00:00',
+            '00:00',
+            '08:00',
+          ],
+        },
+        key(),
+        admin,
+      );
+      const updatedRule = await service.updateRecord(
+        rule.id,
+        { version: rule.version, values: rule.values.slice(0, 9) },
+        admin,
+      );
+      expect(updatedRule.values[9]).toBe('08:00');
     });
   },
 );

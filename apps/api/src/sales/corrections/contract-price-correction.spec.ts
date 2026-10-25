@@ -1,3 +1,9 @@
+vi.mock('../../finance/accounting/sales-contract-accounting.public', () => ({
+  captureSalesContractAccounting: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('../../finance/accounting/accounting-workflows.public', () => ({
+  assertRevenueEditable: vi.fn().mockResolvedValue(undefined),
+}));
 import { it, expect, vi } from 'vitest';
 import { Prisma } from '@nora/database';
 import {

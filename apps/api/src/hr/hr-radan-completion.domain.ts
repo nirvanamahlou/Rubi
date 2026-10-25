@@ -92,7 +92,18 @@ export function validateCompletionValues(
     throw new BadRequestException('اولویت باید بین یک و ۹۹ باشد.');
   if (key === 'time.leaveTransferRules') {
     jalaliYear(read('سال مبدأ'));
-    for (const label of columns.slice(2)) durationMinutes(read(label));
+    for (const label of columns.slice(2)) {
+      if (label === 'حد پایین ساعت:دقیقه' && !read(label)) continue;
+      durationMinutes(read(label));
+    }
+    if (
+      read('حد پایین ساعت:دقیقه') &&
+      durationMinutes(read('حد پایین ساعت:دقیقه')) >
+        durationMinutes(read('حد تعیین‌شده ساعت:دقیقه'))
+    )
+      throw new BadRequestException(
+        'حد پایین نمی‌تواند بیشتر از حد بالا باشد.',
+      );
   }
   if (['requests.radanLeave', 'requests.radanMission'].includes(key)) {
     if (read('تا تاریخ') < read('از تاریخ'))
@@ -134,6 +145,12 @@ export function validateCompletionValues(
 
 export function transferSplit(balance: number, rule: string[]) {
   const threshold = durationMinutes(rule[2]);
+  const lower = rule[9] ? durationMinutes(rule[9]) : undefined;
+  if (
+    lower !== undefined &&
+    (lower > threshold || (balance <= threshold && balance >= lower))
+  )
+    throw new BadRequestException('مانده در محدوده انتقال تعریف‌شده نیست.');
   const offset = balance > threshold ? 3 : 6;
   const amounts = rule.slice(offset, offset + 3).map(durationMinutes);
   if (amounts.reduce((a, b) => a + b, 0) !== balance)

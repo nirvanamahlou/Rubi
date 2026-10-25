@@ -57,6 +57,21 @@ it('formats recorded job title, department, full name and extension in requested
     }),
   ).toBe('کارشناس فروش - کارمند آزمایشی - 404');
 });
+it.each([
+  ['کارشناس فروش', 'فروش'],
+  ['مدیر رزرواسیون', 'رزرواسیون'],
+  ['کارشناس هوش مصنوعی', 'هوش مصنوعی'],
+  ['کارشناس هوش مصنوعي', 'هوش مصنوعی'],
+])('does not repeat department already present in %s', (position, unit) => {
+  expect(
+    callDestinationLabel({
+      position,
+      unit: `شرکت / ${unit}`,
+      name: 'کارمند آزمایشی',
+      extension: '404',
+    }),
+  ).toBe(`${position} - کارمند آزمایشی - 404`);
+});
 
 it('lists distinct employees on shared extensions using only the requested active branch', async () => {
   const findMany = vi.fn().mockResolvedValue([

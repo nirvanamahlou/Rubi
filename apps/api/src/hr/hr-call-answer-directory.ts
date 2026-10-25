@@ -80,7 +80,16 @@ export function callDestinationLabel(row: {
       .map((part) => part.trim())
       .filter(Boolean)
       .at(-1) ?? '';
-  const title = [row.position?.trim(), unit].filter(Boolean).join(' ');
+  const position = row.position?.trim() ?? '';
+  const normalize = (value: string) =>
+    value
+      .replace(/ي/g, 'ی')
+      .replace(/ك/g, 'ک')
+      .replace(/[\s\u200c]+/g, ' ')
+      .trim();
+  const includesUnit =
+    !!unit && ` ${normalize(position)} `.includes(` ${normalize(unit)} `);
+  const title = [position, includesUnit ? '' : unit].filter(Boolean).join(' ');
   return [title || 'واحد نامشخص', row.name, row.extension].join(' - ');
 }
 

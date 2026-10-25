@@ -24,7 +24,13 @@ export interface AttentionCall {
   synthetic: boolean;
   claimed: boolean;
   deferred: boolean;
-  call: { phone: string; name: string; subject: string; note: string };
+  call: {
+    direction?: string;
+    phone: string;
+    name: string;
+    subject: string;
+    note: string;
+  };
   technical: {
     caller: { kind: string; value: string | null };
     callerName?: string | null;
@@ -47,10 +53,18 @@ const states: Record<string, string> = {
   ENDED: 'پایان‌یافته',
   UNKNOWN: 'وضعیت نامشخص',
 };
-export function TelephonyAttention() {
+export function TelephonyAttention({
+  outboundOnly = false,
+}: {
+  outboundOnly?: boolean;
+}) {
   const actor = useAccessActor();
   // Explicit local rollout hold: no automatic attention UI before owner activation.
-  if (process.env.NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED === 'false')
+  if (
+    outboundOnly
+      ? process.env.NEXT_PUBLIC_CALL_CENTER_OUTBOUND_POPUPS_ENABLED !== 'true'
+      : process.env.NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED === 'false'
+  )
     return null;
   const allowed =
     !!actor?.permissions.includes(
@@ -61,10 +75,17 @@ export function TelephonyAttention() {
     <Attention
       key={actor.userId + actor.branchIds.join(',')}
       branch={actor.branchIds[0] ?? ''}
+      outboundOnly={outboundOnly}
     />
   );
 }
-function Attention({ branch }: { branch: string }) {
+function Attention({
+  branch,
+  outboundOnly,
+}: {
+  branch: string;
+  outboundOnly: boolean;
+}) {
   const [rows, setRows] = useState<AttentionCall[]>([]),
     [total, setTotal] = useState(0),
     [page, setPage] = useState(1);
@@ -123,7 +144,11 @@ function Attention({ branch }: { branch: string }) {
         );
         if (disposed) return;
         setLeader(lease.leader);
-        const attention = data.incoming ?? data.data;
+        const attention = (data.incoming ?? data.data).filter(
+          (row) =>
+            !outboundOnly ||
+            (!row.synthetic && row.call.direction === 'OUTBOUND'),
+        );
         const visibleRows = [
           ...new Map(
             [...data.data, ...attention].map((row) => [row.id, row]),
@@ -158,6 +183,8 @@ function Attention({ branch }: { branch: string }) {
             });
             setDirty(false);
             setOpen(true);
+            if (outboundOnly)
+              window.dispatchEvent(new Event('call-center:outbound-received'));
           }
         }
       } catch (e) {
@@ -184,7 +211,7 @@ function Attention({ branch }: { branch: string }) {
       abort.abort();
       clearTimeout(timer);
     };
-  }, [branch, page, blocked, tab]);
+  }, [branch, page, blocked, tab, outboundOnly]);
   const currentId = current?.id,
     currentBranch = current?.branchId;
   useEffect(() => {
@@ -272,15 +299,22 @@ function Attention({ branch }: { branch: string }) {
     }
   }
   return (
-    <aside className={styles.attention} aria-label="صف تماس تلفنی">
-      <button ref={button} type="button" onClick={() => setOpen(true)}>
-        <Phone size={18} /> تماس‌ها ({total})
-      </button>
-      <small role="status">{status}</small>
-      {blocked && (
-        <button onClick={() => setBlocked(false)} type="button">
-          <RotateCcw size={14} /> تلاش مجدد
-        </button>
+    <aside
+      className={outboundOnly ? undefined : styles.attention}
+      aria-label="صف تماس تلفنی"
+    >
+      {!outboundOnly && (
+        <>
+          <button ref={button} type="button" onClick={() => setOpen(true)}>
+            <Phone size={18} /> تماس‌ها ({total})
+          </button>
+          <small role="status">{status}</small>
+          {blocked && (
+            <button onClick={() => setBlocked(false)} type="button">
+              <RotateCcw size={14} /> تلاش مجدد
+            </button>
+          )}
+        </>
       )}
       {open && current && !current.synthetic && (
         <OperationalCallPopup
@@ -296,7 +330,7 @@ function Attention({ branch }: { branch: string }) {
         />
       )}
       <Dialog
-        open={open && (!current || current.synthetic)}
+        open={!outboundOnly && open && (!current || current.synthetic)}
         onOpenChange={(value) => setOpen(value)}
       >
         <DialogContent

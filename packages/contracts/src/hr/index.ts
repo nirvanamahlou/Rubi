@@ -175,6 +175,12 @@ export interface HrNotificationDto {
   createdAt: string;
   readAt: string | null;
 }
+/** Complete, bounded HR-owner read model; references are not date-filtered operational rows. */
+export interface HrAttendanceReportSnapshotDto {
+  employees: HrEmployeeDto[];
+  records: HrRecordDto[];
+  references: HrRecordDto[];
+}
 export interface HrBootstrapDto {
   /** Shared non-sensitive catalogue; operational records retain branch authorization. */
   jobTitles?: { id: string; name: string; status: string }[];

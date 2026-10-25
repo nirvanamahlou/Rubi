@@ -1,3 +1,5 @@
+import { captureSalesContractAccounting } from '../../finance/accounting/sales-contract-accounting.public';
+import { assertRevenueEditable } from '../../finance/accounting/accounting-workflows.public';
 import {
   canSelfServeSalesContract,
   hasSalesContractSelfService,
@@ -97,6 +99,7 @@ export class ContractPriceCorrectionService {
     )
       throw new BadRequestException('مبلغ و ارز معتبر وارد کنید.');
     return this.db.client.$transaction(async (tx) => {
+      await assertRevenueEditable(tx, id, actor.branchIds);
       const row = await tx.salesContract.findFirst({
         where: { id, branchId: { in: actor.branchIds } },
         include: { priceComponents: true },
@@ -187,6 +190,7 @@ export class ContractPriceCorrectionService {
         },
       });
       await recalculateSalesSettlement(tx, id, actor.userId, false);
+      await captureSalesContractAccounting(tx, id, actor.userId);
       return { version: row.version + 1, totals: value.totals };
     });
   }

@@ -1196,3 +1196,38 @@ a.card:hover {
   font-size: 0.75rem;
   color: var(--color-muted-foreground, #526784);
 }
+
+.reportChoices {
+  min-width: 200px;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--surface);
+}
+.reportChoices legend {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.reportChoices label,
+.filters .reportChoices label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 28px;
+}
+.reportChoices input[type='checkbox'],
+.filters input[type='checkbox'] {
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  min-height: 16px;
+  padding: 0;
+  accent-color: var(--primary);
+}
+.reportChoices summary {
+  cursor: pointer;
+}

@@ -68,6 +68,8 @@ describe('Live HR boundaries and consolidated workflows', () => {
     expect(hrGroups.time?.map((group) => group.id)).toEqual([
       'work',
       'shifts',
+      'workingHours',
+      'leaveBalance',
       'settings',
       'device',
     ]);

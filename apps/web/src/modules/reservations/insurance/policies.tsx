@@ -351,7 +351,7 @@ export function InsurancePolicies({
           </div>
         ) : (
           <div className={styles.tableWrap}>
-            <table className={styles.table}>
+            <table className={`${styles.table} ${styles.policyTable}`}>
               <thead>
                 <tr>
                   {[

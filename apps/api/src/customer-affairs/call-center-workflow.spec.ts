@@ -190,6 +190,34 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       workflow?.onModuleDestroy();
       await db?.$disconnect();
     });
+    it('rejects a forged request owner even when the other account is active in the same branch', async () => {
+      const otherId = randomUUID();
+      await db.user.create({
+        data: {
+          id: otherId,
+          username: otherId,
+          displayName: 'Synthetic other agent',
+          status: 'ACTIVE',
+          passwordHash: 'not-a-login',
+        },
+      });
+      await db.userBranch.create({ data: { userId: otherId, branchId } });
+      const id = randomUUID();
+      await expect(
+        workflow.saveRequest(actor, branchId, contactId, {
+          ...request,
+          id,
+          commandId: randomUUID(),
+          ownerId: otherId,
+        }),
+      ).rejects.toThrow('خارج از محدوده');
+      expect(await db.customerAffairsTicket.count({ where: { id } })).toBe(0);
+      expect(
+        (await workflow.requestOptions(actor, branchId)).data.map(
+          (row) => row.id,
+        ),
+      ).toEqual([userId]);
+    });
     it('filters closed requests before paging without changing the default dossier history', async () => {
       const contact = (
         await calls.create(
@@ -863,6 +891,35 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           delete process.env.CALL_CENTER_CLOSURE_MANAGER_IDS;
         else process.env.CALL_CENTER_CLOSURE_MANAGER_IDS = previous;
       }
+    });
+    it('orders queue by creation time with stable ties even after an old request changes', async () => {
+      const ids: string[] = [randomUUID(), randomUUID(), randomUUID()].sort();
+      for (const id of ids)
+        await workflow.saveRequest(actor, branchId, contactId, {
+          ...request,
+          id,
+          commandId: randomUUID(),
+          priority: 'HIGH',
+        });
+      const old = new Date('2020-01-01T00:00:00Z');
+      const recent = new Date('2021-01-01T00:00:00Z');
+      await db.customerAffairsTicket.update({
+        where: { id: ids[0]! },
+        data: { createdAt: old, updatedAt: new Date('2030-01-01T00:00:00Z') },
+      });
+      for (const id of ids.slice(1))
+        await db.customerAffairsTicket.update({
+          where: { id },
+          data: { createdAt: recent, updatedAt: old },
+        });
+      const rows = (
+        await workflow.queue(actor, branchId, 'ALL', 1)
+      ).data.filter((row) => ids.includes(row.id));
+      expect(rows.map((row) => row.id)).toEqual([ids[1], ids[2], ids[0]]);
+      expect(rows[0]).toMatchObject({
+        priority: 'HIGH',
+        createdAt: recent.toISOString(),
+      });
     });
   },
 );

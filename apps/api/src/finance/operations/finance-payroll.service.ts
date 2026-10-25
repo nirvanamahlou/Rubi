@@ -1,3 +1,4 @@
+import { grossAccrualCovers } from '../accounting/accounting.workflows';
 import { lockCustomerSettlement } from '../../sales/customer-purchase-settlement.public';
 import {
   lockReceiptFunds,
@@ -213,6 +214,21 @@ export class FinancePayrollService {
     }
     try {
       await this.database.client.$transaction(async (tx) => {
+        if (initial.kind === 'PAYROLL' && action === 'APPROVE')
+          await tx.$queryRaw`SELECT id FROM accounting_books WHERE "branchId"=${initial.branchId}::uuid AND active=true AND "allowsPosting"=true ORDER BY id FOR SHARE`;
+        const grossCovered =
+          initial.kind === 'PAYROLL' &&
+          action === 'APPROVE' &&
+          initial.hrRecordId
+            ? await grossAccrualCovers(
+                tx,
+                initial.branchId,
+                initial.hrRecordId,
+                initial.amount.toString(),
+                initial.currencyCode,
+              )
+            : false;
+
         const replay = await tx.financeOperationalRevision.findUnique({
           where: { id: operationId },
         });
@@ -483,6 +499,7 @@ export class FinancePayrollService {
         });
         if (
           action === 'APPROVE' &&
+          !grossCovered &&
           ['PAYROLL', 'COMMISSION', 'ADJUSTMENT'].includes(current.kind) &&
           (await isNewAccountingSource(tx, current.createdAt))
         )

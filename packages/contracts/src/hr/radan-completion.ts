@@ -59,6 +59,7 @@ export const HR_RADAN_COMPLETION_COLUMNS = {
     'انتقال کمتر ساعت:دقیقه',
     'سوخت کمتر ساعت:دقیقه',
     'بازخرید کمتر ساعت:دقیقه',
+    'حد پایین ساعت:دقیقه',
   ],
   'requests.patterns': ['نام الگو', 'توضیحات'],
   'requests.patternAssignments': ['کارمند'],
