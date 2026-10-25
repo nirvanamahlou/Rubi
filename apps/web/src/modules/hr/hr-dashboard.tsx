@@ -1,4 +1,5 @@
 'use client';
+import { HrDashboardCharts } from './hr-dashboard-charts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
@@ -87,7 +88,12 @@ export function HrDashboard({
   const scoped = records.filter(
     (item) => !unit || Boolean(item.employeeId && ids.has(item.employeeId)),
   );
-  const today = now.toISOString().slice(0, 10);
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tehran',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
   const read = (record: HrRecordDto, label: string) =>
     record.values[record.columns.indexOf(label)] ?? '';
   const pending = scoped.filter(
@@ -141,8 +147,19 @@ export function HrDashboard({
       label: 'حاضر امروز',
       icon: CalendarCheck2,
       tone: 'success',
-      value: attendance.filter((item) => Number(read(item, 'ساعت کارکرد')) > 0)
-        .length,
+      value: new Set(
+        attendance
+          .filter(
+            (item) =>
+              Number(
+                item.data.workedMinutes ??
+                  item.data.minutes ??
+                  Number(read(item, 'ساعت کارکرد').replace(':', '.')),
+              ) > 0,
+          )
+          .map((item) => item.employeeId)
+          .filter(Boolean),
+      ).size,
       href: '/hr?section=time&tab=attendance',
     },
     {
@@ -164,7 +181,7 @@ export function HrDashboard({
       icon: FileClock,
       tone: 'warning',
       value: expiring.length,
-      href: '/hr?section=contracts',
+      href: '/hr?section=employees&tab=active',
     },
     {
       label: 'درخواست در انتظار',
@@ -308,6 +325,11 @@ export function HrDashboard({
           </Link>
         ))}
       </div>
+      <HrDashboardCharts
+        branch={branch}
+        unit={unit}
+        revision={store.revision}
+      />
       <div className={ui.twoColumns}>
         <HrPanel
           title="روند شروع همکاری کارکنان"

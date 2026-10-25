@@ -530,10 +530,11 @@ it.each([
   },
 );
 
-it('legacy flow keeps travel context and enables its next step without passenger counts or table', () => {
+it('legacy flow keeps services and age counts but still requires complete travel data without a passenger table', () => {
   fixture.ticketDraft = {
     ...emptySalesForm,
     legacyContract: true,
+    serviceKinds: ['FLIGHT'],
     customerId: 'buyer',
     customerName: 'Synthetic Buyer',
     originId: 'origin',
@@ -545,14 +546,39 @@ it('legacy flow keeps travel context and enables its next step without passenger
     expect(html).toContain('قرارداد قدیمی');
     expect(html).toContain('مسیر سفر');
     expect(html).toContain('تاریخ سفر');
-    expect(html).not.toContain('تعداد مسافران');
+    expect(html).toContain('تعداد مسافران');
     expect(html).not.toContain('<table');
     const next = [...html.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)].find(
       (match) => match[0].includes('تأیید مسیر و خدمات'),
     )?.[0];
     expect(next).toBeDefined();
-    expect(next).not.toMatch(/ disabled(?:=|>|\s)/);
+    expect(next).toMatch(/ disabled(?:=|>|\s)/);
   } finally {
+    fixture.ticketDraft = null;
+  }
+});
+
+it('shows historical prices once in the customer table, with rial, foreign, discount and commission', () => {
+  fixture.step = 1;
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    legacyContract: true,
+    customerId: 'buyer',
+    customerName: 'Synthetic Historical Buyer',
+    serviceKinds: ['HOTEL', 'FLIGHT'],
+    contractPrices: [{ amount: '100', currencyCode: 'EUR' }],
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    expect(html).toContain('Synthetic Historical Buyer');
+    expect(html).toContain('aria-label="قیمت ریالی"');
+    expect(html).toContain('aria-label="قیمت ارزی"');
+    expect(html).toContain('aria-label="تخفیف"');
+    expect(html).toContain('aria-label="کمیسیون"');
+    expect(html).not.toContain('قیمت روز فروش');
+    expect(html).not.toContain('مبلغ توافق‌شده با مشتری');
+  } finally {
+    fixture.step = 0;
     fixture.ticketDraft = null;
   }
 });

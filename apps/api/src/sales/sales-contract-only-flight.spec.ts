@@ -403,3 +403,72 @@ it('allows a contract creator to submit only their own branch draft without sepa
     ),
   ).rejects.toThrow();
 });
+
+it('reserves aggregate historical adults and children per catalog leg and keeps anonymous identities out of the snapshot', async () => {
+  const saved = row();
+  saved.passengers = [];
+  saved.services = [
+    {
+      ...saved.services[0]!,
+      metadata: {
+        direction: 'OUTBOUND',
+        legacyServicePartiesV2: JSON.stringify({
+          'flight-outbound': { adults: 2, children: 1, infants: 1 },
+        }),
+      },
+    },
+  ];
+  saved.ticketSelections = [
+    {
+      ...flight,
+      departureAt: new Date(flight.departureAt),
+      arrivalAt: new Date(flight.arrivalAt),
+      offerId: 'catalog',
+      serviceId: 'service',
+      serviceClientKey: 'flight-outbound',
+    },
+  ] as unknown as SalesContractRow['ticketSelections'];
+  const reserve = vi.fn().mockResolvedValue({
+    available: true,
+    unavailableOfferIds: [],
+    createdAllocationIds: ['allocation'],
+  });
+  const transition = vi.fn().mockResolvedValue(saved);
+  const service = new SalesService(
+    {
+      findById: vi.fn().mockResolvedValue(saved),
+      transition,
+    } as unknown as SalesRepository,
+    {
+      resolveSnapshot: vi.fn(),
+      assertPassengers: vi.fn(),
+    } as unknown as SalesCustomersPublicAdapter,
+    { reserve, release: vi.fn() } as unknown as SalesTicketAvailabilityPort,
+  );
+  await service.confirm('contract', 1, null, actor, 'legacy-confirm');
+  expect(reserve).toHaveBeenCalledWith(
+    expect.any(Array),
+    'branch',
+    'contract',
+    3,
+    undefined,
+    { 'flight-outbound': 3 },
+  );
+  const snapshot = transition.mock.calls[0]![8];
+  expect(presentSalesContract(saved).passengerCount).toBe(4);
+  expect(snapshot.passengerIds).toEqual([]);
+  expect(snapshot.passengerAssignments).toEqual([]);
+  expect(
+    snapshot.serviceSelections[0].metadata.legacyServicePartiesV2,
+  ).toBeDefined();
+  transition.mockClear();
+  reserve.mockResolvedValueOnce({
+    available: false,
+    unavailableOfferIds: ['catalog'],
+    createdAllocationIds: [],
+  });
+  await expect(
+    service.confirm('contract', 1, null, actor, 'legacy-full'),
+  ).rejects.toThrow('ظرفیت');
+  expect(transition).not.toHaveBeenCalled();
+});

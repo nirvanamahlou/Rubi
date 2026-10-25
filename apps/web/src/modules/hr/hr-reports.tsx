@@ -5,17 +5,31 @@ import { RequiredFieldLabel } from './required-field-label';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
-import { HR_RADAN_CONTRACT_TYPES, HR_RADAN_LEAVE_TYPES } from '@nora/contracts';
+import { HR_RADAN_CONTRACT_TYPES } from '@nora/contracts';
 import {
   radanReports,
   unavailableRadanReports,
   buildRadanReport,
   emptyRadanFilters,
+  reportClockingTime,
 } from './radan-reports';
 import { useHrReferenceData } from './hr-reference-data';
-import type { HrRecordDto } from '@nora/contracts';
+import { hrRequest } from './hr-api';
+import { HrReportPeoplePicker } from './hr-report-people-picker';
+import { HrReportChoices, HrCoefficientTree } from './hr-report-choices';
+import {
+  radanReportForm,
+  radanDefaultReportRange,
+  radanCoefficientTree,
+  coefficientPaths,
+} from './radan-report-fields';
+import type {
+  HrEmployeeDto,
+  HrAttendanceReportSnapshotDto,
+  HrRecordDto,
+} from '@nora/contracts';
 import { allHrRecords, type HrStore } from './hr-store';
-import { hrGroups } from './hr-navigation';
+import { employeeGroups, hrGroups } from './hr-navigation';
 import { recordsDataset } from './hr-live-data';
 import { employeeDataset } from './hr-employees';
 import {
@@ -29,46 +43,98 @@ import { HrAudit } from './hr-audit';
 import ui from './hr-unified.module.css';
 import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
 
-export function HrReports({ store }: { store: HrStore }) {
+export function HrReports({
+  store,
+  initialTopic = 'employees',
+}: {
+  store: HrStore;
+  initialTopic?: string;
+}) {
   const [records, setRecords] = useState<HrRecordDto[]>([]);
   const [loadedRange, setLoadedRange] = useState('');
   const [range, setRange] = useState({ from: '', to: '' });
-  const [draftRange, setDraftRange] = useState({ from: '', to: '' });
-  const [topic, setTopic] = useState('employees');
+  const [draftRange, setDraftRange] = useState(() =>
+    radanDefaultReportRange(initialTopic.slice(6)),
+  );
+  const [topic, setTopic] = useState(initialTopic);
   const [filters, setFilters] = useState(emptyRadanFilters);
   const [coefficients, setCoefficients] = useState<string[]>([]);
   const [peopleFields, setPeopleFields] = useState<string[]>([]);
-  const references = useHrReferenceData(store);
+  const references = useHrReferenceData(store, !topic.startsWith('radan:'));
   const radan = topic.startsWith('radan:');
   const reportId = topic.slice(6);
   const unavailable = radan && unavailableRadanReports.has(reportId);
   const [error, setError] = useState('');
+  const [snapshotEmployees, setSnapshotEmployees] = useState<HrEmployeeDto[]>(
+    [],
+  );
+  const [snapshotReferences, setSnapshotReferences] = useState<HrRecordDto[]>(
+    [],
+  );
+  const form = radanReportForm(reportId);
+  const requestKey = JSON.stringify([range, store.revision, radan]);
   useEffect(() => {
     let active = true;
-    void allHrRecords({
+    const query = {
       ...(range.from ? { from: range.from } : {}),
       ...(range.to ? { to: range.to } : {}),
-    })
-      .then((items) => {
-        if (active) {
+    };
+    const load = async () => {
+      try {
+        if (radan) {
+          const snapshot = await hrRequest<HrAttendanceReportSnapshotDto>(
+            `/reports/attendance-data?${new URLSearchParams(query)}`,
+          );
+          if (!active) return;
+          setRecords(snapshot.records);
+          setSnapshotEmployees(snapshot.employees);
+          setSnapshotReferences(snapshot.references);
+        } else {
+          const items = await allHrRecords(query);
+          if (!active) return;
           setRecords(items);
-          setLoadedRange(JSON.stringify(range));
-          setError('');
         }
-      })
-      .catch((e) => {
-        if (active)
+        setLoadedRange(requestKey);
+        setError('');
+      } catch (e) {
+        if (active) {
+          setLoadedRange('');
+          setRecords([]);
+          setSnapshotEmployees([]);
+          setSnapshotReferences([]);
           setError(e instanceof Error ? e.message : 'دریافت گزارش انجام نشد.');
-      });
+        }
+      }
+    };
+    void load();
     return () => {
       active = false;
     };
-  }, [range, store.revision]);
+  }, [range, store.revision, radan, requestKey]);
+  const people = radan ? snapshotEmployees : store.data!.employees;
+  const referenceRecords = radan ? snapshotReferences : references.data.records;
+  const groupOptions = referenceRecords
+    .filter(
+      (record) =>
+        record.section === 'organization' &&
+        record.tab === 'groups' &&
+        record.status === 'فعال' &&
+        !record.deletedAt,
+    )
+    .map((record) => ({
+      id: record.id,
+      label: record.values[0] ?? record.code,
+    }));
   const sources = Array.from(
     new Map(
-      Object.values(hrGroups)
-        .flatMap((groups) => groups.flatMap((group) => group.sources))
-        .map((source) => [`${source.section}.${source.tab}`, source]),
+      [
+        ...Object.values(hrGroups).flatMap((groups) =>
+          groups.flatMap((group) => group.sources),
+        ),
+        ...employeeGroups
+          .flatMap((group) => group.sources)
+          .filter((source) => source.section !== 'employee'),
+      ].map((source) => [`${source.section}.${source.tab}`, source]),
     ).values(),
   );
   const source = sources.find(
@@ -77,75 +143,43 @@ export function HrReports({ store }: { store: HrStore }) {
   const title = radan
     ? (radanReports.find(([id]) => id === reportId)?.[1] ?? 'گزارش کارکرد')
     : (source?.label ?? 'کارکنان');
-  const selection = useHrRowSelection(JSON.stringify([topic, range, filters]));
+  const selection = useHrRowSelection(
+    JSON.stringify([
+      topic,
+      range,
+      filters,
+      coefficients,
+      peopleFields,
+      store.revision,
+    ]),
+  );
   const reportReady =
     !radan ||
     (Boolean(range.to) &&
-      (['people', 'incompleteDetail', 'presence'].includes(reportId) ||
-        Boolean(range.from)) &&
-      (![
-        'remote',
-        'dailyMinutes',
-        'totalMinutes',
-        'present',
-        'forgiveness',
-        'arpa',
-      ].includes(reportId) ||
-        Boolean(filters.employeeId && filters.groupId)));
+      (!form.requiredFrom || Boolean(range.from)) &&
+      (!form.requiredGroups ||
+        filters.groupIds === undefined ||
+        filters.groupIds.length > 0));
   const currentRecords =
-    reportReady && loadedRange === JSON.stringify(range) ? records : [];
+    reportReady && loadedRange === requestKey ? records : [];
   const baseData = radan
     ? buildRadanReport(
         reportId,
         currentRecords,
-        store.data!.employees,
-        filters,
-        references.data.records,
+        people,
+        { ...filters, coefficients, from: range.from, to: range.to },
+        referenceRecords,
       )
     : source
       ? recordsDataset(source.section, source.tab, currentRecords)
       : employeeDataset(
-          store.data!.employees.filter(
+          people.filter(
             (item) =>
               (!range.from || item.startedAtValue >= range.from) &&
               (!range.to || item.startedAtValue <= range.to),
           ),
           store.data!.branches,
         );
-  const coefficientOptions = [
-    'کارکرد',
-    'اضافه‌کار / ساعتی / اول وقت',
-    'اضافه‌کار / ساعتی / آخر وقت',
-    'اضافه‌کار / ساعتی / خارج وقت',
-    'اضافه‌کار / ساعتی / در مرخصی',
-    'اضافه‌کار / ساعتی / در مأموریت',
-    'اضافه‌کار غیرمجاز / اول وقت',
-    'اضافه‌کار غیرمجاز / آخر وقت',
-    'اضافه‌کار غیرمجاز / خارج وقت',
-    'اضافه‌کار روز تعطیل',
-    ...HR_RADAN_LEAVE_TYPES.map((t) => `مرخصی / روزانه / ${t}`),
-    ...HR_RADAN_LEAVE_TYPES.slice(0, 4).map((t) => `مرخصی / ساعتی / ${t}`),
-    'مأموریت / روزانه / درون‌شهری',
-    'مأموریت / روزانه / برون‌شهری',
-    'مأموریت / روزانه / برون‌کشوری',
-    'مأموریت / ساعتی / درون‌شهری',
-    'مأموریت / ساعتی / برون‌شهری',
-    'فرجه',
-    'شناوری',
-    'شب‌کاری',
-    'جمعه‌کاری',
-    'تأخیر',
-    'تعجیل',
-    'غیبت / روزانه',
-    'غیبت / ساعتی',
-    'تأخیر سرویس',
-    'دورکاری',
-    'ساعت ناهاری',
-    'گرد کردن ساعت کاری',
-    'نوبت‌کاری / ۱۰ درصد',
-    'نوبت‌کاری / ۱۵ درصد',
-    'نوبت‌کاری / ۲۲٫۵ درصد',
-  ];
   const optionalPeople = [
     'نقش',
     'شیفت',
@@ -156,106 +190,97 @@ export function HrReports({ store }: { store: HrStore }) {
     'نام دستگاه',
   ];
   const data =
-    radan && reportId === 'general' && coefficients.length
+    radan && reportId === 'people' && peopleFields.length
       ? {
           ...baseData,
-          columns: ['کارمند', ...coefficients],
-          rows: baseData.rows.map((row) => [
-            row[baseData.columns.indexOf('کارمند')] ?? '—',
-            ...coefficients.map(
-              (label) => row[baseData.columns.indexOf(label)] ?? '—',
-            ),
-          ]),
-        }
-      : radan && reportId === 'people' && peopleFields.length
-        ? {
-            ...baseData,
-            columns: [...baseData.columns, ...peopleFields],
-            rows: baseData.rows.map((row, index) => {
-              const employeeId = baseData.recordIds?.[index],
-                employee = store.data!.employees.find(
-                  (e) => e.id === employeeId,
-                );
-              const own = references.data.records.filter(
-                (r) => r.employeeId === employeeId && !r.deletedAt,
-              );
-              return [
-                ...row,
-                ...peopleFields.map((label) => {
-                  if (label === 'شیفت')
-                    return (
-                      own
-                        .filter((r) => r.tab === 'shift' && r.status === 'فعال')
-                        .map((r) => r.values[0])
-                        .join('، ') || '—'
-                    );
-                  if (label === 'الگو')
-                    return (
-                      own
-                        .filter(
-                          (r) =>
-                            r.tab === 'patternAssignments' &&
-                            r.status === 'فعال',
-                        )
-                        .map(
-                          (r) =>
-                            references.data.records.find(
-                              (p) => p.id === r.parentId,
-                            )?.values[0],
-                        )
-                        .filter(Boolean)
-                        .join('، ') || '—'
-                    );
-                  if (label === 'تنظیمات')
-                    return (
-                      references.data.records.find(
+          columns: [...baseData.columns, ...peopleFields],
+          rows: baseData.rows.map((row, index) => {
+            const employeeId = baseData.recordIds?.[index],
+              employee = people.find((e) => e.id === employeeId);
+            const own = referenceRecords.filter(
+              (r) => r.employeeId === employeeId && !r.deletedAt,
+            );
+            return [
+              ...row,
+              ...peopleFields.map((label) => {
+                if (label === 'شیفت')
+                  return (
+                    own
+                      .filter((r) => r.tab === 'shift' && r.status === 'فعال')
+                      .map((r) => r.values[0])
+                      .join('، ') || '—'
+                  );
+                if (label === 'الگو')
+                  return (
+                    own
+                      .filter(
+                        (r) =>
+                          r.tab === 'patternAssignments' && r.status === 'فعال',
+                      )
+                      .map(
+                        (r) =>
+                          referenceRecords.find((p) => p.id === r.parentId)
+                            ?.values[0],
+                      )
+                      .filter(Boolean)
+                      .join('، ') || '—'
+                  );
+                if (label === 'تنظیمات')
+                  return (
+                    referenceRecords.find(
+                      (r) =>
+                        r.branchId === employee?.branchId &&
+                        r.tab === 'calculationSettings' &&
+                        r.status === 'فعال',
+                    )?.values[0] ?? '—'
+                  );
+                if (label === 'سیاست')
+                  return (
+                    referenceRecords
+                      .filter(
                         (r) =>
                           r.branchId === employee?.branchId &&
-                          r.tab === 'calculationSettings' &&
+                          r.tab === 'leavePolicies' &&
                           r.status === 'فعال',
-                      )?.values[0] ?? '—'
-                    );
-                  if (label === 'سیاست')
-                    return (
-                      references.data.records
-                        .filter(
-                          (r) =>
-                            r.branchId === employee?.branchId &&
-                            r.tab === 'leavePolicies' &&
-                            r.status === 'فعال',
-                        )
-                        .map((r) => r.values[0])
-                        .join('، ') || '—'
-                    );
-                  const last = own
-                    .filter((r) => r.tab === 'checkins')
-                    .sort((a, b) =>
-                      (b.data.startsAt ?? '').localeCompare(
-                        a.data.startsAt ?? '',
-                      ),
-                    )[0];
-                  if (label === 'آخرین تردد') return last?.data.startsAt ?? '—';
-                  if (label === 'نام دستگاه')
-                    return last?.values[last.columns.indexOf('دستگاه')] ?? '—';
-                  return '—';
-                }),
-              ];
-            }),
-          }
-        : baseData;
+                      )
+                      .map((r) => r.values[0])
+                      .join('، ') || '—'
+                  );
+                const last = currentRecords
+                  .filter((record) => record.employeeId === employeeId)
+                  .filter((r) => r.tab === 'checkins')
+                  .sort(
+                    (a, b) =>
+                      reportClockingTime(b) - reportClockingTime(a) ||
+                      b.id.localeCompare(a.id),
+                  )[0];
+                if (label === 'آخرین تردد')
+                  return last
+                    ? (last.data.startsAt ??
+                        `${last.values[last.columns.indexOf('تاریخ تردد')]} ${last.values[last.columns.indexOf('ساعت تردد')]}`)
+                    : '—';
+                if (label === 'نام دستگاه')
+                  return last?.values[last.columns.indexOf('دستگاه')] ?? '—';
+                return '—';
+              }),
+            ];
+          }),
+        }
+      : baseData;
+  const exportData = radan
+    ? reportReady && loadedRange === requestKey
+      ? data
+      : { ...data, rows: [] }
+    : selectedHrDataset(data, selection.selectedIds);
   return (
     <div className={ui.spaced}>
       <header className={ui.heading}>
         <h1>گزارش‌های منابع انسانی</h1>
       </header>
       <div className={ui.filters}>
-        {reportId !== 'presence' ? (
+        {!radan || form.from ? (
           <label>
-            <RequiredFieldLabel
-              required={
-                radan && !['people', 'incompleteDetail'].includes(reportId)
-              }
-            >
+            <RequiredFieldLabel required={radan && form.requiredFrom}>
               از تاریخ
             </RequiredFieldLabel>
             <DatePicker
@@ -277,11 +302,7 @@ export function HrReports({ store }: { store: HrStore }) {
           onClick={() => {
             if (
               radan &&
-              (!draftRange.to ||
-                (!['people', 'incompleteDetail', 'presence'].includes(
-                  reportId,
-                ) &&
-                  !draftRange.from))
+              (!draftRange.to || (form.requiredFrom && !draftRange.from))
             ) {
               setError('بازه تاریخ گزارش را تکمیل کنید.');
               return;
@@ -320,14 +341,8 @@ export function HrReports({ store }: { store: HrStore }) {
         onApply={(from, to) => setRange({ from, to })}
         actions={
           <>
-            <HrExportButton
-              data={selectedHrDataset(data, selection.selectedIds)}
-              name={`hr-report-${topic}`}
-            />
-            <HrPdfButton
-              data={selectedHrDataset(data, selection.selectedIds)}
-              title={title}
-            />
+            <HrExportButton data={exportData} name={`hr-report-${topic}`} />
+            <HrPdfButton data={exportData} title={title} />
           </>
         }
       />
@@ -339,6 +354,10 @@ export function HrReports({ store }: { store: HrStore }) {
               value={topic}
               onChange={(event) => {
                 setTopic(event.target.value);
+                setDraftRange(
+                  radanDefaultReportRange(event.target.value.slice(6)),
+                );
+                setRange({ from: '', to: '' });
                 setFilters(emptyRadanFilters);
                 setCoefficients([]);
                 setPeopleFields([]);
@@ -364,141 +383,125 @@ export function HrReports({ store }: { store: HrStore }) {
           </label>
           {radan ? (
             <>
-              <label>
-                کارمند
-                <NativeSearchSelect
-                  value={filters.employeeId}
-                  onChange={(e) =>
-                    setFilters({ ...filters, employeeId: e.target.value })
+              <HrReportPeoplePicker
+                people={people}
+                value={filters.employeeIds ?? []}
+                disabled={loadedRange !== requestKey}
+                onChange={(employeeIds) =>
+                  setFilters({ ...filters, employeeIds })
+                }
+              />
+              <HrReportChoices
+                title="گروه‌ها"
+                required={form.requiredGroups}
+                options={groupOptions}
+                value={
+                  filters.groupIds ?? groupOptions.map((group) => group.id)
+                }
+                onChange={(groupIds) => {
+                  const next = { ...filters };
+                  if (groupIds.length === groupOptions.length)
+                    delete next.groupIds;
+                  else next.groupIds = groupIds;
+                  setFilters(next);
+                }}
+              />
+              {form.coefficients ? (
+                <fieldset className={ui.reportChoices}>
+                  <legend>ضرایب</legend>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={
+                        coefficients.length === coefficientPaths().length
+                      }
+                      onChange={(e) =>
+                        setCoefficients(
+                          e.target.checked ? coefficientPaths() : [],
+                        )
+                      }
+                    />
+                    همه ({coefficientPaths().length} / {coefficients.length})
+                  </label>
+                  <HrCoefficientTree
+                    nodes={radanCoefficientTree}
+                    value={coefficients}
+                    onChange={setCoefficients}
+                  />
+                </fieldset>
+              ) : null}
+              {form.peopleFields ? (
+                <HrReportChoices
+                  title="ستون‌های افراد"
+                  options={optionalPeople.map((label) => ({
+                    id: label,
+                    label,
+                  }))}
+                  value={peopleFields}
+                  onChange={setPeopleFields}
+                />
+              ) : null}
+              {form.contractTypes ? (
+                <HrReportChoices
+                  title="نوع قرارداد"
+                  options={HR_RADAN_CONTRACT_TYPES.map((label) => ({
+                    id: label,
+                    label,
+                  }))}
+                  value={filters.contractTypes ?? []}
+                  onChange={(contractTypes) =>
+                    setFilters({ ...filters, contractTypes })
                   }
-                >
-                  <option value="">همه کارکنان مجاز</option>
-                  {store.data!.employees.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.name}
-                    </option>
-                  ))}
-                </NativeSearchSelect>
-              </label>
-              <label>
-                گروه
-                <NativeSearchSelect
-                  value={filters.groupId}
-                  onChange={(e) =>
-                    setFilters({ ...filters, groupId: e.target.value })
-                  }
-                >
-                  <option value="">همه گروه‌ها</option>
-                  {references.data.records
-                    .filter(
-                      (r) =>
-                        r.section === 'organization' &&
-                        r.tab === 'groups' &&
-                        !r.deletedAt &&
-                        r.status === 'فعال',
-                    )
-                    .map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.values[0]}
+                />
+              ) : null}
+              {form.sortOptions.length ? (
+                <label>
+                  مرتب‌سازی بر اساس
+                  <NativeSearchSelect
+                    value={filters.sort}
+                    onChange={(event) =>
+                      setFilters({ ...filters, sort: event.target.value })
+                    }
+                  >
+                    {form.sortOptions.map((value) => (
+                      <option key={value} value={value}>
+                        {
+                          (
+                            {
+                              code: 'کد پرسنلی',
+                              name: 'نام',
+                              lastName: 'نام خانوادگی',
+                              identification: 'کد شناسایی',
+                            } as Record<string, string>
+                          )[value]
+                        }
                       </option>
                     ))}
-                </NativeSearchSelect>
-              </label>
-              {reportId === 'general' ? (
-                <label>
-                  ضرایب
-                  <select
-                    multiple
-                    value={coefficients}
-                    onChange={(e) =>
-                      setCoefficients(
-                        Array.from(e.target.selectedOptions, (o) => o.value),
-                      )
-                    }
-                  >
-                    {coefficientOptions.map((label) => (
-                      <option key={label}>{label}</option>
-                    ))}
-                  </select>
+                  </NativeSearchSelect>
                 </label>
               ) : null}
-              {reportId === 'people' ? (
+              {form.units.length ? (
                 <label>
-                  ستون‌های افراد
-                  <select
-                    multiple
-                    value={peopleFields}
-                    onChange={(e) =>
-                      setPeopleFields(
-                        Array.from(e.target.selectedOptions, (o) => o.value),
-                      )
+                  نوع گزارش
+                  <NativeSearchSelect
+                    value={
+                      filters.unit === 'minutes' ? 'default' : filters.unit
+                    }
+                    onChange={(event) =>
+                      setFilters({
+                        ...filters,
+                        unit: event.target.value as
+                          'clock' | 'days' | 'default',
+                      })
                     }
                   >
-                    {optionalPeople.map((label) => (
-                      <option key={label}>{label}</option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
-              {['general', 'total'].includes(reportId) ? (
-                <>
-                  <label>
-                    نوع قرارداد
-                    <NativeSearchSelect
-                      value={filters.contractType}
-                      onChange={(e) =>
-                        setFilters({ ...filters, contractType: e.target.value })
-                      }
-                    >
-                      <option value="">همه قراردادها</option>
-                      {HR_RADAN_CONTRACT_TYPES.map((t) => (
-                        <option key={t}>{t}</option>
-                      ))}
-                    </NativeSearchSelect>
-                  </label>
-                </>
-              ) : null}
-              <label>
-                مرتب‌سازی بر اساس
-                <NativeSearchSelect
-                  value={filters.sort}
-                  onChange={(e) =>
-                    setFilters({ ...filters, sort: e.target.value })
-                  }
-                >
-                  <option value="code">کد پرسنلی</option>
-                  <option value="name">نام</option>
-                  <option value="lastName">نام خانوادگی</option>
-                </NativeSearchSelect>
-              </label>
-              <label>
-                نوع گزارش
-                <NativeSearchSelect
-                  value={filters.unit}
-                  onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      unit: e.target.value as
-                        'clock' | 'minutes' | 'days' | 'default',
-                    })
-                  }
-                >
-                  <option value="default">پیش‌فرض</option>
-                  <option value="clock">ساعت</option>
-                  {reportId === 'total' ? (
+                    <option value="default">پیش فرض</option>
+                    <option value="clock">ساعت</option>
                     <option value="days">روز</option>
-                  ) : null}
-                  <option value="minutes">دقیقه</option>
-                </NativeSearchSelect>
-              </label>
-              {[
-                'late',
-                'early',
-                'absence',
-                'mission',
-                'leave',
-                'overtime',
-              ].includes(reportId) ? (
+                  </NativeSearchSelect>
+                </label>
+              ) : null}
+              {form.aggregate ? (
                 <>
                   <label>
                     <input
@@ -522,9 +525,15 @@ export function HrReports({ store }: { store: HrStore }) {
             نیست.
           </p>
         ) : null}
-        {references.error ? <p role="alert">{references.error}</p> : null}
+        {!radan && references.error ? (
+          <p role="alert">{references.error}</p>
+        ) : null}
         {error ? <p role="alert">{error}</p> : null}
-        {!references.loading && !references.error ? (
+        {(
+          radan
+            ? loadedRange === requestKey
+            : !references.loading && !references.error
+        ) ? (
           <>
             {!reportReady ? (
               <p role="status">

@@ -325,3 +325,31 @@ it('allows changing the suggested return to a manually chosen floating day', () 
     undefined,
   );
 });
+
+it('shows one enabled return calendar without an outbound date and keeps its chosen day', () => {
+  fixture.roundTrip = false;
+  fixture.requireFare = false;
+  const onChange = vi.fn();
+  const html = renderToStaticMarkup(
+    <FlightTripDates
+      originId="origin"
+      destinationId="destination"
+      primaryDirection="RETURN"
+      roundTrip={false}
+      seats={1}
+      requireFare={false}
+      value={{ from: '', to: '' }}
+      onChange={onChange}
+    />,
+  );
+  expect(fixture.pickers).toHaveLength(1);
+  expect(fixture.pickers[0]!.disabled).toBe(false);
+  expect(fixture.pickers[0]!['aria-label']).toBe('تاریخ بلیط برگشت');
+  expect(fixture.pickers[0]!.markedDates).toEqual(['2099-10-01']);
+  expect(html).not.toContain('بلیط رفت');
+  fixture.pickers[0]!.onChange?.('2099-10-01');
+  expect(onChange).toHaveBeenCalledWith({
+    from: '2099-10-01',
+    to: '2099-10-01',
+  });
+});

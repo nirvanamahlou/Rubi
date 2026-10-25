@@ -254,13 +254,34 @@ export class TicketPublicService {
   }
 
   /** Reservations document numbering consumes only the assigned offer's supply type. */
-  async purchaseCapacityInventory(branchIds: readonly string[]) {
-    const rows = await this.database.client.ticketPublishedOffer.findMany({
-      where: { branchId: { in: [...branchIds] } },
+  async purchaseCapacityInventory(
+    branchIds: readonly string[],
+    transaction?: Prisma.TransactionClient,
+    offerIds?: readonly string[],
+  ) {
+    if (transaction && offerIds?.length)
+      await transaction.$queryRaw(
+        Prisma.sql`SELECT id FROM "TicketPublishedOffer" WHERE id IN (${Prisma.join([...offerIds].sort().map((id) => Prisma.sql`${id}::uuid`))}) FOR SHARE`,
+      );
+    const rows = await (
+      transaction ?? this.database.client
+    ).ticketPublishedOffer.findMany({
+      where: {
+        branchId: { in: [...branchIds] },
+        ...(offerIds ? { id: { in: [...offerIds] } } : {}),
+      },
       select: {
         id: true,
         branchId: true,
         supplyType: true,
+        version: true,
+        carrierName: true,
+        serviceNumber: true,
+        originId: true,
+        destinationId: true,
+        originAirportId: true,
+        destinationAirportId: true,
+        cabinClassCode: true,
         departureAt: true,
         arrivalAt: true,
         totalCapacity: true,

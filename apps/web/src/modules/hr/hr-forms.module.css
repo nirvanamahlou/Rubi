@@ -187,7 +187,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 24px;
+  gap: 52px;
 }
 .orgNode {
   position: relative;
@@ -196,7 +196,7 @@
   border-radius: 16px;
   background: var(--surface);
   color: var(--foreground);
-  padding: 45px 20px 20px;
+  padding: 24px 20px;
   text-align: center;
   box-shadow: 0 4px 12px rgb(15 35 65 / 5%);
 }
@@ -249,10 +249,11 @@
 }
 .orgNodeActions {
   position: absolute;
-  inset-block-start: 9px;
-  inset-inline-end: 9px;
+  inset-block-start: 0;
+  inset-inline-end: calc(100% + 4px);
   display: flex;
-  gap: 5px;
+  flex-direction: column;
+  gap: 4px;
 }
 .orgEditButton {
   display: inline-flex;
@@ -261,7 +262,10 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
-  padding: 5px 8px;
+  padding: 5px;
+  min-width: 28px;
+  min-height: 28px;
+  justify-content: center;
   color: var(--primary);
   font: inherit;
   font-size: 11px;
@@ -364,4 +368,41 @@
     gap: 8px;
     padding: 8px 10px;
   }
+}
+
+.orgViewport {
+  overflow: auto;
+  max-height: 75vh;
+  padding: 12px 42px;
+  min-height: 340px;
+}
+.orgMoveButton {
+  cursor: grab;
+  touch-action: none;
+}
+.orgMoveButton:active {
+  cursor: grabbing;
+}
+.orgEditButton:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+.control[type='checkbox'] {
+  width: 18px;
+  min-height: 18px;
+  height: 18px;
+  align-self: flex-start;
+  padding: 0;
+  accent-color: var(--primary);
+}
+.control[type='color'] {
+  padding: 4px;
+  cursor: pointer;
 }

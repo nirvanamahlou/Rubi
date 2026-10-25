@@ -64,7 +64,7 @@ describe('Legacy HR preview and migration regression fixtures', () => {
 
   it('renders the eighteen capability hub cards as deep links', () => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId="home" />);
-    expect(hrHubCards).toHaveLength(15);
+    expect(hrHubCards).toHaveLength(13);
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('data-hr-mode="preview"');
     for (const card of hrHubCards) {
@@ -272,7 +272,7 @@ describe('Legacy HR preview and migration regression fixtures', () => {
     expect(chart).toContain('نیایش سیر');
     expect(chart).toContain('عملیات سفر');
     expect(chart.match(/ویرایش /g)?.length ?? 0).toBe(5);
-    expect(chart.match(/حذف /g)?.length ?? 0).toBe(5);
+    expect(chart.match(/aria-label="حذف /g)?.length ?? 0).toBe(5);
     expect(chart).toContain('۲ عنوان شغلی');
     expect(chart).toContain('data-edge-count="3"');
 

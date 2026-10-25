@@ -15,6 +15,19 @@ import type { HrBootstrapDto, HrRecordDto } from '@nora/contracts';
 import { hrCompanies } from './hr-live-data';
 import { HR_GRADE_OPTIONS } from './hr-grade-options';
 
+/** Presentation aliases keep historical persisted column positions and command keys intact. */
+export function hrFieldLabel(label: string): string {
+  return (
+    (
+      {
+        سمت: 'عنوان شغلی',
+        'سمت فعلی': 'عنوان شغلی فعلی',
+        'سمت جدید': 'عنوان شغلی جدید',
+      } as Record<string, string>
+    )[label] ?? label
+  );
+}
+
 export const recordValue = (record: HrRecordDto | undefined, label: string) =>
   record?.values[record.columns.indexOf(label)] ?? '';
 
@@ -41,6 +54,7 @@ export function retiredHrColumns(section: string, tab: string): string[] {
 }
 
 export function parentFieldLabel(section: string, tab: string): string {
+  if (section === 'organization' && tab === 'chartEmployees') return 'گره والد';
   if (section === 'organization')
     return tab === 'groupMembers' ? 'گروه' : 'واحد والد';
   if (section === 'time' && tab === 'shift')

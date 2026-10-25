@@ -137,7 +137,11 @@ export function buildSalesXlsx(
       ];
       const cells = values.map((value, column) =>
         column === 2
-          ? numericCell(`C${row}`, String(record.passengerNames.length), 6)
+          ? numericCell(
+              `C${row}`,
+              String(record.passengerCount ?? record.passengerNames.length),
+              6,
+            )
           : textCell(`${String.fromCharCode(65 + column)}${row}`, value),
       );
       for (const [column, amount] of [

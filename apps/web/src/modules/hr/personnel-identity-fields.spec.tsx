@@ -74,9 +74,6 @@ describe('observed Radan personnel entry', () => {
       />,
     );
     for (const label of [
-      'اطلاعات فردی',
-      'اطلاعات کاربری',
-      'تایید و ثبت',
       'کد ملی',
       'شماره شناسنامه',
       'نام پدر',
@@ -92,7 +89,7 @@ describe('observed Radan personnel entry', () => {
     ])
       expect(html).toContain(label);
     expect(html).toContain('accept="image/jpeg,image/png,image/webp"');
-    expect(html).toContain('aria-current="step"');
+    expect(html).not.toContain('مراحل فرم پرسنلی');
     expect(html).toContain('value="مرد"');
   });
   it('accepts an optional national code and still requires province before city', () => {

@@ -63,6 +63,9 @@ export interface HrRecordDto {
 
 /** Typed command inputs; no provider receipts or binary content are accepted. */
 export interface HrWorkflowData {
+  /** Persistent diagram offsets in CSS pixels, independent of personnel assignments. */
+  chartX?: number;
+  chartY?: number;
   /** Server-managed contract lifecycle. Generic record commands reject these fields. */
   contractState?: 'SIGNED' | 'ACTIVE' | 'ENDED';
   signedDocumentId?: string;
@@ -156,7 +159,7 @@ export interface HrRecordCreate {
 export interface HrRecordUpdate {
   privateData?: { networkPassword?: string };
   version: number;
-  /** Only organization units may be reparented; server checks branch and cycles. */
+  /** Organization units and chart employee nodes support reparenting; server checks branch/company/cycles. */
   parentId?: string | null;
   values?: string[];
   status?: string;
@@ -171,6 +174,12 @@ export interface HrNotificationDto {
   title: string;
   createdAt: string;
   readAt: string | null;
+}
+/** Complete, bounded HR-owner read model; references are not date-filtered operational rows. */
+export interface HrAttendanceReportSnapshotDto {
+  employees: HrEmployeeDto[];
+  records: HrRecordDto[];
+  references: HrRecordDto[];
 }
 export interface HrBootstrapDto {
   /** Shared non-sensitive catalogue; operational records retain branch authorization. */
@@ -196,4 +205,30 @@ export interface HrBootstrapDto {
   recordCount: number;
   recordsTruncated: boolean;
   workflowWarnings?: { recordId: string; message: string }[];
+}
+
+/** Private HR aggregates; units are explicit and never converted between days/hours. */
+export interface HrDashboardChartDto {
+  id:
+    | 'present'
+    | 'quarterLate'
+    | 'weeklyAttendance'
+    | 'overtime'
+    | 'departmentLate'
+    | 'leave'
+    | 'leaveBalance';
+  title: string;
+  description: string;
+  from: string;
+  to: string;
+  points: {
+    key: string;
+    label: string;
+    value: number;
+    unit: 'نفر' | 'دقیقه' | 'ساعت' | 'روز' | 'درخواست';
+  }[];
+}
+export interface HrDashboardChartsDto {
+  asOf: string;
+  charts: HrDashboardChartDto[];
 }

@@ -128,6 +128,7 @@ export const salesAdditionalServices = {
 
 export interface SalesFormState {
   legacyContract?: boolean;
+  legacyDeductions?: { discount?: SalesMoney; commission?: SalesMoney };
   additionalServices?: (keyof typeof salesAdditionalServices)[];
   roomDrivenGuests?: boolean;
   flightOnlyPassengers?: { key: string; age: number }[];
@@ -1294,56 +1295,141 @@ export function salesTravelDate(state: SalesFormState): string {
   );
 }
 
+export function legacySalesPricingServices(
+  state: SalesFormState,
+): SalesServiceInput[] {
+  return [
+    ...state.serviceKinds.flatMap((kind): SalesServiceInput[] =>
+      kind === 'FLIGHT' || kind === 'TRANSFER'
+        ? salesDirections(state, kind).map((direction) => ({
+            clientKey: `${kind.toLowerCase()}-${direction.toLowerCase()}`,
+            kind,
+            titleSnapshot: `${kind === 'FLIGHT' ? 'بلیط' : 'ترانسفر'} ${direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}`,
+          }))
+        : [{ clientKey: kind.toLowerCase(), kind, titleSnapshot: kind }],
+    ),
+    ...(state.additionalServices ?? []).map((role): SalesServiceInput => ({
+      clientKey: role === 'CITY_TOUR' ? 'city-tour' : 'tour-guide',
+      kind: 'OTHER',
+      titleSnapshot: salesAdditionalServices[role],
+    })),
+  ];
+}
+
+/** Historical prices belong to the customer contract, never to individual services. */
+export function legacyContractPriceComponents(
+  state: SalesFormState,
+): SalesPriceComponentInput[] {
+  const totals = new Map<string, bigint>();
+  const components: SalesPriceComponentInput[] = [];
+  for (const price of state.contractPrices ?? []) {
+    if (!price.amount.trim()) continue;
+    if (
+      !/^[A-Z]{3}$/.test(price.currencyCode) ||
+      totals.has(price.currencyCode)
+    )
+      throw Error('ارز مبلغ قرارداد باید معتبر و یکتا باشد.');
+    const amount = moneyUnits(price.amount);
+    totals.set(price.currencyCode, amount);
+    if (amount > 0n)
+      components.push({ ...price, type: 'BASE', title: 'مبلغ کل قرارداد' });
+  }
+  if (!components.length) throw Error('مبلغ کل قرارداد را وارد کنید.');
+  for (const kind of ['discount', 'commission'] as const) {
+    const price = state.legacyDeductions?.[kind];
+    if (!price?.amount.trim()) continue;
+    const amount = moneyUnits(price.amount);
+    if (
+      !/^[A-Z]{3}$/.test(price.currencyCode) ||
+      amount > (totals.get(price.currencyCode) ?? 0n)
+    )
+      throw Error(
+        'تخفیف و کمیسیون نباید از مبلغ قرارداد در همان ارز بیشتر باشد.',
+      );
+    totals.set(
+      price.currencyCode,
+      (totals.get(price.currencyCode) ?? 0n) - amount,
+    );
+    if (amount > 0n)
+      components.push({
+        ...price,
+        type: 'DISCOUNT',
+        title: kind === 'discount' ? 'تخفیف قرارداد' : 'کمیسیون قرارداد',
+      });
+  }
+  return components;
+}
+
 export function salesPayload(
   state: SalesFormState,
+  aggregateLegacy = false,
 ): SalesContractCreateRequest {
   if (state.legacyContract) {
-    const totalState = {
+    const plain = {
       ...state,
+      legacyContract: false,
+      priceEntryMode: 'CONTRACT_TOTAL' as const,
+      contractPrices: (state.contractPrices ?? []).filter((p) =>
+        p.amount.trim(),
+      ),
+      servicePricing: {},
+      passengers: [],
       passengerTotalPricing: false,
       automaticComponentPricing: false,
       packageSaleQuote: undefined,
+      packageSaleAvailable: false,
       passengerDeductions: {},
+      passengerPrices: {},
+      passengerHotelPrices: {},
+      passengerHotelStays: {},
+      firstPassengerIsCustomer: false,
     };
-    return {
-      customerId: state.customerId,
-      payerCustomerId: state.customerId,
-      ...(state.buyerContact ? { buyerContact: state.buyerContact } : {}),
-      tripType: 'ONE_WAY',
-      originId: state.originId,
-      destinationId: state.destinationId,
-      departureDate: state.departureDate,
-      services: [
-        {
-          clientKey: 'legacy-contract',
-          kind: 'OTHER',
-          titleSnapshot: 'قرارداد قدیمی',
-          metadata: {
-            legacyContractV1: true,
-            reservationNote: state.reservationNote || '',
-            contractNotice: state.contractNotice || '',
-          },
+    const payload = salesPayload(plain, true);
+    const counts = salesPassengerCounts(state);
+    const parties = Object.fromEntries(
+      payload.services.map((service) => {
+        const roomAges = state.hotel.rooms?.flatMap((r) => r.childAges) ?? [];
+        const party =
+          service.kind === 'HOTEL' && state.hotel.rooms?.length
+            ? {
+                adults: state.hotel.rooms.reduce((n, r) => n + r.adults, 0),
+                children: roomAges.filter((a) => a !== null && a >= 2).length,
+                infants: roomAges.filter((a) => a !== null && a < 2).length,
+              }
+            : service.kind === 'VISA' && state.visaComposition
+              ? { ...state.visaComposition, infants: 0 }
+              : {
+                  adults: counts.adults,
+                  children: counts.children,
+                  infants: counts.infants,
+                };
+        return [service.clientKey, party];
+      }),
+    );
+    const services = payload.services.map((s) => ({ ...s }));
+    if (services[0])
+      services[0] = {
+        ...services[0],
+        metadata: {
+          ...services[0].metadata,
+          legacyServicePartiesV2: JSON.stringify(parties),
         },
-      ],
-      passengers: [],
-      ticketSelections: [],
-      hotelSelection: null,
-      priceComponents: salesChequeComponents(
-        contractSaleComponents(totalState),
-        state.paymentTerms,
-      ),
-      payments: state.payments.map((p) => ({
-        ...p,
-        dueAt: new Date(p.dueAt).toISOString(),
-      })),
-      ...(state.paymentTerms !== undefined
-        ? { paymentTerms: state.paymentTerms }
-        : {}),
-      pricingNotes: state.pricingNotes || null,
-    };
+      };
+    if (payload.hotelSelection) {
+      const party = parties[payload.hotelSelection.serviceClientKey]!;
+      payload.hotelSelection = {
+        ...payload.hotelSelection,
+        occupancy: party.adults + party.children + party.infants,
+      };
+    }
+    payload.priceComponents = salesChequeComponents(
+      legacyContractPriceComponents(state),
+      state.paymentTerms,
+    );
+    return { ...payload, services };
   }
   state = syncHotelChildSelections(state, salesTravelDate(state));
-  state = withFirstPassengerCustomer(state);
+  if (!aggregateLegacy) state = withFirstPassengerCustomer(state);
   const roomPartyError = salesRoomPartyError(state);
   if (roomPartyError) throw new Error(roomPartyError);
   if (
@@ -1364,7 +1450,11 @@ export function salesPayload(
     )
   )
     throw new Error('مشخصات و سن کودکان همهٔ اتاق‌ها را تکمیل کنید.');
-  if (state.serviceKinds.includes('VISA') && state.visaComposition) {
+  if (
+    !aggregateLegacy &&
+    state.serviceKinds.includes('VISA') &&
+    state.visaComposition
+  ) {
     const selected = state.passengers.filter((p) =>
       state.visaApplicantIds?.includes(p.customerId),
     );

@@ -727,7 +727,7 @@ describe('explicit visa applicants', () => {
 });
 
 describe('legacy contract payload', () => {
-  it('uses only manually agreed totals and drops prior operational passengers and selections', () => {
+  it('keeps manually agreed totals and omits personal passenger rows for aggregate legacy services', () => {
     const state = {
       ...emptySalesForm,
       legacyContract: true,
@@ -736,7 +736,7 @@ describe('legacy contract payload', () => {
       originId: 'origin',
       destinationId: 'destination',
       departureDate: '2026-10-01',
-      serviceKinds: ['FLIGHT' as const],
+      serviceKinds: ['OTHER' as const],
       passengerTotalPricing: true,
       automaticComponentPricing: true,
       contractPrices: [
@@ -770,7 +770,7 @@ describe('legacy contract payload', () => {
     expect(payload.passengers).toEqual([]);
     expect(payload.ticketSelections).toEqual([]);
     expect(payload.hotelSelection).toBeNull();
-    expect(payload.services[0]?.metadata?.legacyContractV1).toBe(true);
+    expect(payload.services[0]?.metadata?.legacyServicePartiesV2).toBeDefined();
     expect(
       payload.priceComponents.map((p) => [p.currencyCode, p.amount]),
     ).toEqual([
@@ -778,5 +778,79 @@ describe('legacy contract payload', () => {
       ['USD', '50'],
     ]);
     expect(payload.payments).toHaveLength(2);
+  });
+});
+
+describe('historical customer total pricing', () => {
+  const state = {
+    ...emptySalesForm,
+    legacyContract: true,
+    customerId: 'buyer',
+    customerName: 'Buyer',
+    originId: 'origin',
+    destinationId: 'destination',
+    departureDate: '2026-10-01',
+    serviceKinds: ['OTHER' as const],
+    contractPrices: [
+      { currencyCode: 'IRR', amount: '100000000' },
+      { currencyCode: 'EUR', amount: '915.125' },
+    ],
+    legacyDeductions: {
+      discount: { currencyCode: 'EUR', amount: '15.125' },
+      commission: { currencyCode: 'IRR', amount: '10000000' },
+    },
+    servicePricing: {
+      other: [
+        {
+          version: 1 as const,
+          currencyCode: 'USD',
+          daySale: { basis: 'TOTAL' as const, amount: '999' },
+          agreed: { basis: 'TOTAL' as const, amount: '999' },
+        },
+      ],
+    },
+  };
+  it('persists one customer total with separate-currency deductions and ignores stale service prices', () => {
+    const payload = salesPayload(state);
+    expect(payload.passengers).toEqual([]);
+    expect(
+      payload.priceComponents.map((p) => [p.type, p.currencyCode, p.amount]),
+    ).toEqual([
+      ['BASE', 'IRR', '100000000'],
+      ['BASE', 'EUR', '915.125'],
+      ['DISCOUNT', 'EUR', '15.125'],
+      ['DISCOUNT', 'IRR', '10000000'],
+    ]);
+    expect(payload.services[0]?.pricing).toBeUndefined();
+    expect(payload.services[0]?.metadata?.contractPackagePricingVersion).toBe(
+      1,
+    );
+  });
+  it('accepts foreign-only totals and refuses over-deduction or deduction in an absent currency', () => {
+    expect(
+      salesPayload({
+        ...state,
+        contractPrices: [
+          { currencyCode: 'IRR', amount: '' },
+          { currencyCode: 'EUR', amount: '20' },
+        ],
+        legacyDeductions: {},
+      }).priceComponents,
+    ).toHaveLength(1);
+    expect(() =>
+      salesPayload({
+        ...state,
+        legacyDeductions: {
+          discount: { currencyCode: 'EUR', amount: '900' },
+          commission: { currencyCode: 'EUR', amount: '16' },
+        },
+      }),
+    ).toThrow();
+    expect(() =>
+      salesPayload({
+        ...state,
+        legacyDeductions: { discount: { currencyCode: 'USD', amount: '1' } },
+      }),
+    ).toThrow();
   });
 });

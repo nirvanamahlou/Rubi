@@ -1,5 +1,7 @@
 'use client';
 import serviceStyles from './contract-service-cards.module.css';
+import { withAutomaticReturn } from '../model/automatic-return';
+import { LegacyContractPrices } from './legacy-contract-prices';
 import {
   Plane,
   Building2,
@@ -240,14 +242,13 @@ export function SalesContractForm() {
   const [draftState, setState] = useState<SalesFormState>(freshSalesDraft);
   const state = useMemo<SalesFormState>(() => {
     if (draftState.legacyContract)
-      return {
+      return withRoomDrivenGuests({
         ...draftState,
         passengerTotalPricing: false,
         automaticComponentPricing: false,
         priceEntryMode: 'CONTRACT_TOTAL',
-        serviceKinds: ['OTHER'],
         passengers: [],
-      };
+      });
     if (isTicketOnlyContract(draftState))
       return ticketOnlySaleDefaults({
         ...draftState,
@@ -327,6 +328,7 @@ export function SalesContractForm() {
     state.destinationId &&
     state.originId !== state.destinationId &&
     state.serviceKinds.includes('FLIGHT') &&
+    salesDirections(state, 'FLIGHT').includes('OUTBOUND') &&
     !state.contractFlights?.OUTBOUND &&
     flightDatesReady,
   );
@@ -357,10 +359,19 @@ export function SalesContractForm() {
     route: string;
     offers: TicketOfferV1[];
   }>({ route: '', offers: [] });
+  const selectedReturnDay = state.returnOffer
+    ? flightDay(state.returnOffer)
+    : flightRange.to;
   const calendarRoute = state.originId + ':' + state.destinationId;
   const onReturningOffers = useCallback(
-    (offers: TicketOfferV1[]) =>
-      setReturnCalendar({ route: calendarRoute, offers }),
+    (offers: TicketOfferV1[]) => {
+      setReturnCalendar({ route: calendarRoute, offers });
+      // Calendar reads may finish after the outbound picker. Resolve from current
+      // state so stale responses and an already chosen manual return cannot win.
+      setState((current) =>
+        withAutomaticReturn(current, calendarRoute, offers),
+      );
+    },
     [calendarRoute],
   );
   const submission = useRef({ fingerprint: '', key: '' });
@@ -683,11 +694,9 @@ export function SalesContractForm() {
   const occupancyRoom = hotelRoomRates.find(
     (room) => room.roomTypeId === state.hotel.roomTypeId,
   );
-  const pricedState = hotelOccupancySaleDefaults(
-    state,
-    occupancyRoom,
-    hotelRoomRates,
-  );
+  const pricedState = state.legacyContract
+    ? state
+    : hotelOccupancySaleDefaults(state, occupancyRoom, hotelRoomRates);
   const passengerCounts = salesPassengerCounts(state);
   const hotelCapacityError = salesHotelCapacityError(state, hotelRoomRates);
   const hotelGuestIds = salesHotelGuestIds(state);
@@ -764,12 +773,13 @@ export function SalesContractForm() {
     if (hotelCapacityError) return hotelCapacityError;
     try {
       const payload = salesPayload({
-        ...pricedState,
+        ...(state.legacyContract ? state : pricedState),
         servicePricing: pricedState.servicePricing ?? {},
       });
       validateSalesCurrencySelection(payload, references.currencies);
       readPassengerHotelPrices(payload.services, payload.passengers);
       if (
+        !state.legacyContract &&
         payload.services.some((s) => s.kind === 'FLIGHT') &&
         !state.passengerTotalPricing &&
         state.passengerFlightPrices === undefined
@@ -790,8 +800,9 @@ export function SalesContractForm() {
         payload.paymentTerms
           ? payload.priceComponents.filter((p) => p.title !== SALES_CHEQUE_FEE)
           : payload.priceComponents,
-        state.passengerTotalPricing ||
-          state.priceEntryMode === 'PASSENGER_TOTAL',
+        !state.legacyContract &&
+          (state.passengerTotalPricing ||
+            state.priceEntryMode === 'PASSENGER_TOTAL'),
       );
       return payload.priceComponents.length > 0 ||
         (payload.services.length > 0 &&
@@ -806,16 +817,6 @@ export function SalesContractForm() {
     }
   })();
   const canContinue = (() => {
-    if (step === 0 && state.legacyContract)
-      return (
-        !passengerStepError &&
-        Boolean(
-          state.originId &&
-          state.destinationId &&
-          state.originId !== state.destinationId &&
-          state.departureDate,
-        )
-      );
     if (step === 0)
       return Boolean(
         passengerStepError === null &&
@@ -865,8 +866,11 @@ export function SalesContractForm() {
         (!(state.tour || state.serviceKinds.includes('TOUR')) ||
           Boolean(
             state.tour &&
-            state.tour.startsOn >= salesFlightToday() &&
-            (!state.packageSaleAvailable || state.packageSaleQuote),
+            (state.legacyContract ||
+              state.tour.startsOn >= salesFlightToday()) &&
+            (state.legacyContract ||
+              !state.packageSaleAvailable ||
+              state.packageSaleQuote),
           )),
       );
     if (step === 1) return !finalStepError;
@@ -1099,9 +1103,10 @@ export function SalesContractForm() {
         {flightDirections.includes('RETURN') &&
         salesFlightSeats(state, 'RETURN') > 0 ? (
           <section className="grid gap-3 min-w-0">
+            <h3 className="font-bold">بلیط برگشت</h3>
             {!salesReturnRequiresInventory(state) && (
               <ContractFlightEditor
-                flightDate={flightRange.to}
+                flightDate={selectedReturnDay}
                 international={salesInternationalTravel(state)}
                 airlines={references.airlines}
                 value={state.contractFlights?.RETURN}
@@ -1133,13 +1138,13 @@ export function SalesContractForm() {
                         (city) => city.id === state.originId,
                       )?.name ?? 'مبدأ'
                     }
-                    key={`return-${salesFlightSelection(state, 'OUTBOUND')?.departureAt ?? futureFrom}-${flightRange.from + '-' + flightRange.to}`}
+                    key={`return-${salesFlightSelection(state, 'OUTBOUND')?.departureAt ?? futureFrom}-${flightRange.from + '-' + selectedReturnDay}`}
                     query={{
                       originId: state.destinationId,
                       destinationId: state.originId,
-                      ...exactFlightQuery(flightRange.to),
+                      ...exactFlightQuery(selectedReturnDay),
                     }}
-                    exactDay={flightRange.to}
+                    exactDay={selectedReturnDay}
                     requiredSeats={salesFlightSeats(state, 'RETURN')}
                     requireStandaloneFare={false}
                     {...(state.outboundOffer
@@ -1336,9 +1341,11 @@ export function SalesContractForm() {
                 setPeopleDirty(true);
                 patchState({
                   legacyContract,
+                  servicePricing: {},
+                  contractPrices: [],
+                  legacyDeductions: {},
                   ...(legacyContract
                     ? {
-                        serviceKinds: ['OTHER'],
                         passengers: [],
                         firstPassengerIsCustomer: false,
                         passengerTotalPricing: false,
@@ -1353,9 +1360,7 @@ export function SalesContractForm() {
             قرارداد قدیمی
           </label>
         )}
-        {!state.legacyContract && (
-          <PublishedPackageSale state={state} onChange={setState} />
-        )}
+        {<PublishedPackageSale state={state} onChange={setState} />}
         {step === 0 ? (
           <div className="grid gap-5">
             <h2 className="text-sm font-bold">مسیر سفر</h2>
@@ -1435,7 +1440,7 @@ export function SalesContractForm() {
             />
           </FormField>
         )}
-        {step === 0 && !state.legacyContract ? (
+        {step === 0 ? (
           <div className="mt-6 grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">
             <h2 className="text-sm font-bold">خدمات قرارداد</h2>
             {state.tour ? (
@@ -1589,7 +1594,6 @@ export function SalesContractForm() {
           </div>
         ) : null}
         {step === 0 &&
-        !state.legacyContract &&
         !usesRoomDrivenGuests(state) &&
         state.serviceKinds.some((k) => k !== 'HOTEL' && k !== 'VISA') ? (
           <section className="mt-5 grid gap-3 border-t border-border pt-4">
@@ -1682,7 +1686,7 @@ export function SalesContractForm() {
             </div>
           </section>
         ) : null}
-        {step === 0 && !state.legacyContract && (
+        {step === 0 && (
           <ServiceParties
             state={state}
             patch={patchState}
@@ -1697,6 +1701,11 @@ export function SalesContractForm() {
             className="mt-5 border-t border-border pt-4"
           >
             <FlightTripDates
+              primaryDirection={
+                salesDirections(state, 'FLIGHT').includes('OUTBOUND')
+                  ? 'OUTBOUND'
+                  : 'RETURN'
+              }
               onReturningOffers={onReturningOffers}
               international={salesInternationalTravel(state)}
               originId={
@@ -1722,7 +1731,7 @@ export function SalesContractForm() {
               requireFare={false}
               value={
                 flightRangeRoute === flightRouteKey
-                  ? flightRange
+                  ? { ...flightRange, to: selectedReturnDay }
                   : { from: '', to: '' }
               }
               onChange={(range, outboundIds) => {
@@ -1743,7 +1752,7 @@ export function SalesContractForm() {
                     ...(range.from !== flightRange.from
                       ? { checkInManual: false }
                       : {}),
-                    ...(range.to !== flightRange.to
+                    ...(range.to !== selectedReturnDay
                       ? { checkOutManual: false }
                       : {}),
                   },
@@ -2393,11 +2402,19 @@ export function SalesContractForm() {
               />
             </div>
             <div className="grid content-start gap-3">
-              <ContractTotalPrices
-                state={state}
-                currencies={references.currencies}
-                onChange={(contractPrices) => patchState({ contractPrices })}
-              />
+              {state.legacyContract ? (
+                <LegacyContractPrices
+                  state={state}
+                  currencies={references.currencies}
+                  onChange={patchState}
+                />
+              ) : (
+                <ContractTotalPrices
+                  state={state}
+                  currencies={references.currencies}
+                  onChange={(contractPrices) => patchState({ contractPrices })}
+                />
+              )}
               {!state.legacyContract && (
                 <PassengerServicePrices
                   state={state}

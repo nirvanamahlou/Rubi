@@ -1181,3 +1181,142 @@ describe('legacy customer-only contract', () => {
     ).toThrow();
   });
 });
+
+describe('aggregate legacy service contracts', () => {
+  const aggregate = (): SalesContractCreateRequest => ({
+    ...structuredClone(draft),
+    passengers: [],
+    services: draft.services.map((s) => ({
+      ...s,
+      metadata: {
+        legacyServicePartiesV2: JSON.stringify({
+          flight: { adults: 2, children: 1, infants: 1 },
+        }),
+      },
+    })),
+  });
+  it('accepts contract-total historical mixed currencies and deductions without per-service prices', () => {
+    const input = aggregate();
+    input.services[0]!.metadata = {
+      ...input.services[0]!.metadata,
+      contractPackagePricingVersion: 1,
+    };
+    input.priceComponents = [
+      {
+        type: 'BASE',
+        title: 'Contract total',
+        amount: '100000000',
+        currencyCode: 'IRR',
+      },
+      {
+        type: 'BASE',
+        title: 'Contract total',
+        amount: '915.125',
+        currencyCode: 'EUR',
+      },
+      {
+        type: 'DISCOUNT',
+        title: 'Contract discount',
+        amount: '15.125',
+        currencyCode: 'EUR',
+      },
+      {
+        type: 'DISCOUNT',
+        title: 'Contract commission',
+        amount: '10000000',
+        currencyCode: 'IRR',
+      },
+    ];
+    expect(() => validateSalesContract(input)).not.toThrow();
+    expect(input.ticketSelections).toHaveLength(2);
+    expect(input.passengers).toEqual([]);
+  });
+  it('accepts real outward and return ticket selections without invented passengers', () => {
+    expect(() => validateSalesContract(aggregate())).not.toThrow();
+  });
+  it('rejects missing/invalid counts and mixed personal identities', () => {
+    const input = aggregate();
+    expect(() =>
+      validateSalesContract({ ...input, passengers: draft.passengers }),
+    ).toThrow();
+    expect(() =>
+      validateSalesContract({ ...input, services: draft.services }),
+    ).toThrow();
+    input.services[0]!.metadata = {
+      legacyServicePartiesV2: JSON.stringify({
+        flight: { adults: 0, children: 0, infants: 0 },
+      }),
+    };
+    expect(() => validateSalesContract(input)).toThrow();
+  });
+  it('retains normal ticket time and route validation', () => {
+    const input = aggregate();
+    input.ticketSelections![0]!.destinationId = input.originId;
+    expect(() => validateSalesContract(input)).toThrow();
+  });
+});
+
+it('validates aggregate legacy hotel occupancy and room age counts without personal guest assignments', () => {
+  const input: SalesContractCreateRequest = {
+    ...structuredClone(draft),
+    tripType: 'ONE_WAY',
+    returnNotBefore: null,
+    passengers: [],
+    ticketSelections: [],
+    services: [
+      {
+        clientKey: 'hotel',
+        kind: 'HOTEL',
+        titleSnapshot: 'Hotel',
+        metadata: {
+          legacyServicePartiesV2: JSON.stringify({
+            hotel: { adults: 2, children: 1, infants: 1 },
+          }),
+        },
+      },
+    ],
+    hotelSelection: {
+      serviceClientKey: 'hotel',
+      hotelId: 'hotel',
+      hotelNameSnapshot: 'Hotel',
+      cityId: draft.destinationId,
+      checkInDate: '2026-10-01',
+      checkOutDate: '2026-10-03',
+      roomCount: 1,
+      roomTypeId: '10000000-0000-4000-8000-000000000005',
+      occupancy: 4,
+      inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: '10000000-0000-4000-8000-000000000005',
+          roomTypeNameSnapshot: 'Standard',
+          adults: 2,
+          childAges: [5, 1],
+        },
+      ],
+    },
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  expect(() =>
+    validateSalesContract({
+      ...input,
+      hotelSelection: { ...input.hotelSelection!, occupancy: 3 },
+    }),
+  ).toThrow();
+  expect(() =>
+    validateSalesContract({
+      ...input,
+      hotelSelection: {
+        ...input.hotelSelection!,
+        rooms: [
+          {
+            ...input.hotelSelection!.rooms![0]!,
+            adults: 1,
+            childAges: [5, 5, 1],
+          },
+        ],
+      },
+    }),
+  ).toThrow();
+});

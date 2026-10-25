@@ -32,28 +32,8 @@ export function pairedReturnDate(
   seats: number,
 ) {
   const pairs = outbound.flatMap((out) => {
-    if (out.status !== 'ACTIVE') return [];
-    const ids = new Set(
-      out.roundTripSalePrices?.map((p) => p.returnOfferId) ?? [],
-    );
-    return returning
-      .filter(
-        (back) =>
-          back.status === 'ACTIVE' &&
-          back.remainingCapacity >= seats &&
-          back.cabinClassCode === out.cabinClassCode &&
-          eligibleReturn(out, back) &&
-          (!out.scheduledReturnDate ||
-            flightDay(back) === out.scheduledReturnDate) &&
-          (ids.size
-            ? ids.has(back.id)
-            : Boolean(
-                out.loadGroupId &&
-                (out.returnMaxDays != null || out.scheduledReturnDate) &&
-                out.loadGroupId === back.loadGroupId,
-              )),
-      )
-      .map((back) => ({ out, back }));
+    const back = pairedReturnOffer(out, returning, seats);
+    return back ? [{ out, back }] : [];
   });
   const days = [...new Set(pairs.map((p) => flightDay(p.back)))];
   return days.length === 1
@@ -84,9 +64,16 @@ export function pairedReturnOffer(
   const pricedIds = new Set(
     outbound.roundTripSalePrices?.map((p) => p.returnOfferId),
   );
-  const candidates = loadPartners.length
-    ? loadPartners
-    : eligible.filter((back) => pricedIds.has(back.id));
+  // Preserve the original load partner; a price pair can disambiguate recurring
+  // dates within that load, but cannot replace it with an unrelated alternative.
+  const candidates =
+    loadPartners.length === 1
+      ? loadPartners
+      : loadPartners.length
+        ? pricedIds.size
+          ? loadPartners.filter((back) => pricedIds.has(back.id))
+          : loadPartners
+        : eligible.filter((back) => pricedIds.has(back.id));
   const unique = [
     ...new Map(candidates.map((back) => [back.id, back])).values(),
   ];

@@ -18,13 +18,23 @@ const fixture = vi.hoisted(() => ({
   pickers: [] as {
     selectedId: string;
     onSelect: (offer: TicketOfferV1) => void;
-    query: { originId: string };
+    query: {
+      originId: string;
+      destinationId: string;
+      departureFrom: string;
+      departureTo: string;
+    };
+    exactDay: string;
     requireStandaloneFare?: boolean;
   }[],
   dates: null as null | {
     onChange: (range: FlightDateRange) => void;
     onReturningOffers: (offers: TicketOfferV1[]) => void;
     requireFare: boolean;
+    originId: string;
+    destinationId: string;
+    primaryDirection: string;
+    roundTrip: boolean;
   },
   confirms: [] as (() => void)[],
 }));
@@ -323,4 +333,45 @@ it('confirms overnight floating tickets and enables continuation with confirmed 
     .find((markup) => markup.includes('تأیید مسیر و خدمات'));
   expect(button).toBeDefined();
   expect(button).not.toContain('disabled');
+});
+
+it('opens only the reverse-route return cards on the selected return day without choosing outbound', () => {
+  fixture.draft = {
+    ...fixture.draft!,
+    tripType: 'ONE_WAY',
+    serviceDirections: { FLIGHT: ['RETURN'] },
+  };
+  render();
+  expect(fixture.dates).toMatchObject({
+    originId: 'destination',
+    destinationId: 'origin',
+    primaryDirection: 'RETURN',
+    roundTrip: false,
+  });
+  fixture.dates!.onChange({ from: '2099-10-04', to: '2099-10-04' });
+  const html = render();
+  expect(html).not.toContain('ابتدا بلیط رفت');
+  expect(fixture.pickers).toHaveLength(1);
+  expect(fixture.pickers[0]).toMatchObject({
+    exactDay: '2099-10-04',
+    query: {
+      originId: 'destination',
+      destinationId: 'origin',
+      departureFrom: '2099-10-04T00:00:00+03:30',
+      departureTo: '2099-10-04',
+    },
+  });
+  fixture.pickers[0]!.onSelect(back);
+  render();
+  const selected = fixture.cells.find((c): c is SalesFormState =>
+    Boolean(c && typeof c === 'object' && 'serviceKinds' in c),
+  )!;
+  expect(selected.ticket.outboundOfferId).toBe('');
+  expect(selected.ticket.returnOfferId).toBe('back');
+  expect(salesFlightsValid(selected)).toBe(true);
+  fixture.dates!.onChange({ from: '2099-10-05', to: '2099-10-05' });
+  render();
+  expect(fixture.pickers).toHaveLength(1);
+  expect(fixture.pickers[0]!.exactDay).toBe('2099-10-05');
+  expect(fixture.pickers[0]!.selectedId).toBe('');
 });
