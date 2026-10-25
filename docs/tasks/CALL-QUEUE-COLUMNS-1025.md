@@ -11,4 +11,3 @@ CALL-QUEUE-COLUMNS-1025, PC-C. Owner-requested queue presentation only:
 No schema, migration, dependency, operational data, IAM, PBX or popup changes. Current approved local runtime is the rollout base; retain previous build artifacts for rollback. No PR/merge/production deployment requested.
 
 Validation:19 real isolated PostgreSQL workflow tests pass, including creation-order/tie regression;3 Web workflow tests pass. Scoped API/Web lint, API TypeScript build, Web TypeScript and65-route compilation pass. Read-only check of the two existing local requests confirms valid priority/timestamp and newest-created ordering. Local runtime and visual verification recorded in PROJECT_STATUS.
-
