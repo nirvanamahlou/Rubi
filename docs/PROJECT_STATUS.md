@@ -7487,3 +7487,6 @@ Request title cells now centered horizontally/vertically with bounded truncation
 
 ## OUTCOME-DRILLDOWN-1025 — PC-C — COMPLETE
 Missing-outcome KPI opens bounded server-paged per-call modal with completion and dossier actions. Count and identity-safe scope agree; saves refresh data.22 tests, lint/types/build and authenticated browser checks pass. Local3000 active; no migration/PBX changes. See docs/tasks/OUTCOME-DRILLDOWN-1025.md.
+
+## CALL-DESTINATION-TITLE-1025 — PC-C — COMPLETE
+Destination options avoid repeating department already present as complete words in job title, including Persian/Arabic character and spacing normalization. Name/extension retained; generic titles still receive department.11 tests, lint/types/build pass; local API updated. Historical stored snapshots unchanged; no schema/PBX changes.

@@ -9473,3 +9473,8 @@ QUEUE-TITLE-CENTER-1025 — COMPLETE / SOURCE_RELEASED:3 existing queue tests, l
 User approves per-call missing-outcome modal, server paging, completion and dossier actions, matching KPI scope. Reserve call-center read service/controller/DTO/tests and Web kpis/workflow/workspace/new modal/tests/styles/docs. Base3274cd5e; prior scopes released. No migration/dependency/PBX changes. Scope intersects report and contact access for identity-safe KPI drilldown.
 
 OUTCOME-DRILLDOWN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:14 PostgreSQL and8 Web tests, affected lint/types/API build and65-route Web build pass. Authenticated modal/completion/cancel/dossier/Enter/Escape checked. Local3000/4000 updated; no migration/PR/merge.
+
+## CALL-DESTINATION-TITLE-1025 — PC-C — RESERVED
+User requests removal of repeated department from destination job title. Reserve HR call-answer label formatter/test and docs only; preserve staff records and historical snapshots. Base deb7fc74. No schema/PBX/Web layout changes.
+
+CALL-DESTINATION-TITLE-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:11 tests, lint/typecheck/API build pass. Local API label formatter updated; no migration/HR data rewrite.
