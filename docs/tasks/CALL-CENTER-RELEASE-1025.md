@@ -7,3 +7,5 @@ Includes scoped staff assignees, queue columns/alignment/badges, dual calendar f
 Integrated develop8806eac1 before PR. Resolved append-only project/work assignment/decision conflicts by preserving both sides; merged English translation keys without replacing other modules. No Call Center code conflict, new migration or dependency change.
 
 Prior local verification: scoped lint/typechecks, API/Web builds, isolated PostgreSQL tests, Web tests and browser acceptance are recorded in each feature task. Final integrated acceptance is all GitHub CI checks on the exact PR head. Do not bypass failed checks or branch protection.
+
+PR: https://github.com/nirvanamahlou/Rubi/pull/1114 (author Amin-tech11, target develop). Source release prepared and pushed; all final checks and merge SHA are authoritative in the PR checks/timeline. Merge remains conditional on success of every check on the latest head; no gate bypass is authorized.

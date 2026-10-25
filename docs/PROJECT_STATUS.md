@@ -7569,3 +7569,5 @@ Return-only New Contract now labels its sole date picker as the return ticket an
 
 ## 2026-10-25 — CALL-CENTER-RELEASE-1025 — PC-C
 Final Call Center feature chain consolidated from87eb5e3a and integrated with develop8806eac1. User authorizes PR and merge after all CI/CD checks pass. Only shared docs and translation append conflicts required resolution; other modules preserved. No local secrets/runtime files published. See release task for final CI/merge evidence.
+
+CALL-CENTER-RELEASE-1025 publication: https://github.com/nirvanamahlou/Rubi/pull/1114 targets develop under Amin-tech11. Final reviewed source pushed; source reservations released. Await all checks on latest head before authorized merge; PR checks/timeline are final CI/merge evidence. Local runtime preserved.
