@@ -1,3 +1,6 @@
+vi.mock('../finance/accounting/accounting-workflows.public', () => ({
+  assertRevenueEditable: vi.fn().mockResolvedValue(undefined),
+}));
 import { describe, it, expect, vi } from 'vitest';
 import { SalesRepository } from './sales.repository';
 import type { SalesContractCreateRequest } from '@nora/contracts';

@@ -73,7 +73,7 @@ export async function documentPostingPreview(
     }[]
   >(Prisma.sql`
     SELECT a.code,
-      CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'REVERSE:%'
+      CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'REVERSE:%' OR j."sourceKey" LIKE 'WORKFLOW:%'
         THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END AS currency,
       SUM(l.debit-l.credit) AS "baseBalance",
       SUM(CASE WHEN l.currency<>${book.baseCurrency} THEN CASE WHEN l.debit>0 THEN COALESCE(l."foreignAmount",0) ELSE -COALESCE(l."foreignAmount",0) END ELSE 0 END) AS "foreignBalance"
@@ -81,7 +81,7 @@ export async function documentPostingPreview(
     JOIN accounting_accounts a ON a.id=l."accountId" AND a."bookId"=j."bookId"
     WHERE j."bookId"=${book.id}::uuid AND j."periodId"=${period.id}::uuid AND j."documentDate"<=${toDate}
       AND ${documentFigureStatuses}
-      AND (CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'REVERSE:%'
+      AND (CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'REVERSE:%' OR j."sourceKey" LIKE 'WORKFLOW:%'
         THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END)<>${book.baseCurrency}
     GROUP BY 1,2,l."detail4Id",l."detail5Id",l."detail6Id"
     ORDER BY 1,2`);

@@ -1,4 +1,13 @@
 import {
+  workflowPostingContext,
+  captureWorkflow,
+  workflowJournal,
+  cancelWorkflow,
+  workflowList,
+  workflowSources,
+  assertWorkflowsClosed,
+} from './accounting.workflows';
+import {
   isReceiptAllocation,
   postedReceiptBasis,
 } from './receipt-funds.public';
@@ -772,6 +781,26 @@ export class AccountingService {
     };
   }
 
+  async workflows(bookId: string, actor: AuthenticatedActor) {
+    this.require(actor, 'finance.journal.read');
+    return this.database.client.$transaction(async (tx) =>
+      workflowList(tx, await this.book(tx, bookId, actor)),
+    );
+  }
+  async workflowSources(
+    bookId: string,
+    search: string,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'finance.journal.create');
+    return this.database.client.$transaction(async (tx) =>
+      workflowSources(
+        tx,
+        await this.book(tx, bookId, actor),
+        v.text(search, 160),
+      ),
+    );
+  }
   async command(
     bookId: string,
     action: string,
@@ -779,62 +808,68 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     const permission: IamPermissionCode =
-      action === 'export-batch'
-        ? 'finance.export'
-        : [
-              'approve',
-              'approve-fx',
-              'review-document',
-              'unreview-document',
-              'review-documents',
-              'unreview-documents',
-              'review-all-preview',
-              'review-all-documents',
-            ].includes(action)
-          ? 'finance.journal.approve'
-          : [
-                'post',
-                'document-posting-preview',
-                'post-documents',
-                'general-document-preview',
-                'general-document-issue',
-                'general-document-date',
-              ].includes(action)
-            ? 'finance.journal.post'
-            : action === 'reverse'
-              ? 'finance.journal.reverse'
+      action === 'workflow-cancel'
+        ? 'finance.journal.approve'
+        : action.startsWith('workflow-')
+          ? 'finance.journal.create'
+          : action === 'export-batch'
+            ? 'finance.export'
+            : [
+                  'approve',
+                  'approve-fx',
+                  'review-document',
+                  'unreview-document',
+                  'review-documents',
+                  'unreview-documents',
+                  'review-all-preview',
+                  'review-all-documents',
+                ].includes(action)
+              ? 'finance.journal.approve'
               : [
-                    'close-period',
-                    'year-end-closing',
-                    'year-end-opening',
-                    'year-end-preview',
-                    'year-end-final',
-                    'year-end-nature-adjustment',
+                    'post',
+                    'document-posting-preview',
+                    'post-documents',
+                    'general-document-preview',
+                    'general-document-issue',
+                    'general-document-date',
                   ].includes(action)
-                ? 'finance.period.close'
-                : [
-                      'source-journal',
-                      'financial-event-journal',
-                      'allocation-run',
-                      'allocation-preview',
-                      'automatic-preview',
-                      'automatic-run',
-                      'document-revaluation-preview',
-                      'document-revaluation-run',
-                      'document-transfer-preview',
-                      'document-transfer-run',
-                      'document-import-run',
-                      'revaluation-preview',
-                      'revaluation-run',
-                      'number-drafts',
-                      'number-journal-preview',
-                      'move-drafts',
-                      'reorder-journals',
-                    ].includes(action) ||
-                    action.startsWith('journal') ||
-                    ['submit', 'return', 'cancel', 'restore'].includes(action)
-                  ? 'finance.journal.create'
-                  : 'finance.account.manage';
+                ? 'finance.journal.post'
+                : action === 'reverse'
+                  ? 'finance.journal.reverse'
+                  : [
+                        'close-period',
+                        'year-end-closing',
+                        'year-end-opening',
+                        'year-end-preview',
+                        'year-end-final',
+                        'year-end-nature-adjustment',
+                      ].includes(action)
+                    ? 'finance.period.close'
+                    : [
+                          'source-journal',
+                          'financial-event-journal',
+                          'allocation-run',
+                          'allocation-preview',
+                          'automatic-preview',
+                          'automatic-run',
+                          'document-revaluation-preview',
+                          'document-revaluation-run',
+                          'document-transfer-preview',
+                          'document-transfer-run',
+                          'document-import-run',
+                          'revaluation-preview',
+                          'revaluation-run',
+                          'number-drafts',
+                          'number-journal-preview',
+                          'move-drafts',
+                          'reorder-journals',
+                        ].includes(action) ||
+                        action.startsWith('journal') ||
+                        ['submit', 'return', 'cancel', 'restore'].includes(
+                          action,
+                        )
+                      ? 'finance.journal.create'
+                      : 'finance.account.manage';
     this.require(actor, permission);
     const c = v.object(body) as unknown as AccountingCommandV1;
     const key = v.text(c.key, 100, true),
@@ -917,6 +952,35 @@ export class AccountingService {
     financialSourceRebuild = false,
   ): Promise<unknown> {
     const bookId = book.id;
+    if (action === 'workflow-create')
+      return captureWorkflow(tx, book, p, actor);
+    if (action === 'workflow-cancel') return cancelWorkflow(tx, book, p, actor);
+    if (action === 'workflow-journal') {
+      const result = await workflowJournal(
+        tx,
+        book,
+        p,
+        actor,
+        async (payload) =>
+          this.execute(
+            tx,
+            book,
+            'journal-save',
+            payload,
+            undefined,
+            actor,
+            true,
+            stateEvents,
+          ) as Promise<{ id: string }>,
+      );
+      if ('noJournal' in result) return result;
+      const journal = await tx.accountingJournal.findUniqueOrThrow({
+        where: { id: result.id },
+        include: journalInclude,
+      });
+      await this.validatePosting(tx, book, journal);
+      return journal;
+    }
     if (
       action === 'close-period' ||
       action === 'year-end-final' ||
@@ -929,6 +993,7 @@ export class AccountingService {
         },
       });
       if (!period) throw new NotFoundException();
+      await assertWorkflowsClosed(tx, book, period.startDate, period.endDate);
       const [pending] = await tx.$queryRaw<
         { count: number }[]
       >`SELECT count(*)::int AS count FROM finance_accounting_events e
@@ -4269,7 +4334,8 @@ export class AccountingService {
         existing?.sourceKey &&
         !internal &&
         (/^(OPEN|CLOSE|FINAL|NATURE):/.test(existing.sourceKey) ||
-          !!v.attributes(existing.attributes).financialEventId) &&
+          !!v.attributes(existing.attributes).financialEventId ||
+          !!v.attributes(existing.attributes).financialWorkflowId) &&
         (periodId !== existing.periodId ||
           typeId !== existing.typeId ||
           documentDate !== existing.documentDate)
@@ -5088,7 +5154,8 @@ export class AccountingService {
     }>,
   ) {
     const endAttributes = v.attributes(journal.attributes);
-    let financialValuationAt: Date | null = null;
+    const workflowContext = await workflowPostingContext(tx, book, journal);
+    let financialValuationAt: Date | null = workflowContext.at;
     let allocationCarry = false;
     if (endAttributes.financialEventId) {
       const event = await tx.financeAccountingEvent.findFirst({
@@ -5418,6 +5485,7 @@ export class AccountingService {
       }
       if (row.currency && row.currency !== book.baseCurrency) {
         const historicalCarry =
+          workflowContext.carryAccounts.includes(row.accountId!) ||
           allocationCarry ||
           (!!journal.sourceKey &&
             /^(OPEN|CLOSE|FINAL|NATURE|REVERSE):/.test(journal.sourceKey) &&
@@ -5645,12 +5713,12 @@ export class AccountingService {
       }[]
     >`
       SELECT l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",
-        CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END AS currency,
+        CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' OR j."sourceKey" LIKE 'WORKFLOW:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END AS currency,
         SUM(CASE WHEN l.currency<>${book.baseCurrency} THEN CASE WHEN l.debit>0 THEN l."foreignAmount" ELSE -l."foreignAmount" END ELSE 0 END) AS quantity,
         SUM(l.debit-l.credit) AS base
       FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId"
       WHERE j."bookId"=${book.id}::uuid AND j."periodId"=${periodId}::uuid AND j.status='POSTED' AND j."documentDate"<=${asOf}
-      GROUP BY l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END`;
+      GROUP BY l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' OR j."sourceKey" LIKE 'WORKFLOW:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END`;
     const rows = values
       .filter(
         (r) =>
