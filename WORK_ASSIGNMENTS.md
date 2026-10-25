@@ -9500,3 +9500,6 @@ PERIOD-DRILLDOWN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:30 tests, scoped li
 Reserve shared KPI dialog and workspace wiring, own docs. User requests removal of dossier actions and a single edit-existing-call action in all four KPI modals. No API/migration/telephony changes.
 
 KPI-EDIT-ACTION-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: lint,15 Web tests, typecheck/build and four-modal browser checks pass. Local3000 updated; API and database unchanged.
+
+## CALL-CENTER-RELEASE-1025 — PC-C — IN_PROGRESS
+User authorizes publishing all final Call Center changes as PR to develop and merging only after all CI/CD checks succeed. Release branch starts at87eb5e3a, integrates origin/develop8806eac1 in isolated checkout. Reserve release docs and conflict resolution for this integration; no migration/dependency scope. Preserve local runtime and generated files in existing checkout.
