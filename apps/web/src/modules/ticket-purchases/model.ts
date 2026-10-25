@@ -61,6 +61,43 @@ export const purchaseWeekdays = [
   'جمعه',
   'شنبه',
 ];
+/** Each dated offer owns its request, cost and payment evidence. */
+export function separateTicketPurchases(
+  matching: readonly TicketPurchaseInboxItemV1[],
+): TicketPurchaseRow[] {
+  return matching.map((row) => ({
+    ...row,
+    members: [row],
+    dates: [row.flightGroup?.departureDate ?? row.request.serviceDate].filter(
+      (date): date is string => !!date,
+    ),
+    capacityCosts: row.capacityCost ? [row.capacityCost] : [],
+  }));
+}
+
+/** Previously persisted shared invoices must retain their original edit scope. */
+export function ticketPurchaseEditRow(
+  all: readonly TicketPurchaseInboxItemV1[],
+  row: TicketPurchaseInboxItemV1,
+): TicketPurchaseRow {
+  return row.cost?.purchaseGroup
+    ? groupTicketPurchases(all, [row])[0]!
+    : separateTicketPurchases([row])[0]!;
+}
+
+export function canEditTicketPurchase(
+  row: TicketPurchaseRow,
+  canPrice: boolean,
+) {
+  return (
+    canPrice &&
+    row.members.every(
+      (member) =>
+        member.request.status === 'PENDING' && !member.cost?.paymentCount,
+    )
+  );
+}
+
 export function groupTicketPurchases(
   all: readonly TicketPurchaseInboxItemV1[],
   matching = all,
@@ -68,11 +105,7 @@ export function groupTicketPurchases(
   const groups = new Map<string, TicketPurchaseInboxItemV1[]>();
   for (const row of matching) {
     const pool = row.cost?.purchaseGroup;
-    const key = pool
-      ? 'saved:' + pool.id
-      : !row.cost && row.flightGroup
-        ? 'new:' + row.flightGroup.key
-        : 'single:' + row.request.id;
+    const key = pool ? 'saved:' + pool.id : 'single:' + row.request.id;
     if (pool) {
       if (!groups.has(key))
         groups.set(
