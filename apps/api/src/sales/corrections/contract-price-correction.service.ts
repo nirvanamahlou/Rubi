@@ -1,3 +1,4 @@
+import { captureSalesContractAccounting } from '../../finance/accounting/sales-contract-accounting.public';
 import { assertRevenueEditable } from '../../finance/accounting/accounting-workflows.public';
 import {
   canSelfServeSalesContract,
@@ -189,6 +190,7 @@ export class ContractPriceCorrectionService {
         },
       });
       await recalculateSalesSettlement(tx, id, actor.userId, false);
+      await captureSalesContractAccounting(tx, id, actor.userId);
       return { version: row.version + 1, totals: value.totals };
     });
   }

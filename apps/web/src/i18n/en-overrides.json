@@ -4337,5 +4337,17 @@
   "نوع تردد ناشناخته": "Unknown clocking type",
   "ورود تکراری": "Duplicate clock-in",
   "وضعیت حضور": "Presence status",
-  "همه (": "All ("
+  "همه (": "All (",
+  "ابتدا سند تعهد قرارداد را در همین دفتر ثبت نهایی کنید.": "Post the contract obligation journal in this book first.",
+  "اقلام تعهد قرارداد باید دقیقاً با مبلغ و ارز مبدأ منطبق باشند.": "Contract obligation lines must exactly match the source amount and currency.",
+  "این رویداد تعهد با نسخه جدید قرارداد جایگزین شده است.": "This obligation event has been superseded by a newer contract version.",
+  "تعهد قرارداد فروش تأییدشده": "Confirmed sales contract obligation",
+  "تعهد قرارداد به معین دائمی بدهکار/بستانکار با کل و گروه فعال همین دفتر نیاز دارد.": "The contract obligation requires permanent debit and credit subsidiary accounts under active general accounts and groups in this book.",
+  "درآمد از تعهد قرارداد بیشتر نیست.": "Revenue cannot exceed the contract obligation.",
+  "مبلغ خالص قرارداد برای ثبت حسابداری منفی نیست.": "The net contract amount cannot be negative for accounting capture.",
+  "مبنای تعهد قرارداد باید دو قلم معتبر داشته باشد.": "The contract obligation basis must contain two valid lines.",
+  "مبنای تعهد قرارداد تغییر کرده یا ابطال شده است؛ فقط آخرین رویداد معتبر قابل ثبت است.": "The contract obligation basis has changed or been cancelled; only the latest valid event can be posted.",
+  "پیش از اصلاح یا ابطال قرارداد، پیش‌نویس تعهد را لغو یا سند ثبت‌شده آن را برگشت دهید.": "Before amending or cancelling the contract, cancel its obligation draft or post a reversal of its posted journal.",
+  "پیش از برگشت تعهد قرارداد، مبنا و سند درآمد وابسته را لغو یا برگشت دهید.": "Cancel or reverse the dependent revenue basis and journal before reversing the contract obligation.",
+  "حساب تعهد ارائه خدمت باید غیرقابل تسعیر باشد؛ آزادسازی درآمد بر مبلغ تاریخی انجام می‌شود.": "The deferred service obligation account must not be revaluable; revenue is released at its historical carrying amount."
 }
