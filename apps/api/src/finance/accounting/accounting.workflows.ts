@@ -1,3 +1,7 @@
+import {
+  assertSalesContractAccountingEditable,
+  salesContractDeferredBasis,
+} from './sales-contract-accounting.public';
 import { randomUUID } from 'node:crypto';
 import {
   ConflictException,
@@ -689,6 +693,10 @@ export async function workflowJournal(
     reversalOfId: string | undefined,
     ratio = new Exact(1),
     fx: Prisma.AccountingFxSnapshotGetPayload<object> | null = null;
+  const contractBasis =
+    r.kind === 'REVENUE'
+      ? await salesContractDeferredBasis(tx, r.contractId!, r.currency, book.id)
+      : null;
   if (
     r.currency !== book.baseCurrency &&
     ['REVENUE', 'PAYROLL', 'SUPPLIER_REFUND'].includes(r.kind)
@@ -698,9 +706,14 @@ export async function workflowJournal(
         bookId: book.id,
         currency: r.currency,
         status: 'APPROVED',
-        validFrom: { lte: r.occurredAt },
-        validTo: { gte: r.occurredAt },
-        ...(p.fxSnapshotId ? { id: v.uuid(p.fxSnapshotId)! } : {}),
+        validFrom: { lte: contractBasis?.event.occurredAt ?? r.occurredAt },
+        validTo: { gte: contractBasis?.event.occurredAt ?? r.occurredAt },
+        ...(contractBasis?.line.fxSnapshotId
+          ? { id: contractBasis.line.fxSnapshotId }
+          : {}),
+        ...(!contractBasis && p.fxSnapshotId
+          ? { id: v.uuid(p.fxSnapshotId)! }
+          : {}),
       },
     });
     if (options.length !== 1)
@@ -742,7 +755,23 @@ export async function workflowJournal(
       JSON.stringify((f.source as Facts).components)
     )
       fail('قرارداد پس از ثبت مبنا تغییر کرده است؛ مبنای جدید ثبت کنید.');
-    component('receivable', r.amount.toString(), 'debit');
+    if (contractBasis) {
+      if (r.amount.gt(contractBasis.event.amount))
+        fail('درآمد از تعهد قرارداد بیشتر نیست.');
+      const carrying = new Exact(contractBasis.line.credit.toString())
+        .mul(r.amount.toString())
+        .div(contractBasis.event.amount.toString())
+        .toDecimalPlaces(scale, Prisma.Decimal.ROUND_HALF_UP)
+        .toString();
+      lines.push(
+        carryLine(
+          contractBasis.line,
+          carrying,
+          '0',
+          r.currency === book.baseCurrency ? undefined : r.amount.toString(),
+        ),
+      );
+    } else component('receivable', r.amount.toString(), 'debit');
     component('income', String(f.earned), 'credit');
     component('tax', String(f.tax), 'credit');
   } else if (r.kind === 'PAYROLL') {
@@ -1017,9 +1046,17 @@ export async function workflowJournal(
       ),
     );
   const tracking = String(
-      f.trackingNumber ?? r.contractId ?? r.hrRecordId ?? r.id,
+      f.trackingNumber ??
+        (contractBasis?.line.attributes as Facts | undefined)?.trackingNumber ??
+        r.contractId ??
+        r.hrRecordId ??
+        r.id,
     ),
-    trackingDate = String(f.trackingDate ?? financialDate(r.occurredAt));
+    trackingDate = String(
+      f.trackingDate ??
+        (contractBasis?.line.attributes as Facts | undefined)?.trackingDate ??
+        financialDate(r.occurredAt),
+    );
   lines = lines.map((l) => ({
     ...l,
     description: `${r.kind} · ${r.reference}`,
@@ -1326,6 +1363,17 @@ export async function workflowPostingContext(
       JSON.stringify((f.source as Facts).components)
     )
       fail('قیمت قرارداد با مبنای درآمد یکسان نیست؛ مبنا و سند را اصلاح کنید.');
+    const deferred = await salesContractDeferredBasis(
+      tx,
+      r.contractId!,
+      r.currency,
+      book.id,
+    );
+    if (deferred)
+      return {
+        at: deferred.event.occurredAt,
+        carryAccounts: [deferred.line.accountId!],
+      };
   }
   if (r.kind === 'PAYROLL') {
     const current = await payrollSource(
@@ -1384,6 +1432,7 @@ export async function assertRevenueEditable(
 ) {
   if (!branchIds.length) throw new ForbiddenException();
   await tx.$queryRaw`SELECT id FROM accounting_books WHERE "branchId" IN (${Prisma.join(branchIds.map((id) => Prisma.sql`${id}::uuid`))}) ORDER BY id FOR SHARE`;
+  await assertSalesContractAccountingEditable(tx, contractId, branchIds);
   const rows = await active(tx, {
     contractId,
     branchId: { in: [...branchIds] },
