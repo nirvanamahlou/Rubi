@@ -1,3 +1,4 @@
+import { assertRevenueEditable } from '../../finance/accounting/accounting-workflows.public';
 import {
   canSelfServeSalesContract,
   hasSalesContractSelfService,
@@ -97,6 +98,7 @@ export class ContractPriceCorrectionService {
     )
       throw new BadRequestException('مبلغ و ارز معتبر وارد کنید.');
     return this.db.client.$transaction(async (tx) => {
+      await assertRevenueEditable(tx, id, actor.branchIds);
       const row = await tx.salesContract.findFirst({
         where: { id, branchId: { in: actor.branchIds } },
         include: { priceComponents: true },

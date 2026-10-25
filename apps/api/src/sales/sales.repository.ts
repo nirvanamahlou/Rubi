@@ -1,3 +1,4 @@
+import { assertRevenueEditable } from '../finance/accounting/accounting-workflows.public';
 import { recalculateSalesSettlement } from './sales-financial-settlement';
 import {
   recordFinancialEvent,
@@ -697,6 +698,7 @@ export class SalesRepository {
   ): Promise<boolean> {
     return this.database.client.$transaction(
       async (tx) => {
+        await assertRevenueEditable(tx, id, [actor.branchId]);
         const changed = await tx.salesContract.updateMany({
           where: {
             id,
@@ -1025,6 +1027,8 @@ export class SalesRepository {
   ): Promise<boolean> {
     return this.database.client.$transaction(
       async (tx) => {
+        if (toStatus === 'CANCELLED')
+          await assertRevenueEditable(tx, id, [actor.branchId]);
         const changed = await tx.salesContract.updateMany({
           where: { id, version, status: { in: fromStatuses } },
           data: {
