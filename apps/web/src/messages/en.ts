@@ -58,6 +58,14 @@ export const englishNavigation: Record<
     title: 'Petty cash',
     description: 'Services and suppliers',
   },
+  '/ticket-purchases/floating-hotels': {
+    title: 'Floating hotel purchases',
+    description: 'Hotel purchases for floating contracts',
+  },
+  '/ticket-purchases/floating-flights': {
+    title: 'Floating flight purchases',
+    description: 'Flight purchases for floating contracts',
+  },
   '/ticket-purchases': {
     title: 'Purchasing & supply',
     description: 'Flight purchase costs and airline settlement',

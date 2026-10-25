@@ -180,6 +180,48 @@ describe.skipIf(process.env.NORA_RUN_FLOATING_PURCHASE_POSTGRES_TESTS !== '1')(
               ),
             );
             expect(registered.map((r) => r.clientKey)).toEqual(['h2']);
+            // Other sellers fill the first global page; the owner's rows must still be found.
+            for (let n = 100; n < 130; n++) {
+              await tx.$executeRaw(
+                Prisma.sql`INSERT INTO "ReservationIntake" VALUES (${uuid(n)}::uuid,${uuid(20)}::uuid,${uuid(11)}::uuid,${new Date('2026-10-26T00:00:00Z')},${JSON.stringify({ contractNumber: `SYNTHETIC-${n}`, serviceSelections: [hotel(n), contractOnly] })}::jsonb)`,
+              );
+            }
+            const scopedPage = await tx.$queryRaw<{ clientKey: string }[]>(
+              purchaseSelectionSql(
+                [uuid(20)],
+                q,
+                undefined,
+                false,
+                ['floating'],
+                { ownerUserId: uuid(10) },
+              ),
+            );
+            expect(scopedPage.map((r) => r.clientKey).sort()).toEqual([
+              'h1',
+              'h6',
+            ]);
+            const scopedSummary = await tx.$queryRaw<{ total: number }[]>(
+              purchaseSelectionSql(
+                [uuid(20)],
+                q,
+                undefined,
+                true,
+                ['floating'],
+                { ownerUserId: uuid(10) },
+              ),
+            );
+            expect(scopedSummary[0]?.total).toBe(2);
+            const globalPage = await tx.$queryRaw<unknown[]>(
+              purchaseSelectionSql(
+                [uuid(20)],
+                q,
+                undefined,
+                false,
+                ['floating'],
+                {},
+              ),
+            );
+            expect(globalPage).toHaveLength(26);
           },
           { timeout: 30000 },
         );

@@ -219,13 +219,11 @@ it('forbids actual transfer purchases and cross-branch rows in the floating sale
 });
 
 it('uses server-derived floating status for reference options and rejects ordinary context', async () => {
-  const context = vi
-    .fn()
-    .mockResolvedValue({
-      salesOwnerUserId: 'seller',
-      floatingContract: true,
-      snapshot: { serviceSelections: [] },
-    });
+  const context = vi.fn().mockResolvedValue({
+    salesOwnerUserId: 'seller',
+    floatingContract: true,
+    snapshot: { serviceSelections: [] },
+  });
   const choices = vi.fn().mockResolvedValue({ data: [], meta: { total: 0 } });
   const controller = new FloatingPurchasesController(
     { purchaseContext: context } as never,

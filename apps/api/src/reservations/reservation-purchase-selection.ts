@@ -43,7 +43,7 @@ export function purchaseSelectionSql(
           WHERE NOT EXISTS (SELECT 1 FROM jsonb_array_elements(i.selections) x WHERE x->>'kind' IN ('FLIGHT','TRAIN','BUS'))
             AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(i.tickets) t WHERE t->>'offerId' = o)
       ) s WHERE (${q.kind} = 'ALL' OR s.service->>'kind' = ${q.kind})
-      AND (s.service->>'kind' <> 'FLIGHT' OR ${floatingOfferIds === undefined} OR (s.service->'metadata'->>'contractFlightVersion' = '1' AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(s.tickets) c WHERE c->>'serviceClientKey'=s.service->>'clientKey' AND COALESCE(c->>'source','CATALOG') <> 'CONTRACT_ONLY')) OR COALESCE((SELECT t->>'offerId' FROM jsonb_array_elements(i.tickets) t WHERE t->>'serviceClientKey' = s.service->>'clientKey' LIMIT 1), s.service->>'referenceId') IN (SELECT jsonb_array_elements_text(${JSON.stringify(floatingOfferIds ?? [])}::jsonb)))
+      AND (s.service->>'kind' <> 'FLIGHT' OR ${floatingOfferIds === undefined} OR (s.service->'metadata'->>'contractFlightVersion' = '1' AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(i.tickets) c WHERE c->>'serviceClientKey'=s.service->>'clientKey' AND COALESCE(c->>'source','CATALOG') <> 'CONTRACT_ONLY')) OR COALESCE((SELECT t->>'offerId' FROM jsonb_array_elements(i.tickets) t WHERE t->>'serviceClientKey' = s.service->>'clientKey' LIMIT 1), s.service->>'referenceId') IN (SELECT jsonb_array_elements_text(${JSON.stringify(floatingOfferIds ?? [])}::jsonb)))
     ), facts AS (
       SELECT s."id", s.service->>'kind' AS kind, p.version AS "purchaseVersion", p."coveredServiceClientKeys", s.service->>'clientKey' AS "clientKey",
         CASE WHEN p."createdAt" IS NOT NULL OR h.at IS NOT NULL OR (f.registered AND ${floatingOfferIds === undefined}) THEN 'REGISTERED'
