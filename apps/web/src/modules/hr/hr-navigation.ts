@@ -78,17 +78,8 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
       ],
       'جزئیات شیفت',
     ),
-    group(
-      'leaves',
-      'مرخصی',
-      [
-        source('time', 'leave', 'تعریف مرخصی', 'تعریف مرخصی'),
-        source('time', 'minuteLedger', 'کاردکس دقیقه‌ای مرخصی', '', true),
-        source('time', 'leaveTransferRules', 'قواعد انتقال مرخصی'),
-      ],
-      'پرونده مرخصی',
-    ),
     group('settings', 'تنظیمات کارکرد', [
+      source('time', 'leaveTransferRules', 'قواعد انتقال مرخصی'),
       source('time', 'leavePolicies', 'سیاست و سهمیه', 'تعریف سیاست مرخصی'),
       source('time', 'holidays', 'تعطیلات', 'ثبت تعطیلی'),
       source('time', 'calculationSettings', 'تنظیمات محاسبات کارکرد'),
@@ -297,15 +288,23 @@ export const employeeGroups: readonly HrGroup[] = [
     source('employee', 'phones', 'شماره‌های تماس'),
     source('employee', 'contact', 'اطلاعات تماس'),
   ]),
-  group('employment', 'همکاری و قرارداد', [
-    source('employee', 'assignment', 'انتصاب'),
-    source('employee', 'contract', 'قرارداد', '', true),
-  ]),
-  group('time', 'کارکرد و مرخصی', [
+  group('employment', 'همکاری', [source('employee', 'assignment', 'انتصاب')]),
+  ...hrGroups.lifecycle!.filter((item) =>
+    ['changes', 'exit'].includes(item.id),
+  ),
+  ...hrGroups.contracts!,
+  group(
+    'leaves',
+    'مرخصی',
+    [
+      source('time', 'leave', 'تعریف مرخصی', 'تعریف مرخصی'),
+      source('time', 'minuteLedger', 'کاردکس دقیقه‌ای مرخصی', '', true),
+    ],
+    'پرونده مرخصی',
+  ),
+  group('time', 'کارکرد', [
     source('employee', 'attendance', 'کارکرد', '', true),
     source('employee', 'shift', 'شیفت', '', true),
-    source('employee', 'leave', 'مرخصی', '', true),
-    source('employee', 'minuteLedger', 'کاردکس دقیقه‌ای مرخصی', '', true),
     source('employee', 'overtime', 'اضافه‌کاری', '', true),
   ]),
   group('pay', 'حقوق و پرداخت‌ها', [
@@ -341,15 +340,32 @@ export function resolveHrGroup(groups: readonly HrGroup[], tab?: string) {
 export function canonicalHrLocation(
   section: HrSectionId,
   tab?: string,
+  employeeId?: string,
 ): { section: HrSectionId; tab?: string } {
   if (section === 'finance')
     return tab === 'settlements'
-      ? { section: 'lifecycle', tab: 'settlements' }
+      ? canonicalHrLocation('lifecycle', 'settlements', employeeId)
       : { section: 'payroll', tab: tab ?? 'periods' };
-  if (section === 'contracts' && tab === 'termination')
-    return { section: 'lifecycle', tab: 'termination' };
-  if (section === 'contracts' && tab === 'alerts')
-    return { section, tab: 'active' };
+  if (
+    section === 'contracts' ||
+    section === 'lifecycle' ||
+    (section === 'time' &&
+      ['leave', 'leaves', 'minuteLedger'].includes(tab ?? ''))
+  ) {
+    const movedTab =
+      section === 'contracts'
+        ? !tab || tab === 'alerts'
+          ? 'active'
+          : tab
+        : section === 'lifecycle'
+          ? !tab || tab === 'onboarding'
+            ? 'changes'
+            : tab
+          : tab === 'leaves'
+            ? 'leave'
+            : tab!;
+    return { section: employeeId ? 'employee' : 'employees', tab: movedTab };
+  }
   if (section === 'fleet')
     return { section: 'assets', tab: tab === 'logs' ? 'logs' : 'vehicles' };
   return { section, ...(tab ? { tab } : {}) };

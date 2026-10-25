@@ -58,7 +58,7 @@ describe('Live HR boundaries and consolidated workflows', () => {
       tab: 'batch',
     });
     expect(canonicalHrLocation('contracts', 'termination')).toEqual({
-      section: 'lifecycle',
+      section: 'employees',
       tab: 'termination',
     });
     expect(canonicalHrLocation('fleet', 'vehicles')).toEqual({
@@ -68,13 +68,12 @@ describe('Live HR boundaries and consolidated workflows', () => {
     expect(hrGroups.time?.map((group) => group.id)).toEqual([
       'work',
       'shifts',
-      'leaves',
       'settings',
       'device',
     ]);
     expect(resolveHrGroup(hrGroups.time!, 'biometric').id).toBe('device');
     expect(resolveHrGroup(hrGroups.lifecycle!, 'transfer').id).toBe('changes');
-    expect(employeeGroups).toHaveLength(8);
+    expect(employeeGroups).toHaveLength(12);
   });
   it('does not cross-link candidates with matching display names', () => {
     const parent = {

@@ -4118,5 +4118,8 @@
   "والد گره باید فعال و متعلق به همان شعبه باشد.": "The parent node must be active and belong to the same branch.",
   "تخفیف قرارداد": "Contract discount",
   "کمیسیون قرارداد": "Contract commission",
-  "تخفیف و کمیسیون نباید از مبلغ قرارداد در همان ارز بیشتر باشد.": "Discount and commission cannot exceed the contract amount in the same currency."
+  "تخفیف و کمیسیون نباید از مبلغ قرارداد در همان ارز بیشتر باشد.": "Discount and commission cannot exceed the contract amount in the same currency.",
+  "تردد، شیفت، مأموریت و اضافه‌کاری نسخه‌دار": "Versioned attendance, shifts, missions and overtime",
+  "عنوان شغلی جدید": "New job title",
+  "عنوان شغلی فعلی": "Current job title"
 }
