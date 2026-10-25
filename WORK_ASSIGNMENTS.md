@@ -9468,3 +9468,8 @@ User explicitly requests centered request-title cells. Reserve workflow.module.c
 QUEUE-TITLE-CENTER-1025: scope also records user-confirmed real outbound404 popup acceptance in predecessor task documentation; no telephony code changes.
 
 QUEUE-TITLE-CENTER-1025 — COMPLETE / SOURCE_RELEASED:3 existing queue tests, lint, TypeScript and65-route build pass. New local3000 runtime; no API or migration change.
+
+## OUTCOME-DRILLDOWN-1025 — PC-C — RESERVED
+User approves per-call missing-outcome modal, server paging, completion and dossier actions, matching KPI scope. Reserve call-center read service/controller/DTO/tests and Web kpis/workflow/workspace/new modal/tests/styles/docs. Base3274cd5e; prior scopes released. No migration/dependency/PBX changes. Scope intersects report and contact access for identity-safe KPI drilldown.
+
+OUTCOME-DRILLDOWN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:14 PostgreSQL and8 Web tests, affected lint/types/API build and65-route Web build pass. Authenticated modal/completion/cancel/dossier/Enter/Escape checked. Local3000/4000 updated; no migration/PR/merge.

@@ -97,6 +97,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         ![
           '/nora_call_center_package_one_test_1019',
           '/nora_ci',
+          '/nora_outbound_first_contact_1025',
           '/nora_call_request_pending_1024',
         ].includes(url.pathname)
       )
@@ -683,6 +684,88 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           read.kpis({ ...scopedActor, permissions: [] }, kpiBranch),
         ).rejects.toMatchObject({ status: 403 });
         expect(decrypt).not.toHaveBeenCalled();
+        const drilldown = await read.withoutOutcome(
+          scopedActor,
+          kpiBranch,
+          Object.assign(new CallCenterSearchDto(), {
+            pageSize: 1,
+            query: 'ignored filter',
+          }),
+        );
+        expect(drilldown.meta.total).toBe(result.data.withoutOutcome);
+        expect(drilldown.data).toHaveLength(1);
+        expect(drilldown.data[0]!.call.outcome).toBeNull();
+        expect(drilldown.data[0]!.call.origin).not.toBe('SYNTHETIC');
+        const original = await db.callCenterCall.findUniqueOrThrow({
+          where: { id: drilldown.data[0]!.call.id },
+        });
+        const secondId = randomUUID();
+        await db.callCenterCall.create({
+          data: {
+            ...original,
+            id: secondId,
+            requestFingerprint: crypto.fingerprint(secondId),
+            encryptedPayload: crypto.encrypt(
+              value,
+              `call:${secondId}:${original.contactId}`,
+            ),
+          },
+        });
+        const firstPage = await read.withoutOutcome(
+          scopedActor,
+          kpiBranch,
+          Object.assign(new CallCenterSearchDto(), { pageSize: 1 }),
+        );
+        const secondPage = await read.withoutOutcome(
+          scopedActor,
+          kpiBranch,
+          Object.assign(new CallCenterSearchDto(), {
+            page: 2,
+            pageSize: 1,
+            revision: firstPage.meta.revision,
+          }),
+        );
+        expect(firstPage.meta.total).toBe(2);
+        expect(secondPage.data).toHaveLength(1);
+        expect(secondPage.data[0]!.call.id).not.toBe(
+          firstPage.data[0]!.call.id,
+        );
+        expect(secondPage.data[0]!.call.contactId).toBe(
+          firstPage.data[0]!.call.contactId,
+        );
+        await expect(
+          read.withoutOutcome(
+            scopedActor,
+            otherBranch,
+            new CallCenterSearchDto(),
+          ),
+        ).rejects.toMatchObject({ status: 403 });
+        await expect(
+          read.withoutOutcome(
+            scopedActor,
+            kpiBranch,
+            Object.assign(new CallCenterSearchDto(), {
+              page: 2,
+              revision: 'stale',
+            }),
+          ),
+        ).rejects.toMatchObject({ status: 409 });
+        await db.callCenterCall.updateMany({
+          where: { id: { in: [original.id, secondId] } },
+          data: { outcome: 'ANSWERED' },
+        });
+        expect(
+          (
+            await read.withoutOutcome(
+              scopedActor,
+              kpiBranch,
+              new CallCenterSearchDto(),
+            )
+          ).meta.total,
+        ).toBe(0);
+        expect(
+          (await read.kpis(scopedActor, kpiBranch)).data.withoutOutcome,
+        ).toBe(0);
       } finally {
         vi.useRealTimers();
         decrypt.mockRestore();

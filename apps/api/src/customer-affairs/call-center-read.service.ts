@@ -345,6 +345,7 @@ export class CallCenterReadService {
   async kpis(actor: AuthenticatedActor, branch: string | undefined) {
     const branchId = this.workflow.scope(actor, branch);
     const scope = await this.workflow.access.sql(actor, branchId, 'reports');
+    const contactScope = await this.identityScope(actor, branchId);
     const now = new Date(),
       day = tehranDay(now),
       week = tehranWeek(now);
@@ -358,7 +359,7 @@ export class CallCenterReadService {
     >`SELECT
       count(*) FILTER(WHERE a.occurred_at >= ${day} AND a.occurred_at <= ${now}) AS today,
       count(*) FILTER(WHERE a.occurred_at >= ${week} AND a.occurred_at <= ${now}) AS week,
-      count(*) FILTER(WHERE a.outcome IS NULL) AS "withoutOutcome",
+      count(*) FILTER(WHERE a.outcome IS NULL AND (${contactScope})) AS "withoutOutcome",
       count(*) FILTER(WHERE EXISTS(
         SELECT 1 FROM customer_affairs_tickets r
         WHERE r.id=a.ticket_id AND r.branch_id=c.branch_id
@@ -389,6 +390,82 @@ export class CallCenterReadService {
           'today/week=occurredAt through asOf; withoutOutcome=all history with null outcome; needsFollowUp=distinct calls linked to non-closed Call Center requests with OPEN follow-up',
       },
     };
+  }
+  private async identityScope(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    try {
+      return await this.workflow.access.sql(actor, branchId, 'contacts', tx);
+    } catch (error) {
+      if (!(error instanceof ForbiddenException)) throw error;
+      return Prisma.sql`FALSE`;
+    }
+  }
+  async withoutOutcome(
+    actor: AuthenticatedActor,
+    branch: string | undefined,
+    input: CallCenterSearchDto,
+  ) {
+    const branchId = this.workflow.scope(actor, branch);
+    // Only paging is accepted semantically: contact-list filters never affect this KPI.
+    const q = {
+      page: input.page,
+      pageSize: input.pageSize,
+      revision: input.revision,
+      outcome: 'UNKNOWN',
+    } as CallCenterSearchDto;
+    return this.db.client.$transaction(
+      async (tx) => {
+        const reportScope = await this.workflow.access.sql(
+          actor,
+          branchId,
+          'reports',
+          tx,
+        );
+        const contactScope = await this.identityScope(actor, branchId, tx);
+        const revision = await this.revision(tx, branchId, q);
+        if (q.page > 1 && q.revision !== revision)
+          throw new ConflictException(
+            'داده‌ها تغییر کرده‌اند؛ فهرست را تازه‌سازی کنید.',
+          );
+        const now = new Date();
+        const predicate = Prisma.sql`c.branch_id=${branchId}::uuid AND a.outcome IS NULL
+        AND a.occurred_at <= ${now} AND (a.origin IS NULL OR a.origin <> 'SYNTHETIC')
+        AND (${reportScope}) AND (${contactScope})`;
+        const count = await tx.$queryRaw<
+          Array<{ total: bigint }>
+        >`SELECT count(*) AS total
+        FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate}`;
+        const ids = await tx.$queryRaw<
+          Array<{ id: string; callCount: bigint }>
+        >`SELECT a.id,
+        (SELECT count(*) FROM customer_affairs_calls z WHERE z.contact_id=c.id) AS "callCount"
+        FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate}
+        ORDER BY a.occurred_at DESC,a.id ASC LIMIT ${q.pageSize} OFFSET ${(q.page - 1) * q.pageSize}`;
+        const rows = await tx.callCenterCall.findMany({
+          where: { id: { in: ids.map((r) => r.id) } },
+        });
+        return {
+          data: ids.map((r) => ({
+            call: this.calls.presentSummary(rows.find((c) => c.id === r.id)!),
+            callCount: Number(r.callCount),
+          })),
+          meta: {
+            total: Number(count[0]!.total),
+            page: q.page,
+            pageSize: q.pageSize,
+            revision,
+            asOf: now.toISOString(),
+          },
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        timeout: 15000,
+      },
+    );
   }
   async report(
     actor: AuthenticatedActor,

@@ -7484,3 +7484,6 @@ Exclusive mapped outbound calls now create incomplete contacts with audited init
 
 ## QUEUE-TITLE-CENTER-1025 — PC-C — COMPLETE
 Request title cells now centered horizontally/vertically with bounded truncation; remaining queue unchanged.3 tests, lint/types/build pass; local3000 updated. User also confirms real404 outgoing popup opened after prior activation. No migration/PR/merge.
+
+## OUTCOME-DRILLDOWN-1025 — PC-C — COMPLETE
+Missing-outcome KPI opens bounded server-paged per-call modal with completion and dossier actions. Count and identity-safe scope agree; saves refresh data.22 tests, lint/types/build and authenticated browser checks pass. Local3000 active; no migration/PBX changes. See docs/tasks/OUTCOME-DRILLDOWN-1025.md.

@@ -59,6 +59,7 @@ import {
   taskLabels,
 } from './workflow';
 import { CallForm } from './call-form';
+import { WithoutOutcomeDialog } from './without-outcome-dialog';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './workspace.module.css';
 import { ReportHighlights } from './report-highlights';
@@ -197,6 +198,7 @@ function Content({
     [noteDrafts, onDirty],
   );
   const [newRequestOpen, setNewRequestOpen] = useState(false);
+  const [withoutOutcomeOpen, setWithoutOutcomeOpen] = useState(false);
   const [selected, setSelected] = useState<ContactSummary | null>(null),
     [draft, setDraft] = useState<CallEvent | null>(null),
     [busy, setBusy] = useState(false);
@@ -346,6 +348,7 @@ function Content({
     try {
       const r = await callCenterApi.create(branch, call);
       setHistoryRevision((v) => v + 1);
+      setRefresh((v) => v + 1);
       setDraft(null);
       setMessage(
         'تماس ذخیره شد؛ برای نمایش ترتیب جدید فهرست را تازه‌سازی کنید.',
@@ -416,6 +419,7 @@ function Content({
         </button>
       </header>
       <WorkQueue
+        onWithoutOutcome={() => setWithoutOutcomeOpen(true)}
         branchId={branch}
         actorId={actorId}
         canManage={canManage}
@@ -846,6 +850,21 @@ function Content({
         )}
       </div>
 
+      {withoutOutcomeOpen && (
+        <WithoutOutcomeDialog
+          key={`${branch}:${historyRevision}`}
+          branch={branch}
+          revision={historyRevision}
+          hidden={!!draft}
+          canComplete={canCreate && canManage && !busy}
+          onClose={() => setWithoutOutcomeOpen(false)}
+          onComplete={complete}
+          onContact={(contact) => {
+            setSelected(contact);
+            setWithoutOutcomeOpen(false);
+          }}
+        />
+      )}
       {draft && (
         <CallForm
           branchId={branch}

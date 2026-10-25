@@ -19,9 +19,11 @@ const cards = [
 export function CallKpiCards({
   branchId,
   revision,
+  onWithoutOutcome,
 }: {
   branchId: string;
   revision: string;
+  onWithoutOutcome?: (() => void) | undefined;
 }) {
   const [data, setData] = useState<CallKpis | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,30 @@ export function CallKpiCards({
     <section aria-label="آمار تماس‌ها" aria-busy={loading}>
       <div className={styles.actionCards}>
         {cards.map(([key, label, description]) => (
-          <article key={key} aria-label={label} data-tone={key}>
+          <article
+            key={key}
+            aria-label={label}
+            data-tone={key}
+            role={
+              key === 'withoutOutcome' && onWithoutOutcome
+                ? 'button'
+                : undefined
+            }
+            tabIndex={
+              key === 'withoutOutcome' && onWithoutOutcome ? 0 : undefined
+            }
+            onClick={key === 'withoutOutcome' ? onWithoutOutcome : undefined}
+            onKeyDown={
+              key === 'withoutOutcome'
+                ? (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onWithoutOutcome?.();
+                    }
+                  }
+                : undefined
+            }
+          >
             <span>{label}</span>
             <strong>
               {loading ? '…' : data ? faNumber(data.data[key]) : '—'}
