@@ -1,3 +1,4 @@
+import { contractFlightMetadata } from '@nora/contracts';
 import { describe, it, expect, vi } from 'vitest';
 import type {
   AuthenticatedActor,
@@ -340,3 +341,55 @@ it('keeps aggregate legacy catalog legs and adult/child capacity in the transact
   expect(options.snapshot.passengerAssignments).toEqual([]);
   expect(row.payments[0]!.status).toBe('FINANCE_CONFIRMED');
 });
+
+it.each([true, false])(
+  'republishes an amended business output flag with the canonical reservation snapshot (%s)',
+  async (checked) => {
+    const { row, repo, service } = setup();
+    const metadata = {
+      passengerPackagePricingVersion: 1,
+      businessOutput: !checked,
+      ...contractFlightMetadata({
+        version: 1,
+        direction: 'OUTBOUND',
+        originId: input.originId,
+        destinationId: input.destinationId,
+        departureAt: '2099-01-01T08:00:00Z',
+        arrivalAt: '2099-01-01T10:00:00Z',
+        carrierNameSnapshot: 'Synthetic',
+        serviceNumberSnapshot: 'TEST',
+        cabinClassCode: 'ECONOMY',
+      }),
+    };
+    Object.assign(row.services[0]!, {
+      kind: 'FLIGHT',
+      status: 'NEEDS_RESERVATION_CONFIRMATION',
+      metadata,
+    });
+    const next: SalesContractAmendmentV1 = {
+      ...input,
+      services: [
+        {
+          ...input.services[0]!,
+          kind: 'FLIGHT',
+          status: 'NEEDS_RESERVATION_CONFIRMATION',
+          metadata: { ...metadata, businessOutput: checked },
+        },
+      ],
+    };
+    await service.update(id, next, actor, undefined, next.passengerCategories);
+    const saved = repo.updateDraft.mock
+      .calls[0]![1] as SalesContractAmendmentV1;
+    const options = repo.updateDraft.mock.calls[0]![5] as {
+      snapshot: {
+        serviceSelections: { metadata: { businessOutput: boolean } }[];
+      };
+    };
+    expect(saved.services[0]!.metadata?.businessOutput).toBe(checked);
+    expect(options.snapshot.serviceSelections[0]!.metadata.businessOutput).toBe(
+      checked,
+    );
+    expect(saved).not.toHaveProperty('payments');
+    expect(row.payments[0]!.status).toBe('FINANCE_CONFIRMED');
+  },
+);
