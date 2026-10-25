@@ -27,13 +27,25 @@ it('opens a legacy employee link through the existing authorized summary route',
     'hr.employees.read',
     screenPermission('hr.employee.summary'),
   ];
-  expect(canViewRoute(permissions, entry)).toBe(false);
+  expect(canViewRoute(permissions, entry)).toBe(true);
   expect(canViewRoute(permissions, target)).toBe(true);
+  expect(
+    canViewRoute(permissions, entry.replace('/hr?', '/human-resources?')),
+  ).toBe(true);
+  expect(canViewRoute([], entry)).toBe(false);
   expect(canViewRoute([], target)).toBe(false);
+  expect(canViewRoute(permissions, `${entry}&tab=contact`)).toBe(false);
+  expect(canViewRoute(permissions, '/hr?section=employee')).toBe(false);
   expect(
     canViewRoute(
       [...permissions, denyPermission('hr.employee.summary')],
       target,
+    ),
+  ).toBe(false);
+  expect(
+    canViewRoute(
+      [...permissions, denyPermission('hr.employee.summary')],
+      entry,
     ),
   ).toBe(false);
   await expect(

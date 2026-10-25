@@ -1,5 +1,7 @@
 ## HR-PROFILE-ENTRY-1025 — PC-B
 
+Runtime verification extension: the outer client guard prevents the legacy server redirect from mounting. The existing IAM route matcher therefore resolves only employee-id routes missing tab to the exact existing summary decision; explicit denied tabs, denied summary, missing employee IDs and anonymous users remain rejected. HR and IAM compatibility scope is recorded in the same reservation; no grants or API scope change.
+
 Reproduced the empty local3100 employee profile: links omitted tab, while existing IAM route matching requires an explicit employee tab. HR entry links now target summary; legacy tab-less entry redirects to that same existing route and preserves record IDs. Explicit selected tabs and all IAM/API authorization remain unchanged. Targeted route, deny and employee-workflow regressions, scoped lint/types and exact-head CI gate authorized develop merge. Local-only rollout, no data writes, schema/migration/dependency or server changes. Reservations freeze after verification and release on verified merged PR.
 
 ## HR-LOCAL-YEAR-1025 — PC-B
