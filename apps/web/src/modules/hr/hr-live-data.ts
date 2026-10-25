@@ -4,7 +4,7 @@ import {
   type HrBootstrapDto,
 } from '@nora/contracts';
 import type { HrPreviewDataset } from './hr-preview-data';
-import { retiredHrColumns } from './hr-form-model';
+import { hrFieldLabel, retiredHrColumns } from './hr-form-model';
 import { hrDisplayDate } from './hr-dates';
 
 export function recordsDataset(
@@ -23,7 +23,11 @@ export function recordsDataset(
       record.section === section && record.tab === tab && !record.deletedAt,
   );
   return {
-    columns: ['شناسه', ...visible.map((item) => item.label), 'وضعیت'],
+    columns: [
+      'شناسه',
+      ...visible.map((item) => hrFieldLabel(item.label)),
+      'وضعیت',
+    ],
     rows: items.map((record) => [
       record.code,
       ...visible.map((item) =>

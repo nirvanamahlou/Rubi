@@ -9472,6 +9472,14 @@ HR-ORG-CHART-NODES-1025 final targeted recheck: the real PostgreSQL concurrent d
 
 HR-ORG-CHART-NODES-1025 bounded compatibility reservation: retain authorized IAM fallback roots/options independently for each branch lacking a configured organization company, even when another branch has companies. Reserve the HR-owned hr-live-data.ts company projection and chart-root regression only; this restores existing legacy branch choices without granting access or changing IAM. Existing current-task source reservation reopens only for this fix and freezes again on publication.
 
+## HR-EMPLOYEE-CASE-WORKFLOWS-1025 — PC-B — RESERVED
+
+COMPUTER_ID=PC-B; branch codex/pc-b-hr-employee-case-workflows-1025 from developcb4657ce. User authorizes employee-centred profile display/edit and optional job changes, exit, leave and employment contract workflows. Remove standalone lifecycle/contracts navigation and the leave group from time; preserve canonical resources, existing forms/approval effects/history and backend scopes. Reserve HR navigation/model/live workspace, employee profile/summary/list, contextual/record form presentation, corresponding focused regressions, own translations/generated catalogue/status/task notes. Relabel historical position field keys only at presentation boundaries as job titles, keeping canonical payload positions stable. No database/schema/dependency/IAM grants/runtime/Radan changes; no orchestrator/sub-agents. Existing published HR source locks released.
+
+HR-EMPLOYEE-CASE-WORKFLOWS-1025 compatibility scope: include HR-owned report source discovery and record-source labels so moving leave out of the time menu does not remove leave/cardex reporting or canonical record detail metadata. No report engine/API contracts change.
+
+HR-EMPLOYEE-CASE-WORKFLOWS-1025 validation: focused employee-bound create/edit, optional entry, view permissions, legacy routing and shared job-title rendering regressions pass. Existing legacy hub fixture now explicitly excludes the removed lifecycle entry. Final hosted quality/types/full tests/build/database gates precede merge; scoped source/translation locks release after verified develop merge. No migration/dependency/runtime changes.
+
 ## HR-DEVICE-FORM-1025 — PC-B — RESERVED
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-device-form-1025 from develop1b21687c. User resumed the authorized device crawl after signing in. Fresh read-only Radan device-list observation confirms name/address/type required, description/port/network password optional; type choices V800, Radan, ZK, TF8000, V210. Reserve HR time navigation, live record form/device-only contextual rendering and focused existing regressions, own notes/translations. Existing branch/permission, encrypted write-only password and canonical record column positions remain intact. No schema/dependency/API/provider/runtime/Radan writes. Distinct copy-cleanup PR1107 remains independently gated; integrate its develop merge before publication.

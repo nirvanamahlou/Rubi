@@ -181,7 +181,7 @@ export function HrDashboard({
       icon: FileClock,
       tone: 'warning',
       value: expiring.length,
-      href: '/hr?section=contracts',
+      href: '/hr?section=employees&tab=active',
     },
     {
       label: 'درخواست در انتظار',

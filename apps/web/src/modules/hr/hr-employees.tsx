@@ -2,7 +2,6 @@
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useMemo, useRef, useState } from 'react';
-import Link from '@/i18n/link';
 import dynamic from 'next/dynamic';
 import type { HrBootstrapDto, HrEmployeeDto } from '@nora/contracts';
 import { hrApi } from './hr-api';
@@ -509,9 +508,6 @@ export function HrEmployees({
           <h1>کارکنان</h1>
           <p>پرونده شخصی، جایگاه سازمانی و وضعیت همکاری کارکنان</p>
         </div>
-        <Link href="/hr?section=lifecycle&tab=onboarding">
-          ثبت ورود نیروی جدید
-        </Link>
       </header>
       <HrRangeBar
         onApply={(from, to) => setRange({ from, to })}
