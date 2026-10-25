@@ -7474,3 +7474,6 @@ Owner's five RTL columns now show request title, assigned expert, status, priori
 ## CALL-FILTER-CALENDAR-1025 — 2026-10-25
 Both advanced Call Center date filters now switch Persian/Gregorian, with opt-in reference navy calendar, month/year grids, Clear/Close and correct Gregorian labels. Tehran-midnight ISO conversion and exclusive end bound retained.18 tests/lint/typecheck/65-route build pass; browser selection narrowed12 contacts to4, independent clear and Escape verified. Web3000 PID4392 runs .next-filter-calendar-1025; API/Worker unchanged, popups disabled. No migration/PR/merge. Source released.
 
+
+## CALL-QUEUE-ALIGN-1025 — 2026-10-25
+User-requested queue header/cell centering (except title) and status/priority colored badges implemented.3 tests, lint, TypeScript and65-route build pass; browser verified. Web3000 PID19332 uses .next-queue-align-1025; previous artifacts preserved, API/Worker unchanged, popups disabled. No migration/PR/merge; source released.

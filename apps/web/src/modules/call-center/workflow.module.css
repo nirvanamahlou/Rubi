@@ -358,3 +358,44 @@
   margin-top: 12px;
   width: 100%;
 }
+
+/* Queue alignment: keep request titles readable in the writing direction. */
+.queueColumns > *,
+.queueRow > :not(strong) {
+  text-align: center;
+  justify-self: center;
+  align-self: center;
+  min-width: 0;
+}
+.queueRow > strong {
+  text-align: start;
+  align-self: center;
+}
+.queueRow .status,
+.queueRow .priority {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.7;
+  width: fit-content;
+}
+.priority {
+  background: #e7f1ff;
+  color: #176cc7;
+}
+.priority[data-priority='LOW'] {
+  background: #f0f2f5;
+  color: #475467;
+}
+.priority[data-priority='HIGH'] {
+  background: #fff1d6;
+  color: #925b07;
+}
+.priority[data-priority='URGENT'] {
+  background: #ffe4e8;
+  color: #b42338;
+}

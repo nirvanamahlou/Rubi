@@ -9451,3 +9451,7 @@ CALL-QUEUE-COLUMNS-1025 COMPLETE:19 PostgreSQL and3 Web tests, lint, types and b
 Base0fad730e preserves approved local Call Center. Reserve workspace date filter controls and opt-in shared date-picker variant, focused tests and own docs. No other shared picker consumer behavior changes, no API/migration/dependency/PBX/popups. User explicitly authorizes screenshot calendar design. Source predecessors released; generated next-env retained locally.
 
 CALL-FILTER-CALENDAR-1025 — COMPLETE / SOURCE_RELEASED:18 tests, lint, TypeScript,65-route build and authenticated UI checks pass. Web3000 PID4392; existing API/Worker/popups hold preserved. No migration/PR/merge. See docs/tasks/CALL-FILTER-CALENDAR-1025.md.
+
+## CALL-QUEUE-ALIGN-1025 — PC-C — RESERVED
+Base554064d7. User authorizes centered queue headers/cells except request title, plus colored status/priority badges. Reserve workflow.tsx queue markup and workflow.module.css, own docs. Prior scope released; generated next-env preserved. No API/schema/PBX/popups or other panel changes.
+CALL-QUEUE-ALIGN-1025 — COMPLETE / SOURCE_RELEASED:3 tests, lint/types/65-route build and authenticated visual review pass. Web3000 PID19332, no API/Worker/PBX changes. No migration/PR/merge.

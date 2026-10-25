@@ -716,7 +716,10 @@ export function WorkQueue({
                     <span className={styles.status} data-status={item.status}>
                       {requestLabels[item.status]}
                     </span>
-                    <span>
+                    <span
+                      className={styles.priority}
+                      data-priority={item.priority}
+                    >
                       {priorities[item.priority as keyof typeof priorities] ??
                         'نامشخص'}
                     </span>
