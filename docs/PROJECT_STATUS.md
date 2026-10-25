@@ -7497,3 +7497,8 @@ Removed the employee dialog explanatory paragraph and the numbered personal/acco
 ## LEGACY-CAPACITY-AMEND-1025 — PC-A
 
 Historical service capacity is also retained by the transactional amendment callback: declared adult+child counts select catalog legs and per-leg quantities even with zero personal passenger records. Existing ordinary amendment logic, CAS/snapshot and receipts remain. Regression covers an aggregate count change with a confirmed receipt; all exact-head gates precede the owner-authorized follow-up merge and server rollout. No migration or dependency changes.
+
+
+## RETURN-ONLY-CALENDAR-1025 — PC-A
+
+Return-only New Contract now labels its sole date picker as the return ticket and shows a return-card heading. The existing destination-to-origin calendar/search and RETURN payload/capacity mapping are retained; no outbound-date prerequisite or forward-route speculative request is added. Exact-day cards refresh and clear stale choices when the date changes. Round-trip pairing and outbound-only behavior remain unchanged. Focused25 regressions pass; broader Sales tests, scoped lint/types/Web build and all exact-head gates precede owner-authorized develop merge. No API, schema, migration, dependency or production change.
