@@ -1,3 +1,4 @@
+import { buildDashboardCharts, dashboardPeriods } from './hr-dashboard.domain';
 import { configuredAttendance } from './hr-attendance-settings';
 import { readPayslipWorkbook } from './hr-payslip-import';
 import {
@@ -389,6 +390,137 @@ export class HrService {
       updatedAt: row.updatedAt.toISOString(),
       data: sensitive ? {} : (publicHrData(row.data) as HrWorkflowData),
     };
+  }
+  async dashboardCharts(
+    input: Record<string, unknown>,
+    actor: AuthenticatedActor,
+  ) {
+    this.readable(actor);
+    validate.object(input, ['organizationBranchId', 'unit']);
+    const organizationBranchId = input.organizationBranchId
+      ? validate.uuid(input.organizationBranchId)
+      : undefined;
+    const unit = input.unit
+      ? validate.text(input.unit, 'واحد', 200)
+      : undefined;
+    const branchNames = new Map(
+      (await this.iam.listRolesAndBranches()).branches.map((branch) => [
+        branch.id,
+        branch.name,
+      ]),
+    );
+    const now = new Date();
+    const periods = dashboardPeriods(now);
+    const result = await this.database.client.$transaction(
+      async (tx) => {
+        const employees = await tx.hrEmployee.findMany({
+          where: {
+            AND: [
+              this.employeeScope(actor),
+              {
+                ...(organizationBranchId ? { organizationBranchId } : {}),
+                ...(unit ? { unit } : {}),
+              },
+            ],
+          },
+          select: {
+            id: true,
+            name: true,
+            unit: true,
+            branchId: true,
+            organizationBranchId: true,
+            organizationBranch: { select: { values: true } },
+          },
+          orderBy: { id: 'asc' },
+          take: 10001,
+        });
+        if (employees.length > 10000)
+          throw new ConflictException('حجم گزارش بیش از حد مجاز است.');
+        const ids = employees.map((e) => e.id);
+        const [records, entries] = await Promise.all([
+          tx.hrRecord.findMany({
+            where: {
+              AND: [
+                this.recordScope(actor),
+                {
+                  employeeId: { in: ids },
+                  OR: [
+                    {
+                      section: 'time',
+                      tab: 'attendance',
+                      OR: [
+                        {
+                          effectiveAt: {
+                            gte: validate.isoDate(periods.quarterFrom),
+                            lte: validate.isoDate(periods.today),
+                          },
+                        },
+                        { effectiveAt: null },
+                      ],
+                    },
+                    {
+                      section: { in: ['time', 'requests'] },
+                      tab: { in: ['leave', 'radanLeave'] },
+                    },
+                    { section: 'time', tab: 'minuteLedger' },
+                  ],
+                },
+              ],
+            },
+            select: {
+              id: true,
+              employeeId: true,
+              section: true,
+              tab: true,
+              values: true,
+              data: true,
+              status: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+            take: 100001,
+          }),
+          tx.hrLeaveEntry.findMany({
+            where: {
+              employeeId: { in: ids },
+              year: Number(periods.today.slice(0, 4)),
+              createdAt: { lte: now },
+            },
+            select: {
+              employeeId: true,
+              year: true,
+              days: true,
+              createdAt: true,
+            },
+            take: 100001,
+          }),
+        ]);
+        if (records.length > 100000 || entries.length > 100000)
+          throw new ConflictException('حجم گزارش بیش از حد مجاز است.');
+        return buildDashboardCharts(
+          employees.map((e) => ({
+            ...e,
+            company:
+              (e.organizationBranch?.values as string[] | undefined)?.[0] ||
+              branchNames.get(e.branchId) ||
+              'شعبه',
+          })),
+          records,
+          entries,
+          now,
+        );
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        timeout: 30000,
+      },
+    );
+    await this.auditRead(
+      actor,
+      'dashboard.charts',
+      result.charts.reduce((sum, chart) => sum + chart.points.length, 0),
+    );
+    return result;
   }
   async bootstrap(actor: AuthenticatedActor): Promise<HrBootstrapDto> {
     this.readable(actor);

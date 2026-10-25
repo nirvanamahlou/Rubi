@@ -27,6 +27,14 @@ import { HrService } from './hr.service';
 @Controller('hr')
 export class HrController {
   constructor(@Inject(HrService) private readonly service: HrService) {}
+  @Get('dashboard/charts')
+  @Header('Cache-Control', 'private, no-store')
+  dashboardCharts(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.dashboardCharts(query, req.actor);
+  }
   @Get('bootstrap') @Header('Cache-Control', 'private, no-store') bootstrap(
     @Req() req: AuthenticatedRequest,
   ) {

@@ -1,3 +1,4 @@
+import { dashboardPeriods } from './hr-dashboard.domain';
 import { revealHrValues } from './hr-private-values';
 import { getHrResource } from '@nora/contracts';
 import { zipSync, strToU8, unzipSync } from 'fflate';
@@ -3453,6 +3454,86 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         ).toBe(before + 1);
       } finally {
         vi.useRealTimers();
+      }
+    });
+    it('serves complete scoped dashboard aggregates through authenticated HTTP without leaking another branch', async () => {
+      const first = await service.createEmployee(
+        employeeInput('Chart A', { unit: 'Chart unit' }),
+        key(),
+        admin,
+      );
+      const second = await service.createEmployee(
+        employeeInput('Chart B', { branchId: branchB, unit: 'Chart unit' }),
+        key(),
+        admin,
+      );
+      const today = dashboardPeriods(new Date()).today;
+      const fixtureIds: string[] = [];
+      try {
+        for (const e of [first, second]) {
+          const r = await client.hrRecord.create({
+            data: {
+              branchId: e.branchId,
+              employeeId: e.id,
+              section: 'time',
+              tab: 'attendance',
+              code: `CHART-${key()}`,
+              status: 'حاضر',
+              values: [e.name, today, '', '08:00', '5'],
+              effectiveAt: new Date(today),
+              data: { workedMinutes: 480, lateMinutes: 5, overtimeMinutes: 60 },
+            },
+          });
+          fixtureIds.push(r.id);
+        }
+        const result = await request(app.getHttpServer())
+          .get('/api/v1/hr/dashboard/charts?unit=Chart%20unit')
+          .set('Cookie', adminCookie)
+          .expect(200);
+        expect(result.headers['cache-control']).toContain('no-store');
+        expect(result.body.charts).toHaveLength(7);
+        expect(
+          result.body.charts
+            .find((c: { id: string }) => c.id === 'present')
+            .points.at(-1).value,
+        ).toBe(2);
+        const scoped = await service.dashboardCharts(
+          { unit: 'Chart unit' },
+          { ...admin, branchIds: [branchA] },
+        );
+        expect(
+          scoped.charts.find((c) => c.id === 'present')?.points.at(-1)?.value,
+        ).toBe(1);
+        expect(
+          scoped.charts
+            .find((c) => c.id === 'weeklyAttendance')
+            ?.points.map((p) => p.label),
+        ).toEqual(['Chart A']);
+        const selfResult = await request(app.getHttpServer())
+          .get('/api/v1/hr/dashboard/charts?unit=Chart%20unit')
+          .set('Cookie', selfCookie)
+          .expect(200);
+        expect(
+          selfResult.body.charts.find(
+            (c: { id: string }) => c.id === 'weeklyAttendance',
+          ).points,
+        ).toEqual([]);
+        await request(app.getHttpServer())
+          .get('/api/v1/hr/dashboard/charts')
+          .expect(401);
+        await request(app.getHttpServer())
+          .get('/api/v1/hr/dashboard/charts?organizationBranchId=bad')
+          .set('Cookie', adminCookie)
+          .expect(400);
+      } finally {
+        await client.hrRecord.updateMany({
+          where: { id: { in: fixtureIds } },
+          data: { deletedAt: new Date() },
+        });
+        await client.hrEmployee.updateMany({
+          where: { id: { in: [first.id, second.id] } },
+          data: { deletedAt: new Date() },
+        });
       }
     });
   },

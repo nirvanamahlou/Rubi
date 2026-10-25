@@ -7456,3 +7456,11 @@ all six aliases,19 total choices and unchanged shared-extension handling. Six
 directory regressions pass. Runtime reads the file per lookup, so no restart/build
 or historical rewrite. No personnel data committed, schema/grant/PBX change or
 operational test call. See tasks/CALL-EXTENSION-ALIASES-1024.md for handoff.
+
+
+## HR-DASHBOARD-CHARTS-1025 — PC-B — IMPLEMENTED / VALIDATING
+
+Seven HR-owned operational charts consume a new authenticated private/no-store aggregate endpoint. Daily unique presence (30 days), previous complete Persian-season lateness, seven-day employee work hours, current Persian-month calculated overtime, today's department lateness, approved overlapping leave request counts and department leave balances retain the existing HR panels/theme. Filters apply authorized current organizational assignments; identical unit names remain company-separated. Aggregation uses a repeatable-read snapshot, mandatory employee + record scopes and explicit overflow errors, not capped bootstrap totals. Minute ledger balances use the current Persian accounting year/month; legacy day entitlements retain their Gregorian ledger-year label and separate units without guessed hours/day conversions. No migration/dependency/runtime/server or Radan writes. Initial11 domain/service and3 chart rendering checks pass; full gates and isolated PostgreSQL HTTP verification pending.
+
+
+HR-DASHBOARD-CHARTS-1025 verification:38 isolated PostgreSQL/HTTP HR checks,12 focused aggregation/scope regressions and3 chart rendering checks pass. API/Web TypeScript and scoped lint pass. Department display names consume the existing IAM public port; HR data remains owned/read within HR. Final focused recheck and hosted exact-head full quality/tests/production-build/database gates remain required before authorized develop merge. No operational database or runtime changes.
