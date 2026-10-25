@@ -863,10 +863,6 @@ function Content({
           canComplete={canCreate && canManage && !busy}
           onClose={() => setWithoutOutcomeOpen(false)}
           onComplete={complete}
-          onContact={(contact) => {
-            setSelected(contact);
-            setWithoutOutcomeOpen(false);
-          }}
         />
       )}
       {periodOpen && (
@@ -879,10 +875,6 @@ function Content({
           canComplete={canCreate && canManage && !busy}
           onClose={() => setPeriodOpen(null)}
           onComplete={complete}
-          onContact={(contact) => {
-            setSelected(contact);
-            setPeriodOpen(null);
-          }}
         />
       )}
       {callbacksOpen && (
@@ -892,18 +884,9 @@ function Content({
           branch={branch}
           revision={historyRevision}
           hidden={!!draft}
-          canComplete={canCreate && !busy}
+          canComplete={canCreate && canManage && !busy}
           onClose={() => setCallbacksOpen(false)}
           onComplete={complete}
-          onRegister={(call) => {
-            if (!canCreate || busy || draft) return;
-            open(call.phone, 'OUTBOUND');
-            setCompletionPrevious({ ...call, note: '', recordings: [] });
-          }}
-          onContact={(contact) => {
-            setSelected(contact);
-            setCallbacksOpen(false);
-          }}
         />
       )}
       {draft && (

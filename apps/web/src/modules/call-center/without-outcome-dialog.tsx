@@ -6,31 +6,27 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/overlays';
-import { readApi, type ContactSummary } from './read-client';
+import { readApi } from './read-client';
 import { callDate, faNumber } from './model';
 import { useDialogReturnFocus } from './use-dialog-focus';
 import styles from './without-outcome-dialog.module.css';
 
 export function WithoutOutcomeDialog({
   mode = 'without-outcome',
-  onRegister,
   branch,
   revision,
   hidden,
   canComplete,
   onClose,
   onComplete,
-  onContact,
 }: {
   mode?: 'without-outcome' | 'missed-callbacks' | 'today' | 'week';
-  onRegister?: (call: ContactSummary['latest']) => void;
   branch: string;
   revision: number;
   hidden: boolean;
   canComplete: boolean;
   onClose: () => void;
   onComplete: (id: string) => Promise<void>;
-  onContact: (contact: ContactSummary) => void;
 }) {
   const callbacks = mode === 'missed-callbacks';
   const period = mode === 'today' || mode === 'week';
@@ -107,7 +103,7 @@ export function WithoutOutcomeDialog({
               ? 'تماس‌های امروز از ابتدای روز تا اکنون به وقت تهران؛ مستقل از فیلترهای مخاطبان.'
               : 'تماس‌های هفته از ابتدای شنبه تا اکنون به وقت تهران؛ مستقل از فیلترهای مخاطبان.'
             : callbacks
-              ? 'هر ردیف یک مخاطب نیازمند تماس مجدد است. پس از تماس با مخاطب، نتیجه تماس مجدد را ثبت کنید؛ تلاش ناموفق او را از فهرست خارج نمی‌کند.'
+              ? 'هر ردیف یک مخاطب نیازمند تماس مجدد است؛ اطلاعات آخرین تماس بی‌پاسخ او را می‌توانید ویرایش کنید.'
               : 'هر ردیف یک تماس با نتیجه ثبت‌نشده است؛ همه سوابق شعبه انتخاب‌شده، مستقل از فیلترهای مخاطبان.'}
         </DialogDescription>
         <div className={styles.toolbar}>
@@ -194,29 +190,9 @@ export function WithoutOutcomeDialog({
                         <button
                           type="button"
                           disabled={!canComplete}
-                          onClick={() =>
-                            callbacks
-                              ? onRegister?.(call)
-                              : void onComplete(call.id)
-                          }
+                          onClick={() => void onComplete(call.id)}
                         >
-                          {period
-                            ? 'ویرایش اطلاعات تماس'
-                            : callbacks
-                              ? 'ثبت تماس مجدد'
-                              : 'تکمیل اطلاعات تماس'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onContact({
-                              id: call.contactId!,
-                              latest: call,
-                              callCount,
-                            })
-                          }
-                        >
-                          مشاهده پرونده مخاطب
+                          ویرایش اطلاعات تماس
                         </button>
                       </div>
                     </td>

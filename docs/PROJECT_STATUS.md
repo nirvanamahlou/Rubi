@@ -7507,3 +7507,8 @@ CALLBACK-DRILLDOWN-1025 final: Web typecheck/build65 routes and browser acceptan
 Today/week KPI call drilldowns with dossier and edit, Tehran bounds, matching authorized counts, revision-aware pagination.30 targeted tests pass. No migration or telephony/UI layout change. See task document for final build/browser verification.
 
 PERIOD-DRILLDOWN-1025 final: Web65-route build and local browser verification passed; running3000/4000. Scoped source reservations released on push; no merge/deploy.
+
+## 2026-10-25 — KPI-EDIT-ACTION-1025 — PC-C
+All four KPI modal tables use one existing-call edit action; dossier and fresh-callback actions removed per user request. Shared existing edit permissions retained. No API/migration/telephony change. Lint and15 Web tests pass; final build/browser acceptance in task document.
+
+KPI-EDIT-ACTION-1025 final:65-route Web build and all four modal checks pass; localhost3000 updated with edit-only actions. Source reservation released on push.

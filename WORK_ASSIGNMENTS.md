@@ -9495,3 +9495,8 @@ CALLBACK-DRILLDOWN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:28 tests pass, sc
 Reserve Call Center read service/controller/tests and Web KPI/workflow/workspace/shared modal/client/localization for today/week call drilldowns. Add authenticated POST today-calls/week-calls; preserve permissions, UI and telephony. No migration/dependency changes.
 
 PERIOD-DRILLDOWN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:30 tests, scoped lint, API build and Web typecheck/build pass; today/week modal and edit verified on localhost3000. No migration or automatic-popup change.
+
+## KPI-EDIT-ACTION-1025 — PC-C — IN_PROGRESS
+Reserve shared KPI dialog and workspace wiring, own docs. User requests removal of dossier actions and a single edit-existing-call action in all four KPI modals. No API/migration/telephony changes.
+
+KPI-EDIT-ACTION-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: lint,15 Web tests, typecheck/build and four-modal browser checks pass. Local3000 updated; API and database unchanged.

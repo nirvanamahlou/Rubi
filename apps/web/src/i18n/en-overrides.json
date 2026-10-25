@@ -4090,5 +4090,6 @@
   "تماسی در این بازه در دسترسی شما وجود ندارد.": "No accessible calls in this period.",
   "صفحه‌بندی تماس‌های بازه": "Period calls pagination",
   "تماس‌های امروز از ابتدای روز تا اکنون به وقت تهران؛ مستقل از فیلترهای مخاطبان.": "Calls from the start of today until now, Tehran time; independent of contact filters.",
-  "تماس‌های هفته از ابتدای شنبه تا اکنون به وقت تهران؛ مستقل از فیلترهای مخاطبان.": "Calls from the start of Saturday until now, Tehran time; independent of contact filters."
+  "تماس‌های هفته از ابتدای شنبه تا اکنون به وقت تهران؛ مستقل از فیلترهای مخاطبان.": "Calls from the start of Saturday until now, Tehran time; independent of contact filters.",
+  "هر ردیف یک مخاطب نیازمند تماس مجدد است؛ اطلاعات آخرین تماس بی‌پاسخ او را می‌توانید ویرایش کنید.": "Each row is a contact awaiting a callback; you can edit their latest missed call."
 }
