@@ -1,3 +1,4 @@
+import { missedCallbackCount } from './call-center-callbacks';
 import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
 import {
   BadRequestException,
@@ -354,18 +355,11 @@ export class CallCenterReadService {
         today: bigint;
         week: bigint;
         withoutOutcome: bigint;
-        needsFollowUp: bigint;
       }>
     >`SELECT
       count(*) FILTER(WHERE a.occurred_at >= ${day} AND a.occurred_at <= ${now}) AS today,
       count(*) FILTER(WHERE a.occurred_at >= ${week} AND a.occurred_at <= ${now}) AS week,
-      count(*) FILTER(WHERE a.outcome IS NULL AND (${contactScope})) AS "withoutOutcome",
-      count(*) FILTER(WHERE EXISTS(
-        SELECT 1 FROM customer_affairs_tickets r
-        WHERE r.id=a.ticket_id AND r.branch_id=c.branch_id
-          AND r.category='CALL_CENTER_REQUEST' AND r.status <> 'CLOSED'
-          AND ${callCenterTaskFilter(branchId, 'OPEN', now, day)}
-      )) AS "needsFollowUp"
+      count(*) FILTER(WHERE a.outcome IS NULL AND (${contactScope})) AS "withoutOutcome"
       FROM customer_affairs_calls a
       JOIN customer_affairs_call_contacts c ON c.id=a.contact_id
       WHERE c.branch_id=${branchId}::uuid AND a.occurred_at <= ${now}
@@ -376,7 +370,21 @@ export class CallCenterReadService {
         today: Number(row.today),
         week: Number(row.week),
         withoutOutcome: Number(row.withoutOutcome),
-        needsFollowUp: Number(row.needsFollowUp),
+        needsFollowUp: await this.db.client.$transaction(
+          (tx) =>
+            missedCallbackCount(
+              tx,
+              this.crypto,
+              branchId,
+              scope,
+              contactScope,
+              now,
+            ),
+          {
+            isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+            timeout: 60000,
+          },
+        ),
       },
       meta: {
         branchId,
@@ -387,7 +395,7 @@ export class CallCenterReadService {
         scope:
           'selected branch; independent of list filters; excludes synthetic calls',
         basis:
-          'today/week=occurredAt through asOf; withoutOutcome=all history with null outcome; needsFollowUp=distinct calls linked to non-closed Call Center requests with OPEN follow-up',
+          'today/week=occurredAt through asOf; withoutOutcome=all history with null outcome; needsFollowUp=unique known callers with missed inbound calls and no later answered inbound/outbound conversation; provider technical facts precede manual outcomes; all history',
       },
     };
   }

@@ -9478,3 +9478,9 @@ OUTCOME-DRILLDOWN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:14 PostgreSQL and8
 User requests removal of repeated department from destination job title. Reserve HR call-answer label formatter/test and docs only; preserve staff records and historical snapshots. Base deb7fc74. No schema/PBX/Web layout changes.
 
 CALL-DESTINATION-TITLE-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:11 tests, lint/typecheck/API build pass. Local API label formatter updated; no migration/HR data rewrite.
+
+## MISSED-CALLBACK-KPI-1025 — PC-C — IN_PROGRESS
+
+User selects unique known callers with missed inbound calls and no later successful conversation as replacement fourth KPI. Reserve Call Center read service/helper/tests, kpis.tsx and two English labels, own docs. Retain needsFollowUp wire key for compatibility; API producer and Web consumer ship together with updated basis metadata. Existing branch/report/contact permissions preserved; no schema, dependency, telephony behavior or popup change. Source targets clean; prior bounded Call Center reservations released.
+
+MISSED-CALLBACK-KPI-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:15 PostgreSQL tests,5 Web tests, lint/typecheck/API build and65-route Web build pass. Local browser confirms new KPI;3000/4000 updated while preserving outbound-only popup settings. No migration, grants, PR or merge.

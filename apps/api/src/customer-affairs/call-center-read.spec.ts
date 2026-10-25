@@ -532,7 +532,123 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       });
       expect(inbound.data.topFollowUps).toEqual([]);
     });
-    it('counts branch KPI calls with Tehran boundaries, null outcomes and deduplicated open follow-ups', async () => {
+    it('counts unique callback numbers and resolves only after a later real conversation', async () => {
+      const branch = await db.branch.create({
+        data: { code: randomUUID(), name: 'Synthetic callback test' },
+      });
+      const scoped = { ...actor, branchIds: [branch.id] };
+      const contact = await db.callCenterContact.create({
+        data: {
+          branchId: branch.id,
+          phoneFingerprint: crypto.fingerprint(randomUUID()),
+          latestOccurredAt: new Date(),
+        },
+      });
+      const connection = await db.integrationTelephonyConnection.create({
+        data: {
+          branchId: branch.id,
+          createdByUserId: userId,
+          name: 'Synthetic fixture only',
+        },
+      });
+      async function add(
+        hour: number,
+        direction: string,
+        outcome: string | null,
+        technical?: { answered?: boolean; unanswered?: boolean; state: string },
+        phone = '2025550101',
+        origin = 'MANUAL',
+      ) {
+        const id = randomUUID();
+        const call = await db.callCenterCall.create({
+          data: {
+            id,
+            contactId: contact.id,
+            createdByUserId: userId,
+            direction,
+            outcome,
+            origin: technical ? 'TELEPHONY' : origin,
+            status: 'جدید',
+            occurredAt: new Date(Date.UTC(2026, 9, 20, hour)),
+            encryptedPayload: crypto.encrypt(
+              { ...value, phone },
+              `call:${id}:${contact.id}`,
+            ),
+            keyVersion: 1,
+            requestFingerprint: crypto.fingerprint(id),
+          },
+        });
+        if (technical) {
+          const sessionId = randomUUID();
+          await db.callCenterTelephonySession.create({
+            data: {
+              id: sessionId,
+              connectionId: connection.id,
+              rootFingerprint: crypto.fingerprint(id),
+              callId: id,
+              state: technical.state,
+              synthetic: false,
+              keyVersion: 1,
+              encryptedTechnical: crypto.encrypt(
+                technical,
+                `telephony:${sessionId}`,
+              ),
+            },
+          });
+        }
+        return call;
+      }
+      const count = async () =>
+        (await read.kpis(scoped, branch.id)).data.needsFollowUp;
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-10-20T20:00:00Z'));
+      try {
+        await add(1, 'INBOUND', 'NO_ANSWER', undefined, '');
+        expect(await count()).toBe(0); // Hidden/unknown caller cannot be called back.
+        await add(2, 'OUTBOUND', 'NO_ANSWER');
+        expect(await count()).toBe(0);
+        await add(3, 'INBOUND', 'NO_ANSWER');
+        await add(4, 'INBOUND', 'NO_ANSWER');
+        expect(await count()).toBe(1); // Repeated missed calls count once.
+        await add(5, 'OUTBOUND', 'BUSY');
+        await add(6, 'OUTBOUND', 'ANSWERED', {
+          state: 'ENDED',
+          unanswered: true,
+        });
+        expect(await count()).toBe(1); // Business outcome cannot override provider evidence.
+        await add(7, 'OUTBOUND', null, { state: 'ENDED', answered: true });
+        expect(await count()).toBe(0); // Successful technical call needs no completed form.
+        await add(8, 'INBOUND', 'ANSWERED', {
+          state: 'ENDED',
+          unanswered: true,
+        });
+        expect(await count()).toBe(1); // A new miss reopens callback need.
+        await add(
+          9,
+          'INBOUND',
+          'ANSWERED',
+          undefined,
+          '2025550101',
+          'SYNTHETIC',
+        );
+        await add(22, 'INBOUND', 'ANSWERED');
+        expect(await count()).toBe(1); // Synthetic and future success cannot resolve it.
+        await add(10, 'INBOUND', null, {
+          state: 'ENDED',
+          unanswered: true,
+          answered: true,
+        });
+        expect(await count()).toBe(0); // Late answer wins over a missed ringing leg.
+        await add(11, 'INBOUND', 'NO_ANSWER', {
+          state: 'RINGING',
+          unanswered: true,
+        });
+        expect(await count()).toBe(0); // Still ringing is not a missed call.
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+    it('counts branch KPI calls with Tehran boundaries, null outcomes and unresolved missed callers', async () => {
       const kpiBranch = randomUUID(),
         emptyBranch = randomUUID(),
         kpiContact = randomUUID(),
@@ -611,7 +727,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         [
           '2026-10-19T20:30:00.001Z',
           'NO_ANSWER',
-          'TELEPHONY',
+          'MANUAL',
           requestIds[0],
           kpiContact,
         ],
@@ -663,7 +779,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           today: 2,
           week: 4,
           withoutOutcome: 1,
-          needsFollowUp: 2,
+          needsFollowUp: 1,
         });
         expect(result.meta).toMatchObject({
           branchId: kpiBranch,
@@ -683,7 +799,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         await expect(
           read.kpis({ ...scopedActor, permissions: [] }, kpiBranch),
         ).rejects.toMatchObject({ status: 403 });
-        expect(decrypt).not.toHaveBeenCalled();
+        expect(decrypt).toHaveBeenCalled();
         const drilldown = await read.withoutOutcome(
           scopedActor,
           kpiBranch,

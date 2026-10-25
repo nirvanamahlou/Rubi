@@ -7490,3 +7490,9 @@ Missing-outcome KPI opens bounded server-paged per-call modal with completion an
 
 ## CALL-DESTINATION-TITLE-1025 — PC-C — COMPLETE
 Destination options avoid repeating department already present as complete words in job title, including Persian/Arabic character and spacing normalization. Name/extension retained; generic titles still receive department.11 tests, lint/types/build pass; local API updated. Historical stored snapshots unchanged; no schema/PBX changes.
+
+## 2026-10-25 — MISSED-CALLBACK-KPI-1025 — PC-C
+
+Replaces fourth Call Center KPI with unique known missed inbound callers lacking a later answered conversation. Provider technical facts are authoritative; unsuccessful retries do not resolve, repeated misses deduplicate and a fresh miss reopens. Branch/contact/report scope and all other cards/layout/popups preserved. API retains needsFollowUp wire key with updated definition metadata. No migration/dependency/business-data rewrite. Fifteen isolated PostgreSQL tests and five Web tests pass; affected lint and API typecheck/build pass. Local Web build/runtime verification follows in task record.
+
+MISSED-CALLBACK-KPI-1025 final verification: production Web build/typecheck65 routes passed; local browser shows new callback KPI with count1 at verification. Source locks released on publication; local runtime updated, no production deployment or merge.

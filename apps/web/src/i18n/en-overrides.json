@@ -3885,6 +3885,8 @@
   "تعداد تماس هفته": "This week's calls",
   "تماس‌های بدون نتیجه": "Calls without a recorded outcome",
   "تماس‌های لازم به پیگیری": "Calls requiring follow-up",
+  "تماس‌های ازدست‌رفته نیازمند تماس مجدد": "Missed callers requiring a callback",
+  "شماره‌های یکتا · بدون مکالمه موفق بعدی": "Unique numbers · no subsequent answered conversation",
   "از ابتدای امروز تا اکنون": "From the start of today until now",
   "از شنبه تا اکنون": "From Saturday until now",
   "نتیجه ثبت‌نشده · همه سوابق": "No recorded outcome · all history",
