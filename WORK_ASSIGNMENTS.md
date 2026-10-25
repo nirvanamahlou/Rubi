@@ -1,3 +1,7 @@
+## ACCOUNTING-SUBTITLE-1025 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-accounting-subtitle-1025. User authorizes removal of the Accounting header subtitle and push/develop merge. Reserve only accounting-navigation-workspace.tsx and own status entries; no active overlapping writer found. Preserve forms, fields, routes and behavior. No schema, API, dependency or data change. Source reservation releases on merge. Exact-head hosted gates required.
+
 ## RETURN-ONLY-CALENDAR-1025 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; codex/pc-a-return-only-calendar-1025 from origin/develop e266e049f. Owner authorizes return-only calendar, destination-to-origin ticket selection and develop merge. Reserve only SalesContractForm, FlightTripDates, their focused regressions and own status docs. Keep single-leg range values backward compatible, exact-date inventory and actual capacity/pricing/payload direction rules. No active overlapping source writer found; previous legacy form locks released on publication. No API/schema/migration/dependency/permission or production rollout change. Focused 25 calendar/search/prefetch regressions pass, including return-only route reversal, no outbound prerequisite and stale-date selection clearing. Broader Sales tests, affected lint/typecheck/build and all exact-head hosted gates precede pinned merge. Source scope freezes/releases with publication.
