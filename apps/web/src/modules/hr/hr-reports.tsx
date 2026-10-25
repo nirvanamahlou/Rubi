@@ -391,10 +391,11 @@ export function HrReports({
                   return;
                 }
                 setError('');
+                setLoadedRange('');
                 setRange(
                   reportId === 'presence'
                     ? { from: draftRange.to, to: draftRange.to }
-                    : draftRange,
+                    : { ...draftRange },
                 );
                 setAppliedFilters(draftKey);
               }}
