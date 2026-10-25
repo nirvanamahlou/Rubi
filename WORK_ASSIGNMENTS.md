@@ -1,3 +1,7 @@
+## LEGACY-CONTRACT-TOTAL-1025 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-legacy-contract-total-1025 from develop cb4657ceb. Owner replaces historical per-service pricing with one customer-name table of gross IRR/foreign totals and discount/commission deductions. Reserve Sales form/model/new legacy-total component and focused API/model/render regressions, additive local draft field only, own docs/English catalogues if needed. Preserve V2 service parties, real catalog selections/capacity and canonical contract-total validation; no fake passengers. Also reserve exact-flight-dates/picker consumer and tests for registered return auto-selection while retaining manual replacement. Existing sources released; no overlapping active writer found. Sales Web604 plus13 return checks and API65 domain tests pass; Web typecheck and scoped lint pass. Full Sales607/one skip pass with translation coverage timing out under local disk pressure; isolated coverage rerun pending. Local production compilation passed but cache persistence hit disk exhaustion; exact-head hosted build/test gates remain required. Source locks freeze/release with candidate. No schema/migration/dependency/permission change. Owner authorizes develop merge and Avina server update after exact-head gates and encrypted backup.
+
 ## FLIGHT-WEEKDAY-PURCHASE-1025 — PC-A — READY_FOR_CI
 
 ## LEGACY-CAPACITY-AMEND-1025 — PC-A — READY_FOR_CI

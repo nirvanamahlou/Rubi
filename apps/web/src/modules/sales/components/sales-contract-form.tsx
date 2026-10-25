@@ -1,7 +1,7 @@
 'use client';
 import serviceStyles from './contract-service-cards.module.css';
-import { SalesPricingPanel } from './sales-pricing-panel';
-import { legacySalesPricingServices } from '../model/sales-form';
+import { withAutomaticReturn } from '../model/automatic-return';
+import { LegacyContractPrices } from './legacy-contract-prices';
 import {
   Plane,
   Building2,
@@ -358,10 +358,19 @@ export function SalesContractForm() {
     route: string;
     offers: TicketOfferV1[];
   }>({ route: '', offers: [] });
+  const selectedReturnDay = state.returnOffer
+    ? flightDay(state.returnOffer)
+    : flightRange.to;
   const calendarRoute = state.originId + ':' + state.destinationId;
   const onReturningOffers = useCallback(
-    (offers: TicketOfferV1[]) =>
-      setReturnCalendar({ route: calendarRoute, offers }),
+    (offers: TicketOfferV1[]) => {
+      setReturnCalendar({ route: calendarRoute, offers });
+      // Calendar reads may finish after the outbound picker. Resolve from current
+      // state so stale responses and an already chosen manual return cannot win.
+      setState((current) =>
+        withAutomaticReturn(current, calendarRoute, offers),
+      );
+    },
     [calendarRoute],
   );
   const submission = useRef({ fingerprint: '', key: '' });
@@ -684,31 +693,9 @@ export function SalesContractForm() {
   const occupancyRoom = hotelRoomRates.find(
     (room) => room.roomTypeId === state.hotel.roomTypeId,
   );
-  const pricedState = (() => {
-    if (!state.legacyContract)
-      return hotelOccupancySaleDefaults(state, occupancyRoom, hotelRoomRates);
-    try {
-      const payload = salesPayload(state);
-      const totals = new Map<string, bigint>();
-      for (const p of payload.priceComponents.filter(
-        (p) => p.title !== SALES_CHEQUE_FEE,
-      ))
-        totals.set(
-          p.currencyCode,
-          (totals.get(p.currencyCode) ?? 0n) +
-            (p.type === 'DISCOUNT' ? -1n : 1n) * moneyUnits(p.amount),
-        );
-      return {
-        ...state,
-        contractPrices: [...totals].map(([currencyCode, amount]) => ({
-          currencyCode,
-          amount: moneyDecimal(amount),
-        })),
-      };
-    } catch {
-      return { ...state, contractPrices: [] };
-    }
-  })();
+  const pricedState = state.legacyContract
+    ? state
+    : hotelOccupancySaleDefaults(state, occupancyRoom, hotelRoomRates);
   const passengerCounts = salesPassengerCounts(state);
   const hotelCapacityError = salesHotelCapacityError(state, hotelRoomRates);
   const hotelGuestIds = salesHotelGuestIds(state);
@@ -785,16 +772,11 @@ export function SalesContractForm() {
     if (hotelCapacityError) return hotelCapacityError;
     try {
       const payload = salesPayload({
-        ...pricedState,
+        ...(state.legacyContract ? state : pricedState),
         servicePricing: pricedState.servicePricing ?? {},
       });
       validateSalesCurrencySelection(payload, references.currencies);
       readPassengerHotelPrices(payload.services, payload.passengers);
-      if (
-        state.legacyContract &&
-        !Object.keys(state.servicePricing ?? {}).length
-      )
-        throw Error('قیمت خدمات قرارداد را تکمیل کنید.');
       if (
         !state.legacyContract &&
         payload.services.some((s) => s.kind === 'FLIGHT') &&
@@ -817,8 +799,9 @@ export function SalesContractForm() {
         payload.paymentTerms
           ? payload.priceComponents.filter((p) => p.title !== SALES_CHEQUE_FEE)
           : payload.priceComponents,
-        state.passengerTotalPricing ||
-          state.priceEntryMode === 'PASSENGER_TOTAL',
+        !state.legacyContract &&
+          (state.passengerTotalPricing ||
+            state.priceEntryMode === 'PASSENGER_TOTAL'),
       );
       return payload.priceComponents.length > 0 ||
         (payload.services.length > 0 &&
@@ -1121,7 +1104,7 @@ export function SalesContractForm() {
           <section className="grid gap-3 min-w-0">
             {!salesReturnRequiresInventory(state) && (
               <ContractFlightEditor
-                flightDate={flightRange.to}
+                flightDate={selectedReturnDay}
                 international={salesInternationalTravel(state)}
                 airlines={references.airlines}
                 value={state.contractFlights?.RETURN}
@@ -1153,13 +1136,13 @@ export function SalesContractForm() {
                         (city) => city.id === state.originId,
                       )?.name ?? 'مبدأ'
                     }
-                    key={`return-${salesFlightSelection(state, 'OUTBOUND')?.departureAt ?? futureFrom}-${flightRange.from + '-' + flightRange.to}`}
+                    key={`return-${salesFlightSelection(state, 'OUTBOUND')?.departureAt ?? futureFrom}-${flightRange.from + '-' + selectedReturnDay}`}
                     query={{
                       originId: state.destinationId,
                       destinationId: state.originId,
-                      ...exactFlightQuery(flightRange.to),
+                      ...exactFlightQuery(selectedReturnDay),
                     }}
-                    exactDay={flightRange.to}
+                    exactDay={selectedReturnDay}
                     requiredSeats={salesFlightSeats(state, 'RETURN')}
                     requireStandaloneFare={false}
                     {...(state.outboundOffer
@@ -1358,6 +1341,7 @@ export function SalesContractForm() {
                   legacyContract,
                   servicePricing: {},
                   contractPrices: [],
+                  legacyDeductions: {},
                   ...(legacyContract
                     ? {
                         passengers: [],
@@ -1740,7 +1724,7 @@ export function SalesContractForm() {
               requireFare={false}
               value={
                 flightRangeRoute === flightRouteKey
-                  ? flightRange
+                  ? { ...flightRange, to: selectedReturnDay }
                   : { from: '', to: '' }
               }
               onChange={(range, outboundIds) => {
@@ -1761,7 +1745,7 @@ export function SalesContractForm() {
                     ...(range.from !== flightRange.from
                       ? { checkInManual: false }
                       : {}),
-                    ...(range.to !== flightRange.to
+                    ...(range.to !== selectedReturnDay
                       ? { checkOutManual: false }
                       : {}),
                   },
@@ -2412,35 +2396,10 @@ export function SalesContractForm() {
             </div>
             <div className="grid content-start gap-3">
               {state.legacyContract ? (
-                <SalesPricingPanel
-                  services={legacySalesPricingServices(state).map((s) => ({
-                    key: s.clientKey,
-                    title:
-                      serviceOptions.find(([k]) => k === s.kind)?.[1] ===
-                        undefined || s.clientKey.includes('-')
-                        ? s.titleSnapshot
-                        : serviceOptions.find(([k]) => k === s.kind)![1],
-                    hotel: s.kind === 'HOTEL',
-                  }))}
-                  nights={Math.max(
-                    1,
-                    Math.round(
-                      (Date.parse(state.hotel.checkOut) -
-                        Date.parse(state.hotel.checkIn)) /
-                        86400000,
-                    ) || 1,
-                  )}
-                  values={state.servicePricing ?? {}}
+                <LegacyContractPrices
+                  state={state}
                   currencies={references.currencies}
-                  salePriceFromAgreed
-                  onChange={(key, prices) =>
-                    patchState({
-                      servicePricing: {
-                        ...state.servicePricing,
-                        [key]: prices,
-                      },
-                    })
-                  }
+                  onChange={patchState}
                 />
               ) : (
                 <ContractTotalPrices

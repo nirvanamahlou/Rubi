@@ -1,3 +1,7 @@
+## LEGACY-CONTRACT-TOTAL-1025 — PC-A
+
+Historical new-contract pricing now uses a single customer-name table with separate rial/foreign gross totals, discount and commission. Canonical total pricing and existing aggregate service/capacity metadata remain; no personal passengers are invented and prior saved records stay unchanged. Return pairing disambiguates recurring original loads with registered pair IDs and handles delayed calendar reads without overwriting manual returns. Targeted Sales model/render/domain, translations, types/lint/build and exact-head full CI gate owner-authorized develop merge and encrypted-backup Avina rollout. No migration/dependency change.
+
 
 ## 2026-10-25 — FLIGHT-WEEKDAY-PURCHASE-1025 — PC-A
 
