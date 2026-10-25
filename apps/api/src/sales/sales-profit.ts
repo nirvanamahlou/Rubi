@@ -14,6 +14,7 @@ type TicketCost = {
   childUnitCost: string;
   unitCost: string | null;
   supplyType?: string | null | undefined;
+  poolCost?: { seatCount: number; totalCost: string };
   seatCount?: number | null;
   invoiceAmount?: string | null;
 };
@@ -106,11 +107,13 @@ export function contractProfit(
     );
     if (!assigned.length) continue;
     const soldSeats = assigned.filter((p) => p.ageCategory !== 'INF').length;
+    const purchasedSeats = cost.poolCost?.seatCount ?? cost.seatCount;
+    const invoice = cost.poolCost?.totalCost ?? cost.invoiceAmount;
     const proportional =
-      cost.seatCount && cost.invoiceAmount
-        ? (moneyUnits(cost.invoiceAmount) * BigInt(soldSeats) +
-            BigInt(cost.seatCount) / 2n) /
-          BigInt(cost.seatCount)
+      purchasedSeats && invoice
+        ? (moneyUnits(invoice) * BigInt(soldSeats) +
+            BigInt(purchasedSeats) / 2n) /
+          BigInt(purchasedSeats)
         : null;
     const amount =
       proportional ??

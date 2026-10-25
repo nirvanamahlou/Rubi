@@ -302,3 +302,45 @@ it('does not accept a legacy per-contract company cost when the capacity invoice
   );
   expect(result.complete).toBe(false);
 });
+
+it('uses four consumed seats from a 150-seat recurring pool and ignores per-departure rounding', () => {
+  const four = {
+    ...contract,
+    passengersDetail: Array.from({ length: 4 }, () => ({
+      ageCategory: 'ADT',
+      serviceClientKeys: ['flight'],
+    })),
+  } as unknown as SalesContractDetail;
+  const cost = {
+    ...ticket,
+    supplyType: 'COMPANY',
+    seatCount: 50,
+    invoiceAmount: '33.3333',
+    unitCost: '0.6667',
+    poolCost: { seatCount: 150, totalCost: '100' },
+  };
+  const result = contractProfit(four, intake, [cost]);
+  expect(result.costs.find((r) => r.source === 'FINANCE_TICKET')?.amount).toBe(
+    '2.6667',
+  );
+});
+
+it('avoids a rounded departure share when a single seat consumes part of the pool', () => {
+  const one = {
+    ...contract,
+    passengersDetail: [{ ageCategory: 'ADT', serviceClientKeys: ['flight'] }],
+  } as unknown as SalesContractDetail;
+  const cost = {
+    ...ticket,
+    supplyType: 'COMPANY',
+    seatCount: 2,
+    invoiceAmount: '0.6667',
+    unitCost: '0.3333',
+    poolCost: { seatCount: 3, totalCost: '1' },
+  };
+  expect(
+    contractProfit(one, intake, [cost]).costs.find(
+      (r) => r.source === 'FINANCE_TICKET',
+    )?.amount,
+  ).toBe('0.3333');
+});

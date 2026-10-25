@@ -1,3 +1,7 @@
+## 2026-10-25 — FLIGHT-WEEKDAY-PURCHASE-1025 — PC-A
+
+Recurring company-capacity purchases group exact carrier/number/route/cabin/supplier/branch and Tehran weekday. One total atomically apportions per-offer payable revisions whose sum is exact; Sales uses the original pool denominator for actual consumed seats. Dates/full membership remain visible, old costs/history/payments stay protected, and final unsold loss remains separated from future residual capacity. API52 and Web26 related tests pass; full type/lint/build and exact-head CI including isolated PostgreSQL concurrency/rollback gate user-authorized develop merge. No schema/migration/dependency/operational rollout. See tasks/FLIGHT-WEEKDAY-PURCHASE-1025.md.
+
 ## 2026-10-24 — RESERVATION-FORM-POLISH-1024 — PC-A
 
 Supplier reservation preview/PDF removes the separate flight table while retaining each passenger's flight allocation. Transfer headers are TRF IN / TRF OUT; generic OTHER values are omitted while named English services remain. Room/night summary is slightly smaller and hotel table values use semibold. Registered request-scoped gender reaches output; an existing versioned form-only gender field is now editable for missing/corrected form data. Voucher flight layout is unchanged. Focused45 tests pass; synthetic one-page and three-page A4 PDFs rendered and all pages visually reviewed, with repeated footer and no clipped columns. Full affected checks/exact-head CI gate authorized develop merge and encrypted-backup Avina deployment. No schema, migration, dependency or permission changes.

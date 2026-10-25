@@ -1,3 +1,7 @@
+## 2026-10-25 — FLIGHT-WEEKDAY-PURCHASE-1025
+
+Owner authorizes grouping recurring company capacity by exact flight identity and Tehran weekday. Preserve existing per-offer Procurement and Finance FKs/payables; create all cost revisions atomically, with exact apportioned invoice totals and immutable pool evidence in the existing reason field. Contract and unsold-seat costs consume the pool total/seat denominator, never the rounded per-offer share or a duplicate pooled payable. New dates do not expand historical pools; paid/partial-paid or incomplete original-group amendments fail. Additive public types/endpoint and optional transaction-backed producer reads retain legacy compatibility. No schema/migration; see tasks/FLIGHT-WEEKDAY-PURCHASE-1025.md.
+
 ## HOTEL-CHECKIN-DEPARTURE-DAY-1024 — owner clarification (2026-10-24)
 
 Automatic check-in with an outbound flight uses its displayed Tehran departure day, including overnight arrivals and published packages. This supersedes the earlier whole-stay next-day flag for flight-linked automatic dates; stale draft flags must not advance check-in. Explicit manual check-in remains authoritative. Hotel-only/package-only dates, checkout policy and per-guest stay overrides remain unchanged. No persisted records are rewritten.
