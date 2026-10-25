@@ -7592,3 +7592,7 @@ Request reason is mandatory for every creation/edit, enforced by native form val
 
 ## REQUEST-HEADER-SPACING-1025 — PC-C
 Added user-requested16px gap between contact summary and request title in the Call Center editor. Browser measurement confirms0->16px onlocalhost3000.3 workflow tests, lint and full Web types/build65 pages pass; no API/migration/dependency changes. See tasks/REQUEST-HEADER-SPACING-1025.md.
+
+## CALL-DIRECTION-LABELS-1025 — PC-C
+
+User-approved latest-call direction badges distinguish inbound and outbound contact rows. Neutral extension/agent column retains full destination names. Outbound call forms and dossier history say Called from extension; manual direction selection updates the label. Five form regressions, scoped ESLint, full Web types and65-page production build pass. No API, schema, migration, PBX routing or popup activation change. Independent worktree preserves the active queue editor.

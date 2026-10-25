@@ -9643,3 +9643,9 @@ REQUEST-REASON-REQUIRED-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: mandatory r
 Reserve workflow.tsx/workflow.module.css and own docs for user-authorized16px separation between contact summary and request title. No functional, API, dependency or migration change.
 
 REQUEST-HEADER-SPACING-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: scoped16px contact-summary spacing, verified visually and by DOM measurement on3000.3 tests, lint, full Web typecheck/build pass. No API/data change.
+
+## CALL-DIRECTION-LABELS-1025 — PC-C — IN_PROGRESS
+
+User explicitly approves inbound/outbound badges and direction-specific extension wording. Base6bcacb9b retains the completed local destination/history changes; independent worktree avoids ACTIVE queue editor workflow.tsx. Reserve workspace.tsx, call-form.tsx and its existing tests, scoped styles/i18n and own docs. No routing, API, schema or telephony popup activation.
+
+CALL-DIRECTION-LABELS-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: five form regressions, scoped lint, full Web types and production build65 pages pass. Generated localization synchronized. No runtime deployment claimed; preserve parallel queue-editor work.

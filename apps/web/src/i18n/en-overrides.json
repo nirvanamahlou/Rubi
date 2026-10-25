@@ -4369,5 +4369,8 @@
   "صفحه‌بندی تماس‌های بدون نتیجه": "Calls without outcome pagination",
   "کارشناس انتخاب‌شده خارج از محدوده مجاز ارجاع درخواست است.": "The selected specialist is outside the permitted request assignment scope.",
   "مشغول": "Busy",
-  "نتیجه ثبت‌نشده": "Outcome not recorded"
+  "نتیجه ثبت‌نشده": "Outcome not recorded",
+  "نوع آخرین تماس": "Latest call direction",
+  "داخلی / کارشناس": "Extension / agent",
+  "تماس‌گرفته‌شده از داخلی": "Called from extension"
 }
