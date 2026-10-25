@@ -7470,3 +7470,7 @@ Owner-approved local personnel/unit/account configuration is live on existing300
 ## CALL-QUEUE-COLUMNS-1025 — PC-C — COMPLETE LOCALLY
 
 Owner's five RTL columns now show request title, assigned expert, status, priority and creation time. Queue sorted in PostgreSQL by createdAt DESC/id ASC; editing does not reorder older requests. Centered previous/current-total/next pagination verified in authenticated browser.19 PostgreSQL tests and3 Web tests pass; scoped lint/format, API types/build and Web types/65-route production build pass. API10880 on4000 and Web26220 on3000 use isolated .api-queue-1025/.next-queue-1025 artifacts; previous runtime artifacts retained. No database/schema/permissions/PBX/popup changes. Screenshot remains private locally. Scope released; no PR/merge/production rollout.
+
+## CALL-FILTER-CALENDAR-1025 — 2026-10-25
+Both advanced Call Center date filters now switch Persian/Gregorian, with opt-in reference navy calendar, month/year grids, Clear/Close and correct Gregorian labels. Tehran-midnight ISO conversion and exclusive end bound retained.18 tests/lint/typecheck/65-route build pass; browser selection narrowed12 contacts to4, independent clear and Escape verified. Web3000 PID4392 runs .next-filter-calendar-1025; API/Worker unchanged, popups disabled. No migration/PR/merge. Source released.
+

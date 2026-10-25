@@ -9446,3 +9446,8 @@ Owner authorizes five queue columns, newest-created server ordering and centered
 
 CALL-QUEUE-COLUMNS-1025 extends bounded scope to two Web English override labels for the new queue timestamp and pagination accessibility name; preserve unrelated catalogue entries.
 CALL-QUEUE-COLUMNS-1025 COMPLETE:19 PostgreSQL and3 Web tests, lint, types and builds pass. Authenticated local3000 UI and real queue fields/order verified. Previous runtime artifacts preserved; no data migration. Source locks released on push.
+
+## CALL-FILTER-CALENDAR-1025 — PC-C — RESERVED
+Base0fad730e preserves approved local Call Center. Reserve workspace date filter controls and opt-in shared date-picker variant, focused tests and own docs. No other shared picker consumer behavior changes, no API/migration/dependency/PBX/popups. User explicitly authorizes screenshot calendar design. Source predecessors released; generated next-env retained locally.
+
+CALL-FILTER-CALENDAR-1025 — COMPLETE / SOURCE_RELEASED:18 tests, lint, TypeScript,65-route build and authenticated UI checks pass. Web3000 PID4392; existing API/Worker/popups hold preserved. No migration/PR/merge. See docs/tasks/CALL-FILTER-CALENDAR-1025.md.

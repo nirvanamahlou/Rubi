@@ -465,19 +465,21 @@ function Content({
             <fieldset>
               <legend>محدوده و زمان</legend>{' '}
               <label>
-                از تاریخ میلادی (تهران)
+                از تاریخ (تهران)
                 <DatePicker
-                  calendarSystem="gregorian"
-                  aria-label="از تاریخ میلادی (تهران)"
+                  filterCalendar
+                  defaultCalendarSystem="persian"
+                  aria-label="از تاریخ (تهران)"
                   value={filters.from}
                   onChange={(value) => change('from', value)}
                 />
               </label>
               <label>
-                تا ابتدای تاریخ میلادی (تهران)
+                تا ابتدای تاریخ (تهران)
                 <DatePicker
-                  calendarSystem="gregorian"
-                  aria-label="تا ابتدای تاریخ میلادی (تهران)"
+                  filterCalendar
+                  defaultCalendarSystem="persian"
+                  aria-label="تا ابتدای تاریخ (تهران)"
                   value={filters.to}
                   onChange={(value) => change('to', value)}
                 />
