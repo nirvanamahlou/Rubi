@@ -3,12 +3,7 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from '@/components/ui/overlays';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import styles from './hr-forms.module.css';
 import { buttonVariants } from '@/components/ui/button';
 import {
@@ -358,23 +353,8 @@ export function NewEmployeeForm({
 
   return (
     <form noValidate onSubmit={submit}>
-      {personnelMode ? (
-        <ol aria-label="مراحل فرم پرسنلی">
-          {['اطلاعات فردی', 'اطلاعات کاربری', 'تایید و ثبت'].map(
-            (label, index) => (
-              <li
-                key={label}
-                aria-current={step === index ? 'step' : undefined}
-              >
-                {label}
-              </li>
-            ),
-          )}
-        </ol>
-      ) : null}
       {personnelMode && step === 2 ? (
         <fieldset className={styles.formFieldset}>
-          <legend className={styles.formLegend}>تایید و ثبت</legend>
           <dl>
             <dt>نام و نام خانوادگی</dt>
             <dd>
@@ -403,13 +383,11 @@ export function NewEmployeeForm({
         className={styles.formFieldset}
         hidden={personnelMode && step === 2}
       >
-        <legend className={styles.formLegend}>
-          {personnelMode
-            ? step === 0
-              ? 'اطلاعات فردی'
-              : 'اطلاعات پرسنلی'
-            : 'مشخصات پایه'}
-        </legend>
+        {!personnelMode || step === 1 ? (
+          <legend className={styles.formLegend}>
+            {personnelMode ? 'اطلاعات پرسنلی' : 'مشخصات پایه'}
+          </legend>
+        ) : null}
         <div className={styles.formGrid}>
           <label
             className={styles.fieldLabel}
@@ -888,6 +866,7 @@ export function NewEmployeeDialog({
   return (
     <Dialog onOpenChange={(open) => !open && onClose()} open>
       <DialogContent
+        aria-describedby={undefined}
         className={`${styles.modal} ${styles.employeeModal}`}
         dir="rtl"
       >
@@ -898,9 +877,6 @@ export function NewEmployeeDialog({
               ? 'ویرایش کارمند'
               : 'افزودن کارمند جدید'}
         </DialogTitle>
-        <DialogDescription>
-          مشخصات پایه و جایگاه سازمانی کارمند را مطابق فهرست کارکنان تکمیل کنید.
-        </DialogDescription>
         {waitingForInitialCatalog ? (
           <div role={referenceError ? 'alert' : 'status'}>
             <p>{referenceError || 'دریافت واحدها و عنوان‌های شغلی…'}</p>

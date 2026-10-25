@@ -1,3 +1,4 @@
+
 ## 2026-10-25 — FLIGHT-WEEKDAY-PURCHASE-1025 — PC-A
 
 Recurring company-capacity purchases group exact carrier/number/route/cabin/supplier/branch and Tehran weekday. One total atomically apportions per-offer payable revisions whose sum is exact; Sales uses the original pool denominator for actual consumed seats. Dates/full membership remain visible, old costs/history/payments stay protected, and final unsold loss remains separated from future residual capacity. API52 and Web26 related tests pass; full type/lint/build and exact-head CI including isolated PostgreSQL concurrency/rollback gate user-authorized develop merge. No schema/migration/dependency/operational rollout. See tasks/FLIGHT-WEEKDAY-PURCHASE-1025.md.
@@ -7481,3 +7482,10 @@ The live organization chart adds real departments and explicit employee nodes th
 ## HR-DEVICE-FORM-1025 — PC-B
 
 Fresh authenticated read-only inspection of Radan /attendance/device/device-list confirms the six device inputs and five provider choices. Time navigation now exposes a dedicated دستگاه group. The device form renders name, description, address, port, write-only network password and type in observed order; generated code/status/synchronization telemetry remain stored and available to existing server workflows but are not editable form inputs. Display ordering never reorders canonical submitted column positions. Existing branch scope, sensitive permission and encrypted password storage remain unchanged. Six focused regressions pass; final lint/types and hosted full quality/tests/build/database gates precede authorized develop merge. No migration/dependency/provider connection/deploy or Radan write.
+
+## HR-PERSONNEL-COPY-CLEANUP-1025 — PC-B
+
+Removed the employee dialog explanatory paragraph and the numbered personal/account/confirmation step captions, including duplicate personal/confirmation legends. Existing fields, step navigation, validation, account binding and submission remain unchanged. Six existing personnel regressions pass; scoped lint, Web typecheck and hosted quality/tests/build/database gates are required before the authorized develop merge. No migration/dependency/deploy/Radan writes.
+## LEGACY-CAPACITY-AMEND-1025 — PC-A
+
+Historical service capacity is also retained by the transactional amendment callback: declared adult+child counts select catalog legs and per-leg quantities even with zero personal passenger records. Existing ordinary amendment logic, CAS/snapshot and receipts remain. Regression covers an aggregate count change with a confirmed receipt; all exact-head gates precede the owner-authorized follow-up merge and server rollout. No migration or dependency changes.
