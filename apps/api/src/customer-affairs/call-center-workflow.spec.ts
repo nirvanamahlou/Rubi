@@ -190,6 +190,34 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       workflow?.onModuleDestroy();
       await db?.$disconnect();
     });
+    it('rejects a forged request owner even when the other account is active in the same branch', async () => {
+      const otherId = randomUUID();
+      await db.user.create({
+        data: {
+          id: otherId,
+          username: otherId,
+          displayName: 'Synthetic other agent',
+          status: 'ACTIVE',
+          passwordHash: 'not-a-login',
+        },
+      });
+      await db.userBranch.create({ data: { userId: otherId, branchId } });
+      const id = randomUUID();
+      await expect(
+        workflow.saveRequest(actor, branchId, contactId, {
+          ...request,
+          id,
+          commandId: randomUUID(),
+          ownerId: otherId,
+        }),
+      ).rejects.toThrow('خارج از محدوده');
+      expect(await db.customerAffairsTicket.count({ where: { id } })).toBe(0);
+      expect(
+        (await workflow.requestOptions(actor, branchId)).data.map(
+          (row) => row.id,
+        ),
+      ).toEqual([userId]);
+    });
     it('filters closed requests before paging without changing the default dossier history', async () => {
       const contact = (
         await calls.create(

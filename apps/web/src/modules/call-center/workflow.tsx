@@ -846,6 +846,42 @@ export function WorkflowEditor({
     [error, setError] = useState(''),
     [dirty, setDirty] = useState(false);
   const [owner, setOwner] = useState(editor.item?.ownerId ?? '');
+  const [ownersRevision, setOwnersRevision] = useState(0);
+  const [ownersResult, setOwnersResult] = useState<{
+    key: string;
+    data: Operator[];
+    error: string;
+  } | null>(null);
+  const ownersKey = `${branchId}:${ownersRevision}`;
+  const ownersLoading =
+    editor.kind === 'request' && ownersResult?.key !== ownersKey;
+  const requestOperators =
+    ownersResult?.key === ownersKey ? ownersResult.data : [];
+  const ownersError = ownersResult?.key === ownersKey ? ownersResult.error : '';
+  useEffect(() => {
+    if (editor.kind !== 'request') return;
+    let active = true;
+    void workflowApi
+      .requestOperators(branchId)
+      .then(({ data }) => {
+        if (!active) return;
+        setOwnersResult({ key: ownersKey, data, error: '' });
+        setOwner(
+          (current) => current || (data.length === 1 ? data[0]!.id : ''),
+        );
+      })
+      .catch(() => {
+        if (active)
+          setOwnersResult({
+            key: ownersKey,
+            data: [],
+            error: 'دریافت فهرست کارشناسان ممکن نشد.',
+          });
+      });
+    return () => {
+      active = false;
+    };
+  }, [branchId, editor.kind, ownersKey]);
   const [status, setStatus] = useState(
     editor.kind === 'request'
       ? editor.item?.status && editor.item.status !== 'NEW'
@@ -867,6 +903,7 @@ export function WorkflowEditor({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
+    if (editor.kind === 'request' && (ownersLoading || ownersError)) return;
     const data = new FormData(event.currentTarget);
     const value = (key: string) => String(data.get(key) ?? '').trim();
     const base = {
@@ -1048,14 +1085,31 @@ export function WorkflowEditor({
             <label>
               کارشناس مسئول
               <OwnerSelect
-                operators={operators}
+                operators={
+                  editor.kind === 'request' ? requestOperators : operators
+                }
                 value={owner}
-                disabled={busy}
+                disabled={busy || (editor.kind === 'request' && ownersLoading)}
+                required={editor.kind === 'request'}
                 onChange={(value) => {
                   setOwner(value);
                   setDirty(true);
                 }}
               />
+              {editor.kind === 'request' && ownersLoading && (
+                <span role="status">در حال دریافت کارشناسان…</span>
+              )}
+              {editor.kind === 'request' && ownersError && (
+                <span role="alert">
+                  {ownersError}{' '}
+                  <button
+                    type="button"
+                    onClick={() => setOwnersRevision((value) => value + 1)}
+                  >
+                    تلاش مجدد
+                  </button>
+                </span>
+              )}
             </label>
             {(editor.kind === 'task' || editor.item) && (
               <label>

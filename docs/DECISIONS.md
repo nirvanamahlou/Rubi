@@ -633,3 +633,7 @@ Owner explicitly disables blocking hotel room capacity and guest-age/composition
 ## 2026-10-24 — Contract owner self-service
 
 Owner authorizes visible Sales contract-area users to export, amend and record additional payments for their own contracts in their allowed branches, without separate export/update/payment grants. Existing explicit screen denies, broader native permissions, contract state/CAS/idempotency and payment validation stay authoritative. This grants no receipt approval, financial release, payer transfer or access to other owners' contracts. The old flight/room party equality error follows the already-approved temporary hotel-capacity policy. Develop merge and production rollout explicitly authorized.
+
+## 2026-10-25 — Call Center request assignee scope
+
+Explicit owner approval makes request execution assignment self-only for ordinary agents, current-unit-only for team managers, and cross-unit for an explicitly configured executive/demo allowlist. Use active native ERP identities and the existing team-management permission with exact organizationUnitId; never infer authority from display names or phone extensions. A dedicated request directory avoids widening telephony/referral eligibility. Server-side assignment validation is authoritative. HR's public minimal projection supplies full name/title; unknown titles remain unknown. Branch and contact permissions remain intact, and accounts/grants are not implicitly created. See tasks/CALL-REQUEST-ASSIGNEES-1025.md.

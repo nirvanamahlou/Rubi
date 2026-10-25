@@ -228,6 +228,14 @@ export class CallCenterWorkflowService
       ),
     };
   }
+  async requestOptions(actor: AuthenticatedActor, branch?: string) {
+    return {
+      data: await this.directory.requestAssignees(
+        actor,
+        this.scope(actor, branch, true),
+      ),
+    };
+  }
   async link(
     actor: AuthenticatedActor,
     branch: string | undefined,
@@ -630,9 +638,7 @@ export class CallCenterWorkflowService
       await this.contact(tx, contactId, branchId);
       if (this.access.scoped(actor)) {
         await this.access.contact(actor, branchId, contactId, 'workflow', tx);
-        if (input.ownerId)
-          await this.access.recipient(actor, branchId, input.ownerId, tx);
-        else input = { ...input, ownerId: actor.userId };
+        if (!input.ownerId) input = { ...input, ownerId: actor.userId };
       }
       await this.lock(tx, input.id);
       if (
@@ -682,7 +688,12 @@ export class CallCenterWorkflowService
         input.ownerId &&
         (!current || current.executionOwnerUserId !== input.ownerId)
       )
-        await this.directory.resolve(tx, branchId, input.ownerId);
+        await this.directory.resolveRequestAssignee(
+          tx,
+          actor,
+          branchId,
+          input.ownerId,
+        );
       const openTasks = current
         ? await this.tasks.list(tx, branchId, [current.id])
         : [];

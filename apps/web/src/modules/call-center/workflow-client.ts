@@ -2,6 +2,8 @@ import { callCenterRequest } from './client';
 export interface Operator {
   id: string;
   displayName: string;
+  position?: string | null;
+  showPosition?: boolean;
 }
 export interface FollowUp {
   ownerName?: string;
@@ -55,6 +57,8 @@ export interface RequestCase {
   }[];
 }
 export const workflowApi = {
+  requestOperators: (branch: string) =>
+    callCenterRequest<{ data: Operator[] }>('/request-operators', branch),
   nextAction: (branch: string, contact: string, signal: AbortSignal) =>
     callCenterRequest<{
       data: {

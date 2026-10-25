@@ -9429,3 +9429,8 @@ resolve to the correct people and appear once in the19-choice public directory.
 Existing shared-extension choices retained. Six directory tests pass. No source,
 schema, user grant, PBX, business-record write or runtime restart. Private personnel
 assignments remain outside Git. Details: docs/tasks/CALL-EXTENSION-ALIASES-1024.md.
+
+## CALL-REQUEST-ASSIGNEES-1025 — PC-C — RESERVED
+Explicit user authorization: ordinary staff self-only; unit managers their own unit; explicitly configured executive/demo accounts all active branch-eligible staff with job titles. Base0012c956. Reserve IAM Call Center directory, HR public unit-directory minimal personnel projection, workflow options/save validation, OwnerSelect/types, focused tests and own docs. No account creation, grant changes, schema/dependency edits or popup activation. Personnel/account allowlist stays outside Git. Maintain existing read scope and PBX eligibility; request assignment is a separate public contract. All source changes isolated from existing runtimes.
+
+CALL-REQUEST-ASSIGNEES-1025 — COMPLETE / SOURCE_RELEASED_ON_PUSH:38 focused tests, scoped lint, API/Web typecheck and builds pass. Local3000/4000 activated preserving prior runtime artifacts; authenticated self-only dropdown verified without saving. No migration, account/grant creation or popup activation. Private executive allowlist remains outside Git; real HR/account/unit population required for full staff demonstration. See docs/tasks/CALL-REQUEST-ASSIGNEES-1025.md.
