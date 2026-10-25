@@ -7472,3 +7472,8 @@ Seven HR-owned operational charts consume a new authenticated private/no-store a
 
 
 HR-DASHBOARD-CHARTS-1025 verification:38 isolated PostgreSQL/HTTP HR checks,12 focused aggregation/scope regressions and3 chart rendering checks pass. API/Web TypeScript and scoped lint pass. Department display names consume the existing IAM public port; HR data remains owned/read within HR. Final focused recheck and hosted exact-head full quality/tests/production-build/database gates remain required before authorized develop merge. No operational database or runtime changes.
+
+
+## HR-ORG-CHART-NODES-1025 — PC-B — IMPLEMENTED / VALIDATING
+
+The live organization chart adds real departments and explicit employee nodes through its per-node side toolbar. Employee nodes bind existing personnel IDs and same-company parent department/employee records; removing a chart member never archives the personnel record or changes their official assignment. Create forms no longer require selecting an already-existing unit. Existing canonical department editing/deletion and dependency guards remain intact; parent editing is available for both supported node kinds. Pointer/touch move handles and arrow keys persist bounded diagram offsets through existing versioned/audited HR record commands, retain connector alignment and restore server state after save conflicts. Truncated bootstrap loads the complete permitted reference set before enabling the chart. No migration/dependency/runtime/server or Radan changes.153 HR Web checks and40 isolated PostgreSQL/HTTP checks pass at the implementation checkpoint; final source checks and hosted gates remain required.

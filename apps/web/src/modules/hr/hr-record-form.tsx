@@ -143,6 +143,7 @@ function HrRecordFormFields({
   allowInlineCreate = true,
 }: HrRecordFormProps & { nodePicker?: ReactNode }) {
   const definition = getHrResource(target.source.section, target.source.tab)!;
+  const isChartEmployee = definition.key === 'organization.chartEmployees';
   const external = useHrFormReferences();
   const references = useHrReferenceData(store);
   const data = references.data;
@@ -206,7 +207,7 @@ function HrRecordFormFields({
   const [employeeId, setEmployeeId] = useState(
     target.employeeId ??
       target.record?.employeeId ??
-      target.parent?.employeeId ??
+      (isChartEmployee ? undefined : target.parent?.employeeId) ??
       '',
   );
   const [parentId, setParentId] = useState(
@@ -262,7 +263,17 @@ function HrRecordFormFields({
       item.branchId === branchId &&
       (!company?.organizationBranchId ||
         item.organizationBranchId === company.organizationBranchId ||
-        item.id === employeeId),
+        item.id === employeeId ||
+        (isChartEmployee && !item.organizationBranchId)) &&
+      (!isChartEmployee ||
+        item.id === employeeId ||
+        !data.records.some(
+          (r) =>
+            r.section === 'organization' &&
+            r.tab === 'chartEmployees' &&
+            r.employeeId === item.id &&
+            !r.deletedAt,
+        )),
   );
   const parents = missionExpense
     ? expenseMissionOptions(
@@ -278,7 +289,8 @@ function HrRecordFormFields({
           (!company?.organizationBranchId ||
             !item.data.organizationBranchId ||
             item.data.organizationBranchId === company.organizationBranchId) &&
-          (!definition.employeeRequired ||
+          (isChartEmployee ||
+            !definition.employeeRequired ||
             !employeeId ||
             !item.employeeId ||
             item.employeeId === employeeId) &&
@@ -534,7 +546,7 @@ function HrRecordFormFields({
                 disabled={Boolean(
                   target.record ||
                   target.employeeId ||
-                  target.parent?.employeeId,
+                  (!isChartEmployee && target.parent?.employeeId),
                 )}
                 onChange={(event) => {
                   setEmployeeId(event.target.value);
@@ -555,7 +567,7 @@ function HrRecordFormFields({
               افزودن کارمند
             </button>
           ) : null}
-          {definition.parentResources.length && !isUnit ? (
+          {definition.parentResources.length ? (
             <label className={ui.field}>
               <RequiredFieldLabel required={!definition.parentOptional}>
                 {parentFieldLabel(target.source.section, target.source.tab)}
@@ -564,14 +576,20 @@ function HrRecordFormFields({
                 disabled={Boolean(
                   target.parent ||
                   (target.record &&
-                    !(isUnit || isApplicant || missionExpense)) ||
+                    !(
+                      isUnit ||
+                      isChartEmployee ||
+                      isApplicant ||
+                      missionExpense
+                    )) ||
                   references.loading,
                 )}
                 value={parentId}
                 onChange={(event) => {
                   setParentId(event.target.value);
                   const item = parents.find((p) => p.id === event.target.value);
-                  if (item?.employeeId) setEmployeeId(item.employeeId);
+                  if (item?.employeeId && !isChartEmployee)
+                    setEmployeeId(item.employeeId);
                 }}
               >
                 <option value="">
@@ -595,7 +613,9 @@ function HrRecordFormFields({
                       ? missionOptionLabel(item)
                       : isApplicant && item.tab === 'staffing'
                         ? `برنامه ${valueOf(item, 'سال برنامه')} - ${valueOf(item, 'واحد')}`
-                        : item.values[0]}
+                        : item.tab === 'chartEmployees'
+                          ? item.values[1] || item.values[0]
+                          : item.values[0]}
                   </option>
                 ))}
               </NativeSearchSelect>
@@ -1003,7 +1023,10 @@ function HrRecordFormFields({
                       : {}),
                     ...(input.status ? { status: input.status } : {}),
                     ...(input.data ? { data: input.data } : {}),
-                    ...(isUnit || isApplicant || missionExpense
+                    ...(isUnit ||
+                    isChartEmployee ||
+                    isApplicant ||
+                    missionExpense
                       ? { parentId: parentId || null }
                       : {}),
                     ...(input.effectiveAt

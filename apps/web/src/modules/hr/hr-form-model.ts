@@ -41,6 +41,7 @@ export function retiredHrColumns(section: string, tab: string): string[] {
 }
 
 export function parentFieldLabel(section: string, tab: string): string {
+  if (section === 'organization' && tab === 'chartEmployees') return 'گره والد';
   if (section === 'organization')
     return tab === 'groupMembers' ? 'گروه' : 'واحد والد';
   if (section === 'time' && tab === 'shift')

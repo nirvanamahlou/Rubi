@@ -10,6 +10,13 @@ const sources = new Map(
 
 // Keep navigation metadata independent of the operation screen's client bundle.
 export function sourceForRecord(record: HrRecordDto): HrSource {
+  if (record.section === 'organization' && record.tab === 'chartEmployees')
+    return {
+      section: 'organization',
+      tab: 'chartEmployees',
+      label: 'کارکن چارت',
+      action: 'افزودن کارکن به چارت',
+    };
   return (
     sources.get(`${record.section}.${record.tab}`) ?? {
       section: record.section as HrSectionId,
