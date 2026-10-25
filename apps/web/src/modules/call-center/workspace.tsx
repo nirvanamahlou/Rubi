@@ -719,7 +719,6 @@ function Content({
                       >
                         {row.latest.subject}
                       </td>
-                      <td data-label="منبع">{row.latest.source}</td>
                       <td data-label="نوع آخرین تماس">
                         <span
                           className={styles.badge}
@@ -730,6 +729,7 @@ function Content({
                             : 'خروجی'}
                         </span>
                       </td>
+                      <td data-label="منبع">{row.latest.source}</td>
                       <td data-label="داخلی / کارشناس">
                         {row.latest.operator}
                       </td>
