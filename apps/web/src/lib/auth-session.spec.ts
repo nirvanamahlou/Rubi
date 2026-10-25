@@ -78,13 +78,11 @@ describe('shared authentication refresh', () => {
   });
 
   it('never shares refresh results between separate API origins', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => ({ user: { id: 'user-id' } }),
-      });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ user: { id: 'user-id' } }),
+    });
     vi.stubGlobal('fetch', fetchMock);
     const { refreshAuthenticatedSession } = await import('./auth-session');
     await Promise.all([

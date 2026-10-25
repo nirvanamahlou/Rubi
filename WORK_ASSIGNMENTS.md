@@ -9528,7 +9528,6 @@ HR-DEVICE-FORM-1025 regression alignment: reserve the existing hr-live.spec.tsx 
 
 FINANCIAL-WORKFLOWS-COMPLETION-1025 release: PR1110 is the publication record; all code/schema/CI reservations of this unit release automatically when that PR is merged. No other migration or module ownership is claimed. Exact-head gates, existing-database backup/count proof and local deployment receipt remain the publication evidence; operational receipt is kept outside Git under AppData/Local/Nora/deployments.
 
-
 ## SESSION-STABILITY-1025 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-session-stability-1025 from origin/develop dc82d0730. User reports involuntary logout/page refresh on avinaofficial.ir and explicitly authorizes fix, tests and develop merge. Reserve bounded Web auth-session helper/spec, IAM AccessProvider/session loader/spec, proxy/spec and user-menu async error handling plus own status notes. No active overlapping source writer found after reading current assignments/ownership; prior IAM source units published/released. Retain true authentication expiry, logout, backend revocation, API/document guards and permission revalidation. Distinguish temporary network/5xx/409 refresh failures from confirmed401/403; keep mounted forms during transient access checks; allow browser recovery of a remaining HttpOnly refresh cookie on page navigation without authorizing any API. No Backend/schema/migration/dependency/user grants or operational-data changes. Mandatory quality/tests/build and exact-head hosted checks gate the owner-authorized merge.
