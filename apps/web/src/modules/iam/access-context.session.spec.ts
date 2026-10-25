@@ -1,5 +1,6 @@
 import { createElement, type ReactElement, type ReactNode } from 'react';
 import type * as ReactRuntime from 'react';
+import type { AuthenticatedActor } from '@nora/contracts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Exercise the provider's polling effect while retaining its hook state across
@@ -36,7 +37,7 @@ import { redirect } from 'next/navigation';
 import { loadAccessSession } from './access-session';
 import { AccessProvider } from './access-context';
 
-const actor = {
+const actor: AuthenticatedActor = {
   userId: 'seller',
   sessionId: 'session',
   permissions: ['sales.contracts.create'],
