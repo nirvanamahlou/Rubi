@@ -41,6 +41,8 @@ import {
 } from './amendment-flight-search';
 import {
   amendmentFromContract,
+  amendmentBusinessOutput,
+  withAmendmentBusinessOutput,
   manualAmendmentFlights,
   applyManualAmendmentFlights,
   replaceAmendmentFlight,
@@ -269,6 +271,19 @@ export function ReservationSalesAmendment({
       >
         {section === 'FLIGHT' && (
           <>
+            <label className="flex items-center gap-3 rounded-xl bg-primary/5 p-3">
+              <input
+                type="checkbox"
+                className="size-4 accent-primary"
+                checked={amendmentBusinessOutput(draft)}
+                onChange={(event) =>
+                  patch(
+                    withAmendmentBusinessOutput(draft, event.target.checked),
+                  )
+                }
+              />
+              این بلیط بیزینس است — درج در خروجی
+            </label>
             <div className="grid gap-3 md:grid-cols-3">
               <SearchableReference
                 label="مبدأ"

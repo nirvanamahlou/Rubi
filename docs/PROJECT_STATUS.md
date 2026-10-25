@@ -7510,3 +7510,8 @@ Historical service capacity is also retained by the transactional amendment call
 ## RETURN-ONLY-CALENDAR-1025 — PC-A
 
 Return-only New Contract now labels its sole date picker as the return ticket and shows a return-card heading. The existing destination-to-origin calendar/search and RETURN payload/capacity mapping are retained; no outbound-date prerequisite or forward-route speculative request is added. Exact-day cards refresh and clear stale choices when the date changes. Round-trip pairing and outbound-only behavior remain unchanged. Focused25 regressions pass; broader Sales tests, scoped lint/types/Web build and all exact-head gates precede owner-authorized develop merge. No API, schema, migration, dependency or production change.
+
+
+## RESERVATION-BUSINESS-TOGGLE-1025 — PC-A
+
+Flight amendment in Reservations now exposes the existing contract-wide business-output checkbox, initialized from saved flight-service metadata. Both on and explicit off update all flight services while preserving other metadata and services, tickets, cabin class and pricing. Native Sales amendment republishes the canonical reservation snapshot; current contract and passenger ticket outputs read the amended flag. Historical documents stay versioned. Focused11 API and9 Web regressions pass, including snapshot propagation and confirmed-receipt preservation; related tests, affected lint/types/Web build and all exact-head hosted gates precede owner-authorized develop merge. No API/schema/migration/dependency/permission or production change.
