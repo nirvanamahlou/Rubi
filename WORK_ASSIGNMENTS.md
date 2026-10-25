@@ -9456,6 +9456,10 @@ LEGACY-CONTRACT-SERVICES-1025 count projection extension: reserve additive optio
 
 LEGACY-CONTRACT-SERVICES-1025 validation: Web Sales102 files612 tests pass (one existing skipped), API Sales36 files261 tests pass, targeted aggregate metadata/count/price/output regressions and ordinary V1 compatibility pass. Affected types, scoped lint/build and all exact-head hosted gates required before merge; deployment uses a verified encrypted backup and preserves environment/mounts/data. No migration. Source locks release on publication.
 
+## HR-LOCAL-YEAR-1025 — PC-B — RESERVED
+
+Base develop8806eac1; branch codex/pc-b-hr-local-year-1025. During the user-authorized local3100 rollout, the leave form showed NaN because Intl's Persian calendar year includes an era suffix. Reserve only hr-radan-tools.tsx, its new focused year regression and own status notes. Extract the numeric year part with Latin digits and Tehran timezone. No API, schema, migration, dependency, permissions or server deployment changes. Prior HR parity reservations released on merged PR1113; no overlapping active writer found. Targeted regression, lint/types and hosted gates precede authorized normal develop merge. Local runtime uses existing database/documents without operational writes.
+
 ## HR-DASHBOARD-CHARTS-1025 — PC-B — RESERVED
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-dashboard-charts-1025 from develop0012c956. Owner authorizes seven HR attendance/leave dashboard charts, tests, push and develop merge. Reserve HR-owned service/controller/new aggregation domain and focused tests, additive HR contracts DTO, Web HR dashboard/chart component/tests and scoped English catalogue/generated outputs, task/status docs. HR produces a new private read-only aggregate endpoint consumed by its dashboard; existing clients unaffected. Apply employee and record IAM scopes together; no raw private data, cross-module table access, migration, dependency, deployment or Radan writes. Complete bounded query with explicit overflow failure, never bootstrap-capped totals. Existing source reservations released upon publication. No orchestrator/sub-agents.
