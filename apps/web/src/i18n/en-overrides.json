@@ -4460,5 +4460,10 @@
   "حذف از انتخاب:": "Remove from selection:",
   "کارکنی انتخاب نشده است.": "No employees selected.",
   "۲ زیرصفحه": "2 subpages",
-  "دسترسی به این بخش مجاز نیست.": "You do not have access to this section."
+  "دسترسی به این بخش مجاز نیست.": "You do not have access to this section.",
+  "گروه‌ها را انتخاب کنید.": "Select groups.",
+  "گزارش آماده نشده است.": "The report is not ready.",
+  "گزینه‌ای برای انتخاب وجود ندارد.": "There are no options to select.",
+  "نتیجه گزارش": "Report results",
+  "منبع دادهٔ این گزارش در دسترس نیست.": "The data source for this report is unavailable."
 }

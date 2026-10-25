@@ -1,4 +1,4 @@
-import ui from './hr-unified.module.css';
+import styles from './hr-reports.module.css';
 import type { RadanCoefficientNode } from './radan-report-fields';
 import {
   coefficientPaths,
@@ -20,22 +20,26 @@ export function HrReportChoices({
   required?: boolean;
 }) {
   return (
-    <fieldset className={ui.reportChoices}>
+    <fieldset className={styles.choices}>
       <legend>
         <RequiredFieldLabel required={required}>{title}</RequiredFieldLabel>
       </legend>
       <label>
         <input
           type="checkbox"
-          checked={value.length === options.length}
+          checked={options.length > 0 && value.length === options.length}
           disabled={!options.length}
           onChange={(e) =>
             onChange(e.target.checked ? options.map((option) => option.id) : [])
           }
         />
-        همه ({options.length} / {value.length})
+        همه{' '}
+        <bdi>
+          ({value.length} / {options.length})
+        </bdi>
       </label>
-      <div style={{ maxHeight: 220, overflow: 'auto' }}>
+      <div className={styles.choiceList}>
+        {!options.length ? <p>گزینه‌ای برای انتخاب وجود ندارد.</p> : null}
         {options.map((option) => (
           <div key={option.id}>
             <label>
@@ -70,7 +74,7 @@ export function HrCoefficientTree({
   onChange: (ids: string[]) => void;
 }) {
   return (
-    <div>
+    <div className={styles.coefficientTree}>
       {nodes.map((node) => {
         const path = parent ? `${parent} / ${node.label}` : node.label;
         const descendants = coefficientPaths([node], parent);
