@@ -9,6 +9,10 @@ import { canViewRoute } from './iam/user-access';
 import { completeManualAccessPrerequisites } from './iam/manual-access-prerequisites';
 const empty = { serviceSelections: [], ticketSelections: [] };
 describe('floating sourcing boundaries', () => {
+  it('fails closed for historical or partial snapshots without flight selections', () => {
+    expect(isFloatingContract(undefined)).toBe(false);
+    expect(isFloatingContract({})).toBe(false);
+  });
   it('classifies a mixed contract hotel when one flight is contract-only, without inferring from the hotel', () => {
     expect(
       isFloatingContract(

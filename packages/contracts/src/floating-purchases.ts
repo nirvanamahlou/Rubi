@@ -7,21 +7,26 @@ export const FLOATING_PURCHASE_OWN = 'floating_purchases.write.own';
 export const FLOATING_PURCHASE_ALL = 'floating_purchases.read.all';
 /** Server-owned Sales/Inventory facts; one floating leg also makes the hotel floating. */
 export function isFloatingContract(
-  snapshot: Pick<
-    SalesReservationRequestV1,
-    'serviceSelections' | 'ticketSelections'
-  >,
+  snapshot:
+    | Partial<
+        Pick<
+          SalesReservationRequestV1,
+          'serviceSelections' | 'ticketSelections'
+        >
+      >
+    | null
+    | undefined,
   trustedInventoryProjection = true,
 ): boolean {
   return (
-    snapshot.ticketSelections?.some(
+    snapshot?.ticketSelections?.some(
       (t) => 'source' in t && t.source === 'CONTRACT_ONLY',
     ) === true ||
-    snapshot.serviceSelections.some(
+    (snapshot?.serviceSelections ?? []).some(
       (s) =>
         s.kind === 'FLIGHT' &&
         ((s.metadata?.contractFlightVersion === 1 &&
-          !snapshot.ticketSelections?.some(
+          !snapshot?.ticketSelections?.some(
             (t) =>
               t.serviceClientKey === s.clientKey &&
               (!('source' in t) || t.source !== 'CONTRACT_ONLY'),

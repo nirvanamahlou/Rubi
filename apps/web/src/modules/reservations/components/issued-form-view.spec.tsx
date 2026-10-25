@@ -1,3 +1,4 @@
+import { canonicalTestTree } from '@/i18n/test-tree';
 import { beforeEach, it, expect, vi } from 'vitest';
 import type * as ReactModule from 'react';
 import { isValidElement, type ReactNode } from 'react';
@@ -139,3 +140,25 @@ it.each([undefined, 0, -1, 1.5])(
     expect(tree.some((node) => node.type === ReservationSettings)).toBe(true);
   },
 );
+
+it('opens floating voucher issuance and leader setup before any supplier operations form', () => {
+  const intake = state.values[3] as Record<string, unknown>;
+  intake.floatingContract = true;
+  intake.workflow = {
+    version: 0,
+    voucherIssued: false,
+    supplierStatus: 'NEW',
+    voucherSettings: { brokerId: 'b', leaderId: 'l', text: {} },
+    branding: { kind: 'OWN' },
+    insuranceIssued: true,
+  };
+  const tree = nodes(
+    canonicalTestTree(TravelWorkflowForm({ id: 'request', action: 'واچر' })),
+  );
+  const issue = tree.find(
+    (n) => n.type === Button && n.props.children === 'صدور واچر',
+  );
+  expect(issue).toBeDefined();
+  expect(issue?.props.disabled).toBe(false);
+  expect(tree.some((n) => n.props.children === 'انتخاب تورلیدر')).toBe(true);
+});
