@@ -7623,3 +7623,7 @@ Reservation contract-detail travel dates and flight timestamps now honor per-ser
 ## CONTRACT-SELLER-NAME-1025 — PC-A
 
 Saved contract output resolves its actual owner display name after existing contract/state/company authorization, without requiring iam.users.read or enumerating the users directory. Creator-only own-contract output and manager output retain the saved seller, including inactive/moved owners; preview/PDF consume the same ownerName. Exact-owner IAM projection exposes only ID/displayName. Permission, missing-owner and safe-header regressions plus affected types/lint/build and hosted exact-head gates precede user-authorized develop merge. No schema/migration/dependency/role grant or runtime rollout.
+
+## CALL-DIRECTION-LABELS-1025 — PC-C
+
+Contact rows distinguish latest inbound/outbound calls; outbound forms and history label the originating extension explicitly. Neutral extension/agent column heading. No PBX routing, API, schema or popup activation change. Isolated publication preserves unrelated work; local candidate verified with five form tests, lint, types and production build.
