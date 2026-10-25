@@ -1,3 +1,7 @@
+## SALES-CONTRACT-ACCOUNTING-1025 — PC-A
+
+Contract confirmation now captures per-currency immutable obligations in the source transaction. Existing approved Accounting chart mappings generate independent drafts; no guessed accounts or automatic posting. Source guards cover amendment/cancellation/supersession and period closure; earned revenue releases the original deferred line instead of accruing a second receivable, including historical FX dimensions. Forms, bank behavior and operational data preserved. See [task evidence](tasks/SALES-CONTRACT-ACCOUNTING-1025.md). Isolated PostgreSQL/source regressions, affected checks and exact-head hosted gates required before authorized develop merge. No schema/migration/dependency or runtime rollout.
+
 ## HR-LOCAL-YEAR-1025 — PC-B
 
 Local3100 rollout of merged HR parity exposed Intl Persian-year strings containing an era suffix, which produced NaN in leave forms. Extract only the year part with Latin digits in Asia/Tehran; regressions cover the observed date and the Tehran Nowruz midnight boundary. No API/schema/migration/dependency/permission changes or server rollout. Existing local data/documents remain. Targeted tests/lint/types and exact-head hosted gates precede authorized normal develop merge. Reservation freezes after final verification and releases only on verified merged PR.
