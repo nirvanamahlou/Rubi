@@ -1,3 +1,7 @@
+import type {
+  ReservationServicePurchaseV1,
+  ReservationHotelPurchaseV1,
+} from './travel';
 import type { SalesReservationRequestV1 } from './sales';
 export const FLOATING_PURCHASE_OWN = 'floating_purchases.write.own';
 export const FLOATING_PURCHASE_ALL = 'floating_purchases.read.all';
@@ -37,4 +41,36 @@ export function canWriteOwnFloatingPurchase(
     !!ownerId &&
     ownerId === userId
   );
+}
+
+/** Bounded purchase workspace projection; no passenger identity or Finance payment details. */
+export interface FloatingPurchaseRequestV1 {
+  id: string;
+  salesOwnerUserId?: string | null;
+  purchaseVersion?: number;
+  snapshot: {
+    contractNumber: string;
+    serviceSelections: readonly {
+      clientKey: string;
+      kind: 'HOTEL' | 'FLIGHT';
+      titleSnapshot: string;
+    }[];
+    hotelSelection?: { serviceClientKey: string; hotelNameSnapshot: string };
+    ticketSelections?: readonly {
+      serviceClientKey: string;
+      carrierNameSnapshot: string;
+    }[];
+  };
+  servicePurchases?: readonly Pick<
+    ReservationServicePurchaseV1,
+    | 'serviceClientKey'
+    | 'supplierOrganizationId'
+    | 'supplierName'
+    | 'amount'
+    | 'currencyCode'
+  >[];
+  hotelPurchases?: readonly Pick<
+    ReservationHotelPurchaseV1,
+    'amount' | 'currencyCode'
+  >[];
 }

@@ -19,6 +19,7 @@ import {
   FLOATING_PURCHASE_OWN,
   FLOATING_PURCHASE_ALL,
   type ReservationServicePurchaseInputV1,
+  type FloatingPurchaseRequestV1,
 } from '@nora/contracts';
 import { AuthGuard } from '../iam/auth.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
@@ -71,6 +72,65 @@ export class FloatingPurchasesController {
     return {
       version: 1,
       ...result,
+      data: result.data.map((request): FloatingPurchaseRequestV1 => {
+        const keys = new Set(
+          result.meta.services
+            .filter((row) => row.id === request.id)
+            .map((row) => row.clientKey),
+        );
+        return {
+          id: request.id,
+          salesOwnerUserId: request.salesOwnerUserId,
+          purchaseVersion: request.purchaseVersion,
+          snapshot: {
+            contractNumber: request.snapshot.contractNumber,
+            serviceSelections: request.snapshot.serviceSelections
+              .filter(
+                (s) =>
+                  keys.has(s.clientKey) &&
+                  (s.kind === 'HOTEL' || s.kind === 'FLIGHT'),
+              )
+              .map((s) => ({
+                clientKey: s.clientKey,
+                kind: s.kind as 'HOTEL' | 'FLIGHT',
+                titleSnapshot: s.titleSnapshot,
+              })),
+            ...(request.snapshot.hotelSelection &&
+            keys.has(request.snapshot.hotelSelection.serviceClientKey)
+              ? {
+                  hotelSelection: {
+                    serviceClientKey:
+                      request.snapshot.hotelSelection.serviceClientKey,
+                    hotelNameSnapshot:
+                      request.snapshot.hotelSelection.hotelNameSnapshot,
+                  },
+                }
+              : {}),
+            ticketSelections: request.snapshot.ticketSelections
+              ?.filter((t) => keys.has(t.serviceClientKey))
+              .map((t) => ({
+                serviceClientKey: t.serviceClientKey,
+                carrierNameSnapshot: t.carrierNameSnapshot,
+              })),
+          },
+          servicePurchases: request.servicePurchases
+            ?.filter((p) => keys.has(p.serviceClientKey))
+            .map((p) => ({
+              serviceClientKey: p.serviceClientKey,
+              supplierOrganizationId: p.supplierOrganizationId,
+              supplierName: p.supplierName,
+              amount: p.amount,
+              currencyCode: p.currencyCode,
+            })),
+          hotelPurchases:
+            kind === 'HOTEL'
+              ? request.hotelPurchases?.map((p) => ({
+                  amount: p.amount,
+                  currencyCode: p.currencyCode,
+                }))
+              : undefined,
+        };
+      }),
       meta: {
         ...result.meta,
         canRecord: req.actor.permissions.includes(FLOATING_PURCHASE_OWN),

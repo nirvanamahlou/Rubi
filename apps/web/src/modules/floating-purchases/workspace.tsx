@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   canViewRoute,
   canWriteOwnFloatingPurchase,
-  type ReservationIntakeV1,
+  type FloatingPurchaseRequestV1,
   type ReservationServicePurchaseInputV1,
   type SalesServiceInput,
 } from '@nora/contracts';
@@ -24,7 +24,7 @@ import { floatingPurchaseService } from './model';
 type Kind = 'HOTEL' | 'FLIGHT';
 type Row = { id: string; clientKey: string; status: string };
 type Inbox = {
-  data: ReservationIntakeV1[];
+  data: FloatingPurchaseRequestV1[];
   meta: { page: number; hasMore: boolean; services: Row[] };
 };
 type Option = { id: string; name: string };
@@ -104,7 +104,7 @@ function PurchaseEditor({
   kind,
   onSaved,
 }: {
-  request: ReservationIntakeV1;
+  request: FloatingPurchaseRequestV1;
   service: SalesServiceInput;
   kind: Kind;
   onSaved: () => void;
@@ -212,7 +212,7 @@ export function FloatingPurchasesWorkspace({ kind }: { kind: Kind }) {
     actor?.permissions,
   ]);
   const [selection, setSelection] = useState<{
-    request: ReservationIntakeV1;
+    request: FloatingPurchaseRequestV1;
     service: SalesServiceInput;
     scopeKey: string;
   } | null>(null);

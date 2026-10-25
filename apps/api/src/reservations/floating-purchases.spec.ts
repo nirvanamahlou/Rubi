@@ -246,3 +246,42 @@ it('uses server-derived floating status for reference options and rejects ordina
   ).rejects.toBeInstanceOf(ForbiddenException);
   expect(choices).toHaveBeenCalledTimes(1);
 });
+
+it('projects only the selected purchase service without passenger, other cost or Finance payment details', async () => {
+  const inbox = vi.fn().mockResolvedValue({
+    data: [
+      {
+        id: 'i',
+        salesOwnerUserId: 'seller',
+        purchaseVersion: 0,
+        snapshot: {
+          contractNumber: 'SYNTHETIC',
+          passengerIds: ['PRIVATE-PASSENGER'],
+          serviceSelections: [
+            { clientKey: 'h', kind: 'HOTEL', titleSnapshot: 'Hotel' },
+          ],
+        },
+        servicePurchases: [
+          {
+            serviceClientKey: 'h',
+            supplierName: 'Broker',
+            amount: '100',
+            currencyCode: 'IRR',
+            finance: { accountTitle: 'PRIVATE-BANK' },
+          },
+          { serviceClientKey: 'insurance', amount: 'PRIVATE-OTHER-COST' },
+        ],
+      },
+    ],
+    meta: { services: [{ id: 'i', clientKey: 'h' }] },
+  });
+  const controller = new FloatingPurchasesController(
+    { purchaseInbox: inbox } as never,
+    {} as never,
+    {} as never,
+  );
+  const result = await controller.list({ actor } as never, { kind: 'HOTEL' });
+  expect(result.data[0]?.servicePurchases).toHaveLength(1);
+  expect(JSON.stringify(result)).not.toContain('PRIVATE-');
+  expect(result.data[0]?.snapshot.contractNumber).toBe('SYNTHETIC');
+});

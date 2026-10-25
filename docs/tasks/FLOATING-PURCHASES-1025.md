@@ -11,7 +11,7 @@ User requests a review PR only. No merge, deployment, operational data rewrite o
 
 ## Behavior and boundaries
 
-Hotel and flight entries are stacked in Purchasing & Supply. The existing Reservations public producer supplies branch/owner-scoped rows; filtering occurs before count and pagination and is repeated at hydration. Actual Inventory supply plus canonical contract-only flight metadata classify the contract. Client-provided supply metadata cannot authorize purchases. Any floating leg makes the associated hotel floating; company-capacity flights are not purchased again per contract.
+Hotel and flight entries are stacked in Purchasing & Supply. The bounded response contains only contract/service descriptors and selected purchase amounts; it excludes passenger identities, unrelated costs and Finance payment/bank details. The existing Reservations public producer supplies branch/owner-scoped rows; filtering occurs before count and pagination and is repeated at hydration. Actual Inventory supply plus canonical contract-only flight metadata classify the contract. Client-provided supply metadata cannot authorize purchases. Any floating leg makes the associated hotel floating; company-capacity flights are not purchased again per contract.
 
 The existing append-only Reservations cost command records one aggregate supplier/currency amount per selected floating service, with version/owner CAS, idempotency, purchase FX and an actor audit. Flight Finance settlement/refund coverage remains required. No synthetic passenger nightly prices, duplicate cost producer or financial posting is introduced.
 

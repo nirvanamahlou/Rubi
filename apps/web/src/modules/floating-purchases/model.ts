@@ -1,6 +1,9 @@
-import type { ReservationIntakeV1, SalesServiceInput } from '@nora/contracts';
+import type {
+  FloatingPurchaseRequestV1,
+  SalesServiceInput,
+} from '@nora/contracts';
 export function floatingPurchaseService(
-  request: ReservationIntakeV1,
+  request: FloatingPurchaseRequestV1,
   key: string,
 ): SalesServiceInput | undefined {
   const service = request.snapshot.serviceSelections.find(
