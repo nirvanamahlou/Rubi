@@ -727,7 +727,7 @@ describe('explicit visa applicants', () => {
 });
 
 describe('legacy contract payload', () => {
-  it('uses only manually agreed totals and drops prior operational passengers and selections', () => {
+  it('keeps manually agreed totals and omits personal passenger rows for aggregate legacy services', () => {
     const state = {
       ...emptySalesForm,
       legacyContract: true,
@@ -736,7 +736,7 @@ describe('legacy contract payload', () => {
       originId: 'origin',
       destinationId: 'destination',
       departureDate: '2026-10-01',
-      serviceKinds: ['FLIGHT' as const],
+      serviceKinds: ['OTHER' as const],
       passengerTotalPricing: true,
       automaticComponentPricing: true,
       contractPrices: [
@@ -770,7 +770,7 @@ describe('legacy contract payload', () => {
     expect(payload.passengers).toEqual([]);
     expect(payload.ticketSelections).toEqual([]);
     expect(payload.hotelSelection).toBeNull();
-    expect(payload.services[0]?.metadata?.legacyContractV1).toBe(true);
+    expect(payload.services[0]?.metadata?.legacyServicePartiesV2).toBeDefined();
     expect(
       payload.priceComponents.map((p) => [p.currencyCode, p.amount]),
     ).toEqual([

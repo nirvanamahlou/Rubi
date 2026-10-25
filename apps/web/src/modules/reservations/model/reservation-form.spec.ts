@@ -296,3 +296,28 @@ it('prints a manually completed missing gender only in the saved supplier form',
   ).toBe('-');
   expect(value.outputPassengers).toBeUndefined();
 });
+
+it('uses historical hotel age counts without adding fabricated people to the supplier form', () => {
+  const intake = structuredClone(input);
+  intake.snapshot.passengerIds = [];
+  intake.snapshot.passengerAssignments = [];
+  intake.snapshot.hotelSelection = {
+    ...intake.snapshot.hotelSelection!,
+    serviceClientKey: 'hotel',
+  };
+  intake.snapshot.serviceSelections = [
+    {
+      clientKey: 'hotel',
+      kind: 'HOTEL',
+      titleSnapshot: 'Hotel',
+      metadata: {
+        legacyServicePartiesV2: JSON.stringify({
+          hotel: { adults: 2, children: 1, infants: 1 },
+        }),
+      },
+    },
+  ];
+  const form = reservationFormData(intake);
+  expect(form).toMatchObject({ adults: 2, children: 1, infants: 1 });
+  expect(form.passengers).toEqual([]);
+});
