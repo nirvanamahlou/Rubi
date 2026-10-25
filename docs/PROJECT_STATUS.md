@@ -7502,3 +7502,8 @@ MISSED-CALLBACK-KPI-1025 final verification: production Web build/typecheck65 ro
 Missed-callback KPI opens a paginated unique-contact list using the same eligibility as its count. Reuses existing modal presentation, dossier and fresh outbound registration with phone/name prefill, preserving the original missed call. Registration/cancel keeps modal context; saved results refresh membership and KPI. Shared predicate, branch/report/contact authorization, stable sorting and membership/revision checks protect reads.15 PostgreSQL tests plus13 Web tests pass, including KPI/list agreement and successful/unsuccessful manual callback behavior. No migration/dependency/PBX or automatic popup change; local build/browser acceptance tracked in task document.
 
 CALLBACK-DRILLDOWN-1025 final: Web typecheck/build65 routes and browser acceptance complete. Callback registration preserves original miss and uses existing form. Local runtime updated, no business-data test writes, no PR/merge/deployment. Bounded source reservations released on push.
+
+## 2026-10-25 — PERIOD-DRILLDOWN-1025 — PC-C
+Today/week KPI call drilldowns with dossier and edit, Tehran bounds, matching authorized counts, revision-aware pagination.30 targeted tests pass. No migration or telephony/UI layout change. See task document for final build/browser verification.
+
+PERIOD-DRILLDOWN-1025 final: Web65-route build and local browser verification passed; running3000/4000. Scoped source reservations released on push; no merge/deploy.

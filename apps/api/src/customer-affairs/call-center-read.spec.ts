@@ -874,6 +874,65 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           read.kpis({ ...scopedActor, permissions: [] }, kpiBranch),
         ).rejects.toMatchObject({ status: 403 });
         expect(decrypt).toHaveBeenCalled();
+        for (const period of ['today', 'week'] as const) {
+          const first = await read.withoutOutcome(
+            scopedActor,
+            kpiBranch,
+            Object.assign(new CallCenterSearchDto(), {
+              pageSize: 1,
+              query: 'ignored',
+            }),
+            period,
+          );
+          expect(first.meta.total).toBe(result.data[period]);
+          expect(first.data).toHaveLength(1);
+          const second = await read.withoutOutcome(
+            scopedActor,
+            kpiBranch,
+            Object.assign(new CallCenterSearchDto(), {
+              page: 2,
+              pageSize: 1,
+              revision: first.meta.revision,
+            }),
+            period,
+          );
+          expect(second.data[0]!.call.id).not.toBe(first.data[0]!.call.id);
+          expect(
+            new Date(first.data[0]!.call.occurredAt).getTime(),
+          ).toBeGreaterThanOrEqual(
+            new Date(second.data[0]!.call.occurredAt).getTime(),
+          );
+          await expect(
+            read.withoutOutcome(
+              scopedActor,
+              kpiBranch,
+              Object.assign(new CallCenterSearchDto(), {
+                page: 2,
+                pageSize: 1,
+                revision: 'stale',
+              }),
+              period,
+            ),
+          ).rejects.toMatchObject({ status: 409 });
+          await expect(
+            read.withoutOutcome(
+              scopedActor,
+              otherBranch,
+              new CallCenterSearchDto(),
+              period,
+            ),
+          ).rejects.toMatchObject({ status: 403 });
+          expect(
+            (
+              await read.withoutOutcome(
+                scopedActor,
+                emptyBranch,
+                new CallCenterSearchDto(),
+                period,
+              )
+            ).meta.total,
+          ).toBe(0);
+        }
         const drilldown = await read.withoutOutcome(
           scopedActor,
           kpiBranch,

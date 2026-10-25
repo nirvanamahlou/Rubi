@@ -21,10 +21,12 @@ export function CallKpiCards({
   revision,
   onWithoutOutcome,
   onMissedCallbacks,
+  onPeriod,
 }: {
   branchId: string;
   revision: string;
   onWithoutOutcome?: (() => void) | undefined;
+  onPeriod?: ((period: 'today' | 'week') => void) | undefined;
   onMissedCallbacks?: (() => void) | undefined;
 }) {
   const [data, setData] = useState<CallKpis | null>(null);
@@ -74,36 +76,36 @@ export function CallKpiCards({
             aria-label={label}
             data-tone={key}
             role={
+              ((key === 'today' || key === 'week') && onPeriod) ||
               (key === 'withoutOutcome' && onWithoutOutcome) ||
               (key === 'needsFollowUp' && onMissedCallbacks)
                 ? 'button'
                 : undefined
             }
             tabIndex={
+              ((key === 'today' || key === 'week') && onPeriod) ||
               (key === 'withoutOutcome' && onWithoutOutcome) ||
               (key === 'needsFollowUp' && onMissedCallbacks)
                 ? 0
                 : undefined
             }
             onClick={
-              key === 'withoutOutcome'
-                ? onWithoutOutcome
-                : key === 'needsFollowUp'
-                  ? onMissedCallbacks
-                  : undefined
+              key === 'today' || key === 'week'
+                ? () => onPeriod?.(key)
+                : key === 'withoutOutcome'
+                  ? onWithoutOutcome
+                  : key === 'needsFollowUp'
+                    ? onMissedCallbacks
+                    : undefined
             }
-            onKeyDown={
-              key === 'withoutOutcome' || key === 'needsFollowUp'
-                ? (event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      (key === 'withoutOutcome'
-                        ? onWithoutOutcome
-                        : onMissedCallbacks)?.();
-                    }
-                  }
-                : undefined
-            }
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                if (key === 'today' || key === 'week') onPeriod?.(key);
+                else if (key === 'withoutOutcome') onWithoutOutcome?.();
+                else onMissedCallbacks?.();
+              }
+            }}
           >
             <span>{label}</span>
             <strong>

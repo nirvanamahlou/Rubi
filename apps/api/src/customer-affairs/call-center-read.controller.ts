@@ -69,6 +69,24 @@ export class CallCenterReadController {
   ) {
     return this.service.withoutOutcome(req.actor, branch, query);
   }
+  @Post('today-calls')
+  @Header('Cache-Control', 'private, no-store')
+  todayCalls(
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch: string | undefined,
+    @Body() query: CallCenterSearchDto,
+  ) {
+    return this.service.withoutOutcome(req.actor, branch, query, 'today');
+  }
+  @Post('week-calls')
+  @Header('Cache-Control', 'private, no-store')
+  weekCalls(
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch: string | undefined,
+    @Body() query: CallCenterSearchDto,
+  ) {
+    return this.service.withoutOutcome(req.actor, branch, query, 'week');
+  }
   @Post('missed-callbacks')
   @Header('Cache-Control', 'private, no-store')
   missedCallbacks(

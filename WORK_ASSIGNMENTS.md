@@ -9490,3 +9490,8 @@ MISSED-CALLBACK-KPI-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:15 PostgreSQL te
 User authorizes clickable missed-callback KPI with same-style modal, one row per eligible contact, dossier and new outbound registration. Reserve Call Center callbacks/read/controller/tests and Web kpis/workflow/workspace/shared drilldown/client/tests, localized copy, own docs. Producer/consumer add POST missed-callbacks with existing paging shape; same authoritative eligibility as KPI. No migration/dependency, IAM/PBX or automatic popup change. Previous locks released; preserve generated next-env change and other runtimes.
 
 CALLBACK-DRILLDOWN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:28 tests pass, scoped lint/API build and Web typecheck/build65 routes pass. Browser verifies modal/list/new outbound form/cancel/dossier. Local3000/4000 refreshed; no operational data edit or migration.
+
+## PERIOD-DRILLDOWN-1025 — PC-C — IN_PROGRESS
+Reserve Call Center read service/controller/tests and Web KPI/workflow/workspace/shared modal/client/localization for today/week call drilldowns. Add authenticated POST today-calls/week-calls; preserve permissions, UI and telephony. No migration/dependency changes.
+
+PERIOD-DRILLDOWN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:30 tests, scoped lint, API build and Web typecheck/build pass; today/week modal and edit verified on localhost3000. No migration or automatic-popup change.

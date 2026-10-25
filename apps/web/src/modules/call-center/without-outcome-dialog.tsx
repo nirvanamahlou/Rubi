@@ -22,7 +22,7 @@ export function WithoutOutcomeDialog({
   onComplete,
   onContact,
 }: {
-  mode?: 'without-outcome' | 'missed-callbacks';
+  mode?: 'without-outcome' | 'missed-callbacks' | 'today' | 'week';
   onRegister?: (call: ContactSummary['latest']) => void;
   branch: string;
   revision: number;
@@ -33,9 +33,14 @@ export function WithoutOutcomeDialog({
   onContact: (contact: ContactSummary) => void;
 }) {
   const callbacks = mode === 'missed-callbacks';
-  const title = callbacks
-    ? 'تماس‌های ازدست‌رفته نیازمند تماس مجدد'
-    : 'تماس‌های بدون نتیجه';
+  const period = mode === 'today' || mode === 'week';
+  const title = period
+    ? mode === 'today'
+      ? 'تماس‌های امروز'
+      : 'تماس‌های هفته'
+    : callbacks
+      ? 'تماس‌های ازدست‌رفته نیازمند تماس مجدد'
+      : 'تماس‌های بدون نتیجه';
   const restoreFocus = useDialogReturnFocus();
   const [page, setPage] = useState(1);
   const [retry, setRetry] = useState(0);
@@ -47,7 +52,13 @@ export function WithoutOutcomeDialog({
   const snapshot = useRef<string | undefined>(undefined);
   useEffect(() => {
     const controller = new AbortController();
-    (callbacks ? readApi.missedCallbacks : readApi.withoutOutcome)(
+    (mode === 'today'
+      ? readApi.todayCalls
+      : mode === 'week'
+        ? readApi.weekCalls
+        : callbacks
+          ? readApi.missedCallbacks
+          : readApi.withoutOutcome)(
       branch,
       page,
       page === 1 ? undefined : snapshot.current,
@@ -73,7 +84,7 @@ export function WithoutOutcomeDialog({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [branch, page, revision, retry, callbacks]);
+  }, [branch, page, revision, retry, callbacks, mode]);
   const refresh = () => {
     setLoading(true);
     setError('');
@@ -91,9 +102,13 @@ export function WithoutOutcomeDialog({
       <DialogContent className={styles.dialog} onCloseAutoFocus={restoreFocus}>
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription>
-          {callbacks
-            ? 'هر ردیف یک مخاطب نیازمند تماس مجدد است. پس از تماس با مخاطب، نتیجه تماس مجدد را ثبت کنید؛ تلاش ناموفق او را از فهرست خارج نمی‌کند.'
-            : 'هر ردیف یک تماس با نتیجه ثبت‌نشده است؛ همه سوابق شعبه انتخاب‌شده، مستقل از فیلترهای مخاطبان.'}
+          {period
+            ? mode === 'today'
+              ? 'تماس‌های امروز از ابتدای روز تا اکنون به وقت تهران؛ مستقل از فیلترهای مخاطبان.'
+              : 'تماس‌های هفته از ابتدای شنبه تا اکنون به وقت تهران؛ مستقل از فیلترهای مخاطبان.'
+            : callbacks
+              ? 'هر ردیف یک مخاطب نیازمند تماس مجدد است. پس از تماس با مخاطب، نتیجه تماس مجدد را ثبت کنید؛ تلاش ناموفق او را از فهرست خارج نمی‌کند.'
+              : 'هر ردیف یک تماس با نتیجه ثبت‌نشده است؛ همه سوابق شعبه انتخاب‌شده، مستقل از فیلترهای مخاطبان.'}
         </DialogDescription>
         <div className={styles.toolbar}>
           <span aria-live="polite">
@@ -117,9 +132,11 @@ export function WithoutOutcomeDialog({
         )}
         {!loading && result?.data.length === 0 && (
           <p role="status">
-            {callbacks
-              ? 'مخاطب نیازمند تماس مجددی در دسترسی شما وجود ندارد.'
-              : 'تماس بدون نتیجه‌ای در دسترسی شما وجود ندارد.'}
+            {period
+              ? 'تماسی در این بازه در دسترسی شما وجود ندارد.'
+              : callbacks
+                ? 'مخاطب نیازمند تماس مجددی در دسترسی شما وجود ندارد.'
+                : 'تماس بدون نتیجه‌ای در دسترسی شما وجود ندارد.'}
           </p>
         )}
         <div className={styles.scroll} aria-busy={loading}>
@@ -158,7 +175,18 @@ export function WithoutOutcomeDialog({
                     <td>{faNumber(callCount)}</td>
                     <td>
                       <span className={styles.badge}>
-                        {callbacks ? 'نیازمند تماس مجدد' : 'نتیجه ثبت‌نشده'}
+                        {period
+                          ? ((
+                              {
+                                ANSWERED: 'پاسخ داده شده',
+                                NO_ANSWER: 'بدون پاسخ',
+                                BUSY: 'مشغول',
+                                FAILED: 'ناموفق',
+                              } as Record<string, string>
+                            )[call.outcome ?? ''] ?? 'نتیجه ثبت‌نشده')
+                          : callbacks
+                            ? 'نیازمند تماس مجدد'
+                            : 'نتیجه ثبت‌نشده'}
                       </span>
                     </td>
                     <td>
@@ -172,7 +200,11 @@ export function WithoutOutcomeDialog({
                               : void onComplete(call.id)
                           }
                         >
-                          {callbacks ? 'ثبت تماس مجدد' : 'تکمیل اطلاعات تماس'}
+                          {period
+                            ? 'ویرایش اطلاعات تماس'
+                            : callbacks
+                              ? 'ثبت تماس مجدد'
+                              : 'تکمیل اطلاعات تماس'}
                         </button>
                         <button
                           type="button"
@@ -196,9 +228,11 @@ export function WithoutOutcomeDialog({
         <nav
           className={styles.pagination}
           aria-label={
-            callbacks
-              ? 'صفحه‌بندی مخاطبان نیازمند تماس مجدد'
-              : 'صفحه‌بندی تماس‌های بدون نتیجه'
+            period
+              ? 'صفحه‌بندی تماس‌های بازه'
+              : callbacks
+                ? 'صفحه‌بندی مخاطبان نیازمند تماس مجدد'
+                : 'صفحه‌بندی تماس‌های بدون نتیجه'
           }
         >
           <button

@@ -8,6 +8,38 @@ vi.mock('@/lib/environment', () => ({
 }));
 describe('Call Center paginated read transport', () => {
   beforeEach(() => vi.clearAllMocks());
+  it.each(['today', 'week'] as const)(
+    'loads %s calls with scoped paging',
+    async (period) => {
+      transport.mockResolvedValue(
+        new Response(JSON.stringify({ data: [], meta: { total: 0 } })),
+      );
+      const controller = new AbortController();
+      await readApi[period === 'today' ? 'todayCalls' : 'weekCalls'](
+        'branch',
+        2,
+        'revision',
+        controller.signal,
+      );
+      const [url, options] = transport.mock.calls[0]!;
+      expect(url).toBe(
+        'http://localhost:4000/api/v1/customer-affairs/call-center/' +
+          period +
+          '-calls',
+      );
+      expect(options).toMatchObject({
+        method: 'POST',
+        signal: controller.signal,
+        cache: 'no-store',
+        headers: { 'x-branch-id': 'branch' },
+      });
+      expect(JSON.parse(options.body)).toEqual({
+        page: 2,
+        pageSize: 20,
+        revision: 'revision',
+      });
+    },
+  );
   it('loads callback contacts with server pagination and cancellation', async () => {
     transport.mockResolvedValue(
       new Response(JSON.stringify({ data: [], meta: { total: 0 } })),

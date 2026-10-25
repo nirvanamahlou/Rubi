@@ -129,6 +129,54 @@ export const readApi = {
       }),
       signal,
     }),
+  todayCalls: (
+    branch: string,
+    page: number,
+    revision: string | undefined,
+    signal: AbortSignal,
+  ) =>
+    callCenterRequest<{
+      data: { call: ContactSummary['latest']; callCount: number }[];
+      meta: {
+        total: number;
+        page: number;
+        pageSize: number;
+        revision: string;
+        asOf: string;
+      };
+    }>('/today-calls', branch, {
+      method: 'POST',
+      body: JSON.stringify({
+        page,
+        pageSize: 20,
+        ...(revision ? { revision } : {}),
+      }),
+      signal,
+    }),
+  weekCalls: (
+    branch: string,
+    page: number,
+    revision: string | undefined,
+    signal: AbortSignal,
+  ) =>
+    callCenterRequest<{
+      data: { call: ContactSummary['latest']; callCount: number }[];
+      meta: {
+        total: number;
+        page: number;
+        pageSize: number;
+        revision: string;
+        asOf: string;
+      };
+    }>('/week-calls', branch, {
+      method: 'POST',
+      body: JSON.stringify({
+        page,
+        pageSize: 20,
+        ...(revision ? { revision } : {}),
+      }),
+      signal,
+    }),
   missedCallbacks: (
     branch: string,
     page: number,

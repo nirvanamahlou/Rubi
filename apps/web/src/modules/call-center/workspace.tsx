@@ -199,6 +199,7 @@ function Content({
   );
   const [newRequestOpen, setNewRequestOpen] = useState(false);
   const [withoutOutcomeOpen, setWithoutOutcomeOpen] = useState(false);
+  const [periodOpen, setPeriodOpen] = useState<'today' | 'week' | null>(null);
   const [callbacksOpen, setCallbacksOpen] = useState(false);
   const [selected, setSelected] = useState<ContactSummary | null>(null),
     [draft, setDraft] = useState<CallEvent | null>(null),
@@ -422,6 +423,7 @@ function Content({
       <WorkQueue
         onWithoutOutcome={() => setWithoutOutcomeOpen(true)}
         onMissedCallbacks={() => setCallbacksOpen(true)}
+        onPeriod={setPeriodOpen}
         branchId={branch}
         actorId={actorId}
         canManage={canManage}
@@ -864,6 +866,22 @@ function Content({
           onContact={(contact) => {
             setSelected(contact);
             setWithoutOutcomeOpen(false);
+          }}
+        />
+      )}
+      {periodOpen && (
+        <WithoutOutcomeDialog
+          key={periodOpen + branch + historyRevision}
+          mode={periodOpen}
+          branch={branch}
+          revision={historyRevision}
+          hidden={!!draft}
+          canComplete={canCreate && canManage && !busy}
+          onClose={() => setPeriodOpen(null)}
+          onComplete={complete}
+          onContact={(contact) => {
+            setSelected(contact);
+            setPeriodOpen(null);
           }}
         />
       )}

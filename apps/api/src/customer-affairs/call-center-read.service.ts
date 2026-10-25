@@ -360,8 +360,8 @@ export class CallCenterReadService {
         withoutOutcome: bigint;
       }>
     >`SELECT
-      count(*) FILTER(WHERE a.occurred_at >= ${day} AND a.occurred_at <= ${now}) AS today,
-      count(*) FILTER(WHERE a.occurred_at >= ${week} AND a.occurred_at <= ${now}) AS week,
+      count(*) FILTER(WHERE a.occurred_at >= ${day} AND a.occurred_at <= ${now} AND (${contactScope})) AS today,
+      count(*) FILTER(WHERE a.occurred_at >= ${week} AND a.occurred_at <= ${now} AND (${contactScope})) AS week,
       count(*) FILTER(WHERE a.outcome IS NULL AND (${contactScope})) AS "withoutOutcome"
       FROM customer_affairs_calls a
       JOIN customer_affairs_call_contacts c ON c.id=a.contact_id
@@ -418,6 +418,7 @@ export class CallCenterReadService {
     actor: AuthenticatedActor,
     branch: string | undefined,
     input: CallCenterSearchDto,
+    period?: 'today' | 'week',
   ) {
     const branchId = this.workflow.scope(actor, branch);
     // Only paging is accepted semantically: contact-list filters never affect this KPI.
@@ -425,7 +426,7 @@ export class CallCenterReadService {
       page: input.page,
       pageSize: input.pageSize,
       revision: input.revision,
-      outcome: 'UNKNOWN',
+      outcome: period ? undefined : 'UNKNOWN',
     } as CallCenterSearchDto;
     return this.db.client.$transaction(
       async (tx) => {
@@ -436,13 +437,25 @@ export class CallCenterReadService {
           tx,
         );
         const contactScope = await this.identityScope(actor, branchId, tx);
-        const revision = await this.revision(tx, branchId, q);
+        const now = new Date();
+        const from =
+          period === 'today'
+            ? tehranDay(now)
+            : period === 'week'
+              ? tehranWeek(now)
+              : null;
+        const revision = this.crypto.fingerprint(
+          JSON.stringify({
+            period: period ?? 'without-outcome',
+            from,
+            data: await this.revision(tx, branchId, q),
+          }),
+        );
         if (q.page > 1 && q.revision !== revision)
           throw new ConflictException(
             'داده‌ها تغییر کرده‌اند؛ فهرست را تازه‌سازی کنید.',
           );
-        const now = new Date();
-        const predicate = Prisma.sql`c.branch_id=${branchId}::uuid AND a.outcome IS NULL
+        const predicate = Prisma.sql`c.branch_id=${branchId}::uuid AND ${period ? Prisma.sql`a.occurred_at >= ${from}` : Prisma.sql`a.outcome IS NULL`}
         AND a.occurred_at <= ${now} AND (a.origin IS NULL OR a.origin <> 'SYNTHETIC')
         AND (${reportScope}) AND (${contactScope})`;
         const count = await tx.$queryRaw<

@@ -4084,5 +4084,11 @@
   "آخرین تماس بی‌پاسخ": "Latest missed call",
   "نیازمند تماس مجدد": "Callback required",
   "ثبت تماس مجدد": "Record callback",
-  "صفحه‌بندی مخاطبان نیازمند تماس مجدد": "Callback contacts pagination"
+  "صفحه‌بندی مخاطبان نیازمند تماس مجدد": "Callback contacts pagination",
+  "تماس‌های امروز": "Today’s calls",
+  "تماس‌های هفته": "This week’s calls",
+  "تماسی در این بازه در دسترسی شما وجود ندارد.": "No accessible calls in this period.",
+  "صفحه‌بندی تماس‌های بازه": "Period calls pagination",
+  "تماس‌های امروز از ابتدای روز تا اکنون به وقت تهران؛ مستقل از فیلترهای مخاطبان.": "Calls from the start of today until now, Tehran time; independent of contact filters.",
+  "تماس‌های هفته از ابتدای شنبه تا اکنون به وقت تهران؛ مستقل از فیلترهای مخاطبان.": "Calls from the start of Saturday until now, Tehran time; independent of contact filters."
 }
