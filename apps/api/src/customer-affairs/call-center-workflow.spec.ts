@@ -893,7 +893,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       }
     });
     it('orders queue by creation time with stable ties even after an old request changes', async () => {
-      const ids = [randomUUID(), randomUUID(), randomUUID()].sort();
+      const ids: string[] = [randomUUID(), randomUUID(), randomUUID()].sort();
       for (const id of ids)
         await workflow.saveRequest(actor, branchId, contactId, {
           ...request,

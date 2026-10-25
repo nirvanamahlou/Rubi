@@ -9,3 +9,5 @@ Integrated develop8806eac1 before PR. Resolved append-only project/work assignme
 Prior local verification: scoped lint/typechecks, API/Web builds, isolated PostgreSQL tests, Web tests and browser acceptance are recorded in each feature task. Final integrated acceptance is all GitHub CI checks on the exact PR head. Do not bypass failed checks or branch protection.
 
 PR: https://github.com/nirvanamahlou/Rubi/pull/1114 (author Amin-tech11, target develop). Source release prepared and pushed; all final checks and merge SHA are authoritative in the PR checks/timeline. Merge remains conditional on success of every check on the latest head; no gate bypass is authorized.
+
+CI fix: Full typecheck exposed Node UUID template-literal inference in the queue sorting test (TS2345 at ids.includes(row.id)). Explicitly typed the fixture ID collection as string[]; production behavior unchanged. Full CI must rerun on the fixing commit.
