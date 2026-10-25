@@ -7598,3 +7598,7 @@ Queue request clicks now directly open the existing request/assignee editor with
 
 ## CALL-FORM-DOCK-1025 — PC-C
 User-authorized call form minimize icon and persistent left-edge restore implemented in shared shell. In-memory forms retain fields across internal ERP route navigation; close/save removes them. Existing call save/claim permissions and popup rollout flags preserved.56 tests, scoped lint, full Web types/build and browser cross-panel preservation acceptance pass. Active onlocalhost3000. See tasks/CALL-FORM-DOCK-1025.md.
+
+## REQUEST-MANAGER-FIELDS-1025 — PC-C
+Existing request title, execution owner, status and priority are protected by a public IAM same-unit manager capability, checked against persisted values inside the workflow transaction. Ordinary experts retain reason/result edits under existing access. Web fails closed for missing capability and places the required reason star inline. Configured global management accounts retain existing authority. No schema/dependency change; 59 PostgreSQL, 12 IAM and 5 Web tests, lint and API types/build pass. Runtime and browser evidence: tasks/REQUEST-MANAGER-FIELDS-1025.md.
+REQUEST-MANAGER-FIELDS-1025 final: full Web types/build65 pages and browser acceptance passed; active onlocalhost3000/4000.76 targeted tests pass; source reservations released on push.

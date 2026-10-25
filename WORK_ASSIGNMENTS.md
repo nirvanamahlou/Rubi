@@ -9654,3 +9654,9 @@ User explicitly authorizes a minimize action beside call-dialog close and persis
 CALL-FORM-DOCK-1025 additional narrow reservation: five new dock/minimize labels in en-overrides.json; preserve all other translations.
 
 CALL-FORM-DOCK-1025:56 tests, lint, full Web types/build and cross-panel browser acceptance passed. Local3000 updated; source and central shell/translation reservations released on push.
+
+## REQUEST-MANAGER-FIELDS-1025 — PC-C — IN_PROGRESS
+User restricts existing request title/owner/status/priority edits to the relevant unit manager and requests inline required-star alignment. Reserve workflow service/IAM call-center directory public capability, request client/form/tests/CSS, scoped translation and own docs. Existing configured global danial/demo authority preserved. Unit is current owner unit, creator unit fallback when unassigned. Creation remains unchanged; reason/result edits retain existing access rules. No schema/dependency change. Producer IAM/service and frontend consumer updated together with optional fail-closed capability.
+REQUEST-MANAGER-FIELDS-1025 test fixture scope: update read.spec IAM stub with the new optional-read capability; no behavior change to identity linking.
+REQUEST-MANAGER-FIELDS-1025 additional regression scope: access.postgres.spec now asserts agent closure rejection and successful same-unit manager closure, replacing the superseded agent-can-close expectation.
+REQUEST-MANAGER-FIELDS-1025 — DONE / SOURCE_RELEASED ON PUSH:76 targeted tests, scoped lint, API types/build and full Web types/build65 pages pass. Browser confirms protected controls and inline required star. Local3000/4000 updated; no schema/dependency/data changes.

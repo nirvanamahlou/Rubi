@@ -124,7 +124,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       const workflow = new CallCenterWorkflowService(
         database,
         crypto,
-        {} as never,
+        { canManageRequest: async () => false } as never,
         {} as never,
         {} as never,
       );
@@ -212,7 +212,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       const workflow = new CallCenterWorkflowService(
         database,
         crypto,
-        {} as never,
+        { canManageRequest: async () => false } as never,
         new CallCenterTasksService(database),
         {} as never,
       );

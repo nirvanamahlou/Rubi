@@ -93,3 +93,49 @@ describe('request workflow form', () => {
     expect(html).toMatch(/<button[^>]*type="button"[^>]*>بستن<\/button>/);
   });
 });
+
+it('locks only management fields for an ordinary agent and keeps progress text editable', () => {
+  const item: RequestCase = {
+    id: 'request',
+    version: 1,
+    title: 'Saved',
+    reason: 'Reason',
+    result: 'Progress',
+    status: 'IN_PROGRESS',
+    priority: 'HIGH',
+    ownerId: 'agent',
+    ownerName: 'Agent',
+    createdAt: '2026-10-25T10:00:00Z',
+    followUps: [],
+    history: [],
+    privateHistory: [],
+    canEditManagement: false,
+  };
+  const html = renderToStaticMarkup(
+    <WorkflowEditor {...props} editor={{ kind: 'request', item }} />,
+  );
+  expect(html.match(/<input[^>]*name="title"[^>]*>/)?.[0]).toContain(
+    'readOnly',
+  );
+  expect(
+    html.match(/<input[^>]*aria-label="کارشناس مسئول"[^>]*>/)?.[0],
+  ).toContain('readOnly');
+  expect(html.match(/<button[^>]*aria-label="وضعیت"[^>]*>/)?.[0]).toContain(
+    'disabled',
+  );
+  expect(html.match(/<button[^>]*aria-label="اولویت"[^>]*>/)?.[0]).toContain(
+    'disabled',
+  );
+  expect(html.match(/<textarea[^>]*name="result"[^>]*>/)?.[0]).not.toMatch(
+    /disabled|readOnly/,
+  );
+  const manager = renderToStaticMarkup(
+    <WorkflowEditor
+      {...props}
+      editor={{ kind: 'request', item: { ...item, canEditManagement: true } }}
+    />,
+  );
+  expect(manager.match(/<input[^>]*name="title"[^>]*>/)?.[0]).not.toContain(
+    'readOnly',
+  );
+});

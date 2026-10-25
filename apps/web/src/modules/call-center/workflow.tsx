@@ -913,6 +913,10 @@ export function WorkflowEditor({
   onSaved: (data: RequestCase[]) => void;
 }) {
   const restoreFocus = useDialogReturnFocus();
+  const managementLocked =
+    editor.kind === 'request' &&
+    !!editor.item &&
+    editor.item.canEditManagement !== true;
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [dirty, setDirty] = useState(false);
@@ -925,12 +929,14 @@ export function WorkflowEditor({
   } | null>(null);
   const ownersKey = `${branchId}:${ownersRevision}`;
   const ownersLoading =
-    editor.kind === 'request' && ownersResult?.key !== ownersKey;
+    editor.kind === 'request' &&
+    !managementLocked &&
+    ownersResult?.key !== ownersKey;
   const requestOperators =
     ownersResult?.key === ownersKey ? ownersResult.data : [];
   const ownersError = ownersResult?.key === ownersKey ? ownersResult.error : '';
   useEffect(() => {
-    if (editor.kind !== 'request') return;
+    if (editor.kind !== 'request' || managementLocked) return;
     let active = true;
     void workflowApi
       .requestOperators(branchId)
@@ -952,7 +958,7 @@ export function WorkflowEditor({
     return () => {
       active = false;
     };
-  }, [branchId, editor.kind, ownersKey]);
+  }, [branchId, editor.kind, ownersKey, managementLocked]);
   const [status, setStatus] = useState(
     editor.kind === 'request'
       ? editor.item?.status && editor.item.status !== 'NEW'
@@ -974,7 +980,12 @@ export function WorkflowEditor({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy || readOnly) return;
-    if (editor.kind === 'request' && (ownersLoading || ownersError)) return;
+    if (
+      editor.kind === 'request' &&
+      !managementLocked &&
+      (ownersLoading || ownersError)
+    )
+      return;
     const data = new FormData(event.currentTarget);
     const value = (key: string) => String(data.get(key) ?? '').trim();
     const base = {
@@ -1095,14 +1106,17 @@ export function WorkflowEditor({
                   عنوان درخواست
                   <input
                     name="title"
+                    readOnly={managementLocked}
                     required
                     maxLength={160}
                     defaultValue={editor.item?.title}
                   />
                 </label>
                 <label>
-                  دلیل تغییر، بستن یا بازگشایی
-                  <span aria-hidden="true"> *</span>
+                  <span>
+                    دلیل تغییر، بستن یا بازگشایی{' '}
+                    <span aria-hidden="true">*</span>
+                  </span>
                   <textarea
                     name="reason"
                     maxLength={500}
@@ -1158,18 +1172,28 @@ export function WorkflowEditor({
             )}
             <label>
               کارشناس مسئول
-              <OwnerSelect
-                operators={
-                  editor.kind === 'request' ? requestOperators : operators
-                }
-                value={owner}
-                disabled={busy || (editor.kind === 'request' && ownersLoading)}
-                required={editor.kind === 'request'}
-                onChange={(value) => {
-                  setOwner(value);
-                  setDirty(true);
-                }}
-              />
+              {managementLocked ? (
+                <input
+                  aria-label="کارشناس مسئول"
+                  readOnly
+                  value={editor.item?.ownerName ?? 'بدون مسئول'}
+                />
+              ) : (
+                <OwnerSelect
+                  operators={
+                    editor.kind === 'request' ? requestOperators : operators
+                  }
+                  value={owner}
+                  disabled={
+                    busy || (editor.kind === 'request' && ownersLoading)
+                  }
+                  required={editor.kind === 'request'}
+                  onChange={(value) => {
+                    setOwner(value);
+                    setDirty(true);
+                  }}
+                />
+              )}
               {editor.kind === 'request' && ownersLoading && (
                 <span role="status">در حال دریافت کارشناسان…</span>
               )}
@@ -1192,7 +1216,7 @@ export function WorkflowEditor({
                   label="وضعیت"
                   name="status"
                   value={status}
-                  disabled={busy}
+                  disabled={busy || managementLocked}
                   onValueChange={(value) => {
                     setStatus(value);
                     setDirty(true);
@@ -1218,7 +1242,7 @@ export function WorkflowEditor({
               <RequestChoice
                 label="اولویت"
                 value={priority}
-                disabled={busy}
+                disabled={busy || managementLocked}
                 onValueChange={(value) => {
                   setPriority(value);
                   setDirty(true);

@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import type { AuthenticatedActor } from '@nora/contracts';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { CallCenterCrypto } from './call-center.crypto';
@@ -188,6 +188,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       const database = { client: db } as never;
       calls = new CallCenterService(database, crypto);
       directory = new IamCallCenterDirectory(database);
+      vi.spyOn(directory, 'canManageRequest').mockResolvedValue(true);
       workflow = new CallCenterWorkflowService(
         database,
         crypto,
@@ -337,6 +338,56 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         );
       expect(first.data.contactId).toBe(replay.data.contactId);
       expect(first.data.contactId).not.toBe(second.data.contactId);
+    });
+    it('blocks forged management edits but allows agent reason/result updates without changing protected fields', async () => {
+      const input = {
+        ...request,
+        id: randomUUID(),
+        commandId: randomUUID(),
+        status: 'IN_PROGRESS',
+      };
+      await workflow.saveRequest(actor, branchId, contactId, input);
+      vi.mocked(directory.canManageRequest).mockResolvedValue(false);
+      try {
+        for (const change of [
+          { title: 'Forged title' },
+          { priority: 'HIGH' },
+          { status: 'WAITING_CUSTOMER' },
+          { ownerId: null },
+        ]) {
+          await expect(
+            workflow.saveRequest(actor, branchId, contactId, {
+              ...input,
+              ...change,
+              expectedVersion: 1,
+              commandId: randomUUID(),
+            }),
+          ).rejects.toThrow('فقط برای مدیر واحد');
+        }
+        const unchanged = await db.customerAffairsTicket.findUniqueOrThrow({
+          where: { id: input.id },
+        });
+        expect(unchanged.version).toBe(1);
+        const result = await workflow.saveRequest(actor, branchId, contactId, {
+          ...input,
+          expectedVersion: 1,
+          commandId: randomUUID(),
+          reason: 'Agent progress',
+          result: 'Agent findings',
+        });
+        expect(result.data.find((row) => row.id === input.id)).toMatchObject({
+          canEditManagement: false,
+          title: input.title,
+          status: 'IN_PROGRESS',
+          priority: 'NORMAL',
+          ownerId: userId,
+          reason: 'Agent progress',
+          result: 'Agent findings',
+        });
+      } finally {
+        vi.mocked(directory.canManageRequest).mockResolvedValue(true);
+        await db.customerAffairsTicket.delete({ where: { id: input.id } });
+      }
     });
     it('creates exactly one request under concurrent retries without plaintext private content', async () => {
       const results = await Promise.all(
