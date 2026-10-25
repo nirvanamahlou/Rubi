@@ -14,7 +14,7 @@ import type {
   SalesContractOutputV1,
 } from '@nora/contracts';
 import { CustomerService } from '../customers/customer.service';
-import { IamService } from '../iam/iam.service';
+import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { LegalEntitiesService } from '../legal-entities/legal-entities.service';
 import { SalesService } from './sales.service';
 import { SalesRepository } from './sales.repository';
@@ -27,7 +27,8 @@ export class SalesOutputService {
     @Inject(CustomerService) private readonly customers: CustomerService,
     @Inject(LegalEntitiesService)
     private readonly legalEntities: LegalEntitiesService,
-    @Inject(IamService) private readonly iam: IamService,
+    @Inject(IamFinanceDirectory)
+    private readonly identities: IamFinanceDirectory,
   ) {}
   async prepare(
     id: string,
@@ -88,16 +89,12 @@ export class SalesOutputService {
         };
       }),
     );
-    const users = actor.permissions.includes('iam.users.read')
-      ? await this.iam.listUsers()
-      : [];
+    const owner = await this.identities.documentOwnerName(contract.ownerUserId);
     const output: SalesContractOutputV1 = {
       version: 1,
       generatedAt: new Date().toISOString(),
       contract: { ...contract, passengersDetail: passengerNames },
-      ownerName:
-        users.find((user) => user.id === contract.ownerUserId)?.displayName ??
-        null,
+      ownerName: owner?.displayName ?? null,
       customer: {
         kind: customer.kind,
         address:

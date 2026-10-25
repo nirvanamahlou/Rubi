@@ -1,3 +1,7 @@
+## CONTRACT-SELLER-NAME-1025 — 2026-10-25
+
+Owner authorizes showing the responsible seller in readable contract outputs without global IAM users-directory access. Sales authorizes the saved contract first, then requests only contract.ownerUserId through an IAM-owned internal document identity projection selecting ID/displayName. Current exporter identity must never replace the seller. User status/branch reassignment does not erase the name from a historical readable contract. No new client-selectable identity endpoint, role grant, schema or shared wire change; preview/PDF retain the existing ownerName contract. Missing identities remain null rather than inventing an actor name.
+
 ## LEGACY-CONTRACT-TOTAL-1025 — 2026-10-25
 
 Owner supersedes per-service historical sale prices with one customer contract table: separate IRR/foreign gross amounts, discount and commission in their own selected currency, no FX conversion. Both deductions subtract from the same-currency gross total. Persist ordinary BASE/DISCOUNT components and existing contractPackagePricingVersion alongside legacyServicePartiesV2; service selections, age counts and real capacity references remain. Existing saved per-service historical contracts are not rewritten. Old unfinished draft service prices cannot override the newly entered customer total. Registered flight return defaults retain original load priority; explicit pair IDs disambiguate recurring dates and late calendar responses fill only an empty return, preserving manual choices. No schema/migration or permission changes.
