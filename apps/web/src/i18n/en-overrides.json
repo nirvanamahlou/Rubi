@@ -4115,5 +4115,8 @@
   "گره والد": "Parent node",
   "مختصات فقط برای گره‌های چارت سازمانی مجاز است.": "Coordinates are only allowed for organization chart nodes.",
   "مختصات گره باید عددی بین منفی و مثبت ۵۰۰۰ باشد.": "Node coordinates must be numbers between -5000 and 5000.",
-  "والد گره باید فعال و متعلق به همان شعبه باشد.": "The parent node must be active and belong to the same branch."
+  "والد گره باید فعال و متعلق به همان شعبه باشد.": "The parent node must be active and belong to the same branch.",
+  "تردد، شیفت، مأموریت و اضافه‌کاری نسخه‌دار": "Versioned attendance, shifts, missions and overtime",
+  "عنوان شغلی جدید": "New job title",
+  "عنوان شغلی فعلی": "Current job title"
 }

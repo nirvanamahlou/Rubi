@@ -518,7 +518,11 @@ function HrRecordFormFields({
             <label className={ui.field}>
               <RequiredFieldLabel required>شرکت / شعبه</RequiredFieldLabel>
               <NativeSearchSelect
-                disabled={Boolean(target.parent || (target.record && !isUnit))}
+                disabled={Boolean(
+                  target.employeeId ||
+                  target.parent ||
+                  (target.record && !isUnit),
+                )}
                 value={companyId || branchId}
                 onChange={(event) => {
                   const selectedCompany = companies.find(
