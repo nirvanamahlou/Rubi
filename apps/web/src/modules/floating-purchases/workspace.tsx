@@ -33,12 +33,14 @@ function FloatingOptions({
   kind,
   resource,
   value,
+  selectedLabel,
   onChange,
 }: {
   id: string;
   kind: Kind;
   resource: 'brokers' | 'currencies';
   value: string;
+  selectedLabel?: string;
   onChange: (value: string) => void;
 }) {
   const [search, setSearch] = useState('');
@@ -74,6 +76,7 @@ function FloatingOptions({
       <SearchCombobox
         label={resource === 'brokers' ? 'کارگزار' : 'ارز'}
         value={value}
+        selectedLabel={selectedLabel || value}
         options={options.map((option) => ({
           value: option.id,
           label: option.name,
@@ -115,8 +118,10 @@ function PurchaseEditor({
   const [supplier, setSupplier] = useState(
     current?.supplierOrganizationId ?? '',
   );
-  const [currency, setCurrency] = useState(current?.currencyCode ?? 'IRR');
-  const [amount, setAmount] = useState(current?.amount ?? '');
+  const prior =
+    current ?? (kind === 'HOTEL' ? request.hotelPurchases?.[0] : undefined);
+  const [currency, setCurrency] = useState(prior?.currencyCode ?? 'IRR');
+  const [amount, setAmount] = useState(prior?.amount ?? '');
   const [rate, setRate] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -161,6 +166,11 @@ function PurchaseEditor({
           kind={kind}
           resource="brokers"
           value={supplier}
+          selectedLabel={
+            current && supplier === current.supplierOrganizationId
+              ? current.supplierName
+              : ''
+          }
           onChange={setSupplier}
         />
       </FormField>
@@ -290,6 +300,11 @@ export function FloatingPurchasesWorkspace({ kind }: { kind: Kind }) {
               const cost = request.servicePurchases?.find(
                 (p) => p.serviceClientKey === row.clientKey,
               );
+              const displayedCost =
+                cost ??
+                (service.kind === 'HOTEL'
+                  ? request.hotelPurchases?.[0]
+                  : undefined);
               const editable = canWriteOwnFloatingPurchase(
                 actor!.permissions,
                 actor!.userId,
@@ -301,8 +316,8 @@ export function FloatingPurchasesWorkspace({ kind }: { kind: Kind }) {
                   <td className="p-3">{service.titleSnapshot}</td>
                   <td className="p-3">{cost?.supplierName ?? '—'}</td>
                   <td className="p-3">
-                    {cost
-                      ? `${formatSalesMoney(cost.amount)} ${cost.currencyCode}`
+                    {displayedCost
+                      ? `${formatSalesMoney(displayedCost.amount)} ${displayedCost.currencyCode}`
                       : '—'}
                   </td>
                   <td className="p-3">

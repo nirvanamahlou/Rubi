@@ -51,6 +51,7 @@ vi.mock('react', async (original) => ({
                 },
               },
               servicePurchases: [],
+              hotelPurchases: [{ amount: '125', currencyCode: 'USD' }],
             },
           ],
           meta: {
@@ -84,6 +85,7 @@ describe('floating purchase workspace', () => {
     );
     expect(html).toContain('خرید هتل شناور');
     expect(html).toContain('Synthetic hotel');
+    expect(html).toContain('125 USD');
     expect(html).toContain('SYNTHETIC');
     expect(html).toMatch(/<button[^>]*>ثبت خرید<\/button>/);
   });
