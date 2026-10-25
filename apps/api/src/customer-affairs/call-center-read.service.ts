@@ -247,13 +247,16 @@ export class CallCenterReadService {
         const calls = await tx.callCenterCall.findMany({
           where: { id: { in: rows.map((r) => r.latestId) } },
         });
+        const summaries = await this.calls.hydrateDestinations(
+          branchId,
+          calls.map((call) => this.calls.presentSummary(call)),
+          tx,
+        );
         return {
           data: rows.map((row) => ({
             id: row.id,
             callCount: Number(row.callCount),
-            latest: this.calls.presentSummary(
-              calls.find((c) => c.id === row.latestId)!,
-            ),
+            latest: summaries.find((call) => call.id === row.latestId)!,
           })),
           meta: {
             branchId,

@@ -34,6 +34,12 @@ function setup(
   return { service, resolve, findMany };
 }
 describe('legacy outbound destination display', () => {
+  it('keeps contact search enrichment inside its read transaction', async () => {
+    const { service, findMany, resolve } = setup();
+    const tx = { callCenterTelephonySession: { findMany } };
+    await service.hydrateDestinations('branch', [call], tx as never);
+    expect(resolve).toHaveBeenCalledWith('branch', '105', at, tx, 'pbx');
+  });
   it('uses authenticated branch and provider extension without inventing an answer or mutating the call', async () => {
     const { service, findMany, resolve } = setup();
     const result = await service.hydrateDestinations('branch', [call]);

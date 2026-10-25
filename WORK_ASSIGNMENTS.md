@@ -9628,3 +9628,8 @@ STICKY-TEN-SECONDS-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: ringSeconds10 pr
 Reserve Call Center service/read/telephony projections and related tests, own docs. Investigate missing outbound staff labels, preserve historical identity snapshots and branch/access boundaries; no UI layout, ownership or PBX change. Authorized local read inspection and runtime fix after checks; no schema/dependency changes.
 
 CALL-DESTINATION-HISTORY-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: missing label cause fixed for new outbound and legacy authorized history/get;56 tests and targeted lint/types/API build pass. Exact screenshot sample verified in browser on3000. No data repair write, ownership, UI layout or PBX change.
+
+## CONTACT-DESTINATION-COLUMN-1025 — PC-C — IN_PROGRESS
+User requests contact-list headers source->acquaintance source and unit->connected to, rendering full staff destination like the call form. Reserve workspace.tsx and shared authorized destination hydration/read search, related tests and own docs. No unrelated filters/KPI layout, schema/PBX changes.
+
+CONTACT-DESTINATION-COLUMN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: requested table headers and full destination display verified onlocalhost3000.49 tests, lint, API types/build and Web types/build pass; private build isolation documented. No schema/PBX/business-data write.

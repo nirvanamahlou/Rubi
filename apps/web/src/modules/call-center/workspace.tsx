@@ -649,8 +649,8 @@ function Content({
                       'نام مخاطب',
                       'شماره تماس',
                       'موضوع آخرین تماس',
-                      'منبع',
-                      'واحد',
+                      'منبع آشنایی',
+                      'وصل شده به',
                       'آخرین تماس',
                       'تعداد تماس',
                       'نتیجه',
@@ -718,8 +718,12 @@ function Content({
                       >
                         {row.latest.subject}
                       </td>
-                      <td data-label="منبع">{row.latest.source}</td>
-                      <td data-label="واحد">{row.latest.operator}</td>
+                      <td data-label="منبع آشنایی">{row.latest.source}</td>
+                      <td data-label="وصل شده به">
+                        {row.latest.answerRecipient?.label ||
+                          row.latest.operator ||
+                          'نامشخص'}
+                      </td>
                       <td data-label="آخرین تماس">
                         {callDate(row.latest.occurredAt)}
                       </td>

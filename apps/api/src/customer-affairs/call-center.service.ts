@@ -153,6 +153,7 @@ export class CallCenterService {
   >(
     branchId: string,
     calls: T[],
+    tx?: Prisma.TransactionClient,
   ): Promise<(T & { answerRecipient?: CallAnswerRecipient })[]> {
     const missing = calls.filter(
       (call) =>
@@ -163,13 +164,14 @@ export class CallCenterService {
             `داخلی ${call.answerRecipient.extension}`),
     );
     if (!missing.length) return calls;
-    const sessions =
-      await this.database.client.callCenterTelephonySession.findMany({
-        where: {
-          call: { contact: { branchId } },
-          callId: { in: missing.map((call) => call.id) },
-        },
-      });
+    const sessions = await (
+      tx ?? this.database.client
+    ).callCenterTelephonySession.findMany({
+      where: {
+        call: { contact: { branchId } },
+        callId: { in: missing.map((call) => call.id) },
+      },
+    });
     const results = new Map<string, CallAnswerRecipient>();
     const labels = new Map<
       string,
@@ -202,7 +204,7 @@ export class CallCenterService {
           branchId,
           extension,
           observedAt,
-          undefined,
+          tx,
           session.connectionId,
         );
         labels.set(key, recipient);

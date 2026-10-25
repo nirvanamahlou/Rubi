@@ -7581,3 +7581,8 @@ User-approved previous-agent ringing budget is now10 seconds before queue1002 fa
 
 ## 2026-10-25 — CALL-DESTINATION-HISTORY-1025 — PC-C
 Missing outbound staff labels traced to answer-only identity snapshots. New outbound calls capture originator label at creation without inventing answer evidence; authorized legacy history/get views resolve missing labels from provider-confirmed extension and HR directory. Full historical snapshots and ownership preserved.56 tests and scoped lint/API build pass; read-only local sample12/12 recovered. No schema/UI/PBX change; local API updated, Web preserved.
+
+## 2026-10-25 — CONTACT-DESTINATION-COLUMN-1025 — PC-C
+Contact table now labels columns connected-to and acquaintance source, using full staff destination label like the call form. Authorized latest-call summaries enrich legacy outbound destinations inside the same read transaction. Existing scopes, historical snapshots and other table behavior preserved; no schema/PBX change. Final checks/runtime evidence in task document.
+
+CONTACT-DESTINATION-COLUMN-1025 final: localhost3000 now shows requested headers and full staff destination labels; browser verified.49 tests and lint/types/API-Web builds pass. Local runtime paths/PIDs and private isolated build instructions in task document; source reservations released on push.
