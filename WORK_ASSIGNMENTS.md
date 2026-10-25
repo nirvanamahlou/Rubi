@@ -1,3 +1,7 @@
+## ACCOUNTING-SUBTITLE-1025 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-accounting-subtitle-1025. User authorizes removal of the Accounting header subtitle and push/develop merge. Reserve only accounting-navigation-workspace.tsx and own status entries; no active overlapping writer found. Preserve forms, fields, routes and behavior. No schema, API, dependency or data change. Source reservation releases on merge. Exact-head hosted gates required.
+
 ## RETURN-ONLY-CALENDAR-1025 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; codex/pc-a-return-only-calendar-1025 from origin/develop e266e049f. Owner authorizes return-only calendar, destination-to-origin ticket selection and develop merge. Reserve only SalesContractForm, FlightTripDates, their focused regressions and own status docs. Keep single-leg range values backward compatible, exact-date inventory and actual capacity/pricing/payload direction rules. No active overlapping source writer found; previous legacy form locks released on publication. No API/schema/migration/dependency/permission or production rollout change. Focused 25 calendar/search/prefetch regressions pass, including return-only route reversal, no outbound prerequisite and stale-date selection clearing. Broader Sales tests, affected lint/typecheck/build and all exact-head hosted gates precede pinned merge. Source scope freezes/releases with publication.
@@ -344,6 +348,20 @@ User authorizes fixing voucher issuance after a sent reservation form, passenger
 Branch codex/pc-a-contract-hotel-compact-1018 from origin/develop. Reserve only Sales service-parties.tsx layout and own coordination notes. User authorizes same-row hotel/count controls and develop merge. Prior related source locks released; no API/schema/dependency/data changes. Six ServiceParties tests, scoped ESLint and formatting pass. Source scope released with frozen candidate; exact-head full hosted checks gate merge.
 
 ## PARTNER-DOSSIER-SESSION-LOOP-1018 — PC-B — IN_PROGRESS
+
+## SESSION-STABILITY-1025 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-session-stability-1025 from origin/develop dc82d0730. User reports involuntary logout/page refresh on avinaofficial.ir and explicitly authorizes fix, tests and develop merge. Reserve bounded Web auth-session helper/spec, IAM AccessProvider/session loader/spec, proxy/spec and user-menu async error handling plus own status notes. No active overlapping source writer found after reading current assignments/ownership; prior IAM source units published/released. Retain true authentication expiry, logout, backend revocation, API/document guards and permission revalidation. Distinguish temporary network/5xx/409 refresh failures from confirmed401/403; keep mounted forms during transient access checks; allow browser recovery of a remaining HttpOnly refresh cookie on page navigation without authorizing any API. No Backend/schema/migration/dependency/user grants or operational-data changes. Mandatory quality/tests/build and exact-head hosted checks gate the owner-authorized merge.
+
+SESSION-STABILITY-1025 final integration: all eight hosted checks passed on864760b27. Integrated develop d0f8c587f after concurrent PR1114/1116; only docs append conflicts, preserving every peer entry. Own notes moved beside a stable older work heading to avoid repeated conflicts with append-only release receipts. Production HTTP smoke verifies old navigation307 versus fixed200, anonymous307 and protected API401. Final integrated-head gates precede merge.
+
+SESSION-STABILITY-1025 bounded Sales extension: reserve only mounted draft ownership in SalesContractForm plus new pure contract-draft-scope helper/tests. PR1112 calendar source is published/frozen and explicitly released; its non-overlapping calendar edits are preserved. Found that actor.sessionId changes on every refresh and the draft restore effect replaced the in-progress form with an empty draft under a new storage key. Hold only the mounted form's original user/session-scoped key across same-user token rotation; new mounts/new logins and account switches use their own session key. Existing tab-only storage and unowned legacy-draft rejection remain. The old PARTNER-DOSSIER-SESSION-LOOP-1018 placeholder has no claimed paths and no active published candidate.
+
+SESSION-STABILITY-1025: implementation complete;54 focused regressions cover transient refresh errors, per-origin single-flight, permission revalidation, no mounted-draft replacement, confirmed expiry/forbidden, refresh-cookie page recovery and protected-API401. Existing draft restore checks pass. No production writes or runtime replacement performed. Source scope freezes/releases on publication; exact-head full quality/test/build/PG gates must pass before owner-authorized merge.
+
+SESSION-STABILITY-1025 validation update:54 focused session/access/draft/proxy tests,33 Sales/search regressions and scoped full Next ESLint pass. Full local Web typecheck passes after resolving private local type-only Contracts dependency. Integrated latest develop8806eac19, retaining PR1112 calendar and PR1113 HR/report changes; only Project Status append conflict required both entries to be preserved. Final exact-head hosted tests/type/build/PG checks remain merge gates.
+
+SESSION-STABILITY-1025 consumer-test compatibility: reserve the existing Customers browser-client spec only (no Customer producer/UI/source change). Full hosted Web run passes3879 tests but exposes three old session mocks missing the real user.id and expecting a network outage to be indistinguishable from expired authentication. Update synthetic fixtures to include the actual LoginResponse identity and assert the new explicit recoverable SessionRefreshUnavailableError while retaining branch-name, one-refresh retry and no-invented-reference assertions. Hosted quality/production build/database gates passed on prior head; rerun all gates after this test alignment. Local production Web build also passes after regenerating current merged Contracts.
 
 ## PACKAGE-SALE-FLOW-1018 — PC-A — READY_FOR_CI
 
@@ -9448,6 +9466,91 @@ Existing shared-extension choices retained. Six directory tests pass. No source,
 schema, user grant, PBX, business-record write or runtime restart. Private personnel
 assignments remain outside Git. Details: docs/tasks/CALL-EXTENSION-ALIASES-1024.md.
 
+## CALL-REQUEST-ASSIGNEES-1025 — PC-C — RESERVED
+
+Explicit user authorization: ordinary staff self-only; unit managers their own unit; explicitly configured executive/demo accounts all active branch-eligible staff with job titles. Base0012c956. Reserve IAM Call Center directory, HR public unit-directory minimal personnel projection, workflow options/save validation, OwnerSelect/types, focused tests and own docs. No account creation, grant changes, schema/dependency edits or popup activation. Personnel/account allowlist stays outside Git. Maintain existing read scope and PBX eligibility; request assignment is a separate public contract. All source changes isolated from existing runtimes.
+
+CALL-REQUEST-ASSIGNEES-1025 — COMPLETE / SOURCE_RELEASED_ON_PUSH:38 focused tests, scoped lint, API/Web typecheck and builds pass. Local3000/4000 activated preserving prior runtime artifacts; authenticated self-only dropdown verified without saving. No migration, account/grant creation or popup activation. Private executive allowlist remains outside Git; real HR/account/unit population required for full staff demonstration. See docs/tasks/CALL-REQUEST-ASSIGNEES-1025.md.
+
+## CALL-LOCAL-STAFF-1025 — PC-C — IN_PROGRESS
+
+Owner explicitly authorizes local staff/account/unit configuration for request-assignee review. Branch codex/pc-c-call-local-staff-1025 continues approved local runtime ef9ecc4c. Scope: private idempotent IAM/HR setup through owning services, backup, local directory checks and own documentation. Preserve existing accounts/passwords/grants, all existing extension aliases and the two deferred no-account employees. No production configuration, PBX mapping/popups, UI/source/schema/dependency changes. Personnel and credentials stay outside Git. Unknown organizational facts are not inferred.
+
+CALL-LOCAL-STAFF-1025 completion: local configuration and verification complete;19 accounts configured with preserved existing credentials/grants,20 employees,10 units and23 extension entries.10 real HTTP checks,21 DB integrity checks and15 focused tests pass. Private data remains outside Git; no application source or runtime changes. Details and local-review data limitations: docs/tasks/CALL-LOCAL-STAFF-1025.md. Reservation released.
+
+## CALL-QUEUE-COLUMNS-1025 — PC-C — IN_PROGRESS
+
+Owner authorizes five queue columns, newest-created server ordering and centered pagination on current local runtime. Reserve workflow.tsx/module.css/client, bounded queue response/order in workflow service, tests and own docs. Additive priority/createdAt fields; preserve branch/permission scope and all other UI. No schema/dependency change. Base1356974c preserves approved local version.
+
+CALL-QUEUE-COLUMNS-1025 extends bounded scope to two Web English override labels for the new queue timestamp and pagination accessibility name; preserve unrelated catalogue entries.
+CALL-QUEUE-COLUMNS-1025 COMPLETE:19 PostgreSQL and3 Web tests, lint, types and builds pass. Authenticated local3000 UI and real queue fields/order verified. Previous runtime artifacts preserved; no data migration. Source locks released on push.
+
+## CALL-FILTER-CALENDAR-1025 — PC-C — RESERVED
+
+Base0fad730e preserves approved local Call Center. Reserve workspace date filter controls and opt-in shared date-picker variant, focused tests and own docs. No other shared picker consumer behavior changes, no API/migration/dependency/PBX/popups. User explicitly authorizes screenshot calendar design. Source predecessors released; generated next-env retained locally.
+
+CALL-FILTER-CALENDAR-1025 — COMPLETE / SOURCE_RELEASED:18 tests, lint, TypeScript,65-route build and authenticated UI checks pass. Web3000 PID4392; existing API/Worker/popups hold preserved. No migration/PR/merge. See docs/tasks/CALL-FILTER-CALENDAR-1025.md.
+
+## CALL-QUEUE-ALIGN-1025 — PC-C — RESERVED
+
+Base554064d7. User authorizes centered queue headers/cells except request title, plus colored status/priority badges. Reserve workflow.tsx queue markup and workflow.module.css, own docs. Prior scope released; generated next-env preserved. No API/schema/PBX/popups or other panel changes.
+CALL-QUEUE-ALIGN-1025 — COMPLETE / SOURCE_RELEASED:3 tests, lint/types/65-route build and authenticated visual review pass. Web3000 PID19332, no API/Worker/PBX changes. No migration/PR/merge.
+
+## OUTBOUND-FIRST-CONTACT-1025 — PC-C — RESERVED
+
+Based22338f7 approved local UI. User confirms immediate incomplete outbound contact listing and no popup for shared extensions. Published outbound predecessor740b03e3 is clean and incorporated; reserve outbound domain recipient guard/new-contact ownership, tests, opt-in headless outbound attention shell mount and docs. Preserve inbound hold and removed technical widget. No schema/dependency/PBX changes; operational mapping/trunk inventory must be verified before enabling.
+Scope includes existing workspace refresh handler on outbound receipt; no new visible control, page-one refresh retains selected dossier and later pages retain paging context.
+
+OUTBOUND-FIRST-CONTACT-1025 — IMPLEMENTED / SOURCE_RELEASED ON PUSH:27 targeted tests, lint/types/build pass. Local outgoing-only runtime active; manual post-activation call acceptance pending. No migration/PBX change/PR/merge. See task evidence.
+
+## QUEUE-TITLE-CENTER-1025 — PC-C — RESERVED
+
+User explicitly requests centered request-title cells. Reserve workflow.module.css and status/assignment docs only. Base a0eee391; preceding scopes released. Preserve generated next-env and all outbound behavior.
+
+QUEUE-TITLE-CENTER-1025: scope also records user-confirmed real outbound404 popup acceptance in predecessor task documentation; no telephony code changes.
+
+QUEUE-TITLE-CENTER-1025 — COMPLETE / SOURCE_RELEASED:3 existing queue tests, lint, TypeScript and65-route build pass. New local3000 runtime; no API or migration change.
+
+## OUTCOME-DRILLDOWN-1025 — PC-C — RESERVED
+
+User approves per-call missing-outcome modal, server paging, completion and dossier actions, matching KPI scope. Reserve call-center read service/controller/DTO/tests and Web kpis/workflow/workspace/new modal/tests/styles/docs. Base3274cd5e; prior scopes released. No migration/dependency/PBX changes. Scope intersects report and contact access for identity-safe KPI drilldown.
+
+OUTCOME-DRILLDOWN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:14 PostgreSQL and8 Web tests, affected lint/types/API build and65-route Web build pass. Authenticated modal/completion/cancel/dossier/Enter/Escape checked. Local3000/4000 updated; no migration/PR/merge.
+
+## CALL-DESTINATION-TITLE-1025 — PC-C — RESERVED
+
+User requests removal of repeated department from destination job title. Reserve HR call-answer label formatter/test and docs only; preserve staff records and historical snapshots. Base deb7fc74. No schema/PBX/Web layout changes.
+
+CALL-DESTINATION-TITLE-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:11 tests, lint/typecheck/API build pass. Local API label formatter updated; no migration/HR data rewrite.
+
+## MISSED-CALLBACK-KPI-1025 — PC-C — IN_PROGRESS
+
+User selects unique known callers with missed inbound calls and no later successful conversation as replacement fourth KPI. Reserve Call Center read service/helper/tests, kpis.tsx and two English labels, own docs. Retain needsFollowUp wire key for compatibility; API producer and Web consumer ship together with updated basis metadata. Existing branch/report/contact permissions preserved; no schema, dependency, telephony behavior or popup change. Source targets clean; prior bounded Call Center reservations released.
+
+MISSED-CALLBACK-KPI-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:15 PostgreSQL tests,5 Web tests, lint/typecheck/API build and65-route Web build pass. Local browser confirms new KPI;3000/4000 updated while preserving outbound-only popup settings. No migration, grants, PR or merge.
+
+## CALLBACK-DRILLDOWN-1025 — PC-C — IN_PROGRESS
+
+User authorizes clickable missed-callback KPI with same-style modal, one row per eligible contact, dossier and new outbound registration. Reserve Call Center callbacks/read/controller/tests and Web kpis/workflow/workspace/shared drilldown/client/tests, localized copy, own docs. Producer/consumer add POST missed-callbacks with existing paging shape; same authoritative eligibility as KPI. No migration/dependency, IAM/PBX or automatic popup change. Previous locks released; preserve generated next-env change and other runtimes.
+
+CALLBACK-DRILLDOWN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:28 tests pass, scoped lint/API build and Web typecheck/build65 routes pass. Browser verifies modal/list/new outbound form/cancel/dossier. Local3000/4000 refreshed; no operational data edit or migration.
+
+## PERIOD-DRILLDOWN-1025 — PC-C — IN_PROGRESS
+
+Reserve Call Center read service/controller/tests and Web KPI/workflow/workspace/shared modal/client/localization for today/week call drilldowns. Add authenticated POST today-calls/week-calls; preserve permissions, UI and telephony. No migration/dependency changes.
+
+PERIOD-DRILLDOWN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:30 tests, scoped lint, API build and Web typecheck/build pass; today/week modal and edit verified on localhost3000. No migration or automatic-popup change.
+
+## KPI-EDIT-ACTION-1025 — PC-C — IN_PROGRESS
+
+Reserve shared KPI dialog and workspace wiring, own docs. User requests removal of dossier actions and a single edit-existing-call action in all four KPI modals. No API/migration/telephony changes.
+
+KPI-EDIT-ACTION-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: lint,15 Web tests, typecheck/build and four-modal browser checks pass. Local3000 updated; API and database unchanged.
+
+## CALL-CENTER-RELEASE-1025 — PC-C — IN_PROGRESS
+
+User authorizes publishing all final Call Center changes as PR to develop and merging only after all CI/CD checks succeed. Release branch starts at87eb5e3a, integrates origin/develop8806eac1 in isolated checkout. Reserve release docs and conflict resolution for this integration; no migration/dependency scope. Preserve local runtime and generated files in existing checkout.
+
 ## LEGACY-CONTRACT-SERVICES-1025 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-legacy-contract-services-1025 from origin/develop. Owner requests normal services, dates, age-category counts and prices for legacy contracts without personal passenger rows; explicitly authorizes real flight capacity deduction, develop merge and server rollout. Reserve Sales form/payload/count UI and API legacy validation/capacity adapters, shared versioned anonymous-party metadata contract plus bounded Reservations/output count consumers and tests. Existing V1 customer-only records stay readable; no fabricated customer identities or manifest passenger rows. Shared producer Sales, consumers Sales validation/Ticketing capacity/Reservations/output; additive V2 metadata with strict validated category counts, existing commands and real ticket/hotel FK references. Preserve normal-contract validation and immutable financial controls. No active overlapping writer found; previous relevant scopes published. No schema/migration/dependency planned; central shared sales index only scoped export/metadata doc reserved here.
@@ -9528,14 +9631,4 @@ HR-DEVICE-FORM-1025 regression alignment: reserve the existing hr-live.spec.tsx 
 
 FINANCIAL-WORKFLOWS-COMPLETION-1025 release: PR1110 is the publication record; all code/schema/CI reservations of this unit release automatically when that PR is merged. No other migration or module ownership is claimed. Exact-head gates, existing-database backup/count proof and local deployment receipt remain the publication evidence; operational receipt is kept outside Git under AppData/Local/Nora/deployments.
 
-## SESSION-STABILITY-1025 — PC-A — READY_FOR_CI
-
-COMPUTER_ID=PC-A; branch codex/pc-a-session-stability-1025 from origin/develop dc82d0730. User reports involuntary logout/page refresh on avinaofficial.ir and explicitly authorizes fix, tests and develop merge. Reserve bounded Web auth-session helper/spec, IAM AccessProvider/session loader/spec, proxy/spec and user-menu async error handling plus own status notes. No active overlapping source writer found after reading current assignments/ownership; prior IAM source units published/released. Retain true authentication expiry, logout, backend revocation, API/document guards and permission revalidation. Distinguish temporary network/5xx/409 refresh failures from confirmed401/403; keep mounted forms during transient access checks; allow browser recovery of a remaining HttpOnly refresh cookie on page navigation without authorizing any API. No Backend/schema/migration/dependency/user grants or operational-data changes. Mandatory quality/tests/build and exact-head hosted checks gate the owner-authorized merge.
-
-SESSION-STABILITY-1025 bounded Sales extension: reserve only mounted draft ownership in SalesContractForm plus new pure contract-draft-scope helper/tests. PR1112 calendar source is published/frozen and explicitly released; its non-overlapping calendar edits are preserved. Found that actor.sessionId changes on every refresh and the draft restore effect replaced the in-progress form with an empty draft under a new storage key. Hold only the mounted form's original user/session-scoped key across same-user token rotation; new mounts/new logins and account switches use their own session key. Existing tab-only storage and unowned legacy-draft rejection remain. The old PARTNER-DOSSIER-SESSION-LOOP-1018 placeholder has no claimed paths and no active published candidate.
-
-SESSION-STABILITY-1025: implementation complete;54 focused regressions cover transient refresh errors, per-origin single-flight, permission revalidation, no mounted-draft replacement, confirmed expiry/forbidden, refresh-cookie page recovery and protected-API401. Existing draft restore checks pass. No production writes or runtime replacement performed. Source scope freezes/releases on publication; exact-head full quality/test/build/PG gates must pass before owner-authorized merge.
-
-SESSION-STABILITY-1025 validation update:54 focused session/access/draft/proxy tests,33 Sales/search regressions and scoped full Next ESLint pass. Full local Web typecheck passes after resolving private local type-only Contracts dependency. Integrated latest develop8806eac19, retaining PR1112 calendar and PR1113 HR/report changes; only Project Status append conflict required both entries to be preserved. Final exact-head hosted tests/type/build/PG checks remain merge gates.
-
-SESSION-STABILITY-1025 consumer-test compatibility: reserve the existing Customers browser-client spec only (no Customer producer/UI/source change). Full hosted Web run passes3879 tests but exposes three old session mocks missing the real user.id and expecting a network outage to be indistinguishable from expired authentication. Update synthetic fixtures to include the actual LoginResponse identity and assert the new explicit recoverable SessionRefreshUnavailableError while retaining branch-name, one-refresh retry and no-invented-reference assertions. Hosted quality/production build/database gates passed on prior head; rerun all gates after this test alignment. Local production Web build also passes after regenerating current merged Contracts.
+CALL-CENTER-RELEASE-1025 — SOURCE_RELEASED / PR1114 PENDING CI: integration and publication complete; release source locks freed. Agent remains responsible for CI fixes and authorized merge after all checks pass. Final CI and merge state tracked on PR1114.

@@ -548,6 +548,9 @@ function CallRequestLink({
 }
 
 export function WorkQueue({
+  onWithoutOutcome,
+  onMissedCallbacks,
+  onPeriod,
   branchId,
   actorId,
   canManage,
@@ -557,6 +560,9 @@ export function WorkQueue({
   actorId: string;
   canManage: boolean;
   refreshKey?: number;
+  onWithoutOutcome?: () => void;
+  onPeriod?: ((period: 'today' | 'week') => void) | undefined;
+  onMissedCallbacks?: () => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const queueHeading = useRef<HTMLHeadingElement>(null);
@@ -608,6 +614,9 @@ export function WorkQueue({
   return (
     <>
       <CallKpiCards
+        onWithoutOutcome={onWithoutOutcome}
+        onMissedCallbacks={onMissedCallbacks}
+        onPeriod={onPeriod}
         branchId={branchId}
         revision={`${refreshKey}:${revision}`}
       />
@@ -691,11 +700,11 @@ export function WorkQueue({
               {!data.data.length && <p>درخواستی در این صف نیست.</p>}
               <div className={styles.queueRows}>
                 <div className={styles.queueColumns} aria-hidden="true">
-                  <span>موضوع درخواست</span>
-                  <span>شعبه</span>
-                  <span>مسئول</span>
+                  <span>عنوان درخواست</span>
+                  <span>کارشناس مسئول</span>
                   <span>وضعیت</span>
-                  <span>موعد نزدیک‌ترین پیگیری</span>
+                  <span>اولویت</span>
+                  <span>زمان ثبت درخواست</span>
                 </div>
                 {data.data.map((item) => (
                   <button
@@ -712,50 +721,27 @@ export function WorkQueue({
                     }}
                   >
                     <strong>{item.title}</strong>
-                    <span>{item.branchName}</span>
                     <span>{item.ownerName ?? 'بدون مسئول'}</span>
                     <span className={styles.status} data-status={item.status}>
                       {requestLabels[item.status]}
                     </span>
                     <span
-                      data-overdue={
-                        !!item.dueAt &&
-                        Date.parse(item.dueAt) <
-                          Date.parse(data?.meta.asOf ?? '')
-                      }
+                      className={styles.priority}
+                      data-priority={item.priority}
                     >
-                      {item.dueAt ? (
-                        <>
-                          <time dateTime={item.dueAt}>
-                            {callDate(item.dueAt)}
-                          </time>
-                          {Date.parse(item.dueAt) <
-                            Date.parse(data?.meta.asOf ?? '') && (
-                            <small>
-                              {' '}
-                              ·{' '}
-                              {faNumber(
-                                Math.max(
-                                  1,
-                                  Math.floor(
-                                    (Date.parse(data?.meta.asOf ?? '') -
-                                      Date.parse(item.dueAt)) /
-                                      60000,
-                                  ),
-                                ),
-                              )}{' '}
-                              دقیقه تأخیر
-                            </small>
-                          )}
-                        </>
-                      ) : (
-                        'بدون پیگیری باز'
-                      )}
+                      {priorities[item.priority as keyof typeof priorities] ??
+                        'نامشخص'}
                     </span>
+                    <time dateTime={item.createdAt}>
+                      {item.createdAt ? callDate(item.createdAt) : 'نامشخص'}
+                    </time>
                   </button>
                 ))}
               </div>
-              <div>
+              <nav
+                className={styles.queuePagination}
+                aria-label="صفحه‌بندی صف رسیدگی و پیگیری"
+              >
                 <button
                   type="button"
                   disabled={page <= 1}
@@ -767,7 +753,15 @@ export function WorkQueue({
                 >
                   قبلی
                 </button>
-                <span>{page.toLocaleString('fa-IR')}</span>
+                <span aria-live="polite">
+                  {faNumber(page)} /{' '}
+                  {faNumber(
+                    Math.max(
+                      1,
+                      Math.ceil(data.meta.total / data.meta.pageSize),
+                    ),
+                  )}
+                </span>
                 <button
                   type="button"
                   disabled={page * data.meta.pageSize >= data.meta.total}
@@ -779,7 +773,7 @@ export function WorkQueue({
                 >
                   بعدی
                 </button>
-              </div>
+              </nav>
             </>
           )}
         </div>
@@ -846,6 +840,42 @@ export function WorkflowEditor({
     [error, setError] = useState(''),
     [dirty, setDirty] = useState(false);
   const [owner, setOwner] = useState(editor.item?.ownerId ?? '');
+  const [ownersRevision, setOwnersRevision] = useState(0);
+  const [ownersResult, setOwnersResult] = useState<{
+    key: string;
+    data: Operator[];
+    error: string;
+  } | null>(null);
+  const ownersKey = `${branchId}:${ownersRevision}`;
+  const ownersLoading =
+    editor.kind === 'request' && ownersResult?.key !== ownersKey;
+  const requestOperators =
+    ownersResult?.key === ownersKey ? ownersResult.data : [];
+  const ownersError = ownersResult?.key === ownersKey ? ownersResult.error : '';
+  useEffect(() => {
+    if (editor.kind !== 'request') return;
+    let active = true;
+    void workflowApi
+      .requestOperators(branchId)
+      .then(({ data }) => {
+        if (!active) return;
+        setOwnersResult({ key: ownersKey, data, error: '' });
+        setOwner(
+          (current) => current || (data.length === 1 ? data[0]!.id : ''),
+        );
+      })
+      .catch(() => {
+        if (active)
+          setOwnersResult({
+            key: ownersKey,
+            data: [],
+            error: 'دریافت فهرست کارشناسان ممکن نشد.',
+          });
+      });
+    return () => {
+      active = false;
+    };
+  }, [branchId, editor.kind, ownersKey]);
   const [status, setStatus] = useState(
     editor.kind === 'request'
       ? editor.item?.status && editor.item.status !== 'NEW'
@@ -867,6 +897,7 @@ export function WorkflowEditor({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
+    if (editor.kind === 'request' && (ownersLoading || ownersError)) return;
     const data = new FormData(event.currentTarget);
     const value = (key: string) => String(data.get(key) ?? '').trim();
     const base = {
@@ -1048,14 +1079,31 @@ export function WorkflowEditor({
             <label>
               کارشناس مسئول
               <OwnerSelect
-                operators={operators}
+                operators={
+                  editor.kind === 'request' ? requestOperators : operators
+                }
                 value={owner}
-                disabled={busy}
+                disabled={busy || (editor.kind === 'request' && ownersLoading)}
+                required={editor.kind === 'request'}
                 onChange={(value) => {
                   setOwner(value);
                   setDirty(true);
                 }}
               />
+              {editor.kind === 'request' && ownersLoading && (
+                <span role="status">در حال دریافت کارشناسان…</span>
+              )}
+              {editor.kind === 'request' && ownersError && (
+                <span role="alert">
+                  {ownersError}{' '}
+                  <button
+                    type="button"
+                    onClick={() => setOwnersRevision((value) => value + 1)}
+                  >
+                    تلاش مجدد
+                  </button>
+                </span>
+              )}
             </label>
             {(editor.kind === 'task' || editor.item) && (
               <label>

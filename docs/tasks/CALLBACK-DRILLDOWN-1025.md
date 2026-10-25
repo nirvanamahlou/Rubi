@@ -1,0 +1,11 @@
+# Callback KPI drilldown — 2026-10-25
+
+Click/Enter/Space on the missed-callback KPI opens the existing drilldown presentation in callback mode. Each row represents one eligible known caller and displays its latest missed inbound call, with dossier and Record callback actions. Rows sort newest missed call first with stable contact ID tie-breaker. Existing layout and missing-outcome behavior remain intact.
+
+POST /customer-affairs/call-center/missed-callbacks shares the exact eligibility function with the KPI. Only paging/revision matter; contact search filters do not alter membership. Server resolves branch/report/contact scope. Repeatable-read selection, eligibility membership hash and existing audit/telephony revision reject stale subsequent pages. Page size is validated by existing DTO; only selected page identities are returned. No cross-module access or new grants.
+
+Record callback opens a fresh manual outbound registration with a new UUID/time, same phone and available name. It does not edit the missed call, copy its completion token/result, place a phone call or send a telephony command. Existing required fields, save/retry controls and unsaved form guard apply. Cancel returns to the list; successful save refreshes both modal and KPI. Failed/busy/unanswered callbacks remain eligible; successful subsequent conversations remove the contact. Existing automatic telephony collection remains unchanged.
+
+No schema, migration, dependency, operational business-data edit, PBX configuration or automatic popup change. Local runtime ownership must remain unchanged before rollout.
+
+Validation complete:15 isolated PostgreSQL tests and13 Web tests pass. API/Web scoped lint, API TypeScript build and Web TypeScript/webpack65-route production build pass. Real authenticated browser confirms clickable KPI, count/list1 agreement, Record callback opens a fresh outbound form with blank result, cancel restores list, dossier selection displays its existing history. No real records were saved during browser verification. Local Web3000=.next-callback-drilldown-1025, API4000=.api-callback-drilldown-1025; prior artifacts retained, development AMI settings and existing outbound-only popup settings preserved. No PR/merge/production deployment.
