@@ -9648,3 +9648,9 @@ REQUEST-HEADER-SPACING-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: scoped16px c
 Reserve workflow.tsx and workflow.spec.tsx for direct queue-row opening of the existing request editor, scoped request/contact loading, read-only access preservation, refresh/focus/error behavior and own docs. No API/schema/dependency changes.
 
 Completed direct editor routing, read-only safeguard, loading/error/focus handling.4 tests, lint, Web types/build and browser acceptance pass; runtime3000 updated. Source reservation released; no API/schema/dependency changes.
+
+## CALL-FORM-DOCK-1025 — PC-C — DONE
+User explicitly authorizes a minimize action beside call-dialog close and persistent left-edge restore across ERP panels. Reserve call-form.tsx, new call-form-host components/styles/tests, launcher imports in workspace/operational-call-popup, app-shell provider mount, use-unsaved-guard optional internal-navigation support and own docs. Central app-shell scope is only this provider; historical reservations released. No API/dependency/schema or automatic popup rollout change. In-memory drafts only; preserve existing next-env modifications.
+CALL-FORM-DOCK-1025 additional narrow reservation: five new dock/minimize labels in en-overrides.json; preserve all other translations.
+
+CALL-FORM-DOCK-1025:56 tests, lint, full Web types/build and cross-panel browser acceptance passed. Local3000 updated; source and central shell/translation reservations released on push.

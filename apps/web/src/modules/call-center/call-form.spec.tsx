@@ -140,3 +140,24 @@ it('shows the server-confirmed answer read-only without exposing a manual select
   expect(html).toContain('type="hidden" name="operator" value="داخلی 203"');
   expect(html).not.toMatch(/<select[^>]*name="operator"/);
 });
+
+it('exposes a non-submit minimize action only when hosted and disables it during saving', () => {
+  const call = previewCalls()[0]!;
+  const props = {
+    branchId: 'test',
+    event: call,
+    previous: call,
+    onSave: async () => {},
+    onClose: () => {},
+  };
+  const unhosted = renderToStaticMarkup(<CallForm {...props} busy={false} />);
+  expect(unhosted).not.toContain('کوچک‌کردن فرم تماس');
+  const hosted = renderToStaticMarkup(
+    <CallForm {...props} busy onMinimize={() => {}} />,
+  );
+  const button = hosted.match(
+    /<button[^>]*aria-label="کوچک‌کردن فرم تماس"[^>]*>/,
+  )?.[0];
+  expect(button).toContain('type="button"');
+  expect(button).toContain('disabled');
+});

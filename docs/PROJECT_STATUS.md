@@ -7595,3 +7595,6 @@ Added user-requested16px gap between contact summary and request title in the Ca
 
 ## QUEUE-REQUEST-EDITOR-1025 — PC-C
 Queue request clicks now directly open the existing request/assignee editor with authorized saved data and contact summary. Read-only permissions, cancellation, focus return and refresh behavior preserved.4 workflow tests, scoped lint, full Web types/build65 pages and browser direct-open/focus acceptance pass. Active onlocalhost3000; no API/schema/popup-policy change. See tasks/QUEUE-REQUEST-EDITOR-1025.md.
+
+## CALL-FORM-DOCK-1025 — PC-C
+User-authorized call form minimize icon and persistent left-edge restore implemented in shared shell. In-memory forms retain fields across internal ERP route navigation; close/save removes them. Existing call save/claim permissions and popup rollout flags preserved.56 tests, scoped lint, full Web types/build and browser cross-panel preservation acceptance pass. Active onlocalhost3000. See tasks/CALL-FORM-DOCK-1025.md.

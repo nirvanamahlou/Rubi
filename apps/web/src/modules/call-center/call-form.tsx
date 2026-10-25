@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, type FormEvent } from 'react';
-import { Check, PhoneIncoming } from 'lucide-react';
+import { Check, PhoneIncoming, Minus } from 'lucide-react';
 import { useDialogReturnFocus } from './use-dialog-focus';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import { workflowApi, type RequestCase } from './workflow-client';
@@ -34,6 +34,8 @@ export function CallForm({
   onSave,
   onClose,
   busy,
+  onMinimize,
+  allowInternalNavigation = false,
 }: {
   branchId: string;
   event: CallEvent;
@@ -41,6 +43,8 @@ export function CallForm({
   onSave: (call: Call) => Promise<void>;
   onClose: () => void;
   busy: boolean;
+  onMinimize?: () => void;
+  allowInternalNavigation?: boolean;
 }) {
   const restoreFocus = useDialogReturnFocus();
   const completing = Boolean(event.completionToken);
@@ -131,7 +135,7 @@ export function CallForm({
         });
     return () => controller.abort();
   }, [branchId, previous?.contactId]);
-  useUnsavedGuard(dirty);
+  useUnsavedGuard(dirty, allowInternalNavigation);
   function close() {
     if (
       !busy &&
@@ -191,7 +195,19 @@ export function CallForm({
         dir="rtl"
         className={styles.callDialog}
       >
-        <DialogTitle className="flex items-center gap-2 pe-9">
+        {onMinimize && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onMinimize}
+            aria-label="کوچک‌کردن فرم تماس"
+            title="کوچک‌کردن فرم تماس"
+            className="absolute end-14 top-4 rounded-lg p-2 text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Minus size={16} aria-hidden="true" />
+          </button>
+        )}
+        <DialogTitle className="flex items-center gap-2 pe-20">
           <PhoneIncoming className="text-blue-500" />
           {completing
             ? 'ویرایش اطلاعات تماس'
