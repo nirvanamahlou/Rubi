@@ -196,6 +196,9 @@ export interface SalesFormState {
   destinationId: string;
   departureDate: string;
   returnDate: string;
+  flightCalendarSystems?: Partial<
+    Record<'OUTBOUND' | 'RETURN', 'persian' | 'gregorian'>
+  >;
   serviceKinds: SalesServiceKind[];
   ticket: {
     outboundOfferId: string;
@@ -1110,6 +1113,16 @@ export function salesHotelCalendarSystem(
   );
 }
 
+export function salesFlightCalendarSystem(
+  state: SalesFormState,
+  direction: 'OUTBOUND' | 'RETURN',
+): 'persian' | 'gregorian' {
+  return (
+    state.flightCalendarSystems?.[direction] ??
+    (salesInternationalTravel(state) ? 'gregorian' : 'persian')
+  );
+}
+
 export function salesDetailSteps(state: SalesFormState): string[] {
   return state.serviceKinds.flatMap((kind) =>
     kind === 'TRANSFER' ||
@@ -1509,7 +1522,13 @@ export function salesPayload(
                   }
                 : {}),
               ...(kind === 'FLIGHT'
-                ? { businessOutput: state.businessOutput === true }
+                ? {
+                    businessOutput: state.businessOutput === true,
+                    dateCalendarSystem: salesFlightCalendarSystem(
+                      state,
+                      direction,
+                    ),
+                  }
                 : {}),
               ...(kind === 'FLIGHT'
                 ? state.serviceDetails?.[`${kind}-${direction}`]
@@ -1532,6 +1551,9 @@ export function salesPayload(
                 kind,
                 metadata: {
                   ...state.serviceDetails?.[kind],
+                  ...(kind === 'HOTEL'
+                    ? { dateCalendarSystem: salesHotelCalendarSystem(state) }
+                    : {}),
                   ...(kind === 'VISA' && state.visaComposition
                     ? {
                         applicantAdults: state.visaComposition.adults,

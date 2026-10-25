@@ -44,7 +44,16 @@ export function FlightTripDates({
   value,
   onChange,
   onReturningOffers,
+  calendarSystems,
+  onCalendarSystemChange,
 }: {
+  calendarSystems?: Partial<
+    Record<'OUTBOUND' | 'RETURN', 'persian' | 'gregorian'>
+  >;
+  onCalendarSystemChange?: (
+    direction: 'OUTBOUND' | 'RETURN',
+    calendar: 'persian' | 'gregorian',
+  ) => void;
   onReturningOffers?: (offers: TicketOfferV1[]) => void;
   originId: string;
   international?: boolean;
@@ -167,6 +176,18 @@ export function FlightTripDates({
               : {})}
             gregorianEnglish
             value={value.from}
+            {...(calendarSystems
+              ? {
+                  calendarSystem:
+                    calendarSystems[primaryDirection] ??
+                    (international
+                      ? ('gregorian' as const)
+                      : ('persian' as const)),
+                }
+              : {})}
+            onCalendarSystemChange={(calendar) =>
+              onCalendarSystemChange?.(primaryDirection, calendar)
+            }
             markedDates={days}
 
             disabled={!readyRoute}
@@ -199,6 +220,18 @@ export function FlightTripDates({
                 : {})}
               gregorianEnglish
               value={value.to}
+              {...(calendarSystems
+                ? {
+                    calendarSystem:
+                      calendarSystems.RETURN ??
+                      (international
+                        ? ('gregorian' as const)
+                        : ('persian' as const)),
+                  }
+                : {})}
+              onCalendarSystemChange={(calendar) =>
+                onCalendarSystemChange?.('RETURN', calendar)
+              }
               markedDates={returnDays}
               minimumDate={value.from}
               disabled={!readyRoute || !value.from}

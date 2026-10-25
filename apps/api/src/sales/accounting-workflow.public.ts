@@ -66,3 +66,37 @@ export async function revenueSources(
     take: 101,
   });
 }
+
+/** Accounting consumes current commercial facts through this Sales-owned transaction projection. */
+export async function salesContractAccountingSource(
+  tx: Prisma.TransactionClient,
+  id: string,
+) {
+  const row = await tx.salesContract.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      branchId: true,
+      payerCustomerId: true,
+      contractNumber: true,
+      status: true,
+      version: true,
+      priceComponents: {
+        select: { type: true, title: true, amount: true, currencyCode: true },
+      },
+    },
+  });
+  if (!row) return null;
+  return {
+    id: row.id,
+    branchId: row.branchId,
+    payerCustomerId: row.payerCustomerId,
+    contractNumber: row.contractNumber,
+    status: row.status,
+    version: row.version,
+    balances: calculateSalesBalances(
+      row.priceComponents.map((c) => ({ ...c, amount: c.amount.toString() })),
+      [],
+    ),
+  };
+}

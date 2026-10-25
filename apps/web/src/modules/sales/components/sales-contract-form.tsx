@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { restoreContractDraft } from '../model/restore-contract-draft';
 import { useAccessActor } from '@/modules/iam/access-context';
+import { contractDraftScope } from '../model/contract-draft-scope';
 import { documentsApi } from '@/modules/documents/api/client';
 import { createdPaymentIds } from '../model/creation-payment-receipts';
 import {
@@ -91,6 +92,7 @@ import { SalesChequeCalculator } from './sales-cheque-calculator';
 import { ContractTotalPrices } from './contract-total-prices';
 import { ContractServiceSummary } from './contract-service-summary';
 import { SalesDatePicker } from './sales-date-picker';
+import { salesFlightCalendarSystem } from '../model/sales-form';
 import { SalesPaymentPlan } from './sales-payment-plan';
 import { Button, buttonVariants } from '@/components/ui/button';
 
@@ -224,9 +226,14 @@ function freshSalesDraft(): SalesFormState {
 export function SalesContractForm() {
   const router = useRouter();
   const actor = useAccessActor();
-  const draftStorageKey = actor
-    ? `nora.sales.contract.draft.v2:${actor.userId}:${actor.sessionId}`
-    : null;
+  const [draftScope, setDraftScope] = useState(() =>
+    contractDraftScope(null, actor),
+  );
+  if (draftScope?.userId !== actor?.userId) {
+    setDraftScope(contractDraftScope(draftScope, actor));
+  }
+  const draftStorageKey =
+    actor && draftScope?.userId === actor.userId ? draftScope.storageKey : null;
   const [restoredDraftKey, setRestoredDraftKey] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [flightRange, setFlightRange] = useState<FlightDateRange>({
@@ -1009,9 +1016,7 @@ export function SalesContractForm() {
               <>
                 <TicketOfferPicker
                   refreshRevision={referenceRefresh.revision}
-                  calendarSystem={
-                    salesInternationalTravel(state) ? 'gregorian' : 'persian'
-                  }
+                  calendarSystem={salesFlightCalendarSystem(state, 'OUTBOUND')}
                   prepared={preparedTickets}
                   enabled={flightDatesReady}
                   originLabel={
@@ -1124,9 +1129,7 @@ export function SalesContractForm() {
                 salesFlightSelection(state, 'OUTBOUND') ? (
                   <TicketOfferPicker
                     refreshRevision={referenceRefresh.revision}
-                    calendarSystem={
-                      salesInternationalTravel(state) ? 'gregorian' : 'persian'
-                    }
+                    calendarSystem={salesFlightCalendarSystem(state, 'RETURN')}
                     enabled={flightDatesReady}
                     originLabel={
                       references.cities.find(
@@ -1701,6 +1704,19 @@ export function SalesContractForm() {
             className="mt-5 border-t border-border pt-4"
           >
             <FlightTripDates
+              calendarSystems={{
+                OUTBOUND: salesFlightCalendarSystem(state, 'OUTBOUND'),
+                RETURN: salesFlightCalendarSystem(state, 'RETURN'),
+              }}
+              onCalendarSystemChange={(direction, calendar) =>
+                patchState((current) => ({
+                  ...current,
+                  flightCalendarSystems: {
+                    ...current.flightCalendarSystems,
+                    [direction]: calendar,
+                  },
+                }))
+              }
               primaryDirection={
                 salesDirections(state, 'FLIGHT').includes('OUTBOUND')
                   ? 'OUTBOUND'

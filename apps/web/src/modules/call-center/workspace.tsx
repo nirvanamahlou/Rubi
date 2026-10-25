@@ -59,6 +59,7 @@ import {
   taskLabels,
 } from './workflow';
 import { CallForm } from './call-form';
+import { WithoutOutcomeDialog } from './without-outcome-dialog';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './workspace.module.css';
 import { ReportHighlights } from './report-highlights';
@@ -197,10 +198,26 @@ function Content({
     [noteDrafts, onDirty],
   );
   const [newRequestOpen, setNewRequestOpen] = useState(false);
+  const [withoutOutcomeOpen, setWithoutOutcomeOpen] = useState(false);
+  const [periodOpen, setPeriodOpen] = useState<'today' | 'week' | null>(null);
+  const [callbacksOpen, setCallbacksOpen] = useState(false);
   const [selected, setSelected] = useState<ContactSummary | null>(null),
     [draft, setDraft] = useState<CallEvent | null>(null),
     [busy, setBusy] = useState(false);
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    const refreshOutbound = () => {
+      if (page === 1) setRefresh((value) => value + 1);
+      else setMessage('تماس خروجی جدید ثبت شد؛ فهرست را تازه‌سازی کنید.');
+    };
+    window.addEventListener('call-center:outbound-received', refreshOutbound);
+    return () =>
+      window.removeEventListener(
+        'call-center:outbound-received',
+        refreshOutbound,
+      );
+  }, [page]);
+
   useEffect(() => {
     let active = true;
     readApi
@@ -333,6 +350,7 @@ function Content({
     try {
       const r = await callCenterApi.create(branch, call);
       setHistoryRevision((v) => v + 1);
+      setRefresh((v) => v + 1);
       setDraft(null);
       setMessage(
         'تماس ذخیره شد؛ برای نمایش ترتیب جدید فهرست را تازه‌سازی کنید.',
@@ -403,6 +421,9 @@ function Content({
         </button>
       </header>
       <WorkQueue
+        onWithoutOutcome={() => setWithoutOutcomeOpen(true)}
+        onMissedCallbacks={() => setCallbacksOpen(true)}
+        onPeriod={setPeriodOpen}
         branchId={branch}
         actorId={actorId}
         canManage={canManage}
@@ -465,19 +486,21 @@ function Content({
             <fieldset>
               <legend>محدوده و زمان</legend>{' '}
               <label>
-                از تاریخ میلادی (تهران)
+                از تاریخ (تهران)
                 <DatePicker
-                  calendarSystem="gregorian"
-                  aria-label="از تاریخ میلادی (تهران)"
+                  filterCalendar
+                  defaultCalendarSystem="persian"
+                  aria-label="از تاریخ (تهران)"
                   value={filters.from}
                   onChange={(value) => change('from', value)}
                 />
               </label>
               <label>
-                تا ابتدای تاریخ میلادی (تهران)
+                تا ابتدای تاریخ (تهران)
                 <DatePicker
-                  calendarSystem="gregorian"
-                  aria-label="تا ابتدای تاریخ میلادی (تهران)"
+                  filterCalendar
+                  defaultCalendarSystem="persian"
+                  aria-label="تا ابتدای تاریخ (تهران)"
                   value={filters.to}
                   onChange={(value) => change('to', value)}
                 />
@@ -831,6 +854,41 @@ function Content({
         )}
       </div>
 
+      {withoutOutcomeOpen && (
+        <WithoutOutcomeDialog
+          key={`${branch}:${historyRevision}`}
+          branch={branch}
+          revision={historyRevision}
+          hidden={!!draft}
+          canComplete={canCreate && canManage && !busy}
+          onClose={() => setWithoutOutcomeOpen(false)}
+          onComplete={complete}
+        />
+      )}
+      {periodOpen && (
+        <WithoutOutcomeDialog
+          key={periodOpen + branch + historyRevision}
+          mode={periodOpen}
+          branch={branch}
+          revision={historyRevision}
+          hidden={!!draft}
+          canComplete={canCreate && canManage && !busy}
+          onClose={() => setPeriodOpen(null)}
+          onComplete={complete}
+        />
+      )}
+      {callbacksOpen && (
+        <WithoutOutcomeDialog
+          key={'callbacks:' + branch + ':' + historyRevision}
+          mode="missed-callbacks"
+          branch={branch}
+          revision={historyRevision}
+          hidden={!!draft}
+          canComplete={canCreate && canManage && !busy}
+          onClose={() => setCallbacksOpen(false)}
+          onComplete={complete}
+        />
+      )}
       {draft && (
         <CallForm
           branchId={branch}

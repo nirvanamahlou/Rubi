@@ -69,16 +69,30 @@ export function UserMenu() {
     const recovered = (event: Event) =>
       applySession((event as CustomEvent<LoginResponse>).detail);
     window.addEventListener(AUTH_SESSION_RECOVERED_EVENT, recovered);
-    void Promise.resolve().then(async () => {
-      const api = getPublicApiBaseUrl();
-      const response = api ? await refreshAuthenticatedSession(api) : null;
-      if (!active) return;
-      if (!response) {
-        setIdentity({ status: 'error', displayName: PROFILE_USER_FALLBACK });
-        return;
-      }
-      applySession(response);
-    });
+    void Promise.resolve()
+      .then(async () => {
+        const api = getPublicApiBaseUrl();
+        const response = api ? await refreshAuthenticatedSession(api) : null;
+        if (!active) return;
+        if (!response) {
+          setIdentity({ status: 'error', displayName: PROFILE_USER_FALLBACK });
+          return;
+        }
+        applySession(response);
+      })
+      .catch(() => {
+        if (!active) return;
+        const cached = readHeaderSession();
+        setIdentity(
+          cached
+            ? {
+                status: 'ready',
+                displayName: cached.displayName,
+                loggedInAt: cached.loggedInAt,
+              }
+            : { status: 'error', displayName: PROFILE_USER_FALLBACK },
+        );
+      });
     return () => {
       active = false;
       window.removeEventListener(AUTH_SESSION_RECOVERED_EVENT, recovered);
