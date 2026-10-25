@@ -81,10 +81,10 @@ export class FloatingPurchasesController {
         return {
           id: request.id,
           salesOwnerUserId: request.salesOwnerUserId,
-          purchaseVersion: request.purchaseVersion,
+          purchaseVersion: request.purchaseVersion ?? 0,
           snapshot: {
             contractNumber: request.snapshot.contractNumber,
-            serviceSelections: request.snapshot.serviceSelections
+            serviceSelections: (request.snapshot.serviceSelections ?? [])
               .filter(
                 (s) =>
                   keys.has(s.clientKey) &&
@@ -106,15 +106,15 @@ export class FloatingPurchasesController {
                   },
                 }
               : {}),
-            ticketSelections: request.snapshot.ticketSelections
-              ?.filter((t) => keys.has(t.serviceClientKey))
+            ticketSelections: (request.snapshot.ticketSelections ?? [])
+              .filter((t) => keys.has(t.serviceClientKey))
               .map((t) => ({
                 serviceClientKey: t.serviceClientKey,
                 carrierNameSnapshot: t.carrierNameSnapshot,
               })),
           },
-          servicePurchases: request.servicePurchases
-            ?.filter((p) => keys.has(p.serviceClientKey))
+          servicePurchases: (request.servicePurchases ?? [])
+            .filter((p) => keys.has(p.serviceClientKey))
             .map((p) => ({
               serviceClientKey: p.serviceClientKey,
               supplierOrganizationId: p.supplierOrganizationId,
@@ -124,11 +124,11 @@ export class FloatingPurchasesController {
             })),
           hotelPurchases:
             kind === 'HOTEL'
-              ? request.hotelPurchases?.map((p) => ({
+              ? (request.hotelPurchases ?? []).map((p) => ({
                   amount: p.amount,
                   currencyCode: p.currencyCode,
                 }))
-              : undefined,
+              : [],
         };
       }),
       meta: {
