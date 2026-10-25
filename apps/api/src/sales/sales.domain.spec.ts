@@ -1195,6 +1195,42 @@ describe('aggregate legacy service contracts', () => {
       },
     })),
   });
+  it('accepts contract-total historical mixed currencies and deductions without per-service prices', () => {
+    const input = aggregate();
+    input.services[0]!.metadata = {
+      ...input.services[0]!.metadata,
+      contractPackagePricingVersion: 1,
+    };
+    input.priceComponents = [
+      {
+        type: 'BASE',
+        title: 'Contract total',
+        amount: '100000000',
+        currencyCode: 'IRR',
+      },
+      {
+        type: 'BASE',
+        title: 'Contract total',
+        amount: '915.125',
+        currencyCode: 'EUR',
+      },
+      {
+        type: 'DISCOUNT',
+        title: 'Contract discount',
+        amount: '15.125',
+        currencyCode: 'EUR',
+      },
+      {
+        type: 'DISCOUNT',
+        title: 'Contract commission',
+        amount: '10000000',
+        currencyCode: 'IRR',
+      },
+    ];
+    expect(() => validateSalesContract(input)).not.toThrow();
+    expect(input.ticketSelections).toHaveLength(2);
+    expect(input.passengers).toEqual([]);
+  });
   it('accepts real outward and return ticket selections without invented passengers', () => {
     expect(() => validateSalesContract(aggregate())).not.toThrow();
   });
