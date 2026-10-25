@@ -1135,6 +1135,107 @@ export class HrService {
     );
     return row;
   }
+  private chartCoordinates(schema: HrResourceDefinition, data: HrWorkflowData) {
+    if (
+      (data.chartX !== undefined || data.chartY !== undefined) &&
+      ![
+        'organization.branches',
+        'organization.units',
+        'organization.chartEmployees',
+      ].includes(schema.key)
+    )
+      throw new BadRequestException(
+        'مختصات فقط برای گره‌های چارت سازمانی مجاز است.',
+      );
+  }
+  private async chartEmployee(
+    tx: Tx,
+    schema: HrResourceDefinition,
+    employee: Employee | null,
+    branchId: string,
+    parentId: string | null,
+    data: HrWorkflowData,
+    actor: AuthenticatedActor,
+    id?: string,
+  ) {
+    if (schema.key !== 'organization.chartEmployees') return;
+    if (!employee || employee.branchId !== branchId)
+      throw new BadRequestException('کارمند گره باید متعلق به همان شعبه باشد.');
+    if (
+      await tx.hrRecord.count({
+        where: {
+          section: 'organization',
+          tab: 'chartEmployees',
+          employeeId: employee.id,
+          branchId,
+          ...(employee.organizationBranchId
+            ? {
+                OR: [
+                  {
+                    data: {
+                      path: ['organizationBranchId'],
+                      equals: employee.organizationBranchId,
+                    },
+                  },
+                  {
+                    data: {
+                      path: ['organizationBranchId'],
+                      equals: Prisma.DbNull,
+                    },
+                  },
+                ],
+              }
+            : {}),
+          deletedAt: null,
+          ...(id ? { id: { not: id } } : {}),
+        },
+      })
+    )
+      throw new ConflictException('این کارمند قبلاً در چارت قرار گرفته است.');
+    let cursor = parentId;
+    const seen = new Set(id ? [id] : []);
+    let company: string | null | undefined =
+      data.organizationBranchId || employee.organizationBranchId;
+    while (cursor) {
+      if (seen.has(cursor) || seen.size > 1000)
+        throw new BadRequestException('چرخه ساختار سازمانی مجاز نیست.');
+      seen.add(cursor);
+      const parent = await this.record(tx, cursor, actor);
+      if (
+        parent.branchId !== branchId ||
+        !['organization.units', 'organization.chartEmployees'].includes(
+          `${parent.section}.${parent.tab}`,
+        ) ||
+        parent.status !== 'فعال'
+      )
+        throw new BadRequestException(
+          'والد گره باید فعال و متعلق به همان شعبه باشد.',
+        );
+      if (parent.employeeId === employee.id)
+        throw new BadRequestException('کارمند نمی‌تواند والد خودش باشد.');
+      const parentCompany = (parent.data as HrWorkflowData)
+        .organizationBranchId;
+      if (parentCompany && company && company !== parentCompany)
+        throw new BadRequestException(
+          'گره و والد باید متعلق به یک شرکت باشند.',
+        );
+      company ||= parentCompany;
+      cursor = parent.parentId;
+    }
+    if (
+      company &&
+      employee.organizationBranchId &&
+      company !== employee.organizationBranchId
+    )
+      throw new BadRequestException(
+        'کارمند و گره باید متعلق به یک شرکت باشند.',
+      );
+    if (company) {
+      await this.organizationBranch(tx, company, branchId, actor);
+      data.organizationBranchId = company;
+      if (id) await this.assertChartDescendantsCompany(tx, id, company);
+    }
+  }
   private async organizationBranch(
     tx: Tx,
     id: unknown,
@@ -1199,35 +1300,52 @@ export class HrService {
         branchId,
         actor,
       );
-    if (id && data.organizationBranchId) {
-      let frontier = [id],
-        inspected = 0;
-      while (frontier.length) {
-        const children = await tx.hrRecord.findMany({
-          where: {
-            parentId: { in: frontier },
-            section: 'organization',
-            tab: 'units',
-            deletedAt: null,
-          },
-          select: { id: true, data: true },
-          take: 2001,
-        });
-        inspected += children.length;
-        if (inspected > 2000)
-          throw new ConflictException(
-            'ساختار بزرگ است؛ تغییر شرکت نیازمند بررسی سازمانی است.',
-          );
-        if (
-          children.some((child) => {
-            const company = (child.data as HrWorkflowData).organizationBranchId;
-            return company && company !== data.organizationBranchId;
-          })
-        )
-          throw new BadRequestException(
-            'واحد دارای زیرمجموعه متعلق به شرکت دیگر است.',
-          );
-        frontier = children.map((child) => child.id);
+    if (id && data.organizationBranchId)
+      await this.assertChartDescendantsCompany(
+        tx,
+        id,
+        data.organizationBranchId,
+      );
+  }
+  private async assertChartDescendantsCompany(
+    tx: Tx,
+    id: string,
+    companyId: string,
+  ) {
+    let frontier = [id],
+      inspected = 0;
+    const seen = new Set([id]);
+    while (frontier.length) {
+      const children = await tx.hrRecord.findMany({
+        where: {
+          parentId: { in: frontier },
+          section: 'organization',
+          tab: { in: ['units', 'chartEmployees'] },
+          deletedAt: null,
+        },
+        select: { id: true, data: true },
+        take: 2001,
+      });
+      inspected += children.length;
+      if (inspected > 2000)
+        throw new ConflictException(
+          'ساختار بزرگ است؛ تغییر شرکت نیازمند بررسی سازمانی است.',
+        );
+      if (
+        children.some((child) => {
+          const company = (child.data as HrWorkflowData).organizationBranchId;
+          return company && company !== companyId;
+        })
+      )
+        throw new BadRequestException(
+          'واحد دارای زیرمجموعه متعلق به شرکت دیگر است.',
+        );
+      frontier = [];
+      for (const child of children) {
+        if (seen.has(child.id))
+          throw new BadRequestException('چرخه ساختار سازمانی مجاز نیست.');
+        seen.add(child.id);
+        frontier.push(child.id);
       }
     }
   }
@@ -1995,6 +2113,7 @@ export class HrService {
     const input = validate.object(body, recordKeys);
     const schema = validate.resource(input.section, input.tab);
     const data = validate.workflowData(input.data);
+    this.chartCoordinates(schema, data);
     const networkPassword = this.devicePassword(
       input.privateData,
       schema,
@@ -2056,11 +2175,22 @@ export class HrService {
               !schema.parentResources.includes(
                 `${parent.section}.${parent.tab}`,
               )) ||
-            (parent.employeeId && parent.employeeId !== employee?.id))
+            (parent.employeeId &&
+              parent.employeeId !== employee?.id &&
+              schema.key !== 'organization.chartEmployees'))
         )
           throw new BadRequestException(
             'ارتباط پرونده والد با این رکورد معتبر نیست.',
           );
+        await this.chartEmployee(
+          tx,
+          schema,
+          employee,
+          branchId,
+          parent?.id ?? null,
+          data,
+          actor,
+        );
         if (schema.key === 'organization.units')
           await this.unitCompany(tx, branchId, parent?.id ?? null, data, actor);
         if (missionExpenseResources.has(schema.key))
@@ -2261,9 +2391,11 @@ export class HrService {
       let parentId = row.parentId;
       if (input.parentId !== undefined) {
         if (
-          !['organization.units', 'recruitment.applicants'].includes(
-            schema.key,
-          ) &&
+          ![
+            'organization.units',
+            'organization.chartEmployees',
+            'recruitment.applicants',
+          ].includes(schema.key) &&
           !missionExpenseResources.has(schema.key)
         )
           throw new BadRequestException(
@@ -2287,7 +2419,12 @@ export class HrService {
             throw new BadRequestException(
               'رکورد مرتبط باید از نوع مجاز و متعلق به همان شعبه باشد.',
             );
-          cursor = schema.key === 'organization.units' ? parent.parentId : null;
+          cursor = [
+            'organization.units',
+            'organization.chartEmployees',
+          ].includes(schema.key)
+            ? parent.parentId
+            : null;
         }
       }
       if (schema.key === 'time.checkins') {
@@ -2458,6 +2595,17 @@ export class HrService {
           : undefined;
       if (missionParent !== undefined)
         this.expenseMission(missionParent, employee, data);
+      this.chartCoordinates(schema, data);
+      await this.chartEmployee(
+        tx,
+        schema,
+        employee,
+        row.branchId,
+        parentId,
+        data,
+        actor,
+        row.id,
+      );
       if (schema.key === 'organization.units')
         await this.unitCompany(tx, row.branchId, parentId, data, actor, row.id);
       const values =

@@ -3536,5 +3536,275 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         });
       }
     });
+    it('persists organization employee nodes and positions with CAS, hierarchy guards and safe node deletion', async () => {
+      const first = await service.createEmployee(
+        employeeInput('Org chart first'),
+        key(),
+        admin,
+      );
+      const second = await service.createEmployee(
+        employeeInput('Org chart second'),
+        key(),
+        admin,
+      );
+      const values = (name: string) =>
+        getHrResource('organization', 'units')!.columns.map((_, i) =>
+          i === 0 ? name : '',
+        );
+      const a = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'units',
+          branchId: branchA,
+          values: values('Org chart department A'),
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      const b = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'units',
+          branchId: branchA,
+          values: values('Org chart department B'),
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      const body = {
+        section: 'organization',
+        tab: 'chartEmployees',
+        branchId: branchA,
+        employeeId: first.id,
+        parentId: a.id,
+        values: [first.name, ''],
+        status: 'فعال',
+      };
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/hr/records')
+        .set('Cookie', adminCookie)
+        .set('Idempotency-Key', key())
+        .send(body)
+        .expect(201);
+      const node = response.body as HrRecordDto;
+      const moved = await request(app.getHttpServer())
+        .patch(`/api/v1/hr/records/${node.id}`)
+        .set('Cookie', adminCookie)
+        .send({ version: node.version, data: { chartX: 120, chartY: -35 } })
+        .expect(200);
+      expect((await service.getRecord(node.id, admin)).data).toMatchObject({
+        chartX: 120,
+        chartY: -35,
+      });
+      await request(app.getHttpServer())
+        .patch(`/api/v1/hr/records/${node.id}`)
+        .set('Cookie', adminCookie)
+        .send({ version: node.version, data: { chartX: 10 } })
+        .expect(409);
+      await request(app.getHttpServer())
+        .patch(`/api/v1/hr/records/${node.id}`)
+        .set('Cookie', adminCookie)
+        .send({ version: moved.body.version, data: { chartY: 5001 } })
+        .expect(400);
+      await expect(
+        service.updateRecord(
+          node.id,
+          { version: moved.body.version, data: { chartX: 0 } },
+          outsider,
+        ),
+      ).rejects.toThrow();
+      await request(app.getHttpServer())
+        .post('/api/v1/hr/records')
+        .set('Cookie', selfCookie)
+        .set('Idempotency-Key', key())
+        .send({ ...body, employeeId: employee.id, values: [employee.name, ''] })
+        .expect(403);
+      const child = await service.createRecord(
+        {
+          ...body,
+          employeeId: second.id,
+          parentId: node.id,
+          values: [second.name, 'جانشین'],
+        },
+        key(),
+        admin,
+      );
+      await expect(
+        service.updateRecord(
+          node.id,
+          { version: moved.body.version, parentId: child.id },
+          admin,
+        ),
+      ).rejects.toThrow('چرخه');
+      await expect(
+        service.deleteRecord(node.id, moved.body.version, admin),
+      ).rejects.toThrow('وابسته');
+      await expect(
+        service.deleteRecord(a.id, a.version, admin),
+      ).rejects.toThrow('وابسته');
+      const childMoved = await service.updateRecord(
+        child.id,
+        {
+          version: child.version,
+          parentId: b.id,
+          values: [second.name, 'عنوان جدید'],
+        },
+        admin,
+      );
+      expect(childMoved.parentId).toBe(b.id);
+      await service.deleteRecord(node.id, moved.body.version, admin);
+      const person = await client.hrEmployee.findUniqueOrThrow({
+        where: { id: first.id },
+      });
+      expect(person.deletedAt).toBeNull();
+      expect(person.unit).toBe(first.unit);
+      expect(person.version).toBe(first.version);
+      const readded = await service.createRecord(body, key(), admin);
+      expect(readded.id).not.toBe(node.id);
+      const unitMoved = await service.updateRecord(
+        a.id,
+        { version: a.version, data: { chartX: -10, chartY: 50 } },
+        admin,
+      );
+      expect(unitMoved.data.chartY).toBe(50);
+      const audited = await client.hrAuditEvent.count({
+        where: { recordId: node.id, action: 'record.update' },
+      });
+      expect(audited).toBe(1);
+      await client.hrRecord.updateMany({
+        where: { id: { in: [a.id, b.id, node.id, child.id, readded.id] } },
+        data: { deletedAt: new Date() },
+      });
+      await client.hrEmployee.updateMany({
+        where: { id: { in: [first.id, second.id] } },
+        data: { deletedAt: new Date() },
+      });
+    });
+    it('rejects cross-company chart parents and duplicate employee nodes under concurrent requests', async () => {
+      const company = async (name: string) =>
+        service.createRecord(
+          {
+            section: 'organization',
+            tab: 'branches',
+            branchId: branchA,
+            values: getHrResource('organization', 'branches')!.columns.map(
+              (_, i) => (i === 0 ? name : ''),
+            ),
+            status: 'فعال',
+          },
+          key(),
+          admin,
+        );
+      const companyA = await company('Chart company A'),
+        companyB = await company('Chart company B');
+      const first = await service.createEmployee(
+        employeeInput('Company chart employee', {
+          organizationBranchId: companyA.id,
+        }),
+        key(),
+        admin,
+      );
+      const foreign = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'units',
+          branchId: branchA,
+          values: getHrResource('organization', 'units')!.columns.map((_, i) =>
+            i === 0 ? 'Foreign chart department' : '',
+          ),
+          status: 'فعال',
+          data: { organizationBranchId: companyB.id },
+        },
+        key(),
+        admin,
+      );
+      const body = {
+        section: 'organization',
+        tab: 'chartEmployees',
+        branchId: branchA,
+        employeeId: first.id,
+        values: [first.name, ''],
+        status: 'فعال',
+      };
+      await expect(
+        service.createRecord({ ...body, parentId: foreign.id }, key(), admin),
+      ).rejects.toThrow('شرکت');
+      await expect(
+        service.createRecord(
+          { ...body, data: { organizationBranchId: companyB.id } },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('شرکت');
+      const ownDepartment = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'units',
+          branchId: branchA,
+          values: getHrResource('organization', 'units')!.columns.map((_, i) =>
+            i === 0 ? 'Own chart department' : '',
+          ),
+          status: 'فعال',
+          data: { organizationBranchId: companyA.id },
+        },
+        key(),
+        admin,
+      );
+      const attached = { ...body, parentId: ownDepartment.id };
+      const results = await Promise.allSettled([
+        service.createRecord(attached, key(), admin),
+        service.createRecord(attached, key(), admin),
+      ]);
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      await expect(
+        service.updateRecord(
+          ownDepartment.id,
+          {
+            version: ownDepartment.version,
+            data: { organizationBranchId: companyB.id },
+          },
+          admin,
+        ),
+      ).rejects.toThrow('زیرمجموعه');
+      expect(
+        await client.hrRecord.count({
+          where: {
+            employeeId: first.id,
+            tab: 'chartEmployees',
+            deletedAt: null,
+          },
+        }),
+      ).toBe(1);
+      // A canonical personnel transfer leaves historical chart records intact; a new current-company node is allowed.
+      await client.hrEmployee.update({
+        where: { id: first.id },
+        data: { organizationBranchId: companyB.id },
+      });
+      const transferredNode = await service.createRecord(
+        { ...body, parentId: foreign.id },
+        key(),
+        admin,
+      );
+      expect(transferredNode.data.organizationBranchId).toBe(companyB.id);
+      await client.hrRecord.updateMany({
+        where: {
+          OR: [
+            {
+              id: {
+                in: [companyA.id, companyB.id, foreign.id, ownDepartment.id],
+              },
+            },
+            { employeeId: first.id, tab: 'chartEmployees' },
+          ],
+        },
+        data: { deletedAt: new Date() },
+      });
+      await client.hrEmployee.update({
+        where: { id: first.id },
+        data: { deletedAt: new Date() },
+      });
+    });
   },
 );
