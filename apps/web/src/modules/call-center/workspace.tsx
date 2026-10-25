@@ -649,8 +649,9 @@ function Content({
                       'نام مخاطب',
                       'شماره تماس',
                       'موضوع آخرین تماس',
+                      'نوع آخرین تماس',
                       'منبع',
-                      'واحد',
+                      'داخلی / کارشناس',
                       'آخرین تماس',
                       'تعداد تماس',
                       'نتیجه',
@@ -718,8 +719,20 @@ function Content({
                       >
                         {row.latest.subject}
                       </td>
+                      <td data-label="نوع آخرین تماس">
+                        <span
+                          className={styles.badge}
+                          data-direction={row.latest.direction}
+                        >
+                          {row.latest.direction === 'INBOUND'
+                            ? 'ورودی'
+                            : 'خروجی'}
+                        </span>
+                      </td>
                       <td data-label="منبع">{row.latest.source}</td>
-                      <td data-label="واحد">{row.latest.operator}</td>
+                      <td data-label="داخلی / کارشناس">
+                        {row.latest.operator}
+                      </td>
                       <td data-label="آخرین تماس">
                         {callDate(row.latest.occurredAt)}
                       </td>
@@ -1182,8 +1195,10 @@ function History({
                   {c.note || 'بدون شرح'}
                 </p>
                 <p>
-                  وصل شده به:{' '}
-                  {c.answerRecipient?.label || c.operator || 'نامشخص'}
+                  {c.direction === 'OUTBOUND'
+                    ? 'تماس‌گرفته‌شده از داخلی'
+                    : 'وصل شده به'}
+                  : {c.answerRecipient?.label || c.operator || 'نامشخص'}
                 </p>
                 <p>
                   زمان ثبت: {c.createdAt ? callDate(c.createdAt) : 'نامشخص'}

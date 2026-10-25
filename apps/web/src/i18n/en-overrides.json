@@ -4468,5 +4468,8 @@
   "گزارش آماده نشده است.": "The report is not ready.",
   "گزینه‌ای برای انتخاب وجود ندارد.": "There are no options to select.",
   "نتیجه گزارش": "Report results",
-  "منبع دادهٔ این گزارش در دسترس نیست.": "The data source for this report is unavailable."
+  "منبع دادهٔ این گزارش در دسترس نیست.": "The data source for this report is unavailable.",
+  "نوع آخرین تماس": "Latest call direction",
+  "داخلی / کارشناس": "Extension / agent",
+  "تماس‌گرفته‌شده از داخلی": "Called from extension"
 }
