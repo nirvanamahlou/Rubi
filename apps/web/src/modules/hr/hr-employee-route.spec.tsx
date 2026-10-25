@@ -35,6 +35,7 @@ it('opens a legacy employee link through the existing authorized summary route',
   expect(canViewRoute([], entry)).toBe(false);
   expect(canViewRoute([], target)).toBe(false);
   expect(canViewRoute(permissions, `${entry}&tab=contact`)).toBe(false);
+  expect(canViewRoute(permissions, `${entry}&workspace=payroll`)).toBe(false);
   expect(canViewRoute(permissions, '/hr?section=employee')).toBe(false);
   expect(
     canViewRoute(

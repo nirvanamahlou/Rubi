@@ -2502,6 +2502,7 @@ export function canViewRoute(
     route === '/human-resources' &&
     query.section === 'employee' &&
     query.employee &&
+    !query.workspace &&
     !query.tab
   )
     query.tab = 'summary';
