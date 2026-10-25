@@ -143,17 +143,23 @@ describe('reservation general details', () => {
       dateCalendarSystem: 'gregorian',
     };
     saved.snapshot.ticketSelections![0]!.departureAt = '2026-10-01T23:00:00Z';
-    saved.snapshot.serviceSelections.push({
-      ...saved.snapshot.serviceSelections[1]!,
-      clientKey: 'return',
-      metadata: { dateCalendarSystem: 'persian' },
-    });
-    saved.snapshot.ticketSelections!.push({
-      ...saved.snapshot.ticketSelections![0]!,
-      serviceClientKey: 'return',
-      direction: 'RETURN',
-      departureAt: '2026-10-07T07:30:00Z',
-    });
+    saved.snapshot.serviceSelections = [
+      ...saved.snapshot.serviceSelections,
+      {
+        ...saved.snapshot.serviceSelections[1]!,
+        clientKey: 'return',
+        metadata: { dateCalendarSystem: 'persian' },
+      },
+    ];
+    saved.snapshot.ticketSelections = [
+      ...saved.snapshot.ticketSelections!,
+      {
+        ...saved.snapshot.ticketSelections![0]!,
+        serviceClientKey: 'return',
+        direction: 'RETURN',
+        departureAt: '2026-10-07T07:30:00Z',
+      },
+    ];
     const groups = reservationGeneralDetailGroups(saved, request);
     const field = (label: string) =>
       groups
