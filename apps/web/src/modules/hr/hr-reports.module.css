@@ -1,0 +1,389 @@
+.workspace {
+  min-width: 0;
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(200px, 250px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.catalog {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  position: sticky;
+  top: 16px;
+}
+.catalogHeading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary);
+  margin-bottom: 16px;
+}
+.catalogHeading h2 {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.8;
+  flex: 1;
+  margin: 0;
+}
+.catalogHeading bdi,
+.peopleHeading bdi {
+  font-size: 11px;
+  border-radius: 8px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  padding: 4px 7px;
+  font-variant-numeric: tabular-nums;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted-foreground);
+}
+.search:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.search input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  outline: none;
+  font: inherit;
+  font-size: 12px;
+}
+.reportList {
+  display: grid;
+  gap: 4px;
+  max-height: 520px;
+  overflow: auto;
+  margin: 12px -4px;
+  padding: 2px 4px;
+  scrollbar-width: thin;
+}
+.reportList button {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 11px 9px;
+  text-align: start;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--muted-foreground);
+  background: transparent;
+  cursor: pointer;
+}
+.reportList svg {
+  flex-shrink: 0;
+}
+.reportList button:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+.reportList button[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
+  background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+  color: var(--primary);
+  font-weight: 800;
+}
+.reportList button:focus-visible,
+.personChip button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.otherReports {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.content,
+.form {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.dates > label,
+.fields > label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+.fields:empty {
+  display: none;
+}
+.people,
+.choices,
+.coefficients {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--muted) 35%, var(--surface));
+  padding: 14px;
+  margin: 0;
+}
+.peopleHeading,
+.peopleHeading > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.peopleHeading {
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.people > button {
+  width: 100%;
+}
+.peopleSummary {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  line-height: 1.9;
+  margin-top: 9px;
+}
+.selectedPeople {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  max-height: 130px;
+  overflow: auto;
+}
+.personChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+.personChip button {
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--muted-foreground);
+}
+.choices legend,
+.coefficients legend {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.choices > label,
+.coefficients > label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+.choices input,
+.coefficients input,
+.pickerTree input {
+  accent-color: var(--primary);
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.choiceList {
+  max-height: 210px;
+  overflow: auto;
+  display: grid;
+  gap: 6px;
+  scrollbar-width: thin;
+}
+.choiceList label,
+.coefficientTree label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  min-height: 28px;
+  line-height: 1.8;
+  cursor: pointer;
+}
+.choiceList p {
+  margin: 4px 0;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.coefficients {
+  grid-column: 1/-1;
+}
+.coefficients > .coefficientTree {
+  max-height: 300px;
+  overflow: auto;
+}
+.coefficientTree details {
+  padding: 4px 0;
+}
+.coefficientTree summary {
+  cursor: pointer;
+}
+.coefficientTree summary > label {
+  display: inline-flex;
+}
+.fields > label:has(input[type='checkbox']) {
+  flex-direction: row;
+  align-items: center;
+  align-self: end;
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--muted);
+  padding: 8px 12px;
+}
+.fields > label > input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+.formActions,
+.exportActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.formActions {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+.exportActions button {
+  font-size: 12px;
+}
+.message {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--muted);
+  padding: 12px 14px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.9;
+  margin: 0;
+}
+.error {
+  margin: 0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--destructive);
+  background: color-mix(in srgb, var(--destructive) 7%, var(--surface));
+}
+.picker {
+  max-width: 680px;
+}
+.pickerContent {
+  display: grid;
+  gap: 16px;
+  margin-top: 12px;
+}
+.pickerTree {
+  max-height: 45vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+.pickerTree details {
+  padding: 8px 0;
+}
+.pickerTree summary {
+  font-size: 0.875em;
+  font-weight: 700;
+  padding: 6px;
+  cursor: pointer;
+}
+.pickerTree label {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  min-height: 34px;
+  font-size: 0.875em;
+  padding-inline: 8px;
+}
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 14px;
+  }
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 760px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .catalog {
+    position: static;
+  }
+  .reportList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: 240px;
+  }
+  .dates {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .reportList {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .exportActions > button {
+    flex: 1;
+  }
+  .formActions > button {
+    flex: 1;
+  }
+}

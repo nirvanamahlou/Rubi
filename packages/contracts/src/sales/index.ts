@@ -269,6 +269,17 @@ export interface SalesBalance extends SalesMoney {
 }
 
 export interface SalesContractSummary {
+  travelDates?: {
+    outbound: { date: string; calendar: 'persian' | 'gregorian' } | null;
+    returning: { date: string; calendar: 'persian' | 'gregorian' } | null;
+  };
+  passengerComposition?: {
+    adults: number;
+    children2To6: number;
+    children6To12: number;
+    infants: number;
+    childrenUnknownAge: number;
+  };
   customerDocumentDeliveryApproved?: boolean;
   sellerName?: string | null;
   reservationContractChanged?: boolean;
