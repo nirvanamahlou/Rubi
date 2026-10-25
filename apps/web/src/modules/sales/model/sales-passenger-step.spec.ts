@@ -106,7 +106,7 @@ it('reports missing visa applicants and rejects stale or duplicate identities', 
     ),
   ).toBe('افراد متقاضی ویزا را مطابق تعداد بزرگسال و کودک انتخاب کنید.');
 });
-it('preserves identity confirmation, customer, date and age-composition checks', () => {
+it('preserves identity confirmation, customer and service-date age-composition checks', () => {
   expect(salesPassengerStepError(base(), true, null)).toContain(
     'ثبت و تأیید افراد',
   );
@@ -115,7 +115,7 @@ it('preserves identity confirmation, customer, date and age-composition checks',
   ).toContain('مشتری');
   expect(
     salesPassengerStepError({ ...base(), departureDate: '' }, false, null),
-  ).toContain('تاریخ');
+  ).toBeNull();
   expect(
     salesPassengerStepError(
       {
@@ -135,4 +135,36 @@ it('legacy mode validates its customer confirmation without asking for passenger
   expect(
     salesPassengerStepError({ ...state, customerId: '' }, false, null),
   ).not.toBeNull();
+});
+
+it('validates age composition against hotel dates without a separate trip-start value', () => {
+  const state = {
+    ...base(),
+    departureDate: '',
+    serviceKinds: ['HOTEL' as const],
+    hotel: {
+      ...base().hotel,
+      checkIn: '2099-10-01',
+      checkOut: '2099-10-03',
+      guestCustomerIds: ['person'],
+    },
+  };
+  expect(salesPassengerStepError(state, false, null)).toBeNull();
+  expect(
+    salesPassengerStepError(
+      {
+        ...state,
+        passengerComposition: { adults: 0, children: 1, infants: 0 },
+      },
+      false,
+      null,
+    ),
+  ).toContain('ترکیب ثبت‌شده');
+  expect(
+    salesPassengerStepError(
+      { ...state, passengers: [{ ...state.passengers[0]!, birthDate: '' }] },
+      false,
+      null,
+    ),
+  ).toContain('تاریخ تولد');
 });

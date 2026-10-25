@@ -7623,3 +7623,7 @@ Reservation contract-detail travel dates and flight timestamps now honor per-ser
 ## CONTRACT-SELLER-NAME-1025 — PC-A
 
 Saved contract output resolves its actual owner display name after existing contract/state/company authorization, without requiring iam.users.read or enumerating the users directory. Creator-only own-contract output and manager output retain the saved seller, including inactive/moved owners; preview/PDF consume the same ownerName. Exact-owner IAM projection exposes only ID/displayName. Permission, missing-owner and safe-header regressions plus affected types/lint/build and hosted exact-head gates precede user-authorized develop merge. No schema/migration/dependency/role grant or runtime rollout.
+
+## REMOVE-EXTRA-TRAVEL-DATE-1025 — PC-A
+
+Removed the duplicate people-sheet trip-start and legacy general trip-date controls plus their callback/independent identity confirmation date gate. People can be entered before choosing dated services; real birth dates remain required and composition is rechecked when service dates are known. Flight/hotel/tour dates feed canonical output, and standalone undated services collect their own execution dates in the service section. Old draft departure summaries remain backward compatible. Sales619 tests pass/one existing skip; affected types/lint/build and full exact-head CI gate the owner-authorized develop merge. No API/schema/migration/dependency/permission or runtime change.

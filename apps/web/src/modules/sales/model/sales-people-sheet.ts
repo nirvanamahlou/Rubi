@@ -506,8 +506,8 @@ export function validateSalesPeopleDraft(
   }));
   if (
     !state.legacyContract &&
-    (!salesTravelDate(state) ||
-      !salesPassengerCompositionMatches({ ...state, passengers }))
+    salesTravelDate(state) &&
+    !salesPassengerCompositionMatches({ ...state, passengers })
   )
     throw new Error(
       'تاریخ تولد همه مسافران را کامل کنید؛ تعداد بزرگسال، کودک و نوزاد باید با مرحله اول یکسان باشد.',

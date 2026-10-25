@@ -657,3 +657,7 @@ Owner authorizes implementation, develop merge and3100 rollout without orchestra
 ## CONTRACT-SELLER-NAME-1025 — 2026-10-25
 
 Owner authorizes showing the responsible seller in readable contract outputs without global IAM users-directory access. Sales authorizes the saved contract first, then requests only contract.ownerUserId through an IAM-owned internal document identity projection selecting ID/displayName. Current exporter identity must never replace the seller. User status/branch reassignment does not erase the name from a historical readable contract. No new client-selectable identity endpoint, role grant, schema or shared wire change; preview/PDF retain the existing ownerName contract. Missing identities remain null rather than inventing an actor name.
+
+## REMOVE-EXTRA-TRAVEL-DATE-1025 — 2026-10-25
+
+The owner removes redundant trip-start inputs from New Contract. Identity registration must not demand a second date before service selection. Actual flight/hotel/tour dates remain canonical for travel/age/output; service-only contracts use execution dates attached to selected services rather than an identity-sheet date. Missing birth dates, mismatched ages after date selection, invalid service dates, inventory and allocation validation remain. Keep the existing departureDate wire/DB field as a derived summary and legacy draft fallback, with no schema/migration or invented current-date default.

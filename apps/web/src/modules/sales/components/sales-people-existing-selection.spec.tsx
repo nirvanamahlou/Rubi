@@ -74,7 +74,6 @@ function render() {
       onConfirmed={vi.fn()}
       onBusyChange={vi.fn()}
       onAddInfant={vi.fn()}
-      onTravelDateChange={vi.fn()}
     />,
   );
 }
