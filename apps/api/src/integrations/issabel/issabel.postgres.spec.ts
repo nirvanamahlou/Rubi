@@ -62,7 +62,9 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       const url = new URL(process.env.DATABASE_URL ?? '');
       if (
         !['127.0.0.1', 'localhost'].includes(url.hostname) ||
-        url.pathname !== '/nora_ci'
+        !['/nora_ci', '/nora_outbound_first_contact_1025'].includes(
+          url.pathname,
+        )
       )
         throw Error('Disposable nora_ci database required.');
       db = createDatabaseClient(url.toString());
@@ -1359,6 +1361,87 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       expect(
         (await calls.getCall(pending.callId, actor, branchId)).data,
       ).toMatchObject({ outcome: 'NO_ANSWER', needsCompletion: true });
+    });
+
+    it('persists first outbound contact immediately, assigns its mapped originator once and isolates shared extensions', async () => {
+      const e = {
+        ...fact('RINGING'),
+        externalEventId: randomUUID(),
+        externalCallId: randomUUID(),
+        rootCallId: null,
+        direction: 'OUT' as const,
+        extension: '101',
+        caller: { kind: 'KNOWN' as const, value: '101' },
+        destination: { kind: 'KNOWN' as const, value: '+12025550991' },
+      };
+      config.set('ISSABEL_EVENT_MODE', 'NATIVE_QUEUE_CAPTURE');
+      config.set('ISSABEL_USER_NOTIFICATIONS_ENABLED', 'false');
+      config.set('ISSABEL_OUTBOUND_NOTIFICATIONS_ENABLED', 'true');
+      try {
+        const receipt = await events.receive(e, 'ISSABEL');
+        await events.process(receipt.id);
+        await events.process(receipt.id);
+        const row = await db.callCenterTelephonySession.findFirstOrThrow({
+          where: {
+            connectionId,
+            call: {
+              direction: 'OUTBOUND',
+              contact: { phoneFingerprint: crypto.fingerprint('+12025550991') },
+            },
+          },
+          include: { call: { include: { contact: true } }, offers: true },
+        });
+        expect(row.call.needsCompletion).toBe(true);
+        expect(row.completed).toBe(false);
+        expect(row.call.contact.ownerUserId).toBe(userId);
+        expect(row.offers.map((x) => x.userId)).toEqual([userId]);
+        expect(
+          await db.callCenterCall.count({
+            where: { contactId: row.call.contactId },
+          }),
+        ).toBe(1);
+        expect(
+          await db.customerAffairsAuditEvent.count({
+            where: { entityId: row.call.contactId, action: 'OWNER_ASSIGNED' },
+          }),
+        ).toBe(1);
+        const sharedDomain = new CallCenterTelephonyService(
+          { client: db } as never,
+          crypto,
+          new CallCenterService({ client: db } as never, crypto),
+          new IamCallCenterDirectory({ client: db } as never),
+          { resolve: async () => ({ shared: true }) } as never,
+        );
+        const sid = await db.$transaction((tx) =>
+          sharedDomain.project(
+            tx,
+            {
+              ...e,
+              externalEventId: randomUUID(),
+              externalCallId: randomUUID(),
+              extension: '203',
+              destination: { kind: 'KNOWN', value: '+12025550992' },
+            },
+            {
+              branchId,
+              creatorId: userId,
+              synthetic: false,
+              receivedAt: new Date(),
+              recipient: { userId, version: 1 },
+            },
+          ),
+        );
+        const shared = await db.callCenterTelephonySession.findUniqueOrThrow({
+          where: { id: sid },
+          include: { offers: true, call: { include: { contact: true } } },
+        });
+        expect(shared.offers).toHaveLength(0);
+        expect(shared.call.contact.ownerUserId).toBeNull();
+        expect(shared.call.needsCompletion).toBe(true);
+      } finally {
+        config.set('ISSABEL_OUTBOUND_NOTIFICATIONS_ENABLED', 'false');
+        config.set('ISSABEL_EVENT_MODE', 'CUSTOM_FACTS');
+      }
     });
   },
 );

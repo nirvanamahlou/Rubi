@@ -9455,3 +9455,9 @@ CALL-FILTER-CALENDAR-1025 — COMPLETE / SOURCE_RELEASED:18 tests, lint, TypeScr
 ## CALL-QUEUE-ALIGN-1025 — PC-C — RESERVED
 Base554064d7. User authorizes centered queue headers/cells except request title, plus colored status/priority badges. Reserve workflow.tsx queue markup and workflow.module.css, own docs. Prior scope released; generated next-env preserved. No API/schema/PBX/popups or other panel changes.
 CALL-QUEUE-ALIGN-1025 — COMPLETE / SOURCE_RELEASED:3 tests, lint/types/65-route build and authenticated visual review pass. Web3000 PID19332, no API/Worker/PBX changes. No migration/PR/merge.
+
+## OUTBOUND-FIRST-CONTACT-1025 — PC-C — RESERVED
+Based22338f7 approved local UI. User confirms immediate incomplete outbound contact listing and no popup for shared extensions. Published outbound predecessor740b03e3 is clean and incorporated; reserve outbound domain recipient guard/new-contact ownership, tests, opt-in headless outbound attention shell mount and docs. Preserve inbound hold and removed technical widget. No schema/dependency/PBX changes; operational mapping/trunk inventory must be verified before enabling.
+Scope includes existing workspace refresh handler on outbound receipt; no new visible control, page-one refresh retains selected dossier and later pages retain paging context.
+
+OUTBOUND-FIRST-CONTACT-1025 — IMPLEMENTED / SOURCE_RELEASED ON PUSH:27 targeted tests, lint/types/build pass. Local outgoing-only runtime active; manual post-activation call acceptance pending. No migration/PBX change/PR/merge. See task evidence.

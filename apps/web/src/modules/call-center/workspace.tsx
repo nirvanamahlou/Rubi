@@ -202,6 +202,19 @@ function Content({
     [busy, setBusy] = useState(false);
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
+    const refreshOutbound = () => {
+      if (page === 1) setRefresh((value) => value + 1);
+      else setMessage('تماس خروجی جدید ثبت شد؛ فهرست را تازه‌سازی کنید.');
+    };
+    window.addEventListener('call-center:outbound-received', refreshOutbound);
+    return () =>
+      window.removeEventListener(
+        'call-center:outbound-received',
+        refreshOutbound,
+      );
+  }, [page]);
+
+  useEffect(() => {
     let active = true;
     readApi
       .teams(branch)

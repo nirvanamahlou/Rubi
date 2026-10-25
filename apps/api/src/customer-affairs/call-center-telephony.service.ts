@@ -69,6 +69,32 @@ export class CallCenterTelephonyService {
       } | null;
     },
   ) {
+    // Shared physical extensions never identify an individual caller.
+    if (event.direction === 'OUT' && context.recipient) {
+      const shared =
+        event.extension && this.answerDirectory
+          ? (
+              await this.answerDirectory.resolve(
+                context.branchId,
+                event.extension,
+                event.occurredAt,
+                tx,
+                event.connectionId,
+              )
+            ).shared
+          : false;
+      if (
+        shared ||
+        !(await this.directory.eligibleMapping(
+          context.branchId,
+          context.recipient.userId,
+          context.recipient.teamId ?? null,
+          tx,
+        ))
+      ) {
+        context = { ...context, recipient: null };
+      }
+    }
     const rootFingerprint = this.crypto.fingerprint(
       `telephony:root:${event.connectionId}:${event.rootCallId ?? event.externalCallId}`,
     );
@@ -108,6 +134,7 @@ export class CallCenterTelephonyService {
           : phone || `anonymous:${id}`,
       );
       const occurredAt = new Date(event.occurredAt);
+      const newContactId = randomUUID();
       const contact = await tx.callCenterContact.upsert({
         where: {
           branchId_phoneFingerprint: {
@@ -116,12 +143,33 @@ export class CallCenterTelephonyService {
           },
         },
         create: {
+          id: newContactId,
           branchId: context.branchId,
           phoneFingerprint,
           latestOccurredAt: occurredAt,
+          ...(event.direction === 'OUT' && context.recipient
+            ? { ownerUserId: context.recipient.userId, ownerVersion: 1 }
+            : {}),
         },
         update: {},
       });
+      if (contact.id === newContactId && contact.ownerUserId) {
+        await tx.customerAffairsAuditEvent.create({
+          data: {
+            branchId: context.branchId,
+            actorUserId: context.creatorId,
+            entityType: 'CALL_CENTER_CONTACT',
+            entityId: contact.id,
+            action: 'OWNER_ASSIGNED',
+            version: 1,
+            afterSnapshot: {
+              previousOwnerUserId: null,
+              ownerUserId: contact.ownerUserId,
+              reason: 'OUTBOUND_ORIGINATOR',
+            },
+          },
+        });
+      }
       await tx.callCenterContact.updateMany({
         where: { id: contact.id, latestOccurredAt: { lt: occurredAt } },
         data: { latestOccurredAt: occurredAt },

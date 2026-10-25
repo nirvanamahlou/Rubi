@@ -7477,3 +7477,7 @@ Both advanced Call Center date filters now switch Persian/Gregorian, with opt-in
 
 ## CALL-QUEUE-ALIGN-1025 — 2026-10-25
 User-requested queue header/cell centering (except title) and status/priority colored badges implemented.3 tests, lint, TypeScript and65-route build pass; browser verified. Web3000 PID19332 uses .next-queue-align-1025; previous artifacts preserved, API/Worker unchanged, popups disabled. No migration/PR/merge; source released.
+
+## OUTBOUND-FIRST-CONTACT-1025 — PC-C — LOCAL_ACCEPTANCE_PENDING
+
+Exclusive mapped outbound calls now create incomplete contacts with audited initial ownership and use the existing form across authenticated ERP pages. Shared/unmapped extensions store without offers; inbound hold and approved panel design preserved.27 targeted tests, lint/types/build pass; local3000/4000 running. Pre-activation real AMI404 observed; post-activation call/popup acceptance pending. No migration or PBX change. See docs/tasks/OUTBOUND-FIRST-CONTACT-1025.md.
