@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, MouseEvent } from 'react';
 import type { HrEmployeeDto, HrRecordDto } from '@nora/contracts';
 import { getHrResource } from '@nora/contracts';
 import { HrEmployeeProfile } from './hr-employee-profile';
@@ -101,7 +101,9 @@ describe('optional employee case workflows', () => {
           onSelect={() => {}}
         />,
       );
-      captured.buttons.find((button) => button.primary)?.onClick?.();
+      captured.buttons
+        .find((button) => button.primary)
+        ?.onClick?.({} as MouseEvent<HTMLButtonElement>);
       expect(onForm).toHaveBeenCalledWith(
         expect.objectContaining({
           employeeId: employee.id,

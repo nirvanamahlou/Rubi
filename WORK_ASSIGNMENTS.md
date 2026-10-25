@@ -9472,6 +9472,8 @@ COMPUTER_ID=PC-B; branch codex/pc-b-hr-employee-case-workflows-1025 from develop
 
 HR-EMPLOYEE-CASE-WORKFLOWS-1025 compatibility scope: include HR-owned report source discovery and record-source labels so moving leave out of the time menu does not remove leave/cardex reporting or canonical record detail metadata. No report engine/API contracts change.
 
+HR-EMPLOYEE-CASE-WORKFLOWS-1025 validation: focused employee-bound create/edit, optional entry, view permissions, legacy routing and shared job-title rendering regressions pass. Existing legacy hub fixture now explicitly excludes the removed lifecycle entry. Final hosted quality/types/full tests/build/database gates precede merge; scoped source/translation locks release after verified develop merge. No migration/dependency/runtime changes.
+
 ## HR-DEVICE-FORM-1025 — PC-B — RESERVED
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-device-form-1025 from develop1b21687c. User resumed the authorized device crawl after signing in. Fresh read-only Radan device-list observation confirms name/address/type required, description/port/network password optional; type choices V800, Radan, ZK, TF8000, V210. Reserve HR time navigation, live record form/device-only contextual rendering and focused existing regressions, own notes/translations. Existing branch/permission, encrypted write-only password and canonical record column positions remain intact. No schema/dependency/API/provider/runtime/Radan writes. Distinct copy-cleanup PR1107 remains independently gated; integrate its develop merge before publication.
