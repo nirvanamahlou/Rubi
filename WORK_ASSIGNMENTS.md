@@ -9643,3 +9643,8 @@ REQUEST-REASON-REQUIRED-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: mandatory r
 Reserve workflow.tsx/workflow.module.css and own docs for user-authorized16px separation between contact summary and request title. No functional, API, dependency or migration change.
 
 REQUEST-HEADER-SPACING-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: scoped16px contact-summary spacing, verified visually and by DOM measurement on3000.3 tests, lint, full Web typecheck/build pass. No API/data change.
+
+## QUEUE-REQUEST-EDITOR-1025 — PC-C — DONE
+Reserve workflow.tsx and workflow.spec.tsx for direct queue-row opening of the existing request editor, scoped request/contact loading, read-only access preservation, refresh/focus/error behavior and own docs. No API/schema/dependency changes.
+
+Completed direct editor routing, read-only safeguard, loading/error/focus handling.4 tests, lint, Web types/build and browser acceptance pass; runtime3000 updated. Source reservation released; no API/schema/dependency changes.

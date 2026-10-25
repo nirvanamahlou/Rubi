@@ -84,4 +84,12 @@ describe('request workflow form', () => {
     expect(html).toContain('بسته‌شده');
     expect(html).toContain('data-value="HIGH"');
   });
+  it('prevents editing and saving for read-only queue viewers while allowing dismissal', () => {
+    const html = renderToStaticMarkup(
+      <WorkflowEditor {...props} editor={{ kind: 'request' }} readOnly />,
+    );
+    expect(html).toContain('<fieldset disabled=""');
+    expect(html).not.toContain('type="submit"');
+    expect(html).toMatch(/<button[^>]*type="button"[^>]*>بستن<\/button>/);
+  });
 });

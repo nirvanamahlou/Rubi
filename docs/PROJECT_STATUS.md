@@ -7592,3 +7592,6 @@ Request reason is mandatory for every creation/edit, enforced by native form val
 
 ## REQUEST-HEADER-SPACING-1025 — PC-C
 Added user-requested16px gap between contact summary and request title in the Call Center editor. Browser measurement confirms0->16px onlocalhost3000.3 workflow tests, lint and full Web types/build65 pages pass; no API/migration/dependency changes. See tasks/REQUEST-HEADER-SPACING-1025.md.
+
+## QUEUE-REQUEST-EDITOR-1025 — PC-C
+Queue request clicks now directly open the existing request/assignee editor with authorized saved data and contact summary. Read-only permissions, cancellation, focus return and refresh behavior preserved.4 workflow tests, scoped lint, full Web types/build65 pages and browser direct-open/focus acceptance pass. Active onlocalhost3000; no API/schema/popup-policy change. See tasks/QUEUE-REQUEST-EDITOR-1025.md.
