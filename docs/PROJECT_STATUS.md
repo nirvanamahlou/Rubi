@@ -7478,6 +7478,62 @@ directory regressions pass. Runtime reads the file per lookup, so no restart/bui
 or historical rewrite. No personnel data committed, schema/grant/PBX change or
 operational test call. See tasks/CALL-EXTENSION-ALIASES-1024.md for handoff.
 
+## CALL-REQUEST-ASSIGNEES-1025 — PC-C — 2026-10-25
+
+Implemented dedicated request-assignee directory and server-side recipient validation: self-only ordinary staff, exact active organization-unit scope for team managers, private configured executive/demo cross-unit selection within existing branch authorization. HR public projection supplies full name/title; no account/permission inference from private extension directory. Existing telephony/task/referral options preserved. Web retains OwnerSelect design, adds async scoped request options, safe loading/error/retry and auto-selection of the sole option. Unlinked staff/accounts and missing metadata are explicit limitations; no operational identity, grant or schema mutation.
+
+Evidence:15 IAM/HR authorization/projection tests,18 PostgreSQL workflow tests including forged active same-branch recipient rollback, and5 Web tests pass (38 total). Scoped ESLint, full API typecheck/build and65-route Web production build/typecheck pass. Initial SQL run exposed a legacy nullable-assignment regression, removed before success; concurrent compiler load caused a5s test timeout, rerun at20s passed. No database migration; PostgreSQL tests used only existing disposable nora_call_request_pending_1024. Local Web3000 PID21032 serves .next-assignees-1025; API4000 PID20564 preserves the previous final runtime artifact with only four compiled classes updated, same original CWD/development AMI configuration plus the private approved account allowlist. Worker untouched and global popup remains disabled. Browser authenticated request editor confirms self-only choices and Escape/focus behavior, cancelled without saving business data. Screenshot F:/DevData/Temp/call-request-assignees-1025.png outside Git. Source: codex/pc-c-call-request-assignees-1025, base0012c956. No PR/merge or production deployment. Handoff and data prerequisites in tasks/CALL-REQUEST-ASSIGNEES-1025.md.
+
+## CALL-LOCAL-STAFF-1025 — PC-C — COMPLETE LOCALLY
+
+Owner-approved local personnel/unit/account configuration is live on existing3000/4000.19 configured accounts,20 employee records,10 units and23 extensions; two deferred employees remain unassignable. New accounts use bounded local review grants; existing passwords/grants and all extension aliases preserved.10 authenticated HTTP directory checks,21 DB-backed checks and15 IAM/HR tests pass; repeat import is idempotent. Private backup/credentials/manifest stay outside Git. No UI/source/schema/runtime/PBX/popup/production change. Four review-only employee effective dates are explicitly unverified employment dates; not production HR data. See tasks/CALL-LOCAL-STAFF-1025.md. Source/document locks released at publication.
+
+## CALL-QUEUE-COLUMNS-1025 — PC-C — COMPLETE LOCALLY
+
+Owner's five RTL columns now show request title, assigned expert, status, priority and creation time. Queue sorted in PostgreSQL by createdAt DESC/id ASC; editing does not reorder older requests. Centered previous/current-total/next pagination verified in authenticated browser.19 PostgreSQL tests and3 Web tests pass; scoped lint/format, API types/build and Web types/65-route production build pass. API10880 on4000 and Web26220 on3000 use isolated .api-queue-1025/.next-queue-1025 artifacts; previous runtime artifacts retained. No database/schema/permissions/PBX/popup changes. Screenshot remains private locally. Scope released; no PR/merge/production rollout.
+
+## CALL-FILTER-CALENDAR-1025 — 2026-10-25
+Both advanced Call Center date filters now switch Persian/Gregorian, with opt-in reference navy calendar, month/year grids, Clear/Close and correct Gregorian labels. Tehran-midnight ISO conversion and exclusive end bound retained.18 tests/lint/typecheck/65-route build pass; browser selection narrowed12 contacts to4, independent clear and Escape verified. Web3000 PID4392 runs .next-filter-calendar-1025; API/Worker unchanged, popups disabled. No migration/PR/merge. Source released.
+
+
+## CALL-QUEUE-ALIGN-1025 — 2026-10-25
+User-requested queue header/cell centering (except title) and status/priority colored badges implemented.3 tests, lint, TypeScript and65-route build pass; browser verified. Web3000 PID19332 uses .next-queue-align-1025; previous artifacts preserved, API/Worker unchanged, popups disabled. No migration/PR/merge; source released.
+
+## OUTBOUND-FIRST-CONTACT-1025 — PC-C — LOCAL_ACCEPTANCE_PENDING
+
+Exclusive mapped outbound calls now create incomplete contacts with audited initial ownership and use the existing form across authenticated ERP pages. Shared/unmapped extensions store without offers; inbound hold and approved panel design preserved.27 targeted tests, lint/types/build pass; local3000/4000 running. Pre-activation real AMI404 observed; post-activation call/popup acceptance pending. No migration or PBX change. See docs/tasks/OUTBOUND-FIRST-CONTACT-1025.md.
+
+## QUEUE-TITLE-CENTER-1025 — PC-C — COMPLETE
+Request title cells now centered horizontally/vertically with bounded truncation; remaining queue unchanged.3 tests, lint/types/build pass; local3000 updated. User also confirms real404 outgoing popup opened after prior activation. No migration/PR/merge.
+
+## OUTCOME-DRILLDOWN-1025 — PC-C — COMPLETE
+Missing-outcome KPI opens bounded server-paged per-call modal with completion and dossier actions. Count and identity-safe scope agree; saves refresh data.22 tests, lint/types/build and authenticated browser checks pass. Local3000 active; no migration/PBX changes. See docs/tasks/OUTCOME-DRILLDOWN-1025.md.
+
+## CALL-DESTINATION-TITLE-1025 — PC-C — COMPLETE
+Destination options avoid repeating department already present as complete words in job title, including Persian/Arabic character and spacing normalization. Name/extension retained; generic titles still receive department.11 tests, lint/types/build pass; local API updated. Historical stored snapshots unchanged; no schema/PBX changes.
+
+## 2026-10-25 — MISSED-CALLBACK-KPI-1025 — PC-C
+
+Replaces fourth Call Center KPI with unique known missed inbound callers lacking a later answered conversation. Provider technical facts are authoritative; unsuccessful retries do not resolve, repeated misses deduplicate and a fresh miss reopens. Branch/contact/report scope and all other cards/layout/popups preserved. API retains needsFollowUp wire key with updated definition metadata. No migration/dependency/business-data rewrite. Fifteen isolated PostgreSQL tests and five Web tests pass; affected lint and API typecheck/build pass. Local Web build/runtime verification follows in task record.
+
+MISSED-CALLBACK-KPI-1025 final verification: production Web build/typecheck65 routes passed; local browser shows new callback KPI with count1 at verification. Source locks released on publication; local runtime updated, no production deployment or merge.
+
+## 2026-10-25 — CALLBACK-DRILLDOWN-1025 — PC-C
+
+Missed-callback KPI opens a paginated unique-contact list using the same eligibility as its count. Reuses existing modal presentation, dossier and fresh outbound registration with phone/name prefill, preserving the original missed call. Registration/cancel keeps modal context; saved results refresh membership and KPI. Shared predicate, branch/report/contact authorization, stable sorting and membership/revision checks protect reads.15 PostgreSQL tests plus13 Web tests pass, including KPI/list agreement and successful/unsuccessful manual callback behavior. No migration/dependency/PBX or automatic popup change; local build/browser acceptance tracked in task document.
+
+CALLBACK-DRILLDOWN-1025 final: Web typecheck/build65 routes and browser acceptance complete. Callback registration preserves original miss and uses existing form. Local runtime updated, no business-data test writes, no PR/merge/deployment. Bounded source reservations released on push.
+
+## 2026-10-25 — PERIOD-DRILLDOWN-1025 — PC-C
+Today/week KPI call drilldowns with dossier and edit, Tehran bounds, matching authorized counts, revision-aware pagination.30 targeted tests pass. No migration or telephony/UI layout change. See task document for final build/browser verification.
+
+PERIOD-DRILLDOWN-1025 final: Web65-route build and local browser verification passed; running3000/4000. Scoped source reservations released on push; no merge/deploy.
+
+## 2026-10-25 — KPI-EDIT-ACTION-1025 — PC-C
+All four KPI modal tables use one existing-call edit action; dossier and fresh-callback actions removed per user request. Shared existing edit permissions retained. No API/migration/telephony change. Lint and15 Web tests pass; final build/browser acceptance in task document.
+
+KPI-EDIT-ACTION-1025 final:65-route Web build and all four modal checks pass; localhost3000 updated with edit-only actions. Source reservation released on push.
+
 
 ## HR-DASHBOARD-CHARTS-1025 — PC-B — IMPLEMENTED / VALIDATING
 
@@ -7514,3 +7570,8 @@ Historical service capacity is also retained by the transactional amendment call
 ## RETURN-ONLY-CALENDAR-1025 — PC-A
 
 Return-only New Contract now labels its sole date picker as the return ticket and shows a return-card heading. The existing destination-to-origin calendar/search and RETURN payload/capacity mapping are retained; no outbound-date prerequisite or forward-route speculative request is added. Exact-day cards refresh and clear stale choices when the date changes. Round-trip pairing and outbound-only behavior remain unchanged. Focused25 regressions pass; broader Sales tests, scoped lint/types/Web build and all exact-head gates precede owner-authorized develop merge. No API, schema, migration, dependency or production change.
+
+## 2026-10-25 — CALL-CENTER-RELEASE-1025 — PC-C
+Final Call Center feature chain consolidated from87eb5e3a and integrated with develop8806eac1. User authorizes PR and merge after all CI/CD checks pass. Only shared docs and translation append conflicts required resolution; other modules preserved. No local secrets/runtime files published. See release task for final CI/merge evidence.
+
+CALL-CENTER-RELEASE-1025 publication: https://github.com/nirvanamahlou/Rubi/pull/1114 targets develop under Amin-tech11. Final reviewed source pushed; source reservations released. Await all checks on latest head before authorized merge; PR checks/timeline are final CI/merge evidence. Local runtime preserved.

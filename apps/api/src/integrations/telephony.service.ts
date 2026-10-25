@@ -335,7 +335,11 @@ export class TelephonyIntegrationService {
         event.extension &&
         (!captureOnly ||
           this.config.get<string>('ISSABEL_USER_NOTIFICATIONS_ENABLED') ===
-            'true')
+            'true' ||
+          (event.direction === 'OUT' &&
+            this.config.get<string>(
+              'ISSABEL_OUTBOUND_NOTIFICATIONS_ENABLED',
+            ) === 'true'))
           ? await tx.integrationTelephonyMapping.findUnique({
               where: {
                 connectionId_extension: {
