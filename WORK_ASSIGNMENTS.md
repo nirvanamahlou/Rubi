@@ -9484,3 +9484,9 @@ CALL-DESTINATION-TITLE-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:11 tests, lin
 User selects unique known callers with missed inbound calls and no later successful conversation as replacement fourth KPI. Reserve Call Center read service/helper/tests, kpis.tsx and two English labels, own docs. Retain needsFollowUp wire key for compatibility; API producer and Web consumer ship together with updated basis metadata. Existing branch/report/contact permissions preserved; no schema, dependency, telephony behavior or popup change. Source targets clean; prior bounded Call Center reservations released.
 
 MISSED-CALLBACK-KPI-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:15 PostgreSQL tests,5 Web tests, lint/typecheck/API build and65-route Web build pass. Local browser confirms new KPI;3000/4000 updated while preserving outbound-only popup settings. No migration, grants, PR or merge.
+
+## CALLBACK-DRILLDOWN-1025 — PC-C — IN_PROGRESS
+
+User authorizes clickable missed-callback KPI with same-style modal, one row per eligible contact, dossier and new outbound registration. Reserve Call Center callbacks/read/controller/tests and Web kpis/workflow/workspace/shared drilldown/client/tests, localized copy, own docs. Producer/consumer add POST missed-callbacks with existing paging shape; same authoritative eligibility as KPI. No migration/dependency, IAM/PBX or automatic popup change. Previous locks released; preserve generated next-env change and other runtimes.
+
+CALLBACK-DRILLDOWN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH:28 tests pass, scoped lint/API build and Web typecheck/build65 routes pass. Browser verifies modal/list/new outbound form/cancel/dossier. Local3000/4000 refreshed; no operational data edit or migration.

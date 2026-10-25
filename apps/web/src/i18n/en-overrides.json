@@ -4077,5 +4077,12 @@
   "قرارداد ثبت شد؛ رسیدهای پرداخت را بررسی کنید.": "The contract was saved; check the payment receipts.",
   "ثبت مدرک پرداخت ناموفق بود.": "The payment receipt could not be saved.",
   "زمان ثبت درخواست": "Request created at",
-  "صفحه‌بندی صف رسیدگی و پیگیری": "Request queue pagination"
+  "صفحه‌بندی صف رسیدگی و پیگیری": "Request queue pagination",
+  "هر ردیف یک مخاطب نیازمند تماس مجدد است. پس از تماس با مخاطب، نتیجه تماس مجدد را ثبت کنید؛ تلاش ناموفق او را از فهرست خارج نمی‌کند.": "Each row is a contact requiring a callback. Record the result after calling; an unsuccessful attempt keeps the contact in this list.",
+  "هر ردیف یک تماس با نتیجه ثبت‌نشده است؛ همه سوابق شعبه انتخاب‌شده، مستقل از فیلترهای مخاطبان.": "Each row is a call without a recorded outcome, across the selected branch history, independently of contact filters.",
+  "مخاطب نیازمند تماس مجددی در دسترسی شما وجود ندارد.": "No contacts requiring a callback are available within your access.",
+  "آخرین تماس بی‌پاسخ": "Latest missed call",
+  "نیازمند تماس مجدد": "Callback required",
+  "ثبت تماس مجدد": "Record callback",
+  "صفحه‌بندی مخاطبان نیازمند تماس مجدد": "Callback contacts pagination"
 }

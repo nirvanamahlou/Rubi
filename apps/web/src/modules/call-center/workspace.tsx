@@ -199,6 +199,7 @@ function Content({
   );
   const [newRequestOpen, setNewRequestOpen] = useState(false);
   const [withoutOutcomeOpen, setWithoutOutcomeOpen] = useState(false);
+  const [callbacksOpen, setCallbacksOpen] = useState(false);
   const [selected, setSelected] = useState<ContactSummary | null>(null),
     [draft, setDraft] = useState<CallEvent | null>(null),
     [busy, setBusy] = useState(false);
@@ -420,6 +421,7 @@ function Content({
       </header>
       <WorkQueue
         onWithoutOutcome={() => setWithoutOutcomeOpen(true)}
+        onMissedCallbacks={() => setCallbacksOpen(true)}
         branchId={branch}
         actorId={actorId}
         canManage={canManage}
@@ -862,6 +864,27 @@ function Content({
           onContact={(contact) => {
             setSelected(contact);
             setWithoutOutcomeOpen(false);
+          }}
+        />
+      )}
+      {callbacksOpen && (
+        <WithoutOutcomeDialog
+          key={'callbacks:' + branch + ':' + historyRevision}
+          mode="missed-callbacks"
+          branch={branch}
+          revision={historyRevision}
+          hidden={!!draft}
+          canComplete={canCreate && !busy}
+          onClose={() => setCallbacksOpen(false)}
+          onComplete={complete}
+          onRegister={(call) => {
+            if (!canCreate || busy || draft) return;
+            open(call.phone, 'OUTBOUND');
+            setCompletionPrevious({ ...call, note: '', recordings: [] });
+          }}
+          onContact={(contact) => {
+            setSelected(contact);
+            setCallbacksOpen(false);
           }}
         />
       )}

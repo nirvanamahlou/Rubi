@@ -549,6 +549,7 @@ function CallRequestLink({
 
 export function WorkQueue({
   onWithoutOutcome,
+  onMissedCallbacks,
   branchId,
   actorId,
   canManage,
@@ -559,6 +560,7 @@ export function WorkQueue({
   canManage: boolean;
   refreshKey?: number;
   onWithoutOutcome?: () => void;
+  onMissedCallbacks?: () => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const queueHeading = useRef<HTMLHeadingElement>(null);
@@ -611,6 +613,7 @@ export function WorkQueue({
     <>
       <CallKpiCards
         onWithoutOutcome={onWithoutOutcome}
+        onMissedCallbacks={onMissedCallbacks}
         branchId={branchId}
         revision={`${refreshKey}:${revision}`}
       />

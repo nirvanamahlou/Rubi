@@ -7496,3 +7496,9 @@ Destination options avoid repeating department already present as complete words
 Replaces fourth Call Center KPI with unique known missed inbound callers lacking a later answered conversation. Provider technical facts are authoritative; unsuccessful retries do not resolve, repeated misses deduplicate and a fresh miss reopens. Branch/contact/report scope and all other cards/layout/popups preserved. API retains needsFollowUp wire key with updated definition metadata. No migration/dependency/business-data rewrite. Fifteen isolated PostgreSQL tests and five Web tests pass; affected lint and API typecheck/build pass. Local Web build/runtime verification follows in task record.
 
 MISSED-CALLBACK-KPI-1025 final verification: production Web build/typecheck65 routes passed; local browser shows new callback KPI with count1 at verification. Source locks released on publication; local runtime updated, no production deployment or merge.
+
+## 2026-10-25 — CALLBACK-DRILLDOWN-1025 — PC-C
+
+Missed-callback KPI opens a paginated unique-contact list using the same eligibility as its count. Reuses existing modal presentation, dossier and fresh outbound registration with phone/name prefill, preserving the original missed call. Registration/cancel keeps modal context; saved results refresh membership and KPI. Shared predicate, branch/report/contact authorization, stable sorting and membership/revision checks protect reads.15 PostgreSQL tests plus13 Web tests pass, including KPI/list agreement and successful/unsuccessful manual callback behavior. No migration/dependency/PBX or automatic popup change; local build/browser acceptance tracked in task document.
+
+CALLBACK-DRILLDOWN-1025 final: Web typecheck/build65 routes and browser acceptance complete. Callback registration preserves original miss and uses existing form. Local runtime updated, no business-data test writes, no PR/merge/deployment. Bounded source reservations released on push.

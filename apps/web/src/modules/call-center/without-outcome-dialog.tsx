@@ -12,6 +12,8 @@ import { useDialogReturnFocus } from './use-dialog-focus';
 import styles from './without-outcome-dialog.module.css';
 
 export function WithoutOutcomeDialog({
+  mode = 'without-outcome',
+  onRegister,
   branch,
   revision,
   hidden,
@@ -20,6 +22,8 @@ export function WithoutOutcomeDialog({
   onComplete,
   onContact,
 }: {
+  mode?: 'without-outcome' | 'missed-callbacks';
+  onRegister?: (call: ContactSummary['latest']) => void;
   branch: string;
   revision: number;
   hidden: boolean;
@@ -28,6 +32,10 @@ export function WithoutOutcomeDialog({
   onComplete: (id: string) => Promise<void>;
   onContact: (contact: ContactSummary) => void;
 }) {
+  const callbacks = mode === 'missed-callbacks';
+  const title = callbacks
+    ? 'تماس‌های ازدست‌رفته نیازمند تماس مجدد'
+    : 'تماس‌های بدون نتیجه';
   const restoreFocus = useDialogReturnFocus();
   const [page, setPage] = useState(1);
   const [retry, setRetry] = useState(0);
@@ -39,13 +47,12 @@ export function WithoutOutcomeDialog({
   const snapshot = useRef<string | undefined>(undefined);
   useEffect(() => {
     const controller = new AbortController();
-    readApi
-      .withoutOutcome(
-        branch,
-        page,
-        page === 1 ? undefined : snapshot.current,
-        controller.signal,
-      )
+    (callbacks ? readApi.missedCallbacks : readApi.withoutOutcome)(
+      branch,
+      page,
+      page === 1 ? undefined : snapshot.current,
+      controller.signal,
+    )
       .then((value) => {
         if (!controller.signal.aborted) {
           setResult(value);
@@ -66,7 +73,7 @@ export function WithoutOutcomeDialog({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [branch, page, revision, retry]);
+  }, [branch, page, revision, retry, callbacks]);
   const refresh = () => {
     setLoading(true);
     setError('');
@@ -82,17 +89,18 @@ export function WithoutOutcomeDialog({
       }}
     >
       <DialogContent className={styles.dialog} onCloseAutoFocus={restoreFocus}>
-        <DialogTitle>تماس‌های بدون نتیجه</DialogTitle>
+        <DialogTitle>{title}</DialogTitle>
         <DialogDescription>
-          هر ردیف یک تماس با نتیجه ثبت‌نشده است؛ همه سوابق شعبه انتخاب‌شده،
-          مستقل از فیلترهای مخاطبان.
+          {callbacks
+            ? 'هر ردیف یک مخاطب نیازمند تماس مجدد است. پس از تماس با مخاطب، نتیجه تماس مجدد را ثبت کنید؛ تلاش ناموفق او را از فهرست خارج نمی‌کند.'
+            : 'هر ردیف یک تماس با نتیجه ثبت‌نشده است؛ همه سوابق شعبه انتخاب‌شده، مستقل از فیلترهای مخاطبان.'}
         </DialogDescription>
         <div className={styles.toolbar}>
           <span aria-live="polite">
             {loading
               ? 'در حال دریافت تماس‌ها…'
               : result
-                ? `${faNumber(result.meta.total)} تماس`
+                ? `${faNumber(result.meta.total)} ${callbacks ? 'مخاطب' : 'تماس'}`
                 : ''}
           </span>
           <button type="button" onClick={refresh} disabled={loading}>
@@ -108,7 +116,11 @@ export function WithoutOutcomeDialog({
           </p>
         )}
         {!loading && result?.data.length === 0 && (
-          <p role="status">تماس بدون نتیجه‌ای در دسترسی شما وجود ندارد.</p>
+          <p role="status">
+            {callbacks
+              ? 'مخاطب نیازمند تماس مجددی در دسترسی شما وجود ندارد.'
+              : 'تماس بدون نتیجه‌ای در دسترسی شما وجود ندارد.'}
+          </p>
         )}
         <div className={styles.scroll} aria-busy={loading}>
           <table>
@@ -120,7 +132,7 @@ export function WithoutOutcomeDialog({
                   'موضوع تماس',
                   'منبع',
                   'واحد',
-                  'زمان تماس',
+                  callbacks ? 'آخرین تماس بی‌پاسخ' : 'زمان تماس',
                   'تعداد تماس مخاطب',
                   'نتیجه',
                   'اقدامات',
@@ -145,16 +157,22 @@ export function WithoutOutcomeDialog({
                     <td>{callDate(call.occurredAt)}</td>
                     <td>{faNumber(callCount)}</td>
                     <td>
-                      <span className={styles.badge}>نتیجه ثبت‌نشده</span>
+                      <span className={styles.badge}>
+                        {callbacks ? 'نیازمند تماس مجدد' : 'نتیجه ثبت‌نشده'}
+                      </span>
                     </td>
                     <td>
                       <div className={styles.actions}>
                         <button
                           type="button"
                           disabled={!canComplete}
-                          onClick={() => void onComplete(call.id)}
+                          onClick={() =>
+                            callbacks
+                              ? onRegister?.(call)
+                              : void onComplete(call.id)
+                          }
                         >
-                          تکمیل اطلاعات تماس
+                          {callbacks ? 'ثبت تماس مجدد' : 'تکمیل اطلاعات تماس'}
                         </button>
                         <button
                           type="button"
@@ -177,12 +195,19 @@ export function WithoutOutcomeDialog({
         </div>
         <nav
           className={styles.pagination}
-          aria-label="صفحه‌بندی تماس‌های بدون نتیجه"
+          aria-label={
+            callbacks
+              ? 'صفحه‌بندی مخاطبان نیازمند تماس مجدد'
+              : 'صفحه‌بندی تماس‌های بدون نتیجه'
+          }
         >
           <button
             type="button"
             disabled={loading || !!error || page <= 1}
-            onClick={() => { setLoading(true); setPage((v) => v - 1); }}
+            onClick={() => {
+              setLoading(true);
+              setPage((v) => v - 1);
+            }}
           >
             قبلی
           </button>
@@ -195,7 +220,10 @@ export function WithoutOutcomeDialog({
             disabled={
               loading || !!error || !result || page * 20 >= result.meta.total
             }
-            onClick={() => { setLoading(true); setPage((v) => v + 1); }}
+            onClick={() => {
+              setLoading(true);
+              setPage((v) => v + 1);
+            }}
           >
             بعدی
           </button>

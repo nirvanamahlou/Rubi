@@ -69,6 +69,15 @@ export class CallCenterReadController {
   ) {
     return this.service.withoutOutcome(req.actor, branch, query);
   }
+  @Post('missed-callbacks')
+  @Header('Cache-Control', 'private, no-store')
+  missedCallbacks(
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch: string | undefined,
+    @Body() query: CallCenterSearchDto,
+  ) {
+    return this.service.missedCallbacks(req.actor, branch, query);
+  }
   @Post('report')
   @Header('Cache-Control', 'private, no-store')
   report(

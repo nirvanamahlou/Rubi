@@ -129,6 +129,30 @@ export const readApi = {
       }),
       signal,
     }),
+  missedCallbacks: (
+    branch: string,
+    page: number,
+    revision: string | undefined,
+    signal: AbortSignal,
+  ) =>
+    callCenterRequest<{
+      data: { call: ContactSummary['latest']; callCount: number }[];
+      meta: {
+        total: number;
+        page: number;
+        pageSize: number;
+        revision: string;
+        asOf: string;
+      };
+    }>('/missed-callbacks', branch, {
+      method: 'POST',
+      body: JSON.stringify({
+        page,
+        pageSize: 20,
+        ...(revision ? { revision } : {}),
+      }),
+      signal,
+    }),
   kpis: (branch: string, signal: AbortSignal) =>
     callCenterRequest<CallKpis>('/kpis', branch, { signal }),
   branches: (branch: string) =>

@@ -4,6 +4,12 @@ import type { TelephonyTechnical } from './telephony-state';
 
 /** Count contacts (branch + normalized phone), never individual ringing legs. */
 export async function missedCallbackCount(
+  ...args: Parameters<typeof missedCallbackContacts>
+) {
+  return (await missedCallbackContacts(...args)).length;
+}
+
+export async function missedCallbackContacts(
   tx: Prisma.TransactionClient,
   crypto: CallCenterCrypto,
   branchId: string,
@@ -11,8 +17,8 @@ export async function missedCallbackCount(
   contactScope: Prisma.Sql,
   asOf: Date,
 ) {
-  let after = '',
-    total = 0;
+  let after = '';
+  const pending: { contactId: string; callId: string; missedAt: number }[] = [];
   for (;;) {
     const contacts = await tx.$queryRaw<
       { id: string; candidates: string[] }[]
@@ -28,12 +34,16 @@ export async function missedCallbackCount(
         AND (a.outcome='NO_ANSWER' OR s.state='ENDED')
         ${after ? Prisma.sql`AND c.id > ${after}::uuid` : Prisma.empty}
       GROUP BY c.id ORDER BY c.id LIMIT 100`);
-    if (!contacts.length) return total;
+    if (!contacts.length)
+      return pending.sort(
+        (a, b) =>
+          b.missedAt - a.missedAt || a.contactId.localeCompare(b.contactId),
+      );
     const candidates = new Set(contacts.flatMap((c) => c.candidates));
     const facts = new Map(
       contacts.map(({ id }) => [
         id,
-        { missed: -Infinity, answered: -Infinity },
+        { missed: -Infinity, answered: -Infinity, callId: '' },
       ]),
     );
     let cursor: string | undefined;
@@ -80,17 +90,24 @@ export async function missedCallbackCount(
             row.keyVersion,
             `call:${row.id}:${row.contactId}`,
           ).phone;
-          if (phone?.trim())
-            fact.missed = Math.max(fact.missed, row.occurredAt.getTime());
+          if (
+            phone?.trim() &&
+            (row.occurredAt.getTime() > fact.missed ||
+              (row.occurredAt.getTime() === fact.missed &&
+                row.id < fact.callId))
+          ) {
+            fact.missed = row.occurredAt.getTime();
+            fact.callId = row.id;
+          }
         }
       }
       if (rows.length < 500) break;
       cursor = rows.at(-1)!.id;
     }
     // Equal timestamps do not prove that a conversation happened after the miss.
-    total += [...facts.values()].filter(
-      (f) => Number.isFinite(f.missed) && f.answered <= f.missed,
-    ).length;
+    for (const [contactId, fact] of facts)
+      if (Number.isFinite(fact.missed) && fact.answered <= fact.missed)
+        pending.push({ contactId, callId: fact.callId, missedAt: fact.missed });
     after = contacts.at(-1)!.id;
   }
 }

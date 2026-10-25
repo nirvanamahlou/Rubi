@@ -540,7 +540,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       const contact = await db.callCenterContact.create({
         data: {
           branchId: branch.id,
-          phoneFingerprint: crypto.fingerprint(randomUUID()),
+          phoneFingerprint: crypto.fingerprint('2025550101'),
           latestOccurredAt: new Date(),
         },
       });
@@ -598,8 +598,23 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         }
         return call;
       }
-      const count = async () =>
-        (await read.kpis(scoped, branch.id)).data.needsFollowUp;
+      const count = async () => {
+        const expected = (await read.kpis(scoped, branch.id)).data
+          .needsFollowUp;
+        const list = await read.missedCallbacks(
+          scoped,
+          branch.id,
+          Object.assign(new CallCenterSearchDto(), {
+            query: 'ignored contact filter',
+          }),
+        );
+        expect(list.meta.total).toBe(expected);
+        expect(new Set(list.data.map((r) => r.call.contactId)).size).toBe(
+          expected,
+        );
+        if (expected) expect(list.data[0]!.call.phone).toBe('2025550101');
+        return expected;
+      };
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(new Date('2026-10-20T20:00:00Z'));
       try {
@@ -610,7 +625,28 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         await add(3, 'INBOUND', 'NO_ANSWER');
         await add(4, 'INBOUND', 'NO_ANSWER');
         expect(await count()).toBe(1); // Repeated missed calls count once.
+        const firstPage = await read.missedCallbacks(
+          scoped,
+          branch.id,
+          new CallCenterSearchDto(),
+        );
+        expect(firstPage.data[0]!.call.occurredAt).toBe(
+          '2026-10-20T04:00:00.000Z',
+        );
         await add(5, 'OUTBOUND', 'BUSY');
+        await expect(
+          read.missedCallbacks(
+            scoped,
+            branch.id,
+            Object.assign(new CallCenterSearchDto(), {
+              page: 2,
+              revision: firstPage.meta.revision,
+            }),
+          ),
+        ).rejects.toMatchObject({ status: 409 });
+        await expect(
+          read.missedCallbacks(scoped, otherBranch, new CallCenterSearchDto()),
+        ).rejects.toMatchObject({ status: 403 });
         await add(6, 'OUTBOUND', 'ANSWERED', {
           state: 'ENDED',
           unanswered: true,
@@ -644,6 +680,44 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           unanswered: true,
         });
         expect(await count()).toBe(0); // Still ringing is not a missed call.
+        const missed = await add(12, 'INBOUND', 'NO_ANSWER');
+        const retry = await calls.create(
+          {
+            id: randomUUID(),
+            ...value,
+            phone: '2025550101',
+            direction: 'OUTBOUND',
+            status: 'جدید',
+            outcome: 'NO_ANSWER',
+            occurredAt: '2026-10-20T13:00:00Z',
+          },
+          scoped,
+          branch.id,
+        );
+        expect(retry.data.contactId).toBe(contact.id);
+        expect(retry.data.id).not.toBe(missed.id);
+        expect(await count()).toBe(1);
+        await calls.create(
+          {
+            id: randomUUID(),
+            ...value,
+            phone: '2025550101',
+            direction: 'OUTBOUND',
+            status: 'جدید',
+            outcome: 'ANSWERED',
+            occurredAt: '2026-10-20T14:00:00Z',
+          },
+          scoped,
+          branch.id,
+        );
+        expect(await count()).toBe(0);
+        expect(
+          (
+            await db.callCenterCall.findUniqueOrThrow({
+              where: { id: missed.id },
+            })
+          ).outcome,
+        ).toBe('NO_ANSWER');
       } finally {
         vi.useRealTimers();
       }

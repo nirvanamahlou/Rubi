@@ -20,10 +20,12 @@ export function CallKpiCards({
   branchId,
   revision,
   onWithoutOutcome,
+  onMissedCallbacks,
 }: {
   branchId: string;
   revision: string;
   onWithoutOutcome?: (() => void) | undefined;
+  onMissedCallbacks?: (() => void) | undefined;
 }) {
   const [data, setData] = useState<CallKpis | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,20 +74,32 @@ export function CallKpiCards({
             aria-label={label}
             data-tone={key}
             role={
-              key === 'withoutOutcome' && onWithoutOutcome
+              (key === 'withoutOutcome' && onWithoutOutcome) ||
+              (key === 'needsFollowUp' && onMissedCallbacks)
                 ? 'button'
                 : undefined
             }
             tabIndex={
-              key === 'withoutOutcome' && onWithoutOutcome ? 0 : undefined
+              (key === 'withoutOutcome' && onWithoutOutcome) ||
+              (key === 'needsFollowUp' && onMissedCallbacks)
+                ? 0
+                : undefined
             }
-            onClick={key === 'withoutOutcome' ? onWithoutOutcome : undefined}
-            onKeyDown={
+            onClick={
               key === 'withoutOutcome'
+                ? onWithoutOutcome
+                : key === 'needsFollowUp'
+                  ? onMissedCallbacks
+                  : undefined
+            }
+            onKeyDown={
+              key === 'withoutOutcome' || key === 'needsFollowUp'
                 ? (event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
                       event.preventDefault();
-                      onWithoutOutcome?.();
+                      (key === 'withoutOutcome'
+                        ? onWithoutOutcome
+                        : onMissedCallbacks)?.();
                     }
                   }
                 : undefined

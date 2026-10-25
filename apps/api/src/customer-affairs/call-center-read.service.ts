@@ -1,4 +1,7 @@
-import { missedCallbackCount } from './call-center-callbacks';
+import {
+  missedCallbackCount,
+  missedCallbackContacts,
+} from './call-center-callbacks';
 import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
 import {
   BadRequestException,
@@ -472,6 +475,85 @@ export class CallCenterReadService {
       {
         isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
         timeout: 15000,
+      },
+    );
+  }
+  async missedCallbacks(
+    actor: AuthenticatedActor,
+    branch: string | undefined,
+    input: CallCenterSearchDto,
+  ) {
+    const branchId = this.workflow.scope(actor, branch);
+    return this.db.client.$transaction(
+      async (tx) => {
+        const now = new Date();
+        const reportScope = await this.workflow.access.sql(
+          actor,
+          branchId,
+          'reports',
+          tx,
+        );
+        const contactScope = await this.identityScope(actor, branchId, tx);
+        const pending = await missedCallbackContacts(
+          tx,
+          this.crypto,
+          branchId,
+          reportScope,
+          contactScope,
+          now,
+        );
+        // Membership hash also invalidates paging after ownership/permission changes.
+        const revision = this.crypto.fingerprint(
+          JSON.stringify({
+            kind: 'missed-callbacks-v1',
+            pending,
+            pageSize: input.pageSize,
+            data: await this.revision(tx, branchId, {
+              page: 1,
+              pageSize: input.pageSize,
+            } as CallCenterSearchDto),
+          }),
+        );
+        if (input.page > 1 && input.revision !== revision)
+          throw new ConflictException(
+            'داده‌ها تغییر کرده‌اند؛ فهرست را تازه‌سازی کنید.',
+          );
+        const page = pending.slice(
+          (input.page - 1) * input.pageSize,
+          input.page * input.pageSize,
+        );
+        const calls = await tx.callCenterCall.findMany({
+          where: { id: { in: page.map((p) => p.callId) } },
+        });
+        const counts = await tx.callCenterCall.groupBy({
+          by: ['contactId'],
+          where: {
+            contactId: { in: page.map((p) => p.contactId) },
+            occurredAt: { lte: now },
+            OR: [{ origin: null }, { origin: { not: 'SYNTHETIC' } }],
+          },
+          _count: true,
+        });
+        return {
+          data: page.map((p) => ({
+            call: this.calls.presentSummary(
+              calls.find((c) => c.id === p.callId)!,
+            ),
+            callCount:
+              counts.find((c) => c.contactId === p.contactId)?._count ?? 0,
+          })),
+          meta: {
+            total: pending.length,
+            page: input.page,
+            pageSize: input.pageSize,
+            revision,
+            asOf: now.toISOString(),
+          },
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        timeout: 60000,
       },
     );
   }
