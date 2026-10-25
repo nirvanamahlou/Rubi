@@ -515,3 +515,15 @@ it('prints aggregate historical service age counts instead of empty personal pas
   expect(html).not.toContain('class="passengers passenger-services"');
   expect(html).not.toContain('class="passengers passenger-prices"');
 });
+
+it('renders the supplied seller safely in the header shared by preview and PDF', () => {
+  const output = {
+    ...structuredClone(printFixture),
+    ownerName: 'Actual <Seller> & Team',
+  };
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain(
+    'مسئول فروش<strong>Actual &lt;Seller&gt; &amp; Team</strong>',
+  );
+  expect(html).not.toContain('Actual <Seller>');
+});

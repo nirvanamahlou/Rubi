@@ -1,6 +1,14 @@
+## CONTRACT-FINANCE-APPROVAL-1025 — PC-A
+
+Contract accrual now requires a real approved receipt from the Finance inbox. The approval transaction captures both receipt and per-currency commercial obligation atomically; Sales confirmation alone cannot capture or post an obligation. Reverse-order approval is supported and partial/replayed receipts do not duplicate the obligation. Existing mapping/draft/independent posting and amendment guards remain. No form, schema, dependency, bank or operational-data change. See [current trigger](tasks/CONTRACT-FINANCE-APPROVAL-1025.md); supersedes PR1120 trigger timing. Exact-head gates precede authorized merge/local3100 rollout.
+
 ## SALES-CONTRACT-ACCOUNTING-1025 — PC-A
 
 Contract confirmation now captures per-currency immutable obligations in the source transaction. Existing approved Accounting chart mappings generate independent drafts; no guessed accounts or automatic posting. Source guards cover amendment/cancellation/supersession and period closure; earned revenue releases the original deferred line instead of accruing a second receivable, including historical FX dimensions. Forms, bank behavior and operational data preserved. See [task evidence](tasks/SALES-CONTRACT-ACCOUNTING-1025.md). Isolated PostgreSQL/source regressions, affected checks and exact-head hosted gates required before authorized develop merge. No schema/migration/dependency or runtime rollout.
+
+## HR-LEAVE-REDESIGN-1025 — PC-B
+
+Redesigned the five existing leave-balance views within Nora's theme: selectable month tiles, separate selected-person card, paired greater/lower transfer fieldsets, readable personnel rows, grouped report filters/results, responsive scoped CSS and a wider grouped personnel picker. Existing API commands, scopes, transfer rules, locking and idempotency remain unchanged. Existing12 HR form/year/navigation checks, affected Web typecheck and scoped lint pass; browser verification covers all/none/single month selection and unsaved personnel selection. No leave command or operational data write during visual QA. Local3100 only, no schema/migration/dependency/IAM or server changes. Exact-head hosted checks gate owner-authorized normal develop merge; source reservations freeze after verification and release on verified merged PR.
 
 ## HR-PROFILE-ENTRY-1025 — PC-B
 
@@ -7599,6 +7607,14 @@ Final Call Center feature chain consolidated from87eb5e3a and integrated with de
 
 CALL-CENTER-RELEASE-1025 publication: https://github.com/nirvanamahlou/Rubi/pull/1114 targets develop under Amin-tech11. Final reviewed source pushed; source reservations released. Await all checks on latest head before authorized merge; PR checks/timeline are final CI/merge evidence. Local runtime preserved.
 
+## 2026-10-25 — FLIGHT-PURCHASE-EDIT-1025 — PC-A — READY_FOR_CI
+
+Purchasing now displays each dated flight independently instead of pooling matching weekdays. Filters, focused offer, capacity cost and KPIs use each request's actual cost/payment shares; saved historical pools stay independently visible while edits preserve their original atomic full-pool scope with an explicit explanation. Existing total/per-seat APIs and append-only pricing revisions remain; cost edits reopen before any payment, permissions/stale-version/replay/paid locks stay intact. Web26 and API30 focused tests and affected lint passed. Full Web types/production build and exact-head hosted quality/test/database/build gates precede owner-authorized develop merge. No API/schema/migration/dependency/runtime changes. Bounded source locks freeze/release with publication.
+
 ## 2026-10-25 — RESERVATION-CALENDAR-BASIS-1025 — PC-A — READY_FOR_CI
 
 Reservation contract-detail travel dates and flight timestamps now honor per-service dateCalendarSystem metadata; hotel-only route dates use the hotel's basis, flight legs can differ, and timestamp display consistently uses Tehran while date-only stays preserve their ISO day. Sales keeps each flight calendar choice in the browser draft and writes it, plus the existing independent hotel calendar, to service metadata without converting dates. Producer/consumer ship together; legacy snapshots without basis retain compatible flight Persian/hotel Gregorian defaults because the original choice was not stored. No migration, API shape, permission, operational database/runtime or deployment changes. Focused54 and Sales/hotel/draft33 tests plus scoped ESLint pass; full Web types/build and exact-head hosted gates precede user-authorized develop merge. Source locks freeze/release with publication.
+
+## CONTRACT-SELLER-NAME-1025 — PC-A
+
+Saved contract output resolves its actual owner display name after existing contract/state/company authorization, without requiring iam.users.read or enumerating the users directory. Creator-only own-contract output and manager output retain the saved seller, including inactive/moved owners; preview/PDF consume the same ownerName. Exact-owner IAM projection exposes only ID/displayName. Permission, missing-owner and safe-header regressions plus affected types/lint/build and hosted exact-head gates precede user-authorized develop merge. No schema/migration/dependency/role grant or runtime rollout.

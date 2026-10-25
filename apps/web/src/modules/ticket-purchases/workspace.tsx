@@ -35,7 +35,9 @@ import {
 import {
   purchaseStages,
   purchaseSummary,
-  groupTicketPurchases,
+  separateTicketPurchases,
+  ticketPurchaseEditRow,
+  canEditTicketPurchase,
   purchaseWeekdays,
   type TicketPurchaseRow,
 } from './model';
@@ -99,11 +101,10 @@ export function TicketPurchaseWorkspace({
     };
   }, [revision]);
   const summary = useMemo(
-    () => purchaseSummary(groupTicketPurchases(items)),
+    () => purchaseSummary(separateTicketPurchases(items)),
     [items],
   );
-  const visible = groupTicketPurchases(
-    items,
+  const visible = separateTicketPurchases(
     filters ? filterTicketPurchases(items, filters) : items,
   ).filter(
     (i) =>
@@ -131,6 +132,7 @@ export function TicketPurchaseWorkspace({
         : null
       : ticketPurchaseTotal(seats, unit);
   function open(item: TicketPurchaseRow) {
+    item = ticketPurchaseEditRow(items, item);
     frozen.current = null;
     setSelected(item);
     setFxRates({});
@@ -398,14 +400,16 @@ export function TicketPurchaseWorkspace({
                       </span>
                     </td>
                     <td className="p-3">
-                      {canPrice &&
-                      item.members.every(
-                        (m) =>
-                          m.request.status === 'PENDING' &&
-                          !m.cost?.paymentCount,
+                      {canEditTicketPurchase(
+                        ticketPurchaseEditRow(items, item),
+                        canPrice,
                       ) ? (
                         <Button size="sm" onClick={() => open(item)}>
-                          {item.cost ? 'ویرایش قیمت خرید' : 'ثبت قیمت خرید'}
+                          {item.cost?.purchaseGroup
+                            ? 'ویرایش خرید گروهی قبلی'
+                            : item.cost
+                              ? 'ویرایش قیمت خرید'
+                              : 'ثبت قیمت خرید'}
                         </Button>
                       ) : (
                         <span>
@@ -447,13 +451,19 @@ export function TicketPurchaseWorkspace({
         }}
       >
         <DialogContent className="max-w-lg">
-          <DialogTitle>ثبت قیمت خرید پرواز</DialogTitle>
+          <DialogTitle>
+            {selected?.cost ? 'ویرایش قیمت خرید' : 'ثبت قیمت خرید پرواز'}
+          </DialogTitle>
           <DialogDescription>
             {selected?.request.title} · تأمین‌کننده:{' '}
             {selected?.request.supplierDisplaySnapshot ?? '—'}
           </DialogDescription>
           {selected && selected.members.length > 1 && (
             <div className="mt-3 rounded-xl border p-3 text-sm">
+              <p>
+                این خرید قبلاً گروهی ثبت شده است؛ ویرایش، همهٔ تاریخ‌های
+                نمایش‌داده‌شده را تغییر می‌دهد.
+              </p>
               <b>
                 {selected.flightGroup
                   ? purchaseWeekdays[selected.flightGroup.weekday]
