@@ -7627,3 +7627,7 @@ Saved contract output resolves its actual owner display name after existing cont
 ## REMOVE-EXTRA-TRAVEL-DATE-1025 — PC-A
 
 Removed the duplicate people-sheet trip-start and legacy general trip-date controls plus their callback/independent identity confirmation date gate. People can be entered before choosing dated services; real birth dates remain required and composition is rechecked when service dates are known. Flight/hotel/tour dates feed canonical output, and standalone undated services collect their own execution dates in the service section. Old draft departure summaries remain backward compatible. Sales619 tests pass/one existing skip; affected types/lint/build and full exact-head CI gate the owner-authorized develop merge. No API/schema/migration/dependency/permission or runtime change.
+
+## Avina develop server refresh — 2026-10-25 (PC-A)
+
+Owner-authorized rollout completed at develop `6d6ec5777a6a29898aa52886c32f74d7fc427382`, with exact-head CI run `40197353518` successful. API, Web and Worker now use the same revision. Three additive migrations applied after encrypted, restore-validated database/document/config backups; no seed or business-data edits. HTTPS health/login/assets/auth and source checks passed. Application environments, mounts, database/auxiliary containers and existing login stability configuration preserved. Server evidence: `/opt/rubi/develop-refresh-6d6ec577-1025/verified.json`; backup: `/opt/rubi/backups/before-legacy-total-return-6d6ec5777a6a-20261025T135025Z`.
