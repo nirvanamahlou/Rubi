@@ -908,6 +908,10 @@ export function WorkflowEditor({
       priority,
     };
     let payload: unknown;
+    if (editor.kind === 'request' && !value('reason')) {
+      setError('دلیل تغییر، بستن یا بازگشایی را وارد کنید.');
+      return;
+    }
     if (editor.kind === 'request' && !editor.item && !owner) {
       setError('کارشناس مسئول را انتخاب کنید.');
       return;
@@ -1021,12 +1025,11 @@ export function WorkflowEditor({
                 </label>
                 <label>
                   دلیل تغییر، بستن یا بازگشایی
+                  <span aria-hidden="true"> *</span>
                   <textarea
                     name="reason"
                     maxLength={500}
-                    required={
-                      status === 'CLOSED' || editor.item?.status === 'CLOSED'
-                    }
+                    required
                     defaultValue={editor.item?.reason}
                   />
                 </label>

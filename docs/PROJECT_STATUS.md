@@ -7586,3 +7586,6 @@ Missing outbound staff labels traced to answer-only identity snapshots. New outb
 Contact table now labels columns connected-to and acquaintance source, using full staff destination label like the call form. Authorized latest-call summaries enrich legacy outbound destinations inside the same read transaction. Existing scopes, historical snapshots and other table behavior preserved; no schema/PBX change. Final checks/runtime evidence in task document.
 
 CONTACT-DESTINATION-COLUMN-1025 final: localhost3000 now shows requested headers and full staff destination labels; browser verified.49 tests and lint/types/API-Web builds pass. Local runtime paths/PIDs and private isolated build instructions in task document; source reservations released on push.
+
+## REQUEST-REASON-REQUIRED-1025 — PC-C
+Request reason is mandatory for every creation/edit, enforced by native form validation, trimmed frontend validation, DTO and service.58 isolated PostgreSQL/API tests and6 Web/i18n tests pass; scoped lint, affected API source/test types/build and full Web types/build65 pages pass. No migration, dependency, ownership or popup-policy change. See tasks/REQUEST-REASON-REQUIRED-1025.md.

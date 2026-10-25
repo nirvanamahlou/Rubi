@@ -3315,6 +3315,7 @@
   "دریافت صف انجام نشد.": "Could not load the queue.",
   "دسترسی مدیریت پیگیری کال سنتر مجاز نیست.": "Call Center workflow management is not authorized.",
   "دلیل بستن یا بازگشایی را وارد کنید.": "Enter a reason for closing or reopening.",
+  "دلیل تغییر، بستن یا بازگشایی را وارد کنید.": "Enter a reason for changing, closing or reopening the request.",
   "دلیل تغییر، بستن یا بازگشایی": "Reason for change, closure or reopening",
   "ذخیره ارتباط": "Save link",
   "رسیدگی به درخواست‌های مخاطب": "Manage contact requests",

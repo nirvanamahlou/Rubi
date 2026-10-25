@@ -50,6 +50,9 @@ describe('request workflow form', () => {
     );
     expect(html).toContain('name="title"');
     expect(html).toContain('name="reason"');
+    expect(html.match(/<textarea[^>]*name="reason"[^>]*>/)?.[0]).toContain(
+      'required',
+    );
     expect(html).not.toContain('name="status"');
   });
   it('restores saved request fields, completion and editable closed status', () => {
@@ -73,6 +76,9 @@ describe('request workflow form', () => {
     );
     expect(html).toContain('Saved request');
     expect(html).toContain('Saved completion');
+    expect(html.match(/<textarea[^>]*name="reason"[^>]*>/)?.[0]).toContain(
+      'required',
+    );
     expect(html).toContain('name="status"');
     expect(html).toContain('aria-label="وضعیت"');
     expect(html).toContain('بسته‌شده');

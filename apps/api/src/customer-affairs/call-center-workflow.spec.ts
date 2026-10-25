@@ -19,6 +19,35 @@ import { CallCenterTasksService } from '../tasks/call-center-tasks.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
 describe('Call Center workflow input', () => {
+  it.each([undefined, '', '   ', '\n\t', 'x'.repeat(501)])(
+    'rejects missing, blank or oversized request reasons: %s',
+    async (reason) => {
+      const errors = await validate(
+        plainToInstance(RequestInput, {
+          id: randomUUID(),
+          commandId: randomUUID(),
+          expectedVersion: 0,
+          title: 'Synthetic request',
+          priority: 'NORMAL',
+          reason,
+        }),
+      );
+      expect(errors.some((error) => error.property === 'reason')).toBe(true);
+    },
+  );
+  it('accepts a bounded meaningful request reason', async () => {
+    const errors = await validate(
+      plainToInstance(RequestInput, {
+        id: randomUUID(),
+        commandId: randomUUID(),
+        expectedVersion: 0,
+        title: 'Synthetic request',
+        priority: 'NORMAL',
+        reason: 'Synthetic reason',
+      }),
+    );
+    expect(errors).toEqual([]);
+  });
   it('defaults a new request to waiting for agent action', () => {
     expect(plainToInstance(RequestInput, {}).status).toBe('IN_PROGRESS');
   });
@@ -74,7 +103,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       status: 'NEW',
       ownerId: userId,
       priority: 'NORMAL',
-      reason: '',
+      reason: 'Synthetic request reason',
     };
     const follow: CallCenterFollowUpDto = {
       commandId: randomUUID(),
@@ -920,6 +949,43 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         priority: 'HIGH',
         createdAt: recent.toISOString(),
       });
+    });
+    it('requires a nonblank reason on creation and every request state edit without mutating stored data', async () => {
+      const id = randomUUID();
+      for (const reason of ['', '   ', '\n\t']) {
+        await expect(
+          workflow.saveRequest(actor, branchId, contactId, {
+            ...request,
+            id,
+            commandId: randomUUID(),
+            reason,
+          }),
+        ).rejects.toMatchObject({ status: 400 });
+      }
+      expect(
+        await db.customerAffairsTicket.findUnique({ where: { id } }),
+      ).toBeNull();
+      await workflow.saveRequest(actor, branchId, contactId, {
+        ...request,
+        id,
+        commandId: randomUUID(),
+        reason: 'Synthetic creation reason',
+      });
+      for (const status of ['IN_PROGRESS', 'WAITING_CUSTOMER', 'CLOSED']) {
+        await expect(
+          workflow.saveRequest(actor, branchId, contactId, {
+            ...request,
+            id,
+            commandId: randomUUID(),
+            expectedVersion: 1,
+            status,
+            reason: ' \t ',
+          }),
+        ).rejects.toMatchObject({ status: 400 });
+      }
+      expect(
+        await db.customerAffairsTicket.findUnique({ where: { id } }),
+      ).toMatchObject({ version: 1, status: 'IN_PROGRESS' });
     });
   },
 );

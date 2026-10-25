@@ -636,6 +636,10 @@ export class CallCenterWorkflowService
     const branchId = this.scope(actor, branch, true);
     if (!input.title.trim())
       throw new BadRequestException('عنوان درخواست را وارد کنید.');
+    if (typeof input.reason !== 'string' || !input.reason.trim())
+      throw new BadRequestException(
+        'دلیل تغییر، بستن یا بازگشایی را وارد کنید.',
+      );
     await this.db.client.$transaction(async (tx) => {
       await this.contact(tx, contactId, branchId);
       if (this.access.scoped(actor)) {
@@ -669,11 +673,6 @@ export class CallCenterWorkflowService
         throw new ConflictException(
           'درخواست تغییر کرده است؛ اطلاعات را دوباره دریافت کنید.',
         );
-      if (
-        (input.status === 'CLOSED' || current?.status === 'CLOSED') &&
-        !input.reason.trim()
-      )
-        throw new BadRequestException('دلیل بستن یا بازگشایی را وارد کنید.');
       if (current?.status === 'CLOSED' && input.status === 'WAITING_CUSTOMER')
         throw new BadRequestException('ابتدا درخواست را بازگشایی کنید.');
       if (!current && input.status !== 'IN_PROGRESS')

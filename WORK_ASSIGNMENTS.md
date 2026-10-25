@@ -9633,3 +9633,8 @@ CALL-DESTINATION-HISTORY-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: missing la
 User requests contact-list headers source->acquaintance source and unit->connected to, rendering full staff destination like the call form. Reserve workspace.tsx and shared authorized destination hydration/read search, related tests and own docs. No unrelated filters/KPI layout, schema/PBX changes.
 
 CONTACT-DESTINATION-COLUMN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: requested table headers and full destination display verified onlocalhost3000.49 tests, lint, API types/build and Web types/build pass; private build isolation documented. No schema/PBX/business-data write.
+
+## REQUEST-REASON-REQUIRED-1025 — PC-C — IN_PROGRESS
+User requires reason on every request creation/edit, including whitespace rejection. Reserve workflow form/DTO/service and existing relevant tests/fixtures, scoped i18n reason message and own docs. No migration/dependency change; preserve approved layout and local credentials.
+
+REQUEST-REASON-REQUIRED-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: mandatory reason enforced on create/edit in UI, DTO and service; whitespace rejected without mutation.64 tests, scoped lint/types/API build and Web65-page build pass. Browser validation verified on3000. No migration/PBX/popup-policy change.
