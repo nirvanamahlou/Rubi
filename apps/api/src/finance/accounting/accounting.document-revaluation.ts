@@ -112,7 +112,7 @@ export async function sourceRevaluationPreview(
   } catch {
     v.rule('تخصیص حساب‌های مبنا معتبر نیست.');
   }
-  const valuationCurrency = Prisma.sql`CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END`;
+  const valuationCurrency = Prisma.sql`CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'REVERSE:%' OR j."sourceKey" LIKE 'WORKFLOW:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END`;
   const basis: unknown[] = [];
   const lines: AccountingLineV1[] = [];
   const changes: {

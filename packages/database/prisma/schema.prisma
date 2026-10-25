@@ -30,6 +30,7 @@ enum AuditOutcome {
 }
 
 model User {
+  financialWorkflows     AccountingWorkflow[]
   telephonyCommands      IntegrationTelephonyCommand[]
   telephonyAudit         IntegrationTelephonyAudit[]
   telephonyConnections   IntegrationTelephonyConnection[]
@@ -263,6 +264,7 @@ model RolePermission {
 }
 
 model Branch {
+  financialWorkflows   AccountingWorkflow[]
   telephonyConnections IntegrationTelephonyConnection[]
   receiptAllocations   SalesReceiptAllocation[]
   accountingEvents     FinanceAccountingEvent[]
@@ -3636,6 +3638,8 @@ model HrEmployee {
 }
 
 model HrRecord {
+  financialWorkflows        AccountingWorkflow[]          @relation("WorkflowNetPayroll")
+  grossFinancialWorkflows   AccountingWorkflow[]          @relation("WorkflowGrossPayroll")
   jobTitleId                String?                       @map("job_title_id") @db.Uuid
   jobTitle                  HrRecord?                     @relation("HrAssignmentJobTitle", fields: [jobTitleId], references: [id], onDelete: Restrict)
   jobTitleAssignments       HrRecord[]                    @relation("HrAssignmentJobTitle")
@@ -3956,6 +3960,7 @@ enum PackagePricingRenderStatus {
 }
 
 model SalesContract {
+  financialWorkflows        AccountingWorkflow[]
   receiptAllocations        SalesReceiptAllocation[]
   paymentTerms              Json?                          @map("payment_terms")
   buyerContact              Json?                          @map("buyer_contact")
@@ -4639,6 +4644,7 @@ enum FinanceSupplierPaymentStatus {
 }
 
 model FinanceSettlementAccount {
+  workflowRefunds            AccountingWorkflow[]
   bankIdentifiers            Json?
   maskedAccountNumber        String?                                @db.VarChar(40)
   maskedCardNumber           String?                                @db.VarChar(24)
@@ -7056,6 +7062,7 @@ model MasterBrokerCity {
 }
 
 model AccountingBook {
+  financialWorkflows AccountingWorkflow[]
   fxSnapshots        AccountingFxSnapshot[]
   id                 String                           @id @default(uuid()) @db.Uuid
   branchId           String                           @db.Uuid
@@ -7212,6 +7219,7 @@ model AccountingDetail {
 }
 
 model AccountingJournal {
+  financialWorkflow     AccountingWorkflow?
   financialEvent        FinanceAccountingEvent?
   id                    String                           @id @default(uuid()) @db.Uuid
   bookId                String                           @db.Uuid
@@ -7673,6 +7681,7 @@ model FinancePurchaseFxSnapshot {
 
 // Immutable confirmed financial sources. Journal association is assigned atomically.
 model FinanceAccountingEvent {
+  financialWorkflows  AccountingWorkflow[]
   basisEventId        String?                   @db.Uuid
   basisEvent          FinanceAccountingEvent?   @relation("ReceiptAllocationBasis", fields: [basisEventId], references: [id], onDelete: Restrict)
   derivedEvents       FinanceAccountingEvent[]  @relation("ReceiptAllocationBasis")
@@ -8067,4 +8076,42 @@ model IntegrationTelephonyAnswer {
 
   @@index([connectionId, queue, phoneFingerprint, answeredAt(sort: Desc), id(sort: Desc)], map: "telephony_answer_lookup_idx")
   @@map("integration_telephony_answers")
+}
+
+// Immutable business evidence; only journal linkage and audited cancellation can change.
+model AccountingWorkflow {
+  receiptAccountId String?                   @db.Uuid
+  receiptAccount   FinanceSettlementAccount? @relation(fields: [receiptAccountId], references: [id], onDelete: Restrict)
+  id               String                    @id @default(uuid()) @db.Uuid
+  bookId           String                    @db.Uuid
+  book             AccountingBook            @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  branchId         String                    @db.Uuid
+  branch           Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  actorId          String                    @db.Uuid
+  actor            User                      @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  kind             String                    @db.VarChar(32)
+  businessKey      String                    @unique @db.VarChar(240)
+  contractId       String?                   @db.Uuid
+  contract         SalesContract?            @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  hrRecordId       String?                   @db.Uuid
+  hrRecord         HrRecord?                 @relation("WorkflowNetPayroll", fields: [hrRecordId], references: [id], onDelete: Restrict)
+  grossRecordId    String?                   @db.Uuid
+  grossRecord      HrRecord?                 @relation("WorkflowGrossPayroll", fields: [grossRecordId], references: [id], onDelete: Restrict)
+  sourceEventId    String?                   @db.Uuid
+  sourceEvent      FinanceAccountingEvent?   @relation(fields: [sourceEventId], references: [id], onDelete: Restrict)
+  amount           Decimal                   @db.Decimal(24, 4)
+  currency         String                    @db.VarChar(3)
+  occurredAt       DateTime                  @db.Timestamptz(3)
+  reference        String                    @db.VarChar(160)
+  facts            Json
+  cancelled        Boolean                   @default(false)
+  journalId        String?                   @unique @db.Uuid
+  journal          AccountingJournal?        @relation(fields: [journalId], references: [id], onDelete: Restrict)
+  createdAt        DateTime                  @default(now()) @db.Timestamptz(3)
+
+  @@index([branchId, kind, occurredAt])
+  @@index([sourceEventId, kind])
+  @@index([contractId, kind])
+  @@index([hrRecordId, kind])
+  @@map("finance_accounting_workflows")
 }
