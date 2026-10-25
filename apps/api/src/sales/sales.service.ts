@@ -1,4 +1,8 @@
 import {
+  readLegacyServiceParties,
+  legacyServiceHeadcount,
+} from '@nora/contracts';
+import {
   canSelfServeSalesContract,
   hasSalesContractSelfService,
 } from '@nora/contracts';
@@ -216,11 +220,35 @@ export function presentSalesContract(
     financeConfirmedAt: date(item.financeConfirmedAt),
     financeDecisionReason: item.financeDecisionReason,
   }));
+  const servicesDetail = row.services.map((service) => ({
+    clientKey: service.clientKey,
+    kind: service.kind,
+    referenceId: service.referenceId,
+    titleSnapshot: service.titleSnapshot,
+    status: service.status,
+    ...(Array.isArray(service.pricing)
+      ? {
+          pricing: service.pricing as unknown as SalesServicePricingV1[],
+        }
+      : {}),
+    ...(service.metadata &&
+    typeof service.metadata === 'object' &&
+    !Array.isArray(service.metadata)
+      ? {
+          metadata: service.metadata as Record<
+            string,
+            string | number | boolean | null
+          >,
+        }
+      : {}),
+  }));
+  const legacyCount = legacyServiceHeadcount(servicesDetail);
   return {
     id: row.id,
     contractNumber: row.contractNumber,
     customerId: row.customerId,
     customerNameSnapshot: row.customerNameSnapshot,
+    ...(legacyCount !== null ? { passengerCount: legacyCount } : {}),
     passengerNames: row.passengers.map(
       ({ displayNameSnapshot }) => displayNameSnapshot,
     ),
@@ -244,28 +272,7 @@ export function presentSalesContract(
     updatedAt: row.updatedAt.toISOString(),
     tripType: row.tripType,
     payerCustomerId: row.payerCustomerId,
-    servicesDetail: row.services.map((service) => ({
-      clientKey: service.clientKey,
-      kind: service.kind,
-      referenceId: service.referenceId,
-      titleSnapshot: service.titleSnapshot,
-      status: service.status,
-      ...(Array.isArray(service.pricing)
-        ? {
-            pricing: service.pricing as unknown as SalesServicePricingV1[],
-          }
-        : {}),
-      ...(service.metadata &&
-      typeof service.metadata === 'object' &&
-      !Array.isArray(service.metadata)
-        ? {
-            metadata: service.metadata as Record<
-              string,
-              string | number | boolean | null
-            >,
-          }
-        : {}),
-    })),
+    servicesDetail,
     passengersDetail: row.passengers.map((passenger) => ({
       id: passenger.id,
       customerId: passenger.customerId,
@@ -406,6 +413,9 @@ function summary(detail: SalesContractDetail): SalesContractSummary {
     customerId: detail.customerId,
     customerNameSnapshot: detail.customerNameSnapshot,
     passengerNames: detail.passengerNames,
+    ...(detail.passengerCount !== undefined
+      ? { passengerCount: detail.passengerCount }
+      : {}),
     ownerUserId: detail.ownerUserId,
     assignedUserId: detail.assignedUserId,
     branchId: detail.branchId,
@@ -1573,18 +1583,25 @@ export class SalesService {
         row.branchId,
       );
     await this.assertPresentedHotelRoomCapacity(presented);
-    const seatCount = presented.passengersDetail.filter(
-      ({ ageCategory }) => ageCategory !== 'INF',
-    ).length;
+    const legacyParties = readLegacyServiceParties(presented.servicesDetail);
+    const legacyFlight = presented.ticketSelections[0]
+      ? legacyParties?.[presented.ticketSelections[0].serviceClientKey]
+      : undefined;
+    const seatCount = legacyFlight
+      ? legacyFlight.adults + legacyFlight.children
+      : presented.passengersDetail.filter(
+          ({ ageCategory }) => ageCategory !== 'INF',
+        ).length;
     const ticketCheck = presented.ticketSelections.length
       ? await this.tickets.reserve(
           presented.ticketSelections,
           row.branchId,
           row.id,
           seatCount,
-          presented.servicesDetail.some(
-            (service) => service.kind === 'HOTEL' || service.kind === 'TOUR',
-          )
+          legacyParties ||
+            presented.servicesDetail.some(
+              (service) => service.kind === 'HOTEL' || service.kind === 'TOUR',
+            )
             ? undefined
             : Object.fromEntries(
                 presented.servicesDetail
@@ -1603,11 +1620,14 @@ export class SalesService {
           Object.fromEntries(
             presented.ticketSelections.map((t) => [
               t.serviceClientKey,
-              presented.passengersDetail.filter(
-                (p) =>
-                  p.ageCategory !== 'INF' &&
-                  p.serviceClientKeys.includes(t.serviceClientKey),
-              ).length,
+              legacyParties?.[t.serviceClientKey]
+                ? legacyParties[t.serviceClientKey]!.adults +
+                  legacyParties[t.serviceClientKey]!.children
+                : presented.passengersDetail.filter(
+                    (p) =>
+                      p.ageCategory !== 'INF' &&
+                      p.serviceClientKeys.includes(t.serviceClientKey),
+                  ).length,
             ]),
           ),
         )
