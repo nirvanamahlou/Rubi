@@ -48,6 +48,39 @@ export const emptyRadanFilters: RadanReportFilters = {
   aggregate: false,
   unit: 'clock',
 };
+const reportClockFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Tehran',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+/** Legacy clockings use the same Tehran wall-clock interpretation as HR's canonical UTC conversion. */
+export function reportClockingTime(row: HrRecordDto): number {
+  const stamp = row.data.startsAt ? Date.parse(row.data.startsAt) : NaN;
+  if (Number.isFinite(stamp)) return stamp;
+  const date = row.values[row.columns.indexOf('تاریخ تردد')] ?? '',
+    clock = row.values[row.columns.indexOf('ساعت تردد')] ?? '';
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+    !/^([01]\d|2[0-3]):[0-5]\d$/.test(clock)
+  )
+    return NaN;
+  const desired = Date.parse(`${date}T${clock}:00Z`);
+  if (!Number.isFinite(desired)) return NaN;
+  let guess = desired;
+  const local = (at: number) => {
+    const parts = reportClockFormatter.formatToParts(new Date(at));
+    const read = (type: string) =>
+      parts.find((part) => part.type === type)?.value;
+    return `${read('year')}-${read('month')}-${read('day')}T${read('hour')}:${read('minute')}:00Z`;
+  };
+  for (let index = 0; index < 3; index++)
+    guess += desired - Date.parse(local(guess));
+  return local(guess) === `${date}T${clock}:00Z` ? guess : NaN;
+}
 export function buildRadanReport(
   id: string,
   records: readonly HrRecordDto[],
@@ -199,8 +232,18 @@ export function buildRadanReport(
   const requestMinutes = (row: HrRecordDto): number | null => {
     const read = (label: string) =>
       row.values[row.columns.indexOf(label)] ?? '';
-    const start = (row.data.startsAt ?? read('از تاریخ')).slice(0, 10),
-      end = (row.data.endsAt ?? read('تا تاریخ')).slice(0, 10);
+    const start = (
+        read('از تاریخ') ||
+        read('تاریخ رفت') ||
+        row.data.startsAt ||
+        ''
+      ).slice(0, 10),
+      end = (
+        read('تا تاریخ') ||
+        read('تاریخ برگشت') ||
+        row.data.endsAt ||
+        ''
+      ).slice(0, 10);
     if (
       (filters.from && start && start < filters.from) ||
       (filters.to && end && end > filters.to)
@@ -232,11 +275,8 @@ export function buildRadanReport(
           )
           .sort(
             (a, b) =>
-              (
-                b.data.startsAt ?? `${b.values[1]}T${b.values[2]}`
-              ).localeCompare(
-                a.data.startsAt ?? `${a.values[1]}T${a.values[2]}`,
-              ) || b.id.localeCompare(a.id),
+              reportClockingTime(b) - reportClockingTime(a) ||
+              b.id.localeCompare(a.id),
           )[0];
         const kind = last?.values[last.columns.indexOf('نوع تردد')];
         return [
@@ -321,6 +361,7 @@ export function buildRadanReport(
             const parts = column.split(' / '),
               component = parts[0];
             if (['مرخصی', 'ماموریت', 'دورکاری'].includes(component ?? '')) {
+              let unknownClassification = false;
               const requests = approved
                 .filter(
                   (row) =>
@@ -344,12 +385,20 @@ export function buildRadanReport(
                       String.fromCharCode(0x0623),
                       String.fromCharCode(0x0627),
                     );
-                  return (
-                    (!parts[1] || mode === parts[1]) &&
-                    (!parts[2] || kind === parts[2])
-                  );
+                  if (parts[1] && !mode) {
+                    unknownClassification = true;
+                    return false;
+                  }
+                  if (parts[1] && mode !== parts[1]) return false;
+                  if (parts[2] && !kind) {
+                    unknownClassification = true;
+                    return false;
+                  }
+                  return !parts[2] || kind === parts[2];
                 });
-              return format(sum(requests, requestMinutes, true));
+              return unknownClassification
+                ? '—'
+                : format(sum(requests, requestMinutes, true));
             }
             return '—';
           }),

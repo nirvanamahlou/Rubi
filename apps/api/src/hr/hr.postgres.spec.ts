@@ -3829,6 +3829,13 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         duration: '11:00',
         type: 'استحقاقی',
       };
+      await expect(
+        service.minuteLeave(
+          { ...grant, employeeIds: [first.id, first.id.toUpperCase()] },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('یکتا');
       await service.minuteLeave(grant, key(), admin);
       const draft = await client.hrRecord.create({
         data: {
@@ -3866,6 +3873,14 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           )
         ).balanceMinutes,
       ).toBe(660);
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/leave/report')
+        .set('Cookie', adminCookie)
+        .query({
+          year: 1405,
+          employeeIds: `${first.id},${first.id.toUpperCase()}`,
+        })
+        .expect(400);
       const scoped = { ...admin, branchIds: [branchA] };
       expect(
         (await service.leavePersonnel(scoped)).items.some(
@@ -4116,6 +4131,24 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           },
         },
       );
+      const missionValues = [
+        target.name,
+        'Synthetic destination',
+        '2026-09-30',
+        '2026-10-02',
+        'Synthetic mission',
+        '',
+      ];
+      const legacyMission = await fixture('time', 'mission', missionValues);
+      const mission = await fixture('expenses', 'mission', missionValues);
+      const futureMission = await fixture('time', 'mission', [
+        target.name,
+        'Synthetic destination',
+        '2027-01-01',
+        '2027-01-02',
+        '',
+        '',
+      ]);
       const future = await fixture(
         'time',
         'attendance',
@@ -4138,6 +4171,9 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       const ids = result.body.records.map((row: { id: string }) => row.id);
       expect(ids).toContain(attendance.id);
       expect(ids).toContain(overlap.id);
+      expect(ids).toContain(legacyMission.id);
+      expect(ids).toContain(mission.id);
+      expect(ids).not.toContain(futureMission.id);
       expect(ids).not.toContain(future.id);
       expect(
         result.body.references.some(
@@ -4190,7 +4226,16 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       await client.hrRecord.updateMany({
         where: {
           id: {
-            in: [group.id, membership.id, attendance.id, overlap.id, future.id],
+            in: [
+              group.id,
+              membership.id,
+              attendance.id,
+              overlap.id,
+              future.id,
+              legacyMission.id,
+              mission.id,
+              futureMission.id,
+            ],
           },
         },
         data: { deletedAt: new Date() },

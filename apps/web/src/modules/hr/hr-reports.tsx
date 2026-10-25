@@ -11,6 +11,7 @@ import {
   unavailableRadanReports,
   buildRadanReport,
   emptyRadanFilters,
+  reportClockingTime,
 } from './radan-reports';
 import { useHrReferenceData } from './hr-reference-data';
 import { hrRequest } from './hr-api';
@@ -248,12 +249,16 @@ export function HrReports({
                 const last = currentRecords
                   .filter((record) => record.employeeId === employeeId)
                   .filter((r) => r.tab === 'checkins')
-                  .sort((a, b) =>
-                    (b.data.startsAt ?? '').localeCompare(
-                      a.data.startsAt ?? '',
-                    ),
+                  .sort(
+                    (a, b) =>
+                      reportClockingTime(b) - reportClockingTime(a) ||
+                      b.id.localeCompare(a.id),
                   )[0];
-                if (label === 'آخرین تردد') return last?.data.startsAt ?? '—';
+                if (label === 'آخرین تردد')
+                  return last
+                    ? (last.data.startsAt ??
+                        `${last.values[last.columns.indexOf('تاریخ تردد')]} ${last.values[last.columns.indexOf('ساعت تردد')]}`)
+                    : '—';
                 if (label === 'نام دستگاه')
                   return last?.values[last.columns.indexOf('دستگاه')] ?? '—';
                 return '—';

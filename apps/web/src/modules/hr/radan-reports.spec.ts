@@ -353,3 +353,87 @@ it('reports persisted calculation runs and resolves their configured basis by ca
     'حاضر',
   ]);
 });
+
+it('keeps legacy mission date aliases and unclassified mission breakdowns honest', () => {
+  const mission = {
+    ...record,
+    tab: 'mission',
+    status: 'فعال',
+    columns: ['کارمند', 'مقصد', 'تاریخ رفت', 'تاریخ برگشت'],
+    values: [
+      employee.name,
+      'Synthetic destination',
+      '2026-09-30',
+      '2026-10-02',
+    ],
+    data: { minutes: 120 },
+  };
+  expect(
+    buildRadanReport('mission', [mission], [employee], {
+      ...emptyRadanFilters,
+      aggregate: true,
+      from: '2026-10-01',
+      to: '2026-10-31',
+    }).rows[0],
+  ).toEqual([employee.name, '—']);
+  expect(
+    buildRadanReport('mission', [mission], [employee], {
+      ...emptyRadanFilters,
+      aggregate: true,
+      from: '2026-09-01',
+      to: '2026-10-31',
+    }).rows[0],
+  ).toEqual([employee.name, '2:00']);
+  expect(
+    buildRadanReport('general', [mission], [employee], {
+      ...emptyRadanFilters,
+      coefficients: ['ماموریت / روزانه / درون شهری'],
+    }).rows[0],
+  ).toEqual([employee.name, '—']);
+});
+
+it('uses business dates for report boundaries and compares legacy local clockings with actual UTC clockings', () => {
+  const leave = {
+    ...record,
+    section: 'requests',
+    tab: 'radanLeave',
+    status: 'تأییدشده',
+    columns: ['کارمند', 'نوع مرخصی', 'از تاریخ', 'تا تاریخ', 'نوع مدت'],
+    values: [employee.name, 'استحقاقی', '2026-10-01', '2026-10-01', 'ساعتی'],
+    data: {
+      minutes: 60,
+      startsAt: '2026-09-30T21:30:00.000Z',
+      endsAt: '2026-09-30T22:30:00.000Z',
+    },
+  };
+  expect(
+    buildRadanReport('general', [leave], [employee], {
+      ...emptyRadanFilters,
+      from: '2026-10-01',
+      to: '2026-10-01',
+      coefficients: ['مرخصی'],
+    }).rows[0],
+  ).toEqual([employee.name, '1:00']);
+  const legacy = {
+    ...record,
+    id: 'legacy',
+    tab: 'checkins',
+    columns: ['کارمند', 'تاریخ تردد', 'ساعت تردد', 'نوع تردد'],
+    values: [employee.name, '2026-10-20', '09:00', 'خروج'],
+    data: {},
+  };
+  const current = {
+    ...legacy,
+    id: 'current',
+    values: [employee.name, '2026-10-20', '10:00', 'ورود'],
+    data: { startsAt: '2026-10-20T06:30:00.000Z' },
+  };
+  expect(
+    buildRadanReport(
+      'presence',
+      [legacy, current],
+      [employee],
+      emptyRadanFilters,
+    ).rows[0]?.[2],
+  ).toBe('حاضر');
+});

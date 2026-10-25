@@ -4561,6 +4561,11 @@ export class HrService {
       new Set(input.employeeIds).size !== input.employeeIds.length
     )
       throw new BadRequestException('یک تا صد کارمند یکتا انتخاب کنید.');
+    const employeeIds = input.employeeIds.map((id: unknown) =>
+      validate.uuid(id).toLowerCase(),
+    );
+    if (new Set(employeeIds).size !== employeeIds.length)
+      throw new BadRequestException('یک تا صد کارمند یکتا انتخاب کنید.');
     const year = jalaliYear(input.year),
       type = validate.text(input.type, 'نوع مرخصی', 80);
     if (input.ruleId && input.transfer)
@@ -4606,7 +4611,7 @@ export class HrService {
       async (tx) => {
         const ids: string[] = [];
         const inlineRules = new Map<string, RecordRow>();
-        for (const id of [...(input.employeeIds as string[])].sort()) {
+        for (const id of [...employeeIds].sort()) {
           const employee = await this.employee(tx, validate.uuid(id), actor);
           await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${employee.id + ':minute-leave'}, 0))::text`;
           if (input.ruleId || inlineRule) {
@@ -4783,6 +4788,7 @@ export class HrService {
           ['time', 'leave'],
           ['time', 'remote'],
           ['time', 'overtime'],
+          ['time', 'mission'],
           ['requests', 'leave'],
           ['requests', 'radanLeave'],
           ['requests', 'radanMission'],
@@ -4792,13 +4798,18 @@ export class HrService {
           ([section, tab]) => {
             const columns = getHrResource(section!, tab!)!.columns;
             const startIndex = columns.findIndex((label) =>
-              ['از تاریخ', 'تاریخ کارکرد', 'تاریخ تردد', 'تاریخ'].includes(
-                label,
-              ),
+              [
+                'از تاریخ',
+                'تاریخ رفت',
+                'تاریخ کارکرد',
+                'تاریخ تردد',
+                'تاریخ',
+              ].includes(label),
             );
-            const endIndex = columns.includes('تا تاریخ')
-              ? columns.indexOf('تا تاریخ')
-              : startIndex;
+            const endLabel = ['تا تاریخ', 'تاریخ برگشت'].find((label) =>
+              columns.includes(label),
+            );
+            const endIndex = endLabel ? columns.indexOf(endLabel) : startIndex;
             const dates: Prisma.HrRecordWhereInput[] = [];
             if (from)
               dates.push(
@@ -4890,7 +4901,7 @@ export class HrService {
     const ids = validate
       .text(query.employeeIds, 'پرسنل', 3700)
       .split(',')
-      .map((id) => validate.uuid(id));
+      .map((id) => validate.uuid(id).toLowerCase());
     if (!ids.length || ids.length > 100 || new Set(ids).size !== ids.length)
       throw new BadRequestException('یک تا صد کارمند یکتا انتخاب کنید.');
     return this.database.client.$transaction(
