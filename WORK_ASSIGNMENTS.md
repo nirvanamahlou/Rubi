@@ -9459,3 +9459,10 @@ HR-ORG-CHART-NODES-1025 transfer compatibility: current employee company/branch 
 HR-ORG-CHART-NODES-1025 final targeted recheck: the real PostgreSQL concurrent duplicate/company-transfer case passes on the final scoped uniqueness logic. Historical nodes remain intact, current-company re-attachment succeeds, and mismatched descendant company changes remain rejected. Temporary database/container cleanup is restricted to the recorded task-owned ID. Hosted exact-head checks remain the final merge gate.
 
 HR-ORG-CHART-NODES-1025 bounded compatibility reservation: retain authorized IAM fallback roots/options independently for each branch lacking a configured organization company, even when another branch has companies. Reserve the HR-owned hr-live-data.ts company projection and chart-root regression only; this restores existing legacy branch choices without granting access or changing IAM. Existing current-task source reservation reopens only for this fix and freezes again on publication.
+
+
+## HR-PERSONNEL-COPY-CLEANUP-1025 — PC-B — RESERVED
+
+COMPUTER_ID=PC-B; branch codex/pc-b-hr-personnel-copy-cleanup-1025 from develop1b21687c. User authorizes removal of employee dialog explanatory copy and the numbered three-step captions, tests/push/develop merge. Reserve only new-employee-dialog.tsx, existing personnel form regression assertions, own status notes. Preserve fields, navigation, validation and submission. No contracts/schema/dependency/runtime/Radan changes; no orchestrator/sub-agents. Previous HR source locks released on publication.
+
+HR-PERSONNEL-COPY-CLEANUP-1025 implementation: requested copy removed with existing form flow retained. Six personnel regression checks pass; candidate source locks freeze/release on publication. Scoped lint/types and exact-head hosted gates precede authorized develop merge.
