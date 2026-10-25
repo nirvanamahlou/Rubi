@@ -193,8 +193,8 @@ export const hrHubCards: readonly HrHubCard[] = [
     description: 'گزارش‌های منابع انسانی، دسترسی محرمانه و Audit اختصاصی',
     icon: BarChart3,
     tone: 'slate',
-    pills: ['HR18', 'HR19', 'Export'],
-    footer: '۳ زیرصفحه',
+    pills: ['گزارش‌های حضور و غیاب', 'گزارش کارکنان', 'Audit اختصاصی'],
+    footer: '۲ زیرصفحه',
   },
   {
     id: 'payroll',
@@ -321,7 +321,6 @@ export const sectionTabs: Readonly<
   reports: [
     { id: 'dashboard', label: 'گزارش‌ها و شاخص‌ها', icon: BarChart3 },
     { id: 'audit', label: 'Audit اختصاصی', icon: History },
-    { id: 'access', label: 'دسترسی محرمانه', icon: ShieldCheck },
   ],
   payroll: [
     { id: 'overview', label: 'نمای کلی', icon: BarChart3 },

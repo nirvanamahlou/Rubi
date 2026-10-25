@@ -180,8 +180,8 @@ describe('ReportingWorkspace', () => {
   });
   it('renders the Persian RTL catalog without fabricated KPI values', () => {
     const html = renderToStaticMarkup(<ReportingWorkspace view="catalog" />);
-    expect(html).toContain('href="/hr?section=reports"');
-    expect(html).toContain('گزارش‌های منابع انسانی');
+    expect(html).not.toContain('href="/hr?section=reports"');
+    expect(html).not.toContain('گزارش‌های منابع انسانی');
 
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('گزارش‌ها و خروجی‌های مدیریتی');

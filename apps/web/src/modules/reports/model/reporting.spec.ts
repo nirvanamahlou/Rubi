@@ -51,9 +51,10 @@ describe('reporting catalog', () => {
     const displayCodes = reportCatalog.map((report) => report.displayCode);
     expect(new Set(displayCodes).size).toBe(reportCatalog.length);
     expect(displayCodes).toEqual(
-      reportCatalog.map(
+      Array.from(
+        { length: 37 },
         (_, index) => `RPT-${String(index + 1).padStart(3, '0')}`,
-      ),
+      ).filter((code) => !['RPT-014', 'RPT-029'].includes(code)),
     );
   });
 
@@ -100,7 +101,6 @@ describe('reporting catalog', () => {
       'cancellations_refunds',
       'marketing_performance',
       'customer_service_sla',
-      'hr_performance',
       'tickets_manifest',
     ];
     expect(reportCatalog.map((report) => report.code)).toEqual(
@@ -128,7 +128,6 @@ describe('reporting catalog', () => {
       'customer_satisfaction',
       'customer_consent_coverage',
       'document_compliance',
-      'hr_record_expiry',
       'workbench_due_actions',
       'hotel_rate_comparison',
       'future_travel_commitments',
@@ -204,4 +203,12 @@ describe('reporting catalog', () => {
       /\b(Scope|Provider|Posted|Refund|threshold|redacted|Manifest|Filter Snapshot|Artifact)\b/,
     );
   });
+});
+
+it('keeps HR-only reports out of the general catalog and its search', () => {
+  expect(
+    reportCatalog.some((report) => report.permission === 'reporting.hr.read'),
+  ).toBe(false);
+  expect(searchReports('منابع انسانی')).toEqual([]);
+  expect(filterReportCatalog({ category: 'منابع انسانی' })).toEqual([]);
 });

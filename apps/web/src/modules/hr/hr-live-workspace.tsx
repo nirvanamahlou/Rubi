@@ -19,8 +19,8 @@ import type { HrFormTarget } from './hr-record-form';
 import { sourceForRecord } from './hr-record-source';
 import ui from './hr-unified.module.css';
 
-const HrReports = dynamic(() =>
-  import('./hr-reports').then((module) => module.HrReports),
+const HrReportsWorkspace = dynamic(() =>
+  import('./hr-reports-workspace').then((module) => module.HrReportsWorkspace),
 );
 const HrDashboard = dynamic(() =>
   import('./hr-dashboard').then((module) => module.HrDashboard),
@@ -221,7 +221,7 @@ export function HrLiveWorkspace({
       ) : null}
       {section === 'payroll' ? <HrPayrollPaymentTable data={data} /> : null}
       {section === 'reports' ? (
-        <HrReports store={store} />
+        <HrReportsWorkspace store={store} tab={tab} />
       ) : section === 'surveys' ? (
         <HrSurveys />
       ) : section === 'home' ? (

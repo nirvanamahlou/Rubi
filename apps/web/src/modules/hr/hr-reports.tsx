@@ -39,16 +39,17 @@ import {
   HrRangeBar,
   HrTable,
 } from './hr-controls';
-import { HrAudit } from './hr-audit';
 import ui from './hr-unified.module.css';
 import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
 
 export function HrReports({
   store,
   initialTopic = 'employees',
+  embedded = false,
 }: {
   store: HrStore;
   initialTopic?: string;
+  embedded?: boolean;
 }) {
   const [records, setRecords] = useState<HrRecordDto[]>([]);
   const [loadedRange, setLoadedRange] = useState('');
@@ -274,9 +275,11 @@ export function HrReports({
     : selectedHrDataset(data, selection.selectedIds);
   return (
     <div className={ui.spaced}>
-      <header className={ui.heading}>
-        <h1>گزارش‌های منابع انسانی</h1>
-      </header>
+      {!embedded ? (
+        <header className={ui.heading}>
+          <h1>گزارش‌های منابع انسانی</h1>
+        </header>
+      ) : null}
       <div className={ui.filters}>
         {!radan || form.from ? (
           <label>
@@ -549,7 +552,6 @@ export function HrReports({
           <p role="status">در حال دریافت گزینه‌ها…</p>
         )}
       </HrPanel>
-      {store.data!.capabilities.audit ? <HrAudit store={store} /> : null}
     </div>
   );
 }
