@@ -47,6 +47,7 @@ import { CatalogueEditor, type CatalogueEdit } from './catalogue-editor';
 import { BrandsDashboard } from './brands-dashboard';
 import { IntegrationNavigation } from './integration-navigation';
 import { ConnectionReadiness } from './connection-readiness';
+import { NiyayeshData } from './niyayesh-data';
 import { SiteRegistrationDialog } from './site-registration-dialog';
 import {
   authenticationLabels,
@@ -348,6 +349,9 @@ export function IntegrationWorkspaceBody({
             />
           ) : (
             <>
+              {section === 'connections' ? (
+                <NiyayeshData key={branchId} branchId={branchId} />
+              ) : null}
               {section === 'overview' ? (
                 <>
                   <div className="grid gap-4 sm:grid-cols-3">
