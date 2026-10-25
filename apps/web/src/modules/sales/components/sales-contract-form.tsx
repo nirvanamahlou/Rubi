@@ -91,6 +91,7 @@ import { SalesChequeCalculator } from './sales-cheque-calculator';
 import { ContractTotalPrices } from './contract-total-prices';
 import { ContractServiceSummary } from './contract-service-summary';
 import { SalesDatePicker } from './sales-date-picker';
+import { salesFlightCalendarSystem } from '../model/sales-form';
 import { SalesPaymentPlan } from './sales-payment-plan';
 import { Button, buttonVariants } from '@/components/ui/button';
 
@@ -1009,9 +1010,7 @@ export function SalesContractForm() {
               <>
                 <TicketOfferPicker
                   refreshRevision={referenceRefresh.revision}
-                  calendarSystem={
-                    salesInternationalTravel(state) ? 'gregorian' : 'persian'
-                  }
+                  calendarSystem={salesFlightCalendarSystem(state, 'OUTBOUND')}
                   prepared={preparedTickets}
                   enabled={flightDatesReady}
                   originLabel={
@@ -1124,9 +1123,7 @@ export function SalesContractForm() {
                 salesFlightSelection(state, 'OUTBOUND') ? (
                   <TicketOfferPicker
                     refreshRevision={referenceRefresh.revision}
-                    calendarSystem={
-                      salesInternationalTravel(state) ? 'gregorian' : 'persian'
-                    }
+                    calendarSystem={salesFlightCalendarSystem(state, 'RETURN')}
                     enabled={flightDatesReady}
                     originLabel={
                       references.cities.find(
@@ -1701,6 +1698,19 @@ export function SalesContractForm() {
             className="mt-5 border-t border-border pt-4"
           >
             <FlightTripDates
+              calendarSystems={{
+                OUTBOUND: salesFlightCalendarSystem(state, 'OUTBOUND'),
+                RETURN: salesFlightCalendarSystem(state, 'RETURN'),
+              }}
+              onCalendarSystemChange={(direction, calendar) =>
+                patchState((current) => ({
+                  ...current,
+                  flightCalendarSystems: {
+                    ...current.flightCalendarSystems,
+                    [direction]: calendar,
+                  },
+                }))
+              }
               primaryDirection={
                 salesDirections(state, 'FLIGHT').includes('OUTBOUND')
                   ? 'OUTBOUND'
