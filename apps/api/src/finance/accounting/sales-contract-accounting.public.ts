@@ -25,18 +25,18 @@ function recordId(id: string, version: number, currency: string) {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
-/** Called by Sales inside the source transaction. Drafts and historical contracts are not backfilled. */
+/** Sales captures only a confirmed contract with a real Finance-approved receipt, in the same transaction. */
 export async function captureSalesContractAccounting(
   tx: Tx,
   id: string,
   actorId: string,
-  initialConfirmation = false,
+  activateAfterApproval = false,
 ) {
   const row = await salesContractAccountingSource(tx, id);
   if (!row) throw new ConflictException('قرارداد این شعبه یافت نشد.');
-  if (!eligible(row.status)) return;
+  if (!eligible(row.status) || !row.hasFinanceApproval) return;
   if (
-    !initialConfirmation &&
+    !activateAfterApproval &&
     !(await tx.financeAccountingEvent.findFirst({
       where: {
         source: 'SALES',
@@ -155,6 +155,7 @@ export async function isCurrentSalesContractAccountingSource(
   const balance = row.balances.find((b) => b.currencyCode === event.currency);
   if (
     !eligible(row.status) ||
+    !row.hasFinanceApproval ||
     row.payerCustomerId !== event.partyId ||
     !balance ||
     !event.amount.eq(balance.amount) ||
