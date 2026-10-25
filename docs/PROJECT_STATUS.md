@@ -1,6 +1,14 @@
+## CONTRACT-FINANCE-APPROVAL-1025 — PC-A
+
+Contract accrual now requires a real approved receipt from the Finance inbox. The approval transaction captures both receipt and per-currency commercial obligation atomically; Sales confirmation alone cannot capture or post an obligation. Reverse-order approval is supported and partial/replayed receipts do not duplicate the obligation. Existing mapping/draft/independent posting and amendment guards remain. No form, schema, dependency, bank or operational-data change. See [current trigger](tasks/CONTRACT-FINANCE-APPROVAL-1025.md); supersedes PR1120 trigger timing. Exact-head gates precede authorized merge/local3100 rollout.
+
 ## SALES-CONTRACT-ACCOUNTING-1025 — PC-A
 
 Contract confirmation now captures per-currency immutable obligations in the source transaction. Existing approved Accounting chart mappings generate independent drafts; no guessed accounts or automatic posting. Source guards cover amendment/cancellation/supersession and period closure; earned revenue releases the original deferred line instead of accruing a second receivable, including historical FX dimensions. Forms, bank behavior and operational data preserved. See [task evidence](tasks/SALES-CONTRACT-ACCOUNTING-1025.md). Isolated PostgreSQL/source regressions, affected checks and exact-head hosted gates required before authorized develop merge. No schema/migration/dependency or runtime rollout.
+
+## HR-LEAVE-REDESIGN-1025 — PC-B
+
+Redesigned the five existing leave-balance views within Nora's theme: selectable month tiles, separate selected-person card, paired greater/lower transfer fieldsets, readable personnel rows, grouped report filters/results, responsive scoped CSS and a wider grouped personnel picker. Existing API commands, scopes, transfer rules, locking and idempotency remain unchanged. Existing12 HR form/year/navigation checks, affected Web typecheck and scoped lint pass; browser verification covers all/none/single month selection and unsaved personnel selection. No leave command or operational data write during visual QA. Local3100 only, no schema/migration/dependency/IAM or server changes. Exact-head hosted checks gate owner-authorized normal develop merge; source reservations freeze after verification and release on verified merged PR.
 
 ## HR-PROFILE-ENTRY-1025 — PC-B
 
@@ -7585,14 +7593,15 @@ Removed the employee dialog explanatory paragraph and the numbered personal/acco
 Historical service capacity is also retained by the transactional amendment callback: declared adult+child counts select catalog legs and per-leg quantities even with zero personal passenger records. Existing ordinary amendment logic, CAS/snapshot and receipts remain. Regression covers an aggregate count change with a confirmed receipt; all exact-head gates precede the owner-authorized follow-up merge and server rollout. No migration or dependency changes.
 
 
+## RESERVATION-BUSINESS-TOGGLE-1025 — PC-A
+
+Flight amendment in Reservations now exposes the existing contract-wide business-output checkbox, initialized from saved flight-service metadata. Both on and explicit off update all flight services while preserving other metadata and services, tickets, cabin class and pricing. Native Sales amendment republishes the canonical reservation snapshot; current contract and passenger ticket outputs read the amended flag. Historical documents stay versioned. Focused11 API and9 Web regressions pass, including snapshot propagation and confirmed-receipt preservation; related tests, affected lint/types/Web build and all exact-head hosted gates precede owner-authorized develop merge. No API/schema/migration/dependency/permission or production change.
+
+
 ## RETURN-ONLY-CALENDAR-1025 — PC-A
 
 Return-only New Contract now labels its sole date picker as the return ticket and shows a return-card heading. The existing destination-to-origin calendar/search and RETURN payload/capacity mapping are retained; no outbound-date prerequisite or forward-route speculative request is added. Exact-day cards refresh and clear stale choices when the date changes. Round-trip pairing and outbound-only behavior remain unchanged. Focused25 regressions pass; broader Sales tests, scoped lint/types/Web build and all exact-head gates precede owner-authorized develop merge. No API, schema, migration, dependency or production change.
 
-
-## RESERVATION-BUSINESS-TOGGLE-1025 — PC-A
-
-Flight amendment in Reservations now exposes the existing contract-wide business-output checkbox, initialized from saved flight-service metadata. Both on and explicit off update all flight services while preserving other metadata and services, tickets, cabin class and pricing. Native Sales amendment republishes the canonical reservation snapshot; current contract and passenger ticket outputs read the amended flag. Historical documents stay versioned. Focused11 API and9 Web regressions pass, including snapshot propagation and confirmed-receipt preservation; related tests, affected lint/types/Web build and all exact-head hosted gates precede owner-authorized develop merge. No API/schema/migration/dependency/permission or production change.
 
 ## 2026-10-25 — CALL-CENTER-RELEASE-1025 — PC-C
 Final Call Center feature chain consolidated from87eb5e3a and integrated with develop8806eac1. User authorizes PR and merge after all CI/CD checks pass. Only shared docs and translation append conflicts required resolution; other modules preserved. No local secrets/runtime files published. See release task for final CI/merge evidence.

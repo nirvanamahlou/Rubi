@@ -81,6 +81,16 @@ export async function salesContractAccountingSource(
       contractNumber: true,
       status: true,
       version: true,
+      payments: {
+        where: {
+          status: 'FINANCE_CONFIRMED',
+          financeConfirmedAt: { not: null },
+          financeConfirmedByRef: { not: null },
+          financeReceiptAccountId: { not: null },
+        },
+        select: { id: true },
+        take: 1,
+      },
       priceComponents: {
         select: { type: true, title: true, amount: true, currencyCode: true },
       },
@@ -92,6 +102,7 @@ export async function salesContractAccountingSource(
     branchId: row.branchId,
     payerCustomerId: row.payerCustomerId,
     contractNumber: row.contractNumber,
+    hasFinanceApproval: row.payments.length > 0,
     status: row.status,
     version: row.version,
     balances: calculateSalesBalances(

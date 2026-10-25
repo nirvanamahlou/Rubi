@@ -4380,5 +4380,9 @@
   "صفحه‌بندی تماس‌های بدون نتیجه": "Calls without outcome pagination",
   "کارشناس انتخاب‌شده خارج از محدوده مجاز ارجاع درخواست است.": "The selected specialist is outside the permitted request assignment scope.",
   "مشغول": "Busy",
-  "نتیجه ثبت‌نشده": "Outcome not recorded"
+  "نتیجه ثبت‌نشده": "Outcome not recorded",
+  "انتخاب کارکنان": "Select employees",
+  "پرسنلی یافت نشد.": "No employees found.",
+  "حذف از انتخاب:": "Remove from selection:",
+  "کارکنی انتخاب نشده است.": "No employees selected."
 }
