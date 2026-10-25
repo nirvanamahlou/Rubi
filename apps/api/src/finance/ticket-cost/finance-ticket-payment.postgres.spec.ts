@@ -1,7 +1,8 @@
 import { TicketPublicService } from '../../ticket-catalog/ticket-public.service';
 import { createRequire } from 'node:module';
 import { randomUUID } from 'node:crypto';
-import { readFileSync, readdirSync } from 'node:fs';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { resolve } from 'node:path';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import type { AuthenticatedActor } from '@nora/contracts';
@@ -49,19 +50,28 @@ describe.skipIf(!enabled)('Finance ticket payment isolated PostgreSQL', () => {
       throw new Error('An isolated local database is required');
     await sql('postgres', `CREATE DATABASE "${databaseName}";`);
     created = true;
-    const root = resolve(
-      process.cwd(),
-      '../../packages/database/prisma/migrations',
-    );
-    const migrations = readdirSync(root, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((entry) =>
-        readFileSync(resolve(root, entry.name, 'migration.sql'), 'utf8'),
-      )
-      .join('\n');
-    await sql(databaseName, migrations);
     url.pathname = `/${databaseName}`;
+    // Use the real migration engine so accounting activation metadata is present.
+    await promisify(execFile)(
+      process.execPath,
+      [
+        resolve(
+          process.cwd(),
+          '../../packages/database/node_modules/prisma/build/index.js',
+        ),
+        'migrate',
+        'deploy',
+        '--schema',
+        'prisma/schema.prisma',
+      ],
+      {
+        cwd: resolve(process.cwd(), '../../packages/database'),
+        env: { ...process.env, DATABASE_URL: url.toString() },
+        timeout: 120000,
+        windowsHide: true,
+        maxBuffer: 8 * 1024 * 1024,
+      },
+    );
     client = createDatabaseClient(url.toString());
   }, 120000);
   afterAll(async () => {
