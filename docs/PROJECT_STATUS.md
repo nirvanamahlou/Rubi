@@ -1,3 +1,7 @@
+## 2026-10-25 — FLIGHT-WEEKDAY-PURCHASE-1025 — PC-A
+
+Recurring company-capacity purchases group exact carrier/number/route/cabin/supplier/branch and Tehran weekday. One total atomically apportions per-offer payable revisions whose sum is exact; Sales uses the original pool denominator for actual consumed seats. Dates/full membership remain visible, old costs/history/payments stay protected, and final unsold loss remains separated from future residual capacity. API52 and Web26 related tests pass; full type/lint/build and exact-head CI including isolated PostgreSQL concurrency/rollback gate user-authorized develop merge. No schema/migration/dependency/operational rollout. See tasks/FLIGHT-WEEKDAY-PURCHASE-1025.md.
+
 ## LEGACY-CONTRACT-SERVICES-1025 — PC-A
 
 Legacy Contract retains service/date/age-count selection and per-service negotiated prices while excluding personal passenger entry. Validated additive V2 aggregate metadata preserves real ticket/hotel selections and flows to reservation snapshots/output; confirmation reserves adult+child seats per catalog leg without invented identities. Existing V1 data and ordinary validations remain. Contract output replaces empty personal tables with service age counts; list/Excel expose an additive aggregate count fallback. Web Sales612 tests and API Sales261 tests pass. Shared/targeted regressions, affected types/lint/build and all exact-head hosted gates precede owner-authorized develop merge and encrypted-backup server rollout. No schema/migration/dependency change.

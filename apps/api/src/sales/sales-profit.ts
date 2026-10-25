@@ -1,4 +1,5 @@
 import {
+  readLegacyServiceParties,
   moneyDecimal,
   moneyUnits,
   type SalesContractDetail,
@@ -14,6 +15,7 @@ type TicketCost = {
   childUnitCost: string;
   unitCost: string | null;
   supplyType?: string | null | undefined;
+  poolCost?: { seatCount: number; totalCost: string };
   seatCount?: number | null;
   invoiceAmount?: string | null;
 };
@@ -93,6 +95,7 @@ export function contractProfit(
       });
     covered.add(hotel.serviceClientKey);
   }
+  const legacyParties = readLegacyServiceParties(contract.servicesDetail);
   const flightCoverage = new Map<string, boolean>();
   for (const selection of contract.ticketSelections) {
     if (covered.has(selection.serviceClientKey)) continue;
@@ -104,29 +107,39 @@ export function contractProfit(
     const assigned = contract.passengersDetail.filter((p) =>
       p.serviceClientKeys.includes(selection.serviceClientKey),
     );
-    if (!assigned.length) continue;
-    const soldSeats = assigned.filter((p) => p.ageCategory !== 'INF').length;
+    const legacyParty = legacyParties?.[selection.serviceClientKey];
+    if (!assigned.length && !legacyParty) continue;
+    const soldSeats = legacyParty
+      ? legacyParty.adults + legacyParty.children
+      : assigned.filter((p) => p.ageCategory !== 'INF').length;
+    const purchasedSeats = cost.poolCost?.seatCount ?? cost.seatCount;
+    const invoice = cost.poolCost?.totalCost ?? cost.invoiceAmount;
     const proportional =
-      cost.seatCount && cost.invoiceAmount
-        ? (moneyUnits(cost.invoiceAmount) * BigInt(soldSeats) +
-            BigInt(cost.seatCount) / 2n) /
-          BigInt(cost.seatCount)
+      purchasedSeats && invoice
+        ? (moneyUnits(invoice) * BigInt(soldSeats) +
+            BigInt(purchasedSeats) / 2n) /
+          BigInt(purchasedSeats)
         : null;
     const amount =
       proportional ??
-      assigned.reduce(
-        (sum, p) =>
-          sum +
-          (p.ageCategory === 'INF'
-            ? 0n
-            : moneyUnits(
-                cost.unitCost ??
-                  (p.ageCategory === 'CHD'
-                    ? cost.childUnitCost
-                    : cost.adultUnitCost),
-              )),
-        0n,
-      );
+      (legacyParty
+        ? BigInt(legacyParty.adults) *
+            moneyUnits(cost.unitCost ?? cost.adultUnitCost) +
+          BigInt(legacyParty.children) *
+            moneyUnits(cost.unitCost ?? cost.childUnitCost)
+        : assigned.reduce(
+            (sum, p) =>
+              sum +
+              (p.ageCategory === 'INF'
+                ? 0n
+                : moneyUnits(
+                    cost.unitCost ??
+                      (p.ageCategory === 'CHD'
+                        ? cost.childUnitCost
+                        : cost.adultUnitCost),
+                  )),
+            0n,
+          ));
     costs.push({
       serviceClientKeys: [selection.serviceClientKey],
       serviceTitles: [title(selection.serviceClientKey)],
