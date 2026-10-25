@@ -9461,3 +9461,10 @@ Based22338f7 approved local UI. User confirms immediate incomplete outbound cont
 Scope includes existing workspace refresh handler on outbound receipt; no new visible control, page-one refresh retains selected dossier and later pages retain paging context.
 
 OUTBOUND-FIRST-CONTACT-1025 — IMPLEMENTED / SOURCE_RELEASED ON PUSH:27 targeted tests, lint/types/build pass. Local outgoing-only runtime active; manual post-activation call acceptance pending. No migration/PBX change/PR/merge. See task evidence.
+
+## QUEUE-TITLE-CENTER-1025 — PC-C — RESERVED
+User explicitly requests centered request-title cells. Reserve workflow.module.css and status/assignment docs only. Base a0eee391; preceding scopes released. Preserve generated next-env and all outbound behavior.
+
+QUEUE-TITLE-CENTER-1025: scope also records user-confirmed real outbound404 popup acceptance in predecessor task documentation; no telephony code changes.
+
+QUEUE-TITLE-CENTER-1025 — COMPLETE / SOURCE_RELEASED:3 existing queue tests, lint, TypeScript and65-route build pass. New local3000 runtime; no API or migration change.

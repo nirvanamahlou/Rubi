@@ -359,17 +359,16 @@
   width: 100%;
 }
 
-/* Queue alignment: keep request titles readable in the writing direction. */
+/* Center every queue header and cell, including request titles. */
 .queueColumns > *,
-.queueRow > :not(strong) {
+.queueRow > * {
   text-align: center;
   justify-self: center;
   align-self: center;
   min-width: 0;
 }
 .queueRow > strong {
-  text-align: start;
-  align-self: center;
+  max-width: 100%;
 }
 .queueRow .status,
 .queueRow .priority {

@@ -7481,3 +7481,6 @@ User-requested queue header/cell centering (except title) and status/priority co
 ## OUTBOUND-FIRST-CONTACT-1025 — PC-C — LOCAL_ACCEPTANCE_PENDING
 
 Exclusive mapped outbound calls now create incomplete contacts with audited initial ownership and use the existing form across authenticated ERP pages. Shared/unmapped extensions store without offers; inbound hold and approved panel design preserved.27 targeted tests, lint/types/build pass; local3000/4000 running. Pre-activation real AMI404 observed; post-activation call/popup acceptance pending. No migration or PBX change. See docs/tasks/OUTBOUND-FIRST-CONTACT-1025.md.
+
+## QUEUE-TITLE-CENTER-1025 — PC-C — COMPLETE
+Request title cells now centered horizontally/vertically with bounded truncation; remaining queue unchanged.3 tests, lint/types/build pass; local3000 updated. User also confirms real404 outgoing popup opened after prior activation. No migration/PR/merge.

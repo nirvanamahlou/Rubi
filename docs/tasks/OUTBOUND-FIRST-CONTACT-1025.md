@@ -14,3 +14,5 @@ Local rollout: private approved staff mapping file was matched against active el
 Operational live-call verification and exact build/test results are recorded below. No PR/merge/production deployment requested.
 
 Validation: 12 PostgreSQL integration tests (including actual receive/process, duplicate root and shared extension), 11 adapter/state tests and 4 Web hold/draft tests pass. Affected lint and API typecheck/build pass; final Web production build passes all65 routes. No migration. Local API4000 PID9476 and Web3000 PID22588 started with scoped outbound flags; inbound notifications remain held. Real404 AMI DialBegin was verified before activation; a second post-activation call is requested for end-to-end storage/popup acceptance and is not yet claimed as passed.
+
+Acceptance update: user explicitly confirms a second real404 external call was made and the outgoing popup opened after local activation (2026-10-25).
