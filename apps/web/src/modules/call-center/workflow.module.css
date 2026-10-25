@@ -349,3 +349,12 @@
   color: var(--muted-foreground);
   margin-block: 8px 0;
 }
+
+.queuePagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  width: 100%;
+}

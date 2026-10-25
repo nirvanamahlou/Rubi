@@ -4073,5 +4073,7 @@
   "ساختار قرارداد قدیمی معتبر نیست.": "The legacy contract structure is invalid.",
   "رسید پرداخت (اختیاری)": "Payment receipt (optional)",
   "قرارداد ثبت شد؛ رسیدهای پرداخت را بررسی کنید.": "The contract was saved; check the payment receipts.",
-  "ثبت مدرک پرداخت ناموفق بود.": "The payment receipt could not be saved."
+  "ثبت مدرک پرداخت ناموفق بود.": "The payment receipt could not be saved.",
+  "زمان ثبت درخواست": "Request created at",
+  "صفحه‌بندی صف رسیدگی و پیگیری": "Request queue pagination"
 }

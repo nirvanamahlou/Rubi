@@ -387,7 +387,7 @@ export class CallCenterWorkflowService
         const total = counts[view] ?? 0;
         const rows = await tx.customerAffairsTicket.findMany({
           where,
-          orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+          orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
           skip: (page - 1) * 50,
           take: 50,
           include: {
@@ -417,6 +417,8 @@ export class CallCenterWorkflowService
             ).title,
             ownerName: row.executionOwner?.displayName ?? null,
             status: row.status,
+            priority: row.priority,
+            createdAt: row.createdAt.toISOString(),
           })),
           meta: { total, page, pageSize: 50, counts, asOf: now.toISOString() },
         };

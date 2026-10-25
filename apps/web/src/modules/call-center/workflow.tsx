@@ -691,11 +691,11 @@ export function WorkQueue({
               {!data.data.length && <p>درخواستی در این صف نیست.</p>}
               <div className={styles.queueRows}>
                 <div className={styles.queueColumns} aria-hidden="true">
-                  <span>موضوع درخواست</span>
-                  <span>شعبه</span>
-                  <span>مسئول</span>
+                  <span>عنوان درخواست</span>
+                  <span>کارشناس مسئول</span>
                   <span>وضعیت</span>
-                  <span>موعد نزدیک‌ترین پیگیری</span>
+                  <span>اولویت</span>
+                  <span>زمان ثبت درخواست</span>
                 </div>
                 {data.data.map((item) => (
                   <button
@@ -712,50 +712,24 @@ export function WorkQueue({
                     }}
                   >
                     <strong>{item.title}</strong>
-                    <span>{item.branchName}</span>
                     <span>{item.ownerName ?? 'بدون مسئول'}</span>
                     <span className={styles.status} data-status={item.status}>
                       {requestLabels[item.status]}
                     </span>
-                    <span
-                      data-overdue={
-                        !!item.dueAt &&
-                        Date.parse(item.dueAt) <
-                          Date.parse(data?.meta.asOf ?? '')
-                      }
-                    >
-                      {item.dueAt ? (
-                        <>
-                          <time dateTime={item.dueAt}>
-                            {callDate(item.dueAt)}
-                          </time>
-                          {Date.parse(item.dueAt) <
-                            Date.parse(data?.meta.asOf ?? '') && (
-                            <small>
-                              {' '}
-                              ·{' '}
-                              {faNumber(
-                                Math.max(
-                                  1,
-                                  Math.floor(
-                                    (Date.parse(data?.meta.asOf ?? '') -
-                                      Date.parse(item.dueAt)) /
-                                      60000,
-                                  ),
-                                ),
-                              )}{' '}
-                              دقیقه تأخیر
-                            </small>
-                          )}
-                        </>
-                      ) : (
-                        'بدون پیگیری باز'
-                      )}
+                    <span>
+                      {priorities[item.priority as keyof typeof priorities] ??
+                        'نامشخص'}
                     </span>
+                    <time dateTime={item.createdAt}>
+                      {item.createdAt ? callDate(item.createdAt) : 'نامشخص'}
+                    </time>
                   </button>
                 ))}
               </div>
-              <div>
+              <nav
+                className={styles.queuePagination}
+                aria-label="صفحه‌بندی صف رسیدگی و پیگیری"
+              >
                 <button
                   type="button"
                   disabled={page <= 1}
@@ -767,7 +741,15 @@ export function WorkQueue({
                 >
                   قبلی
                 </button>
-                <span>{page.toLocaleString('fa-IR')}</span>
+                <span aria-live="polite">
+                  {faNumber(page)} /{' '}
+                  {faNumber(
+                    Math.max(
+                      1,
+                      Math.ceil(data.meta.total / data.meta.pageSize),
+                    ),
+                  )}
+                </span>
                 <button
                   type="button"
                   disabled={page * data.meta.pageSize >= data.meta.total}
@@ -779,7 +761,7 @@ export function WorkQueue({
                 >
                   بعدی
                 </button>
-              </div>
+              </nav>
             </>
           )}
         </div>

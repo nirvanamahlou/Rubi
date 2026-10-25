@@ -82,6 +82,8 @@ export const workflowApi = {
         title: string;
         ownerName: string | null;
         status: string;
+        priority: string;
+        createdAt: string;
         dueAt?: string | null;
       }[];
       meta: {
