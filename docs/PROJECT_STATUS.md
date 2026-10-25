@@ -2,6 +2,10 @@
 
 Contract confirmation now captures per-currency immutable obligations in the source transaction. Existing approved Accounting chart mappings generate independent drafts; no guessed accounts or automatic posting. Source guards cover amendment/cancellation/supersession and period closure; earned revenue releases the original deferred line instead of accruing a second receivable, including historical FX dimensions. Forms, bank behavior and operational data preserved. See [task evidence](tasks/SALES-CONTRACT-ACCOUNTING-1025.md). Isolated PostgreSQL/source regressions, affected checks and exact-head hosted gates required before authorized develop merge. No schema/migration/dependency or runtime rollout.
 
+## HR-LEAVE-REDESIGN-1025 — PC-B
+
+Redesigned the five existing leave-balance views within Nora's theme: selectable month tiles, separate selected-person card, paired greater/lower transfer fieldsets, readable personnel rows, grouped report filters/results, responsive scoped CSS and a wider grouped personnel picker. Existing API commands, scopes, transfer rules, locking and idempotency remain unchanged. Existing12 HR form/year/navigation checks, affected Web typecheck and scoped lint pass; browser verification covers all/none/single month selection and unsaved personnel selection. No leave command or operational data write during visual QA. Local3100 only, no schema/migration/dependency/IAM or server changes. Exact-head hosted checks gate owner-authorized normal develop merge; source reservations freeze after verification and release on verified merged PR.
+
 ## HR-PROFILE-ENTRY-1025 — PC-B
 
 Runtime verification extension: the outer client guard prevents the legacy server redirect from mounting. The existing IAM route matcher therefore resolves only employee-id routes missing tab to the exact existing summary decision; explicit denied tabs, denied summary, missing employee IDs and anonymous users remain rejected. HR and IAM compatibility scope is recorded in the same reservation; no grants or API scope change.
