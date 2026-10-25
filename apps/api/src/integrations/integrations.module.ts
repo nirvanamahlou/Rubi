@@ -13,6 +13,8 @@ import { ProcurementSupplierIntegrationService } from './procurement-supplier.in
 import { SystemManagementModule } from '../system-management/system-management.module';
 import { IntegrationRegistryController } from './integration-registry.controller';
 import { IntegrationRegistryService } from './integration-registry.service';
+import { NiyayeshController } from './niyayesh.controller';
+import { NiyayeshService } from './niyayesh.service';
 import { IssabelService } from './issabel/issabel.service';
 import { IssabelRecordingsService } from './issabel/recordings.service';
 import {
@@ -35,6 +37,7 @@ import {
     TelephonyWorkerController,
     IntegrationsController,
     IntegrationRegistryController,
+    NiyayeshController,
   ],
   providers: [
     IssabelService,
@@ -44,6 +47,7 @@ import {
     TelephonyWorkerGuard,
     ProcurementSupplierIntegrationService,
     IntegrationRegistryService,
+    NiyayeshService,
   ],
 })
 export class IntegrationsModule {}

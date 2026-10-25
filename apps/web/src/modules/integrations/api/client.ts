@@ -59,6 +59,33 @@ async function request<T>(
 const branchQuery = (branchId: string) =>
   `?branchId=${encodeURIComponent(branchId)}`;
 export const integrationsApi = {
+  niyayeshStatus: (branchId: string, signal?: AbortSignal) =>
+    request<{
+      state: string;
+      environment?: string;
+      checkedAt?: string;
+      resources: { code: string; title: string }[];
+    }>(`/niyayesh/status${branchQuery(branchId)}`, signal ? { signal } : {}),
+  niyayeshResources: (
+    branchId: string,
+    resource: string,
+    after: number,
+    signal?: AbortSignal,
+  ) =>
+    request<{
+      schemaVersion: number;
+      items: {
+        externalId: string;
+        version: number;
+        archived: boolean;
+        data: Record<string, unknown> | null;
+      }[];
+      nextId: number;
+      hasMore: boolean;
+    }>(
+      `/niyayesh/resources${branchQuery(branchId)}&resource=${encodeURIComponent(resource)}&after=${after}`,
+      signal ? { signal } : {},
+    ),
   async branches(): Promise<BranchReference[]> {
     const base = getPublicApiBaseUrl();
     if (!base)
