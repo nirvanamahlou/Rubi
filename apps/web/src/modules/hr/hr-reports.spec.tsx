@@ -158,3 +158,27 @@ describe('HR reports and audit location', () => {
     expect(html).not.toContain('tab=audit');
   });
 });
+
+it('lists all observed attendance reports as accessible actions before running a report', () => {
+  const html = renderToStaticMarkup(
+    <HrReports store={store} initialTopic="radan:daily" />,
+  );
+  expect(html).toContain('aria-label="فهرست گزارش‌ها"');
+  expect(html.match(/aria-pressed=/g)).toHaveLength(21);
+  expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
+  expect(html).toContain('گزارش آماده نشده است.');
+  expect(html).not.toContain('رکوردی مطابق این فیلترها وجود ندارد.');
+});
+
+it('keeps unsupported result providers explicit and cannot run their report as an empty success', () => {
+  for (const id of ['forgiveness', 'arpa']) {
+    const html = renderToStaticMarkup(
+      <HrReports store={store} initialTopic={`radan:${id}`} />,
+    );
+    expect(html).toContain('منبع دادهٔ این گزارش در دسترس نیست.');
+    expect(html).toMatch(
+      /<button[^>]*disabled=""[^>]*type="submit"[^>]*>گرفتن گزارش<\/button>/,
+    );
+    expect(html).toContain('گزارش آماده نشده است.');
+  }
+});
