@@ -7501,3 +7501,8 @@ Removed the employee dialog explanatory paragraph and the numbered personal/acco
 ## LEGACY-CAPACITY-AMEND-1025 — PC-A
 
 Historical service capacity is also retained by the transactional amendment callback: declared adult+child counts select catalog legs and per-leg quantities even with zero personal passenger records. Existing ordinary amendment logic, CAS/snapshot and receipts remain. Regression covers an aggregate count change with a confirmed receipt; all exact-head gates precede the owner-authorized follow-up merge and server rollout. No migration or dependency changes.
+
+
+## SESSION-STABILITY-1025 — PC-A — 2026-10-25
+
+Fixes avoidable logout/form resets reported on Avina: refresh network/5xx/rate-limit/concurrency failures are recoverable errors rather than authentication expiry; successful access revalidation retains the mounted form during transient outages, while explicit denial and permission changes still apply. Navigation with only the HttpOnly refresh cookie mounts the shell to recover access; protected APIs remain guarded. Same-user token rotation no longer changes the open Sales draft storage scope; new mount/login/account ownership remains isolated. Header identity recovery handles temporary failures.54 focused authentication/access/provider/draft/proxy regressions pass, plus existing draft restoration checks. Full Web lint/types/build and exact-head hosted gates precede authorized develop merge. No Backend/schema/migration/dependency/account grants or operational data changes; this candidate is source-only and has not changed Avina runtime.
