@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { getHrResource } from '@nora/contracts';
 import { persianCalendarMonths } from './hr-template-calendar';
 import { minuteText } from './hr-radan-tools';
-import { radanOptionalLabels } from './hr-form-model';
+import { hrReferenceOptions, radanOptionalLabels } from './hr-form-model';
 import { hrGroups, employeeGroups } from './hr-navigation';
 
 describe('Radan fields in existing HR surfaces', () => {
@@ -74,9 +74,8 @@ it('retains a multiword given name when editing the canonical employee record', 
 });
 
 it('renders a write-only password input in the device form, not in table columns', () => {
-  expect(getHrResource('time', 'biometric')!.columns).not.toContain(
-    'رمز عبور شبکه',
-  );
+  const device = getHrResource('time', 'biometric')!;
+  expect(device.columns).not.toContain('رمز عبور شبکه');
   const html = renderToStaticMarkup(
     <ContextualHrForm
       context={{
@@ -84,14 +83,47 @@ it('renders a write-only password input in the device form, not in table columns
         tab: 'biometric',
         title: 'دستگاه',
         description: '',
-        columns: ['شناسه', 'نام دستگاه', 'رمز عبور شبکه'],
+        columns: ['شناسه', ...device.columns, 'رمز عبور شبکه', 'وضعیت'],
         mode: 'create',
         fieldTypes: { 'رمز عبور شبکه': 'password' },
-        optionalLabels: ['رمز عبور شبکه'],
+        optionalLabels: [...radanOptionalLabels(device), 'رمز عبور شبکه'],
+        optionsByLabel: hrReferenceOptions(
+          { records: [], employees: [], branches: [] } as unknown as Parameters<
+            typeof hrReferenceOptions
+          >[0],
+          'time',
+          'biometric',
+          'synthetic-branch',
+        ),
       }}
       onCancel={() => undefined}
       onSubmit={() => undefined}
     />,
   );
   expect(html).toContain('type="password"');
+  const labels = [
+    'نام دستگاه',
+    'توضیحات',
+    'آدرس دستگاه',
+    'پورت دستگاه',
+    'رمز عبور شبکه',
+    'نوع دستگاه',
+  ];
+  expect(html.match(/<label\b/g)).toHaveLength(6);
+  expect(labels.map((label) => html.indexOf(label))).toEqual(
+    labels.map((label) => html.indexOf(label)).toSorted((a, b) => a - b),
+  );
+  for (const label of [
+    'کد دستگاه',
+    'آخرین همگام‌سازی',
+    'تعداد رکورد',
+    'سلامت اتصال',
+  ])
+    expect(html).not.toContain(label);
+  for (const type of ['V800', 'رادن', 'ZK', 'TF8000', 'V210'])
+    expect(html).toContain(type);
+  expect(hrGroups.time?.find((group) => group.id === 'device')).toMatchObject({
+    label: 'دستگاه',
+    sources: [{ section: 'time', tab: 'biometric', label: 'دستگاه' }],
+  });
 });

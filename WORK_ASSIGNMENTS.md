@@ -9466,8 +9466,16 @@ HR-ORG-CHART-NODES-1025 final targeted recheck: the real PostgreSQL concurrent d
 
 HR-ORG-CHART-NODES-1025 bounded compatibility reservation: retain authorized IAM fallback roots/options independently for each branch lacking a configured organization company, even when another branch has companies. Reserve the HR-owned hr-live-data.ts company projection and chart-root regression only; this restores existing legacy branch choices without granting access or changing IAM. Existing current-task source reservation reopens only for this fix and freezes again on publication.
 
+## HR-DEVICE-FORM-1025 — PC-B — RESERVED
+
+COMPUTER_ID=PC-B; branch codex/pc-b-hr-device-form-1025 from develop1b21687c. User resumed the authorized device crawl after signing in. Fresh read-only Radan device-list observation confirms name/address/type required, description/port/network password optional; type choices V800, Radan, ZK, TF8000, V210. Reserve HR time navigation, live record form/device-only contextual rendering and focused existing regressions, own notes/translations. Existing branch/permission, encrypted write-only password and canonical record column positions remain intact. No schema/dependency/API/provider/runtime/Radan writes. Distinct copy-cleanup PR1107 remains independently gated; integrate its develop merge before publication.
+
+HR-DEVICE-FORM-1025 verification: six focused regressions pass, covering the exact six rendered fields/order, provider options, hidden internal telemetry and dedicated time navigation. Preserve positional submission and password capability/encryption. Candidate source locks freeze/release on publication; hosted gates required before merge.
+
 ## HR-PERSONNEL-COPY-CLEANUP-1025 — PC-B — RESERVED
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-personnel-copy-cleanup-1025 from develop1b21687c. User authorizes removal of employee dialog explanatory copy and the numbered three-step captions, tests/push/develop merge. Reserve only new-employee-dialog.tsx, existing personnel form regression assertions, own status notes. Preserve fields, navigation, validation and submission. No contracts/schema/dependency/runtime/Radan changes; no orchestrator/sub-agents. Previous HR source locks released on publication.
 
 HR-PERSONNEL-COPY-CLEANUP-1025 implementation: requested copy removed with existing form flow retained. Six personnel regression checks pass; candidate source locks freeze/release on publication. Scoped lint/types and exact-head hosted gates precede authorized develop merge.
+
+HR-DEVICE-FORM-1025 regression alignment: reserve the existing hr-live.spec.tsx navigation inventory assertion to include the newly authorized dedicated device group and keep biometric legacy routes resolving to that group. Hosted full Web tests found this expected inventory update; no runtime defect or assertion skip.
