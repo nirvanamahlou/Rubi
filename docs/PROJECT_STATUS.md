@@ -2,6 +2,12 @@
 
 Contract confirmation now captures per-currency immutable obligations in the source transaction. Existing approved Accounting chart mappings generate independent drafts; no guessed accounts or automatic posting. Source guards cover amendment/cancellation/supersession and period closure; earned revenue releases the original deferred line instead of accruing a second receivable, including historical FX dimensions. Forms, bank behavior and operational data preserved. See [task evidence](tasks/SALES-CONTRACT-ACCOUNTING-1025.md). Isolated PostgreSQL/source regressions, affected checks and exact-head hosted gates required before authorized develop merge. No schema/migration/dependency or runtime rollout.
 
+## HR-PROFILE-ENTRY-1025 — PC-B
+
+Runtime verification extension: the outer client guard prevents the legacy server redirect from mounting. The existing IAM route matcher therefore resolves only employee-id routes missing tab to the exact existing summary decision; explicit denied tabs, denied summary, missing employee IDs and anonymous users remain rejected. HR and IAM compatibility scope is recorded in the same reservation; no grants or API scope change.
+
+Reproduced the empty local3100 employee profile: links omitted tab, while existing IAM route matching requires an explicit employee tab. HR entry links now target summary; legacy tab-less entry redirects to that same existing route and preserves record IDs. Explicit selected tabs and all IAM/API authorization remain unchanged. Targeted route, deny and employee-workflow regressions, scoped lint/types and exact-head CI gate authorized develop merge. Local-only rollout, no data writes, schema/migration/dependency or server changes. Reservations freeze after verification and release on verified merged PR.
+
 ## HR-LOCAL-YEAR-1025 — PC-B
 
 Local3100 rollout of merged HR parity exposed Intl Persian-year strings containing an era suffix, which produced NaN in leave forms. Extract only the year part with Latin digits in Asia/Tehran; regressions cover the observed date and the Tehran Nowruz midnight boundary. No API/schema/migration/dependency/permission changes or server rollout. Existing local data/documents remain. Targeted tests/lint/types and exact-head hosted gates precede authorized normal develop merge. Reservation freezes after final verification and releases only on verified merged PR.
