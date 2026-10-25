@@ -84,8 +84,8 @@ export function HrLeaveBalance({
   const [year, setYear] = useState(String(currentPersianYear()));
   const [selectedMonths, setMonths] = useState(months.map((_, i) => i + 1));
   const [duration, setDuration] = useState('16:20');
-  const [people, setPeople] = useState<Person[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [personnelRows, setPeople] = useState<Person[]>([]);
+  const [loadedPersonnel, setLoadedPersonnel] = useState('');
   const [refresh, setRefresh] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const [picker, setPicker] = useState(false);
@@ -98,7 +98,10 @@ export function HrLeaveBalance({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [report, setReport] = useState<LeaveReport | null>(null);
+  const [reportResult, setReport] = useState<{
+    key: string;
+    data: LeaveReport;
+  } | null>(null);
   const [transfer, setTransfer] = useState<Record<string, string>>(
     Object.fromEntries(transferFields.map(([field]) => [field, '00:00'])),
   );
@@ -111,10 +114,12 @@ export function HrLeaveBalance({
     store.data!.capabilities.write && store.data!.capabilities.approve;
   const canTransfer =
     canWrite && allowed('/hr?section=time&tab=leaveTransferRules');
+  const personnelKey = `${store.revision}:${refresh}`;
+  const loading = loadedPersonnel !== personnelKey;
+  const people = loading ? [] : personnelRows;
+  const report = reportResult?.key === personnelKey ? reportResult.data : null;
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setReport(null);
     generation.current++;
     hrRequest<{ items: Person[] }>('/leave/personnel')
       .then((result) => {
@@ -127,16 +132,17 @@ export function HrLeaveBalance({
       .catch((e: unknown) => {
         if (active) {
           setPeople([]);
+          setSelected([]);
           setError(e instanceof Error ? e.message : 'دریافت فهرست انجام نشد.');
         }
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (active) setLoadedPersonnel(personnelKey);
       });
     return () => {
       active = false;
     };
-  }, [refresh, store.revision]);
+  }, [personnelKey]);
   const invalidate = () => {
     generation.current++;
     setReport(null);
@@ -174,6 +180,7 @@ export function HrLeaveBalance({
       body: payload,
     });
     command.current = { payload: '', key: crypto.randomUUID() };
+    setSelected([]);
     invalidate();
     await store.mutated();
     setNotice('درخواست ثبت شد.');
@@ -407,7 +414,7 @@ export function HrLeaveBalance({
                         `/leave/report?${new URLSearchParams({ year, employeeIds: selected.join(',') })}`,
                       );
                       if (requestGeneration === generation.current)
-                        setReport(result);
+                        setReport({ key: personnelKey, data: result });
                     })
                   }
                 >
