@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { isFloatingContract } from '@nora/contracts';
 import type { TravelWorkflowStateV1, VoucherSettingsV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
@@ -44,10 +45,16 @@ async function createLeader(path: string, name: string, phone: string) {
 }
 
 export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
+  const floating =
+    intake.floatingContract ?? isFloatingContract(intake.snapshot);
   const [draft, setDraft] = useState<VoucherSettingsV1>(() => {
     const settings = defaultVoucherSettings(intake, {});
     const supplier = intake.workflow.sentSupplierFormSettings;
-    if (supplier?.brokerId && supplier.brokerId !== settings.brokerId) {
+    if (
+      !floating &&
+      supplier?.brokerId &&
+      supplier.brokerId !== settings.brokerId
+    ) {
       settings.brokerId = supplier.brokerId;
       settings.text.broker = supplier.text.broker;
       delete settings.leaderId;
@@ -258,7 +265,9 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
           }))}
           value={draft.brokerId || ''}
           disabled={
-            busy || Boolean(intake.workflow.sentSupplierFormSettings?.brokerId)
+            busy ||
+            (!floating &&
+              Boolean(intake.workflow.sentSupplierFormSettings?.brokerId))
           }
           onValueChange={(id) => {
             selectionRequest.current += 1;

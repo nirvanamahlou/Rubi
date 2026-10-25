@@ -2293,12 +2293,32 @@ export function canViewScreen(
       permissions.includes(screenPermission(id)) &&
       !permissions.includes(denyPermission(id))
     );
+  if (
+    (id === 'floating-purchases.hotels' ||
+      id === 'floating-purchases.flights') &&
+    permissions.includes(USER_ACCESS_ADMIN_PERMISSION)
+  )
+    return true;
+  if (id === 'floating-purchases.hotels' || id === 'floating-purchases.flights')
+    return (
+      permissions.some(
+        (p) =>
+          p === 'floating_purchases.write.own' ||
+          p === 'floating_purchases.read.all',
+      ) &&
+      hasAccessControl(permissions, id) &&
+      (!hasManagedAccess(permissions) ||
+        permissions.includes(screenPermission(id)))
+    );
   if (id === 'assistant.executive') return true;
   if (id === 'ticket-purchases.home') {
     const visible = (group: string) =>
       USER_ACCESS_SCREENS.some(
         (s) =>
-          s.id !== id && s.group === group && canViewScreen(permissions, s.id),
+          s.id !== id &&
+          !s.id.startsWith('floating-purchases.') &&
+          s.group === group &&
+          canViewScreen(permissions, s.id),
       );
     return (
       (permissions.includes('reservations.read') && visible('reservations')) ||
@@ -2410,6 +2430,25 @@ export function canViewRoute(
   permissions: readonly string[],
   href: string,
 ): boolean {
+  const floatingPath = href.split(/[?#]/)[0];
+  if (
+    floatingPath === '/ticket-purchases/floating-hotels' ||
+    floatingPath === '/ticket-purchases/floating-flights'
+  ) {
+    return (
+      permissions.some(
+        (p) =>
+          p === 'floating_purchases.write.own' ||
+          p === 'floating_purchases.read.all',
+      ) &&
+      canViewScreen(
+        permissions,
+        floatingPath.endsWith('hotels')
+          ? 'floating-purchases.hotels'
+          : 'floating-purchases.flights',
+      )
+    );
+  }
   // Preserve existing explicitly granted legacy route behavior without migrating accounts.
   if (
     href.split(/[?#]/)[0] === '/customer-affairs/call-center' &&

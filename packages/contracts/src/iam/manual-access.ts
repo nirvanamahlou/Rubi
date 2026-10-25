@@ -4,6 +4,8 @@ export * from './manual-access-prerequisites';
 export const MANUAL_ACCESS_VERSION = 'ui.manual.v3' as const;
 export const MANUAL_ACCESS_ROLE_PREFIX = 'manual-access-v3-' as const;
 export const MANUAL_NEW_PERMISSIONS = [
+  ['floating_purchases.write.own', 'ثبت خرید بلیط و هتل شناور قراردادهای خود'],
+  ['floating_purchases.read.all', 'مشاهده خریدهای شناور همه فروشندگان'],
   ['b2b.portal.passengers.read', 'مشاهده مسافران آژانس خود'],
   [
     'b2b.portal.passengers.update',
@@ -74,6 +76,7 @@ export function manualSectionForScreen(screen: {
 }
 
 export function manualSectionForPermission(code: string): string {
+  if (code.startsWith('floating_purchases.')) return 'ticket-purchases';
   if (code.startsWith('customer_affairs.call_center.')) return 'call-center';
   if (code.startsWith('finance.accounting.')) return 'accounting';
   if (code.startsWith('finance.ticket_pricing.')) return 'flight-pricing';

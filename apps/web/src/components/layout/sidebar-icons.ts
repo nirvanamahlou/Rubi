@@ -44,6 +44,8 @@ export const sidebarIcons: Record<
   '/ticket-management': Ticket,
   '/purchases': Package,
   '/ticket-purchases': Ticket,
+  '/ticket-purchases/floating-hotels': Building2,
+  '/ticket-purchases/floating-flights': Ticket,
   '/finance': Banknote,
   '/finance/requests': Inbox,
   '/finance/delivery': FileCheck2,

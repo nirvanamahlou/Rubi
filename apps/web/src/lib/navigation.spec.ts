@@ -30,6 +30,8 @@ const expectedRoutes = [
   '/finance/requests',
   '/finance/delivery',
   '/ticket-purchases',
+  '/ticket-purchases/floating-hotels',
+  '/ticket-purchases/floating-flights',
   '/marketing',
   '/organizations',
   '/human-resources',
@@ -56,6 +58,8 @@ const expectedTitles = [
   'کارتابل درخواست‌ها',
   'تحویل مدارک',
   'خرید و تأمین',
+  'خرید هتل شناور',
+  'خرید بلیط شناور',
   'مارکتینگ',
   'مشتریان B2B',
   'منابع انسانی',
@@ -115,6 +119,15 @@ describe('CRM navigation', () => {
         .find((group) => group.id === 'finance')
         ?.items.map((item) => item.href),
     ).toEqual(['/finance', '/finance/requests', '/finance/delivery']);
+    expect(
+      groupedNavigationItems
+        .find((group) => group.id === 'ticket-purchases')
+        ?.items.map((item) => item.href),
+    ).toEqual([
+      '/ticket-purchases',
+      '/ticket-purchases/floating-hotels',
+      '/ticket-purchases/floating-flights',
+    ]);
     expect(getNavigationItem('/finance/delivery')?.title).toBe('تحویل مدارک');
     expect(
       groupedNavigationItems.find((group) => group.id === 'finance')?.title,
@@ -140,7 +153,7 @@ describe('CRM navigation', () => {
   });
   it('contains the approved routes plus the separate finance inbox in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);
-    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(23);
+    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(25);
     expect(
       groupedNavigationItems
         .flatMap((group) => group.items)
@@ -149,9 +162,9 @@ describe('CRM navigation', () => {
   });
 
   it('uses distinct Persian titles for all navigation items', () => {
-    expect(navigationItems).toHaveLength(23);
+    expect(navigationItems).toHaveLength(25);
     expect(navigationItems.map((item) => item.title)).toEqual(expectedTitles);
-    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(23);
+    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(25);
   });
 
   it('resolves the Human Resources owner route', () => {

@@ -1,3 +1,4 @@
+import { resolveFloatingContract } from './floating-purchase-policy';
 import { refreshWorkflowExecution } from './workflow-current-execution';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
@@ -82,6 +83,11 @@ export class TravelWorkflowService {
         }
       : saved;
     return {
+      floatingContract: await resolveFloatingContract(
+        snapshot,
+        branchIds,
+        this.tickets,
+      ),
       ticketDocuments: (row.ticketDocuments ?? []).map((doc) => ({
         customerId: doc.customerId,
         number: doc.number,
@@ -245,6 +251,13 @@ export class TravelWorkflowService {
                 reservationFlightOutputKey(f.serviceClientKey, f.offerId),
               )
             : [],
+          command.action === 'ISSUE_VOUCHER' &&
+            (intake.floatingContract ??
+              (await resolveFloatingContract(
+                intake.snapshot,
+                actor.branchIds,
+                this.tickets,
+              ))),
         );
       } catch (error) {
         throw new BadRequestException(

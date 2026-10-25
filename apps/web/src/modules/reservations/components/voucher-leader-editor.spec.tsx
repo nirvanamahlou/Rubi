@@ -280,3 +280,25 @@ it('initializes voucher content without copying supplier-form settings while ret
   });
   expect(form.workflow.voucherSettings).toBeUndefined();
 });
+
+it('keeps the floating voucher broker independent from a previously sent operations form', () => {
+  const tree = VoucherLeaderEditor({
+    intake: {
+      ...intake,
+      floatingContract: true,
+      workflow: {
+        ...intake.workflow,
+        sentSupplierFormSettings: {
+          brokerId: 'broker-b',
+          text: { broker: 'B' },
+        } as never,
+      },
+    },
+    onDirty: vi.fn(),
+    onSaved: vi.fn(),
+  });
+  expect(harness.states[0]).toMatchObject({ brokerId: 'broker-a' });
+  expect(
+    elements(tree).find((node) => node.type === SearchCombobox)?.props.disabled,
+  ).toBe(false);
+});

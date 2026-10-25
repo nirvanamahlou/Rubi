@@ -1,4 +1,3 @@
-
 ## 2026-10-25 — FLIGHT-WEEKDAY-PURCHASE-1025 — PC-A
 
 Recurring company-capacity purchases group exact carrier/number/route/cabin/supplier/branch and Tehran weekday. One total atomically apportions per-offer payable revisions whose sum is exact; Sales uses the original pool denominator for actual consumed seats. Dates/full membership remain visible, old costs/history/payments stay protected, and final unsold loss remains separated from future residual capacity. API52 and Web26 related tests pass; full type/lint/build and exact-head CI including isolated PostgreSQL concurrency/rollback gate user-authorized develop merge. No schema/migration/dependency/operational rollout. See tasks/FLIGHT-WEEKDAY-PURCHASE-1025.md.
@@ -7493,3 +7492,7 @@ Removed the employee dialog explanatory paragraph and the numbered personal/acco
 ## LEGACY-CAPACITY-AMEND-1025 — PC-A
 
 Historical service capacity is also retained by the transactional amendment callback: declared adult+child counts select catalog legs and per-leg quantities even with zero personal passenger records. Existing ordinary amendment logic, CAS/snapshot and receipts remain. Regression covers an aggregate count change with a confirmed receipt; all exact-head gates precede the owner-authorized follow-up merge and server rollout. No migration or dependency changes.
+
+## 2026-10-25 — FLOATING-PURCHASES-1025 — PC-A
+
+Purchasing & Supply gains floating hotel and flight workspaces. Sellers record aggregate purchase costs only for contracts they created; a separate read-all permission lets Sales managers inspect all floating purchases within their branches without editing other sellers. Existing Reservations cost revisions, idempotency, owner/version CAS, supplier/currency references, FX capture, Finance coverage and audits remain authoritative. Any floating flight also classifies its hotel as floating. Floating voucher issuance skips supplier-operation confirmation and the old sent-form broker binding; selected output broker/settings, cancellation, financial release and document permissions remain. Two assignable native permissions complete only the two new screens. Catalogue-only migration inserts permissions without granting operational accounts. Focused tests/lint/Contracts build pass; exact-head CI includes an isolated PostgreSQL ownership/count/pagination proof. No merge or deployment requested. Handoff: docs/tasks/FLOATING-PURCHASES-1025.md.

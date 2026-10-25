@@ -1,4 +1,5 @@
 'use client';
+import { isFloatingContract } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
@@ -161,6 +162,9 @@ export function TravelWorkflowForm({
   }
   if (!intake) return <p role="status">{error || 'در حال دریافت اطلاعات…'}</p>;
   const state = intake.workflow;
+  const floating =
+    intake.floatingContract ?? isFloatingContract(intake.snapshot);
+  const operationsReady = floating || hasSentReservationForm(state);
   if (readOnly)
     return (
       <TravelDocument
@@ -297,7 +301,7 @@ export function TravelWorkflowForm({
       )}
       {(action === 'واچر' || action === 'Confirmation') && (
         <>
-          {!closed && hasSentReservationForm(state) && (
+          {!closed && operationsReady && (
             <section className="grid gap-2 rounded border border-border p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -326,7 +330,7 @@ export function TravelWorkflowForm({
               )}
             </section>
           )}
-          {(state.voucherIssued || hasSentReservationForm(state)) &&
+          {(state.voucherIssued || operationsReady) &&
             (state.voucherIssued || state.voucherSettings?.leaderId) &&
             !settingsDirty && (
               <TravelDocument
@@ -362,22 +366,20 @@ export function TravelWorkflowForm({
           }}
         />
       )}
-      {action === 'Confirmation' &&
-        !closed &&
-        hasSentReservationForm(state) && (
-          <VoucherLeaderEditor
-            key={intake.id}
-            intake={intake}
-            onDirty={() => setSettingsDirty(true)}
-            onSaved={(workflow) => {
-              setIntake({ ...intake, workflow });
-              setSettingsDirty(false);
-            }}
-          />
-        )}
+      {action === 'Confirmation' && !closed && operationsReady && (
+        <VoucherLeaderEditor
+          key={intake.id}
+          intake={intake}
+          onDirty={() => setSettingsDirty(true)}
+          onSaved={(workflow) => {
+            setIntake({ ...intake, workflow });
+            setSettingsDirty(false);
+          }}
+        />
+      )}
       {(action === 'واچر' || action === 'Confirmation') &&
         !closed &&
-        !hasSentReservationForm(state) && (
+        !operationsReady && (
           <p role="status">
             ابتدا فرم رزرواسیون را آماده و ارسال درخواست به کارگزار را ثبت کنید؛
             سپس صدور واچر فعال می‌شود.
@@ -485,13 +487,17 @@ export function TravelWorkflowForm({
                     settingsDirty ||
                     !state.voucherSettings?.brokerId ||
                     !state.voucherSettings?.leaderId ||
-                    !hasSentReservationForm(state) ||
-                    state.supplierStatus !== 'REQUESTED' ||
+                    !operationsReady ||
+                    (!floating && state.supplierStatus !== 'REQUESTED') ||
                     (!state.insuranceIssued && !acknowledge)
                   }
-                  onClick={() => void run('CONFIRM_SUPPLIER')}
+                  onClick={() =>
+                    void run(floating ? 'ISSUE_VOUCHER' : 'CONFIRM_SUPPLIER')
+                  }
                 >
-                  تأیید کارگزار و صدور واچر هتل برای فروش
+                  {floating
+                    ? 'صدور واچر'
+                    : 'تأیید کارگزار و صدور واچر هتل برای فروش'}
                 </Button>
                 <Button disabled={busy} onClick={() => void run('CANCEL')}>
                   ابطال درخواست با دلیل
@@ -510,19 +516,22 @@ export function TravelWorkflowForm({
                   settingsDirty ||
                   !state.voucherSettings?.brokerId ||
                   !state.voucherSettings?.leaderId ||
-                  !hasSentReservationForm(state) ||
-                  !['REQUESTED', 'CONFIRMED'].includes(state.supplierStatus) ||
+                  !operationsReady ||
+                  (!floating &&
+                    !['REQUESTED', 'CONFIRMED'].includes(
+                      state.supplierStatus,
+                    )) ||
                   (!state.insuranceIssued && !acknowledge)
                 }
                 onClick={() =>
                   void run(
-                    state.supplierStatus === 'REQUESTED'
+                    !floating && state.supplierStatus === 'REQUESTED'
                       ? 'CONFIRM_SUPPLIER'
                       : 'ISSUE_VOUCHER',
                   )
                 }
               >
-                تأیید کارگزار و صدور واچر
+                {floating ? 'صدور واچر' : 'تأیید کارگزار و صدور واچر'}
               </Button>
             )}
             {action === 'واچر' && (
