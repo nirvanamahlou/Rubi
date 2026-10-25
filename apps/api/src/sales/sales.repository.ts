@@ -1,3 +1,4 @@
+import { captureSalesContractAccounting } from '../finance/accounting/sales-contract-accounting.public';
 import { assertRevenueEditable } from '../finance/accounting/accounting-workflows.public';
 import { recalculateSalesSettlement } from './sales-financial-settlement';
 import {
@@ -939,6 +940,7 @@ export class SalesRepository {
           },
         });
         await recalculateSalesSettlement(tx, id, actor.userId, false);
+        await captureSalesContractAccounting(tx, id, actor.userId);
         return true;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -1084,6 +1086,8 @@ export class SalesRepository {
           },
         });
         await recalculateSalesSettlement(tx, id, actor.userId, false);
+        if (toStatus === 'SENT_TO_RESERVATIONS')
+          await captureSalesContractAccounting(tx, id, actor.userId, true);
         return true;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },

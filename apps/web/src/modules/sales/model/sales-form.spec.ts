@@ -24,6 +24,23 @@ import {
 } from './sales-form';
 
 describe('sales contract form payload', () => {
+  it('persists each flight and hotel calendar without converting ISO dates', () => {
+    const payload = salesPayload({
+      ...emptySalesForm,
+      serviceKinds: ['FLIGHT', 'HOTEL'],
+      tripType: 'ROUND_TRIP',
+      departureDate: '2026-10-01',
+      returnDate: '2026-10-07',
+      flightCalendarSystems: { OUTBOUND: 'gregorian', RETURN: 'persian' },
+      hotel: { ...emptySalesForm.hotel, calendarSystem: 'persian' },
+    });
+    const calendar = (key: string) =>
+      payload.services.find((service) => service.clientKey === key)?.metadata
+        ?.dateCalendarSystem;
+    expect(calendar('flight-outbound')).toBe('gregorian');
+    expect(calendar('flight-return')).toBe('persian');
+    expect(calendar('hotel')).toBe('persian');
+  });
   it('keeps only explicit current hotel guest accommodation and requires an age-compatible selection', () => {
     const state = {
       ...emptySalesForm,
