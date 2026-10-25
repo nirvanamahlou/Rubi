@@ -1245,6 +1245,12 @@ export class SalesRepository {
           partyId: payment.contract.customerId,
           reference: payment.paymentReference,
         });
+        await captureSalesContractAccounting(
+          tx,
+          payment.contractId,
+          event.reviewedByUserId ?? payment.createdByUserId,
+          true,
+        );
         return 'confirmed';
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },

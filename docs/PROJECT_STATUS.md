@@ -1,3 +1,7 @@
+## CONTRACT-FINANCE-APPROVAL-1025 — PC-A
+
+Contract accrual now requires a real approved receipt from the Finance inbox. The approval transaction captures both receipt and per-currency commercial obligation atomically; Sales confirmation alone cannot capture or post an obligation. Reverse-order approval is supported and partial/replayed receipts do not duplicate the obligation. Existing mapping/draft/independent posting and amendment guards remain. No form, schema, dependency, bank or operational-data change. See [current trigger](tasks/CONTRACT-FINANCE-APPROVAL-1025.md); supersedes PR1120 trigger timing. Exact-head gates precede authorized merge/local3100 rollout.
+
 ## SALES-CONTRACT-ACCOUNTING-1025 — PC-A
 
 Contract confirmation now captures per-currency immutable obligations in the source transaction. Existing approved Accounting chart mappings generate independent drafts; no guessed accounts or automatic posting. Source guards cover amendment/cancellation/supersession and period closure; earned revenue releases the original deferred line instead of accruing a second receivable, including historical FX dimensions. Forms, bank behavior and operational data preserved. See [task evidence](tasks/SALES-CONTRACT-ACCOUNTING-1025.md). Isolated PostgreSQL/source regressions, affected checks and exact-head hosted gates required before authorized develop merge. No schema/migration/dependency or runtime rollout.
