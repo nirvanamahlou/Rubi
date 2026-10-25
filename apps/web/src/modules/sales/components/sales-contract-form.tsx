@@ -147,6 +147,8 @@ import {
   salesOfferHasCapacity,
   salesDirections,
   salesTravelDate,
+  salesStandaloneDateServiceKeys,
+  salesStandaloneServiceDatesValid,
   withSalesHotelDates,
   withFirstPassengerCustomer,
   salesHotelValid,
@@ -833,6 +835,7 @@ export function SalesContractForm() {
         state.destinationId &&
         state.originId !== state.destinationId &&
         state.serviceKinds.length &&
+        salesStandaloneServiceDatesValid(state) &&
         passengerCounts.total > 0 &&
         !salesRoomPartyError(state) &&
         (!state.serviceKinds.includes('VISA') ||
@@ -1435,14 +1438,6 @@ export function SalesContractForm() {
             </div>
           </div>
         ) : null}
-        {step === 0 && state.legacyContract && (
-          <FormField label="تاریخ سفر" required>
-            <SalesDatePicker
-              value={state.departureDate}
-              onChange={(departureDate) => patchState({ departureDate })}
-            />
-          </FormField>
-        )}
         {step === 0 ? (
           <div className="mt-6 grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">
             <h2 className="text-sm font-bold">خدمات قرارداد</h2>
@@ -1798,6 +1793,28 @@ export function SalesContractForm() {
             ) : null}
           </section>
         ) : null}
+        {step === 0 && salesStandaloneDateServiceKeys(state).length > 0 && (
+          <section className="mt-4 grid gap-3 sm:grid-cols-2">
+            {salesStandaloneDateServiceKeys(state).map((key) => (
+              <div key={key} className="rounded-xl border p-3">
+                <h3 className="mb-2 text-sm font-bold">{detailLabel(key)}</h3>
+                <FormField label="تاریخ" required>
+                  <SalesDatePicker
+                    value={state.serviceDetails?.[key]?.date ?? ''}
+                    onChange={(date) =>
+                      patchState({
+                        serviceDetails: {
+                          ...state.serviceDetails,
+                          [key]: { ...state.serviceDetails?.[key], date },
+                        },
+                      })
+                    }
+                  />
+                </FormField>
+              </div>
+            ))}
+          </section>
+        )}
         {step === 0 &&
           state.serviceKinds.includes('FLIGHT') &&
           state.serviceKinds.includes('HOTEL') && (
@@ -2241,10 +2258,6 @@ export function SalesContractForm() {
             onAddInfant={() =>
               updatePassengerCount('infants', passengerCounts.infants + 1)
             }
-            onTravelDateChange={(departureDate) => {
-              patchState({ departureDate });
-              setPeopleDirty(true);
-            }}
           />
         ) : null}
         {step === 0 ? (

@@ -1368,3 +1368,14 @@ it('saves a legacy customer without creating a passenger or requiring date of bi
   expect(result.patch.passengers).toEqual([]);
   expect(passengerSlotKeys(legacyState)).toEqual([]);
 });
+
+it('can confirm identities before service dates, then rechecks ages against the selected service date', () => {
+  const withoutDate = { ...state, departureDate: '' };
+  expect(() => validateSalesPeopleDraft(withoutDate, filled())).not.toThrow();
+  expect(() =>
+    validateSalesPeopleDraft(
+      { ...withoutDate, serviceDetails: { OTHER: { date: '2099-10-01' } } },
+      filled(),
+    ),
+  ).toThrow('مرحله اول');
+});
