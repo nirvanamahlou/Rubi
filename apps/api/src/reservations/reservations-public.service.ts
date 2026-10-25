@@ -1,3 +1,4 @@
+import { resolveFloatingContract } from './floating-purchase-policy';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { Optional } from '@nestjs/common';
@@ -355,6 +356,11 @@ export class ReservationsPublicService {
         });
       }
     }
+    result.floatingContract = await resolveFloatingContract(
+      result.snapshot,
+      branchIds,
+      this.tickets,
+    );
     return result;
   }
 
@@ -363,6 +369,7 @@ export class ReservationsPublicService {
     branchIds: readonly string[],
     options: PurchaseQueryInput,
     flights?: PurchaseFlightFacts,
+    floatingScope?: { ownerUserId?: string },
   ) {
     const q = parsePurchaseQuery(options);
     const meta = {
@@ -385,10 +392,26 @@ export class ReservationsPublicService {
       .map((offer) => offer.id);
     const [summary] = await this.database.client.$queryRaw<
       PurchaseInboxSummary[]
-    >(purchaseSelectionSql(branchIds, q, flights, true, floatingOfferIds));
+    >(
+      purchaseSelectionSql(
+        branchIds,
+        q,
+        flights,
+        true,
+        floatingOfferIds,
+        floatingScope,
+      ),
+    );
     if (summary) meta.summary = summary;
     const selected = await this.database.client.$queryRaw<PurchaseServiceRow[]>(
-      purchaseSelectionSql(branchIds, q, flights, false, floatingOfferIds),
+      purchaseSelectionSql(
+        branchIds,
+        q,
+        flights,
+        false,
+        floatingOfferIds,
+        floatingScope,
+      ),
     );
     const services = selected.slice(0, 25);
     if (!services.length) return { data: [], meta };
@@ -396,6 +419,9 @@ export class ReservationsPublicService {
       where: {
         id: { in: [...new Set(services.map((r) => r.id))] },
         branchId: { in: [...branchIds] },
+        ...(floatingScope?.ownerUserId
+          ? { salesOwnerUserId: floatingScope.ownerUserId }
+          : {}),
       },
       include: intakeInclude,
       orderBy: [{ receivedAt: 'desc' }, { id: 'asc' }],

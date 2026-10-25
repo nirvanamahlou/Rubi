@@ -245,6 +245,9 @@ export interface ReservationTicketDocumentV1 {
   issuedAt: string;
 }
 export interface ReservationIntakeV1 {
+  /** Read-only server-derived sourcing classification; never accepted in workflow commands. */
+  floatingContract?: boolean;
+  salesOwnerUserId?: string | null;
   ticketDocuments?: readonly ReservationTicketDocumentV1[];
   contractEditVersion?: number;
   purchaseVersion?: number;

@@ -1,3 +1,4 @@
+import { FloatingPurchasesController } from './floating-purchases.controller';
 import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
 import { reservationOutputPassengers } from './reservation-passenger-output';
 import {
@@ -748,6 +749,7 @@ export class ReservationRequestsController {
     TicketRuntimeModule,
   ],
   controllers: [
+    FloatingPurchasesController,
     BrokerPurchaseHistoryController,
     ReservationHotelSavingsController,
     ReservationRequestsController,

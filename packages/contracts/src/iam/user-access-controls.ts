@@ -307,6 +307,20 @@ export const ADDITIVE_USER_ACCESS_SCREENS: readonly AdditiveUserAccessScreen[] =
       'integrations.section',
     ),
     {
+      id: 'floating-purchases.hotels',
+      group: 'procurement',
+      title: 'خرید هتل شناور',
+      route: '/ticket-purchases/floating-hotels',
+      inheritFrom: 'authenticated',
+    },
+    {
+      id: 'floating-purchases.flights',
+      group: 'procurement',
+      title: 'خرید بلیط شناور',
+      route: '/ticket-purchases/floating-flights',
+      inheritFrom: 'authenticated',
+    },
+    {
       id: 'ticket-purchases.home',
       group: 'procurement',
       title: 'خرید و تأمین خدمات سفر',

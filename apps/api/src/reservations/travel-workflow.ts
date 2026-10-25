@@ -28,6 +28,7 @@ export function transitionTravelWorkflow(
   command: TravelWorkflowCommandV1,
   passengerIds: readonly string[],
   flightKeys: readonly string[] = [],
+  floatingContract = false,
 ): TravelWorkflowStateV1 {
   if (
     !command ||
@@ -207,13 +208,14 @@ export function transitionTravelWorkflow(
       next.insuranceReference = command.insuranceReference.trim();
       break;
     case 'ISSUE_VOUCHER':
-      if (current.supplierStatus !== 'CONFIRMED')
+      if (!floatingContract && current.supplierStatus !== 'CONFIRMED')
         throw new Error('ابتدا تأیید کارگزار را ثبت کنید.');
       if (!current.voucherSettings?.brokerId)
         throw new Error(
           'پیش از صدور واچر، کارگزار را در تنظیمات واچر ثبت کنید.',
         );
       if (
+        !floatingContract &&
         current.sentSupplierFormSettings?.brokerId &&
         current.voucherSettings?.brokerId !==
           current.sentSupplierFormSettings.brokerId

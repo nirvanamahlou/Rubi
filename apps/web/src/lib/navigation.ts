@@ -50,6 +50,8 @@ const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/sales': Handshake,
   '/purchases': PackageSearch,
   '/ticket-purchases': PackageSearch,
+  '/ticket-purchases/floating-hotels': Building2,
+  '/ticket-purchases/floating-flights': Ticket,
   '/finance': CircleDollarSign,
   '/finance/requests': Inbox,
   '/finance/delivery': FileCheck2,
@@ -100,7 +102,11 @@ export const navigationGroups = [
     id: 'ticket-purchases',
     dotClass: 'bg-[#7dd3fc]',
     title: 'خرید و تأمین',
-    hrefs: ['/ticket-purchases'],
+    hrefs: [
+      '/ticket-purchases',
+      '/ticket-purchases/floating-hotels',
+      '/ticket-purchases/floating-flights',
+    ],
   },
   {
     id: 'finance',

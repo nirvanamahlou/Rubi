@@ -6,6 +6,13 @@ export function completeManualAccessPrerequisites(
   previous?: Pick<ManualAccessSelection, 'screenIds' | 'permissionCodes'>,
 ): ManualAccessSelection {
   const screens = new Set(selection.screenIds);
+  if (
+    selection.permissionCodes.includes('floating_purchases.write.own') ||
+    selection.permissionCodes.includes('floating_purchases.read.all')
+  ) {
+    screens.add('floating-purchases.hotels');
+    screens.add('floating-purchases.flights');
+  }
   const permissions = new Set(selection.permissionCodes);
   if (screens.has('customer-affairs.call-center')) {
     permissions.add('customer_affairs.call_center.read');
@@ -38,6 +45,16 @@ export function completeManualAccessPrerequisites(
   return {
     screenIds: [...screens],
     permissionCodes: [...permissions],
-    allowedControlIds: [...selection.allowedControlIds],
+    allowedControlIds: [
+      ...new Set([
+        ...selection.allowedControlIds,
+        ...[...screens].filter(
+          (id) =>
+            id.startsWith('floating-purchases.') &&
+            (permissions.has('floating_purchases.write.own') ||
+              permissions.has('floating_purchases.read.all')),
+        ),
+      ]),
+    ],
   };
 }

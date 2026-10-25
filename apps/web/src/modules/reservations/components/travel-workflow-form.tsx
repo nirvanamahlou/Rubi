@@ -1,4 +1,5 @@
 'use client';
+import { isFloatingContract } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
@@ -491,7 +492,11 @@ export function TravelWorkflowForm({
                   }
                   onClick={() => void run('CONFIRM_SUPPLIER')}
                 >
-                  تأیید کارگزار و صدور واچر هتل برای فروش
+                  {(intake.floatingContract ??
+                  isFloatingContract(intake.snapshot))
+                    ? 'صدور واچر'
+                    : 'تأیید کارگزار و صدور واچر'}{' '}
+                  هتل برای فروش
                 </Button>
                 <Button disabled={busy} onClick={() => void run('CANCEL')}>
                   ابطال درخواست با دلیل
@@ -510,13 +515,26 @@ export function TravelWorkflowForm({
                   settingsDirty ||
                   !state.voucherSettings?.brokerId ||
                   !state.voucherSettings?.leaderId ||
-                  !hasSentReservationForm(state) ||
-                  !['REQUESTED', 'CONFIRMED'].includes(state.supplierStatus) ||
+                  (!(
+                    intake.floatingContract ??
+                    isFloatingContract(intake.snapshot)
+                  ) &&
+                    !hasSentReservationForm(state)) ||
+                  (!(
+                    intake.floatingContract ??
+                    isFloatingContract(intake.snapshot)
+                  ) &&
+                    !['REQUESTED', 'CONFIRMED'].includes(
+                      state.supplierStatus,
+                    )) ||
                   (!state.insuranceIssued && !acknowledge)
                 }
                 onClick={() =>
                   void run(
-                    state.supplierStatus === 'REQUESTED'
+                    !(
+                      intake.floatingContract ??
+                      isFloatingContract(intake.snapshot)
+                    ) && state.supplierStatus === 'REQUESTED'
                       ? 'CONFIRM_SUPPLIER'
                       : 'ISSUE_VOUCHER',
                   )

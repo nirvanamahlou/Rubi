@@ -146,6 +146,16 @@ export const navigationMessages = [
     href: '/ticket-purchases',
     description: 'خرید هتل، پرواز، ترانسفر و بیمه قراردادهای رزرواسیون',
   },
+  {
+    title: 'خرید هتل شناور',
+    href: '/ticket-purchases/floating-hotels',
+    description: 'خرید هتل قراردادهای شناور',
+  },
+  {
+    title: 'خرید بلیط شناور',
+    href: '/ticket-purchases/floating-flights',
+    description: 'خرید بلیط قراردادهای شناور',
+  },
   { title: 'مارکتینگ', href: '/marketing', description: 'کمپین‌ها و مخاطبان' },
   {
     title: 'مشتریان B2B',

@@ -1,3 +1,5 @@
+import { resolveFloatingContract } from './floating-purchase-policy';
+import { canWriteOwnFloatingPurchase, canViewRoute } from '@nora/contracts';
 import { reservedCustomerRefunds } from '../finance/operations/receipt-refund-reservations.public';
 import {
   customerPurchaseSettlement,
@@ -551,10 +553,17 @@ export class ReservationServicePurchaseService {
     input: ReservationServicePurchaseInputV1,
     actor: AuthenticatedActor,
     key?: string,
+    floatingEntry = false,
   ) {
     if (
-      !actor.permissions.includes('reservations.read') ||
-      !actor.permissions.includes('reservations.hotel_purchase.write')
+      floatingEntry &&
+      !actor.permissions.includes('floating_purchases.write.own')
+    )
+      throw new ForbiddenException();
+    if (
+      !floatingEntry &&
+      (!actor.permissions.includes('reservations.read') ||
+        !actor.permissions.includes('reservations.hotel_purchase.write'))
     )
       throw new ForbiddenException('مجوز ثبت خرید خدمات وجود ندارد.');
     if (!UUID.test(intakeId) || !key?.trim() || key.length > 160)
@@ -574,6 +583,29 @@ export class ReservationServicePurchaseService {
     if (!intake || !actor.branchIds.includes(intake.branchId))
       throw new NotFoundException('درخواست رزرواسیون در دسترس نیست.');
     const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
+    if (floatingEntry) {
+      const route =
+        input.serviceClientKey === snapshot.hotelSelection?.serviceClientKey
+          ? '/ticket-purchases/floating-hotels'
+          : '/ticket-purchases/floating-flights';
+      if (
+        !canWriteOwnFloatingPurchase(
+          actor.permissions,
+          actor.userId,
+          intake.salesOwnerUserId,
+        ) ||
+        !canViewRoute(actor.permissions, route)
+      )
+        throw new ForbiddenException();
+      if (
+        !(await resolveFloatingContract(
+          snapshot,
+          actor.branchIds,
+          this.tickets,
+        ))
+      )
+        throw new ForbiddenException();
+    }
     const service = purchasableReservationService(
       snapshot,
       input.serviceClientKey,
@@ -582,6 +614,8 @@ export class ReservationServicePurchaseService {
       throw new BadRequestException(
         'خدمت انتخاب‌شده متعلق به این قرارداد نیست.',
       );
+    if (floatingEntry && !['HOTEL', 'FLIGHT'].includes(service.kind))
+      throw new ForbiddenException();
     if (service.kind === 'FLIGHT') {
       const ticket = snapshot.ticketSelections?.find(
         (item) => item.serviceClientKey === service.clientKey,
@@ -605,7 +639,7 @@ export class ReservationServicePurchaseService {
       this.directory.currencyReference(input.currencyCode),
     ]);
     const hotelPricing =
-      service.kind === 'HOTEL'
+      service.kind === 'HOTEL' && !floatingEntry
         ? hotelPassengerPurchase(
             snapshot,
             service.clientKey,
@@ -686,6 +720,7 @@ export class ReservationServicePurchaseService {
           where: {
             id: intakeId,
             branchId: { in: actor.branchIds },
+            ...(floatingEntry ? { salesOwnerUserId: actor.userId } : {}),
             purchaseVersion: input.expectedVersion,
           },
           data: { purchaseVersion: { increment: 1 } },
@@ -719,6 +754,24 @@ export class ReservationServicePurchaseService {
             fingerprint,
           },
         });
+        if (floatingEntry)
+          await tx.auditEvent.create({
+            data: {
+              actorUserId: actor.userId,
+              action: 'floating_purchases.record',
+              entityType: 'ReservationServicePurchase',
+              entityId: row.id,
+              outcome: 'SUCCESS',
+              metadata: {
+                intakeId,
+                contractId: intake.contractId,
+                serviceClientKey: service.clientKey,
+                amount: input.amount,
+                currencyCode: input.currencyCode,
+                version: row.version,
+              },
+            },
+          });
         await this.purchaseFx?.capture(tx, {
           reservationPurchaseId: row.id,
           branchId: intake.branchId,

@@ -633,3 +633,10 @@ Owner explicitly disables blocking hotel room capacity and guest-age/composition
 ## 2026-10-24 — Contract owner self-service
 
 Owner authorizes visible Sales contract-area users to export, amend and record additional payments for their own contracts in their allowed branches, without separate export/update/payment grants. Existing explicit screen denies, broader native permissions, contract state/CAS/idempotency and payment validation stay authoritative. This grants no receipt approval, financial release, payer transfer or access to other owners' contracts. The old flight/room party equality error follows the already-approved temporary hotel-capacity policy. Develop merge and production rollout explicitly authorized.
+
+
+## FLOATING-PURCHASES-1025 — seller sourcing and operational independence
+
+2026-10-25: Owner explicitly delegates purchase-cost entry for floating flights and their hotel to the creator of the Sales contract, with separate read-all scope for Sales managers. Purchasing & Supply hosts two limited screens; the existing Reservations cost producer retains append-only cost ownership, Finance coverage/FX/payment controls and audits. Any floating flight makes the hotel's purchase floating; ordinary capacity contracts are excluded. Intake salesOwnerUserId and branch are checked on both read and write. Unknown legacy ownership is never guessed.
+
+Owner clarified document independence means removing supplier-operation confirmation and the previously sent operations form broker binding as prerequisites for floating-contract voucher issuance, without changing financial delivery release, document permissions, cancellation, immutable revisions or required output settings. Normal contracts retain supplier-confirmation requirements. No global Sales, Reservations or Procurement permissions are granted by this feature. This supersedes only the operational prerequisite for this bounded floating workflow, not module ownership.

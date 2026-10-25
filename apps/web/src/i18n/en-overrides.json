@@ -4073,5 +4073,17 @@
   "ساختار قرارداد قدیمی معتبر نیست.": "The legacy contract structure is invalid.",
   "رسید پرداخت (اختیاری)": "Payment receipt (optional)",
   "قرارداد ثبت شد؛ رسیدهای پرداخت را بررسی کنید.": "The contract was saved; check the payment receipts.",
-  "ثبت مدرک پرداخت ناموفق بود.": "The payment receipt could not be saved."
+  "ثبت مدرک پرداخت ناموفق بود.": "The payment receipt could not be saved.",
+  "بیشتر": "More",
+  "ثبت خرید بلیط و هتل شناور قراردادهای خود": "Record floating flight and hotel purchases for own contracts",
+  "ثبت قیمت خرید قراردادهای شناور": "Record purchase costs for floating contracts",
+  "خرید بلیط شناور": "Floating flight purchases",
+  "خرید بلیط قراردادهای شناور": "Flight purchases for floating contracts",
+  "خرید هتل شناور": "Floating hotel purchases",
+  "خرید هتل قراردادهای شناور": "Hotel purchases for floating contracts",
+  "مبلغ کل خرید": "Total purchase cost",
+  "مشاهده خریدهای شناور همه فروشندگان": "View floating purchases for all salespeople",
+  "موردی یافت نشد.": "No results found.",
+  "نرخ خرید به ریال": "Purchase exchange rate to IRR",
+  "نوع خرید شناور معتبر نیست.": "The floating purchase type is invalid."
 }

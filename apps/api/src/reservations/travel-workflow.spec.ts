@@ -371,3 +371,41 @@ it('rejects sending without a selected broker and issuing without its leader', (
     ),
   ).toThrow('کارگزار فرم');
 });
+
+it('issues floating vouchers without supplier operation confirmation while retaining settings, cancellation and acknowledgement', () => {
+  const state = {
+    ...initialTravelWorkflow(),
+    voucherSettings: { brokerId: 'broker', leaderId: 'leader' } as never,
+  };
+  const issue = command(state, 'ISSUE_VOUCHER', {
+    acknowledgeMissingInsurance: true,
+  });
+  expect(transition(state, issue, [], [], true).voucherIssued).toBe(true);
+  expect(() => transition(state, issue, [], [], false)).toThrow();
+  expect(() =>
+    transition({ ...state, voucherSettings: null }, issue, [], [], true),
+  ).toThrow();
+  expect(() =>
+    transition({ ...state, supplierStatus: 'CANCELLED' }, issue, [], [], true),
+  ).toThrow();
+  expect(() =>
+    transition(state, command(state, 'ISSUE_VOUCHER'), [], [], true),
+  ).toThrow();
+});
+
+it('does not bind floating voucher issuance to the broker of an earlier operations form', () => {
+  const state = {
+    ...initialTravelWorkflow(),
+    supplierStatus: 'CONFIRMED' as const,
+    sentSupplierFormSettings: { brokerId: 'old-broker' } as never,
+    voucherSettings: {
+      brokerId: 'purchase-broker',
+      leaderId: 'leader',
+    } as never,
+  };
+  const issue = command(state, 'ISSUE_VOUCHER', {
+    acknowledgeMissingInsurance: true,
+  });
+  expect(transition(state, issue, [], [], true).voucherIssued).toBe(true);
+  expect(() => transition(state, issue, [], [], false)).toThrow();
+});

@@ -228,6 +228,11 @@ jobs:
           pnpm --filter @nora/database build
           pnpm --filter @nora/api exec vitest run src/marketing/marketing-records.postgres.spec.ts
 
+      - name: Prove floating purchase ownership and inventory scope
+        env:
+          NORA_RUN_FLOATING_PURCHASE_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run src/reservations/floating-purchase-query.postgres.spec.ts --maxWorkers=1
+
       - name: Prove financial source, refund and petty-cash atomicity
         env:
           NORA_RUN_FINANCIAL_EVENT_POSTGRES_TESTS: '1'
