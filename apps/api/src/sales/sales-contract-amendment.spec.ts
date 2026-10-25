@@ -281,3 +281,62 @@ describe('canonical Sales amendment', () => {
     expect(repo.updateDraft).not.toHaveBeenCalled();
   });
 });
+
+it('keeps aggregate legacy catalog legs and adult/child capacity in the transactional amendment', async () => {
+  const { row, service, repo, tickets } = setup();
+  const party = (adults: number) => ({
+    direction: 'OUTBOUND',
+    legacyServicePartiesV2: JSON.stringify({
+      'flight-outbound': { adults, children: 1, infants: 1 },
+    }),
+  });
+  const flightService = {
+    clientKey: 'flight-outbound',
+    kind: 'FLIGHT' as const,
+    titleSnapshot: 'Historical flight',
+    status: 'SELECTED' as const,
+    metadata: party(2),
+  };
+  const ticket = {
+    serviceClientKey: 'flight-outbound',
+    direction: 'OUTBOUND' as const,
+    offerId: '10000000-0000-4000-8000-000000000005',
+    originId: input.originId,
+    destinationId: input.destinationId,
+    departureAt: '2099-01-01T06:00:00Z',
+    arrivalAt: '2099-01-01T08:00:00Z',
+    carrierNameSnapshot: 'Synthetic',
+    serviceNumberSnapshot: 'TEST1',
+    cabinClassCode: 'ECONOMY',
+  };
+  Object.assign(row, {
+    passengers: [],
+    services: [{ ...flightService, id: 'service' }],
+    ticketSelections: [
+      {
+        ...ticket,
+        serviceId: 'service',
+        departureAt: new Date(ticket.departureAt),
+        arrivalAt: new Date(ticket.arrivalAt),
+      },
+    ],
+  });
+  const next = {
+    ...input,
+    passengers: [],
+    passengerCategories: {},
+    services: [{ ...flightService, metadata: party(3) }],
+    ticketSelections: [ticket],
+  };
+  await service.update(id, next, actor, undefined, {});
+  const options = repo.updateDraft.mock.calls[0]![5] as {
+    snapshot: { passengerAssignments: unknown[] };
+    reserve: (tx: unknown) => Promise<void>;
+  };
+  await options.reserve({});
+  expect(tickets.amend).toHaveBeenCalledWith({}, [ticket], 'branch', id, 4, {
+    'flight-outbound': 4,
+  });
+  expect(options.snapshot.passengerAssignments).toEqual([]);
+  expect(row.payments[0]!.status).toBe('FINANCE_CONFIRMED');
+});

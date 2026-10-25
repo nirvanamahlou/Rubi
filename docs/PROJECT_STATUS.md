@@ -1,3 +1,7 @@
+## LEGACY-CAPACITY-AMEND-1025 — PC-A
+
+Historical service capacity is also retained by the transactional amendment callback: declared adult+child counts select catalog legs and per-leg quantities even with zero personal passenger records. Existing ordinary amendment logic, CAS/snapshot and receipts remain. Regression covers an aggregate count change with a confirmed receipt; all exact-head gates precede the owner-authorized follow-up merge and server rollout. No migration or dependency changes.
+
 ## LEGACY-CONTRACT-SERVICES-1025 — PC-A
 
 Legacy Contract retains service/date/age-count selection and per-service negotiated prices while excluding personal passenger entry. Validated additive V2 aggregate metadata preserves real ticket/hotel selections and flows to reservation snapshots/output; confirmation reserves adult+child seats per catalog leg without invented identities. Existing V1 data and ordinary validations remain. Contract output replaces empty personal tables with service age counts; list/Excel expose an additive aggregate count fallback. Web Sales612 tests and API Sales261 tests pass. Shared/targeted regressions, affected types/lint/build and all exact-head hosted gates precede owner-authorized develop merge and encrypted-backup server rollout. No schema/migration/dependency change.
