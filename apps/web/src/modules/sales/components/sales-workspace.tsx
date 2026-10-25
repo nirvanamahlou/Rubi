@@ -109,6 +109,73 @@ export function ContractListNumber({
   );
 }
 
+export function ContractListTravelDates({
+  contract,
+}: {
+  contract: SalesContractSummary;
+}) {
+  return (
+    <>
+      {(['outbound', 'returning'] as const).map((direction) => {
+        const value = contract.travelDates?.[direction];
+        return (
+          <td key={direction} className="px-4 py-3 whitespace-nowrap">
+            <bdi dir="ltr">
+              {value
+                ? new Date(`${value.date}T00:00:00Z`).toLocaleDateString(
+                    value.calendar === 'gregorian' ? 'en-GB' : 'fa-IR',
+                    { timeZone: 'UTC' },
+                  )
+                : '—'}
+            </bdi>
+          </td>
+        );
+      })}
+    </>
+  );
+}
+
+export function ContractListPassengers({
+  contract,
+}: {
+  contract: SalesContractSummary;
+}) {
+  const counts = contract.passengerComposition;
+  const composition = counts
+    ? [
+        [counts.adults, 'بزرگسال'],
+        [counts.children2To6, 'کودک ۲ تا ۶ سال'],
+        [counts.children6To12, 'کودک ۶ تا ۱۲ سال'],
+        [counts.infants, 'نوزاد'],
+        [counts.childrenUnknownAge, 'کودک (سن ثبت نشده)'],
+      ]
+        .filter(([count]) => Number(count) > 0)
+        .map(
+          ([count, label]) =>
+            `${Number(count).toLocaleString('fa-IR')} ${label}`,
+        )
+        .join('، ')
+    : '';
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 font-semibold text-foreground">
+        <UsersRound className="size-4 text-primary" />
+        <p>
+          {(
+            contract.passengerCount ?? contract.passengerNames.length
+          ).toLocaleString('fa-IR')}{' '}
+          مسافر
+        </p>
+      </div>
+      {composition ? (
+        <p className="mt-1 min-w-48 max-w-64 text-xs leading-5 text-muted-foreground">
+          {composition}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function hasContractDateFilter(query: SalesContractListQuery): boolean {
   return Boolean(
     query.createdFrom || query.createdTo || query.travelFrom || query.travelTo,
@@ -412,7 +479,7 @@ export function SalesWorkspace() {
       {contracts.length && !loading ? (
         <Card className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-md shadow-primary/[0.035]">
           <ContractTableScroll>
-            <table className="w-full min-w-[88rem] text-sm">
+            <table className="w-full min-w-[104rem] text-sm">
               <caption className="sr-only">
                 فهرست قراردادهای فروش؛ عملیات هر قرارداد در ستون آخر قرار دارد.
               </caption>
@@ -425,6 +492,8 @@ export function SalesWorkspace() {
                     'شماره تلفن مشتری',
                     'مقصد',
                     'تاریخ بستن قرارداد',
+                    'تاریخ رفت',
+                    'تاریخ برگشت',
                     'مسافران و خدمات',
                     'وضعیت',
                     'تسویه',
@@ -461,17 +530,9 @@ export function SalesWorkspace() {
                     </td>
                     <td className="px-4 py-3">{contract.sellerName ?? '—'}</td>
                     <ContractListContactRouteDate contract={contract} />
+                    <ContractListTravelDates contract={contract} />
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5 font-semibold text-foreground">
-                        <UsersRound className="size-4 text-primary" />
-                        <p>
-                          {(
-                            contract.passengerCount ??
-                            contract.passengerNames.length
-                          ).toLocaleString('fa-IR')}{' '}
-                          مسافر
-                        </p>
-                      </div>
+                      <ContractListPassengers contract={contract} />
                       <p className="mt-1 max-w-52 text-xs leading-5 text-muted-foreground">
                         {contract.services
                           .map(
