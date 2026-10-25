@@ -156,6 +156,7 @@ describe('Reservations passenger and document consumers', () => {
     expect(r.canEdit).toBe(true);
     expect(r.canEditIdentity).toBe(false);
     expect(r.data[0]).toEqual({
+      insurancePolicyNumber: null,
       id: s.pid,
       firstName: 'Actual',
       lastName: 'Passenger',
