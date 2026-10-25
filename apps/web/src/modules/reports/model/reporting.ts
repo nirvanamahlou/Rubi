@@ -311,20 +311,6 @@ export const reportCatalog: readonly ReportDefinition[] = [
     drillDown: 'Ticket و Timeline SLA مجاز',
   }),
   report({
-    code: 'hr_performance',
-    title: 'کارکرد، مرخصی و اضافه‌کاری کارکنان هر واحد چگونه است؟',
-    category: 'منابع انسانی',
-    description:
-      'کارکرد، حضور، مرخصی، اضافه‌کاری و نتایج ارزیابی کارکنان، بدون نمایش اطلاعات حقوقی.',
-    grain: 'Employee Grain',
-    permission: 'reporting.hr.read',
-    approvedView: 'reporting_employee_performance_facts_v1',
-    dimensions: ['کارمند', 'واحد', 'سمت', 'شعبه'],
-    measures: ['روز کارکرد', 'مرخصی', 'اضافه‌کاری', 'امتیاز ارزیابی'],
-    filters: [...commonFilters, 'کارمند', 'واحد', 'سمت'],
-    drillDown: 'رکوردهای HR مجاز و غیرحقوقی',
-  }),
-  report({
     code: 'tickets_manifest',
     title: 'کدام پروازها و مسیرها بیشترین صدور و ظرفیت مصرف‌شده را دارند؟',
     category: 'مدیریت بلیت‌ها',
@@ -586,25 +572,6 @@ export const reportCatalog: readonly ReportDefinition[] = [
     drillDown: 'سند، نسخه جاری و آخرین کار پردازشی مجاز',
   }),
   report({
-    code: 'hr_record_expiry',
-    title: 'کدام سوابق کارکنان به‌زودی منقضی می‌شوند یا نیازمند تکمیل هستند؟',
-    category: 'منابع انسانی',
-    description:
-      'سوابق فعال کارکنان با موعد انقضا، وضعیت تکمیل و اقدام لازم به تفکیک واحد، سمت و شعبه.',
-    grain: 'HR Record Grain',
-    permission: 'reporting.hr.read',
-    approvedView: 'reporting_hr_record_expiry_facts_v1',
-    dimensions: ['نوع سابقه', 'کارمند', 'واحد', 'سمت', 'شعبه'],
-    measures: [
-      'تعداد در آستانه انقضا',
-      'تعداد منقضی',
-      'روز تا انقضا',
-      'تعداد ناقص',
-    ],
-    filters: [...commonFilters, 'نوع سابقه', 'کارمند', 'واحد', 'سمت'],
-    drillDown: 'رکورد منابع انسانی و سند مرتبط در محدوده مجاز',
-  }),
-  report({
     code: 'workbench_due_actions',
     title: 'کدام کارها و پیگیری‌های میزکار سررسید شده یا عقب افتاده‌اند؟',
     category: 'گزارش‌های مدیریتی تجمیعی',
@@ -822,7 +789,6 @@ export const reportPriorityGroups: readonly ReportPriorityGroup[] = [
       'customer_satisfaction',
       'customer_consent_coverage',
       'document_compliance',
-      'hr_record_expiry',
       'hotel_rate_comparison',
       'manifest_finance_exclusions',
       'customer_portfolio_growth',
@@ -833,7 +799,7 @@ export const reportPriorityGroups: readonly ReportPriorityGroup[] = [
     title: 'اولویت سوم تحلیلی و حاکمیتی',
     description:
       'گزارش‌های دوره‌ای برای تحلیل بازاریابی، منابع انسانی و نظارت بر خروجی‌ها.',
-    reportCodes: ['marketing_performance', 'hr_performance', 'export_audit'],
+    reportCodes: ['marketing_performance', 'export_audit'],
   },
 ];
 
