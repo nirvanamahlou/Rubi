@@ -48,7 +48,7 @@ const sectionLabels: Partial<Record<HrSectionId, readonly string[]>> = {
   organization: ['چارت سازمانی', 'شعبه‌ها', 'واحدها', 'عنوان شغلی'],
   requests: ['کارتابل', 'درخواست‌ها', 'تأییدها'],
   surveys: ['نظرسنجی‌های میزکار', 'پیشنهادها'],
-  reports: ['گزارش کارکنان', 'گزارش بخش‌ها', 'تاریخچه تغییرات'],
+  reports: ['گزارش‌های حضور و غیاب', 'گزارش کارکنان', 'Audit اختصاصی'],
 };
 
 export function HrHub({ data }: { data: HrBootstrapDto }) {
