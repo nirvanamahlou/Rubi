@@ -1,4 +1,6 @@
 {
+  "ویرایش خرید گروهی قبلی": "Edit existing grouped purchase",
+  "این خرید قبلاً گروهی ثبت شده است؛ ویرایش، همهٔ تاریخ‌های نمایش‌داده‌شده را تغییر می‌دهد.": "This purchase was previously recorded as a group; editing it updates all displayed departure dates.",
   "درخواست تازه باید منتظر اقدام کارشناس باشد.": "A new request must be awaiting agent action.",
   "وصل شده به:": "Connected to:",
   "در حال بررسی امنیتی است.": "is undergoing a security scan.",
@@ -4380,5 +4382,9 @@
   "صفحه‌بندی تماس‌های بدون نتیجه": "Calls without outcome pagination",
   "کارشناس انتخاب‌شده خارج از محدوده مجاز ارجاع درخواست است.": "The selected specialist is outside the permitted request assignment scope.",
   "مشغول": "Busy",
-  "نتیجه ثبت‌نشده": "Outcome not recorded"
+  "نتیجه ثبت‌نشده": "Outcome not recorded",
+  "انتخاب کارکنان": "Select employees",
+  "پرسنلی یافت نشد.": "No employees found.",
+  "حذف از انتخاب:": "Remove from selection:",
+  "کارکنی انتخاب نشده است.": "No employees selected."
 }

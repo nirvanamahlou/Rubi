@@ -195,7 +195,7 @@ it('exposes the five observed leave views and separates monthly grants from inde
   ])
     expect(grant).toContain(title);
   expect(grant).toContain('value="16:20"');
-  expect(grant).toContain('value="all" selected=""');
+  expect(grant.match(/checked=""/g)).toHaveLength(13);
   expect(grant).toContain('فرم مانده مرخصی');
   expect(grant).not.toContain('نوع مرخصی');
   const transfer = renderToStaticMarkup(
