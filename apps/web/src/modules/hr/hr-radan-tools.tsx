@@ -9,11 +9,14 @@ import { HrButton, HrExportButton, HrTable } from './hr-controls';
 import { useHrReferenceData } from './hr-reference-data';
 import ui from './hr-unified.module.css';
 
-export const currentPersianYear = () =>
+export const currentPersianYear = (date = new Date()) =>
   Number(
-    new Intl.DateTimeFormat('en-u-ca-persian', { year: 'numeric' }).format(
-      new Date(),
-    ),
+    new Intl.DateTimeFormat('en-u-ca-persian-nu-latn', {
+      year: 'numeric',
+      timeZone: 'Asia/Tehran',
+    })
+      .formatToParts(date)
+      .find((part) => part.type === 'year')?.value,
   );
 export const minuteText = (value: number) =>
   `${value < 0 ? '-' : ''}${Math.floor(Math.abs(value) / 60)}:${String(Math.abs(value) % 60).padStart(2, '0')}`;

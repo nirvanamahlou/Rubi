@@ -11,20 +11,27 @@ export function OwnerSelect({
   value,
   disabled,
   onChange,
+  required = false,
 }: {
   operators: Operator[];
   value: string;
   disabled?: boolean;
   onChange?: (value: string) => void;
+  required?: boolean;
 }) {
   const language = useDisplayLanguage();
   const t = useUiTranslation();
   const choices = [
-    { value: '', title: t('بدون مسئول') },
+    { value: '', title: t(required ? 'انتخاب کارشناس مسئول' : 'بدون مسئول') },
     ...(value && !operators.some((user) => user.id === value)
       ? [{ value, title: t('مسئول قبلی؛ برای ارجاع جدید انتخاب کنید') }]
       : []),
-    ...operators.map((user) => ({ value: user.id, title: user.displayName })),
+    ...operators.map((user) => ({
+      value: user.id,
+      title: user.showPosition
+        ? `${user.displayName} — ${user.position || t('سمت ثبت نشده')}`
+        : user.displayName,
+    })),
   ];
   return (
     <div

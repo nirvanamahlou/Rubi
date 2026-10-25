@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { restoreContractDraft } from '../model/restore-contract-draft';
 import { useAccessActor } from '@/modules/iam/access-context';
+import { contractDraftScope } from '../model/contract-draft-scope';
 import { documentsApi } from '@/modules/documents/api/client';
 import { createdPaymentIds } from '../model/creation-payment-receipts';
 import {
@@ -224,9 +225,14 @@ function freshSalesDraft(): SalesFormState {
 export function SalesContractForm() {
   const router = useRouter();
   const actor = useAccessActor();
-  const draftStorageKey = actor
-    ? `nora.sales.contract.draft.v2:${actor.userId}:${actor.sessionId}`
-    : null;
+  const [draftScope, setDraftScope] = useState(() =>
+    contractDraftScope(null, actor),
+  );
+  if (draftScope?.userId !== actor?.userId) {
+    setDraftScope(contractDraftScope(draftScope, actor));
+  }
+  const draftStorageKey =
+    actor && draftScope?.userId === actor.userId ? draftScope.storageKey : null;
   const [restoredDraftKey, setRestoredDraftKey] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [flightRange, setFlightRange] = useState<FlightDateRange>({
@@ -328,6 +334,7 @@ export function SalesContractForm() {
     state.destinationId &&
     state.originId !== state.destinationId &&
     state.serviceKinds.includes('FLIGHT') &&
+    salesDirections(state, 'FLIGHT').includes('OUTBOUND') &&
     !state.contractFlights?.OUTBOUND &&
     flightDatesReady,
   );
@@ -1102,6 +1109,7 @@ export function SalesContractForm() {
         {flightDirections.includes('RETURN') &&
         salesFlightSeats(state, 'RETURN') > 0 ? (
           <section className="grid gap-3 min-w-0">
+            <h3 className="font-bold">بلیط برگشت</h3>
             {!salesReturnRequiresInventory(state) && (
               <ContractFlightEditor
                 flightDate={selectedReturnDay}
@@ -1699,6 +1707,11 @@ export function SalesContractForm() {
             className="mt-5 border-t border-border pt-4"
           >
             <FlightTripDates
+              primaryDirection={
+                salesDirections(state, 'FLIGHT').includes('OUTBOUND')
+                  ? 'OUTBOUND'
+                  : 'RETURN'
+              }
               onReturningOffers={onReturningOffers}
               international={salesInternationalTravel(state)}
               originId={
