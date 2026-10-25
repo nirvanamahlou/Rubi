@@ -545,7 +545,8 @@ it('legacy flow keeps services and age counts but still requires complete travel
     const html = renderToStaticMarkup(<SalesContractForm />);
     expect(html).toContain('قرارداد قدیمی');
     expect(html).toContain('مسیر سفر');
-    expect(html).toContain('تاریخ سفر');
+    expect(html).not.toContain('تاریخ سفر');
+    expect(html).not.toContain('تاریخ شروع سفر');
     expect(html).toContain('تعداد مسافران');
     expect(html).not.toContain('<table');
     const next = [...html.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)].find(

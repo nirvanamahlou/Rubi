@@ -30,7 +30,6 @@ describe('Sales uses the Customers entry spreadsheet', () => {
         onConfirmed={vi.fn()}
         onBusyChange={vi.fn()}
         onAddInfant={vi.fn()}
-        onTravelDateChange={vi.fn()}
       />,
     );
     expect(html).not.toContain('نحوه آشنایی');
@@ -50,10 +49,10 @@ describe('Sales uses the Customers entry spreadsheet', () => {
         onConfirmed={vi.fn()}
         onBusyChange={vi.fn()}
         onAddInfant={vi.fn()}
-        onTravelDateChange={vi.fn()}
       />,
     );
     expect(html).toContain('جدول ورود اطلاعات مشتری و مسافران');
+    expect(html).not.toContain('تاریخ شروع سفر');
     const birthHeader = [...html.matchAll(/<th\b[^>]*>[\s\S]*?<\/th>/g)].find(
       (m) => m[0].includes('تاریخ تولد'),
     )?.[0];
@@ -105,7 +104,6 @@ describe('Sales uses the Customers entry spreadsheet', () => {
         onConfirmed={vi.fn()}
         onBusyChange={vi.fn()}
         onAddInfant={vi.fn()}
-        onTravelDateChange={vi.fn()}
       />,
     );
     expect(html).toContain('مشتری و مسافر اول');
@@ -134,7 +132,6 @@ describe('Sales uses the Customers entry spreadsheet', () => {
         onConfirmed={vi.fn()}
         onBusyChange={vi.fn()}
         onAddInfant={vi.fn()}
-        onTravelDateChange={vi.fn()}
       />,
     );
     expect(html).toContain('نام انگلیسی مطابق پاسپورت');
@@ -199,7 +196,6 @@ it('allows passport entry for an existing floating-flight passenger before profi
       onConfirmed={vi.fn()}
       onBusyChange={vi.fn()}
       onAddInfant={vi.fn()}
-      onTravelDateChange={vi.fn()}
     />,
   );
   for (const field of [
@@ -244,7 +240,6 @@ it('keeps transfer selections and places the three hotel stay columns last in th
       onConfirmed={vi.fn()}
       onBusyChange={vi.fn()}
       onAddInfant={vi.fn()}
-      onTravelDateChange={vi.fn()}
       onGuestStateChange={vi.fn()}
     />,
   );
@@ -281,7 +276,6 @@ it('shows the city tour, guide and existing visa toggles together above the pass
       onConfirmed={vi.fn()}
       onBusyChange={vi.fn()}
       onAddInfant={vi.fn()}
-      onTravelDateChange={vi.fn()}
       onGuestStateChange={vi.fn()}
       onToggleVisa={vi.fn()}
     />,
@@ -307,7 +301,6 @@ it('legacy contracts show customer controls without passenger spreadsheet or com
       onConfirmed={vi.fn()}
       onBusyChange={vi.fn()}
       onAddInfant={vi.fn()}
-      onTravelDateChange={vi.fn()}
     />,
   );
   expect(html).toContain('مشتری قرارداد قدیمی');

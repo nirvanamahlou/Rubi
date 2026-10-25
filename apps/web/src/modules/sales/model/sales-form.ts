@@ -1299,11 +1299,41 @@ export function salesReturnSearchFrom(state: SalesFormState): string {
   );
 }
 
+/** These services have no flight/hotel/tour date editor of their own. */
+export function salesStandaloneDateServiceKeys(
+  state: SalesFormState,
+): string[] {
+  if (state.serviceKinds.some((k) => ['FLIGHT', 'HOTEL', 'TOUR'].includes(k)))
+    return [];
+  return state.serviceKinds.flatMap((kind) =>
+    kind === 'TRANSFER'
+      ? salesDirections(state, kind).map((direction) => `${kind}-${direction}`)
+      : [kind],
+  );
+}
+export function salesStandaloneServiceDatesValid(
+  state: SalesFormState,
+): boolean {
+  return salesStandaloneDateServiceKeys(state).every((key) => {
+    const date = state.serviceDetails?.[key]?.date ?? '';
+    return (
+      /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+      Number.isFinite(Date.parse(date)) &&
+      new Date(date).toISOString().slice(0, 10) === date
+    );
+  });
+}
+
 export function salesTravelDate(state: SalesFormState): string {
   return (
     salesFlightSelection(state, 'OUTBOUND')?.departureAt.slice(0, 10) ||
     salesFlightSelection(state, 'RETURN')?.departureAt.slice(0, 10) ||
     (state.serviceKinds.includes('HOTEL') ? state.hotel.checkIn : '') ||
+    state.tour?.startsOn ||
+    salesStandaloneDateServiceKeys(state)
+      .map((key) => state.serviceDetails?.[key]?.date ?? '')
+      .filter(Boolean)
+      .sort()[0] ||
     state.departureDate
   );
 }
