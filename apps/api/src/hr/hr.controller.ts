@@ -27,6 +27,14 @@ import { HrService } from './hr.service';
 @Controller('hr')
 export class HrController {
   constructor(@Inject(HrService) private readonly service: HrService) {}
+  @Get('reports/attendance-data')
+  @Header('Cache-Control', 'private, no-store')
+  attendanceReportData(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.attendanceReportData(query, req.actor);
+  }
   @Get('dashboard/charts')
   @Header('Cache-Control', 'private, no-store')
   dashboardCharts(
@@ -159,6 +167,19 @@ export class HrController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.minuteLeave(body, key, req.actor);
+  }
+  @Get('leave/personnel')
+  @Header('Cache-Control', 'private, no-store')
+  leavePersonnel(@Req() req: AuthenticatedRequest) {
+    return this.service.leavePersonnel(req.actor);
+  }
+  @Get('leave/report')
+  @Header('Cache-Control', 'private, no-store')
+  leaveReport(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.leaveReport(query, req.actor);
   }
   @Get('leave/cardex')
   @Header('Cache-Control', 'private, no-store')

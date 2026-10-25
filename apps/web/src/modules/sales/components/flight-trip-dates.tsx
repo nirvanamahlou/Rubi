@@ -38,6 +38,7 @@ export function FlightTripDates({
   international = false,
   destinationId,
   roundTrip,
+  primaryDirection = 'OUTBOUND',
   seats,
   requireFare,
   value,
@@ -49,6 +50,7 @@ export function FlightTripDates({
   international?: boolean;
   destinationId: string;
   roundTrip: boolean;
+  primaryDirection?: 'OUTBOUND' | 'RETURN';
   seats: number;
   requireFare: boolean;
   value: FlightDateRange;
@@ -157,7 +159,7 @@ export function FlightTripDates({
     <div className="grid gap-3 rounded-xl border-2 border-primary/40 bg-primary/5 p-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-semibold">
-          بلیط رفت
+          {primaryDirection === 'RETURN' ? 'بلیط برگشت' : 'بلیط رفت'}
           <DatePicker
             key={international ? 'foreign' : 'local'}
             {...(international
@@ -168,7 +170,11 @@ export function FlightTripDates({
             markedDates={days}
 
             disabled={!readyRoute}
-            aria-label="تاریخ بلیط رفت"
+            aria-label={
+              primaryDirection === 'RETURN'
+                ? 'تاریخ بلیط برگشت'
+                : 'تاریخ بلیط رفت'
+            }
             onChange={(from) => {
               const paired = roundTrip
                 ? pairedReturnDate(

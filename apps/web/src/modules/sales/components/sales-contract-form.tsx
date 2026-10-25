@@ -334,6 +334,7 @@ export function SalesContractForm() {
     state.destinationId &&
     state.originId !== state.destinationId &&
     state.serviceKinds.includes('FLIGHT') &&
+    salesDirections(state, 'FLIGHT').includes('OUTBOUND') &&
     !state.contractFlights?.OUTBOUND &&
     flightDatesReady,
   );
@@ -1108,6 +1109,7 @@ export function SalesContractForm() {
         {flightDirections.includes('RETURN') &&
         salesFlightSeats(state, 'RETURN') > 0 ? (
           <section className="grid gap-3 min-w-0">
+            <h3 className="font-bold">بلیط برگشت</h3>
             {!salesReturnRequiresInventory(state) && (
               <ContractFlightEditor
                 flightDate={selectedReturnDay}
@@ -1705,6 +1707,11 @@ export function SalesContractForm() {
             className="mt-5 border-t border-border pt-4"
           >
             <FlightTripDates
+              primaryDirection={
+                salesDirections(state, 'FLIGHT').includes('OUTBOUND')
+                  ? 'OUTBOUND'
+                  : 'RETURN'
+              }
               onReturningOffers={onReturningOffers}
               international={salesInternationalTravel(state)}
               originId={

@@ -71,15 +71,20 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
       'shifts',
       'شیفت‌بندی',
       [
-        source('time', 'workingHours', 'ساعت کاری', 'تعریف ساعت کاری'),
         source('time', 'shiftTemplates', 'تعریف شیفت', 'تعریف شیفت'),
         source('time', 'templateDays', 'تقویم سالانه شیفت', 'ثبت روز تقویم'),
         source('time', 'shift', 'انتساب شیفت', 'انتساب شیفت'),
       ],
       'جزئیات شیفت',
     ),
+    group('workingHours', 'ساعت کار', [
+      source('time', 'workingHours', 'ساعت کار', 'افزودن ساعت کار'),
+    ]),
+    group('leaveBalance', 'مانده مرخصی', [
+      source('time', 'minuteLedger', 'مانده مرخصی', '', true),
+      source('time', 'leaveTransferRules', 'انتقال مرخصی عمومی'),
+    ]),
     group('settings', 'تنظیمات کارکرد', [
-      source('time', 'leaveTransferRules', 'قواعد انتقال مرخصی'),
       source('time', 'leavePolicies', 'سیاست و سهمیه', 'تعریف سیاست مرخصی'),
       source('time', 'holidays', 'تعطیلات', 'ثبت تعطیلی'),
       source('time', 'calculationSettings', 'تنظیمات محاسبات کارکرد'),
