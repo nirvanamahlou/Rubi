@@ -9429,3 +9429,11 @@ resolve to the correct people and appear once in the19-choice public directory.
 Existing shared-extension choices retained. Six directory tests pass. No source,
 schema, user grant, PBX, business-record write or runtime restart. Private personnel
 assignments remain outside Git. Details: docs/tasks/CALL-EXTENSION-ALIASES-1024.md.
+
+## LEGACY-CONTRACT-SERVICES-1025 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-legacy-contract-services-1025 from origin/develop. Owner requests normal services, dates, age-category counts and prices for legacy contracts without personal passenger rows; explicitly authorizes real flight capacity deduction, develop merge and server rollout. Reserve Sales form/payload/count UI and API legacy validation/capacity adapters, shared versioned anonymous-party metadata contract plus bounded Reservations/output count consumers and tests. Existing V1 customer-only records stay readable; no fabricated customer identities or manifest passenger rows. Shared producer Sales, consumers Sales validation/Ticketing capacity/Reservations/output; additive V2 metadata with strict validated category counts, existing commands and real ticket/hotel FK references. Preserve normal-contract validation and immutable financial controls. No active overlapping writer found; previous relevant scopes published. No schema/migration/dependency planned; central shared sales index only scoped export/metadata doc reserved here.
+
+LEGACY-CONTRACT-SERVICES-1025 count projection extension: reserve additive optional SalesContractSummary.passengerCount, Sales presenter/summary and list/Excel consumers. Historical count is the maximum declared service-party total (never sum both flight legs); keep passengerNames/assignments empty. Ordinary consumers retain passengerNames.length fallback. No active overlapping source writer found.
+
+LEGACY-CONTRACT-SERVICES-1025 validation: Web Sales102 files612 tests pass (one existing skipped), API Sales36 files261 tests pass, targeted aggregate metadata/count/price/output regressions and ordinary V1 compatibility pass. Affected types, scoped lint/build and all exact-head hosted gates required before merge; deployment uses a verified encrypted backup and preserves environment/mounts/data. No migration. Source locks release on publication.

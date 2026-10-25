@@ -1,5 +1,7 @@
 'use client';
 import serviceStyles from './contract-service-cards.module.css';
+import { SalesPricingPanel } from './sales-pricing-panel';
+import { legacySalesPricingServices } from '../model/sales-form';
 import {
   Plane,
   Building2,
@@ -240,14 +242,13 @@ export function SalesContractForm() {
   const [draftState, setState] = useState<SalesFormState>(freshSalesDraft);
   const state = useMemo<SalesFormState>(() => {
     if (draftState.legacyContract)
-      return {
+      return withRoomDrivenGuests({
         ...draftState,
         passengerTotalPricing: false,
         automaticComponentPricing: false,
         priceEntryMode: 'CONTRACT_TOTAL',
-        serviceKinds: ['OTHER'],
         passengers: [],
-      };
+      });
     if (isTicketOnlyContract(draftState))
       return ticketOnlySaleDefaults({
         ...draftState,
@@ -683,11 +684,31 @@ export function SalesContractForm() {
   const occupancyRoom = hotelRoomRates.find(
     (room) => room.roomTypeId === state.hotel.roomTypeId,
   );
-  const pricedState = hotelOccupancySaleDefaults(
-    state,
-    occupancyRoom,
-    hotelRoomRates,
-  );
+  const pricedState = (() => {
+    if (!state.legacyContract)
+      return hotelOccupancySaleDefaults(state, occupancyRoom, hotelRoomRates);
+    try {
+      const payload = salesPayload(state);
+      const totals = new Map<string, bigint>();
+      for (const p of payload.priceComponents.filter(
+        (p) => p.title !== SALES_CHEQUE_FEE,
+      ))
+        totals.set(
+          p.currencyCode,
+          (totals.get(p.currencyCode) ?? 0n) +
+            (p.type === 'DISCOUNT' ? -1n : 1n) * moneyUnits(p.amount),
+        );
+      return {
+        ...state,
+        contractPrices: [...totals].map(([currencyCode, amount]) => ({
+          currencyCode,
+          amount: moneyDecimal(amount),
+        })),
+      };
+    } catch {
+      return { ...state, contractPrices: [] };
+    }
+  })();
   const passengerCounts = salesPassengerCounts(state);
   const hotelCapacityError = salesHotelCapacityError(state, hotelRoomRates);
   const hotelGuestIds = salesHotelGuestIds(state);
@@ -770,6 +791,12 @@ export function SalesContractForm() {
       validateSalesCurrencySelection(payload, references.currencies);
       readPassengerHotelPrices(payload.services, payload.passengers);
       if (
+        state.legacyContract &&
+        !Object.keys(state.servicePricing ?? {}).length
+      )
+        throw Error('قیمت خدمات قرارداد را تکمیل کنید.');
+      if (
+        !state.legacyContract &&
         payload.services.some((s) => s.kind === 'FLIGHT') &&
         !state.passengerTotalPricing &&
         state.passengerFlightPrices === undefined
@@ -806,16 +833,6 @@ export function SalesContractForm() {
     }
   })();
   const canContinue = (() => {
-    if (step === 0 && state.legacyContract)
-      return (
-        !passengerStepError &&
-        Boolean(
-          state.originId &&
-          state.destinationId &&
-          state.originId !== state.destinationId &&
-          state.departureDate,
-        )
-      );
     if (step === 0)
       return Boolean(
         passengerStepError === null &&
@@ -865,8 +882,11 @@ export function SalesContractForm() {
         (!(state.tour || state.serviceKinds.includes('TOUR')) ||
           Boolean(
             state.tour &&
-            state.tour.startsOn >= salesFlightToday() &&
-            (!state.packageSaleAvailable || state.packageSaleQuote),
+            (state.legacyContract ||
+              state.tour.startsOn >= salesFlightToday()) &&
+            (state.legacyContract ||
+              !state.packageSaleAvailable ||
+              state.packageSaleQuote),
           )),
       );
     if (step === 1) return !finalStepError;
@@ -1336,9 +1356,10 @@ export function SalesContractForm() {
                 setPeopleDirty(true);
                 patchState({
                   legacyContract,
+                  servicePricing: {},
+                  contractPrices: [],
                   ...(legacyContract
                     ? {
-                        serviceKinds: ['OTHER'],
                         passengers: [],
                         firstPassengerIsCustomer: false,
                         passengerTotalPricing: false,
@@ -1353,9 +1374,7 @@ export function SalesContractForm() {
             قرارداد قدیمی
           </label>
         )}
-        {!state.legacyContract && (
-          <PublishedPackageSale state={state} onChange={setState} />
-        )}
+        {<PublishedPackageSale state={state} onChange={setState} />}
         {step === 0 ? (
           <div className="grid gap-5">
             <h2 className="text-sm font-bold">مسیر سفر</h2>
@@ -1435,7 +1454,7 @@ export function SalesContractForm() {
             />
           </FormField>
         )}
-        {step === 0 && !state.legacyContract ? (
+        {step === 0 ? (
           <div className="mt-6 grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">
             <h2 className="text-sm font-bold">خدمات قرارداد</h2>
             {state.tour ? (
@@ -1589,7 +1608,6 @@ export function SalesContractForm() {
           </div>
         ) : null}
         {step === 0 &&
-        !state.legacyContract &&
         !usesRoomDrivenGuests(state) &&
         state.serviceKinds.some((k) => k !== 'HOTEL' && k !== 'VISA') ? (
           <section className="mt-5 grid gap-3 border-t border-border pt-4">
@@ -1682,7 +1700,7 @@ export function SalesContractForm() {
             </div>
           </section>
         ) : null}
-        {step === 0 && !state.legacyContract && (
+        {step === 0 && (
           <ServiceParties
             state={state}
             patch={patchState}
@@ -2393,11 +2411,44 @@ export function SalesContractForm() {
               />
             </div>
             <div className="grid content-start gap-3">
-              <ContractTotalPrices
-                state={state}
-                currencies={references.currencies}
-                onChange={(contractPrices) => patchState({ contractPrices })}
-              />
+              {state.legacyContract ? (
+                <SalesPricingPanel
+                  services={legacySalesPricingServices(state).map((s) => ({
+                    key: s.clientKey,
+                    title:
+                      serviceOptions.find(([k]) => k === s.kind)?.[1] ===
+                        undefined || s.clientKey.includes('-')
+                        ? s.titleSnapshot
+                        : serviceOptions.find(([k]) => k === s.kind)![1],
+                    hotel: s.kind === 'HOTEL',
+                  }))}
+                  nights={Math.max(
+                    1,
+                    Math.round(
+                      (Date.parse(state.hotel.checkOut) -
+                        Date.parse(state.hotel.checkIn)) /
+                        86400000,
+                    ) || 1,
+                  )}
+                  values={state.servicePricing ?? {}}
+                  currencies={references.currencies}
+                  salePriceFromAgreed
+                  onChange={(key, prices) =>
+                    patchState({
+                      servicePricing: {
+                        ...state.servicePricing,
+                        [key]: prices,
+                      },
+                    })
+                  }
+                />
+              ) : (
+                <ContractTotalPrices
+                  state={state}
+                  currencies={references.currencies}
+                  onChange={(contractPrices) => patchState({ contractPrices })}
+                />
+              )}
               {!state.legacyContract && (
                 <PassengerServicePrices
                   state={state}

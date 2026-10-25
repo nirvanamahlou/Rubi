@@ -367,3 +367,77 @@ it('uses the selected outbound day before floating flight details are complete w
   });
   expect(next.hotel.checkIn).toBe('2026-10-24');
 });
+
+it('preserves aggregate legacy flight/hotel dates, age counts, real offer links and separate service prices without passenger identities', () => {
+  const current = selected();
+  const price = {
+    version: 1 as const,
+    currencyCode: 'USD',
+    daySale: { basis: 'TOTAL' as const, amount: '100' },
+    agreed: { basis: 'TOTAL' as const, amount: '100' },
+  };
+  const state: SalesFormState = {
+    ...current,
+    legacyContract: true,
+    customerId: 'buyer',
+    ticket: {
+      ...current.ticket,
+      outboundOfferId: current.outboundOffer!.id,
+      returnOfferId: current.returnOffer!.id,
+      outboundDepartureAt: current.outboundOffer!.departureAt,
+      outboundArrivalAt: current.outboundOffer!.arrivalAt,
+      returnDepartureAt: current.returnOffer!.departureAt,
+      returnArrivalAt: current.returnOffer!.arrivalAt,
+    },
+    passengerComposition: { adults: 2, children: 1, infants: 1 },
+    priceEntryMode: 'CONTRACT_TOTAL',
+    hotel: {
+      ...current.hotel,
+      hotelId: 'hotel',
+      name: 'Synthetic Hotel',
+      roomTypeId: '11111111-1111-4111-8111-111111111111',
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: '11111111-1111-4111-8111-111111111111',
+          roomTypeNameSnapshot: 'Standard',
+          adults: 2,
+          childAges: [5, 1],
+        },
+      ],
+    },
+    servicePricing: {
+      'flight-outbound': [price],
+      'flight-return': [price],
+      hotel: [price],
+    },
+  };
+  const payload = salesPayload(state);
+  expect(payload.passengers).toEqual([]);
+  expect(payload.customerId).toBe('buyer');
+  expect(payload.ticketSelections).toHaveLength(2);
+  expect(payload.hotelSelection).toMatchObject({
+    occupancy: 4,
+    checkInDate: '2026-09-10',
+    checkOutDate: '2026-09-19',
+  });
+  const parties = JSON.parse(
+    String(payload.services[0]!.metadata!.legacyServicePartiesV2),
+  );
+  expect(parties.hotel).toEqual({ adults: 2, children: 1, infants: 1 });
+  expect(parties['flight-outbound']).toEqual({
+    adults: 2,
+    children: 1,
+    infants: 1,
+  });
+  expect(payload.services.map((s) => s.kind)).toEqual([
+    'FLIGHT',
+    'FLIGHT',
+    'HOTEL',
+  ]);
+  expect(
+    payload.priceComponents
+      .filter((p) => p.type === 'BASE')
+      .map((p) => p.amount),
+  ).toEqual(['100', '100', '100']);
+});

@@ -100,8 +100,9 @@ export interface SalesServiceInput {
   titleSnapshot: string;
   status?:
     'SELECTED' | 'AWAITING_PUBLIC_API' | 'NEEDS_RESERVATION_CONFIRMATION';
-  /** legacyContractV1=true is reserved for the sole OTHER legacy-contract service:
-   * customer-only totals, zero passengers/selections; ordinary reservation dispatch remains. */
+  /** V1 remains customer-only OTHER. legacyServicePartiesV2 on the first service
+   * declares validated age-category counts for real historical service selections,
+   * with zero personal passengers. Both use the ordinary reservation dispatch. */
   metadata?: Readonly<Record<string, string | number | boolean | null>>;
 }
 
@@ -276,6 +277,8 @@ export interface SalesContractSummary {
   customerId: string;
   customerNameSnapshot: string;
   passengerNames: readonly string[];
+  /** Maximum declared service-party total for aggregate legacy contracts. */
+  passengerCount?: number;
   customerPhone?: string | null;
   originName?: string | null;
   destinationName?: string | null;
@@ -523,3 +526,5 @@ export * from './passenger-total-prices';
 export * from './hotel-capacity-policy';
 
 export * from './owner-actions';
+
+export * from './legacy-service-parties';
