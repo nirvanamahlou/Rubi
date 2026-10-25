@@ -7,6 +7,8 @@ import {
   chartNodeFormTarget,
 } from './hr-organization';
 import { sourceForRecord } from './hr-record-source';
+import { hrCompanies } from './hr-live-data';
+import type { HrBootstrapDto } from '@nora/contracts';
 import { parentFieldLabel } from './hr-form-model';
 const record = (
   id: string,
@@ -159,6 +161,35 @@ describe('live organization chart nodes', () => {
     );
     expect(html).not.toContain('aria-label="ویرایش شرکت"');
     expect(html).toContain('aria-label="افزودن کارکن زیر شرکت"');
+  });
+  it('preserves each authorized legacy branch root and form option when other branches have companies', () => {
+    const company = record('company-a', 'branches');
+    const branches = [
+      { id: 'b', name: 'اول' },
+      { id: 'legacy', name: 'دوم' },
+    ];
+    const nodes = buildLiveOrganizationNodes([company], branches, []);
+    expect(
+      nodes.filter((n) => n.kind === 'MANAGEMENT').map((n) => n.id),
+    ).toEqual(['company-a', 'legacy']);
+    const options = hrCompanies({
+      records: [company],
+      branches,
+    } as unknown as HrBootstrapDto);
+    expect(
+      options.map((o) => [o.id, o.branchId, o.organizationBranchId]),
+    ).toEqual([
+      ['company-a', 'b', 'company-a'],
+      ['legacy', 'legacy', ''],
+    ]);
+    const target = chartNodeFormTarget(
+      'EMPLOYEE',
+      nodes.find((n) => n.id === 'legacy'),
+      [company],
+      nodes,
+    );
+    expect(target.preferredCompanyId).toBe('legacy');
+    expect(target.parent).toBeUndefined();
   });
   it('does not project stale membership after personnel move to another company or branch', () => {
     const branches = [{ id: 'b', name: 'شرکت' }];

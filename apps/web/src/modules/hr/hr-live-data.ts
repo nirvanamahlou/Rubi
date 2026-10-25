@@ -55,16 +55,21 @@ export function hrCompanies(data: HrBootstrapDto) {
       !item.deletedAt &&
       item.status === 'فعال',
   );
-  return catalog.length
-    ? catalog.map((item) => ({
-        id: item.id,
-        branchId: item.branchId,
-        name: item.values[0] ?? item.code,
-        organizationBranchId: item.id,
-      }))
-    : data.branches.map((item) => ({
+  return [
+    ...catalog.map((item) => ({
+      id: item.id,
+      branchId: item.branchId,
+      name: item.values[0] ?? item.code,
+      organizationBranchId: item.id,
+    })),
+    ...data.branches
+      .filter(
+        (branch) => !catalog.some((company) => company.branchId === branch.id),
+      )
+      .map((item) => ({
         ...item,
         branchId: item.id,
         organizationBranchId: '',
-      }));
+      })),
+  ];
 }

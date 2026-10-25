@@ -742,7 +742,7 @@ export function OrganizationChart({
                 <button
                   type="button"
                   className={styles.orgEditButton}
-                  disabled={busy}
+                  disabled={busy || node.status !== 'فعال'}
                   title="افزودن دپارتمان"
                   aria-label={`افزودن دپارتمان زیر ${node.name}`}
                   onClick={() => onAddDepartment(node)}
@@ -754,7 +754,7 @@ export function OrganizationChart({
                 <button
                   type="button"
                   className={styles.orgEditButton}
-                  disabled={busy}
+                  disabled={busy || node.status !== 'فعال'}
                   title="افزودن کارکن"
                   aria-label={`افزودن کارکن زیر ${node.name}`}
                   onClick={() => onAddEmployee(node)}

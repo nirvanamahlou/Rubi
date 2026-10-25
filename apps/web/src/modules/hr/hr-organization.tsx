@@ -39,13 +39,19 @@ export function buildLiveOrganizationNodes(
       item.tab === 'branches' &&
       !item.deletedAt,
   );
-  const roots = companies.length
-    ? companies.map((item) => ({
-        id: item.id,
-        name: item.values[0] ?? item.code,
-        scope: item.branchId,
-      }))
-    : branches.map((item) => ({ ...item, scope: item.id }));
+  const roots = [
+    ...companies.map((item) => ({
+      id: item.id,
+      name: item.values[0] ?? item.code,
+      scope: item.branchId,
+    })),
+    ...branches
+      .filter(
+        (branch) =>
+          !companies.some((company) => company.branchId === branch.id),
+      )
+      .map((item) => ({ ...item, scope: item.id })),
+  ];
   const nodes: OrganizationNode[] = roots.map((branch) => ({
     id: branch.id,
     name: branch.name,
