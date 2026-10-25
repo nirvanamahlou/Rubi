@@ -25,7 +25,7 @@ it('uses authoritative inventory for catalogue and legacy floating flights, not 
   supply.mockResolvedValue('FLOATING');
   expect(
     await resolveFloatingContract(
-      { ...snapshot, ticketSelections: [], serviceSelections: [] } as never,
+      { selectedTicketOfferIds: ['company'] } as never,
       ['branch'],
       { documentSupply: supply },
     ),

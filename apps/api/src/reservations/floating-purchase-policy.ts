@@ -13,7 +13,7 @@ export async function resolveFloatingContract(
   const ids = new Set([
     ...(snapshot.ticketSelections ?? []).map((t) => t.offerId),
     ...(snapshot.selectedTicketOfferIds ?? []),
-    ...snapshot.serviceSelections
+    ...(snapshot.serviceSelections ?? [])
       .filter((s) => s.kind === 'FLIGHT')
       .map((s) => s.referenceId)
       .filter((id): id is string => !!id),
