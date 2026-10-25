@@ -10,7 +10,7 @@ import type {
 } from './sales.adapters';
 import type { CustomerService } from '../customers/customer.service';
 import type { LegalEntitiesService } from '../legal-entities/legal-entities.service';
-import type { IamService } from '../iam/iam.service';
+import type { IamFinanceDirectory } from '../iam/iam-finance-directory';
 const actor: AuthenticatedActor = {
   userId: 'owner',
   sessionId: 'session',
@@ -59,16 +59,16 @@ function setup() {
     }),
   };
   const iam = {
-    listUsers: vi
+    documentOwnerName: vi
       .fn()
-      .mockResolvedValue([{ id: 'owner', displayName: 'نام نمونه' }]),
+      .mockResolvedValue({ id: 'owner', displayName: 'نام نمونه' }),
   };
   const service = new SalesOutputService(
     sales as unknown as SalesService,
     repo as unknown as SalesRepository,
     customers as unknown as CustomerService,
     legal as unknown as LegalEntitiesService,
-    iam as unknown as IamService,
+    iam as unknown as IamFinanceDirectory,
   );
   return { service, contract, sales, repo, customers, legal, iam };
 }
@@ -167,12 +167,12 @@ describe('Sales saved output authorization', () => {
       'شرکت مشخص',
     );
   });
-  it('returns saved amounts, omits ungranted IAM names and audits a preview rather than official issue', async () => {
+  it('returns the authorized document owner name without an IAM directory grant and audits a preview', async () => {
     const t = setup();
     const result = await t.service.prepare('contract', actor, 'trace');
     expect(result.data.contract.balances).toEqual(t.contract.balances);
-    expect(t.iam.listUsers).not.toHaveBeenCalled();
-    expect(result.data.ownerName).toBeNull();
+    expect(t.iam.documentOwnerName).toHaveBeenCalledWith('owner');
+    expect(result.data.ownerName).toBe('نام نمونه');
     expect(t.repo.recordOutputPreview).toHaveBeenCalledWith(
       'contract',
       expect.objectContaining({
@@ -218,12 +218,12 @@ it('uses passport Latin names for contract output without mutating the saved con
 
 it('allows a creator to output their own contract without separate export/legal-directory grants', async () => {
   const t = setup();
-  await expect(
-    t.service.prepare('contract', {
-      ...actor,
-      permissions: ['sales.contracts.create'],
-    }),
-  ).resolves.toHaveProperty('data');
+  const result = await t.service.prepare('contract', {
+    ...actor,
+    permissions: ['sales.contracts.create'],
+  });
+  expect(result.data.ownerName).toBe('نام نمونه');
+  expect(t.iam.documentOwnerName).toHaveBeenCalledWith('owner');
 });
 it('rejects another owner or branch for creator-only output without recording output', async () => {
   for (const change of [{ ownerUserId: 'other' }, { branchId: 'other' }]) {
@@ -236,5 +236,35 @@ it('rejects another owner or branch for creator-only output without recording ou
       }),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(t.repo.recordOutputPreview).not.toHaveBeenCalled();
+    expect(t.iam.documentOwnerName).not.toHaveBeenCalled();
   }
+});
+
+it('prints the saved seller rather than the exporting manager without granting IAM access', async () => {
+  const t = setup();
+  t.contract.ownerUserId = 'other-seller';
+  t.iam.documentOwnerName.mockResolvedValue({
+    id: 'other-seller',
+    displayName: 'Actual Seller',
+  });
+  const result = await t.service.prepare('contract', {
+    ...actor,
+    userId: 'manager',
+    permissions: [
+      'sales.contracts.read.all',
+      'sales.export',
+      'legal-entity.read',
+    ],
+  });
+  expect(result.data.ownerName).toBe('Actual Seller');
+  expect(t.iam.documentOwnerName).toHaveBeenCalledExactlyOnceWith(
+    'other-seller',
+  );
+});
+it('does not substitute the exporting user when the historical owner is missing', async () => {
+  const t = setup();
+  t.iam.documentOwnerName.mockResolvedValue(null as never);
+  expect(
+    (await t.service.prepare('contract', actor)).data.ownerName,
+  ).toBeNull();
 });
