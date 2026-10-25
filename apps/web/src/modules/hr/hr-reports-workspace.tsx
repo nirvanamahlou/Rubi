@@ -3,6 +3,7 @@ import Link from '@/components/access-link';
 import type { HrStore } from './hr-store';
 import { HrReports } from './hr-reports';
 import { HrAudit } from './hr-audit';
+import { HrLeaveBalance } from './hr-leave-balance';
 import { sectionTabs } from './hr.model';
 import ui from './hr-unified.module.css';
 
@@ -14,7 +15,8 @@ export function HrReportsWorkspace({
   tab?: string | undefined;
 }) {
   const auditAllowed = Boolean(store.data?.capabilities.audit);
-  const activeTab = tab === 'audit' ? 'audit' : 'dashboard';
+  const activeTab =
+    tab === 'audit' || tab === 'leaveBalance' ? tab : 'dashboard';
   return (
     <div className={ui.spaced}>
       <header className={ui.heading}>
@@ -40,6 +42,8 @@ export function HrReportsWorkspace({
         ) : (
           <p role="alert">دسترسی به این بخش مجاز نیست.</p>
         )
+      ) : activeTab === 'leaveBalance' ? (
+        <HrLeaveBalance store={store} initialView="report" reportsOnly />
       ) : (
         <HrReports store={store} initialTopic="radan:daily" embedded />
       )}

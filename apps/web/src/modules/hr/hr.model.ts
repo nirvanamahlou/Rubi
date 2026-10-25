@@ -194,7 +194,7 @@ export const hrHubCards: readonly HrHubCard[] = [
     icon: BarChart3,
     tone: 'slate',
     pills: ['گزارش‌های حضور و غیاب', 'گزارش کارکنان', 'Audit اختصاصی'],
-    footer: '۲ زیرصفحه',
+    footer: '۳ زیرصفحه',
   },
   {
     id: 'payroll',
@@ -320,6 +320,7 @@ export const sectionTabs: Readonly<
   ],
   reports: [
     { id: 'dashboard', label: 'گزارش‌ها و شاخص‌ها', icon: BarChart3 },
+    { id: 'leaveBalance', label: 'گزارش مانده مرخصی', icon: CalendarClock },
     { id: 'audit', label: 'Audit اختصاصی', icon: History },
   ],
   payroll: [

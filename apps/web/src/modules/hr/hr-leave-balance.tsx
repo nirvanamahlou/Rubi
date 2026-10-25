@@ -75,13 +75,22 @@ const transferFields = [
 export function HrLeaveBalance({
   store,
   initialView = 'grant',
+  reportsOnly = false,
 }: {
   store: HrStore;
   initialView?: string;
+  reportsOnly?: boolean;
 }) {
   const allowed = useRouteAccess();
   const refs = useHrReferenceData(store);
-  const [view, setView] = useState(initialView);
+  const availableViews = views.filter(
+    (item) => reportsOnly === ['report', 'cardex'].includes(item.id),
+  );
+  const [view, setView] = useState(
+    availableViews.some((item) => item.id === initialView)
+      ? initialView
+      : availableViews[0]!.id,
+  );
   const [year, setYear] = useState(String(currentPersianYear()));
   const [selectedMonths, setMonths] = useState(months.map((_, i) => i + 1));
   const [duration, setDuration] = useState('16:20');
@@ -277,7 +286,7 @@ export function HrLeaveBalance({
       >
         <div className={styles.navigation}>
           <HrTabs
-            items={views}
+            items={availableViews}
             value={view}
             onChange={(id) => {
               if (busy) return;

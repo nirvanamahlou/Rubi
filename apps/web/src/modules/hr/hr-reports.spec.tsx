@@ -124,6 +124,16 @@ describe('HR reports and audit location', () => {
     expect(html).not.toContain('href="/reports');
     expect(html).not.toContain('tab=audit');
   });
+  it('shows leave report and cardex in HR reporting without grant or transfer actions', () => {
+    const html = renderToStaticMarkup(
+      <HrReportsWorkspace store={store} tab="leaveBalance" />,
+    );
+    expect(html).toContain('کاردکس مانده مرخصی');
+    expect(html).toContain('گزارش مانده مرخصی');
+    expect(html).not.toContain('افزودن مانده مرخصی');
+    expect(html).not.toContain('انتقال مرخصی عمومی');
+    expect(html).not.toContain('انتقال مرخصی کاربر');
+  });
   it('opens the audit deep link separately without mounting report filters', () => {
     const auditStore = {
       ...store,
