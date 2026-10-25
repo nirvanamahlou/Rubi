@@ -215,6 +215,11 @@ jobs:
           PURCHASE_FX_TEST: '1'
         run: pnpm --filter @nora/database exec vitest run test/purchase-fx-postgres.spec.ts
 
+      - name: Prove passenger insurance issuance and reference invariants
+        env:
+          INSURANCE_POLICY_TEST: '1'
+        run: pnpm --filter @nora/database exec vitest run test/insurance-policy-postgres.spec.ts
+
       - name: Prove hotel rate broker compatibility and foreign keys
         env:
           HOTEL_RATE_BROKER_TEST: '1'

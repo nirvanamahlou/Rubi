@@ -44,3 +44,4 @@ export type {
 export * from './telephony';
 
 export * from './sales/passenger-hotel-stays';
+export * from './insurance';

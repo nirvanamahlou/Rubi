@@ -115,6 +115,14 @@ const globalScope: SettingsScope = {
 /** Links retain ownership instead of duplicating an owner's administration UI. */
 const managementAreas: readonly ManagementArea[] = [
   {
+    id: 'insurance',
+    title: 'تنظیمات صدور بیمه‌نامه',
+    description: 'کشورها، طرح‌ها، نرخ‌ها و مدیریت بیمه‌نامه‌های مسافران.',
+    href: '/reservations/insurance?tab=settings',
+    moduleIds: ['operations'],
+    owner: 'رزرواسیون',
+  },
+  {
     id: 'iam',
     title: 'مدیریت کاربران',
     description: 'تعریف کاربر، تعیین نقش و انتخاب دسترسی بخش‌ها و زیربخش‌ها.',

@@ -30,15 +30,16 @@ enum AuditOutcome {
 }
 
 model User {
-  telephonyCommands      IntegrationTelephonyCommand[]
-  telephonyAudit         IntegrationTelephonyAudit[]
-  telephonyConnections   IntegrationTelephonyConnection[]
-  telephonyMappings      IntegrationTelephonyMapping[]
-  telephonyOffers        CallCenterTelephonyOffer[]
-  telephonyLeases        CallCenterTelephonyLease[]
-  telephonyClaims        CallCenterTelephonySession[]
-  receiptAllocations     SalesReceiptAllocation[]
-  accountingSourceEvents FinanceAccountingEvent[]         @relation("FinancialEventActor")
+  insurancePolicyRevisions ReservationInsuranceRevision[]
+  telephonyCommands        IntegrationTelephonyCommand[]
+  telephonyAudit           IntegrationTelephonyAudit[]
+  telephonyConnections     IntegrationTelephonyConnection[]
+  telephonyMappings        IntegrationTelephonyMapping[]
+  telephonyOffers          CallCenterTelephonyOffer[]
+  telephonyLeases          CallCenterTelephonyLease[]
+  telephonyClaims          CallCenterTelephonySession[]
+  receiptAllocations       SalesReceiptAllocation[]
+  accountingSourceEvents   FinanceAccountingEvent[]         @relation("FinancialEventActor")
 
   callCenterCalls                                  CallCenterCall[]
   callCenterNotes                                  CallCenterNote[]
@@ -2966,6 +2967,7 @@ enum CustomerDuplicateReviewStatus {
 }
 
 model Customer {
+  insurancePolicies          ReservationInsurancePolicy[]
   marketingPromotions        MarketingAsset[]             @relation("MarketingPromotionCustomer")
   reservationTicketDocuments ReservationTicketDocument[]
   id                         String                       @id @default(uuid()) @db.Uuid
@@ -3956,6 +3958,7 @@ enum PackagePricingRenderStatus {
 }
 
 model SalesContract {
+  insurancePolicies         ReservationInsurancePolicy[]
   receiptAllocations        SalesReceiptAllocation[]
   paymentTerms              Json?                          @map("payment_terms")
   buyerContact              Json?                          @map("buyer_contact")
@@ -4557,6 +4560,7 @@ model FinanceTicketPurchasePaymentRevision {
 }
 
 model ReservationIntake {
+  insurancePolicies   ReservationInsurancePolicy[]
   ticketDocuments     ReservationTicketDocument[]
   salesOwnerUserId    String?                          @db.Uuid
   salesOwner          User?                            @relation("TravelSalesOwner", fields: [salesOwnerUserId], references: [id], onDelete: Restrict)
@@ -8067,4 +8071,52 @@ model IntegrationTelephonyAnswer {
 
   @@index([connectionId, queue, phoneFingerprint, answeredAt(sort: Desc), id(sort: Desc)], map: "telephony_answer_lookup_idx")
   @@map("integration_telephony_answers")
+}
+
+model ReservationInsurancePolicy {
+  id              String                         @id @default(uuid()) @db.Uuid
+  contractId      String                         @db.Uuid
+  intakeId        String                         @db.Uuid
+  customerId      String                         @db.Uuid
+  provider        String                         @default("NOYAN") @db.VarChar(32)
+  providerId      String?                        @db.VarChar(100)
+  policyNumber    String?                        @db.VarChar(100)
+  status          String                         @default("DRAFT") @db.VarChar(24)
+  destinationCode String                         @db.VarChar(40)
+  planCode        String                         @db.VarChar(40)
+  departureDate   DateTime                       @db.Date
+  durationDays    Int
+  amount          Decimal?                       @db.Decimal(20, 4)
+  currencyCode    String?                        @db.VarChar(3)
+  notes           String                         @default("") @db.VarChar(2000)
+  version         Int                            @default(1)
+  issuedAt        DateTime?                      @db.Timestamptz(3)
+  cancelledAt     DateTime?                      @db.Timestamptz(3)
+  createdAt       DateTime                       @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                       @updatedAt @db.Timestamptz(3)
+  contract        SalesContract                  @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  intake          ReservationIntake              @relation(fields: [intakeId], references: [id], onDelete: Restrict)
+  customer        Customer                       @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  revisions       ReservationInsuranceRevision[]
+
+  @@unique([contractId, customerId, provider])
+  @@unique([provider, providerId])
+  @@unique([provider, policyNumber])
+  @@index([intakeId, status, createdAt])
+  @@map("reservation_insurance_policies")
+}
+
+model ReservationInsuranceRevision {
+  id          String                     @id @default(uuid()) @db.Uuid
+  policyId    String                     @db.Uuid
+  version     Int
+  action      String                     @db.VarChar(32)
+  snapshot    Json
+  actorUserId String                     @db.Uuid
+  createdAt   DateTime                   @default(now()) @db.Timestamptz(3)
+  policy      ReservationInsurancePolicy @relation(fields: [policyId], references: [id], onDelete: Restrict)
+  actor       User                       @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([policyId, version])
+  @@map("reservation_insurance_revisions")
 }
