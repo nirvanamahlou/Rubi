@@ -1431,28 +1431,44 @@ export class SalesService {
             reserve: async (tx) => {
               if (!this.tickets.amend)
                 throw new ConflictException('اصلاح ظرفیت بلیت در دسترس نیست.');
+              const legacyParties = readLegacyServiceParties(input.services);
               await this.tickets.amend(
                 tx,
                 (input.ticketSelections ?? []).filter((selection) =>
-                  input.passengers.some(
-                    (p) =>
-                      categories[p.customerId] !== 'INF' &&
-                      p.serviceClientKeys.includes(selection.serviceClientKey),
-                  ),
+                  legacyParties?.[selection.serviceClientKey]
+                    ? legacyParties[selection.serviceClientKey]!.adults +
+                        legacyParties[selection.serviceClientKey]!.children >
+                      0
+                    : input.passengers.some(
+                        (p) =>
+                          categories[p.customerId] !== 'INF' &&
+                          p.serviceClientKeys.includes(
+                            selection.serviceClientKey,
+                          ),
+                      ),
                 ),
                 row.branchId,
                 id,
-                input.passengers.filter(
-                  (p) => categories[p.customerId] !== 'INF',
-                ).length,
+                legacyParties
+                  ? Math.max(
+                      ...Object.values(legacyParties).map(
+                        (p) => p.adults + p.children,
+                      ),
+                    )
+                  : input.passengers.filter(
+                      (p) => categories[p.customerId] !== 'INF',
+                    ).length,
                 Object.fromEntries(
                   (input.ticketSelections ?? []).map((t) => [
                     t.serviceClientKey,
-                    input.passengers.filter(
-                      (p) =>
-                        categories[p.customerId] !== 'INF' &&
-                        p.serviceClientKeys.includes(t.serviceClientKey),
-                    ).length,
+                    legacyParties?.[t.serviceClientKey]
+                      ? legacyParties[t.serviceClientKey]!.adults +
+                        legacyParties[t.serviceClientKey]!.children
+                      : input.passengers.filter(
+                          (p) =>
+                            categories[p.customerId] !== 'INF' &&
+                            p.serviceClientKeys.includes(t.serviceClientKey),
+                        ).length,
                   ]),
                 ),
               );
