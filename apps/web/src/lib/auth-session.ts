@@ -54,7 +54,7 @@ async function refreshWithBrowserLock(
 ): Promise<LoginResponse | null> {
   const refresh = () => requestRefresh(baseUrl);
   if (typeof navigator !== 'undefined' && navigator.locks)
-    return navigator.locks.request(`${REFRESH_LOCK_NAME}:${baseUrl}`, refresh);
+    return navigator.locks.request(REFRESH_LOCK_NAME, refresh);
   return refresh();
 }
 
