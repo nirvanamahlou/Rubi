@@ -63,6 +63,9 @@ export interface HrRecordDto {
 
 /** Typed command inputs; no provider receipts or binary content are accepted. */
 export interface HrWorkflowData {
+  /** Persistent diagram offsets in CSS pixels, independent of personnel assignments. */
+  chartX?: number;
+  chartY?: number;
   /** Server-managed contract lifecycle. Generic record commands reject these fields. */
   contractState?: 'SIGNED' | 'ACTIVE' | 'ENDED';
   signedDocumentId?: string;
@@ -156,7 +159,7 @@ export interface HrRecordCreate {
 export interface HrRecordUpdate {
   privateData?: { networkPassword?: string };
   version: number;
-  /** Only organization units may be reparented; server checks branch and cycles. */
+  /** Organization units and chart employee nodes support reparenting; server checks branch/company/cycles. */
   parentId?: string | null;
   values?: string[];
   status?: string;

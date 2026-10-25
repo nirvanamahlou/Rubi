@@ -4,6 +4,7 @@ export const HR_RESOURCE_COLUMNS = {
   ...HR_RADAN_COMPLETION_COLUMNS,
   // Managed through employee commands, without a separate UI section.
   'employee.internalContact': ['شماره داخلی'],
+  'organization.chartEmployees': ['کارمند', 'عنوان نمایشی'],
   'organization.groups': ['نام گروه', 'توضیحات'],
   'organization.groupMembers': ['کارمند'],
   'time.workingHours': [

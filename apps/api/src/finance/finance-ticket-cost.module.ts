@@ -16,6 +16,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type {
+  TicketPurchaseGroupCommandV1,
   FinanceTicketCostCommandV1,
   FinanceTicketPaymentCommandV1,
 } from '@nora/contracts';
@@ -66,6 +67,14 @@ export class TicketPurchaseInboxController {
   @Header('Cache-Control', 'private, no-store')
   list(@Req() req: AuthenticatedRequest) {
     return this.costs.purchaseInbox(req.actor);
+  }
+  @Post('group-costs')
+  @RequirePermissions('procurement.quote.manage')
+  async groupCost(
+    @Body() input: TicketPurchaseGroupCommandV1,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return { data: await this.costs.recordGroupCost(input, req.actor) };
   }
   @Post(':requestId/costs')
   @RequirePermissions('procurement.quote.manage')
