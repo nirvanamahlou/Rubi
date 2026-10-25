@@ -12,9 +12,69 @@ import {
   ContractListContactRouteDate,
   ContractListAmounts,
   ContractListNumber,
+  ContractListTravelDates,
+  ContractListPassengers,
 } from './sales-workspace';
 
 describe('sales dashboard loading', () => {
+  it('shows the booked travel dates in separate cells with their recorded calendars', () => {
+    const contract = {
+      travelDates: {
+        outbound: { date: '2026-10-25', calendar: 'gregorian' },
+        returning: { date: '2026-11-01', calendar: 'persian' },
+      },
+    } as SalesContractSummary;
+    const html = renderToStaticMarkup(
+      <table>
+        <tbody>
+          <tr>
+            <ContractListTravelDates contract={contract} />
+          </tr>
+        </tbody>
+      </table>,
+    );
+    expect(html.match(/<td\b/g)).toHaveLength(2);
+    expect(html).toContain('25/10/2026');
+    expect(html).toContain(
+      new Date('2026-11-01T00:00:00Z').toLocaleDateString('fa-IR', {
+        timeZone: 'UTC',
+      }),
+    );
+  });
+  it('shows both missing travel dates as unknown for older API responses', () => {
+    const html = renderToStaticMarkup(
+      <table>
+        <tbody>
+          <tr>
+            <ContractListTravelDates contract={{} as SalesContractSummary} />
+          </tr>
+        </tbody>
+      </table>,
+    );
+    expect(html.match(/—/g)).toHaveLength(2);
+  });
+  it('shows the passenger total and each nonempty age band without zero badges', () => {
+    const html = renderToStaticMarkup(
+      <ContractListPassengers
+        contract={
+          {
+            passengerNames: [],
+            passengerCount: 4,
+            passengerComposition: {
+              adults: 2,
+              children2To6: 1,
+              children6To12: 1,
+              infants: 0,
+              childrenUnknownAge: 0,
+            },
+          } as unknown as SalesContractSummary
+        }
+      />,
+    );
+    expect(html).toContain('۴ مسافر');
+    expect(html).toContain('۲ بزرگسال، ۱ کودک ۲ تا ۶ سال، ۱ کودک ۶ تا ۱۲ سال');
+    expect(html).not.toContain('نوزاد');
+  });
   it('keeps corrected yellow contract-number cells structurally identical to ordinary cells', () => {
     const render = (reservationContractChanged: boolean) =>
       renderToStaticMarkup(

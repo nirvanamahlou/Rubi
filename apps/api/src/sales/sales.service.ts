@@ -2,6 +2,7 @@ import {
   readLegacyServiceParties,
   legacyServiceHeadcount,
 } from '@nora/contracts';
+import { salesListTravelSummary } from './sales-list-summary';
 import {
   canSelfServeSalesContract,
   hasSalesContractSelfService,
@@ -408,6 +409,7 @@ export function presentSalesContract(
 
 function summary(detail: SalesContractDetail): SalesContractSummary {
   return {
+    ...salesListTravelSummary(detail),
     id: detail.id,
     contractNumber: detail.contractNumber,
     customerId: detail.customerId,
