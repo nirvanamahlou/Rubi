@@ -403,6 +403,15 @@ const isContextDerivedField = (
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
+const deviceFormOrder = [
+  'نام دستگاه',
+  'توضیحات',
+  'آدرس دستگاه',
+  'پورت دستگاه',
+  'رمز عبور شبکه',
+  'نوع دستگاه',
+];
+
 function buildInitialFormValues(
   context: ContextualHrFormContext,
   fields: readonly ContextualHrField[],
@@ -508,6 +517,20 @@ export function ContextualHrForm({
       context.optionalLabels,
     ],
   );
+  const renderedFields = fields
+    .map((field, index) => ({ field, index }))
+    .filter(
+      ({ field }) =>
+        context.section !== 'time' ||
+        context.tab !== 'biometric' ||
+        deviceFormOrder.includes(field.label),
+    )
+    .sort((a, b) =>
+      context.section === 'time' && context.tab === 'biometric'
+        ? deviceFormOrder.indexOf(a.field.label) -
+          deviceFormOrder.indexOf(b.field.label)
+        : a.index - b.index,
+    );
   const [values, setValues] = useState<Record<string, string>>(() =>
     buildInitialFormValues(context, fields),
   );
@@ -778,7 +801,7 @@ export function ContextualHrForm({
       <fieldset className={styles.formFieldset}>
         <legend className={styles.formLegend}>مشخصات {context.title}</legend>
         <div className={styles.formGrid}>
-          {fields.map((field, index) => {
+          {renderedFields.map(({ field, index }) => {
             if (context.hiddenLabels?.includes(field.label)) return null;
             if (
               context.section === 'development' &&
