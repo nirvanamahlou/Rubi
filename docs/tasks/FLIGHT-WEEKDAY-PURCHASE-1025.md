@@ -14,3 +14,5 @@ Group retries replay the same immutable rows, including after settlement. Altere
 
 ## Verification
 API52 related tests pass; Web26 purchase/filter/translation tests pass. API/Web typechecks and scoped lint passed before final refinements; final builds and hosted exact-head checks gate merge. Local Docker engine is unavailable. The existing isolated Finance PostgreSQL suite is extended with real recurring group locks, concurrent replay, exact totals, public cost denominator, stale version rejection and rollback. One additive database CI step runs it against the job's disposable PostgreSQL18 and a uniquely named test database, never an operational database. No dependency, permission grant, operational mutation or server deployment.
+
+Develop integration: incoming legacyServicePartiesV2 aggregate historical contracts use validated per-service adult/child counts for the same pooled cost allocation; infants remain excluded. Sales profit files remain in this work item scope. Regression covers four seats out of150 with no personal passenger records.

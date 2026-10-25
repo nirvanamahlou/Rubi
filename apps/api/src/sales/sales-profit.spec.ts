@@ -64,6 +64,33 @@ const ticket = {
   currencyCode: 'USD',
 };
 describe('actual contract package margin', () => {
+  it('allocates pooled company cost to historical aggregate adults and children without infant seats', () => {
+    const historical = {
+      ...contract,
+      passengersDetail: [],
+      servicesDetail: [
+        {
+          ...contract.servicesDetail[0]!,
+          metadata: {
+            legacyServicePartiesV2: JSON.stringify({
+              flight: { adults: 3, children: 1, infants: 1 },
+            }),
+          },
+        },
+      ],
+      hotelSelection: null,
+    };
+    const result = contractProfit(historical, null, [
+      {
+        ...ticket,
+        supplyType: 'COMPANY',
+        poolCost: { seatCount: 150, totalCost: '3000' },
+      },
+    ]);
+    expect(result.costs[0]?.amount).toBe('80');
+    expect(result.complete).toBe(true);
+  });
+
   it('includes both legs sharing one service and keeps profit unknown until both costs exist', () => {
     const shared = {
       ...contract,
