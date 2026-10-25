@@ -11,3 +11,5 @@ Prior local verification: scoped lint/typechecks, API/Web builds, isolated Postg
 PR: https://github.com/nirvanamahlou/Rubi/pull/1114 (author Amin-tech11, target develop). Source release prepared and pushed; all final checks and merge SHA are authoritative in the PR checks/timeline. Merge remains conditional on success of every check on the latest head; no gate bypass is authorized.
 
 CI fix: Full typecheck exposed Node UUID template-literal inference in the queue sorting test (TS2345 at ids.includes(row.id)). Explicitly typed the fixture ID collection as string[]; production behavior unchanged. Full CI must rerun on the fixing commit.
+
+CI completeness fix: added13 missing English Call Center strings and synchronized the request-assignment scope error in the offline API catalogue. Local i18n coverage test passes3/3; UI Persian copy and workflow unchanged. Full CI reruns on this translation commit.

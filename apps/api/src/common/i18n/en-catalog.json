@@ -6559,5 +6559,6 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "کارشناس انتخاب‌شده خارج از محدوده مجاز ارجاع درخواست است.": "The selected specialist is outside the permitted request assignment scope."
 }

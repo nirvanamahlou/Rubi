@@ -4355,5 +4355,18 @@
   "صفحه‌بندی تماس‌های بازه": "Period calls pagination",
   "تماس‌های امروز از ابتدای روز تا اکنون به وقت تهران؛ مستقل از فیلترهای مخاطبان.": "Calls from the start of today until now, Tehran time; independent of contact filters.",
   "تماس‌های هفته از ابتدای شنبه تا اکنون به وقت تهران؛ مستقل از فیلترهای مخاطبان.": "Calls from the start of Saturday until now, Tehran time; independent of contact filters.",
-  "هر ردیف یک مخاطب نیازمند تماس مجدد است؛ اطلاعات آخرین تماس بی‌پاسخ او را می‌توانید ویرایش کنید.": "Each row is a contact awaiting a callback; you can edit their latest missed call."
+  "هر ردیف یک مخاطب نیازمند تماس مجدد است؛ اطلاعات آخرین تماس بی‌پاسخ او را می‌توانید ویرایش کنید.": "Each row is a contact awaiting a callback; you can edit their latest missed call.",
+  "از تاریخ (تهران)": "From date (Tehran)",
+  "انتخاب کارشناس مسئول": "Select responsible specialist",
+  "تا ابتدای تاریخ (تهران)": "Until start of date (Tehran)",
+  "تعداد تماس مخاطب": "Contact call count",
+  "تماس بدون نتیجه‌ای در دسترسی شما وجود ندارد.": "No calls without an outcome are available within your access.",
+  "تماس خروجی جدید ثبت شد؛ فهرست را تازه‌سازی کنید.": "A new outbound call was recorded; refresh the list.",
+  "در حال دریافت کارشناسان…": "Loading specialists…",
+  "دریافت فهرست کارشناسان ممکن نشد.": "Could not load the specialist list.",
+  "زمان تماس": "Call time",
+  "صفحه‌بندی تماس‌های بدون نتیجه": "Calls without outcome pagination",
+  "کارشناس انتخاب‌شده خارج از محدوده مجاز ارجاع درخواست است.": "The selected specialist is outside the permitted request assignment scope.",
+  "مشغول": "Busy",
+  "نتیجه ثبت‌نشده": "Outcome not recorded"
 }
