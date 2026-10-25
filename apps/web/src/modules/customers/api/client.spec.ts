@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { customersApi, salesPeopleApi, customerErrorMessage } from './client';
+import { SessionRefreshUnavailableError } from '@/lib/auth-session';
 
 const originalBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 afterEach(() => {
@@ -42,7 +43,7 @@ describe('customers browser client', () => {
     ];
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ user: { branches } }),
+      json: async () => ({ user: { id: 'synthetic-user', branches } }),
     });
     vi.stubGlobal('fetch', fetchMock);
     const [first, second] = await Promise.all([
@@ -69,11 +70,11 @@ describe('customers browser client', () => {
       .mockRejectedValueOnce(new Error('network failure'))
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ user: { branches: [] } }),
+        json: async () => ({ user: { id: 'synthetic-user', branches: [] } }),
       });
     vi.stubGlobal('fetch', fetchMock);
-    await expect(customersApi.branchReferences()).rejects.toThrow(
-      'دریافت نام شعب مجاز ناموفق بود.',
+    await expect(customersApi.branchReferences()).rejects.toBeInstanceOf(
+      SessionRefreshUnavailableError,
     );
     await expect(customersApi.branchReferences()).resolves.toEqual([]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -186,7 +187,7 @@ describe('customers browser client', () => {
       .mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => ({ user: { branches: [] } }),
+        json: async () => ({ user: { id: 'synthetic-user', branches: [] } }),
       })
       .mockResolvedValueOnce({
         ok: true,

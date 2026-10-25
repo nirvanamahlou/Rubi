@@ -4,7 +4,14 @@ const REFRESH_LOCK_NAME = 'nora-auth-refresh';
 const CONFLICT_RETRY_DELAY_MS = 150;
 export const AUTH_SESSION_RECOVERED_EVENT = 'nora:auth-session-recovered';
 
-let refreshInFlight: Promise<LoginResponse | null> | null = null;
+const refreshesInFlight = new Map<string, Promise<LoginResponse | null>>();
+
+export class SessionRefreshUnavailableError extends Error {
+  constructor() {
+    super('ارتباط برقرار نشد؛ دوباره تلاش کنید.');
+    this.name = 'SessionRefreshUnavailableError';
+  }
+}
 
 async function requestRefresh(baseUrl: string): Promise<LoginResponse | null> {
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -13,9 +20,15 @@ async function requestRefresh(baseUrl: string): Promise<LoginResponse | null> {
       credentials: 'include',
       cache: 'no-store',
       headers: { accept: 'application/json' },
-    }).catch(() => null);
+      signal: AbortSignal.timeout(15_000),
+    }).catch(() => {
+      throw new SessionRefreshUnavailableError();
+    });
     if (response?.ok) {
-      const session = (await response.json()) as LoginResponse;
+      const session = (await response
+        .json()
+        .catch(() => null)) as LoginResponse | null;
+      if (!session?.user?.id) throw new SessionRefreshUnavailableError();
       if (typeof window !== 'undefined')
         window.dispatchEvent(
           new CustomEvent<LoginResponse>(AUTH_SESSION_RECOVERED_EVENT, {
@@ -24,12 +37,16 @@ async function requestRefresh(baseUrl: string): Promise<LoginResponse | null> {
         );
       return session;
     }
-    if (response?.status !== 409 || attempt === 1) return null;
+    // Only an authoritative authentication denial ends a session. A failed
+    // connection, busy rotation or server outage does not revoke the cookie.
+    if (response.status === 401 || response.status === 403) return null;
+    if (response.status !== 409 || attempt === 1)
+      throw new SessionRefreshUnavailableError();
     await new Promise((resolve) =>
       globalThis.setTimeout(resolve, CONFLICT_RETRY_DELAY_MS),
     );
   }
-  return null;
+  throw new SessionRefreshUnavailableError();
 }
 
 async function refreshWithBrowserLock(
@@ -44,8 +61,13 @@ async function refreshWithBrowserLock(
 export function refreshAuthenticatedSession(
   baseUrl: string,
 ): Promise<LoginResponse | null> {
-  refreshInFlight ??= refreshWithBrowserLock(baseUrl).finally(() => {
-    refreshInFlight = null;
-  });
-  return refreshInFlight;
+  const key = baseUrl.replace(/\/$/, '');
+  let refresh = refreshesInFlight.get(key);
+  if (!refresh) {
+    refresh = refreshWithBrowserLock(key).finally(() => {
+      refreshesInFlight.delete(key);
+    });
+    refreshesInFlight.set(key, refresh);
+  }
+  return refresh;
 }
