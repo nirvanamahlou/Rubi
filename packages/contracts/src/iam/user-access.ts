@@ -2287,6 +2287,12 @@ export function canViewScreen(
   permissions: readonly string[],
   id: string,
 ): boolean {
+  if (permissions.includes(MANUAL_ACCESS_VERSION))
+    return (
+      USER_ACCESS_SCREENS.some((screen) => screen.id === id) &&
+      permissions.includes(screenPermission(id)) &&
+      !permissions.includes(denyPermission(id))
+    );
   if (
     (id === 'floating-purchases.hotels' ||
       id === 'floating-purchases.flights') &&
@@ -2303,12 +2309,6 @@ export function canViewScreen(
       hasAccessControl(permissions, id) &&
       (!hasManagedAccess(permissions) ||
         permissions.includes(screenPermission(id)))
-    );
-  if (permissions.includes(MANUAL_ACCESS_VERSION))
-    return (
-      USER_ACCESS_SCREENS.some((screen) => screen.id === id) &&
-      permissions.includes(screenPermission(id)) &&
-      !permissions.includes(denyPermission(id))
     );
   if (id === 'assistant.executive') return true;
   if (id === 'ticket-purchases.home') {

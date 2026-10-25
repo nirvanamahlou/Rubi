@@ -36,10 +36,15 @@ function fixture() {
     cabinClassCode: 'ECONOMY',
     status: 'STOPPED',
     totalCapacity: 0,
+    supplyType: 'COMPANY',
   };
   const findMany = vi.fn(async () => [offer]);
   const catalog = new TicketPublicService(
-    { client: { ticketPublishedOffer: { findMany } } } as never,
+    {
+      client: {
+        ticketPublishedOffer: { findMany, findFirst: vi.fn(async () => offer) },
+      },
+    } as never,
     {} as never,
   );
   const saved = structuredClone(selection);

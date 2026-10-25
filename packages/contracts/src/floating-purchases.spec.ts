@@ -5,7 +5,8 @@ import {
   FLOATING_PURCHASE_OWN,
   FLOATING_PURCHASE_ALL,
 } from './floating-purchases';
-import { canViewRoute } from './iam/user-access';
+import { MANUAL_ACCESS_VERSION } from './iam/manual-access';
+import { canViewRoute, canViewScreen } from './iam/user-access';
 import { completeManualAccessPrerequisites } from './iam/manual-access-prerequisites';
 const empty = { serviceSelections: [], ticketSelections: [] };
 describe('floating sourcing boundaries', () => {
@@ -94,4 +95,29 @@ describe('floating sourcing boundaries', () => {
     expect(result.allowedControlIds).toEqual(result.screenIds);
     expect(result.permissionCodes).toEqual([FLOATING_PURCHASE_OWN]);
   });
+});
+
+it('preserves explicit manual screen conversion without granting native floating purchase operations', () => {
+  const permissions = [
+    MANUAL_ACCESS_VERSION,
+    'ui.profile',
+    'ui.screen.floating-purchases.hotels',
+    'ui.allow.floating-purchases.hotels',
+  ];
+  expect(canViewScreen(permissions, 'floating-purchases.hotels')).toBe(true);
+  expect(canViewRoute(permissions, '/ticket-purchases/floating-hotels')).toBe(
+    false,
+  );
+  expect(
+    canViewRoute(
+      [...permissions, FLOATING_PURCHASE_OWN],
+      '/ticket-purchases/floating-hotels',
+    ),
+  ).toBe(true);
+  expect(
+    canViewScreen(
+      [...permissions, 'ui.deny.floating-purchases.hotels'],
+      'floating-purchases.hotels',
+    ),
+  ).toBe(false);
 });
