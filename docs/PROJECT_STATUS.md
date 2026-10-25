@@ -7583,3 +7583,8 @@ Return-only New Contract now labels its sole date picker as the return ticket an
 Final Call Center feature chain consolidated from87eb5e3a and integrated with develop8806eac1. User authorizes PR and merge after all CI/CD checks pass. Only shared docs and translation append conflicts required resolution; other modules preserved. No local secrets/runtime files published. See release task for final CI/merge evidence.
 
 CALL-CENTER-RELEASE-1025 publication: https://github.com/nirvanamahlou/Rubi/pull/1114 targets develop under Amin-tech11. Final reviewed source pushed; source reservations released. Await all checks on latest head before authorized merge; PR checks/timeline are final CI/merge evidence. Local runtime preserved.
+
+## 2026-10-25 — RESERVATION-CALENDAR-BASIS-1025 — PC-A — READY_FOR_CI
+
+Reservation contract-detail travel dates and flight timestamps now honor per-service dateCalendarSystem metadata; hotel-only route dates use the hotel's basis, flight legs can differ, and timestamp display consistently uses Tehran while date-only stays preserve their ISO day. Sales keeps each flight calendar choice in the browser draft and writes it, plus the existing independent hotel calendar, to service metadata without converting dates. Producer/consumer ship together; legacy snapshots without basis retain compatible flight Persian/hotel Gregorian defaults because the original choice was not stored. No migration, API shape, permission, operational database/runtime or deployment changes. Focused54 and Sales/hotel/draft33 tests plus scoped ESLint pass; full Web types/build and exact-head hosted gates precede user-authorized develop merge. Source locks freeze/release with publication.
+

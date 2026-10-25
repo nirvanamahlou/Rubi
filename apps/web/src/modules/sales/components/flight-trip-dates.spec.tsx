@@ -46,6 +46,31 @@ vi.mock('@/components/ui/date-picker', () => ({
 }));
 vi.mock('../api/ticket-search', () => ({ searchTickets: vi.fn() }));
 import { searchTickets } from '../api/ticket-search';
+
+it('reports calendar changes for the exact leg without changing flight dates', () => {
+  const onChange = vi.fn();
+  const onCalendarSystemChange = vi.fn();
+  renderToStaticMarkup(
+    <FlightTripDates
+      originId="origin"
+      destinationId="destination"
+      roundTrip
+      seats={1}
+      requireFare={false}
+      value={{ from: '2099-10-01', to: '2099-10-03' }}
+      onChange={onChange}
+      calendarSystems={{ OUTBOUND: 'gregorian', RETURN: 'persian' }}
+      onCalendarSystemChange={onCalendarSystemChange}
+    />,
+  );
+  expect(fixture.pickers.map((picker) => picker.calendarSystem)).toEqual([
+    'gregorian',
+    'persian',
+  ]);
+  fixture.pickers[1]!.onCalendarSystemChange!('gregorian');
+  expect(onCalendarSystemChange).toHaveBeenCalledWith('RETURN', 'gregorian');
+  expect(onChange).not.toHaveBeenCalled();
+});
 const outbound: TicketOfferV1 = {
   id: 'out',
   version: 1,
