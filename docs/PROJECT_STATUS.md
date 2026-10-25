@@ -7589,3 +7589,6 @@ CONTACT-DESTINATION-COLUMN-1025 final: localhost3000 now shows requested headers
 
 ## REQUEST-REASON-REQUIRED-1025 — PC-C
 Request reason is mandatory for every creation/edit, enforced by native form validation, trimmed frontend validation, DTO and service.58 isolated PostgreSQL/API tests and6 Web/i18n tests pass; scoped lint, affected API source/test types/build and full Web types/build65 pages pass. No migration, dependency, ownership or popup-policy change. See tasks/REQUEST-REASON-REQUIRED-1025.md.
+
+## REQUEST-HEADER-SPACING-1025 — PC-C
+Added user-requested16px gap between contact summary and request title in the Call Center editor. Browser measurement confirms0->16px onlocalhost3000.3 workflow tests, lint and full Web types/build65 pages pass; no API/migration/dependency changes. See tasks/REQUEST-HEADER-SPACING-1025.md.

@@ -9638,3 +9638,8 @@ CONTACT-DESTINATION-COLUMN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: requeste
 User requires reason on every request creation/edit, including whitespace rejection. Reserve workflow form/DTO/service and existing relevant tests/fixtures, scoped i18n reason message and own docs. No migration/dependency change; preserve approved layout and local credentials.
 
 REQUEST-REASON-REQUIRED-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: mandatory reason enforced on create/edit in UI, DTO and service; whitespace rejected without mutation.64 tests, scoped lint/types/API build and Web65-page build pass. Browser validation verified on3000. No migration/PBX/popup-policy change.
+
+## REQUEST-HEADER-SPACING-1025 — PC-C — IN_PROGRESS
+Reserve workflow.tsx/workflow.module.css and own docs for user-authorized16px separation between contact summary and request title. No functional, API, dependency or migration change.
+
+REQUEST-HEADER-SPACING-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: scoped16px contact-summary spacing, verified visually and by DOM measurement on3000.3 tests, lint, full Web typecheck/build pass. No API/data change.

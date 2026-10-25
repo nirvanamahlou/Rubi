@@ -1000,7 +1000,7 @@ export function WorkflowEditor({
           دستگاه است.
         </DialogDescription>
         {contactCall && (
-          <p>
+          <p className={styles.editorContact}>
             مخاطب: {contactCall.name || 'نام ثبت نشده'} ·{' '}
             <bdi dir="ltr">{contactCall.phone || 'شماره نامشخص'}</bdi> ·{' '}
             {contactCall.subject}
