@@ -90,6 +90,8 @@ export function resource(section: unknown, tab: unknown): HrResourceDefinition {
 export function workflowData(value: unknown): HrWorkflowData {
   if (value === undefined) return {};
   const data = object(value, [
+    'chartX',
+    'chartY',
     'managerId',
     'targetBranchId',
     'organizationBranchId',
@@ -138,6 +140,17 @@ export function workflowData(value: unknown): HrWorkflowData {
     !/^\d{1,3}(\.\d{1,2})?$/.test(String(data.allowanceDays))
   )
     throw new BadRequestException('سهمیه معتبر نیست.');
+  for (const coordinate of ['chartX', 'chartY']) {
+    if (
+      data[coordinate] !== undefined &&
+      (typeof data[coordinate] !== 'number' ||
+        !Number.isFinite(data[coordinate]) ||
+        Math.abs(Number(data[coordinate])) > 5000)
+    )
+      throw new BadRequestException(
+        'مختصات گره باید عددی بین منفی و مثبت ۵۰۰۰ باشد.',
+      );
+  }
   if (data.reason !== undefined) text(data.reason, 'دلیل', 1000);
   return data as HrWorkflowData;
 }

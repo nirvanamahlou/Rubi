@@ -70,7 +70,9 @@ describe('Live HR boundaries and consolidated workflows', () => {
       'shifts',
       'leaves',
       'settings',
+      'device',
     ]);
+    expect(resolveHrGroup(hrGroups.time!, 'biometric').id).toBe('device');
     expect(resolveHrGroup(hrGroups.lifecycle!, 'transfer').id).toBe('changes');
     expect(employeeGroups).toHaveLength(8);
   });

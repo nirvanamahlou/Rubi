@@ -2,6 +2,15 @@
 
 Owner-authorized completion adds immutable purchase outcome/manual refund/write-off evidence, explicit principal versus agent earned revenue, actual imported gross payroll with net-accrual deduplication, and supplier payment realised FX carrying adjustments without a second bank line. Existing forms remain; an inline financial-event panel captures evidence and creates drafts through existing independent approval/posting. Sales price/cancel guard, period-close blockers, source FKs and additive migrations20261025120000/20261025120100. No orchestration, bank connection, tax-rate inference or main-data fixtures. Initial isolated PG/math9 and Web/i18n10 tests pass; API typecheck passes. Final merged-head regressions, full types/lint/build and hosted gates are still pending. No push/merge/3100 deployment claimed at this checkpoint. Rules and source/inference boundaries: docs/tasks/FINANCIAL-WORKFLOWS-COMPLETION-1025.md.
 
+
+## 2026-10-25 — FLIGHT-WEEKDAY-PURCHASE-1025 — PC-A
+
+Recurring company-capacity purchases group exact carrier/number/route/cabin/supplier/branch and Tehran weekday. One total atomically apportions per-offer payable revisions whose sum is exact; Sales uses the original pool denominator for actual consumed seats. Dates/full membership remain visible, old costs/history/payments stay protected, and final unsold loss remains separated from future residual capacity. API52 and Web26 related tests pass; full type/lint/build and exact-head CI including isolated PostgreSQL concurrency/rollback gate user-authorized develop merge. No schema/migration/dependency/operational rollout. See tasks/FLIGHT-WEEKDAY-PURCHASE-1025.md.
+
+## LEGACY-CONTRACT-SERVICES-1025 — PC-A
+
+Legacy Contract retains service/date/age-count selection and per-service negotiated prices while excluding personal passenger entry. Validated additive V2 aggregate metadata preserves real ticket/hotel selections and flows to reservation snapshots/output; confirmation reserves adult+child seats per catalog leg without invented identities. Existing V1 data and ordinary validations remain. Contract output replaces empty personal tables with service age counts; list/Excel expose an additive aggregate count fallback. Web Sales612 tests and API Sales261 tests pass. Shared/targeted regressions, affected types/lint/build and all exact-head hosted gates precede owner-authorized develop merge and encrypted-backup server rollout. No schema/migration/dependency change.
+
 ## 2026-10-24 — RESERVATION-FORM-POLISH-1024 — PC-A
 
 Supplier reservation preview/PDF removes the separate flight table while retaining each passenger's flight allocation. Transfer headers are TRF IN / TRF OUT; generic OTHER values are omitted while named English services remain. Room/night summary is slightly smaller and hotel table values use semibold. Registered request-scoped gender reaches output; an existing versioned form-only gender field is now editable for missing/corrected form data. Voucher flight layout is unchanged. Focused45 tests pass; synthetic one-page and three-page A4 PDFs rendered and all pages visually reviewed, with repeated footer and no clipped columns. Full affected checks/exact-head CI gate authorized develop merge and encrypted-backup Avina deployment. No schema, migration, dependency or permission changes.
@@ -7468,3 +7477,19 @@ Seven HR-owned operational charts consume a new authenticated private/no-store a
 
 
 HR-DASHBOARD-CHARTS-1025 verification:38 isolated PostgreSQL/HTTP HR checks,12 focused aggregation/scope regressions and3 chart rendering checks pass. API/Web TypeScript and scoped lint pass. Department display names consume the existing IAM public port; HR data remains owned/read within HR. Final focused recheck and hosted exact-head full quality/tests/production-build/database gates remain required before authorized develop merge. No operational database or runtime changes.
+
+
+## HR-ORG-CHART-NODES-1025 — PC-B — IMPLEMENTED / VALIDATING
+
+The live organization chart adds real departments and explicit employee nodes through its per-node side toolbar. Employee nodes bind existing personnel IDs and same-company parent department/employee records; removing a chart member never archives the personnel record or changes their official assignment. Create forms no longer require selecting an already-existing unit. Existing canonical department editing/deletion and dependency guards remain intact; parent editing is available for both supported node kinds. Pointer/touch move handles and arrow keys persist bounded diagram offsets through existing versioned/audited HR record commands, retain connector alignment and restore server state after save conflicts. Truncated bootstrap loads the complete permitted reference set before enabling the chart. No migration/dependency/runtime/server or Radan changes.153 HR Web checks and40 isolated PostgreSQL/HTTP checks pass at the implementation checkpoint; final source checks and hosted gates remain required.
+
+## HR-DEVICE-FORM-1025 — PC-B
+
+Fresh authenticated read-only inspection of Radan /attendance/device/device-list confirms the six device inputs and five provider choices. Time navigation now exposes a dedicated دستگاه group. The device form renders name, description, address, port, write-only network password and type in observed order; generated code/status/synchronization telemetry remain stored and available to existing server workflows but are not editable form inputs. Display ordering never reorders canonical submitted column positions. Existing branch scope, sensitive permission and encrypted password storage remain unchanged. Six focused regressions pass; final lint/types and hosted full quality/tests/build/database gates precede authorized develop merge. No migration/dependency/provider connection/deploy or Radan write.
+
+## HR-PERSONNEL-COPY-CLEANUP-1025 — PC-B
+
+Removed the employee dialog explanatory paragraph and the numbered personal/account/confirmation step captions, including duplicate personal/confirmation legends. Existing fields, step navigation, validation, account binding and submission remain unchanged. Six existing personnel regressions pass; scoped lint, Web typecheck and hosted quality/tests/build/database gates are required before the authorized develop merge. No migration/dependency/deploy/Radan writes.
+## LEGACY-CAPACITY-AMEND-1025 — PC-A
+
+Historical service capacity is also retained by the transactional amendment callback: declared adult+child counts select catalog legs and per-leg quantities even with zero personal passenger records. Existing ordinary amendment logic, CAS/snapshot and receipts remain. Regression covers an aggregate count change with a confirmed receipt; all exact-head gates precede the owner-authorized follow-up merge and server rollout. No migration or dependency changes.

@@ -27,6 +27,10 @@ export interface HrResourceDefinition {
 
 const parentResources: Record<string, string[]> = {
   'organization.units': ['organization.units'],
+  'organization.chartEmployees': [
+    'organization.units',
+    'organization.chartEmployees',
+  ],
   'organization.groupMembers': ['organization.groups'],
   'time.shift': ['time.workingHours', 'time.shiftTemplates'],
   'time.templateDays': ['time.shiftTemplates'],
@@ -213,6 +217,7 @@ export function getHrResource(
     selfService: selfService.has(key),
     parentResources: parentResources[key] ?? [],
     parentOptional: [
+      'organization.chartEmployees',
       'organization.units',
       'time.shift',
       'expenses.travel',

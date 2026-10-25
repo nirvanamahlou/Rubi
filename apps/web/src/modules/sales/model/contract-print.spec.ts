@@ -496,3 +496,22 @@ it('uses the dedicated public contract capability instead of the pending QR', ()
   expect(html).toContain('data-public-document-qr');
   expect(html).not.toContain('pending-server');
 });
+
+it('prints aggregate historical service age counts instead of empty personal passenger tables', () => {
+  const output = structuredClone(printFixture);
+  output.contract.passengersDetail = [];
+  const parties = Object.fromEntries(
+    output.contract.servicesDetail.map((s) => [
+      s.clientKey,
+      { adults: 2, children: 1, infants: 1 },
+    ]),
+  );
+  output.contract.servicesDetail[0]!.metadata = {
+    legacyServicePartiesV2: JSON.stringify(parties),
+  };
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('تعداد: 4 نفر');
+  expect(html).toContain('<th>نوزاد</th>');
+  expect(html).not.toContain('class="passengers passenger-services"');
+  expect(html).not.toContain('class="passengers passenger-prices"');
+});

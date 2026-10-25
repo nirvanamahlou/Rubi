@@ -1,3 +1,4 @@
+import { readLegacyServiceParties } from '@nora/contracts';
 import type { TicketDocumentFacts } from '@/modules/ticket-catalog/public/document-details';
 import { readPassengerTotalPrices } from '@nora/contracts';
 import { readPassengerHotelStays } from '@nora/contracts';
@@ -135,6 +136,14 @@ export function contractPrintHtml(
       : date(value);
   const name = (id?: string | null) =>
     id ? (refs.names[id] ?? 'نام مرجع در دسترس نیست') : '—';
+  const legacyParties = readLegacyServiceParties(c.servicesDetail);
+  const partyCount = legacyParties
+    ? Math.max(
+        ...Object.values(legacyParties).map(
+          (p) => p.adults + p.children + p.infants,
+        ),
+      )
+    : c.passengersDetail.length;
   const completePrices =
     c.passengersDetail.length > 0 &&
     c.passengersDetail.every((p) => p.agreedPrices?.length);
@@ -471,10 +480,20 @@ export function contractPrintHtml(
   ${c.status === 'CANCELLED' ? '<div class="cancelled">این قرارداد لغو شده است</div>' : ''}
   ${options.draft ? '<p class="note"><b>پیش‌نمایش قرارداد — هنوز ثبت و به رزرواسیون ارسال نشده است.</b></p>' : ''}
   <div class="meta"><div>شماره قرارداد<strong><bdi>${e(c.contractNumber)}</bdi></strong></div><div>${options.draft ? 'تاریخ پیش‌نمایش' : 'تاریخ ثبت'}<strong>${e(date(c.createdAt))}</strong></div><div>ساعت<strong>${e(time(c.createdAt))}</strong></div><div>مسئول فروش<strong>${e(output.ownerName)}</strong></div></div>
-  <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(contractPartyName)}</b></div><div>شماره مشتری: <bdi>${e(output.customer.phone)}</bdi></div><div>تلفن ثابت: <bdi>${e(output.customer.landline || '—')}</bdi></div><div>نشانی: ${e(output.customer.address)}</div><div>کد پستی: <bdi>${e(output.customer.postalCode)}</bdi></div><div>مقصد: ${e(name(c.destinationId))}</div><div>تعداد: ${c.passengersDetail.length} نفر</div><div>درخواست‌کننده: ${e(contractPartyName)}</div><div class="wide">خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
-<section class="passengers passenger-services">${heading(2, 'PASSENGER SERVICES', 'خدمات هر مسافر')}<table><colgroup><col width="4%"><col width="19%"><col width="10%"><col width="6%"><col width="6%"><col width="12%"><col width="12%"><col width="7%"><col width="7%"><col width="17%"></colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>بلیط رفت</th><th>بلیط برگشت</th><th>ورود هتل</th><th>خروج هتل</th><th>ترانسفر رفت</th><th>ترانسفر برگشت</th><th>سایر خدمات</th></tr></thead><tbody>${serviceRows}</tbody></table></section>
+  <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(contractPartyName)}</b></div><div>شماره مشتری: <bdi>${e(output.customer.phone)}</bdi></div><div>تلفن ثابت: <bdi>${e(output.customer.landline || '—')}</bdi></div><div>نشانی: ${e(output.customer.address)}</div><div>کد پستی: <bdi>${e(output.customer.postalCode)}</bdi></div><div>مقصد: ${e(name(c.destinationId))}</div><div>تعداد: ${partyCount} نفر</div><div>درخواست‌کننده: ${e(contractPartyName)}</div><div class="wide">خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
+${
+  legacyParties
+    ? `<section><table><thead><tr><th>خدمت</th><th>بزرگسال</th><th>کودک</th><th>نوزاد</th></tr></thead><tbody>${c.servicesDetail
+        .map((service) => {
+          const p = legacyParties[service.clientKey]!;
+          return `<tr><td>${e(service.titleSnapshot)}</td><td>${p.adults}</td><td>${p.children}</td><td>${p.infants}</td></tr>`;
+        })
+        .join('')}</tbody></table></section>`
+    : `<section class="passengers passenger-services">${heading(2, 'PASSENGER SERVICES', 'خدمات هر مسافر')}<table><colgroup><col width="4%"><col width="19%"><col width="10%"><col width="6%"><col width="6%"><col width="12%"><col width="12%"><col width="7%"><col width="7%"><col width="17%"></colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>بلیط رفت</th><th>بلیط برگشت</th><th>ورود هتل</th><th>خروج هتل</th><th>ترانسفر رفت</th><th>ترانسفر برگشت</th><th>سایر خدمات</th></tr></thead><tbody>${serviceRows}</tbody></table></section>
 <section class="passengers passenger-prices">${heading(3, 'PASSENGERS & PRICING', 'قیمت هر مسافر')}<table><colgroup>${passengerColumns}</colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>${totalPrices ? 'قیمت ریالی' : 'مبلغ پرواز'}</th><th>قیمت ارزی</th>${showDiscount ? '<th>تخفیف</th>' : ''}${showCommission ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th></tr></thead><tbody>${rows}</tbody></table><div class="financial-summary">${totalPrices ? '' : '<p class="note">مبلغ پرواز هر مسافر جزئی از مبلغ کل قرارداد است.</p>'}<div class="summary-grid"><div class="summary-card"><b>قیمت توافق‌شده قرارداد</b><div class="summary-value">${c.paymentTerms?.mode === 'CHECK' || c.servicesDetail.some((s) => s.metadata?.automaticFlightRoomTotalV1 === true) ? moneyRows('amount') : (agreementTotal ?? moneyRows('amount'))}</div></div></div>${chequeTerms}</div></section>
-  <section>${heading(4, 'FLIGHT INFORMATION', 'اطلاعات پرواز')}<table><thead><tr><th>مسیر</th><th>ایرلاین</th><th>شماره</th><th>تاریخ</th><th>ساعت</th><th>کلاس</th></tr></thead><tbody>${flights || '<tr><td colspan="6">پرواز در این قرارداد انتخاب نشده است.</td></tr>'}</tbody></table></section>
+  `
+}
+<section>${heading(4, 'FLIGHT INFORMATION', 'اطلاعات پرواز')}<table><thead><tr><th>مسیر</th><th>ایرلاین</th><th>شماره</th><th>تاریخ</th><th>ساعت</th><th>کلاس</th></tr></thead><tbody>${flights || '<tr><td colspan="6">پرواز در این قرارداد انتخاب نشده است.</td></tr>'}</tbody></table></section>
   <section>${heading(5, 'HOTEL INFORMATION', 'اطلاعات هتل')}${hotel ? `<table><thead><tr><th style="width:30%">نام هتل</th><th>درجه</th><th>خدمات</th><th>ورود</th><th>خروج</th>${mixedRoomTypes ? '' : '<th>نوع اتاق</th>'}</tr></thead><tbody><tr><td><bdi>${e(refs.hotelLatinName ?? 'ثبت نشده')}</bdi><small><bdi>${e(refs.hotelWebsite ?? 'وب‌سایت ثبت نشده')}</bdi></small></td><td>${e(refs.hotelGrade)}</td><td>${e(name(hotel.mealServiceId))}</td><td class="stay-date-cell"><bdi class="stay-date" dir="ltr">${e(stayDate(hotel.checkInDate))}</bdi></td><td class="stay-date-cell"><bdi class="stay-date" dir="ltr">${e(stayDate(hotel.checkOutDate))}</bdi></td>${mixedRoomTypes ? '' : `<td class="room-type"><bdi>${e(room)}</bdi></td>`}</tr></tbody></table><div class="hotel-room-summary"><span>تعداد اتاق‌ها: <b>${e(roomCount)}</b></span><span>مجموع مهمانان هتل: <b>${e(roomGuestCount)}</b></span></div>${hotel.rooms?.length ? `<table class="hotel-rooms"><colgroup>${(showRoomPrices ? [6, 30, 10, 16, 14, 24] : [8, 40, 12, 20, 20]).map((width) => `<col width="${width}%">`).join('')}</colgroup><thead><tr><th>اتاق</th><th>نوع و دسته‌بندی اتاق</th><th>بزرگسال</th><th>سن کودکان</th><th>تعداد نفرات اتاق</th>${showRoomPrices ? '<th>مبلغ توافق‌شدهٔ اتاق</th>' : ''}</tr></thead><tbody>${hotel.rooms.map((r) => `<tr><td>${e(r.ordinal)}</td><td class="room-type"><bdi>${e(salesRoomDisplayName(r))}</bdi></td><td>${e(r.adults)}</td><td>${e(r.childAges.join(', ') || '—')}</td><td>${e(r.adults + r.childAges.length)}</td>${showRoomPrices ? `<td>${r.agreedPrice ? '<bdi class="money">' + contractMoney(r.agreedPrice.amount) + ' ' + contractCurrency(r.agreedPrice.currencyCode) + '</bdi>' : '—'}</td>` : ''}</tr>`).join('')}</tbody></table>` : ''}` : 'هتل در این قرارداد انتخاب نشده است.'}</section>
 
 ${contractNotice ? `<section class="contract-notice"><h3>یادداشت قرارداد <span dir="ltr">NOTICE</span></h3><p>${e(contractNotice)}</p></section>` : ''}
