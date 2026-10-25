@@ -233,7 +233,7 @@ export function HrLiveWorkspace({
           store={store}
           onProfile={(item) =>
             router.push(
-              `/hr?section=employee&employee=${item.id}${tab ? `&tab=${encodeURIComponent(tab)}` : ''}`,
+              `/hr?section=employee&employee=${encodeURIComponent(item.id)}&tab=${encodeURIComponent(tab || 'summary')}`,
             )
           }
         />

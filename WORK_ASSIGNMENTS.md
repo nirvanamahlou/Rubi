@@ -9559,6 +9559,10 @@ LEGACY-CONTRACT-SERVICES-1025 count projection extension: reserve additive optio
 
 LEGACY-CONTRACT-SERVICES-1025 validation: Web Sales102 files612 tests pass (one existing skipped), API Sales36 files261 tests pass, targeted aggregate metadata/count/price/output regressions and ordinary V1 compatibility pass. Affected types, scoped lint/build and all exact-head hosted gates required before merge; deployment uses a verified encrypted backup and preserves environment/mounts/data. No migration. Source locks release on publication.
 
+## HR-PROFILE-ENTRY-1025 — PC-B — RESERVED
+
+Base develop5d1a303d; branch codex/pc-b-hr-profile-entry-1025. Reproduced blank employee profile at local3100: entry omitted tab while the existing access catalogue requires section employee plus an explicit tab. Reserve HR page entry, HR live workspace profile link, a focused route regression and own status notes only. Canonicalize the missing tab to existing summary, retaining explicit tabs and record targets; do not alter IAM grants, shared access contracts or API row authorization. No schema/migration/dependency or server deployment. Local verification must open the actual reported profile without data writes. Targeted routing/authorization regression, scoped lint/types and exact-head gates precede authorized develop merge. Prior year reservation released on merged PR1118; no overlapping active writer found.
+
 ## HR-LOCAL-YEAR-1025 — PC-B — RESERVED
 
 Base develop8806eac1; branch codex/pc-b-hr-local-year-1025. During the user-authorized local3100 rollout, the leave form showed NaN because Intl's Persian calendar year includes an era suffix. Reserve only hr-radan-tools.tsx, its new focused year regression and own status notes. Extract the numeric year part with Latin digits and Tehran timezone. No API, schema, migration, dependency, permissions or server deployment changes. Prior HR parity reservations released on merged PR1113; no overlapping active writer found. Targeted regression, lint/types and hosted gates precede authorized normal develop merge. Local runtime uses existing database/documents without operational writes.
