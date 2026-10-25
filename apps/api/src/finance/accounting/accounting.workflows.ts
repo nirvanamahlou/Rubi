@@ -171,11 +171,21 @@ async function consumed(tx: Tx, sourceEventId: string) {
   });
   return rows.reduce((n, r) => n.add(r.amount.toString()), new Exact(0));
 }
-async function outcome(tx: Tx, e: Event) {
-  const row = await tx.accountingWorkflow.findFirst({
+async function latestOutcome(tx: Tx, e: Event) {
+  const rows = await tx.accountingWorkflow.findMany({
     where: { sourceEventId: e.id, kind: 'PURCHASE_OUTCOME', cancelled: false },
-    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    include: { journal: { select: { status: true } } },
   });
+  return rows.sort(
+    (a, b) =>
+      Number(facts(b).outcomeSequence ?? 0) -
+        Number(facts(a).outcomeSequence ?? 0) ||
+      b.createdAt.getTime() - a.createdAt.getTime() ||
+      b.id.localeCompare(a.id),
+  )[0];
+}
+async function outcome(tx: Tx, e: Event) {
+  const row = await latestOutcome(tx, e);
   return row ? String(facts(row).state) : null;
 }
 
@@ -525,11 +535,7 @@ export async function captureWorkflow(
         fail('نتیجه خرید معتبر نیست.');
       if ((await consumed(tx, e.id)).gt(0) && state !== 'FAILED')
         fail('خرید دارای استرداد یا زیان قطعی دوباره موفق اعلام نمی‌شود.');
-      const previous = await tx.accountingWorkflow.findFirst({
-        where: { sourceEventId: e.id, kind, cancelled: false },
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        include: { journal: { select: { status: true } } },
-      });
+      const previous = await latestOutcome(tx, e);
       if (previous && facts(previous).state === state)
         fail('این وضعیت قبلاً ثبت شده است.');
       if (previous?.journal?.status === 'POSTED' && state !== 'FAILED')
@@ -538,7 +544,14 @@ export async function captureWorkflow(
         );
       key = `OUTCOME:${e.id}:${randomUUID()}`;
       amount = e.amount.toString();
-      data = { ...data, state };
+      data = {
+        ...data,
+        state,
+        outcomeSequence:
+          (await tx.accountingWorkflow.count({
+            where: { sourceEventId: e.id, kind },
+          })) + 1,
+      };
     } else {
       if ((await outcome(tx, e)) !== 'FAILED')
         fail('ابتدا شکست قطعی خرید و مستند تأمین‌کننده را ثبت کنید.');
