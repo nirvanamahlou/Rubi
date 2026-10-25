@@ -383,7 +383,7 @@ it('issues floating vouchers without supplier operation confirmation while retai
   expect(transition(state, issue, [], [], true).voucherIssued).toBe(true);
   expect(() => transition(state, issue, [], [], false)).toThrow();
   expect(() =>
-    transition({ ...state, voucherSettings: undefined }, issue, [], [], true),
+    transition(initialTravelWorkflow(), issue, [], [], true),
   ).toThrow();
   expect(() =>
     transition({ ...state, supplierStatus: 'CANCELLED' }, issue, [], [], true),
