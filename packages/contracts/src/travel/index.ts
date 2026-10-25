@@ -670,4 +670,7 @@ export interface ReservationOperationSummaryV1 {
   lastOperation: { occurredAt: string; actorName: string | null } | null;
 }
 
-export type { TicketPurchaseInboxItemV1 } from './ticket-purchase-inbox';
+export type {
+  TicketPurchaseInboxItemV1,
+  TicketPurchaseGroupCommandV1,
+} from './ticket-purchase-inbox';

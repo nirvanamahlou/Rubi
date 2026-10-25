@@ -585,7 +585,10 @@ export class ReservationServicePurchaseService {
     const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
     if (floatingEntry) {
       const route =
-        input.serviceClientKey === snapshot.hotelSelection?.serviceClientKey
+        input.serviceClientKey === snapshot.hotelSelection?.serviceClientKey ||
+        snapshot.serviceSelections.some(
+          (s) => s.clientKey === input.serviceClientKey && s.kind === 'HOTEL',
+        )
           ? '/ticket-purchases/floating-hotels'
           : '/ticket-purchases/floating-flights';
       if (

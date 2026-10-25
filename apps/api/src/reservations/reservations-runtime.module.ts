@@ -494,7 +494,10 @@ export class ReservationRequestsController {
     }
     if (['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(input.action)) {
       const current = await this.workflow.detail(id, req.actor.branchIds);
-      if (!current.workflow.sentSupplierFormSettings?.brokerId)
+      if (
+        !(input.action === 'ISSUE_VOUCHER' && current.floatingContract) &&
+        !current.workflow.sentSupplierFormSettings?.brokerId
+      )
         throw new BadRequestException(
           'ابتدا فرم رزرواسیون را آماده و ارسال درخواست به کارگزار را ثبت کنید.',
         );

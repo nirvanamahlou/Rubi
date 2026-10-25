@@ -1,3 +1,4 @@
+import { readLegacyServiceParties } from '@nora/contracts';
 import { salesRoomDisplayName } from '@nora/contracts';
 import { readPassengerHotelStays } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
@@ -72,6 +73,10 @@ export function reservationFormData(
     ? salesHotelRoomSummary(hotel.rooms)
     : undefined;
   const services = snapshot.serviceSelections;
+  const legacyParties = readLegacyServiceParties(services);
+  const legacyHotel = hotel
+    ? legacyParties?.[hotel.serviceClientKey]
+    : undefined;
   const passengerStays = readPassengerHotelStays(services, hotel);
   const flights = salesContractFlights(
     services,
@@ -271,15 +276,19 @@ export function reservationFormData(
         ),
       ].join(' / ') || '-',
     destination: name(city),
-    adults: passengers.filter((p) => p.age === 'ADL').length,
-    children: passengers.filter((p) => p.age.startsWith('CHD')).length,
+    adults:
+      legacyHotel?.adults ?? passengers.filter((p) => p.age === 'ADL').length,
+    children:
+      legacyHotel?.children ??
+      passengers.filter((p) => p.age.startsWith('CHD')).length,
     children2To6: passengers.filter((p) => p.hotelChildAgeBand === 'CHD_2_TO_6')
       .length,
     children6To12: passengers.filter(
       (p) => p.hotelChildAgeBand === 'CHD_6_TO_12',
     ).length,
     childrenUnclassified: passengers.filter((p) => p.age === 'CHD').length,
-    infants: passengers.filter((p) => p.age === 'INF').length,
+    infants:
+      legacyHotel?.infants ?? passengers.filter((p) => p.age === 'INF').length,
     rooms:
       roomSummary?.roomCount ??
       intake.arrangement?.roomCount ??

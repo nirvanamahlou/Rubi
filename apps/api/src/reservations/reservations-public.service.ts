@@ -289,9 +289,17 @@ export class ReservationsPublicService {
     return row ? present(row) : null;
   }
 
-  async purchaseContext(id: string, branchIds: readonly string[]) {
+  async purchaseContext(
+    id: string,
+    branchIds: readonly string[],
+    ownerUserId?: string,
+  ) {
     const row = await this.database.client.reservationIntake.findFirst({
-      where: { id, branchId: { in: [...branchIds] } },
+      where: {
+        id,
+        branchId: { in: [...branchIds] },
+        ...(ownerUserId ? { salesOwnerUserId: ownerUserId } : {}),
+      },
       include: intakeInclude,
     });
     if (!row) throw new NotFoundException('درخواست در دسترس نیست.');
@@ -430,7 +438,13 @@ export class ReservationsPublicService {
     return {
       data: this.tickets
         ? await Promise.all(
-            rows.map((row) => this.purchaseContext(row.id, branchIds)),
+            rows.map((row) =>
+              this.purchaseContext(
+                row.id,
+                branchIds,
+                floatingScope?.ownerUserId,
+              ),
+            ),
           )
         : rows.map(present),
       meta: {

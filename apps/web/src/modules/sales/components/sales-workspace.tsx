@@ -465,9 +465,10 @@ export function SalesWorkspace() {
                       <div className="flex items-center gap-1.5 font-semibold text-foreground">
                         <UsersRound className="size-4 text-primary" />
                         <p>
-                          {contract.passengerNames.length.toLocaleString(
-                            'fa-IR',
-                          )}{' '}
+                          {(
+                            contract.passengerCount ??
+                            contract.passengerNames.length
+                          ).toLocaleString('fa-IR')}{' '}
                           مسافر
                         </p>
                       </div>

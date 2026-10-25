@@ -9,8 +9,9 @@ import {
 } from '@nora/contracts';
 import { validateVoucherSettings } from './voucher-settings';
 
-function setup(sent = true) {
+function setup(sent = true, floatingContract = false) {
   const detail = vi.fn().mockResolvedValue({
+    floatingContract,
     workflow: {
       sentSupplierFormSettings: sent ? { brokerId: 'broker' } : undefined,
       voucherSettings: { brokerId: 'broker', leaderId: 'leader' },
@@ -151,4 +152,19 @@ describe('voucher directory snapshot and sent-form gate', () => {
       expect(s.voucherLeaderContact).not.toHaveBeenCalled();
     },
   );
+});
+
+it('allows floating voucher issuance without sent operations form while still checking canonical broker and leader', async () => {
+  const s = setup(false, true);
+  await s.controller.workflowUpdate(
+    'intake',
+    { action: 'ISSUE_VOUCHER', expectedVersion: 1, note: '' },
+    s.request,
+  );
+  expect(s.voucherLeaderContact).toHaveBeenCalledWith(
+    'broker',
+    'leader',
+    expect.anything(),
+  );
+  expect(s.update).toHaveBeenCalledTimes(1);
 });
