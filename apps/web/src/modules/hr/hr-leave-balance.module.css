@@ -370,6 +370,28 @@
   width: min(680px, calc(100vw - 32px));
   max-width: 680px;
 }
+.transferDialog > label {
+  display: grid;
+  gap: 10px;
+  margin-block: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.transferDialog [role='combobox'] {
+  min-height: 44px;
+}
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.dialogActions > button {
+  min-height: 44px;
+  min-width: 100px;
+}
 .pickerTree {
   display: grid;
   gap: 12px;

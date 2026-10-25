@@ -766,7 +766,7 @@ export function HrLeaveBalance({
             if (!busy && !open) setUserTransfer(null);
           }}
         >
-          <DialogContent>
+          <DialogContent className={styles.transferDialog}>
             <DialogTitle>انتقال مرخصی کاربر</DialogTitle>
             <DialogDescription>{userTransfer?.name}</DialogDescription>
             <label>
@@ -791,31 +791,38 @@ export function HrLeaveBalance({
                   ))}
               </NativeSearchSelect>
             </label>
-            <HrButton
-              disabled={
-                busy || !ruleId || refs.loading || !!refs.error || !canTransfer
-              }
-              onClick={() =>
-                void run(async () => {
-                  const rule = refs.data.records.find(
-                    (rule) => rule.id === ruleId,
-                  );
-                  await submit({
-                    employeeIds: [userTransfer!.id],
-                    year: Number(rule!.values[1]),
-                    type: 'استحقاقی',
-                    ruleId,
-                  });
-                  setUserTransfer(null);
-                })
-              }
-            >
-              ثبت درخواست
-            </HrButton>
             {error ? <p role="alert">{error}</p> : null}
-            <HrButton disabled={busy} onClick={() => setUserTransfer(null)}>
-              لغو
-            </HrButton>
+            <div className={styles.dialogActions}>
+              <HrButton
+                primary
+                disabled={
+                  busy ||
+                  !ruleId ||
+                  refs.loading ||
+                  !!refs.error ||
+                  !canTransfer
+                }
+                onClick={() =>
+                  void run(async () => {
+                    const rule = refs.data.records.find(
+                      (rule) => rule.id === ruleId,
+                    );
+                    await submit({
+                      employeeIds: [userTransfer!.id],
+                      year: Number(rule!.values[1]),
+                      type: 'استحقاقی',
+                      ruleId,
+                    });
+                    setUserTransfer(null);
+                  })
+                }
+              >
+                ثبت درخواست
+              </HrButton>
+              <HrButton disabled={busy} onClick={() => setUserTransfer(null)}>
+                لغو
+              </HrButton>
+            </div>
           </DialogContent>
         </Dialog>
       </HrPanel>
