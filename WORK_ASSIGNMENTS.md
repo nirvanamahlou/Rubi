@@ -9618,3 +9618,8 @@ HR-DEVICE-FORM-1025 regression alignment: reserve the existing hr-live.spec.tsx 
 FINANCIAL-WORKFLOWS-COMPLETION-1025 release: PR1110 is the publication record; all code/schema/CI reservations of this unit release automatically when that PR is merged. No other migration or module ownership is claimed. Exact-head gates, existing-database backup/count proof and local deployment receipt remain the publication evidence; operational receipt is kept outside Git under AppData/Local/Nora/deployments.
 
 CALL-CENTER-RELEASE-1025 — SOURCE_RELEASED / PR1114 PENDING CI: integration and publication complete; release source locks freed. Agent remains responsible for CI fixes and authorized merge after all checks pass. Final CI and merge state tracked on PR1114.
+
+## STICKY-TEN-SECONDS-1025 — PC-C — IN_PROGRESS
+User changes previous sales agent ringing budget20s to10s before fallback to sales queue1002. Reserve sticky-sales.ts and its preview/service/PostgreSQL expectations, sticky-sales handoff docs and own status. No PBX access has been supplied; update prepared decision contract without claiming an installed timer. No UI/schema/dependency changes.
+
+STICKY-TEN-SECONDS-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: ringSeconds10 prepared and verified;20 tests and scoped lint/typecheck/build pass. No UI, migration, runtime or PBX write. Real timer requires installation and controlled PBX test.

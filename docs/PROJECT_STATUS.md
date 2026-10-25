@@ -7575,3 +7575,6 @@ Return-only New Contract now labels its sole date picker as the return ticket an
 Final Call Center feature chain consolidated from87eb5e3a and integrated with develop8806eac1. User authorizes PR and merge after all CI/CD checks pass. Only shared docs and translation append conflicts required resolution; other modules preserved. No local secrets/runtime files published. See release task for final CI/merge evidence.
 
 CALL-CENTER-RELEASE-1025 publication: https://github.com/nirvanamahlou/Rubi/pull/1114 targets develop under Amin-tech11. Final reviewed source pushed; source reservations released. Await all checks on latest head before authorized merge; PR checks/timeline are final CI/merge evidence. Local runtime preserved.
+
+## 2026-10-25 — STICKY-TEN-SECONDS-1025 — PC-C
+User-approved previous-agent ringing budget is now10 seconds before queue1002 fallback in the prepared internal routing decision. Selector/contract,3 regression suites and SSH handoff docs updated.20 tests, scoped lint and affected API typecheck/build pass. Physical timer installation still awaits real PBX SSH/setup acceptance; no UI/runtime/PBX mutation.

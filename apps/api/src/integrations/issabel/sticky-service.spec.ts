@@ -25,7 +25,7 @@ function fixture(policy?: string) {
         ? {
             kind: 'PREFER',
             extension: '110',
-            ringSeconds: 20,
+            ringSeconds: 10,
             fallbackQueue: '1002',
           }
         : { kind: 'FALLBACK', queue: '1002', reason: 'AVAILABILITY_UNKNOWN' },
@@ -72,7 +72,7 @@ describe('server-only sales routing preflight integration', () => {
     const f = fixture('{"1002":0}');
     expect(
       await f.service.previewPreviousAgent(actor, '1002', '+12025550188'),
-    ).toMatchObject({ kind: 'PREFER', ringSeconds: 20, fallbackQueue: '1002' });
+    ).toMatchObject({ kind: 'PREFER', ringSeconds: 10, fallbackQueue: '1002' });
     expect(f.client.queueSnapshot).toHaveBeenCalledWith('1002', 0);
     expect(f.preferredAgent).toHaveBeenCalledTimes(2);
     expect(f.preferredAgent.mock.calls[1]![4]).toBe(f.snapshot);
