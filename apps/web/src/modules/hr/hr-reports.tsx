@@ -15,7 +15,7 @@ import {
 import { useHrReferenceData } from './hr-reference-data';
 import type { HrRecordDto } from '@nora/contracts';
 import { allHrRecords, type HrStore } from './hr-store';
-import { hrGroups } from './hr-navigation';
+import { employeeGroups, hrGroups } from './hr-navigation';
 import { recordsDataset } from './hr-live-data';
 import { employeeDataset } from './hr-employees';
 import {
@@ -66,9 +66,14 @@ export function HrReports({ store }: { store: HrStore }) {
   }, [range, store.revision]);
   const sources = Array.from(
     new Map(
-      Object.values(hrGroups)
-        .flatMap((groups) => groups.flatMap((group) => group.sources))
-        .map((source) => [`${source.section}.${source.tab}`, source]),
+      [
+        ...Object.values(hrGroups).flatMap((groups) =>
+          groups.flatMap((group) => group.sources),
+        ),
+        ...employeeGroups
+          .flatMap((group) => group.sources)
+          .filter((source) => source.section !== 'employee'),
+      ].map((source) => [`${source.section}.${source.tab}`, source]),
     ).values(),
   );
   const source = sources.find(

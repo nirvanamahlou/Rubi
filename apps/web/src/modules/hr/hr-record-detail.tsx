@@ -21,6 +21,7 @@ import { reportCellText } from './hr-report-text';
 import { isMissionExpense } from './hr-mission-reference';
 import { sourceForRecord } from './hr-record-source';
 import ui from './hr-unified.module.css';
+import { hrFieldLabel } from './hr-form-model';
 import { HrTemplateCalendar } from './hr-template-calendar';
 
 export function HrRecordDetail({
@@ -305,7 +306,7 @@ export function HrRecordDetail({
           ) : null}
           {record.columns.map((label, index) => (
             <div key={`${label}-${index}`}>
-              <dt>{label}</dt>
+              <dt>{hrFieldLabel(label)}</dt>
               <dd>
                 {record.values[index]?.startsWith('document://') ? (
                   <HrButton
