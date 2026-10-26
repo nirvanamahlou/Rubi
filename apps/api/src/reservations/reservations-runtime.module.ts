@@ -431,9 +431,14 @@ export class ReservationRequestsController {
       req.actor.branchIds,
       historical !== '1',
     );
+    const summaries = this.table
+      ? await this.table.read([intake.contractId], req.actor)
+      : new Map();
     return {
       data: {
         ...intake,
+        contractPartyName:
+          summaries.get(intake.contractId)?.contractPartyName ?? null,
         outputPassengers: await reservationOutputPassengers(
           intake.snapshot,
           this.customers,

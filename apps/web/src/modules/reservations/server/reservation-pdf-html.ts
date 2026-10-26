@@ -201,7 +201,17 @@ export function reservationPdfHtml(
           ? ['CHECK-IN', 'CHECK-OUT']
           : []),
       ],
-      rows.length ? rows : [['-', '-', '-', '-']],
+      rows.length
+        ? rows
+        : [
+            [
+              data.contractPartyName ? 'CONTRACT PARTY' : '-',
+              data.contractPartyName || '-',
+              '-',
+              '-',
+              ...Array(7).fill('-'),
+            ],
+          ],
       'passengers',
       people.map((p) => p.differentStay === true),
     )}

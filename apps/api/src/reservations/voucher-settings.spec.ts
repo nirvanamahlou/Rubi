@@ -22,6 +22,33 @@ const settings = (): VoucherSettingsV1 => ({
   ) as VoucherSettingsV1['flags'],
   passengers: [{ id: 'p', selected: true, roomType: 'DBL', age: 'ADL' }],
 });
+it('allows empty historical supplier manifests only with trusted context, without inventing passenger IDs', () => {
+  const value = settings();
+  value.passengers = [];
+  value.text.contractPartyName = 'SYNTHETIC AGENCY';
+  const state = initialTravelWorkflow();
+  const command = {
+    note: '',
+    expectedVersion: 0,
+    action: 'SUPPLIER_FORM_SETTINGS',
+    voucherSettings: value,
+  } as const;
+  expect(() => transition(state, command, [])).toThrow();
+  expect(
+    transition(state, command, [], [], true).supplierFormSettings,
+  ).toMatchObject({
+    passengers: [],
+    text: { contractPartyName: 'SYNTHETIC AGENCY' },
+  });
+  expect(() =>
+    transition(state, { ...command, action: 'VOUCHER_SETTINGS' }, [], [], true),
+  ).toThrow();
+  expect(() => validateVoucherSettings(value, ['p'], true)).toThrow();
+  value.passengers = [
+    { id: 'foreign', selected: true, age: 'ADL', roomType: '' },
+  ];
+  expect(() => transition(state, command, [], [], true)).toThrow();
+});
 it('retains supplier form display prices exactly and rejects invalid/duplicate currencies', () => {
   const value = settings();
   value.hotelPurchasePrices = [{ amount: '120.50', currencyCode: 'EUR' }];

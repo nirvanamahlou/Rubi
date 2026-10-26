@@ -7,6 +7,7 @@ import { reservationPdfHtml } from '../server/reservation-pdf-html';
 import { describe, expect, it } from 'vitest';
 import {
   reservationFormData,
+  isAggregateReservationForm,
   reservationRoomAppendices,
   reservationPassengerPages,
   type ReservationFormIntake,
@@ -47,6 +48,54 @@ const input = {
     branding: { name: 'Sample Agency' },
   },
 } as unknown as ReservationFormIntake;
+it('prepares and renders historical supplier forms with a buyer and aggregate guests, without fake passengers', () => {
+  const intake = structuredClone(input);
+  intake.contractPartyName = 'SYNTHETIC & BUYER';
+  intake.snapshot.passengerIds = [];
+  intake.snapshot.passengerAssignments = [];
+  intake.snapshot.serviceSelections = [
+    {
+      clientKey: 'hotel',
+      kind: 'HOTEL',
+      metadata: {
+        legacyServicePartiesV2: JSON.stringify({
+          hotel: { adults: 2, children: 1, infants: 0 },
+        }),
+      },
+    },
+  ] as never;
+  intake.snapshot.hotelSelection!.serviceClientKey = 'hotel';
+  expect(isAggregateReservationForm(intake)).toBe(true);
+  const settings = defaultVoucherSettings(intake, {});
+  expect(settings.passengers).toEqual([]);
+  expect(settings.text.contractPartyName).toBe('SYNTHETIC & BUYER');
+  intake.workflow.supplierFormSettings = settings;
+  const data = supplierFormData(intake, {});
+  expect(data.adults).toBe(2);
+  expect(data.childrenUnclassified).toBe(1);
+  expect(data.passengers).toEqual([]);
+  const html = reservationPdfHtml(
+    intake,
+    {},
+    'data:image/png;base64,AAAA',
+    '',
+    false,
+    'https://example.invalid',
+  );
+  expect(html).toContain('SYNTHETIC &amp; BUYER');
+  expect(html).toContain('CONTRACT PARTY');
+  intake.snapshot.serviceSelections = [
+    {
+      clientKey: 'legacy',
+      kind: 'OTHER',
+      metadata: { legacyContractV1: true },
+    },
+  ] as never;
+  expect(isAggregateReservationForm(intake)).toBe(true);
+  intake.snapshot.serviceSelections = [];
+  expect(isAggregateReservationForm(intake)).toBe(false);
+  expect(isAggregateReservationForm(input)).toBe(false);
+});
 describe('reservation reference form', () => {
   it('prefers the registered English hotel name and preserves snapshot fallback', () => {
     expect(reservationFormData(input).hotel).toBe('Sample Hotel');
