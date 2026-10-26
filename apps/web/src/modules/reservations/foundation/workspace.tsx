@@ -284,7 +284,7 @@ export function ReservationOperationsWorkspace({
                   changeQuery({
                     ...defaultQuery,
                     status: 'NEW',
-                    sort: 'newest',
+                    sort: defaultQuery.sort,
                   });
                   setSection('inbox');
                   onDismissNewRequests?.();
@@ -622,6 +622,9 @@ export function ReservationOperationsWorkspace({
                         align="start"
                         className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
                       >
+                        <SelectItem value="oldest">
+                          قدیمی‌ترین قرارداد
+                        </SelectItem>
                         <SelectItem value="deadline">
                           نزدیک‌ترین مهلت
                         </SelectItem>
