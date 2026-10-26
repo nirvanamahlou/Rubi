@@ -37,7 +37,12 @@ describe.skipIf(!enabled)('Salary workflow isolated real PostgreSQL', () => {
     const url = new URL(process.env.DATABASE_URL!);
     if (
       !['127.0.0.1', 'localhost'].includes(url.hostname) ||
-      url.port !== '5432' ||
+      !(
+        url.port === '5432' ||
+        (url.port === '55494' &&
+          url.username === 'qa' &&
+          url.pathname === '/accounting_design_qa')
+      ) ||
       !/^nora_finance_test_[a-f0-9]{32}$/.test(databaseName)
     )
       throw new Error('Isolated local Finance test database required');
@@ -58,6 +63,15 @@ describe.skipIf(!enabled)('Salary workflow isolated real PostgreSQL', () => {
         .join('\n'),
     );
     url.pathname = `/${databaseName}`;
+    // SQL-based fixture bootstrap must also provide the accounting cutover
+    // normally recorded by Prisma deploy. This database is disposable.
+    await sql(
+      databaseName,
+      `CREATE TABLE _prisma_migrations (
+      migration_name text NOT NULL, finished_at timestamptz, rolled_back_at timestamptz
+    ); INSERT INTO _prisma_migrations (migration_name, finished_at)
+      VALUES ('20261018120000_financial_accounting_events', now());`,
+    );
     client = createDatabaseClient(url.toString());
   }, 120000);
   afterAll(async () => {
@@ -192,7 +206,20 @@ describe.skipIf(!enabled)('Salary workflow isolated real PostgreSQL', () => {
   it('serializes competing payments, supports exact partial settlement and safe replay', async () => {
     const f = await fixture();
     await f.service.action(f.result.requestId, command(1, 'REVIEW'), f.actor);
-    await f.service.action(f.result.requestId, command(2, 'APPROVE'), f.actor);
+    await expect(
+      f.service.action(f.result.requestId, command(2, 'APPROVE'), f.actor),
+    ).rejects.toThrow('شخص دیگری');
+    const checker = await client.user.create({
+      data: {
+        username: randomUUID(),
+        displayName: 'Synthetic independent reviewer',
+        passwordHash: 'not-a-login-hash',
+      },
+    });
+    await f.service.action(f.result.requestId, command(2, 'APPROVE'), {
+      ...f.actor,
+      userId: checker.id,
+    });
     const pay = {
       ...command(3, 'PAY'),
       paidAmount: '40.025',
@@ -268,7 +295,7 @@ describe.skipIf(!enabled)('Salary workflow isolated real PostgreSQL', () => {
         command(1, 'CORRECTION_REQUIRED'),
         f.actor,
       ),
-    ).rejects.toThrow();
+    ).resolves.toMatchObject({ status: 'CORRECTION_REQUIRED' });
   }, 60000);
   it('replaces a returned unpaid salary source with a new approved input without rewriting history', async () => {
     const f = await fixture();

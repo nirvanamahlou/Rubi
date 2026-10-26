@@ -7642,3 +7642,7 @@ Contact rows distinguish latest inbound/outbound calls; outbound forms and histo
 ## REMOVE-EXTRA-TRAVEL-DATE-1025 — PC-A
 
 Removed the duplicate people-sheet trip-start and legacy general trip-date controls plus their callback/independent identity confirmation date gate. People can be entered before choosing dated services; real birth dates remain required and composition is rechecked when service dates are known. Flight/hotel/tour dates feed canonical output, and standalone undated services collect their own execution dates in the service section. Old draft departure summaries remain backward compatible. Sales619 tests pass/one existing skip; affected types/lint/build and full exact-head CI gate the owner-authorized develop merge. No API/schema/migration/dependency/permission or runtime change.
+
+## 2026-10-26 — FINANCIAL-INTERNAL-GAPS-1026
+
+Existing-form-only Finance repairs: explicit account-only petty FX, independent operational approval, mandatory existing reference for new CHECK requests. No new fields/buttons, automatic banking, migration or operational writes. 42 targeted/isolated PostgreSQL tests and scoped lint pass. Full original Persian process report retained and updated for RTL Word; remaining lifecycle/configuration gaps are stated explicitly. See tasks/FINANCIAL-INTERNAL-GAPS-1026.md. Source candidate, not a runtime rollout.

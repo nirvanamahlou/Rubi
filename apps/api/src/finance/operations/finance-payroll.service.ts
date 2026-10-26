@@ -280,13 +280,9 @@ export class FinancePayrollService {
           throw new ForbiddenException(
             'بازارسال فقط توسط درخواست‌کننده مجاز است.',
           );
-        if (
-          isPetty &&
-          action === 'APPROVE' &&
-          current.requesterId === actor.userId
-        )
+        if (action === 'APPROVE' && current.requesterId === actor.userId)
           throw new ForbiddenException(
-            'تأیید تنخواه و هزینه آن باید توسط شخص دیگری انجام شود.',
+            'تأیید درخواست مالی باید توسط شخص دیگری انجام شود.',
           );
         if (action === 'CLOSE') {
           if (current.kind !== 'PETTY_CASH_ADVANCE')
@@ -411,6 +407,7 @@ export class FinancePayrollService {
             },
             current.currencyCode,
             current.branchId,
+            isPetty ? 'ACCOUNT_ONLY' : 'SUPPLIER_FOR_FOREIGN',
           );
           accountId = source.account?.id ?? null;
           payingSupplierId = source.payingSupplierId;
@@ -697,8 +694,8 @@ export class FinancePayrollService {
         160,
         true,
       );
-    if (counterpartyOrganizationId && kind === 'CHECK' && !reference.trim())
-      throw new BadRequestException('شماره چک طرف همکاری الزامی است.');
+    if (kind === 'CHECK' && !reference.trim())
+      throw new BadRequestException('شماره چک الزامی است.');
     const text = validate.text(input.amount, 'مبلغ', 30),
       currencyCode = validate.text(input.currencyCode, 'ارز', 3);
     if (
