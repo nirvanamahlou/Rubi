@@ -1,4 +1,7 @@
 {
+  "شماره تلفن ثابت و همراه باید متفاوت باشند.": "Landline and mobile phone numbers must be different.",
+  "تلفن همراه": "Mobile phone",
+  "تلفن ثابت معتبر نیست.": "The landline phone number is invalid.",
   "قیمت هر شب": "Price per night",
   "حداقل یک قیمت خرید مسافر را وارد کنید.": "Enter a purchase price for at least one passenger.",
   "کارگزار، ارز، تاریخ اقامت و حداقل یک قیمت خرید مسافر را تکمیل کنید.": "Select the hotel supplier and currency, check the stay dates, and enter a purchase price for at least one passenger.",

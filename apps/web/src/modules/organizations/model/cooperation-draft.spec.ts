@@ -11,6 +11,8 @@ import {
   normalizeOtpCode,
   saveCooperation,
   registrationCooperationDraft,
+  cooperationContacts,
+  cooperationContactPhones,
 } from './cooperation-draft';
 import { blankAgreementTerms, editableAgreementTerms } from './agreement-terms';
 afterEach(() => vi.restoreAllMocks());
@@ -21,6 +23,238 @@ const draft = {
   code: 'B2B-TEST-01',
 };
 describe('cooperation wizard writes', () => {
+  it('rejects canonically duplicate mobile/office contacts before any organization write', async () => {
+    const create = vi.spyOn(masterDataApi, 'create');
+    await expect(
+      saveCooperation(
+        {
+          ...draft,
+          fullName: 'مدیر نمونه',
+          phone: '09121234567',
+          officePhone: '+98 912 1234567',
+        },
+        ['master_data.read', 'master_data.create'],
+      ),
+    ).rejects.toThrow('متفاوت');
+    expect(create).not.toHaveBeenCalled();
+  });
+  it('checks the native minimum contact requirement before creating an agency', async () => {
+    const create = vi.spyOn(masterDataApi, 'create');
+    await expect(
+      saveCooperation({ ...draft, fullName: 'مدیر نمونه' }, [
+        'master_data.read',
+        'master_data.create',
+      ]),
+    ).rejects.toThrow('حداقل تلفن یا ایمیل');
+    expect(create).not.toHaveBeenCalled();
+  });
+  it('hydrates a legacy Excel landline into the landline input without treating it as a mobile', () => {
+    expect(cooperationContactPhones('02112345678', true, false)).toEqual({
+      phone: '',
+      officePhone: '02112345678',
+    });
+    expect(cooperationContactPhones('09121234567', true, true)).toEqual({
+      phone: '09121234567',
+    });
+    expect(cooperationContactPhones('02112345678', false, false)).toEqual({
+      phone: '02112345678',
+    });
+  });
+  it('stores a standalone office phone without inventing a representative', async () => {
+    const organization = {
+      id: 'agency',
+      attributes: { roleCodes: 'AGENCY' },
+    } as unknown as MasterDataRecord;
+    const save = vi
+      .spyOn(agencyClient, 'saveContact')
+      .mockResolvedValue({ data: organization });
+    await saveCooperation(
+      { ...draft, officePhone: '(021) 1234-5678' },
+      ['master_data.read', 'master_data.create'],
+      organization,
+    );
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledWith(
+      'agency',
+      expect.objectContaining({ fullName: 'دفتر آژانس', phone: '02112345678' }),
+      undefined,
+    );
+  });
+  it('persists agency mobile, office phone, email, license and address through native dossier writers without OTP', async () => {
+    const organization = {
+      id: 'agency',
+      version: 1,
+      attributes: { roleCodes: 'AGENCY' },
+    } as unknown as MasterDataRecord;
+    vi.spyOn(masterDataApi, 'list').mockResolvedValue({
+      data: [],
+      meta: { total: 0 },
+    } as never);
+    const create = vi
+      .spyOn(masterDataApi, 'create')
+      .mockResolvedValue({ data: organization });
+    const contacts = vi
+      .spyOn(agencyClient, 'saveContact')
+      .mockResolvedValue({ data: organization });
+    const verified = vi.spyOn(agencyClient, 'saveVerifiedContact');
+    const address = vi
+      .spyOn(masterDataApi, 'createOrganizationAddress')
+      .mockResolvedValue({ data: {} } as never);
+    const saved = await saveCooperation(
+      {
+        ...draft,
+        fullName: 'مدیر نمونه',
+        phone: '09121234567',
+        officePhone: '۰۲۱ ۱۲۳۴-۵۶۷۸',
+        email: 'office@example.com',
+        tourismLicenseNumber: 'LIC-EXAMPLE',
+        countryId: 'country',
+        cityId: 'city',
+        addressLine: 'نشانی آزمایشی',
+      },
+      ['master_data.read', 'master_data.create', 'master_data.update'],
+    );
+    expect(saved).toBe(organization);
+    expect(create).toHaveBeenCalledWith(
+      'organizations',
+      expect.objectContaining({
+        values: expect.objectContaining({
+          tourismLicenseNumber: 'LIC-EXAMPLE',
+        }),
+      }),
+    );
+    expect(contacts).toHaveBeenNthCalledWith(
+      1,
+      'agency',
+      expect.objectContaining({
+        fullName: 'مدیر نمونه',
+        phone: '09121234567',
+        email: 'office@example.com',
+        isPrimary: 'true',
+      }),
+    );
+    expect(contacts).toHaveBeenNthCalledWith(
+      2,
+      'agency',
+      expect.objectContaining({
+        fullName: 'دفتر آژانس',
+        jobTitle: 'تلفن ثابت',
+        phone: '02112345678',
+        isPrimary: 'false',
+      }),
+      undefined,
+    );
+    expect(address).toHaveBeenCalledWith(
+      'agency',
+      expect.objectContaining({
+        countryId: 'country',
+        cityId: 'city',
+        addressLine: 'نشانی آزمایشی',
+      }),
+    );
+    expect(verified).not.toHaveBeenCalled();
+  });
+  it('selects the primary representative independently of alphabetical contact order', () => {
+    const office = {
+      id: 'office',
+      attributes: { jobTitle: 'تلفن ثابت', isPrimary: 'false' },
+    } as unknown as MasterDataRecord;
+    const other = {
+      id: 'other',
+      attributes: {},
+    } as unknown as MasterDataRecord;
+    const primary = {
+      id: 'primary',
+      attributes: { isPrimary: 'true' },
+    } as unknown as MasterDataRecord;
+    expect(cooperationContacts([office, other, primary])).toEqual({
+      contact: primary,
+      officeContact: office,
+    });
+  });
+  it('edits an Excel office contact in place while preserving undisclosed executive fields and job title', async () => {
+    const organization = {
+      id: 'agency',
+      version: 1,
+      attributes: { roleCodes: 'AGENCY' },
+    } as unknown as MasterDataRecord;
+    const contact = {
+      id: 'executive',
+      attributes: { organizationId: 'agency' },
+    } as unknown as MasterDataRecord;
+    const officeContact = {
+      id: 'office',
+      attributes: { organizationId: 'agency', jobTitle: 'تلفن ثابت' },
+    } as unknown as MasterDataRecord;
+    vi.spyOn(masterDataApi, 'update').mockResolvedValue({ data: organization });
+    const save = vi
+      .spyOn(agencyClient, 'saveContact')
+      .mockResolvedValue({ data: contact });
+    await saveCooperation(
+      { ...draft, fullName: 'مدیر نمونه', officePhone: '02112345678' },
+      ['master_data.read', 'master_data.update'],
+      organization,
+      {
+        contact,
+        officeContact,
+        preserveSensitiveContactFields: true,
+        officePhoneEdited: true,
+      },
+    );
+    expect(save).toHaveBeenNthCalledWith(
+      1,
+      'agency',
+      { fullName: 'مدیر نمونه' },
+      contact,
+    );
+    expect(save).toHaveBeenNthCalledWith(
+      2,
+      'agency',
+      expect.objectContaining({ phone: '02112345678' }),
+      officeContact,
+    );
+  });
+  it('does not clear an office phone when disclosure was denied', async () => {
+    const organization = {
+      id: 'agency',
+      version: 1,
+      attributes: { roleCodes: 'AGENCY' },
+    } as unknown as MasterDataRecord;
+    const contact = {
+      id: 'executive',
+      attributes: { organizationId: 'agency' },
+    } as unknown as MasterDataRecord;
+    const officeContact = {
+      id: 'office',
+      attributes: { jobTitle: 'تلفن ثابت' },
+    } as unknown as MasterDataRecord;
+    vi.spyOn(masterDataApi, 'update').mockResolvedValue({ data: organization });
+    const save = vi
+      .spyOn(agencyClient, 'saveContact')
+      .mockResolvedValue({ data: contact });
+    await saveCooperation(
+      { ...draft, fullName: 'مدیر نمونه' },
+      ['master_data.read', 'master_data.update'],
+      organization,
+      { contact, officeContact, preserveSensitiveContactFields: true },
+    );
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledWith(
+      'agency',
+      { fullName: 'مدیر نمونه' },
+      contact,
+    );
+  });
+  it('rejects malformed office phones before writing the organization', async () => {
+    const create = vi.spyOn(masterDataApi, 'create');
+    await expect(
+      saveCooperation(
+        { ...draft, fullName: 'مدیر نمونه', officePhone: 'invalid' },
+        ['master_data.read', 'master_data.create'],
+      ),
+    ).rejects.toThrow('تلفن ثابت');
+    expect(create).not.toHaveBeenCalled();
+  });
   it('projects initial registration without deferred identity or contract mutations but retains dossier edit values', () => {
     const full = {
       ...draft,
@@ -126,10 +360,7 @@ describe('cooperation wizard writes', () => {
     expect(update).not.toHaveBeenCalled();
     expect(existing.attributes.registrationNumber).toBe('REG');
   });
-  it.each([
-    ['qa@example.com', 'EMAIL'],
-    ['', 'OTHER'],
-  ])(
+  it.each([['qa@example.com', 'EMAIL']])(
     'keeps the no-phone contact flow for email=%s',
     async (email, preferredChannel) => {
       const existing = {
@@ -152,11 +383,11 @@ describe('cooperation wizard writes', () => {
     },
   );
 
-  it('routes a supplied phone only through the verified-contact command', async () => {
+  it('keeps corporate phones on the verified-contact command', async () => {
     const existing = {
       id: 'identity',
       version: 1,
-      attributes: { roleCodes: 'AGENCY' },
+      attributes: { roleCodes: 'CORPORATE_CUSTOMER' },
     } as unknown as MasterDataRecord;
     const generic = vi.spyOn(agencyClient, 'saveContact');
     const verified = vi
@@ -169,6 +400,7 @@ describe('cooperation wizard writes', () => {
         fullName: 'نماینده آزمایشی',
         phone: '۰۹۱۲ ۱۲۳ ۴۵۶۷',
         phoneVerificationGrant: 'grant',
+        role: 'CORPORATE_CUSTOMER',
         phoneVerificationExpiresAt: '2999-01-01T00:00:00.000Z',
       },
       ['master_data.read', 'master_data.create'],
@@ -186,7 +418,7 @@ describe('cooperation wizard writes', () => {
     expect(verified.mock.calls[0]?.[0]).not.toHaveProperty('email');
   });
 
-  it('blocks any supplied phone before organization persistence until it has a grant', async () => {
+  it('blocks corporate phones before organization persistence until they have a grant', async () => {
     const create = vi.spyOn(masterDataApi, 'create');
     await expect(
       saveCooperation(
@@ -195,6 +427,7 @@ describe('cooperation wizard writes', () => {
           branchId: '11111111-1111-4111-8111-111111111111',
           fullName: 'نماینده آزمایشی',
           phone: '09121234567',
+          role: 'CORPORATE_CUSTOMER',
         },
         ['master_data.read', 'master_data.create'],
       ),
@@ -213,6 +446,7 @@ describe('cooperation wizard writes', () => {
           fullName: 'نماینده آزمایشی',
           phone: '09121234567',
           phoneVerificationGrant: 'expired-grant',
+          role: 'CORPORATE_CUSTOMER',
           phoneVerificationExpiresAt: '2000-01-01T00:00:00.000Z',
         },
         ['master_data.read', 'master_data.create'],
@@ -226,6 +460,7 @@ describe('cooperation wizard writes', () => {
           fullName: 'نماینده آزمایشی',
           phone: '09121234567',
           phoneVerificationGrant: 'malformed-expiry-grant',
+          role: 'CORPORATE_CUSTOMER',
           phoneVerificationExpiresAt: 'not-a-date',
         },
         ['master_data.read', 'master_data.create'],
@@ -596,7 +831,7 @@ describe('cooperation wizard writes', () => {
 
     expect(saveContact).toHaveBeenCalledWith(
       'identity',
-      { fullName: 'نماینده', jobTitle: 'مدیر' },
+      { fullName: 'نماینده' },
       contact,
     );
   });
@@ -629,7 +864,7 @@ describe('cooperation wizard writes', () => {
 
     expect(saveContact).toHaveBeenCalledWith(
       'identity',
-      { fullName: 'نماینده', jobTitle: '', email: 'new@example.com' },
+      { fullName: 'نماینده', email: 'new@example.com' },
       contact,
     );
   });
@@ -684,8 +919,13 @@ describe('cooperation wizard writes', () => {
     vi.spyOn(agencyClient, 'saveContact').mockResolvedValue({ data: contact });
 
     await saveCooperation(
-      { ...draft, fullName: 'نماینده', phone: '09123456789', addressLine: '' },
-      ['master_data.read', 'master_data.update'],
+      {
+        ...draft,
+        fullName: 'نماینده',
+        officePhone: '02112345678',
+        addressLine: '',
+      },
+      ['master_data.read', 'master_data.update', 'master_data.create'],
       existing,
       { contact },
     );
@@ -728,7 +968,7 @@ describe('cooperation wizard writes', () => {
     let failure: unknown;
     try {
       await saveCooperation(
-        { ...draft, fullName: 'نماینده آزمون' },
+        { ...draft, fullName: 'نماینده آزمون', email: 'contact@example.com' },
         ['master_data.read', 'master_data.create'],
         existing,
       );

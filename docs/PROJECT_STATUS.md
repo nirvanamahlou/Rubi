@@ -2,6 +2,11 @@
 
 Reservation purchase supplier pickers display the registered English broker name for hotel, shared/split transfers, floating flights and insurance. Both registered Persian and English names remain searchable; saved supplier IDs resolve to the current English label, including later directory pages. Missing English or archived suppliers retain the existing name. Reuses the request-authorized broker directory without changing Master Data, purchase IDs/history, currency controls, API, schema or grants. No operational data or runtime changes. Focused25 regressions, scoped lint, Web production build and typecheck pass. Exact-head hosted checks precede explicitly authorized push/develop merge.
 
+## AGENCY-CONTACT-ROUNDTRIP-1026 — PC-B — READY_FOR_CI
+
+Owner-approved agency phone entry now uses ordinary authorized contacts instead of the development-only OTP endpoint. Mobile and office phone persist to native dossier contacts with Excel-compatible office identification, primary-contact selection and protected-field preservation. Agency executive job-title input is removed while historical values remain; Corporate OTP is unchanged. Native minimum-contact and duplicate-number errors are checked before organization writes. No schema/grants/runtime changes. Organizations/English276 tests pass with one existing optional skip, final contact/English48 and native API29 tests pass; scoped lint, full Web types and production build pass. Exact-head hosted gates precede authorized develop merge. See [scope and evidence](tasks/AGENCY-CONTACT-ROUNDTRIP-1026.md).
+
+
 ## AGENCY-REGISTRATION-SLIM-1026 — PC-B — READY_FOR_CI
 
 Agency registration now defers the five owner-marked identity/contact fields to editable dossier360 and skips contract/credit entry. Four visible steps retain phone verification and final review; save opens the existing dossier for full identity/contact and native agreement management. The registration projection suppresses stale deferred/contract input and preserves existing agencies; edit mode and Corporate-customer registration remain intact. No data/schema/API/permissions or server changes. Organizations/English268 tests plus27 focused save/edit assertions, lint/types and production Web build pass; hosted exact-head gates precede authorized push/develop merge. See [scope and evidence](tasks/AGENCY-REGISTRATION-SLIM-1026.md).
