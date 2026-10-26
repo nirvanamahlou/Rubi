@@ -178,7 +178,7 @@ describe('Reservations passenger and document consumers', () => {
       version: 4,
     });
     expect(JSON.stringify(r)).not.toContain('not-returned');
-    expect(s.workflow.detail).toHaveBeenCalledWith(s.id, [s.branch]);
+    expect(s.workflow.detail).toHaveBeenCalledWith(s.id, [s.branch], true);
     expect(s.customers.detail).toHaveBeenCalledWith(
       s.pid,
       s.actor,
