@@ -6,9 +6,15 @@ Composite hotels now appear in the contract's ordinary Hotel dropdown in both ro
 
 Sales correction now offers passenger completion for historical contracts with aggregate service counts but no named passengers. The shared identity sheet builds adult/child/infant slots, flight/service assignments and optional individual hotel dates. Saving links actual Customer profiles to the existing contract; current contract output and Reservations names consume those identities. Server validates exact booked counts and ages, branch/ownership, version and retry identity; membership, audit and Reservations notification commit together. No price/inventory reservation or schema change. Local84 focused tests, API/Web builds and scoped lint passed; final-head English/CI gates precede owner-authorized push/develop merge. Local preview uses an isolated database copy. See [scope and validation](tasks/CONTRACT-PASSENGER-COMPLETION-1026.md).
 
+## PURCHASE-BROKER-ENGLISH-1026 — PC-A
+
+Reservation purchase supplier pickers display the registered English broker name for hotel, shared/split transfers, floating flights and insurance. Both registered Persian and English names remain searchable; saved supplier IDs resolve to the current English label, including later directory pages. Missing English or archived suppliers retain the existing name. Reuses the request-authorized broker directory without changing Master Data, purchase IDs/history, currency controls, API, schema or grants. No operational data or runtime changes. Focused25 regressions, scoped lint, Web production build and typecheck pass. Exact-head hosted checks precede explicitly authorized push/develop merge.
+
+
 ## AGENCY-CONTACT-ROUNDTRIP-1026 — PC-B — READY_FOR_CI
 
 Owner-approved agency phone entry now uses ordinary authorized contacts instead of the development-only OTP endpoint. Mobile and office phone persist to native dossier contacts with Excel-compatible office identification, primary-contact selection and protected-field preservation. Agency executive job-title input is removed while historical values remain; Corporate OTP is unchanged. Native minimum-contact and duplicate-number errors are checked before organization writes. No schema/grants/runtime changes. Organizations/English276 tests pass with one existing optional skip, final contact/English48 and native API29 tests pass; scoped lint, full Web types and production build pass. Exact-head hosted gates precede authorized develop merge. See [scope and evidence](tasks/AGENCY-CONTACT-ROUNDTRIP-1026.md).
+
 
 ## AGENCY-REGISTRATION-SLIM-1026 — PC-B — READY_FOR_CI
 
@@ -5811,6 +5817,7 @@ Request detail breadcrumb uses the saved request title; redundant UUID/version h
 ## 2026-10-06 — MESSAGE-PERSIAN-SAVE-1006 — PC-B
 
 Visible message/scheduled-channel names use existing Persian labels while canonical enum values stay unchanged. The icon-only save action is placed in a final full-width RTL flex row aligned physically left, preserving its original handler. No API/data/schema/migration/permission/dependency/runtime changes. Targeted rendering tests and affected quality gates precede authorized push/develop merge.
+
 ## 2026-10-06 — PROCUREMENT-RECORD-LISTS-1006
 
 Removed inert sidebar form previews from all seven Procurement sections. Scoped creation/decision actions now sit above full-width records, with a paginated authorized request chooser for dependent forms. Text preview triggers no longer match the shared icon-only action rule; full record titles wrap in lists and workbench. Supplier logos continue using authenticated Master Data document previews, and newly persisted logo profiles immediately refresh the adjacent title cache. No API/schema/IAM/dependency or operational data changes. Eight focused tests, Web typecheck and changed-file lint pass; local production build passed; full CI gates required before merge; authenticated browser verification unavailable because CUA initialization fails.
