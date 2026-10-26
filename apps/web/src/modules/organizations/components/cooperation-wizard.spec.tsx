@@ -1,7 +1,7 @@
 import type { MasterDataRecord } from '@nora/contracts';
 import { describe, expect, it } from 'vitest';
 
-import { cooperationEditDraft } from './cooperation-wizard';
+import { cooperationEditDraft, cooperationStepIds } from './cooperation-wizard';
 
 const organization = {
   id: 'org-1',
@@ -23,6 +23,10 @@ const organization = {
 } satisfies MasterDataRecord;
 
 describe('cooperation wizard edit mode', () => {
+  it('skips contract entry only for agencies and keeps phone verification before final review', () => {
+    expect(cooperationStepIds('AGENCY')).toEqual([1, 2, 3, 5]);
+    expect(cooperationStepIds('CORPORATE_CUSTOMER')).toEqual([1, 2, 3, 4, 5]);
+  });
   it('prefills the registration steps from the selected agency identity', () => {
     const draft = cooperationEditDraft(organization, 'AGENCY');
 

@@ -76,6 +76,29 @@ export const blankCooperationDraft: CooperationDraft = {
   pendingAgreementDocument: null,
   pendingGuaranteeDocuments: [],
 };
+/** Registration is identity/contact intake, never a contract/credit mutation. */
+export function registrationCooperationDraft(
+  draft: CooperationDraft,
+  editing = false,
+): CooperationDraft {
+  if (draft.role !== 'AGENCY') return draft;
+  return {
+    ...draft,
+    ...(!editing
+      ? {
+          nationalId: '',
+          registrationNumber: '',
+          economicCode: '',
+          chiefExecutiveNationalId: '',
+          jobTitle: '',
+        }
+      : {}),
+    withAgreement: false,
+    pendingAgreementDocument: null,
+    pendingGuaranteeDocuments: [],
+  };
+}
+
 export function cooperationIssue(
   draft: CooperationDraft,
   step: number,

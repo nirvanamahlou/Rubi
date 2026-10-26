@@ -17482,5 +17482,6 @@
   "ویرایش هتل ترکیبی": "Edit composite hotel",
   "هتل تکراری در ترکیب وجود دارد.": "The itinerary contains a duplicate hotel.",
   "هتل‌های عضو باید فعال و فروش‌پذیر باشند.": "Member hotels must be active and saleable.",
-  "هر هتل را فقط یک بار انتخاب کنید.": "Select each hotel only once."
+  "هر هتل را فقط یک بار انتخاب کنید.": "Select each hotel only once.",
+  "پس از ثبت، اطلاعات تکمیلی و قراردادها را از پروندهٔ ۳۶۰ مدیریت کنید. این مرحله فقط اطلاعات اولیه را ذخیره می‌کند.": "After registration, manage additional information and contracts in the 360 dossier. This step saves initial information only."
 }
