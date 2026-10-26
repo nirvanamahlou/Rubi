@@ -1,5 +1,82 @@
 import { expect, it } from 'vitest';
-import { completionRows } from './passenger-completion';
+import {
+  completionRows,
+  completionPersonInput,
+  completionSelectedPerson,
+  validateCompletionRow,
+} from './passenger-completion';
+import { emptyPeopleValues } from '../model/sales-people-sheet';
+it('shows registered first and last names for an existing person without passport fields', () => {
+  const row = completionSelectedPerson({
+    id: 'person',
+    firstName: 'Registered',
+    lastName: 'Passenger',
+    displayName: 'Registered Passenger',
+    birthDate: null,
+    contacts: [],
+  } as never);
+  expect(row.values.passportFirstName).toBe('Registered');
+  expect(row.values.passportLastName).toBe('Passenger');
+  expect(() => completionPersonInput(row)).not.toThrow();
+});
+it('requires only first and last names when adding a correction passenger', () => {
+  const values = {
+    ...emptyPeopleValues(),
+    nationalityCode: '',
+    passportIssuingCountryCode: '',
+    birthCountryCode: '',
+    passportFirstName: 'Example',
+    passportLastName: 'Traveller',
+  };
+  const row = {
+    key: 'slot',
+    category: 'children' as const,
+    person: { values },
+    services: ['hotel'],
+    different: false,
+    checkInDate: '',
+    checkOutDate: '',
+  };
+  expect(() => validateCompletionRow(row, '2027-01-01')).not.toThrow();
+  expect(completionPersonInput(row.person)).toMatchObject({
+    firstName: 'Example',
+    lastName: 'Traveller',
+    roles: ['passenger'],
+    passportFirstName: 'EXAMPLE',
+    passportLastName: 'TRAVELLER',
+  });
+  expect(completionPersonInput(row.person)).not.toHaveProperty('birthDate');
+  expect(completionPersonInput(row.person)).not.toHaveProperty(
+    'passportNumber',
+  );
+  values.passportFirstName = '';
+  expect(() => completionPersonInput(row.person)).toThrow();
+  values.passportFirstName = 'Example';
+  values.passportLastName = '';
+  expect(() => completionPersonInput(row.person)).toThrow();
+});
+it('still validates a birth date or passport number when supplied', () => {
+  const row = {
+    key: 'slot',
+    category: 'children' as const,
+    person: {
+      values: {
+        ...emptyPeopleValues(),
+        passportFirstName: 'Example',
+        passportLastName: 'Child',
+        birthDate: '1990-01-01',
+      },
+    },
+    services: ['hotel'],
+    different: false,
+    checkInDate: '',
+    checkOutDate: '',
+  };
+  expect(() => validateCompletionRow(row, '2027-01-01')).toThrow('رده سنی');
+  row.person.values.birthDate = '';
+  row.person.values.passportNumber = '!';
+  expect(() => completionPersonInput(row.person)).toThrow('پاسپورت');
+});
 it('creates booked adult/child/infant slots and preserves per-leg service counts', () => {
   const rows = completionRows({
     version: 1,

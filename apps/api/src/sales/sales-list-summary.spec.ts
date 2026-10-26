@@ -10,6 +10,18 @@ const base = {
   passengersDetail: [],
 } as unknown as SalesContractDetail;
 describe('Sales list travel and passenger projection', () => {
+  it('retains a booked child without assigning a fabricated age band when birth is unknown', () => {
+    expect(
+      salesListTravelSummary({
+        ...base,
+        passengersDetail: [{ ageCategory: 'CHD', birthDate: '' }] as never,
+      }).passengerComposition,
+    ).toMatchObject({
+      childrenUnknownAge: 1,
+      children2To6: 0,
+      children6To12: 0,
+    });
+  });
   it('uses exact flight directions, Tehran day and independent recorded calendars', () => {
     const result = salesListTravelSummary({
       ...base,

@@ -68,7 +68,10 @@ function setup() {
     $transaction: vi.fn(async (fn: (arg: typeof tx) => unknown) => fn(tx)),
   };
   const access = { contract: vi.fn().mockResolvedValue(row) };
-  const customers = { detail: vi.fn().mockResolvedValue({ data: person }) };
+  const customers = {
+    detail: vi.fn().mockResolvedValue({ data: person }),
+    createForSalesCompletion: vi.fn().mockResolvedValue({ data: person }),
+  };
   const notifications = {
     createWithinTransaction: vi.fn().mockResolvedValue({}),
   };
@@ -146,7 +149,7 @@ describe('completing booked aggregate passenger slots', () => {
       s.input.passengers[0]!.serviceClientKeys = ['out'];
     if (scenario === 'foreign-service')
       s.input.passengers[0]!.serviceClientKeys.push('foreign');
-    if (scenario === 'missing-identity') s.person.passportNumber = '';
+    if (scenario === 'missing-identity') s.person.passportFirstName = '';
     if (scenario === 'duplicate')
       s.input.passengers.push(s.input.passengers[0]!);
     await expect(s.service.save(id, s.input, actor)).rejects.toThrow();
@@ -157,6 +160,80 @@ describe('completing booked aggregate passenger slots', () => {
     s.tx.salesContract.updateMany.mockResolvedValue({ count: 0 });
     await expect(s.service.save(id, s.input, actor)).rejects.toThrow('هم‌زمان');
     expect(s.tx.salesContractPassenger.create).not.toHaveBeenCalled();
+  });
+  it.each(['ADT', 'CHD', 'INF'] as const)(
+    'completes a name-only %s without fabricating a birth date',
+    async (category) => {
+      const s = setup();
+      for (const key of Object.keys(s.person))
+        if (
+          !['kind', 'status', 'passportFirstName', 'passportLastName'].includes(
+            key,
+          )
+        )
+          (s.person as Record<string, string>)[key] = '';
+      const party = {
+        adults: category === 'ADT' || category === 'INF' ? 1 : 0,
+        children: category === 'CHD' ? 1 : 0,
+        infants: category === 'INF' ? 1 : 0,
+      };
+      s.row.services[1]!.metadata = {
+        legacyServicePartiesV2: JSON.stringify({ out: party, back: party }),
+      };
+      s.input.passengers[0]!.ageCategory = category;
+      if (category === 'INF') {
+        s.customers.detail.mockResolvedValueOnce({
+          data: { ...s.person, birthDate: '1990-01-01' },
+        });
+        s.input.passengers.unshift({
+          customerId: '20000000-0000-4000-8000-000000000000',
+          ageCategory: 'ADT',
+          serviceClientKeys: ['out', 'back'],
+        });
+      }
+      await expect(s.service.save(id, s.input, actor)).resolves.toEqual({
+        version: 4,
+      });
+      expect(s.tx.salesContractPassenger.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          birthDate: null,
+          ageCategory: category,
+          displayNameSnapshot: 'SYNTHETIC TEST',
+        }),
+      });
+    },
+  );
+  it('requires an explicit booked category when birth date is absent', async () => {
+    const s = setup();
+    s.person.birthDate = '';
+    await expect(s.service.save(id, s.input, actor)).rejects.toThrow();
+    expect(s.client.$transaction).not.toHaveBeenCalled();
+  });
+  it('does not allow an explicit category to override a known birth date', async () => {
+    const s = setup();
+    s.input.passengers[0]!.ageCategory = 'INF';
+    await expect(s.service.save(id, s.input, actor)).rejects.toThrow();
+    expect(s.client.$transaction).not.toHaveBeenCalled();
+  });
+  it('authorizes name-only profile creation against the historical contract before calling Customer', async () => {
+    const s = setup();
+    const input = {
+      kind: 'person' as const,
+      firstName: 'Synthetic',
+      lastName: 'Name',
+      displayName: 'Synthetic Name',
+      roles: ['passenger' as const],
+    };
+    await s.service.createPerson(id, input, actor);
+    expect(s.customers.createForSalesCompletion).toHaveBeenCalledWith(
+      input,
+      actor,
+    );
+    s.access.contract.mockRejectedValue(Error('forbidden'));
+    await expect(s.service.createPerson(id, input, actor)).rejects.toThrow(
+      'forbidden',
+    );
+    expect(s.customers.createForSalesCompletion).toHaveBeenCalledOnce();
   });
   it('replays a committed operation even after membership exists and JSONB reorders keys', async () => {
     const s = setup();

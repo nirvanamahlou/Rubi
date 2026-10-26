@@ -152,6 +152,7 @@ function prepareMutation(
   protectedNationalId?: ProtectedNationalId,
   protectedPassportNumber?: ProtectedPassportNumber,
   nationalIdOptional = false,
+  birthDateOptional = false,
 ) {
   const roles = new Set(input.roles);
   if (!roles.size)
@@ -213,7 +214,12 @@ function prepareMutation(
     if (value && !/^[A-Z]{3}$/.test(value.trim().toUpperCase()))
       throw new BadRequestException('کد کشور باید سه حرف لاتین ISO باشد.');
   }
-  if (!update && roles.has('passenger') && !input.birthDate)
+  if (
+    !update &&
+    !birthDateOptional &&
+    roles.has('passenger') &&
+    !input.birthDate
+  )
     throw new BadRequestException({
       code: 'CUSTOMER_PASSENGER_BIRTH_DATE_REQUIRED',
       message: 'تاریخ تولد مسافر الزامی است.',
@@ -870,12 +876,30 @@ export class CustomerService {
     return this.createRecord(input, salesActor, requestedBranch, traceId, true);
   }
 
+  /** Called only after Sales authorizes an available historical completion. */
+  async createForSalesCompletion(
+    input: CustomerMutationRequest,
+    actor: AuthenticatedActor,
+  ) {
+    const salesActor = this.salesEntryActor(actor);
+    if (input.kind !== 'person') throw new BadRequestException();
+    return this.createRecord(
+      input,
+      salesActor,
+      undefined,
+      undefined,
+      true,
+      true,
+    );
+  }
+
   private async createRecord(
     input: CustomerMutationRequest,
     actor: AuthenticatedActor,
     requestedBranch: string | undefined,
     traceId: string | undefined,
     nationalIdOptional: boolean,
+    birthDateOptional = false,
   ) {
     this.assertMutationFields(input, actor);
     let row;
@@ -893,6 +917,7 @@ export class CustomerService {
               )
             : undefined,
           nationalIdOptional,
+          birthDateOptional,
         ),
         actor.userId,
         branchOf(actor, requestedBranch),

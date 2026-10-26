@@ -278,7 +278,7 @@ export function presentSalesContract(
       id: passenger.id,
       customerId: passenger.customerId,
       displayNameSnapshot: passenger.displayNameSnapshot,
-      birthDate: passenger.birthDate.toISOString().slice(0, 10),
+      birthDate: passenger.birthDate?.toISOString().slice(0, 10) ?? '',
       ageCategory: passenger.ageCategory,
       ...(passenger.childAgeBand === 'AGE_2_6' ||
       passenger.childAgeBand === 'AGE_6_12'
@@ -1234,7 +1234,7 @@ export class SalesService {
               (n) =>
                 n.customerId === p.customerId &&
                 n.birthDate.slice(0, 10) ===
-                  p.birthDate.toISOString().slice(0, 10) &&
+                  (p.birthDate?.toISOString().slice(0, 10) ?? '') &&
                 n.displayNameSnapshot === p.displayNameSnapshot,
             ),
         )

@@ -78,8 +78,14 @@ export function salesListTravelSummary(
       else if (person.ageCategory === 'INF') passengerComposition.infants++;
       else {
         const band = person.childAgeBand;
-        const age = passengerAgeYears(person.birthDate, detail.departureDate);
-        if (band === 'AGE_2_6' || (!band && age < 6))
+        if (!person.birthDate && !band) {
+          passengerComposition.childrenUnknownAge++;
+          continue;
+        }
+        const age = person.birthDate
+          ? passengerAgeYears(person.birthDate, detail.departureDate)
+          : null;
+        if (band === 'AGE_2_6' || (!band && age !== null && age < 6))
           passengerComposition.children2To6++;
         else passengerComposition.children6To12++;
       }

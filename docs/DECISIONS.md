@@ -685,3 +685,7 @@ Omitted itinerary fields on compatible updates preserve saved stays; an explicit
 empty list removes them. Published Tour prices cannot be reused for a changed
 composite itinerary. Rollback retains storage and must not allow old application
 writes to multi-stay contracts. No production migration or rollout requested.
+
+## 2026-10-26 — COMPLETION-NAME-ONLY-1026
+
+Owner supersedes mandatory passport/birth fields in correction Add passenger: only first and last names are mandatory. Missing birth dates persist as SQL NULL with the existing booked age category; do not invent identity dates. A contract-authorized Customer completion policy permits name-only profiles without weakening ordinary Customer/new-contract validation. Optional supplied facts remain validated and known birth dates cannot contradict booked categories. Nullable Sales read projections preserve output compatibility with empty strings and unknown child bands. Apply the additive migration before API rollout. No production deployment is requested.

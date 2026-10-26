@@ -53,6 +53,7 @@ function setup() {
   const findMany = vi.fn().mockResolvedValue([record]);
   const tickets = { reservationCommissions: vi.fn().mockResolvedValue([]) };
   return {
+    record,
     findMany,
     tickets,
     service: new SalesReservationTableService(
@@ -61,6 +62,30 @@ function setup() {
     ),
   };
 }
+it('reads completed name-only passengers without manufacturing ages or crashing', async () => {
+  const s = setup();
+  s.findMany.mockResolvedValueOnce([
+    {
+      ...s.record,
+      passengers: [
+        { birthDate: null, ageCategory: 'ADT' },
+        { birthDate: null, ageCategory: 'INF' },
+        { birthDate: null, ageCategory: 'CHD' },
+      ],
+    },
+  ]);
+  const result = await s.service.read(['c'], {
+    permissions: ['reservations.read'],
+    branchIds: ['b'],
+  } as never);
+  expect(result.get('c')).toMatchObject({
+    passengerCount: 3,
+    adults: 1,
+    infants: 1,
+    children2To6: 0,
+    children6To12: 0,
+  });
+});
 it('keeps currency balances separate, finance-confirmed debt and exact age boundaries', async () => {
   const s = setup();
   const result = await s.service.read(['c'], {

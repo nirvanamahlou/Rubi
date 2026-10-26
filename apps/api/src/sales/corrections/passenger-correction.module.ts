@@ -17,6 +17,8 @@ import {
 } from '@nestjs/common';
 import type { SalesPassengerCorrectionCommandV1 } from '@nora/contracts';
 import { CustomersModule } from '../../customers/customers.module';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { CustomerMutationDto } from '../../customers/customer.dto';
 import { IamModule } from '../../iam/iam.module';
 import { AuthGuard } from '../../iam/auth.guard';
 import type { AuthenticatedRequest } from '../../iam/iam.types';
@@ -50,6 +52,14 @@ export class PassengerCorrectionController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.completion.save(id, input, req.actor);
+  }
+  @Post(':id/passenger-completion/people')
+  createCompletionPerson(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() input: CustomerMutationDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.completion.createPerson(id, input, req.actor);
   }
   @Get(':id/price-correction')
   @Header('Cache-Control', 'private, no-store')

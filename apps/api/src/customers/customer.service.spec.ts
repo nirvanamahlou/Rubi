@@ -482,6 +482,36 @@ describe('CustomerService', () => {
       service.createForSales(input, { ...actor, permissions: [] }),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
+  it('allows name-only historical completion while keeping ordinary Sales creation strict', async () => {
+    const repository = {
+      create: vi.fn().mockResolvedValue(row),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    const input = {
+      kind: 'person' as const,
+      firstName: 'Synthetic',
+      lastName: 'Passenger',
+      displayName: 'Synthetic Passenger',
+      roles: ['passenger' as const],
+    };
+    const salesActor: AuthenticatedActor = {
+      ...actor,
+      permissions: ['sales.contracts.create'],
+    };
+    await service.createForSalesCompletion(input, salesActor);
+    expect(vi.mocked(repository.create).mock.calls[0]?.[0]).toMatchObject({
+      isPassenger: true,
+      birthDate: null,
+    });
+    await expect(
+      service.createForSales(input, salesActor),
+    ).rejects.toMatchObject({
+      response: { code: 'CUSTOMER_PASSENGER_BIRTH_DATE_REQUIRED' },
+    });
+    await expect(
+      service.createForSalesCompletion(input, { ...actor, permissions: [] }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
   it('still protects a supplied national ID and requires a contract passenger birth date', async () => {
     const repository = {
       create: vi.fn().mockResolvedValue(row),

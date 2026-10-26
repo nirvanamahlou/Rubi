@@ -976,3 +976,7 @@ Reservations owns ReservationInsurancePolicy with real contract, intake and cust
 ## FINANCIAL-WORKFLOWS-COMPLETION-1025
 
 Finance-owned AccountingWorkflow stores immutable manual accounting evidence with real Book/Branch/User, SalesContract, HR net/gross record and FinanceAccountingEvent FKs plus a unique optional Journal link. Source-kind XOR, scope trigger, nonnegative Decimal(24,4), ISO currency, immutable evidence/no delete, active principal/agent recognition and payroll period/FX source partial uniqueness protect integration. Additive migration20261025120000_financial_workflows; no seeds/backfill. Cancellation is a controlled state, with command audit and prior journal cancellation/posted reversal required. See the Persian task rules for carrying-basis and source boundaries.
+
+## 2026-10-26 — Historical passenger completion without birth date
+
+SalesContractPassenger.birthDate is nullable only to represent an unknown real birth date during authorized historical passenger completion. Migration20261026170000 changes nullability without backfill, row removal or FK changes. Stored ageCategory preserves the booked ADT/CHD/INF slot; a supplied real birth date must agree. Current string-shaped Sales output uses an empty birthDate for unknown dates. Child age-band projections remain unknown when neither birth nor band is recorded. Customer profiles remain owned by Customer; normal new-contract creation still requires real birth dates. See tasks/COMPLETION-NAME-ONLY-1026.md.

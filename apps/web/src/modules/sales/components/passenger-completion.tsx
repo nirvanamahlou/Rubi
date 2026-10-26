@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type {
   CustomerSummary,
+  CustomerMutationRequest,
+  CustomerDetail,
   SalesPassengerCompletionFormV1,
   SalesPassengerCompletionCommandV1,
 } from '@nora/contracts';
@@ -33,6 +35,84 @@ type Row = {
   createdHere?: boolean;
 };
 const labels = { adults: 'بزرگسال', children: 'کودک', infants: 'نوزاد' };
+export function completionSelectedPerson(person: CustomerDetail) {
+  const row = selectedPeopleRow(person);
+  row.values.passportFirstName ||= person.firstName ?? '';
+  row.values.passportLastName ||= person.lastName ?? '';
+  return row;
+}
+export function completionPersonInput(row: PeopleRow): CustomerMutationRequest {
+  const v = row.values;
+  if (
+    !row.person &&
+    (!/^[A-Za-z][A-Za-z '-]*$/.test(v.passportFirstName.trim()) ||
+      !/^[A-Za-z][A-Za-z '-]*$/.test(v.passportLastName.trim()))
+  )
+    throw Error('نام و نام خانوادگی لاتین پاسپورت را کامل کنید.');
+  if (
+    (v.gender && !['M', 'F'].includes(v.gender)) ||
+    [v.nationalityCode, v.passportIssuingCountryCode, v.birthCountryCode].some(
+      (code) => code && !/^[A-Z]{3}$/.test(code),
+    )
+  )
+    throw Error('جنسیت و کد کشورها را کامل کنید.');
+  const input = peopleCreateInput(
+    {
+      ...row,
+      values: {
+        ...v,
+        firstName: v.passportFirstName,
+        lastName: v.passportLastName,
+      },
+    },
+    false,
+    false,
+  );
+  return {
+    ...input,
+    roles: ['passenger'],
+    passportFirstName: v.passportFirstName.trim().toUpperCase(),
+    passportLastName: v.passportLastName.trim().toUpperCase(),
+    ...(v.gender ? { gender: v.gender as 'M' | 'F' } : {}),
+    ...(v.nationalityCode ? { nationalityCode: v.nationalityCode } : {}),
+    ...(v.passportIssuingCountryCode
+      ? { passportIssuingCountryCode: v.passportIssuingCountryCode }
+      : {}),
+    ...(v.birthCountryCode ? { birthCountryCode: v.birthCountryCode } : {}),
+  };
+}
+
+export function validateCompletionRow(row: Row, departureDate: string) {
+  completionPersonInput(row.person);
+  const v = row.person.values;
+  if (v.birthDate) {
+    const born = new Date(v.birthDate);
+    const travel = new Date(departureDate);
+    const age =
+      travel.getUTCFullYear() -
+      born.getUTCFullYear() -
+      (travel.toISOString().slice(5, 10) < born.toISOString().slice(5, 10)
+        ? 1
+        : 0);
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(v.birthDate) ||
+      Number.isNaN(born.getTime()) ||
+      born.toISOString().slice(0, 10) !== v.birthDate ||
+      v.birthDate > new Date().toISOString().slice(0, 10) ||
+      (age < 2 ? 'infants' : age < 12 ? 'children' : 'adults') !==
+        row.category ||
+      born > travel
+    )
+      throw Error(
+        `تاریخ تولد ${labels[row.category]} با رده سنی قرارداد هم‌خوان نیست.`,
+      );
+  }
+  if (
+    row.different &&
+    (!row.checkInDate || row.checkOutDate <= row.checkInDate)
+  )
+    throw Error('تاریخ ورود و خروج هتل مسافر معتبر نیست.');
+}
 export function completionRows(form: SalesPassengerCompletionFormV1): Row[] {
   return (['adults', 'children', 'infants'] as const).flatMap((category) =>
     Array.from(
@@ -107,7 +187,10 @@ export function PassengerCompletion({
         person.id,
         'customer-verification',
       );
-      change(lookup, { person: selectedPeopleRow(data), createdHere: false });
+      change(lookup, {
+        person: completionSelectedPerson(data),
+        createdHere: false,
+      });
       setLookup(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'دریافت مسافر ناموفق بود.');
@@ -126,40 +209,8 @@ export function PassengerCompletion({
     try {
       if (!attempt.current) {
         // Validate all rows before creating the first identity.
-        for (const row of current) {
-          peopleCreateInput(row.person, false, true, true);
-          const v = row.person.values;
-          if (
-            !['M', 'F'].includes(v.gender) ||
-            ![
-              v.nationalityCode,
-              v.passportIssuingCountryCode,
-              v.birthCountryCode,
-            ].every((c) => /^[A-Z]{3}$/.test(c))
-          )
-            throw Error('جنسیت و کد کشورها را کامل کنید.');
-          const born = new Date(v.birthDate);
-          const travel = new Date(form.departureDate);
-          const age =
-            travel.getUTCFullYear() -
-            born.getUTCFullYear() -
-            (travel.toISOString().slice(5, 10) < born.toISOString().slice(5, 10)
-              ? 1
-              : 0);
-          if (
-            (age < 2 ? 'infants' : age < 12 ? 'children' : 'adults') !==
-              row.category ||
-            born > travel
-          )
-            throw Error(
-              `تاریخ تولد ${labels[row.category]} با رده سنی قرارداد هم‌خوان نیست.`,
-            );
-          if (
-            row.different &&
-            (!row.checkInDate || row.checkOutDate <= row.checkInDate)
-          )
-            throw Error('تاریخ ورود و خروج هتل مسافر معتبر نیست.');
-        }
+        for (const row of current)
+          validateCompletionRow(row, form.departureDate);
         for (const service of form.services)
           for (const category of ['adults', 'children', 'infants'] as const) {
             if (
@@ -172,18 +223,15 @@ export function PassengerCompletion({
                 `تعداد ${labels[category]} برای ${service.title} باید ${service.party[category]} نفر باشد.`,
               );
           }
-        if (
-          new Set(
-            current.map((r) =>
-              r.person.values.passportNumber.trim().toUpperCase(),
-            ),
-          ).size !== current.length
-        )
+        const passports = current
+          .map((r) => r.person.values.passportNumber.trim().toUpperCase())
+          .filter(Boolean);
+        if (new Set(passports).size !== passports.length)
           throw Error('پاسپورت مسافران نباید تکراری باشد.');
         for (let i = 0; i < current.length; i++) {
           let row = current[i]!;
           if (!row.person.person) {
-            const input = peopleCreateInput(row.person, false, true, true);
+            const input = completionPersonInput(row.person);
             const found = (
               await salesPeopleApi.registrationLookup({
                 nationalId: input.nationalId ?? '',
@@ -192,7 +240,9 @@ export function PassengerCompletion({
                 ...(input.birthDate ? { birthDate: input.birthDate } : {}),
               })
             ).data;
-            const data = found ?? (await salesPeopleApi.create(input)).data;
+            const data =
+              found ??
+              (await salesApi.createCompletionPerson(contractId, input)).data;
             row = {
               ...row,
               person: {
@@ -210,7 +260,9 @@ export function PassengerCompletion({
                 await salesPeopleApi.detail(found.id, 'customer-verification')
               ).data;
               current = current.map((r, j) =>
-                j === i ? { ...row, person: selectedPeopleRow(revealed) } : r,
+                j === i
+                  ? { ...row, person: completionSelectedPerson(revealed) }
+                  : r,
               );
               setRows(current);
               throw Error(
@@ -253,6 +305,12 @@ export function PassengerCompletion({
           passengers: current.map((r) => ({
             customerId: r.person.person!.id,
             serviceClientKeys: r.services,
+            ageCategory:
+              r.category === 'adults'
+                ? 'ADT'
+                : r.category === 'children'
+                  ? 'CHD'
+                  : 'INF',
             ...(form.hotel && r.services.includes(form.hotel.serviceKey)
               ? {
                   hotelStay: {
@@ -386,12 +444,28 @@ export function PassengerCompletion({
                 'phone',
                 'email',
               ]}
-              optionalFields={['nationalId']}
+              optionalFields={[
+                'nationalId',
+                'birthDate',
+                'passportNumber',
+                'passportExpiryDate',
+                'gender',
+                'nationalityCode',
+                'passportIssuingCountryCode',
+                'birthCountryCode',
+                'phone',
+                'email',
+              ]}
               columnLabels={{
                 passportFirstName: 'نام انگلیسی مطابق پاسپورت *',
                 passportLastName: 'نام خانوادگی انگلیسی مطابق پاسپورت *',
-                passportNumber: 'شماره پاسپورت *',
-                passportExpiryDate: 'انقضای پاسپورت *',
+                passportNumber: 'شماره پاسپورت',
+                passportExpiryDate: 'انقضای پاسپورت',
+                birthDate: 'تاریخ تولد مسافر',
+                gender: 'جنسیت',
+                nationalityCode: 'ملیت',
+                passportIssuingCountryCode: 'کشور صادرکننده پاسپورت',
+                birthCountryCode: 'کشور محل تولد',
               }}
               extraColumns={[
                 ...form.services.map((s) => ({
