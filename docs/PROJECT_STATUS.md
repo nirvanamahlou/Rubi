@@ -1,6 +1,11 @@
+## CONTRACT-PASSENGER-COMPLETION-1026 — PC-A — READY_FOR_CI
+
+Sales correction now offers passenger completion for historical contracts with aggregate service counts but no named passengers. The shared identity sheet builds adult/child/infant slots, flight/service assignments and optional individual hotel dates. Saving links actual Customer profiles to the existing contract; current contract output and Reservations names consume those identities. Server validates exact booked counts and ages, branch/ownership, version and retry identity; membership, audit and Reservations notification commit together. No price/inventory reservation or schema change. Local84 focused tests, API/Web builds and scoped lint passed; final-head English/CI gates precede owner-authorized push/develop merge. Local preview uses an isolated database copy. See [scope and validation](tasks/CONTRACT-PASSENGER-COMPLETION-1026.md).
+
 ## PURCHASE-BROKER-ENGLISH-1026 — PC-A
 
 Reservation purchase supplier pickers display the registered English broker name for hotel, shared/split transfers, floating flights and insurance. Both registered Persian and English names remain searchable; saved supplier IDs resolve to the current English label, including later directory pages. Missing English or archived suppliers retain the existing name. Reuses the request-authorized broker directory without changing Master Data, purchase IDs/history, currency controls, API, schema or grants. No operational data or runtime changes. Focused25 regressions, scoped lint, Web production build and typecheck pass. Exact-head hosted checks precede explicitly authorized push/develop merge.
+
 
 ## AGENCY-CONTACT-ROUNDTRIP-1026 — PC-B — READY_FOR_CI
 

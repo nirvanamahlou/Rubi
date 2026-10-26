@@ -157,7 +157,7 @@ export class ReservationPassengerFilesService {
     passengerId?: string,
   ) {
     this.require(actor, ['reservations.read']);
-    const intake = await this.workflow.detail(id, actor.branchIds);
+    const intake = await this.workflow.detail(id, actor.branchIds, true);
     if (passengerId && !intake.snapshot.passengerIds.includes(passengerId))
       throw new NotFoundException('مسافر متعلق به این قرارداد نیست.');
     return intake;
