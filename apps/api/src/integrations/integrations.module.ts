@@ -15,6 +15,8 @@ import { IntegrationRegistryController } from './integration-registry.controller
 import { IntegrationRegistryService } from './integration-registry.service';
 import { NiyayeshController } from './niyayesh.controller';
 import { NiyayeshService } from './niyayesh.service';
+import { NiyayeshSsoService } from './niyayesh-sso.service';
+import { NiyayeshSsoController } from './niyayesh-sso.controller';
 import { IssabelService } from './issabel/issabel.service';
 import { IssabelRecordingsService } from './issabel/recordings.service';
 import {
@@ -38,6 +40,7 @@ import {
     IntegrationsController,
     IntegrationRegistryController,
     NiyayeshController,
+    NiyayeshSsoController,
   ],
   providers: [
     IssabelService,
@@ -48,6 +51,7 @@ import {
     ProcurementSupplierIntegrationService,
     IntegrationRegistryService,
     NiyayeshService,
+    NiyayeshSsoService,
   ],
 })
 export class IntegrationsModule {}

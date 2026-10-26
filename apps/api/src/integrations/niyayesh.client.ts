@@ -13,6 +13,7 @@ export interface NiyayeshConnection {
   environment: string;
   keyId: string;
   secret: string;
+  managedAccess?: { branchIds: string[]; resources: string[] };
   users: {
     userId: string;
     branchId: string;

@@ -9,6 +9,7 @@ import {
   type NiyayeshConnection,
 } from './niyayesh.client';
 import { NiyayeshService } from './niyayesh.service';
+import type { AuthenticatedActor } from '@nora/contracts';
 
 const config: NiyayeshConnection = {
   origin: 'http://127.0.0.1:18025',
@@ -28,7 +29,7 @@ const config: NiyayeshConnection = {
     },
   ],
 };
-const actor = {
+const actor: AuthenticatedActor = {
   userId: 'user-a',
   sessionId: 'session-a',
   branchIds: ['branch-a'],

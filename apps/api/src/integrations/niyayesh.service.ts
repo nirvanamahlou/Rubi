@@ -7,6 +7,7 @@ import {
 import { readFile } from 'node:fs/promises';
 import {
   canViewIntegrationSection,
+  canViewScreen,
   type AuthenticatedActor,
 } from '@nora/contracts';
 import { niyayeshRead, type NiyayeshConnection } from './niyayesh.client';
@@ -33,12 +34,7 @@ export const NIYAYESH_RESOURCES = {
 @Injectable()
 export class NiyayeshService {
   // Reload local server configuration for every request: revocation is immediate.
-  async binding(actor: AuthenticatedActor, branch: string) {
-    if (
-      !actor.branchIds.includes(branch) ||
-      !canViewIntegrationSection(actor.permissions, 'connections')
-    )
-      throw new ForbiddenException('مجوز مشاهده اتصال یا شعبه را ندارید.');
+  async configuration() {
     const file = process.env.NIYAYESH_CONNECTION_FILE;
     if (!file) return null;
     let config: NiyayeshConnection;
@@ -62,9 +58,34 @@ export class NiyayeshService {
     } catch {
       throw new ServiceUnavailableException('تنظیمات امن اتصال کامل نیست.');
     }
-    const user = config.users.find(
+    return config;
+  }
+  async binding(actor: AuthenticatedActor, branch: string) {
+    if (
+      !actor.branchIds.includes(branch) ||
+      !canViewIntegrationSection(actor.permissions, 'connections')
+    )
+      throw new ForbiddenException('مجوز مشاهده اتصال یا شعبه را ندارید.');
+    const config = await this.configuration();
+    if (!config) return null;
+    let user = config.users.find(
       (u) => u.userId === actor.userId && u.branchId === branch,
     );
+    if (
+      !user &&
+      canViewScreen(actor.permissions, 'integrations.niyayesh.login') &&
+      config.managedAccess?.branchIds.includes(branch) &&
+      Array.isArray(config.managedAccess.resources)
+    ) {
+      user = {
+        userId: actor.userId,
+        branchId: branch,
+        subject: actor.userId,
+        resources: config.managedAccess.resources.filter((r) =>
+          Object.hasOwn(NIYAYESH_RESOURCES, r),
+        ),
+      };
+    }
     if (!user?.subject || !Array.isArray(user.resources))
       throw new ForbiddenException('حساب شخصی شما به نیایش متصل نشده است.');
     return { config, user };
