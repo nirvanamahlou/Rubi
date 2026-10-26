@@ -42,7 +42,7 @@ export type ReservationFormIntake = ReservationIntakeV1 & {
 /** Historical counts do not imply named passenger records or identities. */
 export function isAggregateReservationForm(intake: ReservationFormIntake) {
   return (
-    intake.snapshot.passengerIds.length === 0 &&
+    intake.snapshot.passengerIds?.length === 0 &&
     (intake.snapshot.serviceSelections.some(
       (service) => service.metadata?.legacyContractV1 === true,
     ) ||
