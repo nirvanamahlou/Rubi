@@ -27,6 +27,7 @@ export function SearchableReference({
   disabled = false,
   preferEnglishName = false,
   showAllOptionsOnOpen = false,
+  required = true,
 }: {
   label: string;
   hideLabel?: boolean;
@@ -35,6 +36,7 @@ export function SearchableReference({
     Partial<MasterDataRecord>)[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  required?: boolean;
   showAllOptionsOnOpen?: boolean;
   preferEnglishName?: boolean;
 }) {
@@ -44,7 +46,7 @@ export function SearchableReference({
       id={id}
       label={label}
       labelClassName={hideLabel ? 'sr-only' : ''}
-      required={!hideLabel}
+      required={required && !hideLabel}
     >
       <SearchCombobox
         id={id}

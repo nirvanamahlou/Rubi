@@ -17,6 +17,7 @@ const fields: Partial<Record<MasterDataResource, readonly string[]>> = {
   countries: ['englishName', 'iso2Code'],
   cities: ['englishName', 'countryId'],
   hotels: ['englishName', 'cityId', 'roomTypeIds', 'starRating', 'website'],
+  'composite-hotels': ['memberHotels', 'memberHotelIds'],
   'room-types': ['englishName'],
   'visa-services': ['countryId'],
   banks: [],

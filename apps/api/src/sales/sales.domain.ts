@@ -742,7 +742,7 @@ export function validateSalesContract(
     }
     if (
       !serviceKeys.has(hotel.serviceClientKey) ||
-      hotel.cityId !== input.destinationId
+      (!hotel.additionalStays?.length && hotel.cityId !== input.destinationId)
     )
       throw new SalesDomainError(
         'SALES_HOTEL_INVALID',
@@ -798,6 +798,44 @@ export function validateSalesContract(
         'SALES_HOTEL_INVALID',
         'تعداد اعضای انتخاب‌شده برای اقامت باید با تعداد مسافران هتل برابر باشد.',
       );
+    if (hotel.additionalStays !== undefined) {
+      if (
+        !Array.isArray(hotel.additionalStays) ||
+        hotel.additionalStays.length > 49 ||
+        (hotel.additionalStays.length > 0 &&
+          (!UUID.test(hotel.hotelId) || !UUID.test(hotel.cityId)))
+      )
+        throw new SalesDomainError(
+          'SALES_HOTEL_INVALID',
+          'Invalid hotel itinerary',
+        );
+      const ids = new Set([hotel.hotelId]);
+      let previousOut = validDate(hotel.checkOutDate, 'Hotel check-out');
+      for (const stay of hotel.additionalStays) {
+        if (
+          !stay ||
+          !UUID.test(stay.hotelId) ||
+          !UUID.test(stay.cityId) ||
+          ids.has(stay.hotelId) ||
+          typeof stay.hotelNameSnapshot !== 'string' ||
+          !stay.hotelNameSnapshot.trim() ||
+          stay.hotelNameSnapshot.length > 240
+        )
+          throw new SalesDomainError(
+            'SALES_HOTEL_INVALID',
+            'Invalid hotel itinerary',
+          );
+        const start = validDate(stay.checkInDate, 'Hotel check-in');
+        const end = validDate(stay.checkOutDate, 'Hotel check-out');
+        if (end <= start || start < previousOut)
+          throw new SalesDomainError(
+            'SALES_HOTEL_INVALID',
+            'Hotel itinerary dates overlap or are reversed',
+          );
+        previousOut = end;
+        ids.add(stay.hotelId);
+      }
+    }
   }
   try {
     validateSalesChequePayments(

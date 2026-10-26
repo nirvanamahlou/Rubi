@@ -329,6 +329,19 @@ export function presentSalesContract(
             row.services.find(({ id }) => id === row.hotelSelection?.serviceId)
               ?.clientKey ?? '',
           hotelId: row.hotelSelection.hotelId,
+          ...(row.hotelSelection.additionalStays?.length
+            ? {
+                additionalStays: row.hotelSelection.additionalStays.map(
+                  (stay) => ({
+                    hotelId: stay.hotelId,
+                    hotelNameSnapshot: stay.hotelNameSnapshot,
+                    cityId: stay.cityId,
+                    checkInDate: stay.checkInDate.toISOString().slice(0, 10),
+                    checkOutDate: stay.checkOutDate.toISOString().slice(0, 10),
+                  }),
+                ),
+              }
+            : {}),
           hotelNameSnapshot: row.hotelSelection.hotelNameSnapshot,
           cityId: row.hotelSelection.cityId,
           checkInDate: row.hotelSelection.checkInDate
@@ -477,6 +490,51 @@ export class SalesService {
       data: await this.hotelRates.availableRoomRates({ branchId, ...input }),
     };
   }
+  private async assertAdditionalHotelStays(
+    input: SalesContractCreateRequest,
+    existing?: SalesContractDetail['hotelSelection'],
+  ) {
+    const hotel = input.hotelSelection;
+    if (!hotel?.additionalStays?.length) return;
+    if (
+      input.services.some(
+        (service) =>
+          service.metadata?.packagePublishedSale ||
+          service.metadata?.tourDepartureId,
+      )
+    )
+      throw new BadRequestException(
+        'Composite itinerary is not part of this published package',
+      );
+    if (!this.references)
+      throw new BadRequestException('Hotel reference service unavailable');
+    for (const stay of [hotel, ...hotel.additionalStays]) {
+      const previous =
+        existing &&
+        [existing, ...(existing.additionalStays ?? [])].find(
+          (item) =>
+            item.hotelId === stay.hotelId &&
+            item.cityId === stay.cityId &&
+            item.hotelNameSnapshot === stay.hotelNameSnapshot &&
+            item.checkInDate === stay.checkInDate &&
+            item.checkOutDate === stay.checkOutDate,
+        );
+      if (previous) continue;
+      const reference = (await this.references.detail('hotels', stay.hotelId))
+        .data;
+      if (
+        reference.status !== 'active' ||
+        String(reference.attributes.cityId) !== stay.cityId ||
+        reference.attributes.isSaleableReference === false
+      )
+        throw new BadRequestException('Invalid hotel itinerary reference');
+      if (stay.hotelNameSnapshot !== reference.name)
+        throw new BadRequestException(
+          'Hotel reference changed; refresh the selection',
+        );
+    }
+  }
+
   private async assertIndividualHotelRooms(
     hotel: NonNullable<SalesContractCreateRequest['hotelSelection']>,
     branchId: string,
@@ -1105,6 +1163,7 @@ export class SalesService {
     } else if (input.services.some((s) => s.metadata?.packagePublishedSale))
       throw new BadRequestException('قیمت فروش معتبر نیست.');
     await this.assertTour(input, branchId, validatedPublishedHotelId);
+    await this.assertAdditionalHotelStays(input);
     await this.assertHotelRoomCapacity(input, branchId);
     const customer = await this.customers.resolveSnapshot(
       input.customerId,
@@ -1185,6 +1244,27 @@ export class SalesService {
         );
       if (row.status === 'CANCELLED')
         throw new ConflictException('قرارداد ابطال‌شده قابل اصلاح نیست.');
+    }
+    if (
+      row.hotelSelection?.additionalStays?.length &&
+      input.hotelSelection &&
+      !Object.hasOwn(input.hotelSelection, 'additionalStays')
+    ) {
+      if (input.hotelSelection.hotelId !== row.hotelSelection.hotelId)
+        throw new BadRequestException(
+          'Review the full hotel itinerary before changing the primary hotel',
+        );
+      input = {
+        ...input,
+        hotelSelection: {
+          ...input.hotelSelection,
+          additionalStays: presentSalesContract(
+            row,
+            undefined,
+            this.buyerCrypto,
+          ).hotelSelection!.additionalStays!,
+        },
+      };
     }
     if (row.paymentTerms != null && input.paymentTerms === null)
       throw new BadRequestException(
@@ -1268,6 +1348,10 @@ export class SalesService {
           );
     }
     await this.assertTour(input, row.branchId, validatedPublishedHotelId);
+    await this.assertAdditionalHotelStays(
+      input,
+      presentSalesContract(row, undefined, this.buyerCrypto).hotelSelection,
+    );
     await this.assertHotelRoomCapacity(input, row.branchId);
     for (const passenger of row.passengers) {
       const next = input.passengers.find(

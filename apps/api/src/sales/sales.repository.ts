@@ -34,7 +34,12 @@ export const salesDetailInclude = {
   },
   services: { orderBy: { createdAt: 'asc' } },
   ticketSelections: { orderBy: { departureAt: 'asc' } },
-  hotelSelection: { include: { rooms: { orderBy: { ordinal: 'asc' } } } },
+  hotelSelection: {
+    include: {
+      rooms: { orderBy: { ordinal: 'asc' } },
+      additionalStays: { orderBy: { ordinal: 'asc' } },
+    },
+  },
   priceComponents: { orderBy: { createdAt: 'asc' } },
   payments: {
     include: { refunds: true, allocations: true },
@@ -614,6 +619,16 @@ export class SalesRepository {
               mealServiceId: hotel.mealServiceId ?? null,
               occupancy: hotel.occupancy,
               inventoryStatus: hotel.inventoryStatus,
+              additionalStays: {
+                create: (hotel.additionalStays ?? []).map((stay, index) => ({
+                  ordinal: index + 2,
+                  hotelId: stay.hotelId,
+                  cityId: stay.cityId,
+                  hotelNameSnapshot: stay.hotelNameSnapshot,
+                  checkInDate: startOfDay(stay.checkInDate),
+                  checkOutDate: startOfDay(stay.checkOutDate),
+                })),
+              },
             },
           });
         }
@@ -883,6 +898,16 @@ export class SalesRepository {
               mealServiceId: hotel.mealServiceId ?? null,
               occupancy: hotel.occupancy,
               inventoryStatus: hotel.inventoryStatus,
+              additionalStays: {
+                create: (hotel.additionalStays ?? []).map((stay, index) => ({
+                  ordinal: index + 2,
+                  hotelId: stay.hotelId,
+                  cityId: stay.cityId,
+                  hotelNameSnapshot: stay.hotelNameSnapshot,
+                  checkInDate: startOfDay(stay.checkInDate),
+                  checkOutDate: startOfDay(stay.checkOutDate),
+                })),
+              },
             },
           });
         }

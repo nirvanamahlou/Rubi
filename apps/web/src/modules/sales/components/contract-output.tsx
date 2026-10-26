@@ -45,6 +45,8 @@ export async function loadContractPrint(id: string) {
     keys.push(['meal-services', c.hotelSelection.mealServiceId]);
   if (c.hotelSelection?.hotelId)
     keys.push(['hotels', c.hotelSelection.hotelId]);
+  for (const stay of c.hotelSelection?.additionalStays ?? [])
+    keys.push(['cities', stay.cityId]);
   const refs: ContractPrintReferences = { names: {} };
   const warnings: string[] = [];
   const base = getPublicApiBaseUrl();

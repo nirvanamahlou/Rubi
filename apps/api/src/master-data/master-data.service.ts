@@ -710,7 +710,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   'room-types': ['name'],
   'meal-services': ['name', 'category'],
   facilities: ['name'],
-  'composite-hotels': ['name', 'cityId', 'memberHotelIds'],
+  'composite-hotels': ['name', 'memberHotelIds'],
   organizations: ['legalName', 'roleCodes'],
   suppliers: [],
   brokers: ['name'],
@@ -3130,6 +3130,8 @@ export class MasterDataService {
         );
         if (!memberIds.length)
           throw new BadRequestException('حداقل یک هتل عضو الزامی است.');
+        if (memberIds.length > 50)
+          throw new BadRequestException('Maximum 50 hotels per itinerary');
         const backupIds = Object.hasOwn(data, 'backupMemberIds')
           ? referenceIds(data.backupMemberIds, 'اعضای پشتیبان')
           : [];
@@ -3137,25 +3139,18 @@ export class MasterDataService {
           throw new BadRequestException(
             'هتل پشتیبان باید در فهرست اعضای ترکیب باشد.',
           );
-        const existing =
-          partial && entityId
-            ? await this.repository.find('composite-hotels', entityId)
-            : null;
-        const cityId = String(data.cityId ?? existing?.cityId ?? '');
         const hotels = await Promise.all(
           memberIds.map((id) => this.repository.find('hotels', id)),
         );
         if (
-          hotels.some(
-            (hotel) =>
-              !hotel?.isActive ||
-              !hotel.isSaleableReference ||
-              hotel.cityId !== cityId,
-          )
+          hotels.some((hotel) => !hotel?.isActive || !hotel.isSaleableReference)
         )
           throw new BadRequestException(
-            'هتل‌های عضو باید فعال، فروش‌پذیر و در شهر ترکیب باشند.',
+            'هتل‌های عضو باید فعال و فروش‌پذیر باشند.',
           );
+        // Legacy parent city is the first actual member's anchor, not a
+        // restriction on subsequent cities in the ordered itinerary.
+        data.cityId = hotels[0]!.cityId;
         delete data.memberHotelIds;
         delete data.backupMemberIds;
         data.members = partial
