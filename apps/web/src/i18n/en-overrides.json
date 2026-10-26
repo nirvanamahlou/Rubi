@@ -1,4 +1,6 @@
 {
+  "تأیید درخواست مالی باید توسط شخص دیگری انجام شود.": "A financial request must be approved by someone other than its requester.",
+  "شماره چک الزامی است.": "The cheque number is required.",
   "درخواست تازه باید منتظر اقدام کارشناس باشد.": "A new request must be awaiting agent action.",
   "وصل شده به:": "Connected to:",
   "در حال بررسی امنیتی است.": "is undergoing a security scan.",

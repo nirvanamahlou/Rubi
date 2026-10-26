@@ -56,3 +56,5 @@ Word is RTL, including table layout. Runtime activation is separate from code te
 Full API TypeScript passes after regenerating existing Contracts/Prisma build outputs for current develop; no source schema change. Initial stale generated outputs caused unrelated Insurance/Sales errors; rebuilding resolved them.
 
 Full API production build and TypeScript passed locally; scoped ESLint passed. The initial six-test payroll run revealed two pre-existing fixture assumptions (missing Prisma cutover metadata and formerly required correction reason); fixtures now follow current runtime policy and all six pass.
+
+Hosted full test gate identified missing English translations for the two new backend errors. Added only their existing catalogue entries; three local coverage tests pass. No form, field, button or layout change. All final-head hosted gates remain required before merge.
