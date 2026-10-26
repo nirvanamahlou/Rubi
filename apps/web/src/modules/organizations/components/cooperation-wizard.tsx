@@ -23,6 +23,7 @@ import {
   CooperationSaveError,
   normalizeOtpCode,
   saveCooperation,
+  registrationCooperationDraft,
   type CooperationDraft,
 } from '../model/cooperation-draft';
 import { PhoneVerificationRequestGate } from '../model/phone-verification-lifecycle';
@@ -35,6 +36,10 @@ const steps = [
   'قرارداد و اعتبار',
   'اسناد و تأیید',
 ];
+
+export function cooperationStepIds(role: CooperationDraft['role']) {
+  return role === 'AGENCY' ? [1, 2, 3, 5] : [1, 2, 3, 4, 5];
+}
 
 function freshDraft(role: CooperationDraft['role'], branchId = '') {
   return {
@@ -100,6 +105,8 @@ export function CooperationWizard({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const agencyRegistration = draft.role === 'AGENCY';
+  const visibleSteps = cooperationStepIds(draft.role);
   const [stopped, setStopped] = useState(false);
   const [partial, setPartial] = useState<MasterDataRecord>();
   const [phoneChallenge, setPhoneChallenge] = useState<B2bPhoneChallengeV1>();
@@ -338,13 +345,16 @@ export function CooperationWizard({
         ? 'ابتدا سازمان موجود را انتخاب کنید.'
         : step === 3
           ? undefined
-          : cooperationIssue(draft, step);
+          : cooperationIssue(
+              registrationCooperationDraft(draft, editing),
+              step,
+            );
     if (issue) {
       setError(issue);
       return;
     }
     setError('');
-    setStep((current) => Math.min(5, current + 1));
+    setStep((current) => visibleSteps[visibleSteps.indexOf(current) + 1] ?? 5);
   }
   async function save() {
     if (busy || uploading || stopped) return;
@@ -359,7 +369,7 @@ export function CooperationWizard({
     try {
       onSaved(
         await saveCooperation(
-          draft,
+          registrationCooperationDraft(draft, editing),
           permissions,
           existing,
           editing
@@ -454,20 +464,24 @@ export function CooperationWizard({
             className="panel steps"
             aria-label={editing ? 'مراحل ویرایش آژانس' : 'مراحل ایجاد همکاری'}
           >
-            {steps.map((title, index) => (
+            {visibleSteps.map((id, index) => (
               <div
-                key={title}
-                className={`step ${step === index + 1 ? 'active' : step > index + 1 ? 'done' : ''}`}
-                aria-current={step === index + 1 ? 'step' : undefined}
+                key={id}
+                className={`step ${step === id ? 'active' : step > id ? 'done' : ''}`}
+                aria-current={step === id ? 'step' : undefined}
               >
                 <span className="step-num">
-                  {step > index + 1 ? (
+                  {step > id ? (
                     <Check size={16} />
                   ) : (
                     (index + 1).toLocaleString('fa-IR')
                   )}
                 </span>
-                <b>{title}</b>
+                <b>
+                  {id === 5 && agencyRegistration
+                    ? 'بازبینی و ثبت'
+                    : steps[id - 1]}
+                </b>
               </div>
             ))}
           </nav>
@@ -659,7 +673,8 @@ export function CooperationWizard({
                       <option value="NATURAL">حقیقی</option>
                     </NativeSearchSelect>
                   </label>
-                  {draft.personType === 'LEGAL' ? (
+                  {(editing || !agencyRegistration) &&
+                  draft.personType === 'LEGAL' ? (
                     <div className="rounded-xl border border-border bg-white p-3">
                       {field(
                         'nationalId',
@@ -673,18 +688,20 @@ export function CooperationWizard({
                       </p>
                     </div>
                   ) : null}
-                  {field(
-                    'registrationNumber',
-                    'شماره ثبت',
-                    80,
-                    mode === 'existing' && !editing,
-                  )}
-                  {field(
-                    'economicCode',
-                    'کد اقتصادی',
-                    80,
-                    mode === 'existing' && !editing,
-                  )}
+                  {(editing || !agencyRegistration) &&
+                    field(
+                      'registrationNumber',
+                      'شماره ثبت',
+                      80,
+                      mode === 'existing' && !editing,
+                    )}
+                  {(editing || !agencyRegistration) &&
+                    field(
+                      'economicCode',
+                      'کد اقتصادی',
+                      80,
+                      mode === 'existing' && !editing,
+                    )}
                   {field(
                     'tourismLicenseNumber',
                     'شماره مجوز',
@@ -711,22 +728,24 @@ export function CooperationWizard({
                       editing ? 'master_data.update' : 'master_data.create',
                     ),
                   )}
-                  {field(
-                    'chiefExecutiveNationalId',
-                    'کد ملی مدیرعامل',
-                    20,
-                    !permissions.includes(
-                      editing ? 'master_data.update' : 'master_data.create',
-                    ),
-                  )}
-                  {field(
-                    'jobTitle',
-                    'سمت',
-                    120,
-                    !permissions.includes(
-                      editing ? 'master_data.update' : 'master_data.create',
-                    ),
-                  )}
+                  {(editing || !agencyRegistration) &&
+                    field(
+                      'chiefExecutiveNationalId',
+                      'کد ملی مدیرعامل',
+                      20,
+                      !permissions.includes(
+                        editing ? 'master_data.update' : 'master_data.create',
+                      ),
+                    )}
+                  {(editing || !agencyRegistration) &&
+                    field(
+                      'jobTitle',
+                      'سمت',
+                      120,
+                      !permissions.includes(
+                        editing ? 'master_data.update' : 'master_data.create',
+                      ),
+                    )}
                   {field(
                     'phone',
                     'تلفن',
@@ -861,7 +880,7 @@ export function CooperationWizard({
                 )}
               </>
             ) : null}
-            {step === 4 ? (
+            {!agencyRegistration && step === 4 ? (
               <>
                 <div className="agreement-row-title">
                   <label className="check">
@@ -936,7 +955,9 @@ export function CooperationWizard({
                 <div className="summary-list">
                   {[
                     ['سازمان', draft.legalName],
-                    ['شناسه ملی شرکت', draft.nationalId || 'ثبت نشده'],
+                    ...(editing || !agencyRegistration
+                      ? [['شناسه ملی شرکت', draft.nationalId || 'ثبت نشده']]
+                      : []),
                     ['کد سازمان', draft.code || 'تخصیص خودکار پس از ثبت'],
                     [
                       'نقش همکاری',
@@ -954,31 +975,35 @@ export function CooperationWizard({
                         : 'ثبت نمی‌شود',
                     ],
                     ['نشانی', draft.addressLine || 'ثبت نمی‌شود'],
-                    [
-                      'قرارداد',
-                      draft.withAgreement
-                        ? `${draft.agreementTerms.title} — پیش‌نویس`
-                        : 'ثبت نمی‌شود',
-                    ],
-                    ...(draft.withAgreement
+                    ...(!agencyRegistration
                       ? [
                           [
-                            'ارزهای قرارداد',
-                            draft.agreementTerms.currencyCodes.join('، '),
+                            'قرارداد',
+                            draft.withAgreement
+                              ? `${draft.agreementTerms.title} — پیش‌نویس`
+                              : 'ثبت نمی‌شود',
                           ],
-                          [
-                            'سقف‌های اعتبار',
-                            draft.agreementTerms.creditPolicies
-                              .map(
-                                (p) =>
-                                  `${p.creditLimit} ${currencySymbol(p.currencyCode)}`,
-                              )
-                              .join(' · ') || 'بدون سقف اعتباری',
-                          ],
-                          [
-                            'تضمین‌ها',
-                            `${draft.agreementTerms.guarantees.length} مورد`,
-                          ],
+                          ...(draft.withAgreement
+                            ? [
+                                [
+                                  'ارزهای قرارداد',
+                                  draft.agreementTerms.currencyCodes.join('، '),
+                                ],
+                                [
+                                  'سقف‌های اعتبار',
+                                  draft.agreementTerms.creditPolicies
+                                    .map(
+                                      (p) =>
+                                        `${p.creditLimit} ${currencySymbol(p.currencyCode)}`,
+                                    )
+                                    .join(' · ') || 'بدون سقف اعتباری',
+                                ],
+                                [
+                                  'تضمین‌ها',
+                                  `${draft.agreementTerms.guarantees.length} مورد`,
+                                ],
+                              ]
+                            : []),
                         ]
                       : []),
                   ].map(([label, value]) => (
@@ -991,9 +1016,9 @@ export function CooperationWizard({
                 <div className="boundary-note">
                   <FileText size={20} />
                   <span>
-                    پس از ذخیره، قرارداد و اسناد آن در پرونده قابل ویرایش و
-                    ارسال برای تأیید مستقل است. این عملیات اطلاعات پرونده را
-                    ذخیره می‌کند و به معنی تأیید اعتبار یا قرارداد نیست.
+                    {agencyRegistration
+                      ? 'پس از ثبت، اطلاعات تکمیلی و قراردادها را از پروندهٔ ۳۶۰ مدیریت کنید. این مرحله فقط اطلاعات اولیه را ذخیره می‌کند.'
+                      : 'پس از ذخیره، قرارداد و اسناد آن در پرونده قابل ویرایش و ارسال برای تأیید مستقل است. این عملیات اطلاعات پرونده را ذخیره می‌کند و به معنی تأیید اعتبار یا قرارداد نیست.'}
                   </span>
                 </div>
               </>
@@ -1018,7 +1043,10 @@ export function CooperationWizard({
                 className="btn"
                 disabled={step === 1 || busy || uploading || stopped}
                 onClick={() => {
-                  setStep((current) => current - 1);
+                  setStep(
+                    (current) =>
+                      visibleSteps[visibleSteps.indexOf(current) - 1] ?? 1,
+                  );
                   setError('');
                 }}
               >

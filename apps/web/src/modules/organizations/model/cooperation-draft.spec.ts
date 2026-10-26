@@ -10,6 +10,7 @@ import {
   CooperationSaveError,
   normalizeOtpCode,
   saveCooperation,
+  registrationCooperationDraft,
 } from './cooperation-draft';
 import { blankAgreementTerms, editableAgreementTerms } from './agreement-terms';
 afterEach(() => vi.restoreAllMocks());
@@ -20,6 +21,40 @@ const draft = {
   code: 'B2B-TEST-01',
 };
 describe('cooperation wizard writes', () => {
+  it('projects initial registration without deferred identity or contract mutations but retains dossier edit values', () => {
+    const full = {
+      ...draft,
+      nationalId: '12345678901',
+      registrationNumber: 'REG',
+      economicCode: 'ECON',
+      chiefExecutiveNationalId: '1234567890',
+      jobTitle: 'Director',
+      withAgreement: true,
+    };
+    const registration = registrationCooperationDraft(full);
+    expect(registration).toMatchObject({
+      nationalId: '',
+      registrationNumber: '',
+      economicCode: '',
+      chiefExecutiveNationalId: '',
+      jobTitle: '',
+      withAgreement: false,
+      pendingAgreementDocument: null,
+      pendingGuaranteeDocuments: [],
+    });
+    expect(registrationCooperationDraft(full, true)).toMatchObject({
+      nationalId: full.nationalId,
+      registrationNumber: 'REG',
+      economicCode: 'ECON',
+      chiefExecutiveNationalId: full.chiefExecutiveNationalId,
+      jobTitle: 'Director',
+      withAgreement: false,
+    });
+    expect(full.withAgreement).toBe(true);
+    expect(full.nationalId).toBe('12345678901');
+    const corporate = { ...full, role: 'CORPORATE_CUSTOMER' as const };
+    expect(registrationCooperationDraft(corporate)).toBe(corporate);
+  });
   it('saves a new agency without an unverified phone and returns its dossier', async () => {
     const organization = {
       id: 'new-agency',
@@ -34,12 +69,26 @@ describe('cooperation wizard writes', () => {
       .spyOn(masterDataApi, 'create')
       .mockResolvedValue({ data: organization });
 
-    const saved = await saveCooperation({ ...draft, fullName: '', phone: '' }, [
-      'master_data.read',
-      'master_data.create',
-    ]);
+    const agreement = vi
+      .spyOn(agencyClient, 'saveAgreementTerms')
+      .mockResolvedValue({} as never);
+    const saved = await saveCooperation(
+      registrationCooperationDraft({
+        ...draft,
+        fullName: '',
+        phone: '',
+        nationalId: 'deferred',
+        registrationNumber: 'deferred',
+        economicCode: 'deferred',
+        chiefExecutiveNationalId: 'deferred',
+        jobTitle: 'deferred',
+        withAgreement: true,
+      }),
+      ['master_data.read', 'master_data.create'],
+    );
 
     expect(saved).toBe(organization);
+    expect(agreement).not.toHaveBeenCalled();
     expect(create).toHaveBeenCalledWith('organizations', {
       values: {
         legalName: draft.legalName,
@@ -51,6 +100,31 @@ describe('cooperation wizard writes', () => {
         roleCodes: 'AGENCY',
       },
     });
+  });
+  it('does not clear deferred fields when registration attaches to an existing agency', async () => {
+    const existing = {
+      id: 'existing',
+      name: draft.legalName,
+      version: 3,
+      attributes: {
+        roleCodes: 'AGENCY',
+        nationalId: '12345678901',
+        registrationNumber: 'REG',
+        economicCode: 'ECON',
+      },
+    } as unknown as MasterDataRecord;
+    const update = vi
+      .spyOn(masterDataApi, 'update')
+      .mockResolvedValue({ data: existing });
+    expect(
+      await saveCooperation(
+        registrationCooperationDraft(draft),
+        ['master_data.read'],
+        existing,
+      ),
+    ).toBe(existing);
+    expect(update).not.toHaveBeenCalled();
+    expect(existing.attributes.registrationNumber).toBe('REG');
   });
   it.each([
     ['qa@example.com', 'EMAIL'],
