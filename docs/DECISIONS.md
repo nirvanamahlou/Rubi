@@ -661,3 +661,23 @@ Owner authorizes showing the responsible seller in readable contract outputs wit
 ## REMOVE-EXTRA-TRAVEL-DATE-1025 — 2026-10-25
 
 The owner removes redundant trip-start inputs from New Contract. Identity registration must not demand a second date before service selection. Actual flight/hotel/tour dates remain canonical for travel/age/output; service-only contracts use execution dates attached to selected services rather than an identity-sheet date. Missing birth dates, mismatched ages after date selection, invalid service dates, inventory and allocation validation remain. Keep the existing departureDate wire/DB field as a derived summary and legacy draft fallback, with no schema/migration or invented current-date default.
+# COMPOSITE-HOTELS-CITIES-1026 — owner-directed multicity composition
+
+2026-10-26: owner replaces the old same-city alternative-hotel reference editor
+with one title and ordered repeatable city/hotel selections and native inline
+Hotel creation. This explicitly supersedes the same-city member invariant in
+Accommodation Master Data. Keep actual Hotel FKs and existing member priorities;
+derive each city's identity from its real Hotel. The existing parent city FK is
+a backward-compatible first-member anchor, not a restriction on later members.
+No automatic dates, prices, bookings, availability or financial writes are inferred.
+Owner clarified that every hotel loads into the contract and its dates are entered
+independently there. Add optional SalesHotelSelectionInput.additionalStays, one
+normalized Sales-owned child table with actual Hotel/City FKs, explicit ordered
+dates and historical name snapshots. Keep the primary selection/room allocation
+and contract-total pricing protocol intact; no cloned charged services or inferred
+dates/prices. Additional stays accompany the immutable reservation snapshot and
+contract output, not automatic hotel purchases. Old contracts need no backfill.
+Omitted itinerary fields on compatible updates preserve saved stays; an explicit
+empty list removes them. Published Tour prices cannot be reused for a changed
+composite itinerary. Rollback retains storage and must not allow old application
+writes to multi-stay contracts. No production migration or rollout requested.

@@ -97,7 +97,7 @@ describe('accommodation workspace', () => {
     expect(chainHeaders).not.toContain('آخرین تغییر');
   });
 
-  it('omits only the contract-reference column from composite hotel rows', () => {
+  it('shows ordered city/hotel stays without old reference or backup fields', () => {
     const combinedStart = source.indexOf('function combined()');
     const combinedEnd = source.indexOf('const content =', combinedStart);
     const combinedSource = source.slice(combinedStart, combinedEnd);
@@ -113,11 +113,11 @@ describe('accommodation workspace', () => {
       combinedSource.indexOf('</tr>', combinedSource.indexOf('names.map')),
     );
 
-    expect(headers).toEqual(['اولویت', 'هتل عضو', 'شهر / منطقه', 'وضعیت']);
+    expect(headers).toEqual(['ترتیب اقامت', 'هتل عضو', 'شهر / منطقه']);
     expect(memberRow.match(/<td\b/g)).toHaveLength(headers.length);
     expect(combinedSource).not.toContain('مرجع قرارداد');
     expect(combinedSource).not.toContain('— · Procurement');
-    expect(combinedSource).toContain("attribute(record, 'usageCondition')");
+    expect(combinedSource).not.toContain("attribute(record, 'usageCondition')");
     expect(catalogSource).toContain("key: 'usageCondition'");
   });
 
@@ -235,7 +235,7 @@ describe('accommodation workspace', () => {
     expect(source).toContain('accommodationSummary');
     expect(source).toContain('<HotelImportPanel');
     expect(source).toContain('<MasterDataKpiGrid');
-    expect(source).toContain("attribute(record, 'usageCondition')");
+    expect(source).toContain("attribute(record, 'memberHotels', '[]')");
     expect(source).not.toContain('— · Procurement');
     expect(source).toContain('در انتظار اتصال Documents');
     expect(source).not.toContain('هتل اسپیناس پالاس');

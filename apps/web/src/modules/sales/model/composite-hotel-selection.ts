@@ -1,0 +1,56 @@
+import type { MasterDataRecord } from '@nora/contracts';
+import type { SalesFormState } from './sales-form';
+
+export function withCompositeHotel(
+  state: SalesFormState,
+  record: MasterDataRecord,
+): SalesFormState {
+  const members: unknown = JSON.parse(
+    String(record.attributes.memberHotels ?? '[]'),
+  );
+  if (
+    !Array.isArray(members) ||
+    !members.length ||
+    members.length > 50 ||
+    members.some(
+      (member) =>
+        !member ||
+        typeof member.hotelId !== 'string' ||
+        !member.hotelId ||
+        typeof member.cityId !== 'string' ||
+        !member.cityId ||
+        typeof member.hotelName !== 'string',
+    )
+  )
+    throw new Error('اطلاعات هتل ترکیبی کامل نیست؛ فهرست را تازه‌سازی کنید.');
+  const stays = members.map(
+    (member: { hotelId: string; cityId: string; hotelName: string }) => ({
+      hotelId: member.hotelId,
+      cityId: member.cityId,
+      hotelNameSnapshot: member.hotelName,
+      checkInDate: '',
+      checkOutDate: '',
+    }),
+  );
+  if (new Set(stays.map((stay) => stay.hotelId)).size !== stays.length)
+    throw new Error('هتل تکراری در ترکیب وجود دارد.');
+  const first = stays[0]!;
+  return {
+    ...state,
+    hotelChildAssignments: {},
+    hotel: {
+      ...state.hotel,
+      hotelId: first.hotelId,
+      name: first.hotelNameSnapshot,
+      cityId: first.cityId,
+      checkIn: '',
+      checkOut: '',
+      checkInManual: true,
+      checkOutManual: true,
+      roomTypeId: '',
+      rooms: [],
+      guestCustomerIds: undefined,
+      additionalStays: stays.slice(1),
+    },
+  };
+}
