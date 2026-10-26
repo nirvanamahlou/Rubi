@@ -8,6 +8,20 @@ vi.mock('../hotel-rates/controls', () => ({
   ),
 }));
 
+vi.mock('./reservation-purchase-broker-lookup', () => ({
+  ReservationPurchaseBrokerLookup: ({
+    requestId,
+    label,
+  }: {
+    requestId: string;
+    label: string;
+  }) => (
+    <span data-source="brokers" data-request={requestId}>
+      {label}
+    </span>
+  ),
+}));
+
 it('uses independent registered broker choices for hotel and both transfer legs', () => {
   const html = renderToStaticMarkup(
     <ReservationHotelPurchase
@@ -35,6 +49,7 @@ it('uses independent registered broker choices for hotel and both transfer legs'
     />,
   );
   expect(html).toContain('data-source="brokers"');
+  expect(html.match(/data-request="synthetic"/g)).toHaveLength(2);
   expect(html).not.toContain('data-source="organizations"');
   expect(html).toContain('کارگزار هتل');
 });

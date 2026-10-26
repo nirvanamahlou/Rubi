@@ -1,3 +1,7 @@
+## PURCHASE-BROKER-ENGLISH-1026 — PC-A
+
+Reservation purchase supplier pickers display the registered English broker name for hotel, shared/split transfers, floating flights and insurance. Both registered Persian and English names remain searchable; saved supplier IDs resolve to the current English label, including later directory pages. Missing English or archived suppliers retain the existing name. Reuses the request-authorized broker directory without changing Master Data, purchase IDs/history, currency controls, API, schema or grants. No operational data or runtime changes. Focused25 regressions, scoped lint, Web production build and typecheck pass. Exact-head hosted checks precede explicitly authorized push/develop merge.
+
 ## AGENCY-REGISTRATION-SLIM-1026 — PC-B — READY_FOR_CI
 
 Agency registration now defers the five owner-marked identity/contact fields to editable dossier360 and skips contract/credit entry. Four visible steps retain phone verification and final review; save opens the existing dossier for full identity/contact and native agreement management. The registration projection suppresses stale deferred/contract input and preserves existing agencies; edit mode and Corporate-customer registration remain intact. No data/schema/API/permissions or server changes. Organizations/English268 tests plus27 focused save/edit assertions, lint/types and production Web build pass; hosted exact-head gates precede authorized push/develop merge. See [scope and evidence](tasks/AGENCY-REGISTRATION-SLIM-1026.md).
@@ -5799,6 +5803,7 @@ Request detail breadcrumb uses the saved request title; redundant UUID/version h
 ## 2026-10-06 — MESSAGE-PERSIAN-SAVE-1006 — PC-B
 
 Visible message/scheduled-channel names use existing Persian labels while canonical enum values stay unchanged. The icon-only save action is placed in a final full-width RTL flex row aligned physically left, preserving its original handler. No API/data/schema/migration/permission/dependency/runtime changes. Targeted rendering tests and affected quality gates precede authorized push/develop merge.
+
 ## 2026-10-06 — PROCUREMENT-RECORD-LISTS-1006
 
 Removed inert sidebar form previews from all seven Procurement sections. Scoped creation/decision actions now sit above full-width records, with a paginated authorized request chooser for dependent forms. Text preview triggers no longer match the shared icon-only action rule; full record titles wrap in lists and workbench. Supplier logos continue using authenticated Master Data document previews, and newly persisted logo profiles immediately refresh the adjacent title cache. No API/schema/IAM/dependency or operational data changes. Eight focused tests, Web typecheck and changed-file lint pass; local production build passed; full CI gates required before merge; authenticated browser verification unavailable because CUA initialization fails.
