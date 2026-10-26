@@ -9758,3 +9758,9 @@ LEGACY-RESERVATION-LOCAL-1026 owner reversal: do not publish or merge synthetic 
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-oldest-first-1026 from origin/develop. Owner authorizes oldest-to-newest reservation contract display with push/develop merge. Reserve bounded Reservations foundation model/workspace/regressions, one own Web English label and own docs. Use immutable contract createdAt for default ascending order, stable ID ties, before pagination/export; keep manual deadline/newest/priority choices. New-request shortcut uses the same ascending order. Existing published source locks released; no active overlap found. No API/schema/migration/dependency/permission or runtime/data changes.
 
 RESERVATION-OLDEST-FIRST-1026 verification: 61 focused tests passed, including reversed receipt times and urgency, pagination, refresh append behavior, stable same-time ordering and retained explicit newest sort. Scoped lint and full Web build/types are checked before merge; exact-head hosted gates remain required. Bounded source locks freeze/release on publication. No local fixture/account/data changes.
+
+## HEADER-PROFILE-PHOTO-1026 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-header-profile-photo-1026 from origin/develop59c59506. Owner requests shared header avatar use persisted Workbench photo, otherwise solid blue without initials, and explicitly authorizes push/develop merge. Reserve user-menu.tsx and its direct existing spec plus own status notes. Prior session-stability header scope published/released; preserve its identity/error handling. No IAM producer/API/schema/dependency or runtime changes.
+
+HEADER-PROFILE-PHOTO-1026 ready for review:5 menu integration tests and scoped lint pass. Photo request sequencing, session-recovery reload and blank fallback retained; no initial-letter rendering. Source scope frozen/released at publication; hosted gates precede authorized merge.

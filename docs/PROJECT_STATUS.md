@@ -7689,3 +7689,8 @@ The reservation contract inbox defaults to ascending immutable contract creation
 ## COMPLETION-NAME-ONLY-1026 — PC-A — READY_FOR_CI
 
 Correction Add passenger now permits name-only profiles; all other identity/passport/contact fields are optional. Dedicated contract-authorized Customer creation keeps ordinary creation policies unchanged. Missing birth persists as NULL and uses the booked age category, with strict counts/services/version/replay and no extra inventory/price writes. Existing profile names and null-safe Reservations/Sales projections are covered. Fresh isolated PostgreSQL migration/nullability/FK proof,102 API and61 Web/translation regressions, scoped lint, API/Web builds and typechecks passed. Exact-head hosted gates precede owner-authorized push/develop merge. Migration must precede API deployment; no operational deployment/runtime change requested. See tasks/COMPLETION-NAME-ONLY-1026.md.
+
+## HEADER-PROFILE-PHOTO-1026 — PC-B
+
+Shared header displays the persisted Workbench profile photo and an empty primary-blue circle when absent/unavailable, never name initials. Reload on profile-photo change and authenticated session recovery; ignore stale photo responses, release object URLs and hide failed images. Identity/session/logout behavior retained. Five existing menu integration checks and scoped ESLint pass; exact-head hosted quality/type/build/full tests/database gates precede authorized develop merge. No API/schema/dependency/runtime changes.
+
