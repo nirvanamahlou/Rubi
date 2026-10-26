@@ -4026,7 +4026,7 @@ model SalesContractPassenger {
   contractId          String                            @map("contract_id") @db.Uuid
   customerId          String                            @map("customer_id") @db.Uuid
   displayNameSnapshot String                            @map("display_name_snapshot") @db.VarChar(200)
-  birthDate           DateTime                          @map("birth_date") @db.Date
+  birthDate           DateTime?                         @map("birth_date") @db.Date
   ageCategory         SalesPassengerAgeCategory         @map("age_category")
   createdAt           DateTime                          @default(now()) @map("created_at") @db.Timestamptz(3)
   contract            SalesContract                     @relation(fields: [contractId], references: [id], onDelete: Cascade)

@@ -10,6 +10,7 @@ import {
 } from '@nora/contracts';
 import type {
   AuthenticatedActor,
+  CustomerMutationRequest,
   SalesPassengerCompletionCommandV1,
   SalesPassengerCompletionFormV1,
   SalesServiceInput,
@@ -34,6 +35,7 @@ const schema = Joi.object({
     .items(
       Joi.object({
         customerId: Joi.string().uuid().required(),
+        ageCategory: Joi.string().valid('ADT', 'CHD', 'INF'),
         serviceClientKeys: Joi.array()
           .min(1)
           .max(100)
@@ -133,6 +135,18 @@ export class PassengerCompletionService {
         : null,
     };
   }
+  async createPerson(
+    id: string,
+    input: CustomerMutationRequest,
+    actor: AuthenticatedActor,
+  ) {
+    const { row, parties } = await this.load(id, actor);
+    if (!parties || row.passengers.length)
+      throw new ConflictException(
+        'نسخه یا فهرست مسافران قرارداد تغییر کرده است.',
+      );
+    return this.customers.createForSalesCompletion(input, actor);
+  }
   async save(
     id: string,
     input: SalesPassengerCompletionCommandV1,
@@ -177,7 +191,7 @@ export class PassengerCompletionService {
       );
     const people: Array<
       SalesPassengerCompletionCommandV1['passengers'][number] & {
-        birthDate: string;
+        birthDate: string | null;
         name: string;
         category: 'ADT' | 'CHD' | 'INF';
       }
@@ -192,26 +206,16 @@ export class PassengerCompletionService {
       if (
         data.kind !== 'person' ||
         data.status !== 'active' ||
-        !data.birthDate ||
-        !data.passportFirstName ||
-        !data.passportLastName ||
-        !data.passportNumber ||
-        !data.passportExpiryDate ||
-        !['M', 'F'].includes(data.gender ?? '') ||
-        ![
-          data.nationalityCode,
-          data.passportIssuingCountryCode,
-          data.birthCountryCode,
-        ].every((v) => typeof v === 'string' && /^[A-Z]{3}$/.test(v))
+        !(data.passportFirstName?.trim() || data.firstName?.trim()) ||
+        !(data.passportLastName?.trim() || data.lastName?.trim())
       )
-        throw new BadRequestException(
-          'مشخصات هویتی و پاسپورت همه مسافران را کامل کنید.',
-        );
+        throw new BadRequestException('نام و نام خانوادگی شخص الزامی است.');
       const day = row.departureDate.toISOString().slice(0, 10);
       if (
-        data.birthDate > day ||
-        data.birthDate > new Date().toISOString().slice(0, 10) ||
-        data.passportExpiryDate < day
+        (data.birthDate &&
+          (data.birthDate > day ||
+            data.birthDate > new Date().toISOString().slice(0, 10))) ||
+        (data.passportExpiryDate && data.passportExpiryDate < day)
       )
         throw new BadRequestException(
           'تاریخ تولد یا انقضای پاسپورت برای سفر معتبر نیست.',
@@ -246,10 +250,20 @@ export class PassengerCompletionService {
       }
       people.push({
         ...person,
-        birthDate: data.birthDate,
-        name: `${data.passportFirstName} ${data.passportLastName}`,
-        category: passengerAgeCategory(data.birthDate, day),
+        birthDate: data.birthDate || null,
+        name: `${data.passportFirstName?.trim() || data.firstName!.trim()} ${data.passportLastName?.trim() || data.lastName!.trim()}`,
+        category: data.birthDate
+          ? passengerAgeCategory(data.birthDate, day)
+          : person.ageCategory!,
       });
+      if (!data.birthDate && !person.ageCategory)
+        throw new BadRequestException('اطلاعات مسافران معتبر نیست.');
+      if (
+        data.birthDate &&
+        person.ageCategory &&
+        person.ageCategory !== people[people.length - 1]!.category
+      )
+        throw new BadRequestException('اطلاعات مسافران معتبر نیست.');
     }
     for (const service of services) {
       const expected = parties[service.clientKey]!;
@@ -283,7 +297,9 @@ export class PassengerCompletionService {
               contractId: id,
               customerId: person.customerId,
               displayNameSnapshot: person.name,
-              birthDate: new Date(person.birthDate + 'T00:00:00Z'),
+              birthDate: person.birthDate
+                ? new Date(person.birthDate + 'T00:00:00Z')
+                : null,
               ageCategory: person.category,
               allocations: {
                 create: person.serviceClientKeys.map((key) => ({

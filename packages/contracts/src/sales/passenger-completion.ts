@@ -23,6 +23,8 @@ export interface SalesPassengerCompletionCommandV1 {
   expectedVersion: number;
   passengers: {
     customerId: string;
+    /** Booked category when the person's birth date is unknown; never a fabricated birth date. */
+    ageCategory?: 'ADT' | 'CHD' | 'INF';
     serviceClientKeys: string[];
     hotelStay?: SalesPassengerHotelStayV1;
   }[];
