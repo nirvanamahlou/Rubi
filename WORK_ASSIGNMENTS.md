@@ -9713,6 +9713,8 @@ FINANCIAL-INTERNAL-GAPS-1026 scope narrowed by explicit user answer: no fields/b
 
 FINANCIAL-INTERNAL-GAPS-1026 CI repair: reserve only two new error-message entries in apps/web/src/i18n/en-overrides.json and apps/api/src/common/i18n/en-catalog.json. Existing form/field/button structure unchanged; no generator, dependency or schema change. Hosted quality/build/database pass; full test coverage requires these English equivalents.
 
-## MASTER-DATA-ACCESS-1026 — PC-B — RESERVED
+## MASTER-DATA-ACCESS-1026 — PC-B — LOCAL_VERIFIED
 
 User authorizes adding Master Data registration access to two explicitly named existing local accounts, then push/develop merge. Branch codex/pc-b-master-data-access-1026 from4395ee177. Reserve new apps/api/scripts/master-data-registration-access.mjs and focused test, own task/status/assignment notes only. IAM public ManualUserAccessService remains the sole mutation boundary with live administrator checks, revision conflict checks and audit. Add read/create and currency-rate proposal create, explicit Master Data screens/resource/field controls; preserve all unrelated permissions/branches and do not grant update/delete/import/approval/admin. No shared IAM source, migration, dependency or runtime source replacement; no overlapping source owner. Real identifiers and access receipts remain outside Git. Prior local payment fix stays on its own branch; it is not part of this publication.
+
+MASTER-DATA-ACCESS-1026 verification: two requested local users updated through IAM; all resources/fields, audit and preservation checks passed, repeated preview is a no-op. Twenty focused tests and scoped ESLint passed. PR1136 targets develop; full hosted gates precede merge. New script/source reservation releases on verified merge. No operational application rebuild or migration.
