@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/form-controls';
 import {
+  isAggregateReservationForm,
   type ReservationFormIntake,
   type ReservationFormReferences,
 } from '../model/reservation-form';
@@ -451,6 +452,7 @@ export function ReservationSettingsForm({
     onDirty();
   };
   const selected = draft.passengers.filter((p) => p.selected);
+  const aggregateForm = isAggregateReservationForm(intake);
   const primaryTextKeys = ['checkIn', 'checkOut', 'roomType'] as const;
   const textKeysBySection: Record<
     ReservationSettingsSection,
@@ -604,7 +606,7 @@ export function ReservationSettingsForm({
         busy ||
         priceLoading ||
         activeDirectory.loading ||
-        !selected.length ||
+        (!selected.length && !aggregateForm) ||
         (showDocument && !draft.brokerId)
       }
     >
@@ -689,7 +691,7 @@ export function ReservationSettingsForm({
               currencyDirectory.loading ||
               intake.workflow.supplierStatus === 'CANCELLED' ||
               activeDirectory.loading ||
-              !selected.length
+              (!selected.length && !aggregateForm)
             }
             onClick={() => void save(false)}
           >
@@ -979,6 +981,19 @@ export function ReservationSettingsForm({
                 </tr>
               </thead>
               <tbody>
+                {aggregateForm && (
+                  <tr>
+                    <td colSpan={14}>
+                      طرف قرارداد:{' '}
+                      {draft.text.contractPartyName ||
+                        intake.contractPartyName ||
+                        '—'}
+                      <p>
+                        اطلاعات اسمی مسافران در این قرارداد قدیمی ثبت نشده است.
+                      </p>
+                    </td>
+                  </tr>
+                )}
                 {draft.passengers.map((p, i) => (
                   <tr key={p.id}>
                     <td>

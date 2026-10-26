@@ -7,6 +7,7 @@ import {
 export function validateVoucherSettings(
   value: unknown,
   passengerIds: readonly string[],
+  allowEmptyPassengers = false,
 ): VoucherSettingsV1 {
   const fail = (): never => {
     throw new Error(
@@ -115,7 +116,8 @@ export function validateVoucherSettings(
   if (
     v.passengers.length !== passengerIds.length ||
     new Set(v.passengers.map((p) => p?.id)).size !== passengerIds.length ||
-    !v.passengers.some((p) => p.selected) ||
+    (!(allowEmptyPassengers && passengerIds.length === 0) &&
+      !v.passengers.some((p) => p.selected)) ||
     v.passengers.some(
       (p) =>
         !p ||

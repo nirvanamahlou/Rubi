@@ -7646,3 +7646,7 @@ Removed the duplicate people-sheet trip-start and legacy general trip-date contr
 ## 2026-10-26 — FINANCIAL-INTERNAL-GAPS-1026
 
 Existing-form-only Finance repairs: explicit account-only petty FX, independent operational approval, mandatory existing reference for new CHECK requests. No new fields/buttons, automatic banking, migration or operational writes. 42 targeted/isolated PostgreSQL tests and scoped lint pass. Full original Persian process report retained and updated for RTL Word; remaining lifecycle/configuration gaps are stated explicitly. See tasks/FINANCIAL-INTERNAL-GAPS-1026.md. Source candidate, not a runtime rollout.
+
+## LEGACY-RESERVATION-LOCAL-1026 — local review only
+
+Historical reservation supplier forms now preserve aggregate contracts without fabricating named passengers. A trusted historical snapshot permits empty supplier manifests; ordinary and voucher validation retain their existing rules. The Sales public summary supplies the saved buyer after request authorization, and the form and escaped PDF show it as CONTRACT PARTY, separate from passenger identities. Broker selection, CAS, issuance and revision history remain enforced. Web44/API30 focused tests, scoped lint and full Web/API production builds pass. Preview runs at http://localhost:3100/reservations with API4000 against an isolated copy of the existing local database; original local data and production remain unchanged. No push, PR or merge is authorized.

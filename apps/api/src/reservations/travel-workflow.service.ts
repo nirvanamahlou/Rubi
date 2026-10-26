@@ -3,6 +3,7 @@ import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
 import {
   salesContractFlights,
+  readLegacyServiceParties,
   reservationFlightOutputKey,
 } from '@nora/contracts';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -245,6 +246,13 @@ export class TravelWorkflowService {
                 reservationFlightOutputKey(f.serviceClientKey, f.offerId),
               )
             : [],
+          command.action === 'SUPPLIER_FORM_SETTINGS' &&
+            intake.snapshot.passengerIds.length === 0 &&
+            (intake.snapshot.serviceSelections.some(
+              (service) => service.metadata?.legacyContractV1 === true,
+            ) ||
+              readLegacyServiceParties(intake.snapshot.serviceSelections) !==
+                null),
         );
       } catch (error) {
         throw new BadRequestException(

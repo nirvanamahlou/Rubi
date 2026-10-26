@@ -28,6 +28,7 @@ export function transitionTravelWorkflow(
   command: TravelWorkflowCommandV1,
   passengerIds: readonly string[],
   flightKeys: readonly string[] = [],
+  allowAggregateSupplierForm = false,
 ): TravelWorkflowStateV1 {
   if (
     !command ||
@@ -118,6 +119,7 @@ export function transitionTravelWorkflow(
       next.supplierFormSettings = validateVoucherSettings(
         command.voucherSettings,
         passengerIds,
+        allowAggregateSupplierForm,
       );
       break;
     case 'VOUCHER_SETTINGS':

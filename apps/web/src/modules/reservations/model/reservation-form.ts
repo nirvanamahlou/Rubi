@@ -30,6 +30,7 @@ import type {
 } from '@nora/contracts';
 export type ReservationFormIntake = ReservationIntakeV1 & {
   workflow: TravelWorkflowStateV1;
+  contractPartyName?: string | null;
   /** Minimal request-scoped Customer projection; no DOB or passport numbers. */
   outputPassengers?: readonly {
     customerId: string;
@@ -38,6 +39,16 @@ export type ReservationFormIntake = ReservationIntakeV1 & {
     hotelChildAgeBand: 'CHD_2_TO_6' | 'CHD_6_TO_12' | null;
   }[];
 };
+/** Historical counts do not imply named passenger records or identities. */
+export function isAggregateReservationForm(intake: ReservationFormIntake) {
+  return (
+    intake.snapshot.passengerIds.length === 0 &&
+    (intake.snapshot.serviceSelections.some(
+      (service) => service.metadata?.legacyContractV1 === true,
+    ) ||
+      readLegacyServiceParties(intake.snapshot.serviceSelections) !== null)
+  );
+}
 export type ReservationFormReferences = Record<string, MasterDataRecord>;
 const text = (value: unknown) =>
   typeof value === 'string' && value.trim() ? value.trim() : '-';
@@ -259,6 +270,7 @@ export function reservationFormData(
       );
     })(),
     request: snapshot.contractNumber,
+    contractPartyName: intake.contractPartyName ?? '',
     issueDate: reservationFormDate(
       workflow.updatedAt ?? intake.receivedAt,
       'Asia/Tehran',

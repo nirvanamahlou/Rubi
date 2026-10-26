@@ -14,6 +14,39 @@ const actor = {
   permissions: ['reservations.read'],
   branchIds: ['branch'],
 } as AuthenticatedActor;
+it('loads the saved buyer through Sales only after authorizing the historical request and leaves passengers empty', async () => {
+  const detail = vi.fn().mockResolvedValue({
+    contractId: 'contract',
+    snapshot: { ...snapshot, passengerIds: [] },
+  });
+  const read = vi
+    .fn()
+    .mockResolvedValue(
+      new Map([['contract', { contractPartyName: 'SYNTHETIC BUYER' }]]),
+    );
+  const reservationOutputIdentity = vi.fn();
+  const controller = new ReservationRequestsController(
+    {} as never,
+    {} as never,
+    {} as never,
+    { detail } as never,
+    { read: vi.fn().mockResolvedValue({}) } as never,
+    { reservationOutputIdentity } as never,
+    {} as never,
+    { read } as never,
+  );
+  const result = await controller.workflowDetail('request', { actor } as never);
+  expect(result.data.contractPartyName).toBe('SYNTHETIC BUYER');
+  expect(result.data.outputPassengers).toEqual([]);
+  expect(read).toHaveBeenCalledWith(['contract'], actor);
+  expect(reservationOutputIdentity).not.toHaveBeenCalled();
+  detail.mockRejectedValueOnce(new Error('outside branch'));
+  read.mockClear();
+  await expect(
+    controller.workflowDetail('request', { actor } as never),
+  ).rejects.toThrow('outside branch');
+  expect(read).not.toHaveBeenCalled();
+});
 it('resolves only request members, once per ID, at the trip date', async () => {
   const reservationOutputIdentity = vi.fn(async (id: string) => ({
     customerId: id,
