@@ -7650,3 +7650,7 @@ Removed the duplicate people-sheet trip-start and legacy general trip-date contr
 ## 2026-10-26 — FINANCIAL-INTERNAL-GAPS-1026
 
 Existing-form-only Finance repairs: explicit account-only petty FX, independent operational approval, mandatory existing reference for new CHECK requests. No new fields/buttons, automatic banking, migration or operational writes. 42 targeted/isolated PostgreSQL tests and scoped lint pass. Full original Persian process report retained and updated for RTL Word; remaining lifecycle/configuration gaps are stated explicitly. See tasks/FINANCIAL-INTERNAL-GAPS-1026.md. Source candidate, not a runtime rollout.
+
+## MASTER-DATA-ACCESS-1026 — PC-B
+
+Applied owner-authorized Master Data registration access to exactly two existing local accounts through the audited IAM manual-access service. Read/create and exchange-rate proposal permission plus explicit resource/field controls; no new edit/delete/import/approval/admin grants. Other accounts and branch memberships verified unchanged; repeat preview reports zero changes. Twenty focused tests and scoped lint passed. Opt-in reusable script/tests and task notes are the publication scope, without real identifiers or automatic startup grants. Full hosted gates precede authorized develop merge. See tasks/MASTER-DATA-ACCESS-1026.md.
