@@ -77,6 +77,46 @@ const draft: SalesContractCreateRequest = {
   ],
 };
 
+it('keeps composite hotel stays ordered with explicit independent dates and no duplicated price components', () => {
+  const input = structuredClone(draft);
+  input.services = [
+    { clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'Composite' },
+  ];
+  input.passengers[0]!.serviceClientKeys = ['hotel'];
+  input.ticketSelections = [];
+  input.hotelSelection = {
+    serviceClientKey: 'hotel',
+    hotelId: '10000000-0000-4000-8000-000000000010',
+    hotelNameSnapshot: 'First',
+    cityId: input.destinationId,
+    checkInDate: '2026-10-01',
+    checkOutDate: '2026-10-03',
+    roomCount: 1,
+    roomTypeId: '10000000-0000-4000-8000-000000000011',
+    occupancy: 1,
+    inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+    additionalStays: [
+      {
+        hotelId: '10000000-0000-4000-8000-000000000012',
+        hotelNameSnapshot: 'Second',
+        cityId: '10000000-0000-4000-8000-000000000013',
+        checkInDate: '2026-10-03',
+        checkOutDate: '2026-10-08',
+      },
+    ],
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  expect(input.priceComponents).toEqual(draft.priceComponents);
+  const stay = input.hotelSelection.additionalStays![0]!;
+  stay.checkInDate = '';
+  expect(() => validateSalesContract(input)).toThrow();
+  stay.checkInDate = '2026-10-02';
+  expect(() => validateSalesContract(input)).toThrow('overlap');
+  stay.checkInDate = '2026-10-03';
+  stay.hotelId = input.hotelSelection.hotelId;
+  expect(() => validateSalesContract(input)).toThrow('itinerary');
+});
+
 it('validates per-person discounts and commissions against the same-currency gross service price', () => {
   const input = structuredClone(draft),
     id = input.passengers[0]!.customerId;

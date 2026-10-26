@@ -2,6 +2,27 @@ import { describe, expect, it } from 'vitest';
 import { contractPrintHtml, contractMoney } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it('prints each subsequent actual hotel with its own dates and escapes snapshot text', () => {
+    const output = structuredClone(printFixture);
+    output.contract.hotelSelection!.additionalStays = [
+      {
+        hotelId: 'hotel-two',
+        cityId: 'city-two',
+        hotelNameSnapshot: 'SECOND <HOTEL>',
+        checkInDate: '2026-10-04',
+        checkOutDate: '2026-10-08',
+      },
+    ];
+    const before = structuredClone(output);
+    const html = contractPrintHtml(output, {
+      ...printReferences,
+      names: { ...printReferences.names, 'city-two': 'City Two' },
+    });
+    expect(html).toContain('SECOND &lt;HOTEL&gt;');
+    expect(html).toContain('City Two');
+    expect(html).toContain('اقامت‌های بعدی');
+    expect(output).toEqual(before);
+  });
   it('shows the saved cheque policy and total including interest without changing passenger service prices', () => {
     const output = structuredClone(printFixture);
     output.contract.paymentTerms = {

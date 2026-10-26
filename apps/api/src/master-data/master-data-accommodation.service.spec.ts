@@ -36,6 +36,52 @@ function row(id: string, extra: Record<string, unknown> = {}) {
 }
 
 describe('MasterDataService accommodation', () => {
+  it('creates ordered real member hotels across cities and derives the legacy anchor from the first', async () => {
+    const secondCity = ids.chain;
+    const firstHotel = row(ids.room, { cityId: ids.city });
+    const secondHotel = row(ids.roomSuite, { cityId: secondCity });
+    const create = vi
+      .fn()
+      .mockImplementation(async (_resource, data) =>
+        row(ids.facility, { ...data, members: [] }),
+      );
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      create,
+      find: vi
+        .fn()
+        .mockImplementation(async (resource, id) =>
+          resource === 'hotels'
+            ? ([firstHotel, secondHotel].find((hotel) => hotel.id === id) ??
+              null)
+            : row(id),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    await service.create(
+      'composite-hotels',
+      { name: 'Multicity', memberHotelIds: `${ids.roomSuite},${ids.room}` },
+      actor,
+    );
+    expect(create.mock.calls[0]?.[1]).toMatchObject({
+      cityId: secondCity,
+      members: {
+        create: [
+          { hotelId: ids.roomSuite, priority: 1, isBackup: false },
+          { hotelId: ids.room, priority: 2, isBackup: false },
+        ],
+      },
+    });
+    secondHotel.isActive = false;
+    await expect(
+      service.create(
+        'composite-hotels',
+        { name: 'Invalid', memberHotelIds: ids.roomSuite },
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(create).toHaveBeenCalledTimes(1);
+  });
   it('edits a long imported facility without losing text and validates storage limits', async () => {
     const facility = row(ids.facility, { name: 'ف'.repeat(164) });
     const update = vi.fn().mockImplementation(async (_resource, _id, data) => ({

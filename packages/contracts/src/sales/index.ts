@@ -155,7 +155,17 @@ export interface SalesTicketSelectionInput {
   quotedPrice?: SalesMoney;
 }
 
+/** Ordered additional hotel itinerary; dates are explicitly entered, not inferred. */
+export interface SalesHotelStayInput {
+  hotelId: string;
+  hotelNameSnapshot: string;
+  cityId: string;
+  checkInDate: string;
+  checkOutDate: string;
+}
+
 export interface SalesHotelSelectionInput {
+  additionalStays?: readonly SalesHotelStayInput[];
   rooms?: readonly SalesHotelRoomV1[];
   serviceClientKey: string;
   hotelId: string;

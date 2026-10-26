@@ -1,3 +1,7 @@
+## Composite hotel contract stays — 2026-10-26
+
+MasterCompositeHotelMember retains actual Hotel FKs and unique ordered priorities; members may span cities. MasterCompositeHotel.cityId is derived from the first member for compatibility. SalesContractHotelSelection remains the primary room/price reference. Its optional additionalStays relation uses SalesContractHotelStay, with UUID parent/Hotel/City FKs, historical name varchar240, independent DATE boundaries and ordinal2..50. Unique(parent, ordinal), ordered-parent, hotel/date and city index prefixes cover reads/FK maintenance. DB CHECKs enforce positive stays and ordinal bounds; Sales enforces actual city ownership, distinct hotel IDs, max50 total and chronological nonoverlap. No invented dates, prices, bookings or historical backfill. Omission on compatible updates preserves itinerary; explicit[] removes it. Retain new storage on rollback; older writers must not edit multistay contracts. Migration20261026120000 is additive and has not been applied to production.
+
 ## Country manual GMT offset — 2026-10-21
 
 MasterCountry.gmtOffset is nullable varchar6, canonical signed HH:MM from -12:00 through +14:00 with minute precision. Blank clears; omitted PATCH preserves; legacy countries remain NULL without guessed backfill. This is descriptive reference metadata, not IANA/DST or flight-time authority. Migration20261021120000 adds only a nullable column and matching CHECK with bounded lock wait. Retain column on application rollback. No operational apply/deployment authorized.

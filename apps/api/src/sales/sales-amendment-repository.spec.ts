@@ -252,3 +252,60 @@ it('persists the room occupancy summary from products rather than stale submitte
 vi.mock('./sales-financial-settlement', () => ({
   recalculateSalesSettlement: vi.fn().mockResolvedValue(undefined),
 }));
+
+it('persists independent additional stays in the hotel transaction without adding charged services', async () => {
+  const { tx, repository } = setup();
+  const additionalStays = [
+    {
+      hotelId: 'hotel-two',
+      cityId: 'city-two',
+      hotelNameSnapshot: 'Second Hotel',
+      checkInDate: '2099-01-03',
+      checkOutDate: '2099-01-06',
+    },
+  ];
+  await repository.updateDraft(
+    'id',
+    {
+      ...input,
+      services: [{ clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'Hotel' }],
+      hotelSelection: {
+        serviceClientKey: 'hotel',
+        hotelId: 'first',
+        hotelNameSnapshot: 'First',
+        cityId: 'first-city',
+        checkInDate: '2099-01-01',
+        checkOutDate: '2099-01-03',
+        roomCount: 1,
+        roomTypeId: 'room',
+        occupancy: 1,
+        inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+        additionalStays,
+      },
+    },
+    2,
+    'Synthetic',
+    { userId: 'u', branchId: 'b' },
+    amendment,
+  );
+  expect(tx.salesContractHotelSelection.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        additionalStays: {
+          create: [
+            {
+              ...additionalStays[0],
+              ordinal: 2,
+              checkInDate: new Date('2099-01-03T00:00:00.000Z'),
+              checkOutDate: new Date('2099-01-06T00:00:00.000Z'),
+            },
+          ],
+        },
+      }),
+    }),
+  );
+  expect(tx.salesContractService.create).toHaveBeenCalledTimes(1);
+  expect(tx.salesContractPriceComponent.createMany).toHaveBeenCalledWith({
+    data: [],
+  });
+});
