@@ -7685,3 +7685,7 @@ Applied owner-authorized Master Data registration access to exactly two existing
 ## RESERVATION-OLDEST-FIRST-1026 — PC-A
 
 The reservation contract inbox defaults to ascending immutable contract creation time, placing newer contracts at the bottom. The new-request shortcut uses the same default. Ordering is stable by ID for equal timestamps and occurs before pagination/export; receipt timestamps, deadline/priority and explicit newest-first choices retain their existing independent behavior. Existing branch/date/status/service filters and the default date window remain unchanged. 61 focused workspace/feed/export/translation tests pass; affected lint, full Web types/build and exact-head hosted gates precede the owner-authorized push/develop merge. No API, schema, dependency, permission, operational data or runtime deployment changes.
+
+## HEADER-PROFILE-PHOTO-1026 — PC-B
+
+Shared header displays the persisted Workbench profile photo and an empty primary-blue circle when absent/unavailable, never name initials. Reload on profile-photo change and authenticated session recovery; ignore stale photo responses, release object URLs and hide failed images. Identity/session/logout behavior retained. Five existing menu integration checks and scoped ESLint pass; exact-head hosted quality/type/build/full tests/database gates precede authorized develop merge. No API/schema/dependency/runtime changes.
