@@ -7662,3 +7662,7 @@ Historical reservation supplier forms now preserve aggregate contracts without f
 ## MASTER-DATA-ACCESS-1026 — PC-B
 
 Applied owner-authorized Master Data registration access to exactly two existing local accounts through the audited IAM manual-access service. Read/create and exchange-rate proposal permission plus explicit resource/field controls; no new edit/delete/import/approval/admin grants. Other accounts and branch memberships verified unchanged; repeat preview reports zero changes. Twenty focused tests and scoped lint passed. Opt-in reusable script/tests and task notes are the publication scope, without real identifiers or automatic startup grants. Full hosted gates precede authorized develop merge. See tasks/MASTER-DATA-ACCESS-1026.md.
+
+## RESERVATION-OLDEST-FIRST-1026 — PC-A
+
+The reservation contract inbox defaults to ascending immutable contract creation time, placing newer contracts at the bottom. The new-request shortcut uses the same default. Ordering is stable by ID for equal timestamps and occurs before pagination/export; receipt timestamps, deadline/priority and explicit newest-first choices retain their existing independent behavior. Existing branch/date/status/service filters and the default date window remain unchanged. 61 focused workspace/feed/export/translation tests pass; affected lint, full Web types/build and exact-head hosted gates precede the owner-authorized push/develop merge. No API, schema, dependency, permission, operational data or runtime deployment changes.

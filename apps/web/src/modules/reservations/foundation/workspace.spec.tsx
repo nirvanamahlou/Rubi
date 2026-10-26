@@ -39,6 +39,57 @@ function row(id = 'test-request'): RequestView {
   };
 }
 describe('reservations workspace access and states', () => {
+  it('defaults to contract creation order before pagination despite reversed receipt dates and urgency', () => {
+    const oldest = {
+      ...row('old'),
+      createdAt: '2026-09-01T09:00:00Z',
+      receivedAt: '2026-09-08T09:00:00Z',
+    };
+    const newest = {
+      ...row('new'),
+      createdAt: '2026-09-07T09:00:00Z',
+      receivedAt: '2026-09-07T09:00:00Z',
+      priority: 'URGENT' as const,
+      deadline: '2026-09-07T10:00:00Z',
+    };
+    const middle = { ...row('middle'), createdAt: '2026-09-04T09:00:00Z' };
+    const source = [newest, oldest, middle];
+    expect(defaultQuery.sort).toBe('oldest');
+    const first = queryRows(source, { ...defaultQuery, pageSize: 2 });
+    expect(first.filteredRows.map((r) => r.id)).toEqual([
+      'old',
+      'middle',
+      'new',
+    ]);
+    expect(first.rows.map((r) => r.id)).toEqual(['old', 'middle']);
+    expect(
+      queryRows(source, { ...defaultQuery, pageSize: 2, page: 2 }).rows.map(
+        (r) => r.id,
+      ),
+    ).toEqual(['new']);
+    expect(source.map((r) => r.id)).toEqual(['new', 'old', 'middle']);
+  });
+  it('appends newly created contracts after existing rows and breaks equal dates consistently', () => {
+    const initial = [row('b'), row('a')];
+    expect(queryRows(initial, defaultQuery).rows.map((r) => r.id)).toEqual([
+      'a',
+      'b',
+    ]);
+    const refreshed = [
+      { ...row('c'), createdAt: '2026-09-09T09:00:00Z' },
+      ...initial,
+    ];
+    expect(queryRows(refreshed, defaultQuery).rows.map((r) => r.id)).toEqual([
+      'a',
+      'b',
+      'c',
+    ]);
+    expect(
+      queryRows(refreshed, { ...defaultQuery, sort: 'newest' }).rows.map(
+        (r) => r.id,
+      ),
+    ).toEqual(['c', 'a', 'b']);
+  });
   it('does not show a standalone bottom history button for a selected contract', () => {
     const html = renderToStaticMarkup(
       <ReservationOperationsWorkspace
