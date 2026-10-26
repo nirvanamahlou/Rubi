@@ -1,17 +1,77 @@
 import { expect, it } from 'vitest';
 import type { MasterDataRecord } from '@nora/contracts';
 import { emptySalesForm, salesPayload, salesHotelValid } from './sales-form';
-import { withCompositeHotel } from './composite-hotel-selection';
+import {
+  withCompositeHotel,
+  contractHotelChoices,
+  selectedContractHotelKey,
+  compositeHotelChoice,
+} from './composite-hotel-selection';
 import { restoreContractDraft } from './restore-contract-draft';
 
 const record = {
+  id: 'composite-1',
+  name: 'Two city hotels',
   attributes: {
+    memberHotelIds: 'h1,h2',
     memberHotels: JSON.stringify([
       { hotelId: 'h1', cityId: 'c1', hotelName: 'ONE, HOTEL' },
       { hotelId: 'h2', cityId: 'c2', hotelName: 'TWO HOTEL' },
     ]),
   },
 } as unknown as MasterDataRecord;
+it('lists real hotels and composites together without ID collisions or stale English titles', () => {
+  const hotel = {
+    id: 'composite-1',
+    name: 'Ordinary hotel',
+    attributes: { englishName: 'Ordinary hotel' },
+  } as unknown as MasterDataRecord;
+  const choices = contractHotelChoices(
+    [hotel],
+    [
+      {
+        ...record,
+        attributes: {
+          ...record.attributes,
+          englishName: 'Old composite title',
+        },
+      },
+    ],
+  );
+  expect(choices.map((c) => c.id)).toEqual([
+    'composite-1',
+    'composite:composite-1',
+  ]);
+  expect(choices[0]).toBe(hotel);
+  expect(choices[1]).toMatchObject({
+    name: record.name,
+    attributes: { englishName: '' },
+  });
+  expect(compositeHotelChoice('composite-1', [record])).toBeUndefined();
+  expect(compositeHotelChoice('composite:composite-1', [record])).toBe(record);
+});
+it('shows the composite in the same picker after loading its ordered real hotels', () => {
+  const state = withCompositeHotel(structuredClone(emptySalesForm), record);
+  expect(selectedContractHotelKey(state, [record])).toBe(
+    'composite:composite-1',
+  );
+  expect(
+    selectedContractHotelKey(
+      { ...state, hotel: { ...state.hotel, additionalStays: [] } },
+      [record],
+    ),
+  ).toBe('h1');
+  expect(selectedContractHotelKey(state, [])).toBe('h1');
+  const reordered = {
+    ...state,
+    hotel: {
+      ...state.hotel,
+      hotelId: 'h2',
+      additionalStays: [{ ...state.hotel.additionalStays![0]!, hotelId: 'h1' }],
+    },
+  };
+  expect(selectedContractHotelKey(reordered, [record])).toBe('h2');
+});
 it('loads each real hotel/city, clears old dates/rooms, and never clones charges', () => {
   const state = structuredClone(emptySalesForm);
   state.hotel.checkIn = '2099-01-01';

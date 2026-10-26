@@ -1,5 +1,5 @@
 'use client';
-import { CompositeHotelPicker } from './composite-hotel-picker';
+import { ContractHotelPicker } from './contract-hotel-picker';
 import serviceStyles from './contract-service-cards.module.css';
 import { withAutomaticReturn } from '../model/automatic-return';
 import { LegacyContractPrices } from './legacy-contract-prices';
@@ -1340,9 +1340,6 @@ export function SalesContractForm() {
         <Alert tone="error" title="عملیات کامل نشد" description={error} />
       ) : null}
       <Card className="min-w-0 rounded-2xl border-border/80 p-4 shadow-sm sm:p-6 lg:p-8">
-        {step === 0 && state.serviceKinds.includes('HOTEL') && !state.tour && (
-          <CompositeHotelPicker state={state} patch={patchState} />
-        )}
         {step === 0 && (
           <label className="mb-4 flex items-center gap-2 rounded-xl border p-3">
             <input
@@ -1694,6 +1691,7 @@ export function SalesContractForm() {
         ) : null}
         {step === 0 && (
           <ServiceParties
+            refreshRevision={referenceRefresh.revision}
             state={state}
             patch={patchState}
             hotels={selectableHotels}
@@ -1924,13 +1922,12 @@ export function SalesContractForm() {
                       <div className="grid gap-4 md:grid-cols-3">
                         {!state.hotel.rooms ? (
                           <>
-                            <SearchableReference
-                              label="هتل"
-                              value={state.hotel.hotelId}
-                              options={selectableHotels}
-                              showAllOptionsOnOpen
-                              preferEnglishName
-                              onChange={(hotelId) =>
+                            <ContractHotelPicker
+                              refreshRevision={referenceRefresh.revision}
+                              state={state}
+                              patch={patchState}
+                              hotels={selectableHotels}
+                              onHotelChange={(hotelId) =>
                                 patchState({
                                   hotel: {
                                     ...state.hotel,

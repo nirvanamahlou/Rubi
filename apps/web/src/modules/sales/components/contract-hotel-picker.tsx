@@ -5,29 +5,34 @@ import type { MasterDataRecord } from '@nora/contracts';
 import { Alert } from '@/components/ui/surfaces';
 import { salesApi } from '../api/client';
 import type { SalesFormState } from '../model/sales-form';
-import { withCompositeHotel } from '../model/composite-hotel-selection';
+import {
+  withCompositeHotel,
+  contractHotelChoices,
+  selectedContractHotelKey,
+  compositeHotelChoice,
+} from '../model/composite-hotel-selection';
 import { SearchableReference } from './searchable-reference';
 
-export function CompositeHotelPicker({
+export function ContractHotelPicker({
   state,
   patch,
+  hotels,
+  onHotelChange,
+  refreshRevision = 0,
 }: {
   state: SalesFormState;
   patch: (value: Partial<SalesFormState>) => void;
+  hotels: readonly MasterDataRecord[];
+  onHotelChange: (hotelId: string) => void;
+  refreshRevision?: number;
 }) {
   const [options, setOptions] = useState<MasterDataRecord[]>([]);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const memberIds = [
-    state.hotel.hotelId,
-    ...(state.hotel.additionalStays ?? []).map((stay) => stay.hotelId),
-  ].join(',');
-  const selected =
-    options.find(
-      (record) => String(record.attributes.memberHotelIds ?? '') === memberIds,
-    )?.id ?? '';
+  const allowComposite = !state.tour;
+  const composites = allowComposite ? options : [];
   useEffect(() => {
     let active = true;
+    if (!allowComposite) return;
     async function load() {
       const items: MasterDataRecord[] = [];
       for (let page = 1; ; page++) {
@@ -42,35 +47,37 @@ export function CompositeHotelPicker({
         items.push(...response.data);
         if (!response.data.length || items.length >= response.meta.total) break;
       }
-      if (active) setOptions(items);
+      if (active) {
+        setOptions(items);
+        setError('');
+      }
     }
-    void load()
-      .catch((cause) => {
-        if (active)
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : 'دریافت هتل‌های ترکیبی انجام نشد.',
-          );
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    void load().catch((cause) => {
+      if (active)
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : 'دریافت هتل‌های ترکیبی انجام نشد.',
+        );
+    });
     return () => {
       active = false;
     };
-  }, []);
+  }, [allowComposite, refreshRevision]);
   return (
-    <section className="space-y-3 rounded-xl border p-4">
+    <div className="min-w-0 space-y-2">
       <SearchableReference
-        label="بارگذاری هتل ترکیبی"
-        required={false}
-        value={selected}
-        options={options}
-        disabled={loading}
+        label="هتل"
+        value={selectedContractHotelKey(state, composites)}
+        options={contractHotelChoices(hotels, composites)}
+        showAllOptionsOnOpen
+        preferEnglishName
         onChange={(id) => {
-          const record = options.find((option) => option.id === id);
-          if (!record) return;
+          const record = compositeHotelChoice(id, composites);
+          if (!record) {
+            onHotelChange(id);
+            return;
+          }
           try {
             const next = withCompositeHotel(state, record);
             patch({
@@ -85,7 +92,7 @@ export function CompositeHotelPicker({
           }
         }}
       />
-      {error && <Alert title={error} tone="error" />}
-    </section>
+      {allowComposite && error && <Alert title={error} tone="error" />}
+    </div>
   );
 }
