@@ -21,6 +21,61 @@ function setup() {
   };
 }
 describe('Finance payment source', () => {
+  it.each(['USD', 'EUR', 'TRY', 'AED', 'IRR'])(
+    'uses an active same-currency branch account for account-only %s operations',
+    async (currencyCode) => {
+      const { tx, directory, findFirst, supplier } = setup();
+      await expect(
+        paymentSource(
+          tx,
+          directory,
+          { accountId: 'account' },
+          currencyCode,
+          'branch',
+          'ACCOUNT_ONLY',
+        ),
+      ).resolves.toMatchObject({
+        account: { id: 'account' },
+        payingSupplierId: null,
+      });
+      expect(findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 'account',
+          branchId: 'branch',
+          currencyCode,
+          isActive: true,
+        },
+      });
+      expect(supplier).not.toHaveBeenCalled();
+    },
+  );
+  it.each([
+    {},
+    { payingSupplierId: supplierId },
+    { accountId: 'account', payingSupplierId: supplierId },
+  ])(
+    'rejects missing or supplier-based sources for account-only operations',
+    async (input) => {
+      const { tx, directory } = setup();
+      await expect(
+        paymentSource(tx, directory, input, 'USD', 'branch', 'ACCOUNT_ONLY'),
+      ).rejects.toThrow();
+    },
+  );
+  it('rejects an inactive, wrong-branch or wrong-currency account', async () => {
+    const { tx, directory, findFirst } = setup();
+    findFirst.mockResolvedValueOnce(null as never);
+    await expect(
+      paymentSource(
+        tx,
+        directory,
+        { accountId: 'account' },
+        'USD',
+        'branch',
+        'ACCOUNT_ONLY',
+      ),
+    ).rejects.toThrow();
+  });
   it.each(['USD', 'EUR', 'TRY', 'AED'])(
     'requires a supplier and never queries accounts for %s',
     async (currency) => {
