@@ -7693,4 +7693,3 @@ Correction Add passenger now permits name-only profiles; all other identity/pass
 ## HEADER-PROFILE-PHOTO-1026 — PC-B
 
 Shared header displays the persisted Workbench profile photo and an empty primary-blue circle when absent/unavailable, never name initials. Reload on profile-photo change and authenticated session recovery; ignore stale photo responses, release object URLs and hide failed images. Identity/session/logout behavior retained. Five existing menu integration checks and scoped ESLint pass; exact-head hosted quality/type/build/full tests/database gates precede authorized develop merge. No API/schema/dependency/runtime changes.
-
