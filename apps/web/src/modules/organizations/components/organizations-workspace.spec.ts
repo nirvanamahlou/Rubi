@@ -81,7 +81,7 @@ describe('agency to Master Organization integration', () => {
 
   it('keeps contract and guarantee entry in the dossier rather than initial registration', () => {
     expect(cooperationWizard).toContain('!agencyRegistration && step === 4');
-    expect(cooperationWizard).toContain("role === 'AGENCY' ? [1, 2, 3, 5]");
+    expect(cooperationWizard).toContain("role === 'AGENCY' ? [1, 2, 5]");
     expect(cooperationWizard).toContain(
       'registrationCooperationDraft(draft, editing)',
     );

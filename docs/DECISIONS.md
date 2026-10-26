@@ -1,3 +1,7 @@
+## AGENCY-CONTACT-ROUNDTRIP-1026 — 2026-10-26
+
+Owner explicitly approves saving agency mobile numbers through the ordinary staff-authorized contact API without SMS verification or any verified-phone claim. Agency registration therefore skips the development-only verification stage; Corporate-customer verification and portal authentication policies are unchanged. Separate office phones reuse the existing encrypted organization-contacts model and Excel conventions. Hidden executive job titles remain stored, without an editable agency job-title input. No new IAM grant or schema change; see tasks/AGENCY-CONTACT-ROUNDTRIP-1026.md.
+
 ## LEGACY-CONTRACT-TOTAL-1025 — 2026-10-25
 
 Owner supersedes per-service historical sale prices with one customer contract table: separate IRR/foreign gross amounts, discount and commission in their own selected currency, no FX conversion. Both deductions subtract from the same-currency gross total. Persist ordinary BASE/DISCOUNT components and existing contractPackagePricingVersion alongside legacyServicePartiesV2; service selections, age counts and real capacity references remain. Existing saved per-service historical contracts are not rewritten. Old unfinished draft service prices cannot override the newly entered customer total. Registered flight return defaults retain original load priority; explicit pair IDs disambiguate recurring dates and late calendar responses fill only an empty return, preserving manual choices. No schema/migration or permission changes.
