@@ -55,18 +55,16 @@ it('lists independent active registered brokers without requiring an organizatio
 });
 
 it('provides the registered English broker name to legacy hotel purchase choices without changing IDs or search', async () => {
-  const list = vi
-    .fn()
-    .mockResolvedValue({
-      data: [
-        {
-          id: 'broker',
-          name: 'کارگزار نمونه',
-          attributes: { englishName: ' Sample Broker ' },
-        },
-      ],
-      meta: { total: 1 },
-    });
+  const list = vi.fn().mockResolvedValue({
+    data: [
+      {
+        id: 'broker',
+        name: 'کارگزار نمونه',
+        attributes: { englishName: ' Sample Broker ' },
+      },
+    ],
+    meta: { total: 1 },
+  });
   const directory = new MasterTravelDirectory({ list } as never);
   expect(await directory.hotelRateChoices('brokers', 'نمونه', 1)).toEqual({
     data: [{ id: 'broker', name: 'Sample Broker' }],
