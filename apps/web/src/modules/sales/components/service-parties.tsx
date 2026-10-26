@@ -23,6 +23,7 @@ import {
   roomPartyUsage,
 } from '../model/sales-room-prices';
 import { SearchableReference } from './searchable-reference';
+import { ContractHotelPicker } from './contract-hotel-picker';
 import { Input } from '@/components/ui/form-controls';
 import type { MasterDataRecord, HotelRoomRateV1 } from '@nora/contracts';
 import type { SalesFormState } from '../model/sales-form';
@@ -33,6 +34,7 @@ export function ServiceParties({
   hotels,
   roomTypes,
   rates,
+  refreshRevision = 0,
 }: {
   state: SalesFormState;
   patch: (value: Partial<SalesFormState>) => void;
@@ -40,6 +42,7 @@ export function ServiceParties({
   roomTypes: readonly (Pick<MasterDataRecord, 'id' | 'name' | 'code'> &
     Partial<MasterDataRecord>)[];
   rates: readonly HotelRoomRateV1[];
+  refreshRevision?: number;
 }) {
   const state = syncHotelChildSelections(
     sourceState,
@@ -282,13 +285,12 @@ export function ServiceParties({
           <h3 className="font-bold">هتل و ترکیب هر اتاق</h3>
           <div className="grid grid-cols-[minmax(0,1fr)_6rem] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_9rem]">
             <div className="min-w-0">
-              <SearchableReference
-                label="هتل"
-                value={state.hotel.hotelId}
-                options={hotels}
-                showAllOptionsOnOpen
-                preferEnglishName
-                onChange={(hotelId) =>
+              <ContractHotelPicker
+                refreshRevision={refreshRevision}
+                state={state}
+                patch={patch}
+                hotels={hotels}
+                onHotelChange={(hotelId) =>
                   patch({
                     hotelChildAssignments: {},
                     hotel: {
