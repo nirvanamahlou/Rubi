@@ -689,3 +689,7 @@ writes to multi-stay contracts. No production migration or rollout requested.
 ## 2026-10-26 — COMPLETION-NAME-ONLY-1026
 
 Owner supersedes mandatory passport/birth fields in correction Add passenger: only first and last names are mandatory. Missing birth dates persist as SQL NULL with the existing booked age category; do not invent identity dates. A contract-authorized Customer completion policy permits name-only profiles without weakening ordinary Customer/new-contract validation. Optional supplied facts remain validated and known birth dates cannot contradict booked categories. Nullable Sales read projections preserve output compatibility with empty strings and unknown child bands. Apply the additive migration before API rollout. No production deployment is requested.
+
+## 2026-10-26 — PURCHASE-BROKER-ENGLISH-COMPAT-1026
+
+Owner requires English Purchase broker labels even for remaining Persian-only records. Official registered Latin names remain authoritative; missing/non-Latin English fields use a display-only Latin transcription, never a new official name or Master data update. After the asynchronous preference question and response opportunity, this visible implementation assumption follows the repeated Latin-display request. Source names, IDs, payable parties and snapshots remain unchanged. The existing generic options API and modern picker share one pure naming helper; no API shape or permission change. Production publication is a separate operation from the requested repository merge.

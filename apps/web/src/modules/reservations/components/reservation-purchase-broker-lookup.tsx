@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { brokerEnglishDisplayName } from '@nora/contracts';
 import {
   SearchCombobox,
   type SearchOption,
@@ -13,7 +14,7 @@ type Broker = { id: string; name: string; englishName?: string };
 export function purchaseBrokerOption(broker: Broker): SearchOption {
   return {
     value: broker.id,
-    label: broker.englishName?.trim() || broker.name,
+    label: brokerEnglishDisplayName(broker),
     searchText: `${broker.name} ${broker.englishName ?? ''}`,
   };
 }
@@ -38,7 +39,8 @@ export function selectedPurchaseBrokerLabel(
   value: Option | null,
 ) {
   return (
-    options.find((option) => option.value === value?.id)?.label ?? value?.name
+    options.find((option) => option.value === value?.id)?.label ??
+    (value ? brokerEnglishDisplayName(value) : undefined)
   );
 }
 

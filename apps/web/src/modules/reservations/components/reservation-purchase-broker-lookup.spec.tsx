@@ -24,11 +24,11 @@ it('displays the registered English name while searching by either name', () => 
   ).toBe('Example Travel');
 });
 
-it('keeps the existing name if English is missing and preserves historical selections', () => {
+it('uses a display-only Latin transcription when English is missing and preserves historical selections', () => {
   expect(
     purchaseBrokerOption({ id: 'broker', name: 'نام موجود', englishName: '  ' })
       .label,
-  ).toBe('نام موجود');
+  ).not.toMatch(/[\u0600-\u06ff]/u);
   expect(purchaseBrokerOption({ id: 'broker', name: 'Existing' }).label).toBe(
     'Existing',
   );
@@ -39,6 +39,13 @@ it('keeps the existing name if English is missing and preserves historical selec
     }),
   ).toBe('Archived supplier');
   expect(selectedPurchaseBrokerLabel([], null)).toBeUndefined();
+  expect(
+    selectedPurchaseBrokerLabel([], { id: 'archived', name: 'جی تی اس' }),
+  ).toBe('GTS');
+  const option = purchaseBrokerOption({ id: 'broker', name: 'دی تور' });
+  expect(option.label).toBe('D Tour');
+  expect(searchOptions([option], 'دی')).toEqual([option]);
+  expect(searchOptions([option], 'D Tour')).toEqual([option]);
 });
 
 it('loads every authorized directory page including a saved broker beyond page one', async () => {
