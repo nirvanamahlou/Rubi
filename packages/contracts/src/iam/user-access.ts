@@ -599,6 +599,18 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
     route: '/integrations',
   },
   {
+    id: 'integrations.niyayesh.login',
+    group: 'integrations',
+    title: 'ورود شخصی به پنل نیایش',
+    route: '/integrations',
+  },
+  {
+    id: 'integrations.niyayesh.provision',
+    group: 'integrations',
+    title: 'ساخت حساب متصل نیایش در اولین ورود',
+    route: '/integrations',
+  },
+  {
     id: 'system.home',
     group: 'system',
     title: 'مدیریت سیستم',

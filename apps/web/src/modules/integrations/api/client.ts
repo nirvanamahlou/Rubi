@@ -59,6 +59,26 @@ async function request<T>(
 const branchQuery = (branchId: string) =>
   `?branchId=${encodeURIComponent(branchId)}`;
 export const integrationsApi = {
+  ssoAccess: (branchId: string, signal?: AbortSignal) =>
+    request<{ enabled: boolean; launchUrl?: string; noraOrigin?: string }>(
+      `/niyayesh/sso/access${branchQuery(branchId)}`,
+      signal ? { signal } : {},
+    ),
+  launchSso: async (branchId: string) => {
+    const base = getPublicApiBaseUrl();
+    if (!base || !(await refreshAuthenticatedSession(base)))
+      throw new IntegrationsApiError('دوباره وارد نورا شوید.', 401);
+    const access = await integrationsApi.ssoAccess(branchId);
+    if (!access.enabled || !access.launchUrl)
+      throw new IntegrationsApiError('ورود شخصی برای شما فعال نیست.', 403);
+    if (access.noraOrigin && access.noraOrigin !== window.location.origin) {
+      window.location.assign(
+        new URL('/integrations', access.noraOrigin).toString(),
+      );
+      return;
+    }
+    window.location.assign(access.launchUrl);
+  },
   niyayeshStatus: (branchId: string, signal?: AbortSignal) =>
     request<{
       state: string;

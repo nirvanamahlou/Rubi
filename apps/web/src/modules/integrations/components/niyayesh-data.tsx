@@ -96,6 +96,7 @@ export function NiyayeshData({ branchId }: { branchId: string }) {
     ReturnType<typeof integrationsApi.niyayeshResources>
   > | null>(null);
   const [resource, setResource] = useState('');
+  const [ssoEnabled, setSsoEnabled] = useState(false);
   const [after, setAfter] = useState(0);
   const [history, setHistory] = useState<number[]>([]);
   const [error, setError] = useState('');
@@ -111,6 +112,12 @@ export function NiyayeshData({ branchId }: { branchId: string }) {
       setStatus(null);
       setPage(null);
       try {
+        const access = await integrationsApi.ssoAccess(
+          branchId,
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        setSsoEnabled(access.enabled);
         const state = await integrationsApi.niyayeshStatus(
           branchId,
           controller.signal,
@@ -151,6 +158,25 @@ export function NiyayeshData({ branchId }: { branchId: string }) {
         اطلاعات مستقیم از API نیایش با مجوز شخصی شما دریافت می‌شود. این نما
         داده‌ای را در مشتریان، فروش یا مالی نورا ثبت نمی‌کند.
       </p>
+      {ssoEnabled ? (
+        <Button
+          disabled={busy}
+          onClick={() => {
+            setError('');
+            void integrationsApi
+              .launchSso(branchId)
+              .catch((e) =>
+                setError(e instanceof Error ? e.message : 'ورود انجام نشد.'),
+              );
+          }}
+        >
+          ورود با حساب نورا به پنل نیایش
+        </Button>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          ورود شخصی نیازمند مجوز «ورود شخصی به پنل نیایش» در مدیریت کاربران است.
+        </p>
+      )}
       {error ? (
         <Alert tone="error" title="دریافت داده کامل نشد" description={error} />
       ) : null}
