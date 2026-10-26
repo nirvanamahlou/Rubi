@@ -1,4 +1,6 @@
 import { ContractPriceCorrectionService } from './contract-price-correction.service';
+import { PassengerCompletionService } from './passenger-completion.service';
+import type { SalesPassengerCompletionCommandV1 } from '@nora/contracts';
 import {
   Body,
   Controller,
@@ -30,7 +32,25 @@ export class PassengerCorrectionController {
     private readonly service: PassengerCorrectionService,
     @Inject(ContractPriceCorrectionService)
     private readonly prices: ContractPriceCorrectionService,
+    @Inject(PassengerCompletionService)
+    private readonly completion: PassengerCompletionService,
   ) {}
+  @Get(':id/passenger-completion')
+  @Header('Cache-Control', 'private, no-store')
+  completionForm(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.completion.form(id, req.actor);
+  }
+  @Post(':id/passenger-completion')
+  completePassengers(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() input: SalesPassengerCompletionCommandV1,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.completion.save(id, input, req.actor);
+  }
   @Get(':id/price-correction')
   @Header('Cache-Control', 'private, no-store')
   priceForm(
@@ -78,6 +98,7 @@ export class PassengerCorrectionController {
   imports: [IamModule, CustomersModule, NotificationsModule],
   controllers: [PassengerCorrectionController],
   providers: [
+    PassengerCompletionService,
     PassengerCorrectionService,
     PassengerCorrectionCrypto,
     ContractPriceCorrectionService,

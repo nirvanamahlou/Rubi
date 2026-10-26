@@ -549,3 +549,4 @@ export * from './hotel-capacity-policy';
 export * from './owner-actions';
 
 export * from './legacy-service-parties';
+export * from './passenger-completion';
