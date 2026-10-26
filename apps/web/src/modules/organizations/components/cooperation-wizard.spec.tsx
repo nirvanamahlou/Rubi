@@ -23,8 +23,8 @@ const organization = {
 } satisfies MasterDataRecord;
 
 describe('cooperation wizard edit mode', () => {
-  it('skips contract entry only for agencies and keeps phone verification before final review', () => {
-    expect(cooperationStepIds('AGENCY')).toEqual([1, 2, 3, 5]);
+  it('uses ordinary staff contact entry for agencies and preserves corporate verification', () => {
+    expect(cooperationStepIds('AGENCY')).toEqual([1, 2, 5]);
     expect(cooperationStepIds('CORPORATE_CUSTOMER')).toEqual([1, 2, 3, 4, 5]);
   });
   it('prefills the registration steps from the selected agency identity', () => {

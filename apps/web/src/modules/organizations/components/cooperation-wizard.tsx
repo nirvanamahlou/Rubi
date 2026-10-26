@@ -24,6 +24,8 @@ import {
   normalizeOtpCode,
   saveCooperation,
   registrationCooperationDraft,
+  cooperationContacts,
+  cooperationContactPhones,
   type CooperationDraft,
 } from '../model/cooperation-draft';
 import { PhoneVerificationRequestGate } from '../model/phone-verification-lifecycle';
@@ -38,7 +40,7 @@ const steps = [
 ];
 
 export function cooperationStepIds(role: CooperationDraft['role']) {
-  return role === 'AGENCY' ? [1, 2, 3, 5] : [1, 2, 3, 4, 5];
+  return role === 'AGENCY' ? [1, 2, 5] : [1, 2, 3, 4, 5];
 }
 
 function freshDraft(role: CooperationDraft['role'], branchId = '') {
@@ -91,6 +93,9 @@ export function CooperationWizard({
     editRecord,
   );
   const [editContact, setEditContact] = useState<MasterDataRecord>();
+  const [officePhoneAvailable, setOfficePhoneAvailable] = useState(false);
+  const officePhoneEdited = useRef(false);
+  const { officeContact } = cooperationContacts(editContacts);
   const [editAddress, setEditAddress] = useState<MasterOrganizationAddressV1>();
   const [contactSensitiveAvailable, setContactSensitiveAvailable] =
     useState(false);
@@ -168,8 +173,8 @@ export function CooperationWizard({
     };
   }, [editRecord]);
   useEffect(() => {
-    if (!editRecord || !editContacts[0]) return;
-    const contact = editContacts[0];
+    const { contact } = cooperationContacts(editContacts);
+    if (!editRecord || !contact) return;
     if (hydratedContact.current === contact.id) return;
     hydratedContact.current = contact.id;
     let active = true;
@@ -183,12 +188,21 @@ export function CooperationWizard({
       .unmaskOrganizationContact(contact.id)
       .then(({ data }) => {
         if (!active) return;
+        const phones = cooperationContactPhones(
+          data.phone ?? '',
+          draft.role === 'AGENCY',
+          Boolean(officeContact),
+        );
         setContactSensitiveAvailable(true);
         setDraft((current) => ({
           ...current,
           phone: editedSensitiveFields.current.has('phone')
             ? current.phone
-            : (data.phone ?? ''),
+            : phones.phone,
+          officePhone:
+            !officePhoneEdited.current && phones.officePhone
+              ? phones.officePhone
+              : current.officePhone,
           email: editedSensitiveFields.current.has('email')
             ? current.email
             : (data.email ?? ''),
@@ -205,7 +219,28 @@ export function CooperationWizard({
     return () => {
       active = false;
     };
-  }, [editContacts, editRecord]);
+  }, [editContacts, editRecord, draft.role, officeContact]);
+  useEffect(() => {
+    if (!editRecord || !officeContact) return;
+    let active = true;
+    void masterDataApi
+      .unmaskOrganizationContact(officeContact.id)
+      .then(({ data }) => {
+        if (!active) return;
+        setOfficePhoneAvailable(true);
+        if (!officePhoneEdited.current)
+          setDraft((current) => ({
+            ...current,
+            officePhone: data.phone ?? '',
+          }));
+      })
+      .catch(() => {
+        if (active) setOfficePhoneAvailable(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [editRecord, officeContact]);
   useEffect(
     () => () => {
       phoneRequests.current.invalidate();
@@ -375,6 +410,9 @@ export function CooperationWizard({
           editing
             ? {
                 ...(editContact ? { contact: editContact } : {}),
+                ...(officeContact ? { officeContact } : {}),
+                officePhoneAvailable,
+                officePhoneEdited: officePhoneEdited.current,
                 ...(editAddress ? { address: editAddress } : {}),
                 preserveSensitiveContactFields:
                   Boolean(editContact) && !contactSensitiveAvailable,
@@ -397,6 +435,18 @@ export function CooperationWizard({
       setBusy(false);
     }
   }
+  function changeContactField(key: keyof CooperationDraft, value: string) {
+    if (key === 'officePhone') officePhoneEdited.current = true;
+    if (
+      key === 'phone' ||
+      key === 'email' ||
+      key === 'chiefExecutiveNationalId'
+    )
+      editedSensitiveFields.current.add(key);
+    if (key === 'phone')
+      changeIdentity((current) => ({ ...current, phone: value }));
+    else set(key, value);
+  }
   const field = (
     key: keyof CooperationDraft,
     label: string,
@@ -415,20 +465,7 @@ export function CooperationWizard({
         placeholder={
           key === 'code' ? 'پس از ثبت، خودکار تولید می‌شود' : undefined
         }
-        onChange={(event) => {
-          if (
-            key === 'phone' ||
-            key === 'email' ||
-            key === 'chiefExecutiveNationalId'
-          )
-            editedSensitiveFields.current.add(key);
-          if (key === 'phone')
-            changeIdentity((current) => ({
-              ...current,
-              phone: event.target.value,
-            }));
-          else set(key, event.target.value);
-        }}
+        onChange={(event) => changeContactField(key, event.target.value)}
       />
     </label>
   );
@@ -737,7 +774,7 @@ export function CooperationWizard({
                         editing ? 'master_data.update' : 'master_data.create',
                       ),
                     )}
-                  {(editing || !agencyRegistration) &&
+                  {!agencyRegistration &&
                     field(
                       'jobTitle',
                       'سمت',
@@ -746,15 +783,27 @@ export function CooperationWizard({
                         editing ? 'master_data.update' : 'master_data.create',
                       ),
                     )}
-                  {field(
-                    'phone',
-                    'تلفن',
-                    32,
-                    !permissions.includes(
-                      editing ? 'master_data.update' : 'master_data.create',
-                    ),
-                    'tel',
-                  )}
+                  <div className="grid gap-4">
+                    {field(
+                      'phone',
+                      agencyRegistration ? 'تلفن همراه' : 'تلفن',
+                      32,
+                      !permissions.includes(
+                        editing ? 'master_data.update' : 'master_data.create',
+                      ),
+                      'tel',
+                    )}
+                    {agencyRegistration &&
+                      field(
+                        'officePhone',
+                        'تلفن ثابت',
+                        32,
+                        !permissions.includes(
+                          editing ? 'master_data.update' : 'master_data.create',
+                        ),
+                        'tel',
+                      )}
+                  </div>
                   {field(
                     'email',
                     'ایمیل',
@@ -967,13 +1016,18 @@ export function CooperationWizard({
                     [
                       'شماره همراه',
                       draft.phone
-                        ? editing
-                          ? 'در پرونده موجود به‌روزرسانی می‌شود'
-                          : draft.phoneVerificationGrant
-                            ? 'تأیید شده برای ثبت این مخاطب'
-                            : 'نیازمند تأیید'
+                        ? agencyRegistration
+                          ? draft.phone
+                          : editing
+                            ? 'در پرونده موجود به‌روزرسانی می‌شود'
+                            : draft.phoneVerificationGrant
+                              ? 'تأیید شده برای ثبت این مخاطب'
+                              : 'نیازمند تأیید'
                         : 'ثبت نمی‌شود',
                     ],
+                    ...(agencyRegistration
+                      ? [['تلفن ثابت', draft.officePhone || 'ثبت نمی‌شود']]
+                      : []),
                     ['نشانی', draft.addressLine || 'ثبت نمی‌شود'],
                     ...(!agencyRegistration
                       ? [
