@@ -1,3 +1,7 @@
+## COMPOSITE-HOTELS-CITIES-1026 — PC-B — READY_FOR_CI
+
+Owner-approved title-only composite editor with ordered city/hotel rows, scoped native hotel creation and no old English/reference-saleability/backup controls. Actual member cities derive from Hotel FKs; first city remains a legacy anchor, not a same-city restriction. Sales loads real hotels and requires independent ordered dates; optional normalized additional stays preserve primary hotel/rooms and one existing price protocol. Print and reservation snapshots retain all stays, while ordinary reservation confirmation/purchase controls remain. Additive migration20261026120000; no operational apply or server rollout. Web639 regressions and isolated PostgreSQL FK/date/order/cascade checks passed before final follow-ups; current API tests, lint/types/build and exact-head hosted gates precede requested push/develop merge. See task evidence.
+
 ## CONTRACT-FINANCE-APPROVAL-1025 — PC-A
 
 Contract accrual now requires a real approved receipt from the Finance inbox. The approval transaction captures both receipt and per-currency commercial obligation atomically; Sales confirmation alone cannot capture or post an obligation. Reverse-order approval is supported and partial/replayed receipts do not duplicate the obligation. Existing mapping/draft/independent posting and amendment guards remain. No form, schema, dependency, bank or operational-data change. See [current trigger](tasks/CONTRACT-FINANCE-APPROVAL-1025.md); supersedes PR1120 trigger timing. Exact-head gates precede authorized merge/local3100 rollout.

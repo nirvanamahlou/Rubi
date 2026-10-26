@@ -1271,41 +1271,57 @@ export function MasterDataAccommodationWorkspace() {
             .split(',')
             .filter(Boolean);
           const cities = attribute(record, 'memberCityNames', '').split(',');
-          const backups = new Set(
-            attribute(record, 'backupMemberIds', '').split(',').filter(Boolean),
-          );
           const ids = attribute(record, 'memberHotelIds', '').split(',');
+          // Structured projection preserves commas in actual hotel/city names.
+          try {
+            const members: unknown = JSON.parse(
+              attribute(record, 'memberHotels', '[]'),
+            );
+            if (Array.isArray(members) && members.length) {
+              names.splice(
+                0,
+                names.length,
+                ...members.map(
+                  (member: { hotelName: string }) => member.hotelName,
+                ),
+              );
+              cities.splice(
+                0,
+                cities.length,
+                ...members.map(
+                  (member: { cityName: string }) => member.cityName,
+                ),
+              );
+            }
+          } catch {
+            /* Read-only fallback for older API projections. */
+          }
           return (
             <Card className="overflow-hidden" key={record.id}>
               <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border p-5">
                 <div>
                   <h3 className="text-lg font-black">{record.name}</h3>
                   <p className="text-sm text-muted-foreground" dir="ltr">
-                    {attribute(record, 'englishName')} · {record.code}
+                    {record.code}
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <StatusBadge record={record} saleable />
+                  <StatusBadge record={record} />
                   {actions(record)}
                 </div>
               </header>
-              <p className="p-5 text-sm text-muted-foreground">
-                شرط استفاده: {attribute(record, 'usageCondition')}
-              </p>
               <div className="overflow-x-auto px-5 pb-5">
                 <table
-                  aria-label="تاریخچه تغییرات هتل"
+                  aria-label="اقامت‌های هتل ترکیبی"
                   className="w-full min-w-[44rem] text-sm"
                 >
                   <thead className="bg-muted/50 text-muted-foreground">
                     <tr>
-                      {['اولویت', 'هتل عضو', 'شهر / منطقه', 'وضعیت'].map(
-                        (head) => (
-                          <th className="p-3 text-start" key={head}>
-                            {head}
-                          </th>
-                        ),
-                      )}
+                      {['ترتیب اقامت', 'هتل عضو', 'شهر / منطقه'].map((head) => (
+                        <th className="p-3 text-start" key={head}>
+                          {head}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
@@ -1319,11 +1335,6 @@ export function MasterDataAccommodationWorkspace() {
                         </td>
                         <td className="p-3 font-semibold">{name}</td>
                         <td className="p-3">{cities[index] || '—'}</td>
-                        <td className="p-3">
-                          <Badge>
-                            {backups.has(ids[index] ?? '') ? 'پشتیبان' : 'فعال'}
-                          </Badge>
-                        </td>
                       </tr>
                     ))}
                   </tbody>

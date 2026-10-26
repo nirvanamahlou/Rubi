@@ -294,6 +294,11 @@ export function ServiceParties({
                     hotel: {
                       ...state.hotel,
                       hotelId,
+                      cityId: String(
+                        hotels.find((h) => h.id === hotelId)?.attributes
+                          .cityId ?? '',
+                      ),
+                      additionalStays: [],
                       name: hotels.find((h) => h.id === hotelId)?.name ?? '',
                       rooms: [],
                       roomTypeId: '',

@@ -1047,6 +1047,7 @@ model MasterCountry {
 }
 
 model MasterCity {
+  salesHotelStays             SalesContractHotelStay[]
   ticketSaleOrigins           TicketOfferSaleRoute[]      @relation("TicketSaleOrigin")
   ticketSaleDestinations      TicketOfferSaleRoute[]      @relation("TicketSaleDestination")
   id                          String                      @id @default(uuid()) @db.Uuid
@@ -2201,6 +2202,7 @@ model MasterBusTypeFacility {
 }
 
 model MasterHotel {
+  salesHotelStays      SalesContractHotelStay[]
   groupRates           ReservationHotelGroupRate[]
   id                   String                       @id @default(uuid()) @db.Uuid
   cityId               String                       @db.Uuid
@@ -4108,6 +4110,7 @@ model SalesContractTicketSelection {
 }
 
 model SalesContractHotelSelection {
+  additionalStays   SalesContractHotelStay[]
   rooms             SalesContractHotelRoom[]
   id                String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   contractId        String                   @unique @map("contract_id") @db.Uuid
@@ -4131,6 +4134,25 @@ model SalesContractHotelSelection {
 
   @@index([hotelId, checkInDate])
   @@map("sales_contract_hotel_selections")
+}
+
+model SalesContractHotelStay {
+  id                String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotelSelectionId  String                      @map("hotel_selection_id") @db.Uuid
+  ordinal           Int
+  hotelId           String                      @map("hotel_id") @db.Uuid
+  cityId            String                      @map("city_id") @db.Uuid
+  hotelNameSnapshot String                      @map("hotel_name_snapshot") @db.VarChar(240)
+  checkInDate       DateTime                    @map("check_in_date") @db.Date
+  checkOutDate      DateTime                    @map("check_out_date") @db.Date
+  selection         SalesContractHotelSelection @relation(fields: [hotelSelectionId], references: [id], onDelete: Cascade, map: "sales_contract_hotel_stays_selection_fkey")
+  hotel             MasterHotel                 @relation(fields: [hotelId], references: [id], onDelete: Restrict, map: "sales_contract_hotel_stays_hotel_fkey")
+  city              MasterCity                  @relation(fields: [cityId], references: [id], onDelete: Restrict, map: "sales_contract_hotel_stays_city_fkey")
+
+  @@unique([hotelSelectionId, ordinal])
+  @@index([hotelId, checkInDate])
+  @@index([cityId])
+  @@map("sales_contract_hotel_stays")
 }
 
 model SalesContractPriceComponent {

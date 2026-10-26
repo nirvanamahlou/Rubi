@@ -1,4 +1,5 @@
 'use client';
+import { CompositeHotelPicker } from './composite-hotel-picker';
 import serviceStyles from './contract-service-cards.module.css';
 import { withAutomaticReturn } from '../model/automatic-return';
 import { LegacyContractPrices } from './legacy-contract-prices';
@@ -402,7 +403,8 @@ export function SalesContractForm() {
   const selectableHotels = useMemo(() => {
     const hotelsAtDestination = references.hotels.filter(
       (hotel) =>
-        hotel.attributes.cityId === state.destinationId &&
+        (hotel.attributes.cityId === state.destinationId ||
+          hotel.id === state.hotel.hotelId) &&
         (!state.tour ||
           (
             state.publishedPackageHotelIds ?? state.tour.package.hotelIds
@@ -416,6 +418,7 @@ export function SalesContractForm() {
     );
   }, [
     references.hotels,
+    state.hotel.hotelId,
     state.destinationId,
     state.tour,
     state.publishedPackageHotelIds,
@@ -494,6 +497,8 @@ export function SalesContractForm() {
                       ? {
                           ...current.hotel,
                           hotelId: '',
+                          cityId: '',
+                          additionalStays: [],
                           name: '',
                           roomTypeId: '',
                           rooms: [],
@@ -1335,6 +1340,9 @@ export function SalesContractForm() {
         <Alert tone="error" title="عملیات کامل نشد" description={error} />
       ) : null}
       <Card className="min-w-0 rounded-2xl border-border/80 p-4 shadow-sm sm:p-6 lg:p-8">
+        {step === 0 && state.serviceKinds.includes('HOTEL') && !state.tour && (
+          <CompositeHotelPicker state={state} patch={patchState} />
+        )}
         {step === 0 && (
           <label className="mb-4 flex items-center gap-2 rounded-xl border p-3">
             <input

@@ -216,6 +216,14 @@ export interface SalesFormState {
   };
   hotelChildAssignments?: Record<string, (string | null)[]> | undefined;
   hotel: {
+    cityId?: string;
+    additionalStays?: Array<{
+      hotelId: string;
+      hotelNameSnapshot: string;
+      cityId: string;
+      checkInDate: string;
+      checkOutDate: string;
+    }>;
     rooms?: Array<
       Omit<SalesHotelRoomV1, 'childAges'> & { childAges: (number | null)[] }
     >;
@@ -1230,6 +1238,23 @@ export function salesHotelRoomTypes(
 }
 
 export function salesHotelValid(state: SalesFormState): boolean {
+  let previousOut = state.hotel.checkOut;
+  const stayIds = new Set([state.hotel.hotelId]);
+  for (const stay of state.hotel.additionalStays ?? []) {
+    if (
+      !stay.hotelId ||
+      !stay.cityId ||
+      stayIds.has(stay.hotelId) ||
+      !stay.checkInDate ||
+      !stay.checkOutDate ||
+      stay.checkOutDate <= stay.checkInDate ||
+      stay.checkInDate < previousOut
+    )
+      return false;
+    previousOut = stay.checkOutDate;
+    stayIds.add(stay.hotelId);
+  }
+  if ((state.hotel.additionalStays?.length ?? 0) > 49) return false;
   return Boolean(
     state.hotel.hotelId &&
     state.hotel.checkIn &&
@@ -2046,7 +2071,10 @@ export function salesPayload(
             serviceClientKey: 'hotel',
             hotelId: state.hotel.hotelId,
             hotelNameSnapshot: state.hotel.name,
-            cityId: state.destinationId,
+            cityId: state.hotel.cityId || state.destinationId,
+            ...(state.hotel.additionalStays?.length
+              ? { additionalStays: state.hotel.additionalStays }
+              : {}),
             checkInDate: state.hotel.checkIn,
             checkOutDate: state.hotel.checkOut,
             roomCount: state.hotel.rooms?.length ?? state.hotel.roomCount,
