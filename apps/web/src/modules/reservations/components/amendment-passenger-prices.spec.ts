@@ -127,13 +127,15 @@ it('opens total-only named contracts with all currencies on the first passenger 
       {
         ...draft.services[0]!,
         metadata: { contractPackagePricingVersion: 1 },
-        pricing: undefined,
       },
     ],
-    passengers: draft.passengers.map((p) => ({
-      ...p,
-      agreedPrices: undefined,
-    })),
+    passengers: draft.passengers.map((p) =>
+      (() => {
+        const next = { ...p };
+        delete next.agreedPrices;
+        return next;
+      })(),
+    ),
     priceComponents: [
       {
         type: 'BASE' as const,
@@ -254,10 +256,13 @@ it('keeps cheque fees separate and applies insurance extras only once while migr
     ...draft,
     paymentTerms: terms,
     priceComponents: components,
-    passengers: draft.passengers.map((p) => ({
-      ...p,
-      agreedPrices: undefined,
-    })),
+    passengers: draft.passengers.map((p) =>
+      (() => {
+        const next = { ...p };
+        delete next.agreedPrices;
+        return next;
+      })(),
+    ),
     services: [
       {
         clientKey: 'insurance',
