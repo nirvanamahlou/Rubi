@@ -262,6 +262,15 @@ export class SalesController {
     );
   }
 
+  @Get('contracts/:id/payment-accounts')
+  @Header('Cache-Control', 'private, no-store')
+  paymentAccounts(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.paymentAccounts(id, request.actor);
+  }
+
   @Post('contracts/:id/confirm')
   confirm(
     @Param('id', ParseUUIDPipe) id: string,
