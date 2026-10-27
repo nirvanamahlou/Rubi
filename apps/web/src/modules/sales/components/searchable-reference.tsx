@@ -25,9 +25,11 @@ export function SearchableReference({
   options,
   onChange,
   disabled = false,
+  loading = false,
   preferEnglishName = false,
   showAllOptionsOnOpen = false,
   required = true,
+  onOpenChange,
 }: {
   label: string;
   hideLabel?: boolean;
@@ -36,7 +38,9 @@ export function SearchableReference({
     Partial<MasterDataRecord>)[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  loading?: boolean;
   required?: boolean;
+  onOpenChange?: (open: boolean) => void;
   showAllOptionsOnOpen?: boolean;
   preferEnglishName?: boolean;
 }) {
@@ -53,6 +57,7 @@ export function SearchableReference({
         label={label}
         value={value}
         disabled={disabled}
+        loading={loading}
         placeholder={
           disabled ? 'ابتدا کشور را انتخاب کنید' : 'جست‌وجو و انتخاب…'
         }
@@ -68,6 +73,7 @@ export function SearchableReference({
             String(item.attributes?.englishName ?? ''),
         }))}
         optionLimit={showAllOptionsOnOpen ? Number.POSITIVE_INFINITY : 5}
+        {...(onOpenChange ? { onOpenChange } : {})}
         onValueChange={onChange}
       />
     </FormField>

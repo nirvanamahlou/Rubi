@@ -18,7 +18,13 @@ import {
   type PayrollWorksheet,
   type PayrollWorksheetSummary,
   type PayrollRates,
+  type PayrollWorksheetStatus,
 } from '@nora/contracts';
+import {
+  payrollWorksheetFinanceStates,
+  submitPayrollWorksheet,
+  assertPayrollWorksheetCanReopen,
+} from '../finance/operations/payroll-worksheet.public';
 import { DatabaseService } from '../database/database.service';
 import { protectHrValues, revealHrValues } from './hr-private-values';
 import { object, text, uuid, version } from './hr.validation';
@@ -89,7 +95,10 @@ export class HrPayrollWorksheetService {
       deletedAt: null,
     };
   }
-  private summary(row: Row): PayrollWorksheetSummary {
+  private summary(
+    row: Row,
+    finance?: { status: PayrollWorksheetStatus; financeRequestId: string },
+  ): PayrollWorksheetSummary {
     const metadata = row.data as Record<string, unknown>;
     return {
       id: row.id,
@@ -97,7 +106,14 @@ export class HrPayrollWorksheetService {
       rowCount: Number(metadata.rowCount ?? 0),
       branchId: row.branchId,
       version: row.version,
-      status: row.status as 'DRAFT' | 'APPROVED',
+      status:
+        row.status === 'DRAFT'
+          ? 'DRAFT'
+          : (finance?.status ??
+            (row.status === 'APPROVED'
+              ? 'HR_APPROVED'
+              : (row.status as PayrollWorksheetStatus))),
+      ...(finance ? { financeRequestId: finance.financeRequestId } : {}),
       updatedAt: row.updatedAt.toISOString(),
     };
   }
@@ -140,7 +156,15 @@ export class HrPayrollWorksheetService {
     row: Row,
     tx: Prisma.TransactionClient,
   ): Promise<PayrollWorksheet> {
-    const { rowCount: _count, ...summary } = this.summary(row);
+    const states = await payrollWorksheetFinanceStates(
+      tx,
+      [row.id],
+      [row.branchId],
+    );
+    const { rowCount: _count, ...summary } = this.summary(
+      row,
+      states.get(row.id),
+    );
     void _count;
     return { ...summary, ...(await this.snapshot(row, tx)) };
   }
@@ -172,7 +196,25 @@ export class HrPayrollWorksheetService {
     });
     if (rows.length > 1000)
       throw new BadRequestException('تعداد دوره‌ها بیش از حد مجاز است.');
-    return rows.map((row) => this.summary(row));
+    const states = await payrollWorksheetFinanceStates(
+      this.database.client,
+      rows.map((row) => row.id),
+      actor.branchIds,
+    );
+    return rows.map((row) => this.summary(row, states.get(row.id)));
+  }
+  async status(id: string, actor: AuthenticatedActor) {
+    this.guard(actor);
+    const row = await this.database.client.hrRecord.findFirst({
+      where: { ...this.scope(actor), id: uuid(id) },
+    });
+    if (!row) throw new NotFoundException('حقوق پیدا نشد.');
+    const states = await payrollWorksheetFinanceStates(
+      this.database.client,
+      [row.id],
+      actor.branchIds,
+    );
+    return this.summary(row, states.get(row.id));
   }
   async detail(id: string, actor: AuthenticatedActor) {
     this.guard(actor);
@@ -354,17 +396,36 @@ export class HrPayrollWorksheetService {
     const input = object(body, ['version']),
       expected = version(input.version);
     return this.database.client.$transaction(async (tx) => {
-      const row = await tx.hrRecord.findFirst({
+      let row = await tx.hrRecord.findFirst({
         where: { ...this.scope(actor), id: uuid(id) },
       });
       if (!row) throw new NotFoundException('حقوق پیدا نشد.');
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${row.code}, 0))::text`;
+      row = await tx.hrRecord.findUniqueOrThrow({ where: { id: row.id } });
+      const metadata = row.data as Record<string, unknown>;
+      const states = await payrollWorksheetFinanceStates(
+        tx,
+        [row.id],
+        actor.branchIds,
+      );
+      const finance = states.get(row.id);
       if (
-        row.version !== expected ||
-        row.status !== (approve ? 'DRAFT' : 'APPROVED')
+        approve &&
+        row.status === 'PENDING_FINANCE' &&
+        row.version === expected + 1 &&
+        metadata.submittedBy === actor.userId &&
+        finance
       )
+        return this.dto(row, tx);
+      if (row.version !== expected)
         throw new ConflictException('وضعیت حقوق تغییر کرده است.');
+      let amount = 0n;
+      let rowCount = 0;
       if (approve) {
+        if (row.status !== 'DRAFT' && !(row.status === 'APPROVED' && !finance))
+          throw new ConflictException('وضعیت حقوق تغییر کرده است.');
         const snapshot = await this.snapshot(row, tx);
+        rowCount = snapshot.rows.length;
         if (
           !snapshot.rows.length ||
           snapshot.rows.some(
@@ -376,15 +437,33 @@ export class HrPayrollWorksheetService {
           throw new BadRequestException(
             'نام و مانده حقوق ردیف‌ها را بررسی کنید.',
           );
-        if ((row.data as Record<string, unknown>).lastEditedBy === actor.userId)
-          throw new ForbiddenException(
-            'تأیید باید توسط کاربر دیگری انجام شود.',
+        // This confirms submission, not final approval. Finance enforces a different final approver.
+        amount = snapshot.rows.reduce(
+          (total, r) =>
+            total + BigInt(calculatePayroll(r, snapshot.rates).remaining),
+          0n,
+        );
+        if (amount <= 0n || amount >= 10n ** 20n)
+          throw new BadRequestException(
+            'مبلغ قابل پرداخت حقوق باید مثبت و در محدوده مجاز باشد.',
           );
+      } else {
+        if (!['APPROVED', 'PENDING_FINANCE'].includes(row.status))
+          throw new ConflictException('وضعیت حقوق تغییر کرده است.');
+        await assertPayrollWorksheetCanReopen(tx, row.id, actor.branchIds);
       }
       const changed = await tx.hrRecord.updateMany({
         where: { id: row.id, version: expected, status: row.status },
         data: {
-          status: approve ? 'APPROVED' : 'DRAFT',
+          status: approve ? 'PENDING_FINANCE' : 'DRAFT',
+          ...(approve
+            ? {
+                data: {
+                  ...metadata,
+                  submittedBy: actor.userId,
+                } as Prisma.InputJsonValue,
+              }
+            : {}),
           version: { increment: 1 },
         },
       });
@@ -393,11 +472,45 @@ export class HrPayrollWorksheetService {
       const saved = await tx.hrRecord.findUniqueOrThrow({
         where: { id: row.id },
       });
+      if (approve) {
+        // Freeze the canonical payable projection with the submitted snapshot, including legacy sheets.
+        await tx.hrRecordAmount.deleteMany({
+          where: {
+            recordId: saved.id,
+            field: { in: ['remaining', 'remainingNegative'] },
+          },
+        });
+        await tx.hrRecordAmount.createMany({
+          data: [
+            {
+              recordId: saved.id,
+              field: 'remaining',
+              amount: new Prisma.Decimal(amount.toString()),
+              currency: 'IRR',
+            },
+          ],
+        });
+        await submitPayrollWorksheet(
+          tx,
+          {
+            id: saved.id,
+            branchId: saved.branchId,
+            period: (saved.values as string[])[0]!,
+            version: saved.version,
+            amount: amount.toString(),
+            currencyCode: 'IRR',
+            rowCount,
+          },
+          actor,
+        );
+      }
       await this.audit(
         tx,
         actor,
         saved,
-        approve ? 'payroll.worksheet.approve' : 'payroll.worksheet.reopen',
+        approve
+          ? 'payroll.worksheet.submitFinance'
+          : 'payroll.worksheet.reopen',
       );
       return this.dto(saved, tx);
     });
