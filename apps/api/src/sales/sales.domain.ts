@@ -833,6 +833,7 @@ export function validateSalesContract(
                     'roomTypeNameSnapshot',
                     'adults',
                     'childAges',
+                    'roomCategory',
                   ].includes(key),
               ),
             ))

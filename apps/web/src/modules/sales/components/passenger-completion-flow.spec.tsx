@@ -1,5 +1,7 @@
 import { isValidElement, type ReactNode } from 'react';
 import type * as ReactModule from 'react';
+import type * as SalesClientModule from '../api/client';
+import type * as CustomersEntryModule from '@/modules/customers/public/entry';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { canonicalTestTree } from '@/i18n/test-tree';
 import { PassengerCompletion } from './passenger-completion';
@@ -47,7 +49,7 @@ vi.mock('react', async (original) => ({
   },
 }));
 vi.mock('../api/client', async (original) => ({
-  ...(await original<typeof import('../api/client')>()),
+  ...(await original<typeof SalesClientModule>()),
   salesApi: {
     passengerCompletionForm: h.form,
     createCompletionPerson: h.create,
@@ -55,7 +57,7 @@ vi.mock('../api/client', async (original) => ({
   },
 }));
 vi.mock('@/modules/customers/public/entry', async (original) => ({
-  ...(await original<typeof import('@/modules/customers/public/entry')>()),
+  ...(await original<typeof CustomersEntryModule>()),
   salesPeopleApi: {
     registrationLookup: h.lookup,
     detail: h.detail,

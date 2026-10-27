@@ -267,6 +267,7 @@ it('persists independent additional stays in the hotel transaction without addin
           roomTypeNameSnapshot: 'Suite',
           adults: 2,
           childAges: [5],
+          roomCategory: 'DOUBLE_EXTRA' as const,
         },
       ],
       checkInDate: '2099-01-03',

@@ -1,6 +1,10 @@
 ## LEGACY-PASSENGER-SAVE-1027 — PC-A
 
 Historical passenger completion skips unnecessary post-create sensitive-detail requests when optional contact fields are blank. Save failures appear beside the action; successful completion refreshes the correction form with confirmation. Real identities, booked per-service categories/counts, supplied-field validation, retry/replay, branch authorization and commercial values remain intact. The existing Sales summary now optionally returns canonical passenger names; Reservations uses them with old-server snapshot fallback and recognizes successful completion as a correction. Name-only adult/child persistence and Web blank-field, invalid-value, contact retry and uncertain-submit regressions pass (API23, Web41). No migration, dependency, permission or runtime/production changes. Final lint/types/build and exact-head hosted checks gate owner-authorized develop merge.
+
+## MULTIHOTEL-ROOM-PARITY-1027 — PC-A
+
+Additional contract hotels now use a room-count field, hotel-specific room-type and category selectors, and separate adult/child/infant counts with age selectors. Draft validation prevents missing child ages and excess guests; hotel room categories are retained through Sales validation, persistence, output and legacy-compatible editing. Existing itinerary dates, prices, primary allocation and service semantics remain. Additive nullable room-category migration preserves historical rows. Focused Web45 and API77 checks, scoped lint and Web typecheck pass; local PostgreSQL was unavailable, so the isolated database migration regression and full builds remain gated by exact-head CI. No operational deployment.
 ## RESERVATION-SERVICE-BORDERLESS-1027 — PC-A
 
 Removed the border and rounded corners around reservation service labels while keeping existing spacing, wrapping, ordered categories, colors, selected rows and content. CSS-only change; no data, API, migration, dependency or runtime changes. Focused checks and final-head hosted CI precede owner-authorized develop merge.
