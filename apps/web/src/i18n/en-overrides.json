@@ -4648,5 +4648,8 @@
   "مجوز ارسال حقوق به مالی لازم است.": "Permission to submit payroll to Finance is required.",
   "منبع درخواست مالی حقوق معتبر نیست.": "The payroll Finance source is invalid.",
   "نسخه درخواست مالی تغییر کرده است.": "The Finance request version has changed.",
-  "نسخه مبنای جدول حقوق تغییر کرده است.": "The payroll worksheet source version has changed."
+  "نسخه مبنای جدول حقوق تغییر کرده است.": "The payroll worksheet source version has changed.",
+  "انتخاب فایل مدرک پرداخت": "Select a payment receipt file",
+  "رسید همین پرداخت را پیوست کنید.": "Attach the receipt for this payment.",
+  "ثبت پرداخت": "Save payment"
 }

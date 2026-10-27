@@ -1122,6 +1122,27 @@ export class SalesService {
     return { data: presentSalesContract(row, undefined, this.buyerCrypto) };
   }
 
+  async paymentReceiptScope(
+    id: string,
+    actor: AuthenticatedActor,
+    paymentId?: string,
+  ) {
+    const row = await this.repository.findById(id);
+    if (!row) throw new NotFoundException('قرارداد یافت نشد.');
+    this.assertRead(row, actor);
+    if (paymentId && !row.payments.some((p) => p.id === paymentId))
+      throw new NotFoundException('پرداخت متعلق به این قرارداد نیست.');
+    return {
+      branchId: row.branchId,
+      contractNumber: row.contractNumber,
+      ownerUserId: row.ownerUserId,
+      entries: row.payments.map((p) => ({
+        id: p.id,
+        paymentReference: p.paymentReference ?? null,
+        dueAt: p.dueAt.toISOString(),
+      })),
+    };
+  }
   async detail(id: string, actor: AuthenticatedActor) {
     const row = await this.repository.findById(id);
     if (!row)
