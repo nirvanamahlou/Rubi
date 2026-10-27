@@ -2303,6 +2303,7 @@ export function SalesContractForm() {
                     {salesPassengerAgeLabel(
                       p.birthDate,
                       salesTravelDate(state),
+                      p.ageCategory,
                     )}
                   </label>
                 ))}
@@ -2355,6 +2356,7 @@ export function SalesContractForm() {
                           {salesPassengerAgeLabel(
                             passenger.birthDate,
                             salesTravelDate(state),
+                            passenger.ageCategory,
                           )}
                         </span>
                       </span>

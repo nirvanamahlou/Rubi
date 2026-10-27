@@ -1,3 +1,4 @@
+import { contractPassengerAgeCategory } from './sales.domain';
 import {
   readLegacyServiceParties,
   legacyServiceHeadcount,
@@ -70,7 +71,6 @@ import {
 import {
   calculateSalesBalances,
   passengerAgeYears,
-  passengerAgeCategory,
   SalesDomainError,
   salesFingerprint,
   sumSalesDecimals,
@@ -1362,7 +1362,7 @@ export class SalesService {
         );
         const age =
           categories?.[passenger.customerId] ??
-          passengerAgeCategory(passenger.birthDate, input.departureDate);
+          contractPassengerAgeCategory(passenger, input.departureDate);
         return age === 'CHD' &&
           (before?.childAgeBand === 'AGE_2_6' ||
             before?.childAgeBand === 'AGE_6_12')

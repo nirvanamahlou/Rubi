@@ -18,8 +18,6 @@ export function salesPassengerStepError(
   if (!state.passengers.length) return 'حداقل یک مسافر اضافه کنید.';
   if (peopleDirty)
     return 'اطلاعات جدول را با دکمه «ثبت و تأیید افراد» تأیید کنید.';
-  if (!state.passengers.every((p) => p.birthDate))
-    return 'تاریخ تولد را وارد کنید';
   if (salesTravelDate(state) && !salesPassengerCompositionMatches(state))
     return 'تعداد و رده سنی مسافران باید با ترکیب ثبت‌شده در مرحله اول یکسان باشد.';
   const guests = salesHotelGuestIds(state);

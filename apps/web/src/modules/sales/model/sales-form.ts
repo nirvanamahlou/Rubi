@@ -1,5 +1,9 @@
 import { enforceSalesHotelCapacity } from '@nora/contracts';
 import {
+  salesHotelGuestAges,
+  type SalesPassengerAgeCategory,
+} from '@nora/contracts';
+import {
   usesRoomDrivenGuests,
   passengerHotelStay,
   passengerHotelStayError,
@@ -263,6 +267,7 @@ export interface SalesFormState {
     customerId: string;
     displayName: string;
     birthDate: string;
+    ageCategory?: SalesPassengerAgeCategory;
   }>;
   priceComponents: SalesPriceComponentInput[];
   payments: SalesPaymentInput[];
@@ -749,15 +754,17 @@ export function salesHotelCapacityError(
     }
     if (state.passengers.length) {
       const ids = new Set(salesHotelGuestIds(state));
-      const actual = state.passengers
-        .filter((p) => ids.has(p.customerId))
-        .map((p) => hotelAgeOn(p.birthDate, state.hotel.checkIn))
-        .map((a) => (a !== null && a >= 15 ? 15 : a))
-        .sort((a, b) => (a ?? -1) - (b ?? -1));
+
       const expected = state.hotel.rooms
         .flatMap((r) => [...Array(r.adults).fill(15), ...r.childAges])
         .sort((a, b) => (a ?? -1) - (b ?? -1));
+      const actual = salesHotelGuestAges(
+        state.passengers.filter((p) => ids.has(p.customerId)),
+        state.hotel.checkIn,
+        expected,
+      )?.sort((a, b) => a - b);
       if (
+        !actual ||
         actual.length !== expected.length ||
         actual.some((a, i) => a !== expected[i])
       )
@@ -898,6 +905,7 @@ export function salesPassengerCompositionMatches(state: SalesFormState) {
     const category = salesPassengerAgeLabel(
       passenger.birthDate,
       salesTravelDate(state),
+      passenger.ageCategory,
     );
     if (category === 'بزرگسال') actual.adults += 1;
     else if (category === 'کودک') actual.children += 1;
@@ -950,7 +958,10 @@ export function withFirstPassengerCustomer(
 export function salesPassengerAgeLabel(
   birthDate: string,
   departureDate: string,
+  bookedCategory?: SalesPassengerAgeCategory,
 ): string {
+  if (!birthDate && bookedCategory)
+    return { ADT: 'بزرگسال', CHD: 'کودک', INF: 'نوزاد' }[bookedCategory];
   if (!birthDate || !departureDate) return 'تاریخ تولد را وارد کنید';
   const birth = new Date(`${birthDate.slice(0, 10)}T00:00:00Z`);
   const travel = new Date(`${departureDate.slice(0, 10)}T00:00:00Z`);
@@ -973,8 +984,13 @@ export function salesPassengerAgeLabel(
 export function salesAccommodationOptions(
   birthDate: string,
   departureDate: string,
+  bookedCategory?: SalesPassengerAgeCategory,
 ) {
-  const label = salesPassengerAgeLabel(birthDate, departureDate);
+  const label = salesPassengerAgeLabel(
+    birthDate,
+    departureDate,
+    bookedCategory,
+  );
   const age =
     label === 'نوزاد'
       ? 'INF'
@@ -998,6 +1014,7 @@ export function salesAccommodationsComplete(state: SalesFormState) {
         salesAccommodationOptions(
           passenger.birthDate,
           salesTravelDate(state),
+          passenger.ageCategory,
         ).some((option) => option.id === state.passengerAccommodations?.[id])
       );
     })
@@ -1569,26 +1586,38 @@ export function salesPayload(
     );
     const adults = selected.filter(
       (p) =>
-        salesPassengerAgeLabel(p.birthDate, salesTravelDate(state)) ===
-        'بزرگسال',
+        salesPassengerAgeLabel(
+          p.birthDate,
+          salesTravelDate(state),
+          p.ageCategory,
+        ) === 'بزرگسال',
     ).length;
     const children = selected.filter(
       (p) =>
-        salesPassengerAgeLabel(p.birthDate, salesTravelDate(state)) === 'کودک',
+        salesPassengerAgeLabel(
+          p.birthDate,
+          salesTravelDate(state),
+          p.ageCategory,
+        ) === 'کودک',
     ).length;
     const wantedAges = [...(state.visaChildAges ?? [])].sort(
       (a, b) => (a ?? -1) - (b ?? -1),
     );
-    const actualAges = selected
-      .filter(
+    const actualAges = salesHotelGuestAges(
+      selected.filter(
         (p) =>
-          salesPassengerAgeLabel(p.birthDate, salesTravelDate(state)) ===
-          'کودک',
-      )
-      .map((p) => hotelAgeOn(p.birthDate, salesTravelDate(state)))
-      .sort((a, b) => (a ?? -1) - (b ?? -1));
+          salesPassengerAgeLabel(
+            p.birthDate,
+            salesTravelDate(state),
+            p.ageCategory,
+          ) === 'کودک',
+      ),
+      salesTravelDate(state),
+      wantedAges,
+    )?.sort((a, b) => a - b);
     if (
       wantedAges.length !== children ||
+      !actualAges ||
       actualAges.some((a, i) => a !== wantedAges[i])
     )
       throw new Error('سن متقاضیان کودک ویزا با سن‌های واردشده هماهنگ نیست.');
@@ -2077,6 +2106,9 @@ export function salesPayload(
           }
         : {}),
       birthDate: item.birthDate,
+      ...(!item.birthDate && item.ageCategory
+        ? { ageCategory: item.ageCategory }
+        : {}),
       serviceClientKeys: services
         .filter(({ clientKey, metadata }) =>
           metadata?.insuranceAgeSurcharge === true
@@ -2220,7 +2252,11 @@ export function salesTransferCount(
     const directions = salesPassengerTransferDirections(state, p.customerId);
     return (
       (direction ? directions.includes(direction) : directions.length > 0) &&
-      salesPassengerAgeLabel(p.birthDate, salesTravelDate(state)) !== 'نوزاد'
+      salesPassengerAgeLabel(
+        p.birthDate,
+        salesTravelDate(state),
+        p.ageCategory,
+      ) !== 'نوزاد'
     );
   }).length;
 }
@@ -2245,6 +2281,10 @@ export function salesFlightSeats(
   return state.passengers.filter(
     (p) =>
       salesPassengerFlightDirections(state, p.customerId).includes(direction) &&
-      salesPassengerAgeLabel(p.birthDate, salesTravelDate(state)) !== 'نوزاد',
+      salesPassengerAgeLabel(
+        p.birthDate,
+        salesTravelDate(state),
+        p.ageCategory,
+      ) !== 'نوزاد',
   ).length;
 }

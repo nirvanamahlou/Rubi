@@ -22,7 +22,7 @@ import type {
 import { AuditOutcome, Prisma, type SalesContractStatus } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
-import { salesFingerprint, passengerAgeCategory } from './sales.domain';
+import { salesFingerprint, contractPassengerAgeCategory } from './sales.domain';
 
 export const salesDetailInclude = {
   passengers: {
@@ -559,9 +559,11 @@ export class SalesRepository {
               childAgeBand: passenger.childAgeBand ?? null,
               agreedPrices: { create: [...(passenger.agreedPrices ?? [])] },
               displayNameSnapshot: passenger.displayNameSnapshot,
-              birthDate: startOfDay(passenger.birthDate),
-              ageCategory: passengerAgeCategory(
-                passenger.birthDate,
+              birthDate: passenger.birthDate
+                ? startOfDay(passenger.birthDate)
+                : null,
+              ageCategory: contractPassengerAgeCategory(
+                passenger,
                 input.departureDate,
               ),
             },
@@ -849,10 +851,12 @@ export class SalesRepository {
               childAgeBand: passenger.childAgeBand ?? null,
               agreedPrices: { create: [...(passenger.agreedPrices ?? [])] },
               displayNameSnapshot: passenger.displayNameSnapshot,
-              birthDate: startOfDay(passenger.birthDate),
+              birthDate: passenger.birthDate
+                ? startOfDay(passenger.birthDate)
+                : null,
               ageCategory:
                 amendment?.categories[passenger.customerId] ??
-                passengerAgeCategory(passenger.birthDate, input.departureDate),
+                contractPassengerAgeCategory(passenger, input.departureDate),
             },
           });
           await tx.salesPassengerServiceAllocation.createMany({

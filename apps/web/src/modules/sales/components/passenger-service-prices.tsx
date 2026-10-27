@@ -204,6 +204,7 @@ export function PassengerServicePrices({
                       {salesPassengerAgeLabel(
                         p.birthDate,
                         salesTravelDate(state),
+                        p.ageCategory,
                       )}
                     </span>
                   </th>

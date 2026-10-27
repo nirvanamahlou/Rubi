@@ -71,6 +71,55 @@ const detail = (id: string, input: Partial<CustomerDetail> = {}) =>
     ...input,
   }) as CustomerDetail;
 
+it.each([['OTHER'], ['FLIGHT'], ['HOTEL'], ['FLIGHT', 'HOTEL']] as const)(
+  'registers unknown DOB for %j without fabricating dates and retains booked adult, child and infant slots',
+  async (...serviceKinds) => {
+    const entryState = {
+      ...state,
+      serviceKinds: [...serviceKinds],
+      originCountryCode: 'IRN',
+      destinationCountryCode: 'TUR',
+    };
+    const draft = filled();
+    for (const row of Object.values(draft.rows))
+      Object.assign(row.values, {
+        birthDate: '',
+        passportFirstName: 'SYNTHETIC',
+        passportLastName: 'TRAVELER',
+        gender: 'M',
+      });
+    expect(() => validateSalesPeopleDraft(entryState, draft)).not.toThrow();
+    let nextId = 0;
+    const create = vi.fn(async (input: CustomerMutationRequest) => ({
+      data: detail('registered-' + nextId++, {
+        ...input,
+        birthDate: null,
+        roles: input.roles,
+        contacts: [],
+      } as Partial<CustomerDetail>),
+    }));
+    const result = await saveSalesPeopleDraft(entryState, draft, vi.fn(), {
+      create,
+      addContact: vi.fn(),
+    });
+    expect(create).toHaveBeenCalledTimes(4);
+    for (const [input] of create.mock.calls)
+      expect(input).not.toHaveProperty('birthDate');
+    expect(result.patch.passengers!.map((p) => p.birthDate)).toEqual([
+      '',
+      '',
+      '',
+      '',
+    ]);
+    expect(result.patch.passengers!.map((p) => p.ageCategory)).toEqual([
+      'ADT',
+      'ADT',
+      'CHD',
+      'INF',
+    ]);
+  },
+);
+
 it.each([['HOTEL'], ['FLIGHT'], ['FLIGHT', 'HOTEL']] as const)(
   'accepts blank passport documents for international %j while validating supplied documents',
   (...serviceKinds) => {

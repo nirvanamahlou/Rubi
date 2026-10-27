@@ -873,7 +873,14 @@ export class CustomerService {
   ) {
     const salesActor = this.salesEntryActor(actor);
     if (input.kind !== 'person') throw new BadRequestException();
-    return this.createRecord(input, salesActor, requestedBranch, traceId, true);
+    return this.createRecord(
+      input,
+      salesActor,
+      requestedBranch,
+      traceId,
+      true,
+      true,
+    );
   }
 
   /** Called only after Sales authorizes an available historical completion. */

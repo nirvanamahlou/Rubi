@@ -1,4 +1,9 @@
 import { legacyRowPriceTotals } from '@nora/contracts';
+import {
+  salesBookedAgeCategory,
+  salesHotelGuestAges,
+  type SalesPassengerInput,
+} from '@nora/contracts';
 import { readLegacyServiceParties } from '@nora/contracts';
 import { enforceSalesHotelCapacity } from '@nora/contracts';
 import { validatePassengerHotelStays } from '@nora/contracts';
@@ -21,7 +26,6 @@ import {
 import {
   moneyUnits,
   validSalesHotelRooms,
-  hotelAgeOn,
   validateInsuranceExtras,
 } from '@nora/contracts';
 import {
@@ -158,6 +162,19 @@ export function passengerAgeCategory(
 ): SalesPassengerAgeCategory {
   const age = passengerAgeYears(birthDate, departureDate);
   return age < 2 ? 'INF' : age < 12 ? 'CHD' : 'ADT';
+}
+
+export function contractPassengerAgeCategory(
+  passenger: Pick<SalesPassengerInput, 'birthDate' | 'ageCategory'>,
+  travelDate: string,
+): SalesPassengerAgeCategory {
+  const category = salesBookedAgeCategory(passenger, travelDate);
+  if (!category)
+    throw new SalesDomainError(
+      'SALES_PASSENGER_BIRTH_DATE_INVALID',
+      'تاریخ تولد مسافر معتبر نیست.',
+    );
+  return category;
 }
 
 export function validateSalesContract(
@@ -428,7 +445,7 @@ export function validateSalesContract(
       );
     const age =
       categories[passenger.customerId] ??
-      passengerAgeCategory(passenger.birthDate, input.departureDate);
+      contractPassengerAgeCategory(passenger, input.departureDate);
     if (
       passenger.childAgeBand != null &&
       (age !== 'CHD' ||
@@ -545,7 +562,7 @@ export function validateSalesContract(
       const cats = selected.map(
         (p) =>
           categories[p.customerId] ??
-          passengerAgeCategory(p.birthDate, input.departureDate),
+          contractPassengerAgeCategory(p, input.departureDate),
       );
       const ageText = service.metadata.applicantChildAges;
       const ages =
@@ -554,13 +571,13 @@ export function validateSalesContract(
             ? ageText.split(',').map(Number)
             : []
           : null;
-      const actualAges = selected
-        .filter(
-          (p) =>
-            passengerAgeCategory(p.birthDate, input.departureDate) === 'CHD',
-        )
-        .map((p) => hotelAgeOn(p.birthDate, input.departureDate))
-        .sort((a, b) => (a ?? -1) - (b ?? -1));
+      const actualAges = salesHotelGuestAges(
+        selected.filter(
+          (p) => contractPassengerAgeCategory(p, input.departureDate) === 'CHD',
+        ),
+        input.departureDate,
+        ages ?? [],
+      )?.sort((a, b) => a - b);
       if (
         !c ||
         !Number.isInteger(c.adults) ||
@@ -577,7 +594,8 @@ export function validateSalesContract(
         !Array.isArray(ages) ||
         ages.length !== c.children ||
         (!legacyParties &&
-          (actualAges.length !== ages.length ||
+          (!actualAges ||
+            actualAges.length !== ages.length ||
             actualAges.some(
               (a, i) => a !== [...ages].sort((a, b) => a - b)[i],
             ))) ||
@@ -601,8 +619,7 @@ export function validateSalesContract(
         : input.passengers.filter(
             (p) =>
               (categories[p.customerId] ??
-                passengerAgeCategory(p.birthDate, input.departureDate)) !==
-              'INF',
+                contractPassengerAgeCategory(p, input.departureDate)) !== 'INF',
           ).length;
       if (
         typeof count !== 'number' ||
@@ -721,20 +738,20 @@ export function validateSalesContract(
       const guests = input.passengers.filter((p) =>
         p.serviceClientKeys.includes(hotel.serviceClientKey),
       );
-      const ages = guests.map((p) =>
-        hotelAgeOn(p.birthDate, hotel.checkInDate),
-      );
       const expected = hotel.rooms
         .flatMap((r) => [...Array(r.adults).fill(15), ...r.childAges])
         .sort((a, b) => a - b);
-      const actual = ages
-        .map((a) => (a !== null && a >= 15 ? 15 : a))
-        .sort((a, b) => (a ?? -1) - (b ?? -1));
+      const actual = salesHotelGuestAges(
+        guests,
+        hotel.checkInDate,
+        expected,
+      )?.sort((a, b) => a - b);
       if (
         hotel.roomTypeId !== hotel.rooms[0]?.roomTypeId ||
         (enforceSalesHotelCapacity() &&
           !legacyParties &&
-          (expected.length !== actual.length ||
+          (!actual ||
+            expected.length !== actual.length ||
             expected.some((a, i) => a !== actual[i])))
       )
         throw new SalesDomainError(

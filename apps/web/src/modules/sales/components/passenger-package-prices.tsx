@@ -136,6 +136,7 @@ export function PassengerPackagePrices({
                     {salesPassengerAgeLabel(
                       p.birthDate,
                       salesTravelDate(state),
+                      p.ageCategory,
                     )}
                   </td>
                   <td className="min-w-40 p-2">
