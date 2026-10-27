@@ -260,6 +260,15 @@ it('persists independent additional stays in the hotel transaction without addin
       hotelId: 'hotel-two',
       cityId: 'city-two',
       hotelNameSnapshot: 'Second Hotel',
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: 'second-room',
+          roomTypeNameSnapshot: 'Suite',
+          adults: 2,
+          childAges: [5],
+        },
+      ],
       checkInDate: '2099-01-03',
       checkOutDate: '2099-01-06',
     },
@@ -295,6 +304,7 @@ it('persists independent additional stays in the hotel transaction without addin
           create: [
             {
               ...additionalStays[0],
+              rooms: { create: additionalStays[0]!.rooms },
               ordinal: 2,
               checkInDate: new Date('2099-01-03T00:00:00.000Z'),
               checkOutDate: new Date('2099-01-06T00:00:00.000Z'),

@@ -108,12 +108,31 @@ it('keeps composite hotel stays ordered with explicit independent dates and no d
   expect(() => validateSalesContract(input)).not.toThrow();
   expect(input.priceComponents).toEqual(draft.priceComponents);
   const stay = input.hotelSelection.additionalStays![0]!;
+  stay.rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: input.hotelSelection.roomTypeId,
+      roomTypeNameSnapshot: 'Single',
+      adults: 1,
+      childAges: [],
+    },
+  ];
+  expect(() => validateSalesContract(input)).not.toThrow();
+  stay.rooms[0]!.adults = 2;
+  expect(() => validateSalesContract(input)).toThrow('اتاق');
+  stay.rooms[0]!.adults = 1;
+  const validRooms = stay.rooms;
+  stay.rooms = null as never;
+  expect(() => validateSalesContract(input)).toThrow('اتاق');
+  stay.rooms = validRooms;
   stay.checkInDate = '';
   expect(() => validateSalesContract(input)).toThrow();
   stay.checkInDate = '2026-10-02';
   expect(() => validateSalesContract(input)).toThrow('overlap');
   stay.checkInDate = '2026-10-03';
   stay.hotelId = input.hotelSelection.hotelId;
+  expect(() => validateSalesContract(input)).toThrow('itinerary');
+  input.hotelSelection.additionalStays = [null as never];
   expect(() => validateSalesContract(input)).toThrow('itinerary');
 });
 

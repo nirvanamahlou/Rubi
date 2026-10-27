@@ -157,6 +157,10 @@ export interface SalesTicketSelectionInput {
 
 /** Ordered additional hotel itinerary; dates are explicitly entered, not inferred. */
 export interface SalesHotelStayInput {
+  rooms?: readonly Pick<
+    SalesHotelRoomV1,
+    'ordinal' | 'roomTypeId' | 'roomTypeNameSnapshot' | 'adults' | 'childAges'
+  >[];
   hotelId: string;
   hotelNameSnapshot: string;
   cityId: string;

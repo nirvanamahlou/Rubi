@@ -43,6 +43,7 @@ import {
 } from '../model/contract-guest-stays';
 import { ServiceParties } from './service-parties';
 import { HotelStayDates } from './hotel-stay-dates';
+import { AdditionalHotelStays } from './additional-hotel-stays';
 import { salesPassengerStepError } from '../model/sales-passenger-step';
 
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
@@ -403,7 +404,9 @@ export function SalesContractForm() {
   const selectableHotels = useMemo(() => {
     const hotelsAtDestination = references.hotels.filter(
       (hotel) =>
-        (hotel.attributes.cityId === state.destinationId ||
+        (state.hotel.multiHotel ||
+          Boolean(state.hotel.additionalStays?.length) ||
+          hotel.attributes.cityId === state.destinationId ||
           hotel.id === state.hotel.hotelId) &&
         (!state.tour ||
           (
@@ -418,6 +421,8 @@ export function SalesContractForm() {
     );
   }, [
     references.hotels,
+    state.hotel.multiHotel,
+    state.hotel.additionalStays,
     state.hotel.hotelId,
     state.destinationId,
     state.tour,
@@ -1821,11 +1826,17 @@ export function SalesContractForm() {
             ))}
           </section>
         )}
-        {step === 0 &&
-          state.serviceKinds.includes('FLIGHT') &&
-          state.serviceKinds.includes('HOTEL') && (
+        {step === 0 && state.serviceKinds.includes('HOTEL') && (
+          <>
             <HotelStayDates state={state} patchState={patchState} />
-          )}
+            <AdditionalHotelStays
+              state={state}
+              patch={patchState}
+              hotels={references.hotels}
+              roomTypes={references.roomTypes}
+            />
+          </>
+        )}
         {step === 0
           ? detailSteps
               .filter((key) => key !== 'FLIGHT')
@@ -2039,12 +2050,6 @@ export function SalesContractForm() {
                             <Alert tone="error" title={hotelCapacityError} />
                           </div>
                         ) : null}
-                        {!usesRoomDrivenGuests(state) && (
-                          <HotelStayDates
-                            state={state}
-                            patchState={patchState}
-                          />
-                        )}
                         {!state.hotel.rooms ? (
                           <>
                             <HotelCountField

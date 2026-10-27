@@ -338,6 +338,17 @@ export function presentSalesContract(
                     cityId: stay.cityId,
                     checkInDate: stay.checkInDate.toISOString().slice(0, 10),
                     checkOutDate: stay.checkOutDate.toISOString().slice(0, 10),
+                    ...(stay.rooms?.length
+                      ? {
+                          rooms: stay.rooms.map((room) => ({
+                            ordinal: room.ordinal,
+                            roomTypeId: room.roomTypeId,
+                            roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                            adults: room.adults,
+                            childAges: room.childAges as number[],
+                          })),
+                        }
+                      : {}),
                   }),
                 ),
               }
@@ -517,7 +528,9 @@ export class SalesService {
             item.cityId === stay.cityId &&
             item.hotelNameSnapshot === stay.hotelNameSnapshot &&
             item.checkInDate === stay.checkInDate &&
-            item.checkOutDate === stay.checkOutDate,
+            item.checkOutDate === stay.checkOutDate &&
+            JSON.stringify(item.rooms ?? []) ===
+              JSON.stringify(stay.rooms ?? []),
         );
       if (previous) continue;
       const reference = (await this.references.detail('hotels', stay.hotelId))
@@ -532,6 +545,24 @@ export class SalesService {
         throw new BadRequestException(
           'Hotel reference changed; refresh the selection',
         );
+      if (stay !== hotel && stay.rooms?.length) {
+        const linked = String(reference.attributes.roomTypeIds ?? '')
+          .split(',')
+          .map((id) => id.trim());
+        for (const room of stay.rooms) {
+          const roomReference = (
+            await this.references.detail('room-types', room.roomTypeId)
+          ).data;
+          if (
+            !linked.includes(room.roomTypeId) ||
+            roomReference.status !== 'active' ||
+            roomReference.name !== room.roomTypeNameSnapshot
+          )
+            throw new BadRequestException(
+              'نوع اتاق به هتل انتخاب‌شده متصل نیست.',
+            );
+        }
+      }
     }
   }
 
@@ -1263,6 +1294,28 @@ export class SalesService {
             undefined,
             this.buyerCrypto,
           ).hotelSelection!.additionalStays!,
+        },
+      };
+    }
+    if (
+      input.hotelSelection?.additionalStays &&
+      row.hotelSelection?.additionalStays?.length
+    ) {
+      const saved =
+        presentSalesContract(row, undefined, this.buyerCrypto).hotelSelection
+          ?.additionalStays ?? [];
+      input = {
+        ...input,
+        hotelSelection: {
+          ...input.hotelSelection,
+          additionalStays: input.hotelSelection.additionalStays.map((stay) => {
+            const previous = saved.find(
+              (item) => item.hotelId === stay.hotelId,
+            );
+            return stay.rooms === undefined && previous?.rooms?.length
+              ? { ...stay, rooms: previous.rooms }
+              : stay;
+          }),
         },
       };
     }

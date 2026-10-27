@@ -120,6 +120,7 @@ it('requires independent chronological dates and preserves the itinerary in payl
   Object.assign(state.hotel.additionalStays![0]!, {
     checkInDate: '2099-01-03',
     checkOutDate: '2099-01-06',
+    rooms: state.hotel.rooms,
   });
   expect(salesHotelValid(state)).toBe(true);
   expect(salesPayload(state).hotelSelection?.additionalStays).toEqual(

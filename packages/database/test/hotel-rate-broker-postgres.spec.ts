@@ -82,6 +82,50 @@ it.skipIf(process.env.HOTEL_RATE_BROKER_TEST !== '1')(
         '23514',
       );
       await rejects('DELETE FROM master_hotels WHERE id=$1', [hotel], '23001');
+      await db.query('CREATE TABLE master_room_types(id UUID PRIMARY KEY)');
+      await db.query(
+        readFileSync(
+          resolve(
+            process.cwd(),
+            'prisma/migrations/20261027120000_sales_hotel_stay_rooms/migration.sql',
+          ),
+          'utf8',
+        ),
+      );
+      const roomType = randomUUID();
+      await db.query('INSERT INTO master_room_types VALUES ($1)', [roomType]);
+      const stay = (await db.query('SELECT id FROM sales_contract_hotel_stays'))
+        .rows[0].id;
+      const roomInsert =
+        'INSERT INTO sales_contract_hotel_stay_rooms(stay_id,ordinal,room_type_id,room_type_name_snapshot,adults,child_ages) VALUES($1,$2,$3,$4,$5,$6)';
+      await db.query(roomInsert, [stay, 1, roomType, 'Suite', 2, '[4,9]']);
+      await rejects(
+        roomInsert,
+        [stay, 1, roomType, 'Duplicate', 1, '[]'],
+        '23505',
+      );
+      await rejects(
+        roomInsert,
+        [stay, 2, randomUUID(), 'Missing', 1, '[]'],
+        '23503',
+      );
+      await rejects(
+        roomInsert,
+        [stay, 2, roomType, 'Invalid', 0, '[]'],
+        '23514',
+      );
+      await rejects(
+        'DELETE FROM master_room_types WHERE id=$1',
+        [roomType],
+        '23001',
+      );
+      expect(
+        (
+          await db.query(
+            'SELECT adults, child_ages FROM sales_contract_hotel_stay_rooms',
+          )
+        ).rows,
+      ).toEqual([{ adults: 2, child_ages: [4, 9] }]);
       expect(
         (
           await db.query(
@@ -95,6 +139,10 @@ it.skipIf(process.env.HOTEL_RATE_BROKER_TEST !== '1')(
       );
       expect(
         (await db.query('SELECT * FROM sales_contract_hotel_stays')).rowCount,
+      ).toBe(0);
+      expect(
+        (await db.query('SELECT * FROM sales_contract_hotel_stay_rooms'))
+          .rowCount,
       ).toBe(0);
     } finally {
       await db.query('ROLLBACK');

@@ -2360,22 +2360,23 @@ model MasterMealService {
 }
 
 model MasterRoomType {
+  salesHotelStayRooms       SalesContractHotelStayRoom[]
   salesHotelRooms           SalesContractHotelRoom[]
-  id                        String                     @id @default(uuid()) @db.Uuid
-  code                      String                     @unique @db.VarChar(32)
-  name                      String                     @db.VarChar(160)
-  englishName               String?                    @db.VarChar(160)
+  id                        String                       @id @default(uuid()) @db.Uuid
+  code                      String                       @unique @db.VarChar(32)
+  name                      String                       @db.VarChar(160)
+  englishName               String?                      @db.VarChar(160)
   referenceCapacity         Int?
-  usageDescription          String?                    @db.VarChar(500)
-  displayOrder              Int                        @default(0)
-  isActive                  Boolean                    @default(true)
-  version                   Int                        @default(1)
-  createdByUserId           String                     @db.Uuid
-  updatedByUserId           String                     @db.Uuid
-  deactivatedByUserId       String?                    @db.Uuid
-  deactivatedAt             DateTime?                  @db.Timestamptz(3)
-  createdAt                 DateTime                   @default(now()) @db.Timestamptz(3)
-  updatedAt                 DateTime                   @updatedAt @db.Timestamptz(3)
+  usageDescription          String?                      @db.VarChar(500)
+  displayOrder              Int                          @default(0)
+  isActive                  Boolean                      @default(true)
+  version                   Int                          @default(1)
+  createdByUserId           String                       @db.Uuid
+  updatedByUserId           String                       @db.Uuid
+  deactivatedByUserId       String?                      @db.Uuid
+  deactivatedAt             DateTime?                    @db.Timestamptz(3)
+  createdAt                 DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime                     @updatedAt @db.Timestamptz(3)
   hotels                    MasterHotel[]
   hotelLinks                MasterHotelRoomType[]
   reservationHotelRoomRates ReservationHotelRoomRate[]
@@ -4137,22 +4138,39 @@ model SalesContractHotelSelection {
 }
 
 model SalesContractHotelStay {
-  id                String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  hotelSelectionId  String                      @map("hotel_selection_id") @db.Uuid
+  rooms             SalesContractHotelStayRoom[]
+  id                String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotelSelectionId  String                       @map("hotel_selection_id") @db.Uuid
   ordinal           Int
-  hotelId           String                      @map("hotel_id") @db.Uuid
-  cityId            String                      @map("city_id") @db.Uuid
-  hotelNameSnapshot String                      @map("hotel_name_snapshot") @db.VarChar(240)
-  checkInDate       DateTime                    @map("check_in_date") @db.Date
-  checkOutDate      DateTime                    @map("check_out_date") @db.Date
-  selection         SalesContractHotelSelection @relation(fields: [hotelSelectionId], references: [id], onDelete: Cascade, map: "sales_contract_hotel_stays_selection_fkey")
-  hotel             MasterHotel                 @relation(fields: [hotelId], references: [id], onDelete: Restrict, map: "sales_contract_hotel_stays_hotel_fkey")
-  city              MasterCity                  @relation(fields: [cityId], references: [id], onDelete: Restrict, map: "sales_contract_hotel_stays_city_fkey")
+  hotelId           String                       @map("hotel_id") @db.Uuid
+  cityId            String                       @map("city_id") @db.Uuid
+  hotelNameSnapshot String                       @map("hotel_name_snapshot") @db.VarChar(240)
+  checkInDate       DateTime                     @map("check_in_date") @db.Date
+  checkOutDate      DateTime                     @map("check_out_date") @db.Date
+  selection         SalesContractHotelSelection  @relation(fields: [hotelSelectionId], references: [id], onDelete: Cascade, map: "sales_contract_hotel_stays_selection_fkey")
+  hotel             MasterHotel                  @relation(fields: [hotelId], references: [id], onDelete: Restrict, map: "sales_contract_hotel_stays_hotel_fkey")
+  city              MasterCity                   @relation(fields: [cityId], references: [id], onDelete: Restrict, map: "sales_contract_hotel_stays_city_fkey")
 
   @@unique([hotelSelectionId, ordinal])
   @@index([hotelId, checkInDate])
   @@index([cityId])
   @@map("sales_contract_hotel_stays")
+}
+
+model SalesContractHotelStayRoom {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stayId               String                 @map("stay_id") @db.Uuid
+  ordinal              Int
+  roomTypeId           String                 @map("room_type_id") @db.Uuid
+  roomTypeNameSnapshot String                 @map("room_type_name_snapshot") @db.VarChar(240)
+  adults               Int
+  childAges            Json                   @map("child_ages") @db.JsonB
+  stay                 SalesContractHotelStay @relation(fields: [stayId], references: [id], onDelete: Cascade)
+  roomType             MasterRoomType         @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+
+  @@unique([stayId, ordinal])
+  @@index([roomTypeId])
+  @@map("sales_contract_hotel_stay_rooms")
 }
 
 model SalesContractPriceComponent {

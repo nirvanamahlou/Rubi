@@ -283,6 +283,26 @@ export function ServiceParties({
       {state.serviceKinds.includes('HOTEL') && (
         <section className="grid gap-3 rounded-xl border p-4">
           <h3 className="font-bold">هتل و ترکیب هر اتاق</h3>
+          {!state.tour && (
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={Boolean(
+                  state.hotel.multiHotel || state.hotel.additionalStays?.length,
+                )}
+                onChange={(e) =>
+                  patch({
+                    hotel: {
+                      ...state.hotel,
+                      multiHotel: e.target.checked,
+                      ...(e.target.checked ? {} : { additionalStays: [] }),
+                    },
+                  })
+                }
+              />
+              هتل ترکیبی
+            </label>
+          )}
           <div className="grid grid-cols-[minmax(0,1fr)_6rem] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_9rem]">
             <div className="min-w-0">
               <ContractHotelPicker
@@ -300,7 +320,13 @@ export function ServiceParties({
                         hotels.find((h) => h.id === hotelId)?.attributes
                           .cityId ?? '',
                       ),
-                      additionalStays: [],
+                      additionalStays:
+                        state.hotel.multiHotel ||
+                        state.hotel.additionalStays?.length
+                          ? (state.hotel.additionalStays ?? []).filter(
+                              (stay) => stay.hotelId !== hotelId,
+                            )
+                          : [],
                       name: hotels.find((h) => h.id === hotelId)?.name ?? '',
                       rooms: [],
                       roomTypeId: '',

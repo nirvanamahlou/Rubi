@@ -37,6 +37,7 @@ import {
 } from '@nora/contracts';
 
 import type {
+  SalesHotelRoomV1,
   SalesBalance,
   SalesContractCreateRequest,
   SalesPassengerAgeCategory,
@@ -813,6 +814,33 @@ export function validateSalesContract(
       const ids = new Set([hotel.hotelId]);
       let previousOut = validDate(hotel.checkOutDate, 'Hotel check-out');
       for (const stay of hotel.additionalStays) {
+        if (
+          stay &&
+          stay.rooms !== undefined &&
+          (!Array.isArray(stay.rooms) ||
+            !validSalesHotelRooms(stay.rooms, stay.rooms.length) ||
+            stay.rooms.reduce(
+              (n: number, room: SalesHotelRoomV1) =>
+                n + room.adults + room.childAges.length,
+              0,
+            ) > hotel.occupancy ||
+            stay.rooms.some((room: SalesHotelRoomV1) =>
+              Object.keys(room).some(
+                (key) =>
+                  ![
+                    'ordinal',
+                    'roomTypeId',
+                    'roomTypeNameSnapshot',
+                    'adults',
+                    'childAges',
+                  ].includes(key),
+              ),
+            ))
+        )
+          throw new SalesDomainError(
+            'SALES_HOTEL_INVALID',
+            'ترکیب اتاق‌ها معتبر نیست.',
+          );
         if (
           !stay ||
           !UUID.test(stay.hotelId) ||

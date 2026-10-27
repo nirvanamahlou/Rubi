@@ -55,41 +55,6 @@ export function HotelStayDates({
           }
         />
       </FormField>
-      {(state.hotel.additionalStays ?? []).map((stay, index) => (
-        <section
-          key={`${stay.hotelId}-${index}`}
-          className="grid gap-3 rounded-xl border p-3 md:col-span-2 md:grid-cols-2"
-        >
-          <h4 className="font-bold md:col-span-2">{stay.hotelNameSnapshot}</h4>
-          {(['checkInDate', 'checkOutDate'] as const).map((field) => (
-            <FormField
-              key={field}
-              label={
-                field === 'checkInDate' ? 'ورود (چک‌این)' : 'خروج (چک‌اوت)'
-              }
-              required
-            >
-              <DatePicker
-                calendarSystem={salesHotelCalendarSystem(state)}
-                value={stay[field]}
-                onChange={(value) =>
-                  patchState({
-                    hotel: {
-                      ...state.hotel,
-                      additionalStays: state.hotel.additionalStays!.map(
-                        (item, position) =>
-                          position === index
-                            ? { ...item, [field]: value }
-                            : item,
-                      ),
-                    },
-                  })
-                }
-              />
-            </FormField>
-          ))}
-        </section>
-      ))}
     </section>
   );
 }
