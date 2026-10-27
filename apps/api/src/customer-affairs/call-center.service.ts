@@ -18,6 +18,7 @@ import { DatabaseService } from '../database/database.service';
 import { CallCenterCrypto } from './call-center.crypto';
 import { CallCenterAccessService } from './call-center-access.service';
 import { HrCallAnswerDirectory } from '../hr/hr-call-answer-directory';
+import type { TelephonyTechnical } from './telephony-state';
 import type {
   CallCenterCallDto,
   CallCenterListDto,
@@ -141,6 +142,91 @@ export class CallCenterService {
       ticketId: call.ticketId,
     };
   }
+  /** Read-only repair of legacy outbound display; recorded identity snapshots win. */
+  async hydrateDestinations<
+    T extends {
+      id: string;
+      origin: string | null;
+      direction: string;
+      answerRecipient?: CallAnswerRecipient;
+    },
+  >(
+    branchId: string,
+    calls: T[],
+    tx?: Prisma.TransactionClient,
+  ): Promise<(T & { answerRecipient?: CallAnswerRecipient })[]> {
+    const missing = calls.filter(
+      (call) =>
+        call.origin === 'TELEPHONY' &&
+        call.direction === 'OUTBOUND' &&
+        (!call.answerRecipient ||
+          call.answerRecipient.label ===
+            `داخلی ${call.answerRecipient.extension}`),
+    );
+    if (!missing.length) return calls;
+    const sessions = await (
+      tx ?? this.database.client
+    ).callCenterTelephonySession.findMany({
+      where: {
+        call: { contact: { branchId } },
+        callId: { in: missing.map((call) => call.id) },
+      },
+    });
+    const results = new Map<string, CallAnswerRecipient>();
+    const labels = new Map<
+      string,
+      Awaited<ReturnType<HrCallAnswerDirectory['resolve']>>
+    >();
+    for (const call of missing) {
+      const matches = sessions.filter((session) => session.callId === call.id);
+      if (matches.length !== 1) continue;
+      const session = matches[0]!;
+      const technical = this.crypto.decrypt<TelephonyTechnical>(
+        session.encryptedTechnical,
+        session.keyVersion,
+        `telephony:${session.id}`,
+      );
+      if (technical.first.direction !== 'OUT') continue;
+      const extension =
+        call.answerRecipient?.extension ?? technical.first.extension;
+      if (!extension || !/^\d{1,16}$/.test(extension)) continue;
+      // Never derive a person from an editable operator label or a different call leg.
+      if (
+        extension !== technical.first.extension &&
+        extension !== technical.lastAnswer?.extension
+      )
+        continue;
+      const observedAt = technical.first.occurredAt;
+      const key = `${session.connectionId}:${extension}`;
+      let recipient = labels.get(key);
+      if (!recipient) {
+        recipient = await this.answerDirectory.resolve(
+          branchId,
+          extension,
+          observedAt,
+          tx,
+          session.connectionId,
+        );
+        labels.set(key, recipient);
+      }
+      if (recipient.label === `داخلی ${extension}`) continue;
+      results.set(call.id, {
+        ...recipient,
+        answeredAt:
+          call.answerRecipient?.answeredAt ??
+          (technical.lastAnswer?.extension === extension
+            ? technical.lastAnswer.at
+            : null),
+        observedAt,
+        labelSource: 'CURRENT_DIRECTORY',
+      });
+    }
+    return calls.map((call) =>
+      results.has(call.id)
+        ? { ...call, answerRecipient: results.get(call.id)! }
+        : call,
+    );
+  }
   presentNote(row: StoredNote) {
     return {
       id: row.id,
@@ -207,7 +293,11 @@ export class CallCenterService {
       where: { id, contact: await this.access.where(actor, branchId) },
     });
     if (!row) throw new NotFoundException();
-    return { data: this.presentCall(row) };
+    return {
+      data: (
+        await this.hydrateDestinations(branchId, [this.presentCall(row)])
+      )[0]!,
+    };
   }
   async create(
     input: CallCenterCallDto,

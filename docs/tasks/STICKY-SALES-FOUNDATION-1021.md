@@ -3,7 +3,7 @@
 PC-C; branch codex/pc-c-sticky-sales-foundation-1021, based on2efa0082.
 Owner requests all feasible work before SSH: learn the actual answering extension,
 retain private caller-to-last-answer history, prepare selection/fallback logic and
-tests. Approved policy: prefer the previous available agent for20seconds, then
+tests. Approved policy: prefer the previous available agent for10seconds, then
 normal sales queue1002. No approved UI change or popup activation.
 
 ## Delivered implementation
@@ -51,7 +51,7 @@ availability must never be wired to this port as trusted evidence.
 
 Decision results:
 
-- PREFER: exact eligible extension, ringSeconds20, fallbackQueue1002 (or the
+- PREFER: exact eligible extension, ringSeconds10, fallbackQueue1002 (or the
   explicitly configured authorized input queue in tests/other deployments).
 - FALLBACK: invalid/hidden number, absent history, stale/unknown availability,
   missing/inactive/ambiguous member, busy/paused agent, ambiguous answer order,
@@ -93,7 +93,7 @@ API/database builds pass. Test facts use fictitious identities only.
    AgentConnect, so simply adding Dial() would break current ERP capture. Either
    preserve the queue event path or implement/test explicit canonical facts for
    that path before activation. No invented dialplan payload is installed now.
-4. Prefer only a current sales member; recheck availability, attempt at most20s,
+4. Prefer only a current sales member; recheck availability, attempt at most10s,
    then invoke the verified original sales route. No history, timeout, unavailable
    ERP or ambiguous data must continue to normal queue1002 without looping.
 5. Test two calls from a controlled number, busy/paused/offline/no-answer cases,
@@ -138,3 +138,5 @@ runtime if needed; retain the additive table/history, do not reverse data writes
 Actual preferential PBX routing remains inactive, pending SSH/config inspection
 and real acceptance. No popup, Web change, grant/mapping, PR/merge or production
 rollout. Source/schema reservation released on commit and push.
+
+2026-10-25 policy update: user shortened the preferred-agent ringing budget from20 to10 seconds; fallback queue1002 and SSH/real-call acceptance requirements remain.

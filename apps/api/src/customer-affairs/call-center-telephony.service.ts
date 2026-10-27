@@ -195,6 +195,21 @@ export class CallCenterTelephonyService {
             ? `داخلی ${event.extension}`
             : '',
         note: '',
+        ...(event.direction === 'OUT' && event.extension && this.answerDirectory
+          ? {
+              answerRecipient: {
+                ...(await this.answerDirectory.resolve(
+                  context.branchId,
+                  event.extension,
+                  event.occurredAt,
+                  tx,
+                  event.connectionId,
+                )),
+                answeredAt: null,
+                observedAt: event.occurredAt,
+              },
+            }
+          : {}),
       };
       await tx.callCenterCall.create({
         data: {

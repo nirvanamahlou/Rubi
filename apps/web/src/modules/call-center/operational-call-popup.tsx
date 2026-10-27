@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { CallForm } from './call-form';
+import { HostedCallForm } from './call-form-host';
 import { callCenterRequest } from './client';
 import type { AttentionCall } from './telephony-attention';
 import type { Call } from './model';
@@ -101,7 +101,7 @@ export function OperationalCallPopup({
   const previous = { ...call };
   if (!canLinkRequests) delete previous.contactId;
   return (
-    <CallForm
+    <HostedCallForm
       key={call.id}
       branchId={branch}
       event={call}

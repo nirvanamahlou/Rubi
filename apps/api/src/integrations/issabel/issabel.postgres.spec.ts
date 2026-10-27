@@ -923,7 +923,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         expect(await choose()).toMatchObject({
           kind: 'PREFER',
           extension: '105',
-          ringSeconds: 20,
+          ringSeconds: 10,
           fallbackQueue: 'sales-test',
         });
         await emit(roots[1]!, 'QueueCallerJoin', '115', now - 15000);
