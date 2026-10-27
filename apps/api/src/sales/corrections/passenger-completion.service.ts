@@ -196,10 +196,15 @@ export class PassengerCompletionService {
         category: 'ADT' | 'CHD' | 'INF';
       }
     > = [];
+    const readActor =
+      !actor.permissions.includes('customers.sensitive.read') &&
+      actor.permissions.includes('sales.contracts.create')
+        ? this.customers.salesEntryActor(actor)
+        : actor;
     for (const person of command.passengers) {
       const { data } = await this.customers.detail(
         person.customerId,
-        actor,
+        readActor,
         undefined,
         'customer-verification',
       );

@@ -7815,3 +7815,7 @@ Foreign hotel-only guest entry matches flight identity fields; passport number a
 ## CONTRACT-OPTIONAL-BIRTH-1027 — PC-A
 
 New-contract DOB is optional in every people-entry table and continuation path. The Sales-only Customer policy permits NULL birth dates while ordinary Customer creation stays strict. Web sends the booked category from selected composition when DOB is absent; API validates and persists the existing nullable Sales passenger date plus category. No generated birth date or schema migration. Known dates, seat/party counts, hotel/visa slots and explicit identity facts retain their checks; pricing/guest labels read booked category for unknown DOB.644 Web Sales tests/one existing skip,343 API tests,2 contract and final61 people/3 English checks pass; API/Web builds, API typecheck and scoped lint pass. User authorizes develop merge and backed-up Avina rollout after exact-head CI.
+
+## CONTRACT-SENSITIVE-READ-1027 — PC-A
+
+Contract creators now reuse the existing request-local Customer Sales-entry read capability for authorized contract passenger correction and completion. Ownership, branch, route checks and customer-verification audit context remain enforced; ordinary Customer endpoints and stored IAM permissions are unchanged.42 targeted tests pass, including own-contract access and other-contract denial. No migration, dependency or global permission grant. User authorizes develop merge and backed-up Avina deployment after required hosted checks.
