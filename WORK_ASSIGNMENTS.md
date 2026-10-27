@@ -1,3 +1,11 @@
+## VOUCHER-TRANSFER-OVERRIDES-1027 — PC-A — READY_FOR_CI
+
+CI follow-up reserves the matching offline API translation for the hotel-supplier validation message. Full Web suite passed4066 tests; its catalogue-sync regression identified this missing entry. No behavior or permission change; all final-head gates rerun before merge.
+
+Bounded shared-source reservation also includes the five new Web English override entries, DECISIONS.md authorization note and own status entry. API39 focused tests and scoped API/Web lint passed; local translation inventory has no missing entries. Full final-head checks remain mandatory; sources freeze/release upon publication.
+
+COMPUTER_ID=PC-A; branch codex/pc-a-voucher-transfer-overrides-1027 from develop296d2d35f. Owner authorizes independent transfer supplier/leader/Board with existing automatic defaults, optional per-voucher overrides and no mandatory leader when transfer is absent, then develop merge. Reserve Reservations voucher leader editor/workflow controls/settings normalization, optional additive VoucherSettingsV1 transfer supplier/name/manual override fields, controller directory validation and pure transition guards, focused tests and own English/status notes. Preserve hotel supplier sent-form identity, audited reference/contact access, finance/document release, branch/CAS/insurance guards and immutable sent snapshots. Existing producer/consumer ship backwards-compatible optional fields together; no schema/migration/dependency, operational data or deployment changes. Prior affected source is merged/released; no active overlapping target writer found. Final-head full checks gate authorized merge.
+
 ## PASSENGER-EDIT-PRICING-1027 — PC-A — READY_FOR_CI
 
 Integration with develop282d6ae35 preserves the newly merged membership and room editing controls, filters identity saves to retained customer IDs, and retains the prior identity-only noncommercial path. Combined membership/room/identity/read-only regressions22 pass; final integrated-head CI gates merge.

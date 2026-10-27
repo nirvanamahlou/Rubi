@@ -327,7 +327,7 @@ export function TravelWorkflowForm({
             </section>
           )}
           {(state.voucherIssued || hasSentReservationForm(state)) &&
-            (state.voucherIssued || state.voucherSettings?.leaderId) &&
+            (state.voucherIssued || state.voucherSettings?.brokerId) &&
             !settingsDirty && (
               <TravelDocument
                 key={`${intake.id}:${state.version}`}
@@ -484,7 +484,6 @@ export function TravelWorkflowForm({
                     busy ||
                     settingsDirty ||
                     !state.voucherSettings?.brokerId ||
-                    !state.voucherSettings?.leaderId ||
                     !hasSentReservationForm(state) ||
                     state.supplierStatus !== 'REQUESTED' ||
                     (!state.insuranceIssued && !acknowledge)
@@ -509,7 +508,6 @@ export function TravelWorkflowForm({
                   busy ||
                   settingsDirty ||
                   !state.voucherSettings?.brokerId ||
-                  !state.voucherSettings?.leaderId ||
                   !hasSentReservationForm(state) ||
                   !['REQUESTED', 'CONFIRMED'].includes(state.supplierStatus) ||
                   (!state.insuranceIssued && !acknowledge)
