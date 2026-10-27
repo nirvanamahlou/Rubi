@@ -9776,3 +9776,9 @@ RESERVATION-OLDEST-FIRST-1026 verification: 61 focused tests passed, including r
 COMPUTER_ID=PC-B; branch codex/pc-b-header-profile-photo-1026 from origin/develop59c59506. Owner requests shared header avatar use persisted Workbench photo, otherwise solid blue without initials, and explicitly authorizes push/develop merge. Reserve user-menu.tsx and its direct existing spec plus own status notes. Prior session-stability header scope published/released; preserve its identity/error handling. No IAM producer/API/schema/dependency or runtime changes.
 
 HEADER-PROFILE-PHOTO-1026 ready for review:5 menu integration tests and scoped lint pass. Photo request sequencing, session-recovery reload and blank fallback retained; no initial-letter rendering. Source scope frozen/released at publication; hosted gates precede authorized merge.
+
+## RESERVATION-SERVICE-GROUPS-1027 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-service-groups-1027 from origin/develop f4b2f801e. Reserve Reservations foundation service presentation helper/component, model/live-feed optional local view projection, workspace service-cell rendering/CSS, focused tests and own docs. Previous oldest-first PR1139 merged; its frozen source lock released. Group exact snapshot service kinds, retain titles and unknown kinds, deduplicate only within category. No API/schema/dependency/migration/IAM/runtime changes. Owner explicitly authorizes develop merge after checks.
+
+RESERVATION-SERVICE-GROUPS-1027 verification:32 focused tests passed, scoped ESLint passed. Source scope freezes/releases with publication; full Web typecheck/build and exact-head hosted gates required before authorized develop merge. No operational deployment requested.
