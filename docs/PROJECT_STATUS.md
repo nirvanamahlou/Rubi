@@ -1,3 +1,7 @@
+## TICKET-WEEKDAY-MOVE-1027 — PC-A
+
+Published weekday edit now has an independent Change day control with target weekday and old/new departure-date preview. Existing same-direction rows move together within the Saturday-Friday week; both instants shift equally, preserving overnight arrival, classes/capacity/routes/baggage/limits and identity/version. Saved per-row facts are used, independently of unsaved edits. Existing authorized atomic batch boundary rejects duplicate identities/stale versions/active holds without partial saves. No backend/API/schema/dependency/data/runtime changes. Thirteen focused tests passed; final Ticket Catalog, English, lint, types/build and exact-head hosted gates precede authorized develop merge.
+
 ## UNIFIED-CONTRACT-HOTEL-PICKER-1026 — PC-A — READY_FOR_CI
 
 Composite hotels now appear in the contract's ordinary Hotel dropdown in both room-composition and legacy-detail paths; the separate composite-loading panel is removed. Selecting a composite still expands its ordered real hotels and independently entered dates, while ordinary hotel selection and Tour restrictions retain their existing behavior. Distinct option IDs prevent ordinary/composite identity collisions, and reference refresh covers both lists.52 targeted selection, room-party, payload and restore tests plus scoped lint pass. Final-head CI gates owner-authorized push/develop merge; no API/schema/migration/dependency or runtime rollout.

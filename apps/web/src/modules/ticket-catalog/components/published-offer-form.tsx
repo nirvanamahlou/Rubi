@@ -22,7 +22,13 @@ import {
 } from '../model/published-catalog';
 import { TicketDatePicker } from './ticket-date-picker';
 import { ManifestTemplatePicker } from './manifest-template-picker';
-import { loadWeekdayRevisions } from '../model/load-weekday-edit';
+import {
+  loadWeekdayRevisions,
+  loadWeekdayMoveRevisions,
+  offerWeekday,
+  weekdayMoveDays,
+} from '../model/load-weekday-edit';
+import { scheduleWeekdays } from '../model/weekday-schedule';
 import { TicketBaggageFields } from './ticket-baggage-fields';
 import { ReferencePicker } from './reference-picker';
 export function tehranWallTime(instant: string) {
@@ -77,6 +83,30 @@ export function PublishedOfferForm({
   const [problem, setProblem] = useState('');
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
+  const [targetWeekday, setTargetWeekday] = useState(
+    offerWeekday(offer.departureAt),
+  );
+  const shiftDays = weekdayMoveDays(offer.departureAt, targetWeekday);
+
+  async function moveWeekday() {
+    if (readOnly || savingRef.current || !weekdayOffers || !shiftDays) return;
+    savingRef.current = true;
+    setSaving(true);
+    setProblem('');
+    try {
+      await toursApi.reviseOfferBatch(
+        loadWeekdayMoveRevisions(offer, weekdayOffers, targetWeekday),
+      );
+      await onSaved();
+    } catch (error) {
+      setProblem(
+        error instanceof Error ? error.message : 'ویرایش بلیط ناموفق بود.',
+      );
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  }
 
   function changeDeparture(value: string) {
     setDeparture(value);
@@ -402,6 +432,53 @@ export function PublishedOfferForm({
           ذخیره تغییرات
         </Button>
       )}
+      {weekdayOffers && !readOnly ? (
+        <fieldset className="space-y-3 rounded-lg border p-3" disabled={saving}>
+          <legend className="px-1 font-semibold">تغییر روز</legend>
+          <p className="text-sm text-muted-foreground">
+            پروازهای همین روز و مسیر، با اطلاعات ثبت‌شده در همان هفته جابه‌جا
+            می‌شوند؛ ساعت‌ها و سایر اطلاعات حفظ می‌شوند.
+          </p>
+          <FormField label="روز جدید">
+            <select
+              aria-label="روز جدید"
+              className="h-10 w-full rounded-md border bg-background px-3"
+              value={targetWeekday}
+              onChange={(event) => {
+                setTargetWeekday(Number(event.target.value));
+                setProblem('');
+              }}
+            >
+              {scheduleWeekdays.map((day) => (
+                <option key={day.day} value={day.day}>
+                  {day.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
+          {shiftDays !== 0 ? (
+            <p dir="ltr" className="text-center text-sm">
+              <time>{initialDeparture.slice(0, 10)}</time>
+              {' → '}
+              <time>
+                {tehranWallTime(
+                  new Date(
+                    Date.parse(offer.departureAt) + shiftDays * 86400000,
+                  ).toISOString(),
+                ).slice(0, 10)}
+              </time>
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            loading={saving}
+            disabled={saving || !shiftDays}
+            onClick={() => void moveWeekday()}
+          >
+            تغییر روز
+          </Button>
+        </fieldset>
+      ) : null}
     </form>
   );
 }
