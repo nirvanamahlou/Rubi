@@ -60,3 +60,72 @@ it('validates itinerary hotels through the Master Data owner without rewriting s
     'Invalid hotel itinerary',
   );
 });
+
+it('rejects an additional hotel room type belonging to another hotel, including changes on an existing itinerary', async () => {
+  const detail = vi.fn(async (resource: string, id: string) => ({
+    data:
+      resource === 'hotels'
+        ? {
+            id,
+            status: 'active',
+            name: id,
+            attributes: {
+              cityId: id + '-city',
+              roomTypeIds: id === 'second' ? 'suite' : 'single',
+            },
+          }
+        : { id, status: 'active', name: id, attributes: {} },
+  }));
+  const service = new SalesService(
+    {} as never,
+    {} as never,
+    {} as never,
+    undefined,
+    undefined,
+    undefined,
+    { detail } as never,
+  ) as unknown as {
+    assertAdditionalHotelStays(
+      input: SalesContractCreateRequest,
+      previous?: SalesContractCreateRequest['hotelSelection'],
+    ): Promise<void>;
+  };
+  const hotelSelection = {
+    hotelId: 'first',
+    cityId: 'first-city',
+    hotelNameSnapshot: 'first',
+    checkInDate: '2099-01-01',
+    checkOutDate: '2099-01-03',
+    additionalStays: [
+      {
+        hotelId: 'second',
+        cityId: 'second-city',
+        hotelNameSnapshot: 'second',
+        checkInDate: '2099-01-03',
+        checkOutDate: '2099-01-06',
+        rooms: [
+          {
+            ordinal: 1,
+            roomTypeId: 'suite',
+            roomTypeNameSnapshot: 'suite',
+            adults: 2,
+            childAges: [],
+          },
+        ],
+      },
+    ],
+  };
+  const input = {
+    services: [],
+    hotelSelection,
+  } as unknown as SalesContractCreateRequest;
+  await expect(
+    service.assertAdditionalHotelStays(input),
+  ).resolves.toBeUndefined();
+  const previous = structuredClone(input.hotelSelection);
+  hotelSelection.additionalStays[0]!.rooms[0]!.roomTypeId = 'single';
+  hotelSelection.additionalStays[0]!.rooms[0]!.roomTypeNameSnapshot = 'single';
+  await expect(
+    service.assertAdditionalHotelStays(input, previous),
+  ).rejects.toThrow('نوع اتاق');
+});

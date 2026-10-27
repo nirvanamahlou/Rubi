@@ -11,6 +11,15 @@ describe('Saved contract print output', () => {
         hotelNameSnapshot: 'SECOND <HOTEL>',
         checkInDate: '2026-10-04',
         checkOutDate: '2026-10-08',
+        rooms: [
+          {
+            ordinal: 1,
+            roomTypeId: 'room-two',
+            roomTypeNameSnapshot: 'Suite <SEA>',
+            adults: 2,
+            childAges: [4],
+          },
+        ],
       },
     ];
     const before = structuredClone(output);
@@ -21,6 +30,9 @@ describe('Saved contract print output', () => {
     expect(html).toContain('SECOND &lt;HOTEL&gt;');
     expect(html).toContain('City Two');
     expect(html).toContain('اقامت‌های بعدی');
+    expect(html).toContain('Suite &lt;SEA&gt;');
+    expect(html).toContain('2 بزرگسال');
+    expect(html).toContain('3 نفر');
     expect(output).toEqual(before);
   });
   it('shows the saved cheque policy and total including interest without changing passenger service prices', () => {

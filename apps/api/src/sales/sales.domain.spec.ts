@@ -108,6 +108,19 @@ it('keeps composite hotel stays ordered with explicit independent dates and no d
   expect(() => validateSalesContract(input)).not.toThrow();
   expect(input.priceComponents).toEqual(draft.priceComponents);
   const stay = input.hotelSelection.additionalStays![0]!;
+  stay.rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: input.hotelSelection.roomTypeId,
+      roomTypeNameSnapshot: 'Single',
+      adults: 1,
+      childAges: [],
+    },
+  ];
+  expect(() => validateSalesContract(input)).not.toThrow();
+  stay.rooms[0]!.adults = 2;
+  expect(() => validateSalesContract(input)).toThrow('اتاق');
+  stay.rooms[0]!.adults = 1;
   stay.checkInDate = '';
   expect(() => validateSalesContract(input)).toThrow();
   stay.checkInDate = '2026-10-02';

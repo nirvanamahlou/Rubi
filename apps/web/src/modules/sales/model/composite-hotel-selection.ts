@@ -77,6 +77,7 @@ export function withCompositeHotel(
     hotelChildAssignments: {},
     hotel: {
       ...state.hotel,
+      multiHotel: true,
       hotelId: first.hotelId,
       name: first.hotelNameSnapshot,
       cityId: first.cityId,
@@ -87,7 +88,7 @@ export function withCompositeHotel(
       roomTypeId: '',
       rooms: [],
       guestCustomerIds: undefined,
-      additionalStays: stays.slice(1),
+      additionalStays: stays.slice(1).map((stay) => ({ ...stay, rooms: [] })),
     },
   };
 }

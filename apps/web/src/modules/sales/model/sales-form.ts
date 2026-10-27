@@ -216,8 +216,19 @@ export interface SalesFormState {
   };
   hotelChildAssignments?: Record<string, (string | null)[]> | undefined;
   hotel: {
+    multiHotel?: boolean;
     cityId?: string;
     additionalStays?: Array<{
+      rooms?: Array<
+        Pick<
+          SalesHotelRoomV1,
+          | 'ordinal'
+          | 'roomTypeId'
+          | 'roomTypeNameSnapshot'
+          | 'adults'
+          | 'childAges'
+        >
+      >;
       hotelId: string;
       hotelNameSnapshot: string;
       cityId: string;
@@ -1238,6 +1249,8 @@ export function salesHotelRoomTypes(
 }
 
 export function salesHotelValid(state: SalesFormState): boolean {
+  if (state.hotel.multiHotel && !state.hotel.additionalStays?.length)
+    return false;
   let previousOut = state.hotel.checkOut;
   const stayIds = new Set([state.hotel.hotelId]);
   for (const stay of state.hotel.additionalStays ?? []) {
@@ -1249,6 +1262,29 @@ export function salesHotelValid(state: SalesFormState): boolean {
       !stay.checkOutDate ||
       stay.checkOutDate <= stay.checkInDate ||
       stay.checkInDate < previousOut
+    )
+      return false;
+    if (
+      stay.rooms !== undefined &&
+      (!stay.rooms.length ||
+        stay.rooms.length > 50 ||
+        stay.rooms.some(
+          (room, index) =>
+            room.ordinal !== index + 1 ||
+            !room.roomTypeId ||
+            !room.roomTypeNameSnapshot ||
+            !Number.isInteger(room.adults) ||
+            room.adults < 1 ||
+            room.adults > 20 ||
+            room.childAges.length > 20 ||
+            room.childAges.some(
+              (age) => !Number.isInteger(age) || age < 0 || age > 14,
+            ),
+        ) ||
+        stay.rooms.reduce(
+          (n, room) => n + room.adults + room.childAges.length,
+          0,
+        ) > state.hotel.occupancy)
     )
       return false;
     previousOut = stay.checkOutDate;

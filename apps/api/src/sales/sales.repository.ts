@@ -37,7 +37,10 @@ export const salesDetailInclude = {
   hotelSelection: {
     include: {
       rooms: { orderBy: { ordinal: 'asc' } },
-      additionalStays: { orderBy: { ordinal: 'asc' } },
+      additionalStays: {
+        orderBy: { ordinal: 'asc' },
+        include: { rooms: { orderBy: { ordinal: 'asc' } } },
+      },
     },
   },
   priceComponents: { orderBy: { createdAt: 'asc' } },
@@ -625,6 +628,15 @@ export class SalesRepository {
                   hotelId: stay.hotelId,
                   cityId: stay.cityId,
                   hotelNameSnapshot: stay.hotelNameSnapshot,
+                  rooms: {
+                    create: (stay.rooms ?? []).map((room) => ({
+                      ordinal: room.ordinal,
+                      roomTypeId: room.roomTypeId,
+                      roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                      adults: room.adults,
+                      childAges: [...room.childAges],
+                    })),
+                  },
                   checkInDate: startOfDay(stay.checkInDate),
                   checkOutDate: startOfDay(stay.checkOutDate),
                 })),
@@ -904,6 +916,15 @@ export class SalesRepository {
                   hotelId: stay.hotelId,
                   cityId: stay.cityId,
                   hotelNameSnapshot: stay.hotelNameSnapshot,
+                  rooms: {
+                    create: (stay.rooms ?? []).map((room) => ({
+                      ordinal: room.ordinal,
+                      roomTypeId: room.roomTypeId,
+                      roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                      adults: room.adults,
+                      childAges: [...room.childAges],
+                    })),
+                  },
                   checkInDate: startOfDay(stay.checkInDate),
                   checkOutDate: startOfDay(stay.checkOutDate),
                 })),

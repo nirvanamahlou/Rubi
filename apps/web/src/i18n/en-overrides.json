@@ -1,4 +1,12 @@
 {
+  "اتاق‌ها و نفرات": "Rooms and guests",
+  "تعداد نفرات اتاق:": "Room guest count:",
+  "حذف هتل": "Remove hotel",
+  "تعداد کودک / نوزاد": "Children / infants",
+  "سن کودک / نوزاد": "Child / infant age",
+  "کودک ·": "children ·",
+  "نوع اتاق به هتل انتخاب‌شده متصل نیست.": "The room type is not linked to the selected hotel.",
+  "هتل‌های ترکیبی قرارداد": "Contract hotel itinerary",
   "تأیید درخواست مالی باید توسط شخص دیگری انجام شود.": "A financial request must be approved by someone other than its requester.",
   "شماره چک الزامی است.": "The cheque number is required.",
   "درخواست تازه باید منتظر اقدام کارشناس باشد.": "A new request must be awaiting agent action.",

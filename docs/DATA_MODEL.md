@@ -980,3 +980,7 @@ Finance-owned AccountingWorkflow stores immutable manual accounting evidence wit
 ## 2026-10-26 — Historical passenger completion without birth date
 
 SalesContractPassenger.birthDate is nullable only to represent an unknown real birth date during authorized historical passenger completion. Migration20261026170000 changes nullability without backfill, row removal or FK changes. Stored ageCategory preserves the booked ADT/CHD/INF slot; a supplied real birth date must agree. Current string-shaped Sales output uses an empty birthDate for unknown dates. Child age-band projections remain unknown when neither birth nor band is recorded. Customer profiles remain owned by Customer; normal new-contract creation still requires real birth dates. See tasks/COMPLETION-NAME-ONLY-1026.md.
+
+## Additional hotel stay room composition — 2026-10-27
+
+SalesContractHotelStayRoom belongs to SalesContractHotelStay and references the actual MasterRoomType. Ordered room snapshots retain adults and child ages independently per itinerary hotel. Unique(stayId, ordinal), restricted room-type deletion and cascade from the stay preserve integrity. Migration20261027120000 is additive; existing stays without room children remain valid historical records. SalesHotelStayInput.rooms is optional for old clients; omission during compatible amendment preserves existing room children. New explicit room lists are validated and do not create additional charges or supplier bookings. See tasks/CONTRACT-MULTI-HOTEL-1027.md.

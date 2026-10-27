@@ -813,6 +813,30 @@ export function validateSalesContract(
       let previousOut = validDate(hotel.checkOutDate, 'Hotel check-out');
       for (const stay of hotel.additionalStays) {
         if (
+          stay.rooms !== undefined &&
+          (!validSalesHotelRooms(stay.rooms, stay.rooms.length) ||
+            stay.rooms.reduce(
+              (n, room) => n + room.adults + room.childAges.length,
+              0,
+            ) > hotel.occupancy ||
+            stay.rooms.some((room) =>
+              Object.keys(room).some(
+                (key) =>
+                  ![
+                    'ordinal',
+                    'roomTypeId',
+                    'roomTypeNameSnapshot',
+                    'adults',
+                    'childAges',
+                  ].includes(key),
+              ),
+            ))
+        )
+          throw new SalesDomainError(
+            'SALES_HOTEL_INVALID',
+            'ترکیب اتاق‌ها معتبر نیست.',
+          );
+        if (
           !stay ||
           !UUID.test(stay.hotelId) ||
           !UUID.test(stay.cityId) ||
