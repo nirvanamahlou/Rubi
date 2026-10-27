@@ -1,13 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, type ClipboardEvent } from 'react';
-import {
-  Plus,
-  Trash2,
-  ArrowRight,
-  Save,
-  Settings2,
-  Download,
-} from 'lucide-react';
+import { Plus, Trash2, ArrowRight, Settings2, Download } from 'lucide-react';
 import {
   PAYROLL_COLUMNS,
   calculatePayroll,
@@ -111,7 +104,6 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
   const [list, setList] = useState<PayrollWorksheetSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [year, setYear] = useState('');
   const [month, setMonth] = useState('');
@@ -171,7 +163,6 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
       });
       setSheet(result);
       setSaved(payload);
-      setNotice('ذخیره شد.');
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'ذخیره انجام نشد.');
     } finally {
@@ -192,7 +183,6 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
     setSaved(JSON.stringify(snapshot(result)));
     setSaveError('');
     setQuery('');
-    setNotice('');
   }
   async function open(id: string) {
     if (busy || lock.current) return;
@@ -457,20 +447,6 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
                   onChange={(e) => setQuery(e.target.value)}
                 />
               </label>
-              <span role="status">
-                {saving
-                  ? 'در حال ذخیره…'
-                  : dirty
-                    ? 'تغییرات ذخیره‌نشده'
-                    : notice || 'ذخیره‌شده'}
-              </span>
-              <HrButton
-                disabled={!editable || !dirty || saving}
-                onClick={() => void save()}
-              >
-                <Save size={16} />
-                ذخیره
-              </HrButton>
             </div>
             <div
               className={styles.grid}
