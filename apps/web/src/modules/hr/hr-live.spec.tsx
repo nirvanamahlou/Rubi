@@ -55,7 +55,7 @@ describe('Live HR boundaries and consolidated workflows', () => {
   it('keeps legacy URLs in a single consolidated surface', () => {
     expect(canonicalHrLocation('finance', 'batch')).toEqual({
       section: 'payroll',
-      tab: 'batch',
+      tab: 'settings',
     });
     expect(canonicalHrLocation('contracts', 'termination')).toEqual({
       section: 'employees',

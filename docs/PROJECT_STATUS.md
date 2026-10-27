@@ -7819,3 +7819,10 @@ New-contract DOB is optional in every people-entry table and continuation path. 
 ## CONTRACT-SENSITIVE-READ-1027 — PC-A
 
 Contract creators now reuse the existing request-local Customer Sales-entry read capability for authorized contract passenger correction and completion. Ownership, branch, route checks and customer-verification audit context remain enforced; ordinary Customer endpoints and stored IAM permissions are unchanged.42 targeted tests pass, including own-contract access and other-contract denial. No migration, dependency or global permission grant. User authorizes develop merge and backed-up Avina deployment after required hosted checks.
+
+## HR-PAYROLL-SETTINGS-ONLY-1027 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B. User replaces the earlier period-form request with removal of payroll periods and payments/adjustments sections. Base origin/develop@d29d2365; reserve hr-navigation.ts, its regression spec, and own status notes. Keep payroll settings worksheet, existing stored records and backend contracts. No schema, dependency, migration or runtime change. User authorizes push and develop merge after checks; release bounded source reservation upon verified merge.
+
+
+HR-PAYROLL-SETTINGS-ONLY-1027 — IMPLEMENTED / CI_PENDING: payroll navigation now exposes settings only; all removed period/adjustment deep links resolve to settings, while employee settlements retain their profile destination. 33 focused navigation, employee-case and worksheet tests passed. No records, services or finance permissions removed. Source freezes on push and bounded reservations release after verified develop merge; full quality/tests/build/database gates remain required.
