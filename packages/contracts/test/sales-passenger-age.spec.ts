@@ -36,7 +36,7 @@ it('matches unknown guests to booked room slots without manufacturing birth date
     { birthDate: '2022-01-01', ageCategory: 'CHD' as const },
     { birthDate: '', ageCategory: 'INF' as const },
   ];
-  const before = structuredClone(people);
+  const before = people.map((person) => ({ ...person }));
   expect(salesHotelGuestAges(people, '2027-01-01', [15, 5, 1])).toEqual([
     15, 5, 1,
   ]);
