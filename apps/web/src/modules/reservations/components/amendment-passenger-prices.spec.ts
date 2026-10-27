@@ -303,3 +303,51 @@ it('keeps cheque fees separate and applies insurance extras only once while migr
     next.priceComponents.filter((p) => p.title !== SALES_CHEQUE_FEE)[0]!.amount,
   ).toBe('100000000');
 });
+
+it('retains explicitly recorded total-contract discount and commission on the first row', () => {
+  const old = {
+    ...draft,
+    services: [
+      { ...draft.services[0]!, metadata: { contractPackagePricingVersion: 1 } },
+    ],
+    passengers: draft.passengers.map((p) => {
+      const next = { ...p };
+      delete next.agreedPrices;
+      return next;
+    }),
+    priceComponents: [
+      {
+        type: 'BASE' as const,
+        title: 'مبلغ کل قرارداد',
+        currencyCode: 'USD',
+        amount: '100',
+      },
+      {
+        type: 'DISCOUNT' as const,
+        title: 'تخفیف قرارداد',
+        currencyCode: 'USD',
+        amount: '10',
+      },
+      {
+        type: 'DISCOUNT' as const,
+        title: 'کمیسیون قرارداد',
+        currencyCode: 'USD',
+        amount: '5',
+      },
+    ],
+  };
+  const next = prepareAmendmentPersonPrices(old);
+  expect(amendmentPassengerGross(next).a).toEqual([
+    { currencyCode: 'USD', amount: '100' },
+  ]);
+  expect(next.passengers[0]!.agreedPrices).toEqual([
+    { currencyCode: 'USD', amount: '85' },
+  ]);
+  expect(next.priceComponents[0]!.amount).toBe('85');
+  expect(
+    JSON.parse(String(next.services[0]!.metadata![PASSENGER_DEDUCTIONS])).a,
+  ).toEqual({
+    discount: { currencyCode: 'USD', amount: '10' },
+    commission: { currencyCode: 'USD', amount: '5' },
+  });
+});

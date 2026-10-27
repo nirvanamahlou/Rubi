@@ -36,6 +36,12 @@ export function amendmentPassengerGross(
         (sums.get(p.currencyCode) ?? 0n) +
           (p.type === 'DISCOUNT' ? -1n : 1n) * moneyUnits(p.amount),
       );
+    for (const values of Object.values(amendmentPricingDeductions(draft)))
+      for (const price of Object.values(values))
+        sums.set(
+          price.currencyCode,
+          (sums.get(price.currencyCode) ?? 0n) + moneyUnits(price.amount),
+        );
     for (const extra of draft.services.filter(
       (s) => s.metadata?.insuranceAgeSurcharge === true,
     ))
@@ -199,10 +205,32 @@ export function amendmentPricingRows(draft: SalesContractAmendmentV1) {
 export function amendmentPricingDeductions(
   draft: SalesContractAmendmentV1,
 ): PassengerDeductions {
-  return (
+  const saved =
     readLegacyRowPrices(draft.services)?.deductions ??
-    readPassengerDeductions(draft.services, draft.passengers)
-  );
+    readPassengerDeductions(draft.services, draft.passengers);
+  if (Object.keys(saved).length) return saved;
+  const first = amendmentPricingRows(draft)[0];
+  if (!first) return {};
+  const values: PassengerDeductions[string] = {};
+  for (const p of draft.priceComponents) {
+    const kind =
+      p.type === 'DISCOUNT' && p.title === 'تخفیف قرارداد'
+        ? 'discount'
+        : p.type === 'DISCOUNT' && p.title === 'کمیسیون قرارداد'
+          ? 'commission'
+          : null;
+    if (!kind) continue;
+    const old = values[kind];
+    if (old && old.currencyCode !== p.currencyCode)
+      throw Error('ارز هر مسافر باید معتبر و یکتا باشد.');
+    values[kind] = {
+      currencyCode: p.currencyCode,
+      amount: moneyDecimal(
+        moneyUnits(old?.amount ?? '0') + moneyUnits(p.amount),
+      ),
+    };
+  }
+  return Object.keys(values).length ? { [first.customerId]: values } : {};
 }
 export function prepareAmendmentPersonPrices(draft: SalesContractAmendmentV1) {
   return applyAmendmentPassengerPrices(
