@@ -9938,9 +9938,6 @@ CONTRACT-OPTIONAL-BIRTH-1027 verification:644 Web Sales tests/one existing skip,
 
 COMPUTER_ID=PC-B. User replaces the earlier period-form request with removal of payroll periods and payments/adjustments sections. Base origin/develop@d29d2365; reserve hr-navigation.ts, its regression spec, and own status notes. Keep payroll settings worksheet, existing stored records and backend contracts. No schema, dependency, migration or runtime change. User authorizes push and develop merge after checks; release bounded source reservation upon verified merge.
 
-
 HR-PAYROLL-SETTINGS-ONLY-1027 bounded scope also includes updating the existing hr-live.spec.tsx legacy finance link expectation to the retained settings destination.
 
-
 HR-PAYROLL-SETTINGS-ONLY-1027 — IMPLEMENTED / CI_PENDING: payroll navigation now exposes settings only; all removed period/adjustment deep links resolve to settings, while employee settlements retain their profile destination. 33 focused navigation, employee-case and worksheet tests passed. No records, services or finance permissions removed. Source freezes on push and bounded reservations release after verified develop merge; full quality/tests/build/database gates remain required.
-
