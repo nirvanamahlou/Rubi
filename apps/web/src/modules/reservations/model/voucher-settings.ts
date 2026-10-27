@@ -144,6 +144,10 @@ export function defaultVoucherSettings(
     passengers: defaults.passengers.map((passenger) => ({
       ...passenger,
       ...saved.passengers?.find((item) => item.id === passenger.id),
+      sex:
+        saved.passengers?.find((item) => item.id === passenger.id)?.sex ||
+        passenger.sex ||
+        '',
       hotelChildAgeBand:
         saved.passengers?.find((item) => item.id === passenger.id)
           ?.hotelChildAgeBand ??
@@ -362,9 +366,6 @@ export function supplierFormData(
           refs,
         ).passengers.map((person) => {
           const saved = settings.passengers.find((p) => p.id === person.id);
-          const room = settings.rooms?.find(
-            (r) => r.ordinal === saved?.roomOrdinal,
-          );
           return {
             ...person,
             hotelChildAgeBand: person.hotelChildAgeBand,
@@ -384,11 +385,6 @@ export function supplierFormData(
                       ? person.checkOut
                       : voucherDate(settings.text.checkOut)
                     : '-',
-                }
-              : {}),
-            ...(room && saved?.services?.hotel !== false
-              ? {
-                  name: `${person.name} / ROOM ${room.ordinal} - ${englishOutputName(room.roomTypeNameSnapshot, refs)}`,
                 }
               : {}),
           };
