@@ -457,6 +457,7 @@ export function PassengerCompletion({
                 'email',
               ]}
               columnLabels={{
+                nationalId: 'کد ملی',
                 passportFirstName: 'نام انگلیسی مطابق پاسپورت *',
                 passportLastName: 'نام خانوادگی انگلیسی مطابق پاسپورت *',
                 passportNumber: 'شماره پاسپورت',

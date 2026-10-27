@@ -297,9 +297,9 @@
   --tone-text: #ffffff;
 }
 .workspace [data-tone='red'] {
-  --tone-bg: #fee2e2;
-  --tone-edge: #dc2626;
-  --tone-text: #991b1b;
+  --tone-bg: #f87171;
+  --tone-edge: #b91c1c;
+  --tone-text: #450a0a;
 }
 .workspace [data-tone='neutral'] {
   --tone-bg: #f7faff;
@@ -416,9 +416,9 @@
   --tone-text: #f3f8fb;
 }
 :global(.dark) .workspace [data-tone='red'] {
-  --tone-bg: #482426;
-  --tone-edge: #ff9494;
-  --tone-text: #ffd7d7;
+  --tone-bg: #7f1d1d;
+  --tone-edge: #f87171;
+  --tone-text: #fef2f2;
 }
 :global(.dark) .workspace [data-tone='neutral'] {
   --tone-bg: #232327;

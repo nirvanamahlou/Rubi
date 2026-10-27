@@ -46,6 +46,7 @@ it('requires only first and last names when adding a correction passenger', () =
     passportLastName: 'TRAVELLER',
   });
   expect(completionPersonInput(row.person)).not.toHaveProperty('birthDate');
+  expect(completionPersonInput(row.person)).not.toHaveProperty('nationalId');
   expect(completionPersonInput(row.person)).not.toHaveProperty(
     'passportNumber',
   );
@@ -76,6 +77,9 @@ it('still validates a birth date or passport number when supplied', () => {
   row.person.values.birthDate = '';
   row.person.values.passportNumber = '!';
   expect(() => completionPersonInput(row.person)).toThrow('پاسپورت');
+  row.person.values.passportNumber = '';
+  row.person.values.nationalId = '123';
+  expect(() => completionPersonInput(row.person)).toThrow('کد ملی');
 });
 it('creates booked adult/child/infant slots and preserves per-leg service counts', () => {
   const rows = completionRows({

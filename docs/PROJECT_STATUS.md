@@ -7659,6 +7659,10 @@ Purchasing now displays each dated flight independently instead of pooling match
 
 Sales list adds separate outbound/return columns based on booked flight directions (Tehran day) or hotel-only check-in/out, honoring recorded independent service calendars. Summary API adds optional travelDates and passengerComposition without exposing birth dates. Adults, children2–6/6–12 and infants appear beneath the total; historical overlapping service parties use the existing maximum-party total without inventing missing child ages. Existing horizontal scroll, filters, monetary columns and scope checks remain. Web23 tests including translation coverage and API19 regression checks pass; affected lint/types/build and exact-head hosted gates precede owner-authorized develop merge. No migration/dependency/runtime/deployment change. Bounded source reservation releases on verified merge.
 
+## 2026-10-27 — PASSENGER-NATIONAL-OPTIONAL-1027 — PC-A
+
+Correction passenger completion now labels national ID without the inherited mandatory asterisk. The existing optionalFields and scoped name-only Customer creation policy already permit blank Iranian national IDs; supplied IDs still pass checksum/format validation. Ordinary new-contract policy remains unchanged. Existing focused completion regressions now explicitly assert omitted nationalId and reject a supplied malformed value. No API/schema/migration/dependency/runtime or production rollout change. Scoped lint/types and all exact-head hosted checks precede the owner-authorized develop merge; sources release on verified merge.
+
 ## 2026-10-25 — RESERVATION-CALENDAR-BASIS-1025 — PC-A — READY_FOR_CI
 
 Reservation contract-detail travel dates and flight timestamps now honor per-service dateCalendarSystem metadata; hotel-only route dates use the hotel's basis, flight legs can differ, and timestamp display consistently uses Tehran while date-only stays preserve their ISO day. Sales keeps each flight calendar choice in the browser draft and writes it, plus the existing independent hotel calendar, to service metadata without converting dates. Producer/consumer ship together; legacy snapshots without basis retain compatible flight Persian/hotel Gregorian defaults because the original choice was not stored. No migration, API shape, permission, operational database/runtime or deployment changes. Focused54 and Sales/hotel/draft33 tests plus scoped ESLint pass; full Web types/build and exact-head hosted gates precede user-authorized develop merge. Source locks freeze/release with publication.
@@ -7698,7 +7702,13 @@ Correction Add passenger now permits name-only profiles; all other identity/pass
 
 Shared header displays the persisted Workbench profile photo and an empty primary-blue circle when absent/unavailable, never name initials. Reload on profile-photo change and authenticated session recovery; ignore stale photo responses, release object URLs and hide failed images. Identity/session/logout behavior retained. Five existing menu integration checks and scoped ESLint pass; exact-head hosted quality/type/build/full tests/database gates precede authorized develop merge. No API/schema/dependency/runtime changes.
 
+<<<<<<< HEAD
 ## RESERVATION-SERVICE-GROUPS-1027 — PC-A
 
 Reservation services now render as compact category groups using snapshot kind/title pairs, retaining localized labels, unknown-service fallback and every distinct service title. Existing raw Excel values, filters, sorting and workflow actions remain unchanged. No API/schema/dependency/migration/runtime changes. Thirty-two focused tests passed; scoped lint passed; typecheck/build and exact-head hosted checks gate authorized develop merge.
 
+=======
+## CANCELLED-ROW-RED-1027 — PC-A — READY_FOR_REVIEW
+
+Cancelled reservation rows now use a stronger saturated red with dark readable text in light mode, and deeper red with light text in dark mode. Only six status palette values change; row dimensions, other status colors, blue selection/focus and notes/correction markers retain their rules. Contrast5.84:1 light /9.16:1 dark,29 existing workspace tests, scoped formatting and the production Web build with TypeScript pass. No API/schema/data/dependency/runtime changes; review PR only, no merge/deployment authorization in this request.
+>>>>>>> origin/develop
