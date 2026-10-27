@@ -7705,3 +7705,7 @@ Shared header displays the persisted Workbench profile photo and an empty primar
 ## PURCHASE-BEFORE-RESERVATION-SEND-1027 — PC-A
 
 Removed the purchase form instruction requiring supplier-form sending before purchase entry. A real sent form remains optional read-only context; an unsent draft is not presented as sent. Existing public purchase-context and atomic hotel/transfer purchase commands already accept unsent requests, so no server restriction or voucher guard was changed. Regression coverage adds initial hotel purchase from broker/currency/nightly entry to enabled submission and saved callback without workflow state, plus atomic hotel/transfer persistence with no workflow revisions. Permissions, contract nights, exact money, service assignments, CAS/replay and Finance routing are retained. Focused tests, lint/types and all hosted gates precede owner-authorized develop merge. No schema/migration/dependency or runtime/server rollout.
+
+## CANCELLED-ROW-RED-1027 — PC-A — READY_FOR_REVIEW
+
+Cancelled reservation rows now use a stronger saturated red with dark readable text in light mode, and deeper red with light text in dark mode. Only six status palette values change; row dimensions, other status colors, blue selection/focus and notes/correction markers retain their rules. Contrast5.84:1 light /9.16:1 dark,29 existing workspace tests, scoped formatting and the production Web build with TypeScript pass. No API/schema/data/dependency/runtime changes; review PR only, no merge/deployment authorization in this request.
