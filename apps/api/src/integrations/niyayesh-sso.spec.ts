@@ -48,6 +48,49 @@ function service() {
   return { service, iam, site };
 }
 describe('Nora current-session SSO authority', () => {
+  it('projects native import grants only when the independent Nora checkbox is enabled', async () => {
+    const { service: s, site } = service();
+    site.binding.mockResolvedValue({
+      user: { subject: actor.userId, resources: ['hotels'] },
+    });
+    Object.assign(site, {
+      importTarget: () => 'hotels',
+      canImport: (a: typeof actor) =>
+        a.permissions.includes(
+          screenPermission('integrations.niyayesh.import.hotels'),
+        ),
+    });
+    vi.spyOn(s, 'policy').mockResolvedValue({
+      enabled: true,
+      launchUrl: 'https://site.example/oidc/start',
+      serviceSecret: 'test-'.repeat(10),
+      organization: 'org',
+      system: 'site',
+      permissions: ['hotels', 'excel'],
+      grants: [
+        'panel.login',
+        'hotels.read',
+        'hotels.update',
+        'hotel-imports.read',
+        'hotel-imports.create',
+        'hotel-imports.bulk',
+      ],
+    });
+    expect((await s.claims(actor, actor.branchIds[0]!)).nora_grants).toEqual([
+      'panel.login',
+      'hotels.read',
+    ]);
+    const permitted = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        screenPermission('integrations.niyayesh.import.hotels'),
+      ],
+    };
+    const claims = await s.claims(permitted, actor.branchIds[0]!);
+    expect(claims.nora_grants).toContain('hotel-imports.bulk');
+    expect(claims.nora_permissions).toEqual(['hotels', 'excel']);
+  });
   it('requires a separate login grant and does not imply provisioning', async () => {
     const { service: s } = service();
     const claims = await s.claims(actor, actor.branchIds[0]!);

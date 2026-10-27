@@ -92,13 +92,37 @@ export class NiyayeshSsoService {
       !canViewScreen(actor.permissions, 'integrations.niyayesh.login')
     )
       throw new ForbiddenException('مجوز ورود به نیایش فعال نیست.');
-    const grants = policy.grants.filter(
-      (g) =>
-        g === 'panel.login' ||
-        (binding.user.resources.includes(g.split('.')[0]!) &&
-          !g.startsWith('users.') &&
-          !g.startsWith('management-reports.')),
-    );
+    const importKinds: Record<string, string> = {
+      'hotel-imports': 'hotels',
+      'tour-price-imports': 'tour-prices',
+      'ticket-imports': 'tickets',
+    };
+    const targetKinds: Record<string, string> = {
+      hotels: 'hotels',
+      tours: 'tour-prices',
+      'service-offers': 'tickets',
+    };
+    const grants = policy.grants.filter((g) => {
+      if (g === 'panel.login') return true;
+      const [resource, operation] = g.split('.');
+      if (
+        !resource ||
+        !operation ||
+        resource === 'users' ||
+        resource === 'management-reports'
+      )
+        return false;
+      const kind = importKinds[resource];
+      if (kind)
+        return (
+          binding.user.resources.includes(this.site.importTarget(kind)) &&
+          this.site.canImport(actor, kind)
+        );
+      if (!binding.user.resources.includes(resource)) return false;
+      if (operation !== 'read' && targetKinds[resource])
+        return this.site.canImport(actor, targetKinds[resource]);
+      return true;
+    });
     if (!grants.includes('panel.login'))
       throw new ForbiddenException('مجوز ورود فعال نیست.');
     const modules: Record<string, string> = {
@@ -118,6 +142,9 @@ export class NiyayeshSsoService {
       'customer-cart-items': 'customers',
       'support-threads': 'customers',
       'travel-requests': 'customers',
+      'hotel-imports': 'excel',
+      'tour-price-imports': 'excel',
+      'ticket-imports': 'excel',
     };
     const permittedModules = new Set(
       grants.map((g) => modules[g.split('.')[0]!]),

@@ -5,6 +5,7 @@ import { request as httpsRequest } from 'node:https';
 import { BlockList } from 'node:net';
 
 export interface NiyayeshConnection {
+  registrySystemId?: string;
   origin: string;
   local: boolean;
   client: string;
@@ -26,6 +27,7 @@ export function signingHeaders(
   c: NiyayeshConnection,
   subject: string,
   path: string,
+  options: { method?: string; body?: string; command?: string } = {},
 ) {
   const timestamp = String(Math.floor(Date.now() / 1000));
   const nonce = randomUUID().replaceAll('-', '');
@@ -36,15 +38,17 @@ export function signingHeaders(
     c.organization,
     c.environment,
     c.keyId,
-    'GET',
+    options.method ?? 'GET',
     path,
     timestamp,
     nonce,
     subject,
+    options.command ?? '',
     '',
     '',
-    '',
-    createHash('sha256').update('').digest('hex'),
+    createHash('sha256')
+      .update(options.body ?? '')
+      .digest('hex'),
   ].join('\n');
   return {
     'X-ERP-Client': c.client,
@@ -59,6 +63,8 @@ export function signingHeaders(
       .update(canonical)
       .digest('hex'),
     Accept: 'application/json',
+    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+    ...(options.command ? { 'Idempotency-Key': options.command } : {}),
   };
 }
 
@@ -114,8 +120,21 @@ export async function niyayeshRead(
   c: NiyayeshConnection,
   subject: string,
   path: string,
+  options: { method?: string; body?: string; command?: string } = {},
 ): Promise<unknown> {
-  if (!/^\/api\/v1\/integration\/(capabilities|resources\/)/.test(path))
+  if (
+    !/^\/api\/v1\/integration\/(capabilities$|dashboard$|resources\/[a-z-]+(?:[/?]|$)|workbooks\/hotels\/export\?city=|workbooks\/(hotels|tour-prices|tickets)(\/template)?$)/.test(
+      path,
+    )
+  )
+    throw Error('INVALID_PATH');
+  if (
+    options.method &&
+    (options.method !== 'POST' ||
+      !/^\/api\/v1\/integration\/workbooks\/(hotels|tour-prices|tickets)$/.test(
+        path,
+      ))
+  )
     throw Error('INVALID_PATH');
   const { url, address } = await destination(c);
   return new Promise((resolve, reject) => {
@@ -125,10 +144,13 @@ export async function niyayeshRead(
         family: address.family,
         port: url.port || (url.protocol === 'http:' ? 80 : 443),
         servername: url.hostname,
-        method: 'GET',
+        method: options.method ?? 'GET',
         path,
-        headers: { ...signingHeaders(c, subject, path), Host: url.host },
-        timeout: 10000,
+        headers: {
+          ...signingHeaders(c, subject, path, options),
+          Host: url.host,
+        },
+        timeout: options.method ? 60000 : 10000,
       },
       (response) => {
         const chunks: Buffer[] = [];
@@ -161,6 +183,6 @@ export async function niyayeshRead(
     );
     req.on('timeout', () => req.destroy(Error('TIMEOUT')));
     req.on('error', () => reject(Error('CONNECTION_FAILED')));
-    req.end();
+    req.end(options.body);
   });
 }

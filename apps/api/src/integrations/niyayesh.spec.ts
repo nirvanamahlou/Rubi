@@ -132,4 +132,57 @@ describe('Niyayesh personal read connector', () => {
     expect(JSON.stringify(status)).not.toContain(config.secret);
     expect(JSON.stringify(status)).not.toContain('person-a');
   });
+  it('redacts totals outside personal resources and never treats a denied count as zero', async () => {
+    const service = new NiyayeshService();
+    vi.spyOn(service, 'binding').mockResolvedValue({
+      config,
+      user: { ...config.users[0]!, resources: ['hotels'] },
+    });
+    vi.spyOn(service, 'read').mockResolvedValue({
+      metrics: [
+        { key: 'hotels', resource: 'hotels', value: 0, state: 'AVAILABLE' },
+        {
+          key: 'customers',
+          resource: 'customer-accounts',
+          value: 300,
+          state: 'AVAILABLE',
+        },
+      ],
+      imports: [],
+    });
+    const data = await service.dashboard(actor, 'branch-a');
+    expect(data.metrics.map((m) => m.value)).toEqual([0, null]);
+    expect(data.metrics[1]!.state).toBe('FORBIDDEN');
+  });
+  it('checks import permission and branch before any remote mutation', async () => {
+    const service = new NiyayeshService();
+    vi.spyOn(service, 'canImport').mockReturnValue(false);
+    const read = vi.spyOn(service, 'read');
+    await expect(
+      service.workbook(
+        actor,
+        'branch-a',
+        'hotels',
+        { buffer: Buffer.from('x'), originalname: 'a.xlsx' },
+        true,
+        undefined,
+        'proof',
+        'a'.repeat(32),
+      ),
+    ).rejects.toThrow();
+    expect(read).not.toHaveBeenCalled();
+  });
+  it('binds write bytes and stable command to the signature with a fresh nonce for retry', () => {
+    const path = '/api/v1/integration/workbooks/hotels';
+    const options = {
+      method: 'POST',
+      body: '{"apply":true}',
+      command: 'a'.repeat(32),
+    };
+    const a = signingHeaders(config, 'person-a', path, options);
+    const b = signingHeaders(config, 'person-a', path, options);
+    expect(a['Idempotency-Key']).toBe(options.command);
+    expect(a['X-ERP-Nonce']).not.toBe(b['X-ERP-Nonce']);
+    expect(a['Content-Type']).toBe('application/json');
+  });
 });

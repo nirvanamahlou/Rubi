@@ -31,7 +31,9 @@ async function request<T>(
     credentials: 'include',
     headers: {
       accept: 'application/json',
-      ...(init.body ? { 'content-type': 'application/json' } : {}),
+      ...(init.body && !(init.body instanceof FormData)
+        ? { 'content-type': 'application/json' }
+        : {}),
       ...init.headers,
     },
   });
@@ -59,6 +61,62 @@ async function request<T>(
 const branchQuery = (branchId: string) =>
   `?branchId=${encodeURIComponent(branchId)}`;
 export const integrationsApi = {
+  niyayeshHotelExport: (branchId: string, city: string) =>
+    request<{ filename: string; content: string }>(
+      `/niyayesh/workbooks/hotels/export${branchQuery(branchId)}&city=${encodeURIComponent(city)}`,
+    ),
+  niyayeshDashboard: (branchId: string, signal?: AbortSignal) =>
+    request<{
+      state: string;
+      environment?: string;
+      checkedAt?: string;
+      metrics: {
+        key: string;
+        resource: string;
+        title: string;
+        definition: string;
+        value: number | null;
+        state: string;
+      }[];
+      imports: { kind: string; canApply: boolean }[];
+    }>(`/niyayesh/dashboard${branchQuery(branchId)}`, signal ? { signal } : {}),
+  niyayeshTemplate: (branchId: string, kind: string) =>
+    request<{ filename: string; content: string }>(
+      `/niyayesh/workbooks/${encodeURIComponent(kind)}/template${branchQuery(branchId)}`,
+    ),
+  niyayeshWorkbook: (
+    branchId: string,
+    kind: string,
+    file: File,
+    command: string,
+    apply: boolean,
+    tourId?: string,
+    proof?: string,
+  ) => {
+    const form = new FormData();
+    form.append('file', file);
+    const query = new URLSearchParams({
+      branchId,
+      command,
+      apply: String(apply),
+      ...(tourId ? { tourId } : {}),
+      ...(proof ? { proof } : {}),
+    });
+    return request<{
+      proof: string | null;
+      revision: number;
+      result: Record<string, unknown> & {
+        valid: boolean;
+        applied: boolean;
+        warnings: string[];
+        errors: string[];
+      };
+    }>(`/niyayesh/workbooks/${encodeURIComponent(kind)}?${query}`, {
+      method: 'POST',
+      body: form,
+      headers: { 'X-Nora-Workbook': '1' },
+    });
+  },
   ssoAccess: (branchId: string, signal?: AbortSignal) =>
     request<{ enabled: boolean; launchUrl?: string; noraOrigin?: string }>(
       `/niyayesh/sso/access${branchQuery(branchId)}`,
@@ -81,6 +139,7 @@ export const integrationsApi = {
   },
   niyayeshStatus: (branchId: string, signal?: AbortSignal) =>
     request<{
+      registrySystemId?: string;
       state: string;
       environment?: string;
       checkedAt?: string;
@@ -91,6 +150,7 @@ export const integrationsApi = {
     resource: string,
     after: number,
     signal?: AbortSignal,
+    metric?: string,
   ) =>
     request<{
       schemaVersion: number;
@@ -103,7 +163,7 @@ export const integrationsApi = {
       nextId: number;
       hasMore: boolean;
     }>(
-      `/niyayesh/resources${branchQuery(branchId)}&resource=${encodeURIComponent(resource)}&after=${after}`,
+      `/niyayesh/resources${branchQuery(branchId)}&resource=${encodeURIComponent(resource)}&after=${after}${metric ? `&metric=${encodeURIComponent(metric)}` : ''}`,
       signal ? { signal } : {},
     ),
   async branches(): Promise<BranchReference[]> {

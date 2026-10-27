@@ -1,3 +1,7 @@
+## 2026-10-27 — SITE-WORKSPACE-1027 — PC-D — SOURCE_VALIDATED / LOCAL_ROLLOUT
+
+Permission-filtered complete site metrics and matching drill-down reuse the signed personal connector. Native hotel/tour-price/ticket Excel services are exposed through bounded preview/proof/commit commands, preserving journal/audit/atomic receipts, stable external IDs and missing-row retention. Three independent IAM import checkboxes and fresh SSO grant intersections are added. Five focused site tests, full site suite, two disposable PostgreSQL concurrency tests,11 Nora API/SSO and25 Web regressions pass; lint/typechecks/API build passed. Docker Web compiled but its final TypeScript/build was interrupted by Engine shutdown; final image/runtime and browser acceptance remain unverified. Work browser access is disabled. No migration/dependency, production deployment or main/develop merge. See tasks/SITE-WORKSPACE-1027.fa.md.
+
 ## 2026-10-26 — NIYAYESH-SSO-1026 — PC-D — LOCAL_VERIFIED
 
 Final local gates:118-test site suite, six managed PostgreSQL tests, ten focused Nora connector/authority/session tests, six Redis protocol tests, API/Web typechecks, scoped lint, translation synchronization, formatting and fresh existing-data migration/rollback rehearsal pass. Source/runtime rollout is confined to local Docker and the two task branches.

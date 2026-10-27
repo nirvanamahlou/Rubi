@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   ServiceUnavailableException,
@@ -33,6 +34,115 @@ export const NIYAYESH_RESOURCES = {
 
 @Injectable()
 export class NiyayeshService {
+  async hotelExport(actor: AuthenticatedActor, branch: string, city: string) {
+    if (typeof city !== 'string' || !city.trim() || city.length > 120)
+      throw new BadRequestException('شهر را انتخاب کنید.');
+    if (!this.canImport(actor, 'hotels')) throw new ForbiddenException();
+    const binding = await this.binding(actor, branch);
+    if (!binding || !binding.user.resources.includes('hotels'))
+      throw new ForbiddenException();
+    return this.read(
+      binding.config,
+      binding.user.subject,
+      `/api/v1/integration/workbooks/hotels/export?city=${encodeURIComponent(city.trim())}`,
+    );
+  }
+  async dashboard(actor: AuthenticatedActor, branch: string) {
+    const binding = await this.binding(actor, branch);
+    if (!binding) return { state: 'NOT_CONFIGURED', metrics: [], imports: [] };
+    const { config, user } = binding;
+    const data = (await this.read(
+      config,
+      user.subject,
+      '/api/v1/integration/dashboard',
+    )) as {
+      checkedAt: string;
+      metrics: {
+        key: string;
+        resource: string;
+        title: string;
+        definition: string;
+        value: number | null;
+        state: string;
+      }[];
+      imports: { kind: string; canApply: boolean }[];
+    };
+    return {
+      ...data,
+      state: 'CONNECTED',
+      environment: config.local ? 'LOCAL' : config.environment,
+      metrics: data.metrics.map((m) =>
+        user.resources.includes(m.resource)
+          ? m
+          : { ...m, value: null, state: 'FORBIDDEN' },
+      ),
+      imports: data.imports.filter(
+        (w) =>
+          this.canImport(actor, w.kind) &&
+          user.resources.includes(this.importTarget(w.kind)),
+      ),
+    };
+  }
+  importTarget(kind: string) {
+    const targets: Record<string, string> = {
+      hotels: 'hotels',
+      'tour-prices': 'tours',
+      tickets: 'service-offers',
+    };
+    if (!targets[kind])
+      throw new BadRequestException('نوع ورود فایل معتبر نیست.');
+    return targets[kind];
+  }
+  canImport(actor: AuthenticatedActor, kind: string) {
+    return canViewScreen(
+      actor.permissions,
+      `integrations.niyayesh.import.${kind}`,
+    );
+  }
+  async workbook(
+    actor: AuthenticatedActor,
+    branch: string,
+    kind: string,
+    file?: { buffer: Buffer; originalname: string },
+    apply = false,
+    tourId?: string,
+    proof?: string,
+    command?: string,
+  ) {
+    const target = this.importTarget(kind);
+    if (!this.canImport(actor, kind))
+      throw new ForbiddenException('مجوز ورود فایل این بخش را ندارید.');
+    const binding = await this.binding(actor, branch);
+    if (!binding || !binding.user.resources.includes(target))
+      throw new ForbiddenException('حساب یا منبع مجاز نیست.');
+    const path = `/api/v1/integration/workbooks/${kind}`;
+    if (!file)
+      return this.read(
+        binding.config,
+        binding.user.subject,
+        `${path}/template`,
+      );
+    if (
+      file.buffer.length > 4 * 1024 * 1024 ||
+      !/^[^/\\]{1,155}\.xlsx$/.test(file.originalname) ||
+      (tourId && !/^[1-9]\d{0,14}$/.test(tourId)) ||
+      !/^[A-Za-z0-9_-]{16,80}$/.test(command ?? '')
+    )
+      throw new BadRequestException(
+        'فایل، شناسه تور یا شناسه عملیات معتبر نیست.',
+      );
+    return this.read(binding.config, binding.user.subject, path, {
+      method: 'POST',
+      command: command!,
+      body: JSON.stringify({
+        filename: file.originalname,
+        content: file.buffer.toString('base64'),
+        apply,
+        ...(tourId ? { tourId: Number(tourId) } : {}),
+        ...(proof ? { proof } : {}),
+      }),
+    });
+  }
   // Reload local server configuration for every request: revocation is immediate.
   async configuration() {
     const file = process.env.NIYAYESH_CONNECTION_FILE;
@@ -90,11 +200,24 @@ export class NiyayeshService {
       throw new ForbiddenException('حساب شخصی شما به نیایش متصل نشده است.');
     return { config, user };
   }
-  async read(config: NiyayeshConnection, subject: string, path: string) {
+  async read(
+    config: NiyayeshConnection,
+    subject: string,
+    path: string,
+    options?: { method?: string; body?: string; command?: string },
+  ) {
     try {
-      return await niyayeshRead(config, subject, path);
+      return await niyayeshRead(config, subject, path, options);
     } catch (error) {
       const code = error instanceof Error ? error.message : '';
+      if (code === 'UPSTREAM_409')
+        throw new ConflictException(
+          'اطلاعات سایت تغییر کرده یا پیش‌نمایش منقضی شده است؛ دوباره پیش‌نمایش بگیرید.',
+        );
+      if (code === 'UPSTREAM_422')
+        throw new BadRequestException(
+          'فایل یا تنظیمات آن معتبر نیست؛ پیش‌نمایش و خطاها را بررسی کنید.',
+        );
       if (code === 'UPSTREAM_403')
         throw new ForbiddenException('مجوز این داده در پنل نیایش فعال نیست.');
       throw new ServiceUnavailableException(
@@ -115,6 +238,7 @@ export class NiyayeshService {
       throw new ServiceUnavailableException('نسخه قرارداد نیایش معتبر نیست.');
     return {
       state: 'CONNECTED',
+      registrySystemId: config.registrySystemId,
       environment: config.local ? 'LOCAL' : config.environment,
       checkedAt: new Date().toISOString(),
       resources: Object.entries(NIYAYESH_RESOURCES)
@@ -132,11 +256,21 @@ export class NiyayeshService {
     resource: string,
     after = '0',
     id?: string,
+    metric?: string,
   ) {
     if (
       !Object.hasOwn(NIYAYESH_RESOURCES, resource) ||
       !/^\d{1,15}$/.test(after) ||
-      (id !== undefined && !/^\d{1,15}$/.test(id))
+      (id !== undefined && !/^\d{1,15}$/.test(id)) ||
+      (metric !== undefined &&
+        ![
+          'customers',
+          'tours',
+          'hotels',
+          'shopping',
+          'sales',
+          'pending',
+        ].includes(metric))
     )
       throw new BadRequestException('منبع یا شناسه معتبر نیست.');
     const binding = await this.binding(actor, branch);
@@ -145,7 +279,11 @@ export class NiyayeshService {
     const { config, user } = binding;
     if (!user.resources.includes(resource))
       throw new ForbiddenException('مجوز این منبع برای حساب شما فعال نیست.');
-    const suffix = id ? `/${id}` : `?after_id=${after}&limit=25`;
+    const effectiveMetric =
+      metric ?? (resource === 'tours' ? 'tours' : undefined);
+    const suffix = id
+      ? `/${id}`
+      : `?after_id=${after}&limit=25${effectiveMetric ? `&metric=${effectiveMetric}` : ''}`;
     return this.read(
       config,
       user.subject,

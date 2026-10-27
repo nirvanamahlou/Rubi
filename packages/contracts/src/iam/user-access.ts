@@ -611,6 +611,24 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
     route: '/integrations',
   },
   {
+    id: 'integrations.niyayesh.import.hotels',
+    group: 'integrations',
+    title: 'ورود و به‌روزرسانی Excel هتل‌های نیایش',
+    route: '/integrations',
+  },
+  {
+    id: 'integrations.niyayesh.import.tour-prices',
+    group: 'integrations',
+    title: 'ورود و به‌روزرسانی Excel قیمت تورهای نیایش',
+    route: '/integrations',
+  },
+  {
+    id: 'integrations.niyayesh.import.tickets',
+    group: 'integrations',
+    title: 'ورود و به‌روزرسانی Excel بلیت‌های نیایش',
+    route: '/integrations',
+  },
+  {
     id: 'system.home',
     group: 'system',
     title: 'مدیریت سیستم',
