@@ -11,6 +11,7 @@ export async function readPublicDocumentLink(
   });
   const data = (await response.json()) as {
     code?: string;
+    message?: unknown;
     url?: unknown;
     html?: unknown;
     documents?: Array<{ passengerId: string; url: string }>;
@@ -22,7 +23,11 @@ export async function readPublicDocumentLink(
     typeof data.url !== 'string' ||
     typeof data.html !== 'string'
   )
-    throw new Error('PUBLIC_DOCUMENT_UNAVAILABLE');
+    throw new Error(
+      typeof data.message === 'string'
+        ? data.message
+        : 'PUBLIC_DOCUMENT_UNAVAILABLE',
+    );
   return {
     status: 'ready' as const,
     url: data.url,
