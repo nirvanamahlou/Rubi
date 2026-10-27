@@ -7815,3 +7815,11 @@ Foreign hotel-only guest entry matches flight identity fields; passport number a
 ## CONTRACT-OPTIONAL-BIRTH-1027 — PC-A
 
 New-contract DOB is optional in every people-entry table and continuation path. The Sales-only Customer policy permits NULL birth dates while ordinary Customer creation stays strict. Web sends the booked category from selected composition when DOB is absent; API validates and persists the existing nullable Sales passenger date plus category. No generated birth date or schema migration. Known dates, seat/party counts, hotel/visa slots and explicit identity facts retain their checks; pricing/guest labels read booked category for unknown DOB.644 Web Sales tests/one existing skip,343 API tests,2 contract and final61 people/3 English checks pass; API/Web builds, API typecheck and scoped lint pass. User authorizes develop merge and backed-up Avina rollout after exact-head CI.
+
+## HR-PAYROLL-SETTINGS-ONLY-1027 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B. User replaces the earlier period-form request with removal of payroll periods and payments/adjustments sections. Base origin/develop@d29d2365; reserve hr-navigation.ts, its regression spec, and own status notes. Keep payroll settings worksheet, existing stored records and backend contracts. No schema, dependency, migration or runtime change. User authorizes push and develop merge after checks; release bounded source reservation upon verified merge.
+
+
+HR-PAYROLL-SETTINGS-ONLY-1027 — IMPLEMENTED / CI_PENDING: payroll navigation now exposes settings only; all removed period/adjustment deep links resolve to settings, while employee settlements retain their profile destination. 33 focused navigation, employee-case and worksheet tests passed. No records, services or finance permissions removed. Source freezes on push and bounded reservations release after verified develop merge; full quality/tests/build/database gates remain required.
+

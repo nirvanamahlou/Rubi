@@ -247,25 +247,6 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
     ]),
   ],
   payroll: [
-    group(
-      'periods',
-      'دوره‌های حقوق',
-      [
-        source('payroll', 'runs', 'دوره‌های حقوق', 'ایجاد دوره حقوق'),
-        source('finance', 'batch', 'مبانی پرداخت', 'آماده‌سازی مبانی پرداخت'),
-        source('finance', 'results', 'نتیجه حقوق', 'دریافت نتیجه', true),
-        source('payroll', 'payslips', 'فیش‌های حقوقی', 'مشاهده فیش', true),
-        source('payroll', 'importedPayslips', 'فیش‌های واردشده', '', true),
-        source('finance', 'payments', 'پرداخت و مغایرت', 'مشاهده پرداخت', true),
-        source('payroll', 'accounting', 'سند حسابداری', 'مشاهده سند', true),
-      ],
-      'پرونده دوره حقوق',
-    ),
-    group('adjustments', 'پرداخت و اصلاحات', [
-      source('payroll', 'additional', 'پرداخت اضافی', 'ثبت پرداخت اضافی'),
-      source('payroll', 'incentives', 'پاداش و مشوق', 'ثبت پاداش'),
-      source('payroll', 'corrections', 'اصلاح و معوق', 'ثبت اصلاح حقوق'),
-    ]),
     group('settings', 'تنظیمات حقوق', [
       source('payroll', 'structures', 'ساختار حقوق', 'تعریف ساختار حقوق'),
       source('payroll', 'components', 'دریافتی و کسورات', 'تعریف مؤلفه حقوق'),
@@ -350,7 +331,26 @@ export function canonicalHrLocation(
   if (section === 'finance')
     return tab === 'settlements'
       ? canonicalHrLocation('lifecycle', 'settlements', employeeId)
-      : { section: 'payroll', tab: tab ?? 'periods' };
+      : { section: 'payroll', tab: 'settings' };
+  if (
+    section === 'payroll' &&
+    (!tab ||
+      [
+        'periods',
+        'adjustments',
+        'runs',
+        'batch',
+        'results',
+        'payslips',
+        'importedPayslips',
+        'payments',
+        'accounting',
+        'additional',
+        'incentives',
+        'corrections',
+      ].includes(tab))
+  )
+    return { section: 'payroll', tab: 'settings' };
   if (
     section === 'contracts' ||
     section === 'lifecycle' ||
