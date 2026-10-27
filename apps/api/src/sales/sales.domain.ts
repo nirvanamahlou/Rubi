@@ -36,6 +36,7 @@ import {
 } from '@nora/contracts';
 
 import type {
+  SalesHotelRoomV1,
   SalesBalance,
   SalesContractCreateRequest,
   SalesPassengerAgeCategory,
@@ -818,10 +819,11 @@ export function validateSalesContract(
           (!Array.isArray(stay.rooms) ||
             !validSalesHotelRooms(stay.rooms, stay.rooms.length) ||
             stay.rooms.reduce(
-              (n, room) => n + room.adults + room.childAges.length,
+              (n: number, room: SalesHotelRoomV1) =>
+                n + room.adults + room.childAges.length,
               0,
             ) > hotel.occupancy ||
-            stay.rooms.some((room) =>
+            stay.rooms.some((room: SalesHotelRoomV1) =>
               Object.keys(room).some(
                 (key) =>
                   ![
