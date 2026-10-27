@@ -41,25 +41,27 @@ export class SalesOutputService {
       context.legalEntity.id,
       actor,
     );
+    // Derived only after Sales row authorization, and used only for this
+    // document's buyer/passenger projections (including read-all managers).
+    const documentActor: AuthenticatedActor = {
+      ...actor,
+      branchIds: [...new Set([...actor.branchIds, contract.branchId])],
+      permissions: [
+        ...new Set<AuthenticatedActor['permissions'][number]>([
+          ...actor.permissions,
+          'sales.export',
+        ]),
+      ],
+    };
     const { data: customer } = await this.customers.maskedDetail(
       contract.customerId,
-      actor,
+      documentActor,
     );
     const passengerNames = await Promise.all(
       (contract.passengersDetail ?? []).map(async (passenger) => {
         const person = await this.customers.salesOutputIdentity(
           passenger.customerId,
-          // Only the narrow identity projection for this authorized document;
-          // never persisted or passed to a Customer mutation/general detail API.
-          {
-            ...actor,
-            permissions: [
-              ...new Set<AuthenticatedActor['permissions'][number]>([
-                ...actor.permissions,
-                'sales.export',
-              ]),
-            ],
-          },
+          documentActor,
           traceId,
         );
         return {

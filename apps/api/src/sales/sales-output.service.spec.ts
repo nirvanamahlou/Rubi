@@ -277,6 +277,7 @@ it.each(['own', 'branch', 'all'])(
     const t = setup();
     const reader: AuthenticatedActor = {
       ...actor,
+      branchIds: scope === 'all' ? [] : actor.branchIds,
       permissions: [
         `sales.contracts.read.${scope}` as 'sales.contracts.read.own',
       ],
@@ -299,12 +300,13 @@ it.each(['own', 'branch', 'all'])(
       'passenger',
       expect.objectContaining({
         userId: reader.userId,
-        branchIds: reader.branchIds,
+        branchIds: expect.arrayContaining([t.contract.branchId]),
         permissions: expect.arrayContaining(['sales.export']),
       }),
       undefined,
     );
     expect(reader.permissions).toEqual([`sales.contracts.read.${scope}`]);
+    expect(reader.branchIds).toEqual(scope === 'all' ? [] : actor.branchIds);
     expect(t.repo.recordOutputPreview).toHaveBeenCalledWith(
       'contract',
       expect.anything(),
