@@ -20,6 +20,15 @@ import {
 } from './registry';
 
 describe('dashboard registry', () => {
+  it('shows source-unavailable warnings without mislabelling them as empty data', () => {
+    const source = readFileSync(
+      resolve('src/modules/dashboard/components/dashboard-workspace.tsx'),
+      'utf8',
+    );
+    expect(source).toContain("query.data?.state === 'blocked'");
+    expect(source).toContain('query.data.unavailableMetrics');
+    expect(source).toContain('description={query.data.message}');
+  });
   it('defines all 84 decision-oriented KPIs with auditable metadata', () => {
     expect(dashboardKpis).toHaveLength(84);
     expect(new Set(dashboardKpis.map((kpi) => kpi.id)).size).toBe(

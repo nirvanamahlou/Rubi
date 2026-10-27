@@ -3866,6 +3866,15 @@ export function DashboardWorkspace() {
               tone="warning"
             />
           ) : null}
+          {query.data?.state === 'blocked' ||
+          (query.data?.state === 'ready' &&
+            Object.keys(query.data.unavailableMetrics ?? {}).length > 0) ? (
+            <Alert
+              title="وضعیت اتصال داده‌های داشبورد"
+              description={query.data.message}
+              tone="warning"
+            />
+          ) : null}
         </section>
       )}
 

@@ -1683,6 +1683,10 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
 
 # وضعیت پروژه
 
+## DASHBOARD-LIVE-SOURCES-1027 — PC-C — READY_FOR_REVIEW
+
+Production diagnosis confirmed the Dashboard reads an empty reporting_travel_facts staging table with no native producer writer. Added producer-owned, permission-scoped Sales/Customer/Lead aggregates and independent Dashboard composition, retaining actual zero versus unavailable state, Decimal currency separation, discounts/refunds and own/branch scope. Issuer context does not filter operational records. UI exposes partial/blocked source messages. Unsupported profit, journal balance and HR measures stay unavailable; no production fixtures inserted. Reporting regression64 and API lint/types/build pass; final Web/translation verification and hosted checks are recorded in docs/tasks/DASHBOARDS-LIVE-SOURCES-1027.md. No migration or permission changes. No production source rollout yet; current SSH policy requires a root-approved deployment plan.
+
 ## ASSISTANT-HTTP-AUTH-1012 — PC-C
 
 Live smoke discovered anonymous assistant API requests returned a307 to HTML login.
@@ -7692,6 +7696,10 @@ Reservations View now includes the current printed contract Notice below its PDF
 ## CONTRACT-ALL-HOTELS-1027 — PC-A
 
 Additional contract hotel selection refreshes the complete active Sales hotel catalogue whenever opened, independently of stale initial form references and without destination/rate restrictions. Publish only complete pages, preserve prior choices on failure, show error/retry and cancel superseded/unmounted requests. Selection uses the returned registered hotel/city/room references; existing duplicate and tour safeguards stay intact. Read-only production diagnosis confirmed RAMADA RESORT & GOLF exists and is active/saleable; no hotel/status/database/runtime changes. The initial form hotel loader uses the same complete unique-ID catalogue reader. Targeted28 catalogue/selector/reference regressions, scoped lint and Web typecheck pass; full exact-head gates precede authorized develop merge. Browser verification ended because Computer Use could not confidently identify the Chrome URL; no UI mutation was made.
+
+## TICKET-LATIN-DIGITS-1027 — PC-A
+
+Passenger ticket display uses ARRIVAL for outbound and DEPARTURE for return, retaining the actual direction enum and existing leg styling. Visible dynamic text normalizes Persian/Arabic digits; Gregorian date/time formatting explicitly requests latn numerals. The existing repository Latin WOFF2 font is used in the shared preview layout and embedded in generated PDF so missing server Segoe/Arial does not fall back to Persian-shaped digits. QR payloads and operational data remain unchanged. Focused44 display/font/PDF/i18n/preview tests, scoped lint and Web types pass. Actual Chrome synthetic PDF rendering passes: one page, Latin-only numerals verified by extraction and raster visually checked without clipping. Full exact-head checks gate authorized develop merge. No dependency, schema/migration or runtime deployment.
 
 ## SALES-NOTICE-SEARCH-1027 — PC-A
 
