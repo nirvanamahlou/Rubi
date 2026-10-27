@@ -1,4 +1,10 @@
 {
+  "تغییر روز": "Change day",
+  "روز جدید": "New weekday",
+  "روز جدید معتبر نیست.": "The new weekday is invalid.",
+  "روز جدید را متفاوت از روز فعلی انتخاب کنید.": "Choose a different weekday.",
+  "فهرست پروازهای روز هفته معتبر نیست؛ فرم را دوباره باز کنید.": "The weekday flight list is invalid; reopen the form.",
+  "پروازهای همین روز و مسیر، با اطلاعات ثبت‌شده در همان هفته جابه‌جا می‌شوند؛ ساعت‌ها و سایر اطلاعات حفظ می‌شوند.": "Flights for this weekday and route move within the same week using their saved details; times and all other details are preserved.",
   "درخواست تازه باید منتظر اقدام کارشناس باشد.": "A new request must be awaiting agent action.",
   "وصل شده به:": "Connected to:",
   "در حال بررسی امنیتی است.": "is undergoing a security scan.",
