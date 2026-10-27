@@ -25,6 +25,7 @@ export interface FollowUp {
   }[];
 }
 export interface RequestCase {
+  canEditManagement?: boolean;
   result?: string;
   customerId?: string | null;
   privateHistory: {

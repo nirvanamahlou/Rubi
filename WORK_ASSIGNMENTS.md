@@ -1,3 +1,13 @@
+## CANCELLED-ROW-RED-1027 — PC-A — READY_FOR_REVIEW
+
+## PURCHASE-BEFORE-RESERVATION-SEND-1027 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-purchase-before-reservation-send-1027 from origin/develop d59cd5d1f. User authorizes purchase entry before supplier-form sending and develop merge. Reserve only reservation-hotel-purchase.tsx and direct purchase/transfer interaction tests, existing API reservation-service-purchase.spec.ts, own assignment/status notes. Inspection confirms purchase-context and atomic purchase-batch commands already do not require a sent form; remove the misleading wait-until-sent instruction and preserve sent snapshots as optional context. Regress an unsent hotel purchase from editable inputs through submission and atomic hotel/transfer persistence without workflow revisions. Keep permissions, service assignments, money/currency/night validation, replay/CAS, financial routing and voucher issuance rules. No overlapping active target reservation found; no shared contract, API behavior, schema/migration, dependency, runtime or server deployment change. Source freezes on publication and releases after verified merge.
+
+PURCHASE-BEFORE-RESERVATION-SEND-1027 verification: Web29 and API16 focused tests, scoped API/Web ESLint and full Web TypeScript pass. Initial hosted quality/typecheck, production build and PostgreSQL gates pass; final-head full suite remains mandatory. Integration preserves the peer cancelled-row palette and both task reports. Bounded source frozen/released at publication; no operational rollout.
+
+COMPUTER_ID=PC-A; codex/pc-a-cancelled-row-red-1027 from developf4b2f801. Owner requests visibly redder cancelled reservation rows from the screenshot. Reserve only Reservations foundation/workspace.module.css cancelled-tone light/dark variables and own status/assignment notes. No active overlapping stylesheet writer found; prior published CSS scopes release locks. Keep compact dimensions, selection/focus blue, note/correction indicators, other status tones and all behavior. No API/schema/migration/dependency/permissions/data or shared runtime change. Changed only the six cancelled-tone color values. Text contrast is5.84:1 light and9.16:1 dark;29 existing workspace regressions, scoped formatting and production Web build with TypeScript pass. Prepare the required review branch/PR; this request does not explicitly authorize merging or deployment. No delegation. Source freezes for review.
+
 ## COMPLETION-NAME-ONLY-1026 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-completion-name-only-1026 from develop59c59506. Owner explicitly requires only first/last names for correction Add passenger, and push/develop merge. Reserve PassengerCompletion Web/API/controller/tests, bounded Customer public completion creation policy and regression, additive optional ageCategory in completion contract, nullable existing Sales passenger birth_date migration/schema and bounded null-safe Sales read consumers/tests. Sole Migration Owner PC-A for this non-destructive nullability change; prior merged migrations release their locks, no active overlapping source/schema writer found. Preserve normal new-contract identity policy, counts/category/services, scoped authorization, actual identity validation when supplied, existing prices/inventory and idempotency. No invented birth dates, shared dependency changes, operational data/runtime mutation or deployment. Producer Customer and consumer Sales remain public-service separated. Additional own document scope: docs/tasks/COMPLETION-NAME-ONLY-1026.md and bounded append-only DATA_MODEL/DECISIONS compatibility notes. Existing string-shaped Sales output represents unknown birth as empty string; SQL persists NULL. No fabricated age bands or shared new-contract validation changes. Local102 API and61 Web/translation regressions, scoped lint, API/Web builds and typechecks pass; fresh isolated PostgreSQL proves all migrations, nullable birth and retained FKs. Exact-head hosted gates precede owner-authorized merge; source locks release on verified merge.
@@ -9713,6 +9723,60 @@ FINANCIAL-WORKFLOWS-COMPLETION-1025 release: PR1110 is the publication record; a
 
 CALL-CENTER-RELEASE-1025 — SOURCE_RELEASED / PR1114 PENDING CI: integration and publication complete; release source locks freed. Agent remains responsible for CI fixes and authorized merge after all checks pass. Final CI and merge state tracked on PR1114.
 
+## STICKY-TEN-SECONDS-1025 — PC-C — IN_PROGRESS
+
+User changes previous sales agent ringing budget20s to10s before fallback to sales queue1002. Reserve sticky-sales.ts and its preview/service/PostgreSQL expectations, sticky-sales handoff docs and own status. No PBX access has been supplied; update prepared decision contract without claiming an installed timer. No UI/schema/dependency changes.
+
+STICKY-TEN-SECONDS-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: ringSeconds10 prepared and verified;20 tests and scoped lint/typecheck/build pass. No UI, migration, runtime or PBX write. Real timer requires installation and controlled PBX test.
+
+## CALL-DESTINATION-HISTORY-1025 — PC-C — IN_PROGRESS
+
+Reserve Call Center service/read/telephony projections and related tests, own docs. Investigate missing outbound staff labels, preserve historical identity snapshots and branch/access boundaries; no UI layout, ownership or PBX change. Authorized local read inspection and runtime fix after checks; no schema/dependency changes.
+
+CALL-DESTINATION-HISTORY-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: missing label cause fixed for new outbound and legacy authorized history/get;56 tests and targeted lint/types/API build pass. Exact screenshot sample verified in browser on3000. No data repair write, ownership, UI layout or PBX change.
+
+## CONTACT-DESTINATION-COLUMN-1025 — PC-C — IN_PROGRESS
+
+User requests contact-list headers source->acquaintance source and unit->connected to, rendering full staff destination like the call form. Reserve workspace.tsx and shared authorized destination hydration/read search, related tests and own docs. No unrelated filters/KPI layout, schema/PBX changes.
+
+CONTACT-DESTINATION-COLUMN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: requested table headers and full destination display verified onlocalhost3000.49 tests, lint, API types/build and Web types/build pass; private build isolation documented. No schema/PBX/business-data write.
+
+## REQUEST-REASON-REQUIRED-1025 — PC-C — IN_PROGRESS
+
+User requires reason on every request creation/edit, including whitespace rejection. Reserve workflow form/DTO/service and existing relevant tests/fixtures, scoped i18n reason message and own docs. No migration/dependency change; preserve approved layout and local credentials.
+
+REQUEST-REASON-REQUIRED-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: mandatory reason enforced on create/edit in UI, DTO and service; whitespace rejected without mutation.64 tests, scoped lint/types/API build and Web65-page build pass. Browser validation verified on3000. No migration/PBX/popup-policy change.
+
+## REQUEST-HEADER-SPACING-1025 — PC-C — IN_PROGRESS
+
+Reserve workflow.tsx/workflow.module.css and own docs for user-authorized16px separation between contact summary and request title. No functional, API, dependency or migration change.
+
+REQUEST-HEADER-SPACING-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: scoped16px contact-summary spacing, verified visually and by DOM measurement on3000.3 tests, lint, full Web typecheck/build pass. No API/data change.
+
+## QUEUE-REQUEST-EDITOR-1025 — PC-C — DONE
+
+Reserve workflow.tsx and workflow.spec.tsx for direct queue-row opening of the existing request editor, scoped request/contact loading, read-only access preservation, refresh/focus/error behavior and own docs. No API/schema/dependency changes.
+
+Completed direct editor routing, read-only safeguard, loading/error/focus handling.4 tests, lint, Web types/build and browser acceptance pass; runtime3000 updated. Source reservation released; no API/schema/dependency changes.
+
+## CALL-FORM-DOCK-1025 — PC-C — DONE
+
+User explicitly authorizes a minimize action beside call-dialog close and persistent left-edge restore across ERP panels. Reserve call-form.tsx, new call-form-host components/styles/tests, launcher imports in workspace/operational-call-popup, app-shell provider mount, use-unsaved-guard optional internal-navigation support and own docs. Central app-shell scope is only this provider; historical reservations released. No API/dependency/schema or automatic popup rollout change. In-memory drafts only; preserve existing next-env modifications.
+CALL-FORM-DOCK-1025 additional narrow reservation: five new dock/minimize labels in en-overrides.json; preserve all other translations.
+
+CALL-FORM-DOCK-1025:56 tests, lint, full Web types/build and cross-panel browser acceptance passed. Local3000 updated; source and central shell/translation reservations released on push.
+
+## REQUEST-MANAGER-FIELDS-1025 — PC-C — IN_PROGRESS
+
+User restricts existing request title/owner/status/priority edits to the relevant unit manager and requests inline required-star alignment. Reserve workflow service/IAM call-center directory public capability, request client/form/tests/CSS, scoped translation and own docs. Existing configured global danial/demo authority preserved. Unit is current owner unit, creator unit fallback when unassigned. Creation remains unchanged; reason/result edits retain existing access rules. No schema/dependency change. Producer IAM/service and frontend consumer updated together with optional fail-closed capability.
+REQUEST-MANAGER-FIELDS-1025 test fixture scope: update read.spec IAM stub with the new optional-read capability; no behavior change to identity linking.
+REQUEST-MANAGER-FIELDS-1025 additional regression scope: access.postgres.spec now asserts agent closure rejection and successful same-unit manager closure, replacing the superseded agent-can-close expectation.
+REQUEST-MANAGER-FIELDS-1025 — DONE / SOURCE_RELEASED ON PUSH:76 targeted tests, scoped lint, API types/build and full Web types/build65 pages pass. Browser confirms protected controls and inline required star. Local3000/4000 updated; no schema/dependency/data changes.
+
+## CALL-CENTER-FINAL-RELEASE-1027 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. User explicitly authorizes integration of all remaining reviewed Call Center changes with latest develop, PR to develop and normal merge only after all CI/CD checks pass. Branch codex/pc-c-call-center-final-release-1027 starts at8bee4b87b (eight unpublished feature commits); integrate origin/develop7f0090415. Reserve integration conflicts in existing Call Center/IAM/sticky source and tests, call-form provider shell mount, scoped i18n generated catalogs and append-only own coordination docs. Preserve PR1130 direction labels and all unrelated develop changes. No migration/dependency, runtime switch, PBX or operational-data change. Existing reservations released; merge authorization overrides general creator restriction for this PR only. Account Amin-tech11 verified with repository write permission.
+
 ## FLIGHT-PURCHASE-EDIT-1025 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-flight-purchase-edit-1025 from develop26c55e51b. User authorizes one row per defined flight, total/per-seat cost entry, later editing in Purchasing and develop merge. Reserve Ticket Purchases workspace/model/regressions, bounded existing Finance ticket-cost regression coverage, own docs and additive English labels if required. Existing public per-offer request, totalCost/unitCost and versioned cost contracts are retained. New rows must not pool recurring weekdays; historical recorded pools retain atomic whole-pool editing and payment locks, without rewriting paid records. No accounting files, schema/migration, dependency or operational runtime change; no active overlapping source writer found. Own ledger/status records append to avoid concurrent heading conflicts. Delivered one row per dated request without automatic weekday pooling, per-flight KPI/filter/offer focus and exact cost/payment evidence; existing total/unit editor reopens the matching revision. Legacy saved pools retain explicit whole-pool edits and member payment locks. Web26 and API30 focused tests passed; scoped lint passed, full Web types/build and exact-head hosted gates precede authorized merge. Bounded source freezes/releases with publication.
@@ -9720,6 +9784,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-flight-purchase-edit-1025 from develop26c55e
 ## SALES-TRIP-COLUMNS-1025 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-sales-trip-columns-1025 from develop b3f3337a3. Owner requests outbound/return dates and passenger composition in Sales list, then develop merge. Reserve Sales workspace/spec, new bounded list-summary helper/spec, only summary projection in sales.service.ts and list regression, additive optional Sales summary wire fields and own docs. Producer Sales supplies dated travel and aggregate counts; Web consumes optional fields with backwards-compatible unknown fallback. No overlap with Finance confirmation hooks; no migration/dependency/IAM/runtime changes. Preserve per-service calendars, Tehran flight dates, one-way missing returns and historical unknown child ages. Web23 and API19 focused tests, Web typecheck and scoped lint pass; full hosted gates precede pinned merge. Source locks release on verified merge.
+
+## PASSENGER-NATIONAL-OPTIONAL-1027 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-passenger-national-optional-1027 from develop f4b2f801e. Owner requests optional national ID in correction passenger completion and develop merge. Reserve only PassengerCompletion Web/spec and own docs. Current completion policy already accepts omitted nationalId and optionalFields disables required; inherited Customer sheet header still shows the default mandatory asterisk. Override this consumer's label and regress blank Iranian national ID and actual rendered optional-field behavior. Preserve ordinary new-contract Customer identity policy and validation of supplied identifiers. No active overlapping source reservation found; previous completion source releases on verified merge. No API/schema/migration/dependency/runtime/deploy changes. All exact-head hosted gates precede owner-authorized merge.
 
 ## RESERVATION-CALENDAR-BASIS-1025 — PC-A — READY_FOR_CI
 
@@ -9772,3 +9840,11 @@ RESERVATION-OLDEST-FIRST-1026 verification: 61 focused tests passed, including r
 COMPUTER_ID=PC-B; branch codex/pc-b-header-profile-photo-1026 from origin/develop59c59506. Owner requests shared header avatar use persisted Workbench photo, otherwise solid blue without initials, and explicitly authorizes push/develop merge. Reserve user-menu.tsx and its direct existing spec plus own status notes. Prior session-stability header scope published/released; preserve its identity/error handling. No IAM producer/API/schema/dependency or runtime changes.
 
 HEADER-PROFILE-PHOTO-1026 ready for review:5 menu integration tests and scoped lint pass. Photo request sequencing, session-recovery reload and blank fallback retained; no initial-letter rendering. Source scope frozen/released at publication; hosted gates precede authorized merge.
+CALL-CENTER-FINAL-RELEASE-1027 publication: PR1151 under Amin-tech11;57 integrated Call Center Web tests pass. Changed source formatting/catalog checks aligned; full final-head CI/CD gates remain mandatory. Reservations freeze during review and release automatically after verified normal merge. No runtime/PBX/data changes.
+
+## RESERVATION-SERVICE-GROUPS-1027 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-service-groups-1027 from origin/develop f4b2f801e. Reserve Reservations foundation service presentation helper/component, model/live-feed optional local view projection, workspace service-cell rendering/CSS, focused tests and own docs. Previous oldest-first PR1139 merged; its frozen source lock released. Group exact snapshot service kinds, retain titles and unknown kinds, deduplicate only within category. No API/schema/dependency/migration/IAM/runtime changes. Owner explicitly authorizes develop merge after checks.
+
+RESERVATION-SERVICE-GROUPS-1027 verification:32 focused tests passed, scoped ESLint passed. Source scope freezes/releases with publication; full Web typecheck/build and exact-head hosted gates required before authorized develop merge. No operational deployment requested.
+CALL-CENTER-FINAL-RELEASE-1027 narrow CI reservation: existing .github/workflows/ci.yml Call Center PostgreSQL command only, add the existing access.postgres.spec.ts so final unit-manager authorization is proven against a fresh PostgreSQL service. No removed/skipped assertion, timeout expansion or other CI step change. Prior complete eight gates passed on1b49f1417; develop advanced to76ede9246 during CI, so integrate its append-only coordination update and rerun all final-head gates. Extra local PG rerun hit setup/interactive-transaction timeouts under constrained host resources; this is recorded as failed and not substituted for hosted proof. Local57 Web and27 API checks pass.

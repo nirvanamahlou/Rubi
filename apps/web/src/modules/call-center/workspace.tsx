@@ -58,7 +58,7 @@ import {
   requestStatusOptions,
   taskLabels,
 } from './workflow';
-import { CallForm } from './call-form';
+import { HostedCallForm } from './call-form-host';
 import { WithoutOutcomeDialog } from './without-outcome-dialog';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './workspace.module.css';
@@ -650,8 +650,8 @@ function Content({
                       'شماره تماس',
                       'موضوع آخرین تماس',
                       'نوع آخرین تماس',
-                      'منبع',
-                      'داخلی / کارشناس',
+                      'منبع آشنایی',
+                      'وصل شده به',
                       'آخرین تماس',
                       'تعداد تماس',
                       'نتیجه',
@@ -729,9 +729,11 @@ function Content({
                             : 'خروجی'}
                         </span>
                       </td>
-                      <td data-label="منبع">{row.latest.source}</td>
-                      <td data-label="داخلی / کارشناس">
-                        {row.latest.operator}
+                      <td data-label="منبع آشنایی">{row.latest.source}</td>
+                      <td data-label="وصل شده به">
+                        {row.latest.answerRecipient?.label ||
+                          row.latest.operator ||
+                          'نامشخص'}
                       </td>
                       <td data-label="آخرین تماس">
                         {callDate(row.latest.occurredAt)}
@@ -903,7 +905,8 @@ function Content({
         />
       )}
       {draft && (
-        <CallForm
+        <HostedCallForm
+          retainOnNavigation
           branchId={branch}
           event={draft}
           previous={

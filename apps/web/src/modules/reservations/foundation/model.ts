@@ -81,6 +81,7 @@ export interface RequestView {
   hotelName?: string;
   hotelId?: string | undefined;
   serviceTitles?: readonly string[];
+  serviceItems?: readonly { kind: string; title: string }[];
   mealServiceId?: string | undefined;
   mealServiceName?: string | undefined;
   hotelNotes?: string | undefined;

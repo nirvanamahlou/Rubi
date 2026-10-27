@@ -6,6 +6,7 @@ import { useQueueNames } from './queue-names';
 import { TableStatusCheckbox, tableFlagColumns } from './table-status-checkbox';
 import { ContractTableAction } from './contract-table-action';
 import { HotelTableAction } from './hotel-table-action';
+import { ReservationServices } from './reservation-services';
 import {
   reservationColumns,
   reservationCells,
@@ -804,6 +805,8 @@ export function ReservationOperationsWorkspace({
                                     </small>
                                   ) : null}
                                 </button>
+                              ) : reservationColumns[index] === 'خدمات' ? (
+                                <ReservationServices row={row} />
                               ) : index === 10 || index === 11 ? (
                                 <HotelTableAction
                                   row={row}

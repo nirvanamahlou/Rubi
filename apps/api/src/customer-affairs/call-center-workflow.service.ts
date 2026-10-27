@@ -557,73 +557,81 @@ export class CallCenterWorkflowService
               }
             : {}),
         },
-        data: rows.map((row) => ({
-          id: row.id,
-          version: row.version,
-          customerId: actor.permissions.includes('customers.read')
-            ? row.customerId
-            : null,
-          title: this.crypto.decrypt<{ title: string; reason: string }>(
-            row.callCenterPayload!,
-            row.callCenterKeyVersion!,
-            `request:${row.id}:${contactId}`,
-          ).title,
-          privateHistory:
-            this.crypto.decrypt<{ history?: unknown[] }>(
+        data: await Promise.all(
+          rows.map(async (row) => ({
+            canEditManagement: await this.directory.canManageRequest(
+              actor,
+              branchId,
+              row.executionOwnerUserId ?? row.createdByUserId,
+              tx,
+            ),
+            id: row.id,
+            version: row.version,
+            customerId: actor.permissions.includes('customers.read')
+              ? row.customerId
+              : null,
+            title: this.crypto.decrypt<{ title: string; reason: string }>(
               row.callCenterPayload!,
               row.callCenterKeyVersion!,
               `request:${row.id}:${contactId}`,
-            ).history ?? [],
-          reason: this.crypto.decrypt<{ reason: string }>(
-            row.callCenterPayload!,
-            row.callCenterKeyVersion!,
-            `request:${row.id}:${contactId}`,
-          ).reason,
-          result:
-            this.crypto.decrypt<{ result?: string }>(
+            ).title,
+            privateHistory:
+              this.crypto.decrypt<{ history?: unknown[] }>(
+                row.callCenterPayload!,
+                row.callCenterKeyVersion!,
+                `request:${row.id}:${contactId}`,
+              ).history ?? [],
+            reason: this.crypto.decrypt<{ reason: string }>(
               row.callCenterPayload!,
               row.callCenterKeyVersion!,
               `request:${row.id}:${contactId}`,
-            ).result ?? '',
-          status: row.status,
-          priority: row.priority,
-          ownerId: row.executionOwnerUserId,
-          ownerName: row.executionOwner?.displayName ?? null,
-          createdAt: row.createdAt.toISOString(),
-          followUps: tasks
-            .filter((task) => task.sourceReference === row.id)
-            .map((task) => {
-              const payload = task.payload as {
-                version: number;
-                encrypted: string;
-                keyVersion: number;
-                history?: unknown[];
-              };
-              return {
-                id: task.id,
-                version: payload.version,
-                ownerId: task.assigneeUserId,
-                dueAt: task.dueAt!.toISOString(),
-                status: task.status,
-                ...this.crypto.decrypt<TaskPrivate>(
-                  payload.encrypted,
-                  payload.keyVersion,
-                  `followup:${task.id}:${row.id}`,
-                ),
-                history: payload.history ?? [],
-              };
-            }),
-          history: history
-            .filter((event) => event.entityId === row.id)
-            .map((event) => ({
-              id: event.id,
-              action: event.action,
-              at: event.occurredAt.toISOString(),
-              actorId: event.actorUserId,
-              version: event.version,
-              changes: event.afterSnapshot,
-            })),
-        })),
+            ).reason,
+            result:
+              this.crypto.decrypt<{ result?: string }>(
+                row.callCenterPayload!,
+                row.callCenterKeyVersion!,
+                `request:${row.id}:${contactId}`,
+              ).result ?? '',
+            status: row.status,
+            priority: row.priority,
+            ownerId: row.executionOwnerUserId,
+            ownerName: row.executionOwner?.displayName ?? null,
+            createdAt: row.createdAt.toISOString(),
+            followUps: tasks
+              .filter((task) => task.sourceReference === row.id)
+              .map((task) => {
+                const payload = task.payload as {
+                  version: number;
+                  encrypted: string;
+                  keyVersion: number;
+                  history?: unknown[];
+                };
+                return {
+                  id: task.id,
+                  version: payload.version,
+                  ownerId: task.assigneeUserId,
+                  dueAt: task.dueAt!.toISOString(),
+                  status: task.status,
+                  ...this.crypto.decrypt<TaskPrivate>(
+                    payload.encrypted,
+                    payload.keyVersion,
+                    `followup:${task.id}:${row.id}`,
+                  ),
+                  history: payload.history ?? [],
+                };
+              }),
+            history: history
+              .filter((event) => event.entityId === row.id)
+              .map((event) => ({
+                id: event.id,
+                action: event.action,
+                at: event.occurredAt.toISOString(),
+                actorId: event.actorUserId,
+                version: event.version,
+                changes: event.afterSnapshot,
+              })),
+          })),
+        ),
       };
     });
   }
@@ -636,11 +644,16 @@ export class CallCenterWorkflowService
     const branchId = this.scope(actor, branch, true);
     if (!input.title.trim())
       throw new BadRequestException('عنوان درخواست را وارد کنید.');
+    if (typeof input.reason !== 'string' || !input.reason.trim())
+      throw new BadRequestException(
+        'دلیل تغییر، بستن یا بازگشایی را وارد کنید.',
+      );
     await this.db.client.$transaction(async (tx) => {
       await this.contact(tx, contactId, branchId);
       if (this.access.scoped(actor)) {
         await this.access.contact(actor, branchId, contactId, 'workflow', tx);
-        if (!input.ownerId) input = { ...input, ownerId: actor.userId };
+        if (input.expectedVersion === 0 && !input.ownerId)
+          input = { ...input, ownerId: actor.userId };
       }
       await this.lock(tx, input.id);
       if (
@@ -669,11 +682,32 @@ export class CallCenterWorkflowService
         throw new ConflictException(
           'درخواست تغییر کرده است؛ اطلاعات را دوباره دریافت کنید.',
         );
-      if (
-        (input.status === 'CLOSED' || current?.status === 'CLOSED') &&
-        !input.reason.trim()
-      )
-        throw new BadRequestException('دلیل بستن یا بازگشایی را وارد کنید.');
+
+      if (current) {
+        const saved = this.crypto.decrypt<{ title: string }>(
+          current.callCenterPayload!,
+          current.callCenterKeyVersion!,
+          `request:${input.id}:${contactId}`,
+        );
+        const changed =
+          saved.title !== input.title.trim() ||
+          (current.executionOwnerUserId ?? null) !== (input.ownerId ?? null) ||
+          (current.status === 'NEW' ? 'IN_PROGRESS' : current.status) !==
+            input.status ||
+          current.priority !== input.priority;
+        if (
+          changed &&
+          !(await this.directory.canManageRequest(
+            actor,
+            branchId,
+            current.executionOwnerUserId ?? current.createdByUserId,
+            tx,
+          ))
+        )
+          throw new ForbiddenException(
+            'ویرایش عنوان، مسئول، وضعیت و اولویت درخواست فقط برای مدیر واحد مجاز است.',
+          );
+      }
       if (current?.status === 'CLOSED' && input.status === 'WAITING_CUSTOMER')
         throw new BadRequestException('ابتدا درخواست را بازگشایی کنید.');
       if (!current && input.status !== 'IN_PROGRESS')

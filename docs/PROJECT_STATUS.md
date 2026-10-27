@@ -1,5 +1,10 @@
 ## UNIFIED-CONTRACT-HOTEL-PICKER-1026 — PC-A — READY_FOR_CI
 
+## PURCHASE-BEFORE-RESERVATION-SEND-1027 — PC-A
+
+Removed the purchase form instruction requiring supplier-form sending before purchase entry. A real sent form remains optional read-only context; an unsent draft is not presented as sent. Existing public purchase-context and atomic hotel/transfer purchase commands already accept unsent requests, so no server restriction or voucher guard was changed. Regression coverage adds initial hotel purchase from broker/currency/nightly entry to enabled submission and saved callback without workflow state, plus atomic hotel/transfer persistence with no workflow revisions. Permissions, contract nights, exact money, service assignments, CAS/replay and Finance routing are retained. Focused tests, lint/types and all hosted gates precede owner-authorized develop merge. No schema/migration/dependency or runtime/server rollout.
+
+
 Composite hotels now appear in the contract's ordinary Hotel dropdown in both room-composition and legacy-detail paths; the separate composite-loading panel is removed. Selecting a composite still expands its ordered real hotels and independently entered dates, while ordinary hotel selection and Tour restrictions retain their existing behavior. Distinct option IDs prevent ordinary/composite identity collisions, and reference refresh covers both lists.52 targeted selection, room-party, payload and restore tests plus scoped lint pass. Final-head CI gates owner-authorized push/develop merge; no API/schema/migration/dependency or runtime rollout.
 
 ## CONTRACT-PASSENGER-COMPLETION-1026 — PC-A — READY_FOR_CI
@@ -7655,6 +7660,33 @@ Final Call Center feature chain consolidated from87eb5e3a and integrated with de
 
 CALL-CENTER-RELEASE-1025 publication: https://github.com/nirvanamahlou/Rubi/pull/1114 targets develop under Amin-tech11. Final reviewed source pushed; source reservations released. Await all checks on latest head before authorized merge; PR checks/timeline are final CI/merge evidence. Local runtime preserved.
 
+## 2026-10-25 — STICKY-TEN-SECONDS-1025 — PC-C
+User-approved previous-agent ringing budget is now10 seconds before queue1002 fallback in the prepared internal routing decision. Selector/contract,3 regression suites and SSH handoff docs updated.20 tests, scoped lint and affected API typecheck/build pass. Physical timer installation still awaits real PBX SSH/setup acceptance; no UI/runtime/PBX mutation.
+
+## 2026-10-25 — CALL-DESTINATION-HISTORY-1025 — PC-C
+Missing outbound staff labels traced to answer-only identity snapshots. New outbound calls capture originator label at creation without inventing answer evidence; authorized legacy history/get views resolve missing labels from provider-confirmed extension and HR directory. Full historical snapshots and ownership preserved.56 tests and scoped lint/API build pass; read-only local sample12/12 recovered. No schema/UI/PBX change; local API updated, Web preserved.
+
+## 2026-10-25 — CONTACT-DESTINATION-COLUMN-1025 — PC-C
+Contact table now labels columns connected-to and acquaintance source, using full staff destination label like the call form. Authorized latest-call summaries enrich legacy outbound destinations inside the same read transaction. Existing scopes, historical snapshots and other table behavior preserved; no schema/PBX change. Final checks/runtime evidence in task document.
+
+CONTACT-DESTINATION-COLUMN-1025 final: localhost3000 now shows requested headers and full staff destination labels; browser verified.49 tests and lint/types/API-Web builds pass. Local runtime paths/PIDs and private isolated build instructions in task document; source reservations released on push.
+
+## REQUEST-REASON-REQUIRED-1025 — PC-C
+Request reason is mandatory for every creation/edit, enforced by native form validation, trimmed frontend validation, DTO and service.58 isolated PostgreSQL/API tests and6 Web/i18n tests pass; scoped lint, affected API source/test types/build and full Web types/build65 pages pass. No migration, dependency, ownership or popup-policy change. See tasks/REQUEST-REASON-REQUIRED-1025.md.
+
+## REQUEST-HEADER-SPACING-1025 — PC-C
+Added user-requested16px gap between contact summary and request title in the Call Center editor. Browser measurement confirms0->16px onlocalhost3000.3 workflow tests, lint and full Web types/build65 pages pass; no API/migration/dependency changes. See tasks/REQUEST-HEADER-SPACING-1025.md.
+
+## QUEUE-REQUEST-EDITOR-1025 — PC-C
+Queue request clicks now directly open the existing request/assignee editor with authorized saved data and contact summary. Read-only permissions, cancellation, focus return and refresh behavior preserved.4 workflow tests, scoped lint, full Web types/build65 pages and browser direct-open/focus acceptance pass. Active onlocalhost3000; no API/schema/popup-policy change. See tasks/QUEUE-REQUEST-EDITOR-1025.md.
+
+## CALL-FORM-DOCK-1025 — PC-C
+User-authorized call form minimize icon and persistent left-edge restore implemented in shared shell. In-memory forms retain fields across internal ERP route navigation; close/save removes them. Existing call save/claim permissions and popup rollout flags preserved.56 tests, scoped lint, full Web types/build and browser cross-panel preservation acceptance pass. Active onlocalhost3000. See tasks/CALL-FORM-DOCK-1025.md.
+
+## REQUEST-MANAGER-FIELDS-1025 — PC-C
+Existing request title, execution owner, status and priority are protected by a public IAM same-unit manager capability, checked against persisted values inside the workflow transaction. Ordinary experts retain reason/result edits under existing access. Web fails closed for missing capability and places the required reason star inline. Configured global management accounts retain existing authority. No schema/dependency change; 59 PostgreSQL, 12 IAM and 5 Web tests, lint and API types/build pass. Runtime and browser evidence: tasks/REQUEST-MANAGER-FIELDS-1025.md.
+REQUEST-MANAGER-FIELDS-1025 final: full Web types/build65 pages and browser acceptance passed; active onlocalhost3000/4000.76 targeted tests pass; source reservations released on push.
+
 ## 2026-10-25 — FLIGHT-PURCHASE-EDIT-1025 — PC-A — READY_FOR_CI
 
 Purchasing now displays each dated flight independently instead of pooling matching weekdays. Filters, focused offer, capacity cost and KPIs use each request's actual cost/payment shares; saved historical pools stay independently visible while edits preserve their original atomic full-pool scope with an explicit explanation. Existing total/per-seat APIs and append-only pricing revisions remain; cost edits reopen before any payment, permissions/stale-version/replay/paid locks stay intact. Web26 and API30 focused tests and affected lint passed. Full Web types/production build and exact-head hosted quality/test/database/build gates precede owner-authorized develop merge. No API/schema/migration/dependency/runtime changes. Bounded source locks freeze/release with publication.
@@ -7662,6 +7694,10 @@ Purchasing now displays each dated flight independently instead of pooling match
 ## 2026-10-25 — SALES-TRIP-COLUMNS-1025 — PC-A
 
 Sales list adds separate outbound/return columns based on booked flight directions (Tehran day) or hotel-only check-in/out, honoring recorded independent service calendars. Summary API adds optional travelDates and passengerComposition without exposing birth dates. Adults, children2–6/6–12 and infants appear beneath the total; historical overlapping service parties use the existing maximum-party total without inventing missing child ages. Existing horizontal scroll, filters, monetary columns and scope checks remain. Web23 tests including translation coverage and API19 regression checks pass; affected lint/types/build and exact-head hosted gates precede owner-authorized develop merge. No migration/dependency/runtime/deployment change. Bounded source reservation releases on verified merge.
+
+## 2026-10-27 — PASSENGER-NATIONAL-OPTIONAL-1027 — PC-A
+
+Correction passenger completion now labels national ID without the inherited mandatory asterisk. The existing optionalFields and scoped name-only Customer creation policy already permit blank Iranian national IDs; supplied IDs still pass checksum/format validation. Ordinary new-contract policy remains unchanged. Existing focused completion regressions now explicitly assert omitted nationalId and reject a supplied malformed value. No API/schema/migration/dependency/runtime or production rollout change. Scoped lint/types and all exact-head hosted checks precede the owner-authorized develop merge; sources release on verified merge.
 
 ## 2026-10-25 — RESERVATION-CALENDAR-BASIS-1025 — PC-A — READY_FOR_CI
 
@@ -7701,3 +7737,15 @@ Correction Add passenger now permits name-only profiles; all other identity/pass
 ## HEADER-PROFILE-PHOTO-1026 — PC-B
 
 Shared header displays the persisted Workbench profile photo and an empty primary-blue circle when absent/unavailable, never name initials. Reload on profile-photo change and authenticated session recovery; ignore stale photo responses, release object URLs and hide failed images. Identity/session/logout behavior retained. Five existing menu integration checks and scoped ESLint pass; exact-head hosted quality/type/build/full tests/database gates precede authorized develop merge. No API/schema/dependency/runtime changes.
+
+## RESERVATION-SERVICE-GROUPS-1027 — PC-A
+
+Reservation services now render as compact category groups using snapshot kind/title pairs, retaining localized labels, unknown-service fallback and every distinct service title. Existing raw Excel values, filters, sorting and workflow actions remain unchanged. No API/schema/dependency/migration/runtime changes. Thirty-two focused tests, scoped lint, full Web typecheck and production build passed. All eight initial hosted gates passed; latest develop integration retains the independent cancelled-row palette and requires refreshed exact-head checks.
+
+## CANCELLED-ROW-RED-1027 — PC-A — READY_FOR_REVIEW
+
+Cancelled reservation rows now use a stronger saturated red with dark readable text in light mode, and deeper red with light text in dark mode. Only six status palette values change; row dimensions, other status colors, blue selection/focus and notes/correction markers retain their rules. Contrast5.84:1 light /9.16:1 dark,29 existing workspace tests, scoped formatting and the production Web build with TypeScript pass. No API/schema/data/dependency/runtime changes; review PR only, no merge/deployment authorization in this request.
+
+## CALL-CENTER-FINAL-RELEASE-1027 — PC-C
+Integrates the eight remaining reviewed Call Center commits through8bee4b87b with develop7f0090415. Retains PR1130 direction column/labels and full connected-to/acquaintance-source columns. Shared documentation and translation conflicts preserve both sides; adds the missing English manager-only error and regenerates offline catalogs. User authorizes PR and normal develop merge after all latest-head CI/CD checks succeed. No new migration/dependency or runtime/PBX change. Release evidence follows in tasks/CALL-CENTER-FINAL-RELEASE-1027.md.
+CALL-CENTER-FINAL-RELEASE-1027 validation refresh: initial eight hosted gates all passed. Latest develop76ede9246 integrated; fresh gates include the previously opt-in access PostgreSQL suite. Local supplemental database setup timeouts are recorded, not counted as success. PR1151 remains the final check/merge record.

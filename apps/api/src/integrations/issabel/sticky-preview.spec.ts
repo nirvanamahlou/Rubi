@@ -6,12 +6,12 @@ import type { StickyDecision } from './sticky-sales';
 const prefer: StickyDecision = {
   kind: 'PREFER',
   extension: '110',
-  ringSeconds: 20,
+  ringSeconds: 10,
   fallbackQueue: '1002',
 };
 afterEach(() => vi.useRealTimers());
 describe('bounded internal routing preview', () => {
-  it('preserves 20-second decision and sanitizes dependency errors', async () => {
+  it('preserves 10-second decision and sanitizes dependency errors', async () => {
     const budget = new StickyPreviewBudget();
     expect(await budget.run('1002', async () => prefer)).toEqual(prefer);
     expect(
