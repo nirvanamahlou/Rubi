@@ -1,5 +1,10 @@
 ## TICKET-WEEKDAY-MOVE-1027 — PC-A
 
+## ISSUED-TICKET-LOAD-EDITS-1027 — PC-A
+
+Sold flight loads now permit airline, flight number, airport, baggage, date/time, return-window and safe capacity revisions. Capacity cannot fall below active sold/held seats under the existing inventory row lock. Linked route/cabin/supply identity, capacity-hold/tour safeguards, duplicates, authorization and version checks remain. Existing Sales/Reservations current-fact readers and new regressions propagate updates into already-issued ticket downloads without rewriting saved quote, document number, allocation or historical artifacts. API35 and Web25 focused tests pass; scoped lint and full hosted type/test/build/PostgreSQL gates precede owner-authorized develop merge. No migration/dependency/runtime or production rollout.
+
+
 Published weekday edit now has an independent Change day control with target weekday and old/new departure-date preview. Existing same-direction rows move together within the Saturday-Friday week; both instants shift equally, preserving overnight arrival, classes/capacity/routes/baggage/limits and identity/version. Saved per-row facts are used, independently of unsaved edits. Existing authorized atomic batch boundary rejects duplicate identities/stale versions/active holds without partial saves. No backend/API/schema/dependency/data/runtime changes. Thirteen focused tests passed; final Ticket Catalog, English, lint, types/build and exact-head hosted gates precede authorized develop merge.
 
 ## UNIFIED-CONTRACT-HOTEL-PICKER-1026 — PC-A — READY_FOR_CI
