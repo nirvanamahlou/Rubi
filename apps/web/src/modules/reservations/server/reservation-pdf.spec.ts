@@ -101,13 +101,18 @@ describe('reservation PDF route', () => {
       sent.hotelPurchasePrices,
     );
   });
-  it('prints exact proposed purchase prices in the English supplier header and never leaks them to vouchers', () => {
+  it('prints exact independent supplier prices in section06 with a four-field header and NOTICE07, without voucher leakage', () => {
     const settings = {
       ...intake.workflow.supplierFormSettings!,
       hotelPurchasePrices: [
         { amount: '9007199254740993.25', currencyCode: 'EUR' },
         { amount: '100.50', currencyCode: 'USD' },
       ],
+      supplierFormPrices: {
+        pp: { amount: '9007199254740993.25', currencyCode: 'EUR' },
+        ratio: { amount: '100.50', currencyCode: 'USD' },
+        transferPp: { amount: '0', currencyCode: 'JPY' },
+      },
     };
     const priced = {
       ...intake,
@@ -123,13 +128,13 @@ describe('reservation PDF route', () => {
       'data:image/png;base64,c2FmZQ==',
       '',
     );
-    expect(html).toContain('9,007,199,254,740,993.25 EUR · 100.50 USD');
-    expect(html.indexOf('PROPOSED PURCHASE PRICE')).toBeGreaterThan(
-      html.indexOf('<span>SUPPLIER</span>'),
-    );
-    expect(html.indexOf('PROPOSED PURCHASE PRICE')).toBeLessThan(
-      html.indexOf('<span>DATE OF ISSUE</span>'),
-    );
+    expect(html).not.toContain('PROPOSED PURCHASE PRICE');
+    expect(html).toContain('9,007,199,254,740,993.25 EUR');
+    expect(html).toContain('100.50 USD');
+    expect(html).toContain('0 JPY');
+    expect(html).toContain('<b>06</b><strong>PRICES</strong>');
+    expect(html).toContain('<b>07</b><strong>NOTICE</strong>');
+    expect(html).toContain('Transfer P.P');
     expect(html).not.toContain('HOTEL TOTAL');
     const voucherHtml = reservationPdfHtml(
       priced,

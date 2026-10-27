@@ -100,6 +100,9 @@ export function defaultVoucherSettings(
   };
   if (!saved) return defaults;
   return {
+    ...(saved.supplierFormPrices !== undefined
+      ? { supplierFormPrices: structuredClone(saved.supplierFormPrices) }
+      : {}),
     ...(saved.rooms !== undefined
       ? {
           rooms: saved.rooms.map((room) => ({

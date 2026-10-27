@@ -60,6 +60,57 @@ it('retains supplier form display prices exactly and rejects invalid/duplicate c
   value.hotelPurchasePrices = [{ amount: '-1', currencyCode: 'EUR' }];
   expect(() => validateVoucherSettings(value, ['p'])).toThrow();
 });
+it('persists each supplier price column independently without summing currencies or changing old totals', () => {
+  const value = settings();
+  value.hotelPurchasePrices = [{ amount: '999', currencyCode: 'IRR' }];
+  value.supplierFormPrices = {
+    pp: { amount: '9007199254740993.25', currencyCode: 'EUR' },
+    ratio: { amount: '2.50', currencyCode: 'USD' },
+    transferPp: { amount: '0', currencyCode: 'JPY' },
+  };
+  const result = validateVoucherSettings(value, ['p']);
+  expect(result.supplierFormPrices).toEqual(value.supplierFormPrices);
+  expect(result.hotelPurchasePrices).toEqual(value.hotelPurchasePrices);
+  expect(result.supplierFormPrices).not.toBe(value.supplierFormPrices);
+  for (const invalid of [
+    null,
+    [],
+    { total: { amount: '1', currencyCode: 'EUR' } },
+    { pp: { amount: '-1', currencyCode: 'EUR' } },
+    { pp: { amount: '1', currencyCode: 'EU' } },
+    { pp: { amount: '', currencyCode: 'EUR' } },
+  ]) {
+    value.supplierFormPrices = invalid as never;
+    expect(() => validateVoucherSettings(value, ['p'])).toThrow();
+  }
+});
+it('preserves a price table omitted by older form editors and supports explicit clearing', () => {
+  const current = initialTravelWorkflow();
+  current.supplierFormSettings = settings();
+  current.supplierFormSettings.supplierFormPrices = {
+    pp: { amount: '20', currencyCode: 'EUR' },
+  };
+  const command = {
+    action: 'SUPPLIER_FORM_SETTINGS',
+    expectedVersion: current.version,
+    voucherSettings: settings(),
+    note: '',
+  } as const;
+  expect(
+    transition(current, command, ['p']).supplierFormSettings
+      ?.supplierFormPrices,
+  ).toEqual(current.supplierFormSettings.supplierFormPrices);
+  expect(
+    transition(
+      current,
+      {
+        ...command,
+        voucherSettings: { ...settings(), supplierFormPrices: {} },
+      },
+      ['p'],
+    ).supplierFormSettings?.supplierFormPrices,
+  ).toEqual({});
+});
 it('validates settings and rejects foreign passengers, invalid dates and unselected groups', () => {
   const valid = settings();
   valid.text.contractPartyName = '  شرکت آزمایشی  ';

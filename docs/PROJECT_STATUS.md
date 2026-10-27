@@ -1,3 +1,6 @@
+## RESERVATION-SERVICE-BORDERLESS-1027 — PC-A
+
+Removed the border and rounded corners around reservation service labels while keeping existing spacing, wrapping, ordered categories, colors, selected rows and content. CSS-only change; no data, API, migration, dependency or runtime changes. Focused checks and final-head hosted CI precede owner-authorized develop merge.
 ## RESERVATION-SERVICE-ORDER-1027 — PC-A
 
 Reservation service badges now have a fixed order: hotel, flight, transfer, then remaining categories in a stable order, independent of each contract's snapshot order. Flight is captioned پرواز. Generic اقامت هتل is omitted from Hotel badges, while specific hotel details, round-trip titles and unknown/legacy service information remain available. No stored data, API, schema, dependency, Excel, filter or workflow changes. Focused service/feed/workspace regressions57 and scoped lint pass; final Web build/types, translation coverage and exact-head hosted checks gate owner-authorized develop merge.
@@ -52,6 +55,16 @@ Contract accrual now requires a real approved receipt from the Finance inbox. Th
 ## SALES-CONTRACT-ACCOUNTING-1025 — PC-A
 
 Contract confirmation now captures per-currency immutable obligations in the source transaction. Existing approved Accounting chart mappings generate independent drafts; no guessed accounts or automatic posting. Source guards cover amendment/cancellation/supersession and period closure; earned revenue releases the original deferred line instead of accruing a second receivable, including historical FX dimensions. Forms, bank behavior and operational data preserved. See [task evidence](tasks/SALES-CONTRACT-ACCOUNTING-1025.md). Isolated PostgreSQL/source regressions, affected checks and exact-head hosted gates required before authorized develop merge. No schema/migration/dependency or runtime rollout.
+
+## HR-PAYROLL-WORKSHEET-1027 — PC-B — READY_FOR_CI
+
+COMPUTER_ID=PC-B; branch codex/pc-b-hr-payroll-worksheet-1027 from origin/develop1e437aaa. User explicitly authorizes implementing the approved payroll-settings mockup with no sample data, tests, push and normal develop merge. Reserve new HR private worksheet leaf controller/service/validation/tests, bounded HrModule registration and HrService generic-record namespace exclusion, additive HR worksheet contract/calculator export, payroll UI leaf/CSS/tests and bounded settings-group dispatch, own task/status notes and additive generated English catalogs. No active overlapping HR source writer found; earlier HR candidates merged/released. No schema/migration/dependency/lockfile or IAM grant changes. Existing HrRecord parent rows hold encrypted versioned snapshots, branch FK and canonical Decimal IRR totals in HrRecordAmount; immutable create replay keys, scoped reads, optimistic updates and metadata-only audit. Shared contract producer HR API and consumer HR Web are additive; existing payroll/Finance APIs remain unchanged. No runtime/server rollout or operational/sample inserts. Source reservations release after verified merge.
+
+Validation: HR API168 tests plus the bounded HTTP transport regression pass (43 existing local-PostgreSQL tests skipped; Docker daemon unavailable). HR Web198 tests pass, including empty-entry/access tests. Scoped API/Web ESLint, API typecheck/build and Web typecheck pass after regenerating ignored Prisma/contracts artifacts. No operational DB writes. Final production builds and complete exact-head hosted gates remain mandatory before owner-authorized develop merge. Scoped JSON transport accepts500-row snapshots and preserves the100KiB default elsewhere.
+
+Integration: preserve concurrent Ticket Catalog, passenger-completion and Reservations changes from develop7b548077; resolve only generated translation collisions by retaining both override sets and regenerating API/legacy dictionaries. Final-head checks gate authorized merge.
+
+Storage review: preserve existing8KiB per-record JSON and nonnegative Decimal constraints. Atomically persist bounded individually encrypted child rows under the versioned parent; repeatable-read detail and branch/parent FK isolation. Negative draft projections use explicit Negative magnitude fields and oversized Decimal aggregates are rejected before writes. Maximum500-row payload, child-ID exclusion and overflow regressions pass; final13 worksheet/HTTP checks and API typecheck pass. No schema/constraint weakening or operational data changes.
 
 ## HR-REPORT-REDESIGN-PARITY-1025 — PC-B
 
@@ -7714,6 +7727,10 @@ Correction passenger completion now labels national ID without the inherited man
 ## 2026-10-27 — CONTRACT-MULTI-HOTEL-1027 — PC-A
 
 Sales adds an explicit multi-hotel checkbox, all-city searchable selection, independent dates and room/guest composition per additional stay. Hotel-only and flight+hotel show the editor only with HOTEL selected; primary allocation and commercial totals remain canonical. Additional room rows have actual parent/room-type FKs and survive output, retrieval and compatible amendments; contract print escapes room snapshots. Migration20261027120000 is additive and not operationally applied. No dependency/grant/runtime/deployment change. Focused regressions and exact-head hosted gates precede owner-authorized develop merge; see tasks/CONTRACT-MULTI-HOTEL-1027.md. Source locks release on verified merge.
+
+## 2026-10-27 — RESERVATION-PRICE-TABLE-1027 — PC-A
+
+Supplier reservation header returns to four fields without a total. Section06 now prints independent P.P, Ratio and Transfer P.P amount/currency cells with directional transfer counts; NOTICE becomes07. Editor selects registered currencies, validates them through the existing request-scoped public directory and removes automatic total-rate hydration. Old totals are retained historically without reinterpreting them as per-person prices. Supplier price table persists in existing versioned workflow JSON, survives compatible omitted-field edits, and never prints on the customer voucher or posts a financial amount. Preview/server PDF share exact string formatting and directional transfer logic. No schema/migration/dependency/runtime/deployment changes; all final-head checks precede owner-authorized develop merge. Bounded source reservation releases on verified merge.
 
 ## 2026-10-25 — RESERVATION-CALENDAR-BASIS-1025 — PC-A — READY_FOR_CI
 

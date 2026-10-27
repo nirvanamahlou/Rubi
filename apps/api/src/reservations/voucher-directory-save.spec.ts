@@ -25,6 +25,7 @@ function setup(sent = true) {
       board: 'Canonical board',
     },
   });
+  const currencyReference = vi.fn().mockResolvedValue({ code: 'JPY' });
   const controller = new ReservationRequestsController(
     {} as never,
     {} as never,
@@ -38,6 +39,7 @@ function setup(sent = true) {
     {
       voucherBrokerName: vi.fn().mockResolvedValue('Canonical broker'),
       voucherLeaderContact,
+      currencyReference,
     } as never,
   );
   const request = {
@@ -47,10 +49,37 @@ function setup(sent = true) {
       permissions: ['reservations.read', 'reservations.documents.manage'],
     },
   } as never;
-  return { controller, request, update, voucherLeaderContact };
+  return {
+    controller,
+    request,
+    update,
+    voucherLeaderContact,
+    currencyReference,
+  };
 }
 
 describe('voucher directory snapshot and sent-form gate', () => {
+  it('validates every chosen quotation currency through the request-scoped registered directory', async () => {
+    const s = setup();
+    const input = {
+      action: 'SUPPLIER_FORM_SETTINGS',
+      expectedVersion: 1,
+      voucherSettings: {
+        supplierFormPrices: {
+          pp: { amount: '1', currencyCode: 'JPY' },
+          ratio: { amount: '2', currencyCode: 'JPY' },
+        },
+      },
+    } as never;
+    await s.controller.workflowUpdate('intake', input, s.request);
+    expect(s.currencyReference).toHaveBeenCalledExactlyOnceWith('JPY');
+    s.update.mockClear();
+    s.currencyReference.mockRejectedValueOnce(new Error('Unknown currency'));
+    await expect(
+      s.controller.workflowUpdate('intake', input, s.request),
+    ).rejects.toThrow('Unknown currency');
+    expect(s.update).not.toHaveBeenCalled();
+  });
   it('validates and persists a canonical 300-character Board and child-band snapshot end to end', async () => {
     const s = setup();
     s.voucherLeaderContact.mockResolvedValueOnce({

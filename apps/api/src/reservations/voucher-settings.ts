@@ -4,6 +4,27 @@ import {
   voucherFlagKeys,
   type VoucherSettingsV1,
 } from '@nora/contracts';
+export function validateSupplierFormPrices(
+  value: unknown,
+): VoucherSettingsV1['supplierFormPrices'] {
+  if (value === undefined) return undefined;
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    Object.entries(value).some(
+      ([key, price]) =>
+        !['pp', 'ratio', 'transferPp'].includes(key) ||
+        !price ||
+        typeof price.amount !== 'string' ||
+        !/^\d{1,18}(?:\.\d{1,4})?$/.test(price.amount) ||
+        typeof price.currencyCode !== 'string' ||
+        !/^[A-Z]{3}$/.test(price.currencyCode),
+    )
+  )
+    throw new Error('جدول قیمت فرم رزرواسیون معتبر نیست.');
+  return value as NonNullable<VoucherSettingsV1['supplierFormPrices']>;
+}
 export function validateVoucherSettings(
   value: unknown,
   passengerIds: readonly string[],
@@ -16,6 +37,11 @@ export function validateVoucherSettings(
   };
   if (!value || typeof value !== 'object') return fail();
   const v = value as VoucherSettingsV1;
+  try {
+    validateSupplierFormPrices(v.supplierFormPrices);
+  } catch {
+    return fail();
+  }
   if (
     v.hotelPurchasePrices !== undefined &&
     (!Array.isArray(v.hotelPurchasePrices) ||
@@ -194,6 +220,16 @@ export function validateVoucherSettings(
             amount: p.amount,
             currencyCode: p.currencyCode,
           })),
+        }
+      : {}),
+    ...(v.supplierFormPrices !== undefined
+      ? {
+          supplierFormPrices: Object.fromEntries(
+            Object.entries(v.supplierFormPrices).map(([key, price]) => [
+              key,
+              { amount: price.amount, currencyCode: price.currencyCode },
+            ]),
+          ),
         }
       : {}),
     ...(v.brokerId ? { brokerId: v.brokerId } : {}),

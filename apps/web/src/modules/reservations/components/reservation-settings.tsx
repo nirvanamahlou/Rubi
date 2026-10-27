@@ -4,7 +4,7 @@ import {
   ReservationCurrencySelect,
   useReservationCurrencies,
 } from './reservation-currencies';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   voucherTextKeys,
   voucherFlagKeys,
@@ -48,6 +48,10 @@ import {
   type ReservationEditReferenceResource,
 } from '../model/reservation-edit-references';
 import styles from './reservation-settings.module.css';
+import {
+  supplierPriceColumns,
+  normalizeSupplierFormPrices,
+} from '../model/supplier-form-prices';
 
 export type ReservationSettingsSection =
   'ALL' | 'PARTY' | 'FLIGHT' | 'HOTEL' | 'OTHER' | 'PASSENGERS';
@@ -211,48 +215,6 @@ export function ReservationSettingsForm({
   const [past, setPast] = useState<TravelWorkflowStateV1>();
   const [previewDirty, setPreviewDirty] = useState(false);
   const [showFiles, setShowFiles] = useState(false);
-  const priceSource = useRef(
-    draft.hotelPurchasePrices !== undefined ? draft.brokerId : undefined,
-  );
-  const [priceLoading, setPriceLoading] = useState(
-    Boolean(draft.brokerId && draft.hotelPurchasePrices === undefined),
-  );
-  const [priceError, setPriceError] = useState('');
-  useEffect(() => {
-    const brokerId = draft.brokerId;
-    if (
-      !brokerId ||
-      priceSource.current === brokerId ||
-      draft.hotelPurchasePrices?.some((p) => p.amount.trim())
-    )
-      return;
-    let live = true;
-    void travelRequest<{
-      data: NonNullable<VoucherSettingsV1['hotelPurchasePrices']>;
-    }>(
-      `reservations/hotel-savings/supplier-form/${intake.id}?brokerId=${encodeURIComponent(brokerId)}`,
-    )
-      .then((response) => {
-        if (!live) return;
-        priceSource.current = brokerId;
-        setDraft((previous) =>
-          previous.brokerId === brokerId
-            ? { ...previous, hotelPurchasePrices: response.data }
-            : previous,
-        );
-        setPreviewDirty(true);
-        setPriceLoading(false);
-        setPriceError('');
-      })
-      .catch(() => {
-        if (!live) return;
-        setPriceLoading(false);
-        setPriceError('دریافت نرخ خرید هتل انجام نشد؛ مبلغ را دستی وارد کنید.');
-      });
-    return () => {
-      live = false;
-    };
-  }, [draft.brokerId, draft.hotelPurchasePrices, intake.id]);
   const referenceKeys = referenceKeysBySection[section];
   const referenceResourceKey = [
     ...new Set(
@@ -340,8 +302,7 @@ export function ReservationSettingsForm({
     };
   }, [intake.id, intake.workflow.version]);
   async function save(sendToBroker = showDocument) {
-    if (busy || priceLoading || intake.workflow.supplierStatus === 'CANCELLED')
-      return;
+    if (busy || intake.workflow.supplierStatus === 'CANCELLED') return;
     if (activeDirectory.loading || activeDirectory.error) {
       setError(
         activeDirectory.error ||
@@ -385,6 +346,10 @@ export function ReservationSettingsForm({
     setMessage('');
     let savedWorkflow: TravelWorkflowStateV1 | undefined;
     try {
+      const supplierFormPrices = normalizeSupplierFormPrices(
+        draft.supplierFormPrices,
+        currencyDirectory.currencies,
+      );
       let currentVersion = intake.workflow.version;
       if (sendToBroker && !intake.workflow.branding) {
         const branded = await travelRequest<{ data: TravelWorkflowStateV1 }>(
@@ -408,6 +373,7 @@ export function ReservationSettingsForm({
           note: sectionLabels[section] + ' فقط در فرم رزواسیون',
           voucherSettings: {
             ...draft,
+            supplierFormPrices,
             text: {
               ...draft.text,
               arrivalAirline:
@@ -538,13 +504,6 @@ export function ReservationSettingsForm({
                   ...(referenceKey === 'broker' ? { brokerId: option.id } : {}),
                 };
                 if (referenceKey === 'broker' && draft.brokerId !== option.id) {
-                  priceSource.current = undefined;
-                  const keepAmount = draft.hotelPurchasePrices?.some((p) =>
-                    p.amount.trim(),
-                  );
-                  if (!keepAmount) next.hotelPurchasePrices = [];
-                  setPriceLoading(!keepAmount);
-                  setPriceError('');
                   delete next.leaderId;
                   next.text.leaderName = '';
                   next.text.leaderPhone = '';
@@ -604,7 +563,6 @@ export function ReservationSettingsForm({
       onClick={() => void save()}
       disabled={
         busy ||
-        priceLoading ||
         activeDirectory.loading ||
         (!selected.length && !aggregateForm) ||
         (showDocument && !draft.brokerId)
@@ -628,66 +586,65 @@ export function ReservationSettingsForm({
 
       {(section === 'ALL' || section === 'HOTEL') && (
         <div className={`${styles.sectionCard} ${styles.amountCard}`}>
-          <h4>مبلغ هتل در فرم رزواسیون</h4>
-          <p>
-            نرخ خرید کارگزار انتخاب‌شده برای کل اقامت؛ قابل ویرایش پیش از صدور.
-          </p>
-          {priceLoading && <p>در حال دریافت نرخ خرید…</p>}
-          {priceError && <p role="alert">{priceError}</p>}
+          <h4>جدول قیمت فرم رزرواسیون</h4>
           {currencyDirectory.error && (
             <p role="alert">{currencyDirectory.error}</p>
           )}
-          {(draft.hotelPurchasePrices?.length
-            ? draft.hotelPurchasePrices
-            : [{ amount: '', currencyCode: '' }]
-          ).map((price, index) => (
-            <div className="grid grid-cols-2 gap-2" key={index}>
-              <label>
-                مبلغ
-                <MoneyInput
-                  aria-label={`مبلغ هتل ${index + 1}`}
-                  value={price.amount}
-                  disabled={busy || priceLoading}
-                  onValueChange={(amount) => {
-                    const prices = [
-                      ...(draft.hotelPurchasePrices?.length
-                        ? draft.hotelPurchasePrices
-                        : [{ amount: '', currencyCode: '' }]),
-                    ];
-                    prices[index] = { ...price, amount };
-                    update({ ...draft, hotelPurchasePrices: prices });
-                  }}
-                />
-              </label>
-              <label>
-                ارز
-                <ReservationCurrencySelect
-                  label={`ارز هتل ${index + 1}`}
-                  value={price.currencyCode}
-                  currencies={currencyDirectory.currencies}
-                  disabled={busy || priceLoading || currencyDirectory.loading}
-                  onChange={(currencyCode) => {
-                    const prices = [
-                      ...(draft.hotelPurchasePrices?.length
-                        ? draft.hotelPurchasePrices
-                        : [{ amount: '', currencyCode: '' }]),
-                    ];
-                    prices[index] = {
-                      ...price,
-                      currencyCode,
-                    };
-                    update({ ...draft, hotelPurchasePrices: prices });
-                  }}
-                />
-              </label>
-            </div>
-          ))}
+          <table className="w-full text-sm">
+            <thead>
+              <tr>
+                {supplierPriceColumns.map((column) => (
+                  <th key={column.key}>{column.label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                {supplierPriceColumns.map((column) => {
+                  const price = draft.supplierFormPrices?.[column.key] ?? {
+                    amount: '',
+                    currencyCode: '',
+                  };
+                  const change = (next: typeof price) =>
+                    update({
+                      ...draft,
+                      supplierFormPrices: {
+                        ...draft.supplierFormPrices,
+                        [column.key]: next,
+                      },
+                    });
+                  return (
+                    <td key={column.key} className="p-2 align-top">
+                      <div className="grid gap-2">
+                        <MoneyInput
+                          aria-label={`مبلغ ${column.label}`}
+                          value={price.amount}
+                          disabled={busy}
+                          onValueChange={(amount) =>
+                            change({ ...price, amount })
+                          }
+                        />
+                        <ReservationCurrencySelect
+                          label={`ارز ${column.label}`}
+                          value={price.currencyCode}
+                          currencies={currencyDirectory.currencies}
+                          disabled={busy || currencyDirectory.loading}
+                          onChange={(currencyCode) =>
+                            change({ ...price, currencyCode })
+                          }
+                        />
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            </tbody>
+          </table>
           <Button
             type="button"
             loading={busy}
             disabled={
               busy ||
-              priceLoading ||
               currencyDirectory.loading ||
               intake.workflow.supplierStatus === 'CANCELLED' ||
               activeDirectory.loading ||
@@ -700,23 +657,8 @@ export function ReservationSettingsForm({
           <Button
             type="button"
             variant="outline"
-            disabled={busy || priceLoading}
-            onClick={() =>
-              update({
-                ...draft,
-                hotelPurchasePrices: [
-                  ...(draft.hotelPurchasePrices ?? []),
-                  { amount: '', currencyCode: '' },
-                ],
-              })
-            }
-          >
-            افزودن ارز
-          </Button>
-          <Button
-            variant="outline"
-            disabled={busy || priceLoading}
-            onClick={() => update({ ...draft, hotelPurchasePrices: [] })}
+            disabled={busy}
+            onClick={() => update({ ...draft, supplierFormPrices: {} })}
           >
             پاک‌کردن مبلغ فرم
           </Button>
@@ -729,6 +671,7 @@ export function ReservationSettingsForm({
           )}
         </div>
       )}
+
       <p
         className={`${styles.hotelSummary} ${
           section === 'ALL' || section === 'HOTEL' ? '' : 'hidden'
