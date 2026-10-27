@@ -59,10 +59,20 @@ def activate():
         raise RuntimeError('Root console execution required')
     os.umask(0o077)
     with (ROOT / 'avina-deploy.lock').open('r') as lock:
-        try:
-            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            raise RuntimeError('Another ERP deployment holds the lock. No changes made; retry after it completes.') from None
+        lock_deadline = time.monotonic() + 900
+        announced = False
+        while True:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if not announced:
+                    print('Waiting up to 15 minutes for the existing ERP deployment; no changes while waiting.', flush=True)
+                    announced = True
+                if time.monotonic() >= lock_deadline:
+                    raise RuntimeError('ERP deployment lock still busy after 15 minutes. No changes made.') from None
+                time.sleep(5)
+        print('Deployment lock acquired; checking current configuration.', flush=True)
         original = COMPOSE.read_bytes()
         config = docker_config()
         services = config['services']
