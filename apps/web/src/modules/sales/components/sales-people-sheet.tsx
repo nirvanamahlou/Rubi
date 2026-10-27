@@ -127,7 +127,15 @@ export function SalesPeopleSheet({
         'phone',
         'email',
       ]
-    : ['firstName', 'lastName', 'nationalId', 'birthDate', 'phone', 'email'];
+    : [
+        'firstName',
+        'lastName',
+        'gender',
+        'birthDate',
+        'nationalId',
+        'phone',
+        'email',
+      ];
   const change = (next: SalesPeopleDraft) => {
     setConfirmed(false);
     setError('');
@@ -896,7 +904,12 @@ export function SalesPeopleSheet({
 
       {!state.legacyContract && (
         <CustomerEntrySheet
-          optionalFields={['nationalId']}
+          optionalFields={[
+            'nationalId',
+            'passportNumber',
+            'passportExpiryDate',
+            ...(!passportIdentity ? (['gender'] as const) : []),
+          ]}
           topScrollbar
           extraColumns={[
             ...(state.serviceKinds.includes('FLIGHT')
@@ -955,7 +968,17 @@ export function SalesPeopleSheet({
           showPassportExpiry={passportIdentity}
           visibleFields={visibleEntryFields}
           columnOrder={
-            passportIdentity ? ['passportFirstName', 'passportLastName'] : []
+            passportIdentity
+              ? [
+                  'passportFirstName',
+                  'passportLastName',
+                  'gender',
+                  'birthDate',
+                  'passportNumber',
+                  'passportExpiryDate',
+                  'nationalId',
+                ]
+              : ['firstName', 'lastName', 'gender', 'birthDate', 'nationalId']
           }
           columnLabels={
             passportIdentity
@@ -964,8 +987,8 @@ export function SalesPeopleSheet({
                   passportFirstName: 'نام انگلیسی مطابق پاسپورت *',
                   passportLastName: 'نام خانوادگی انگلیسی مطابق پاسپورت *',
                   birthDate: 'تاریخ تولد *',
-                  passportNumber: 'شماره پاسپورت *',
-                  passportExpiryDate: 'انقضای پاسپورت *',
+                  passportNumber: 'شماره پاسپورت',
+                  passportExpiryDate: 'انقضای پاسپورت',
                 }
               : { nationalId: 'کد ملی', birthDate: 'تاریخ تولد *' }
           }

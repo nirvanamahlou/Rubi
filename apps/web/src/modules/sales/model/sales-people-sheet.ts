@@ -355,8 +355,6 @@ export function peopleCreateInput(
     .replace(/\s+/g, '');
   if (passportNumber && !/^[A-Z0-9-]{4,24}$/.test(passportNumber))
     throw new Error('شماره پاسپورت معتبر نیست.');
-  if (passportIdentity && (!passportNumber || !v.passportExpiryDate))
-    throw new Error('شماره و انقضای پاسپورت برای سفر خارجی الزامی است.');
   if (v.phone.trim() && !/^\+?[0-9]{10,15}$/.test(v.phone.trim()))
     throw new Error('شماره تلفن معتبر وارد کنید.');
   if (v.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email.trim()))
@@ -398,6 +396,7 @@ export function peopleCreateInput(
           birthCountryCode: v.birthCountryCode.trim().toUpperCase(),
         }
       : {}),
+    ...(v.gender ? { gender: v.gender as 'M' | 'F' } : {}),
   };
 }
 export function validateSalesPeopleDraft(
@@ -450,10 +449,6 @@ export function validateSalesPeopleDraft(
       )
         throw new Error(
           `${label}: نام و نام خانوادگی لاتین پاسپورت الزامی است.`,
-        );
-      if (!v.passportNumber.trim() || !v.passportExpiryDate)
-        throw new Error(
-          `${label}: شماره و انقضای پاسپورت برای سفر خارجی الزامی است.`,
         );
       if (!['M', 'F'].includes(v.gender))
         throw new Error(`${label}: جنسیت را با M یا F ثبت کنید.`);

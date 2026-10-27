@@ -117,6 +117,67 @@ beforeEach(() => {
 });
 
 describe('reservation ticket PDF', () => {
+  it.each([false, true])(
+    'downloads current flight facts for an already issued ticket (Sales=%s)',
+    async (sales) => {
+      const saved = structuredClone(intake);
+      Object.assign(saved.snapshot.ticketSelections![0]!, {
+        carrierNameSnapshot: 'UPDATED AIR',
+        serviceNumberSnapshot: 'UPDATED-9726',
+        departureAt: '2026-11-12T21:00:00Z',
+        arrivalAt: '2026-11-13T01:00:00Z',
+      });
+      saved.ticketDocuments = [
+        {
+          customerId: passengerId,
+          number: 'ISSUED-UNCHANGED',
+          issuedAt: '2026-09-12T00:00:00Z',
+          source: 'AUTO',
+        },
+      ] as never;
+      const fetcher = vi.fn(async (url: string) => {
+        if (url.endsWith('/workflow') || url.endsWith('/travel-documents'))
+          return Response.json({ data: saved });
+        if (url.endsWith('/document-details'))
+          return Response.json({
+            data: {
+              id: 'offer',
+              originId: cityOne,
+              destinationId: cityTwo,
+              economyBaggageKg: '35',
+              businessBaggageKg: '45',
+            },
+          });
+        if (
+          url.endsWith('/passengers') ||
+          url.includes('/master-data/airlines?')
+        )
+          return Response.json({ data: [] });
+        return Response.json({
+          data: { name: 'City', attributes: { englishName: 'CITY' } },
+        });
+      });
+      vi.stubGlobal('fetch', fetcher);
+      const query = sales
+        ? `?salesContractId=${saved.snapshot.contractId}`
+        : '';
+      expect(
+        (await GET(request(query), { params: Promise.resolve({ id }) })).status,
+      ).toBe(200);
+      const html = renderer.mock.calls[0]?.[0] as string;
+      expect(html).toContain('UPDATED AIR');
+      expect(html).toContain('UPDATED-9726');
+      expect(html).toContain('35 KG');
+      expect(html).toContain('ISSUED-UNCHANGED');
+      expect(html).not.toContain('TEST-01</span>');
+      expect(fetcher.mock.calls[0]?.[0]).toContain(
+        sales ? '/travel-documents' : '/workflow',
+      );
+      expect(intake.snapshot.ticketSelections?.[0]?.serviceNumberSnapshot).toBe(
+        'TEST-01',
+      );
+    },
+  );
   it('loads persisted output flight-number overrides into the downloaded PDF', async () => {
     const saved = structuredClone(intake);
     saved.workflow.ticketFlightNumbers = { 'flight-offer': 'B9 4599' };

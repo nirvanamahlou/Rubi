@@ -150,6 +150,8 @@ describe('linked load current schedule across contract and issued ticket reads',
     ).toBe(selection.departureAt);
     f.offer.departureAt = new Date('2026-11-01T23:30:00Z');
     f.offer.arrivalAt = new Date('2026-11-02T02:00:00Z');
+    f.offer.carrierName = 'Updated Air';
+    f.offer.serviceNumber = 'UPDATED-456';
     const detail = (await f.sales.detail('contract', actor)).data;
     const issued = await f.workflow.detail(f.intake.id, ['branch']);
     for (const flights of [
@@ -159,6 +161,8 @@ describe('linked load current schedule across contract and issued ticket reads',
       expect(flights?.[0]).toMatchObject({
         departureAt: f.offer.departureAt.toISOString(),
         arrivalAt: f.offer.arrivalAt.toISOString(),
+        carrierNameSnapshot: 'Updated Air',
+        serviceNumberSnapshot: 'UPDATED-456',
         quotedPrice: { amount: '100', currencyCode: 'USD' },
         originId: 'sales-origin',
         serviceClientKey: 'out',
@@ -168,6 +172,7 @@ describe('linked load current schedule across contract and issued ticket reads',
     expect(detail.priceComponents[0]?.amount).toBe('100');
     expect(detail.version).toBe(1);
     expect(f.saved.departureAt).toBe(selection.departureAt);
+    expect(f.saved.serviceNumberSnapshot).toBe(selection.serviceNumberSnapshot);
     expect(f.snapshot.ticketSelections?.[0]?.departureAt).toBe(
       selection.departureAt,
     );
