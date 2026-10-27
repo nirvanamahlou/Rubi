@@ -738,7 +738,11 @@ export function SalesPeopleSheet({
           </label>
         ) : null}
         <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2 lg:grid-cols-4">
-          <FormField label="نام مشتری" id="sales-buyer-name">
+          <FormField
+            label="نام مشتری"
+            id="sales-buyer-name"
+            required={draft.mode === 'person' && !buyerRow.person}
+          >
             <div className="relative">
               <Input
                 id="sales-buyer-name"

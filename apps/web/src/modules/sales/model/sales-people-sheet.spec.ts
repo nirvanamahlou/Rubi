@@ -124,14 +124,25 @@ it.each([['HOTEL'], ['FLIGHT'], ['FLIGHT', 'HOTEL']] as const)(
   'accepts blank passport documents for international %j while validating supplied documents',
   (...serviceKinds) => {
     const draft = filled();
+    draft.buyerContact = {
+      name: '',
+      phone: '',
+      address: '',
+      postalCode: '',
+      landline: '',
+    };
     for (const row of Object.values(draft.rows)) {
       Object.assign(row.values, {
+        nationalId: '',
+        phone: '',
+        email: '',
         passportFirstName: 'SYNTHETIC',
         passportLastName: 'TRAVELER',
         gender: 'M',
       });
       const input = peopleCreateInput(row, false, true, true);
       expect(input).not.toHaveProperty('passportNumber');
+      expect(input).not.toHaveProperty('nationalId');
       expect(input).not.toHaveProperty('passportExpiryDate');
       expect(input.gender).toBe('M');
     }
@@ -1364,6 +1375,50 @@ it('retains transfer leg exclusions when temporary passenger slots become saved 
     [],
     ['transfer-outbound', 'transfer-return'],
   ]);
+});
+
+it('uses the actual passenger identity when optional buyer fields are blank', async () => {
+  const travel = {
+    ...state,
+    passengerComposition: { adults: 1, children: 0, infants: 0 },
+  };
+  const draft = filled();
+  draft.rows = { p0: draft.rows.p0! };
+  Object.assign(draft.rows.p0!.values, {
+    nationalId: '',
+    phone: '',
+    email: '',
+  });
+  draft.buyerContact = {
+    name: ' ',
+    phone: ' ',
+    address: ' ',
+    postalCode: ' ',
+    landline: ' ',
+  };
+  const create = vi.fn(async () => ({ data: detail('actual-passenger') }));
+  const addContact = vi.fn();
+  const result = await saveSalesPeopleDraft(travel, draft, vi.fn(), {
+    create,
+    addContact,
+  } as never);
+  expect(result.patch).toMatchObject({
+    customerId: 'actual-passenger',
+    customerName: 'Synthetic Person',
+    buyerContact: {
+      name: 'Synthetic Person',
+      phone: '',
+      address: '',
+      postalCode: '',
+      landline: '',
+    },
+  });
+  expect(create).toHaveBeenCalledTimes(1);
+  expect(create.mock.calls[0]).toBeDefined();
+  expect(addContact).not.toHaveBeenCalled();
+  expect(salesPayload({ ...travel, ...result.patch }).buyerContact).toEqual(
+    result.patch.buyerContact,
+  );
 });
 
 it.each([undefined, '', '   ', '02112345678'])(
