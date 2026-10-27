@@ -101,6 +101,7 @@ beforeEach(() => {
     rooms: [],
     passengers: [{ id: 'p', selected: true, age: 'ADL' }],
     hotelPurchasePrices: [{ amount: '1250000.50', currencyCode: 'IRR' }],
+    supplierFormPrices: { pp: { amount: '1250000.50', currencyCode: 'IRR' } },
   };
   h.request.mockResolvedValue({ data: { version: 6 } });
   vi.stubGlobal('window', { dispatchEvent: vi.fn() });
@@ -122,6 +123,9 @@ it('offers a direct save-only action without requiring or sending to a broker', 
       expectedVersion: 5,
       applyToContractAndVoucher: false,
       voucherSettings: expect.objectContaining({
+        supplierFormPrices: {
+          pp: { amount: '1250000.50', currencyCode: 'IRR' },
+        },
         hotelPurchasePrices: [{ amount: '1250000.50', currencyCode: 'IRR' }],
       }),
     }),

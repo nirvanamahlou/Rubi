@@ -1,6 +1,7 @@
 'use client';
+import { SupplierPriceTable } from './supplier-price-table';
 import { VoucherFormSheet } from './voucher-form-sheet';
-import { reservationFormPriceText } from '../model/reservation-form-price';
+
 import { loadOutputReferences } from '../model/output-references';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
@@ -268,23 +269,11 @@ export function ReservationFormSheet({
                   )}
                 </div>
               </header>
-              <div
-                className={`${styles.meta} ${!voucher ? styles.metaWithPrice : ''}`}
-              >
+              <div className={styles.meta}>
                 {[
                   [voucher ? 'BOOKING NO.' : 'REQUEST NO.', data.request],
                   ['SUPPLIER', data.supplier],
-                  ...(!voucher
-                    ? [
-                        [
-                          'PROPOSED PURCHASE PRICE',
-                          reservationFormPriceText(
-                            settings?.hotelPurchasePrices ?? [],
-                            'code',
-                          ) || '-',
-                        ],
-                      ]
-                    : []),
+
                   [voucher ? 'BOOKING DATE' : 'DATE OF ISSUE', data.issueDate],
                   ['SERVICES', data.services],
                 ].map(([label, value]) => (
@@ -556,7 +545,12 @@ export function ReservationFormSheet({
                   )}
                 </tbody>
               </table>
-              <Heading number="06" title="NOTICE" note="Notes & confirmation" />
+              {!voucher && <SupplierPriceTable intake={intake} />}
+              <Heading
+                number={voucher ? '06' : '07'}
+                title="NOTICE"
+                note="Notes & confirmation"
+              />
               <div className={voucher ? styles.voucherClosing : undefined}>
                 <div className={styles.notice}>
                   <span>SPECIAL REQUESTS / REMARKS</span>
