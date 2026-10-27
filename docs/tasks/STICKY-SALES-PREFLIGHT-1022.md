@@ -29,8 +29,8 @@ branch/runtime artifact and was not overwritten.
   database work. Late results have no side effects; dependency failures return
   sanitized fallback reasons. Permission failures remain errors. No caller data
   or exception payload is logged.
-- Candidate decision retains ringSeconds20 and fallbackQueue1002 for sales.
-  This is a decision contract, not an installed20-second telephone timer.
+- Candidate decision retains ringSeconds10 and fallbackQueue1002 for sales.
+  This is a decision contract, not an installed10-second telephone timer.
 
 ## Explicit unknown policy / configuration
 
@@ -81,11 +81,11 @@ Synthetic records were confined to local nora_ci; operational data was not modif
    bypasses existing QueueCallerJoin/AgentConnect observations. Do not activate until
    the selected hook preserves or explicitly projects equivalent root/leg facts,
    answer ownership, unanswered calls and recording correlation exactly once.
-5. Recheck member/availability at dial time; try preferred member at most20 seconds.
+5. Recheck member/availability at dial time; try preferred member at most10 seconds.
    Busy/offline/no-answer or unavailable lookup goes to the original sales route1002
    once, without a loop. Caller hangup ends processing; answered calls are not queued.
    No queue-global penalty, membership, pause, redirect or preference mutation.
-6. Test real new/repeat calls, unavailable agent,20-second no-answer, caller hangup,
+6. Test real new/repeat calls, unavailable agent,10-second no-answer, caller hangup,
    transfer, concurrent callers, ERP disconnect, recording continuity and rollback.
    Only a successfully answered sales conversation may update last-answer history.
 7. Rollback restores the backed-up original sales destination. No popup activation:
@@ -103,3 +103,5 @@ until SSH installation and controlled real-call acceptance.
 - Scoped ESLint passes; TypeScript noEmit and Nest production build pass (final
   rebuild verification recorded at task completion).
 - Disposable test container stopped afterward. No live-PBX acceptance claimed.
+
+2026-10-25 policy update: user shortened the preferred-agent ringing budget from20 to10 seconds; fallback queue1002 and SSH/real-call acceptance requirements remain.

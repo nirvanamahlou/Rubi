@@ -38,7 +38,9 @@ export interface Call extends CallEvent {
     extension: string;
     label: string;
     shared: boolean;
-    answeredAt: string;
+    answeredAt: string | null;
+    observedAt?: string;
+    labelSource?: 'CURRENT_DIRECTORY';
   };
   needsCompletion?: boolean | null;
   ticketId?: string | null;

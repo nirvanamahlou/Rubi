@@ -247,13 +247,16 @@ export class CallCenterReadService {
         const calls = await tx.callCenterCall.findMany({
           where: { id: { in: rows.map((r) => r.latestId) } },
         });
+        const summaries = await this.calls.hydrateDestinations(
+          branchId,
+          calls.map((call) => this.calls.presentSummary(call)),
+          tx,
+        );
         return {
           data: rows.map((row) => ({
             id: row.id,
             callCount: Number(row.callCount),
-            latest: this.calls.presentSummary(
-              calls.find((c) => c.id === row.latestId)!,
-            ),
+            latest: summaries.find((call) => call.id === row.latestId)!,
           })),
           meta: {
             branchId,
@@ -311,7 +314,10 @@ export class CallCenterReadService {
         take: q.pageSize + 1,
       });
       return {
-        data: rows.slice(0, q.pageSize).map((r) => this.calls.presentCall(r)),
+        data: await this.calls.hydrateDestinations(
+          branchId,
+          rows.slice(0, q.pageSize).map((r) => this.calls.presentCall(r)),
+        ),
         meta: {
           next: rows.length > q.pageSize ? rows[q.pageSize - 1]!.id : null,
         },

@@ -53,6 +53,9 @@
 .panel summary {
   cursor: pointer;
 }
+.editorContact {
+  margin-block-end: 16px;
+}
 .form fieldset {
   display: grid;
   gap: 12px;

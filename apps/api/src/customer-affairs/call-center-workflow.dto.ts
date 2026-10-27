@@ -43,7 +43,10 @@ export class CallCenterRequestDto {
     'IN_PROGRESS';
   @IsOptional() @IsUUID() ownerId?: string | null;
   @IsIn(['NORMAL', 'HIGH', 'URGENT']) priority!: string;
-  @IsString() @Length(0, 500) reason!: string;
+  @IsString()
+  @Length(1, 500)
+  @Matches(/\S/u, { message: 'دلیل تغییر، بستن یا بازگشایی را وارد کنید.' })
+  reason!: string;
   @IsOptional() @IsString() @Length(0, 1000) result?: string;
 }
 export class CallCenterFollowUpDto {
