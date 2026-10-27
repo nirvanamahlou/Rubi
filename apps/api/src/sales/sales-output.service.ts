@@ -53,7 +53,12 @@ export class SalesOutputService {
           // never persisted or passed to a Customer mutation/general detail API.
           {
             ...actor,
-            permissions: [...new Set([...actor.permissions, 'sales.export'])],
+            permissions: [
+              ...new Set<AuthenticatedActor['permissions'][number]>([
+                ...actor.permissions,
+                'sales.export',
+              ]),
+            ],
           },
           traceId,
         );
