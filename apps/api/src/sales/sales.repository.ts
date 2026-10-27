@@ -371,6 +371,17 @@ export class SalesRepository {
                     mode: 'insensitive',
                   },
                 },
+                {
+                  services: {
+                    some: {
+                      metadata: {
+                        path: ['contractNotice'],
+                        string_contains: query.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                  },
+                },
               ],
             }
           : {},

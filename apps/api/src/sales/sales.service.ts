@@ -2045,6 +2045,14 @@ export class SalesService {
           [
             row.contractNumber,
             row.customerNameSnapshot,
+            ...(row.services ?? []).flatMap(({ metadata }) =>
+              metadata &&
+              typeof metadata === 'object' &&
+              !Array.isArray(metadata) &&
+              typeof metadata.contractNotice === 'string'
+                ? [metadata.contractNotice]
+                : [],
+            ),
             ...(has(actor, 'sales.payments.read')
               ? row.payments.map((payment) => payment.paymentReference ?? '')
               : []),

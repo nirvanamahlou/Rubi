@@ -299,7 +299,9 @@ describe('sales dashboard loading', () => {
     const html = renderToStaticMarkup(<SalesWorkspace />);
     expect(html).toContain('جست‌وجوی قرارداد');
     expect(html).toContain('وضعیت تسویه');
-    expect(html).toContain('شماره قرارداد، نام مشتری یا شماره پیگیری پرداخت');
+    expect(html).toContain(
+      'شماره قرارداد، نام مشتری، نوتیس یا شماره پیگیری پرداخت',
+    );
     expect(html).toContain('از تاریخ مانده قابل دریافت');
     expect(html).toContain('تا تاریخ مانده قابل دریافت');
     expect(html).toContain(

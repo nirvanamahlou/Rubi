@@ -303,3 +303,66 @@ describe('filtered receivables', () => {
     ]);
   });
 });
+
+it.each(['120123', 'ABC'])(
+  'matches a substring of the public contract Notice in receivable counts and balances (%s)',
+  async (search) => {
+    const publicNote = row('other-number', 'IRR', '100', '10');
+    publicNote.services = [
+      {
+        clientKey: 'public',
+        kind: 'OTHER',
+        titleSnapshot: 'Public',
+        metadata: { contractNotice: 'prefix abc / 120123 / suffix' },
+      },
+    ] as never;
+    const internal = row('internal', 'IRR', '999', '0');
+    internal.pricingNotes = 'abc / 120123';
+    internal.services = [
+      {
+        clientKey: 'internal',
+        kind: 'OTHER',
+        titleSnapshot: 'Internal',
+        metadata: {
+          reservationNote: 'abc / 120123',
+          unrelated: 'abc / 120123',
+        },
+      },
+    ] as never;
+    const nonstring = row('numeric', 'IRR', '999', '0');
+    nonstring.services = [
+      {
+        clientKey: 'numeric',
+        kind: 'OTHER',
+        titleSnapshot: 'Numeric',
+        metadata: { contractNotice: 120123 },
+      },
+    ] as never;
+    const dashboardRows = vi
+      .fn()
+      .mockResolvedValue([publicNote, internal, nonstring]);
+    const service = new SalesService(
+      { dashboardRows } as unknown as SalesRepository,
+      {
+        partyKinds: vi
+          .fn()
+          .mockResolvedValue([{ id: 'customer', kind: 'PERSON' }]),
+      } as unknown as SalesCustomersPublicAdapter,
+      {} as SalesTicketAvailabilityPort,
+    );
+    const actor = {
+      userId: 'owner',
+      branchIds: ['branch'],
+      permissions: ['sales.contracts.read.own'],
+    } as AuthenticatedActor;
+    const result = await service.receivables({ search }, actor);
+    expect(dashboardRows).toHaveBeenCalledWith({
+      branchId: { in: ['branch'] },
+      ownerUserId: 'owner',
+    });
+    expect(result.data.contractCount).toBe(1);
+    expect(result.data.balances).toEqual([
+      { currencyCode: 'IRR', amount: '90' },
+    ]);
+  },
+);
