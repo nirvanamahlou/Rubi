@@ -107,7 +107,12 @@ export class PassengerCorrectionService {
       : null;
   }
   private async state(row: Contract, actor: AuthenticatedActor) {
-    if (!actor.permissions.includes('customers.sensitive.read'))
+    const readActor =
+      !actor.permissions.includes('customers.sensitive.read') &&
+      actor.permissions.includes('sales.contracts.create')
+        ? this.customers.salesEntryActor(actor)
+        : actor;
+    if (!readActor.permissions.includes('customers.sensitive.read'))
       throw new ForbiddenException(
         'مجوز مشاهده اطلاعات حساس مشتری وجود ندارد.',
       );
@@ -126,7 +131,7 @@ export class PassengerCorrectionService {
           };
         const { data } = await this.customers.detail(
           passenger.customerId,
-          actor,
+          readActor,
           undefined,
           'customer-verification',
         );
