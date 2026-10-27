@@ -7714,3 +7714,7 @@ Reservation services now render as compact category groups using snapshot kind/t
 ## CANCELLED-ROW-RED-1027 — PC-A — READY_FOR_REVIEW
 
 Cancelled reservation rows now use a stronger saturated red with dark readable text in light mode, and deeper red with light text in dark mode. Only six status palette values change; row dimensions, other status colors, blue selection/focus and notes/correction markers retain their rules. Contrast5.84:1 light /9.16:1 dark,29 existing workspace tests, scoped formatting and the production Web build with TypeScript pass. No API/schema/data/dependency/runtime changes; review PR only, no merge/deployment authorization in this request.
+
+## PERSIAN-WEEKDAYS-1027 — PC-A
+
+Shared Persian calendars now display full native weekday names from Saturday through Friday even when foreign-trip date inputs prefer English or the app language is English. Scoped locale boundary prevents automatic text translation from changing these headers. Gregorian labels and date storage/selection stay unchanged.20 calendar and3 English-coverage tests, scoped ESLint/format and isolated production Web build with TypeScript pass. User authorizes develop merge after exact-head hosted checks. No migration/API/dependency/runtime changes.
