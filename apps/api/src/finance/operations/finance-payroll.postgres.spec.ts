@@ -9,6 +9,8 @@ import { FinancePayrollService } from './finance-payroll.service';
 import { HrPayrollFinancePublicService } from '../../hr/hr-payroll-finance-public.service';
 import { HrService } from '../../hr/hr.service';
 import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
+import { HrPayrollWorksheetService } from '../../hr/hr-payroll-worksheet.service';
+import { PAYROLL_DEFAULT_RATES, emptyPayrollRow } from '@nora/contracts';
 
 const enabled = process.env.NORA_RUN_FINANCE_POSTGRES_TESTS === '1';
 const databaseName = `nora_finance_test_${randomUUID().replaceAll('-', '')}`;
@@ -78,6 +80,216 @@ describe.skipIf(!enabled)('Salary workflow isolated real PostgreSQL', () => {
     await client?.$disconnect();
     if (created && /^nora_finance_test_[a-f0-9]{32}$/.test(databaseName))
       await sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
+  }, 60000);
+  it('atomically submits a private worksheet once, follows Finance decisions and blocks self-approval/payment/reopening', async () => {
+    vi.stubEnv(
+      'HR_PRIVATE_ENCRYPTION_KEY_BASE64',
+      Buffer.alloc(32, 7).toString('base64'),
+    );
+    try {
+      const f = await fixture();
+      const editorUser = await client.user.create({
+        data: {
+          username: randomUUID(),
+          displayName: 'Synthetic HR editor',
+          passwordHash: 'not-a-login-hash',
+        },
+      });
+      const editor = {
+        ...f.actor,
+        userId: editorUser.id,
+        permissions: ['hr.read', 'hr.manage', 'hr.approve', 'hr.sensitive'],
+      } as AuthenticatedActor;
+      // The author confirms submission; Finance still requires another actor for final approval.
+      const reviewer = editor;
+      const hr = new HrPayrollWorksheetService({ client } as never);
+      const created = await hr.create(
+        { branchId: editor.branchIds[0], period: '1405-09' },
+        editor,
+      );
+      const snapshot = {
+        rates: { ...PAYROLL_DEFAULT_RATES },
+        rows: [
+          {
+            ...emptyPayrollRow(randomUUID()),
+            name: 'Synthetic worksheet employee',
+            agreed: '1000',
+            advance: '50',
+          },
+        ],
+      };
+      await hr.update(created.id, { version: 1, snapshot }, editor);
+      // Failure after the HR CAS must roll back the entire submission, not leave an orphaned pending sheet.
+      await expect(
+        hr.transition(
+          created.id,
+          { version: 2 },
+          { ...reviewer, userId: randomUUID() },
+          true,
+        ),
+      ).rejects.toThrow();
+      expect(await hr.status(created.id, editor)).toMatchObject({
+        status: 'DRAFT',
+        version: 2,
+      });
+      expect(
+        await client.financeOperationalRequest.count({
+          where: { hrRecordId: created.id },
+        }),
+      ).toBe(0);
+      const submitted = await Promise.all([
+        hr.transition(created.id, { version: 2 }, reviewer, true),
+        hr.transition(created.id, { version: 2 }, reviewer, true),
+      ]);
+      expect(submitted.map((r) => r.status)).toEqual([
+        'PENDING_FINANCE',
+        'PENDING_FINANCE',
+      ]);
+      const requestId = submitted[0]!.financeRequestId!;
+      const request = await client.financeOperationalRequest.findUniqueOrThrow({
+        where: { id: requestId },
+      });
+      expect(request).toMatchObject({
+        kind: 'PAYROLL_WORKSHEET',
+        amount: expect.objectContaining({ toString: expect.any(Function) }),
+        sourceVersion: 3,
+        payrollEmployeeId: null,
+        status: 'NEW',
+      });
+      expect(request.amount.toString()).toBe('950');
+      expect(
+        await client.financeOperationalRequest.count({
+          where: { hrRecordId: created.id },
+        }),
+      ).toBe(1);
+      expect(
+        await client.financeOperationalRevision.count({ where: { requestId } }),
+      ).toBe(1);
+      await expect(
+        hr.transition(created.id, { version: 3 }, reviewer, false),
+      ).rejects.toThrow();
+      await expect(
+        hr.status(created.id, { ...editor, branchIds: [randomUUID()] }),
+      ).rejects.toThrow();
+      await f.service.action(
+        requestId,
+        {
+          operationId: randomUUID(),
+          expectedVersion: 1,
+          action: 'REVIEW',
+          reason: '',
+        },
+        f.actor,
+      );
+      await expect(
+        f.service.action(
+          requestId,
+          {
+            operationId: randomUUID(),
+            expectedVersion: 2,
+            action: 'APPROVE',
+            reason: '',
+          },
+          { ...f.actor, userId: reviewer.userId },
+        ),
+      ).rejects.toThrow();
+      await f.service.action(
+        requestId,
+        {
+          operationId: randomUUID(),
+          expectedVersion: 2,
+          action: 'APPROVE',
+          reason: '',
+        },
+        f.actor,
+      );
+      expect(await hr.status(created.id, editor)).toMatchObject({
+        status: 'APPROVED',
+        version: 3,
+      });
+      expect(
+        (await hr.transition(created.id, { version: 2 }, reviewer, true))
+          .status,
+      ).toBe('APPROVED');
+      await expect(
+        hr.transition(created.id, { version: 3 }, reviewer, false),
+      ).rejects.toThrow();
+      await expect(
+        f.service.action(
+          requestId,
+          {
+            operationId: randomUUID(),
+            expectedVersion: 3,
+            action: 'PAY',
+            reason: '',
+            paidAmount: '950',
+            accountId: f.account.id,
+            methodId: f.method.id,
+            transferAt: '2026-10-27T10:00:00.000Z',
+            paymentReference: 'SYNTHETIC-NO-PAYMENT',
+          },
+          f.actor,
+        ),
+      ).rejects.toThrow('این درخواست فقط برای تأیید مالی است');
+      expect(
+        await client.financeOperationalRevision.count({
+          where: { requestId, action: 'PAY' },
+        }),
+      ).toBe(0);
+      const corrected = await hr.create(
+        { branchId: editor.branchIds[0], period: '1405-08' },
+        editor,
+      );
+      await hr.update(corrected.id, { version: 1, snapshot }, editor);
+      await hr.transition(corrected.id, { version: 2 }, reviewer, true);
+      await f.service.action(
+        corrected.id,
+        {
+          operationId: randomUUID(),
+          expectedVersion: 1,
+          action: 'CORRECTION_REQUIRED',
+          reason: 'Synthetic correction',
+        },
+        f.actor,
+      );
+      expect((await hr.status(corrected.id, editor)).status).toBe(
+        'CORRECTION_REQUIRED',
+      );
+      await hr.transition(corrected.id, { version: 3 }, reviewer, false);
+      expect((await hr.status(corrected.id, editor)).status).toBe('DRAFT');
+      await hr.update(
+        corrected.id,
+        {
+          version: 4,
+          snapshot: {
+            ...snapshot,
+            rows: [{ ...snapshot.rows[0]!, agreed: '2000' }],
+          },
+        },
+        editor,
+      );
+      await hr.transition(corrected.id, { version: 5 }, reviewer, true);
+      expect(
+        await client.financeOperationalRequest.findUnique({
+          where: { hrRecordId: corrected.id },
+        }),
+      ).toMatchObject({ status: 'NEW', sourceVersion: 6, version: 3 });
+      await f.service.action(
+        corrected.id,
+        {
+          operationId: randomUUID(),
+          expectedVersion: 3,
+          action: 'REJECT',
+          reason: 'Synthetic rejection',
+        },
+        f.actor,
+      );
+      expect((await hr.status(corrected.id, editor)).status).toBe('REJECTED');
+      await hr.transition(corrected.id, { version: 6 }, reviewer, false);
+      expect((await hr.status(corrected.id, editor)).status).toBe('DRAFT');
+    } finally {
+      vi.unstubAllEnvs();
+    }
   }, 60000);
   async function fixture() {
     const suffix = randomUUID();

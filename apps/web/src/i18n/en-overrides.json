@@ -4634,5 +4634,19 @@
   "پاک‌کردن فیلترها": "Clear filters",
   "فهرست دوره‌های حقوق": "Payroll periods",
   "حقوقی مطابق این فیلترها یافت نشد.": "No payroll worksheets match these filters.",
-  "تعداد دوره‌های نمایش‌داده‌شده": "Displayed and total payroll periods"
+  "تعداد دوره‌های نمایش‌داده‌شده": "Displayed and total payroll periods",
+  "آماده ارسال به مالی": "Ready to submit to Finance",
+  "جدول حقوق": "Payroll worksheet",
+  "جدول حقوق از منابع انسانی اصلاح و ارسال می‌شود؛ این درخواست فقط برای تأیید مالی است.": "Correct and resubmit the worksheet from HR; this request is for Finance approval only.",
+  "جدول حقوق مجاز یافت نشد.": "Authorized payroll worksheet not found.",
+  "جدول در انتظار مالی یا تأییدشده قابل بازگشایی نیست.": "Pending or Finance-approved payroll cannot be reopened.",
+  "در انتظار مالی": "Awaiting Finance",
+  "درخواست حقوق در مالی قابل تغییر نیست.": "The payroll request cannot be changed in its current Finance state.",
+  "دریافت وضعیت مالی انجام نشد؛ دوباره تلاش می‌شود.": "Could not refresh the Finance status; retrying.",
+  "دسترسی درخواست مالی حقوق وجود ندارد.": "Payroll Finance request access denied.",
+  "مبلغ قابل پرداخت حقوق باید مثبت و در محدوده مجاز باشد.": "Payable payroll must be positive and within the permitted range.",
+  "مجوز ارسال حقوق به مالی لازم است.": "Permission to submit payroll to Finance is required.",
+  "منبع درخواست مالی حقوق معتبر نیست.": "The payroll Finance source is invalid.",
+  "نسخه درخواست مالی تغییر کرده است.": "The Finance request version has changed.",
+  "نسخه مبنای جدول حقوق تغییر کرده است.": "The payroll worksheet source version has changed."
 }
