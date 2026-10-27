@@ -12,12 +12,24 @@ import time
 ROOT = Path('/opt/rubi')
 COMPOSE = ROOT / 'compose.yaml'
 KEY = Path('/home/rubi-deploy/nora-provider-1027.env')
+STAGE = 'initialization'
 
 
 def command(args, timeout=90):
+    global STAGE
+    # Fixed operation names only; never log argv, environment values or stderr.
+    if args[:2] == ['docker', 'compose']:
+        STAGE = 'compose:' + args[4]
+    elif args[:2] == ['docker', 'exec']:
+        STAGE = 'container-probe'
+    else:
+        STAGE = ':'.join(args[:2])
     result = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
     if result.returncode:
-        raise RuntimeError('Command failed: ' + args[0])
+        diagnostic = ROOT / 'private/nora-last-command-error.txt'
+        write_private(diagnostic, result.stderr)
+        raise RuntimeError('Stage ' + STAGE + ' failed (exit ' + str(result.returncode)
+                           + '). Private diagnostic: ' + str(diagnostic))
     return result.stdout.strip()
 
 
@@ -81,9 +93,13 @@ def activate():
         (backup / 'compose.yaml').write_bytes(original)
         os.chmod(backup / 'compose.yaml', 0o600)
         provider_path = ROOT / 'private/nora-assistant.env'
+        provider_content = 'GROQ_API_KEY=' + key + '\n'
         if provider_path.exists():
-            raise RuntimeError('Existing provider configuration requires review')
-        write_private(provider_path, 'GROQ_API_KEY=' + key + '\n')
+            info = provider_path.lstat()
+            if provider_path.is_symlink() or info.st_uid != 0 or info.st_mode & 0o077 or provider_path.read_text() != provider_content:
+                raise RuntimeError('Existing provider configuration differs or permissions invalid')
+        else:
+            write_private(provider_path, provider_content)
         updated = copy.deepcopy(config)
         web_env = updated['services']['web'].setdefault('environment', {})
         web_env['ASSISTANT_SERVICE_URL'] = 'http://127.0.0.1:4300'
@@ -136,10 +152,12 @@ def activate():
             os.chown(destination, account.pw_uid, account.pw_gid)
             print('PASS: transport/read-only service/provider access. Receipt: ' + str(destination))
         except BaseException:
+            failed_stage = STAGE
             if changed:
                 subprocess.run(['docker', 'compose', '-f', str(COMPOSE), 'stop', *names], capture_output=True)
                 write_private(COMPOSE, original.decode())
                 subprocess.run(['docker', 'compose', '-f', str(COMPOSE), 'up', '-d', '--no-deps', 'web'], capture_output=True)
+            print('Failed stage: ' + failed_stage + '; previous Compose restored if changed.')
             raise
 
 
