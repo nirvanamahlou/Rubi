@@ -4,6 +4,7 @@ import styles from './workspace.module.css';
 
 const categories: Record<string, string> = {
   ...serviceLabels,
+  FLIGHT: 'پرواز',
   TRANSFER: 'ترانسفر',
   VISA: 'ویزا',
   TOUR: 'تور',
@@ -11,6 +12,21 @@ const categories: Record<string, string> = {
   EXCURSION: 'گشت',
   CIP: 'CIP',
 };
+
+const categoryOrder = [
+  'HOTEL',
+  'FLIGHT',
+  'TRANSFER',
+  'TRAIN',
+  'BUS',
+  'INSURANCE',
+  'VISA',
+  'TOUR',
+  'GUIDE',
+  'EXCURSION',
+  'CIP',
+  'OTHER',
+];
 
 export function reservationServiceGroups(row: RequestView) {
   // Old local views do not have kind/title pairs. Keep their titles rather
@@ -32,12 +48,20 @@ export function reservationServiceGroups(row: RequestView) {
       titles: [],
     };
     const title = item.title.trim();
-    if (title && title !== group.label && !group.titles.includes(title)) {
+    if (
+      title &&
+      title !== group.label &&
+      !(kind === 'HOTEL' && title === 'اقامت هتل') &&
+      !group.titles.includes(title)
+    ) {
       group.titles.push(title);
     }
     groups.set(kind, group);
   }
-  return [...groups.values()];
+  return categoryOrder.flatMap((kind) => {
+    const group = groups.get(kind);
+    return group ? [group] : [];
+  });
 }
 
 export function ReservationServices({ row }: { row: RequestView }) {
