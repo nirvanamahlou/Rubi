@@ -46,6 +46,9 @@ const sample = () => ({
 });
 function fixture() {
   let stored: Record<string, unknown> | null = null;
+  let children: Record<string, unknown>[] = [];
+  const assertBounded = (data: unknown) =>
+    expect(Buffer.byteLength(JSON.stringify(data))).toBeLessThanOrEqual(8000);
   const matches = (where: Record<string, unknown>) =>
     stored &&
     (!where.id || where.id === stored.id) &&
@@ -57,16 +60,36 @@ function fixture() {
         stored.branchId as string,
       ));
   const hrRecord = {
-    findMany: vi.fn(async ({ where }) => (matches(where) ? [stored] : [])),
+    findMany: vi.fn(async ({ where }) =>
+      where.parentId
+        ? children.filter(
+            (row) =>
+              row.parentId === where.parentId &&
+              row.branchId === where.branchId,
+          )
+        : matches(where)
+          ? [stored]
+          : [],
+    ),
+    deleteMany: vi.fn(async () => {
+      children = [];
+    }),
+    createMany: vi.fn(async ({ data }) => {
+      for (const row of data) assertBounded(row.data);
+      children = data;
+      return { count: data.length };
+    }),
     findFirst: vi.fn(async ({ where }) => (matches(where) ? stored : null)),
     findUnique: vi.fn(async ({ where }) => (matches(where) ? stored : null)),
     findUniqueOrThrow: vi.fn(async () => stored),
     create: vi.fn(async ({ data }) => {
+      assertBounded(data.data);
       stored = { ...data, version: 1, deletedAt: null, updatedAt: new Date() };
       return stored;
     }),
     updateMany: vi.fn(async ({ where, data }) => {
       if (!matches(where)) return { count: 0 };
+      if (data.data) assertBounded(data.data);
       stored = { ...stored, ...data, version: Number(stored!.version) + 1 };
       return { count: 1 };
     }),
@@ -83,6 +106,7 @@ function fixture() {
     client,
     hrRecord,
     row: () => stored!,
+    children: () => children,
     service: new HrPayrollWorksheetService({ client } as never),
   };
 }
@@ -163,8 +187,90 @@ describe('payroll worksheet arithmetic and validation', () => {
   });
 });
 describe('private durable worksheet commands', () => {
+  it('rejects aggregate Decimal overflow before touching saved rows', async () => {
+    const { service, hrRecord } = fixture();
+    const created = await service.create(
+      { branchId, period: '1405-07' },
+      actor,
+    );
+    const rows = Array.from({ length: 500 }, () => ({
+      ...sample(),
+      daily: '999999999999',
+      ot: '999:59',
+    }));
+    await expect(
+      service.update(
+        created.id,
+        {
+          version: 1,
+          snapshot: {
+            rows,
+            rates: { ...rates, dailyMinutes: 1, overtime: 100000 },
+          },
+        },
+        actor,
+      ),
+    ).rejects.toThrow(BadRequestException);
+    expect(hrRecord.updateMany).not.toHaveBeenCalled();
+  });
+  it('persists 500 encrypted rows within existing SQL bounds and isolates child IDs', async () => {
+    const { service, children, row } = fixture();
+    const created = await service.create(
+      { branchId, period: '1405-07' },
+      actor,
+    );
+    const rows = Array.from({ length: 500 }, () => ({
+      ...sample(),
+      name: 'ش'.repeat(160),
+      bank: 'ب'.repeat(160),
+      account: 'A'.repeat(160),
+    }));
+    const saved = await service.update(
+      created.id,
+      { version: 1, snapshot: { rows, rates } },
+      actor,
+    );
+    expect(saved.rows).toEqual(rows);
+    expect(children()).toHaveLength(500);
+    expect(JSON.stringify(row())).not.toContain('A'.repeat(160));
+    expect(await service.list(actor)).toHaveLength(1);
+    await expect(
+      service.detail(String(children()[0]!.id), actor),
+    ).rejects.toThrow(NotFoundException);
+  });
+  it('retains negative draft balances as explicit positive-magnitude projections', async () => {
+    const { service, client } = fixture();
+    const created = await service.create(
+      { branchId, period: '1405-07' },
+      actor,
+    );
+    const row = {
+      ...sample(),
+      agreed: '0',
+      advance: '10000000',
+      ot: '0:00',
+      short: '1:00',
+    };
+    await service.update(
+      created.id,
+      { version: 1, snapshot: { rows: [row], rates } },
+      actor,
+    );
+    const totals = client.hrRecordAmount.createMany.mock.calls[0]![0].data;
+    expect(totals).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: 'remainingNegative' }),
+      ]),
+    );
+    expect(
+      totals.every(
+        (entry: { amount: { isNegative: () => boolean } }) =>
+          !entry.amount.isNegative(),
+      ),
+    ).toBe(true);
+  });
   it('starts empty, serializes create retries and keeps amounts and names out of metadata', async () => {
-    const { service, client, row } = fixture();
+    const { service, client, row, children } = fixture();
     const result = await service.create({ branchId, period: '1405-07' }, actor);
     expect(result.rows).toEqual([]);
     expect(
@@ -193,8 +299,8 @@ describe('private durable worksheet commands', () => {
     );
     expect(
       revealHrValues(
-        row().data,
-        `${branchId}:${result.id}:payroll-worksheet:v1`,
+        children()[0]!.data,
+        `${branchId}:${result.id}:payroll-worksheet:v1:${children()[0]!.id}`,
       )[0],
     ).toContain('SYNTHETIC-ACCOUNT');
   });
