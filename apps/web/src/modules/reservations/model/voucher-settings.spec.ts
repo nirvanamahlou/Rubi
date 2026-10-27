@@ -50,7 +50,15 @@ it('uses saved voucher settings, selected passengers and service flags without r
     roomType: 'SGL',
   };
   settings.flags.tourLeader = false;
+  settings.transferBrokerId = 'transfer-broker';
+  settings.transferBrokerName = 'TRANSFER SUPPLIER';
+  settings.transferDetailsOverride = true;
   intake.workflow.voucherSettings = settings;
+  expect(defaultVoucherSettings(intake, {})).toMatchObject({
+    transferBrokerId: 'transfer-broker',
+    transferBrokerName: 'TRANSFER SUPPLIER',
+    transferDetailsOverride: true,
+  });
   const output = voucherFormData(intake, {});
   expect(output.hotel).toBe('SAVED HOTEL');
   expect(output.meal).toBe('UALL');
