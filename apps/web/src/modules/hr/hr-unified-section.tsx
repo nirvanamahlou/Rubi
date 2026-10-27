@@ -246,12 +246,14 @@ function AccessibleHrSection({
             <header className={ui.heading}>
               <h1>{screenMeta[section].title}</h1>
             </header>
-            <HrTabs
-              items={groups}
-              value={group.id}
-              onChange={switchGroup}
-              label="بخش‌های حقوق و دستمزد"
-            />
+            {groups.length > 1 ? (
+              <HrTabs
+                items={groups}
+                value={group.id}
+                onChange={switchGroup}
+                label="بخش‌های حقوق و دستمزد"
+              />
+            ) : null}
           </>
         ) : null}
         <HrPayrollWorksheet data={store.data!} />

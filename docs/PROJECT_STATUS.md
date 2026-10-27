@@ -7826,3 +7826,11 @@ COMPUTER_ID=PC-B. User replaces the earlier period-form request with removal of 
 
 
 HR-PAYROLL-SETTINGS-ONLY-1027 — IMPLEMENTED / CI_PENDING: payroll navigation now exposes settings only; all removed period/adjustment deep links resolve to settings, while employee settlements retain their profile destination. 33 focused navigation, employee-case and worksheet tests passed. No records, services or finance permissions removed. Source freezes on push and bounded reservations release after verified develop merge; full quality/tests/build/database gates remain required.
+
+
+## HR-PAYROLL-LIST-FILTERS-1027 — PC-B — READY_FOR_CI
+
+COMPUTER_ID=PC-B; base origin/develop@79a2d1e4. User authorizes relevant payroll worksheet list filters, compact responsive layout, push and develop merge. Reserve hr-payroll-worksheet.tsx/module.css/spec.tsx and new HR-local list helper/spec; own English overrides and generated API/Web translation catalogs if needed, plus own status notes. Prior worksheet and settings-only PRs merged and reservations released; no overlapping active source writer found. Preserve scoped API summaries, worksheet editing/save/approval, existing records and Finance workflow. No API/schema/migration/dependency/runtime changes. Source freezes on push and reservations release after verified merge.
+
+
+HR-PAYROLL-LIST-FILTERS-1027 implemented: authorized summaries filter conjunctively by search, branch, Persian year/month, status and empty/populated rows; deterministic period/update/row-count sorting, clear filters and live result count. Header creation action and removal of redundant one-tab strip compact the list; responsive 7/4/2/1-column controls and 36px fields preserve Nora styling. Search normalizes Persian/Arabic digits, letters and period separators. 13 focused filter/worksheet/navigation tests pass; final scoped lint/typecheck and hosted quality/tests/build/PostgreSQL gates precede owner-authorized merge. Generated catalogs also synchronize existing merged overrides. No operational records, API contracts or runtime changed; source reservations release after verified merge.

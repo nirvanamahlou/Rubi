@@ -4601,5 +4601,19 @@
   "وضعیت حقوق تغییر کرده است.": "Payroll status has changed.",
   "هنوز حقوقی ثبت نشده است.": "No payroll worksheets yet.",
   "هنوز ردیفی ثبت نشده است.": "No rows yet.",
-  "بخش‌های حقوق و دستمزد": "Payroll sections"
+  "بخش‌های حقوق و دستمزد": "Payroll sections",
+  "فیلتر فهرست حقوق": "Payroll list filters",
+  "دوره یا شعبه": "Period or branch",
+  "همه سال‌ها": "All years",
+  "ردیف‌های جدول": "Worksheet rows",
+  "همه جدول‌ها": "All worksheets",
+  "دارای ردیف": "With rows",
+  "جدول‌های خالی": "Empty worksheets",
+  "جدیدترین دوره": "Newest period",
+  "قدیمی‌ترین دوره": "Oldest period",
+  "بیشترین ردیف": "Most rows",
+  "پاک‌کردن فیلترها": "Clear filters",
+  "فهرست دوره‌های حقوق": "Payroll periods",
+  "حقوقی مطابق این فیلترها یافت نشد.": "No payroll worksheets match these filters.",
+  "تعداد دوره‌های نمایش‌داده‌شده": "Displayed and total payroll periods"
 }
