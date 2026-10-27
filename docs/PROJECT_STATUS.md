@@ -7887,3 +7887,17 @@ HR-PAYROLL-FINANCE-APPROVAL-1027 validation:208 HR/Finance API tests passed (50 
 Clicking a Sales contract row, including its existing action controls, keeps that contract highlighted light blue until another row is selected. Selection uses the stable contract ID and survives scrolling and data refresh; keyboard focus within a row also selects it. Selected styling takes precedence over zebra/status backgrounds, while existing status badges and business data remain unchanged. No scroll/focus commands, API, schema, dependency or deployment change. Existing focused table tests and scoped lint are the local verification; full final-head hosted gates precede user-authorized develop merge.
 
 HR-PAYROLL-FINANCE-APPROVAL-1027 stage semantics: HR author confirmation submits only; independent final approval remains Finance-owned. No permission grant or self-approval bypass in Finance.
+
+# DASHBOARDS-COMPLETE-SOURCES-1027 — PC-C — IN_PROGRESS
+
+Production read-only table/column inventory and exact counts completed; empty legacy
+facts are not evidence of an empty ERP. Native Sales/Customer/HR/Reservations records
+exist; accounting journals and approved cost/payment sources are not complete.
+Candidate adds gross-versus-discount correction, finalized/new-order counts, scoped confirmed
+receipt/refund aggregates, actual-registry trend IDs and currency-specific metric series.
+72 API and 34 Web tests pass (one existing Web skip); both typechecks, scoped lint and
+API build pass. Independent read-only SQL reconciles gross/discounts in three currencies
+and new-order count. Web production build also passed (66 pages). Full widget/chart
+coverage, reconciliation, quality/build, final-head CI and authorized PR/merge remain.
+No production business writes, migration, deployment or localhost restart.
+See `docs/tasks/DASHBOARDS-COMPLETE-SOURCES-1027.md`.

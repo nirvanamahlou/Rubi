@@ -27,6 +27,9 @@ describe('dashboard registry', () => {
     );
     expect(source).toContain("query.data?.state === 'blocked'");
     expect(source).toContain('query.data.unavailableMetrics');
+    expect(source).toContain('query.data.unavailableVisuals');
+    expect(source).toContain('series={displayData.series}');
+    expect(source).not.toContain('series={data?.series}');
     expect(source).toContain('description={query.data.message}');
   });
   it('defines all 84 decision-oriented KPIs with auditable metadata', () => {

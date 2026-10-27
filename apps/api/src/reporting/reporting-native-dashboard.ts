@@ -1,4 +1,10 @@
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Optional,
+} from '@nestjs/common';
+import { SalesDashboardPayments } from '../sales/sales-dashboard-payments.public';
 import { createHash } from 'node:crypto';
 import { Prisma } from '@nora/database';
 import type {
@@ -30,6 +36,23 @@ const emptyOptions = () => ({
 });
 const sum = (rows: readonly DashboardObservation[]) =>
   rows.reduce((value, row) => value.plus(row.value), new Prisma.Decimal(0));
+// Metric series inside a currency must never be confused with currency series.
+const trendVisuals: Readonly<Record<string, readonly string[]>> = {
+  'revenue-collections': ['net-sales'], // legacy client identifier
+  'executive-trend': ['net-sales', 'collected', 'gross-profit'],
+  'sales-collection-trend': ['net-sales', 'collected', 'refunded'],
+  'finalized-sales-trend': ['net-sales'],
+  'discount-trend': ['discount-amount'],
+  'executive-lead-acquisition': ['new-leads'],
+};
+const metricLabels: Readonly<Record<string, string>> = {
+  'net-sales': 'فروش خالص',
+  collected: 'وصول تأییدشده',
+  refunded: 'استرداد تکمیل‌شده',
+  'gross-profit': 'سود ناخالص',
+  'discount-amount': 'تخفیف',
+  'new-leads': 'لید جدید',
+};
 function exactText(value: Prisma.Decimal) {
   const [integer, fraction] = value
     .toFixed(4)
@@ -73,6 +96,9 @@ export class ReportingNativeDashboard {
     @Inject(LeadDashboardSource) private readonly leads: LeadDashboardSource,
     @Inject(IamFinanceDirectory)
     private readonly identities: IamFinanceDirectory,
+    @Optional()
+    @Inject(SalesDashboardPayments)
+    private readonly payments?: SalesDashboardPayments,
   ) {}
   async load(
     input: Record<string, string | undefined>,
@@ -109,7 +135,12 @@ export class ReportingNativeDashboard {
       filters: sourceFilters,
       dateBasis: input.dateBasis ?? 'effective',
     };
-    const readers = [this.sales, this.customers, this.leads];
+    const readers = [
+      this.sales,
+      this.customers,
+      this.leads,
+      ...(this.payments ? [this.payments] : []),
+    ];
     const read = async (request: DashboardSourceQuery) => {
       const results = await Promise.allSettled(
         readers.map((reader) => reader.read(request)),
@@ -122,6 +153,7 @@ export class ReportingNativeDashboard {
                 'sales.dashboard.contract-currency.v1',
                 'customers.dashboard.registrations.v1',
                 'customer-affairs.dashboard.leads.v1',
+                'sales.dashboard.confirmed-payments.v1',
               ][index]!,
               state: 'unavailable',
               reason: 'SOURCE_READ_FAILED',
@@ -154,9 +186,10 @@ export class ReportingNativeDashboard {
     const requested = (input.kpiIds ?? Object.keys(available).join(','))
       .split(',')
       .filter(Boolean);
-    const visualIds = (input.visualIds ?? '').split(',');
+    const visualIds = (input.visualIds ?? '').split(',').filter(Boolean);
     const calculated = new Set(requested);
-    if (visualIds.includes('revenue-collections')) calculated.add('net-sales');
+    for (const id of visualIds)
+      for (const metric of trendVisuals[id] ?? []) calculated.add(metric);
     const starts =
       duration > 0
         ? dashboardTrendBucketStarts({
@@ -311,18 +344,60 @@ export class ReportingNativeDashboard {
     }
     const visuals: Record<string, DashboardProjectionV1['visuals'][string]> =
       {};
-    const net = metrics['net-sales'];
-    if (visualIds.includes('revenue-collections') && net?.trend) {
-      const series = net.trend.series ?? [];
-      visuals['revenue-collections'] = {
+    const unavailableVisuals: Record<string, string> = {};
+    for (const id of visualIds) {
+      const ids = trendVisuals[id] ?? [];
+      const usable = ids.filter((metric) => metrics[metric]?.trend);
+      if (!usable.length) {
+        unavailableVisuals[id] = 'SOURCE_OR_SCOPE_UNAVAILABLE';
+        continue;
+      }
+      const missing = ids.filter((metric) => !usable.includes(metric));
+      const money = available[usable[0]!]!.kind === 'money';
+      const codes = [
+        ...new Set(
+          usable.flatMap(
+            (metric) =>
+              metrics[metric]!.trend!.series?.map(
+                (series) => series.currencyCode,
+              ) ?? [],
+          ),
+        ),
+      ].sort();
+      // An authorized empty event source is a true zero for each currency
+      // found in another authorized source. A missing source is never zero.
+      const seriesFor = (code?: string) =>
+        usable.map((metric) => ({
+          label: metricLabels[metric] ?? metric,
+          values: code
+            ? (metrics[metric]!.trend!.series?.find(
+                (series) => series.currencyCode === code,
+              )?.values ?? starts.map(() => 0))
+            : metrics[metric]!.trend!.values,
+        }));
+      const currencySeries = codes.map((currencyCode) => {
+        const series = seriesFor(currencyCode);
+        return { currencyCode, labels, values: series[0]!.values, series };
+      });
+      const series = seriesFor();
+      const notices = [
+        ...(missing.length
+          ? [
+              `سری‌های فاقد منبع معتبر یا دسترسی: ${missing.map((metric) => metricLabels[metric] ?? metric).join('، ')}؛ این سری‌ها صفر فرض نشده‌اند.`,
+            ]
+          : []),
+        ...(id === 'finalized-sales-trend'
+          ? [
+              'این نمودار مبلغ فروش خالص را نشان می‌دهد؛ تعداد فروش در کارت مستقل نمایش داده می‌شود تا تعداد و مبلغ روی یک محور ادغام نشوند.',
+            ]
+          : []),
+      ];
+      visuals[id] = {
         labels,
-        values: net.trend.values,
-        unit: 'فروش خالص؛ ارزهای مستقل',
-        currencySeries: series.map((row) => ({
-          currencyCode: row.currencyCode,
-          labels,
-          values: row.values,
-        })),
+        values: currencySeries[0]?.values ?? series[0]!.values,
+        unit: money ? 'مبلغ؛ ارزهای مستقل' : 'تعداد',
+        ...(money ? { currencySeries } : { series }),
+        ...(notices.length ? { notice: notices.join(' ') } : {}),
       };
     }
     for (const id of Object.keys(metrics)) {
@@ -330,6 +405,7 @@ export class ReportingNativeDashboard {
     }
     const partial =
       Object.keys(unavailableMetrics).length > 0 ||
+      Object.keys(unavailableVisuals).length > 0 ||
       current.some((result) => result.state !== 'ready');
     return {
       state:
@@ -344,7 +420,7 @@ export class ReportingNativeDashboard {
         dataAsOf: now.toISOString(),
         timezone: 'Asia/Tehran',
         dateBasis:
-          'SOURCE_DEFINED: confirmed contract cohort / customer and lead registration',
+          'SOURCE_DEFINED: confirmed contract cohort / customer and lead registration / confirmed receipt and executed refund event',
         currencyFxBasis: 'SOURCE_CURRENCY_NO_CONVERSION',
         reportVersion: 'reporting.dashboard.native.v1',
         permissionSnapshot: createHash('sha256')
@@ -381,6 +457,7 @@ export class ReportingNativeDashboard {
       metrics,
       visuals,
       unavailableMetrics,
+      unavailableVisuals,
       sourceCoverage: current.map((result) => ({
         source: result.source,
         state: result.state,
