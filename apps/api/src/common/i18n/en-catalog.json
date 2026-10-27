@@ -6146,6 +6146,7 @@
   "کارگزار باید فعال باشد.": "The broker must be active.",
   "کارگزار باید فعال و دارای نقش کارگزار باشد.": "The broker must be active and have the role of broker.",
   "کارگزار فعال برای تورلیدر یافت نشد.": "No active broker found for Tourleader.",
+  "کارگزار را انتخاب کنید.": "Select a broker.",
   "کارگزار فعال لازم است.": "An active broker is required.",
   "کارگزار فعال یافت نشد.": "No active broker found.",
   "کارگزار و تورلیدر را انتخاب و ذخیره کنید.": "Select broker and tourleader and save.",
