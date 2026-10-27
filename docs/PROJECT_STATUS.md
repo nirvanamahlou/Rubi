@@ -1,3 +1,6 @@
+## RESERVATION-SERVICE-ORDER-1027 — PC-A
+
+Reservation service badges now have a fixed order: hotel, flight, transfer, then remaining categories in a stable order, independent of each contract's snapshot order. Flight is captioned پرواز. Generic اقامت هتل is omitted from Hotel badges, while specific hotel details, round-trip titles and unknown/legacy service information remain available. No stored data, API, schema, dependency, Excel, filter or workflow changes. Focused service/feed/workspace regressions57 and scoped lint pass; final Web build/types, translation coverage and exact-head hosted checks gate owner-authorized develop merge.
 ## TICKET-WEEKDAY-MOVE-1027 — PC-A
 
 Published weekday edit now has an independent Change day control with target weekday and old/new departure-date preview. Existing same-direction rows move together within the Saturday-Friday week; both instants shift equally, preserving overnight arrival, classes/capacity/routes/baggage/limits and identity/version. Saved per-row facts are used, independently of unsaved edits. Existing authorized atomic batch boundary rejects duplicate identities/stale versions/active holds without partial saves. No backend/API/schema/dependency/data/runtime changes. Thirteen focused tests passed; final Ticket Catalog, English, lint, types/build and exact-head hosted gates precede authorized develop merge.

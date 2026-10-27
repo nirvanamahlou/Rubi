@@ -19,13 +19,61 @@ it('groups round-trip services by actual kind and preserves every distinct title
       }),
     ),
   ).toEqual([
-    { kind: 'FLIGHT', label: 'هواپیما', titles: ['بلیط رفت', 'بلیط برگشت'] },
+    { kind: 'HOTEL', label: 'هتل', titles: [] },
+    { kind: 'FLIGHT', label: 'پرواز', titles: ['بلیط رفت', 'بلیط برگشت'] },
     {
       kind: 'TRANSFER',
       label: 'ترانسفر',
       titles: ['ترانسفر رفت', 'ترانسفر برگشت'],
     },
-    { kind: 'HOTEL', label: 'هتل', titles: ['اقامت هتل'] },
+  ]);
+});
+
+it('keeps the same category order for differently ordered contract services', () => {
+  const serviceItems = [
+    { kind: 'OTHER', title: 'راهنما' },
+    { kind: 'TRANSFER', title: 'ترانسفر رفت' },
+    { kind: 'HOTEL', title: 'اقامت هتل' },
+    { kind: 'FLIGHT', title: 'بلیط رفت' },
+    { kind: 'VISA', title: 'ویزا' },
+  ];
+  const expected = ['HOTEL', 'FLIGHT', 'TRANSFER', 'VISA', 'OTHER'];
+  for (let offset = 0; offset < serviceItems.length; offset++) {
+    const items = [
+      ...serviceItems.slice(offset),
+      ...serviceItems.slice(0, offset),
+    ];
+    expect(
+      reservationServiceGroups(row({ serviceItems: items })).map((g) => g.kind),
+    ).toEqual(expected);
+    expect(
+      reservationServiceGroups(row({ serviceItems: items.reverse() })).map(
+        (g) => g.kind,
+      ),
+    ).toEqual(expected);
+  }
+  expect(
+    reservationServiceGroups(
+      row({ services: ['FLIGHT', 'HOTEL', 'INSURANCE'] }),
+    ).map((g) => g.kind),
+  ).toEqual(['HOTEL', 'FLIGHT', 'INSURANCE']);
+});
+
+it('omits only the generic hotel caption and keeps specific hotel details', () => {
+  expect(
+    reservationServiceGroups(
+      row({
+        serviceItems: [
+          { kind: 'HOTEL', title: ' اقامت هتل ' },
+          { kind: 'HOTEL', title: 'هتل' },
+          { kind: 'HOTEL', title: 'Custom hotel stay' },
+          { kind: 'OTHER', title: 'اقامت هتل' },
+        ],
+      }),
+    ),
+  ).toEqual([
+    { kind: 'HOTEL', label: 'هتل', titles: ['Custom hotel stay'] },
+    { kind: 'OTHER', label: 'سایر خدمات', titles: ['اقامت هتل'] },
   ]);
 });
 
