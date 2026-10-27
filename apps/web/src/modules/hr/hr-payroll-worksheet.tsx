@@ -27,6 +27,7 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { HrButton, HrLoading, HrPanel, HrConfirmDelete } from './hr-controls';
 import { hrRequest } from './hr-api';
 import styles from './hr-payroll-worksheet.module.css';
+import { pastePayrollGrid } from './hr-payroll-grid';
 
 const api = '/payroll-worksheets';
 const number = (v: string | bigint | number) =>
@@ -244,30 +245,26 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
     if (!/[\t\n]/.test(text)) return;
     e.preventDefault();
     try {
-      const start = draft.rows.findIndex((r) => r.id === target.dataset.row),
-        col = PAYROLL_COLUMNS.findIndex(([k]) => k === target.dataset.field);
-      const lines = text.replace(/\r/g, '').replace(/\n$/, '').split('\n');
-      if (start < 0 || start + lines.length > 500)
-        throw new Error('حداکثر ۵۰۰ ردیف مجاز است.');
-      const rows = draft.rows.map((r) => ({ ...r }));
-      lines.forEach((line, i) => {
-        const row = rows[start + i] ?? emptyPayrollRow(crypto.randomUUID());
-        line.split('\t').forEach((v, j) => {
-          const key = PAYROLL_COLUMNS[col + j]?.[0];
-          if (key && isPayrollInput(key)) row[key] = payrollCell(key, v);
-        });
-        rows[start + i] = row;
-      });
+      const rows = pastePayrollGrid(
+        draft.rows,
+        visible.map((row) => row.id),
+        target.dataset.row,
+        target.dataset.field,
+        text,
+        () => crypto.randomUUID(),
+      );
       setDraft({ ...draft, rows });
+      setQuery('');
       setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ورود داده انجام نشد.');
     }
   }
-  const calculated =
-    draft?.rows.map((row) => calculatePayroll(row, draft.rates)) ?? [];
   const visible =
     draft?.rows.filter((row) => !query || row.name.includes(query)) ?? [];
+  const calculated = draft
+    ? visible.map((row) => calculatePayroll(row, draft.rates))
+    : [];
   const total = (key: PayrollColumn | 'remaining') =>
     calculated.reduce(
       (sum, row) => sum + (payrollTextInput(key) ? 0n : BigInt(row[key])),
