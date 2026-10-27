@@ -25,6 +25,7 @@ export function SearchableReference({
   options,
   onChange,
   disabled = false,
+  loading = false,
   preferEnglishName = false,
   showAllOptionsOnOpen = false,
   required = true,
@@ -37,6 +38,7 @@ export function SearchableReference({
     Partial<MasterDataRecord>)[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  loading?: boolean;
   required?: boolean;
   onOpenChange?: (open: boolean) => void;
   showAllOptionsOnOpen?: boolean;
@@ -55,6 +57,7 @@ export function SearchableReference({
         label={label}
         value={value}
         disabled={disabled}
+        loading={loading}
         placeholder={
           disabled ? 'ابتدا کشور را انتخاب کنید' : 'جست‌وجو و انتخاب…'
         }

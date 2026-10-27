@@ -103,6 +103,7 @@ it('refreshes an incomplete initial list and selects registered Ramada/city with
       (picker().options as MasterDataRecord[]).map((x) => x.name),
     ).toContain('RAMADA RESORT & GOLF'),
   );
+  expect(picker().loading).toBe(false);
   expect(h.patch).not.toHaveBeenCalled();
   (picker().onChange as (id: string) => void)('RAMADA RESORT & GOLF');
   expect(h.patch.mock.calls[0]![0].hotel.additionalStays[0]).toMatchObject({
@@ -163,6 +164,7 @@ it('fetches once per opening rather than again on every typed character or arrow
   open();
   open();
   open();
+  expect(picker().loading).toBe(true);
   await vi.waitFor(() =>
     expect((picker().options as MasterDataRecord[])[0]?.name).toBe(
       'RAMADA RESORT & GOLF',

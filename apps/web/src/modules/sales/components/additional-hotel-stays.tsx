@@ -77,7 +77,6 @@ export function AdditionalHotelStays({
       aria-label="هتل‌های ترکیبی قرارداد"
     >
       <h3 className="font-bold">هتل‌های ترکیبی قرارداد</h3>
-      {catalogBusy && <p role="status">در حال دریافت فهرست هتل‌ها…</p>}
       {catalogError && (
         <div role="alert">
           <p>{catalogError}</p>
@@ -121,6 +120,7 @@ export function AdditionalHotelStays({
                     ),
                 )}
                 showAllOptionsOnOpen
+                loading={catalogBusy}
                 onOpenChange={(open) => {
                   if (open && openHotelRow.current !== index) {
                     openHotelRow.current = index;
@@ -252,6 +252,7 @@ export function AdditionalHotelStays({
                     value={room.roomTypeId}
                     options={options}
                     showAllOptionsOnOpen
+                    loading={catalogBusy}
                     preferEnglishName
                     onChange={(id) =>
                       change({
