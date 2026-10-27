@@ -1,3 +1,7 @@
+## AVINA-DEVELOP-ROLLOUT-1027 — PC-A — VERIFIED
+
+Owner-authorized Avina rollout completed on 2026-10-27 from d5dae6f4788a to develop684d3ec5e5ad. API/Web/Worker use the same pinned image. Reviewed additive hotel-stay-rooms migration applied after verified encrypted backups and checksum-matched off-server copies; no seed, destructive SQL, volume replacement or unrelated-service restart. Build, 12 targeted regressions, isolated canary and post-switch public health/auth/assets/source/stability checks passed. Existing browser assets retained. See [deployment evidence](tasks/AVINA-DEVELOP-ROLLOUT-1027.md).
+
 ## TICKET-WEEKDAY-MOVE-1027 — PC-A
 
 Published weekday edit now has an independent Change day control with target weekday and old/new departure-date preview. Existing same-direction rows move together within the Saturday-Friday week; both instants shift equally, preserving overnight arrival, classes/capacity/routes/baggage/limits and identity/version. Saved per-row facts are used, independently of unsaved edits. Existing authorized atomic batch boundary rejects duplicate identities/stale versions/active holds without partial saves. No backend/API/schema/dependency/data/runtime changes. Thirteen focused tests passed; final Ticket Catalog, English, lint, types/build and exact-head hosted gates precede authorized develop merge.
