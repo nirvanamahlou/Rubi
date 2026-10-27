@@ -1,14 +1,5 @@
-import {
-  canSelfServeSalesContract,
-  hasSalesContractSelfService,
-} from '@nora/contracts';
 import { createHash } from 'node:crypto';
-import {
-  ConflictException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import type {
   AuthenticatedActor,
   SalesContractOutputV1,
@@ -35,26 +26,8 @@ export class SalesOutputService {
     actor: AuthenticatedActor,
     traceId?: string,
   ): Promise<{ data: SalesContractOutputV1 }> {
-    if (
-      !(
-        actor.permissions.includes('sales.export') &&
-        actor.permissions.includes('legal-entity.read')
-      ) &&
-      !hasSalesContractSelfService(actor.permissions)
-    )
-      throw new ForbiddenException(
-        'مجوز خروجی قرارداد و مشاهده شرکت فعال لازم است.',
-      );
-    // Reuse the existing own/assigned/branch/all contract-read policy.
+    // The authoritative row-read policy also authorizes this document's output.
     const { data: contract } = await this.sales.detail(id, actor);
-    if (
-      !(
-        actor.permissions.includes('sales.export') &&
-        actor.permissions.includes('legal-entity.read')
-      ) &&
-      !canSelfServeSalesContract(actor, contract)
-    )
-      throw new ForbiddenException('قرارداد خارج از دامنه دسترسی است.');
     if (['DRAFT', 'PENDING_CONFIRMATION'].includes(contract.status))
       throw new ConflictException(
         'قرارداد را پیش از تهیه خروجی نهایی تأیید کنید.',
@@ -76,7 +49,12 @@ export class SalesOutputService {
       (contract.passengersDetail ?? []).map(async (passenger) => {
         const person = await this.customers.salesOutputIdentity(
           passenger.customerId,
-          actor,
+          // Only the narrow identity projection for this authorized document;
+          // never persisted or passed to a Customer mutation/general detail API.
+          {
+            ...actor,
+            permissions: [...new Set([...actor.permissions, 'sales.export'])],
+          },
           traceId,
         );
         return {

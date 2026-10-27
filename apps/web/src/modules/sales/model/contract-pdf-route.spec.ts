@@ -1,8 +1,19 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { GET } from '../../../app/sales/contracts/[id]/pdf/route';
 import { printFixture } from './contract-print.fixture';
-const mocks = vi.hoisted(() => ({ render: vi.fn(), fetch: vi.fn() }));
-vi.mock('../server/contract-pdf', () => ({ renderContractPdf: mocks.render }));
+const mocks = vi.hoisted(() => ({
+  render: vi.fn(),
+  fetch: vi.fn(),
+  prepare: vi.fn(),
+  share: vi.fn(),
+}));
+vi.mock('../server/contract-pdf', () => ({
+  renderContractPdf: mocks.render,
+  prepareContractHtml: mocks.prepare,
+}));
+vi.mock('@/modules/travel-documents/server/public-document-store', () => ({
+  createPublicDocument: mocks.share,
+}));
 vi.mock('@/lib/environment', () => ({
   getPublicApiBaseUrl: () => 'http://api.test/api/v1',
 }));
@@ -15,6 +26,8 @@ describe('Saved contract PDF download route', () => {
     vi.stubGlobal('fetch', mocks.fetch);
     mocks.fetch.mockReset();
     mocks.render.mockReset();
+    mocks.prepare.mockReset();
+    mocks.share.mockReset();
   });
   it('rejects invalid ids before upstream or renderer access', async () => {
     const r = await GET(new Request('http://web.test'), {
@@ -100,5 +113,57 @@ describe('Saved contract PDF download route', () => {
           String(url).includes('/selections/sales/'),
       ),
     ).toBe(true);
+  });
+  it('publishes the latest authorized amended output for preview and PDF with the same QR', async () => {
+    const saved = {
+      ...printFixture,
+      contract: { ...printFixture.contract, version: 9 },
+    };
+    mocks.fetch.mockImplementation(async (url: string) =>
+      url.endsWith('/output')
+        ? Response.json({ data: saved })
+        : new Response('', { status: 403 }),
+    );
+    const share = {
+      url: 'https://example.test/d/' + 'a'.repeat(32),
+      save: vi.fn(),
+    };
+    mocks.share.mockReturnValue(share);
+    mocks.prepare.mockResolvedValue(
+      '<!doctype html><html>amended version 9</html>',
+    );
+    mocks.render.mockResolvedValue(Buffer.from('%PDF-version9'));
+    const preview = await GET(
+      new Request('http://web.test?format=share', {
+        headers: { cookie: 'nora_access=reader' },
+      }),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(preview.status).toBe(200);
+    expect(await preview.json()).toEqual({
+      url: share.url,
+      html: '<!doctype html><html>amended version 9</html>',
+    });
+    expect(mocks.prepare).toHaveBeenCalledWith(
+      saved,
+      expect.objectContaining({ publicDocumentUrl: share.url }),
+      'fa',
+    );
+    expect(share.save).toHaveBeenCalledWith(
+      '<!doctype html><html>amended version 9</html>',
+    );
+    const pdf = await GET(
+      new Request('http://web.test', {
+        headers: { cookie: 'nora_access=reader' },
+      }),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(pdf.status).toBe(200);
+    expect(await pdf.text()).toBe('%PDF-version9');
+    expect(mocks.render).toHaveBeenCalledWith(
+      saved,
+      expect.objectContaining({ publicDocumentUrl: share.url }),
+      'fa',
+    );
   });
 });

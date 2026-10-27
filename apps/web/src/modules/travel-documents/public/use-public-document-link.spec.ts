@@ -27,7 +27,7 @@ it.each([401, 403, 409, 503])(
     );
     await expect(
       readPublicDocumentLink('/saved/pdf?format=share'),
-    ).rejects.toThrow('PUBLIC_DOCUMENT_UNAVAILABLE');
+    ).rejects.toThrow('unavailable');
   },
 );
 it('uses only credentialed canonical GET data and propagates cancellation', async () => {
@@ -48,4 +48,20 @@ it('uses only credentialed canonical GET data and propagates cancellation', asyn
     cache: 'no-store',
     signal: controller.signal,
   });
+});
+it('shows the canonical authorized-route error without substituting draft content', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValue(
+        Response.json(
+          { message: 'برای خروجی، یک شرکت مشخص را انتخاب کنید.' },
+          { status: 409 },
+        ),
+      ),
+  );
+  await expect(
+    readPublicDocumentLink('/saved/pdf?format=share'),
+  ).rejects.toThrow('برای خروجی، یک شرکت مشخص را انتخاب کنید.');
 });

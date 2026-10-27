@@ -117,12 +117,14 @@ describe('Sales saved output authorization', () => {
       );
     },
   );
-  it('denies export without existing permission before reading any data', async () => {
+  it('retains authoritative contract-read denial before reading document data', async () => {
     const t = setup();
+    t.sales.detail.mockRejectedValue(new ForbiddenException());
     await expect(
       t.service.prepare('contract', { ...actor, permissions: [] }),
     ).rejects.toBeInstanceOf(ForbiddenException);
-    expect(t.sales.detail).not.toHaveBeenCalled();
+    expect(t.sales.detail).toHaveBeenCalled();
+    expect(t.customers.maskedDetail).not.toHaveBeenCalled();
     expect(t.repo.recordOutputPreview).not.toHaveBeenCalled();
   });
   it('delegates existing contract scope and propagates forbidden access', async () => {
@@ -226,9 +228,9 @@ it('allows a creator to output their own contract without separate export/legal-
   expect(t.iam.documentOwnerName).toHaveBeenCalledWith('owner');
 });
 it('rejects another owner or branch for creator-only output without recording output', async () => {
-  for (const change of [{ ownerUserId: 'other' }, { branchId: 'other' }]) {
+  for (const scope of ['owner', 'branch']) {
     const t = setup();
-    t.sales.detail.mockResolvedValue({ data: { ...t.contract, ...change } });
+    t.sales.detail.mockRejectedValue(new ForbiddenException(scope));
     await expect(
       t.service.prepare('contract', {
         ...actor,
@@ -268,3 +270,45 @@ it('does not substitute the exporting user when the historical owner is missing'
     (await t.service.prepare('contract', actor)).data.ownerName,
   ).toBeNull();
 });
+
+it.each(['own', 'branch', 'all'])(
+  'allows an authorized %s reader to output the latest amended contract without export/company grants',
+  async (scope) => {
+    const t = setup();
+    const reader: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        `sales.contracts.read.${scope}` as 'sales.contracts.read.own',
+      ],
+    };
+    t.contract.version = 9;
+    t.contract.passengersDetail = [
+      {
+        id: 'p',
+        customerId: 'passenger',
+        displayNameSnapshot: 'Corrected Name',
+      },
+    ] as never;
+    const result = await t.service.prepare('contract', reader);
+    expect(t.sales.detail).toHaveBeenCalledExactlyOnceWith('contract', reader);
+    expect(result.data.contract.version).toBe(9);
+    expect(result.data.contract.passengersDetail[0]?.displayNameSnapshot).toBe(
+      'Corrected Name',
+    );
+    expect(t.customers.salesOutputIdentity).toHaveBeenCalledWith(
+      'passenger',
+      expect.objectContaining({
+        userId: reader.userId,
+        branchIds: reader.branchIds,
+        permissions: expect.arrayContaining(['sales.export']),
+      }),
+      undefined,
+    );
+    expect(reader.permissions).toEqual([`sales.contracts.read.${scope}`]);
+    expect(t.repo.recordOutputPreview).toHaveBeenCalledWith(
+      'contract',
+      expect.anything(),
+      expect.objectContaining({ contractVersion: 9 }),
+    );
+  },
+);

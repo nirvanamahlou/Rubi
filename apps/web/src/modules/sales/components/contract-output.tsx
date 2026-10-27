@@ -127,6 +127,16 @@ export function ContractOutputButton({
           actor && canSelfServeSalesContract(actor, { ownerUserId, branchId }),
         )
       : hasSalesContractSelfService(permissions ?? []);
+  const scopedReader =
+    permissions?.includes('sales.contracts.read.all') ||
+    (ownerUserId && branchId
+      ? actor?.branchIds.includes(branchId) &&
+        (permissions?.includes('sales.contracts.read.branch') ||
+          (actor.userId === ownerUserId &&
+            permissions?.includes('sales.contracts.read.own')))
+      : ['own', 'branch'].some((scope) =>
+          permissions?.includes('sales.contracts.read.' + scope),
+        ));
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -194,7 +204,7 @@ export function ContractOutputButton({
   return (
     <>
       <Button
-        {...(selfService ? {} : { permission: 'sales.export' })}
+        {...(selfService || scopedReader ? {} : { permission: 'sales.export' })}
         size="sm"
         variant="outline"
         className={className}
