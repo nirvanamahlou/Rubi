@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { useSystemPreferences } from '@/components/system-preferences-provider';
 import { cn } from '@/lib/utils';
 import { TimePicker } from './time-picker';
+import { DatePickerWeekdays } from './date-picker-weekdays';
 import {
   calendarMonthDays,
   calendarMonthLabel,
@@ -21,11 +22,6 @@ import {
   toIsoDate,
   type CalendarSystem,
 } from './date-picker.utils';
-
-const weekdayLabels = {
-  persian: ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'],
-  gregorian: ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش'],
-} satisfies Record<CalendarSystem, string[]>;
 
 type CalendarView = 'days' | 'months' | 'years';
 
@@ -554,19 +550,10 @@ export function DatePicker({
                 </div>
               ) : (
                 <div dir="ltr" className="grid grid-cols-7 gap-1 text-center">
-                  {(calendarEnglish
-                    ? calendarSystem === 'persian'
-                      ? ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri']
-                      : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-                    : weekdayLabels[calendarSystem]
-                  ).map((label, index) => (
-                    <span
-                      className="py-1 text-xs font-bold text-primary"
-                      key={`${label}-${index}`}
-                    >
-                      {label}
-                    </span>
-                  ))}
+                  <DatePickerWeekdays
+                    calendarSystem={calendarSystem}
+                    english={calendarEnglish}
+                  />
                   {days.map((day) => {
                     const selected = day.isoDate === selectedDate;
                     const available =

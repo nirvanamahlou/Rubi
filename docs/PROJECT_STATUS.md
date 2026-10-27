@@ -7750,6 +7750,10 @@ Reservation services now render as compact category groups using snapshot kind/t
 
 Cancelled reservation rows now use a stronger saturated red with dark readable text in light mode, and deeper red with light text in dark mode. Only six status palette values change; row dimensions, other status colors, blue selection/focus and notes/correction markers retain their rules. Contrast5.84:1 light /9.16:1 dark,29 existing workspace tests, scoped formatting and the production Web build with TypeScript pass. No API/schema/data/dependency/runtime changes; review PR only, no merge/deployment authorization in this request.
 
+## PERSIAN-WEEKDAYS-1027 — PC-A
+
+Shared Persian calendars now display full native weekday names from Saturday through Friday even when foreign-trip date inputs prefer English or the app language is English. Scoped locale boundary prevents automatic text translation from changing these headers. Gregorian labels and date storage/selection stay unchanged.20 calendar and3 English-coverage tests, scoped ESLint/format and isolated production Web build with TypeScript pass. User authorizes develop merge after exact-head hosted checks. No migration/API/dependency/runtime changes.
+
 ## CALL-CENTER-FINAL-RELEASE-1027 — PC-C
 Integrates the eight remaining reviewed Call Center commits through8bee4b87b with develop7f0090415. Retains PR1130 direction column/labels and full connected-to/acquaintance-source columns. Shared documentation and translation conflicts preserve both sides; adds the missing English manager-only error and regenerates offline catalogs. User authorizes PR and normal develop merge after all latest-head CI/CD checks succeed. No new migration/dependency or runtime/PBX change. Release evidence follows in tasks/CALL-CENTER-FINAL-RELEASE-1027.md.
 CALL-CENTER-FINAL-RELEASE-1027 validation refresh: initial eight hosted gates all passed. Latest develop76ede9246 integrated; fresh gates include the previously opt-in access PostgreSQL suite. Local supplemental database setup timeouts are recorded, not counted as success. PR1151 remains the final check/merge record.
