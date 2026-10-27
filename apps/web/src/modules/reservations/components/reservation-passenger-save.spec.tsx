@@ -90,6 +90,13 @@ const contract = {
       ageCategory: 'ADT',
       serviceClientKeys: ['flight'],
     },
+    {
+      customerId: 'p2',
+      displayNameSnapshot: 'Second Traveler',
+      birthDate: '',
+      ageCategory: 'ADT',
+      serviceClientKeys: ['flight'],
+    },
   ],
   ticketSelections: [],
   hotelSelection: null,

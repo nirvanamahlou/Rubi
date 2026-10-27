@@ -45,6 +45,7 @@ export function ReservationPassengers({
   serviceEditor,
   saveRef,
   onDirty,
+  customerIds,
 }: {
   id: string;
   readOnly?: boolean;
@@ -52,6 +53,8 @@ export function ReservationPassengers({
   serviceEditor?: (customerId: string) => ReactNode;
   saveRef?: Ref<ReservationPassengerEditor>;
   onDirty?: () => void;
+  /** Unsaved contract-membership edits can hide removed links without deleting identities. */
+  customerIds?: readonly string[];
 }) {
   const [rows, setRows] = useState<PassengerName[]>([]);
   const [dirty, setDirty] = useState<string[]>([]);
@@ -170,10 +173,20 @@ export function ReservationPassengers({
   }
 
   useImperativeHandle(saveRef, () => ({
-    savePending: () => saveRows(rows.filter((row) => dirty.includes(row.id))),
+    savePending: () =>
+      saveRows(
+        rows.filter(
+          (row) =>
+            dirty.includes(row.id) &&
+            (!customerIds || customerIds.includes(row.id)),
+        ),
+      ),
   }));
 
   if (loading) return <p>در حال دریافت اطلاعات مسافران…</p>;
+  const displayedRows = rows.filter(
+    (row) => !customerIds || customerIds.includes(row.id),
+  );
 
   if (readOnly)
     return (
@@ -208,7 +221,7 @@ export function ReservationPassengers({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {displayedRows.map((row) => (
                 <tr key={row.id}>
                   {[
                     row.firstName,
@@ -233,7 +246,9 @@ export function ReservationPassengers({
             </tbody>
           </table>
         </div>
-        {!rows.length && !error && <p>مسافری به این قرارداد متصل نشده است.</p>}
+        {!displayedRows.length && !error && (
+          <p>مسافری به این قرارداد متصل نشده است.</p>
+        )}
       </div>
     );
 
@@ -273,7 +288,7 @@ export function ReservationPassengers({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, index) => {
+            {displayedRows.map((row, index) => {
               const disabled = !canEdit || Boolean(busy);
               const identityDisabled = !canEditIdentity || Boolean(busy);
               return (
@@ -450,7 +465,9 @@ export function ReservationPassengers({
           </tbody>
         </table>
       </div>
-      {!rows.length && !error && <p>مسافری به این قرارداد متصل نشده است.</p>}
+      {!displayedRows.length && !error && (
+        <p>مسافری به این قرارداد متصل نشده است.</p>
+      )}
       {!canEdit && rows.length > 0 && (
         <p className="text-sm text-muted-foreground">
           مجوز ویرایش نام مسافران برای حساب شما فعال نیست.
