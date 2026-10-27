@@ -1,7 +1,7 @@
 import { captureSalesContractAccounting } from '../../finance/accounting/sales-contract-accounting.public';
 import { assertRevenueEditable } from '../../finance/accounting/accounting-workflows.public';
 import {
-  canSelfServeSalesContract,
+  canCorrectSalesContract,
   hasSalesContractSelfService,
 } from '@nora/contracts';
 import { recalculateSalesSettlement } from '../sales-financial-settlement';
@@ -61,7 +61,7 @@ export class ContractPriceCorrectionService {
       include: { priceComponents: true },
     });
     if (!row) throw new NotFoundException('قرارداد یافت نشد.');
-    if (!native && !canSelfServeSalesContract(actor, row))
+    if (!native && !canCorrectSalesContract(actor, row))
       throw new ForbiddenException('مجوز ویرایش قیمت قرارداد وجود ندارد.');
     return {
       version: row.version,
@@ -105,7 +105,7 @@ export class ContractPriceCorrectionService {
         include: { priceComponents: true },
       });
       if (!row) throw new NotFoundException('قرارداد یافت نشد.');
-      if (!native && !canSelfServeSalesContract(actor, row))
+      if (!native && !canCorrectSalesContract(actor, row))
         throw new ForbiddenException('مجوز ویرایش قیمت قرارداد وجود ندارد.');
       if (
         ![

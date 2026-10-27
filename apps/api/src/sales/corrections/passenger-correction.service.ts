@@ -1,4 +1,4 @@
-import { canSelfServeSalesContract } from '@nora/contracts';
+import { canCorrectSalesContract } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -69,12 +69,7 @@ export class PassengerCorrectionService {
     },
     actor: AuthenticatedActor,
   ) {
-    return (
-      canSelfServeSalesContract(actor, row) ||
-      actor.permissions.includes('sales.contracts.update.branch') ||
-      (actor.permissions.includes('sales.contracts.update.own') &&
-        row.ownerUserId === actor.userId)
-    );
+    return canCorrectSalesContract(actor, row);
   }
   async contract(id: string, actor: AuthenticatedActor, write = false) {
     const row = await this.database.client.salesContract.findFirst({
@@ -83,7 +78,7 @@ export class PassengerCorrectionService {
     });
     if (!row) throw new NotFoundException('قرارداد یافت نشد.');
     const readable =
-      canSelfServeSalesContract(actor, row) ||
+      canCorrectSalesContract(actor, row) ||
       actor.permissions.includes('reservations.read') ||
       actor.permissions.includes('sales.contracts.read.all') ||
       actor.permissions.includes('sales.contracts.read.branch') ||
@@ -107,6 +102,7 @@ export class PassengerCorrectionService {
       : null;
   }
   private async state(row: Contract, actor: AuthenticatedActor) {
+    if (row.passengers.length === 0) return [];
     if (!actor.permissions.includes('customers.sensitive.read'))
       throw new ForbiddenException(
         'مجوز مشاهده اطلاعات حساس مشتری وجود ندارد.',

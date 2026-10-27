@@ -6,6 +6,7 @@ import {
 import { salesListTravelSummary } from './sales-list-summary';
 import {
   canSelfServeSalesContract,
+  canCorrectSalesContract,
   hasSalesContractSelfService,
 } from '@nora/contracts';
 import { enforceSalesHotelCapacity } from '@nora/contracts';
@@ -764,7 +765,7 @@ export class SalesService {
   }
 
   private assertUpdate(row: SalesContractRow, actor: AuthenticatedActor): void {
-    if (canSelfServeSalesContract(actor, row)) return;
+    if (canCorrectSalesContract(actor, row)) return;
     if (
       has(actor, 'sales.contracts.update.branch') &&
       actor.branchIds.includes(row.branchId)

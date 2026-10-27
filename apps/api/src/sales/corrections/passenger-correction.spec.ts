@@ -334,3 +334,31 @@ it('allows a contract-area creator to read and edit their own passenger correcti
   t.row.ownerUserId = 'other';
   await expect(t.service.contract(id, creator, true)).rejects.toThrow();
 });
+
+it.each(['sales.contracts.read.branch', 'sales.contracts.read.all'])(
+  'opens historical correction for a scoped %s reader without sensitive-data grants',
+  async (permission) => {
+    const t = setup();
+    t.row.ownerUserId = 'other';
+    t.row.passengers = [];
+    const reader = {
+      ...actor,
+      permissions: [permission],
+    } as AuthenticatedActor;
+    await expect(t.service.form(id, reader)).resolves.toMatchObject({
+      version: 3,
+      passengers: [],
+    });
+    expect(t.customers.detail).not.toHaveBeenCalled();
+    await expect(
+      t.service.contract(id, { ...reader, branchIds: [] }, true),
+    ).rejects.toThrow();
+    await expect(
+      t.service.contract(
+        id,
+        { ...reader, permissions: ['sales.contracts.read.own'] },
+        true,
+      ),
+    ).rejects.toThrow();
+  },
+);

@@ -2,6 +2,7 @@ import type { AuthenticatedActor } from '../iam';
 import { expect, it } from 'vitest';
 import {
   hasSalesContractSelfService,
+  canCorrectSalesContract,
   canSelfServeSalesContract,
 } from './owner-actions';
 import {
@@ -63,4 +64,56 @@ it('does not infer contract actions from unrelated or denied/manual screens', ()
 it('allows scoped contract-area readers to manage their own contract without granting financial approval', () => {
   expect(hasSalesContractSelfService(['sales.contracts.read.own'])).toBe(true);
   expect(actor.permissions).toEqual(['sales.contracts.create']);
+});
+
+it.each(['sales.contracts.read.branch', 'sales.contracts.read.all'])(
+  'permits correction of visible contracts for %s without widening owner-only actions',
+  (permission) => {
+    const reader = { ...actor, permissions: [permission] };
+    const other = { ownerUserId: 'other', branchId: 'branch' };
+    expect(canCorrectSalesContract(reader, other)).toBe(true);
+    expect(canSelfServeSalesContract(reader, other)).toBe(false);
+    expect(canCorrectSalesContract({ ...reader, branchIds: [] }, other)).toBe(
+      false,
+    );
+    expect(
+      canCorrectSalesContract(
+        {
+          ...reader,
+          permissions: [
+            permission,
+            denyPermission('sales.home'),
+            denyPermission('sales.new-contract'),
+          ],
+        },
+        other,
+      ),
+    ).toBe(false);
+  },
+);
+it.each(['sales.contracts.read.own', 'sales.contracts.create'])(
+  'keeps %s correction limited to owned contracts',
+  (permission) => {
+    const reader = { ...actor, permissions: [permission] };
+    expect(
+      canCorrectSalesContract(reader, {
+        ownerUserId: 'owner',
+        branchId: 'branch',
+      }),
+    ).toBe(true);
+    expect(
+      canCorrectSalesContract(reader, {
+        ownerUserId: 'other',
+        branchId: 'branch',
+      }),
+    ).toBe(false);
+  },
+);
+it('does not grant correction from unrelated read permissions', () => {
+  expect(
+    canCorrectSalesContract(
+      { ...actor, permissions: ['finance.read', 'reservations.read'] },
+      { ownerUserId: 'owner', branchId: 'branch' },
+    ),
+  ).toBe(false);
 });

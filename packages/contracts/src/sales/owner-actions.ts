@@ -23,3 +23,20 @@ export function canSelfServeSalesContract(
     actor.branchIds.includes(contract.branchId)
   );
 }
+
+/** Correction follows the viewer's existing contract scope, without granting financial approval. */
+export function canCorrectSalesContract(
+  actor: Pick<AuthenticatedActor, 'permissions' | 'userId' | 'branchIds'>,
+  contract: { ownerUserId: string; branchId: string },
+): boolean {
+  if (!actor.branchIds.includes(contract.branchId)) return false;
+  return (
+    canSelfServeSalesContract(actor, contract) ||
+    actor.permissions.includes('sales.contracts.update.branch') ||
+    (actor.permissions.includes('sales.contracts.update.own') &&
+      contract.ownerUserId === actor.userId) ||
+    (hasSalesContractSelfService(actor.permissions) &&
+      (actor.permissions.includes('sales.contracts.read.branch') ||
+        actor.permissions.includes('sales.contracts.read.all')))
+  );
+}

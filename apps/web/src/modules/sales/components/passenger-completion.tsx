@@ -152,14 +152,16 @@ export function PassengerCompletion({
   contractId,
   onSaved,
   onPending,
+  initiallyOpen = false,
 }: {
   contractId: string;
   onSaved: () => void;
   onPending: (pending: boolean) => void;
+  initiallyOpen?: boolean;
 }) {
   const [form, setForm] = useState<SalesPassengerCompletionFormV1 | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   const [calendar, setCalendar] = useState<CustomerCalendarMode>('gregorian');
   const [lookup, setLookup] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

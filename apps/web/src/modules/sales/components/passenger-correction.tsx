@@ -1,5 +1,5 @@
 'use client';
-import { canSelfServeSalesContract } from '@nora/contracts';
+import { canCorrectSalesContract } from '@nora/contracts';
 import { ContractPriceCorrection } from './contract-price-correction';
 import { PassengerCompletion } from './passenger-completion';
 import { useEffect, useRef, useState } from 'react';
@@ -274,33 +274,29 @@ export function PassengerCorrectionButton({
   ownerUserId,
   branchId,
   status,
+  completionOnly = false,
   onSaved,
 }: {
   contractId: string;
   ownerUserId: string;
   branchId: string;
   status: string;
+  completionOnly?: boolean;
   onSaved: () => void;
 }) {
   const permissions = useAccessPermissions();
   const actor = useAccessActor();
   const selfService = Boolean(
-    actor && canSelfServeSalesContract(actor, { ownerUserId, branchId }),
+    actor && canCorrectSalesContract(actor, { ownerUserId, branchId }),
   );
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   if (
+    (completionOnly && !selfService) ||
     !['CONFIRMED', 'SENT_TO_RESERVATIONS', 'IN_PROGRESS', 'COMPLETED'].includes(
       status,
     ) ||
-    (!selfService &&
-      !permissions?.some(
-        (p) =>
-          p === 'sales.contracts.update.branch' ||
-          p === 'sales.contracts.update.own' ||
-          p === 'finance.read' ||
-          p === 'sales.contracts.read.all',
-      ))
+    (!selfService && !permissions?.includes('finance.read'))
   )
     return null;
   return (
@@ -311,7 +307,7 @@ export function PassengerCorrectionButton({
         className="h-8 px-2 text-xs"
         onClick={() => setOpen(true)}
       >
-        اصلاح
+        {completionOnly ? 'افزودن مسافر' : 'اصلاح'}
       </Button>
       <Dialog
         open={open}
@@ -323,17 +319,23 @@ export function PassengerCorrectionButton({
           dir="rtl"
           className="max-h-[90vh] max-w-4xl overflow-y-auto"
         >
-          <DialogTitle>اصلاح مشخصات مسافران قرارداد</DialogTitle>
+          <DialogTitle>
+            {completionOnly ? 'افزودن مسافر' : 'اصلاح مشخصات مسافران قرارداد'}
+          </DialogTitle>
           <DialogDescription>
             تاریخ تولد، مشخصات پاسپورت و توضیحات رزرواسیون
           </DialogDescription>
-          {open &&
-          !selfService &&
-          !permissions?.some(
-            (p) =>
-              p === 'sales.contracts.update.branch' ||
-              p === 'sales.contracts.update.own',
-          ) ? (
+          {open && completionOnly && selfService ? (
+            <PassengerCompletion
+              initiallyOpen
+              contractId={contractId}
+              onSaved={() => {
+                setOpen(false);
+                onSaved();
+              }}
+              onPending={setPending}
+            />
+          ) : open && !selfService ? (
             <ContractPriceCorrection
               contractId={contractId}
               onSaved={onSaved}
