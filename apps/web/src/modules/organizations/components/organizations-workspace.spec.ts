@@ -79,15 +79,18 @@ describe('agency to Master Organization integration', () => {
     expect(source).not.toContain('دانلود قالب ورود');
   });
 
-  it('keeps contract and guarantee uploads inside registration without a change-reason field', () => {
-    expect(cooperationWizard).toContain('pendingAgreementDocument');
-    expect(cooperationWizard).toContain('pendingGuaranteeDocuments');
+  it('keeps contract and guarantee entry in the dossier rather than initial registration', () => {
+    expect(cooperationWizard).toContain('!agencyRegistration && step === 4');
+    expect(cooperationWizard).toContain("role === 'AGENCY' ? [1, 2, 5]");
+    expect(cooperationWizard).toContain(
+      'registrationCooperationDraft(draft, editing)',
+    );
     expect(agreementEditor).toContain("'سند قرارداد'");
     expect(agreementEditor).toContain('`سند تضمین ${index + 1}`');
     expect(agreementEditor).not.toContain('دلیل ثبت یا اصلاح این نسخه');
   });
 
-  it('keeps the five-stage phone workflow stale-safe and development-only explicit', () => {
+  it('keeps phone verification stale-safe while reducing registration to four steps', () => {
     expect(cooperationWizard).toContain("'تأیید شماره',");
     expect(cooperationWizard).not.toContain('کد یک‌بارمصرف شماره همراه');
     expect(cooperationWizard).toContain('کد آزمایشی؛ پیامک واقعی ارسال نشده');

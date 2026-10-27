@@ -56,6 +56,9 @@ describe('existing call form completion', () => {
         `type="hidden" name="direction" value="${direction}"`,
       );
       expect(html).not.toMatch(/<select[^>]*name="direction"/);
+      expect(html).toContain(
+        `aria-label="${direction === 'OUTBOUND' ? 'تماس‌گرفته‌شده از داخلی' : 'وصل شده به'}"`,
+      );
     },
   );
   it('restores saved business fields while retaining the same technical identity', () => {

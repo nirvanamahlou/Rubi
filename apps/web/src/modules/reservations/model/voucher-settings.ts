@@ -4,6 +4,7 @@ import type { voucherNumberKeys, voucherFlagKeys } from '@nora/contracts';
 import { voucherTextKeys, type VoucherSettingsV1 } from '@nora/contracts';
 import {
   reservationFormData,
+  isAggregateReservationForm,
   englishOutputName,
   reservationFormDate,
   reservationPassengerAgeLabel,
@@ -22,6 +23,7 @@ export function defaultVoucherSettings(
     voucherTextKeys.map((k) => [k, '']),
   ) as VoucherSettingsV1['text'];
   Object.assign(text, {
+    contractPartyName: intake.contractPartyName ?? '',
     city: d.destination === '-' ? '' : d.destination,
     hotel: d.hotel === '-' ? '' : d.hotel,
     stars: d.stars === '-' ? '' : d.stars,
@@ -303,19 +305,28 @@ export function voucherFormData(
       .filter(Boolean)
       .join(' / '),
     passengers,
-    adults: passengers.filter((p) => p.age === 'ADL').length,
-    children: passengers.filter((p) => p.age.startsWith('CHD')).length,
+    contractPartyName: v.text.contractPartyName || d.contractPartyName,
+    adults: isAggregateReservationForm(intake)
+      ? d.adults
+      : passengers.filter((p) => p.age === 'ADL').length,
+    children: isAggregateReservationForm(intake)
+      ? d.children
+      : passengers.filter((p) => p.age.startsWith('CHD')).length,
     children2To6: passengers.filter((p) => p.hotelChildAgeBand === 'CHD_2_TO_6')
       .length,
     children6To12: passengers.filter(
       (p) => p.hotelChildAgeBand === 'CHD_6_TO_12',
     ).length,
-    childrenUnclassified: passengers.filter(
-      (p) =>
-        p.age.startsWith('CHD') &&
-        !['CHD_2_TO_6', 'CHD_6_TO_12'].includes(p.hotelChildAgeBand ?? ''),
-    ).length,
-    infants: passengers.filter((p) => p.age === 'INF').length,
+    childrenUnclassified: isAggregateReservationForm(intake)
+      ? d.children
+      : passengers.filter(
+          (p) =>
+            p.age.startsWith('CHD') &&
+            !['CHD_2_TO_6', 'CHD_6_TO_12'].includes(p.hotelChildAgeBand ?? ''),
+        ).length,
+    infants: isAggregateReservationForm(intake)
+      ? d.infants
+      : passengers.filter((p) => p.age === 'INF').length,
     flights: (['arrival', 'departure'] as const).map((prefix) => ({
       leg: prefix === 'arrival' ? 'OUTBOUND' : 'RETURN',
       airline: englishOutputName(v.text[`${prefix}Airline`] || '-', refs),

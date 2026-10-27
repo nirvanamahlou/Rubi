@@ -1,6 +1,7 @@
 'use client';
 import { canSelfServeSalesContract } from '@nora/contracts';
 import { ContractPriceCorrection } from './contract-price-correction';
+import { PassengerCompletion } from './passenger-completion';
 import { useEffect, useRef, useState } from 'react';
 import type {
   SalesPassengerCorrectionCommandV1,
@@ -36,6 +37,7 @@ function CorrectionForm({
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [completionPending, setCompletionPending] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -84,7 +86,7 @@ function CorrectionForm({
     );
   }
   async function save() {
-    if (lock.current || loading || !version) return;
+    if (lock.current || loading || completionPending || !version) return;
     lock.current = true;
     setBusy(true);
     onPending(true);
@@ -155,7 +157,23 @@ function CorrectionForm({
         نمی‌کند.
       </p>
       {loading ? <p role="status">در حال دریافت مشخصات…</p> : null}
-      <fieldset disabled={loading || busy || uncertain} className="grid gap-3">
+      {!loading && rows.length === 0 && (
+        <PassengerCompletion
+          contractId={contractId}
+          onPending={(pending) => {
+            setCompletionPending(pending);
+            onPending(pending);
+          }}
+          onSaved={() => {
+            setRevision((value) => value + 1);
+            onSaved();
+          }}
+        />
+      )}
+      <fieldset
+        disabled={loading || busy || uncertain || completionPending}
+        className="grid gap-3"
+      >
         {rows.map((row, index) => (
           <div
             key={row.customerId}
@@ -215,7 +233,7 @@ function CorrectionForm({
       {message ? <p role="status">{message}</p> : null}
       <div className="flex gap-2">
         <Button
-          disabled={loading || busy || !version}
+          disabled={loading || busy || completionPending || !version}
           onClick={() => void save()}
         >
           {busy
@@ -226,7 +244,7 @@ function CorrectionForm({
         </Button>
         <Button
           variant="outline"
-          disabled={busy || uncertain}
+          disabled={busy || uncertain || completionPending}
           onClick={() => {
             setLoading(true);
             setRevision((value) => value + 1);

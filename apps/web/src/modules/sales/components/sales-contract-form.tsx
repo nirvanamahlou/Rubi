@@ -1,4 +1,5 @@
 'use client';
+import { ContractHotelPicker } from './contract-hotel-picker';
 import serviceStyles from './contract-service-cards.module.css';
 import { withAutomaticReturn } from '../model/automatic-return';
 import { LegacyContractPrices } from './legacy-contract-prices';
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 import { restoreContractDraft } from '../model/restore-contract-draft';
 import { useAccessActor } from '@/modules/iam/access-context';
+import { contractDraftScope } from '../model/contract-draft-scope';
 import { documentsApi } from '@/modules/documents/api/client';
 import { createdPaymentIds } from '../model/creation-payment-receipts';
 import {
@@ -91,6 +93,7 @@ import { SalesChequeCalculator } from './sales-cheque-calculator';
 import { ContractTotalPrices } from './contract-total-prices';
 import { ContractServiceSummary } from './contract-service-summary';
 import { SalesDatePicker } from './sales-date-picker';
+import { salesFlightCalendarSystem } from '../model/sales-form';
 import { SalesPaymentPlan } from './sales-payment-plan';
 import { Button, buttonVariants } from '@/components/ui/button';
 
@@ -145,6 +148,8 @@ import {
   salesOfferHasCapacity,
   salesDirections,
   salesTravelDate,
+  salesStandaloneDateServiceKeys,
+  salesStandaloneServiceDatesValid,
   withSalesHotelDates,
   withFirstPassengerCustomer,
   salesHotelValid,
@@ -224,9 +229,14 @@ function freshSalesDraft(): SalesFormState {
 export function SalesContractForm() {
   const router = useRouter();
   const actor = useAccessActor();
-  const draftStorageKey = actor
-    ? `nora.sales.contract.draft.v2:${actor.userId}:${actor.sessionId}`
-    : null;
+  const [draftScope, setDraftScope] = useState(() =>
+    contractDraftScope(null, actor),
+  );
+  if (draftScope?.userId !== actor?.userId) {
+    setDraftScope(contractDraftScope(draftScope, actor));
+  }
+  const draftStorageKey =
+    actor && draftScope?.userId === actor.userId ? draftScope.storageKey : null;
   const [restoredDraftKey, setRestoredDraftKey] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [flightRange, setFlightRange] = useState<FlightDateRange>({
@@ -393,7 +403,8 @@ export function SalesContractForm() {
   const selectableHotels = useMemo(() => {
     const hotelsAtDestination = references.hotels.filter(
       (hotel) =>
-        hotel.attributes.cityId === state.destinationId &&
+        (hotel.attributes.cityId === state.destinationId ||
+          hotel.id === state.hotel.hotelId) &&
         (!state.tour ||
           (
             state.publishedPackageHotelIds ?? state.tour.package.hotelIds
@@ -407,6 +418,7 @@ export function SalesContractForm() {
     );
   }, [
     references.hotels,
+    state.hotel.hotelId,
     state.destinationId,
     state.tour,
     state.publishedPackageHotelIds,
@@ -485,6 +497,8 @@ export function SalesContractForm() {
                       ? {
                           ...current.hotel,
                           hotelId: '',
+                          cityId: '',
+                          additionalStays: [],
                           name: '',
                           roomTypeId: '',
                           rooms: [],
@@ -826,6 +840,7 @@ export function SalesContractForm() {
         state.destinationId &&
         state.originId !== state.destinationId &&
         state.serviceKinds.length &&
+        salesStandaloneServiceDatesValid(state) &&
         passengerCounts.total > 0 &&
         !salesRoomPartyError(state) &&
         (!state.serviceKinds.includes('VISA') ||
@@ -1009,9 +1024,7 @@ export function SalesContractForm() {
               <>
                 <TicketOfferPicker
                   refreshRevision={referenceRefresh.revision}
-                  calendarSystem={
-                    salesInternationalTravel(state) ? 'gregorian' : 'persian'
-                  }
+                  calendarSystem={salesFlightCalendarSystem(state, 'OUTBOUND')}
                   prepared={preparedTickets}
                   enabled={flightDatesReady}
                   originLabel={
@@ -1124,9 +1137,7 @@ export function SalesContractForm() {
                 salesFlightSelection(state, 'OUTBOUND') ? (
                   <TicketOfferPicker
                     refreshRevision={referenceRefresh.revision}
-                    calendarSystem={
-                      salesInternationalTravel(state) ? 'gregorian' : 'persian'
-                    }
+                    calendarSystem={salesFlightCalendarSystem(state, 'RETURN')}
                     enabled={flightDatesReady}
                     originLabel={
                       references.cities.find(
@@ -1432,14 +1443,6 @@ export function SalesContractForm() {
             </div>
           </div>
         ) : null}
-        {step === 0 && state.legacyContract && (
-          <FormField label="تاریخ سفر" required>
-            <SalesDatePicker
-              value={state.departureDate}
-              onChange={(departureDate) => patchState({ departureDate })}
-            />
-          </FormField>
-        )}
         {step === 0 ? (
           <div className="mt-6 grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">
             <h2 className="text-sm font-bold">خدمات قرارداد</h2>
@@ -1688,6 +1691,7 @@ export function SalesContractForm() {
         ) : null}
         {step === 0 && (
           <ServiceParties
+            refreshRevision={referenceRefresh.revision}
             state={state}
             patch={patchState}
             hotels={selectableHotels}
@@ -1701,6 +1705,19 @@ export function SalesContractForm() {
             className="mt-5 border-t border-border pt-4"
           >
             <FlightTripDates
+              calendarSystems={{
+                OUTBOUND: salesFlightCalendarSystem(state, 'OUTBOUND'),
+                RETURN: salesFlightCalendarSystem(state, 'RETURN'),
+              }}
+              onCalendarSystemChange={(direction, calendar) =>
+                patchState((current) => ({
+                  ...current,
+                  flightCalendarSystems: {
+                    ...current.flightCalendarSystems,
+                    [direction]: calendar,
+                  },
+                }))
+              }
               primaryDirection={
                 salesDirections(state, 'FLIGHT').includes('OUTBOUND')
                   ? 'OUTBOUND'
@@ -1782,6 +1799,28 @@ export function SalesContractForm() {
             ) : null}
           </section>
         ) : null}
+        {step === 0 && salesStandaloneDateServiceKeys(state).length > 0 && (
+          <section className="mt-4 grid gap-3 sm:grid-cols-2">
+            {salesStandaloneDateServiceKeys(state).map((key) => (
+              <div key={key} className="rounded-xl border p-3">
+                <h3 className="mb-2 text-sm font-bold">{detailLabel(key)}</h3>
+                <FormField label="تاریخ" required>
+                  <SalesDatePicker
+                    value={state.serviceDetails?.[key]?.date ?? ''}
+                    onChange={(date) =>
+                      patchState({
+                        serviceDetails: {
+                          ...state.serviceDetails,
+                          [key]: { ...state.serviceDetails?.[key], date },
+                        },
+                      })
+                    }
+                  />
+                </FormField>
+              </div>
+            ))}
+          </section>
+        )}
         {step === 0 &&
           state.serviceKinds.includes('FLIGHT') &&
           state.serviceKinds.includes('HOTEL') && (
@@ -1883,13 +1922,12 @@ export function SalesContractForm() {
                       <div className="grid gap-4 md:grid-cols-3">
                         {!state.hotel.rooms ? (
                           <>
-                            <SearchableReference
-                              label="هتل"
-                              value={state.hotel.hotelId}
-                              options={selectableHotels}
-                              showAllOptionsOnOpen
-                              preferEnglishName
-                              onChange={(hotelId) =>
+                            <ContractHotelPicker
+                              refreshRevision={referenceRefresh.revision}
+                              state={state}
+                              patch={patchState}
+                              hotels={selectableHotels}
+                              onHotelChange={(hotelId) =>
                                 patchState({
                                   hotel: {
                                     ...state.hotel,
@@ -2225,10 +2263,6 @@ export function SalesContractForm() {
             onAddInfant={() =>
               updatePassengerCount('infants', passengerCounts.infants + 1)
             }
-            onTravelDateChange={(departureDate) => {
-              patchState({ departureDate });
-              setPeopleDirty(true);
-            }}
           />
         ) : null}
         {step === 0 ? (

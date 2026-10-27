@@ -21,9 +21,28 @@ import {
   normalizeRouteSearch,
   toggleSalesDirectionalService,
   salesTravelDate,
+  salesStandaloneDateServiceKeys,
+  salesStandaloneServiceDatesValid,
 } from './sales-form';
 
 describe('sales contract form payload', () => {
+  it('persists each flight and hotel calendar without converting ISO dates', () => {
+    const payload = salesPayload({
+      ...emptySalesForm,
+      serviceKinds: ['FLIGHT', 'HOTEL'],
+      tripType: 'ROUND_TRIP',
+      departureDate: '2026-10-01',
+      returnDate: '2026-10-07',
+      flightCalendarSystems: { OUTBOUND: 'gregorian', RETURN: 'persian' },
+      hotel: { ...emptySalesForm.hotel, calendarSystem: 'persian' },
+    });
+    const calendar = (key: string) =>
+      payload.services.find((service) => service.clientKey === key)?.metadata
+        ?.dateCalendarSystem;
+    expect(calendar('flight-outbound')).toBe('gregorian');
+    expect(calendar('flight-return')).toBe('persian');
+    expect(calendar('hotel')).toBe('persian');
+  });
   it('keeps only explicit current hotel guest accommodation and requires an age-compatible selection', () => {
     const state = {
       ...emptySalesForm,
@@ -852,5 +871,72 @@ describe('historical customer total pricing', () => {
         legacyDeductions: { discount: { currencyCode: 'USD', amount: '1' } },
       }),
     ).toThrow();
+  });
+});
+
+describe('service dates replace the extra trip-start field', () => {
+  it('uses hotel or tour dates without a separate departure date and ignores deselected services', () => {
+    expect(
+      salesTravelDate({
+        ...emptySalesForm,
+        serviceKinds: ['HOTEL'],
+        hotel: { ...emptySalesForm.hotel, checkIn: '2026-10-05' },
+      }),
+    ).toBe('2026-10-05');
+    expect(
+      salesTravelDate({
+        ...emptySalesForm,
+        serviceKinds: ['TOUR'],
+        tour: { startsOn: '2026-10-06' } as never,
+      }),
+    ).toBe('2026-10-06');
+    const standalone = {
+      ...emptySalesForm,
+      serviceKinds: ['VISA' as const],
+      serviceDetails: {
+        VISA: { date: '2026-10-10' },
+        OTHER: { date: '2020-01-01' },
+      },
+    };
+    expect(salesTravelDate(standalone)).toBe('2026-10-10');
+    expect(salesStandaloneServiceDatesValid(standalone)).toBe(true);
+  });
+  it('requires dates only within standalone services and keeps flight/hotel date controls authoritative', () => {
+    expect(
+      salesStandaloneDateServiceKeys({
+        ...emptySalesForm,
+        serviceKinds: ['FLIGHT', 'TRANSFER'],
+      }),
+    ).toEqual([]);
+    expect(
+      salesStandaloneDateServiceKeys({
+        ...emptySalesForm,
+        serviceKinds: ['HOTEL', 'INSURANCE'],
+      }),
+    ).toEqual([]);
+    expect(
+      salesStandaloneServiceDatesValid({
+        ...emptySalesForm,
+        serviceKinds: ['OTHER'],
+      }),
+    ).toBe(false);
+    expect(
+      salesStandaloneServiceDatesValid({
+        ...emptySalesForm,
+        serviceKinds: ['OTHER'],
+        serviceDetails: { OTHER: { date: '2026-02-30' } },
+      }),
+    ).toBe(false);
+    const transfers = {
+      ...emptySalesForm,
+      tripType: 'ROUND_TRIP' as const,
+      serviceKinds: ['TRANSFER' as const],
+      serviceDetails: {
+        'TRANSFER-OUTBOUND': { date: '2026-10-01' },
+        'TRANSFER-RETURN': { date: '2026-10-08' },
+      },
+    };
+    expect(salesStandaloneServiceDatesValid(transfers)).toBe(true);
+    expect(salesTravelDate(transfers)).toBe('2026-10-01');
   });
 });

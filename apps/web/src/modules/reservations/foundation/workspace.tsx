@@ -1,5 +1,6 @@
 'use client';
 import { RefreshCw } from 'lucide-react';
+import Link from '@/components/access-link';
 import { HotelSavingsDashboard } from '../components/hotel-purchase-savings';
 import { useQueueNames } from './queue-names';
 import { TableStatusCheckbox, tableFlagColumns } from './table-status-checkbox';
@@ -211,6 +212,9 @@ export function ReservationOperationsWorkspace({
           <header className={styles.header}>
             <div>
               <h1>رزرواسیون</h1>
+              {available && (
+                <Link href="/reservations/insurance">بیمه مسافرتی</Link>
+              )}
             </div>
             <span className={styles.badge}>
               {preview
@@ -280,7 +284,7 @@ export function ReservationOperationsWorkspace({
                   changeQuery({
                     ...defaultQuery,
                     status: 'NEW',
-                    sort: 'newest',
+                    sort: defaultQuery.sort,
                   });
                   setSection('inbox');
                   onDismissNewRequests?.();
@@ -618,6 +622,9 @@ export function ReservationOperationsWorkspace({
                         align="start"
                         className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
                       >
+                        <SelectItem value="oldest">
+                          قدیمی‌ترین قرارداد
+                        </SelectItem>
                         <SelectItem value="deadline">
                           نزدیک‌ترین مهلت
                         </SelectItem>

@@ -1,0 +1,11 @@
+# HR report form redesign and Radan parity — 2026-10-25
+
+PC-B; task branch codex/pc-b-hr-report-redesign-parity-1025. User explicitly requests redesign of the HR report filter panel and all Radan attendance report forms, push and normal develop merge. Previous Reports and Audit placement (PR1128) remains canonical.
+
+All21 forms re-inspected in authenticated Radan using read-only UI: general, daily, late, early, absence, mission, leave, overtime, work, total, people, presence, incomplete, incompleteDetail, calculation, remote, dailyMinutes, totalMinutes, present, forgiveness and ARPA. First20 appear on page1 and ARPA on page2. Date fields, report-specific required groups, contracts, coefficients, optional personnel columns, sort/unit and aggregate field structures remain as previously verified. No report was executed or input entered in Radan; its output algorithms were not observed.
+
+Nora exposes the21 entries as a searchable side list, preserves the employee/section report selector, and groups dates, people, groups and conditional options into spaced cards. Personnel selections show removable chips; the existing scoped chart picker remains local-only. Results and exports share a dedicated result card. An initial report is unprepared; changing any applied filter, report or store revision invalidates its prior output until explicit submission. Group-required forms cannot treat an empty group catalog as a valid selection. Existing private snapshot, record/employee authorization, known measurements, unknown metrics and actual exports are unchanged.
+
+Evidence limit: forgiveness and ARPA have no authoritative Nora result provider and no observed Radan output algorithm. Both complete forms remain listed with an explicit missing-source state and a disabled run action; no guessed result, zero-fill or false successful empty table is introduced.
+
+No schema, migration, dependency, API contract, grants or server changes. Existing192 HR regressions passed before a final notice-copy adjustment; final focused recheck, lint/type/format/i18n, browser QA and exact-head full hosted gates must pass before merge. No operational data writes in local visual QA. PR metadata is authoritative for final head and merge; source locks release on verified MERGED.

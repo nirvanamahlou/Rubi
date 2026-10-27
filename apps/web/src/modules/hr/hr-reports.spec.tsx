@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { HrReports } from './hr-reports';
+import { HrReportsWorkspace } from './hr-reports-workspace';
 import { radanReports } from './radan-reports';
 import {
   coefficientPaths,
@@ -110,4 +111,74 @@ it('prefills only the general report with the current Tehran Jalali month', () =
     radanDefaultReportRange('general', new Date('2026-10-25T08:00:00.000Z')),
   ).toEqual({ from: '2026-10-23', to: '2026-10-25' });
   expect(radanDefaultReportRange('daily')).toEqual({ from: '', to: '' });
+});
+
+describe('HR reports and audit location', () => {
+  it('opens all attendance reports inside HR without needing a general Reporting entry', () => {
+    const html = renderToStaticMarkup(<HrReportsWorkspace store={store} />);
+    expect(html).toContain('گزارش و Audit');
+    expect(html).toContain('href="/hr?section=reports&amp;tab=dashboard"');
+    expect(html).toContain('value="radan:daily" selected=""');
+    for (const [id] of radanReports)
+      expect(html).toContain(`value="radan:${id}"`);
+    expect(html).not.toContain('href="/reports');
+    expect(html).not.toContain('tab=audit');
+  });
+  it('shows leave report and cardex in HR reporting without grant or transfer actions', () => {
+    const html = renderToStaticMarkup(
+      <HrReportsWorkspace store={store} tab="leaveBalance" />,
+    );
+    expect(html).toContain('کاردکس مانده مرخصی');
+    expect(html).toContain('گزارش مانده مرخصی');
+    expect(html).not.toContain('افزودن مانده مرخصی');
+    expect(html).not.toContain('انتقال مرخصی عمومی');
+    expect(html).not.toContain('انتقال مرخصی کاربر');
+  });
+  it('opens the audit deep link separately without mounting report filters', () => {
+    const auditStore = {
+      ...store,
+      data: {
+        ...store.data!,
+        capabilities: { ...store.data!.capabilities, audit: true },
+      },
+    } as HrStore;
+    const html = renderToStaticMarkup(
+      <HrReportsWorkspace store={auditStore} tab="audit" />,
+    );
+    expect(html).toContain('href="/hr?section=reports&amp;tab=audit"');
+    expect(html).toContain('تاریخچه تغییرات و دسترسی‌ها');
+    expect(html).not.toContain('موضوع گزارش');
+  });
+  it('does not mount audit data or grant access for a direct unauthorized audit link', () => {
+    const html = renderToStaticMarkup(
+      <HrReportsWorkspace store={store} tab="audit" />,
+    );
+    expect(html).toContain('role="alert"');
+    expect(html).not.toContain('تاریخچه تغییرات و دسترسی‌ها');
+    expect(html).not.toContain('tab=audit');
+  });
+});
+
+it('lists all observed attendance reports as accessible actions before running a report', () => {
+  const html = renderToStaticMarkup(
+    <HrReports store={store} initialTopic="radan:daily" />,
+  );
+  expect(html).toContain('aria-label="فهرست گزارش‌ها"');
+  expect(html.match(/aria-pressed=/g)).toHaveLength(21);
+  expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
+  expect(html).toContain('گزارش آماده نشده است.');
+  expect(html).not.toContain('رکوردی مطابق این فیلترها وجود ندارد.');
+});
+
+it('keeps unsupported result providers explicit and cannot run their report as an empty success', () => {
+  for (const id of ['forgiveness', 'arpa']) {
+    const html = renderToStaticMarkup(
+      <HrReports store={store} initialTopic={`radan:${id}`} />,
+    );
+    expect(html).toContain('منبع دادهٔ این گزارش در دسترس نیست.');
+    expect(html).toMatch(
+      /<button[^>]*disabled=""[^>]*type="submit"[^>]*>گرفتن گزارش<\/button>/,
+    );
+    expect(html).toContain('گزارش آماده نشده است.');
+  }
 });

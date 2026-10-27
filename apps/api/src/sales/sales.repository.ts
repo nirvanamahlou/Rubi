@@ -1,3 +1,4 @@
+import { captureSalesContractAccounting } from '../finance/accounting/sales-contract-accounting.public';
 import { assertRevenueEditable } from '../finance/accounting/accounting-workflows.public';
 import { recalculateSalesSettlement } from './sales-financial-settlement';
 import {
@@ -33,7 +34,12 @@ export const salesDetailInclude = {
   },
   services: { orderBy: { createdAt: 'asc' } },
   ticketSelections: { orderBy: { departureAt: 'asc' } },
-  hotelSelection: { include: { rooms: { orderBy: { ordinal: 'asc' } } } },
+  hotelSelection: {
+    include: {
+      rooms: { orderBy: { ordinal: 'asc' } },
+      additionalStays: { orderBy: { ordinal: 'asc' } },
+    },
+  },
   priceComponents: { orderBy: { createdAt: 'asc' } },
   payments: {
     include: { refunds: true, allocations: true },
@@ -613,6 +619,16 @@ export class SalesRepository {
               mealServiceId: hotel.mealServiceId ?? null,
               occupancy: hotel.occupancy,
               inventoryStatus: hotel.inventoryStatus,
+              additionalStays: {
+                create: (hotel.additionalStays ?? []).map((stay, index) => ({
+                  ordinal: index + 2,
+                  hotelId: stay.hotelId,
+                  cityId: stay.cityId,
+                  hotelNameSnapshot: stay.hotelNameSnapshot,
+                  checkInDate: startOfDay(stay.checkInDate),
+                  checkOutDate: startOfDay(stay.checkOutDate),
+                })),
+              },
             },
           });
         }
@@ -882,6 +898,16 @@ export class SalesRepository {
               mealServiceId: hotel.mealServiceId ?? null,
               occupancy: hotel.occupancy,
               inventoryStatus: hotel.inventoryStatus,
+              additionalStays: {
+                create: (hotel.additionalStays ?? []).map((stay, index) => ({
+                  ordinal: index + 2,
+                  hotelId: stay.hotelId,
+                  cityId: stay.cityId,
+                  hotelNameSnapshot: stay.hotelNameSnapshot,
+                  checkInDate: startOfDay(stay.checkInDate),
+                  checkOutDate: startOfDay(stay.checkOutDate),
+                })),
+              },
             },
           });
         }
@@ -939,6 +965,7 @@ export class SalesRepository {
           },
         });
         await recalculateSalesSettlement(tx, id, actor.userId, false);
+        await captureSalesContractAccounting(tx, id, actor.userId);
         return true;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -1084,6 +1111,8 @@ export class SalesRepository {
           },
         });
         await recalculateSalesSettlement(tx, id, actor.userId, false);
+        if (toStatus === 'SENT_TO_RESERVATIONS')
+          await captureSalesContractAccounting(tx, id, actor.userId, true);
         return true;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -1241,6 +1270,12 @@ export class SalesRepository {
           partyId: payment.contract.customerId,
           reference: payment.paymentReference,
         });
+        await captureSalesContractAccounting(
+          tx,
+          payment.contractId,
+          event.reviewedByUserId ?? payment.createdByUserId,
+          true,
+        );
         return 'confirmed';
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },

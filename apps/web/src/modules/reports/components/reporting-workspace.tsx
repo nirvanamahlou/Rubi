@@ -39,7 +39,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from '@/i18n/link';
 import { ReportingOperationsView } from './reporting-operations-view';
-import { useScreenAccess, useRouteAccess } from '@/modules/iam/access-context';
+import { useScreenAccess } from '@/modules/iam/access-context';
 import { ReportSharingDialog } from './report-sharing-dialog';
 
 import { Button } from '@/components/ui/button';
@@ -1672,7 +1672,6 @@ export function ReportingWorkspace({
   savedFilter?: SavedReportFilter;
 }) {
   const screenAllowed = useScreenAccess();
-  const routeAllowed = useRouteAccess();
   const visibleWorkspaceViews = workspaceViews.filter(({ id }) =>
     screenAllowed(`reports.view.${id}`),
   );
@@ -2101,19 +2100,7 @@ export function ReportingWorkspace({
     <main className="space-y-6" dir="rtl">
       {!configurationOnly ? (
         <>
-          <PageHeader
-            title="گزارش‌ها و خروجی‌های مدیریتی"
-            actions={
-              routeAllowed('/hr?section=reports') ? (
-                <Button asChild variant="outline">
-                  <Link href="/hr?section=reports">
-                    <Clock3 aria-hidden="true" size={16} />
-                    گزارش‌های منابع انسانی
-                  </Link>
-                </Button>
-              ) : undefined
-            }
-          />
+          <PageHeader title="گزارش‌ها و خروجی‌های مدیریتی" />
           <nav
             aria-label="نماهای گزارش"
             className="flex gap-2 overflow-x-auto pb-1"

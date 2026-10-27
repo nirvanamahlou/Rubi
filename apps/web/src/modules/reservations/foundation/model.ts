@@ -108,7 +108,7 @@ export interface Query {
   search: string;
   status: QueueStatus | 'ALL';
   service: string;
-  sort: 'deadline' | 'newest' | 'priority';
+  sort: 'oldest' | 'deadline' | 'newest' | 'priority';
   page: number;
   pageSize: number;
   dateBasis: 'createdAt' | 'receivedAt' | 'travelDate';
@@ -119,7 +119,7 @@ export const defaultQuery: Query = {
   search: '',
   status: 'ALL',
   service: 'ALL',
-  sort: 'deadline',
+  sort: 'oldest',
   page: 1,
   pageSize: 10,
   dateBasis: 'createdAt',
@@ -201,13 +201,15 @@ export function queryRows(rows: readonly RequestView[], query: Query) {
   );
   filtered.sort((a, b) => {
     const order =
-      query.sort === 'priority'
-        ? priority[b.priority] - priority[a.priority]
-        : query.sort === 'newest'
-          ? Date.parse(b.receivedAt ?? b.createdAt) -
-            Date.parse(a.receivedAt ?? a.createdAt)
-          : (a.deadline ? Date.parse(a.deadline) : Number.MAX_SAFE_INTEGER) -
-            (b.deadline ? Date.parse(b.deadline) : Number.MAX_SAFE_INTEGER);
+      query.sort === 'oldest'
+        ? Date.parse(a.createdAt) - Date.parse(b.createdAt)
+        : query.sort === 'priority'
+          ? priority[b.priority] - priority[a.priority]
+          : query.sort === 'newest'
+            ? Date.parse(b.receivedAt ?? b.createdAt) -
+              Date.parse(a.receivedAt ?? a.createdAt)
+            : (a.deadline ? Date.parse(a.deadline) : Number.MAX_SAFE_INTEGER) -
+              (b.deadline ? Date.parse(b.deadline) : Number.MAX_SAFE_INTEGER);
     return order || a.id.localeCompare(b.id);
   });
   const pageSize = Number.isFinite(query.pageSize)

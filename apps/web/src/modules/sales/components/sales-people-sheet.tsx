@@ -19,7 +19,6 @@ import {
 } from '@/modules/customers/public/entry';
 import { SalesOrganizationCustomer } from './sales-organization-customer';
 import { SalesPersonSearch } from './sales-person-search';
-import { SalesDatePicker } from './sales-date-picker';
 import { SalesThemedSelect } from './sales-themed-select';
 import { loadSalesAcquaintanceMethods } from '../api/acquaintance-methods';
 import {
@@ -55,7 +54,6 @@ export function SalesPeopleSheet({
   onBusyChange,
   onAddInfant,
   onGuestStateChange,
-  onTravelDateChange,
   onFlightDirectionsChange,
   onToggleVisa,
   busy = false,
@@ -72,7 +70,6 @@ export function SalesPeopleSheet({
   onBusyChange: (busy: boolean) => void;
   onAddInfant: () => void;
   onGuestStateChange?: (patch: Partial<SalesFormState>) => void;
-  onTravelDateChange: (value: string) => void;
   busy?: boolean;
 }) {
   const draft = normalizeSalesPeopleDraft(
@@ -397,10 +394,12 @@ export function SalesPeopleSheet({
           </p>
           {key !== 'primary' ? (
             <p className="text-primary">
-              {salesPassengerAgeLabel(
-                row.values.birthDate,
-                salesTravelDate(state),
-              )}
+              {row.values.birthDate && !salesTravelDate(state)
+                ? '—'
+                : salesPassengerAgeLabel(
+                    row.values.birthDate,
+                    salesTravelDate(state),
+                  )}
             </p>
           ) : null}
           {row.person ? (
@@ -556,17 +555,6 @@ export function SalesPeopleSheet({
         </div>
       )}
 
-      {!salesTravelDate(state) ||
-      (!state.serviceKinds.includes('FLIGHT') &&
-        !(state.serviceKinds.includes('HOTEL') && state.hotel.checkIn)) ? (
-        <FormField label="تاریخ شروع سفر" required>
-          <SalesDatePicker
-            value={state.departureDate}
-            onChange={onTravelDateChange}
-            disabled={busy}
-          />
-        </FormField>
-      ) : null}
       {error ? (
         <Alert tone="error" title="ثبت افراد کامل نشد" description={error} />
       ) : null}

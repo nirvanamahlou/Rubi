@@ -174,7 +174,7 @@ it('renders the nine observed working-hour controls with stable stored positions
   );
 });
 
-it('exposes the five observed leave views and separates monthly grants from independent transfer thresholds', () => {
+it('keeps leave operations separate from HR reports and preserves monthly grants and independent transfer thresholds', () => {
   const store = {
     data: {
       records: [],
@@ -188,14 +188,14 @@ it('exposes the five observed leave views and separates monthly grants from inde
   const grant = renderToStaticMarkup(<HrLeaveBalance store={store} />);
   for (const title of [
     'افزودن مانده مرخصی',
-    'کاردکس مانده مرخصی',
-    'گزارش مانده مرخصی',
     'انتقال مرخصی کاربر',
     'انتقال مرخصی عمومی',
   ])
     expect(grant).toContain(title);
+  expect(grant).not.toContain('کاردکس مانده مرخصی');
+  expect(grant).not.toContain('گزارش مانده مرخصی');
   expect(grant).toContain('value="16:20"');
-  expect(grant).toContain('value="all" selected=""');
+  expect(grant.match(/checked=""/g)).toHaveLength(13);
   expect(grant).toContain('فرم مانده مرخصی');
   expect(grant).not.toContain('نوع مرخصی');
   const transfer = renderToStaticMarkup(
@@ -209,7 +209,11 @@ it('exposes the five observed leave views and separates monthly grants from inde
   expect(transfer).not.toContain('نوع مرخصی');
   for (const initialView of ['cardex', 'report', 'userTransfer']) {
     const html = renderToStaticMarkup(
-      <HrLeaveBalance store={store} initialView={initialView} />,
+      <HrLeaveBalance
+        store={store}
+        initialView={initialView}
+        reportsOnly={initialView !== 'userTransfer'}
+      />,
     );
     for (const field of [
       'جست‌وجو',

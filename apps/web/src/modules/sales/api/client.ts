@@ -3,6 +3,8 @@ import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { localizedFetch } from '@/i18n/localized-fetch';
 
 import type {
+  CustomerMutationRequest,
+  CustomerDetail,
   HotelRoomRateV1,
   CustomerSummary,
   SalesBuyerContactV1,
@@ -26,6 +28,8 @@ import type {
   SalesPassengerIdentityV1,
   SalesPassengerCorrectionHistoryV1,
   SalesPassengerCorrectionCommandV1,
+  SalesPassengerCompletionFormV1,
+  SalesPassengerCompletionCommandV1,
 } from '@nora/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -163,6 +167,20 @@ export const salesApi = {
       contractNumber: string;
       passengers: SalesPassengerIdentityV1[];
     }>(`/contracts/${encodeURIComponent(id)}/passenger-corrections/form`),
+  createCompletionPerson: (id: string, input: CustomerMutationRequest) =>
+    request<{ data: CustomerDetail }>(
+      `/contracts/${encodeURIComponent(id)}/passenger-completion/people`,
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
+  passengerCompletionForm: (id: string) =>
+    request<SalesPassengerCompletionFormV1>(
+      `/contracts/${encodeURIComponent(id)}/passenger-completion`,
+    ),
+  completePassengers: (id: string, input: SalesPassengerCompletionCommandV1) =>
+    request<{ version: number }>(
+      `/contracts/${encodeURIComponent(id)}/passenger-completion`,
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
   passengerCorrectionHistory: (id: string, cursor?: string, eventId?: string) =>
     request<{
       items: SalesPassengerCorrectionHistoryV1[];

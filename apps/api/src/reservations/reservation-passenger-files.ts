@@ -1,4 +1,5 @@
 import { ReservationOperationInterceptor } from './reservation-operation.interceptor';
+import { ReservationInsuranceService } from './insurance/insurance.service';
 import { PassengerCorrectionService } from '../sales/corrections/passenger-correction.service';
 import {
   BadRequestException,
@@ -138,6 +139,9 @@ export class ReservationPassengerFilesService {
     @Optional()
     @Inject(PassengerCorrectionService)
     private readonly corrections?: PassengerCorrectionService,
+    @Optional()
+    @Inject(ReservationInsuranceService)
+    private readonly insurance?: ReservationInsuranceService,
   ) {}
   private require(actor: AuthenticatedActor, permissions: readonly string[]) {
     if (
@@ -153,7 +157,7 @@ export class ReservationPassengerFilesService {
     passengerId?: string,
   ) {
     this.require(actor, ['reservations.read']);
-    const intake = await this.workflow.detail(id, actor.branchIds);
+    const intake = await this.workflow.detail(id, actor.branchIds, true);
     if (passengerId && !intake.snapshot.passengerIds.includes(passengerId))
       throw new NotFoundException('مسافر متعلق به این قرارداد نیست.');
     return intake;
@@ -165,6 +169,11 @@ export class ReservationPassengerFilesService {
       'customers.sensitive.read',
     );
     const data = [];
+    const policyNumbers = await this.insurance?.issuedNumbers(
+      intake.snapshot.contractId,
+      intake.snapshot.passengerIds,
+      actor,
+    );
     const corrections = await this.corrections?.effective(
       intake.snapshot.contractId,
       actor,
@@ -196,7 +205,10 @@ export class ReservationPassengerFilesService {
       );
     }
     return {
-      data,
+      data: data.map((row) => ({
+        ...row,
+        insurancePolicyNumber: policyNumbers?.get(row.id) ?? null,
+      })),
       canEdit: actor.permissions.includes('customers.update'),
       canEditIdentity:
         actor.permissions.includes('customers.update') &&

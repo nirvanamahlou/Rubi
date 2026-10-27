@@ -547,7 +547,11 @@ export function ReservationFormSheet({
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4}>-</td>
+                      <td colSpan={11}>
+                        {data.contractPartyName
+                          ? `CONTRACT PARTY: ${data.contractPartyName}`
+                          : '-'}
+                      </td>
                     </tr>
                   )}
                 </tbody>

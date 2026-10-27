@@ -51,6 +51,35 @@ it('displays passenger facts without any editable control even with identity per
     ),
   ).toBe(false);
 });
+it.each([true, false])(
+  'shows the issued policy number and keeps unissued cells empty (readonly=%s)',
+  (readOnly) => {
+    const passengers = state.values[0] as Record<string, unknown>[];
+    passengers.push({
+      ...passengers[0],
+      id: 'second',
+      insurancePolicyNumber: 'TEST-POLICY-2',
+    });
+    const tree = nodes(ReservationPassengers({ id: 'request', readOnly }));
+    expect(
+      tree.some(
+        (n) =>
+          n.type === 'th' &&
+          nodes(n.props.children as ReactNode).some(
+            (child) => child.props.children === 'شماره بیمه‌نامه',
+          ),
+      ),
+    ).toBe(true);
+    expect(
+      tree
+        .filter(
+          (n) =>
+            (n.type === 'td' || n.props.tag === 'td') && n.props.dir === 'ltr',
+        )
+        .map((n) => n.props.children),
+    ).toEqual(['', 'TEST-POLICY-2']);
+  },
+);
 it('places contract category controls inside the existing editable passenger row, never in read-only output', () => {
   const editor = vi.fn(() => <span>inline-contract-age</span>);
   const tree = nodes(

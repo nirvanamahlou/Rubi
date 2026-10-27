@@ -8,6 +8,8 @@ import {
 } from '@/components/ui/overlays';
 import { HrButton } from './hr-controls';
 import ui from './hr-unified.module.css';
+import styles from './hr-reports.module.css';
+import { UsersRound, X } from 'lucide-react';
 
 /** Selection changes are local; reporting never writes employee data. */
 export function HrReportPeoplePicker({
@@ -37,8 +39,16 @@ export function HrReportPeoplePicker({
         : current.filter((id) => !ids.includes(id)),
     );
   return (
-    <div>
-      <span>کاربران</span>
+    <section className={styles.people} aria-label="کاربران">
+      <div className={styles.peopleHeading}>
+        <span>
+          <UsersRound size={17} aria-hidden="true" />
+          کاربران
+        </span>
+        <bdi>
+          {value.length || people.length} / {people.length}
+        </bdi>
+      </div>
       <HrButton
         disabled={disabled}
         onClick={() => {
@@ -50,16 +60,37 @@ export function HrReportPeoplePicker({
       >
         افزودن
       </HrButton>
-      <span>
+      <span className={styles.peopleSummary}>
         {value.length
           ? `${value.length} / ${people.length}`
           : 'همه کارکنان مجاز'}
       </span>
+      {value.length ? (
+        <div className={styles.selectedPeople}>
+          {people
+            .filter((person) => value.includes(person.id))
+            .map((person) => (
+              <span className={styles.personChip} key={person.id}>
+                {person.name}
+                <button
+                  type="button"
+                  aria-label={`حذف از انتخاب: ${person.name}`}
+                  disabled={disabled}
+                  onClick={() =>
+                    onChange(value.filter((id) => id !== person.id))
+                  }
+                >
+                  <X size={13} aria-hidden="true" />
+                </button>
+              </span>
+            ))}
+        </div>
+      ) : null}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className={styles.picker}>
           <DialogTitle>کاربران</DialogTitle>
           <DialogDescription>انتخاب از چارت سازمانی</DialogDescription>
-          <div className={ui.spaced}>
+          <div className={styles.pickerContent}>
             <label className={ui.field}>
               جست‌وجو
               <input
@@ -83,13 +114,10 @@ export function HrReportPeoplePicker({
               </HrButton>
               <HrButton onClick={() => setZoom(100)}>تنظیم مجدد</HrButton>
             </div>
-            <div
-              style={{
-                maxHeight: '45vh',
-                overflow: 'auto',
-                fontSize: `${zoom}%`,
-              }}
-            >
+            <div className={styles.pickerTree} style={{ fontSize: `${zoom}%` }}>
+              {!filtered.length ? (
+                <p className={ui.muted}>پرسنلی یافت نشد.</p>
+              ) : null}
               {[...new Set(filtered.map((person) => person.unit))]
                 .sort()
                 .map((unit) => {
@@ -132,7 +160,7 @@ export function HrReportPeoplePicker({
                   );
                 })}
             </div>
-            <div className={ui.filters}>
+            <div className={styles.formActions}>
               <HrButton onClick={() => setOpen(false)}>لغو</HrButton>
               <HrButton onClick={() => setDraft([])}>همه کارکنان مجاز</HrButton>
               <HrButton
@@ -148,6 +176,6 @@ export function HrReportPeoplePicker({
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </section>
   );
 }

@@ -22,10 +22,7 @@ import {
   PROFILE_PHOTO_CHANGED_EVENT,
   workbenchPersonalApi,
 } from '@/modules/workbench/workbench-personal-api';
-import {
-  profileInitials,
-  PROFILE_USER_FALLBACK,
-} from '@/modules/profile/model/profile';
+import { PROFILE_USER_FALLBACK } from '@/modules/profile/model/profile';
 import { Button } from '../ui/button';
 import {
   DropdownMenu,
@@ -69,16 +66,30 @@ export function UserMenu() {
     const recovered = (event: Event) =>
       applySession((event as CustomEvent<LoginResponse>).detail);
     window.addEventListener(AUTH_SESSION_RECOVERED_EVENT, recovered);
-    void Promise.resolve().then(async () => {
-      const api = getPublicApiBaseUrl();
-      const response = api ? await refreshAuthenticatedSession(api) : null;
-      if (!active) return;
-      if (!response) {
-        setIdentity({ status: 'error', displayName: PROFILE_USER_FALLBACK });
-        return;
-      }
-      applySession(response);
-    });
+    void Promise.resolve()
+      .then(async () => {
+        const api = getPublicApiBaseUrl();
+        const response = api ? await refreshAuthenticatedSession(api) : null;
+        if (!active) return;
+        if (!response) {
+          setIdentity({ status: 'error', displayName: PROFILE_USER_FALLBACK });
+          return;
+        }
+        applySession(response);
+      })
+      .catch(() => {
+        if (!active) return;
+        const cached = readHeaderSession();
+        setIdentity(
+          cached
+            ? {
+                status: 'ready',
+                displayName: cached.displayName,
+                loggedInAt: cached.loggedInAt,
+              }
+            : { status: 'error', displayName: PROFILE_USER_FALLBACK },
+        );
+      });
     return () => {
       active = false;
       window.removeEventListener(AUTH_SESSION_RECOVERED_EVENT, recovered);
@@ -88,23 +99,32 @@ export function UserMenu() {
   useEffect(() => {
     let active = true;
     let objectUrl = '';
+    let photoRequest = 0;
     const loadPhoto = () => {
+      const request = ++photoRequest;
       void workbenchPersonalApi
         .profilePhoto()
         .then((blob) => {
-          if (!active) return;
+          if (!active || request !== photoRequest) return;
           const nextUrl = URL.createObjectURL(blob);
           if (objectUrl) URL.revokeObjectURL(objectUrl);
           objectUrl = nextUrl;
           setPhotoUrl(nextUrl);
         })
-        .catch(() => undefined);
+        .catch(() => {
+          if (!active || request !== photoRequest) return;
+          if (objectUrl) URL.revokeObjectURL(objectUrl);
+          objectUrl = '';
+          setPhotoUrl('');
+        });
     };
     loadPhoto();
     window.addEventListener(PROFILE_PHOTO_CHANGED_EVENT, loadPhoto);
+    window.addEventListener(AUTH_SESSION_RECOVERED_EVENT, loadPhoto);
     return () => {
       active = false;
       window.removeEventListener(PROFILE_PHOTO_CHANGED_EVENT, loadPhoto);
+      window.removeEventListener(AUTH_SESSION_RECOVERED_EVENT, loadPhoto);
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, []);
@@ -116,8 +136,6 @@ export function UserMenu() {
     router.refresh();
   }
 
-  const initials =
-    identity.status === 'ready' ? profileInitials(identity.displayName) : null;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -130,17 +148,18 @@ export function UserMenu() {
         >
           <span
             aria-hidden="true"
-            data-user-avatar-placeholder={
-              !photoUrl && identity.status !== 'ready' ? true : undefined
-            }
+            data-user-avatar-placeholder={!photoUrl || undefined}
             className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-xs font-black text-primary-foreground"
           >
-            {photoUrl ? (
+            {photoUrl && (
               // Authenticated object URLs cannot be rendered through next/image.
               // eslint-disable-next-line @next/next/no-img-element
-              <img alt="" className="size-full object-cover" src={photoUrl} />
-            ) : (
-              initials
+              <img
+                alt=""
+                className="size-full object-cover"
+                src={photoUrl}
+                onError={() => setPhotoUrl('')}
+              />
             )}
           </span>
           <span className="hidden min-w-0 max-w-36 text-start lg:block">

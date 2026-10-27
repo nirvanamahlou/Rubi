@@ -30,16 +30,17 @@ enum AuditOutcome {
 }
 
 model User {
-  financialWorkflows     AccountingWorkflow[]
-  telephonyCommands      IntegrationTelephonyCommand[]
-  telephonyAudit         IntegrationTelephonyAudit[]
-  telephonyConnections   IntegrationTelephonyConnection[]
-  telephonyMappings      IntegrationTelephonyMapping[]
-  telephonyOffers        CallCenterTelephonyOffer[]
-  telephonyLeases        CallCenterTelephonyLease[]
-  telephonyClaims        CallCenterTelephonySession[]
-  receiptAllocations     SalesReceiptAllocation[]
-  accountingSourceEvents FinanceAccountingEvent[]         @relation("FinancialEventActor")
+  insurancePolicyRevisions ReservationInsuranceRevision[]
+  financialWorkflows       AccountingWorkflow[]
+  telephonyCommands        IntegrationTelephonyCommand[]
+  telephonyAudit           IntegrationTelephonyAudit[]
+  telephonyConnections     IntegrationTelephonyConnection[]
+  telephonyMappings        IntegrationTelephonyMapping[]
+  telephonyOffers          CallCenterTelephonyOffer[]
+  telephonyLeases          CallCenterTelephonyLease[]
+  telephonyClaims          CallCenterTelephonySession[]
+  receiptAllocations       SalesReceiptAllocation[]
+  accountingSourceEvents   FinanceAccountingEvent[]         @relation("FinancialEventActor")
 
   callCenterCalls                                  CallCenterCall[]
   callCenterNotes                                  CallCenterNote[]
@@ -1046,6 +1047,7 @@ model MasterCountry {
 }
 
 model MasterCity {
+  salesHotelStays             SalesContractHotelStay[]
   ticketSaleOrigins           TicketOfferSaleRoute[]      @relation("TicketSaleOrigin")
   ticketSaleDestinations      TicketOfferSaleRoute[]      @relation("TicketSaleDestination")
   id                          String                      @id @default(uuid()) @db.Uuid
@@ -2200,6 +2202,7 @@ model MasterBusTypeFacility {
 }
 
 model MasterHotel {
+  salesHotelStays      SalesContractHotelStay[]
   groupRates           ReservationHotelGroupRate[]
   id                   String                       @id @default(uuid()) @db.Uuid
   cityId               String                       @db.Uuid
@@ -2968,6 +2971,7 @@ enum CustomerDuplicateReviewStatus {
 }
 
 model Customer {
+  insurancePolicies          ReservationInsurancePolicy[]
   marketingPromotions        MarketingAsset[]             @relation("MarketingPromotionCustomer")
   reservationTicketDocuments ReservationTicketDocument[]
   id                         String                       @id @default(uuid()) @db.Uuid
@@ -3960,6 +3964,7 @@ enum PackagePricingRenderStatus {
 }
 
 model SalesContract {
+  insurancePolicies         ReservationInsurancePolicy[]
   financialWorkflows        AccountingWorkflow[]
   receiptAllocations        SalesReceiptAllocation[]
   paymentTerms              Json?                          @map("payment_terms")
@@ -4021,7 +4026,7 @@ model SalesContractPassenger {
   contractId          String                            @map("contract_id") @db.Uuid
   customerId          String                            @map("customer_id") @db.Uuid
   displayNameSnapshot String                            @map("display_name_snapshot") @db.VarChar(200)
-  birthDate           DateTime                          @map("birth_date") @db.Date
+  birthDate           DateTime?                         @map("birth_date") @db.Date
   ageCategory         SalesPassengerAgeCategory         @map("age_category")
   createdAt           DateTime                          @default(now()) @map("created_at") @db.Timestamptz(3)
   contract            SalesContract                     @relation(fields: [contractId], references: [id], onDelete: Cascade)
@@ -4105,6 +4110,7 @@ model SalesContractTicketSelection {
 }
 
 model SalesContractHotelSelection {
+  additionalStays   SalesContractHotelStay[]
   rooms             SalesContractHotelRoom[]
   id                String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   contractId        String                   @unique @map("contract_id") @db.Uuid
@@ -4128,6 +4134,25 @@ model SalesContractHotelSelection {
 
   @@index([hotelId, checkInDate])
   @@map("sales_contract_hotel_selections")
+}
+
+model SalesContractHotelStay {
+  id                String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hotelSelectionId  String                      @map("hotel_selection_id") @db.Uuid
+  ordinal           Int
+  hotelId           String                      @map("hotel_id") @db.Uuid
+  cityId            String                      @map("city_id") @db.Uuid
+  hotelNameSnapshot String                      @map("hotel_name_snapshot") @db.VarChar(240)
+  checkInDate       DateTime                    @map("check_in_date") @db.Date
+  checkOutDate      DateTime                    @map("check_out_date") @db.Date
+  selection         SalesContractHotelSelection @relation(fields: [hotelSelectionId], references: [id], onDelete: Cascade, map: "sales_contract_hotel_stays_selection_fkey")
+  hotel             MasterHotel                 @relation(fields: [hotelId], references: [id], onDelete: Restrict, map: "sales_contract_hotel_stays_hotel_fkey")
+  city              MasterCity                  @relation(fields: [cityId], references: [id], onDelete: Restrict, map: "sales_contract_hotel_stays_city_fkey")
+
+  @@unique([hotelSelectionId, ordinal])
+  @@index([hotelId, checkInDate])
+  @@index([cityId])
+  @@map("sales_contract_hotel_stays")
 }
 
 model SalesContractPriceComponent {
@@ -4562,6 +4587,7 @@ model FinanceTicketPurchasePaymentRevision {
 }
 
 model ReservationIntake {
+  insurancePolicies   ReservationInsurancePolicy[]
   ticketDocuments     ReservationTicketDocument[]
   salesOwnerUserId    String?                          @db.Uuid
   salesOwner          User?                            @relation("TravelSalesOwner", fields: [salesOwnerUserId], references: [id], onDelete: Restrict)
@@ -8114,4 +8140,52 @@ model AccountingWorkflow {
   @@index([contractId, kind])
   @@index([hrRecordId, kind])
   @@map("finance_accounting_workflows")
+}
+
+model ReservationInsurancePolicy {
+  id              String                         @id @default(uuid()) @db.Uuid
+  contractId      String                         @db.Uuid
+  intakeId        String                         @db.Uuid
+  customerId      String                         @db.Uuid
+  provider        String                         @default("NOYAN") @db.VarChar(32)
+  providerId      String?                        @db.VarChar(100)
+  policyNumber    String?                        @db.VarChar(100)
+  status          String                         @default("DRAFT") @db.VarChar(24)
+  destinationCode String                         @db.VarChar(40)
+  planCode        String                         @db.VarChar(40)
+  departureDate   DateTime                       @db.Date
+  durationDays    Int
+  amount          Decimal?                       @db.Decimal(20, 4)
+  currencyCode    String?                        @db.VarChar(3)
+  notes           String                         @default("") @db.VarChar(2000)
+  version         Int                            @default(1)
+  issuedAt        DateTime?                      @db.Timestamptz(3)
+  cancelledAt     DateTime?                      @db.Timestamptz(3)
+  createdAt       DateTime                       @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                       @updatedAt @db.Timestamptz(3)
+  contract        SalesContract                  @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  intake          ReservationIntake              @relation(fields: [intakeId], references: [id], onDelete: Restrict)
+  customer        Customer                       @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  revisions       ReservationInsuranceRevision[]
+
+  @@unique([contractId, customerId, provider])
+  @@unique([provider, providerId])
+  @@unique([provider, policyNumber])
+  @@index([intakeId, status, createdAt])
+  @@map("reservation_insurance_policies")
+}
+
+model ReservationInsuranceRevision {
+  id          String                     @id @default(uuid()) @db.Uuid
+  policyId    String                     @db.Uuid
+  version     Int
+  action      String                     @db.VarChar(32)
+  snapshot    Json
+  actorUserId String                     @db.Uuid
+  createdAt   DateTime                   @default(now()) @db.Timestamptz(3)
+  policy      ReservationInsurancePolicy @relation(fields: [policyId], references: [id], onDelete: Restrict)
+  actor       User                       @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([policyId, version])
+  @@map("reservation_insurance_revisions")
 }

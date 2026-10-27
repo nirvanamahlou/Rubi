@@ -50,6 +50,9 @@ export function CallForm({
   const completing = Boolean(event.completionToken);
   const [error, setError] = useState('');
   const [dirty, setDirty] = useState(false);
+  const [direction, setDirection] = useState(event.direction);
+  const operatorLabel =
+    direction === 'OUTBOUND' ? 'تماس‌گرفته‌شده از داخلی' : 'وصل شده به';
   const [requestState, setRequestState] = useState<{
     contact: string;
     rows: RequestCase[];
@@ -281,7 +284,10 @@ export function CallForm({
                     </>
                   ) : (
                     <NativeSearchSelect
-                      onChange={() => setDirty(true)}
+                      onChange={(e) => {
+                        setDirty(true);
+                        setDirection(e.target.value as CallEvent['direction']);
+                      }}
                       aria-label="نوع تماس"
                       className={styles.control}
                       optionLimit={50}
@@ -313,11 +319,11 @@ export function CallForm({
                   </NativeSearchSelect>
                 </label>
                 <label>
-                  وصل شده به
+                  {operatorLabel}
                   {completing && previous?.answerRecipient ? (
                     <>
                       <input
-                        aria-label="وصل شده به"
+                        aria-label={operatorLabel}
                         readOnly
                         value={previous.answerRecipient.label}
                       />
@@ -331,7 +337,7 @@ export function CallForm({
                     <>
                       <NativeSearchSelect
                         onChange={() => setDirty(true)}
-                        aria-label="وصل شده به"
+                        aria-label={operatorLabel}
                         className={styles.control}
                         optionLimit={50}
                         disabled={busy}

@@ -1,4 +1,8 @@
 import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
+import { SystemManagementModule } from '../system-management/system-management.module';
+import { InsuranceSettingsService } from '../integrations/insurance/insurance-settings';
+import { ReservationInsuranceController } from './insurance/insurance.controller';
+import { ReservationInsuranceService } from './insurance/insurance.service';
 import { reservationOutputPassengers } from './reservation-passenger-output';
 import {
   BrokerPurchaseHistory,
@@ -427,9 +431,14 @@ export class ReservationRequestsController {
       req.actor.branchIds,
       historical !== '1',
     );
+    const summaries = this.table
+      ? await this.table.read([intake.contractId], req.actor)
+      : new Map();
     return {
       data: {
         ...intake,
+        contractPartyName:
+          summaries.get(intake.contractId)?.contractPartyName ?? null,
         outputPassengers: await reservationOutputPassengers(
           intake.snapshot,
           this.customers,
@@ -732,6 +741,7 @@ export class ReservationRequestsController {
 }
 @Module({
   imports: [
+    SystemManagementModule,
     PurchaseFxModule,
     FinanceTicketCostModule,
     SalesOperationalAmendmentModule,
@@ -748,6 +758,7 @@ export class ReservationRequestsController {
     TicketRuntimeModule,
   ],
   controllers: [
+    ReservationInsuranceController,
     BrokerPurchaseHistoryController,
     ReservationHotelSavingsController,
     ReservationRequestsController,
@@ -756,6 +767,8 @@ export class ReservationRequestsController {
     ReservationManifestBatchController,
   ],
   providers: [
+    InsuranceSettingsService,
+    ReservationInsuranceService,
     BrokerPurchaseHistory,
     ReservationHotelSavingsService,
     ReservationTicketDocumentsService,

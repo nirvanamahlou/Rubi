@@ -122,7 +122,7 @@ export class PassengerCorrectionService {
           return {
             ...previous,
             name: passenger.displayNameSnapshot,
-            birthDate: passenger.birthDate.toISOString().slice(0, 10),
+            birthDate: passenger.birthDate?.toISOString().slice(0, 10) ?? '',
           };
         const { data } = await this.customers.detail(
           passenger.customerId,
@@ -133,7 +133,7 @@ export class PassengerCorrectionService {
         return {
           customerId: passenger.customerId,
           name: passenger.displayNameSnapshot,
-          birthDate: passenger.birthDate.toISOString().slice(0, 10),
+          birthDate: passenger.birthDate?.toISOString().slice(0, 10) ?? '',
           passportNumber: data.passportNumber ?? null,
           passportExpiryDate: data.passportExpiryDate ?? null,
         };
@@ -469,7 +469,7 @@ export class PassengerCorrectionService {
     const current = new Map(
       row.passengers.map((p) => [
         p.customerId,
-        p.birthDate.toISOString().slice(0, 10),
+        p.birthDate?.toISOString().slice(0, 10) ?? '',
       ]),
     );
     return new Map(

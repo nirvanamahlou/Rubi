@@ -1,4 +1,7 @@
 {
+  "شماره تلفن ثابت و همراه باید متفاوت باشند.": "Landline and mobile phone numbers must be different.",
+  "تلفن همراه": "Mobile phone",
+  "تلفن ثابت معتبر نیست.": "The landline phone number is invalid.",
   "قیمت هر شب": "Price per night",
   "حداقل یک قیمت خرید مسافر را وارد کنید.": "Enter a purchase price for at least one passenger.",
   "کارگزار، ارز، تاریخ اقامت و حداقل یک قیمت خرید مسافر را تکمیل کنید.": "Select the hotel supplier and currency, check the stay dates, and enter a purchase price for at least one passenger.",
@@ -17466,5 +17469,22 @@
   "(مشترک)": "(shared)",
   "یادداشت قرارداد": "Contract notice",
   "یادداشت قرارداد / Notice (اختیاری)": "Contract notice (optional)",
-  "یادداشتی که در پایین قرارداد چاپ می‌شود": "Note printed at the bottom of the contract"
+  "یادداشتی که در پایین قرارداد چاپ می‌شود": "Note printed at the bottom of the contract",
+  "اطلاعات هتل ترکیبی کامل نیست؛ فهرست را تازه‌سازی کنید.": "The composite hotel is incomplete; refresh the list.",
+  "افزودن شهر و هتل": "Add city and hotel",
+  "اقامت‌های بعدی": "Subsequent hotel stays",
+  "اقامت‌های هتل ترکیبی": "Composite hotel stays",
+  "ترتیب اقامت": "Stay order",
+  "ایجاد هتل ترکیبی": "Create composite hotel",
+  "بارگذاری هتل ترکیبی": "Load composite hotel",
+  "برای هر ردیف شهر و هتل را انتخاب کنید.": "Select a city and hotel for every row.",
+  "حذف اقامت": "Remove stay",
+  "دریافت هتل‌های ترکیبی انجام نشد.": "Could not load composite hotels.",
+  "عنوان را وارد کنید؛ حداکثر ۱۶۰ نویسه.": "Enter a title of up to 160 characters.",
+  "مشخصات هتل ترکیبی": "Composite hotel details",
+  "ویرایش هتل ترکیبی": "Edit composite hotel",
+  "هتل تکراری در ترکیب وجود دارد.": "The itinerary contains a duplicate hotel.",
+  "هتل‌های عضو باید فعال و فروش‌پذیر باشند.": "Member hotels must be active and saleable.",
+  "هر هتل را فقط یک بار انتخاب کنید.": "Select each hotel only once.",
+  "پس از ثبت، اطلاعات تکمیلی و قراردادها را از پروندهٔ ۳۶۰ مدیریت کنید. این مرحله فقط اطلاعات اولیه را ذخیره می‌کند.": "After registration, manage additional information and contracts in the 360 dossier. This step saves initial information only."
 }

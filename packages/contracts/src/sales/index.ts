@@ -155,7 +155,17 @@ export interface SalesTicketSelectionInput {
   quotedPrice?: SalesMoney;
 }
 
+/** Ordered additional hotel itinerary; dates are explicitly entered, not inferred. */
+export interface SalesHotelStayInput {
+  hotelId: string;
+  hotelNameSnapshot: string;
+  cityId: string;
+  checkInDate: string;
+  checkOutDate: string;
+}
+
 export interface SalesHotelSelectionInput {
+  additionalStays?: readonly SalesHotelStayInput[];
   rooms?: readonly SalesHotelRoomV1[];
   serviceClientKey: string;
   hotelId: string;
@@ -269,6 +279,17 @@ export interface SalesBalance extends SalesMoney {
 }
 
 export interface SalesContractSummary {
+  travelDates?: {
+    outbound: { date: string; calendar: 'persian' | 'gregorian' } | null;
+    returning: { date: string; calendar: 'persian' | 'gregorian' } | null;
+  };
+  passengerComposition?: {
+    adults: number;
+    children2To6: number;
+    children6To12: number;
+    infants: number;
+    childrenUnknownAge: number;
+  };
   customerDocumentDeliveryApproved?: boolean;
   sellerName?: string | null;
   reservationContractChanged?: boolean;
@@ -528,3 +549,4 @@ export * from './hotel-capacity-policy';
 export * from './owner-actions';
 
 export * from './legacy-service-parties';
+export * from './passenger-completion';

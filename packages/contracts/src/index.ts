@@ -45,4 +45,7 @@ export * from './telephony';
 
 export * from './sales/passenger-hotel-stays';
 
+export * from './insurance';
+
 export * from './finance/accounting-workflows';
+export { brokerEnglishDisplayName } from './broker-display-name';

@@ -47,6 +47,12 @@ export function ReservationPassengers({
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState('');
   const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    const refresh = () => setRevision((value) => value + 1);
+    window.addEventListener('reservation-workflow-changed', refresh);
+    return () =>
+      window.removeEventListener('reservation-workflow-changed', refresh);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -158,6 +164,7 @@ export function ReservationPassengers({
                 ].map((label) => (
                   <th key={label}>{label}</th>
                 ))}
+                <th>شماره بیمه‌نامه</th>
               </tr>
             </thead>
             <tbody>
@@ -180,6 +187,7 @@ export function ReservationPassengers({
                   ].map((value, i) => (
                     <td key={i}>{value || '—'}</td>
                   ))}
+                  <td dir="ltr">{row.insurancePolicyNumber ?? ''}</td>
                 </tr>
               ))}
             </tbody>
@@ -219,6 +227,7 @@ export function ReservationPassengers({
               <th>محل صدور پاسپورت</th>
               <th>ملیت</th>
               <th>کشور محل تولد</th>
+              <th>شماره بیمه‌نامه</th>
               <th>عملیات</th>
               {serviceEditor && <th>خدمات مسافر</th>}
             </tr>
@@ -376,6 +385,7 @@ export function ReservationPassengers({
                       disabled={identityDisabled}
                     />
                   </td>
+                  <td dir="ltr">{row.insurancePolicyNumber ?? ''}</td>
                   <td>
                     <form
                       id={`passenger-${row.id}`}

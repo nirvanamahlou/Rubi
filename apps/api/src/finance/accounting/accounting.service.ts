@@ -1,4 +1,11 @@
 import {
+  SALES_CONTRACT_EVENT,
+  hasPendingSalesContractAccounting,
+  assertSalesContractJournalReversible,
+  validateSalesContractAccounts,
+  validateSalesContractAccountingSource,
+} from './sales-contract-accounting.public';
+import {
   workflowPostingContext,
   captureWorkflow,
   workflowJournal,
@@ -769,7 +776,8 @@ export class AccountingService {
         requestId: e.requestId,
         trackingNumber: e.trackingNumber ?? e.requestId,
         trackingDate: e.trackingDate ?? financialDate(e.occurredAt),
-        reference: e.reference,
+        reference:
+          e.kind === SALES_CONTRACT_EVENT ? e.trackingNumber : e.reference,
         amount: e.amount.toString(),
         currency: e.currency,
         occurredAt: e.occurredAt.toISOString(),
@@ -998,9 +1006,17 @@ export class AccountingService {
         { count: number }[]
       >`SELECT count(*)::int AS count FROM finance_accounting_events e
         LEFT JOIN accounting_journals j ON j.id=e."journalId"
-        WHERE e."branchId"=${book.branchId}::uuid AND (e."journalId" IS NULL OR j.status='CANCELLED')
+        WHERE e.kind<>${SALES_CONTRACT_EVENT} AND e."branchId"=${book.branchId}::uuid AND (e."journalId" IS NULL OR j.status='CANCELLED')
           AND (e."occurredAt" AT TIME ZONE 'Asia/Tehran')::date BETWEEN ${period.startDate}::date AND ${period.endDate}::date`;
-      if (pending?.count)
+      if (
+        pending?.count ||
+        (await hasPendingSalesContractAccounting(
+          tx,
+          book.branchId,
+          period.startDate,
+          period.endDate,
+        ))
+      )
         v.rule(
           'منابع مالی بدون سند این شعبه در بازه دوره باید پیش از بستن دوره تعیین تکلیف شوند.',
         );
@@ -2787,6 +2803,7 @@ export class AccountingService {
         where: { id: eventId, branchId: book.branchId },
       });
       if (!event) v.rule('رویداد مالی در این شعبه پیدا نشد.');
+      await validateSalesContractAccountingSource(tx, event);
       if (isReceiptAllocation(event.kind)) {
         if (action === 'financial-rule-save')
           v.rule('حساب تخصیص از سند دریافت اصلی حمل می‌شود و قاعده جدا ندارد.');
@@ -2839,6 +2856,13 @@ export class AccountingService {
         fx
           ? { id: fx.id, rate: fx.rate, baseCurrency: book.baseCurrency }
           : undefined,
+      );
+      await validateSalesContractAccounts(
+        tx,
+        event,
+        bookId,
+        lines[0]!.accountId,
+        lines[1]!.accountId,
       );
       if (lines[0]!.accountId === lines[1]!.accountId)
         v.rule('حساب بدهکار و بستانکار باید متفاوت باشند.');
@@ -2988,7 +3012,11 @@ export class AccountingService {
               journal?.description ??
               accountingFinancialEventLabels[event.kind] ??
               'عملیات مالی',
-            reference: journal?.reference ?? event.reference,
+            reference:
+              journal?.reference ??
+              (event.kind === SALES_CONTRACT_EVENT
+                ? event.trackingNumber
+                : event.reference),
             sourceKey: event.sourceKey,
             attributes: {
               ...resetApprovalAttributes(journal?.attributes ?? {}),
@@ -4900,6 +4928,7 @@ export class AccountingService {
               'ابتدا همه تخصیص‌های دریافت را برگشت دهید و اسناد تخصیص و برگشت را ثبت نهایی کنید.',
             );
         }
+        await assertSalesContractJournalReversible(tx, journal.id);
         if (journal.status !== 'POSTED')
           v.rule('فقط سند قطعی برگشت داده می‌شود.');
         if (
@@ -5166,6 +5195,34 @@ export class AccountingService {
         },
       });
       if (!event) v.rule('مبنای رویداد مالی سند پیدا نشد.');
+      await validateSalesContractAccountingSource(tx, event);
+      await validateSalesContractAccounts(
+        tx,
+        event,
+        book.id,
+        journal.lines.find((l) => l.debit.gt(0))?.accountId ?? '',
+        journal.lines.find((l) => l.credit.gt(0))?.accountId ?? '',
+      );
+      if (event.kind === SALES_CONTRACT_EVENT) {
+        const debit = journal.lines.find((l) => l.debit.gt(0));
+        const credit = journal.lines.find((l) => l.credit.gt(0));
+        if (
+          journal.lines.length !== 2 ||
+          !debit ||
+          !credit ||
+          !debit.credit.isZero() ||
+          !credit.debit.isZero() ||
+          (event.currency === book.baseCurrency
+            ? !debit.debit.eq(event.amount) || !credit.credit.eq(event.amount)
+            : !debit.foreignAmount?.eq(event.amount) ||
+              !credit.foreignAmount?.eq(event.amount) ||
+              debit.currency !== event.currency ||
+              credit.currency !== event.currency)
+        )
+          v.rule(
+            'اقلام تعهد قرارداد باید دقیقاً با مبلغ و ارز مبدأ منطبق باشند.',
+          );
+      }
       financialValuationAt = event.occurredAt;
       if (isReceiptAllocation(event.kind)) {
         if (!event.basisEventId) v.rule('مبنای تخصیص سند یافت نشد.');

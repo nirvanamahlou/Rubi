@@ -1,3 +1,11 @@
+import { FinanceInboxService } from '../src/finance/finance-inbox.service';
+import { SalesRepository } from '../src/sales/sales.repository';
+import { FinancialEventDispatcher } from '../src/finance/accounting/financial-event-dispatcher';
+import {
+  hasPendingSalesContractAccounting,
+  captureSalesContractAccounting,
+  SALES_CONTRACT_EVENT,
+} from '../src/finance/accounting/sales-contract-accounting.public';
 import { randomUUID } from 'node:crypto';
 import { beforeAll, afterAll, describe, it, expect } from 'vitest';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
@@ -265,6 +273,552 @@ describe.skipIf(!url)(
         },
       });
     }
+    async function approveContractReceipt(contractId: string, approve = true) {
+      const repository = new SalesRepository({ client: db } as never);
+      const component = await db.salesContractPriceComponent.findFirstOrThrow({
+        where: { contractId },
+      });
+      const account = await db.financeSettlementAccount.create({
+        data: {
+          branchId,
+          title: `Synthetic verified receipt ${randomUUID()}`,
+          kind: 'CASH',
+          currencyCode: component.currencyCode,
+          isActive: true,
+          createdByUserId: makerId,
+        },
+      });
+      const payment = await db.salesContractPaymentEntry.create({
+        data: {
+          contractId,
+          amount: '1',
+          currencyCode: component.currencyCode,
+          dueAt: new Date('2026-10-01'),
+          method: 'CASH',
+          idempotencyKey: randomUUID(),
+          requestFingerprint: 'b'.repeat(64),
+          createdByUserId: makerId,
+        },
+      });
+      const inbox = new FinanceInboxService(
+        {
+          financeReceipt: (
+            paymentId: string,
+            id: string,
+            actor: AuthenticatedActor,
+          ) => repository.financeReceipt(paymentId, id, actor.branchIds),
+          applyFinancePaymentConfirmed: (event: {
+            eventId: string;
+            contractId: string;
+            paymentId: string;
+            financePaymentReference: string;
+            receiptAccountId: string;
+            confirmedAt: string;
+            reviewedByUserId: string;
+            reason?: string;
+          }) =>
+            repository.applyFinanceConfirmation({
+              ...event,
+              financeConfirmationId: event.eventId,
+            }),
+        } as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        { client: db } as never,
+        {} as never,
+        {} as never,
+      );
+      const payload = {
+        version: 1 as const,
+        contractId,
+        action: 'APPROVE' as const,
+        accountId: account.id,
+      };
+      if (approve) await inbox.decideReceipt(payment.id, payload, maker);
+      return { inbox, payment, account, payload };
+    }
+    it('waits for Finance inbox approval, captures the contract once across replay and partial receipts, and releases deferred liability without duplicating receivables', async () => {
+      const c = await contract();
+      await db.salesContract.update({
+        where: { id: c.id },
+        data: { status: 'DRAFT' },
+      });
+      const sales = new SalesRepository({ client: db } as never);
+      const transition = () =>
+        sales.transition(
+          c.id,
+          1,
+          ['DRAFT'],
+          'SENT_TO_RESERVATIONS',
+          'Synthetic confirmation',
+          { userId: makerId, branchId },
+          randomUUID(),
+          'c'.repeat(64),
+        );
+      expect(await transition()).toBe(true);
+      expect(await transition()).toBe(false);
+      expect(
+        await db.financeAccountingEvent.count({
+          where: { requestId: c.id, kind: SALES_CONTRACT_EVENT },
+        }),
+      ).toBe(0);
+      const approval = await approveContractReceipt(c.id);
+      await expect(
+        approval.inbox.decideReceipt(
+          approval.payment.id,
+          approval.payload,
+          maker,
+        ),
+      ).resolves.toEqual({ status: 'RECEIPT_CONFIRMED' });
+      await approveContractReceipt(c.id);
+      let events = await db.financeAccountingEvent.findMany({
+        where: { requestId: c.id, kind: SALES_CONTRACT_EVENT },
+      });
+      expect(events).toHaveLength(1);
+      const event = events[0]!;
+      expect(event.amount.toString()).toBe('109000');
+      expect(event.partyId).toBe(c.payerCustomerId);
+      expect(event.trackingNumber).toBe(c.contractNumber);
+      expect(event.journalId).toBeNull();
+      await command('financial-rule-save', {
+        eventId: event.id,
+        typeId,
+        debitAccountId: debitId,
+        creditAccountId: creditId,
+      });
+      // Rules intentionally apply prospectively: the first source uses the explicit approved mapping.
+      const j = await command('financial-event-journal', {
+        eventId: event.id,
+        typeId,
+        debitAccountId: debitId,
+        creditAccountId: creditId,
+      });
+      await expect(
+        db.$transaction((tx) => assertRevenueEditable(tx, c.id, [branchId])),
+      ).rejects.toThrow();
+      await post(String(j.id));
+      const w = await command(
+        'workflow-create',
+        evidence('REVENUE', c.id, {
+          currency: 'IRR',
+          sourceVersion: (
+            await db.salesContract.findUniqueOrThrow({ where: { id: c.id } })
+          ).version,
+          mode: 'PRINCIPAL',
+          fulfilled: true,
+        }),
+      );
+      const revenue = await command('workflow-journal', {
+        id: w.id,
+        typeId,
+        receivableAccountId: debitId,
+        incomeAccountId: profitLossId,
+        taxAccountId: profitLossId,
+      });
+      const lines = await db.accountingJournalLine.findMany({
+        where: { journalId: String(revenue.id) },
+        orderBy: { position: 'asc' },
+      });
+      expect(lines[0]!.accountId).toBe(creditId);
+      expect(lines[0]!.debit.toString()).toBe('109000');
+      expect(lines.some((l) => l.accountId === debitId)).toBe(false);
+      await post(String(revenue.id));
+      const period = await db.accountingPeriod.findFirstOrThrow({
+        where: { bookId },
+      });
+      const posted = await db.accountingJournal.findUniqueOrThrow({
+        where: { id: String(j.id) },
+      });
+      await expect(
+        command(
+          'reverse',
+          {
+            id: j.id,
+            periodId: period.id,
+            documentDate: '2026-10-25',
+            reason: 'Synthetic reversal evidence',
+          },
+          posted.version,
+        ),
+      ).rejects.toThrow();
+      // The next contract of the same payer/currency uses the approved chart mapping automatically.
+      const next = await contract();
+      await db.salesContract.update({
+        where: { id: next.id },
+        data: { payerCustomerId: c.payerCustomerId },
+      });
+      await approveContractReceipt(next.id);
+      const dispatcher = new FinancialEventDispatcher(
+        {
+          client: {
+            financeAccountingEvent: {
+              findMany: (args: { where: object }) =>
+                db.financeAccountingEvent.findMany({
+                  ...args,
+                  where: { ...args.where, requestId: next.id },
+                }),
+              updateMany: db.financeAccountingEvent.updateMany.bind(
+                db.financeAccountingEvent,
+              ),
+            },
+            accountingConfiguration: db.accountingConfiguration,
+          },
+        } as never,
+        service,
+        { reminderPrincipal: async () => maker } as never,
+      );
+      await dispatcher.tick();
+      await dispatcher.tick();
+      events = await db.financeAccountingEvent.findMany({
+        where: { requestId: next.id, kind: SALES_CONTRACT_EVENT },
+        include: { journal: true },
+      });
+      expect(events).toHaveLength(1);
+      expect(events[0]!.journalId).toBeTruthy();
+      expect(
+        await db.accountingJournal.count({
+          where: { sourceKey: events[0]!.sourceKey },
+        }),
+      ).toBe(1);
+    });
+    it('does not capture pending, rejected, scheduled or incompletely marked receipts, and handles approval before Sales confirmation', async () => {
+      const c = await contract();
+      const pending = await approveContractReceipt(c.id, false);
+      for (const status of [
+        'PENDING_FINANCE_CONFIRMATION',
+        'SCHEDULED',
+        'FINANCE_REJECTED',
+      ] as const) {
+        await db.salesContractPaymentEntry.update({
+          where: { id: pending.payment.id },
+          data: { status },
+        });
+        await db.$transaction((tx) =>
+          captureSalesContractAccounting(tx, c.id, makerId, true),
+        );
+        expect(
+          await db.financeAccountingEvent.count({
+            where: { requestId: c.id, kind: SALES_CONTRACT_EVENT },
+          }),
+        ).toBe(0);
+      }
+      await expect(
+        db.salesContractPaymentEntry.update({
+          where: { id: pending.payment.id },
+          data: { status: 'FINANCE_CONFIRMED' },
+        }),
+      ).rejects.toThrow();
+      await db.salesContractPaymentEntry.update({
+        where: { id: pending.payment.id },
+        data: {
+          status: 'FINANCE_CONFIRMED',
+          financeReceiptAccountId: pending.account.id,
+        },
+      });
+      await db.$transaction((tx) =>
+        captureSalesContractAccounting(tx, c.id, makerId, true),
+      );
+      expect(
+        await db.financeAccountingEvent.count({
+          where: { requestId: c.id, kind: SALES_CONTRACT_EVENT },
+        }),
+      ).toBe(0);
+      await db.salesContractPaymentEntry.update({
+        where: { id: pending.payment.id },
+        data: {
+          status: 'PENDING_FINANCE_CONFIRMATION',
+          financeReceiptAccountId: null,
+        },
+      });
+      await db.salesContract.update({
+        where: { id: c.id },
+        data: { status: 'DRAFT' },
+      });
+      await pending.inbox.decideReceipt(
+        pending.payment.id,
+        pending.payload,
+        maker,
+      );
+      expect(
+        await db.financeAccountingEvent.count({
+          where: { requestId: c.id, kind: SALES_CONTRACT_EVENT },
+        }),
+      ).toBe(0);
+      const version = (
+        await db.salesContract.findUniqueOrThrow({ where: { id: c.id } })
+      ).version;
+      const sales = new SalesRepository({ client: db } as never);
+      expect(
+        await sales.transition(
+          c.id,
+          version,
+          ['DRAFT'],
+          'SENT_TO_RESERVATIONS',
+          'Synthetic confirmation after Finance approval',
+          { userId: makerId, branchId },
+          randomUUID(),
+          'c'.repeat(64),
+        ),
+      ).toBe(true);
+      expect(
+        await db.financeAccountingEvent.count({
+          where: { requestId: c.id, kind: SALES_CONTRACT_EVENT },
+        }),
+      ).toBe(1);
+      // Retire this synthetic source so later period-close assertions remain independent.
+      await db.salesContract.update({
+        where: { id: c.id },
+        data: { status: 'CANCELLED' },
+      });
+    });
+    it('rolls Finance approval and its receipt event back together if contract accounting capture fails', async () => {
+      const c = await contract();
+      await db.salesContractPriceComponent.create({
+        data: {
+          contractId: c.id,
+          type: 'DISCOUNT',
+          title: 'Synthetic invalid source',
+          amount: '200000',
+          currencyCode: 'IRR',
+        },
+      });
+      const approval = await approveContractReceipt(c.id, false);
+      await expect(
+        approval.inbox.decideReceipt(
+          approval.payment.id,
+          approval.payload,
+          maker,
+        ),
+      ).rejects.toThrow('مبلغ خالص قرارداد');
+      const payment = await db.salesContractPaymentEntry.findUniqueOrThrow({
+        where: { id: approval.payment.id },
+      });
+      expect(payment.status).toBe('PENDING_FINANCE_CONFIRMATION');
+      expect(payment.financeConfirmedByRef).toBeNull();
+      expect(
+        (await db.salesContract.findUniqueOrThrow({ where: { id: c.id } }))
+          .version,
+      ).toBe(c.version);
+      expect(
+        await db.financeAccountingEvent.count({ where: { requestId: c.id } }),
+      ).toBe(0);
+    });
+    it('keeps currencies separate, supersedes changed unlinked sources and rejects cancelled/foreign-branch sources', async () => {
+      const c = await contract();
+      await db.$transaction((tx) =>
+        captureSalesContractAccounting(tx, c.id, makerId),
+      );
+      expect(
+        await db.financeAccountingEvent.count({
+          where: { requestId: c.id, kind: SALES_CONTRACT_EVENT },
+        }),
+      ).toBe(0);
+      await db.salesContractPriceComponent.create({
+        data: {
+          contractId: c.id,
+          type: 'BASE',
+          title: 'Synthetic USD',
+          amount: '12.3456',
+          currencyCode: 'USD',
+        },
+      });
+      await approveContractReceipt(c.id);
+      await db.$transaction((tx) =>
+        captureSalesContractAccounting(tx, c.id, makerId, true),
+      );
+      const first = await db.financeAccountingEvent.findMany({
+        where: { requestId: c.id, kind: SALES_CONTRACT_EVENT },
+      });
+      expect(first.map((e) => e.currency).sort()).toEqual(['IRR', 'USD']);
+      await db.$transaction((tx) =>
+        captureSalesContractAccounting(tx, c.id, makerId, true),
+      );
+      expect(
+        await db.financeAccountingEvent.count({
+          where: { requestId: c.id, kind: SALES_CONTRACT_EVENT },
+        }),
+      ).toBe(2);
+      await db.salesContractPriceComponent.create({
+        data: {
+          contractId: c.id,
+          type: 'DISCOUNT',
+          title: 'Synthetic discount',
+          amount: '1000',
+          currencyCode: 'IRR',
+        },
+      });
+      await db.salesContract.update({
+        where: { id: c.id },
+        data: { version: { increment: 1 } },
+      });
+      await db.$transaction((tx) =>
+        captureSalesContractAccounting(tx, c.id, makerId, true),
+      );
+      const old = first.find((e) => e.currency === 'IRR')!;
+      await expect(
+        command('financial-event-journal', {
+          eventId: old.id,
+          typeId,
+          debitAccountId: debitId,
+          creditAccountId: creditId,
+        }),
+      ).rejects.toThrow();
+      const current = await db.financeAccountingEvent.findFirstOrThrow({
+        where: {
+          requestId: c.id,
+          kind: SALES_CONTRACT_EVENT,
+          currency: 'IRR',
+          id: { not: old.id },
+        },
+      });
+      expect(current.amount.toString()).toBe('108000');
+      await db.accountingAccount.update({
+        where: { id: creditId },
+        data: { attributes: { revaluable: true } },
+      });
+      await expect(
+        command('financial-event-journal', {
+          eventId: current.id,
+          typeId,
+          debitAccountId: debitId,
+          creditAccountId: creditId,
+        }),
+      ).rejects.toThrow();
+      await db.accountingAccount.update({
+        where: { id: creditId },
+        data: { attributes: {} },
+      });
+
+      await expect(
+        command('financial-event-journal', {
+          eventId: current.id,
+          typeId,
+          debitAccountId: creditId,
+          creditAccountId: debitId,
+        }),
+      ).rejects.toThrow();
+      await expect(
+        command(
+          'financial-event-journal',
+          {
+            eventId: current.id,
+            typeId,
+            debitAccountId: debitId,
+            creditAccountId: creditId,
+          },
+          undefined,
+          { ...maker, branchIds: [] },
+        ),
+      ).rejects.toThrow();
+      expect(
+        await db.$transaction((tx) =>
+          hasPendingSalesContractAccounting(
+            tx,
+            branchId,
+            '2026-01-01',
+            '2026-12-31',
+          ),
+        ),
+      ).toBe(true);
+      await db.salesContract.update({
+        where: { id: c.id },
+        data: { status: 'CANCELLED' },
+      });
+      expect(
+        await db.$transaction((tx) =>
+          hasPendingSalesContractAccounting(
+            tx,
+            branchId,
+            '2026-01-01',
+            '2026-12-31',
+          ),
+        ),
+      ).toBe(false);
+
+      await expect(
+        command('financial-event-journal', {
+          eventId: current.id,
+          typeId,
+          debitAccountId: debitId,
+          creditAccountId: creditId,
+        }),
+      ).rejects.toThrow();
+    });
+    it('releases earned agency fees from the original foreign deferred lot, retaining the approved rate and tracking dimensions', async () => {
+      const c = await contract();
+      await db.salesContractPriceComponent.deleteMany({
+        where: { contractId: c.id },
+      });
+      await db.salesContractPriceComponent.create({
+        data: {
+          contractId: c.id,
+          type: 'BASE',
+          title: 'Synthetic EUR',
+          amount: '100',
+          currencyCode: 'EUR',
+        },
+      });
+      await db.accountingAccount.updateMany({
+        where: { id: { in: [debitId, creditId, profitLossId] } },
+        data: { attributes: { multiCurrency: true } },
+      });
+      const fx = await db.accountingFxSnapshot.create({
+        data: {
+          bookId,
+          currency: 'EUR',
+          rate: '11',
+          source: 'Synthetic',
+          validFrom: new Date('2026-01-01'),
+          validTo: new Date('2026-12-31'),
+          status: 'APPROVED',
+          makerId,
+          approverId: checkerId,
+        },
+      });
+      await approveContractReceipt(c.id);
+      const event = await db.financeAccountingEvent.findFirstOrThrow({
+        where: { requestId: c.id, kind: SALES_CONTRACT_EVENT },
+      });
+      const j = await command('financial-event-journal', {
+        eventId: event.id,
+        typeId,
+        debitAccountId: debitId,
+        creditAccountId: creditId,
+        fxSnapshotId: fx.id,
+      });
+      await post(String(j.id));
+      const w = await command(
+        'workflow-create',
+        evidence('REVENUE', c.id, {
+          currency: 'EUR',
+          sourceVersion: (
+            await db.salesContract.findUniqueOrThrow({ where: { id: c.id } })
+          ).version,
+          mode: 'AGENT',
+          amount: '5',
+          fulfilled: true,
+        }),
+      );
+      const release = await command('workflow-journal', {
+        id: w.id,
+        typeId,
+        receivableAccountId: debitId,
+        incomeAccountId: profitLossId,
+      });
+      const lines = await db.accountingJournalLine.findMany({
+        where: { journalId: String(release.id) },
+        orderBy: { position: 'asc' },
+      });
+      expect(lines[0]!.accountId).toBe(creditId);
+      expect(lines[0]!.debit.toString()).toBe('55');
+      expect(lines[0]!.foreignAmount?.toString()).toBe('5');
+      expect(lines[0]!.attributes).toMatchObject({
+        trackingNumber: c.contractNumber,
+      });
+      expect(lines.every((l) => l.fxSnapshotId === fx.id)).toBe(true);
+      await post(String(release.id));
+    });
     it('recognises only evidenced principal revenue, preserves source and requires independent posting', async () => {
       const c = await contract(),
         p = evidence('REVENUE', c.id, {

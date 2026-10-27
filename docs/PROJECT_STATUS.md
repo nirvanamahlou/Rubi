@@ -1,3 +1,63 @@
+## UNIFIED-CONTRACT-HOTEL-PICKER-1026 — PC-A — READY_FOR_CI
+
+Composite hotels now appear in the contract's ordinary Hotel dropdown in both room-composition and legacy-detail paths; the separate composite-loading panel is removed. Selecting a composite still expands its ordered real hotels and independently entered dates, while ordinary hotel selection and Tour restrictions retain their existing behavior. Distinct option IDs prevent ordinary/composite identity collisions, and reference refresh covers both lists.52 targeted selection, room-party, payload and restore tests plus scoped lint pass. Final-head CI gates owner-authorized push/develop merge; no API/schema/migration/dependency or runtime rollout.
+
+## CONTRACT-PASSENGER-COMPLETION-1026 — PC-A — READY_FOR_CI
+
+Sales correction now offers passenger completion for historical contracts with aggregate service counts but no named passengers. The shared identity sheet builds adult/child/infant slots, flight/service assignments and optional individual hotel dates. Saving links actual Customer profiles to the existing contract; current contract output and Reservations names consume those identities. Server validates exact booked counts and ages, branch/ownership, version and retry identity; membership, audit and Reservations notification commit together. No price/inventory reservation or schema change. Local84 focused tests, API/Web builds and scoped lint passed; final-head English/CI gates precede owner-authorized push/develop merge. Local preview uses an isolated database copy. See [scope and validation](tasks/CONTRACT-PASSENGER-COMPLETION-1026.md).
+
+## PURCHASE-BROKER-ENGLISH-1026 — PC-A
+
+Reservation purchase supplier pickers display the registered English broker name for hotel, shared/split transfers, floating flights and insurance. Both registered Persian and English names remain searchable; saved supplier IDs resolve to the current English label, including later directory pages. Missing English or archived suppliers retain the existing name. Reuses the request-authorized broker directory without changing Master Data, purchase IDs/history, currency controls, API, schema or grants. No operational data or runtime changes. Focused25 regressions, scoped lint, Web production build and typecheck pass. Exact-head hosted checks precede explicitly authorized push/develop merge.
+
+
+## PURCHASE-BROKER-ENGLISH-COMPAT-1026 — PC-A — READY_FOR_CI
+
+Fixes the remaining Persian fallback and generic hotel-rate options path after PR1142. Registered Latin broker names win; otherwise display-only Latin transcription is shared by the producer and modern/legacy Purchase selectors. Saved IDs resolve current labels, Persian search remains available and no Master name/history/payable identity is rewritten. No schema/migration/dependency/grant/runtime change. Focused API/Web/shared/English regressions pass; scoped lint, API/Web builds and typechecks pass. Hosted exact-head checks precede owner-authorized push/develop merge. Production screenshot was not authenticated against deployed code/data. See tasks/PURCHASE-BROKER-ENGLISH-COMPAT-1026.md.
+
+## AGENCY-CONTACT-ROUNDTRIP-1026 — PC-B — READY_FOR_CI
+
+Owner-approved agency phone entry now uses ordinary authorized contacts instead of the development-only OTP endpoint. Mobile and office phone persist to native dossier contacts with Excel-compatible office identification, primary-contact selection and protected-field preservation. Agency executive job-title input is removed while historical values remain; Corporate OTP is unchanged. Native minimum-contact and duplicate-number errors are checked before organization writes. No schema/grants/runtime changes. Organizations/English276 tests pass with one existing optional skip, final contact/English48 and native API29 tests pass; scoped lint, full Web types and production build pass. Exact-head hosted gates precede authorized develop merge. See [scope and evidence](tasks/AGENCY-CONTACT-ROUNDTRIP-1026.md).
+
+
+## AGENCY-REGISTRATION-SLIM-1026 — PC-B — READY_FOR_CI
+
+Agency registration now defers the five owner-marked identity/contact fields to editable dossier360 and skips contract/credit entry. Four visible steps retain phone verification and final review; save opens the existing dossier for full identity/contact and native agreement management. The registration projection suppresses stale deferred/contract input and preserves existing agencies; edit mode and Corporate-customer registration remain intact. No data/schema/API/permissions or server changes. Organizations/English268 tests plus27 focused save/edit assertions, lint/types and production Web build pass; hosted exact-head gates precede authorized push/develop merge. See [scope and evidence](tasks/AGENCY-REGISTRATION-SLIM-1026.md).
+
+## COMPOSITE-HOTELS-CITIES-1026 — PC-B — READY_FOR_CI
+
+Owner-approved title-only composite editor with ordered city/hotel rows, scoped native hotel creation and no old English/reference-saleability/backup controls. Actual member cities derive from Hotel FKs; first city remains a legacy anchor, not a same-city restriction. Sales loads real hotels and requires independent ordered dates; optional normalized additional stays preserve primary hotel/rooms and one existing price protocol. Print and reservation snapshots retain all stays, while ordinary reservation confirmation/purchase controls remain. Additive migration20261026120000; no operational apply or server rollout. Web639 regressions and isolated PostgreSQL FK/date/order/cascade checks passed before final follow-ups; current API tests, lint/types/build and exact-head hosted gates precede requested push/develop merge. See task evidence.
+
+## CONTRACT-FINANCE-APPROVAL-1025 — PC-A
+
+Contract accrual now requires a real approved receipt from the Finance inbox. The approval transaction captures both receipt and per-currency commercial obligation atomically; Sales confirmation alone cannot capture or post an obligation. Reverse-order approval is supported and partial/replayed receipts do not duplicate the obligation. Existing mapping/draft/independent posting and amendment guards remain. No form, schema, dependency, bank or operational-data change. See [current trigger](tasks/CONTRACT-FINANCE-APPROVAL-1025.md); supersedes PR1120 trigger timing. Exact-head gates precede authorized merge/local3100 rollout.
+
+## SALES-CONTRACT-ACCOUNTING-1025 — PC-A
+
+Contract confirmation now captures per-currency immutable obligations in the source transaction. Existing approved Accounting chart mappings generate independent drafts; no guessed accounts or automatic posting. Source guards cover amendment/cancellation/supersession and period closure; earned revenue releases the original deferred line instead of accruing a second receivable, including historical FX dimensions. Forms, bank behavior and operational data preserved. See [task evidence](tasks/SALES-CONTRACT-ACCOUNTING-1025.md). Isolated PostgreSQL/source regressions, affected checks and exact-head hosted gates required before authorized develop merge. No schema/migration/dependency or runtime rollout.
+
+## HR-REPORT-REDESIGN-PARITY-1025 — PC-B
+
+Re-inspected all21 Radan report forms read-only, including ARPA on page2; no Radan input or report run. Nora now exposes all21 reports in a searchable, accessible side list while retaining its employee/section report selector. Dedicated responsive CSS separates dates, personnel with removable local-selection chips, groups, report-specific contracts/coefficients/columns/sorting and result exports. Initial or changed filters show an unprepared state, not a false empty success; prior results/exports are invalid until explicit report execution. Required group selections are validated against actual scoped groups. Missing forgiveness/ARPA result providers remain explicit and cannot run as fabricated empty reports. Uses existing private complete HR snapshot and real generated XLSX/PDF; no API/schema/migration/dependency/grant changes, operational/Radan writes or server rollout. All192 HR Web regressions and scoped lint pass; final Web types, browser verification and all exact-head hosted gates precede owner-authorized normal develop merge. Source reservations release only on verified MERGED.
+
+## HR-REPORTS-LOCATION-1025 — PC-B
+
+HR Reports and Audit is the sole visible HR reporting workspace. The general Reports HR shortcut and two pending HR-only catalog cards are removed; other public report identifiers remain unchanged and existing backend contracts/saved history are preserved. HR opens the existing21 attendance forms directly, retains employee/section report selection, scoped snapshots, filters and XLSX/PDF exports. A separate linkable audit tab mounts only with the existing HR audit capability; unauthorized direct links show a denial and never mount audit. Existing Nora tab styles support anchors without a design change. Leave-balance report and cardex move into this HR reporting workspace; the time workspace retains only operational grant/transfer views. No API/schema/migration/dependency/grant changes, no operational/Radan writes or server rollout. 81 focused HR/Reporting regressions and scoped lint pass; Web typecheck, browser QA and all exact-head hosted gates precede owner-authorized normal develop merge. Source reservations release on verified merged PR.
+
+## HR-LEAVE-REDESIGN-1025 — PC-B
+
+Redesigned the five existing leave-balance views within Nora's theme: selectable month tiles, separate selected-person card, paired greater/lower transfer fieldsets, readable personnel rows, grouped report filters/results, responsive scoped CSS and a wider grouped personnel picker. Existing API commands, scopes, transfer rules, locking and idempotency remain unchanged. Existing12 HR form/year/navigation checks, affected Web typecheck and scoped lint pass; browser verification covers all/none/single month selection and unsaved personnel selection. No leave command or operational data write during visual QA. Local3100 only, no schema/migration/dependency/IAM or server changes. Exact-head hosted checks gate owner-authorized normal develop merge; source reservations freeze after verification and release on verified merged PR.
+
+## HR-PROFILE-ENTRY-1025 — PC-B
+
+Runtime verification extension: the outer client guard prevents the legacy server redirect from mounting. The existing IAM route matcher therefore resolves only employee-id routes missing tab to the exact existing summary decision; explicit denied tabs, denied summary, missing employee IDs and anonymous users remain rejected. HR and IAM compatibility scope is recorded in the same reservation; no grants or API scope change.
+
+Reproduced the empty local3100 employee profile: links omitted tab, while existing IAM route matching requires an explicit employee tab. HR entry links now target summary; legacy tab-less entry redirects to that same existing route and preserves record IDs. Explicit selected tabs and all IAM/API authorization remain unchanged. Targeted route, deny and employee-workflow regressions, scoped lint/types and exact-head CI gate authorized develop merge. Local-only rollout, no data writes, schema/migration/dependency or server changes. Reservations freeze after verification and release on verified merged PR.
+
+## HR-LOCAL-YEAR-1025 — PC-B
+
+Local3100 rollout of merged HR parity exposed Intl Persian-year strings containing an era suffix, which produced NaN in leave forms. Extract only the year part with Latin digits in Asia/Tehran; regressions cover the observed date and the Tehran Nowruz midnight boundary. No API/schema/migration/dependency/permission changes or server rollout. Existing local data/documents remain. Targeted tests/lint/types and exact-head hosted gates precede authorized normal develop merge. Reservation freezes after final verification and releases only on verified merged PR.
+
 ## ACCOUNTING-SUBTITLE-1025
 
 Removed the requested Accounting header subtitle only; forms, data and behavior preserved. Static diff and scoped lint verification; exact-head CI gates before authorized develop merge. No migration or dependency change.
@@ -78,6 +138,10 @@ New Contract passenger-service prices hide repeated currency headings and their 
 ## 2026-10-24 — IMAGE-PREVIEW-NO-SCAN-WAIT-1024 — PC-A
 
 Immediate authenticated JPEG/PNG preview no longer waits for an unavailable/pending/failed scanner; scan states are preserved. Protected images still require the same access/step-up grants, with PREVIEW issuance aligned; infected/quarantined images are blocked. Full Documents suites: API 212 and Web 38 tests pass, including new immediate-preview and download/step-up regressions. No schema, migration, dependency, operational writes or runtime deployment. Owner authorizes develop merge after exact-head checks.
+
+## SESSION-STABILITY-1025 — PC-A — 2026-10-25
+
+Fixes avoidable logout/form resets reported on Avina: refresh network/5xx/rate-limit/concurrency failures are recoverable errors rather than authentication expiry; successful access revalidation retains the mounted form during transient outages, while explicit denial and permission changes still apply. Navigation with only the HttpOnly refresh cookie mounts the shell to recover access; protected APIs remain guarded. Same-user token rotation no longer changes the open Sales draft storage scope; new mount/login/account ownership remains isolated. Header identity recovery handles temporary failures.54 focused authentication/access/provider/draft/proxy regressions pass, plus existing draft restoration checks. Full Web lint/types/build and exact-head hosted gates precede authorized develop merge. No Backend/schema/migration/dependency/account grants or operational data changes; this candidate is source-only and has not changed Avina runtime.
 
 ## AGENCY-CONTACT-FILL-1024 — PC-A — READY_FOR_CI
 
@@ -5757,6 +5821,7 @@ Request detail breadcrumb uses the saved request title; redundant UUID/version h
 ## 2026-10-06 — MESSAGE-PERSIAN-SAVE-1006 — PC-B
 
 Visible message/scheduled-channel names use existing Persian labels while canonical enum values stay unchanged. The icon-only save action is placed in a final full-width RTL flex row aligned physically left, preserving its original handler. No API/data/schema/migration/permission/dependency/runtime changes. Targeted rendering tests and affected quality gates precede authorized push/develop merge.
+
 ## 2026-10-06 — PROCUREMENT-RECORD-LISTS-1006
 
 Removed inert sidebar form previews from all seven Procurement sections. Scoped creation/decision actions now sit above full-width records, with a paginated authorized request chooser for dependent forms. Text preview triggers no longer match the shared icon-only action rule; full record titles wrap in lists and workbench. Supplier logos continue using authenticated Master Data document previews, and newly persisted logo profiles immediately refresh the adjacent title cache. No API/schema/IAM/dependency or operational data changes. Eight focused tests, Web typecheck and changed-file lint pass; local production build passed; full CI gates required before merge; authenticated browser verification unavailable because CUA initialization fails.
@@ -7567,9 +7632,19 @@ Removed the employee dialog explanatory paragraph and the numbered personal/acco
 Historical service capacity is also retained by the transactional amendment callback: declared adult+child counts select catalog legs and per-leg quantities even with zero personal passenger records. Existing ordinary amendment logic, CAS/snapshot and receipts remain. Regression covers an aggregate count change with a confirmed receipt; all exact-head gates precede the owner-authorized follow-up merge and server rollout. No migration or dependency changes.
 
 
+## INSURANCE-WORKSPACE-1025 — PC-A — IMPLEMENTED / VALIDATING
+
+Read-only Zhenik accessibility crawl captured issuance settings, country/plan mappings, age/duration rate grid, policy filters/columns and management actions. Source screenshots and unopened action dialogs remain unverified. Rubi adds the two themed insurance tabs, branch-scoped persisted settings, draft preparation/correction, status/date/country search, revision history and current-page export. Reservations passenger rows show only their own confirmed official policy number, otherwise blank. Additive policy/revision migration and hosted PostgreSQL constraint proof included. No live provider connection, issuance, cancellation, payment, credential storage or deployment. API31 focused checks, Web4 passenger checks and7 system-management checks pass; API/Web typechecks and production builds pass. Browser fixture confirmed settings rendering/rate matrix and successful save. Local Docker returned HTTP500; hosted migration proof and all exact-head gates remain required.
+
+## RESERVATION-BUSINESS-TOGGLE-1025 — PC-A
+
+Flight amendment in Reservations now exposes the existing contract-wide business-output checkbox, initialized from saved flight-service metadata. Both on and explicit off update all flight services while preserving other metadata and services, tickets, cabin class and pricing. Native Sales amendment republishes the canonical reservation snapshot; current contract and passenger ticket outputs read the amended flag. Historical documents stay versioned. Focused11 API and9 Web regressions pass, including snapshot propagation and confirmed-receipt preservation; related tests, affected lint/types/Web build and all exact-head hosted gates precede owner-authorized develop merge. No API/schema/migration/dependency/permission or production change.
+
+
 ## RETURN-ONLY-CALENDAR-1025 — PC-A
 
 Return-only New Contract now labels its sole date picker as the return ticket and shows a return-card heading. The existing destination-to-origin calendar/search and RETURN payload/capacity mapping are retained; no outbound-date prerequisite or forward-route speculative request is added. Exact-day cards refresh and clear stale choices when the date changes. Round-trip pairing and outbound-only behavior remain unchanged. Focused25 regressions pass; broader Sales tests, scoped lint/types/Web build and all exact-head gates precede owner-authorized develop merge. No API, schema, migration, dependency or production change.
+
 
 ## 2026-10-25 — CALL-CENTER-RELEASE-1025 — PC-C
 Final Call Center feature chain consolidated from87eb5e3a and integrated with develop8806eac1. User authorizes PR and merge after all CI/CD checks pass. Only shared docs and translation append conflicts required resolution; other modules preserved. No local secrets/runtime files published. See release task for final CI/merge evidence.
@@ -7602,3 +7677,61 @@ User-authorized call form minimize icon and persistent left-edge restore impleme
 ## REQUEST-MANAGER-FIELDS-1025 — PC-C
 Existing request title, execution owner, status and priority are protected by a public IAM same-unit manager capability, checked against persisted values inside the workflow transaction. Ordinary experts retain reason/result edits under existing access. Web fails closed for missing capability and places the required reason star inline. Configured global management accounts retain existing authority. No schema/dependency change; 59 PostgreSQL, 12 IAM and 5 Web tests, lint and API types/build pass. Runtime and browser evidence: tasks/REQUEST-MANAGER-FIELDS-1025.md.
 REQUEST-MANAGER-FIELDS-1025 final: full Web types/build65 pages and browser acceptance passed; active onlocalhost3000/4000.76 targeted tests pass; source reservations released on push.
+
+## 2026-10-25 — FLIGHT-PURCHASE-EDIT-1025 — PC-A — READY_FOR_CI
+
+Purchasing now displays each dated flight independently instead of pooling matching weekdays. Filters, focused offer, capacity cost and KPIs use each request's actual cost/payment shares; saved historical pools stay independently visible while edits preserve their original atomic full-pool scope with an explicit explanation. Existing total/per-seat APIs and append-only pricing revisions remain; cost edits reopen before any payment, permissions/stale-version/replay/paid locks stay intact. Web26 and API30 focused tests and affected lint passed. Full Web types/production build and exact-head hosted quality/test/database/build gates precede owner-authorized develop merge. No API/schema/migration/dependency/runtime changes. Bounded source locks freeze/release with publication.
+
+## 2026-10-25 — SALES-TRIP-COLUMNS-1025 — PC-A
+
+Sales list adds separate outbound/return columns based on booked flight directions (Tehran day) or hotel-only check-in/out, honoring recorded independent service calendars. Summary API adds optional travelDates and passengerComposition without exposing birth dates. Adults, children2–6/6–12 and infants appear beneath the total; historical overlapping service parties use the existing maximum-party total without inventing missing child ages. Existing horizontal scroll, filters, monetary columns and scope checks remain. Web23 tests including translation coverage and API19 regression checks pass; affected lint/types/build and exact-head hosted gates precede owner-authorized develop merge. No migration/dependency/runtime/deployment change. Bounded source reservation releases on verified merge.
+
+## 2026-10-27 — PASSENGER-NATIONAL-OPTIONAL-1027 — PC-A
+
+Correction passenger completion now labels national ID without the inherited mandatory asterisk. The existing optionalFields and scoped name-only Customer creation policy already permit blank Iranian national IDs; supplied IDs still pass checksum/format validation. Ordinary new-contract policy remains unchanged. Existing focused completion regressions now explicitly assert omitted nationalId and reject a supplied malformed value. No API/schema/migration/dependency/runtime or production rollout change. Scoped lint/types and all exact-head hosted checks precede the owner-authorized develop merge; sources release on verified merge.
+
+## 2026-10-25 — RESERVATION-CALENDAR-BASIS-1025 — PC-A — READY_FOR_CI
+
+Reservation contract-detail travel dates and flight timestamps now honor per-service dateCalendarSystem metadata; hotel-only route dates use the hotel's basis, flight legs can differ, and timestamp display consistently uses Tehran while date-only stays preserve their ISO day. Sales keeps each flight calendar choice in the browser draft and writes it, plus the existing independent hotel calendar, to service metadata without converting dates. Producer/consumer ship together; legacy snapshots without basis retain compatible flight Persian/hotel Gregorian defaults because the original choice was not stored. No migration, API shape, permission, operational database/runtime or deployment changes. Focused54 and Sales/hotel/draft33 tests plus scoped ESLint pass; full Web types/build and exact-head hosted gates precede user-authorized develop merge. Source locks freeze/release with publication.
+
+## CONTRACT-SELLER-NAME-1025 — PC-A
+
+Saved contract output resolves its actual owner display name after existing contract/state/company authorization, without requiring iam.users.read or enumerating the users directory. Creator-only own-contract output and manager output retain the saved seller, including inactive/moved owners; preview/PDF consume the same ownerName. Exact-owner IAM projection exposes only ID/displayName. Permission, missing-owner and safe-header regressions plus affected types/lint/build and hosted exact-head gates precede user-authorized develop merge. No schema/migration/dependency/role grant or runtime rollout.
+
+## CALL-DIRECTION-LABELS-1025 — PC-C
+
+Contact rows distinguish latest inbound/outbound calls; outbound forms and history label the originating extension explicitly. Neutral extension/agent column heading. No PBX routing, API, schema or popup activation change. Isolated publication preserves unrelated work; local candidate verified with five form tests, lint, types and production build.
+## REMOVE-EXTRA-TRAVEL-DATE-1025 — PC-A
+
+Removed the duplicate people-sheet trip-start and legacy general trip-date controls plus their callback/independent identity confirmation date gate. People can be entered before choosing dated services; real birth dates remain required and composition is rechecked when service dates are known. Flight/hotel/tour dates feed canonical output, and standalone undated services collect their own execution dates in the service section. Old draft departure summaries remain backward compatible. Sales619 tests pass/one existing skip; affected types/lint/build and full exact-head CI gate the owner-authorized develop merge. No API/schema/migration/dependency/permission or runtime change.
+
+## 2026-10-26 — FINANCIAL-INTERNAL-GAPS-1026
+
+Existing-form-only Finance repairs: explicit account-only petty FX, independent operational approval, mandatory existing reference for new CHECK requests. No new fields/buttons, automatic banking, migration or operational writes. 42 targeted/isolated PostgreSQL tests and scoped lint pass. Full original Persian process report retained and updated for RTL Word; remaining lifecycle/configuration gaps are stated explicitly. See tasks/FINANCIAL-INTERNAL-GAPS-1026.md. Source candidate, not a runtime rollout.
+
+## LEGACY-RESERVATION-LOCAL-1026 — local review only
+
+Historical reservation supplier forms now preserve aggregate contracts without fabricating named passengers. A trusted historical snapshot permits empty supplier manifests; ordinary and voucher validation retain their existing rules. The Sales public summary supplies the saved buyer after request authorization, and the form and escaped PDF show it as CONTRACT PARTY, separate from passenger identities. Broker selection, CAS, issuance and revision history remain enforced. Web44/API30 focused tests, scoped lint and full Web/API production builds pass. Preview runs at http://localhost:3100/reservations with API4000 against an isolated copy of the existing local database; original local data and production remain unchanged. The owner subsequently authorized source-only PR1137 and develop merge. Synthetic review data is excluded; the review copy was restored to its pre-test state to remove the test account and contract. No production rollout.
+
+## MASTER-DATA-ACCESS-1026 — PC-B
+
+Applied owner-authorized Master Data registration access to exactly two existing local accounts through the audited IAM manual-access service. Read/create and exchange-rate proposal permission plus explicit resource/field controls; no new edit/delete/import/approval/admin grants. Other accounts and branch memberships verified unchanged; repeat preview reports zero changes. Twenty focused tests and scoped lint passed. Opt-in reusable script/tests and task notes are the publication scope, without real identifiers or automatic startup grants. Full hosted gates precede authorized develop merge. See tasks/MASTER-DATA-ACCESS-1026.md.
+
+## RESERVATION-OLDEST-FIRST-1026 — PC-A
+
+The reservation contract inbox defaults to ascending immutable contract creation time, placing newer contracts at the bottom. The new-request shortcut uses the same default. Ordering is stable by ID for equal timestamps and occurs before pagination/export; receipt timestamps, deadline/priority and explicit newest-first choices retain their existing independent behavior. Existing branch/date/status/service filters and the default date window remain unchanged. 61 focused workspace/feed/export/translation tests pass; affected lint, full Web types/build and exact-head hosted gates precede the owner-authorized push/develop merge. No API, schema, dependency, permission, operational data or runtime deployment changes.
+
+## COMPLETION-NAME-ONLY-1026 — PC-A — READY_FOR_CI
+
+Correction Add passenger now permits name-only profiles; all other identity/passport/contact fields are optional. Dedicated contract-authorized Customer creation keeps ordinary creation policies unchanged. Missing birth persists as NULL and uses the booked age category, with strict counts/services/version/replay and no extra inventory/price writes. Existing profile names and null-safe Reservations/Sales projections are covered. Fresh isolated PostgreSQL migration/nullability/FK proof,102 API and61 Web/translation regressions, scoped lint, API/Web builds and typechecks passed. Exact-head hosted gates precede owner-authorized push/develop merge. Migration must precede API deployment; no operational deployment/runtime change requested. See tasks/COMPLETION-NAME-ONLY-1026.md.
+
+## HEADER-PROFILE-PHOTO-1026 — PC-B
+
+Shared header displays the persisted Workbench profile photo and an empty primary-blue circle when absent/unavailable, never name initials. Reload on profile-photo change and authenticated session recovery; ignore stale photo responses, release object URLs and hide failed images. Identity/session/logout behavior retained. Five existing menu integration checks and scoped ESLint pass; exact-head hosted quality/type/build/full tests/database gates precede authorized develop merge. No API/schema/dependency/runtime changes.
+
+## CANCELLED-ROW-RED-1027 — PC-A — READY_FOR_REVIEW
+
+Cancelled reservation rows now use a stronger saturated red with dark readable text in light mode, and deeper red with light text in dark mode. Only six status palette values change; row dimensions, other status colors, blue selection/focus and notes/correction markers retain their rules. Contrast5.84:1 light /9.16:1 dark,29 existing workspace tests, scoped formatting and the production Web build with TypeScript pass. No API/schema/data/dependency/runtime changes; review PR only, no merge/deployment authorization in this request.
+
+## CALL-CENTER-FINAL-RELEASE-1027 — PC-C
+Integrates the eight remaining reviewed Call Center commits through8bee4b87b with develop7f0090415. Retains PR1130 direction column/labels and full connected-to/acquaintance-source columns. Shared documentation and translation conflicts preserve both sides; adds the missing English manager-only error and regenerates offline catalogs. User authorizes PR and normal develop merge after all latest-head CI/CD checks succeed. No new migration/dependency or runtime/PBX change. Release evidence follows in tasks/CALL-CENTER-FINAL-RELEASE-1027.md.

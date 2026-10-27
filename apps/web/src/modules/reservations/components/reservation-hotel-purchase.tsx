@@ -1,4 +1,5 @@
 'use client';
+import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';
 
 import { ContractProfit } from '@/modules/finance/components/contract-profit';
@@ -508,8 +509,8 @@ export function ReservationHotelPurchase({
           </h4>
           <div className="grid gap-3 sm:grid-cols-2">
             <FormField label="کارگزار هتل">
-              <Lookup
-                kind="brokers"
+              <ReservationPurchaseBrokerLookup
+                requestId={request.id}
                 label="کارگزار هتل"
                 value={hotelSupplier}
                 onChange={setHotelSupplier}
@@ -655,8 +656,8 @@ export function ReservationHotelPurchase({
               )}
               <div className="grid gap-3 sm:grid-cols-2">
                 <FormField label="کارگزار ترانسفر">
-                  <Lookup
-                    kind="brokers"
+                  <ReservationPurchaseBrokerLookup
+                    requestId={request.id}
                     label={title + ' · کارگزار ترانسفر'}
                     value={
                       draft.supplier ?? (!splitTransfers ? hotelSupplier : null)

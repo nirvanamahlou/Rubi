@@ -1,3 +1,7 @@
+## AGENCY-CONTACT-ROUNDTRIP-1026 — 2026-10-26
+
+Owner explicitly approves saving agency mobile numbers through the ordinary staff-authorized contact API without SMS verification or any verified-phone claim. Agency registration therefore skips the development-only verification stage; Corporate-customer verification and portal authentication policies are unchanged. Separate office phones reuse the existing encrypted organization-contacts model and Excel conventions. Hidden executive job titles remain stored, without an editable agency job-title input. No new IAM grant or schema change; see tasks/AGENCY-CONTACT-ROUNDTRIP-1026.md.
+
 ## LEGACY-CONTRACT-TOTAL-1025 — 2026-10-25
 
 Owner supersedes per-service historical sale prices with one customer contract table: separate IRR/foreign gross amounts, discount and commission in their own selected currency, no FX conversion. Both deductions subtract from the same-currency gross total. Persist ordinary BASE/DISCOUNT components and existing contractPackagePricingVersion alongside legacyServicePartiesV2; service selections, age counts and real capacity references remain. Existing saved per-service historical contracts are not rewritten. Old unfinished draft service prices cannot override the newly entered customer total. Registered flight return defaults retain original load priority; explicit pair IDs disambiguate recurring dates and late calendar responses fill only an empty return, preserving manual choices. No schema/migration or permission changes.
@@ -653,3 +657,39 @@ Explicit owner approval makes request execution assignment self-only for ordinar
 ## 2026-10-25 — Evidence-backed financial workflow completion
 
 Owner authorizes implementation, develop merge and3100 rollout without orchestration or automatic banking, preserving current forms. Principal/agent is explicit; outgoing agency commission is not earned revenue. Actual imported gross/deduction/net payroll is reconciled with the approved HR request, without invented statutory rates. Posted original payable carrying and prior valid revaluations determine realised FX; actual cash is never journalled twice. Failed payouts remain, and actual refunds/write-offs are separately evidenced and capped. Immutable source facts, independent posting/cancellation, additive FKs and isolated tests are mandatory. IFRS15/IAS19/IAS21 inform treatment, not a claim of Iranian statutory compliance; source-specific operational rules are explicitly documented as inference in docs/tasks/FINANCIAL-WORKFLOWS-COMPLETION-1025.md. Legal exports remain deferred by owner.
+
+## CONTRACT-SELLER-NAME-1025 — 2026-10-25
+
+Owner authorizes showing the responsible seller in readable contract outputs without global IAM users-directory access. Sales authorizes the saved contract first, then requests only contract.ownerUserId through an IAM-owned internal document identity projection selecting ID/displayName. Current exporter identity must never replace the seller. User status/branch reassignment does not erase the name from a historical readable contract. No new client-selectable identity endpoint, role grant, schema or shared wire change; preview/PDF retain the existing ownerName contract. Missing identities remain null rather than inventing an actor name.
+
+## REMOVE-EXTRA-TRAVEL-DATE-1025 — 2026-10-25
+
+The owner removes redundant trip-start inputs from New Contract. Identity registration must not demand a second date before service selection. Actual flight/hotel/tour dates remain canonical for travel/age/output; service-only contracts use execution dates attached to selected services rather than an identity-sheet date. Missing birth dates, mismatched ages after date selection, invalid service dates, inventory and allocation validation remain. Keep the existing departureDate wire/DB field as a derived summary and legacy draft fallback, with no schema/migration or invented current-date default.
+# COMPOSITE-HOTELS-CITIES-1026 — owner-directed multicity composition
+
+2026-10-26: owner replaces the old same-city alternative-hotel reference editor
+with one title and ordered repeatable city/hotel selections and native inline
+Hotel creation. This explicitly supersedes the same-city member invariant in
+Accommodation Master Data. Keep actual Hotel FKs and existing member priorities;
+derive each city's identity from its real Hotel. The existing parent city FK is
+a backward-compatible first-member anchor, not a restriction on later members.
+No automatic dates, prices, bookings, availability or financial writes are inferred.
+Owner clarified that every hotel loads into the contract and its dates are entered
+independently there. Add optional SalesHotelSelectionInput.additionalStays, one
+normalized Sales-owned child table with actual Hotel/City FKs, explicit ordered
+dates and historical name snapshots. Keep the primary selection/room allocation
+and contract-total pricing protocol intact; no cloned charged services or inferred
+dates/prices. Additional stays accompany the immutable reservation snapshot and
+contract output, not automatic hotel purchases. Old contracts need no backfill.
+Omitted itinerary fields on compatible updates preserve saved stays; an explicit
+empty list removes them. Published Tour prices cannot be reused for a changed
+composite itinerary. Rollback retains storage and must not allow old application
+writes to multi-stay contracts. No production migration or rollout requested.
+
+## 2026-10-26 — COMPLETION-NAME-ONLY-1026
+
+Owner supersedes mandatory passport/birth fields in correction Add passenger: only first and last names are mandatory. Missing birth dates persist as SQL NULL with the existing booked age category; do not invent identity dates. A contract-authorized Customer completion policy permits name-only profiles without weakening ordinary Customer/new-contract validation. Optional supplied facts remain validated and known birth dates cannot contradict booked categories. Nullable Sales read projections preserve output compatibility with empty strings and unknown child bands. Apply the additive migration before API rollout. No production deployment is requested.
+
+## 2026-10-26 — PURCHASE-BROKER-ENGLISH-COMPAT-1026
+
+Owner requires English Purchase broker labels even for remaining Persian-only records. Official registered Latin names remain authoritative; missing/non-Latin English fields use a display-only Latin transcription, never a new official name or Master data update. After the asynchronous preference question and response opportunity, this visible implementation assumption follows the repeated Latin-display request. Source names, IDs, payable parties and snapshots remain unchanged. The existing generic options API and modern picker share one pure naming helper; no API shape or permission change. Production publication is a separate operation from the requested repository merge.

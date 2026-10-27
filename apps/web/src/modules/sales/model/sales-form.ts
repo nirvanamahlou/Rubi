@@ -196,6 +196,9 @@ export interface SalesFormState {
   destinationId: string;
   departureDate: string;
   returnDate: string;
+  flightCalendarSystems?: Partial<
+    Record<'OUTBOUND' | 'RETURN', 'persian' | 'gregorian'>
+  >;
   serviceKinds: SalesServiceKind[];
   ticket: {
     outboundOfferId: string;
@@ -213,6 +216,14 @@ export interface SalesFormState {
   };
   hotelChildAssignments?: Record<string, (string | null)[]> | undefined;
   hotel: {
+    cityId?: string;
+    additionalStays?: Array<{
+      hotelId: string;
+      hotelNameSnapshot: string;
+      cityId: string;
+      checkInDate: string;
+      checkOutDate: string;
+    }>;
     rooms?: Array<
       Omit<SalesHotelRoomV1, 'childAges'> & { childAges: (number | null)[] }
     >;
@@ -1110,6 +1121,16 @@ export function salesHotelCalendarSystem(
   );
 }
 
+export function salesFlightCalendarSystem(
+  state: SalesFormState,
+  direction: 'OUTBOUND' | 'RETURN',
+): 'persian' | 'gregorian' {
+  return (
+    state.flightCalendarSystems?.[direction] ??
+    (salesInternationalTravel(state) ? 'gregorian' : 'persian')
+  );
+}
+
 export function salesDetailSteps(state: SalesFormState): string[] {
   return state.serviceKinds.flatMap((kind) =>
     kind === 'TRANSFER' ||
@@ -1217,6 +1238,23 @@ export function salesHotelRoomTypes(
 }
 
 export function salesHotelValid(state: SalesFormState): boolean {
+  let previousOut = state.hotel.checkOut;
+  const stayIds = new Set([state.hotel.hotelId]);
+  for (const stay of state.hotel.additionalStays ?? []) {
+    if (
+      !stay.hotelId ||
+      !stay.cityId ||
+      stayIds.has(stay.hotelId) ||
+      !stay.checkInDate ||
+      !stay.checkOutDate ||
+      stay.checkOutDate <= stay.checkInDate ||
+      stay.checkInDate < previousOut
+    )
+      return false;
+    previousOut = stay.checkOutDate;
+    stayIds.add(stay.hotelId);
+  }
+  if ((state.hotel.additionalStays?.length ?? 0) > 49) return false;
   return Boolean(
     state.hotel.hotelId &&
     state.hotel.checkIn &&
@@ -1286,11 +1324,41 @@ export function salesReturnSearchFrom(state: SalesFormState): string {
   );
 }
 
+/** These services have no flight/hotel/tour date editor of their own. */
+export function salesStandaloneDateServiceKeys(
+  state: SalesFormState,
+): string[] {
+  if (state.serviceKinds.some((k) => ['FLIGHT', 'HOTEL', 'TOUR'].includes(k)))
+    return [];
+  return state.serviceKinds.flatMap((kind) =>
+    kind === 'TRANSFER'
+      ? salesDirections(state, kind).map((direction) => `${kind}-${direction}`)
+      : [kind],
+  );
+}
+export function salesStandaloneServiceDatesValid(
+  state: SalesFormState,
+): boolean {
+  return salesStandaloneDateServiceKeys(state).every((key) => {
+    const date = state.serviceDetails?.[key]?.date ?? '';
+    return (
+      /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+      Number.isFinite(Date.parse(date)) &&
+      new Date(date).toISOString().slice(0, 10) === date
+    );
+  });
+}
+
 export function salesTravelDate(state: SalesFormState): string {
   return (
     salesFlightSelection(state, 'OUTBOUND')?.departureAt.slice(0, 10) ||
     salesFlightSelection(state, 'RETURN')?.departureAt.slice(0, 10) ||
     (state.serviceKinds.includes('HOTEL') ? state.hotel.checkIn : '') ||
+    state.tour?.startsOn ||
+    salesStandaloneDateServiceKeys(state)
+      .map((key) => state.serviceDetails?.[key]?.date ?? '')
+      .filter(Boolean)
+      .sort()[0] ||
     state.departureDate
   );
 }
@@ -1509,7 +1577,13 @@ export function salesPayload(
                   }
                 : {}),
               ...(kind === 'FLIGHT'
-                ? { businessOutput: state.businessOutput === true }
+                ? {
+                    businessOutput: state.businessOutput === true,
+                    dateCalendarSystem: salesFlightCalendarSystem(
+                      state,
+                      direction,
+                    ),
+                  }
                 : {}),
               ...(kind === 'FLIGHT'
                 ? state.serviceDetails?.[`${kind}-${direction}`]
@@ -1532,6 +1606,9 @@ export function salesPayload(
                 kind,
                 metadata: {
                   ...state.serviceDetails?.[kind],
+                  ...(kind === 'HOTEL'
+                    ? { dateCalendarSystem: salesHotelCalendarSystem(state) }
+                    : {}),
                   ...(kind === 'VISA' && state.visaComposition
                     ? {
                         applicantAdults: state.visaComposition.adults,
@@ -1994,7 +2071,10 @@ export function salesPayload(
             serviceClientKey: 'hotel',
             hotelId: state.hotel.hotelId,
             hotelNameSnapshot: state.hotel.name,
-            cityId: state.destinationId,
+            cityId: state.hotel.cityId || state.destinationId,
+            ...(state.hotel.additionalStays?.length
+              ? { additionalStays: state.hotel.additionalStays }
+              : {}),
             checkInDate: state.hotel.checkIn,
             checkOutDate: state.hotel.checkOut,
             roomCount: state.hotel.rooms?.length ?? state.hotel.roomCount,
