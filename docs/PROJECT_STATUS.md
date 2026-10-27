@@ -7729,9 +7729,14 @@ Correction Add passenger now permits name-only profiles; all other identity/pass
 
 Shared header displays the persisted Workbench profile photo and an empty primary-blue circle when absent/unavailable, never name initials. Reload on profile-photo change and authenticated session recovery; ignore stale photo responses, release object URLs and hide failed images. Identity/session/logout behavior retained. Five existing menu integration checks and scoped ESLint pass; exact-head hosted quality/type/build/full tests/database gates precede authorized develop merge. No API/schema/dependency/runtime changes.
 
+## RESERVATION-SERVICE-GROUPS-1027 — PC-A
+
+Reservation services now render as compact category groups using snapshot kind/title pairs, retaining localized labels, unknown-service fallback and every distinct service title. Existing raw Excel values, filters, sorting and workflow actions remain unchanged. No API/schema/dependency/migration/runtime changes. Thirty-two focused tests, scoped lint, full Web typecheck and production build passed. All eight initial hosted gates passed; latest develop integration retains the independent cancelled-row palette and requires refreshed exact-head checks.
+
 ## CANCELLED-ROW-RED-1027 — PC-A — READY_FOR_REVIEW
 
 Cancelled reservation rows now use a stronger saturated red with dark readable text in light mode, and deeper red with light text in dark mode. Only six status palette values change; row dimensions, other status colors, blue selection/focus and notes/correction markers retain their rules. Contrast5.84:1 light /9.16:1 dark,29 existing workspace tests, scoped formatting and the production Web build with TypeScript pass. No API/schema/data/dependency/runtime changes; review PR only, no merge/deployment authorization in this request.
 
 ## CALL-CENTER-FINAL-RELEASE-1027 — PC-C
 Integrates the eight remaining reviewed Call Center commits through8bee4b87b with develop7f0090415. Retains PR1130 direction column/labels and full connected-to/acquaintance-source columns. Shared documentation and translation conflicts preserve both sides; adds the missing English manager-only error and regenerates offline catalogs. User authorizes PR and normal develop merge after all latest-head CI/CD checks succeed. No new migration/dependency or runtime/PBX change. Release evidence follows in tasks/CALL-CENTER-FINAL-RELEASE-1027.md.
+CALL-CENTER-FINAL-RELEASE-1027 validation refresh: initial eight hosted gates all passed. Latest develop76ede9246 integrated; fresh gates include the previously opt-in access PostgreSQL suite. Local supplemental database setup timeouts are recorded, not counted as success. PR1151 remains the final check/merge record.
