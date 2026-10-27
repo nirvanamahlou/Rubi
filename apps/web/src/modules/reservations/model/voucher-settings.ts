@@ -120,6 +120,15 @@ export function defaultVoucherSettings(
       : {}),
     ...(saved.brokerId ? { brokerId: saved.brokerId } : {}),
     ...(saved.leaderId ? { leaderId: saved.leaderId } : {}),
+    ...(saved.transferBrokerId
+      ? { transferBrokerId: saved.transferBrokerId }
+      : {}),
+    ...(saved.transferBrokerName !== undefined
+      ? { transferBrokerName: saved.transferBrokerName }
+      : {}),
+    ...(saved.transferDetailsOverride !== undefined
+      ? { transferDetailsOverride: saved.transferDetailsOverride }
+      : {}),
     text: {
       ...(Object.fromEntries(
         voucherTextKeys.map((key) => [key, saved.text?.[key] ?? text[key]]),
