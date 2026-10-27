@@ -1,5 +1,11 @@
 ## CANCELLED-ROW-RED-1027 — PC-A — READY_FOR_REVIEW
 
+## PURCHASE-BEFORE-RESERVATION-SEND-1027 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-purchase-before-reservation-send-1027 from origin/develop d59cd5d1f. User authorizes purchase entry before supplier-form sending and develop merge. Reserve only reservation-hotel-purchase.tsx and direct purchase/transfer interaction tests, existing API reservation-service-purchase.spec.ts, own assignment/status notes. Inspection confirms purchase-context and atomic purchase-batch commands already do not require a sent form; remove the misleading wait-until-sent instruction and preserve sent snapshots as optional context. Regress an unsent hotel purchase from editable inputs through submission and atomic hotel/transfer persistence without workflow revisions. Keep permissions, service assignments, money/currency/night validation, replay/CAS, financial routing and voucher issuance rules. No overlapping active target reservation found; no shared contract, API behavior, schema/migration, dependency, runtime or server deployment change. Source freezes on publication and releases after verified merge.
+
+PURCHASE-BEFORE-RESERVATION-SEND-1027 verification: Web29 and API16 focused tests, scoped API/Web ESLint and full Web TypeScript pass. Initial hosted quality/typecheck, production build and PostgreSQL gates pass; final-head full suite remains mandatory. Integration preserves the peer cancelled-row palette and both task reports. Bounded source frozen/released at publication; no operational rollout.
+
 COMPUTER_ID=PC-A; codex/pc-a-cancelled-row-red-1027 from developf4b2f801. Owner requests visibly redder cancelled reservation rows from the screenshot. Reserve only Reservations foundation/workspace.module.css cancelled-tone light/dark variables and own status/assignment notes. No active overlapping stylesheet writer found; prior published CSS scopes release locks. Keep compact dimensions, selection/focus blue, note/correction indicators, other status tones and all behavior. No API/schema/migration/dependency/permissions/data or shared runtime change. Changed only the six cancelled-tone color values. Text contrast is5.84:1 light and9.16:1 dark;29 existing workspace regressions, scoped formatting and production Web build with TypeScript pass. Prepare the required review branch/PR; this request does not explicitly authorize merging or deployment. No delegation. Source freezes for review.
 
 ## COMPLETION-NAME-ONLY-1026 — PC-A — READY_FOR_CI
@@ -9780,3 +9786,9 @@ RESERVATION-OLDEST-FIRST-1026 verification: 61 focused tests passed, including r
 COMPUTER_ID=PC-B; branch codex/pc-b-header-profile-photo-1026 from origin/develop59c59506. Owner requests shared header avatar use persisted Workbench photo, otherwise solid blue without initials, and explicitly authorizes push/develop merge. Reserve user-menu.tsx and its direct existing spec plus own status notes. Prior session-stability header scope published/released; preserve its identity/error handling. No IAM producer/API/schema/dependency or runtime changes.
 
 HEADER-PROFILE-PHOTO-1026 ready for review:5 menu integration tests and scoped lint pass. Photo request sequencing, session-recovery reload and blank fallback retained; no initial-letter rendering. Source scope frozen/released at publication; hosted gates precede authorized merge.
+
+## RESERVATION-SERVICE-GROUPS-1027 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-service-groups-1027 from origin/develop f4b2f801e. Reserve Reservations foundation service presentation helper/component, model/live-feed optional local view projection, workspace service-cell rendering/CSS, focused tests and own docs. Previous oldest-first PR1139 merged; its frozen source lock released. Group exact snapshot service kinds, retain titles and unknown kinds, deduplicate only within category. No API/schema/dependency/migration/IAM/runtime changes. Owner explicitly authorizes develop merge after checks.
+
+RESERVATION-SERVICE-GROUPS-1027 verification:32 focused tests passed, scoped ESLint passed. Source scope freezes/releases with publication; full Web typecheck/build and exact-head hosted gates required before authorized develop merge. No operational deployment requested.

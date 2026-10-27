@@ -322,6 +322,10 @@ export function decodeIntake(
         serviceTitles: snapshot.serviceSelections
           .map((s) => s.titleSnapshot)
           .filter(Boolean),
+        serviceItems: snapshot.serviceSelections.map((s) => ({
+          kind: s.kind,
+          title: s.titleSnapshot,
+        })),
         mealServiceId: snapshot.hotelSelection?.mealServiceId ?? undefined,
         hotelNotes: row.arrangement?.reason,
         hasNotes:

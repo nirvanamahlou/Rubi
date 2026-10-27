@@ -150,13 +150,7 @@ export function SupplierFormPurchaseContext({
   request: PurchaseRequest;
 }) {
   const settings = request.workflow?.sentSupplierFormSettings;
-  if (!settings)
-    return (
-      <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-        هنوز نسخه‌ای از فرم رزواسیون برای کارگزار ارسال نشده است؛ مبلغ خرید را
-        پس از ارسال فرم ثبت کنید.
-      </p>
-    );
+  if (!settings) return null;
   const selected = settings.passengers.filter(
     (passenger) => passenger.selected,
   );

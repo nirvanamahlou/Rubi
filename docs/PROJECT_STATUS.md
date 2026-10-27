@@ -1,5 +1,10 @@
 ## UNIFIED-CONTRACT-HOTEL-PICKER-1026 — PC-A — READY_FOR_CI
 
+## PURCHASE-BEFORE-RESERVATION-SEND-1027 — PC-A
+
+Removed the purchase form instruction requiring supplier-form sending before purchase entry. A real sent form remains optional read-only context; an unsent draft is not presented as sent. Existing public purchase-context and atomic hotel/transfer purchase commands already accept unsent requests, so no server restriction or voucher guard was changed. Regression coverage adds initial hotel purchase from broker/currency/nightly entry to enabled submission and saved callback without workflow state, plus atomic hotel/transfer persistence with no workflow revisions. Permissions, contract nights, exact money, service assignments, CAS/replay and Finance routing are retained. Focused tests, lint/types and all hosted gates precede owner-authorized develop merge. No schema/migration/dependency or runtime/server rollout.
+
+
 Composite hotels now appear in the contract's ordinary Hotel dropdown in both room-composition and legacy-detail paths; the separate composite-loading panel is removed. Selecting a composite still expands its ordered real hotels and independently entered dates, while ordinary hotel selection and Tour restrictions retain their existing behavior. Distinct option IDs prevent ordinary/composite identity collisions, and reference refresh covers both lists.52 targeted selection, room-party, payload and restore tests plus scoped lint pass. Final-head CI gates owner-authorized push/develop merge; no API/schema/migration/dependency or runtime rollout.
 
 ## CONTRACT-PASSENGER-COMPLETION-1026 — PC-A — READY_FOR_CI
@@ -7705,6 +7710,10 @@ Correction Add passenger now permits name-only profiles; all other identity/pass
 ## HEADER-PROFILE-PHOTO-1026 — PC-B
 
 Shared header displays the persisted Workbench profile photo and an empty primary-blue circle when absent/unavailable, never name initials. Reload on profile-photo change and authenticated session recovery; ignore stale photo responses, release object URLs and hide failed images. Identity/session/logout behavior retained. Five existing menu integration checks and scoped ESLint pass; exact-head hosted quality/type/build/full tests/database gates precede authorized develop merge. No API/schema/dependency/runtime changes.
+
+## RESERVATION-SERVICE-GROUPS-1027 — PC-A
+
+Reservation services now render as compact category groups using snapshot kind/title pairs, retaining localized labels, unknown-service fallback and every distinct service title. Existing raw Excel values, filters, sorting and workflow actions remain unchanged. No API/schema/dependency/migration/runtime changes. Thirty-two focused tests, scoped lint, full Web typecheck and production build passed. All eight initial hosted gates passed; latest develop integration retains the independent cancelled-row palette and requires refreshed exact-head checks.
 
 ## CANCELLED-ROW-RED-1027 — PC-A — READY_FOR_REVIEW
 
