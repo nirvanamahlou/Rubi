@@ -8,13 +8,16 @@ import { prepareAmendmentPersonPrices } from './amendment-passenger-prices';
 import { amendmentPriceComponents } from './amendment-price-components';
 import { isOptionalOperationReason } from '@nora/contracts';
 
-import { ReservationPassengers } from '../passenger-files/passengers';
+import {
+  ReservationPassengers,
+  type ReservationPassengerEditor,
+} from '../passenger-files/passengers';
 import {
   PassengerAgeEditor,
   changeAmendmentPassengerAge,
 } from './passenger-age-editor';
 import { currencySymbol } from '@/lib/currency-symbol';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   MasterDataRecord,
   MasterDataResource,
@@ -61,6 +64,7 @@ export function ReservationSalesAmendment({
   section: 'FLIGHT' | 'HOTEL' | 'OTHER' | 'CORRECTION' | 'PRICES';
   onSaved: () => void;
 }) {
+  const passengerEditor = useRef<ReservationPassengerEditor>(null);
   const [draft, setDraft] = useState(() => amendmentFromContract(contract));
   const [manualDirty, setManualDirty] = useState<SalesTicketDirection[]>([]);
   const [manualFlights, setManualFlights] = useState(() =>
@@ -125,6 +129,7 @@ export function ReservationSalesAmendment({
     setDraft((d) => {
       const next = { ...d, ...v };
       if (
+        section !== 'CORRECTION' &&
         next.services.some(
           (s) => s.metadata?.automaticFlightRoomTotalV1 === true,
         )
@@ -190,6 +195,21 @@ export function ReservationSalesAmendment({
     setBusy(true);
     setError('');
     try {
+      if (section === 'CORRECTION' && requestId) {
+        const unchanged =
+          JSON.stringify({ ...draft, reason: '' }) ===
+          JSON.stringify(amendmentFromContract(contract));
+        if (
+          !passengerEditor.current ||
+          !(await passengerEditor.current.savePending())
+        )
+          return;
+        if (unchanged) {
+          setSaved(true);
+          onSaved();
+          return;
+        }
+      }
       const corrected = applyManualAmendmentFlights(
         section === 'PRICES' || membershipChanged
           ? prepareAmendmentPersonPrices(draft)
@@ -509,6 +529,8 @@ export function ReservationSalesAmendment({
             <ReservationPassengers
               id={requestId}
               customerIds={draft.passengers.map((p) => p.customerId)}
+              saveRef={passengerEditor}
+              onDirty={() => setSaved(false)}
               serviceEditor={(customerId) => (
                 <PassengerServiceEditor
                   draft={draft}

@@ -1,4 +1,21 @@
-import { payrollDigits, type PayrollWorksheetSummary } from '@nora/contracts';
+import {
+  payrollDigits,
+  type PayrollWorksheetSummary,
+  type PayrollWorksheetStatus,
+} from '@nora/contracts';
+
+export const payrollWorksheetStatusLabels: Record<
+  PayrollWorksheetStatus,
+  string
+> = {
+  DRAFT: 'پیش‌نویس',
+  HR_APPROVED: 'آماده ارسال به مالی',
+  PENDING_FINANCE: 'در انتظار مالی',
+  APPROVED: 'تأییدشده',
+  CORRECTION_REQUIRED: 'نیازمند اصلاح',
+  REJECTED: 'ردشده',
+  CANCELLED: 'لغوشده',
+};
 
 export const payrollMonths = [
   'فروردین',

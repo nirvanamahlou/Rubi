@@ -32,6 +32,7 @@ import {
   filterPayrollList,
   payrollMonths as monthNames,
   payrollPeriodLabel as periodLabel,
+  payrollWorksheetStatusLabels,
   type PayrollListFilters,
 } from './hr-payroll-list';
 
@@ -125,6 +126,42 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
   const current = draft ? JSON.stringify(draft) : '';
   const dirty = Boolean(sheet && current !== saved);
   const editable = writable && sheet?.status === 'DRAFT' && !busy;
+  const pollingSheetId = sheet?.status === 'PENDING_FINANCE' ? sheet.id : null;
+  const pollingList =
+    !sheet && list.some((item) => item.status === 'PENDING_FINANCE');
+  useEffect(() => {
+    if (!canRead || (!pollingSheetId && !pollingList)) return;
+    let active = true;
+    const sync = async () => {
+      try {
+        if (pollingSheetId) {
+          const status = await hrRequest<PayrollWorksheetSummary>(
+            `${api}/${pollingSheetId}/status`,
+          );
+          if (active)
+            setSheet((previous) =>
+              previous?.id === pollingSheetId
+                ? { ...previous, ...status }
+                : previous,
+            );
+        } else {
+          const rows = await hrRequest<PayrollWorksheetSummary[]>(api);
+          if (active) setList(rows);
+        }
+      } catch {
+        if (active)
+          setError('دریافت وضعیت مالی انجام نشد؛ دوباره تلاش می‌شود.');
+      }
+    };
+    const onFocus = () => void sync();
+    const timer = window.setInterval(onFocus, 15000);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [canRead, pollingSheetId, pollingList]);
   async function refresh() {
     setLoading(true);
     setError('');
@@ -297,6 +334,7 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
           },
         ),
       );
+      window.dispatchEvent(new Event('nora:finance-inbox-refresh'));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'عملیات انجام نشد.');
     } finally {
@@ -540,17 +578,29 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
             ) : null}
             <div className={styles.footer}>
               <span>
-                {sheet.status === 'DRAFT' ? 'پیش‌نویس' : 'تأییدشده'} ·{' '}
+                {payrollWorksheetStatusLabels[sheet.status]} ·{' '}
                 {number(draft.rows.length)} ردیف · ریال
               </span>
-              {data.capabilities.approve && writable ? (
+              {data.capabilities.approve &&
+              writable &&
+              ['DRAFT', 'HR_APPROVED'].includes(sheet.status) ? (
                 <HrButton
                   disabled={dirty || saving || busy}
-                  onClick={() => void transition(sheet.status === 'DRAFT')}
+                  onClick={() => void transition(true)}
                 >
-                  {sheet.status === 'DRAFT'
-                    ? 'تأیید حقوق'
-                    : 'بازگشت به پیش‌نویس'}
+                  تأیید حقوق
+                </HrButton>
+              ) : null}
+              {data.capabilities.approve &&
+              writable &&
+              ['HR_APPROVED', 'CORRECTION_REQUIRED', 'REJECTED'].includes(
+                sheet.status,
+              ) ? (
+                <HrButton
+                  disabled={dirty || saving || busy}
+                  onClick={() => void transition(false)}
+                >
+                  بازگشت به پیش‌نویس
                 </HrButton>
               ) : null}
             </div>
@@ -635,8 +685,13 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
                 }
               >
                 <option value="">همه وضعیت‌ها</option>
-                <option value="DRAFT">پیش‌نویس</option>
-                <option value="APPROVED">تأییدشده</option>
+                {Object.entries(payrollWorksheetStatusLabels).map(
+                  ([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ),
+                )}
               </NativeSearchSelect>
             </label>
             <label>
@@ -722,7 +777,7 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
                       <td>{number(item.rowCount)}</td>
                       <td>
                         <HrStatus>
-                          {item.status === 'DRAFT' ? 'پیش‌نویس' : 'تأییدشده'}
+                          {payrollWorksheetStatusLabels[item.status]}
                         </HrStatus>
                       </td>
                       <td>
