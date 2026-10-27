@@ -7736,7 +7736,7 @@ Supplier reservation header returns to four fields without a total. Section06 no
 
 - New Contract buyer phone/address now accept blank values consistently in the people sheet and Sales domain; supplied phone, postal code and landline still validate. A blank buyer caption resolves to the actual selected/created customer name before producing the contract payload. A new separate individual buyer displays its required name marker.
 - International HOTEL/FLIGHT regressions cover blank national ID, passport documents and contacts; a save regression verifies real passenger identity fallback and no empty contact creation. Required passport names, gender, birth date and country fields, plus existing-profile deletion/duplicate safeguards, remain enforced.
-- Targeted Web 69 and API Sales/Customers 106 tests passed; scoped lint passed. Web typecheck, English coverage and hosted full verification pending. No migration, dependency, runtime or production data changes. This request authorizes the fix and reviewable PR; merge is not performed without a new instruction.
+- Targeted Web 69 and API Sales/Customers 106 tests passed; scoped lint passed. Local English coverage reached its explicit 30-second timeout under machine load; hosted full quality/typecheck and production builds passed on the initial source head. PR #1166 requires all final-head hosted gates before merge. The owner subsequently explicitly authorized develop merge. No migration, dependency, runtime or production data changes; source locks freeze on publication and release after verified merge.
 
 ## 2026-10-25 — RESERVATION-CALENDAR-BASIS-1025 — PC-A — READY_FOR_CI
 
