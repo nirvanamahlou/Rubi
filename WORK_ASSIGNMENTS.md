@@ -1,3 +1,7 @@
+## RESERVATION-SERVICE-BORDERLESS-1027 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-service-borderless-1027 from develop7b548077a. Owner requests removing the border around reservation service labels and authorizes develop merge. Reserve only the serviceGroups list-item declarations in Reservations foundation/workspace.module.css and own assignment/status entries. Prior grouping PR1149 and ordering PR1159 are merged and their source reservations released; the cancelled-row palette scope is independent and preserved. Display-only: retain labels, ordering, spacing, legibility, selection and other table styles. No API, schema, migration, dependency, data or runtime changes. Source scope releases upon publication and exact-head checks gate merge.
+
 ## RESERVATION-SERVICE-ORDER-1027 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-reservation-service-order-1027 from develop1e437aaab. Owner requests fixed reservation service order (hotel, flight, transfer, remaining services), a single Hotel caption and develop merge. Reserve only foundation/reservation-services.tsx and its existing regression spec plus own status/assignment notes. Prior service-group PR1149 is merged and source locks released; no overlapping active writer found. Preserve saved service kinds/titles, unknown and legacy fallback, Excel/filter/workflow behavior. Display-only; no API/schema/migration/dependency/runtime or production-data changes. Source freezes/releases on publication; final-head gates precede authorized merge.
