@@ -596,6 +596,17 @@ export function SalesWorkspace() {
                     </td>
                     <td className="px-4 py-3 last:pl-5">
                       <div className="grid min-w-72 grid-cols-4 gap-1.5">
+                        {contract.passengerCount &&
+                        contract.passengerNames.length === 0 ? (
+                          <PassengerCorrectionButton
+                            contractId={contract.id}
+                            ownerUserId={contract.ownerUserId}
+                            branchId={contract.branchId}
+                            status={contract.status}
+                            completionOnly
+                            onSaved={() => void load()}
+                          />
+                        ) : null}
                         <PassengerCorrectionButton
                           contractId={contract.id}
                           ownerUserId={contract.ownerUserId}

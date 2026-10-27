@@ -1,13 +1,14 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it, vi } from 'vitest';
 import type * as Access from '@/modules/iam/access-context';
+const access = vi.hoisted(() => ({ permissions: ['sales.contracts.create'] }));
 vi.mock('@/modules/iam/access-context', async (original) => ({
   ...(await original<typeof Access>()),
-  useAccessPermissions: () => ['sales.contracts.create'],
+  useAccessPermissions: () => access.permissions,
   useAccessActor: () => ({
     userId: 'owner',
     branchIds: ['branch'],
-    permissions: ['sales.contracts.create'],
+    permissions: access.permissions,
   }),
   useRouteAccess: () => () => true,
 }));
@@ -72,3 +73,39 @@ it('hides owner-only output on another owner or branch while retaining the new-c
     ),
   ).toContain('<button');
 });
+
+it.each(['sales.contracts.read.branch', 'sales.contracts.read.all'])(
+  'exposes correction and explicit passenger completion for a scoped %s reader',
+  (permission) => {
+    access.permissions = [permission];
+    try {
+      for (const completionOnly of [false, true]) {
+        const html = renderToStaticMarkup(
+          <PassengerCorrectionButton
+            contractId="synthetic"
+            ownerUserId="other"
+            branchId="branch"
+            status="CONFIRMED"
+            completionOnly={completionOnly}
+            onSaved={() => undefined}
+          />,
+        );
+        expect(html).toContain(completionOnly ? 'افزودن مسافر' : 'اصلاح');
+        expect(html).not.toContain('disabled=""');
+      }
+      const forbidden = renderToStaticMarkup(
+        <PassengerCorrectionButton
+          contractId="synthetic"
+          ownerUserId="other"
+          branchId="outside"
+          status="CONFIRMED"
+          completionOnly
+          onSaved={() => undefined}
+        />,
+      );
+      expect(forbidden).not.toContain('افزودن مسافر');
+    } finally {
+      access.permissions = ['sales.contracts.create'];
+    }
+  },
+);

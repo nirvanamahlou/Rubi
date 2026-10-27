@@ -69,13 +69,14 @@ function nodes(node: ReactNode): Record<string, unknown>[] {
   if (!isValidElement<Record<string, unknown>>(node)) return [];
   return [node.props, ...nodes(node.props.children as ReactNode)];
 }
-function render() {
+function render(initiallyOpen = false) {
   h.index = 0;
   h.effectIndex = 0;
   const result = nodes(
     canonicalTestTree(
       PassengerCompletion({
         contractId: 'contract',
+        initiallyOpen,
         onSaved: h.saved,
         onPending: h.pending,
       }),
@@ -264,4 +265,11 @@ it('retries an uncertain completion with the same operation without recreating p
   expect(h.complete).toHaveBeenCalledTimes(2);
   expect(h.complete.mock.calls[1]![1]).toEqual(first);
   expect(h.create).toHaveBeenCalledTimes(2);
+});
+
+it('opens the booked passenger slots directly from the list completion action', async () => {
+  render(true);
+  await vi.waitFor(() => expect(entries()).toHaveLength(2));
+  expect(h.create).not.toHaveBeenCalled();
+  expect(h.complete).not.toHaveBeenCalled();
 });

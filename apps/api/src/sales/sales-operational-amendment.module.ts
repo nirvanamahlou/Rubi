@@ -1,6 +1,6 @@
 import { currentSalesExecution } from './sales-current-execution';
 import type { SalesReservationRequestV1 } from '@nora/contracts';
-import { canSelfServeSalesContract } from '@nora/contracts';
+import { canCorrectSalesContract } from '@nora/contracts';
 import {
   Module,
   Injectable,
@@ -63,7 +63,7 @@ export class SalesOperationalAmendmentService {
       !row ||
       !actor.branchIds.includes(row.branchId) ||
       !(
-        canSelfServeSalesContract(actor, row) ||
+        canCorrectSalesContract(actor, row) ||
         actor.permissions.includes('sales.contracts.update.branch') ||
         (actor.permissions.includes('sales.contracts.update.own') &&
           row.ownerUserId === actor.userId)
