@@ -1,3 +1,4 @@
+import { ForbiddenException } from '@nestjs/common';
 import { expect, it, vi } from 'vitest';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { ContractNoticeService } from './contract-notice.service';
@@ -119,9 +120,13 @@ it('adds a first Notice to a contract without one', async () => {
     data: { metadata: { other: 'KEEP', contractNotice: 'New' } },
   });
 });
-it.each([[], ['reservations.read'], ['reservations.documents.manage']])(
+it.each([
+  { permissions: [] },
+  { permissions: ['reservations.read'] },
+  { permissions: ['reservations.documents.manage'] },
+] as { permissions: AuthenticatedActor['permissions'] }[])(
   'rejects unauthorized writes (%j)',
-  async (permissions) => {
+  async ({ permissions }) => {
     const t = setup();
     await expect(
       t.service.save(
@@ -129,7 +134,7 @@ it.each([[], ['reservations.read'], ['reservations.documents.manage']])(
         { expectedVersion: 3, notice: 'Bad' },
         { ...actor, permissions },
       ),
-    ).rejects.toThrow();
+    ).rejects.toBeInstanceOf(ForbiddenException);
     expect(t.db.client.$transaction).not.toHaveBeenCalled();
   },
 );
