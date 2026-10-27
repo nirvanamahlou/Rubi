@@ -437,10 +437,7 @@ export class HrPayrollWorksheetService {
           throw new BadRequestException(
             'نام و مانده حقوق ردیف‌ها را بررسی کنید.',
           );
-        if ((row.data as Record<string, unknown>).lastEditedBy === actor.userId)
-          throw new ForbiddenException(
-            'تأیید باید توسط کاربر دیگری انجام شود.',
-          );
+        // This confirms submission, not final approval. Finance enforces a different final approver.
         amount = snapshot.rows.reduce(
           (total, r) =>
             total + BigInt(calculatePayroll(r, snapshot.rates).remaining),

@@ -27,8 +27,9 @@ the other owner's private tables directly.
 
 ## Atomicity and state
 
-The existing HR sensitive/manage/approve permissions and independent HR reviewer
-rule remain. Submission serializes on the worksheet business key, performs CAS,
+The existing HR sensitive/manage/approve permissions gate explicit submission.
+The worksheet author may submit; Finance requires a different final approver.
+Submission serializes on the worksheet business key, performs CAS,
 freezes the canonical payable projection, creates the Finance request and its
 initial revision, and appends HR audit in one transaction. A failure rolls back
 all changes. An ambiguous retry by the same submitting actor at the immediately

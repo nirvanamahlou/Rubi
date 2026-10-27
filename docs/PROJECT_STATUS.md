@@ -7865,3 +7865,5 @@ HR-PAYROLL-FINANCE-APPROVAL-1027 validation:208 HR/Finance API tests passed (50 
 ## SALES-SELECTED-ROW-1027 — PC-A
 
 Clicking a Sales contract row, including its existing action controls, keeps that contract highlighted light blue until another row is selected. Selection uses the stable contract ID and survives scrolling and data refresh; keyboard focus within a row also selects it. Selected styling takes precedence over zebra/status backgrounds, while existing status badges and business data remain unchanged. No scroll/focus commands, API, schema, dependency or deployment change. Existing focused table tests and scoped lint are the local verification; full final-head hosted gates precede user-authorized develop merge.
+
+HR-PAYROLL-FINANCE-APPROVAL-1027 stage semantics: HR author confirmation submits only; independent final approval remains Finance-owned. No permission grant or self-approval bypass in Finance.

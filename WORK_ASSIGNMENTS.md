@@ -9981,3 +9981,5 @@ HR-PAYROLL-FINANCE-APPROVAL-1027 validation:208 HR/Finance API tests passed (50 
 ## SALES-SELECTED-ROW-1027 — PC-A — RESERVED
 
 COMPUTER_ID=PC-A; branch codex/pc-a-sales-selected-row-1027 from latest origin/develop. User authorizes persistent light-blue highlight on clicked Sales contract table row while scrolling and develop merge. Reserve sales-workspace.tsx, its existing focused suite if needed and own status notes. Keep contract-ID selection through scrolling and data refresh; selecting another row moves the highlight. Preserve operations, status facts, sorting and existing scroll behavior. No API/schema/dependency/runtime rollout. No overlapping active source writer found. Required exact-head hosted checks before merge; bounded reservation releases at verified publication.
+
+HR-PAYROLL-FINANCE-APPROVAL-1027 final stage semantics: a permitted worksheet author can confirm submission to Finance. Final Finance approval still requires another actor and cannot be self-approved by the submitter; the real-PostgreSQL journey covers these two actors explicitly.

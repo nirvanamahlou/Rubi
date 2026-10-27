@@ -95,19 +95,13 @@ describe.skipIf(!enabled)('Salary workflow isolated real PostgreSQL', () => {
           passwordHash: 'not-a-login-hash',
         },
       });
-      const reviewerUser = await client.user.create({
-        data: {
-          username: randomUUID(),
-          displayName: 'Synthetic HR reviewer',
-          passwordHash: 'not-a-login-hash',
-        },
-      });
       const editor = {
         ...f.actor,
         userId: editorUser.id,
         permissions: ['hr.read', 'hr.manage', 'hr.approve', 'hr.sensitive'],
       } as AuthenticatedActor;
-      const reviewer = { ...editor, userId: reviewerUser.id };
+      // The author confirms submission; Finance still requires another actor for final approval.
+      const reviewer = editor;
       const hr = new HrPayrollWorksheetService({ client } as never);
       const created = await hr.create(
         { branchId: editor.branchIds[0], period: '1405-09' },

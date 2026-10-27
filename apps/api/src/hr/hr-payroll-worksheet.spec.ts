@@ -413,7 +413,7 @@ describe('private durable worksheet commands', () => {
   });
   it('submits exactly one pending request, tracks Finance approval and permits only returned drafts to reopen', async () => {
     const { service, client, finance, financeStatus } = fixture(),
-      reviewer = { ...actor, userId: randomUUID() };
+      reviewer = actor;
     const created = await service.create(
       { branchId, period: '1405-07' },
       actor,
@@ -427,7 +427,15 @@ describe('private durable worksheet commands', () => {
       actor,
     );
     await expect(
-      service.transition(saved.id, { version: 2 }, actor, true),
+      service.transition(
+        saved.id,
+        { version: 2 },
+        {
+          ...actor,
+          permissions: actor.permissions.filter((p) => p !== 'hr.approve'),
+        },
+        true,
+      ),
     ).rejects.toThrow(ForbiddenException);
     const approved = await service.transition(
       saved.id,
@@ -441,6 +449,7 @@ describe('private durable worksheet commands', () => {
       hrRecordId: saved.id,
       sourceVersion: 3,
       currencyCode: 'IRR',
+      requesterId: actor.userId,
     });
     expect(finance().amount).toBe(calculatePayroll(sample(), rates).remaining);
     expect(
