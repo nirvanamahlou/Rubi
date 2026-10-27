@@ -9965,3 +9965,7 @@ COMPUTER_ID=PC-A; branch codex/pc-a-contract-preview-availability-1027 from orig
 ## HR-PAYROLL-SEARCH-ONLY-1027 — PC-B — READY_FOR_CI
 
 COMPUTER_ID=PC-B; base origin/develop@ee94c291. User requests removing the manual Save control and saved/saving status beside payroll employee search, leaving only search in that row; authorizes push and develop merge. Reserve only hr-payroll-worksheet.tsx and own status notes. Prior payroll PR1172 merged, reservations released; no overlapping source writer. Preserve debounced automatic saving, failure retry, dirty-draft protection and approval guards. No API/schema/dependency/runtime change. Run existing focused tests, lint/types and all hosted gates; bounded source reservation releases upon verified merge.
+
+## SALES-SELECTED-ROW-1027 — PC-A — RESERVED
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-selected-row-1027 from latest origin/develop. User authorizes persistent light-blue highlight on clicked Sales contract table row while scrolling and develop merge. Reserve sales-workspace.tsx, its existing focused suite if needed and own status notes. Keep contract-ID selection through scrolling and data refresh; selecting another row moves the highlight. Preserve operations, status facts, sorting and existing scroll behavior. No API/schema/dependency/runtime rollout. No overlapping active source writer found. Required exact-head hosted checks before merge; bounded reservation releases at verified publication.

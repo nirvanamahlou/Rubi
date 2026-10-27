@@ -52,7 +52,10 @@ export function contractRowClassName(
     SalesContractSummary,
     'customerDocumentDeliveryApproved' | 'reservationContractChanged'
   >,
+  selected = false,
 ) {
+  if (selected)
+    return 'group cursor-pointer border-t border-primary/30 bg-blue-100/80 transition-colors hover:bg-blue-100 dark:bg-blue-950/55 dark:hover:bg-blue-900/60';
   if (contract.customerDocumentDeliveryApproved)
     return 'group border-t border-emerald-300 bg-emerald-100/70 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/60';
   return contract.reservationContractChanged
@@ -256,6 +259,9 @@ export function SalesWorkspace() {
     null,
   );
   const [contracts, setContracts] = useState<SalesContractPage['data']>([]);
+  const [selectedContractId, setSelectedContractId] = useState<string | null>(
+    null,
+  );
   const [query, setQuery] = useState<SalesContractListQuery>({});
   const [total, setTotal] = useState(0);
   const requestVersion = useRef(0);
@@ -514,8 +520,14 @@ export function SalesWorkspace() {
               <tbody>
                 {contracts.map((contract) => (
                   <tr
-                    className={contractRowClassName(contract)}
+                    className={contractRowClassName(
+                      contract,
+                      selectedContractId === contract.id,
+                    )}
                     key={contract.id}
+                    aria-selected={selectedContractId === contract.id}
+                    onClick={() => setSelectedContractId(contract.id)}
+                    onFocusCapture={() => setSelectedContractId(contract.id)}
                   >
                     <ContractListNumber contract={contract} />
                     <td className="px-4 py-3">
