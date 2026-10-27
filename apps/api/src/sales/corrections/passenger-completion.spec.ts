@@ -209,6 +209,57 @@ describe('completing booked aggregate passenger slots', () => {
     await expect(s.service.save(id, s.input, actor)).rejects.toThrow();
     expect(s.client.$transaction).not.toHaveBeenCalled();
   });
+  it('persists two historical names and their booked service assignments with every optional identity field absent', async () => {
+    const s = setup();
+    s.row.services[1]!.metadata = {
+      legacyServicePartiesV2: JSON.stringify({
+        out: { adults: 1, children: 1, infants: 0 },
+        back: { adults: 1, children: 1, infants: 0 },
+      }),
+    };
+    const secondId = '20000000-0000-4000-8000-000000000002';
+    s.customers.detail.mockImplementation(
+      async (personId) =>
+        ({
+          data: {
+            kind: 'person',
+            status: 'active',
+            birthDate: null,
+            firstName: personId === customerId ? 'First' : 'Second',
+            lastName: 'Traveler',
+          },
+        }) as never,
+    );
+    s.input.passengers = [
+      { customerId, ageCategory: 'ADT', serviceClientKeys: ['out', 'back'] },
+      {
+        customerId: secondId,
+        ageCategory: 'CHD',
+        serviceClientKeys: ['out', 'back'],
+      },
+    ];
+    await expect(s.service.save(id, s.input, actor)).resolves.toEqual({
+      version: 4,
+    });
+    expect(s.tx.salesContractPassenger.create).toHaveBeenCalledTimes(2);
+    for (const [personId, displayNameSnapshot, ageCategory] of [
+      [customerId, 'First Traveler', 'ADT'],
+      [secondId, 'Second Traveler', 'CHD'],
+    ])
+      expect(s.tx.salesContractPassenger.create).toHaveBeenCalledWith({
+        data: {
+          contractId: id,
+          customerId: personId,
+          displayNameSnapshot,
+          ageCategory,
+          birthDate: null,
+          allocations: {
+            create: [{ serviceId: 'return' }, { serviceId: 'outbound' }],
+          },
+        },
+      });
+    expect(s.notifications.createWithinTransaction).toHaveBeenCalledOnce();
+  });
   it('does not allow an explicit category to override a known birth date', async () => {
     const s = setup();
     s.input.passengers[0]!.ageCategory = 'INF';

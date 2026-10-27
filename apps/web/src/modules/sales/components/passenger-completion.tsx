@@ -279,7 +279,10 @@ export function PassengerCompletion({
               );
             }
           }
-          if (row.createdHere) {
+          if (
+            row.createdHere &&
+            (row.person.values.phone.trim() || row.person.values.email.trim())
+          ) {
             let data = (
               await salesPeopleApi.detail(
                 row.person.person!.id,
@@ -372,13 +375,14 @@ export function PassengerCompletion({
   return (
     <section className="grid min-w-0 gap-3 rounded-xl border p-3">
       <Button
+        type="button"
         variant="outline"
         disabled={!form || busy}
         onClick={() => setOpen(!open)}
       >
         افزودن مسافر
       </Button>
-      {error && (
+      {error && (!open || !form) && (
         <p role="alert" className="text-destructive">
           {error}
         </p>
@@ -569,7 +573,12 @@ export function PassengerCompletion({
               onCancel={() => setLookup(null)}
             />
           )}
-          <Button disabled={busy} onClick={() => void save()}>
+          {error && (
+            <p role="alert" className="text-destructive">
+              {error}
+            </p>
+          )}
+          <Button type="button" disabled={busy} onClick={() => void save()}>
             {busy
               ? 'در حال ثبت…'
               : uncertain

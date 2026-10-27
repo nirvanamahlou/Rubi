@@ -45,6 +45,56 @@ function intake(id = 'one', receivedAt = '2026-09-08T09:00:00Z') {
 const envelope = (data = [intake()]) => ({ version: 1, data });
 const row = (id = 'one', time?: string) =>
   decodeIntake(envelope([intake(id, time)]), session)[0]!;
+it('uses completed canonical passenger names instead of an empty or stale historical snapshot', () => {
+  const input = {
+    ...intake(),
+    snapshot: {
+      ...intake().snapshot,
+      passengerAssignments: [
+        {
+          customerId: 'old',
+          displayNameSnapshot: 'Old snapshot name',
+          ageCategory: 'ADT',
+          serviceClientKeys: [],
+        },
+      ],
+    },
+  };
+  const summary = {
+    createdAt: input.receivedAt,
+    contractVersion: 2,
+    correctedAt: input.receivedAt,
+    cancelledAt: null,
+    departureDate: '2027-01-01',
+    returnDate: null,
+    passengerCount: 2,
+    adults: 1,
+    children2To6: 0,
+    children6To12: 0,
+    infants: 0,
+    saleRial: null,
+    saleForeign: null,
+    currencies: '',
+    discount: null,
+    commission: null,
+    debtRial: null,
+    debtForeign: null,
+  };
+  const decode = (tableSummary?: object) =>
+    decodeIntake(
+      { version: 1, data: [{ ...input, tableSummary }] },
+      session,
+    )[0]!;
+  expect(
+    decode({
+      ...summary,
+      passengerNames: ['FIRST TRAVELER', 'SECOND TRAVELER'],
+    }).passengerNames,
+  ).toEqual(['FIRST TRAVELER', 'SECOND TRAVELER']);
+  expect(decode({ ...summary, passengerNames: [] }).passengerNames).toEqual([]);
+  expect(decode(summary).passengerNames).toEqual(['Old snapshot name']);
+  expect(decode().passengerNames).toEqual(['Old snapshot name']);
+});
 it('decodes actual queue labels, meal reference and arrangement notes without defaults', () => {
   const input = intake();
   const result = decodeIntake(

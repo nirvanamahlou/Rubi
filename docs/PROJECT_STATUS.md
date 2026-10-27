@@ -1,3 +1,6 @@
+## LEGACY-PASSENGER-SAVE-1027 — PC-A
+
+Historical passenger completion skips unnecessary post-create sensitive-detail requests when optional contact fields are blank. Save failures appear beside the action; successful completion refreshes the correction form with confirmation. Real identities, booked per-service categories/counts, supplied-field validation, retry/replay, branch authorization and commercial values remain intact. The existing Sales summary now optionally returns canonical passenger names; Reservations uses them with old-server snapshot fallback and recognizes successful completion as a correction. Name-only adult/child persistence and Web blank-field, invalid-value, contact retry and uncertain-submit regressions pass (API23, Web41). No migration, dependency, permission or runtime/production changes. Final lint/types/build and exact-head hosted checks gate owner-authorized develop merge.
 ## RESERVATION-SERVICE-BORDERLESS-1027 — PC-A
 
 Removed the border and rounded corners around reservation service labels while keeping existing spacing, wrapping, ordered categories, colors, selected rows and content. CSS-only change; no data, API, migration, dependency or runtime changes. Focused checks and final-head hosted CI precede owner-authorized develop merge.
