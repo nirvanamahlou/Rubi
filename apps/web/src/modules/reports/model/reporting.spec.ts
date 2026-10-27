@@ -14,7 +14,7 @@ describe('reporting catalog', () => {
       reportCatalog
         .filter((report) => report.availability === 'READY')
         .map((report) => report.code),
-    ).toHaveLength(12);
+    ).toHaveLength(13);
     expect(
       reportCatalog.find((report) => report.code === 'due_checks')
         ?.availability,
@@ -111,7 +111,10 @@ describe('reporting catalog', () => {
         (report) =>
           (report.approvedView.startsWith('reporting_') ||
             report.approvedView.startsWith('reporting.') ||
-            report.approvedView === 'sales.reporting.organization.v2') &&
+            [
+              'sales.reporting.contract-currency.v1',
+              'sales.reporting.payment-events.v1',
+            ].includes(report.approvedView)) &&
           report.outputs.join(',') === 'XLSX,PDF,CSV,API',
       ),
     ).toBe(true);
@@ -119,7 +122,6 @@ describe('reporting catalog', () => {
 
   it('keeps feature-backed cards pending until their own producers publish a projection', () => {
     const featureBackedReports = [
-      'sales_contract_pipeline',
       'agency_contract_risk',
       'ticket_capacity',
       'supplier_payment_queue',

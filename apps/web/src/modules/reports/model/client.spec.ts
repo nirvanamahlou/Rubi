@@ -12,6 +12,62 @@ vi.mock('@/lib/auth-session', () => ({
 afterEach(() => vi.unstubAllGlobals());
 
 describe('reporting public projection client', () => {
+  it('preserves native labels and grain without exposing unavailable cost or issuance measures', async () => {
+    const columns = [
+      { key: 'primaryDimension', label: 'شعبه' },
+      { key: 'secondaryDimension', label: 'کارشناس' },
+      { key: 'currencyCode', label: 'ارز' },
+      { key: 'orderCount', label: 'تعداد قرارداد' },
+      { key: 'salesAmount', label: 'مبلغ قرارداد' },
+    ];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            reportCode: 'sales_by_organization',
+            reportVersion: 3,
+            grain: 'CONTRACT_CURRENCY',
+            sourceProjection: 'sales.reporting.contract-currency.v1',
+            columns,
+            rows: [
+              {
+                grainId: 'one',
+                primaryDimension: 'مرکزی',
+                secondaryDimension: 'کارشناس',
+                currencyCode: 'IRR',
+                orderCount: 1,
+                salesAmount: '900',
+                purchaseAmount: '0',
+                grossProfit: '900',
+                ticketCount: 0,
+                pendingReservationActions: 0,
+              },
+            ],
+            total: 1,
+            page: 1,
+            pageSize: 5,
+            previewLimit: 100,
+            generatedAtUtc: '2026-10-27T12:00:00Z',
+            sourceDataAsOfUtc: '2026-10-27T11:00:00Z',
+            totalsByCurrency: [{ currencyCode: 'IRR', salesAmount: '900' }],
+            filterOptions: { branch: ['branch'] },
+            filterOptionLabels: { branch: 'مرکزی' },
+            filterSnapshot: {},
+            warnings: [],
+          }),
+        ),
+      ),
+    );
+    const result = await reportingApi.salesByOrganization();
+    expect(result.rowGrain).toBe('CONTRACT_CURRENCY');
+    expect(result.columns).toEqual(columns);
+    expect(result.filterOptions.labels).toEqual({ branch: 'مرکزی' });
+    expect(result.rows[0]).not.toHaveProperty('grossProfit');
+    expect(result.rows[0]).not.toHaveProperty('purchaseAmount');
+    expect(result.rows[0]).not.toHaveProperty('pendingReservationActions');
+    expect(result.summary.pendingReservationActions).toBe(0);
+  });
   it('uses the recording endpoint only for the explicit result action', async () => {
     const fetch = vi.fn().mockImplementation(() =>
       Promise.resolve(

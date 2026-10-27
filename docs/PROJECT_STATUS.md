@@ -7852,3 +7852,23 @@ HR-PAYROLL-SEARCH-ONLY-1027 implementation removes only the manual Save control,
 ## SALES-SELECTED-ROW-1027 — PC-A
 
 Clicking a Sales contract row, including its existing action controls, keeps that contract highlighted light blue until another row is selected. Selection uses the stable contract ID and survives scrolling and data refresh; keyboard focus within a row also selects it. Selected styling takes precedence over zebra/status backgrounds, while existing status badges and business data remain unchanged. No scroll/focus commands, API, schema, dependency or deployment change. Existing focused table tests and scoped lint are the local verification; full final-head hosted gates precede user-authorized develop merge.
+
+## REPORTING-LIVE-SOURCES-1027 — PC-C — source integration and read-only verification
+
+Dedicated branch codex/pc-c-reporting-live-sources-1027. The approved root-console
+audit confirms operational Sales data exists while reporting_travel_facts is empty.
+Five bounded native report codes now use Sales-owned read-only producers through
+the same preview/export path, with native own/branch/all authorization, Decimal
+currency separation and no passenger/service revenue multiplication. Remaining
+catalogue reports still require their source producers; this is not full catalogue
+completion. Organization and route totals were independently reconciled against
+production SQL for three currencies. Pipeline generated real rows; confirmed
+receipt/refund source was genuinely empty. Four server-generated XLSX outputs
+were parsed independently, rendered and checked for valid XML/styles, 16pt title,
+hidden gridlines and formula errors. Service-combination implementation was added
+after that receipt and still needs its live reconciliation. Actual business files
+and receipts remain private and ignored; no seeds, migrations or DB writes occurred.
+No application deployment or authenticated user acceptance occurred. Preserve the
+parallel Dashboard task's shared constructor/module/dashboard changes. Details,
+source map and remaining rollout/verification gates are in
+docs/tasks/REPORTING-LIVE-SOURCES-1027.md.

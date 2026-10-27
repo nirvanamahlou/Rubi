@@ -4,6 +4,7 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
 export interface SalesByOrganizationReportResult {
+  columns?: readonly { key: string; label: string; kind: string }[];
   reportCode: string;
   reportVersion: number;
   grain: string;
@@ -45,6 +46,7 @@ export interface SalesByOrganizationReportResult {
     filters: Readonly<Record<string, string | readonly string[]>>;
   };
   filterOptions: {
+    labels?: Readonly<Record<string, string>>;
     branchIds: readonly string[];
     ownerUserIds: readonly string[];
     currencyCodes: readonly string[];
@@ -119,6 +121,7 @@ export interface ReportingSavedReportRecord {
 }
 
 interface TravelReportResult {
+  filterOptionLabels?: Readonly<Record<string, string>>;
   reportCode: string;
   reportVersion: number;
   grain: string;
@@ -268,11 +271,14 @@ export const reportingApi = {
         return result as SalesByOrganizationReportResult;
       }
       const travel = result as TravelReportResult;
+      const hasColumn = (key: string) =>
+        !travel.columns || travel.columns.some((column) => column.key === key);
       return {
+        ...(travel.columns ? { columns: travel.columns } : {}),
         reportCode: travel.reportCode,
         reportVersion: travel.reportVersion,
         grain: travel.grain,
-        rowGrain: 'ORDER_ITEM_CURRENCY',
+        rowGrain: travel.grain,
         sourceProjection: travel.sourceProjection,
         rows: travel.rows.map((row) => ({
           grainId: row.grainId,
@@ -281,13 +287,23 @@ export const reportingApi = {
           amount: row.salesAmount,
           currencyCode: row.currencyCode,
           contractCount: row.orderCount,
-          passengerCount: row.passengerCount,
-          ticketCount: row.ticketCount,
-          purchaseAmount: row.purchaseAmount,
-          grossProfit: row.grossProfit,
-          refundAmount: row.refundAmount,
-          settlementBalance: row.settlementBalance,
-          pendingReservationActions: row.pendingReservationActions,
+          ...(hasColumn('passengerCount')
+            ? { passengerCount: row.passengerCount }
+            : {}),
+          ...(hasColumn('ticketCount') ? { ticketCount: row.ticketCount } : {}),
+          ...(hasColumn('purchaseAmount')
+            ? { purchaseAmount: row.purchaseAmount }
+            : {}),
+          ...(hasColumn('grossProfit') ? { grossProfit: row.grossProfit } : {}),
+          ...(hasColumn('refundAmount')
+            ? { refundAmount: row.refundAmount }
+            : {}),
+          ...(hasColumn('settlementBalance')
+            ? { settlementBalance: row.settlementBalance }
+            : {}),
+          ...(hasColumn('pendingReservationActions')
+            ? { pendingReservationActions: row.pendingReservationActions }
+            : {}),
         })),
         total: travel.total,
         page: travel.page,
@@ -309,6 +325,9 @@ export const reportingApi = {
         },
         filterSnapshot: travel.filterSnapshot,
         filterOptions: {
+          ...(travel.filterOptionLabels
+            ? { labels: travel.filterOptionLabels }
+            : {}),
           branchIds: travel.filterOptions.branch ?? [],
           ownerUserIds: travel.filterOptions.expert ?? [],
           currencyCodes: travel.filterOptions.currency ?? [],
@@ -327,9 +346,12 @@ export const reportingApi = {
           partiallySettledContracts: 0,
           settledContracts: 0,
           pendingFinancePayments: 0,
-          pendingReservationActions: travel.rows.filter(
-            (row) => row.ticketCount === 0,
-          ).length,
+          pendingReservationActions: hasColumn('pendingReservationActions')
+            ? travel.rows.reduce(
+                (sum, row) => sum + row.pendingReservationActions,
+                0,
+              )
+            : 0,
         },
       } satisfies SalesByOrganizationReportResult;
     });

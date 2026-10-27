@@ -29,6 +29,7 @@ type DimensionKey = keyof Pick<
   | 'legalEntityName'
   | 'branchName'
   | 'ownerName'
+  | 'orderStatus'
 >;
 
 const REPORT_DIMENSIONS: Readonly<
@@ -46,6 +47,7 @@ const REPORT_DIMENSIONS: Readonly<
   agency_performance: ['agencyName', 'salesChannel'],
   lead_to_order_conversion: ['leadSource', 'customerType'],
   route_passengers: ['destinationCity', 'routeLabel'],
+  sales_contract_pipeline: ['orderStatus', 'reservationStatus'],
 };
 
 const DIMENSION_LABELS: Readonly<Record<DimensionKey, string>> = {
@@ -64,6 +66,7 @@ const DIMENSION_LABELS: Readonly<Record<DimensionKey, string>> = {
   legalEntityName: 'شرکت',
   branchName: 'شعبه',
   ownerName: 'کارشناس',
+  orderStatus: 'وضعیت قرارداد',
 };
 
 const pendingReservationStatuses = new Set([
@@ -83,16 +86,64 @@ function text(value: unknown) {
   return typeof value === 'string' && value.trim() ? value : 'نامشخص';
 }
 
+/** Eligibility is applied before totals, pagination and export, not just labels. */
+export function eligibleTravelReportFacts(
+  code: string,
+  facts: readonly ReportingFactRow[],
+): readonly ReportingFactRow[] {
+  return facts.filter((fact) => {
+    switch (code) {
+      case 'paid_not_issued':
+        return (
+          fact.paymentStatus === 'PAID' &&
+          [
+            'PENDING',
+            'NOT_ISSUED',
+            'PARTIALLY_ISSUED',
+            'ERROR',
+            'FAILED',
+          ].includes(fact.issueStatus) &&
+          fact.orderStatus !== 'CANCELLED' &&
+          fact.reservationStatus !== 'CANCELLED'
+        );
+      case 'reservation_errors':
+        return ['ERROR', 'FAILED'].includes(fact.reservationStatus);
+      case 'cancellations_refunds':
+        return (
+          fact.reservationStatus === 'CANCELLED' ||
+          fact.orderStatus === 'CANCELLED' ||
+          fact.refundAmount.greaterThan(0)
+        );
+      case 'tickets_manifest':
+        return fact.ticketCount > 0;
+      case 'purchase_by_supplier':
+        return (
+          Boolean(fact.providerName?.trim()) &&
+          fact.purchaseAmount.greaterThan(0)
+        );
+      case 'agency_performance':
+        return Boolean(fact.agencyName?.trim());
+      case 'lead_to_order_conversion':
+        return Boolean(fact.leadSource?.trim());
+      default:
+        return true;
+    }
+  });
+}
+
 export function buildTravelReportResult(input: {
   code: string;
   query: ReportQueryV1;
   facts: readonly ReportingFactRow[];
   now: Date;
   includeAllRows?: boolean;
+  dimensionOverride?: readonly [DimensionKey, DimensionKey];
+  dimensionIdentity?: (fact: ReportingFactRow) => readonly [string, string];
 }): TravelReportResultV1 {
-  const dimensions = REPORT_DIMENSIONS[input.code];
+  const dimensions = input.dimensionOverride ?? REPORT_DIMENSIONS[input.code];
   if (!dimensions)
     throw new BadRequestException('این گزارش به Projection سفر متصل نشده است.');
+  const facts = eligibleTravelReportFacts(input.code, input.facts);
   const groups = new Map<
     string,
     TravelReportRowV1 & {
@@ -100,10 +151,14 @@ export function buildTravelReportResult(input: {
       pendingReservationOrderIds: Set<string>;
     }
   >();
-  for (const fact of input.facts) {
+  for (const fact of facts) {
     const primaryDimension = text(fact[dimensions[0]]);
     const secondaryDimension = text(fact[dimensions[1]]);
-    const key = `${primaryDimension}\u001f${secondaryDimension}\u001f${fact.currencyCode}`;
+    const identity = input.dimensionIdentity?.(fact) ?? [
+      primaryDimension,
+      secondaryDimension,
+    ];
+    const key = `${identity[0]}\u001f${identity[1]}\u001f${fact.currencyCode}`;
     const current = groups.get(key) ?? {
       grainId: key,
       primaryDimension,
@@ -201,11 +256,9 @@ export function buildTravelReportResult(input: {
         : String(l).localeCompare(String(r), 'fa');
     return compared * (sort.direction === 'ASC' ? 1 : -1);
   });
-  const currencies = [...new Set(input.facts.map((fact) => fact.currencyCode))];
+  const currencies = [...new Set(facts.map((fact) => fact.currencyCode))];
   const totalsByCurrency = currencies.map((currencyCode) => {
-    const scoped = input.facts.filter(
-      (fact) => fact.currencyCode === currencyCode,
-    );
+    const scoped = facts.filter((fact) => fact.currencyCode === currencyCode);
     const sum = (select: (fact: ReportingFactRow) => Prisma.Decimal) =>
       scoped
         .reduce(
@@ -229,7 +282,7 @@ export function buildTravelReportResult(input: {
   const generatedAtUtc = input.now.toISOString();
   const offset = (input.query.page - 1) * input.query.pageSize;
   const option = (key: keyof ReportingFactRow) =>
-    [...new Set(input.facts.map((fact) => text(fact[key])))].sort((a, b) =>
+    [...new Set(facts.map((fact) => text(fact[key])))].sort((a, b) =>
       a.localeCompare(b, 'fa'),
     );
   return {
@@ -275,9 +328,9 @@ export function buildTravelReportResult(input: {
     pageSize: input.query.pageSize,
     previewLimit: MAX_PREVIEW_PAGE_SIZE,
     generatedAtUtc,
-    sourceDataAsOfUtc: input.facts.length
+    sourceDataAsOfUtc: facts.length
       ? new Date(
-          Math.max(...input.facts.map((fact) => fact.dataAsOf.getTime())),
+          Math.max(...facts.map((fact) => fact.dataAsOf.getTime())),
         ).toISOString()
       : null,
     totalsByCurrency,
@@ -302,9 +355,9 @@ export function buildTravelReportResult(input: {
     },
     reconciliation: {
       matchesApprovedProjection: true,
-      sourceRowCount: input.facts.length,
+      sourceRowCount: facts.length,
     },
-    warnings: input.facts.length
+    warnings: facts.length
       ? []
       : ['در محدوده انتخاب‌شده رکوردی در Public Projection وجود ندارد.'],
   };
