@@ -1,4 +1,8 @@
 {
+  "وضعیت اتصال داده‌های داشبورد": "Dashboard data connection status",
+  "بخشی از شاخص‌ها به منبع معتبر یا دسترسی لازم متصل نیستند؛ شاخص‌های موجود از دادهٔ واقعی محاسبه شده‌اند.": "Some metrics lack a verified source or required access; available metrics are calculated from actual data.",
+  "دادهٔ واقعی ماژول‌های ERP؛ بدون تبدیل ارز. شرکت صادرکننده دامنهٔ دادهٔ عملیاتی را تغییر نمی‌دهد.": "Actual ERP module data, without currency conversion. Issuer company context does not change the operational data scope.",
+  "شعبه داشبورد خارج از دسترسی مجاز است.": "The dashboard branch is outside your authorized scope.",
   "کارگزار ترانسفر به‌صورت پیش‌فرض همان کارگزار هتل است؛ انتخاب تورلیدر اختیاری است.": "The transfer supplier defaults to the hotel supplier; selecting a tour leader is optional.",
   "انتخاب کارگزار ترانسفر": "Select transfer supplier",
   "همان کارگزار هتل": "Same as hotel supplier",
