@@ -6725,5 +6725,6 @@
   "version برای ویرایش الزامی است.": "version is required for editing.",
   "تعداد مسافران قرارداد مشخص نیست.": "The contract passenger count is not specified.",
   "مجموع قیمت نفرات با مبلغ کل قرارداد مطابقت ندارد.": "The per-person prices do not match the contract total.",
-  "قیمت ردیف‌های قرارداد قدیمی معتبر نیست.": "The legacy contract pricing rows are invalid."
+  "قیمت ردیف‌های قرارداد قدیمی معتبر نیست.": "The legacy contract pricing rows are invalid.",
+  "جمع قیمت کل مسافران": "Total price of all passengers"
 }
