@@ -113,7 +113,7 @@ export function SalesReceivablesCard({
         <FormField label="جست‌وجوی قرارداد">
           <input
             aria-label="جست‌وجوی قرارداد"
-            placeholder="شماره قرارداد، نام مشتری یا شماره پیگیری پرداخت…"
+            placeholder="شماره قرارداد، نام مشتری، نوتیس یا شماره پیگیری پرداخت…"
             maxLength={160}
             value={draft.search ?? ''}
             onChange={(event) =>
