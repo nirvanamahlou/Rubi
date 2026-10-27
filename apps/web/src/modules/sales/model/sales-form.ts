@@ -220,14 +220,18 @@ export interface SalesFormState {
     cityId?: string;
     additionalStays?: Array<{
       rooms?: Array<
-        Pick<
-          SalesHotelRoomV1,
-          | 'ordinal'
-          | 'roomTypeId'
-          | 'roomTypeNameSnapshot'
-          | 'adults'
-          | 'childAges'
-        >
+        Omit<
+          Pick<
+            SalesHotelRoomV1,
+            | 'ordinal'
+            | 'roomTypeId'
+            | 'roomTypeNameSnapshot'
+            | 'adults'
+            | 'childAges'
+            | 'roomCategory'
+          >,
+          'childAges'
+        > & { childAges: (number | null)[] }
       >;
       hotelId: string;
       hotelNameSnapshot: string;
@@ -1278,7 +1282,8 @@ export function salesHotelValid(state: SalesFormState): boolean {
             room.adults > 20 ||
             room.childAges.length > 20 ||
             room.childAges.some(
-              (age) => !Number.isInteger(age) || age < 0 || age > 14,
+              (age) =>
+                age === null || !Number.isInteger(age) || age < 0 || age > 14,
             ),
         ) ||
         stay.rooms.reduce(
@@ -2109,7 +2114,23 @@ export function salesPayload(
             hotelNameSnapshot: state.hotel.name,
             cityId: state.hotel.cityId || state.destinationId,
             ...(state.hotel.additionalStays?.length
-              ? { additionalStays: state.hotel.additionalStays }
+              ? {
+                  additionalStays: state.hotel.additionalStays.map((stay) => {
+                    const { rooms, ...details } = stay;
+                    return {
+                      ...details,
+                      ...(rooms
+                        ? {
+                            rooms: rooms.map((room) => ({
+                              ...room,
+                              roomCategory: defaultSalesRoomCategory(room),
+                              childAges: room.childAges as number[],
+                            })),
+                          }
+                        : {}),
+                    };
+                  }),
+                }
               : {}),
             checkInDate: state.hotel.checkIn,
             checkOutDate: state.hotel.checkOut,

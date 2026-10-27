@@ -1,10 +1,13 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, expect, it, vi } from 'vitest';
+import type { InputHTMLAttributes } from 'react';
+import type * as FormControls from '@/components/ui/form-controls';
 import { AdditionalHotelStays } from './additional-hotel-stays';
 import {
   emptySalesForm,
   salesHotelValid,
   salesPayload,
+  type SalesFormState,
 } from '../model/sales-form';
 const fixture = vi.hoisted(() => ({
   choices: [] as {
@@ -12,6 +15,37 @@ const fixture = vi.hoisted(() => ({
     options: { id: string }[];
     onChange: (value: string) => void;
   }[],
+  inputs: [] as InputHTMLAttributes<HTMLInputElement>[],
+  ages: [] as { label: string; onChange: (value: number | null) => void }[],
+  categories: [] as { onValueChange: (value: string) => void }[],
+}));
+vi.mock('@/components/ui/form-controls', async (importOriginal) => {
+  const original = await importOriginal<typeof FormControls>();
+  return {
+    ...original,
+    Input: (props: InputHTMLAttributes<HTMLInputElement>) => {
+      fixture.inputs.push(props);
+      return <input {...props} />;
+    },
+  };
+});
+vi.mock('./sales-themed-select', () => ({
+  SalesThemedSelect: (props: {
+    label: string;
+    onValueChange: (value: string) => void;
+  }) => {
+    fixture.categories.push(props);
+    return <span>{props.label}</span>;
+  },
+}));
+vi.mock('./passenger-age-field', () => ({
+  PassengerAgeField: (props: {
+    label: string;
+    onChange: (value: number | null) => void;
+  }) => {
+    fixture.ages.push(props);
+    return <span>{props.label}</span>;
+  },
 }));
 vi.mock('./searchable-reference', () => ({
   SearchableReference: (props: (typeof fixture.choices)[number]) => {
@@ -62,6 +96,7 @@ const state = {
             roomTypeNameSnapshot: 'Suite',
             adults: 2,
             childAges: [4],
+            roomCategory: 'DOUBLE_EXTRA' as const,
           },
         ],
       },
@@ -70,6 +105,65 @@ const state = {
 };
 beforeEach(() => {
   fixture.choices = [];
+  fixture.inputs = [];
+  fixture.ages = [];
+  fixture.categories = [];
+});
+it('edits two independent rooms and preserves child, infant, age and category in the contract payload', () => {
+  let current: SalesFormState = {
+    ...structuredClone(state),
+    hotel: { ...structuredClone(state.hotel), occupancy: 5 },
+  };
+  const patch = (value: Partial<SalesFormState>) => {
+    current = { ...current, ...value };
+  };
+  const render = () => {
+    fixture.inputs = [];
+    fixture.choices = [];
+    fixture.ages = [];
+    fixture.categories = [];
+    renderToStaticMarkup(
+      <AdditionalHotelStays
+        state={current}
+        patch={patch}
+        hotels={hotels}
+        roomTypes={roomTypes}
+      />,
+    );
+  };
+  const setNumber = (index: number, value: string) =>
+    fixture.inputs[index]!.onChange!({ target: { value } } as never);
+  render();
+  setNumber(0, '2');
+  render();
+  fixture.choices[2]!.onChange('room-second');
+  render();
+  setNumber(3, '1');
+  render();
+  fixture.ages[1]!.onChange(1);
+  render();
+  fixture.categories[0]!.onValueChange('DOUBLE_EXTRA');
+  render();
+  const rooms = current.hotel.additionalStays![0]!.rooms!;
+  expect(rooms).toHaveLength(2);
+  expect(rooms[0]).toMatchObject({
+    adults: 2,
+    childAges: [4, 1],
+    roomCategory: 'DOUBLE_EXTRA',
+  });
+  expect(rooms[1]).toMatchObject({
+    adults: 1,
+    childAges: [],
+    roomTypeId: 'room-second',
+  });
+  expect(
+    salesPayload(current).hotelSelection?.additionalStays?.[0]?.rooms,
+  ).toEqual(
+    rooms.map((room) => ({
+      ...room,
+      roomCategory: room.roomCategory ?? 'SINGLE',
+    })),
+  );
 });
 it('selects hotels across cities and only the selected hotel room types', () => {
   const patch = vi.fn();
@@ -86,6 +180,11 @@ it('selects hotels across cities and only the selected hotel room types', () => 
   expect(html).toContain('2099-01-03');
   expect(html).toContain('2099-01-06');
   expect(html).toContain('مجموع مهمانان هتل: 3');
+  expect(html).toContain('تعداد اتاق');
+  expect(html).toContain('دسته‌بندی اتاق');
+  expect(html).toContain('تعداد بزرگسال اتاق');
+  expect(html).toContain('تعداد کودک اتاق');
+  expect(html).toContain('تعداد نوزاد اتاق');
   fixture.choices[0]!.onChange('second');
   expect(patch.mock.calls[0]![0].hotel.additionalStays[0]).toMatchObject({
     cityId: 'city-two',

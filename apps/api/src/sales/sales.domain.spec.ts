@@ -115,9 +115,13 @@ it('keeps composite hotel stays ordered with explicit independent dates and no d
       roomTypeNameSnapshot: 'Single',
       adults: 1,
       childAges: [],
+      roomCategory: 'SINGLE',
     },
   ];
   expect(() => validateSalesContract(input)).not.toThrow();
+  stay.rooms[0]!.roomCategory = 'FAMILY';
+  expect(() => validateSalesContract(input)).toThrow('اتاق');
+  stay.rooms[0]!.roomCategory = 'SINGLE';
   stay.rooms[0]!.adults = 2;
   expect(() => validateSalesContract(input)).toThrow('اتاق');
   stay.rooms[0]!.adults = 1;

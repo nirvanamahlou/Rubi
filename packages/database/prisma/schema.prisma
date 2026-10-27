@@ -4164,6 +4164,7 @@ model SalesContractHotelStayRoom {
   roomTypeId           String                 @map("room_type_id") @db.Uuid
   roomTypeNameSnapshot String                 @map("room_type_name_snapshot") @db.VarChar(240)
   adults               Int
+  roomCategory         String?                @map("room_category") @db.VarChar(16)
   childAges            Json                   @map("child_ages") @db.JsonB
   stay                 SalesContractHotelStay @relation(fields: [stayId], references: [id], onDelete: Cascade)
   roomType             MasterRoomType         @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
