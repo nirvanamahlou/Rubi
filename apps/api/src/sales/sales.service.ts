@@ -1434,6 +1434,11 @@ export class SalesService {
             Object.entries(s.metadata ?? {}).filter(
               ([key]) =>
                 ![
+                  'legacyRowPricesV1',
+                  'passengerPackagePricingVersion',
+                  'contractPackagePricingVersion',
+                  'automaticFlightRoomTotalV1',
+                  'passengerHotelPricesV1',
                   'passengerTotalPricesV1',
                   'passengerDeductionsV1',
                   'passengerFlightPricesV1',

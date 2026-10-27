@@ -22,7 +22,9 @@ it('edits the contract total rather than just the insurance surcharge for aggreg
         titleSnapshot: 'Synthetic surcharge',
         metadata: {
           contractPackagePricingVersion: 1,
-          insuranceAgeSurcharge: true,
+          legacyServicePartiesV2: JSON.stringify({
+            'insurance-extra': { adults: 2, children: 1, infants: 0 },
+          }),
         },
         pricing: [
           {
@@ -67,12 +69,16 @@ it('edits the contract total rather than just the insurance surcharge for aggreg
       onSaved={vi.fn()}
     />,
   );
-  expect(html).toContain('value="1100"');
-  expect(html).toContain('value="45"');
-  expect(html).toContain('Family');
+  expect(html).toContain('value="1,100"');
+  expect(html).not.toContain('value="45"');
+  expect(html).toContain('بزرگسال 1');
+  expect(html).toContain('کودک 1');
+  expect(html).toContain('رده سنی');
+  expect(html).not.toContain('قیمت اتاق');
+  expect(html).not.toContain('ارز اتاق');
   expect(html).not.toContain('value="100"');
   expect(html).toContain('مبلغ کل قرارداد');
-  expect(html).toContain('﷼');
+  expect(html).toContain('قیمت ریالی');
 });
 
 it('shows passenger price, discount and commission together without old room currency controls', () => {

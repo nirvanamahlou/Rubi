@@ -550,3 +550,5 @@ export * from './owner-actions';
 
 export * from './legacy-service-parties';
 export * from './passenger-completion';
+
+export * from './legacy-row-prices';

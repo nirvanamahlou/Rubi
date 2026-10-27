@@ -393,3 +393,69 @@ it.each([true, false])(
     expect(row.payments[0]!.status).toBe('FINANCE_CONFIRMED');
   },
 );
+
+it('keeps execution, capacity and receipts intact when anonymous total pricing is distributed into age rows', async () => {
+  const { row, repo, service, tickets } = setup();
+  const metadata = {
+    contractPackagePricingVersion: 1,
+    legacyServicePartiesV2: JSON.stringify({
+      other: { adults: 1, children: 1, infants: 0 },
+    }),
+  };
+  row.passengers.length = 0;
+  Object.assign(row.services[0]!, { metadata });
+  const next: SalesContractAmendmentV1 = {
+    ...input,
+    passengers: [],
+    passengerCategories: {},
+    services: [
+      {
+        ...input.services[0]!,
+        metadata: {
+          ...metadata,
+          legacyRowPricesV1: JSON.stringify({
+            gross: {
+              'legacy-ADT-1': [{ currencyCode: 'USD', amount: '80' }],
+              'legacy-CHD-1': [{ currencyCode: 'USD', amount: '20' }],
+            },
+            deductions: {},
+          }),
+        },
+      },
+    ],
+  };
+  await service.update(id, next, actor, undefined, {});
+  expect(
+    (repo.updateDraft.mock.calls[0]![5] as { snapshot: unknown }).snapshot,
+  ).toBeUndefined();
+  expect(tickets.amend).not.toHaveBeenCalled();
+  expect(
+    (repo.updateDraft.mock.calls[0]![1] as SalesContractAmendmentV1).passengers,
+  ).toEqual([]);
+  expect(row.payments[0]!.status).toBe('FINANCE_CONFIRMED');
+});
+it('migrates a named total into passenger pricing without republishing operational execution', async () => {
+  const { row, repo, service } = setup();
+  Object.assign(row.services[0]!, {
+    metadata: { contractPackagePricingVersion: 1 },
+  });
+  const next: SalesContractAmendmentV1 = {
+    ...input,
+    services: [
+      {
+        ...input.services[0]!,
+        metadata: {
+          passengerPackagePricingVersion: 1,
+          passengerTotalPricesV1: JSON.stringify({
+            [person]: [{ currencyCode: 'USD', amount: '100' }],
+          }),
+        },
+      },
+    ],
+  };
+  await service.update(id, next, actor, undefined, next.passengerCategories);
+  expect(
+    (repo.updateDraft.mock.calls[0]![5] as { snapshot: unknown }).snapshot,
+  ).toBeUndefined();
+  expect(row.payments[0]!.status).toBe('FINANCE_CONFIRMED');
+});

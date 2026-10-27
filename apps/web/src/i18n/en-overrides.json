@@ -4500,5 +4500,8 @@
   "مشخصات هویتی و پاسپورت همه مسافران را کامل کنید.": "Complete identity and passport details for every passenger.",
   "نسخه یا فهرست مسافران قرارداد تغییر کرده است.": "The contract version or passenger list has changed.",
   "نفر باشد.": "passengers.",
-  "قدیمی‌ترین قرارداد": "Oldest contract first"
+  "قدیمی‌ترین قرارداد": "Oldest contract first",
+  "تعداد مسافران قرارداد مشخص نیست.": "The contract passenger count is not specified.",
+  "مجموع قیمت نفرات با مبلغ کل قرارداد مطابقت ندارد.": "The per-person prices do not match the contract total.",
+  "قیمت ردیف‌های قرارداد قدیمی معتبر نیست.": "The legacy contract pricing rows are invalid."
 }

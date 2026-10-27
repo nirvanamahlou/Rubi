@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
 import {
-  readPassengerDeductions,
   type SalesContractAmendmentV1,
   type SalesMoney,
   type PassengerDeductions,
@@ -13,6 +12,8 @@ import {
 } from '@/modules/sales/components/sales-currency-select';
 import {
   amendmentPassengerGross,
+  amendmentPricingRows,
+  amendmentPricingDeductions,
   applyAmendmentPassengerPrices,
 } from './amendment-passenger-prices';
 
@@ -32,7 +33,7 @@ export function AmendmentPassengerPriceTable({
     {},
   );
   const [deductions, setDeductions] = useState(() =>
-    readPassengerDeductions(draft.services, draft.passengers),
+    amendmentPricingDeductions(draft),
   );
   const change = (
     prices: Record<string, SalesMoney[]>,
@@ -63,17 +64,22 @@ export function AmendmentPassengerPriceTable({
       <table className="w-full text-sm">
         <thead className="bg-muted">
           <tr>
-            {['مسافر', 'قیمت ریالی', 'قیمت ارزی', 'تخفیف', 'کمیسیون'].map(
-              (t) => (
-                <th key={t} className="p-2 text-start">
-                  {t}
-                </th>
-              ),
-            )}
+            {[
+              'مسافر',
+              'رده سنی',
+              'قیمت ریالی',
+              'قیمت ارزی',
+              'تخفیف',
+              'کمیسیون',
+            ].map((t) => (
+              <th key={t} className="p-2 text-start">
+                {t}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {draft.passengers.map((p) => {
+          {amendmentPricingRows(draft).map((p) => {
             const rows = gross[p.customerId] ?? [],
               rial = rows.find((v) => v.currencyCode === 'IRR');
             const foreign = rows.find((v) => v.currencyCode !== 'IRR');
@@ -86,6 +92,13 @@ export function AmendmentPassengerPriceTable({
             return (
               <tr key={p.customerId} className="border-t">
                 <th className="p-2 text-start">{p.displayNameSnapshot}</th>
+                <td className="p-2">
+                  {p.ageCategory
+                    ? ({ ADT: 'بزرگسال', CHD: 'کودک', INF: 'نوزاد' } as const)[
+                        p.ageCategory
+                      ]
+                    : '—'}
+                </td>
                 <td className="min-w-32 p-2">
                   <MoneyInput
                     aria-label={'قیمت ریالی ' + p.displayNameSnapshot}

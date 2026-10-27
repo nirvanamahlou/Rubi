@@ -1,5 +1,8 @@
 import { expect, it } from 'vitest';
 import {
+  salesChequeComponents,
+  SALES_CHEQUE_FEE,
+  type SalesPaymentTerms,
   PASSENGER_TOTAL_PRICES,
   PASSENGER_DEDUCTIONS,
   validatePassengerTotalPricing,
@@ -7,6 +10,8 @@ import {
 } from '@nora/contracts';
 import {
   amendmentPassengerGross,
+  prepareAmendmentPersonPrices,
+  amendmentPricingRows,
   applyAmendmentPassengerPrices,
 } from './amendment-passenger-prices';
 const gross = {
@@ -113,4 +118,183 @@ it('rejects excessive or cross-currency deductions and incomplete passengers', (
   expect(() =>
     applyAmendmentPassengerPrices(draft, { ...gross, b: [] }, {}),
   ).toThrow('هر مسافر');
+});
+
+it('opens total-only named contracts with all currencies on the first passenger and zeros on others', () => {
+  const total = {
+    ...draft,
+    services: [
+      {
+        ...draft.services[0]!,
+        metadata: { contractPackagePricingVersion: 1 },
+        pricing: undefined,
+      },
+    ],
+    passengers: draft.passengers.map((p) => ({
+      ...p,
+      agreedPrices: undefined,
+    })),
+    priceComponents: [
+      {
+        type: 'BASE' as const,
+        title: 'Total',
+        amount: '2706300000',
+        currencyCode: 'IRR',
+      },
+      {
+        type: 'BASE' as const,
+        title: 'Total',
+        amount: '350',
+        currencyCode: 'USD',
+      },
+    ],
+  };
+  const next = prepareAmendmentPersonPrices(total);
+  expect(next.passengers[0]!.agreedPrices).toEqual([
+    { currencyCode: 'IRR', amount: '2706300000' },
+    { currencyCode: 'USD', amount: '350' },
+  ]);
+  expect(next.passengers[1]!.agreedPrices).toEqual([
+    { currencyCode: 'IRR', amount: '0' },
+    { currencyCode: 'USD', amount: '0' },
+  ]);
+  expect(next.services[0]!.metadata?.passengerPackagePricingVersion).toBe(1);
+  expect(
+    next.services[0]!.metadata?.contractPackagePricingVersion,
+  ).toBeUndefined();
+  expect(next.services[0]!.pricing).toBeUndefined();
+  expect(next.priceComponents.map((p) => p.amount)).toEqual([
+    '2706300000',
+    '350',
+  ]);
+});
+it('redistributes anonymous legacy totals by age without creating passengers or changing capacity counts', () => {
+  const services = [
+    {
+      clientKey: 'hotel',
+      kind: 'HOTEL' as const,
+      titleSnapshot: 'Hotel',
+      metadata: {
+        contractPackagePricingVersion: 1,
+        legacyServicePartiesV2: JSON.stringify({
+          hotel: { adults: 2, children: 1, infants: 1 },
+        }),
+      },
+    },
+  ];
+  const old = {
+    ...draft,
+    services,
+    passengers: [],
+    passengerCategories: {},
+    priceComponents: [
+      {
+        type: 'BASE' as const,
+        title: 'Total',
+        amount: '400',
+        currencyCode: 'USD',
+      },
+    ],
+  };
+  const rows = amendmentPricingRows(old);
+  expect(rows.map((p) => p.ageCategory)).toEqual(['ADT', 'ADT', 'CHD', 'INF']);
+  const next = prepareAmendmentPersonPrices(old);
+  expect(next.passengers).toEqual([]);
+  const gross = amendmentPassengerGross(next);
+  expect(gross['legacy-ADT-1']![0]!.amount).toBe('400');
+  expect(gross['legacy-INF-1']![0]!.amount).toBe('0');
+  const edited = applyAmendmentPassengerPrices(
+    next,
+    {
+      ...gross,
+      'legacy-ADT-1': [{ currencyCode: 'USD', amount: '200' }],
+      'legacy-ADT-2': [{ currencyCode: 'USD', amount: '150' }],
+      'legacy-CHD-1': [{ currencyCode: 'USD', amount: '50' }],
+    },
+    {},
+  );
+  expect(edited.priceComponents[0]!.amount).toBe('400');
+  expect(edited.passengers).toEqual([]);
+  expect(edited.services[0]!.metadata?.legacyServicePartiesV2).toBe(
+    services[0]!.metadata.legacyServicePartiesV2,
+  );
+  expect(amendmentPassengerGross(JSON.parse(JSON.stringify(edited)))).toEqual({
+    ...gross,
+    'legacy-ADT-1': [{ currencyCode: 'USD', amount: '200' }],
+    'legacy-ADT-2': [{ currencyCode: 'USD', amount: '150' }],
+    'legacy-CHD-1': [{ currencyCode: 'USD', amount: '50' }],
+  });
+});
+
+it('keeps cheque fees separate and applies insurance extras only once while migrating a total', () => {
+  const terms: SalesPaymentTerms = {
+    version: 1,
+    mode: 'CHECK',
+    plans: [
+      {
+        currencyCode: 'IRR',
+        downPayment: '30000000',
+        months: 3,
+        firstDueDate: '2099-02-01',
+      },
+    ],
+  };
+  const components = salesChequeComponents(
+    [
+      {
+        type: 'BASE',
+        title: 'Total',
+        currencyCode: 'IRR',
+        amount: '100000000',
+      },
+    ],
+    terms,
+  );
+  const old = {
+    ...draft,
+    paymentTerms: terms,
+    priceComponents: components,
+    passengers: draft.passengers.map((p) => ({
+      ...p,
+      agreedPrices: undefined,
+    })),
+    services: [
+      {
+        clientKey: 'insurance',
+        kind: 'INSURANCE' as const,
+        titleSnapshot: 'Insurance',
+        metadata: { contractPackagePricingVersion: 1 },
+      },
+      {
+        clientKey: 'extra',
+        kind: 'OTHER' as const,
+        titleSnapshot: 'Extra',
+        metadata: {
+          contractPackagePricingVersion: 1,
+          insuranceAgeSurcharge: true,
+          passengerId: 'a',
+          extraToman: '100',
+        },
+        pricing: [
+          {
+            version: 1 as const,
+            currencyCode: 'IRR',
+            daySale: { basis: 'TOTAL' as const, amount: '1000' },
+            agreed: { basis: 'TOTAL' as const, amount: '1000' },
+          },
+        ],
+      },
+    ],
+  };
+  const next = prepareAmendmentPersonPrices(old);
+  expect(next.passengers[0]!.agreedPrices).toEqual([
+    { currencyCode: 'IRR', amount: '100000000' },
+  ]);
+  expect(next.services[1]!.pricing).toEqual(old.services[1]!.pricing);
+  expect(
+    next.priceComponents.find((p) => p.title === SALES_CHEQUE_FEE)?.amount,
+  ).toBe(components.find((p) => p.title === SALES_CHEQUE_FEE)?.amount);
+  expect(
+    next.priceComponents.filter((p) => p.title !== SALES_CHEQUE_FEE)[0]!.amount,
+  ).toBe('100000000');
 });
