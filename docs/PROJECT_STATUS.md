@@ -1,6 +1,9 @@
 ## SALES-PAYMENT-ACCOUNT-1027 — PC-A
 
 The Sales Add payment dialog now loads active contract-branch receipt accounts and requires an explicit choice matching the selected currency; currency changes clear incompatible selections. Saved payments retain the canonical destination title and FK independently of Finance approval. Finance inbox prefers the declared account when still eligible; inactive/unavailable choices do not silently fall back to another account. Existing older clients may omit the additive field; permissions, CAS/replay, exact amounts and receipt-upload continuation remain. Additive nullable migration20261027160000; no production or runtime change. Focused account/authorization/persistence/UI checks and all exact-head hosted gates precede owner-authorized develop merge.
+## CONTRACT-PAYMENT-RECEIPT-1027 — PC-A
+
+The add-payment form accepts an optional PDF/JPG/PNG before submission and attaches it to the exact newly saved payment. Existing and later receipts can be listed/uploaded/downloaded by authorized contract readers through a bounded Sales route, without general Documents or payment-creation grants. Sales validates contract/payment membership; Documents retains fixed receipt references, branch ownership, file validation/scanning and audit. Receipt-only history omits payment amounts for readers without existing payment-history permission. Failed uploads preserve the payment/file for retry; uncertain upload outcomes require review rather than blind retry. Web16 and API14 focused service/HTTP tests plus3 English coverage checks pass. No schema/migration/dependency or production deployment; final integrated-head quality/test/build/database checks gate owner-authorized develop merge.
 
 ## VOUCHER-TRANSFER-OVERRIDES-1027 — PC-A
 

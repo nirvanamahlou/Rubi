@@ -1,4 +1,11 @@
 'use client';
+import {
+  paymentReceiptsApi,
+  type PaymentReceiptEntry,
+} from '../api/payment-receipts';
+import { validatePaymentEvidenceFile } from '../model/payment-evidence';
+import { DocumentsApiError } from '@/modules/documents/api/client';
+
 import { canSelfServeSalesContract } from '@nora/contracts';
 import { useAccessActor } from '@/modules/iam/access-context';
 import { currencySymbol } from '@/lib/currency-symbol';
@@ -238,6 +245,11 @@ export function ContractPayments({
   const [receiptPaymentId, setReceiptPaymentId] = useState('');
   const [adding, setAdding] = useState(false);
   const [savedPaymentId, setSavedPaymentId] = useState('');
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptUnknown, setReceiptUnknown] = useState(false);
+  const [receiptEntries, setReceiptEntries] = useState<PaymentReceiptEntry[]>(
+    [],
+  );
   const attempt = useRef({ fingerprint: '', key: '' });
   useEffect(() => {
     if (!adding) return;
@@ -302,6 +314,14 @@ export function ContractPayments({
     );
   useEffect(() => {
     let active = true;
+    void paymentReceiptsApi
+      .entries(id)
+      .then((r) => {
+        if (active) setReceiptEntries(r.data);
+      })
+      .catch(() => {
+        if (active) setError('دریافت مدارک ناموفق بود.');
+      });
     void salesApi
       .detail(id)
       .then((response) => {
@@ -360,7 +380,36 @@ export function ContractPayments({
       const added = response.data.payments.find(
         (item) => !previousIds.has(item.id),
       );
-      if (added) setSavedPaymentId(added.id);
+      if (added) {
+        setSavedPaymentId(added.id);
+        if (receiptFile) {
+          let submitted = false;
+          try {
+            const options = await paymentReceiptsApi.options(id, added.id);
+            validatePaymentEvidenceFile(options.data, receiptFile);
+            const form = new FormData();
+            form.set('file', receiptFile);
+            submitted = true;
+            await paymentReceiptsApi.upload(id, added.id, form);
+            setReceiptFile(null);
+          } catch (reason) {
+            setError(
+              reason instanceof Error
+                ? reason.message
+                : 'عملیات مدرک ناموفق بود.',
+            );
+            setReceiptUnknown(
+              submitted &&
+                !(
+                  reason instanceof DocumentsApiError &&
+                  reason.status >= 400 &&
+                  reason.status < 500 &&
+                  reason.status !== 408
+                ),
+            );
+          }
+        }
+      }
       onSaved();
     } catch (reason) {
       setError(
@@ -494,6 +543,20 @@ export function ContractPayments({
             ) : null}
           </div>
         ))}
+        {contract &&
+          receiptEntries
+            .filter(
+              (entry) => !contract.payments.some((p) => p.id === entry.id),
+            )
+            .map((entry) => (
+              <div key={entry.id} className="rounded-xl border p-3">
+                <p>
+                  شماره پیگیری:{' '}
+                  <bdi>{entry.paymentReference || 'ثبت نشده'}</bdi>
+                </p>
+                <PaymentDocuments contract={contract} paymentId={entry.id} />
+              </div>
+            ))}
         <p className="text-sm text-muted-foreground">
           افزودن ردیف پرداخت به‌تنهایی مانده را کم نمی‌کند؛ تأیید مالی لازم است.
         </p>
@@ -506,6 +569,8 @@ export function ContractPayments({
               setAccountsLoading(true);
               setAccountsError('');
               setSavedPaymentId('');
+              setReceiptFile(null);
+              setReceiptUnknown(false);
               setPayment({
                 ...empty,
                 currencyCode: defaultSalesCurrency(currencies),
@@ -712,10 +777,43 @@ export function ContractPayments({
                     }
                   />
                 )}
+                <div className="md:col-span-2">
+                  <FormField label="انتخاب فایل مدرک پرداخت">
+                    <Input
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/png"
+                      aria-label="انتخاب فایل مدرک پرداخت"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        if (
+                          file &&
+                          (![
+                            'application/pdf',
+                            'image/jpeg',
+                            'image/png',
+                          ].includes(file.type) ||
+                            file.size <= 0 ||
+                            file.size > 25 * 1024 * 1024)
+                        ) {
+                          event.target.value = '';
+                          setReceiptFile(null);
+                          setError(
+                            'مدرک باید PDF، JPG یا PNG و در محدودهٔ حجم مجاز باشد.',
+                          );
+                        } else {
+                          setReceiptFile(file);
+                          setError('');
+                        }
+                      }}
+                    />
+                  </FormField>
+                </div>
               </fieldset>
               <div className="md:col-span-2">
-                {savedPaymentId && contract ? (
+                {savedPaymentId && contract && !busy ? (
                   <PaymentDocuments
+                    initialFile={receiptFile}
+                    initialUnknown={receiptUnknown}
                     key={savedPaymentId}
                     contract={contract}
                     paymentId={savedPaymentId}
@@ -723,8 +821,7 @@ export function ContractPayments({
                   />
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    پس از ثبت پرداخت، بارگذاری تصویر یا PDF رسید زیر شماره
-                    پیگیری فعال می‌شود.
+                    رسید همین پرداخت را پیوست کنید.
                   </p>
                 )}
               </div>
@@ -737,7 +834,7 @@ export function ContractPayments({
                   loading={busy}
                   disabled={!contract || !validCurrency || !validAccount}
                 >
-                  ثبت پرداخت و ادامه برای رسید
+                  ثبت پرداخت
                 </Button>
               ) : (
                 <Button

@@ -1,3 +1,6 @@
+vi.mock('../api/payment-receipts', () => ({
+  paymentReceiptsApi: { entries: vi.fn(async () => ({ data: [] })) },
+}));
 import { beforeEach, expect, it, vi } from 'vitest';
 import type { ReactElement, ReactNode } from 'react';
 import type * as ReactModule from 'react';
