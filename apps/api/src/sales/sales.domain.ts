@@ -203,8 +203,8 @@ export function validateSalesContract(
       ) ||
       !buyer.name.trim() ||
       buyer.name.length > 200 ||
-      !/^\+?[0-9]{10,15}$/.test(buyer.phone.trim()) ||
-      !buyer.address.trim() ||
+      (buyer.phone.trim() !== '' &&
+        !/^\+?[0-9]{10,15}$/.test(buyer.phone.trim())) ||
       buyer.address.length > 1000 ||
       (buyer.postalCode.trim() !== '' &&
         !/^[0-9]{10}$/.test(buyer.postalCode.trim())) ||

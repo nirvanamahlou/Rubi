@@ -329,7 +329,7 @@ describe('Sales contract domain', () => {
       { landline: 'bad' },
       { postalCode: '123' },
       { name: ' ' },
-      { address: ' ' },
+      { address: 'a'.repeat(1001) },
     ])
       expect(() =>
         validateSalesContract({
@@ -337,6 +337,19 @@ describe('Sales contract domain', () => {
           buyerContact: { ...buyerContact, ...change },
         }),
       ).toThrow('طرف حساب');
+    for (const blank of ['', '   '])
+      expect(() =>
+        validateSalesContract({
+          ...draft,
+          buyerContact: {
+            ...buyerContact,
+            phone: blank,
+            address: blank,
+            postalCode: blank,
+            landline: blank,
+          },
+        }),
+      ).not.toThrow();
     expect(() =>
       validateSalesContract({
         ...draft,

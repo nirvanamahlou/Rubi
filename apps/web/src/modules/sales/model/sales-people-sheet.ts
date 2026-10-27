@@ -409,10 +409,9 @@ export function validateSalesPeopleDraft(
   if (draft.buyerContact) {
     const buyer = draft.buyerContact;
     if (
-      !buyer.name.trim() ||
       buyer.name.length > 200 ||
-      !/^\+?[0-9]{10,15}$/.test(buyer.phone.trim()) ||
-      !buyer.address.trim() ||
+      (buyer.phone.trim() !== '' &&
+        !/^\+?[0-9]{10,15}$/.test(buyer.phone.trim())) ||
       buyer.address.length > 1000 ||
       (buyer.postalCode.trim() !== '' &&
         !/^[0-9]{10}$/.test(buyer.postalCode.trim())) ||
@@ -421,7 +420,7 @@ export function validateSalesPeopleDraft(
         !/^\+?[0-9]+$/.test(buyer.landline.trim()))
     )
       throw new Error(
-        'نام، شماره تماس و آدرس مشتری را کامل کنید؛ تلفن ثابت اختیاری است و کد پستی در صورت ورود باید ۱۰ رقم باشد.',
+        'اطلاعات واردشده مشتری معتبر نیست؛ شماره تماس، آدرس، تلفن ثابت و کد پستی اختیاری‌اند؛ کد پستی در صورت ورود باید ۱۰ رقم باشد.',
       );
   }
   if (draft.mode === 'organization' && !draft.organization)
@@ -910,22 +909,25 @@ export async function saveSalesPeopleDraft(
     draft.mode === 'organization'
       ? draft.organization!
       : peopleRow(current, draft.mode === 'person' ? 'primary' : 'p0').person!;
+  const buyer = current.buyerContact;
+  const buyerContact = buyer
+    ? {
+        name: buyer.name.trim() || customer.displayName,
+        phone: buyer.phone.trim(),
+        address: buyer.address.trim(),
+        postalCode: buyer.postalCode.trim(),
+        ...(buyer.landline !== undefined
+          ? { landline: buyer.landline.trim() }
+          : {}),
+      }
+    : undefined;
   return {
-    draft: current,
+    draft: buyerContact ? { ...current, buyerContact } : current,
     patch: {
       passengers,
       customerId: customer.id,
-      customerName: draft.buyerContact?.name.trim() ?? customer.displayName,
-      ...(draft.buyerContact
-        ? {
-            buyerContact: Object.fromEntries(
-              Object.entries(draft.buyerContact).map(([key, value]) => [
-                key,
-                value.trim(),
-              ]),
-            ) as SalesBuyerContactV1,
-          }
-        : {}),
+      customerName: buyerContact?.name || customer.displayName,
+      ...(buyerContact ? { buyerContact } : {}),
       customerKind:
         draft.mode === 'organization'
           ? ('organization' as const)

@@ -1,5 +1,6 @@
 {
   "تغییر روز": "Change day",
+  "اطلاعات واردشده مشتری معتبر نیست؛ شماره تماس، آدرس، تلفن ثابت و کد پستی اختیاری‌اند؛ کد پستی در صورت ورود باید ۱۰ رقم باشد.": "The supplied customer details are invalid. Phone, address, landline and postal code are optional; a supplied postal code must contain 10 digits.",
   "روز جدید": "New weekday",
   "روز جدید معتبر نیست.": "The new weekday is invalid.",
   "روز جدید را متفاوت از روز فعلی انتخاب کنید.": "Choose a different weekday.",
