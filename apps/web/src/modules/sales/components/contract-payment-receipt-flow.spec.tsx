@@ -57,6 +57,17 @@ vi.mock('../api/client', () => ({
     detail: h.detail,
     addPayment: h.add,
     listReferences: vi.fn(async () => ({ data: [] })),
+    paymentAccounts: vi.fn(async () => ({
+      data: [
+        {
+          id: 'account',
+          title: 'Company',
+          currencyCode: 'IRR',
+          kind: 'BANK',
+          maskedIdentifier: null,
+        },
+      ],
+    })),
   },
 }));
 vi.mock('../api/payment-currencies', () => ({
@@ -129,6 +140,11 @@ async function ready() {
   const dialog = render().find((p) => p.open === false && p.onOpenChange)!;
   (dialog.onOpenChange as (v: boolean) => void)(true);
   render();
+  await vi.waitFor(() =>
+    expect(render().some((p) => Array.isArray(p.accounts))).toBe(true),
+  );
+  const account = render().find((p) => Array.isArray(p.accounts))!;
+  (account.onChange as (id: string) => void)('account');
   const amount = field('مبلغ').children as {
     props: { onValueChange: (v: string) => void };
   };

@@ -1,3 +1,7 @@
+## Sales-declared receipt destination — 2026-10-27
+
+SalesContractPaymentEntry has nullable destinationAccountId (real restrictive FK to FinanceSettlementAccount) and destinationAccountTitle (canonical title at entry). Migration20261027160000 is additive and leaves existing payments NULL. Finance owns the public masked choice and active/branch/currency validation boundary; Sales validates atomically before payment insertion. This is the declared destination only, independent of financeReceiptAccountId and receipt approval. No balances, journal, receipt allocation or release changes until ordinary Finance approval. New optional API fields remain compatible with older clients; apply migration/API before Web and retain nullable columns on rollback.
+
 ## Additional hotel room category — 2026-10-27
 
 SalesContractHotelStayRoom.roomCategory is nullable varchar16 with the same SINGLE, DOUBLE, DOUBLE_EXTRA, TRIPLE and FAMILY values as the primary hotel room category. The additive migration leaves legacy records NULL; no historic category is inferred or backfilled. Sales accepts an optional compatible roomCategory in each additional-stay room and preserves previously saved categories when an older client omits them for the same room identity and compatible composition. Apply migration before the new API; retain the column on rollback. Child ages remain the existing JSON array (ages 0–1 represent infants), with draft-only unknown child ages blocked before submission. No price, hotel identity, existing contract or reservation workflow is rewritten.

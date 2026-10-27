@@ -18,6 +18,7 @@ import type {
   SalesContractDetail,
   SalesPaymentInput,
   SalesPaymentMethod,
+  SalesPaymentAccountV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
@@ -46,6 +47,46 @@ const empty: SalesPaymentInput = {
   method: 'BANK_TRANSFER',
   dueAt: '',
 };
+export function ContractPaymentAccountSelect({
+  accounts,
+  currencyCode,
+  value,
+  onChange,
+}: {
+  accounts: readonly SalesPaymentAccountV1[];
+  currencyCode: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const eligible = accounts.filter(
+    (account) => account.currencyCode === currencyCode,
+  );
+  return (
+    <FormField label="حساب مقصد پرداخت" required>
+      <SalesThemedSelect
+        label="حساب مقصد پرداخت"
+        required
+        value={value}
+        disabled={!eligible.length}
+        onValueChange={onChange}
+        options={[
+          { value: '', label: 'انتخاب حساب مقصد' },
+          ...eligible.map((account) => ({
+            value: account.id,
+            label: [account.title, account.maskedIdentifier]
+              .filter(Boolean)
+              .join(' · '),
+          })),
+        ]}
+      />
+      {!eligible.length ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          حساب فعالی برای ارز پرداخت در این شعبه موجود نیست.
+        </p>
+      ) : null}
+    </FormField>
+  );
+}
 export function ContractPaymentCurrencySelect({
   currencies,
   value,
@@ -187,6 +228,12 @@ export function ContractPayments({
     actor && contract && canSelfServeSalesContract(actor, contract),
   );
   const [payment, setPayment] = useState(empty);
+  const [accounts, setAccounts] = useState<readonly SalesPaymentAccountV1[]>(
+    [],
+  );
+  const [accountsLoading, setAccountsLoading] = useState(true);
+  const [accountsError, setAccountsError] = useState('');
+  const [accountsRetry, setAccountsRetry] = useState(0);
   const [banks, setBanks] = useState<readonly MasterDataRecord[]>([]);
   const [currencies, setCurrencies] = useState<readonly MasterDataRecord[]>([]);
   const [currencyLoading, setCurrencyLoading] = useState(true);
@@ -204,6 +251,35 @@ export function ContractPayments({
     [],
   );
   const attempt = useRef({ fingerprint: '', key: '' });
+  useEffect(() => {
+    if (!adding) return;
+    let active = true;
+    void salesApi
+      .paymentAccounts(id)
+      .then((response) => {
+        if (active) setAccounts(response.data);
+      })
+      .catch(() => {
+        if (active)
+          setAccountsError(
+            'دریافت حساب‌های مقصد ناموفق بود؛ دوباره تلاش کنید.',
+          );
+      })
+      .finally(() => {
+        if (active) setAccountsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id, adding, accountsRetry]);
+  const validAccount =
+    !accountsLoading &&
+    !accountsError &&
+    accounts.some(
+      (account) =>
+        account.id === payment.destinationAccountId &&
+        account.currencyCode === payment.currencyCode,
+    );
   useEffect(() => {
     let active = true;
     void loadPaymentCurrencies()
@@ -281,6 +357,7 @@ export function ContractPayments({
     try {
       if (!validCurrency)
         throw new Error('ارز پرداخت را از فهرست ارزهای فعال انتخاب کنید.');
+      if (!validAccount) throw new Error('حساب مقصد پرداخت را انتخاب کنید.');
       validateSalesCurrencySelection(
         { priceComponents: [], payments: [payment] },
         currencies,
@@ -433,6 +510,9 @@ export function ContractPayments({
             <p>
               شماره پیگیری: <bdi>{item.paymentReference || 'ثبت نشده'}</bdi>
             </p>
+            {item.destinationAccountTitle ? (
+              <p>حساب مقصد پرداخت: {item.destinationAccountTitle}</p>
+            ) : null}
             <p>
               سررسید: {new Date(item.dueAt).toLocaleDateString('fa-IR')}
               {item.check ? ` · تاریخ چک: ${item.check.dueDate}` : ''}
@@ -486,6 +566,8 @@ export function ContractPayments({
             if (busy) return;
             setAdding(open);
             if (open) {
+              setAccountsLoading(true);
+              setAccountsError('');
               setSavedPaymentId('');
               setReceiptFile(null);
               setReceiptUnknown(false);
@@ -554,7 +636,11 @@ export function ContractPayments({
                       currencies={currencies}
                       value={payment.currencyCode}
                       onChange={(currencyCode) =>
-                        setPayment({ ...payment, currencyCode })
+                        setPayment({
+                          ...payment,
+                          currencyCode,
+                          destinationAccountId: null,
+                        })
                       }
                     />
                   )}
@@ -664,6 +750,33 @@ export function ContractPayments({
                     }
                   />
                 </FormField>
+                {accountsLoading ? (
+                  <p role="status">در حال دریافت حساب‌های مقصد…</p>
+                ) : accountsError ? (
+                  <div>
+                    <Alert tone="error" title={accountsError} />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setAccountsLoading(true);
+                        setAccountsError('');
+                        setAccountsRetry((value) => value + 1);
+                      }}
+                    >
+                      تلاش مجدد
+                    </Button>
+                  </div>
+                ) : (
+                  <ContractPaymentAccountSelect
+                    accounts={accounts}
+                    currencyCode={payment.currencyCode}
+                    value={payment.destinationAccountId ?? ''}
+                    onChange={(destinationAccountId) =>
+                      setPayment({ ...payment, destinationAccountId })
+                    }
+                  />
+                )}
                 <div className="md:col-span-2">
                   <FormField label="انتخاب فایل مدرک پرداخت">
                     <Input
@@ -719,7 +832,7 @@ export function ContractPayments({
                     : { permission: 'sales.payments.create' })}
                   type="submit"
                   loading={busy}
-                  disabled={!contract || !validCurrency}
+                  disabled={!contract || !validCurrency || !validAccount}
                 >
                   ثبت پرداخت
                 </Button>
