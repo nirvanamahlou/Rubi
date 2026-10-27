@@ -489,7 +489,7 @@ export interface ReservationTableFlagV1 {
 }
 export interface ReservationTableSummaryV1 {
   /** Current canonical contract names, including completed historical passenger slots. */
-  passengerNames?: readonly string[];
+  passengerNames?: readonly string[] | undefined;
   contractPartyName?: string;
   createdAt: string;
   contractVersion: number;
