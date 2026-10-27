@@ -33,6 +33,11 @@ import {
   changeAmendmentMembership,
   assertAmendmentMembershipPricing,
 } from './amendment-membership';
+const accommodation = {
+  ADT: 'DBL',
+  CHD: 'CHILD_WITH_BED',
+  INF: 'INFANT',
+} as const;
 
 export function AmendmentPassengerMembership({
   contractId,
@@ -163,12 +168,12 @@ export function AmendmentPassengerMembership({
             birthDate: selected.values.birthDate,
             ageCategory: category,
             serviceClientKeys: services,
-            accommodationKind:
-              category === 'INF'
-                ? 'INFANT'
-                : category === 'CHD'
-                  ? 'CHILD_WITH_BED'
-                  : 'DBL',
+            ...(draft.hotelSelection &&
+            services.includes(draft.hotelSelection.serviceClientKey)
+              ? {
+                  accommodationKind: accommodation[category],
+                }
+              : {}),
           },
           category,
           prices: [{ amount, currencyCode: currency }],
