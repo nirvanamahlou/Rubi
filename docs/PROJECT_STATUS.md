@@ -7602,3 +7602,9 @@ User-authorized call form minimize icon and persistent left-edge restore impleme
 ## REQUEST-MANAGER-FIELDS-1025 — PC-C
 Existing request title, execution owner, status and priority are protected by a public IAM same-unit manager capability, checked against persisted values inside the workflow transaction. Ordinary experts retain reason/result edits under existing access. Web fails closed for missing capability and places the required reason star inline. Configured global management accounts retain existing authority. No schema/dependency change; 59 PostgreSQL, 12 IAM and 5 Web tests, lint and API types/build pass. Runtime and browser evidence: tasks/REQUEST-MANAGER-FIELDS-1025.md.
 REQUEST-MANAGER-FIELDS-1025 final: full Web types/build65 pages and browser acceptance passed; active onlocalhost3000/4000.76 targeted tests pass; source reservations released on push.
+
+## CALL-DIRECTION-RUNTIME-1027 — PC-C
+
+Absent localhost call direction caused by serving a later local manager/dock build without merged PR1130. Integrating approved badges into the same local feature base, building separately and replacing only Web3000 after verification. Existing API/data and rollback build retained. See tasks/CALL-DIRECTION-RUNTIME-1027.md.
+
+CALL-DIRECTION-RUNTIME-1027 acceptance: Web3000 now serves verified build bvsYyOA5HIczkLpjnZwOJ from the private C temporary build. Browser observed both direction labels on20 rows; screenshot and runtime receipt remain outside Git.6 form tests, scoped lint, complete TypeScript and production build65 pages pass. Old build retained for rollback.

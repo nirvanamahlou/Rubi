@@ -9620,43 +9620,57 @@ FINANCIAL-WORKFLOWS-COMPLETION-1025 release: PR1110 is the publication record; a
 CALL-CENTER-RELEASE-1025 — SOURCE_RELEASED / PR1114 PENDING CI: integration and publication complete; release source locks freed. Agent remains responsible for CI fixes and authorized merge after all checks pass. Final CI and merge state tracked on PR1114.
 
 ## STICKY-TEN-SECONDS-1025 — PC-C — IN_PROGRESS
+
 User changes previous sales agent ringing budget20s to10s before fallback to sales queue1002. Reserve sticky-sales.ts and its preview/service/PostgreSQL expectations, sticky-sales handoff docs and own status. No PBX access has been supplied; update prepared decision contract without claiming an installed timer. No UI/schema/dependency changes.
 
 STICKY-TEN-SECONDS-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: ringSeconds10 prepared and verified;20 tests and scoped lint/typecheck/build pass. No UI, migration, runtime or PBX write. Real timer requires installation and controlled PBX test.
 
 ## CALL-DESTINATION-HISTORY-1025 — PC-C — IN_PROGRESS
+
 Reserve Call Center service/read/telephony projections and related tests, own docs. Investigate missing outbound staff labels, preserve historical identity snapshots and branch/access boundaries; no UI layout, ownership or PBX change. Authorized local read inspection and runtime fix after checks; no schema/dependency changes.
 
 CALL-DESTINATION-HISTORY-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: missing label cause fixed for new outbound and legacy authorized history/get;56 tests and targeted lint/types/API build pass. Exact screenshot sample verified in browser on3000. No data repair write, ownership, UI layout or PBX change.
 
 ## CONTACT-DESTINATION-COLUMN-1025 — PC-C — IN_PROGRESS
+
 User requests contact-list headers source->acquaintance source and unit->connected to, rendering full staff destination like the call form. Reserve workspace.tsx and shared authorized destination hydration/read search, related tests and own docs. No unrelated filters/KPI layout, schema/PBX changes.
 
 CONTACT-DESTINATION-COLUMN-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: requested table headers and full destination display verified onlocalhost3000.49 tests, lint, API types/build and Web types/build pass; private build isolation documented. No schema/PBX/business-data write.
 
 ## REQUEST-REASON-REQUIRED-1025 — PC-C — IN_PROGRESS
+
 User requires reason on every request creation/edit, including whitespace rejection. Reserve workflow form/DTO/service and existing relevant tests/fixtures, scoped i18n reason message and own docs. No migration/dependency change; preserve approved layout and local credentials.
 
 REQUEST-REASON-REQUIRED-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: mandatory reason enforced on create/edit in UI, DTO and service; whitespace rejected without mutation.64 tests, scoped lint/types/API build and Web65-page build pass. Browser validation verified on3000. No migration/PBX/popup-policy change.
 
 ## REQUEST-HEADER-SPACING-1025 — PC-C — IN_PROGRESS
+
 Reserve workflow.tsx/workflow.module.css and own docs for user-authorized16px separation between contact summary and request title. No functional, API, dependency or migration change.
 
 REQUEST-HEADER-SPACING-1025 — COMPLETE / SOURCE_RELEASED ON PUSH: scoped16px contact-summary spacing, verified visually and by DOM measurement on3000.3 tests, lint, full Web typecheck/build pass. No API/data change.
 
 ## QUEUE-REQUEST-EDITOR-1025 — PC-C — DONE
+
 Reserve workflow.tsx and workflow.spec.tsx for direct queue-row opening of the existing request editor, scoped request/contact loading, read-only access preservation, refresh/focus/error behavior and own docs. No API/schema/dependency changes.
 
 Completed direct editor routing, read-only safeguard, loading/error/focus handling.4 tests, lint, Web types/build and browser acceptance pass; runtime3000 updated. Source reservation released; no API/schema/dependency changes.
 
 ## CALL-FORM-DOCK-1025 — PC-C — DONE
+
 User explicitly authorizes a minimize action beside call-dialog close and persistent left-edge restore across ERP panels. Reserve call-form.tsx, new call-form-host components/styles/tests, launcher imports in workspace/operational-call-popup, app-shell provider mount, use-unsaved-guard optional internal-navigation support and own docs. Central app-shell scope is only this provider; historical reservations released. No API/dependency/schema or automatic popup rollout change. In-memory drafts only; preserve existing next-env modifications.
 CALL-FORM-DOCK-1025 additional narrow reservation: five new dock/minimize labels in en-overrides.json; preserve all other translations.
 
 CALL-FORM-DOCK-1025:56 tests, lint, full Web types/build and cross-panel browser acceptance passed. Local3000 updated; source and central shell/translation reservations released on push.
 
 ## REQUEST-MANAGER-FIELDS-1025 — PC-C — IN_PROGRESS
+
 User restricts existing request title/owner/status/priority edits to the relevant unit manager and requests inline required-star alignment. Reserve workflow service/IAM call-center directory public capability, request client/form/tests/CSS, scoped translation and own docs. Existing configured global danial/demo authority preserved. Unit is current owner unit, creator unit fallback when unassigned. Creation remains unchanged; reason/result edits retain existing access rules. No schema/dependency change. Producer IAM/service and frontend consumer updated together with optional fail-closed capability.
 REQUEST-MANAGER-FIELDS-1025 test fixture scope: update read.spec IAM stub with the new optional-read capability; no behavior change to identity linking.
 REQUEST-MANAGER-FIELDS-1025 additional regression scope: access.postgres.spec now asserts agent closure rejection and successful same-unit manager closure, replacing the superseded agent-can-close expectation.
 REQUEST-MANAGER-FIELDS-1025 — DONE / SOURCE_RELEASED ON PUSH:76 targeted tests, scoped lint, API types/build and full Web types/build65 pages pass. Browser confirms protected controls and inline required star. Local3000/4000 updated; no schema/dependency/data changes.
+
+## CALL-DIRECTION-RUNTIME-1027 — PC-C — IN_PROGRESS
+
+User reports absent direction badges on localhost3000. Listener9500 serves private request-manager-fields-1025 build, which predates PR1130 despite newer local request-management changes. Reserve local integration of already approved direction labels into workspace/call-form/styles/translations plus own docs and private rebuilt Web runtime. Base8bee4b87 retains local dock/manager/destination work. No API, DB, PBX or parallel source change. Previous reservations released.
+
+CALL-DIRECTION-RUNTIME-1027 — DONE / SOURCE_RELEASED ON PUSH:6 form tests and scoped lint pass; full Web TypeScript and65-page production build pass. Browser on actual3000 confirms inbound/outbound badges with real rows and preserves minimized-call dock/full destination labels. Slow F filesystem blocked cold builds; private C build used. Web listener25728, API24108 unchanged. No DB/PBX/production deployment.

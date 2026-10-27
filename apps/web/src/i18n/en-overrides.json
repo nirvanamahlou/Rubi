@@ -4373,5 +4373,9 @@
   "کوچک‌کردن فرم تماس": "Minimize call form",
   "تماس‌های کوچک‌شده": "Minimized calls",
   "بازکردن فرم تماس": "Restore call form",
-  "فرم تماس": "Call form"
+  "فرم تماس": "Call form",
+  "نوع آخرین تماس": "Latest call direction",
+  "داخلی / کارشناس": "Extension / agent",
+  "تماس‌گرفته‌شده از داخلی": "Called from extension",
+  "ویرایش عنوان، مسئول، وضعیت و اولویت درخواست فقط برای مدیر واحد مجاز است.": "Only the unit manager can edit the request title, owner, status and priority."
 }

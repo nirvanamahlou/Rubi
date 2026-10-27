@@ -1,0 +1,9 @@
+# CALL-DIRECTION-RUNTIME-1027
+
+PC-C. localhost3000 was serving PID9500 from ignored tmp/request-manager-fields-1025/apps/web, built before PR1130. The committed direction labels remain on develop; the later local manager/dock build did not include them. Browser confirmed26 rows and zero data-direction badges on the active page.
+
+Integrate the same approved direction badges and direction-specific form/history labels on base8bee4b87, preserving full staff destination, dock and request-manager rules. Build independently at tmp/call-direction-runtime-1027; do not replace API24108 or mutate business data. Keep old runtime directory/build for rollback. No migration/dependency/PBX change. Source branch codex/pc-c-call-direction-runtime-1027 is a local integration branch, not a substitute production release.
+
+Acceptance requires full production Web types/build and browser-visible INBOUND/OUTBOUND badges on actual3000 after runtime swap. Record build ID and listener proof in a private receipt, without credentials or customer data.
+
+Completed:6 form tests, scoped lint, full TypeScript and65-page production build passed. Native Next warned of slow filesystem (473ms benchmark) on F. Build was prepared on a private C temporary path, with only Next copied and canonical dependency junctions; no dependency manifest changes. Production listener25728 now serves verified build bvsYyOA5HIczkLpjnZwOJ on3000; API24108 unchanged. Stage3002/login returned200 before swap. Authenticated browser confirmed20 direction badges, including both INBOUND and OUTBOUND, with full destination and call dock retained. No form saved and no business-data mutation. Screenshot and exact startup/rollback receipt are ignored under tmp/call-direction-runtime-1027. The already-merged PR1130 remains the develop source of the feature; this branch preserves local integration work and runtime handoff.
