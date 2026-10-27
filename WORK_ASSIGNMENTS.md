@@ -1713,6 +1713,10 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-label-1005. User authorizes corr
 
 # Work Assignments
 
+## DASHBOARD-LIVE-SOURCES-1027 — PC-C — READY_FOR_REVIEW
+
+Owner requests diagnosis and repair of empty production Dashboard despite native data. Base develop296d2d35f; branch codex/pc-c-dashboard-live-sources-1027. Read-only production proof: reporting_travel_facts is empty while native Customer/Sales records exist; no live writer connects that table. Bounded scope: Reporting native dashboard orchestration/contracts/module/service/tests, new Sales/Customers/CustomerAffairs public aggregate leaf readers, common/dashboard-source.ts internal v1 contract, Dashboard transport/source-state tests, four English overrides and generated API/standalone catalog additions, own task/status documentation. Producer-owned readers enforce native permissions, branch/own scope and supported filters; Reporting never queries their operational tables. Consumer prefers native production sources, legacy fact report queries remain unchanged. Currency-separated Decimal measures and independent source availability; unsupported costs/journal/HR measures are not fabricated. Legal Entity remains issuer context, never operational ownership, as required by MODULE_BOUNDARIES. No Prisma/migration/dependency/lockfile, operational data inserts or permission grants. Source freezes for review at publication; no active server rollout. Production rollout requires reviewed artifacts, fresh backup, exclusive deployment lock and the existing root-approved restricted workflow.
+
 ## ASSISTANT-HTTP-AUTH-1012 — PC-C — READY_FOR_REVIEW
 
 Base develop0f111706, clean inactive checkout; branch codex/pc-c-assistant-http-auth-1012.
