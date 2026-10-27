@@ -20,3 +20,25 @@ export async function readTicketBrandAsset(
 
   throw new Error('PDF_BRAND_ASSET_UNAVAILABLE');
 }
+
+/** The existing bundled Latin font is embedded so server-installed fonts cannot reshape digits. */
+export async function readTicketLatinFont(
+  cwd = process.cwd(),
+  reader: AssetReader = readFile,
+): Promise<Buffer> {
+  for (const candidate of [
+    join(cwd, 'public', 'fonts', 'vazirmatn-latin-wght-normal.woff2'),
+    join(
+      cwd,
+      'apps',
+      'web',
+      'public',
+      'fonts',
+      'vazirmatn-latin-wght-normal.woff2',
+    ),
+  ]) {
+    const bytes = await reader(candidate).catch(() => null);
+    if (bytes?.length && bytes.length <= 5_000_000) return bytes;
+  }
+  throw new Error('PDF_LATIN_FONT_UNAVAILABLE');
+}

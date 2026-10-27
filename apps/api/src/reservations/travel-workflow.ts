@@ -180,10 +180,6 @@ export function transitionTravelWorkflow(
           current.sentSupplierFormSettings.brokerId
       )
         throw new Error('تورلیدر باید از کارگزار فرم صادرشده انتخاب شود.');
-      if (!current.voucherSettings?.leaderId)
-        throw new Error(
-          'پیش از صدور واچر، تورلیدر کارگزار را انتخاب و ذخیره کنید.',
-        );
       if (
         !current.insuranceIssued &&
         command.acknowledgeMissingInsurance !== true
@@ -228,10 +224,6 @@ export function transitionTravelWorkflow(
           current.sentSupplierFormSettings.brokerId
       )
         throw new Error('تورلیدر باید از کارگزار فرم صادرشده انتخاب شود.');
-      if (!current.voucherSettings?.leaderId)
-        throw new Error(
-          'پیش از صدور واچر، تورلیدر کارگزار را انتخاب و ذخیره کنید.',
-        );
       if (
         !current.insuranceIssued &&
         command.acknowledgeMissingInsurance !== true

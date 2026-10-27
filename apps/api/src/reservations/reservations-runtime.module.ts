@@ -499,24 +499,68 @@ export class ReservationRequestsController {
       ['VOUCHER_SETTINGS', 'SUPPLIER_FORM_SETTINGS'].includes(input.action) &&
       input.voucherSettings?.brokerId
     ) {
-      await this.workflow.detail(id, req.actor.branchIds);
+      const context = await this.workflow.detail(id, req.actor.branchIds);
       const settings = input.voucherSettings;
+      const previous = context.workflow.voucherSettings;
+      if (
+        input.action === 'VOUCHER_SETTINGS' &&
+        !Object.hasOwn(settings, 'transferDetailsOverride') &&
+        previous?.brokerId === settings.brokerId &&
+        previous?.leaderId === settings.leaderId
+      ) {
+        if (
+          !Object.hasOwn(settings, 'transferBrokerId') &&
+          previous?.transferBrokerId
+        ) {
+          settings.transferBrokerId = previous.transferBrokerId;
+        }
+        if (previous?.transferDetailsOverride !== undefined)
+          settings.transferDetailsOverride = previous.transferDetailsOverride;
+      }
       const brokerId = settings.brokerId!;
       const brokerName = await this.directory!.voucherBrokerName(brokerId);
       settings.text.broker = brokerName;
+      const transferBrokerId = settings.transferBrokerId ?? brokerId;
+      if (settings.transferBrokerId) {
+        settings.transferBrokerName =
+          await this.directory!.voucherBrokerName(transferBrokerId);
+      } else {
+        delete settings.transferBrokerName;
+      }
+      const manual =
+        input.action === 'VOUCHER_SETTINGS' &&
+        settings.transferDetailsOverride === true;
+      if (
+        (manual || settings.transferBrokerId) &&
+        !req.actor.permissions.includes('reservations.documents.manage')
+      )
+        throw new ForbiddenException();
       if (settings.leaderId) {
         if (!req.actor.permissions.includes('reservations.documents.manage'))
           throw new ForbiddenException();
         const { data: leader } = await this.directory!.voucherLeaderContact(
-          brokerId,
+          transferBrokerId,
           settings.leaderId,
           req.actor,
         );
-        settings.text.leaderName = leader.name;
-        settings.text.leaderPhone = leader.phone || '';
-        if (input.action === 'VOUCHER_SETTINGS')
-          settings.text.transferBoard = leader.board ?? '';
-        settings.flags.tourLeader = true;
+        if (!manual) {
+          settings.text.leaderName = leader.name;
+          settings.text.leaderPhone = leader.phone || '';
+          if (input.action === 'VOUCHER_SETTINGS')
+            settings.text.transferBoard = leader.board ?? '';
+        }
+        settings.flags.tourLeader =
+          typeof settings.text.leaderName === 'string' &&
+          Boolean(settings.text.leaderName.trim());
+      } else if (manual) {
+        settings.flags.tourLeader =
+          typeof settings.text.leaderName === 'string' &&
+          Boolean(settings.text.leaderName.trim());
+      } else if (input.action === 'VOUCHER_SETTINGS') {
+        settings.text.leaderName = '';
+        settings.text.leaderPhone = '';
+        settings.text.transferBoard = '';
+        settings.flags.tourLeader = false;
       }
     }
     if (['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(input.action)) {
@@ -526,16 +570,17 @@ export class ReservationRequestsController {
           'ابتدا فرم رزرواسیون را آماده و ارسال درخواست به کارگزار را ثبت کنید.',
         );
       const settings = current.workflow.voucherSettings;
-      if (!settings?.brokerId || !settings.leaderId)
-        throw new BadRequestException(
-          'کارگزار و تورلیدر را انتخاب و ذخیره کنید.',
-        );
+      if (!settings?.brokerId)
+        throw new BadRequestException('کارگزار را انتخاب کنید.');
       await this.directory!.voucherBrokerName(settings.brokerId);
-      await this.directory!.voucherLeaderContact(
-        settings.brokerId,
-        settings.leaderId,
-        req.actor,
-      );
+      if (settings.transferBrokerId)
+        await this.directory!.voucherBrokerName(settings.transferBrokerId);
+      if (settings.leaderId)
+        await this.directory!.voucherLeaderContact(
+          settings.transferBrokerId ?? settings.brokerId,
+          settings.leaderId,
+          req.actor,
+        );
     }
     return { data: await this.workflow.update(id, input, req.actor) };
   }
