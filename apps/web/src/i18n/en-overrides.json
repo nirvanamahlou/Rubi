@@ -16,6 +16,8 @@
   "فروش آزاد باید بله، خیر، TRUE، FALSE، ۱ یا ۰ باشد.": "Free sale must be Yes, No, TRUE, FALSE, 1 or 0.",
   "نام فارسی حداکثر ۱۶۰ نویسه است.": "The Persian name must not exceed 160 characters.",
   "اتاق‌ها و نفرات": "Rooms and guests",
+  "تأیید درخواست مالی باید توسط شخص دیگری انجام شود.": "A financial request must be approved by someone other than its requester.",
+  "شماره چک الزامی است.": "The cheque number is required.",
   "تعداد نفرات اتاق:": "Room guest count:",
   "حذف هتل": "Remove hotel",
   "تعداد کودک / نوزاد": "Children / infants",
