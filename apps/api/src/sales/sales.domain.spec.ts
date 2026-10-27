@@ -1360,3 +1360,45 @@ it('validates aggregate legacy hotel occupancy and room age counts without perso
     }),
   ).toThrow();
 });
+
+it('validates anonymous per-age row prices against canonical totals without inventing passenger allocations', () => {
+  const c: SalesContractCreateRequest = {
+    ...draft,
+    tripType: 'ONE_WAY',
+    passengers: [],
+    ticketSelections: [],
+    services: [
+      {
+        clientKey: 'other',
+        kind: 'OTHER',
+        titleSnapshot: 'Synthetic',
+        metadata: {
+          contractPackagePricingVersion: 1,
+          legacyServicePartiesV2: JSON.stringify({
+            other: { adults: 1, children: 1, infants: 0 },
+          }),
+          legacyRowPricesV1: JSON.stringify({
+            gross: {
+              'legacy-ADT-1': [{ currencyCode: 'USD', amount: '80' }],
+              'legacy-CHD-1': [{ currencyCode: 'USD', amount: '20' }],
+            },
+            deductions: {},
+          }),
+        },
+      },
+    ],
+    priceComponents: [
+      { type: 'BASE', title: 'Total', currencyCode: 'USD', amount: '100' },
+    ],
+  };
+  expect(() => validateSalesContract(c, false)).not.toThrow();
+  expect(() =>
+    validateSalesContract(
+      { ...c, priceComponents: [{ ...c.priceComponents[0]!, amount: '99' }] },
+      false,
+    ),
+  ).toThrow('مجموع قیمت نفرات');
+  expect(() =>
+    validateSalesContract({ ...c, passengers: draft.passengers }, false),
+  ).toThrow();
+});

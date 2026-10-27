@@ -1,3 +1,4 @@
+import { legacyRowPriceTotals } from '@nora/contracts';
 import { readLegacyServiceParties } from '@nora/contracts';
 import { enforceSalesHotelCapacity } from '@nora/contracts';
 import { validatePassengerHotelStays } from '@nora/contracts';
@@ -849,6 +850,47 @@ export function validateSalesContract(
       !input.paymentTerms
     )
       throw new Error('برای پرداخت چکی، نوع فروش چکی را انتخاب کنید.');
+    const legacyTotals = legacyRowPriceTotals(input.services);
+    if (legacyTotals) {
+      const signature = (
+        rows: readonly {
+          currencyCode: string;
+          amount: string;
+          type?: string;
+        }[],
+      ) => {
+        const sums = new Map<string, bigint>();
+        for (const p of rows)
+          sums.set(
+            p.currencyCode,
+            (sums.get(p.currencyCode) ?? 0n) +
+              (p.type === 'DISCOUNT' ? -1n : 1n) * moneyUnits(p.amount),
+          );
+        return JSON.stringify(
+          [...sums]
+            .filter(([, n]) => n !== 0n)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([c, n]) => [c, n.toString()]),
+        );
+      };
+      if (
+        input.passengers.length ||
+        !input.services.every(
+          (s) => s.metadata?.contractPackagePricingVersion === 1,
+        ) ||
+        signature(
+          salesChequeComponents(
+            legacyTotals.map((p) => ({
+              ...p,
+              type: 'BASE' as const,
+              title: 'جمع قیمت کل مسافران',
+            })),
+            input.paymentTerms,
+          ),
+        ) !== signature(input.priceComponents)
+      )
+        throw Error('مجموع قیمت نفرات با مبلغ کل قرارداد مطابقت ندارد.');
+    }
     const derived = servicePriceComponents(
       input.services,
       input.hotelSelection,
