@@ -33,11 +33,14 @@ export function ReservationPassengers({
   readOnly = false,
   ageEditor,
   serviceEditor,
+  customerIds,
 }: {
   id: string;
   readOnly?: boolean;
   ageEditor?: (customerId: string) => ReactNode;
   serviceEditor?: (customerId: string) => ReactNode;
+  /** Unsaved contract-membership edits can hide removed links without deleting identities. */
+  customerIds?: readonly string[];
 }) {
   const [rows, setRows] = useState<PassengerName[]>([]);
   const [canEdit, setCanEdit] = useState(false);
@@ -134,6 +137,9 @@ export function ReservationPassengers({
   }
 
   if (loading) return <p>در حال دریافت اطلاعات مسافران…</p>;
+  const displayedRows = rows.filter(
+    (row) => !customerIds || customerIds.includes(row.id),
+  );
 
   if (readOnly)
     return (
@@ -168,7 +174,7 @@ export function ReservationPassengers({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {displayedRows.map((row) => (
                 <tr key={row.id}>
                   {[
                     row.firstName,
@@ -193,7 +199,9 @@ export function ReservationPassengers({
             </tbody>
           </table>
         </div>
-        {!rows.length && !error && <p>مسافری به این قرارداد متصل نشده است.</p>}
+        {!displayedRows.length && !error && (
+          <p>مسافری به این قرارداد متصل نشده است.</p>
+        )}
       </div>
     );
 
@@ -233,7 +241,7 @@ export function ReservationPassengers({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, index) => {
+            {displayedRows.map((row, index) => {
               const disabled = !canEdit || Boolean(busy);
               const identityDisabled = !canEditIdentity || Boolean(busy);
               return (
@@ -410,7 +418,9 @@ export function ReservationPassengers({
           </tbody>
         </table>
       </div>
-      {!rows.length && !error && <p>مسافری به این قرارداد متصل نشده است.</p>}
+      {!displayedRows.length && !error && (
+        <p>مسافری به این قرارداد متصل نشده است.</p>
+      )}
       {!canEdit && rows.length > 0 && (
         <p className="text-sm text-muted-foreground">
           مجوز ویرایش نام مسافران برای حساب شما فعال نیست.
