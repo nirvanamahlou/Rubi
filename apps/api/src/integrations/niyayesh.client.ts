@@ -23,11 +23,26 @@ export interface NiyayeshConnection {
   }[];
 }
 
+export class NiyayeshUpstreamError extends Error {
+  constructor(
+    readonly status: number,
+    readonly details: string,
+  ) {
+    super(`UPSTREAM_${status}`);
+  }
+}
+
 export function signingHeaders(
   c: NiyayeshConnection,
   subject: string,
   path: string,
-  options: { method?: string; body?: string; command?: string } = {},
+  options: {
+    method?: string;
+    body?: string;
+    command?: string;
+    version?: string;
+    ifMatch?: string;
+  } = {},
 ) {
   const timestamp = String(Math.floor(Date.now() / 1000));
   const nonce = randomUUID().replaceAll('-', '');
@@ -44,8 +59,8 @@ export function signingHeaders(
     nonce,
     subject,
     options.command ?? '',
-    '',
-    '',
+    options.version ?? '',
+    options.ifMatch ?? '',
     createHash('sha256')
       .update(options.body ?? '')
       .digest('hex'),
@@ -65,6 +80,8 @@ export function signingHeaders(
     Accept: 'application/json',
     ...(options.body ? { 'Content-Type': 'application/json' } : {}),
     ...(options.command ? { 'Idempotency-Key': options.command } : {}),
+    ...(options.version ? { 'X-ERP-Version': options.version } : {}),
+    ...(options.ifMatch ? { 'If-Match': options.ifMatch } : {}),
   };
 }
 
@@ -120,20 +137,39 @@ export async function niyayeshRead(
   c: NiyayeshConnection,
   subject: string,
   path: string,
-  options: { method?: string; body?: string; command?: string } = {},
+  options: {
+    method?: string;
+    body?: string;
+    command?: string;
+    version?: string;
+    ifMatch?: string;
+  } = {},
 ): Promise<unknown> {
   if (
-    !/^\/api\/v1\/integration\/(capabilities$|dashboard$|resources\/[a-z-]+(?:[/?]|$)|workbooks\/hotels\/export\?city=|workbooks\/(hotels|tour-prices|tickets)(\/template)?$)/.test(
+    !/^\/api\/v1\/integration\/(capabilities$|dashboard$|report\?from=|catalogue\/[a-z-]+\/(?:schema$|value\/\d+$)|resources\/[a-z-]+(?:[/?]|$)|workbooks\/hotels\/export\?city=|workbooks\/(hotels|tour-prices|tickets)(\/template)?$)/.test(
+      path,
+    ) &&
+    !/^\/api\/v1\/admin\/(tours|hotels|service-offers|visas|destinations|countries|airlines|categories|editorial-content)(\/\d+)?$/.test(
       path,
     )
   )
     throw Error('INVALID_PATH');
   if (
     options.method &&
-    (options.method !== 'POST' ||
-      !/^\/api\/v1\/integration\/workbooks\/(hotels|tour-prices|tickets)$/.test(
-        path,
-      ))
+    !(
+      (options.method === 'POST' &&
+        /^\/api\/v1\/integration\/workbooks\/(hotels|tour-prices|tickets)$/.test(
+          path,
+        )) ||
+      (options.method === 'POST' &&
+        /^\/api\/v1\/admin\/(tours|hotels|service-offers|visas|destinations|countries|airlines|categories|editorial-content)$/.test(
+          path,
+        )) ||
+      (options.method === 'PATCH' &&
+        /^\/api\/v1\/admin\/(tours|hotels|service-offers|visas|destinations|countries|airlines|editorial-content)\/\d+$/.test(
+          path,
+        ))
+    )
   )
     throw Error('INVALID_PATH');
   const { url, address } = await destination(c);
@@ -156,11 +192,36 @@ export async function niyayeshRead(
         const chunks: Buffer[] = [];
         let bytes = 0;
         if (
-          response.statusCode !== 200 ||
+          ![200, 201].includes(response.statusCode ?? 0) ||
           !response.headers['content-type']?.includes('application/json')
         ) {
-          response.resume();
-          reject(Error(`UPSTREAM_${response.statusCode ?? 502}`));
+          let detail = '';
+          response.on('data', (chunk: Buffer) => {
+            if (detail.length < 65536) detail += chunk.toString();
+          });
+          response.on('end', () => {
+            let safe = '';
+            if ([403, 404, 409, 422].includes(response.statusCode ?? 0)) {
+              try {
+                const value = JSON.parse(detail) as { detail?: unknown };
+                if (typeof value.detail === 'string')
+                  safe = value.detail.slice(0, 4000);
+                else if (Array.isArray(value.detail))
+                  safe = value.detail
+                    .slice(0, 20)
+                    .map(
+                      (i: { loc?: unknown[]; msg?: string }) =>
+                        `${i.loc?.join('.') ?? ''}: ${i.msg ?? ''}`,
+                    )
+                    .join('\n')
+                    .slice(0, 4000);
+              } catch {
+                /* No raw upstream bodies are disclosed. */
+              }
+            }
+            reject(new NiyayeshUpstreamError(response.statusCode ?? 502, safe));
+          });
+          response.on('error', () => reject(Error('CONNECTION_FAILED')));
           return;
         }
         response.on('data', (chunk: Buffer) => {

@@ -61,6 +61,46 @@ async function request<T>(
 const branchQuery = (branchId: string) =>
   `?branchId=${encodeURIComponent(branchId)}`;
 export const integrationsApi = {
+  niyayeshReport: (
+    branchId: string,
+    from: string,
+    to: string,
+    signal?: AbortSignal,
+  ) =>
+    request<SiteReport>(
+      `/niyayesh/report${branchQuery(branchId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+      signal ? { signal } : {},
+    ),
+  niyayeshEditor: (
+    branchId: string,
+    resource: string,
+    id?: string,
+    signal?: AbortSignal,
+  ) =>
+    request<EditorContract>(
+      `/niyayesh/catalogue/${encodeURIComponent(resource)}${branchQuery(branchId)}${id ? `&id=${encodeURIComponent(id)}` : ''}`,
+      signal ? { signal } : {},
+    ),
+  niyayeshSave: (
+    branchId: string,
+    resource: string,
+    value: Record<string, unknown>,
+    command: string,
+    record?: { externalId: string; version: number },
+  ) =>
+    request<Record<string, unknown>>(
+      `/niyayesh/catalogue/${encodeURIComponent(resource)}${branchQuery(branchId)}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          value,
+          command,
+          ...(record
+            ? { id: record.externalId, version: String(record.version) }
+            : {}),
+        }),
+      },
+    ),
   niyayeshHotelExport: (branchId: string, city: string) =>
     request<{ filename: string; content: string }>(
       `/niyayesh/workbooks/hotels/export${branchQuery(branchId)}&city=${encodeURIComponent(city)}`,
@@ -151,6 +191,7 @@ export const integrationsApi = {
     after: number,
     signal?: AbortSignal,
     metric?: string,
+    report?: { metric: string; from: string; to: string },
   ) =>
     request<{
       schemaVersion: number;
@@ -163,7 +204,7 @@ export const integrationsApi = {
       nextId: number;
       hasMore: boolean;
     }>(
-      `/niyayesh/resources${branchQuery(branchId)}&resource=${encodeURIComponent(resource)}&after=${after}${metric ? `&metric=${encodeURIComponent(metric)}` : ''}`,
+      `/niyayesh/resources${branchQuery(branchId)}&resource=${encodeURIComponent(resource)}&after=${after}${metric ? `&metric=${encodeURIComponent(metric)}` : ''}${report ? `&reportMetric=${encodeURIComponent(report.metric)}&from=${encodeURIComponent(report.from)}&to=${encodeURIComponent(report.to)}` : ''}`,
       signal ? { signal } : {},
     ),
   async branches(): Promise<BranchReference[]> {
@@ -201,4 +242,70 @@ export const integrationsApi = {
       '/adapters',
       signal ? { signal } : {},
     ),
+};
+
+export type EditorSchema = {
+  $ref?: string;
+  $defs?: Record<string, EditorSchema>;
+  type?: string;
+  title?: string;
+  description?: string;
+  properties?: Record<string, EditorSchema>;
+  items?: EditorSchema;
+  anyOf?: EditorSchema[];
+  enum?: (string | number | boolean)[];
+  default?: unknown;
+  required?: string[];
+  format?: string;
+  minLength?: number;
+  maxLength?: number;
+  minimum?: number;
+  maximum?: number;
+  pattern?: string;
+};
+export type EditorContract = {
+  schemaVersion: number;
+  resource: string;
+  title: string;
+  createSchema: EditorSchema;
+  updateSchema: EditorSchema;
+  canCreate: boolean;
+  canUpdate: boolean;
+  canPublish: boolean;
+  lookups: Record<string, string>;
+  groups: Record<string, string[]>;
+  record: {
+    externalId: string;
+    version: number;
+    value: Record<string, unknown>;
+    data: Record<string, unknown>;
+  } | null;
+};
+export type SiteReport = {
+  schemaVersion: number;
+  registrySystemId?: string;
+  environment: string;
+  checkedAt: string;
+  from: string;
+  to: string;
+  metrics: Record<string, { value: number | null; state: string }>;
+  totals: Record<string, number | null>;
+  salesByCurrency:
+    { currency: string; amount: string | null; complete: boolean }[] | null;
+  trends: Record<string, { date: string; value: number }[]>;
+  visits: {
+    pageViews: number;
+    uniqueBrowsers: number;
+    definition: string;
+    daily: { date: string; views: number; visitors: number }[];
+  };
+  activity: {
+    resource: string;
+    externalId: string;
+    operation: string;
+    occurredAt: string;
+    origin: string;
+    version: number;
+  }[];
+  activityAvailable: boolean;
 };

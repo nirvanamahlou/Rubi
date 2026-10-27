@@ -23,6 +23,7 @@ function service() {
     authenticateSessionReferenceV1: vi.fn().mockResolvedValue(actor),
   };
   const site = {
+    canEdit: () => false,
     binding: vi.fn().mockResolvedValue({
       user: { subject: actor.userId, resources: ['countries'] },
     }),

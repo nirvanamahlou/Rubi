@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { integrationsApi } from '../api/client';
+import { NiyayeshEditor } from './niyayesh-editor';
 import { NiyayeshWorkbooks } from './niyayesh-workbooks';
 
 const labels: Record<string, string> = {
@@ -294,7 +295,19 @@ export function NiyayeshData({
                 >
                   ورود هتل، قیمت تور و بلیت
                 </Button>
+                <Button
+                  variant={view === 'editor' ? 'primary' : 'outline'}
+                  onClick={() => setView('editor')}
+                >
+                  تعریف و ویرایش تور و هتل
+                </Button>
               </nav>
+              {view === 'editor' ? (
+                <NiyayeshEditor
+                  branchId={branchId}
+                  onSaved={() => setRevision((v) => v + 1)}
+                />
+              ) : null}
               {view === 'imports' ? (
                 dashboard.imports.length ? (
                   <NiyayeshWorkbooks

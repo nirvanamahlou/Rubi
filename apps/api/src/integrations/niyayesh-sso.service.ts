@@ -118,9 +118,33 @@ export class NiyayeshSsoService {
           binding.user.resources.includes(this.site.importTarget(kind)) &&
           this.site.canImport(actor, kind)
         );
+      if (resource === 'site-analytics')
+        return (
+          operation === 'read' &&
+          binding.user.resources.includes(resource) &&
+          canViewScreen(actor.permissions, 'integrations.niyayesh.analytics')
+        );
+      if (resource === 'events')
+        return (
+          operation === 'read' &&
+          canViewScreen(actor.permissions, 'integrations.niyayesh.analytics') &&
+          canViewIntegrationSection(actor.permissions, 'logs')
+        );
       if (!binding.user.resources.includes(resource)) return false;
-      if (operation !== 'read' && targetKinds[resource])
-        return this.site.canImport(actor, targetKinds[resource]);
+      if (operation === 'publish')
+        return (
+          (canViewScreen(actor.permissions, 'integrations.niyayesh.publish') &&
+            this.site.canEdit(actor, resource)) ||
+          (!!targetKinds[resource] &&
+            this.site.canImport(actor, targetKinds[resource]))
+        );
+      if (operation !== 'read')
+        return (
+          ['create', 'update', 'bulk', 'export'].includes(operation) &&
+          (this.site.canEdit(actor, resource) ||
+            (!!targetKinds[resource] &&
+              this.site.canImport(actor, targetKinds[resource])))
+        );
       return true;
     });
     if (!grants.includes('panel.login'))
@@ -145,6 +169,7 @@ export class NiyayeshSsoService {
       'hotel-imports': 'excel',
       'tour-price-imports': 'excel',
       'ticket-imports': 'excel',
+      'site-analytics': 'catalog',
     };
     const permittedModules = new Set(
       grants.map((g) => modules[g.split('.')[0]!]),

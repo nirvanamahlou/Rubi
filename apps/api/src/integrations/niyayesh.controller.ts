@@ -1,5 +1,6 @@
 import {
   Controller,
+  Body,
   BadRequestException,
   Get,
   Header,
@@ -26,6 +27,48 @@ export class NiyayeshController {
     @Inject(NiyayeshService) private readonly service: NiyayeshService,
     @Inject(IamService) private readonly iam: IamService,
   ) {}
+  @Get('report')
+  @Header('Cache-Control', 'private, no-store')
+  report(
+    @Req() r: AuthenticatedRequest,
+    @Query('branchId') branch: string,
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    return this.service.report(r.actor, branch, from, to);
+  }
+  @Get('catalogue/:resource')
+  @Header('Cache-Control', 'private, no-store')
+  editor(
+    @Req() r: AuthenticatedRequest,
+    @Param('resource') resource: string,
+    @Query('branchId') branch: string,
+    @Query('id') id?: string,
+  ) {
+    return this.service.editor(r.actor, branch, resource, id);
+  }
+  @Post('catalogue/:resource')
+  @Header('Cache-Control', 'private, no-store')
+  async saveCatalogue(
+    @Req() r: AuthenticatedRequest,
+    @Param('resource') resource: string,
+    @Query('branchId') branch: string,
+    @Body() input: unknown,
+  ) {
+    const data = await this.service.saveCatalogue(
+      r.actor,
+      branch,
+      resource,
+      input,
+    );
+    await this.iam.recordSelfActivity(
+      r.actor,
+      'integrations.niyayesh.catalogue.write',
+      'external_catalogue',
+      `${branch}:${resource}`,
+    );
+    return data;
+  }
   @Get('dashboard')
   @Header('Cache-Control', 'private, no-store')
   dashboard(@Req() r: AuthenticatedRequest, @Query('branchId') branch: string) {
@@ -106,6 +149,9 @@ export class NiyayeshController {
     @Query('after') after?: string,
     @Query('id') id?: string,
     @Query('metric') metric?: string,
+    @Query('reportMetric') reportMetric?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
   ) {
     const data = await this.service.resources(
       r.actor,
@@ -114,6 +160,9 @@ export class NiyayeshController {
       after,
       id,
       metric,
+      reportMetric,
+      from,
+      to,
     );
     await this.iam.recordSelfActivity(
       r.actor,

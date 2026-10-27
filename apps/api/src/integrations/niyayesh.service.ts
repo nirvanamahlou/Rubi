@@ -11,7 +11,11 @@ import {
   canViewScreen,
   type AuthenticatedActor,
 } from '@nora/contracts';
-import { niyayeshRead, type NiyayeshConnection } from './niyayesh.client';
+import {
+  niyayeshRead,
+  NiyayeshUpstreamError,
+  type NiyayeshConnection,
+} from './niyayesh.client';
 
 export const NIYAYESH_RESOURCES = {
   countries: 'کشورها',
@@ -34,6 +38,159 @@ export const NIYAYESH_RESOURCES = {
 
 @Injectable()
 export class NiyayeshService {
+  readonly editors = [
+    'tours',
+    'hotels',
+    'service-offers',
+    'visas',
+    'destinations',
+    'countries',
+    'airlines',
+    'categories',
+    'editorial-content',
+  ];
+  canEdit(actor: AuthenticatedActor, resource: string) {
+    return (
+      this.editors.includes(resource) &&
+      canViewScreen(
+        actor.permissions,
+        `integrations.niyayesh.manage.${resource}`,
+      )
+    );
+  }
+  async editor(
+    actor: AuthenticatedActor,
+    branch: string,
+    resource: string,
+    id?: string,
+  ) {
+    if (
+      !this.canEdit(actor, resource) ||
+      (id !== undefined && !/^[1-9]\d{0,14}$/.test(id))
+    )
+      throw new ForbiddenException('مجوز مدیریت این بخش سایت را ندارید.');
+    const binding = await this.binding(actor, branch);
+    if (!binding || !binding.user.resources.includes(resource))
+      throw new ForbiddenException();
+    const path = `/api/v1/integration/catalogue/${resource}`;
+    const schema = (await this.read(
+      binding.config,
+      binding.user.subject,
+      `${path}/schema`,
+    )) as Record<string, unknown>;
+    const data = id
+      ? await this.read(
+          binding.config,
+          binding.user.subject,
+          `${path}/value/${id}`,
+        )
+      : null;
+    return {
+      ...schema,
+      canPublish:
+        schema.canPublish === true &&
+        canViewScreen(actor.permissions, 'integrations.niyayesh.publish'),
+      record: data,
+    };
+  }
+  async saveCatalogue(
+    actor: AuthenticatedActor,
+    branch: string,
+    resource: string,
+    input: unknown,
+  ) {
+    if (!this.canEdit(actor, resource))
+      throw new ForbiddenException('مجوز مدیریت این بخش سایت را ندارید.');
+    const value = input as {
+      id?: string;
+      version?: string;
+      command?: string;
+      value?: Record<string, unknown>;
+    };
+    if (
+      !value ||
+      !value.value ||
+      typeof value.value !== 'object' ||
+      Array.isArray(value.value) ||
+      !/^[A-Za-z0-9_-]{16,80}$/.test(value.command ?? '') ||
+      (value.id &&
+        (!/^[1-9]\d{0,14}$/.test(value.id) ||
+          !/^\d{1,15}$/.test(value.version ?? '')))
+    )
+      throw new BadRequestException('اطلاعات فرم یا نسخه معتبر نیست.');
+    if (
+      value.value.status === 'published' &&
+      !canViewScreen(actor.permissions, 'integrations.niyayesh.publish')
+    )
+      throw new ForbiddenException('مجوز انتشار در سایت را ندارید.');
+    const binding = await this.binding(actor, branch);
+    if (!binding || !binding.user.resources.includes(resource))
+      throw new ForbiddenException();
+    return this.read(
+      binding.config,
+      binding.user.subject,
+      `/api/v1/admin/${resource}${value.id ? `/${value.id}` : ''}`,
+      {
+        method: value.id ? 'PATCH' : 'POST',
+        command: value.command!,
+        body: JSON.stringify(value.value),
+        ...(value.id ? { version: value.version! } : {}),
+      },
+    );
+  }
+  async report(
+    actor: AuthenticatedActor,
+    branch: string,
+    from: string,
+    to: string,
+  ) {
+    if (!canViewScreen(actor.permissions, 'integrations.niyayesh.analytics'))
+      throw new ForbiddenException('مجوز گزارش سایت را ندارید.');
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(from ?? '') ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(to ?? '') ||
+      from > to
+    )
+      throw new BadRequestException('بازه گزارش معتبر نیست.');
+    const binding = await this.binding(actor, branch, 'brands');
+    if (!binding || !binding.user.resources.includes('site-analytics'))
+      throw new ForbiddenException();
+    const result = (await this.read(
+      binding.config,
+      binding.user.subject,
+      `/api/v1/integration/report?from=${from}&to=${to}`,
+    )) as Record<string, unknown> & {
+      metrics: Record<string, { value: number | null; state: string }>;
+      totals: Record<string, number | null>;
+      trends: Record<string, unknown>;
+      activity: { resource: string }[];
+    };
+    for (const [metric, resource] of Object.entries({
+      users: 'customer-accounts',
+      orders: 'customer-orders',
+      sales: 'customer-orders',
+      pending: 'customer-orders',
+    })) {
+      if (!binding.user.resources.includes(resource)) {
+        result.metrics[metric] = { value: null, state: 'FORBIDDEN' };
+        delete result.trends[metric];
+        if (metric === 'sales') result.salesByCurrency = null;
+      }
+    }
+    for (const resource of Object.keys(result.totals))
+      if (!binding.user.resources.includes(resource))
+        result.totals[resource] = null;
+    result.activity = canViewIntegrationSection(actor.permissions, 'logs')
+      ? result.activity.filter((row) =>
+          binding.user.resources.includes(row.resource),
+        )
+      : [];
+    return {
+      ...result,
+      registrySystemId: binding.config.registrySystemId,
+      environment: binding.config.local ? 'LOCAL' : binding.config.environment,
+    };
+  }
   async hotelExport(actor: AuthenticatedActor, branch: string, city: string) {
     if (typeof city !== 'string' || !city.trim() || city.length > 120)
       throw new BadRequestException('شهر را انتخاب کنید.');
@@ -170,10 +327,14 @@ export class NiyayeshService {
     }
     return config;
   }
-  async binding(actor: AuthenticatedActor, branch: string) {
+  async binding(
+    actor: AuthenticatedActor,
+    branch: string,
+    section: 'connections' | 'brands' = 'connections',
+  ) {
     if (
       !actor.branchIds.includes(branch) ||
-      !canViewIntegrationSection(actor.permissions, 'connections')
+      !canViewIntegrationSection(actor.permissions, section)
     )
       throw new ForbiddenException('مجوز مشاهده اتصال یا شعبه را ندارید.');
     const config = await this.configuration();
@@ -191,8 +352,8 @@ export class NiyayeshService {
         userId: actor.userId,
         branchId: branch,
         subject: actor.userId,
-        resources: config.managedAccess.resources.filter((r) =>
-          Object.hasOwn(NIYAYESH_RESOURCES, r),
+        resources: config.managedAccess.resources.filter(
+          (r) => Object.hasOwn(NIYAYESH_RESOURCES, r) || r === 'site-analytics',
         ),
       };
     }
@@ -204,7 +365,13 @@ export class NiyayeshService {
     config: NiyayeshConnection,
     subject: string,
     path: string,
-    options?: { method?: string; body?: string; command?: string },
+    options?: {
+      method?: string;
+      body?: string;
+      command?: string;
+      version?: string;
+      ifMatch?: string;
+    },
   ) {
     try {
       return await niyayeshRead(config, subject, path, options);
@@ -212,11 +379,15 @@ export class NiyayeshService {
       const code = error instanceof Error ? error.message : '';
       if (code === 'UPSTREAM_409')
         throw new ConflictException(
-          'اطلاعات سایت تغییر کرده یا پیش‌نمایش منقضی شده است؛ دوباره پیش‌نمایش بگیرید.',
+          error instanceof NiyayeshUpstreamError && error.details
+            ? error.details
+            : 'اطلاعات سایت تغییر کرده یا پیش‌نمایش منقضی شده است؛ دوباره پیش‌نمایش بگیرید.',
         );
       if (code === 'UPSTREAM_422')
         throw new BadRequestException(
-          'فایل یا تنظیمات آن معتبر نیست؛ پیش‌نمایش و خطاها را بررسی کنید.',
+          error instanceof NiyayeshUpstreamError && error.details
+            ? error.details
+            : 'فایل یا تنظیمات آن معتبر نیست؛ پیش‌نمایش و خطاها را بررسی کنید.',
         );
       if (code === 'UPSTREAM_403')
         throw new ForbiddenException('مجوز این داده در پنل نیایش فعال نیست.');
@@ -257,6 +428,9 @@ export class NiyayeshService {
     after = '0',
     id?: string,
     metric?: string,
+    reportMetric?: string,
+    from?: string,
+    to?: string,
   ) {
     if (
       !Object.hasOwn(NIYAYESH_RESOURCES, resource) ||
@@ -273,17 +447,30 @@ export class NiyayeshService {
         ].includes(metric))
     )
       throw new BadRequestException('منبع یا شناسه معتبر نیست.');
-    const binding = await this.binding(actor, branch);
+    if (
+      reportMetric &&
+      (!['users', 'orders', 'sales', 'pending'].includes(reportMetric) ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(from ?? '') ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(to ?? '') ||
+        !canViewScreen(actor.permissions, 'integrations.niyayesh.analytics'))
+    )
+      throw new ForbiddenException();
+    const binding = await this.binding(
+      actor,
+      branch,
+      reportMetric ? 'brands' : 'connections',
+    );
     if (!binding)
       throw new ServiceUnavailableException('اتصال تنظیم نشده است.');
     const { config, user } = binding;
     if (!user.resources.includes(resource))
       throw new ForbiddenException('مجوز این منبع برای حساب شما فعال نیست.');
-    const effectiveMetric =
-      metric ?? (resource === 'tours' ? 'tours' : undefined);
+    const effectiveMetric = reportMetric
+      ? undefined
+      : (metric ?? (resource === 'tours' ? 'tours' : undefined));
     const suffix = id
       ? `/${id}`
-      : `?after_id=${after}&limit=25${effectiveMetric ? `&metric=${effectiveMetric}` : ''}`;
+      : `?after_id=${after}&limit=25${effectiveMetric ? `&metric=${effectiveMetric}` : ''}${reportMetric ? `&report_metric=${reportMetric}&from=${from}&to=${to}` : ''}`;
     return this.read(
       config,
       user.subject,

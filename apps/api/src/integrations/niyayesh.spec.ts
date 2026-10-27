@@ -186,3 +186,78 @@ describe('Niyayesh personal read connector', () => {
     expect(a['Content-Type']).toBe('application/json');
   });
 });
+
+describe('Niyayesh native editor and period reports', () => {
+  it('passes only the fixed native route, stable command, personal actor and version', async () => {
+    const service = new NiyayeshService();
+    vi.spyOn(service, 'binding').mockResolvedValue({
+      config,
+      user: { ...config.users![0]!, resources: ['tours'] },
+    });
+    const read = vi.spyOn(service, 'read').mockResolvedValue({ id: 1 });
+    await service.saveCatalogue(actor, 'branch-a', 'tours', {
+      id: '1',
+      version: '8',
+      command: 'stable-command-12345',
+      value: { title: 'New' },
+    });
+    expect(read).toHaveBeenCalledWith(
+      config,
+      'person-a',
+      '/api/v1/admin/tours/1',
+      {
+        method: 'PATCH',
+        command: 'stable-command-12345',
+        version: '8',
+        body: '{"title":"New"}',
+      },
+    );
+    await expect(
+      service.saveCatalogue(
+        { ...actor, permissions: [] },
+        'branch-a',
+        'tours',
+        { command: 'stable-command-12345', value: { title: 'New' } },
+      ),
+    ).rejects.toThrow();
+    expect(read).toHaveBeenCalledTimes(1);
+    await expect(
+      service.saveCatalogue(actor, 'branch-a', 'tours', {
+        id: '1',
+        command: 'stable-command-12345',
+        value: { title: 'New' },
+      }),
+    ).rejects.toThrow();
+  });
+  it('redacts report facts and activities outside personal source grants', async () => {
+    const service = new NiyayeshService();
+    vi.spyOn(service, 'binding').mockResolvedValue({
+      config: { ...config, registrySystemId: 'registered-site' },
+      user: { ...config.users![0]!, resources: ['site-analytics', 'hotels'] },
+    });
+    vi.spyOn(service, 'read').mockResolvedValue({
+      metrics: {
+        users: { value: 3 },
+        orders: { value: 4 },
+        sales: { value: 5 },
+        pending: { value: 1 },
+      },
+      totals: { tours: 8, hotels: 9 },
+      trends: { users: [1], sales: [2] },
+      salesByCurrency: [{ currency: 'USD', amount: '5' }],
+      activity: [{ resource: 'customer-orders' }],
+    });
+    const report = await service.report(
+      actor,
+      'branch-a',
+      '2026-10-01',
+      '2026-10-27',
+    );
+    expect(report.metrics.users).toEqual({ value: null, state: 'FORBIDDEN' });
+    expect(report.salesByCurrency).toBeNull();
+    expect(report.totals).toEqual({ tours: null, hotels: 9 });
+    expect(report.activity).toEqual([]);
+    expect(report.trends.users).toBeUndefined();
+    expect(report.registrySystemId).toBe('registered-site');
+  });
+});
