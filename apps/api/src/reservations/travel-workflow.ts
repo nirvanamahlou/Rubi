@@ -121,6 +121,13 @@ export function transitionTravelWorkflow(
         passengerIds,
         allowAggregateSupplierForm,
       );
+      if (
+        next.supplierFormSettings.supplierFormPrices === undefined &&
+        current.supplierFormSettings?.supplierFormPrices !== undefined
+      )
+        next.supplierFormSettings.supplierFormPrices = structuredClone(
+          current.supplierFormSettings.supplierFormPrices,
+        );
       break;
     case 'VOUCHER_SETTINGS':
       if (current.supplierStatus === 'CANCELLED')

@@ -1,3 +1,4 @@
+import { supplierPriceTableData } from '../model/supplier-form-prices';
 import { localizeDocumentHtml } from '@/i18n/document';
 import {
   voucherPassengerServices,
@@ -6,7 +7,7 @@ import {
   voucherPassengerPageUnits,
 } from '../model/voucher-passenger-services';
 import { reservationFormFooterHtml } from '../model/reservation-form-footer';
-import { reservationFormPriceText } from '../model/reservation-form-price';
+
 import { supplierFormData, voucherFormData } from '../model/voucher-settings';
 import {
   reservationPassengerPages,
@@ -97,21 +98,11 @@ export function voucherPdfHtml(
       [
         [voucher ? 'BOOKING NO.' : 'REQUEST NO.', data.request],
         ['SUPPLIER', data.supplier],
-        ...(!voucher
-          ? [
-              [
-                'PROPOSED PURCHASE PRICE',
-                reservationFormPriceText(
-                  settings?.hotelPurchasePrices ?? [],
-                  'code',
-                ) || '-',
-              ],
-            ]
-          : []),
+
         [voucher ? 'BOOKING DATE' : 'DATE OF ISSUE', data.issueDate],
         ['SERVICES', data.services],
       ],
-      voucher ? 'meta' : 'meta metaWithPrice',
+      'meta',
     )}
     <section class="bookingSection">${heading('01', 'BOOKING SUMMARY', 'Reservation details')}${fields(
       [
@@ -200,7 +191,7 @@ export function voucherPdfHtml(
             'passengers',
           )
     }
-    ${heading('06', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
+    ${!voucher ? heading('06', 'PRICES', 'Supplier quotation') + table(supplierPriceTableData(intake).headers, [supplierPriceTableData(intake).values]) : ''}${heading(voucher ? '06' : '07', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
     <footer class="footer"><div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin, intake.workflow.branding?.companyCode, data.brand, publicDocumentUrl, voucher)}</div><div><span></span></div><b>${index + 1} / ${pageCount}</b></footer></article>`;
     })
     .join('');

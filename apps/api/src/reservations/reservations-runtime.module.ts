@@ -1,4 +1,5 @@
 import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
+import { validateSupplierFormPrices } from './voucher-settings';
 import { SystemManagementModule } from '../system-management/system-management.module';
 import { InsuranceSettingsService } from '../integrations/insurance/insurance-settings';
 import { ReservationInsuranceController } from './insurance/insurance.controller';
@@ -476,6 +477,24 @@ export class ReservationRequestsController {
     @Body() input: TravelWorkflowCommandV1,
     @Req() req: AuthenticatedRequest,
   ) {
+    if (
+      input.action === 'SUPPLIER_FORM_SETTINGS' &&
+      input.voucherSettings?.supplierFormPrices !== undefined
+    ) {
+      await this.workflow.detail(id, req.actor.branchIds);
+      let prices: ReturnType<typeof validateSupplierFormPrices>;
+      try {
+        prices = validateSupplierFormPrices(
+          input.voucherSettings.supplierFormPrices,
+        );
+      } catch {
+        throw new BadRequestException('جدول قیمت فرم رزرواسیون معتبر نیست.');
+      }
+      for (const currency of new Set(
+        Object.values(prices ?? {}).map((price) => price.currencyCode),
+      ))
+        await this.directory!.currencyReference(currency);
+    }
     if (
       ['VOUCHER_SETTINGS', 'SUPPLIER_FORM_SETTINGS'].includes(input.action) &&
       input.voucherSettings?.brokerId
