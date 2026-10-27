@@ -1,5 +1,7 @@
 ## MULTIHOTEL-ROOM-PARITY-1027 — PC-A — IN_PROGRESS
 
+CI follow-up: reserve only three new English display translations in the existing Web override catalogue; all prior entries remain unchanged. The exact-head full-suite gate found missing labels; source lock releases with the corrected candidate.
+
 COMPUTER_ID=PC-A; branch codex/pc-a-multihotel-room-parity-1027 from develop d05f89649. Owner requests hotel two and subsequent stays use the same room-count, type/category, adult/child/infant and age controls as hotel one, with develop merge. Reserve Sales additional-hotel editor and focused tests, Sales draft validation/payload/print, additive optional roomCategory in SalesHotelStayInput, Sales-owned validation/repository/presenter, one nullable additional-stay room category column, existing PostgreSQL room migration regression and own data/status/assignment notes. Sole Migration/Schema Owner PC-A for this bounded additive column; previous multi-hotel PR1153 merged and source/schema reservations released. Existing API producers/consumers remain backwards compatible: legacy category is absent and may be inferred for display; no historical records rewritten. Preserve itinerary, primary passenger allocations, dates, prices, authorization, audit and prior room data. No dependency, operational data or deployment changes. Final-head hosted checks precede owner-authorized develop merge.
 
 ## RESERVATION-SERVICE-BORDERLESS-1027 — PC-A — IN_PROGRESS
