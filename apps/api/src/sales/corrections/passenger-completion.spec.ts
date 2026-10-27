@@ -325,6 +325,7 @@ describe('completing booked aggregate passenger slots', () => {
       kind: 'person' as const,
       firstName: 'Synthetic',
       lastName: 'Added',
+      displayName: 'Synthetic Added',
       roles: ['passenger' as const],
     };
     await s.service.createPerson(id, input, actor);
@@ -347,6 +348,7 @@ describe('completing booked aggregate passenger slots', () => {
           kind: 'person',
           firstName: 'Synthetic',
           lastName: 'Added',
+          displayName: 'Synthetic Added',
           roles: ['passenger'],
         },
         actor,
