@@ -11,6 +11,7 @@ import {
 import {
   calculateSalesBalances,
   passengerAgeCategory,
+  contractPassengerAgeCategory,
   salesFingerprint,
   sumSalesDecimals,
   validateSalesContract,
@@ -1421,3 +1422,28 @@ it('validates anonymous per-age row prices against canonical totals without inve
     validateSalesContract({ ...c, passengers: draft.passengers }, false),
   ).toThrow();
 });
+
+it.each(['ADT', 'CHD', 'INF'] as const)(
+  'accepts unknown DOB with booked category %s and rejects missing/invalid facts',
+  (ageCategory) => {
+    const input = structuredClone(draft);
+    input.passengers = input.passengers.map((p) => ({
+      ...p,
+      birthDate: '',
+      ageCategory,
+    }));
+    expect(() => validateSalesContract(input)).not.toThrow();
+    expect(
+      contractPassengerAgeCategory(input.passengers[0]!, input.departureDate),
+    ).toBe(ageCategory);
+    expect(() =>
+      contractPassengerAgeCategory({ birthDate: '' }, input.departureDate),
+    ).toThrow();
+    expect(() =>
+      contractPassengerAgeCategory(
+        { birthDate: 'invalid', ageCategory },
+        input.departureDate,
+      ),
+    ).toThrow();
+  },
+);

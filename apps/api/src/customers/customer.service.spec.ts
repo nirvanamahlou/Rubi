@@ -482,7 +482,7 @@ describe('CustomerService', () => {
       service.createForSales(input, { ...actor, permissions: [] }),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
-  it('allows name-only historical completion while keeping ordinary Sales creation strict', async () => {
+  it('allows unknown birth dates in Sales while keeping ordinary Customer creation strict', async () => {
     const repository = {
       create: vi.fn().mockResolvedValue(row),
     } as unknown as CustomerRepository;
@@ -503,8 +503,12 @@ describe('CustomerService', () => {
       isPassenger: true,
       birthDate: null,
     });
+    await service.createForSales(input, salesActor);
+    expect(vi.mocked(repository.create).mock.calls[1]?.[0]).toMatchObject({
+      birthDate: null,
+    });
     await expect(
-      service.createForSales(input, salesActor),
+      service.create({ ...input, nationalId: mutation.nationalId! }, actor),
     ).rejects.toMatchObject({
       response: { code: 'CUSTOMER_PASSENGER_BIRTH_DATE_REQUIRED' },
     });
@@ -512,7 +516,7 @@ describe('CustomerService', () => {
       service.createForSalesCompletion(input, { ...actor, permissions: [] }),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
-  it('still protects a supplied national ID and requires a contract passenger birth date', async () => {
+  it('still protects a supplied national ID and validates a supplied birth date', async () => {
     const repository = {
       create: vi.fn().mockResolvedValue(row),
     } as unknown as CustomerRepository;
@@ -528,11 +532,13 @@ describe('CustomerService', () => {
     const input = { ...mutation };
     delete input.nationalId;
     delete input.birthDate;
-    await expect(
-      service.createForSales(input, salesActor),
-    ).rejects.toMatchObject({
-      response: { code: 'CUSTOMER_PASSENGER_BIRTH_DATE_REQUIRED' },
+    await service.createForSales(input, salesActor);
+    expect(vi.mocked(repository.create).mock.calls[1]?.[0]).toMatchObject({
+      birthDate: null,
     });
+    await expect(
+      service.createForSales({ ...input, birthDate: 'invalid' }, salesActor),
+    ).rejects.toThrow('تاریخ تولد معتبر نیست');
   });
 
   it('rejects a person create without national ID', async () => {

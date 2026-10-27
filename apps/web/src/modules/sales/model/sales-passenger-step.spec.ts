@@ -166,5 +166,17 @@ it('validates age composition against hotel dates without a separate trip-start 
       false,
       null,
     ),
-  ).toContain('تاریخ تولد');
+  ).toContain('ترکیب ثبت‌شده');
+  expect(
+    salesPassengerStepError(
+      {
+        ...state,
+        passengers: [
+          { ...state.passengers[0]!, birthDate: '', ageCategory: 'ADT' },
+        ],
+      },
+      false,
+      null,
+    ),
+  ).toBeNull();
 });

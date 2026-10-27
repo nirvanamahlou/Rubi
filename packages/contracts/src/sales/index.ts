@@ -1,4 +1,5 @@
 export * from './hotel-rooms';
+export * from './passenger-age';
 import type { SalesHotelRoomV1 } from './hotel-rooms';
 import type { SalesServicePricingV1 } from './pricing';
 import type { LegalEntityCode } from '../legal-entities';
@@ -116,6 +117,9 @@ export interface SalesPassengerInput {
   agreedPrices?: readonly SalesMoney[];
   customerId: string;
   displayNameSnapshot: string;
+  /** Booked category when DOB is unknown; a supplied DOB remains authoritative. */
+  ageCategory?: SalesPassengerAgeCategory;
+  /** Empty string represents unknown DOB, persisted as SQL NULL. */
   birthDate: string;
   serviceClientKeys: readonly string[];
 }

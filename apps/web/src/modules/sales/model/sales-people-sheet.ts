@@ -1,4 +1,7 @@
-import { usesRoomDrivenGuests } from './contract-guest-stays';
+import {
+  usesRoomDrivenGuests,
+  roomDrivenFlightParty,
+} from './contract-guest-stays';
 import { tehranToday } from '@/lib/passport-dates';
 import type {
   CustomerDetail,
@@ -148,6 +151,27 @@ export const passengerSlotKeys = (state: SalesFormState) =>
           ? (state.flightOnlyPassengers ?? []).map((p) => p.key)
           : []),
       ];
+
+export function bookedSlotCategory(
+  state: SalesFormState,
+  key: string,
+): 'ADT' | 'CHD' | 'INF' {
+  const extra = state.flightOnlyPassengers?.find((p) => p.key === key);
+  if (extra) return extra.age < 2 ? 'INF' : extra.age < 12 ? 'CHD' : 'ADT';
+  const counts = usesRoomDrivenGuests(state)
+    ? roomDrivenFlightParty(state.hotel.rooms, {
+        adults: 0,
+        childAges: [],
+        infantAges: [],
+      }).passengerComposition
+    : salesPassengerCounts(state);
+  const index = passengerSlotKeys(state).indexOf(key);
+  return index < counts.adults
+    ? 'ADT'
+    : index < counts.adults + counts.children
+      ? 'CHD'
+      : 'INF';
+}
 export const peopleRow = (draft: SalesPeopleDraft, key: string): PeopleRow =>
   draft.rows[key] ?? { values: emptyPeopleValues() };
 export function selectedPeopleRow(person: CustomerDetail): PeopleRow {
@@ -347,8 +371,6 @@ export function peopleCreateInput(
     (!/^\d{10}$/.test(nationalId) || !isValidIranianNationalId(nationalId))
   )
     throw new Error('کد ملی معتبر ۱۰رقمی وارد کنید.');
-  if (passenger && !v.birthDate)
-    throw new Error('تاریخ تولد مسافر الزامی است.');
   const passportNumber = v.passportNumber
     .trim()
     .toUpperCase()
@@ -498,6 +520,7 @@ export function validateSalesPeopleDraft(
     customerId: key,
     displayName: key,
     birthDate: peopleRow(draft, key).values.birthDate,
+    ageCategory: bookedSlotCategory(state, key),
   }));
   if (
     !state.legacyContract &&
@@ -505,7 +528,7 @@ export function validateSalesPeopleDraft(
     !salesPassengerCompositionMatches({ ...state, passengers })
   )
     throw new Error(
-      'تاریخ تولد همه مسافران را کامل کنید؛ تعداد بزرگسال، کودک و نوزاد باید با مرحله اول یکسان باشد.',
+      'تعداد و رده سنی مسافران باید با ترکیب ثبت‌شده در مرحله اول یکسان باشد.',
     );
 }
 function registrationNames(row: PeopleRow, passportIdentity: boolean) {
@@ -904,6 +927,9 @@ export async function saveSalesPeopleDraft(
           ? `${row.values.passportFirstName.trim()} ${row.values.passportLastName.trim()}`.toUpperCase()
           : row.person!.displayName,
       birthDate: row.values.birthDate,
+      ...(!row.values.birthDate
+        ? { ageCategory: bookedSlotCategory(state, key) }
+        : {}),
     };
   });
   const customer =

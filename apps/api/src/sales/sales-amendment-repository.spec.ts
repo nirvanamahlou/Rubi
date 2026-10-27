@@ -28,8 +28,11 @@ function setup(count = 1) {
     },
     salesContractHotelSelection: { ...remove, create: vi.fn() },
     salesContractTicketSelection: { ...remove },
-    salesPassengerServiceAllocation: { ...remove },
-    salesContractPassenger: { ...remove },
+    salesPassengerServiceAllocation: { ...remove, createMany: vi.fn() },
+    salesContractPassenger: {
+      ...remove,
+      create: vi.fn(async () => ({ id: 'new-person' })),
+    },
     salesContractService: {
       ...remove,
       create: vi.fn(async () => ({ id: 'hotel-service' })),
@@ -54,6 +57,31 @@ const amendment = {
   reserve: vi.fn(async () => {}),
 };
 describe('contract amendment transaction', () => {
+  it('persists an unknown birth date as SQL NULL with the booked category', async () => {
+    const { tx, repository } = setup();
+    await repository.updateDraft(
+      'id',
+      {
+        ...input,
+        passengers: [
+          {
+            customerId: 'person',
+            displayNameSnapshot: 'Synthetic',
+            birthDate: '',
+            ageCategory: 'CHD',
+            serviceClientKeys: [],
+          },
+        ],
+      },
+      2,
+      'Synthetic',
+      { userId: 'u', branchId: 'b' },
+      amendment,
+    );
+    expect(tx.salesContractPassenger.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ birthDate: null, ageCategory: 'CHD' }),
+    });
+  });
   it('writes the versioned outbox in the same transaction without replacing payments', async () => {
     const { tx, repository } = setup();
     await expect(

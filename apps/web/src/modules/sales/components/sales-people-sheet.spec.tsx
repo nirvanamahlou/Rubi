@@ -16,6 +16,24 @@ vi.mock('./sales-date-picker', () => ({
 }));
 
 describe('Sales uses the Customers entry spreadsheet', () => {
+  it('shows birth date without a required marker while retaining the booked age hint', () => {
+    const html = renderToStaticMarkup(
+      <SalesPeopleSheet
+        state={emptySalesForm}
+        draft={null}
+        onDraftChange={vi.fn()}
+        onConfirmed={vi.fn()}
+        onBusyChange={vi.fn()}
+        onAddInfant={vi.fn()}
+      />,
+    );
+    const header = [...html.matchAll(/<th\b[^>]*>[\s\S]*?<\/th>/g)].find((m) =>
+      m[0].includes('تاریخ تولد'),
+    )?.[0];
+    expect(header).toBeDefined();
+    expect(header).not.toContain('*');
+    expect(html).not.toContain('تاریخ تولد را وارد کنید');
+  });
   it('omits acquaintance selection and its loading messages for agency contracts', () => {
     const html = renderToStaticMarkup(
       <SalesPeopleSheet

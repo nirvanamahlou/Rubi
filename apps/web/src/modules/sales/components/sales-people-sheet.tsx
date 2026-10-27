@@ -33,6 +33,7 @@ import {
 } from '../model/sales-form';
 import {
   initialSalesPeopleDraft,
+  bookedSlotCategory,
   passengerSlotKeys,
   peopleRow,
   emptyPeopleValues,
@@ -407,6 +408,7 @@ export function SalesPeopleSheet({
                 : salesPassengerAgeLabel(
                     row.values.birthDate,
                     salesTravelDate(state),
+                    bookedSlotCategory(state, key),
                   )}
             </p>
           ) : null}
@@ -906,6 +908,7 @@ export function SalesPeopleSheet({
         <CustomerEntrySheet
           optionalFields={[
             'nationalId',
+            'birthDate',
             'passportNumber',
             'passportExpiryDate',
             ...(!passportIdentity ? (['gender'] as const) : []),
@@ -986,11 +989,11 @@ export function SalesPeopleSheet({
                   nationalId: 'کد ملی',
                   passportFirstName: 'نام انگلیسی مطابق پاسپورت *',
                   passportLastName: 'نام خانوادگی انگلیسی مطابق پاسپورت *',
-                  birthDate: 'تاریخ تولد *',
+                  birthDate: 'تاریخ تولد',
                   passportNumber: 'شماره پاسپورت',
                   passportExpiryDate: 'انقضای پاسپورت',
                 }
-              : { nationalId: 'کد ملی', birthDate: 'تاریخ تولد *' }
+              : { nationalId: 'کد ملی', birthDate: 'تاریخ تولد' }
           }
           salesDatePolicy
           calendarSwitchInBirthDateHeader
