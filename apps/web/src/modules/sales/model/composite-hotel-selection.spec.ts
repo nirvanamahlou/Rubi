@@ -123,9 +123,15 @@ it('requires independent chronological dates and preserves the itinerary in payl
     rooms: state.hotel.rooms,
   });
   expect(salesHotelValid(state)).toBe(true);
+  state.hotel.additionalStays![0]!.rooms![0]!.roomCategory = 'SINGLE';
   expect(salesPayload(state).hotelSelection?.additionalStays).toEqual(
     state.hotel.additionalStays,
   );
+  state.hotel.occupancy = 2;
+  state.hotel.additionalStays![0]!.rooms![0]!.childAges = [null];
+  expect(salesHotelValid(state)).toBe(false);
+  state.hotel.additionalStays![0]!.rooms![0]!.childAges = [5];
+  expect(salesHotelValid(state)).toBe(true);
   state.hotel.additionalStays![0]!.checkInDate = '2099-01-02';
   expect(salesHotelValid(state)).toBe(false);
 });
