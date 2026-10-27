@@ -70,7 +70,7 @@ export type StickyDecision =
   | {
       kind: 'PREFER';
       extension: string;
-      ringSeconds: 20;
+      ringSeconds: 10;
       fallbackQueue: string;
     };
 export const fallback = (queue: string, reason: string): StickyDecision => ({
@@ -137,5 +137,5 @@ export async function selectPreviousAgent(
     return fallback(queue, 'NOT_A_CURRENT_MEMBER');
   if (members[0]!.paused || !members[0]!.available)
     return fallback(queue, 'AGENT_UNAVAILABLE');
-  return { kind: 'PREFER', extension, ringSeconds: 20, fallbackQueue: queue };
+  return { kind: 'PREFER', extension, ringSeconds: 10, fallbackQueue: queue };
 }

@@ -153,3 +153,38 @@ describe('request assignee organizational authorization', () => {
     ]);
   });
 });
+
+it('denies management fields to ordinary staff even on their own request', async () => {
+  const { directory } = setup();
+  expect(await directory.canManageRequest(actor, 'branch', 'self')).toBe(false);
+});
+it('allows only a manager of the responsible employee unit', async () => {
+  const { directory, user } = setup();
+  const manager: AuthenticatedActor = {
+    ...actor,
+    permissions: [
+      ...actor.permissions,
+      'customer_affairs.call_center.workflow.manage.team',
+    ],
+  };
+  expect(await directory.canManageRequest(manager, 'branch', 'employee')).toBe(
+    true,
+  );
+  user.findFirst
+    .mockResolvedValueOnce({
+      username: 'manager',
+      profile: { organizationUnitId: 'unit-a' },
+    })
+    .mockResolvedValueOnce({ profile: { organizationUnitId: 'unit-b' } });
+  expect(await directory.canManageRequest(manager, 'branch', 'employee')).toBe(
+    false,
+  );
+  expect(await directory.canManageRequest(manager, 'other', 'employee')).toBe(
+    false,
+  );
+});
+it('preserves only explicitly configured global authority', async () => {
+  vi.stubEnv('CALL_CENTER_REQUEST_GLOBAL_USERNAMES', 'danial,demo');
+  const { directory } = setup('danial');
+  expect(await directory.canManageRequest(actor, 'branch', null)).toBe(true);
+});

@@ -567,7 +567,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         title: 'Synthetic own request',
         status: 'NEW',
         priority: 'NORMAL',
-        reason: '',
+        reason: 'Synthetic request reason',
         ownerId: expertId,
       };
       const first = await workflow.saveRequest(
@@ -618,9 +618,18 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         status: 'COMPLETED',
         result: 'Synthetic complete',
       });
+      await expect(
+        workflow.saveRequest(expert, branchId, contactIds[0]!, {
+          ...input,
+          commandId: randomUUID(),
+          expectedVersion: 1,
+          status: 'CLOSED',
+          reason: 'Completed',
+        }),
+      ).rejects.toThrow('فقط برای مدیر واحد');
       expect(
         (
-          await workflow.saveRequest(expert, branchId, contactIds[0]!, {
+          await workflow.saveRequest(manager, branchId, contactIds[0]!, {
             ...input,
             commandId: randomUUID(),
             expectedVersion: 1,

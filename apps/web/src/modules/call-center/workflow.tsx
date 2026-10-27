@@ -552,7 +552,6 @@ export function WorkQueue({
   onMissedCallbacks,
   onPeriod,
   branchId,
-  actorId,
   canManage,
   refreshKey = 0,
 }: {
@@ -778,42 +777,116 @@ export function WorkQueue({
           )}
         </div>
         {selected && (
-          <Dialog
-            open
-            onOpenChange={(open) => {
-              if (!open) setSelected(null);
+          <QueueRequestEditor
+            key={selected.requestId}
+            selected={selected}
+            canManage={canManage}
+            onClose={() => setSelected(null)}
+            onReturnFocus={(event) => {
+              event.preventDefault();
+              queueTrigger.current?.focus();
             }}
-          >
-            <DialogContent
-              onCloseAutoFocus={(event) => {
-                event.preventDefault();
-                queueTrigger.current?.focus();
-              }}
-              dir="rtl"
-              className="max-h-[90dvh] max-w-2xl overflow-y-auto"
-            >
-              <DialogTitle>رسیدگی به درخواست مخاطب</DialogTitle>
-              <DialogDescription>
-                درخواست و اقدام‌های مرتبط را بررسی کنید.
-              </DialogDescription>
-              <WorkflowPanel
-                key={selected.requestId}
-                requestId={selected.requestId}
-                branchId={selected.branchId}
-                actorId={actorId}
-                contactId={selected.contactId}
-                canManage={canManage}
-                onChanged={() => (
-                  setLoading(true),
-                  setError(''),
-                  setRevision((value) => value + 1)
-                )}
-              />
-            </DialogContent>
-          </Dialog>
+            onSaved={() => {
+              window.dispatchEvent(new Event('call-center:workflow-changed'));
+              setSelected(null);
+            }}
+          />
         )}
       </section>
     </>
+  );
+}
+function QueueRequestEditor({
+  selected,
+  canManage,
+  onClose,
+  onReturnFocus,
+  onSaved,
+}: {
+  selected: { requestId: string; contactId: string; branchId: string };
+  canManage: boolean;
+  onClose: () => void;
+  onReturnFocus: (event: Event) => void;
+  onSaved: () => void;
+}) {
+  const [loaded, setLoaded] = useState<{
+    item: RequestCase;
+    contactCall: Call | undefined;
+  } | null>(null);
+  const [error, setError] = useState('');
+  const handingOff = useRef(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    Promise.all([
+      workflowApi.list(
+        selected.branchId,
+        selected.contactId,
+        controller.signal,
+        1,
+        1,
+        selected.requestId,
+      ),
+      readApi.calls(
+        selected.branchId,
+        selected.contactId,
+        undefined,
+        controller.signal,
+      ),
+    ])
+      .then(([requests, history]) => {
+        if (controller.signal.aborted) return;
+        const item = requests.data.find(
+          (request) => request.id === selected.requestId,
+        );
+        if (!item) throw new Error('دریافت درخواست‌ها انجام نشد.');
+        handingOff.current = true;
+        setLoaded({ item, contactCall: history.data[0] });
+      })
+      .catch((reason) => {
+        if (!controller.signal.aborted)
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : 'دریافت درخواست‌ها انجام نشد.',
+          );
+      });
+    return () => controller.abort();
+  }, [selected.branchId, selected.contactId, selected.requestId]);
+  if (loaded)
+    return (
+      <WorkflowEditor
+        editor={{ kind: 'request', item: loaded.item }}
+        contactCall={loaded.contactCall}
+        operators={[]}
+        branchId={selected.branchId}
+        contactId={selected.contactId}
+        readOnly={!canManage}
+        onReturnFocus={onReturnFocus}
+        onClose={onClose}
+        onSaved={onSaved}
+      />
+    );
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent
+        dir="rtl"
+        onCloseAutoFocus={(event) => {
+          if (handingOff.current) event.preventDefault();
+          else onReturnFocus(event);
+        }}
+      >
+        <DialogTitle>درخواست و مسئول رسیدگی</DialogTitle>
+        <DialogDescription>
+          {error || 'در حال دریافت درخواست‌ها…'}
+        </DialogDescription>
+        {error && <p role="alert">{error}</p>}
+      </DialogContent>
+    </Dialog>
   );
 }
 export function WorkflowEditor({
@@ -824,7 +897,11 @@ export function WorkflowEditor({
   contactId,
   onClose,
   onSaved,
+  readOnly = false,
+  onReturnFocus,
 }: {
+  readOnly?: boolean;
+  onReturnFocus?: (event: Event) => void;
   contactCall?: Call | undefined;
   editor:
     | { kind: 'request'; item?: RequestCase }
@@ -836,6 +913,10 @@ export function WorkflowEditor({
   onSaved: (data: RequestCase[]) => void;
 }) {
   const restoreFocus = useDialogReturnFocus();
+  const managementLocked =
+    editor.kind === 'request' &&
+    !!editor.item &&
+    editor.item.canEditManagement !== true;
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [dirty, setDirty] = useState(false);
@@ -848,12 +929,14 @@ export function WorkflowEditor({
   } | null>(null);
   const ownersKey = `${branchId}:${ownersRevision}`;
   const ownersLoading =
-    editor.kind === 'request' && ownersResult?.key !== ownersKey;
+    editor.kind === 'request' &&
+    !managementLocked &&
+    ownersResult?.key !== ownersKey;
   const requestOperators =
     ownersResult?.key === ownersKey ? ownersResult.data : [];
   const ownersError = ownersResult?.key === ownersKey ? ownersResult.error : '';
   useEffect(() => {
-    if (editor.kind !== 'request') return;
+    if (editor.kind !== 'request' || managementLocked) return;
     let active = true;
     void workflowApi
       .requestOperators(branchId)
@@ -875,7 +958,7 @@ export function WorkflowEditor({
     return () => {
       active = false;
     };
-  }, [branchId, editor.kind, ownersKey]);
+  }, [branchId, editor.kind, ownersKey, managementLocked]);
   const [status, setStatus] = useState(
     editor.kind === 'request'
       ? editor.item?.status && editor.item.status !== 'NEW'
@@ -896,8 +979,13 @@ export function WorkflowEditor({
   useUnsavedGuard(dirty);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy) return;
-    if (editor.kind === 'request' && (ownersLoading || ownersError)) return;
+    if (busy || readOnly) return;
+    if (
+      editor.kind === 'request' &&
+      !managementLocked &&
+      (ownersLoading || ownersError)
+    )
+      return;
     const data = new FormData(event.currentTarget);
     const value = (key: string) => String(data.get(key) ?? '').trim();
     const base = {
@@ -908,6 +996,10 @@ export function WorkflowEditor({
       priority,
     };
     let payload: unknown;
+    if (editor.kind === 'request' && !value('reason')) {
+      setError('دلیل تغییر، بستن یا بازگشایی را وارد کنید.');
+      return;
+    }
     if (editor.kind === 'request' && !editor.item && !owner) {
       setError('کارشناس مسئول را انتخاب کنید.');
       return;
@@ -972,7 +1064,7 @@ export function WorkflowEditor({
       }}
     >
       <DialogContent
-        onCloseAutoFocus={restoreFocus}
+        onCloseAutoFocus={onReturnFocus ?? restoreFocus}
         onEscapeKeyDown={(event) => {
           // Radix observes Escape before the search input closes its own menu.
           const target = event.target;
@@ -996,7 +1088,7 @@ export function WorkflowEditor({
           دستگاه است.
         </DialogDescription>
         {contactCall && (
-          <p>
+          <p className={styles.editorContact}>
             مخاطب: {contactCall.name || 'نام ثبت نشده'} ·{' '}
             <bdi dir="ltr">{contactCall.phone || 'شماره نامشخص'}</bdi> ·{' '}
             {contactCall.subject}
@@ -1007,26 +1099,28 @@ export function WorkflowEditor({
           onSubmit={submit}
           onChange={() => setDirty(true)}
         >
-          <fieldset disabled={busy}>
+          <fieldset disabled={busy || readOnly}>
             {editor.kind === 'request' ? (
               <>
                 <label>
                   عنوان درخواست
                   <input
                     name="title"
+                    readOnly={managementLocked}
                     required
                     maxLength={160}
                     defaultValue={editor.item?.title}
                   />
                 </label>
                 <label>
-                  دلیل تغییر، بستن یا بازگشایی
+                  <span>
+                    دلیل تغییر، بستن یا بازگشایی{' '}
+                    <span aria-hidden="true">*</span>
+                  </span>
                   <textarea
                     name="reason"
                     maxLength={500}
-                    required={
-                      status === 'CLOSED' || editor.item?.status === 'CLOSED'
-                    }
+                    required
                     defaultValue={editor.item?.reason}
                   />
                 </label>
@@ -1078,18 +1172,28 @@ export function WorkflowEditor({
             )}
             <label>
               کارشناس مسئول
-              <OwnerSelect
-                operators={
-                  editor.kind === 'request' ? requestOperators : operators
-                }
-                value={owner}
-                disabled={busy || (editor.kind === 'request' && ownersLoading)}
-                required={editor.kind === 'request'}
-                onChange={(value) => {
-                  setOwner(value);
-                  setDirty(true);
-                }}
-              />
+              {managementLocked ? (
+                <input
+                  aria-label="کارشناس مسئول"
+                  readOnly
+                  value={editor.item?.ownerName ?? 'بدون مسئول'}
+                />
+              ) : (
+                <OwnerSelect
+                  operators={
+                    editor.kind === 'request' ? requestOperators : operators
+                  }
+                  value={owner}
+                  disabled={
+                    busy || (editor.kind === 'request' && ownersLoading)
+                  }
+                  required={editor.kind === 'request'}
+                  onChange={(value) => {
+                    setOwner(value);
+                    setDirty(true);
+                  }}
+                />
+              )}
               {editor.kind === 'request' && ownersLoading && (
                 <span role="status">در حال دریافت کارشناسان…</span>
               )}
@@ -1112,7 +1216,7 @@ export function WorkflowEditor({
                   label="وضعیت"
                   name="status"
                   value={status}
-                  disabled={busy}
+                  disabled={busy || managementLocked}
                   onValueChange={(value) => {
                     setStatus(value);
                     setDirty(true);
@@ -1138,7 +1242,7 @@ export function WorkflowEditor({
               <RequestChoice
                 label="اولویت"
                 value={priority}
-                disabled={busy}
+                disabled={busy || managementLocked}
                 onValueChange={(value) => {
                   setPriority(value);
                   setDirty(true);
@@ -1147,13 +1251,22 @@ export function WorkflowEditor({
               />
             </label>
             {error && <p role="alert">{error}</p>}
-            <footer>
-              <button type="submit">{busy ? 'در حال ذخیره…' : 'ذخیره'}</button>
-              <button type="button" onClick={close}>
-                انصراف
-              </button>
-            </footer>
+            {!readOnly && (
+              <footer>
+                <button type="submit">
+                  {busy ? 'در حال ذخیره…' : 'ذخیره'}
+                </button>
+                <button type="button" onClick={close}>
+                  انصراف
+                </button>
+              </footer>
+            )}
           </fieldset>
+          {readOnly && (
+            <button type="button" onClick={close}>
+              بستن
+            </button>
+          )}
         </form>
       </DialogContent>
     </Dialog>
