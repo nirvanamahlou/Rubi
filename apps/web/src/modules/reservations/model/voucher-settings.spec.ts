@@ -242,10 +242,15 @@ it('keeps passenger services and room allocation in the supplier revision only',
     returnTransfer: true,
     checkIn: '01 NOV 2026',
   });
-  expect(result.passengers[0]!.name).toContain('ROOM 1 - Double');
+  expect(result.passengers[0]!.name).toBe(
+    voucherFormData(intake, {}).passengers[0]!.name,
+  );
+  expect(result.roomBreakdown).toEqual([
+    { ordinal: 1, roomType: 'Double', adults: 2, childAges: [] },
+  ]);
   expect(
     reservationPdfHtml(intake, {}, 'data:image/png;base64,AAAA', '', false),
-  ).toContain('ROOM 1 - Double');
+  ).not.toContain('ROOM 1 - Double');
   expect(JSON.stringify(intake.snapshot)).toBe(before);
   expect(voucherFormData(intake, {}).passengers[0]!.outboundFlight).toBe(false);
 });
