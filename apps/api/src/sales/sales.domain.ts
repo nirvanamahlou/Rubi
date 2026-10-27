@@ -813,8 +813,10 @@ export function validateSalesContract(
       let previousOut = validDate(hotel.checkOutDate, 'Hotel check-out');
       for (const stay of hotel.additionalStays) {
         if (
+          stay &&
           stay.rooms !== undefined &&
-          (!validSalesHotelRooms(stay.rooms, stay.rooms.length) ||
+          (!Array.isArray(stay.rooms) ||
+            !validSalesHotelRooms(stay.rooms, stay.rooms.length) ||
             stay.rooms.reduce(
               (n, room) => n + room.adults + room.childAges.length,
               0,
