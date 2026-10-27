@@ -249,7 +249,7 @@ describe('published ticket revision', () => {
   it('logically archives sold rows while retaining their allocation history', async () => {
     const { tx, service } = setup({
       status: 'ACTIVE',
-      capacityAllocations: [{ id: 'linked-sale' }],
+      capacityAllocations: [{ id: 'linked-sale', quantity: 1 }],
     });
     await expect(service.archiveExpired(id, 1, actor)).resolves.toEqual({
       data: { id },
@@ -574,7 +574,9 @@ describe('published ticket revision', () => {
     expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
   });
   it('allows a schedule-only revision after a contract reserved seats', async () => {
-    const { tx, service } = setup({ capacityAllocations: [{ id: 'linked' }] });
+    const { tx, service } = setup({
+      capacityAllocations: [{ id: 'linked', quantity: 1 }],
+    });
     await expect(
       service.revise(
         id,
@@ -591,15 +593,73 @@ describe('published ticket revision', () => {
     ).resolves.toEqual({ data: { id, version: 2 } });
     expect(tx.ticketPublishedOffer.update).toHaveBeenCalledOnce();
   });
-  it('still rejects changing the route or capacity of a sold offer', async () => {
-    const { tx, service } = setup({ capacityAllocations: [{ id: 'linked' }] });
+  it.each([5, 41])(
+    'updates sold flight operational facts and safe capacity %s without changing allocations',
+    async (totalCapacity) => {
+      const { tx, service } = setup({
+        capacityAllocations: [{ id: 'linked', quantity: 5 }],
+      });
+      const revised = {
+        ...offer,
+        carrierName: 'Updated Air',
+        serviceNumber: 'UPDATED-123',
+        departureAt: '2099-09-23T05:00:00Z',
+        arrivalAt: '2099-09-23T08:00:00Z',
+        economyBaggageKg: '35',
+        businessBaggageKg: '45',
+        returnMinDays: 7,
+        returnMaxDays: 10,
+        totalCapacity,
+      };
+      await expect(
+        service.revise(id, { expectedVersion: 1, offer: revised }, actor),
+      ).resolves.toEqual({ data: { id, version: 2 } });
+      expect(tx.ticketPublishedOffer.update).toHaveBeenCalledWith({
+        where: { id },
+        data: expect.objectContaining({
+          carrierName: revised.carrierName,
+          serviceNumber: revised.serviceNumber,
+          economyBaggageKg: '35',
+          businessBaggageKg: '45',
+          totalCapacity,
+          returnMinDays: 7,
+          returnMaxDays: 10,
+          departureAt: new Date(revised.departureAt),
+          arrivalAt: new Date(revised.arrivalAt),
+        }),
+      });
+      expect(tx.ticketOfferAudit.create).toHaveBeenCalledOnce();
+    },
+  );
+  it('rejects capacity below already allocated seats', async () => {
+    const { tx, service } = setup({
+      capacityAllocations: [{ id: 'linked', quantity: 5 }],
+    });
     await expect(
       service.revise(
         id,
-        { expectedVersion: 1, offer: { ...offer, totalCapacity: 41 } },
+        { expectedVersion: 1, offer: { ...offer, totalCapacity: 4 } },
         actor,
       ),
-    ).rejects.toThrow('فقط ساعت حرکت و رسیدن');
+    ).rejects.toThrow('صندلی‌های فروخته‌شده و رزروشده');
+    expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
+  });
+  it.each([
+    { originId: '10000000-0000-4000-8000-000000000003' },
+    { destinationId: '10000000-0000-4000-8000-000000000003' },
+    { cabinClassCode: 'BUSINESS' as const },
+    { supplyType: 'FLOATING' as const },
+  ])('preserves sold inventory identity for %j', async (patch) => {
+    const { tx, service } = setup({
+      capacityAllocations: [{ id: 'linked', quantity: 1 }],
+    });
+    await expect(
+      service.revise(
+        id,
+        { expectedVersion: 1, offer: { ...offer, ...patch } },
+        actor,
+      ),
+    ).rejects.toThrow('اصلاح قراردادهای متصل');
     expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
   });
   it.each(['capacityHolds', 'tourOutboundDepartures', 'tourReturnDepartures'])(

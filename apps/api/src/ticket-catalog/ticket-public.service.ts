@@ -1964,22 +1964,37 @@ export class TicketPublicService {
             JSON.stringify(a).localeCompare(JSON.stringify(b)),
           ),
         );
-    const scheduleOnlyRevision =
+    const inventoryIdentityUnchanged =
       routesEqual &&
+      (row.supplyType ?? null) === (supplyType ?? null) &&
+      row.originId === value.originId &&
+      row.destinationId === value.destinationId &&
+      row.cabinClassCode === value.cabinClassCode;
+    const committedCapacity =
+      row.capacityAllocations.reduce(
+        (sum, allocation) => sum + allocation.quantity,
+        0,
+      ) + row.capacityHolds.reduce((sum, hold) => sum + hold.quantity, 0);
+    if (value.totalCapacity < committedCapacity)
+      throw new ConflictException(
+        'ظرفیت کل نمی‌تواند از تعداد صندلی‌های فروخته‌شده و رزروشده کمتر باشد.',
+      );
+    if (linkedSale && !inventoryIdentityUnchanged)
+      throw new ConflictException(
+        'تغییر مسیر، کلاس یا نوع تأمین بلیط فروخته‌شده نیازمند اصلاح قراردادهای متصل است.',
+      );
+    const scheduleOnlyRevision =
+      inventoryIdentityUnchanged &&
       (row.originAirportId == null ||
         row.originAirportId === originAirportId) &&
       (row.destinationAirportId == null ||
         row.destinationAirportId === destinationAirportId) &&
-      (row.supplyType ?? null) === (supplyType ?? null) &&
       baggageValue(row.economyBaggageKg) === baggageValue(economyBaggageKg) &&
       baggageValue(row.businessBaggageKg) === baggageValue(businessBaggageKg) &&
       (row.returnMinDays ?? null) === (min ?? null) &&
       (row.returnMaxDays ?? null) === (max ?? null) &&
-      row.originId === value.originId &&
-      row.destinationId === value.destinationId &&
       row.carrierName === value.carrierName &&
       row.serviceNumber === value.serviceNumber &&
-      row.cabinClassCode === value.cabinClassCode &&
       row.totalCapacity === value.totalCapacity;
     const templateOnlyRevision =
       scheduleOnlyRevision &&
@@ -1989,13 +2004,12 @@ export class TicketPublicService {
       row.arrivalAt.getTime() === new Date(value.arrivalAt).getTime();
     if (
       !templateOnlyRevision &&
-      ((linkedSale && !scheduleOnlyRevision) ||
-        row.capacityHolds.length ||
+      (row.capacityHolds.length ||
         row.tourOutboundDepartures.length ||
         row.tourReturnDepartures.length)
     )
       throw new ConflictException(
-        'برای بلیط متصل به قرارداد فقط ساعت حرکت و رسیدن قابل ویرایش است؛ رزرو ظرفیت یا تور متصل باید ابتدا تعیین تکلیف شود.',
+        'رزرو ظرفیت یا تور متصل باید ابتدا تعیین تکلیف شود.',
       );
     const updated = await tx.ticketPublishedOffer.update({
       where: { id },

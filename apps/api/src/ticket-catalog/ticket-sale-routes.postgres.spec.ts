@@ -193,6 +193,78 @@ describe.skipIf(!url)(
           actor,
         ),
       ).rejects.toThrow();
+      const allocationWhere = { offerId: offer.id, status: 'ACTIVE' } as const;
+      const allocationsBefore =
+        await client.ticketOfferCapacityAllocation.findMany({
+          where: allocationWhere,
+          orderBy: { id: 'asc' },
+        });
+      const revision = await service.revise(
+        offer.id,
+        {
+          expectedVersion: offer.version,
+          offer: {
+            ...input,
+            carrierName: 'Updated Air',
+            serviceNumber: 'UPDATED-123',
+            totalCapacity: 6,
+            economyBaggageKg: '35',
+          },
+        },
+        actor,
+      );
+      expect(
+        await client.ticketOfferCapacityAllocation.findMany({
+          where: allocationWhere,
+          orderBy: { id: 'asc' },
+        }),
+      ).toEqual(allocationsBefore);
+      const current = await service.currentSelections([selection(c)], branch);
+      expect(current[0]).toMatchObject({
+        offerId: offer.id,
+        destinationId: c,
+        carrierNameSnapshot: 'Updated Air',
+        serviceNumberSnapshot: 'UPDATED-123',
+      });
+      const races = await Promise.allSettled([
+        service.revise(
+          offer.id,
+          {
+            expectedVersion: revision.data.version,
+            offer: {
+              ...input,
+              carrierName: 'Updated Air',
+              serviceNumber: 'UPDATED-123',
+              totalCapacity: 3,
+              economyBaggageKg: '35',
+            },
+          },
+          actor,
+        ),
+        service.reserve(current, branch, randomUUID(), 2),
+      ]);
+      const final = await client.ticketPublishedOffer.findUniqueOrThrow({
+        where: { id: offer.id },
+        include: { capacityAllocations: { where: { status: 'ACTIVE' } } },
+      });
+      const allocated = final.capacityAllocations.reduce(
+        (sum, row) => sum + row.quantity,
+        0,
+      );
+      expect(allocated).toBeLessThanOrEqual(final.totalCapacity);
+      expect(races[1].status).toBe('fulfilled');
+      if (races[0].status === 'rejected')
+        expect(races[0].reason.message).toContain(
+          'صندلی‌های فروخته‌شده و رزروشده',
+        );
+      else {
+        expect(races[0].value.data.version).toBe(revision.data.version + 1);
+        expect(
+          races[1].status === 'fulfilled' && races[1].value.available,
+        ).toBe(false);
+      }
+      expect(final.carrierName).toBe('Updated Air');
+      expect(final.economyBaggageKg?.toString()).toBe('35');
     }, 20000);
   },
 );

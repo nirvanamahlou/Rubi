@@ -4523,5 +4523,8 @@
   "نسخه یا فهرست مسافران قرارداد تغییر کرده است.": "The contract version or passenger list has changed.",
   "نفر باشد.": "passengers.",
   "قدیمی‌ترین قرارداد": "Oldest contract first",
-  "ویرایش عنوان، مسئول، وضعیت و اولویت درخواست فقط برای مدیر واحد مجاز است.": "Only the unit manager may edit the request title, assignee, status and priority."
+  "ویرایش عنوان، مسئول، وضعیت و اولویت درخواست فقط برای مدیر واحد مجاز است.": "Only the unit manager may edit the request title, assignee, status and priority.",
+  "ظرفیت کل نمی‌تواند از تعداد صندلی‌های فروخته‌شده و رزروشده کمتر باشد.": "Total capacity cannot be lower than the sold and reserved seat count.",
+  "تغییر مسیر، کلاس یا نوع تأمین بلیط فروخته‌شده نیازمند اصلاح قراردادهای متصل است.": "Changing the route, cabin or supply type of a sold ticket requires amending its linked contracts.",
+  "رزرو ظرفیت یا تور متصل باید ابتدا تعیین تکلیف شود.": "Resolve the linked capacity hold or tour first."
 }
