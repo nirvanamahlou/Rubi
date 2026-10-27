@@ -28,6 +28,7 @@ export function SearchableReference({
   preferEnglishName = false,
   showAllOptionsOnOpen = false,
   required = true,
+  onOpenChange,
 }: {
   label: string;
   hideLabel?: boolean;
@@ -37,6 +38,7 @@ export function SearchableReference({
   onChange: (value: string) => void;
   disabled?: boolean;
   required?: boolean;
+  onOpenChange?: (open: boolean) => void;
   showAllOptionsOnOpen?: boolean;
   preferEnglishName?: boolean;
 }) {
@@ -68,6 +70,7 @@ export function SearchableReference({
             String(item.attributes?.englishName ?? ''),
         }))}
         optionLimit={showAllOptionsOnOpen ? Number.POSITIVE_INFINITY : 5}
+        {...(onOpenChange ? { onOpenChange } : {})}
         onValueChange={onChange}
       />
     </FormField>
