@@ -9917,3 +9917,6 @@ CONTRACT-PASSENGER-FIELDS-1027 validation:640 Sales tests pass/one existing skip
 ## ASSISTANT-SERVER-REPAIR-1027 — PC-C — IN_PROGRESS
 
 User authorizes diagnosis/repair of production Nora chat and prepared actions. Base77c122c5c. Reserve bounded read-only deployment diagnostic and own task/status docs; no shared source/runtime/container changes until actual configuration is verified. SSH rubi-deploy works, limited sudo audit confirms no assistant/read containers and no4300/4301 listener; Docker/config inaccessible to account. Preserve parallel Call Center operations. No schema/dependency or ERP-data transfer to provider.
+
+ASSISTANT-SERVER-REPAIR-1027 remains IN_PROGRESS: ERP-host Groq HTTP403 confirmed; provider preflight added before Compose mutation, root activation and authenticated acceptance pending.
+

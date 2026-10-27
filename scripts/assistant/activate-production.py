@@ -15,10 +15,12 @@ KEY = Path('/home/rubi-deploy/nora-provider-1027.env')
 STAGE = 'initialization'
 
 
-def command(args, timeout=90):
+def command(args, timeout=90, stage=None):
     global STAGE
     # Fixed operation names only; never log argv, environment values or stderr.
-    if args[:2] == ['docker', 'compose']:
+    if stage:
+        STAGE = stage
+    elif args[:2] == ['docker', 'compose']:
         STAGE = 'compose:' + args[4]
     elif args[:2] == ['docker', 'exec']:
         STAGE = 'container-probe'
@@ -28,6 +30,11 @@ def command(args, timeout=90):
     if result.returncode:
         diagnostic = ROOT / 'private/nora-last-command-error.txt'
         write_private(diagnostic, result.stderr)
+        if STAGE == 'groq-access':
+            # This probe emits only a numeric HTTP status, never a response or key.
+            status = result.stdout.strip()
+            if status.isdigit():
+                raise RuntimeError('Groq access rejected: HTTP ' + status + '; no ERP configuration changed')
         raise RuntimeError('Stage ' + STAGE + ' failed (exit ' + str(result.returncode)
                            + '). Private diagnostic: ' + str(diagnostic))
     return result.stdout.strip()
@@ -93,6 +100,10 @@ def activate():
         # Check the exact running image; no new image, migration or source build.
         check = "const fs=require('fs');for(const p of ['apps/api/dist/assistant-read/main.js','services/assistant/server.mjs'])if(!fs.existsSync(p))process.exit(1)"
         command(['docker', 'run', '--rm', '--network', 'none', '--entrypoint', 'node', image, '-e', check])
+        # Verify provider reachability before any Compose or Web mutation.
+        provider_probe = "const r=await fetch('https://api.groq.com/openai/v1/models',{headers:{authorization:'Bearer '+process.env.GROQ_API_KEY},signal:AbortSignal.timeout(10000)});console.log(r.status);process.exit(r.ok?0:1)"
+        command(['docker', 'run', '--rm', '--env-file', str(KEY), '--entrypoint', 'node', image, '-e', provider_probe],
+                25, stage='groq-access')
         env = dict(item.split('=', 1) for item in api['Config']['Env'] if '=' in item)
         for name in ('DATABASE_URL', 'IAM_ACCESS_TOKEN_SECRET'):
             if not env.get(name):
@@ -151,7 +162,7 @@ def activate():
             if not ready:
                 raise RuntimeError('Nora readiness failed')
             probe = "const r=await fetch('https://api.groq.com/openai/v1/models',{headers:{authorization:'Bearer '+process.env.GROQ_API_KEY},signal:AbortSignal.timeout(10000)});console.log(JSON.stringify({provider_status:r.status}));process.exit(r.ok?0:1)"
-            command(['docker', 'exec', container(names[0]), 'node', '-e', probe], 20)
+            command(['docker', 'exec', container(names[0]), 'node', '-e', probe], 20, stage='groq-runtime-access')
             receipt = {'status': 'transport_ready', 'authenticated_business_acceptance': 'pending',
                        'backup': str(backup), 'image': image, 'public_ports_added': False,
                        'database_mutations': False, 'provider_policy': 'messages-only'}

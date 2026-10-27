@@ -7801,3 +7801,6 @@ Foreign hotel-only guest entry matches flight identity fields; passport number a
 ## ASSISTANT-SERVER-REPAIR-1027 — PC-C
 
 Production Nora outage traced to missing Web service URL and absent assistant/read services. Root-console inspected configuration confirms it. Bounded inspect/activation scripts prepared with Compose snapshot, deployment lock, namespace-shared loopback-only services and rollback.68 assistant tests and Python syntax pass; root execution, live chat and authenticated report/source reconciliation remain pending. No migration/core data/provider-result transfer. See tasks/ASSISTANT-SERVER-REPAIR-1027.md.
+
+Production follow-up: direct unauthenticated Groq models request from ERP host returned HTTP403 with Forbidden on 2026-10-27. This confirms an upstream access barrier, not its IP/geographic cause. Latest root activation stopped at generic container-probe and rolled back; provider failure is plausible but not yet proven from that stage alone. Activation now checks authenticated provider access before Compose mutations and labels provider probes distinctly. No production acceptance claimed.
+
