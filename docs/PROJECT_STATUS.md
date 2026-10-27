@@ -7797,3 +7797,7 @@ Supplier forms no longer append room number/type to passenger names; room compos
 ## CONTRACT-PASSENGER-FIELDS-1027 — PC-A
 
 Foreign hotel-only guest entry matches flight identity fields; passport number and expiry are optional across new-contract modes while supplied values still validate. Gender precedes DOB where national ID was, and national ID follows passport fields; domestic gender is optional and saved when provided. Correction Add passenger no longer calls the ten-digit national-ID lookup with an empty ID, allowing name-only creation through the existing scoped completion policy. Supplied-ID reuse/review remains intact.640 Sales tests/one existing skip plus final110 targeted checks, scoped lint/format and full final Web build/types pass. User authorizes develop merge and Avina rollout with verified encrypted backups; no schema/API/dependency changes. Runtime verification is separate from source publication.
+
+## ASSISTANT-SERVER-REPAIR-1027 — PC-C
+
+Production Nora outage traced to missing Web service URL and absent assistant/read services. Root-console inspected configuration confirms it. Bounded inspect/activation scripts prepared with Compose snapshot, deployment lock, namespace-shared loopback-only services and rollback.68 assistant tests and Python syntax pass; root execution, live chat and authenticated report/source reconciliation remain pending. No migration/core data/provider-result transfer. See tasks/ASSISTANT-SERVER-REPAIR-1027.md.
