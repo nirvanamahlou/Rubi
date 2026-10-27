@@ -1,3 +1,5 @@
+import { ContractNoticeService } from './contract-notice.service';
+import { ContractNoticeController } from './contract-notice.controller';
 import { ContractPriceCorrectionService } from './contract-price-correction.service';
 import { PassengerCompletionService } from './passenger-completion.service';
 import type { SalesPassengerCompletionCommandV1 } from '@nora/contracts';
@@ -106,8 +108,9 @@ export class PassengerCorrectionController {
 }
 @Module({
   imports: [IamModule, CustomersModule, NotificationsModule],
-  controllers: [PassengerCorrectionController],
+  controllers: [PassengerCorrectionController, ContractNoticeController],
   providers: [
+    ContractNoticeService,
     PassengerCompletionService,
     PassengerCorrectionService,
     PassengerCorrectionCrypto,
