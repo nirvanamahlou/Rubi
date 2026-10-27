@@ -67,6 +67,13 @@ describe('live payroll settings entry', () => {
     expect(html).not.toContain('دریافت نسخه داده‌ها');
     expect(html).not.toContain('بازنشانی نمونه');
     expect(html).not.toContain('data-row=');
+    expect(html).toContain('فیلتر فهرست حقوق');
+    expect(html).toContain('دوره یا شعبه');
+    expect(html).toContain('همه سال‌ها');
+    expect(html).toContain('همه ماه‌ها');
+    expect(html).toContain('همه وضعیت‌ها');
+    expect(html).toContain('پاک‌کردن فیلترها');
+    expect(html.match(/افزودن حقوق/g)).toHaveLength(1);
   });
   it('requires sensitive access and hides creation controls from denied readers', () => {
     const html = renderToStaticMarkup(

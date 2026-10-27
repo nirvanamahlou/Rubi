@@ -24,10 +24,23 @@ import {
 } from '@nora/contracts';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
-import { HrButton, HrLoading, HrPanel, HrConfirmDelete } from './hr-controls';
+import {
+  HrButton,
+  HrLoading,
+  HrPanel,
+  HrConfirmDelete,
+  HrStatus,
+} from './hr-controls';
 import { hrRequest } from './hr-api';
 import styles from './hr-payroll-worksheet.module.css';
 import { pastePayrollGrid } from './hr-payroll-grid';
+import {
+  defaultPayrollListFilters,
+  filterPayrollList,
+  payrollMonths as monthNames,
+  payrollPeriodLabel as periodLabel,
+  type PayrollListFilters,
+} from './hr-payroll-list';
 
 const api = '/payroll-worksheets';
 const number = (v: string | bigint | number) =>
@@ -36,22 +49,6 @@ const snapshot = (sheet: PayrollSnapshot): PayrollSnapshot => ({
   rows: sheet.rows,
   rates: sheet.rates,
 });
-const monthNames = [
-  'فروردین',
-  'اردیبهشت',
-  'خرداد',
-  'تیر',
-  'مرداد',
-  'شهریور',
-  'مهر',
-  'آبان',
-  'آذر',
-  'دی',
-  'بهمن',
-  'اسفند',
-];
-const periodLabel = (period: string) =>
-  `${monthNames[Number(period.slice(5)) - 1]} ${period.slice(0, 4)}`;
 function Cell({
   value,
   label,
@@ -126,7 +123,9 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [query, setQuery] = useState('');
-  const [filterBranch, setFilterBranch] = useState('');
+  const [listFilters, setListFilters] = useState<PayrollListFilters>({
+    ...defaultPayrollListFilters,
+  });
   const [ratesOpen, setRatesOpen] = useState(false);
   const [removeId, setRemoveId] = useState<string | null>(null);
   const lock = useRef(false);
@@ -314,6 +313,37 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
       setBusy(false);
     }
   }
+  const filteredList = filterPayrollList(list, data.branches, listFilters);
+  const years = Array.from(
+    new Set([
+      ...list.map((item) => item.period.slice(0, 4)),
+      ...(listFilters.year ? [listFilters.year] : []),
+    ]),
+  )
+    .sort()
+    .reverse();
+  const listFiltersChanged = (
+    Object.keys(listFilters) as (keyof PayrollListFilters)[]
+  ).some((key) => listFilters[key] !== defaultPayrollListFilters[key]);
+  const updateListFilter = <K extends keyof PayrollListFilters>(
+    key: K,
+    value: PayrollListFilters[K],
+  ) => setListFilters((previous) => ({ ...previous, [key]: value }));
+  const createButton = (
+    <HrButton
+      primary
+      disabled={!writable || busy || dirty || saving}
+      onClick={() => {
+        setCreateOpen(true);
+        setYear('');
+        setMonth('');
+        setBranch('');
+      }}
+    >
+      <Plus size={16} />
+      افزودن حقوق
+    </HrButton>
+  );
   if (!canRead)
     return (
       <p role="alert">
@@ -322,54 +352,40 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
     );
   return (
     <div className={styles.workspace}>
-      <div className={styles.actions}>
-        {sheet ? (
-          <>
-            <HrButton
-              disabled={busy || saving}
-              onClick={() => {
-                if (
-                  dirty &&
-                  !window.confirm('تغییرات ذخیره‌نشده کنار گذاشته شوند؟')
-                )
-                  return;
-                setSheet(null);
-                setDraft(null);
-                setSaveError('');
-                void refresh();
-              }}
-            >
-              <ArrowRight size={16} />
-              بازگشت به فهرست حقوق
-            </HrButton>
-            <HrButton onClick={exportCsv}>
-              <Download size={16} />
-              خروجی اکسل (CSV)
-            </HrButton>
-            <HrButton onClick={() => window.print()}>گزارش PDF</HrButton>
-            <HrButton
-              disabled={!editable || saving}
-              onClick={() => setRatesOpen(true)}
-            >
-              <Settings2 size={16} />
-              ضرایب محاسبات
-            </HrButton>
-          </>
-        ) : null}
-        <HrButton
-          primary
-          disabled={!writable || busy || dirty || saving}
-          onClick={() => {
-            setCreateOpen(true);
-            setYear('');
-            setMonth('');
-            setBranch('');
-          }}
-        >
-          <Plus size={16} />
-          افزودن حقوق
-        </HrButton>
-      </div>
+      {sheet ? (
+        <div className={styles.actions}>
+          <HrButton
+            disabled={busy || saving}
+            onClick={() => {
+              if (
+                dirty &&
+                !window.confirm('تغییرات ذخیره‌نشده کنار گذاشته شوند؟')
+              )
+                return;
+              setSheet(null);
+              setDraft(null);
+              setSaveError('');
+              void refresh();
+            }}
+          >
+            <ArrowRight size={16} />
+            بازگشت به فهرست حقوق
+          </HrButton>
+          <HrButton onClick={exportCsv}>
+            <Download size={16} />
+            خروجی اکسل (CSV)
+          </HrButton>
+          <HrButton onClick={() => window.print()}>گزارش PDF</HrButton>
+          <HrButton
+            disabled={!editable || saving}
+            onClick={() => setRatesOpen(true)}
+          >
+            <Settings2 size={16} />
+            ضرایب محاسبات
+          </HrButton>
+          {createButton}
+        </div>
+      ) : null}
       {error ? (
         <p role="alert" className={styles.error}>
           {error}
@@ -565,13 +581,27 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
           </HrPanel>
         </>
       ) : (
-        <HrPanel title="تنظیمات حقوق">
-          <div className={styles.filters}>
+        <HrPanel title="تنظیمات حقوق" actions={createButton}>
+          <div
+            className={styles.listFilters}
+            role="search"
+            aria-label="فیلتر فهرست حقوق"
+          >
+            <label>
+              جست‌وجو
+              <input
+                type="search"
+                value={listFilters.query}
+                onChange={(e) => updateListFilter('query', e.target.value)}
+                placeholder="دوره یا شعبه"
+              />
+            </label>
             <label>
               شعبه
               <NativeSearchSelect
-                value={filterBranch}
-                onChange={(e) => setFilterBranch(e.target.value)}
+                aria-label="شعبه"
+                value={listFilters.branchId}
+                onChange={(e) => updateListFilter('branchId', e.target.value)}
               >
                 <option value="">همه شعبه‌های مجاز</option>
                 {data.branches.map((b) => (
@@ -581,15 +611,119 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
                 ))}
               </NativeSearchSelect>
             </label>
-            <HrButton disabled={loading} onClick={() => void refresh()}>
-              به‌روزرسانی
-            </HrButton>
+            <label>
+              سال
+              <NativeSearchSelect
+                aria-label="سال"
+                value={listFilters.year}
+                onChange={(e) => updateListFilter('year', e.target.value)}
+              >
+                <option value="">همه سال‌ها</option>
+                {years.map((value) => (
+                  <option key={value} value={value}>
+                    {number(value)}
+                  </option>
+                ))}
+              </NativeSearchSelect>
+            </label>
+            <label>
+              ماه
+              <NativeSearchSelect
+                aria-label="ماه"
+                value={listFilters.month}
+                onChange={(e) => updateListFilter('month', e.target.value)}
+              >
+                <option value="">همه ماه‌ها</option>
+                {monthNames.map((label, index) => (
+                  <option
+                    key={label}
+                    value={String(index + 1).padStart(2, '0')}
+                  >
+                    {label}
+                  </option>
+                ))}
+              </NativeSearchSelect>
+            </label>
+            <label>
+              وضعیت
+              <NativeSearchSelect
+                aria-label="وضعیت"
+                value={listFilters.status}
+                onChange={(e) =>
+                  updateListFilter(
+                    'status',
+                    e.target.value as PayrollListFilters['status'],
+                  )
+                }
+              >
+                <option value="">همه وضعیت‌ها</option>
+                <option value="DRAFT">پیش‌نویس</option>
+                <option value="APPROVED">تأییدشده</option>
+              </NativeSearchSelect>
+            </label>
+            <label>
+              ردیف‌های جدول
+              <NativeSearchSelect
+                aria-label="ردیف‌های جدول"
+                value={listFilters.rows}
+                onChange={(e) =>
+                  updateListFilter(
+                    'rows',
+                    e.target.value as PayrollListFilters['rows'],
+                  )
+                }
+              >
+                <option value="">همه جدول‌ها</option>
+                <option value="populated">دارای ردیف</option>
+                <option value="empty">جدول‌های خالی</option>
+              </NativeSearchSelect>
+            </label>
+            <label>
+              مرتب‌سازی
+              <NativeSearchSelect
+                aria-label="مرتب‌سازی"
+                value={listFilters.sort}
+                onChange={(e) =>
+                  updateListFilter(
+                    'sort',
+                    e.target.value as PayrollListFilters['sort'],
+                  )
+                }
+              >
+                <option value="periodDesc">جدیدترین دوره</option>
+                <option value="periodAsc">قدیمی‌ترین دوره</option>
+                <option value="updatedDesc">آخرین تغییر</option>
+                <option value="rowsDesc">بیشترین ردیف</option>
+              </NativeSearchSelect>
+            </label>
+          </div>
+          <div className={styles.listTools}>
+            <span
+              role="status"
+              aria-live="polite"
+              aria-label="تعداد دوره‌های نمایش‌داده‌شده"
+            >
+              {loading
+                ? 'در حال دریافت اطلاعات…'
+                : `${number(filteredList.length)} / ${number(list.length)}`}
+            </span>
+            <div>
+              <HrButton
+                disabled={!listFiltersChanged}
+                onClick={() => setListFilters({ ...defaultPayrollListFilters })}
+              >
+                پاک‌کردن فیلترها
+              </HrButton>
+              <HrButton disabled={loading} onClick={() => void refresh()}>
+                به‌روزرسانی
+              </HrButton>
+            </div>
           </div>
           {loading ? (
             <HrLoading />
           ) : (
             <div className={styles.list}>
-              <table>
+              <table aria-label="فهرست دوره‌های حقوق">
                 <thead>
                   <tr>
                     <th>دوره حقوق</th>
@@ -600,37 +734,37 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {list
-                    .filter(
-                      (item) => !filterBranch || item.branchId === filterBranch,
-                    )
-                    .map((item) => (
-                      <tr key={item.id}>
-                        <td>{periodLabel(item.period)}</td>
-                        <td>
-                          {data.branches.find((b) => b.id === item.branchId)
-                            ?.name ?? ''}
-                        </td>
-                        <td>{number(item.rowCount)}</td>
-                        <td>
+                  {filteredList.map((item) => (
+                    <tr key={item.id}>
+                      <td>{periodLabel(item.period)}</td>
+                      <td>
+                        {data.branches.find((b) => b.id === item.branchId)
+                          ?.name ?? ''}
+                      </td>
+                      <td>{number(item.rowCount)}</td>
+                      <td>
+                        <HrStatus>
                           {item.status === 'DRAFT' ? 'پیش‌نویس' : 'تأییدشده'}
-                        </td>
-                        <td>
-                          <HrButton
-                            disabled={busy}
-                            onClick={() => void open(item.id)}
-                          >
-                            باز کردن جدول
-                          </HrButton>
-                        </td>
-                      </tr>
-                    ))}
+                        </HrStatus>
+                      </td>
+                      <td>
+                        <HrButton
+                          disabled={busy}
+                          onClick={() => void open(item.id)}
+                        >
+                          باز کردن جدول
+                        </HrButton>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
-              {!list.filter(
-                (item) => !filterBranch || item.branchId === filterBranch,
-              ).length ? (
-                <div className={styles.empty}>هنوز حقوقی ثبت نشده است.</div>
+              {!filteredList.length ? (
+                <div className={styles.empty}>
+                  {list.length
+                    ? 'حقوقی مطابق این فیلترها یافت نشد.'
+                    : 'هنوز حقوقی ثبت نشده است.'}
+                </div>
               ) : null}
             </div>
           )}
