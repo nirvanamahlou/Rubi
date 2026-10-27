@@ -7765,3 +7765,7 @@ CALL-CENTER-FINAL-RELEASE-1027 validation refresh: initial eight hosted gates al
 ## DOCUMENT-PASSENGER-IDENTITY-1027 — PC-A
 
 Supplier forms no longer append room number/type to passenger names; room composition remains in the room section. Voucher and supplier preview/PDF regressions verify clean names and registered genders in their separate cells. Saved legacy blank gender defaults now read the request-scoped registered identity; explicit form overrides remain authoritative and unknown gender stays blank.25 focused tests and scoped lint pass; full Web build/types and final-head hosted gates precede user-authorized develop merge. No schema/API/dependency/data/runtime changes.
+
+## CONTRACT-PASSENGER-FIELDS-1027 — PC-A
+
+Foreign hotel-only guest entry matches flight identity fields; passport number and expiry are optional across new-contract modes while supplied values still validate. Gender precedes DOB where national ID was, and national ID follows passport fields; domestic gender is optional and saved when provided. Correction Add passenger no longer calls the ten-digit national-ID lookup with an empty ID, allowing name-only creation through the existing scoped completion policy. Supplied-ID reuse/review remains intact.640 Sales tests/one existing skip plus final110 targeted checks, scoped lint/format and full final Web build/types pass. User authorizes develop merge and Avina rollout with verified encrypted backups; no schema/API/dependency changes. Runtime verification is separate from source publication.

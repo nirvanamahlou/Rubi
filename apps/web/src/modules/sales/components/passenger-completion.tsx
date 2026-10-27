@@ -82,6 +82,22 @@ export function completionPersonInput(row: PeopleRow): CustomerMutationRequest {
   };
 }
 
+/** National-ID matching is available only when an optional ID was supplied. */
+export async function completionRegistrationLookup(
+  input: CustomerMutationRequest,
+  lookup = salesPeopleApi.registrationLookup,
+) {
+  if (!input.nationalId?.trim()) return null;
+  return (
+    await lookup({
+      nationalId: input.nationalId,
+      firstName: input.firstName!,
+      lastName: input.lastName!,
+      ...(input.birthDate ? { birthDate: input.birthDate } : {}),
+    })
+  ).data;
+}
+
 export function validateCompletionRow(row: Row, departureDate: string) {
   completionPersonInput(row.person);
   const v = row.person.values;
@@ -232,14 +248,7 @@ export function PassengerCompletion({
           let row = current[i]!;
           if (!row.person.person) {
             const input = completionPersonInput(row.person);
-            const found = (
-              await salesPeopleApi.registrationLookup({
-                nationalId: input.nationalId ?? '',
-                firstName: input.firstName!,
-                lastName: input.lastName!,
-                ...(input.birthDate ? { birthDate: input.birthDate } : {}),
-              })
-            ).data;
+            const found = await completionRegistrationLookup(input);
             const data =
               found ??
               (await salesApi.createCompletionPerson(contractId, input)).data;

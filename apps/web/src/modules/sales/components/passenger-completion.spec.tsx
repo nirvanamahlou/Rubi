@@ -1,11 +1,49 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import {
   completionRows,
   completionPersonInput,
   completionSelectedPerson,
+  completionRegistrationLookup,
   validateCompletionRow,
 } from './passenger-completion';
 import { emptyPeopleValues } from '../model/sales-people-sheet';
+
+it('lets a name-only correction proceed without calling the ten-digit national-ID lookup', async () => {
+  const input = completionPersonInput({
+    values: {
+      ...emptyPeopleValues(),
+      passportFirstName: 'Synthetic',
+      passportLastName: 'Traveler',
+    },
+  });
+  const lookup = vi
+    .fn()
+    .mockRejectedValue(new Error('national ID requires ten digits'));
+  expect(await completionRegistrationLookup(input, lookup)).toBeNull();
+  expect(lookup).not.toHaveBeenCalled();
+  expect(input).not.toHaveProperty('nationalId');
+  expect(input).not.toHaveProperty('birthDate');
+  expect(input).not.toHaveProperty('passportNumber');
+});
+
+it('retains national-ID matching and explicit existing-person review when an ID is supplied', async () => {
+  const found = { id: 'existing-person' };
+  const lookup = vi.fn().mockResolvedValue({ data: found });
+  const input = {
+    kind: 'person' as const,
+    displayName: 'Synthetic Traveler',
+    firstName: 'Synthetic',
+    lastName: 'Traveler',
+    nationalId: '0013547893',
+    roles: ['passenger' as const],
+  };
+  expect(await completionRegistrationLookup(input, lookup)).toBe(found);
+  expect(lookup).toHaveBeenCalledWith({
+    nationalId: input.nationalId,
+    firstName: input.firstName,
+    lastName: input.lastName,
+  });
+});
 it('shows registered first and last names for an existing person without passport fields', () => {
   const row = completionSelectedPerson({
     id: 'person',

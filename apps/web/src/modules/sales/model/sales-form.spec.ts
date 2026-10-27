@@ -324,7 +324,7 @@ describe('sales contract form payload', () => {
       normalizeRouteSearch('انتالیا'),
     );
   });
-  it('requires passport identity only for an international flight, not a hotel stay', () => {
+  it('uses the same international identity fields for hotel stays and flights', () => {
     const internationalRoute = {
       ...emptySalesForm,
       originCountryCode: 'IRN',
@@ -335,7 +335,7 @@ describe('sales contract form payload', () => {
         ...internationalRoute,
         serviceKinds: ['HOTEL'],
       }),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       salesRequiresPassportIdentity({
         ...internationalRoute,

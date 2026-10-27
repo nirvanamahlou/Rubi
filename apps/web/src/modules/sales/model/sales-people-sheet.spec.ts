@@ -15,6 +15,7 @@ import {
   selectedPeopleRow,
   validateSalesPeopleDraft,
   saveSalesPeopleDraft,
+  peopleCreateInput,
   linkCustomerAsFirst,
   editPeopleRow,
   refreshPeopleRow,
@@ -69,6 +70,40 @@ const detail = (id: string, input: Partial<CustomerDetail> = {}) =>
     maskedPrimaryContact: null,
     ...input,
   }) as CustomerDetail;
+
+it.each([['HOTEL'], ['FLIGHT'], ['FLIGHT', 'HOTEL']] as const)(
+  'accepts blank passport documents for international %j while validating supplied documents',
+  (...serviceKinds) => {
+    const draft = filled();
+    for (const row of Object.values(draft.rows)) {
+      Object.assign(row.values, {
+        passportFirstName: 'SYNTHETIC',
+        passportLastName: 'TRAVELER',
+        gender: 'M',
+      });
+      const input = peopleCreateInput(row, false, true, true);
+      expect(input).not.toHaveProperty('passportNumber');
+      expect(input).not.toHaveProperty('passportExpiryDate');
+      expect(input.gender).toBe('M');
+    }
+    const travel = {
+      ...state,
+      serviceKinds: [...serviceKinds],
+      originCountryCode: 'IRN',
+      destinationCountryCode: 'TUR',
+    };
+    expect(() => validateSalesPeopleDraft(travel, draft)).not.toThrow();
+    draft.rows.p0!.values.passportNumber = '!';
+    expect(() => validateSalesPeopleDraft(travel, draft)).toThrow(
+      'شماره پاسپورت معتبر نیست',
+    );
+    draft.rows.p0!.values.passportNumber = '';
+    draft.rows.p0!.values.passportExpiryDate = 'invalid';
+    expect(() => validateSalesPeopleDraft(travel, draft)).toThrow(
+      'تاریخ انقضای پاسپورت معتبر نیست',
+    );
+  },
+);
 describe('fixed Sales people-entry slots', () => {
   it('defaults new contract passenger country fields to IRN while keeping them editable', () => {
     expect(emptyPeopleValues()).toMatchObject({

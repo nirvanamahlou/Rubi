@@ -144,7 +144,7 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     ).toEqual([
       'نام انگلیسی مطابق پاسپورت *',
       'نام خانوادگی انگلیسی مطابق پاسپورت *',
-      'کد ملی',
+      'جنسیت *',
     ]);
     expect(html).toMatch(/id="sales-entry-p\d+-passport-first-name"/);
     expect(html).toMatch(/id="sales-entry-p\d+-national-id"/);
@@ -162,6 +162,46 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     expect(html).toContain('جنسیت *');
   });
 });
+
+it.each([['HOTEL'], ['FLIGHT'], ['FLIGHT', 'HOTEL']] as const)(
+  'shows shared international fields and optional passport documents for %j',
+  (...serviceKinds) => {
+    const html = renderToStaticMarkup(
+      <SalesPeopleSheet
+        state={{
+          ...emptySalesForm,
+          serviceKinds: [...serviceKinds],
+          originCountryCode: 'IRN',
+          destinationCountryCode: 'TUR',
+          passengerComposition: { adults: 1, children: 0, infants: 0 },
+        }}
+        draft={null}
+        onDraftChange={vi.fn()}
+        onConfirmed={vi.fn()}
+        onBusyChange={vi.fn()}
+        onAddInfant={vi.fn()}
+      />,
+    );
+    expect(html).toContain('sales-entry-p0-passport-first-name');
+    expect(html).toContain('sales-entry-p0-passport-last-name');
+    const cells = [...html.matchAll(/<th\b[^>]*>(.*?)<\/th>/gs)].map((m) =>
+      m[1]!.replace(/<[^>]*>/g, ''),
+    );
+    expect(cells.indexOf('جنسیت *')).toBeLessThan(
+      cells.findIndex((c) => c.includes('تاریخ تولد')),
+    );
+    expect(cells.indexOf('کد ملی')).toBeGreaterThan(
+      cells.indexOf('انقضای پاسپورت'),
+    );
+    expect(cells).not.toContain('شماره پاسپورت *');
+    expect(cells).not.toContain('انقضای پاسپورت *');
+    const passport = html.match(
+      /<input[^>]*id="sales-entry-p0-passport-number"[^>]*>/,
+    )?.[0];
+    expect(passport).toBeDefined();
+    expect(passport).not.toMatch(/\brequired(?:=|\s|>)/);
+  },
+);
 
 it('allows passport entry for an existing floating-flight passenger before profile hydration', () => {
   const html = renderToStaticMarkup(

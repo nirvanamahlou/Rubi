@@ -1107,12 +1107,12 @@ export function salesDomesticIranRoute(state: SalesFormState): boolean {
 }
 
 /**
- * Passport data belongs to an international flight, not to the destination
- * itself. A foreign hotel-only contract must remain usable with the domestic
- * customer identity fields.
+ * International hotel and flight guests share the same identity fields.
+ * Passport document number/expiry remain optional at contract entry.
  */
 export function salesRequiresPassportIdentity(state: SalesFormState): boolean {
-  if (!state.serviceKinds.includes('FLIGHT')) return false;
+  if (!state.serviceKinds.some((kind) => kind === 'FLIGHT' || kind === 'HOTEL'))
+    return false;
   if (
     !state.originCountryId &&
     !state.destinationCountryId &&
