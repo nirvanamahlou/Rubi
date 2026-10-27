@@ -7697,3 +7697,8 @@ Correction Add passenger now permits name-only profiles; all other identity/pass
 ## HEADER-PROFILE-PHOTO-1026 — PC-B
 
 Shared header displays the persisted Workbench profile photo and an empty primary-blue circle when absent/unavailable, never name initials. Reload on profile-photo change and authenticated session recovery; ignore stale photo responses, release object URLs and hide failed images. Identity/session/logout behavior retained. Five existing menu integration checks and scoped ESLint pass; exact-head hosted quality/type/build/full tests/database gates precede authorized develop merge. No API/schema/dependency/runtime changes.
+
+## RESERVATION-SERVICE-GROUPS-1027 — PC-A
+
+Reservation services now render as compact category groups using snapshot kind/title pairs, retaining localized labels, unknown-service fallback and every distinct service title. Existing raw Excel values, filters, sorting and workflow actions remain unchanged. No API/schema/dependency/migration/runtime changes. Thirty-two focused tests passed; scoped lint passed; typecheck/build and exact-head hosted checks gate authorized develop merge.
+
