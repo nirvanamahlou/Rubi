@@ -124,7 +124,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       const workflow = new CallCenterWorkflowService(
         database,
         crypto,
-        {} as never,
+        { canManageRequest: async () => false } as never,
         {} as never,
         {} as never,
       );
@@ -212,7 +212,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       const workflow = new CallCenterWorkflowService(
         database,
         crypto,
-        {} as never,
+        { canManageRequest: async () => false } as never,
         new CallCenterTasksService(database),
         {} as never,
       );
@@ -270,7 +270,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         title: 'Synthetic identity request',
         status: 'NEW',
         priority: 'NORMAL',
-        reason: '',
+        reason: 'Synthetic request reason',
       });
       for (const status of ['IN_PROGRESS', 'NEW']) {
         // Only the synthetic fixture is changed to represent pre-upgrade rows.

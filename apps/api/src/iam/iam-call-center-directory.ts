@@ -22,6 +22,71 @@ export class IamCallCenterDirectory {
     ),
   ) {}
 
+  /** Management fields follow the current assignee's unit, or creator for unassigned requests. */
+  async canManageRequest(
+    actor: AuthenticatedActor,
+    branchId: string,
+    responsibleUserId: string | null,
+    tx?: Prisma.TransactionClient,
+  ) {
+    if (
+      !actor.branchIds.includes(branchId) ||
+      !actor.permissions.includes(
+        'customer_affairs.call_center.workflow.manage',
+      )
+    )
+      return false;
+    const client = tx ?? this.database.client;
+    if (tx) {
+      await tx.$queryRaw`SELECT id FROM iam_users WHERE id IN (${actor.userId}::uuid, ${responsibleUserId ?? actor.userId}::uuid) ORDER BY id FOR SHARE`;
+      await tx.$queryRaw`SELECT user_id FROM iam_user_profiles WHERE user_id IN (${actor.userId}::uuid, ${responsibleUserId ?? actor.userId}::uuid) ORDER BY user_id FOR SHARE`;
+    }
+    const account = await client.user.findFirst({
+      where: {
+        id: actor.userId,
+        status: 'ACTIVE',
+        b2bOrganizationUser: null,
+        branches: { some: { branchId, branch: { isActive: true } } },
+      },
+      select: {
+        username: true,
+        profile: { select: { organizationUnitId: true } },
+      },
+    });
+    if (!account) return false;
+    if (
+      (process.env.CALL_CENTER_REQUEST_GLOBAL_USERNAMES ?? '')
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .includes(account.username)
+    )
+      return true;
+    if (
+      !actor.permissions.includes(
+        'customer_affairs.call_center.workflow.manage.team',
+      ) ||
+      !account.profile?.organizationUnitId ||
+      !responsibleUserId
+    )
+      return false;
+    if (
+      !(await this.personnel.callCenterUnit(
+        branchId,
+        account.profile.organizationUnitId,
+        tx,
+      ))
+    )
+      return false;
+    const target = await client.user.findFirst({
+      where: { id: responsibleUserId, branches: { some: { branchId } } },
+      select: { profile: { select: { organizationUnitId: true } } },
+    });
+    return (
+      target?.profile?.organizationUnitId === account.profile.organizationUnitId
+    );
+  }
+
   /** Request execution ownership is independent of telephony recipient eligibility. */
   async requestAssignees(
     actor: AuthenticatedActor,
