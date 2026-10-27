@@ -79,7 +79,7 @@ describe('flight ticket output template', () => {
       />,
     );
     expect(html).toContain('TRANSFER INCLUDED:');
-    expect(html).toContain('RETURN');
+    expect(html).toContain('DEPARTURE');
   });
   it('renders reference sections without fabricating issuance or sample passenger data', () => {
     const html = renderToStaticMarkup(
@@ -133,7 +133,7 @@ describe('flight ticket output template', () => {
       />,
     );
     expect(html).toContain('ELECTRONIC TICKET / ITINERARY');
-    expect(html).toContain('OUTBOUND');
+    expect(html).toContain('ARRIVAL');
     expect(html).toContain('TEST AIRLINE');
     expect(html).toContain('PRESENCE 03:00 BEFORE FLIGHT TIME');
     expect(html).not.toContain('<table');

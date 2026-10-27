@@ -95,3 +95,48 @@ it('uses the airport city and IATA instead of the commercial route city on the t
   expect(html).not.toContain('Commercial Antalya');
   expect(data).toEqual(original);
 });
+
+it('displays ARRIVAL/DEPARTURE without changing leg direction, route or source data', () => {
+  const before = structuredClone(data);
+  const html = ticketPageHtml(data, cities, brand, airlines);
+  expect(html).toContain('class="leg outbound"');
+  expect(html).toContain('<strong>ARRIVAL</strong>');
+  expect(html).toContain('class="leg return"');
+  expect(html).toContain('<strong>DEPARTURE</strong>');
+  expect(html).not.toContain('<strong>OUTBOUND</strong>');
+  expect(html).not.toContain('<strong>RETURN</strong>');
+  expect(data).toEqual(before);
+  const returningOnly = ticketPageHtml(
+    { ...data, offers: [data.offers[1]!] },
+    cities,
+    brand,
+    airlines,
+  );
+  expect(returningOnly).toContain('<strong>DEPARTURE</strong>');
+  expect(returningOnly).not.toContain('<strong>ARRIVAL</strong>');
+});
+it('uses Latin digits for every displayed value including Persian/Arabic legacy numbers in a Persian UI', () => {
+  const original = {
+    ...data,
+    contractNumber: '۱۲۰۱۲۸',
+    eTicketNumber: '١٠٠٠٠٠',
+    issuedAt: '2026-10-27T10:00:00Z',
+    offers: data.offers.map((o) => ({
+      ...o,
+      serviceNumber: '۹۷۴۰',
+      baggageKg: '٢٠',
+    })),
+  };
+  const before = structuredClone(original);
+  const html = ticketDocumentHtml([original], cities, brand, airlines);
+  expect(html).toContain('120128');
+  expect(html).toContain('100000');
+  expect(html).toContain('9740');
+  expect(html).toContain('20 KG');
+  expect(html).toContain('27 OCT 2026');
+  expect(html).toContain('21:20');
+  expect(html).not.toMatch(/[\u0660-\u0669\u06f0-\u06f9]/);
+  expect(html).toContain('font-family:TicketLatin,');
+  expect(html).toContain('vazirmatn-latin-wght-normal.woff2');
+  expect(original).toEqual(before);
+});
