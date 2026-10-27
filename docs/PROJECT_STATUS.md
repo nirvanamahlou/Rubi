@@ -1,3 +1,6 @@
+## RESERVATION-SERVICE-BORDERLESS-1027 — PC-A
+
+Removed the border and rounded corners around reservation service labels while keeping existing spacing, wrapping, ordered categories, colors, selected rows and content. CSS-only change; no data, API, migration, dependency or runtime changes. Focused checks and final-head hosted CI precede owner-authorized develop merge.
 ## RESERVATION-SERVICE-ORDER-1027 — PC-A
 
 Reservation service badges now have a fixed order: hotel, flight, transfer, then remaining categories in a stable order, independent of each contract's snapshot order. Flight is captioned پرواز. Generic اقامت هتل is omitted from Hotel badges, while specific hotel details, round-trip titles and unknown/legacy service information remain available. No stored data, API, schema, dependency, Excel, filter or workflow changes. Focused service/feed/workspace regressions57 and scoped lint pass; final Web build/types, translation coverage and exact-head hosted checks gate owner-authorized develop merge.
