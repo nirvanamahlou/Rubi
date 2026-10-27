@@ -68,12 +68,30 @@ export interface PayrollSnapshot {
   rows: PayrollRow[];
   rates: PayrollRates;
 }
+export type PayrollWorksheetStatus =
+  | 'DRAFT'
+  | 'HR_APPROVED'
+  | 'PENDING_FINANCE'
+  | 'APPROVED'
+  | 'CORRECTION_REQUIRED'
+  | 'REJECTED'
+  | 'CANCELLED';
+export interface PayrollWorksheetFinanceSource {
+  id: string;
+  branchId: string;
+  period: string;
+  version: number;
+  amount: string;
+  currencyCode: 'IRR';
+  rowCount: number;
+}
 export interface PayrollWorksheet extends PayrollSnapshot {
   id: string;
   branchId: string;
   period: string;
   version: number;
-  status: 'DRAFT' | 'APPROVED';
+  status: PayrollWorksheetStatus;
+  financeRequestId?: string;
   updatedAt: string;
 }
 export interface PayrollWorksheetSummary extends Omit<

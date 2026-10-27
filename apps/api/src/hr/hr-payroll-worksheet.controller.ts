@@ -32,6 +32,12 @@ export class HrPayrollWorksheetController {
   ) {
     return this.service.detail(id, req.actor);
   }
+  @Get(':id/status') @Header('Cache-Control', 'private, no-store') status(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.status(id, req.actor);
+  }
   @Post() create(@Body() body: unknown, @Req() req: AuthenticatedRequest) {
     return this.service.create(body, req.actor);
   }
