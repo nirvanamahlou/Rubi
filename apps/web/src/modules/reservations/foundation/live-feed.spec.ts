@@ -82,6 +82,7 @@ it('decodes actual queue labels, meal reference and arrangement notes without de
     mealServiceId: 'meal',
     hotelNotes: 'TWIN BED',
     serviceTitles: ['Test hotel'],
+    serviceItems: [{ kind: 'HOTEL', title: 'Test hotel' }],
   });
 });
 describe('reservation feed boundary', () => {
