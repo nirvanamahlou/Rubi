@@ -621,7 +621,9 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
                 <option value="">همه سال‌ها</option>
                 {years.map((value) => (
                   <option key={value} value={value}>
-                    {number(value)}
+                    {Number(value).toLocaleString('fa-IR', {
+                      useGrouping: false,
+                    })}
                   </option>
                 ))}
               </NativeSearchSelect>
