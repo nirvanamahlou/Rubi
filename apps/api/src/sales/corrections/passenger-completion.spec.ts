@@ -4,6 +4,7 @@ import type {
   SalesPassengerCompletionCommandV1,
 } from '@nora/contracts';
 import { PassengerCompletionService } from './passenger-completion.service';
+import { CustomerService } from '../../customers/customer.service';
 
 const id = '10000000-0000-4000-8000-000000000001';
 const customerId = '20000000-0000-4000-8000-000000000001';
@@ -69,6 +70,7 @@ function setup() {
   };
   const access = { contract: vi.fn().mockResolvedValue(row) };
   const customers = {
+    salesEntryActor: vi.fn(CustomerService.prototype.salesEntryActor),
     detail: vi.fn().mockResolvedValue({ data: person }),
     createForSalesCompletion: vi.fn().mockResolvedValue({ data: person }),
   };
@@ -100,6 +102,32 @@ function setup() {
   };
 }
 describe('completing booked aggregate passenger slots', () => {
+  it('lets contract creators complete passenger identity without a global sensitive-customer grant', async () => {
+    const s = setup();
+    const creator = {
+      ...actor,
+      permissions: ['sales.contracts.create'],
+    } as AuthenticatedActor;
+    await expect(s.service.save(id, s.input, creator)).resolves.toHaveProperty(
+      'version',
+      4,
+    );
+    expect(s.customers.detail).toHaveBeenCalledWith(
+      customerId,
+      expect.objectContaining({
+        permissions: expect.arrayContaining(['customers.sensitive.read']),
+      }),
+      undefined,
+      'customer-verification',
+    );
+    expect(creator.permissions).toEqual(['sales.contracts.create']);
+    const denied = setup();
+    denied.access.contract.mockRejectedValue(new Error('outside contract'));
+    await expect(
+      denied.service.save(id, denied.input, creator),
+    ).rejects.toThrow('outside contract');
+    expect(denied.customers.detail).not.toHaveBeenCalled();
+  });
   it('reads original counts independently of database service order', async () => {
     const s = setup();
     expect(await s.service.form(id, actor)).toMatchObject({

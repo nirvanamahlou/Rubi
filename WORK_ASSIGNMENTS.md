@@ -9934,6 +9934,10 @@ CONTRACT-OPTIONAL-BIRTH-1027 bounded scope includes passenger-step continuation 
 
 CONTRACT-OPTIONAL-BIRTH-1027 verification:644 Web Sales tests/one existing skip,343 API Sales/Customer tests,2 shared-contract regressions and final61 people-entry/3 English checks pass. API/Web production builds, full API typecheck including tests and scoped lint pass. Repository regression confirms NULL plus booked category; supplied real DOB/invalid calendar dates remain authoritative. Added hotel/flight/combined registration checks pass. No schema/dependency changes; full final-head CI required before authorized develop merge and backed-up server rollout. Source locks release at publication.
 
+## CONTRACT-SENSITIVE-READ-1027 — PC-A — READY FOR CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-contract-sensitive-read-1027 from latest origin/develop. User authorizes contract creators to read required customer identity inside contract workflow, develop merge and server rollout, with only relevant tests. Reserve Sales corrections passenger-correction/completion service and direct regression suites, own docs. Reuse existing Customer.salesEntryActor request-local capability only after Sales contract access validation; preserve branch/route checks, auditing and ordinary Customer sensitive-read denial. No IAM persistence/global permission grant/schema/dependency change. Prior scopes published/released; exact-head hosted gates remain required.
+
 ## HR-PAYROLL-SETTINGS-ONLY-1027 — PC-B — IN_PROGRESS
 
 COMPUTER_ID=PC-B. User replaces the earlier period-form request with removal of payroll periods and payments/adjustments sections. Base origin/develop@d29d2365; reserve hr-navigation.ts, its regression spec, and own status notes. Keep payroll settings worksheet, existing stored records and backend contracts. No schema, dependency, migration or runtime change. User authorizes push and develop merge after checks; release bounded source reservation upon verified merge.
