@@ -162,11 +162,11 @@ it('accepts the hotel embedded in a legacy reservation snapshot', () => {
   });
 });
 
-it.each([false, true, 'split', 'partial'])(
+it.each([false, true, 'split', 'partial', 'unsent'])(
   'records hotel and both transfer directions atomically (formula=%s)',
   async (mode) => {
     const partial = mode === 'partial';
-    const formula = partial ? false : mode;
+    const formula = partial || mode === 'unsent' ? false : mode;
     const hotelAmount = partial ? '300' : '450';
     const create = vi.fn().mockResolvedValue({});
     const updateMany = vi.fn().mockResolvedValue({ count: 1 });
@@ -211,18 +211,21 @@ it.each([false, true, 'split', 'partial'])(
                 checkOutDate: '2026-10-04',
               },
             },
-            workflowRevisions: [
-              {
-                state: {
-                  sentSupplierFormSettings: {
-                    text: {
-                      checkIn: '2026-10-02',
-                      checkOut: '2026-10-10',
+            workflowRevisions:
+              mode === 'unsent'
+                ? []
+                : [
+                    {
+                      state: {
+                        sentSupplierFormSettings: {
+                          text: {
+                            checkIn: '2026-10-02',
+                            checkOut: '2026-10-10',
+                          },
+                        },
+                      },
                     },
-                  },
-                },
-              },
-            ],
+                  ],
           }),
         },
         reservationServicePurchase: {

@@ -115,7 +115,7 @@ it('shows passenger nightly fields and contractual nights instead of hotel formu
   expect(html).not.toContain('ترانسفر هر مسافر');
 });
 
-it('does not present an unsent draft as purchase context', () => {
+it('keeps an unsent draft out of purchase context without asking the user to wait', () => {
   const html = renderToStaticMarkup(
     <SupplierFormPurchaseContext
       request={request({
@@ -123,10 +123,7 @@ it('does not present an unsent draft as purchase context', () => {
       } as TravelWorkflowStateV1)}
     />,
   );
-  expect(html).toContain(
-    'هنوز نسخه‌ای از فرم رزواسیون برای کارگزار ارسال نشده',
-  );
-  expect(html).not.toContain('مبنای قیمت خرید:');
+  expect(html).toBe('');
 });
 
 it('converts a nightly hotel rate into the payable total using the sent stay dates', () => {
