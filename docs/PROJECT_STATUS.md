@@ -7702,13 +7702,10 @@ Correction Add passenger now permits name-only profiles; all other identity/pass
 
 Shared header displays the persisted Workbench profile photo and an empty primary-blue circle when absent/unavailable, never name initials. Reload on profile-photo change and authenticated session recovery; ignore stale photo responses, release object URLs and hide failed images. Identity/session/logout behavior retained. Five existing menu integration checks and scoped ESLint pass; exact-head hosted quality/type/build/full tests/database gates precede authorized develop merge. No API/schema/dependency/runtime changes.
 
-<<<<<<< HEAD
 ## RESERVATION-SERVICE-GROUPS-1027 — PC-A
 
-Reservation services now render as compact category groups using snapshot kind/title pairs, retaining localized labels, unknown-service fallback and every distinct service title. Existing raw Excel values, filters, sorting and workflow actions remain unchanged. No API/schema/dependency/migration/runtime changes. Thirty-two focused tests passed; scoped lint passed; typecheck/build and exact-head hosted checks gate authorized develop merge.
+Reservation services now render as compact category groups using snapshot kind/title pairs, retaining localized labels, unknown-service fallback and every distinct service title. Existing raw Excel values, filters, sorting and workflow actions remain unchanged. No API/schema/dependency/migration/runtime changes. Thirty-two focused tests, scoped lint, full Web typecheck and production build passed. All eight initial hosted gates passed; latest develop integration retains the independent cancelled-row palette and requires refreshed exact-head checks.
 
-=======
 ## CANCELLED-ROW-RED-1027 — PC-A — READY_FOR_REVIEW
 
 Cancelled reservation rows now use a stronger saturated red with dark readable text in light mode, and deeper red with light text in dark mode. Only six status palette values change; row dimensions, other status colors, blue selection/focus and notes/correction markers retain their rules. Contrast5.84:1 light /9.16:1 dark,29 existing workspace tests, scoped formatting and the production Web build with TypeScript pass. No API/schema/data/dependency/runtime changes; review PR only, no merge/deployment authorization in this request.
->>>>>>> origin/develop
