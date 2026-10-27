@@ -19,6 +19,7 @@ vi.mock('@/components/ui/overlays', () => ({
 import type { MasterDataRecord } from '@nora/contracts';
 import {
   ContractPaymentCurrencySelect,
+  ContractPaymentAccountSelect,
   ContractPaymentShareSummary,
   ContractPayments,
 } from './contract-payments';
@@ -26,6 +27,49 @@ import { PaymentDocuments } from './payment-documents';
 import { printFixture } from '../model/contract-print.fixture';
 
 describe('saved contract payment currency control', () => {
+  it('shows a required searchable destination using only accounts matching the payment currency', () => {
+    const html = renderToStaticMarkup(
+      <ContractPaymentAccountSelect
+        accounts={[
+          {
+            id: 'irr',
+            title: 'Company IRR',
+            currencyCode: 'IRR',
+            kind: 'BANK',
+            maskedIdentifier: '****1234',
+          },
+          {
+            id: 'usd',
+            title: 'Company USD',
+            currencyCode: 'USD',
+            kind: 'BANK',
+            maskedIdentifier: null,
+          },
+        ]}
+        currencyCode="IRR"
+        value="irr"
+        onChange={() => undefined}
+      />,
+    );
+    expect(html).toContain('حساب مقصد پرداخت');
+    expect(html).toContain('Company IRR');
+    expect(html).not.toContain('Company USD');
+    expect(html).toContain('****1234');
+    expect(html).toContain('role="combobox"');
+    expect(html).toContain('required');
+  });
+  it('does not silently choose an incompatible account when the currency has no accounts', () => {
+    const html = renderToStaticMarkup(
+      <ContractPaymentAccountSelect
+        accounts={[]}
+        currencyCode="USD"
+        value=""
+        onChange={() => undefined}
+      />,
+    );
+    expect(html).toContain('disabled');
+    expect(html).toContain('حساب فعالی برای ارز پرداخت');
+  });
   it('opens history separately without showing an unsaved payment or unrelated receipt picker', () => {
     const html = renderToStaticMarkup(
       <ContractPayments

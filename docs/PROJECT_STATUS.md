@@ -1,3 +1,7 @@
+## SALES-PAYMENT-ACCOUNT-1027 — PC-A
+
+The Sales Add payment dialog now loads active contract-branch receipt accounts and requires an explicit choice matching the selected currency; currency changes clear incompatible selections. Saved payments retain the canonical destination title and FK independently of Finance approval. Finance inbox prefers the declared account when still eligible; inactive/unavailable choices do not silently fall back to another account. Existing older clients may omit the additive field; permissions, CAS/replay, exact amounts and receipt-upload continuation remain. Additive nullable migration20261027160000; no production or runtime change. Focused account/authorization/persistence/UI checks and all exact-head hosted gates precede owner-authorized develop merge.
+
 ## VOUCHER-TRANSFER-OVERRIDES-1027 — PC-A
 
 Voucher transfer supplier can differ from the hotel broker while defaulting to it. Registered leader/contact/Board defaults remain automatic; an explicit per-voucher option unlocks bounded Board, name and phone edits. Leader selection no longer blocks saving or issuance, including when no transfer is selected. Selected references still require authorized directory validation; sent hotel supplier, financial delivery, insurance, CAS and branch protections remain. Optional JSON revision fields only, no migration/dependency/runtime change. Focused Web/API and exact-head hosted checks gate owner-authorized develop merge. See VOUCHER-TRANSFER-OVERRIDES-1027 in DECISIONS.md.

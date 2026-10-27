@@ -984,6 +984,17 @@ export function validateSalesContract(
 }
 
 export function validateSalesPayment(payment: SalesPaymentInput): void {
+  if (
+    payment?.destinationAccountId != null &&
+    (typeof payment.destinationAccountId !== 'string' ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        payment.destinationAccountId,
+      ))
+  )
+    throw new SalesDomainError(
+      'SALES_PAYMENT_ACCOUNT_INVALID',
+      'حساب مقصد پرداخت معتبر نیست.',
+    );
   if (!payment || typeof payment.dueAt !== 'string')
     throw new SalesDomainError(
       'SALES_PAYMENT_INVALID',

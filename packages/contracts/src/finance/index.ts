@@ -375,6 +375,8 @@ export interface FinanceInboxSourceStateV1 {
 }
 
 export interface FinanceInboxItemV1 {
+  /** Sales-declared destination; Finance must independently approve the receipt. */
+  destinationAccountId?: string | null;
   /** Absent in older producers. Internal expense clearance is not a second cash payment. */
   direction?: 'RECEIPT' | 'PAYMENT' | 'NON_CASH';
   purchaseFx?: readonly FinancePurchaseFxV1[];

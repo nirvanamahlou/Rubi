@@ -25,6 +25,7 @@ import type {
   SalesReceivables,
   SalesReceivablesQuery,
   SalesPaymentCreateRequest,
+  SalesPaymentAccountV1,
   SalesPassengerIdentityV1,
   SalesPassengerCorrectionHistoryV1,
   SalesPassengerCorrectionCommandV1,
@@ -262,6 +263,10 @@ export const salesApi = {
       `/hotel-room-rates?${query}`,
     );
   },
+  paymentAccounts: (id: string) =>
+    request<{ data: SalesPaymentAccountV1[] }>(
+      `/contracts/${id}/payment-accounts`,
+    ),
   addPayment: (id: string, input: SalesPaymentCreateRequest, key: string) =>
     request<{ data: SalesContractDetail }>(
       `/contracts/${encodeURIComponent(id)}/payments`,

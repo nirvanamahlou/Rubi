@@ -138,6 +138,8 @@ function paymentInput(row: SalesContractRow['payments'][number]) {
     method: row.method,
     description: row.description,
     paymentReference: row.paymentReference,
+    destinationAccountId: row.destinationAccountId,
+    destinationAccountTitle: row.destinationAccountTitle,
     check,
   };
 }
@@ -1106,6 +1108,7 @@ export class SalesService {
       method: row.method,
       description: row.description,
       paymentReference: row.paymentReference,
+      destinationAccountId: row.destinationAccountId,
       dueAt: row.dueAt.toISOString(),
       createdAt: row.createdAt.toISOString(),
       createdByUserId: row.createdByUserId,
@@ -1656,6 +1659,18 @@ export class SalesService {
         message: 'قرارداد هم‌زمان تغییر کرده یا دیگر قابل ویرایش نیست.',
       });
     return this.detail(id, actor);
+  }
+
+  async paymentAccounts(id: string, actor: AuthenticatedActor) {
+    const row = await this.repository.findById(id);
+    if (!row) throw new NotFoundException('قرارداد یافت نشد.');
+    this.assertRead(row, actor);
+    if (
+      !has(actor, 'sales.payments.create') &&
+      !canSelfServeSalesContract(actor, row)
+    )
+      throw new ForbiddenException('مجوز ثبت پرداخت وجود ندارد.');
+    return { data: await this.repository.paymentAccounts(row.branchId) };
   }
 
   async addPayment(
