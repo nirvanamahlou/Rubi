@@ -159,7 +159,12 @@ export interface SalesTicketSelectionInput {
 export interface SalesHotelStayInput {
   rooms?: readonly Pick<
     SalesHotelRoomV1,
-    'ordinal' | 'roomTypeId' | 'roomTypeNameSnapshot' | 'adults' | 'childAges'
+    | 'ordinal'
+    | 'roomTypeId'
+    | 'roomTypeNameSnapshot'
+    | 'adults'
+    | 'childAges'
+    | 'roomCategory'
   >[];
   hotelId: string;
   hotelNameSnapshot: string;

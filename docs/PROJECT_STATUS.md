@@ -1,3 +1,6 @@
+## MULTIHOTEL-ROOM-PARITY-1027 — PC-A
+
+Additional contract hotels now use a room-count field, hotel-specific room-type and category selectors, and separate adult/child/infant counts with age selectors. Draft validation prevents missing child ages and excess guests; hotel room categories are retained through Sales validation, persistence, output and legacy-compatible editing. Existing itinerary dates, prices, primary allocation and service semantics remain. Additive nullable room-category migration preserves historical rows. Focused Web45 and API77 checks, scoped lint and Web typecheck pass; local PostgreSQL was unavailable, so the isolated database migration regression and full builds remain gated by exact-head CI. No operational deployment.
 ## RESERVATION-SERVICE-BORDERLESS-1027 — PC-A
 
 Removed the border and rounded corners around reservation service labels while keeping existing spacing, wrapping, ordered categories, colors, selected rows and content. CSS-only change; no data, API, migration, dependency or runtime changes. Focused checks and final-head hosted CI precede owner-authorized develop merge.

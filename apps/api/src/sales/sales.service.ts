@@ -15,7 +15,7 @@ import {
 import { financialDate } from '../finance/accounting/financial-event.public';
 import { PackageTourPricingService } from '../package-pricing/package-tour-pricing.service';
 import { canViewRoute, isOptionalOperationReason } from '@nora/contracts';
-import { salesHotelRoomSummary } from '@nora/contracts';
+import { salesHotelRoomSummary, salesRoomCategories } from '@nora/contracts';
 import type { DisplayLanguage } from '../common/i18n/language';
 import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { expectedTicketSale } from './sales-ticket-quote';
@@ -346,6 +346,12 @@ export function presentSalesContract(
                             roomTypeNameSnapshot: room.roomTypeNameSnapshot,
                             adults: room.adults,
                             childAges: room.childAges as number[],
+                            ...(room.roomCategory
+                              ? {
+                                  roomCategory:
+                                    room.roomCategory as SalesRoomCategory,
+                                }
+                              : {}),
                           })),
                         }
                       : {}),
@@ -1312,9 +1318,33 @@ export class SalesService {
             const previous = saved.find(
               (item) => item.hotelId === stay.hotelId,
             );
-            return stay.rooms === undefined && previous?.rooms?.length
-              ? { ...stay, rooms: previous.rooms }
-              : stay;
+            if (stay.rooms === undefined && previous?.rooms?.length)
+              return { ...stay, rooms: previous.rooms };
+            if (!Array.isArray(stay.rooms) || !previous?.rooms) return stay;
+            return {
+              ...stay,
+              rooms: stay.rooms.map((room) => {
+                if (
+                  !room ||
+                  typeof room !== 'object' ||
+                  !Array.isArray(room.childAges)
+                )
+                  return room;
+                const old = previous.rooms?.find(
+                  (item) =>
+                    item.ordinal === room.ordinal &&
+                    item.roomTypeId === room.roomTypeId,
+                );
+                return room.roomCategory === undefined &&
+                  old?.roomCategory &&
+                  salesRoomCategories(
+                    room.adults,
+                    room.childAges.length,
+                  ).includes(old.roomCategory)
+                  ? { ...room, roomCategory: old.roomCategory }
+                  : room;
+              }),
+            };
           }),
         },
       };

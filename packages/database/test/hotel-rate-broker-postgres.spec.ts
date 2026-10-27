@@ -99,6 +99,38 @@ it.skipIf(process.env.HOTEL_RATE_BROKER_TEST !== '1')(
       const roomInsert =
         'INSERT INTO sales_contract_hotel_stay_rooms(stay_id,ordinal,room_type_id,room_type_name_snapshot,adults,child_ages) VALUES($1,$2,$3,$4,$5,$6)';
       await db.query(roomInsert, [stay, 1, roomType, 'Suite', 2, '[4,9]']);
+      await db.query(
+        readFileSync(
+          resolve(
+            process.cwd(),
+            'prisma/migrations/20261027130000_sales_hotel_stay_room_category/migration.sql',
+          ),
+          'utf8',
+        ),
+      );
+      expect(
+        (
+          await db.query(
+            'SELECT room_category FROM sales_contract_hotel_stay_rooms',
+          )
+        ).rows,
+      ).toEqual([{ room_category: null }]);
+      await db.query(
+        'UPDATE sales_contract_hotel_stay_rooms SET room_category=$1',
+        ['DOUBLE_EXTRA'],
+      );
+      await rejects(
+        'UPDATE sales_contract_hotel_stay_rooms SET room_category=$1',
+        ['UNKNOWN'],
+        '23514',
+      );
+      expect(
+        (
+          await db.query(
+            'SELECT room_category FROM sales_contract_hotel_stay_rooms',
+          )
+        ).rows,
+      ).toEqual([{ room_category: 'DOUBLE_EXTRA' }]);
       await rejects(
         roomInsert,
         [stay, 1, roomType, 'Duplicate', 1, '[]'],

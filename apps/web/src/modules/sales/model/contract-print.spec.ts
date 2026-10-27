@@ -17,7 +17,8 @@ describe('Saved contract print output', () => {
             roomTypeId: 'room-two',
             roomTypeNameSnapshot: 'Suite <SEA>',
             adults: 2,
-            childAges: [4],
+            childAges: [4, 0],
+            roomCategory: 'DOUBLE_EXTRA',
           },
         ],
       },
@@ -32,7 +33,10 @@ describe('Saved contract print output', () => {
     expect(html).toContain('اقامت‌های بعدی');
     expect(html).toContain('Suite &lt;SEA&gt;');
     expect(html).toContain('2 بزرگسال');
-    expect(html).toContain('3 نفر');
+    expect(html).toContain('1 کودک');
+    expect(html).toContain('1 نوزاد');
+    expect(html).toContain('Double + 1 Extra Bed');
+    expect(html).toContain('4 نفر');
     expect(output).toEqual(before);
   });
   it('shows the saved cheque policy and total including interest without changing passenger service prices', () => {
