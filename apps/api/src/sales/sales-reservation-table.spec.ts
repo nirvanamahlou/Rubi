@@ -68,7 +68,11 @@ it('reads completed name-only passengers without manufacturing ages or crashing'
     {
       ...s.record,
       passengers: [
-        { birthDate: null, ageCategory: 'ADT' },
+        {
+          birthDate: null,
+          ageCategory: 'ADT',
+          displayNameSnapshot: 'SYNTHETIC ADULT',
+        },
         { birthDate: null, ageCategory: 'INF' },
         { birthDate: null, ageCategory: 'CHD' },
       ],
@@ -80,6 +84,7 @@ it('reads completed name-only passengers without manufacturing ages or crashing'
   } as never);
   expect(result.get('c')).toMatchObject({
     passengerCount: 3,
+    passengerNames: ['SYNTHETIC ADULT'],
     adults: 1,
     infants: 1,
     children2To6: 0,
@@ -184,7 +189,7 @@ it('projects ages only for the matching hotel contract and allocated guests', as
   expect(await service.hotelGuestAges(snapshot, actor)).toBeNull();
 });
 
-it('uses only explicit sales corrections for the purple correction marker', async () => {
+it('uses successful sales corrections and historical completions for the correction marker', async () => {
   const s = setup();
   await s.service.read(['c'], {
     permissions: ['reservations.read'],
@@ -192,7 +197,9 @@ it('uses only explicit sales corrections for the purple correction marker', asyn
   } as never);
   expect(s.findMany.mock.calls[0]![0].include.auditEvents.where).toEqual({
     outcome: 'SUCCESS',
-    action: { in: ['SALES_PASSENGER_CORRECTION'] },
+    action: {
+      in: ['SALES_PASSENGER_CORRECTION', 'SALES_PASSENGER_COMPLETION'],
+    },
   });
 });
 

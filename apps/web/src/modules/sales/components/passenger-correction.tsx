@@ -165,6 +165,8 @@ function CorrectionForm({
             onPending(pending);
           }}
           onSaved={() => {
+            setLoading(true);
+            setMessage('اصلاح ثبت شد و به رزرواسیون اطلاع داده شد.');
             setRevision((value) => value + 1);
             onSaved();
           }}

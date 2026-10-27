@@ -141,7 +141,7 @@ export class SalesReservationTableService {
           where: {
             outcome: 'SUCCESS',
             action: {
-              in: ['SALES_PASSENGER_CORRECTION'],
+              in: ['SALES_PASSENGER_CORRECTION', 'SALES_PASSENGER_COMPLETION'],
             },
           },
           orderBy: { occurredAt: 'desc' },
@@ -246,6 +246,11 @@ export class SalesReservationTableService {
             row.id,
             {
               contractPartyName: row.customerNameSnapshot,
+              passengerNames: row.passengers.flatMap((person) =>
+                person.displayNameSnapshot?.trim()
+                  ? [person.displayNameSnapshot]
+                  : [],
+              ),
               createdAt: row.createdAt.toISOString(),
               contractVersion: row.version,
               correctedAt: row.auditEvents[0]?.occurredAt.toISOString() ?? null,

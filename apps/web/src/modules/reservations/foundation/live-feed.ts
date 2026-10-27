@@ -20,6 +20,7 @@ const flagSchema = z.object({
   actorName: z.string().nullable().optional(),
 });
 const summarySchema = z.object({
+  passengerNames: z.array(z.string().max(500)).max(1000).optional(),
   createdAt: instant,
   contractVersion: z.number().int().positive(),
   correctedAt: instant.nullable(),
@@ -337,9 +338,11 @@ export function decodeIntake(
               ),
           ) || !!row.workflow?.reservationNotes?.length,
         assignee: null,
-        passengerNames: (snapshot.passengerAssignments ?? []).flatMap((p) =>
-          p.displayNameSnapshot ? [p.displayNameSnapshot] : [],
-        ),
+        passengerNames:
+          row.tableSummary?.passengerNames ??
+          (snapshot.passengerAssignments ?? []).flatMap((p) =>
+            p.displayNameSnapshot ? [p.displayNameSnapshot] : [],
+          ),
         services,
         priority: 'UNSPECIFIED',
         deadline: null,
