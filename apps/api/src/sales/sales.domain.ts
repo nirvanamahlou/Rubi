@@ -181,6 +181,7 @@ export function validateSalesContract(
   input: SalesContractCreateRequest,
   requireChequeTerms = false,
   categories: Readonly<Record<string, 'ADT' | 'CHD' | 'INF'>> = {},
+  options: { allowStaleHotelPriceRoster?: boolean } = {},
 ): void {
   if (
     !input ||
@@ -193,6 +194,7 @@ export function validateSalesContract(
       'SALES_CONTRACT_INVALID',
       'ساختار قرارداد معتبر نیست.',
     );
+  let staleHotelPriceRoster = false;
   try {
     validateInsuranceExtras(input);
   } catch (error) {
@@ -349,7 +351,16 @@ export function validateSalesContract(
     )
       throw Error('تخفیف و کمیسیون مسافران معتبر نیست.');
     validatePassengerTotalPricing(input.services, input.passengers);
-    readPassengerHotelPrices(input.services, input.passengers);
+    const hasHotelPriceSnapshot = input.services.some(
+      (service) =>
+        service.kind === 'HOTEL' &&
+        service.metadata?.passengerHotelPricesV1 !== undefined,
+    );
+    staleHotelPriceRoster =
+      hasHotelPriceSnapshot &&
+      !readPassengerHotelPrices(input.services, input.passengers);
+    if (staleHotelPriceRoster && !options.allowStaleHotelPriceRoster)
+      throw Error('قیمت هتل هر مسافر را وارد کنید.');
     validatePassengerFlightPrices(
       input.services,
       input.passengers,
@@ -362,6 +373,7 @@ export function validateSalesContract(
     );
   }
   if (
+    !staleHotelPriceRoster &&
     input.services.some((s) => s.metadata?.automaticFlightRoomTotalV1 === true)
   ) {
     try {

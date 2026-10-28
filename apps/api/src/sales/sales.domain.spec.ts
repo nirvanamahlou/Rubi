@@ -1067,6 +1067,71 @@ it('checks manual per-guest hotel prices against exact automatic contract totals
   );
 });
 
+it('does not require a legacy hotel price allocation to match a changed guest roster during contract edit', () => {
+  const input = structuredClone(draft);
+  const originalGuest = input.passengers[0]!;
+  input.services = [
+    {
+      clientKey: 'flight',
+      kind: 'FLIGHT',
+      titleSnapshot: 'Flight',
+      metadata: { automaticFlightRoomTotalV1: true },
+    },
+    {
+      clientKey: 'hotel',
+      kind: 'HOTEL',
+      titleSnapshot: 'Hotel',
+      metadata: {
+        passengerHotelPricesV1: JSON.stringify({
+          [originalGuest.customerId]: [{ amount: '50', currencyCode: 'USD' }],
+        }),
+      },
+    },
+  ];
+  originalGuest.serviceClientKeys = ['flight', 'hotel'];
+  input.passengers = [
+    ...input.passengers,
+    {
+      ...originalGuest,
+      customerId: '10000000-0000-4000-8000-000000000099',
+      displayNameSnapshot: 'مسافر جدید',
+    },
+  ];
+  input.hotelSelection = {
+    serviceClientKey: 'hotel',
+    hotelId: '10000000-0000-4000-8000-000000000010',
+    hotelNameSnapshot: 'Hotel',
+    cityId: input.destinationId,
+    checkInDate: '2026-10-01',
+    checkOutDate: '2026-10-03',
+    roomCount: 1,
+    roomTypeId: '10000000-0000-4000-8000-000000000011',
+    occupancy: 2,
+    inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+  };
+
+  expect(() => validateSalesContract(input)).toThrow(
+    'قیمت هتل هر مسافر را وارد کنید.',
+  );
+  const savedTotal = structuredClone(input.priceComponents);
+  expect(() =>
+    validateSalesContract(
+      input,
+      false,
+      {},
+      {
+        allowStaleHotelPriceRoster: true,
+      },
+    ),
+  ).not.toThrow();
+  expect(input.priceComponents).toEqual(savedTotal);
+  expect(input.services[1]!.metadata!.passengerHotelPricesV1).toBe(
+    JSON.stringify({
+      [originalGuest.customerId]: [{ amount: '50', currencyCode: 'USD' }],
+    }),
+  );
+});
+
 it('validates individual hotel stay snapshots without an obsolete override price and rejects flight-only stays', () => {
   const input = structuredClone(draft),
     id = input.passengers[0]!.customerId;

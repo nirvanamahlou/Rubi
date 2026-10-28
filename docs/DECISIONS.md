@@ -704,3 +704,7 @@ Owner supersedes the prior mandatory passport-number/expiry rule at new-contract
 ## 2026-10-27 — CONTRACT-OPTIONAL-BIRTH-1027
 
 Owner explicitly makes birth date optional during new-contract entry and authorizes develop merge/Avina rollout. Extend the existing scoped Customer Sales-entry policy without weakening ordinary Customer creation. Reuse nullable Customer and Sales passenger columns; persist SQL NULL and an explicit booked ADT/CHD/INF category, never an inferred birthday. The additive optional request ageCategory is consumed only when DOB is absent; a supplied DOB remains authoritative and validated. Sales Web derives booked categories from step-one composition, including room-driven/flight-only slots. Hotel room/visa composition matching allocates unknown identities to already-booked slots without changing identity data; count and known-DOB contradictions still reject. Existing consumer projections already expose empty DOB with stored category. No schema/dependency migration is needed.
+
+## 2026-10-28 — SALES-HOTEL-PRICE-ROSTER-1028
+
+When an existing contract's hotel guest roster changes, an old passengerHotelPricesV1 map whose IDs no longer match is an obsolete allocation, not a validation error and not a basis for recalculating the agreed contract total. Preserve its stored metadata and price components; continue normal validation for matching hotel price snapshots, flight prices, passenger identities, and current total-pricing data. Do not infer or redistribute the old hotel amount. No schema/API migration or operational data change.

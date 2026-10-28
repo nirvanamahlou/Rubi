@@ -159,6 +159,26 @@ export function readPassengerHotelPrices(
       s.kind === 'HOTEL' && s.metadata?.[PASSENGER_HOTEL_PRICES] !== undefined,
   );
   if (!hotel) return undefined;
+  const raw = hotel.metadata![PASSENGER_HOTEL_PRICES];
+  let snapshot: unknown;
+  try {
+    snapshot = typeof raw === 'string' ? JSON.parse(raw) : undefined;
+  } catch {
+    throw Error('قیمت هتل هر مسافر را وارد کنید.');
+  }
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot))
+    throw Error('قیمت هتل هر مسافر را وارد کنید.');
+  const snapshotPrices = snapshot as Record<string, unknown>;
+  const ids = passengers
+    .filter((p) => p.serviceClientKeys.includes(hotel.clientKey))
+    .map((p) => p.customerId);
+  // A historical per-guest split cannot be applied after the hotel guest roster
+  // changes. Treat it as unavailable without rewriting the saved snapshot.
+  if (
+    Object.keys(snapshotPrices).length !== ids.length ||
+    ids.some((id) => !Object.prototype.hasOwnProperty.call(snapshotPrices, id))
+  )
+    return undefined;
   const prices = readPassengerFlightPrices([
     {
       kind: 'FLIGHT',
@@ -167,9 +187,6 @@ export function readPassengerHotelPrices(
       },
     },
   ])!;
-  const ids = passengers
-    .filter((p) => p.serviceClientKeys.includes(hotel.clientKey))
-    .map((p) => p.customerId);
   if (
     Object.keys(prices).length !== ids.length ||
     ids.some((id) => !prices[id])

@@ -1490,7 +1490,32 @@ export class SalesService {
                 : null,
           }
         : input;
-    domainCall(() => validateSalesContract(updateInput, false, categories));
+    const previousHotelGuests = row.passengers
+      .filter((passenger) =>
+        passenger.allocations.some(({ service }) => service.kind === 'HOTEL'),
+      )
+      .map((passenger) => passenger.customerId)
+      .sort();
+    const nextHotelServiceKeys = new Set(
+      updateInput.services
+        .filter((service) => service.kind === 'HOTEL')
+        .map((service) => service.clientKey),
+    );
+    const nextHotelGuests = updateInput.passengers
+      .filter((passenger) =>
+        passenger.serviceClientKeys.some((key) =>
+          nextHotelServiceKeys.has(key),
+        ),
+      )
+      .map((passenger) => passenger.customerId)
+      .sort();
+    const hotelGuestRosterChanged =
+      JSON.stringify(previousHotelGuests) !== JSON.stringify(nextHotelGuests);
+    domainCall(() =>
+      validateSalesContract(updateInput, false, categories, {
+        allowStaleHotelPriceRoster: hotelGuestRosterChanged,
+      }),
+    );
     const previous = categories
       ? presentSalesContract(row, undefined, this.buyerCrypto)
       : undefined;
