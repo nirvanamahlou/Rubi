@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { writeFile } from 'node:fs/promises';
 import { printFixture } from '../model/contract-print.fixture';
-import { renderContractPdf, resolveContractPdfRuntime } from './contract-pdf';
+import {
+  prepareContractHtml,
+  renderContractPdf,
+  resolveContractPdfRuntime,
+} from './contract-pdf';
 
 describe('contract PDF runtime', () => {
   it('finds installed Chrome and the user-installed Nazanin font', async () => {
@@ -30,6 +34,18 @@ describe('contract PDF runtime', () => {
         async (path) => path === chrome,
       ),
     ).resolves.toEqual({ chromePath: chrome, fontPath: null });
+  });
+
+  it('embeds bundled Persian and Latin fonts when B Nazanin is unavailable', async () => {
+    const html = await prepareContractHtml(printFixture, { names: {} });
+
+    expect(html).toContain('font-family:ContractVazirmatn');
+    expect(html).toContain('unicode-range:U+0600-06FF');
+    expect(html).toContain('unicode-range:U+0000-00FF');
+    expect(html).toContain('data:font/woff2;base64,');
+    expect(html).toContain(
+      'font-family:ContractNazanin,ContractVazirmatn,serif',
+    );
   });
 
   it.runIf(process.env.CONTRACT_PDF_RUNTIME_SMOKE === '1')(

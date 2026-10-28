@@ -420,10 +420,10 @@ export function contractPrintHtml(
   return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; font-src data:; img-src data:"><title>قرارداد ${e(c.contractNumber)}</title><style>
   @font-face{font-family:ContractNazanin;src:local('B Nazanin'),local('BNazanin');font-weight:normal}
   @page{size:A4 portrait;margin:7mm 7mm 12mm;@bottom-center{content:counter(page) " / " counter(pages);direction:ltr;unicode-bidi:isolate;font-family:Arial,sans-serif;font-size:8pt;color:#596781}}
-  *{box-sizing:border-box}body{margin:0;background:white;color:#102d54;font-family:ContractNazanin,serif;font-size:10.5pt;line-height:1.2}
+  *{box-sizing:border-box}body{margin:0;background:white;color:#102d54;font-family:ContractNazanin,ContractVazirmatn,serif;font-size:10.5pt;line-height:1.2}
   .document{padding:0;border:0;background:white}
   header{display:flex;align-items:center;justify-content:space-between;gap:4mm;background:#10386b;background:linear-gradient(115deg,#10386b,#092b56);color:white;border-bottom:1mm solid #15999e;padding:4mm 5mm;min-height:27mm}
-  header .title{order:-1;flex:1;text-align:right}header h1{margin:0;font-family:ContractNazanin,serif;font-size:25pt;line-height:1.2;white-space:nowrap}
+  header .title{order:-1;flex:1;text-align:right}header h1{margin:0;font-family:ContractNazanin,ContractVazirmatn,serif;font-size:25pt;line-height:1.2;white-space:nowrap}
   header .subtitle{display:flex;align-items:center;gap:2mm;margin:1mm 0 0;font-family:Arial,sans-serif;font-size:8pt;letter-spacing:2.2px;white-space:nowrap}
   header .subtitle:before,header .subtitle:after{content:"";height:1px;background:#38aeb1;flex:1;min-width:6mm}
   header .brand{width:54mm;flex-shrink:0;text-align:center;font-size:10.5pt}

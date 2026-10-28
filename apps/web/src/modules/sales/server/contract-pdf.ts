@@ -108,16 +108,59 @@ export async function prepareContractHtml(
 ): Promise<string> {
   const { fontPath: font } = await resolveContractPdfRuntime();
   let html = localizeDocumentHtml(contractPrintHtml(output, refs), language);
+  const fontFaces: string[] = [];
   if (font) {
-    const fontBytes = await readFile(/* turbopackIgnore: true */ font);
-    if (fontBytes.length && fontBytes.length <= 5_000_000)
-      html = html.replace(
-        '</style>',
+    // B Nazanin is an optional enhancement. A file that becomes unreadable
+    // after discovery must not prevent a contract from being rendered.
+    const fontBytes = await readFile(/* turbopackIgnore: true */ font).catch(
+      () => null,
+    );
+    if (fontBytes?.length && fontBytes.length <= 5_000_000)
+      fontFaces.push(
         '@font-face{font-family:ContractNazanin;src:url(data:font/ttf;base64,' +
           fontBytes.toString('base64') +
-          ') format("truetype");font-weight:normal}</style>',
+          ') format("truetype");font-weight:normal}',
       );
   }
+  // Ship Persian and Latin glyphs with the document. PDF rendering therefore
+  // does not depend on a machine-local B Nazanin installation.
+  const bundledFonts = [
+    {
+      file: 'vazirmatn-arabic-wght-normal.woff2',
+      range: 'U+0600-06FF,U+0750-077F,U+08A0-08FF,U+FB50-FDFF,U+FE70-FEFF',
+    },
+    {
+      file: 'vazirmatn-latin-wght-normal.woff2',
+      range: 'U+0000-00FF,U+0100-024F',
+    },
+  ];
+  const fontAssets = await Promise.all(
+    bundledFonts.map(async ({ file, range }) => {
+      const candidates = [
+        join(process.cwd(), 'public', 'fonts', file),
+        join(process.cwd(), 'apps', 'web', 'public', 'fonts', file),
+      ];
+      for (const candidate of candidates) {
+        const bytes = await readFile(
+          /* turbopackIgnore: true */ candidate,
+        ).catch(() => null);
+        if (bytes?.length && bytes.length <= 5_000_000)
+          return { file, range, bytes };
+      }
+      return null;
+    }),
+  );
+  for (const asset of fontAssets)
+    if (asset)
+      fontFaces.push(
+        '@font-face{font-family:ContractVazirmatn;src:url(data:font/woff2;base64,' +
+          asset.bytes.toString('base64') +
+          ') format("woff2");font-weight:100 900;font-style:normal;unicode-range:' +
+          asset.range +
+          '}',
+      );
+  if (fontFaces.length)
+    html = html.replace('</style>', fontFaces.join('') + '</style>');
   if (Buffer.byteLength(html) > 10_000_000) throw new Error('PDF_TOO_LARGE');
   return html;
 }
