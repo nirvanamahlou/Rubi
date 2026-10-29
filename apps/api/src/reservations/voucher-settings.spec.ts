@@ -65,7 +65,7 @@ it('persists each supplier price column independently without summing currencies
   value.hotelPurchasePrices = [{ amount: '999', currencyCode: 'IRR' }];
   value.supplierFormPrices = {
     pp: { amount: '9007199254740993.25', currencyCode: 'EUR' },
-    ratio: { amount: '2.50', currencyCode: 'USD' },
+    ratio: { amount: '2.50' },
     transferPp: { amount: '0', currencyCode: 'JPY' },
   };
   const result = validateVoucherSettings(value, ['p']);
@@ -358,4 +358,12 @@ it('round-trips optional transfer overrides and rejects invalid supplier IDs and
       'p',
     ]),
   ).toThrow();
+});
+
+it('accepts legacy ratio currency but persists the factor without money semantics', () => {
+  const value = settings();
+  value.supplierFormPrices = { ratio: { amount: '2', currencyCode: 'USD' } };
+  expect(validateVoucherSettings(value, ['p']).supplierFormPrices).toEqual({
+    ratio: { amount: '2' },
+  });
 });

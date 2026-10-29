@@ -7970,3 +7970,7 @@ Explicit zero hotel passenger nightly prices and transfer unit/base prices are a
 ## EXCLUDE-CANCELLED-SALES-COUNTS-1029 - PC-A
 
 Cancelled contracts are excluded before Sales dashboard metrics and currency sums, filtered receivable amounts/counts and reference choices. The ordinary contract list, pagination total and Excel share the same noncancelled predicate; an explicit CANCELLED status query retains historical access under existing own/branch/all scope. Completed sales remain in valid revenue and receivable totals. Existing contract/payment/refund/settlement history and stored balances are unchanged.33 focused dashboard/receivable/list/search/export tests pass; scoped lint, API types/build and final-head hosted gates precede the owner-authorized develop merge. No migration, schema, API shape, dependency, production data or runtime change. Source reservations release on verified merge.
+
+## SUPPLIER-RATIO-SAVE-1029 — PC-A
+
+Supplier form Ratio is a dimensionless decimal without a currency selector, currency directory lookup or PDF currency suffix. Historical ratio currencies remain readable and are removed when saving a new revision. Hotel P.P replaces P.P in input and both preview/PDF rendering. Explicit Save stores settings without sending/issuing; passenger ticket PDF downloads remain while the two browser print buttons are removed. No schema/migration/deployment. Focused validation and hosted gates precede authorized develop merge.

@@ -624,15 +624,17 @@ export function ReservationSettingsForm({
                             change({ ...price, amount })
                           }
                         />
-                        <ReservationCurrencySelect
-                          label={`ارز ${column.label}`}
-                          value={price.currencyCode}
-                          currencies={currencyDirectory.currencies}
-                          disabled={busy || currencyDirectory.loading}
-                          onChange={(currencyCode) =>
-                            change({ ...price, currencyCode })
-                          }
-                        />
+                        {column.key !== 'ratio' && (
+                          <ReservationCurrencySelect
+                            label={`ارز ${column.label}`}
+                            value={price.currencyCode ?? ''}
+                            currencies={currencyDirectory.currencies}
+                            disabled={busy || currencyDirectory.loading}
+                            onChange={(currencyCode) =>
+                              change({ ...price, currencyCode })
+                            }
+                          />
+                        )}
                       </div>
                     </td>
                   );
@@ -652,7 +654,7 @@ export function ReservationSettingsForm({
             }
             onClick={() => void save(false)}
           >
-            ثبت مبلغ فرم
+            ذخیره
           </Button>
           <Button
             type="button"
