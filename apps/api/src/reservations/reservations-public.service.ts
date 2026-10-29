@@ -132,6 +132,19 @@ function present(
               )!,
             }
           : {}),
+        ...(!Array.isArray(purchase.passengerPrices) &&
+        purchase.passengerPrices &&
+        typeof purchase.passengerPrices === 'object' &&
+        'legacyGuests' in purchase.passengerPrices
+          ? {
+              legacyGuestPrices: purchase.passengerPrices
+                .legacyGuests as unknown as NonNullable<
+                NonNullable<
+                  ReservationIntakeV1['servicePurchases']
+                >[number]['legacyGuestPrices']
+              >,
+            }
+          : {}),
         passengerPrices: Array.isArray(purchase.passengerPrices)
           ? (purchase.passengerPrices as unknown as {
               customerId: string;

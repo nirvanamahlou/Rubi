@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import type { SalesReservationRequestV1 } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
 import {
   ReservationServicePurchaseService,
@@ -16,7 +17,185 @@ const valid = {
   currencyCode: 'IRR',
 };
 
+it('validates and prices only the actual unnamed legacy hotel guest ordinals', () => {
+  const snapshot = {
+    passengerIds: [],
+    passengerAssignments: [],
+    serviceSelections: [
+      {
+        clientKey: 'hotel-1',
+        kind: 'HOTEL',
+        metadata: {
+          legacyServicePartiesV2: JSON.stringify({
+            'hotel-1': { adults: 2, children: 1, infants: 0 },
+          }),
+        },
+      },
+    ],
+    hotelSelection: {
+      serviceClientKey: 'hotel-1',
+      checkInDate: '2026-10-01',
+      checkOutDate: '2026-10-07',
+    },
+  } as unknown as SalesReservationRequestV1;
+  const prices = [
+    { guestIndex: 0, nightlyAmount: '10' },
+    { guestIndex: 2, nightlyAmount: '5' },
+  ];
+  expect(() =>
+    validateServicePurchase({
+      ...valid,
+      amount: '90',
+      legacyGuestPrices: prices,
+    }),
+  ).not.toThrow();
+  expect(hotelPassengerPurchase(snapshot, 'hotel-1', [], prices)).toMatchObject(
+    {
+      amount: '90',
+      passengerPrices: [],
+      legacyGuestPrices: [
+        {
+          guestIndex: 0,
+          ageCategory: 'ADT',
+          passengerName: 'مسافر 1',
+          totalAmount: '60',
+        },
+        { guestIndex: 2, ageCategory: 'CHD', totalAmount: '30' },
+      ],
+    },
+  );
+  for (const invalid of [
+    [{ guestIndex: 3, nightlyAmount: '10' }],
+    [prices[0]!, prices[0]!],
+  ])
+    expect(() =>
+      hotelPassengerPurchase(snapshot, 'hotel-1', [], invalid),
+    ).toThrow(BadRequestException);
+  expect(() =>
+    hotelPassengerPurchase(
+      { ...snapshot, passengerIds: ['real'] } as never,
+      'hotel-1',
+      [],
+      prices,
+    ),
+  ).toThrow(BadRequestException);
+  expect(() =>
+    validateServicePurchase({
+      ...valid,
+      legacyGuestPrices: prices,
+      passengerPrices: [
+        { customerId: valid.supplierOrganizationId, nightlyAmount: '10' },
+      ],
+    }),
+  ).toThrow(BadRequestException);
+});
+
 describe('service purchase validation', () => {
+  it('persists legacy guest purchase amounts and rejects a forged total before writing', async () => {
+    const snapshot = {
+      passengerIds: [],
+      serviceSelections: [
+        {
+          clientKey: 'hotel-1',
+          kind: 'HOTEL',
+          metadata: {
+            legacyServicePartiesV2: JSON.stringify({
+              'hotel-1': { adults: 2, children: 0, infants: 0 },
+            }),
+          },
+        },
+      ],
+      hotelSelection: {
+        serviceClientKey: 'hotel-1',
+        checkInDate: '2026-10-01',
+        checkOutDate: '2026-10-07',
+      },
+    };
+    const create = vi.fn().mockImplementation(async ({ data }) => ({
+      ...data,
+      id: 'saved',
+      createdAt: new Date(),
+    }));
+    const transaction = {
+      $queryRaw: vi.fn(),
+      reservationIntake: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      reservationServicePurchase: { create },
+    };
+    const database = {
+      client: {
+        reservationIntake: {
+          findUnique: vi
+            .fn()
+            .mockResolvedValue({ branchId: 'branch', snapshot }),
+        },
+        reservationServicePurchase: {
+          findUnique: vi.fn().mockResolvedValue(null),
+        },
+        $transaction: async (
+          work: (tx: typeof transaction) => Promise<unknown>,
+        ) => work(transaction),
+      },
+    };
+    const directory = {
+      brokerReference: vi.fn().mockResolvedValue({
+        id: valid.supplierOrganizationId,
+        name: 'Broker',
+      }),
+      currencyReference: vi.fn().mockResolvedValue({ code: 'IRR' }),
+    };
+    const service = new ReservationServicePurchaseService(
+      database as never,
+      directory as never,
+    );
+    const actor = {
+      userId: 'user',
+      branchIds: ['branch'],
+      permissions: ['reservations.read', 'reservations.hotel_purchase.write'],
+    } as never;
+    const purchase = {
+      ...valid,
+      amount: '60',
+      coveredServiceClientKeys: ['hotel-1'],
+      legacyGuestPrices: [{ guestIndex: 0, nightlyAmount: '10' }],
+    };
+    await expect(
+      service.recordBatch(
+        'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        {
+          version: 1,
+          expectedVersion: 0,
+          purchases: [{ ...purchase, amount: '1' }],
+        },
+        actor,
+        'tampered',
+      ),
+    ).rejects.toThrow(BadRequestException);
+    expect(create).not.toHaveBeenCalled();
+    await service.recordBatch(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      { version: 1, expectedVersion: 0, purchases: [purchase] },
+      actor,
+      'valid',
+    );
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          amount: '60',
+          passengerPrices: {
+            legacyGuests: [
+              expect.objectContaining({
+                guestIndex: 0,
+                passengerName: 'مسافر 1',
+                totalAmount: '60',
+              }),
+            ],
+          },
+        }),
+      }),
+    );
+  });
   it('accepts a positive service purchase with broker and currency', () => {
     expect(() => validateServicePurchase(valid)).not.toThrow();
   });
