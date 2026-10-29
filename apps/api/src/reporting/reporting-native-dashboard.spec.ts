@@ -16,6 +16,7 @@ import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { SalesDashboardPublicModule } from '../sales/sales-dashboard.public';
 import { CustomerDashboardPublicModule } from '../customers/customer-dashboard.public';
 import { LeadDashboardPublicModule } from '../customer-affairs/lead-dashboard.public';
+import { SalesDashboardCustomersModule } from '../sales/sales-dashboard-customers.public';
 import {
   SalesDashboardPayments,
   SalesDashboardPaymentsModule,
@@ -86,6 +87,103 @@ const filters = {
 };
 
 describe('native dashboard independent source composition', () => {
+  it('recomputes average sale from contract amounts per currency and keeps empty denominators unavailable', async () => {
+    const at = new Date('2026-10-15');
+    const source: DashboardSourceResult = {
+      source: 'sales',
+      state: 'ready',
+      metrics: {
+        'average-sale-value': {
+          kind: 'money',
+          calculation: 'mean',
+          aggregation: 'contract mean',
+          observations: [
+            { at, value: '10', currencyCode: 'USD' },
+            { at, value: '30', currencyCode: 'USD' },
+            { at, value: '90', currencyCode: 'EUR' },
+          ],
+        },
+      },
+    };
+    const result = await setup(source).native.load(
+      { kpiIds: 'average-sale-value' },
+      actor,
+      filters,
+      new Date('2026-11-01'),
+    );
+    expect(result.metrics['average-sale-value']?.value).toBe('۹۰ EUR · ۲۰ USD');
+    expect(result.metrics['average-sale-value']?.trend).toBeUndefined();
+    source.metrics['average-sale-value']!.observations = [];
+    const empty = await setup(source).native.load(
+      { kpiIds: 'average-sale-value' },
+      actor,
+      filters,
+      new Date('2026-11-01'),
+    );
+    expect(empty.metrics['average-sale-value']).toBeUndefined();
+    expect(empty.unavailableMetrics?.['average-sale-value']).toBe(
+      'ZERO_DENOMINATOR',
+    );
+  });
+  it('reconciles service buckets to the monetary KPI without duplicating composite contracts', async () => {
+    const at = new Date('2026-10-15');
+    const source: DashboardSourceResult = {
+      source: 'sales',
+      state: 'ready',
+      metrics: {
+        'net-sales': {
+          kind: 'money',
+          aggregation: 'fixture',
+          observations: [
+            {
+              at,
+              value: '100',
+              currencyCode: 'USD',
+              dimensions: { service: 'خدمات ترکیبی' },
+            },
+            {
+              at,
+              value: '20',
+              currencyCode: 'USD',
+              dimensions: { service: 'هتل' },
+            },
+            {
+              at,
+              value: '15',
+              currencyCode: 'EUR',
+              dimensions: { service: 'هتل' },
+            },
+          ],
+        },
+      },
+    };
+    const result = await setup(source).native.load(
+      {
+        kpiIds: 'net-sales,gross-profit',
+        visualIds:
+          'service-type,executive-sales-by-service,service-sales-portfolio',
+      },
+      actor,
+      filters,
+      new Date('2026-11-01'),
+    );
+    expect(result.metrics['net-sales']?.value).toContain('۱۲۰ USD');
+    for (const chart of Object.values(result.visuals)) {
+      const usd = chart.currencySeries?.find(
+        (series) => series.currencyCode === 'USD',
+      );
+      expect(usd?.values.reduce((a, b) => a + b, 0)).toBe(120);
+      expect(usd?.labels).toContain('خدمات ترکیبی');
+      expect(
+        chart.currencySeries?.find((series) => series.currencyCode === 'EUR')
+          ?.values,
+      ).toEqual([15]);
+    }
+    expect(result.metrics['gross-profit']).toBeUndefined();
+    expect(result.unavailableMetrics?.['gross-profit']).toBe(
+      'APPROVED_MATCHED_COST_REQUIRED',
+    );
+  });
   it('connects actual registry chart IDs, separates metric and currency series, and labels missing profit', async () => {
     const sales: DashboardSourceResult = {
       source: 'sales',
@@ -148,6 +246,7 @@ describe('native dashboard independent source composition', () => {
         CustomerDashboardPublicModule,
         LeadDashboardPublicModule,
         SalesDashboardPaymentsModule,
+        SalesDashboardCustomersModule,
       ],
       providers: [
         ReportingNativeDashboard,
@@ -331,6 +430,39 @@ describe('native dashboard independent source composition', () => {
 });
 
 describe('producer-owned native dashboard readers', () => {
+  it('puts a multi-service contract in one composite bucket with its complete amount once', async () => {
+    const at = new Date('2026-10-15');
+    const findMany = vi
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          createdAt: at,
+          confirmedAt: at,
+          services: [{ kind: 'FLIGHT' }, { kind: 'HOTEL' }],
+          payments: [],
+          priceComponents: [
+            {
+              type: 'BASE',
+              title: 'fixture',
+              amount: new Prisma.Decimal(100),
+              currencyCode: 'USD',
+            },
+          ],
+        },
+      ])
+      .mockResolvedValueOnce([]);
+    const result = await new SalesDashboardSource({
+      client: { salesContract: { findMany } },
+    } as never).read(query);
+    expect(result.metrics['net-sales']?.observations).toEqual([
+      {
+        at,
+        value: '100',
+        currencyCode: 'USD',
+        dimensions: { service: 'خدمات ترکیبی' },
+      },
+    ]);
+  });
   it('counts new orders by creation independently of finalized contracts', async () => {
     const at = new Date('2026-10-15');
     const findMany = vi
@@ -480,7 +612,7 @@ describe('producer-owned native dashboard readers', () => {
       client: { customer: { findMany } },
     } as never);
     expect(
-      (await source.read(query)).metrics['new-customers']?.observations,
+      (await source.read(query)).metrics['registered-customers']?.observations,
     ).toHaveLength(1);
     expect(findMany.mock.calls[0]?.[0].where).toEqual({
       ownerBranchId: { in: ['branch-a'] },

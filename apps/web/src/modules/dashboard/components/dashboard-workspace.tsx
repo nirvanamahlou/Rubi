@@ -1023,7 +1023,9 @@ function Metric({
           >
             {metric
               ? `${latinizeDashboardNumericText(metric.value)}${isPercentageMetric ? '%' : ''}`
-              : '—'}
+              : definition?.id === 'gross-profit'
+                ? 'قابل محاسبه نیست'
+                : '—'}
           </span>
           <span aria-hidden="true" />
         </span>

@@ -5,6 +5,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { SalesDashboardPayments } from '../sales/sales-dashboard-payments.public';
+import { SalesDashboardCustomers } from '../sales/sales-dashboard-customers.public';
 import { createHash } from 'node:crypto';
 import { Prisma } from '@nora/database';
 import type {
@@ -44,6 +45,7 @@ const trendVisuals: Readonly<Record<string, readonly string[]>> = {
   'finalized-sales-trend': ['net-sales'],
   'discount-trend': ['discount-amount'],
   'executive-lead-acquisition': ['new-leads'],
+  'executive-customer-retention': ['new-customers', 'returning-customers'],
 };
 const metricLabels: Readonly<Record<string, string>> = {
   'net-sales': 'فروش خالص',
@@ -52,7 +54,15 @@ const metricLabels: Readonly<Record<string, string>> = {
   'gross-profit': 'سود ناخالص',
   'discount-amount': 'تخفیف',
   'new-leads': 'لید جدید',
+  'new-customers': 'مشتری با اولین خرید تأییدشده',
+  'returning-customers': 'مشتری بازگشتی',
+  'average-sale-value': 'میانگین مبلغ فروش',
 };
+const serviceVisualIds = new Set([
+  'executive-sales-by-service',
+  'service-type',
+  'service-sales-portfolio',
+]);
 function exactText(value: Prisma.Decimal) {
   const [integer, fraction] = value
     .toFixed(4)
@@ -99,6 +109,9 @@ export class ReportingNativeDashboard {
     @Optional()
     @Inject(SalesDashboardPayments)
     private readonly payments?: SalesDashboardPayments,
+    @Optional()
+    @Inject(SalesDashboardCustomers)
+    private readonly customerPurchases?: SalesDashboardCustomers,
   ) {}
   async load(
     input: Record<string, string | undefined>,
@@ -140,6 +153,7 @@ export class ReportingNativeDashboard {
       this.customers,
       this.leads,
       ...(this.payments ? [this.payments] : []),
+      ...(this.customerPurchases ? [this.customerPurchases] : []),
     ];
     const read = async (request: DashboardSourceQuery) => {
       const results = await Promise.allSettled(
@@ -154,6 +168,7 @@ export class ReportingNativeDashboard {
                 'customers.dashboard.registrations.v1',
                 'customer-affairs.dashboard.leads.v1',
                 'sales.dashboard.confirmed-payments.v1',
+                'sales.dashboard.customer-purchase-cohorts.v1',
               ][index]!,
               state: 'unavailable',
               reason: 'SOURCE_READ_FAILED',
@@ -190,6 +205,8 @@ export class ReportingNativeDashboard {
     const calculated = new Set(requested);
     for (const id of visualIds)
       for (const metric of trendVisuals[id] ?? []) calculated.add(metric);
+    if (visualIds.some((id) => serviceVisualIds.has(id)))
+      calculated.add('net-sales');
     const starts =
       duration > 0
         ? dashboardTrendBucketStarts({
@@ -212,13 +229,16 @@ export class ReportingNativeDashboard {
         day: 'numeric',
       }).format(date),
     );
-    const trend = (rows: readonly DashboardObservation[]) => ({
+    const aggregate = (rows: readonly DashboardObservation[], mean = false) =>
+      mean && rows.length ? sum(rows).div(rows.length) : sum(rows);
+    const trend = (rows: readonly DashboardObservation[], mean = false) => ({
       labels,
       values: starts.map((start, index) =>
-        sum(
+        aggregate(
           rows.filter(
             (row) => row.at >= start && row.at < (starts[index + 1] ?? to),
           ),
+          mean,
         ).toNumber(),
       ),
     });
@@ -228,10 +248,18 @@ export class ReportingNativeDashboard {
     for (const id of calculated) {
       const metric = available[id];
       if (!metric) {
-        unavailableMetrics[id] = 'SOURCE_OR_SCOPE_UNAVAILABLE';
+        unavailableMetrics[id] =
+          id === 'gross-profit'
+            ? 'APPROVED_MATCHED_COST_REQUIRED'
+            : 'SOURCE_OR_SCOPE_UNAVAILABLE';
         continue;
       }
       const old = prior[id];
+      const mean = metric.calculation === 'mean';
+      if (mean && !metric.observations.length) {
+        unavailableMetrics[id] = 'ZERO_DENOMINATOR';
+        continue;
+      }
       const codes = [
         ...new Set(
           metric.observations.flatMap((row) =>
@@ -260,18 +288,22 @@ export class ReportingNativeDashboard {
                   ) &&
                   safe(
                     old.observations.filter((row) => row.currencyCode === code),
-                  ),
+                  ) &&
+                  (!mean ||
+                    old.observations.some((row) => row.currencyCode === code)),
               )
               .map((code) => ({
                 currencyCode: code,
                 ...comparison(
-                  sum(
+                  aggregate(
                     metric.observations.filter(
                       (row) => row.currencyCode === code,
                     ),
+                    mean,
                   ),
-                  sum(
+                  aggregate(
                     old.observations.filter((row) => row.currencyCode === code),
+                    mean,
                   ),
                 ),
               }))
@@ -282,10 +314,11 @@ export class ReportingNativeDashboard {
               .map(
                 (code) =>
                   exactText(
-                    sum(
+                    aggregate(
                       metric.observations.filter(
                         (row) => row.currencyCode === code,
                       ),
+                      mean,
                     ),
                   ) +
                   ' ' +
@@ -309,7 +342,8 @@ export class ReportingNativeDashboard {
           : old && safe(metric.observations) && safe(old.observations)
             ? { comparison: comparison(total, sum(old.observations)) }
             : {}),
-        ...(starts.length &&
+        ...(!mean &&
+        starts.length &&
         (monetary
           ? codes.every((code) =>
               safe(
@@ -326,6 +360,7 @@ export class ReportingNativeDashboard {
                           metric.observations.filter(
                             (row) => row.currencyCode === codes[0],
                           ),
+                          mean,
                         ).values
                       : starts.map(() => 0),
                     series: codes.map((currencyCode) => ({
@@ -334,6 +369,7 @@ export class ReportingNativeDashboard {
                         metric.observations.filter(
                           (row) => row.currencyCode === currencyCode,
                         ),
+                        mean,
                       ).values,
                     })),
                   }
@@ -346,6 +382,64 @@ export class ReportingNativeDashboard {
       {};
     const unavailableVisuals: Record<string, string> = {};
     for (const id of visualIds) {
+      if (serviceVisualIds.has(id)) {
+        const source = available['net-sales'];
+        if (!source) {
+          unavailableVisuals[id] = 'SOURCE_OR_SCOPE_UNAVAILABLE';
+          continue;
+        }
+        const codes = [
+          ...new Set(
+            source.observations
+              .map((row) => row.currencyCode)
+              .filter((code): code is string => Boolean(code)),
+          ),
+        ].sort();
+        const currencySeries = codes.map((currencyCode) => {
+          const rows = source.observations.filter(
+            (row) => row.currencyCode === currencyCode,
+          );
+          const labels = [
+            ...new Set(
+              rows.map((row) => row.dimensions?.service ?? 'خدمت ثبت نشده'),
+            ),
+          ].sort();
+          const totals = labels.map((label) =>
+            sum(
+              rows.filter(
+                (row) => (row.dimensions?.service ?? 'خدمت ثبت نشده') === label,
+              ),
+            ),
+          );
+          return {
+            currencyCode,
+            labels,
+            values: totals.map((value) => value.toNumber()),
+            safe: totals.every((value) =>
+              value.abs().lte(Number.MAX_SAFE_INTEGER),
+            ),
+          };
+        });
+        if (currencySeries.some((series) => !series.safe)) {
+          unavailableVisuals[id] = 'CHART_NUMERIC_RANGE';
+          continue;
+        }
+        visuals[id] = {
+          labels: currencySeries[0]?.labels ?? [],
+          values: currencySeries[0]?.values ?? [],
+          currencySeries: currencySeries.map(
+            ({ currencyCode, labels, values }) => ({
+              currencyCode,
+              labels,
+              values,
+            }),
+          ),
+          unit: 'فروش خالص',
+          notice:
+            'قرارداد چندخدمتیِ فاقد تفکیک مبلغ، یک بار در خدمات ترکیبی محاسبه می‌شود.',
+        };
+        continue;
+      }
       const ids = trendVisuals[id] ?? [];
       const usable = ids.filter((metric) => metrics[metric]?.trend);
       if (!usable.length) {

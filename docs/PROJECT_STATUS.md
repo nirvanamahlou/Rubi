@@ -7947,6 +7947,17 @@ HR-PAYROLL-FINANCE-APPROVAL-1027 stage semantics: HR author confirmation submits
 
 # DASHBOARDS-COMPLETE-SOURCES-1027 — PC-C — IN_PROGRESS
 
+2026-10-29: owner approved approved-cost-only profit, composite-services bucket and
+PR/merge/deploy workflow. Updated314-table production read-only inventory confirms
+purchase records exist but Finance-approved costs and journals remain absent.
+Service charts now preserve one amount per contract/currency; exact average sale
+and distinct paid-purchase new/repeat customer cohorts replace the previous
+registration/first-purchase mismatch.90 target API tests and34 Web tests pass (one
+existing skip); API emitted build and live read-only smoke succeed. Independent SQL
+reconciles gross/discount in three currencies and new orders. Complete remaining
+widget coverage, rendered acceptance, final CI and root-installed deployment plan
+are still gates; no operational rollout is claimed.
+
 Production read-only table/column inventory and exact counts completed; empty legacy
 facts are not evidence of an empty ERP. Native Sales/Customer/HR/Reservations records
 exist; accounting journals and approved cost/payment sources are not complete.

@@ -14,6 +14,7 @@ import { CustomerDashboardPublicModule } from '../customers/customer-dashboard.p
 import { LeadDashboardPublicModule } from '../customer-affairs/lead-dashboard.public';
 import { ReportingNativeDashboard } from './reporting-native-dashboard';
 import { SalesDashboardPaymentsModule } from '../sales/sales-dashboard-payments.public';
+import { SalesDashboardCustomersModule } from '../sales/sales-dashboard-customers.public';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { SalesDashboardPaymentsModule } from '../sales/sales-dashboard-payments.
     CustomerDashboardPublicModule,
     LeadDashboardPublicModule,
     SalesDashboardPaymentsModule,
+    SalesDashboardCustomersModule,
   ],
   controllers: [ReportingController],
   providers: [

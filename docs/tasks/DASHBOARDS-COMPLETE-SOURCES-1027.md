@@ -82,6 +82,37 @@ that a source is empty: several populated tables had stale zero estimates.
 - No PR/merge/deploy yet: the owner's gate is completion followed by all final-head
   CI. The source/task branch can be published for handoff without claiming that gate.
 
-Pending owner choices: approved-cost-only profit versus separately labelled estimate;
-and keeping unallocated multi-service contracts in a distinct composite-services
-bucket versus requiring explicit per-service sale-price allocation first.
+2026-10-29 owner decisions: profit requires complete matched approved cost; absent
+cost is not zero and the KPI must say cannot calculate. Unallocated multi-service
+contracts belong to an explicit composite-services bucket without duplicate money.
+PR/merge after all CI and production deployment are explicitly authorized.
+
+## 2026-10-29 continuation
+
+- Synchronized current develop, keeping both coordination documents' additions.
+- Added service buckets on Sales-owned monetary observations and three service
+  chart IDs. Multi-service contracts retain their entire amount once in the
+  composite-services bucket; currency groups reconcile independently.
+- Gross-profit card explicitly displays cannot calculate. Approved matched cost
+  projection remains required; there is no estimated-profit substitution.
+- Added exact per-currency average sale, recomputed over contract observations;
+  zero denominator remains unavailable. A sparse mean time series is withheld
+  because the current numeric-only chart contract cannot represent null buckets.
+- Corrected the previously discovered customer-definition mismatch: registered
+  identities are a separate producer metric, while new/repeat customer cards use
+  successful paid-purchase cohorts from a Sales-owned public reader. History is
+  scoped to authorized Sales access; no identity is returned. Service/currency
+  filters that would redefine the cohort fail closed. Added retention chart.
+- Refreshed read-only inventory:314 tables;15 ReservationServicePurchase records,
+  still zero Finance-approved cost revisions, supplier-payment revisions, accounting
+  books/journals and accounting events/workflows. Purchases alone cannot yield profit.
+- 90 targeted API tests pass;34 Web tests pass with one existing skip. Initial API
+  typecheck found stale generated Prisma declarations after merging newer develop;
+  regenerated the client only (no schema edit or migration) and rebuilding.
+- API emitted build then passed. Live read-only smoke returns ten requested KPIs
+  and six requested visuals including service mix and customer retention. Gross
+  profit remains unavailable as required. Independent gross/discount/new-order SQL
+  reconciliation succeeds in three source currencies; no monetary values disclosed.
+- Existing production deployment wrapper has no installed root-approved plan.
+  Preparing source is not runtime activation. Full Dashboard coverage and runtime
+  acceptance remain outstanding; this task must not be described as fully finalized.

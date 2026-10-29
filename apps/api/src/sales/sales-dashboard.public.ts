@@ -81,6 +81,7 @@ export class SalesDashboardSource {
         ],
       },
       select: {
+        services: { select: { kind: true } },
         createdAt: true,
         confirmedAt: true,
         priceComponents: {
@@ -143,6 +144,29 @@ export class SalesDashboardSource {
       discounts: DashboardObservation[] = [],
       finalized: DashboardObservation[] = [];
     for (const row of rows) {
+      const kinds = [
+        ...new Set((row.services ?? []).map((service) => service.kind)),
+      ].sort();
+      const serviceLabels: Readonly<Record<string, string>> = {
+        FLIGHT: 'پرواز',
+        HOTEL: 'هتل',
+        VISA: 'ویزا',
+        INSURANCE: 'بیمه',
+        TRANSFER: 'ترانسفر',
+        TOUR: 'تور',
+        BUS: 'اتوبوس',
+        TRAIN: 'قطار',
+        CIP: 'تشریفات فرودگاهی',
+        OTHER: 'سایر خدمات',
+      };
+      const dimensions = {
+        service:
+          kinds.length > 1
+            ? 'خدمات ترکیبی'
+            : kinds.length === 1
+              ? (serviceLabels[kinds[0]!] ?? kinds[0]!)
+              : 'خدمت ثبت نشده',
+      };
       const at =
         query.dateBasis === 'created' ? row.createdAt : row.confirmedAt!;
       const balances = calculateSalesBalances(
@@ -196,6 +220,7 @@ export class SalesDashboardSource {
           at,
           currencyCode: balance.currencyCode,
           value: new Prisma.Decimal(balance.amount).minus(refunded).toString(),
+          dimensions,
         });
       }
     }
@@ -234,6 +259,13 @@ export class SalesDashboardSource {
           kind: 'money',
           aggregation:
             'confirmed contract cohort sale total minus completed refunds allocated to those contracts before window end; CONTRACT_CURRENCY',
+          observations: net,
+        },
+        'average-sale-value': {
+          kind: 'money',
+          calculation: 'mean',
+          aggregation:
+            'net sale total divided by priced confirmed contracts in each source currency; recomputed from contract observations',
           observations: net,
         },
       },
