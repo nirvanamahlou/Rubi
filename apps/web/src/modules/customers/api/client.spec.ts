@@ -39,13 +39,11 @@ describe('customers browser client', () => {
   });
   it('does not replay denied Sales creation or an unkeyed uncertain creation', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue({
-        ok: false,
-        status: 403,
-        json: async () => ({ message: 'denied' }),
-      });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: async () => ({ message: 'denied' }),
+    });
     vi.stubGlobal('fetch', fetchMock);
     const input = {
       kind: 'person',
