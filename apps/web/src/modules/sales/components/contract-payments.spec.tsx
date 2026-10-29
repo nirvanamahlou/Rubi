@@ -18,8 +18,8 @@ vi.mock('@/components/ui/overlays', () => ({
 }));
 import type { MasterDataRecord } from '@nora/contracts';
 import {
-  ContractPaymentCurrencySelect,
   ContractPaymentAccountSelect,
+  ContractPaymentCurrencySelect,
   ContractPaymentShareSummary,
   ContractPayments,
 } from './contract-payments';
@@ -162,4 +162,66 @@ describe('saved contract payment currency control', () => {
     expect(html).toContain('112,000,000 ﷼');
     expect(html).not.toContain('1,000 $');
   });
+});
+
+it('shows the named company destination and full bank identifiers for the selected currency', () => {
+  const account = {
+    id: 'account',
+    title: 'Operating account',
+    bankName: 'Example Bank',
+    currencyCode: 'IRR',
+    kind: 'BANK',
+    maskedIdentifier: '••001',
+    accountNumber: '123456789012',
+    cardNumber: '6037990000000000',
+    iban: 'IR000000000000000000000001',
+  };
+  const html = renderToStaticMarkup(
+    <ContractPaymentAccountSelect
+      accounts={[
+        account,
+        {
+          ...account,
+          id: 'other',
+          title: 'Foreign account',
+          currencyCode: 'USD',
+        },
+      ]}
+      currencyCode="IRR"
+      value="account"
+      onChange={() => undefined}
+    />,
+  );
+  for (const text of [
+    account.title,
+    account.bankName,
+    account.accountNumber,
+    account.cardNumber,
+    account.iban,
+  ])
+    expect(html).toContain(text);
+  expect(html).toContain('dir="ltr"');
+  expect(html).not.toContain('Foreign account');
+  expect(html).not.toContain('••001');
+});
+it('keeps older masked account responses usable and hides stale selections after currency changes', () => {
+  const account = {
+    id: 'account',
+    title: 'Legacy account',
+    currencyCode: 'IRR',
+    kind: 'BANK',
+    maskedIdentifier: '••001',
+  };
+  const render = (currencyCode: string) =>
+    renderToStaticMarkup(
+      <ContractPaymentAccountSelect
+        accounts={[account]}
+        currencyCode={currencyCode}
+        value="account"
+        onChange={() => undefined}
+      />,
+    );
+  expect(render('IRR')).toContain('••001');
+  expect(render('USD')).not.toContain('Legacy account');
+  expect(render('USD')).toContain('disabled');
 });

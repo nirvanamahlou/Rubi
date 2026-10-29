@@ -207,6 +207,11 @@ export interface SalesPaymentAccountV1 {
   currencyCode: string;
   kind: string;
   maskedIdentifier: string | null;
+  /** Company payment instructions; available only to contract-authorized payers. */
+  bankName?: string | null;
+  accountNumber?: string | null;
+  cardNumber?: string | null;
+  iban?: string | null;
 }
 
 export interface SalesPaymentInput extends SalesMoney {

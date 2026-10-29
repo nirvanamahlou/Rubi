@@ -1,4 +1,5 @@
 import { DocumentsModule } from '../documents/documents.module';
+import { SalesReceiptAccountsModule } from '../finance/payments/sales-receipt-accounts.public';
 import {
   SalesPaymentReceiptsController,
   SalesPaymentReceiptsService,
@@ -35,6 +36,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
 
 @Module({
   imports: [
+    SalesReceiptAccountsModule,
     DocumentsModule,
     PackagePricingModule,
     PassengerCorrectionModule,
