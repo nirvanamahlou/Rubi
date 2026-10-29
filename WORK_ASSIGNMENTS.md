@@ -10071,9 +10071,23 @@ COMPUTER_ID=PC-A; branch codex/pc-a-sales-selected-row-1027 from latest origin/d
 
 # REPORTING-LIVE-SOURCES-1027 — PC-C — IN_PROGRESS
 
+REPORT-CANCELLED-TOTALS-1029 — PC-C — RESERVED: user requests cancelled-contract identification and exclusion from confirmed report sales. Branch codex/pc-c-report-cancelled-totals-1029 from latest origin/develop. Reserve Reporting native-sales/projection and focused tests, source capability docs and own status notes. Preserve native Sales permissions and separate cancellation/status rows, payment/refund historical events and other developers' work. No schema, migration, seed, business-record mutation or operational rollout. Do not rewrite Sales-owned cancellation workflow or its active source reservations.
+
 Owner requests production Reports source repair and correct complete exports. Reserve new native Reporting result/orchestration tests, preview/export nativeResult dispatch only in ReportingService/Repository, Travel report contracts only, catalog and Reports UI model/workspace/tests, read-only scripts/reporting, domain-owned new reporting public leaf producers and own docs. Dashboard task owns its active shared constructor/module/dashboard sections; preserve those and defer integration until coordinated. No schema, migration, dependency, demo seed or operational data write. Branch codex/pc-c-reporting-live-sources-1027 from020dcc5b3. Root-console audit and reconciliation receipts received; three populated native reports and one genuinely empty payment report produced structurally validated XLSX in an isolated read-only process. Service-combination report additionally implemented with no per-service multiplication; its new production reconciliation and authenticated runtime acceptance remain pending. Not deployed; full catalog completion is not claimed.
 
 HR-PAYROLL-FINANCE-APPROVAL-1027 final stage semantics: a permitted worksheet author can confirm submission to Finance. Final Finance approval still requires another actor and cannot be self-approved by the submitter; the real-PostgreSQL journey covers these two actors explicitly.
+
+## DASHBOARDS-COMPLETE-SOURCES-1027 — PC-C — IN_PROGRESS
+
+2026-10-29 continuation, COMPUTER_ID=PC-C: owner approves approved-cost-only profit,
+explicit composite-services bucket for unallocated multi-service contracts, full
+Dashboard finalization, PR/merge after all CI and production deployment. Reuse the
+existing task branch; synchronized develop acf9cf070 preserving both coordination
+records. Reserve only existing dashboard aggregate producers/composition/UI/tests,
+new bounded owner-public readers, and own deployment preparation. No active source
+overlap discovered for these files; no schema/dependency reservation requested.
+
+COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-complete-sources-1027 from develop5fbda3e3f. Owner requests read-only production schema/data inventory and complete real KPI/chart connections, then develop PR/merge after all CI. Reserve Dashboard native composition/registry/tests, existing Sales/Customer/Lead public dashboard producers and new bounded domain-owned aggregate leaf readers where source definitions are established, internal additive dashboard aggregate contract and own status/task notes. Preserve operational domain ownership, permissions/branch scope, Decimal/currency and approved UI. No migration/dependency/global grants or production business writes. Finance policy-dependent metrics require approved semantics; source absence must not become fabricated profit/balance. Production inspection is metadata/counts only; no PII/secrets in Git. Deployment remains a separately pinned root-approved operation. Prior PR1182 merged; do not edit concurrently reserved HR worksheet or Sales payment-receipt paths.
 
 ## LEGACY-UNNAMED-PURCHASE-1029 — PC-A — READY_FOR_CI
 

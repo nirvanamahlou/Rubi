@@ -1,5 +1,6 @@
 {
   "این قرارداد باطل شده است": "This contract has been cancelled",
+  "دادهٔ تأییدشده برای نمایش موجود نیست؛ منبع، دسترسی و فیلترهای این نمودار باید بررسی شوند.": "Verified data is unavailable. Check this chart's source, access permissions and filters.",
   "بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ تراکنش دارد.": "Narrow the date range; the report exceeds 10,000 transactions.",
   "بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ قرارداد دارد.": "Narrow the date range; the report exceeds 10,000 contracts.",
   "ترکیب خدمات قرارداد": "Contract service combination",

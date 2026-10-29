@@ -1707,6 +1707,14 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
 
 # وضعیت پروژه
 
+REPORT-CANCELLED-TOTALS-1029 (PC-C): pipeline confirmed-sales currency totals now
+exclude cancelled/draft status rows while retaining their separate amounts.
+Legacy revenue/profit/agency/attribution totals exclude cancelled contracts;
+historical receipt/refund events remain intact. Native Sales revenue already
+filters confirmed active contracts. Added preview/export and cancelled-only
+regression. Test/lint could not start due unavailable reused API dependencies;
+no successful test, merge or operational rollout claimed. See task document.
+
 ## DASHBOARD-LIVE-SOURCES-1027 — PC-C — READY_FOR_REVIEW
 
 Production diagnosis confirmed the Dashboard reads an empty reporting_travel_facts staging table with no native producer writer. Added producer-owned, permission-scoped Sales/Customer/Lead aggregates and independent Dashboard composition, retaining actual zero versus unavailable state, Decimal currency separation, discounts/refunds and own/branch scope. Issuer context does not filter operational records. UI exposes partial/blocked source messages. Unsupported profit, journal balance and HR measures stay unavailable; no production fixtures inserted. Reporting regression64 and API lint/types/build pass; final Web/translation verification and hosted checks are recorded in docs/tasks/DASHBOARDS-LIVE-SOURCES-1027.md. No migration or permission changes. No production source rollout yet; current SSH policy requires a root-approved deployment plan.
@@ -7948,6 +7956,31 @@ parallel Dashboard task's shared constructor/module/dashboard changes. Details,
 source map and remaining rollout/verification gates are in
 docs/tasks/REPORTING-LIVE-SOURCES-1027.md.
 HR-PAYROLL-FINANCE-APPROVAL-1027 stage semantics: HR author confirmation submits only; independent final approval remains Finance-owned. No permission grant or self-approval bypass in Finance.
+
+# DASHBOARDS-COMPLETE-SOURCES-1027 — PC-C — IN_PROGRESS
+
+2026-10-29: owner approved approved-cost-only profit, composite-services bucket and
+PR/merge/deploy workflow. Updated314-table production read-only inventory confirms
+purchase records exist but Finance-approved costs and journals remain absent.
+Service charts now preserve one amount per contract/currency; exact average sale
+and distinct paid-purchase new/repeat customer cohorts replace the previous
+registration/first-purchase mismatch.90 target API tests and34 Web tests pass (one
+existing skip); API emitted build and live read-only smoke succeed. Independent SQL
+reconciles gross/discount in three currencies and new orders. Complete remaining
+widget coverage, rendered acceptance, final CI and root-installed deployment plan
+are still gates; no operational rollout is claimed.
+
+Production read-only table/column inventory and exact counts completed; empty legacy
+facts are not evidence of an empty ERP. Native Sales/Customer/HR/Reservations records
+exist; accounting journals and approved cost/payment sources are not complete.
+Candidate adds gross-versus-discount correction, finalized/new-order counts, scoped confirmed
+receipt/refund aggregates, actual-registry trend IDs and currency-specific metric series.
+72 API and 34 Web tests pass (one existing Web skip); both typechecks, scoped lint and
+API build pass. Independent read-only SQL reconciles gross/discounts in three currencies
+and new-order count. Web production build also passed (66 pages). Full widget/chart
+coverage, reconciliation, quality/build, final-head CI and authorized PR/merge remain.
+No production business writes, migration, deployment or localhost restart.
+See `docs/tasks/DASHBOARDS-COMPLETE-SOURCES-1027.md`.
 
 ## 2026-10-29 — LEGACY-UNNAMED-PURCHASE-1029 — PC-A
 
