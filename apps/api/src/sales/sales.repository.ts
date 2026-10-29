@@ -397,7 +397,9 @@ export class SalesRepository {
         query.ownerUserId ? { ownerUserId: query.ownerUserId } : {},
         query.originId ? { originId: query.originId } : {},
         query.destinationId ? { destinationId: query.destinationId } : {},
-        query.status ? { status: query.status } : {},
+        query.status
+          ? { status: query.status }
+          : { status: { not: 'CANCELLED' } },
         query.settlementStatus
           ? { settlementStatus: query.settlementStatus }
           : {},
