@@ -78,6 +78,24 @@ const draft: SalesContractCreateRequest = {
   ],
 };
 
+it('uses canonical passenger totals despite obsolete split-flight pricing metadata', () => {
+  const input = structuredClone(draft);
+  input.passengers[0]!.agreedPrices = [
+    { amount: '200.50', currencyCode: 'USD' },
+  ];
+  input.services[0]!.metadata = {
+    passengerPackagePricingVersion: 1,
+    passengerTotalPricesV1: JSON.stringify({
+      [input.passengers[0]!.customerId]: input.passengers[0]!.agreedPrices,
+    }),
+    automaticFlightRoomTotalV1: true,
+    passengerFlightPricesV1: '{}',
+    passengerHotelPricesV1: 'obsolete',
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.passengers[0]!.agreedPrices = [{ amount: '1', currencyCode: 'USD' }];
+  expect(() => validateSalesContract(input)).toThrow();
+});
 it('keeps composite hotel stays ordered with explicit independent dates and no duplicated price components', () => {
   const input = structuredClone(draft);
   input.services = [

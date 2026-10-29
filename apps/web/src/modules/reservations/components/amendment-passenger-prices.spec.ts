@@ -41,6 +41,36 @@ const draft = {
     rooms: [{ agreedPrice: { amount: '9999', currencyCode: 'USD' } }],
   },
 } as unknown as SalesContractAmendmentV1;
+it('normalizes saved rial/foreign totals and removes obsolete flight price requirements before correction submission', () => {
+  const old = {
+    ...draft,
+    services: draft.services.map((s) => ({
+      ...s,
+      metadata: {
+        ...s.metadata,
+        automaticFlightRoomTotalV1: true,
+        passengerFlightPricesV1: '{}',
+        passengerHotelPricesV1: 'obsolete',
+      },
+    })),
+  };
+  const next = prepareAmendmentPersonPrices(old);
+  expect(next.services[0]!.metadata).not.toHaveProperty(
+    'automaticFlightRoomTotalV1',
+  );
+  expect(next.services[0]!.metadata).not.toHaveProperty(
+    'passengerFlightPricesV1',
+  );
+  expect(next.services[0]!.metadata).not.toHaveProperty(
+    'passengerHotelPricesV1',
+  );
+  expect(next.passengers.map((p) => p.agreedPrices)).toEqual(
+    draft.passengers.map((p) => p.agreedPrices),
+  );
+  expect(() =>
+    validatePassengerTotalPricing(next.services, next.passengers),
+  ).not.toThrow();
+});
 it('edits each passenger gross and deductions once, without adding old room prices', () => {
   const next = applyAmendmentPassengerPrices(draft, gross, {
     a: {

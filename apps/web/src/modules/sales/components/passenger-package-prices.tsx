@@ -91,7 +91,7 @@ export function PassengerPackagePrices({
         {hotel
           ? 'قیمت هتل هر مسافر'
           : flight
-            ? 'قیمت پرواز هر مسافر'
+            ? 'قیمت ریالی و ارزی هر مسافر'
             : 'قیمت کل خدمات هر مسافر'}
       </h3>
 
@@ -192,9 +192,7 @@ export function PassengerPackagePrices({
         </table>
       </div>
       <div className="flex flex-wrap gap-4 border-t pt-3">
-        <strong>
-          {hotel ? 'جمع هتل:' : flight ? 'جمع قیمت پرواز:' : 'جمع قرارداد:'}
-        </strong>
+        <strong>{hotel ? 'جمع هتل:' : 'جمع قرارداد:'}</strong>
         {[...totals].map(([code, amount]) => (
           <span key={code}>
             <bdi>
