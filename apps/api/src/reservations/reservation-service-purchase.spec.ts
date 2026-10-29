@@ -111,13 +111,11 @@ describe('service purchase validation', () => {
         checkOutDate: '2026-10-07',
       },
     };
-    const create = vi
-      .fn()
-      .mockImplementation(async ({ data }) => ({
-        ...data,
-        id: 'saved',
-        createdAt: new Date(),
-      }));
+    const create = vi.fn().mockImplementation(async ({ data }) => ({
+      ...data,
+      id: 'saved',
+      createdAt: new Date(),
+    }));
     const transaction = {
       $queryRaw: vi.fn(),
       reservationIntake: {
@@ -141,12 +139,10 @@ describe('service purchase validation', () => {
       },
     };
     const directory = {
-      brokerReference: vi
-        .fn()
-        .mockResolvedValue({
-          id: valid.supplierOrganizationId,
-          name: 'Broker',
-        }),
+      brokerReference: vi.fn().mockResolvedValue({
+        id: valid.supplierOrganizationId,
+        name: 'Broker',
+      }),
       currencyReference: vi.fn().mockResolvedValue({ code: 'IRR' }),
     };
     const service = new ReservationServicePurchaseService(
