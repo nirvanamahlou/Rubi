@@ -117,6 +117,20 @@ probe deadline. Eight safety checks and compilation pass. Retry3 uses a fresh pr
 attempt directory and refreshed payload hash. It is staged, not executed. PPP credentials,
 PBX reachability, Docker AMI and persistence remain unverified; no end-to-end success claimed.
 Receipt preserved=true and public API health confirmed healthy after rollback.
+
+## Verified outcome — 2026-10-29
+
+User executed retry3 as root. Independent SSH inspection of the sanitized receipt confirms
+complete=true, stage=vpn_connected, L2TP/IPsec IKEv1, SSH/AMI TCP success, reconnect_verified,
+boot_enabled, docker_ami_authenticated and tls_verified. All three VPN/TLS/starter services
+are active; own VPN and TLS units are enabled. PBX route uses ppp0 with VPN-assigned source.
+Public API health is healthy. Application changes=false and database changes=false.
+
+The connection is independent of the Windows workstation. A real host reboot was not
+performed; service enablement and link restart were verified. The application provider is
+not activated by this installer. Production call ingestion, employee mapping, recording
+delivery and recovery acceptance remain separate work and are not inferred from AMI login.
+Network objective is achieved; operational source reservation released at publication.
 Sanitized result: /opt/rubi/CALL-CENTER-VPN-1029.json.
 Do not print private inputs, ipsec secrets, PPP options or prepared AMI client credentials.
 
