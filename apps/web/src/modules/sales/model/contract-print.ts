@@ -385,7 +385,7 @@ export function contractPrintHtml(
         airport
           ? `${airport.cityName || airport.name} (${airport.code})`
           : name(id);
-      return `<tr><td class="flight-route">${e(endpoint(facts?.originAirport, t.originId))} ← ${e(endpoint(facts?.destinationAirport, t.destinationId))}<small>${t.direction === 'RETURN' ? 'برگشت' : 'رفت'}${t.source === 'CONTRACT_ONLY' ? ' · شناور، نیازمند تأیید رزرو' : ''}</small></td><td>${e(t.carrierNameSnapshot)}</td><td><bdi>${e(t.serviceNumberSnapshot)}</bdi></td><td>${e(travelDate(t.departureAt))}</td><td>${e(time(t.departureAt))}</td><td>${e(business ? 'BUSINESS' : t.cabinClassCode)}</td></tr>`;
+      return `<tr><td class="flight-route"><bdi dir="ltr"><bdi>${e(endpoint(facts?.originAirport, t.originId))}</bdi> → <bdi>${e(endpoint(facts?.destinationAirport, t.destinationId))}</bdi></bdi><small>${t.direction === 'RETURN' ? 'برگشت' : 'رفت'}${t.source === 'CONTRACT_ONLY' ? ' · شناور، نیازمند تأیید رزرو' : ''}</small></td><td>${e(t.carrierNameSnapshot)}</td><td><bdi>${e(t.serviceNumberSnapshot)}</bdi></td><td>${e(travelDate(t.departureAt))}</td><td>${e(time(t.departureAt))}</td><td>${e(business ? 'BUSINESS' : t.cabinClassCode)}</td></tr>`;
     })
     .join('');
   const issuerName =
