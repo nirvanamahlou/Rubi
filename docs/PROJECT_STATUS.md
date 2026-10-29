@@ -7897,3 +7897,5 @@ HR-PAYROLL-FINANCE-APPROVAL-1027 stage semantics: HR author confirmation submits
 
 ## CALL-CENTER-SERVER-1029 — PC-C — PREPARED / ROOT EXECUTION PENDING
 Production already contains Call Center release1151; existing API/Worker restart unless-stopped and backup timer are active. Prepared a pinned-image Worker/API transport helper with backup, lock/concurrency checks, isolated credential, strict Compose preservation, authenticated health verification and rollback. Five synthetic tests pass. Root-console execution requested; deployment account permissions preserved. VPN type/PBX destination are awaiting IT clarification; no provider activation claimed. See tasks/CALL-CENTER-SERVER-1029.md. No migration/dependency/data/IAM change.
+
+CALL-CENTER-SERVER-1029 activation: root-console helper succeeded; server receipt confirms authenticated Worker/API, Docker boot and unless-stopped policy. HTTPS200 and post-setup encrypted backup verified; current image retained. VPN/AMI clarification and real-call acceptance still pending; no full telephony readiness claim.
