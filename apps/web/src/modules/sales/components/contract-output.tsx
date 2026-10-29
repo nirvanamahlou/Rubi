@@ -9,6 +9,8 @@ import {
 } from '@/modules/iam/access-context';
 import { readPublicDocumentLink } from '@/modules/travel-documents/public/use-public-document-link';
 import { readContractFlightFacts } from '../model/contract-flight-facts';
+import { enrichContractHotels } from '../model/contract-hotel-references';
+import { downloadContractResponse } from '../model/contract-download';
 import { localizedFetch } from '@/i18n/localized-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { useRef, useState } from 'react';
@@ -99,6 +101,12 @@ export async function loadContractPrint(id: string) {
   } catch {
     warnings.push('لوگوی شرکت بارگذاری نشد.');
   }
+  await enrichContractHotels(
+    output,
+    refs,
+    async (resource, id) =>
+      (await masterDataApi.detail(resource, id, 'sales')).data,
+  );
   const shared = await readPublicDocumentLink(
     '/sales/contracts/' + encodeURIComponent(id) + '/pdf?format=share',
   );
@@ -171,10 +179,7 @@ export function ContractOutputButton({
     setDownloading(true);
     setError('');
     try {
-      const response = await fetch(
-        '/sales/contracts/' + encodeURIComponent(contractId) + '/pdf',
-        { credentials: 'include', cache: 'no-store' },
-      );
+      const response = await downloadContractResponse(contractId);
       if (
         !response.ok ||
         !response.headers.get('content-type')?.includes('application/pdf')

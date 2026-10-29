@@ -45,6 +45,7 @@ describe('Saved contract PDF download route', () => {
     expect(mocks.render).not.toHaveBeenCalled();
   });
   it('downloads actual bytes with private attachment headers from saved output', async () => {
+    // Route enrichment uses hotel-owned city references; authorization remains upstream.
     mocks.fetch.mockImplementation(async (url: string) =>
       url.includes('/sales/contracts/')
         ? Response.json({ data: printFixture })
@@ -65,6 +66,57 @@ describe('Saved contract PDF download route', () => {
     expect(mocks.render.mock.calls[0]?.[0]).toEqual(printFixture);
     expect(mocks.fetch.mock.calls[0]?.[1].headers.cookie).toBe(
       'nora_access=test-session',
+    );
+  });
+  it('preserves the actual upstream confirmation or access explanation instead of a misleading generic download error', async () => {
+    mocks.fetch.mockResolvedValue(
+      Response.json(
+        { error: { message: 'Synthetic scoped denial' } },
+        { status: 403 },
+      ),
+    );
+    const response = await GET(new Request('https://web.test'), {
+      params: Promise.resolve({ id }),
+    });
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      message: 'Synthetic scoped denial',
+    });
+    expect(mocks.render).not.toHaveBeenCalled();
+  });
+  it('enriches both hotel cities through their actual master records before PDF generation', async () => {
+    const saved = structuredClone(printFixture);
+    saved.contract.hotelSelection!.additionalStays = [
+      {
+        hotelId: 'second-hotel',
+        hotelNameSnapshot: 'Second',
+        cityId: 'stale',
+        checkInDate: '2026-10-05',
+        checkOutDate: '2026-10-08',
+      },
+    ];
+    mocks.fetch.mockImplementation(async (url: string) => {
+      if (url.endsWith('/output')) return Response.json({ data: saved });
+      if (url.endsWith('/hotels/second-hotel'))
+        return Response.json({
+          data: {
+            name: 'Second',
+            attributes: { cityId: 'izmir', englishName: 'SECOND HOTEL' },
+          },
+        });
+      if (url.endsWith('/cities/izmir'))
+        return Response.json({
+          data: { name: 'ازمیر', attributes: { englishName: 'IZMIR' } },
+        });
+      return new Response('', { status: 403 });
+    });
+    mocks.render.mockResolvedValue(Buffer.from('%PDF'));
+    const response = await GET(new Request('https://web.test'), {
+      params: Promise.resolve({ id }),
+    });
+    expect(response.status).toBe(200);
+    expect(mocks.render.mock.calls[0]![1].hotels['second-hotel']).toMatchObject(
+      { name: 'SECOND HOTEL', city: 'IZMIR' },
     );
   });
   it('reports unavailable renderer without leaking internal errors', async () => {
