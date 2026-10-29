@@ -139,8 +139,10 @@ function present(
           ? {
               legacyGuestPrices: purchase.passengerPrices
                 .legacyGuests as unknown as NonNullable<
-                ReservationIntakeV1['servicePurchases']
-              >[number]['legacyGuestPrices'],
+                NonNullable<
+                  ReservationIntakeV1['servicePurchases']
+                >[number]['legacyGuestPrices']
+              >,
             }
           : {}),
         passengerPrices: Array.isArray(purchase.passengerPrices)
