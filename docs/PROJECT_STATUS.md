@@ -7904,6 +7904,13 @@ Clicking a Sales contract row, including its existing action controls, keeps tha
 
 HR-PAYROLL-FINANCE-APPROVAL-1027 stage semantics: HR author confirmation submits only; independent final approval remains Finance-owned. No permission grant or self-approval bypass in Finance.
 
+
+## CONTRACT-TRANSACTIONAL-NUMBERING-1029 — PC-A
+
+Replaces nontransactional sequence allocation with an additive Sales singleton counter, incremented in the same Serializable create transaction as contract/service/passenger/payment/history/audit writes. Bounded serialization retries preserve concurrency without consuming numbers after rollback. Existing numbers/gaps remain immutable; the counter starts above existing contract numbers and the legacy sequence high-water mark. Unit and isolated PostgreSQL regressions cover later-write rollback, duplicate-request rollback, concurrent unique consecutive commits, imported-number/high-water initialization and exhaustion. Stop legacy API writers before migration and deploy only the new allocator. No operational migration, production-data or runtime change performed. Validation and exact-head CI gate the owner-authorized develop merge.
+
+Validation:20 focused API/repository tests and4 real PostgreSQL numbering proofs pass. Scoped ESLint, API typecheck/build, schema format/validation, Prettier and diff checks pass. All eight hosted gates passed on e2a8055d1; integration preserves the subsequently merged composite-city hotel correction and requires refreshed final-head gates. Source/migration reservations release upon verified develop merge. No operational rollout.
+
 ## COMPOSITE-CITY-HOTELS-1029 — PC-A
 
 New-contract additional hotel stays now select their own destination from the full paginated active-city catalogue, then show only that city's hotels. City changes clear incompatible hotel/name/room selections while retaining stay dates; mismatched hotel callbacks are rejected and duplicate hotels remain excluded. Primary hotel selection stays limited to the main contract destination even in multihotel mode; predefined composites are filtered by their authoritative first-member city.16 focused additional-stay/composite/reference-refresh tests pass. No API/schema/migration/dependency/runtime change. User authorizes develop merge after exact-head hosted checks.

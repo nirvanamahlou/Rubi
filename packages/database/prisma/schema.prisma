@@ -3964,6 +3964,13 @@ enum PackagePricingRenderStatus {
   FAILED
 }
 
+model SalesContractNumberCounter {
+  id         Int @id
+  lastNumber Int @map("last_number")
+
+  @@map("sales_contract_number_counters")
+}
+
 model SalesContract {
   insurancePolicies         ReservationInsurancePolicy[]
   financialWorkflows        AccountingWorkflow[]
