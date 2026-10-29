@@ -109,7 +109,8 @@ export interface Query {
   search: string;
   status: QueueStatus | 'ALL';
   service: string;
-  sort: 'oldest' | 'deadline' | 'newest' | 'priority';
+  /** Old tokens remain accepted for callers; the queue always follows contract numbers. */
+  sort: 'contract' | 'oldest' | 'deadline' | 'newest' | 'priority';
   page: number;
   pageSize: number;
   dateBasis: 'createdAt' | 'receivedAt' | 'travelDate';
@@ -120,7 +121,7 @@ export const defaultQuery: Query = {
   search: '',
   status: 'ALL',
   service: 'ALL',
-  sort: 'oldest',
+  sort: 'contract',
   page: 1,
   pageSize: 10,
   dateBasis: 'createdAt',
@@ -177,7 +178,10 @@ function normalizeSearch(value: string) {
 }
 export function queryRows(rows: readonly RequestView[], query: Query) {
   const search = normalizeSearch(query.search);
-  const priority = { UNSPECIFIED: -1, NORMAL: 0, HIGH: 1, URGENT: 2 };
+  const contractOrder = new Intl.Collator('en', {
+    numeric: true,
+    sensitivity: 'base',
+  });
   const dateError = validateDateRange(query.fromDate, query.toDate);
   const filtered = rows.filter(
     (r) =>
@@ -201,16 +205,10 @@ export function queryRows(rows: readonly RequestView[], query: Query) {
       ].some((v) => normalizeSearch(v).includes(search)),
   );
   filtered.sort((a, b) => {
-    const order =
-      query.sort === 'oldest'
-        ? Date.parse(a.createdAt) - Date.parse(b.createdAt)
-        : query.sort === 'priority'
-          ? priority[b.priority] - priority[a.priority]
-          : query.sort === 'newest'
-            ? Date.parse(b.receivedAt ?? b.createdAt) -
-              Date.parse(a.receivedAt ?? a.createdAt)
-            : (a.deadline ? Date.parse(a.deadline) : Number.MAX_SAFE_INTEGER) -
-              (b.deadline ? Date.parse(b.deadline) : Number.MAX_SAFE_INTEGER);
+    const order = contractOrder.compare(
+      normalizeSearch(a.contractNumber),
+      normalizeSearch(b.contractNumber),
+    );
     return order || a.id.localeCompare(b.id);
   });
   const pageSize = Number.isFinite(query.pageSize)

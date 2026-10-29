@@ -33,6 +33,7 @@
   "سن همه کودکان هتل را انتخاب کنید.": "Select the age of every child staying at the hotel.",
   "نوزاد ·": "infants ·",
   "تغییر روز": "Change day",
+  "شماره قرارداد (از کوچک به بزرگ)": "Contract number (ascending)",
   "ترکیب مهمانان اقامت‌های بعدی از اقامت اول خوانده می‌شود.": "Guest composition for later stays is taken from the first stay.",
   "شهر هتل:": "Hotel city:",
   "دریافت قرارداد انجام نشد؛ دوباره تلاش کنید.": "The contract could not be retrieved. Please try again.",
@@ -4687,5 +4688,8 @@
   "نسخه مبنای جدول حقوق تغییر کرده است.": "The payroll worksheet source version has changed.",
   "انتخاب فایل مدرک پرداخت": "Select a payment receipt file",
   "رسید همین پرداخت را پیوست کنید.": "Attach the receipt for this payment.",
-  "ثبت پرداخت": "Save payment"
+  "ثبت پرداخت": "Save payment",
+  "قیمت هر شب هر مسافر باید صفر یا بیشتر باشد.": "Each passenger's nightly price must be zero or greater.",
+  "مبلغ خرید باید صفر یا بیشتر باشد.": "The purchase amount must be zero or greater.",
+  "هزینه خرید باید صفر یا بیشتر با حداکثر چهار رقم اعشار باشد.": "The purchase cost must be zero or greater, with up to four decimal places."
 }
