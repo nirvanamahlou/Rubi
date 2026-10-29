@@ -15,9 +15,12 @@ export interface DashboardObservation {
   at: Date;
   value: string;
   currencyCode?: string;
+  /** Mutually exclusive producer-owned breakdowns; never contain row identities. */
+  dimensions?: Readonly<Record<string, string>>;
 }
 export interface DashboardSourceMetric {
   kind: 'money' | 'count';
+  calculation?: 'sum' | 'mean';
   aggregation: string;
   observations: readonly DashboardObservation[];
 }

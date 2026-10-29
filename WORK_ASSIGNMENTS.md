@@ -10069,6 +10069,18 @@ Owner requests production Reports source repair and correct complete exports. Re
 
 HR-PAYROLL-FINANCE-APPROVAL-1027 final stage semantics: a permitted worksheet author can confirm submission to Finance. Final Finance approval still requires another actor and cannot be self-approved by the submitter; the real-PostgreSQL journey covers these two actors explicitly.
 
+## DASHBOARDS-COMPLETE-SOURCES-1027 — PC-C — IN_PROGRESS
+
+2026-10-29 continuation, COMPUTER_ID=PC-C: owner approves approved-cost-only profit,
+explicit composite-services bucket for unallocated multi-service contracts, full
+Dashboard finalization, PR/merge after all CI and production deployment. Reuse the
+existing task branch; synchronized develop acf9cf070 preserving both coordination
+records. Reserve only existing dashboard aggregate producers/composition/UI/tests,
+new bounded owner-public readers, and own deployment preparation. No active source
+overlap discovered for these files; no schema/dependency reservation requested.
+
+COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-complete-sources-1027 from develop5fbda3e3f. Owner requests read-only production schema/data inventory and complete real KPI/chart connections, then develop PR/merge after all CI. Reserve Dashboard native composition/registry/tests, existing Sales/Customer/Lead public dashboard producers and new bounded domain-owned aggregate leaf readers where source definitions are established, internal additive dashboard aggregate contract and own status/task notes. Preserve operational domain ownership, permissions/branch scope, Decimal/currency and approved UI. No migration/dependency/global grants or production business writes. Finance policy-dependent metrics require approved semantics; source absence must not become fabricated profit/balance. Production inspection is metadata/counts only; no PII/secrets in Git. Deployment remains a separately pinned root-approved operation. Prior PR1182 merged; do not edit concurrently reserved HR worksheet or Sales payment-receipt paths.
+
 ## LEGACY-UNNAMED-PURCHASE-1029 — PC-A — READY_FOR_CI
 
 Branch codex/pc-a-legacy-unnamed-purchase-1029 from origin/develop1f1caa975. User authorizes unnamed legacy service guests in hotel/transfer purchase and develop merge. Reserve Reservations hotel purchase component/tests, service-purchase validation/persistence/tests and public purchase projection; shared Contracts travel input/output and a bounded helper deriving explicit legacy service counts. Optional legacyGuestPrices with ordinal guestIndex, never Customer UUID; normal passenger pricing stays unchanged. Customer/Finance owners retain identities, totals, payment release and audit. Producer Reservations derives allowed ordinals/ages from Sales snapshot metadata; Web consumes same helper and distinct input, existing JSON stores typed legacy guests. No schema/migration/dependency/data backfill. Prior purchase scopes published, no overlapping active bounded writer found. Own docs reserved; quality gates before merge.
