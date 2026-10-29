@@ -72,7 +72,7 @@ it('retains exact independent prices and does not reinterpret a historical total
   };
   expect(supplierPriceTableData(intake).values).toEqual([
     '9,007,199,254,740,993.25 EUR',
-    '2 USD',
+    '2',
     '0 JPY',
   ]);
   const restored = defaultVoucherSettings(
@@ -96,10 +96,7 @@ it('requires a valid amount and registered currency together, allows an empty ta
     ]),
   ).toThrow();
   expect(() =>
-    normalizeSupplierFormPrices(
-      { ratio: { amount: '', currencyCode: 'JPY' } },
-      [{ code: 'JPY' }],
-    ),
+    normalizeSupplierFormPrices({ ratio: { amount: '-1' } }, [{ code: 'JPY' }]),
   ).toThrow();
 });
 it('uses booked leg counts and supports aggregate contracts without manufacturing passenger identities', () => {
@@ -120,4 +117,16 @@ it('uses booked leg counts and supports aggregate contracts without manufacturin
     }),
   };
   expect(supplierTransferCounts(intake)).toEqual({ outbound: 3, returning: 2 });
+});
+
+it('saves a dimensionless ratio without requiring a currency and removes legacy currency on save', () => {
+  expect(
+    normalizeSupplierFormPrices({ ratio: { amount: '2.50' } }, []),
+  ).toEqual({ ratio: { amount: '2.50' } });
+  expect(
+    normalizeSupplierFormPrices(
+      { ratio: { amount: '2', currencyCode: 'USD' } },
+      [],
+    ),
+  ).toEqual({ ratio: { amount: '2' } });
 });
