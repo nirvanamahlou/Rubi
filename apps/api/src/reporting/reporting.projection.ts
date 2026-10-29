@@ -92,6 +92,18 @@ export function eligibleTravelReportFacts(
   facts: readonly ReportingFactRow[],
 ): readonly ReportingFactRow[] {
   return facts.filter((fact) => {
+    if (
+      [
+        'sales_by_organization',
+        'sales_by_service_route',
+        'route_passengers',
+        'contract_service_profit',
+        'agency_performance',
+        'lead_to_order_conversion',
+      ].includes(code) &&
+      fact.orderStatus === 'CANCELLED'
+    )
+      return false;
     switch (code) {
       case 'paid_not_issued':
         return (
@@ -256,9 +268,24 @@ export function buildTravelReportResult(input: {
         : String(l).localeCompare(String(r), 'fa');
     return compared * (sort.direction === 'ASC' ? 1 : -1);
   });
-  const currencies = [...new Set(facts.map((fact) => fact.currencyCode))];
+  // Pipeline rows retain cancelled/draft contracts as separate status groups,
+  // but its sales headline must only sum confirmed active contracts.
+  const totalFacts =
+    input.code === 'sales_contract_pipeline'
+      ? facts.filter((fact) =>
+          [
+            'CONFIRMED',
+            'SENT_TO_RESERVATIONS',
+            'IN_PROGRESS',
+            'COMPLETED',
+          ].includes(fact.orderStatus),
+        )
+      : facts;
+  const currencies = [...new Set(totalFacts.map((fact) => fact.currencyCode))];
   const totalsByCurrency = currencies.map((currencyCode) => {
-    const scoped = facts.filter((fact) => fact.currencyCode === currencyCode);
+    const scoped = totalFacts.filter(
+      (fact) => fact.currencyCode === currencyCode,
+    );
     const sum = (select: (fact: ReportingFactRow) => Prisma.Decimal) =>
       scoped
         .reduce(
