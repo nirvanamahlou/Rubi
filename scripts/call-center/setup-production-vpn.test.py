@@ -4,6 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from subprocess import CompletedProcess
 
 spec = importlib.util.spec_from_file_location('bootstrap', Path(__file__).with_name('setup-production-vpn.py'))
 bootstrap = importlib.util.module_from_spec(spec)
@@ -11,6 +12,15 @@ spec.loader.exec_module(bootstrap)
 
 
 class BootstrapSafety(unittest.TestCase):
+    def test_waits_for_control_socket_not_just_running_service(self):
+        replies = [CompletedProcess([], 1, b''),
+                   CompletedProcess([], 0, b'Listening IP addresses:\n  192.0.2.1\n')]
+        with patch.object(bootstrap.subprocess, 'run', side_effect=replies) as command, \
+                patch.object(bootstrap.time, 'sleep') as sleep:
+            bootstrap.await_daemon()
+        self.assertEqual(command.call_count, 2)
+        sleep.assert_called_once_with(1)
+
     def test_psk_uses_existing_apparmor_allowed_directory(self):
         rendered = bootstrap.files({'password': 'synthetic-password', 'psk': 'synthetic-psk'})
         self.assertEqual(bootstrap.PSK_FILE.parent, Path('/etc/ipsec.d'))

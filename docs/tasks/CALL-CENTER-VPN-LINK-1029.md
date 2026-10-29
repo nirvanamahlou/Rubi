@@ -86,6 +86,22 @@ not overwrite failed-attempt evidence. New PSK file is removed on failed rollbac
 Root command: python3 -I /home/rubi-deploy/retry-vpn-1029.py.
 Six offline safety checks and both Python compilations passed; non-root launcher correctly
 refuses execution. Root retry has not run, so connection is not yet established.
+
+## Retry1 result and retry2 preparation
+
+Retry1 rolled back at configuration, with preserved=true; public API remains healthy,
+target route list empty. Its only new daemon message is starter startup, so successful
+key loading or authentication cannot be claimed. The preceding L2TP_TIMEOUT signal is
+historical and is not the cause of this configuration-stage failure. The previous
+receipt omitted the failed command, preventing a definitive operation diagnosis.
+
+Separate start/await-control/load stages and a maximum30-second control-socket readiness
+wait now prevent a potential service-start/reload race. Failure messages include only
+the command and action (no credentials) plus exit code; bounded redacted daemon output
+is retained. Retry2 uses another fresh private directory, original-baseline verification
+and already installed packages. Seven safety checks, including a delayed-control-socket
+regression, and Python compilation pass. Root retry2 is staged under the same short
+command; it has not executed. No connection success or provider activation is claimed.
 Sanitized result: /opt/rubi/CALL-CENTER-VPN-1029.json.
 Do not print private inputs, ipsec secrets, PPP options or prepared AMI client credentials.
 

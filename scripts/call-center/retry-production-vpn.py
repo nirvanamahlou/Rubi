@@ -8,7 +8,7 @@ import subprocess
 
 path = Path('/home/rubi-deploy/setup-production-vpn.py')
 source = path.read_bytes()
-if hashlib.sha256(source).hexdigest() != '7d7ddae533006ffb068e550acd3ee29bf4fd5087da304a8efb6281651200e852':
+if hashlib.sha256(source).hexdigest() != 'df11f1c582742eccfc72e43425dbc52f042c4fa6ed79804f926d49625579233b':
     raise SystemExit('Installer changed; execution refused')
 scope = {'__name__': 'reviewed_bootstrap', '__file__': str(path)}
 exec(compile(source, str(path), 'exec'), scope)
@@ -25,5 +25,5 @@ for name in ('ipsec.conf', 'ipsec.secrets'):
 for name in ('rubi-issabel-vpn.service', 'rubi-issabel-tls.service', 'strongswan-starter.service'):
     if subprocess.run(['systemctl', 'is-active', '--quiet', name]).returncode == 0:
         raise SystemExit('VPN service already active; inspect before retry')
-scope['PRIVATE'] = root / 'private/call-center-vpn-retry1-1029'
+scope['PRIVATE'] = root / 'private/call-center-vpn-retry2-1029'
 raise SystemExit(scope['main'](retry=True))

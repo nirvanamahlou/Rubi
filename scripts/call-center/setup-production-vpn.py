@@ -37,7 +37,7 @@ def run(args, timeout=30, required=True):
             raise
         return ''
     if required and result.returncode:
-        raise RuntimeError('Operation failed: ' + args[0])
+        raise RuntimeError('Operation failed: ' + ' '.join(args[:2]) + ' exit=' + str(result.returncode))
     return result.stdout.decode(errors='replace')
 
 
@@ -198,6 +198,16 @@ def cleanup(originals):
 def connected():
     routes=json.loads(run(['ip','-j','route','get',PBX],required=False) or '[]')
     return bool(routes and re.fullmatch(r'ppp[0-9]+',routes[0].get('dev','')))
+
+
+def await_daemon(seconds=30):
+    deadline=time.monotonic()+seconds
+    while time.monotonic()<deadline:
+        result=subprocess.run(['ipsec','statusall'],capture_output=True,timeout=5)
+        if result.returncode==0 and b'Listening IP addresses:' in result.stdout:
+            return
+        time.sleep(1)
+    raise RuntimeError('IPsec control socket not ready after service start')
 
 
 def await_link(seconds=70):
@@ -361,7 +371,11 @@ WantedBy=multi-user.target
 ''' % (PRIVATE,CONN,PRIVATE,PRIVATE,CONN)
             write(UNIT,unit,0o644)
             run(['systemctl','daemon-reload'])
+            report['stage']='start_ipsec_daemon'
             run(['systemctl','enable','--now','strongswan-starter.service'])
+            report['stage']='await_ipsec_control'
+            await_daemon()
+            report['stage']='load_ipsec_configuration'
             run(['ipsec','reload']);run(['ipsec','rereadsecrets'])
             report['stage']='authenticated_l2tp_probe'
             run(['systemctl','start','rubi-issabel-vpn.service'],timeout=75)
@@ -380,6 +394,7 @@ WantedBy=multi-user.target
             report.update(complete=True,stage='vpn_connected',protocol='L2TP/IPsec IKEv1',ami_tcp=True,ssh_tcp=True,reconnect_verified=True,boot_enabled=True)
         except Exception as error:
             report['failure_type']=type(error).__name__
+            report['failure_message']=str(error)[:300]
             report['failure_stage']=report.get('stage')
             recent=run(['journalctl','--since','-10 minutes','-t','charon','-t','ipsec','-t','xl2tpd','-t','pppd','-n','120','--no-pager','-o','cat'],required=False)
             for value in (secret['password'],secret['psk'],secret['amiSecret']):
