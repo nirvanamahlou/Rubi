@@ -42,7 +42,7 @@ const hotel = (id: string) =>
     createdAt: '',
     updatedAt: '',
     attributes: {
-      cityId: id === 'RAMADA RESORT & GOLF' ? 'kusadasi' : 'bodrum',
+      cityId: id === 'Other city' ? 'bodrum' : 'kusadasi',
     },
   }) as MasterDataRecord;
 const initial = [hotel('Old option')];
@@ -55,7 +55,7 @@ const state = {
     additionalStays: [
       {
         hotelId: '',
-        cityId: '',
+        cityId: 'kusadasi',
         hotelNameSnapshot: '',
         checkInDate: '2026-11-01',
         checkOutDate: '2026-11-03',
@@ -104,6 +104,9 @@ it('refreshes an incomplete initial list and selects registered Ramada/city with
     ).toContain('RAMADA RESORT & GOLF'),
   );
   expect(picker().loading).toBe(false);
+  expect(
+    (picker().options as MasterDataRecord[]).map((x) => x.name),
+  ).not.toContain('Other city');
   expect(h.patch).not.toHaveBeenCalled();
   (picker().onChange as (id: string) => void)('RAMADA RESORT & GOLF');
   expect(h.patch.mock.calls[0]![0].hotel.additionalStays[0]).toMatchObject({

@@ -241,15 +241,16 @@ export function contractPrintHtml(
     : (hotel?.occupancy ?? 0);
   const showRoomPrices =
     hotel?.rooms?.some((room) => room.agreedPrice) ?? false;
-  const flightPrices = readPassengerFlightPrices(c.servicesDetail);
   const totalPrices = readPassengerTotalPrices(
     c.servicesDetail,
     c.passengersDetail,
   );
-  const hotelPrices = readPassengerHotelPrices(
-    c.servicesDetail,
-    c.passengersDetail,
-  );
+  const flightPrices = totalPrices
+    ? undefined
+    : readPassengerFlightPrices(c.servicesDetail);
+  const hotelPrices = totalPrices
+    ? undefined
+    : readPassengerHotelPrices(c.servicesDetail, c.passengersDetail);
   const hotelGuestIds = c.passengersDetail
     .filter((p) => {
       if (!p.serviceClientKeys.includes(hotel?.serviceClientKey ?? 'hotel'))
@@ -295,17 +296,21 @@ export function contractPrintHtml(
               '</bdi>'
           : '—';
       };
-      const renderPrices = (hotelPrice: boolean) =>
-        (totalPrices
-          ? (totalPrices[p.customerId] ?? []).filter((price) =>
-              hotelPrice
-                ? price.currencyCode !== 'IRR'
-                : price.currencyCode === 'IRR',
-            )
-          : hotelPrice
-            ? (hotelPrices?.[p.customerId] ?? shares[p.customerId] ?? [])
-            : (flightPrices?.[p.customerId] ?? [])
-        )
+      const prices =
+        totalPrices?.[p.customerId] ??
+        (p.agreedPrices?.length
+          ? p.agreedPrices
+          : [
+              ...(flightPrices?.[p.customerId] ?? []),
+              ...(hotelPrices?.[p.customerId] ?? shares[p.customerId] ?? []),
+            ]);
+      const renderPrices = (foreign: boolean) =>
+        prices
+          .filter((price) =>
+            foreign
+              ? price.currencyCode !== 'IRR'
+              : price.currencyCode === 'IRR',
+          )
           .map(
             (price) =>
               '<div><bdi class="money">' +
@@ -315,7 +320,7 @@ export function contractPrintHtml(
               '</bdi></div>',
           )
           .join('');
-      return `<tr><td>${i + 1}</td><td class="passenger-name"><bdi>${e(p.displayNameSnapshot)}</bdi></td><td>${ageLabel}</td><td class="contract-total">${totalPrices ? renderPrices(false) || '—' : flightPrices?.[p.customerId]?.length ? renderPrices(false) : 'ثبت نشده'}</td><td>${renderPrices(true)}</td>${showDiscount ? '<td>' + deductionCell('discount') + '</td>' : ''}${showCommission ? '<td>' + (deductions[p.customerId]?.commission ? deductionCell('commission') : p.ageCategory !== 'INF' && commission ? contractMoney(p.ageCategory === 'ADT' ? commission.adult : commission.child) : '—') + '</td>' : ''}<td>—</td></tr>`;
+      return `<tr><td>${i + 1}</td><td class="passenger-name"><bdi>${e(p.displayNameSnapshot)}</bdi></td><td>${ageLabel}</td><td class="contract-total">${renderPrices(false) || '—'}</td><td>${renderPrices(true)}</td>${showDiscount ? '<td>' + deductionCell('discount') + '</td>' : ''}${showCommission ? '<td>' + (deductions[p.customerId]?.commission ? deductionCell('commission') : p.ageCategory !== 'INF' && commission ? contractMoney(p.ageCategory === 'ADT' ? commission.adult : commission.child) : '—') + '</td>' : ''}<td>—</td></tr>`;
     })
     .join('');
   const contractFlights = salesContractFlights(
@@ -499,7 +504,7 @@ ${
         })
         .join('')}</tbody></table></section>`
     : `<section class="passengers passenger-services">${heading(2, 'PASSENGER SERVICES', 'خدمات هر مسافر')}<table><colgroup><col width="4%"><col width="19%"><col width="10%"><col width="6%"><col width="6%"><col width="12%"><col width="12%"><col width="7%"><col width="7%"><col width="17%"></colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>بلیط رفت</th><th>بلیط برگشت</th><th>ورود هتل</th><th>خروج هتل</th><th>ترانسفر رفت</th><th>ترانسفر برگشت</th><th>سایر خدمات</th></tr></thead><tbody>${serviceRows}</tbody></table></section>
-<section class="passengers passenger-prices">${heading(3, 'PASSENGERS & PRICING', 'قیمت هر مسافر')}<table><colgroup>${passengerColumns}</colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>${totalPrices ? 'قیمت ریالی' : 'مبلغ پرواز'}</th><th>قیمت ارزی</th>${showDiscount ? '<th>تخفیف</th>' : ''}${showCommission ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th></tr></thead><tbody>${rows}</tbody></table><div class="financial-summary">${totalPrices ? '' : '<p class="note">مبلغ پرواز هر مسافر جزئی از مبلغ کل قرارداد است.</p>'}<div class="summary-grid"><div class="summary-card"><b>قیمت توافق‌شده قرارداد</b><div class="summary-value">${c.paymentTerms?.mode === 'CHECK' || c.servicesDetail.some((s) => s.metadata?.automaticFlightRoomTotalV1 === true) ? moneyRows('amount') : (agreementTotal ?? moneyRows('amount'))}</div></div></div>${chequeTerms}</div></section>
+<section class="passengers passenger-prices">${heading(3, 'PASSENGERS & PRICING', 'قیمت هر مسافر')}<table><colgroup>${passengerColumns}</colgroup><thead><tr><th>ردیف</th><th>نام مسافر</th><th>رده سنی</th><th>قیمت ریالی</th><th>قیمت ارزی</th>${showDiscount ? '<th>تخفیف</th>' : ''}${showCommission ? '<th>کمیسیون</th>' : ''}<th>توضیحات</th></tr></thead><tbody>${rows}</tbody></table><div class="financial-summary"><div class="summary-grid"><div class="summary-card"><b>قیمت توافق‌شده قرارداد</b><div class="summary-value">${c.paymentTerms?.mode === 'CHECK' || c.servicesDetail.some((s) => s.metadata?.automaticFlightRoomTotalV1 === true) ? moneyRows('amount') : (agreementTotal ?? moneyRows('amount'))}</div></div></div>${chequeTerms}</div></section>
   `
 }
 <section>${heading(4, 'FLIGHT INFORMATION', 'اطلاعات پرواز')}<table><thead><tr><th>مسیر</th><th>ایرلاین</th><th>شماره</th><th>تاریخ</th><th>ساعت</th><th>کلاس</th></tr></thead><tbody>${flights || '<tr><td colspan="6">پرواز در این قرارداد انتخاب نشده است.</td></tr>'}</tbody></table></section>

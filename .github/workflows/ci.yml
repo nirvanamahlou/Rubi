@@ -238,6 +238,12 @@ jobs:
           NORA_RUN_FINANCIAL_EVENT_POSTGRES_TESTS: '1'
         run: pnpm --filter @nora/api exec vitest run test/financial-events.postgres.spec.ts test/accounting-workflows.postgres.spec.ts --maxWorkers=1
 
+      - name: Prove rollback-safe consecutive Sales contract numbers
+        # The prior financial-source step has built the shared packages.
+        env:
+          NORA_RUN_SALES_NUMBER_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run test/sales-contract-number.postgres.spec.ts --maxWorkers=1
+
       - name: Prove recurring flight purchase and payment atomicity
         env:
           NORA_RUN_FINANCE_POSTGRES_TESTS: '1'

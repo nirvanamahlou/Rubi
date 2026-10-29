@@ -55,7 +55,7 @@ it('offers independent rial and optional foreign flight amounts for each passeng
       onChange={vi.fn()}
     />,
   );
-  expect(html).toContain('قیمت پرواز هر مسافر');
+  expect(html).toContain('قیمت ریالی و ارزی هر مسافر');
   expect(html).toContain('قیمت ریالی PASSPORT NAME');
   expect(html).toContain('قیمت ارزی PASSPORT NAME');
   expect(html).not.toContain('مبلغ معتبر با حداکثر');
