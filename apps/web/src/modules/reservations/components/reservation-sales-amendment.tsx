@@ -211,7 +211,7 @@ export function ReservationSalesAmendment({
         }
       }
       const corrected = applyManualAmendmentFlights(
-        section === 'PRICES' || membershipChanged
+        section === 'PRICES' || section === 'CORRECTION' || membershipChanged
           ? prepareAmendmentPersonPrices(draft)
           : draft,
         Object.fromEntries(

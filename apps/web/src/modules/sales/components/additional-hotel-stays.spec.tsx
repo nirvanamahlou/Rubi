@@ -109,6 +109,57 @@ beforeEach(() => {
   fixture.ages = [];
   fixture.categories = [];
 });
+it('offers all cities and clears incompatible hotel/rooms when the destination changes', () => {
+  const patch = vi.fn();
+  const cities = [
+    { id: 'city-one', name: 'One' },
+    { id: 'city-two', name: 'Two' },
+    { id: 'city-three', name: 'Three' },
+  ] as never;
+  renderToStaticMarkup(
+    <AdditionalHotelStays
+      state={state}
+      patch={patch}
+      hotels={hotels}
+      cities={cities}
+      roomTypes={roomTypes}
+    />,
+  );
+  expect(fixture.choices[0]!.label).toBe('شهر مقصد');
+  expect(fixture.choices[0]!.options.map((city) => city.id)).toEqual([
+    'city-one',
+    'city-two',
+    'city-three',
+  ]);
+  fixture.choices[1]!.onChange('first');
+  expect(patch).not.toHaveBeenCalled();
+  fixture.choices[0]!.onChange('city-three');
+  expect(patch.mock.calls[0]![0].hotel.additionalStays[0]).toMatchObject({
+    cityId: 'city-three',
+    hotelId: '',
+    hotelNameSnapshot: '',
+    rooms: [],
+    checkInDate: '2099-01-03',
+    checkOutDate: '2099-01-06',
+  });
+});
+it('shows no hotels before choosing a city and excludes hotels from other cities', () => {
+  renderToStaticMarkup(
+    <AdditionalHotelStays
+      state={{
+        ...state,
+        hotel: {
+          ...state.hotel,
+          additionalStays: [{ ...state.hotel.additionalStays[0]!, cityId: '' }],
+        },
+      }}
+      patch={vi.fn()}
+      hotels={hotels}
+      roomTypes={roomTypes}
+    />,
+  );
+  expect(fixture.choices[1]!.options).toEqual([]);
+});
 it('edits two independent rooms and preserves child, infant, age and category in the contract payload', () => {
   let current: SalesFormState = {
     ...structuredClone(state),
@@ -136,7 +187,7 @@ it('edits two independent rooms and preserves child, infant, age and category in
   render();
   setNumber(0, '2');
   render();
-  fixture.choices[2]!.onChange('room-second');
+  fixture.choices[3]!.onChange('room-second');
   render();
   setNumber(3, '1');
   render();
@@ -175,8 +226,8 @@ it('selects hotels across cities and only the selected hotel room types', () => 
       roomTypes={roomTypes}
     />,
   );
-  expect(fixture.choices[0]!.options.map((h) => h.id)).toEqual(['second']);
-  expect(fixture.choices[1]!.options.map((r) => r.id)).toEqual(['room-second']);
+  expect(fixture.choices[1]!.options.map((h) => h.id)).toEqual(['second']);
+  expect(fixture.choices[2]!.options.map((r) => r.id)).toEqual(['room-second']);
   expect(html).toContain('2099-01-03');
   expect(html).toContain('2099-01-06');
   expect(html).toContain('مجموع مهمانان هتل: 3');
@@ -185,7 +236,7 @@ it('selects hotels across cities and only the selected hotel room types', () => 
   expect(html).toContain('تعداد بزرگسال اتاق');
   expect(html).toContain('تعداد کودک اتاق');
   expect(html).toContain('تعداد نوزاد اتاق');
-  fixture.choices[0]!.onChange('second');
+  fixture.choices[1]!.onChange('second');
   expect(patch.mock.calls[0]![0].hotel.additionalStays[0]).toMatchObject({
     cityId: 'city-two',
     hotelNameSnapshot: 'Second',
