@@ -305,7 +305,7 @@ describe('ReportingWorkspace', () => {
     )!;
     const snapshot = buildReportingFilterSnapshot({
       currency: 'USD',
-      filterValues: { وضعیت: 'ACTIVE', مسیر: 'THR-DXB' },
+      filterValues: { وضعیت: 'SENT_TO_RESERVATIONS', کارشناس: 'agent-1' },
       fromDate: '2026-09-01',
       legalEntity: 'NIYAYESH_SEIR_SAHAR',
       report,
@@ -321,8 +321,8 @@ describe('ReportingWorkspace', () => {
         },
         { active: true, label: 'شرکت', value: 'نیایش سیر سحر' },
         { active: true, label: 'ارز', value: 'USD' },
-        { active: true, label: 'وضعیت', value: 'ACTIVE' },
-        { active: true, label: 'مسیر', value: 'THR-DXB' },
+        { active: true, label: 'وضعیت', value: 'SENT_TO_RESERVATIONS' },
+        { active: true, label: 'کارشناس', value: 'agent-1' },
         { active: false, label: 'شعبه', value: 'همه شعبه‌ها' },
       ]),
     );
@@ -335,15 +335,7 @@ describe('ReportingWorkspace', () => {
     expect(reportingDateRangeError('2026-09-01', '2026-09-10')).toBe('');
     expect(reportingDateRangeError('', '2026-09-10')).toBe('');
     expect(reportCatalog[0]?.filters).toEqual(
-      expect.arrayContaining([
-        'بازه تاریخ',
-        'شرکت',
-        'شعبه',
-        'سایت',
-        'کارشناس',
-        'ارز',
-        'وضعیت',
-      ]),
+      expect.arrayContaining(['بازه تاریخ', 'شعبه', 'کارشناس', 'ارز', 'وضعیت']),
     );
   });
 
@@ -433,7 +425,7 @@ describe('ReportingWorkspace', () => {
       result: reportResult,
     });
     expect(chart).toContain('role="img"');
-    expect(chart).toContain('مبلغ قرارداد به تفکیک شرکت و سایت');
+    expect(chart).toContain('مبلغ قرارداد به تفکیک شعبه و کارشناس');
     expect(chart).toContain('نمودار میله‌ای افقی');
     expect(chart).toContain('نوع نمودار');
     expect(chart).toContain('id="report-result-sort"');
