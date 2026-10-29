@@ -44,6 +44,15 @@ it('fills a registered return when the calendar finishes after outbound selectio
   expect(selected.returnDate).toBe('2099-10-08');
   expect(selected.ticket.returnOfferId).toBe('back');
 });
+it('uses the configured load and return offset, ignoring other loads and dates', () => {
+  const selected = withAutomaticReturn(state, 'origin:destination', [
+    { ...back, id: 'other-load', loadGroupId: 'different' },
+    { ...back, id: 'wrong-day', departureAt: '2099-10-09T10:00:00Z' },
+    back,
+  ]);
+  expect(selected.returnOffer?.id).toBe(back.id);
+  expect(selected.returnDate).toBe('2099-10-08');
+});
 it('preserves manual returns and rejects stale routes, sold out and ambiguous partners', () => {
   const manual = { ...state, returnOffer: { ...back, id: 'manual' } };
   expect(withAutomaticReturn(manual, 'origin:destination', [back])).toBe(

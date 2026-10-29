@@ -1,3 +1,7 @@
+## RESERVATION-DEFAULTS-1029 — PC-A — VALIDATING
+
+Cancelled selections now explicitly identify cancellation. Automatic return regressions prove the configured outbound load/day offset selects its unique return and preserves manual choices. Hotel default follows outbound arrival (manual dates preserved); scoped Customers identity projection evaluates child bands at saved hotel check-in without exposing DOB. Missing form sex defaults Male, known/saved Female remains intact. Contract services/pricing tables show child bands from DOB at hotel check-in, with booked-band fallback for missing DOB and departure fallback for ticket-only contracts. Web92 and API18 focused tests pass; lint/typechecks and exact-head hosted full tests/build/database gates precede authorized develop merge. No schema/migration/live-data or server rollout.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
 Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.

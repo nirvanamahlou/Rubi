@@ -661,7 +661,7 @@ it('prints supplier service allocations from the contract and reserves a repeati
   expect(html).toContain('class="roomsNights"');
   expect(html).toContain('table hotelInformation');
   expect(html).toContain(
-    'ALPHA / ONE</td><td dir="auto">-</td><td dir="auto">ADL</td><td dir="auto">✓</td><td dir="auto">-</td><td dir="auto">01 NOV 2026',
+    'ALPHA / ONE</td><td dir="auto">Male</td><td dir="auto">ADL</td><td dir="auto">✓</td><td dir="auto">-</td><td dir="auto">01 NOV 2026',
   );
   expect(html).toContain('INSURANCE');
   expect(html).toContain('position:fixed;height:26mm;display:block;bottom:0');

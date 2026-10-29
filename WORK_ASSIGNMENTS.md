@@ -1,3 +1,9 @@
+## RESERVATION-DEFAULTS-1029 — PC-A — IN_PROGRESS
+
+User additionally requests child age bands in contract preview/PDF. Extend bounded reservation to contract-print.ts and its existing regressions (prior print task merged/released). Use saved hotel check-in for DOB calculation, falling back to contract departure for ticket-only contracts; when DOB is absent retain the explicitly booked child band rather than silently printing only Child. No operational reservation overrides or source mutation.
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-defaults-1029. User authorizes develop merge: explicit cancelled-contract warning, return selection by configured outbound load and return offset, hotel check-in default from outbound arrival, child age at hotel check-in (2 to under6,6 to under12), missing passenger sex default Male. Reserve bounded Sales hotel-date helper and existing automatic-return regressions, Reservations passenger-output date projection/action panel/voucher defaults and focused tests, own documentation/translation entries. Preserve manual dates, known/saved sex, DOB confidentiality, unique load pairing, permissions and historical records. No schema/migration/dependency/live-data or deployment changes. New explicit arrival-date instruction supersedes the earlier departure-day default; final-head checks gate merge.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
 CI follow-up: reserve the existing ServiceParties category-option assertion only, adding Family to the expected choices and verifying its onValueChange persists Family with no fabricated extra bed. Full suite identified exactly this stale expectation (4121 other Web tests pass); preserve all other assertions and gates.
