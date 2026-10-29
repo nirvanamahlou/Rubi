@@ -11,6 +11,13 @@ function requestFor(patch = {}, health = {}) {
         ? {
             state: 'NO_INTERNAL_ALERT',
             alerts: [],
+            pending: 0,
+            retrying: 0,
+            dead: 0,
+            unpublishedRecordings: 0,
+            unknownCommands: 0,
+            expiredRecordings: 0,
+            oldestPendingSeconds: null,
             ...health,
           }
         : {
@@ -62,4 +69,68 @@ test('refuses credential-bearing URLs and public plaintext', async () => {
     'https://example.com/?secret=x',
   ])
     await assert.rejects(check({ TELEPHONY_CHECK_API_URL: url }, requestFor()));
+});
+
+test('incomplete or contradictory health cannot silently pass', async () => {
+  const fields = [
+    'pending',
+    'retrying',
+    'dead',
+    'unpublishedRecordings',
+    'unknownCommands',
+    'expiredRecordings',
+  ];
+  for (const field of fields) {
+    for (const value of [
+      undefined,
+      null,
+      -1,
+      0.5,
+      '0',
+      Number.MAX_SAFE_INTEGER + 1,
+    ]) {
+      assert.equal(
+        (await check(env, requestFor({}, { [field]: value }))).operationalReady,
+        false,
+        `${field}=${String(value)}`,
+      );
+    }
+  }
+  for (const field of [
+    'dead',
+    'unpublishedRecordings',
+    'unknownCommands',
+    'expiredRecordings',
+  ])
+    assert.equal(
+      (await check(env, requestFor({}, { [field]: 1 }))).operationalReady,
+      false,
+    );
+  for (const patch of [
+    { pending: 1 },
+    { retrying: 1, oldestPendingSeconds: 60 },
+    { pending: 1, oldestPendingSeconds: -1 },
+    { oldestPendingSeconds: 0 },
+  ])
+    assert.equal(
+      (await check(env, requestFor({}, patch))).operationalReady,
+      false,
+    );
+  assert.equal(
+    (await check(env, requestFor({}, { pending: 1, oldestPendingSeconds: 59 })))
+      .operationalReady,
+    true,
+  );
+});
+
+test('unknown frame backlog cannot pass, while healthy transient work is allowed', async () => {
+  for (const value of [undefined, null, -1, 0.5, '0'])
+    assert.equal(
+      (await check(env, requestFor({ pendingFrames: value }))).operationalReady,
+      false,
+    );
+  assert.equal(
+    (await check(env, requestFor({ pendingFrames: 1 }))).operationalReady,
+    true,
+  );
 });
