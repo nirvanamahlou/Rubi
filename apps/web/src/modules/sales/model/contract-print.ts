@@ -252,16 +252,25 @@ export function contractPrintHtml(
     ? undefined
     : readPassengerHotelPrices(c.servicesDetail, c.passengersDetail);
   const hotelGuestIds = c.passengersDetail
-    .filter(
-      (p) =>
-        p.serviceClientKeys.includes(hotel?.serviceClientKey ?? 'hotel') &&
-        (hotelAgeOn(p.birthDate, hotel?.checkInDate ?? c.departureDate) ?? 0) >=
-          15,
-    )
+    .filter((p) => {
+      if (!p.serviceClientKeys.includes(hotel?.serviceClientKey ?? 'hotel'))
+        return false;
+      const age = hotelAgeOn(
+        p.birthDate || '',
+        hotel?.checkInDate ?? c.departureDate,
+      );
+      return age === null ? p.ageCategory === 'ADT' : age >= 15;
+    })
     .map((p) => p.customerId);
-  const shares = hotelPrices
-    ? {}
-    : roomPriceShares(hotel?.rooms ?? [], hotelGuestIds);
+  const rooms = hotel?.rooms ?? [];
+  // Aggregate historical contracts may not yet have passenger identities. Keep their
+  // saved room totals without inventing a per-person allocation.
+  const shares =
+    hotelPrices ||
+    hotelGuestIds.length !==
+      rooms.reduce((count, room) => count + room.adults, 0)
+      ? {}
+      : roomPriceShares(rooms, hotelGuestIds);
   const passengerAgeLabel = (p: (typeof c.passengersDetail)[number]) => {
     if (p.ageCategory !== 'CHD')
       return p.ageCategory === 'INF' ? 'نوزاد' : 'بزرگسال';
