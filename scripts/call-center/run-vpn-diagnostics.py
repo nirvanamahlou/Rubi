@@ -11,6 +11,6 @@ with os.fdopen(fd, 'rb') as stream:
     if not stat.S_ISREG(info.st_mode) or info.st_size > 100000:
         raise SystemExit('Unexpected diagnostic file')
     source = stream.read()
-if hashlib.sha256(source).hexdigest() != '526c803c9e0ed1f0ee1aa04a2ba9d718eed03ee69e9bc57e730b7c4d57949ae0':
+if hashlib.sha256(source).hexdigest() != '914964b7445b767e5594bcc9d7983a8a9188f080ca75261dab4b95708f663a28':
     raise SystemExit('Diagnostic changed; execution refused')
 exec(compile(source, path, 'exec'), {'__name__': '__main__', '__file__': path})

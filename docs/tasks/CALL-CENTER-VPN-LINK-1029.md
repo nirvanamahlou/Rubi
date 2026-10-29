@@ -57,6 +57,10 @@ own services are inactive. It does not retry a connection or alter PBX/applicati
 Run from any directory: python3 -I /home/rubi-deploy/check-vpn-1029.py.
 Inspect /opt/rubi/CALL-CENTER-VPN-DIAG-1029.json before preparing any retry.
 Diagnostic compilation and installer safety checks pass; root diagnostic execution is pending.
+The first diagnostic attempt correctly stopped at the deployment lock before changes.
+ERP inspection confirms a separate approved deployment is active and API health is healthy.
+The diagnostic now waits up to600 seconds for that lock without cancelling the deployment
+or modifying anything during the wait; timeout exits cleanly. The launcher hash is refreshed.
 Authenticated network acceptance remains pending.
 Sanitized result: /opt/rubi/CALL-CENTER-VPN-1029.json.
 Do not print private inputs, ipsec secrets, PPP options or prepared AMI client credentials.

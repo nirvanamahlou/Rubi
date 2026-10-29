@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import time
 
 ROOT = Path('/opt/rubi')
 PRIVATE = ROOT / 'private/call-center-vpn-1029'
@@ -24,7 +25,19 @@ def main():
     if receipt.get('complete') or receipt.get('stage') != 'rolled_back':
         raise SystemExit('Expected failed, rolled-back installation')
     with open(ROOT / 'avina-deploy.lock', 'r') as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        deadline = time.monotonic() + 600
+        announced = False
+        while True:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if not announced:
+                    print('Waiting for the active deployment; no changes made (up to 10 minutes).', flush=True)
+                    announced = True
+                if time.monotonic() >= deadline:
+                    raise SystemExit('Deployment is still active; diagnostic stopped without changes.')
+                time.sleep(2)
         secrets = json.loads(Path('/home/rubi-deploy/.rubi-vpn-1029.json').read_text())
         sensitive = [secrets[k] for k in ('password', 'psk', 'amiSecret')]
         logs = capture(['journalctl', '--since', '-3 hours', '-n', '5000', '--no-pager', '-o', 'json'])
