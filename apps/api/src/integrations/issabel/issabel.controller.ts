@@ -1,3 +1,4 @@
+import { CallCenterActorGuard } from '../../customer-affairs/call-center-actor.guard';
 import {
   Body,
   type CanActivate,
@@ -148,7 +149,7 @@ export class IssabelRecordingController {
 }
 
 @Controller('integrations/telephony/recordings')
-@UseGuards(AuthGuard, PermissionGuard)
+@UseGuards(AuthGuard, CallCenterActorGuard, PermissionGuard)
 @RequirePermissions(
   'customer_affairs.call_center.read',
   'customer_affairs.call_center.recordings.read',

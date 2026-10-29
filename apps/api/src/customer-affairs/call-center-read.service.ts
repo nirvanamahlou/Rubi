@@ -3,6 +3,7 @@ import {
   missedCallbackContacts,
 } from './call-center-callbacks';
 import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
+import { answeredCallAccess } from '../iam/call-center-answer-policy';
 import {
   BadRequestException,
   ConflictException,
@@ -178,8 +179,17 @@ export class CallCenterReadService {
   }
   async teams(actor: AuthenticatedActor, branch: string | undefined) {
     const branchId = this.workflow.scope(actor, branch);
-    const options = await this.directory.options(actor, branchId);
+    const options = await this.directory.options(
+      actor,
+      branchId,
+      undefined,
+      true,
+    );
     if (!this.workflow.access.scoped(actor)) return options;
+    if (
+      (await this.workflow.access.users(actor, branchId, 'contacts')) === null
+    )
+      return options;
     const users = actor.permissions.some((p) =>
       [
         'customer_affairs.call_center.contacts.read.team',
@@ -680,6 +690,16 @@ export class CallCenterReadService {
             category: 'CALL_CENTER_REQUEST',
             createdAt: { gte: from, lt: to },
             ...(users ? { executionOwnerUserId: { in: users } } : {}),
+            ...(answeredCallAccess()
+              ? {
+                  callCenterContact: await this.workflow.access.where(
+                    actor,
+                    branchId,
+                    'reports',
+                    tx,
+                  ),
+                }
+              : {}),
           },
           _count: true,
         });

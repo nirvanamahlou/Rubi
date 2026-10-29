@@ -1,3 +1,4 @@
+import { CallCenterActorGuard } from './call-center-actor.guard';
 import {
   Body,
   Controller,
@@ -19,7 +20,7 @@ import { CallCenterTelephonyService } from './call-center-telephony.service';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { TelephonyActionDto, TelephonyLeaseDto } from './telephony.dto';
 @Controller('customer-affairs/call-center/telephony')
-@UseGuards(AuthGuard, PermissionGuard)
+@UseGuards(AuthGuard, CallCenterActorGuard, PermissionGuard)
 @RequirePermissions('customer_affairs.call_center.read')
 export class CallCenterTelephonyController {
   constructor(
