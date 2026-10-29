@@ -311,8 +311,14 @@ it('prices only entered guests with exact nightly arithmetic and leaves blank gu
   expect(() =>
     hotelPassengerPurchaseInput(passengers, { one: '10', two: 'bad' }, 7),
   ).toThrow();
+  expect(hotelPassengerPurchaseInput(passengers, { one: '0' }, 7)).toEqual({
+    amount: '0',
+    passengerPrices: [{ customerId: 'one', nightlyAmount: '0' }],
+  });
+  expect(transferPurchaseTotal('0', '2')).toBe('0');
+  expect(() => hotelPassengerPurchaseInput(passengers, {}, 7)).toThrow();
   expect(() =>
-    hotelPassengerPurchaseInput(passengers, { one: '0' }, 7),
+    hotelPassengerPurchaseInput(passengers, { one: '-1' }, 7),
   ).toThrow();
 });
 it('renders hotel guest names and age categories and restores only saved passenger prices', () => {

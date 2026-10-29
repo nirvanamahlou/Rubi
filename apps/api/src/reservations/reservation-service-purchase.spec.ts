@@ -17,6 +17,34 @@ const valid = {
 };
 
 describe('service purchase validation', () => {
+  it('accepts explicit zero only when hotel/transfer scope permits it, keeping blank and negative invalid', () => {
+    expect(() =>
+      validateServicePurchase(
+        {
+          ...valid,
+          amount: '0',
+          pricingCalculation: { baseAmount: '0', factor: '2' },
+        },
+        true,
+      ),
+    ).not.toThrow();
+    expect(() =>
+      validateServicePurchase(
+        {
+          ...valid,
+          amount: '0',
+          passengerPrices: [
+            { customerId: valid.supplierOrganizationId, nightlyAmount: '0' },
+          ],
+        },
+        true,
+      ),
+    ).not.toThrow();
+    for (const amount of ['', '-1'])
+      expect(() =>
+        validateServicePurchase({ ...valid, amount }, true),
+      ).toThrow();
+  });
   it('accepts a positive service purchase with broker and currency', () => {
     expect(() => validateServicePurchase(valid)).not.toThrow();
   });
@@ -162,12 +190,13 @@ it('accepts the hotel embedded in a legacy reservation snapshot', () => {
   });
 });
 
-it.each([false, true, 'split', 'partial', 'unsent'])(
+it.each([false, true, 'split', 'partial', 'unsent', 'zero'])(
   'records hotel and both transfer directions atomically (formula=%s)',
   async (mode) => {
     const partial = mode === 'partial';
-    const formula = partial || mode === 'unsent' ? false : mode;
-    const hotelAmount = partial ? '300' : '450';
+    const zero = mode === 'zero';
+    const formula = partial || mode === 'unsent' || zero ? false : mode;
+    const hotelAmount = zero ? '0' : partial ? '300' : '450';
     const create = vi.fn().mockResolvedValue({});
     const updateMany = vi.fn().mockResolvedValue({ count: 1 });
     const database = {
@@ -335,11 +364,11 @@ it.each([false, true, 'split', 'partial', 'unsent'])(
                 passengerPrices: [
                   {
                     customerId: '11111111-1111-4111-8111-111111111111',
-                    nightlyAmount: '100',
+                    nightlyAmount: zero ? '0' : '100',
                   },
                   {
                     customerId: '22222222-2222-4222-8222-222222222222',
-                    nightlyAmount: '50',
+                    nightlyAmount: zero ? '0' : '50',
                   },
                 ].slice(0, partial ? 1 : 2),
               },
@@ -347,9 +376,9 @@ it.each([false, true, 'split', 'partial', 'unsent'])(
                 serviceClientKey: 'outbound',
                 coveredServiceClientKeys: ['outbound', 'return'],
                 supplierOrganizationId: valid.supplierOrganizationId,
-                amount: '80',
+                amount: zero ? '0' : '80',
                 currencyCode: 'IRR',
-                transferUnitAmount: '40',
+                transferUnitAmount: zero ? '0' : '40',
               },
             ],
       },
@@ -396,7 +425,7 @@ it.each([false, true, 'split', 'partial', 'unsent'])(
       expect(back.coveredServiceClientKeys).toEqual(['return']);
       expect(back.batchId).toBe(hotel.batchId);
     }
-    expect(transfer.amount).toBe(formula ? '50' : '80');
+    expect(transfer.amount).toBe(zero ? '0' : formula ? '50' : '80');
     if (formula) {
       expect(hotel.passengerPrices).toEqual({
         hotelSavings,

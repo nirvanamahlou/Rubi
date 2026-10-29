@@ -412,21 +412,22 @@ export function reservationServicePurchaseTotal(
   factor: string,
   nights: number,
 ): string {
-  const units = (value: string) => {
+  const units = (value: string, allowZero = false) => {
     if (typeof value !== 'string' || !/^\d{1,18}(?:\.\d{1,4})?$/.test(value))
       throw new Error(
         'قیمت پایه و ضریب باید مثبت و حداکثر چهار رقم اعشار باشند.',
       );
     const [whole, fraction = ''] = value.split('.');
     const result = BigInt(whole!) * 10000n + BigInt(fraction.padEnd(4, '0'));
-    if (result <= 0n) throw new Error('قیمت پایه و ضریب باید مثبت باشند.');
+    if (result < 0n || (!allowZero && result === 0n))
+      throw new Error('قیمت پایه و ضریب باید مثبت باشند.');
     return result;
   };
   if (!Number.isSafeInteger(nights) || nights <= 0)
     throw new Error('تعداد شب قرارداد معتبر نیست.');
-  const total =
-    (units(baseAmount) * units(factor) * BigInt(nights) + 5000n) / 10000n;
-  if (total <= 0n || total >= 10n ** 22n)
+  const baseUnits = units(baseAmount, true);
+  const total = (baseUnits * units(factor) * BigInt(nights) + 5000n) / 10000n;
+  if ((total === 0n && baseUnits > 0n) || total < 0n || total >= 10n ** 22n)
     throw new Error('مبلغ کل خرید خارج از محدوده است.');
   const fraction = (total % 10000n)
     .toString()

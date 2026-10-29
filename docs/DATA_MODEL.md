@@ -991,3 +991,7 @@ SalesContractPassenger.birthDate is nullable to represent an unknown real birth 
 ## Additional hotel stay room composition — 2026-10-27
 
 SalesContractHotelStayRoom belongs to SalesContractHotelStay and references the actual MasterRoomType. Ordered room snapshots retain adults and child ages independently per itinerary hotel. Unique(stayId, ordinal), restricted room-type deletion and cascade from the stay preserve integrity. Migration20261027120000 is additive; existing stays without room children remain valid historical records. SalesHotelStayInput.rooms is optional for old clients; omission during compatible amendment preserves existing room children. New explicit room lists are validated and do not create additional charges or supplier bookings. See tasks/CONTRACT-MULTI-HOTEL-1027.md.
+
+## Explicit zero hotel and transfer purchases — 2026-10-29
+
+ReservationHotelPurchase.amount accepts finite nonnegative values. ReservationServicePurchase.amount accepts finite zero only for HOTEL/TRANSFER; other kinds remain positive. Explicit zero passenger nightly/base/unit values are stored as purchased, while blank input is absent and invalid for a completely unpriced hotel. Existing decimal, currency, actor, scope, CAS, idempotency, positive nights/factor/count and audit rules remain. Migration20261029120000 replaces two CHECK constraints with no row rewrite; deploy it before the coordinated API/Web update. Zero purchases skip positive-only FX baseline creation because no foreign amount is acquired. No operational migration is applied by this source task.

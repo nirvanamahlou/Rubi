@@ -30,10 +30,10 @@ export function validateHotelPurchase(input: ReservationHotelPurchaseInputV1) {
   )
     throw new BadRequestException('اطلاعات هزینه خرید هتل معتبر نیست.');
   try {
-    if (moneyUnits(input.amount) <= 0n) throw new Error();
+    if (moneyUnits(input.amount) < 0n) throw new Error();
   } catch {
     throw new BadRequestException(
-      'هزینه خرید باید مبلغی مثبت با حداکثر چهار رقم اعشار باشد.',
+      'هزینه خرید باید صفر یا بیشتر با حداکثر چهار رقم اعشار باشد.',
     );
   }
 }
