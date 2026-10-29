@@ -1,3 +1,7 @@
+## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-family-room-child-1029 from develop8a1acec9c. Owner requests Family as an additional room-category option for two adults and one or more children, with develop merge. Reserve shared Sales hotel-rooms category helper/regressions and focused existing Web consumer tests plus own status notes. Existing Sales primary/additional hotel and Reservations amendment selectors/server validation consume this same public helper; no shape/API change. Keep Double default and Extra option, prior adult-only rules, actual hotel capacity/rate/age/party checks and saved data. No migration/schema/dependency or runtime/server changes. Full exact-head CI gates authorized merge; no overlapping active helper writer found.
+
 ## CONTRACT-ROUTE-ARROW-1029 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-contract-route-arrow-1029 from latest develop. User requests correct flight-route arrows in customer contract preview/PDF and develop merge. Reserve only contract-print.ts route markup and focused output regression plus own notes. Previous print task PR1186 is merged and released. Isolate origin-to-destination route LTR with independently isolated endpoints and rightward arrow; keep actual return origin/destination rather than reversing data. Preserve escaping, saved flights, direction captions, all monetary/identity content. No schema/migration/dependency/server or business-data changes. Exact-head full CI gates merge.
