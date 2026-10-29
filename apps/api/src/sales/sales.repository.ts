@@ -1,4 +1,8 @@
 import { captureSalesContractAccounting } from '../finance/accounting/sales-contract-accounting.public';
+import {
+  salesReceiptAccounts,
+  salesReceiptDestination,
+} from '../finance/payments/sales-receipt-accounts.public';
 import { assertRevenueEditable } from '../finance/accounting/accounting-workflows.public';
 import { recalculateSalesSettlement } from './sales-financial-settlement';
 import {
@@ -667,9 +671,15 @@ export class SalesRepository {
             currencyCode: item.currencyCode.toUpperCase(),
           })),
         });
-        for (const [index, payment] of (input.payments ?? []).entries())
+        for (const [index, payment] of (input.payments ?? []).entries()) {
+          const destination = await salesReceiptDestination(
+            tx,
+            payment,
+            actor.branchId,
+          );
           await tx.salesContractPaymentEntry.create({
             data: {
+              ...destination,
               contractId: contract.id,
               amount: payment.amount,
               currencyCode: payment.currencyCode.toUpperCase(),
@@ -692,6 +702,7 @@ export class SalesRepository {
               createdByUserId: actor.userId,
             },
           });
+        }
         await tx.salesContractStatusHistory.create({
           data: {
             contractId: contract.id,
@@ -1010,6 +1021,10 @@ export class SalesRepository {
     );
   }
 
+  paymentAccounts(branchId: string) {
+    return salesReceiptAccounts(this.database.client, branchId);
+  }
+
   async addPayment(
     contractId: string,
     input: SalesPaymentCreateRequest,
@@ -1035,8 +1050,14 @@ export class SalesRepository {
           data: { version: { increment: 1 } },
         });
         if (changed.count !== 1) return 'concurrent';
+        const destination = await salesReceiptDestination(
+          tx,
+          input,
+          actor.branchId,
+        );
         await tx.salesContractPaymentEntry.create({
           data: {
+            ...destination,
             contractId,
             amount: input.amount,
             currencyCode: input.currencyCode.toUpperCase(),
@@ -1068,6 +1089,7 @@ export class SalesRepository {
               amount: input.amount,
               currencyCode: input.currencyCode,
               method: input.method,
+              destinationAccountId: destination.destinationAccountId ?? null,
             }),
             traceId: actor.traceId ?? null,
           },

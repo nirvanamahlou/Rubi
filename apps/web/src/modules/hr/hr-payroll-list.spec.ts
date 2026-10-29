@@ -3,6 +3,7 @@ import type { PayrollWorksheetSummary } from '@nora/contracts';
 import {
   defaultPayrollListFilters,
   filterPayrollList,
+  payrollWorksheetStatusLabels,
 } from './hr-payroll-list';
 
 const branches = [
@@ -54,6 +55,21 @@ const select = (overrides: Partial<typeof defaultPayrollListFilters> = {}) =>
   }).map((item) => item.id);
 
 describe('payroll list filters over authorized summaries', () => {
+  it('keeps pending and returned Finance decisions distinct from final approval', () => {
+    const pending = { ...summaries[0]!, status: 'PENDING_FINANCE' as const };
+    const rejected = { ...summaries[1]!, status: 'REJECTED' as const };
+    expect(
+      filterPayrollList([pending, rejected], branches, {
+        ...defaultPayrollListFilters,
+        status: 'PENDING_FINANCE',
+      }),
+    ).toEqual([pending]);
+    expect(payrollWorksheetStatusLabels.PENDING_FINANCE).toBe('در انتظار مالی');
+    expect(payrollWorksheetStatusLabels.APPROVED).toBe('تأییدشده');
+    expect(payrollWorksheetStatusLabels.HR_APPROVED).not.toBe(
+      payrollWorksheetStatusLabels.APPROVED,
+    );
+  });
   it('combines branch, Persian year/month, status and populated rows', () => {
     expect(
       select({

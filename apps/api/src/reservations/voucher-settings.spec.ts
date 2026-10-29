@@ -335,3 +335,27 @@ it('preserves validated form services and room membership and rejects foreign ro
     'yes';
   expect(() => validateVoucherSettings(value, ['p'])).toThrow();
 });
+
+it('round-trips optional transfer overrides and rejects invalid supplier IDs and flags', () => {
+  const value = settings();
+  value.brokerId = '10000000-0000-4000-8000-000000000001';
+  value.transferBrokerId = '20000000-0000-4000-8000-000000000002';
+  value.transferBrokerName = 'Transfer supplier';
+  value.transferDetailsOverride = true;
+  value.text.transferBoard = 'SPECIAL';
+  const result = validateVoucherSettings(value, ['p']);
+  expect(result).toMatchObject({
+    transferBrokerId: value.transferBrokerId,
+    transferBrokerName: 'Transfer supplier',
+    transferDetailsOverride: true,
+    text: { transferBoard: 'SPECIAL' },
+  });
+  expect(() =>
+    validateVoucherSettings({ ...value, transferBrokerId: 'invalid' }, ['p']),
+  ).toThrow();
+  expect(() =>
+    validateVoucherSettings({ ...value, transferDetailsOverride: 'true' }, [
+      'p',
+    ]),
+  ).toThrow();
+});

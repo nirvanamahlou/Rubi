@@ -166,4 +166,59 @@ describe('Saved contract PDF download route', () => {
       'fa',
     );
   });
+  it.each(['network', 'json', 'missing-data', 'missing-attributes'])(
+    'renders the authorized contract when optional hotel references fail (%s)',
+    async (failure) => {
+      mocks.fetch.mockImplementation(async (url: string) => {
+        if (url.endsWith('/output'))
+          return Response.json({ data: printFixture });
+        if (url.includes('/selections/sales/hotels/')) {
+          if (failure === 'network') throw Error('Synthetic reference timeout');
+          if (failure === 'json')
+            return new Response('<unavailable>', { status: 200 });
+          if (failure === 'missing-data') return Response.json({ data: null });
+          return Response.json({ data: { name: 'Saved reference' } });
+        }
+        return new Response('', { status: 403 });
+      });
+      mocks.render.mockResolvedValue(Buffer.from('%PDF-authorized-contract'));
+      const before = structuredClone(printFixture);
+      const r = await GET(new Request('http://web.test'), {
+        params: Promise.resolve({ id }),
+      });
+      expect(r.status).toBe(200);
+      expect(await r.text()).toBe('%PDF-authorized-contract');
+      expect(mocks.render.mock.calls[0]?.[0]).toEqual(before);
+      expect(printFixture).toEqual(before);
+    },
+  );
+  it('keeps a share preview available when optional references fail without invoking Chromium', async () => {
+    mocks.fetch.mockImplementation(async (url: string) => {
+      if (url.endsWith('/output')) return Response.json({ data: printFixture });
+      throw Error('Synthetic optional reference failure');
+    });
+    const save = vi.fn();
+    mocks.share.mockReturnValue({
+      url: 'https://example.test/d/' + 'b'.repeat(32),
+      save,
+    });
+    mocks.prepare.mockResolvedValue(
+      '<!doctype html><html>authorized saved contract</html>',
+    );
+    const result = await GET(new Request('http://web.test?format=share'), {
+      params: Promise.resolve({ id }),
+    });
+    expect(result.status).toBe(200);
+    expect(save).toHaveBeenCalledOnce();
+    expect(mocks.render).not.toHaveBeenCalled();
+  });
+  it('still rejects unavailable canonical output rather than rendering guessed contract data', async () => {
+    mocks.fetch.mockRejectedValue(Error('Synthetic canonical output failure'));
+    const result = await GET(new Request('http://web.test'), {
+      params: Promise.resolve({ id }),
+    });
+    expect(result.status).toBe(503);
+    expect(mocks.prepare).not.toHaveBeenCalled();
+    expect(mocks.render).not.toHaveBeenCalled();
+  });
 });

@@ -19,6 +19,7 @@ import {
   validatePayrollSnapshot,
 } from './hr-payroll-worksheet.service';
 import { revealHrValues } from './hr-private-values';
+import { Prisma } from '@nora/database';
 
 const branchId = randomUUID(),
   otherBranch = randomUUID(),
@@ -47,6 +48,10 @@ const sample = () => ({
 function fixture() {
   let stored: Record<string, unknown> | null = null;
   let children: Record<string, unknown>[] = [];
+  let finance: Record<string, unknown> | null = null;
+  const revisions: Record<string, unknown>[] = [];
+  const financeRow = () =>
+    finance ? { ...finance, revisions: revisions.slice(-1) } : null;
   const assertBounded = (data: unknown) =>
     expect(Buffer.byteLength(JSON.stringify(data))).toBeLessThanOrEqual(8000);
   const matches = (where: Record<string, unknown>) =>
@@ -99,6 +104,25 @@ function fixture() {
     $queryRaw: vi.fn(),
     hrRecordAmount: { deleteMany: vi.fn(), createMany: vi.fn() },
     hrAuditEvent: { create: vi.fn() },
+    financeOperationalRequest: {
+      findMany: vi.fn(async () => (finance ? [financeRow()] : [])),
+      findUnique: vi.fn(async () => financeRow()),
+      findUniqueOrThrow: vi.fn(async () => financeRow()),
+      create: vi.fn(async ({ data }) => (finance = { ...data, version: 1 })),
+      updateMany: vi.fn(async ({ data }) => {
+        finance = {
+          ...finance,
+          ...data,
+          version: Number(finance!.version) + 1,
+        };
+        return { count: 1 };
+      }),
+    },
+    financeOperationalRevision: {
+      create: vi.fn(async ({ data }) => {
+        revisions.push({ ...data, cumulativePaid: new Prisma.Decimal(0) });
+      }),
+    },
     $transaction: vi.fn(),
   };
   client.$transaction.mockImplementation(async (work) => work(client));
@@ -107,6 +131,10 @@ function fixture() {
     hrRecord,
     row: () => stored!,
     children: () => children,
+    finance: () => finance!,
+    financeStatus: (status: string) => {
+      finance = { ...finance, status };
+    },
     service: new HrPayrollWorksheetService({ client } as never),
   };
 }
@@ -118,6 +146,21 @@ beforeEach(() =>
 );
 afterEach(() => vi.unstubAllEnvs());
 describe('payroll worksheet arithmetic and validation', () => {
+  it('does not describe historical HR-only approval as Finance approval', async () => {
+    const f = fixture();
+    const created = await f.service.create(
+      { branchId, period: '1405-07' },
+      actor,
+    );
+    f.row().status = 'APPROVED';
+    expect((await f.service.status(created.id, actor)).status).toBe(
+      'HR_APPROVED',
+    );
+    expect(
+      (await f.service.transition(created.id, { version: 1 }, actor, false))
+        .status,
+    ).toBe('DRAFT');
+  });
   it('preserves all 28 Excel columns including sequence, and exact formulas', () => {
     expect(PAYROLL_COLUMNS).toHaveLength(27);
     const row = sample(),
@@ -368,9 +411,9 @@ describe('private durable worksheet commands', () => {
     ).rejects.toThrow(ConflictException);
     expect((await service.detail(created.id, actor)).rows).toHaveLength(1);
   });
-  it('locks reviewed rows, enforces independent approval and supports explicit reopen', async () => {
-    const { service } = fixture(),
-      reviewer = { ...actor, userId: randomUUID() };
+  it('submits exactly one pending request, tracks Finance approval and permits only returned drafts to reopen', async () => {
+    const { service, client, finance, financeStatus } = fixture(),
+      reviewer = actor;
     const created = await service.create(
       { branchId, period: '1405-07' },
       actor,
@@ -384,7 +427,15 @@ describe('private durable worksheet commands', () => {
       actor,
     );
     await expect(
-      service.transition(saved.id, { version: 2 }, actor, true),
+      service.transition(
+        saved.id,
+        { version: 2 },
+        {
+          ...actor,
+          permissions: actor.permissions.filter((p) => p !== 'hr.approve'),
+        },
+        true,
+      ),
     ).rejects.toThrow(ForbiddenException);
     const approved = await service.transition(
       saved.id,
@@ -392,7 +443,32 @@ describe('private durable worksheet commands', () => {
       reviewer,
       true,
     );
-    expect(approved.status).toBe('APPROVED');
+    expect(approved.status).toBe('PENDING_FINANCE');
+    expect(finance()).toMatchObject({
+      kind: 'PAYROLL_WORKSHEET',
+      hrRecordId: saved.id,
+      sourceVersion: 3,
+      currencyCode: 'IRR',
+      requesterId: actor.userId,
+    });
+    expect(finance().amount).toBe(calculatePayroll(sample(), rates).remaining);
+    expect(
+      (await service.transition(saved.id, { version: 2 }, reviewer, true))
+        .status,
+    ).toBe('PENDING_FINANCE');
+    expect(client.financeOperationalRequest.create).toHaveBeenCalledTimes(1);
+    await expect(
+      service.transition(saved.id, { version: 3 }, reviewer, false),
+    ).rejects.toThrow(ConflictException);
+    financeStatus('APPROVED');
+    expect((await service.status(saved.id, actor)).status).toBe('APPROVED');
+    await expect(
+      service.transition(saved.id, { version: 3 }, reviewer, false),
+    ).rejects.toThrow(ConflictException);
+    financeStatus('CORRECTION_REQUIRED');
+    expect((await service.status(saved.id, actor)).status).toBe(
+      'CORRECTION_REQUIRED',
+    );
     await expect(
       service.update(
         saved.id,

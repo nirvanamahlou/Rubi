@@ -240,7 +240,9 @@ export function FinancePayrollActions({
             </Button>
           </>
         ) : null}
-        {manage && status === 'CORRECTION_REQUIRED' ? (
+        {manage &&
+        detail?.kind !== 'PAYROLL_WORKSHEET' &&
+        status === 'CORRECTION_REQUIRED' ? (
           <Button
             disabled={busy || !isOptionalOperationReason(reason)}
             onClick={() => void act('RESUBMIT')}
@@ -260,7 +262,10 @@ export function FinancePayrollActions({
           بستن تنخواه پس از تسویه
         </Button>
       ) : null}
-      {canPay && ['APPROVED', 'PAYING'].includes(status) ? (
+      {canPay &&
+      detail &&
+      detail.kind !== 'PAYROLL_WORKSHEET' &&
+      ['APPROVED', 'PAYING'].includes(status) ? (
         <div className="space-y-2">
           <label>
             مبلغ این پرداخت

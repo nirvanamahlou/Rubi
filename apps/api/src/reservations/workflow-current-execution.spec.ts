@@ -42,6 +42,9 @@ it('rebases current hotel and age facts while preserving supplier, leader and is
   const settings = {
     brokerId: 'broker',
     leaderId: 'leader',
+    transferBrokerId: 'transfer-broker',
+    transferBrokerName: 'Transfer supplier',
+    transferDetailsOverride: true,
     text: { hotel: 'OLD HOTEL', checkIn: '2099-01-01', remarks: 'KEEP NOTE' },
     numbers: {},
     flags: { withLetterhead: true },
@@ -99,6 +102,8 @@ it('rebases current hotel and age facts while preserving supplier, leader and is
     });
     expect(s?.brokerId).toBe('broker');
     expect(s?.leaderId).toBe('leader');
+    expect(s?.transferBrokerId).toBe('transfer-broker');
+    expect(s?.transferDetailsOverride).toBe(true);
     expect(s?.passengers[0]).toMatchObject({
       age: 'CHD',
       hotelChildAgeBand: 'CHD_2_TO_6',

@@ -1,17 +1,23 @@
 'use client';
 import { AmendmentPassengerPriceTable } from './amendment-passenger-price-table';
+import { AmendmentPassengerMembership } from './amendment-passenger-membership';
+import { AmendmentHotelRooms } from './amendment-hotel-rooms';
+import { PassengerCompletion } from '@/modules/sales/components/passenger-completion';
 import { PassengerServiceEditor } from './passenger-service-editor';
 import { prepareAmendmentPersonPrices } from './amendment-passenger-prices';
 import { amendmentPriceComponents } from './amendment-price-components';
 import { isOptionalOperationReason } from '@nora/contracts';
 
-import { ReservationPassengers } from '../passenger-files/passengers';
+import {
+  ReservationPassengers,
+  type ReservationPassengerEditor,
+} from '../passenger-files/passengers';
 import {
   PassengerAgeEditor,
   changeAmendmentPassengerAge,
 } from './passenger-age-editor';
 import { currencySymbol } from '@/lib/currency-symbol';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   MasterDataRecord,
   MasterDataResource,
@@ -20,7 +26,11 @@ import type {
   SalesHotelSelectionInput,
   SalesTicketDirection,
 } from '@nora/contracts';
-import { salesChequeComponents } from '@nora/contracts';
+import {
+  salesChequeComponents,
+  readLegacyServiceParties,
+  readPassengerHotelStays,
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';
 import { masterDataApi } from '@/modules/master-data/api/client';
@@ -54,6 +64,7 @@ export function ReservationSalesAmendment({
   section: 'FLIGHT' | 'HOTEL' | 'OTHER' | 'CORRECTION' | 'PRICES';
   onSaved: () => void;
 }) {
+  const passengerEditor = useRef<ReservationPassengerEditor>(null);
   const [draft, setDraft] = useState(() => amendmentFromContract(contract));
   const [manualDirty, setManualDirty] = useState<SalesTicketDirection[]>([]);
   const [manualFlights, setManualFlights] = useState(() =>
@@ -64,6 +75,7 @@ export function ReservationSalesAmendment({
   const [priceError, setPriceError] = useState('');
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [completionPending, setCompletionPending] = useState(false);
   const [direction, setDirection] = useState<SalesTicketDirection>('OUTBOUND');
   const [airline, setAirline] = useState('');
   const [day, setDay] = useState(() => amendmentFlightDay(draft, 'OUTBOUND'));
@@ -117,6 +129,7 @@ export function ReservationSalesAmendment({
     setDraft((d) => {
       const next = { ...d, ...v };
       if (
+        section !== 'CORRECTION' &&
         next.services.some(
           (s) => s.metadata?.automaticFlightRoomTotalV1 === true,
         )
@@ -145,24 +158,34 @@ export function ReservationSalesAmendment({
     return !!code && !['IR', 'IRN', 'IRAN'].includes(code);
   });
   const hotel = draft.hotelSelection;
+  const membershipChanged =
+    draft.passengers.map((p) => p.customerId).join('|') !==
+    contract.passengersDetail.map((p) => p.customerId).join('|');
   function changeHotel(v: Partial<SalesHotelSelectionInput>) {
-    if (hotel)
+    if (hotel) {
+      const nextHotel = { ...hotel, ...v };
+      const stays = readPassengerHotelStays(draft.services, nextHotel);
       patch({
-        hotelSelection: { ...hotel, ...v },
-        ...(v.hotelId
-          ? {
-              services: draft.services.map((s) =>
-                s.clientKey === hotel.serviceClientKey
+        hotelSelection: nextHotel,
+        services: draft.services.map((s) =>
+          s.clientKey === hotel.serviceClientKey
+            ? {
+                ...s,
+                ...(v.hotelId ? { referenceId: v.hotelId } : {}),
+                titleSnapshot: v.hotelNameSnapshot ?? s.titleSnapshot,
+                ...(stays
                   ? {
-                      ...s,
-                      referenceId: v.hotelId!,
-                      titleSnapshot: v.hotelNameSnapshot ?? s.titleSnapshot,
+                      metadata: {
+                        ...s.metadata,
+                        passengerHotelStaysV1: JSON.stringify(stays),
+                      },
                     }
-                  : s,
-              ),
-            }
-          : {}),
+                  : {}),
+              }
+            : s,
+        ),
       });
+    }
   }
   async function submit() {
     if (priceError) {
@@ -172,8 +195,25 @@ export function ReservationSalesAmendment({
     setBusy(true);
     setError('');
     try {
+      if (section === 'CORRECTION' && requestId) {
+        const unchanged =
+          JSON.stringify({ ...draft, reason: '' }) ===
+          JSON.stringify(amendmentFromContract(contract));
+        if (
+          !passengerEditor.current ||
+          !(await passengerEditor.current.savePending())
+        )
+          return;
+        if (unchanged) {
+          setSaved(true);
+          onSaved();
+          return;
+        }
+      }
       const corrected = applyManualAmendmentFlights(
-        section === 'PRICES' ? prepareAmendmentPersonPrices(draft) : draft,
+        section === 'PRICES' || section === 'CORRECTION' || membershipChanged
+          ? prepareAmendmentPersonPrices(draft)
+          : draft,
         Object.fromEntries(
           Object.entries(manualFlights).filter(([key]) =>
             manualDirty.includes(key as SalesTicketDirection),
@@ -212,9 +252,37 @@ export function ReservationSalesAmendment({
         </p>
       )}
       <fieldset
-        disabled={busy || (section !== 'CORRECTION' && saved)}
+        disabled={
+          busy || completionPending || (section !== 'CORRECTION' && saved)
+        }
         className="grid gap-4"
       >
+        {section === 'CORRECTION' &&
+          requestId &&
+          (!contract.passengersDetail.length &&
+          readLegacyServiceParties(draft.services) ? (
+            <PassengerCompletion
+              contractId={contract.id}
+              onSaved={onSaved}
+              onPending={setCompletionPending}
+            />
+          ) : (
+            <AmendmentPassengerMembership
+              contractId={contract.id}
+              draft={draft}
+              disabled={busy || saved}
+              currencies={(refs.currencies ?? []).map((c) => ({
+                code: c.code ?? '',
+                name: c.name,
+                status: c.status,
+              }))}
+              onChange={(next) => {
+                setDraft(next);
+                setPriceError('');
+              }}
+              onPending={setCompletionPending}
+            />
+          ))}
         {section === 'FLIGHT' && (
           <>
             <label className="flex items-center gap-3 rounded-xl bg-primary/5 p-3">
@@ -344,7 +412,7 @@ export function ReservationSalesAmendment({
             />
           </>
         )}
-        {section === 'HOTEL' &&
+        {(section === 'HOTEL' || (section === 'CORRECTION' && hotel)) &&
           (hotel ? (
             <div className="grid gap-3 md:grid-cols-3">
               <SearchableReference
@@ -364,11 +432,15 @@ export function ReservationSalesAmendment({
                     });
                 }}
               />
-              <SearchableReference
-                label="نوع اتاق"
-                value={hotel.roomTypeId}
-                options={refs['room-types'] ?? []}
-                onChange={(roomTypeId) => changeHotel({ roomTypeId })}
+              <AmendmentHotelRooms
+                hotel={hotel}
+                roomTypes={refs['room-types'] ?? []}
+                currencies={(refs.currencies ?? []).map((c) => ({
+                  code: c.code ?? '',
+                  name: c.name,
+                  status: c.status,
+                }))}
+                onChange={(hotelSelection) => patch({ hotelSelection })}
               />
               <SearchableReference
                 label="سرویس هتل"
@@ -396,27 +468,28 @@ export function ReservationSalesAmendment({
                   onChange={(checkOutDate) => changeHotel({ checkOutDate })}
                 />
               </label>
-              {(
-                [
-                  'roomCount',
-                  'singleRoomCount',
-                  'doubleRoomCount',
-                  'extraBedCount',
-                  'occupancy',
-                ] as const
-              ).map((key, i) => (
-                <label key={key}>
-                  {['تعداد اتاق', 'SGL', 'DBL', 'EXT', 'ظرفیت اتاق'][i]}
-                  <Input
-                    type="number"
-                    min={key === 'roomCount' || key === 'occupancy' ? 1 : 0}
-                    value={hotel[key] ?? 0}
-                    onChange={(e) =>
-                      changeHotel({ [key]: Number(e.target.value) })
-                    }
-                  />
-                </label>
-              ))}
+              {!hotel.rooms?.length &&
+                (
+                  [
+                    'roomCount',
+                    'singleRoomCount',
+                    'doubleRoomCount',
+                    'extraBedCount',
+                    'occupancy',
+                  ] as const
+                ).map((key, i) => (
+                  <label key={key}>
+                    {['تعداد اتاق', 'SGL', 'DBL', 'EXT', 'ظرفیت اتاق'][i]}
+                    <Input
+                      type="number"
+                      min={key === 'roomCount' || key === 'occupancy' ? 1 : 0}
+                      value={hotel[key] ?? 0}
+                      onChange={(e) =>
+                        changeHotel({ [key]: Number(e.target.value) })
+                      }
+                    />
+                  </label>
+                ))}
             </div>
           ) : (
             <p>این قرارداد هتل ندارد.</p>
@@ -452,61 +525,72 @@ export function ReservationSalesAmendment({
           </>
         )}
         {section === 'CORRECTION' && requestId && (
-          <ReservationPassengers
-            id={requestId}
-            serviceEditor={(customerId) => (
-              <PassengerServiceEditor
-                draft={draft}
-                customerId={customerId}
-                disabled={busy || saved}
-                onChange={setDraft}
-              />
-            )}
-            ageEditor={(customerId) => {
-              const passenger = draft.passengers.find(
-                (p) => p.customerId === customerId,
-              );
-              if (!passenger) return '—';
-              return (
-                <PassengerAgeEditor
-                  passenger={passenger}
-                  category={draft.passengerCategories[customerId]!}
+          <>
+            <ReservationPassengers
+              id={requestId}
+              customerIds={draft.passengers.map((p) => p.customerId)}
+              saveRef={passengerEditor}
+              onDirty={() => setSaved(false)}
+              serviceEditor={(customerId) => (
+                <PassengerServiceEditor
+                  draft={draft}
+                  customerId={customerId}
                   disabled={busy || saved}
-                  onCategory={(category) =>
-                    setDraft((current) =>
-                      changeAmendmentPassengerAge(
-                        current,
-                        customerId,
-                        category,
-                      ),
-                    )
-                  }
-                  onBand={(childAgeBand) =>
-                    patch({
-                      passengers: draft.passengers.map((p) =>
-                        p.customerId === customerId
-                          ? { ...p, childAgeBand: childAgeBand ?? null }
-                          : p,
-                      ),
-                    })
-                  }
-                  onAccommodation={(accommodationKind) =>
-                    patch({
-                      passengers: draft.passengers.map((p) =>
-                        p.customerId === customerId
-                          ? { ...p, accommodationKind }
-                          : p,
-                      ),
-                    })
-                  }
+                  onChange={setDraft}
                 />
-              );
-            }}
-          />
+              )}
+              ageEditor={(customerId) => {
+                const passenger = draft.passengers.find(
+                  (p) => p.customerId === customerId,
+                );
+                if (!passenger) return '—';
+                return (
+                  <PassengerAgeEditor
+                    passenger={passenger}
+                    category={draft.passengerCategories[customerId]!}
+                    disabled={busy || saved}
+                    onCategory={(category) =>
+                      setDraft((current) =>
+                        changeAmendmentPassengerAge(
+                          current,
+                          customerId,
+                          category,
+                        ),
+                      )
+                    }
+                    onBand={(childAgeBand) =>
+                      patch({
+                        passengers: draft.passengers.map((p) =>
+                          p.customerId === customerId
+                            ? { ...p, childAgeBand: childAgeBand ?? null }
+                            : p,
+                        ),
+                      })
+                    }
+                    onAccommodation={(accommodationKind) =>
+                      patch({
+                        passengers: draft.passengers.map((p) =>
+                          p.customerId === customerId
+                            ? { ...p, accommodationKind }
+                            : p,
+                        ),
+                      })
+                    }
+                  />
+                );
+              }}
+            />
+          </>
         )}
-        {section === 'PRICES' && (
+        {(section === 'PRICES' ||
+          (section === 'CORRECTION' &&
+            (membershipChanged ||
+              contract.passengersDetail.some(
+                (p) => !p.agreedPrices?.length,
+              )))) && (
           <>
             <AmendmentPassengerPriceTable
+              key={draft.passengers.map((p) => p.customerId).join('|')}
               draft={draft}
               currencies={(refs.currencies ?? []).map((c) => ({
                 code: c.code ?? '',
@@ -544,6 +628,7 @@ export function ReservationSalesAmendment({
         <Button
           disabled={
             busy ||
+            completionPending ||
             saved ||
             !!priceError ||
             !isOptionalOperationReason(draft.reason)

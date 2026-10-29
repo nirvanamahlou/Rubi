@@ -336,6 +336,10 @@ export function validateSalesContract(
     );
   }
   try {
+    const totalPrices = readPassengerTotalPrices(
+      input.services,
+      input.passengers,
+    );
     const deductions = readPassengerDeductions(
       input.services,
       input.passengers,
@@ -349,12 +353,14 @@ export function validateSalesContract(
     )
       throw Error('تخفیف و کمیسیون مسافران معتبر نیست.');
     validatePassengerTotalPricing(input.services, input.passengers);
-    readPassengerHotelPrices(input.services, input.passengers);
-    validatePassengerFlightPrices(
-      input.services,
-      input.passengers,
-      input.priceComponents,
-    );
+    if (!totalPrices) {
+      readPassengerHotelPrices(input.services, input.passengers);
+      validatePassengerFlightPrices(
+        input.services,
+        input.passengers,
+        input.priceComponents,
+      );
+    }
   } catch (error) {
     throw new SalesDomainError(
       'SALES_FLIGHT_PASSENGER_PRICE_INVALID',
@@ -362,6 +368,7 @@ export function validateSalesContract(
     );
   }
   if (
+    !readPassengerTotalPrices(input.services, input.passengers) &&
     input.services.some((s) => s.metadata?.automaticFlightRoomTotalV1 === true)
   ) {
     try {
@@ -984,6 +991,17 @@ export function validateSalesContract(
 }
 
 export function validateSalesPayment(payment: SalesPaymentInput): void {
+  if (
+    payment?.destinationAccountId != null &&
+    (typeof payment.destinationAccountId !== 'string' ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        payment.destinationAccountId,
+      ))
+  )
+    throw new SalesDomainError(
+      'SALES_PAYMENT_ACCOUNT_INVALID',
+      'حساب مقصد پرداخت معتبر نیست.',
+    );
   if (!payment || typeof payment.dueAt !== 'string')
     throw new SalesDomainError(
       'SALES_PAYMENT_INVALID',

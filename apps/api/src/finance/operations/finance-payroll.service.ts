@@ -36,6 +36,8 @@ import { SalesService } from '../../sales/sales.service';
 import { DocumentsService } from '../../documents/documents.service';
 import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
 import { MasterOrganizationDirectory } from '../../master-data/master-organization-directory';
+import { PAYROLL_WORKSHEET_KIND } from './payroll-worksheet.public';
+import { payrollWorksheetPaymentSource } from '../../hr/hr-payroll-worksheet.public';
 
 @Injectable()
 export class FinancePayrollService {
@@ -157,6 +159,15 @@ export class FinancePayrollService {
         },
       });
     if (!initial) throw new NotFoundException('درخواست حقوق یافت نشد.');
+    if (initial.kind === PAYROLL_WORKSHEET_KIND && !initial.hrRecordId)
+      throw new ConflictException('منبع درخواست مالی حقوق معتبر نیست.');
+    if (
+      initial.kind === PAYROLL_WORKSHEET_KIND &&
+      ['PAY', 'RESUBMIT'].includes(action)
+    )
+      throw new BadRequestException(
+        'جدول حقوق از منابع انسانی اصلاح و ارسال می‌شود؛ این درخواست فقط برای تأیید مالی است.',
+      );
     const completed =
       await this.database.client.financeOperationalRevision.findUnique({
         where: { id: operationId },
@@ -174,14 +185,21 @@ export class FinancePayrollService {
       !actor.permissions.includes('finance.receipt.approve')
     )
       throw new ForbiddenException('مجوز تأیید دستی دریافت وجه لازم است.');
-    const source = initial.hrRecordId
-      ? await this.hr.approvedSource(initial.hrRecordId, actor.branchIds)
-      : {
-          id: initial.id,
-          version: initial.sourceVersion ?? 1,
-          amount: initial.amount.toString(),
-          currencyCode: initial.currencyCode,
-        };
+    const source =
+      initial.kind === PAYROLL_WORKSHEET_KIND && initial.hrRecordId
+        ? await payrollWorksheetPaymentSource(
+            this.database.client,
+            initial.hrRecordId,
+            actor.branchIds,
+          )
+        : initial.hrRecordId
+          ? await this.hr.approvedSource(initial.hrRecordId, actor.branchIds)
+          : {
+              id: initial.id,
+              version: initial.sourceVersion ?? 1,
+              amount: initial.amount.toString(),
+              currencyCode: initial.currencyCode,
+            };
     const refundReceipt = initial.refundReceiptId
       ? (
           await this.sales?.financeReceiptHistory(

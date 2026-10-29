@@ -314,6 +314,48 @@ describe('completing booked aggregate passenger slots', () => {
     );
     expect(s.customers.createForSalesCompletion).toHaveBeenCalledOnce();
   });
+  it('permits scoped profile creation for an amendment with existing passengers without relaxing completion membership guards', async () => {
+    const s = setup();
+    s.client.salesContract.findUniqueOrThrow.mockResolvedValue({
+      ...s.row,
+      passengers: [{ customerId }],
+      services: s.row.services.map((service) => ({ ...service, metadata: {} })),
+    });
+    const input = {
+      kind: 'person' as const,
+      firstName: 'Synthetic',
+      lastName: 'Added',
+      displayName: 'Synthetic Added',
+      roles: ['passenger' as const],
+    };
+    await s.service.createPerson(id, input, actor);
+    expect(s.access.contract).toHaveBeenCalledWith(id, actor, true);
+    expect(s.customers.createForSalesCompletion).toHaveBeenCalledWith(
+      input,
+      actor,
+    );
+    expect((await s.service.form(id, actor)).available).toBe(false);
+    await expect(s.service.save(id, s.input, actor)).rejects.toThrow();
+    expect(s.client.$transaction).not.toHaveBeenCalled();
+  });
+  it('does not create an amendment passenger for a cancelled contract', async () => {
+    const s = setup();
+    s.row.status = 'CANCELLED';
+    await expect(
+      s.service.createPerson(
+        id,
+        {
+          kind: 'person',
+          firstName: 'Synthetic',
+          lastName: 'Added',
+          displayName: 'Synthetic Added',
+          roles: ['passenger'],
+        },
+        actor,
+      ),
+    ).rejects.toThrow('تأییدشده');
+    expect(s.customers.createForSalesCompletion).not.toHaveBeenCalled();
+  });
   it('replays a committed operation even after membership exists and JSONB reorders keys', async () => {
     const s = setup();
     s.client.salesContractAuditEvent.findUnique.mockResolvedValue({

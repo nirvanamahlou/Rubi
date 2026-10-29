@@ -140,11 +140,10 @@ export class PassengerCompletionService {
     input: CustomerMutationRequest,
     actor: AuthenticatedActor,
   ) {
-    const { row, parties } = await this.load(id, actor);
-    if (!parties || row.passengers.length)
-      throw new ConflictException(
-        'نسخه یا فهرست مسافران قرارداد تغییر کرده است.',
-      );
+    // Profile creation is also used by the versioned contract amendment editor.
+    // Membership/capacity changes still go through Sales.amend; completion.save
+    // retains its aggregate-only guards and never reserves capacity twice.
+    await this.load(id, actor);
     return this.customers.createForSalesCompletion(input, actor);
   }
   async save(

@@ -1,7 +1,13 @@
 'use client';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useImperativeHandle,
+  useState,
+  type ReactNode,
+  type Ref,
+} from 'react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/form-controls';
@@ -28,18 +34,30 @@ type EditableField =
 
 const nullable = (value: string | null) => value?.trim() || '';
 
+export interface ReservationPassengerEditor {
+  savePending: () => Promise<boolean>;
+}
+
 export function ReservationPassengers({
   id,
   readOnly = false,
   ageEditor,
   serviceEditor,
+  saveRef,
+  onDirty,
+  customerIds,
 }: {
   id: string;
   readOnly?: boolean;
   ageEditor?: (customerId: string) => ReactNode;
   serviceEditor?: (customerId: string) => ReactNode;
+  saveRef?: Ref<ReservationPassengerEditor>;
+  onDirty?: () => void;
+  /** Unsaved contract-membership edits can hide removed links without deleting identities. */
+  customerIds?: readonly string[];
 }) {
   const [rows, setRows] = useState<PassengerName[]>([]);
+  const [dirty, setDirty] = useState<string[]>([]);
   const [canEdit, setCanEdit] = useState(false);
   const [canEditIdentity, setCanEditIdentity] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -60,6 +78,7 @@ export function ReservationPassengers({
       .then((r) => {
         if (!active) return;
         setRows(r.data);
+        setDirty([]);
         setCanEdit(r.canEdit);
         setCanEditIdentity(r.canEditIdentity);
         setError('');
@@ -76,6 +95,8 @@ export function ReservationPassengers({
   }, [id, revision]);
 
   function change(customerId: string, field: EditableField, value: string) {
+    onDirty?.();
+    setDirty((old) => [...new Set([...old, customerId])]);
     setRows((old) =>
       old.map((row) =>
         row.id === customerId ? { ...row, [field]: value } : row,
@@ -83,57 +104,89 @@ export function ReservationPassengers({
     );
   }
 
-  async function save(row: PassengerName) {
-    if (readOnly) return;
-    setBusy(row.id);
+  async function saveRows(targets: PassengerName[]) {
+    if (loading || busy) return false;
+    if (!targets.length) return true;
+    if (readOnly || !canEdit) return false;
+    setBusy(targets[0]!.id);
     setError('');
     setMessage('');
     try {
-      const path = `passengers/${encodeURIComponent(row.id)}${
-        canEditIdentity ? '/identity' : ''
-      }`;
-      const body = canEditIdentity
-        ? {
-            firstName: row.firstName.trim(),
-            lastName: row.lastName.trim(),
-            passportFirstName: nullable(row.passportFirstName),
-            passportLastName: nullable(row.passportLastName),
-            gender: row.gender ?? '',
-            birthDate: nullable(row.birthDate),
-            nationalId: nullable(row.nationalId),
-            passportNumber: nullable(row.passportNumber),
-            passportExpiryDate: nullable(row.passportExpiryDate),
-            passportIssuingCountryCode: nullable(row.passportIssuePlace),
-            nationalityCode: nullable(row.nationalityCode),
-            birthCountryCode: nullable(row.birthCountryCode),
-            version: row.version,
-          }
-        : {
-            firstName: row.firstName.trim(),
-            lastName: row.lastName.trim(),
-            version: row.version,
-          };
-      await passengerFilesRequest<{ data: PassengerName }>(id, path, {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+      for (const row of targets) {
+        const path = `passengers/${encodeURIComponent(row.id)}${
+          canEditIdentity ? '/identity' : ''
+        }`;
+        const body = canEditIdentity
+          ? {
+              firstName: row.firstName.trim(),
+              lastName: row.lastName.trim(),
+              passportFirstName: nullable(row.passportFirstName),
+              passportLastName: nullable(row.passportLastName),
+              gender: row.gender ?? '',
+              birthDate: nullable(row.birthDate),
+              nationalId: nullable(row.nationalId),
+              passportNumber: nullable(row.passportNumber),
+              passportExpiryDate: nullable(row.passportExpiryDate),
+              passportIssuingCountryCode: nullable(row.passportIssuePlace),
+              nationalityCode: nullable(row.nationalityCode),
+              birthCountryCode: nullable(row.birthCountryCode),
+              version: row.version,
+            }
+          : {
+              firstName: row.firstName.trim(),
+              lastName: row.lastName.trim(),
+              version: row.version,
+            };
+        const result = await passengerFilesRequest<{ data: PassengerName }>(
+          id,
+          path,
+          {
+            method: 'PATCH',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(body),
+          },
+        );
+        setDirty((old) => old.filter((id) => id !== row.id));
+        setRows((old) =>
+          old.map((p) =>
+            p.id === row.id ? { ...p, version: result.data.version } : p,
+          ),
+        );
+      }
       setMessage(
         canEditIdentity
           ? 'مشخصات مسافر در پروندهٔ اصلی فروش ذخیره شد.'
           : 'نام مسافر در پروندهٔ اصلی ذخیره شد.',
       );
-      setLoading(true);
-      setRevision((value) => value + 1);
-      window.dispatchEvent(new Event('reservation-workflow-changed'));
+      if (!dirty.some((id) => !targets.some((row) => row.id === id))) {
+        setLoading(true);
+        setRevision((value) => value + 1);
+        window.dispatchEvent(new Event('reservation-workflow-changed'));
+      }
+      return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'ذخیره انجام نشد.');
+      return false;
     } finally {
       setBusy('');
     }
   }
 
+  useImperativeHandle(saveRef, () => ({
+    savePending: () =>
+      saveRows(
+        rows.filter(
+          (row) =>
+            dirty.includes(row.id) &&
+            (!customerIds || customerIds.includes(row.id)),
+        ),
+      ),
+  }));
+
   if (loading) return <p>در حال دریافت اطلاعات مسافران…</p>;
+  const displayedRows = rows.filter(
+    (row) => !customerIds || customerIds.includes(row.id),
+  );
 
   if (readOnly)
     return (
@@ -168,7 +221,7 @@ export function ReservationPassengers({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {displayedRows.map((row) => (
                 <tr key={row.id}>
                   {[
                     row.firstName,
@@ -193,7 +246,9 @@ export function ReservationPassengers({
             </tbody>
           </table>
         </div>
-        {!rows.length && !error && <p>مسافری به این قرارداد متصل نشده است.</p>}
+        {!displayedRows.length && !error && (
+          <p>مسافری به این قرارداد متصل نشده است.</p>
+        )}
       </div>
     );
 
@@ -233,7 +288,7 @@ export function ReservationPassengers({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, index) => {
+            {displayedRows.map((row, index) => {
               const disabled = !canEdit || Boolean(busy);
               const identityDisabled = !canEditIdentity || Boolean(busy);
               return (
@@ -391,7 +446,7 @@ export function ReservationPassengers({
                       id={`passenger-${row.id}`}
                       onSubmit={(event) => {
                         event.preventDefault();
-                        void save(row);
+                        void saveRows([row]);
                       }}
                     >
                       <Button type="submit" disabled={disabled}>
@@ -410,7 +465,9 @@ export function ReservationPassengers({
           </tbody>
         </table>
       </div>
-      {!rows.length && !error && <p>مسافری به این قرارداد متصل نشده است.</p>}
+      {!displayedRows.length && !error && (
+        <p>مسافری به این قرارداد متصل نشده است.</p>
+      )}
       {!canEdit && rows.length > 0 && (
         <p className="text-sm text-muted-foreground">
           مجوز ویرایش نام مسافران برای حساب شما فعال نیست.

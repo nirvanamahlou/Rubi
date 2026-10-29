@@ -88,6 +88,7 @@ export interface DashboardFilterOptions {
 export interface DashboardProjectionSnapshot {
   state: DashboardProjectionState;
   message: string;
+  unavailableMetrics?: Readonly<Record<string, string>>;
   metadata: DashboardMetadata | null;
   filterOptions?: DashboardFilterOptions;
   metrics: Readonly<Record<string, DashboardMetricSnapshot>>;

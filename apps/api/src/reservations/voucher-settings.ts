@@ -86,7 +86,14 @@ export function validateVoucherSettings(
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (
     (v.brokerId !== undefined && !uuid.test(v.brokerId)) ||
-    (v.leaderId !== undefined && (!v.brokerId || !uuid.test(v.leaderId)))
+    (v.leaderId !== undefined && (!v.brokerId || !uuid.test(v.leaderId))) ||
+    (v.transferBrokerId !== undefined &&
+      (!v.brokerId || !uuid.test(v.transferBrokerId))) ||
+    (v.transferBrokerName !== undefined &&
+      (typeof v.transferBrokerName !== 'string' ||
+        v.transferBrokerName.length > 200)) ||
+    (v.transferDetailsOverride !== undefined &&
+      typeof v.transferDetailsOverride !== 'boolean')
   )
     return fail();
   if (
@@ -234,6 +241,13 @@ export function validateVoucherSettings(
       : {}),
     ...(v.brokerId ? { brokerId: v.brokerId } : {}),
     ...(v.leaderId ? { leaderId: v.leaderId } : {}),
+    ...(v.transferBrokerId ? { transferBrokerId: v.transferBrokerId } : {}),
+    ...(v.transferBrokerName !== undefined
+      ? { transferBrokerName: v.transferBrokerName.trim() }
+      : {}),
+    ...(v.transferDetailsOverride !== undefined
+      ? { transferDetailsOverride: v.transferDetailsOverride }
+      : {}),
     text: {
       ...(Object.fromEntries(
         voucherTextKeys.map((k) => [k, v.text[k].trim()]),

@@ -8,6 +8,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { ReportingExportService } from './reporting-export.service';
+import { ReportingNativeDashboard } from './reporting-native-dashboard';
 import { SettingsRuntimeService } from '../settings/settings-runtime.service';
 import {
   dashboardCalendarRangeStart,
@@ -98,6 +99,9 @@ export class ReportingService {
     @Optional()
     @Inject(SettingsRuntimeService)
     private readonly settings?: SettingsRuntimeService,
+    @Optional()
+    @Inject(ReportingNativeDashboard)
+    private readonly nativeDashboard?: ReportingNativeDashboard,
   ) {}
 
   private hasSalesRead(actor: ReportingActor): boolean {
@@ -321,6 +325,8 @@ export class ReportingService {
     };
     for (const [source, target] of Object.entries(aliases))
       if (input[source]) filters[target] = input[source]!;
+    if (this.nativeDashboard)
+      return this.nativeDashboard.load(input, actor, filters, now);
     const serverBranchScope =
       actor.permissions.includes('reporting.manage') ||
       actor.permissions.includes('sales.contracts.read.all')

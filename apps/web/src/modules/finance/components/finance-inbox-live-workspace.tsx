@@ -1,4 +1,5 @@
 import { useAccessPermissions } from '@/modules/iam/access-context';
+import { initialReceiptAccount } from '../model/receipt-account';
 import {
   PurchaseFxSummary,
   PurchaseFxCapture,
@@ -432,14 +433,11 @@ export function FinanceInboxLiveWorkspace() {
     item: FinanceInboxItemV1,
     kind: 'APPROVE' | 'CORRECTION_REQUIRED',
   ) {
-    const eligibleAccounts = accounts.filter(
-      (account) =>
-        account.branchId === item.branchReference &&
-        account.currencyCode === item.amount?.currencyCode,
-    );
     setActionItem(item);
     setActionKind(kind);
-    setAccountId(kind === 'APPROVE' ? (eligibleAccounts[0]?.id ?? '') : '');
+    setAccountId(
+      kind === 'APPROVE' ? initialReceiptAccount(item, accounts) : '',
+    );
     setReason('');
     setIssueDocumentDelivery(false);
     setActionError('');

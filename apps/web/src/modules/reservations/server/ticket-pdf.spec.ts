@@ -524,7 +524,7 @@ describe('reservation ticket PDF', () => {
     expect(html).toContain(
       'PRESENCE 03:00 BEFORE FLIGHT TIME AT THE AIRPORT IS MANDATORY',
     );
-    expect(html).toContain('حضور در فرودگاه ۳ ساعت قبل از پرواز الزامی است.');
+    expect(html).toContain('حضور در فرودگاه 3 ساعت قبل از پرواز الزامی است.');
     expect(html).toContain('class="airline-logo"');
     expect(html).not.toContain('>20<');
   });

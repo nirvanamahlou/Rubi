@@ -264,9 +264,12 @@ export class FinanceInboxService {
             : row.kind === 'PETTY_CASH_EXPENSE'
               ? 'NON_CASH'
               : 'PAYMENT',
-        source: row.kind === 'PAYROLL' ? 'HR' : 'FINANCE',
-        kind:
-          row.kind === 'PAYROLL' ? 'PAYROLL_REQUEST' : 'OPERATIONAL_REQUEST',
+        source: ['PAYROLL', 'PAYROLL_WORKSHEET'].includes(row.kind)
+          ? 'HR'
+          : 'FINANCE',
+        kind: ['PAYROLL', 'PAYROLL_WORKSHEET'].includes(row.kind)
+          ? 'PAYROLL_REQUEST'
+          : 'OPERATIONAL_REQUEST',
         sourceReference: row.id,
         sourceContextReference: row.hrRecordId ?? row.id,
         contractReference: row.reference,
@@ -293,6 +296,7 @@ export class FinanceInboxService {
         origin: 'PERSISTED_SOURCE',
       })),
       ...salesItems.map((item): FinanceInboxItemV1 => ({
+        destinationAccountId: item.destinationAccountId ?? null,
         version: 1,
         id: `sales:${item.paymentId}`,
         source: 'SALES',
@@ -552,7 +556,10 @@ export class FinanceInboxService {
       this.sourceState(
         'HR',
         hrResult.status === 'fulfilled',
-        hrItems.length,
+        hrItems.length +
+          payrollRows.filter((row) =>
+            ['PAYROLL', 'PAYROLL_WORKSHEET'].includes(row.kind),
+          ).length,
         'ارجاع‌های ثبت‌شده منابع انسانی به واحد مالی',
       ),
       this.sourceState(
@@ -590,7 +597,9 @@ export class FinanceInboxService {
         {
           source: 'FINANCE',
           connection: 'CONNECTED',
-          itemCount: payrollRows.filter((row) => row.kind !== 'PAYROLL').length,
+          itemCount: payrollRows.filter(
+            (row) => !['PAYROLL', 'PAYROLL_WORKSHEET'].includes(row.kind),
+          ).length,
           message:
             'درخواست‌های استرداد، کمیسیون، چک، اصلاح مالی و تنخواه با رویداد حسابداری قابل پیگیری',
         },

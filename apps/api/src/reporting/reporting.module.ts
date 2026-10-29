@@ -9,12 +9,24 @@ import { ReportingController } from './reporting.controller';
 import { ReportingService } from './reporting.service';
 import { ReportingRepository } from './reporting.repository';
 import { ReportingExportService } from './reporting-export.service';
+import { SalesDashboardPublicModule } from '../sales/sales-dashboard.public';
+import { CustomerDashboardPublicModule } from '../customers/customer-dashboard.public';
+import { LeadDashboardPublicModule } from '../customer-affairs/lead-dashboard.public';
+import { ReportingNativeDashboard } from './reporting-native-dashboard';
 
 @Module({
-  imports: [IamModule, DocumentsModule, SettingsModule],
+  imports: [
+    IamModule,
+    DocumentsModule,
+    SettingsModule,
+    SalesDashboardPublicModule,
+    CustomerDashboardPublicModule,
+    LeadDashboardPublicModule,
+  ],
   controllers: [ReportingController],
   providers: [
     ReportingService,
+    ReportingNativeDashboard,
     ReportingRepository,
     ReportingExportService,
     AuthGuard,

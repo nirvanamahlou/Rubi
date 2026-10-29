@@ -55,6 +55,7 @@ function setup(sent = true) {
     update,
     voucherLeaderContact,
     currencyReference,
+    detail,
   };
 }
 
@@ -179,5 +180,147 @@ describe('voucher directory snapshot and sent-form gate', () => {
       expect(s.update).not.toHaveBeenCalled();
       expect(s.voucherLeaderContact).not.toHaveBeenCalled();
     },
+  );
+});
+
+it('validates a separate transfer supplier while preserving explicit per-voucher details', async () => {
+  const s = setup();
+  const input = {
+    action: 'VOUCHER_SETTINGS',
+    expectedVersion: 1,
+    note: '',
+    voucherSettings: {
+      brokerId: 'hotel-broker',
+      transferBrokerId: 'transfer-broker',
+      leaderId: 'leader',
+      transferDetailsOverride: true,
+      text: {
+        broker: '',
+        leaderName: 'SPECIAL LEADER',
+        leaderPhone: 'SPECIAL PHONE',
+        transferBoard: 'SPECIAL BOARD',
+      },
+      flags: { tourLeader: false },
+    },
+  } as unknown as TravelWorkflowCommandV1;
+  await s.controller.workflowUpdate('intake', input, s.request);
+  expect(s.voucherLeaderContact).toHaveBeenCalledWith(
+    'transfer-broker',
+    'leader',
+    expect.anything(),
+  );
+  expect(s.update).toHaveBeenCalledWith(
+    'intake',
+    expect.objectContaining({
+      voucherSettings: expect.objectContaining({
+        brokerId: 'hotel-broker',
+        transferBrokerId: 'transfer-broker',
+        transferDetailsOverride: true,
+        text: expect.objectContaining({
+          broker: 'Canonical broker',
+          leaderName: 'SPECIAL LEADER',
+          leaderPhone: 'SPECIAL PHONE',
+          transferBoard: 'SPECIAL BOARD',
+        }),
+      }),
+    }),
+    expect.anything(),
+  );
+});
+
+it.each(['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'] as const)(
+  'permits %s without a leader for a voucher without transfer',
+  async (action) => {
+    const s = setup();
+    s.detail.mockResolvedValue({
+      workflow: {
+        sentSupplierFormSettings: { brokerId: 'broker' },
+        voucherSettings: { brokerId: 'broker', flags: { transfer: false } },
+      },
+    });
+    await s.controller.workflowUpdate(
+      'intake',
+      { action, expectedVersion: 1, note: '' },
+      s.request,
+    );
+    expect(s.update).toHaveBeenCalled();
+    expect(s.voucherLeaderContact).not.toHaveBeenCalled();
+  },
+);
+
+it('keeps contact authorization mandatory even when manual overrides are requested', async () => {
+  const s = setup();
+  s.voucherLeaderContact.mockRejectedValueOnce(
+    new Error('Contact is not authorized'),
+  );
+  await expect(
+    s.controller.workflowUpdate(
+      'intake',
+      {
+        action: 'VOUCHER_SETTINGS',
+        expectedVersion: 1,
+        note: '',
+        voucherSettings: {
+          brokerId: 'broker',
+          leaderId: 'foreign-leader',
+          transferDetailsOverride: true,
+          text: { broker: '', leaderName: 'MANUAL' },
+          flags: {},
+        } as never,
+      },
+      s.request,
+    ),
+  ).rejects.toThrow('Contact is not authorized');
+  expect(s.update).not.toHaveBeenCalled();
+});
+
+it('preserves an independent transfer supplier when an older editor omits the new fields', async () => {
+  const s = setup();
+  s.detail.mockResolvedValue({
+    workflow: {
+      sentSupplierFormSettings: { brokerId: 'broker' },
+      voucherSettings: {
+        brokerId: 'broker',
+        leaderId: 'leader',
+        transferBrokerId: 'transfer-broker',
+        transferDetailsOverride: true,
+      },
+    },
+  });
+  await s.controller.workflowUpdate(
+    'intake',
+    {
+      action: 'VOUCHER_SETTINGS',
+      expectedVersion: 1,
+      note: '',
+      voucherSettings: {
+        brokerId: 'broker',
+        leaderId: 'leader',
+        text: {
+          broker: '',
+          leaderName: 'KEPT',
+          leaderPhone: '',
+          transferBoard: 'KEPT BOARD',
+        },
+        flags: {},
+      } as never,
+    },
+    s.request,
+  );
+  expect(s.voucherLeaderContact).toHaveBeenCalledWith(
+    'transfer-broker',
+    'leader',
+    expect.anything(),
+  );
+  expect(s.update).toHaveBeenCalledWith(
+    'intake',
+    expect.objectContaining({
+      voucherSettings: expect.objectContaining({
+        transferBrokerId: 'transfer-broker',
+        transferDetailsOverride: true,
+        text: expect.objectContaining({ transferBoard: 'KEPT BOARD' }),
+      }),
+    }),
+    expect.anything(),
   );
 });

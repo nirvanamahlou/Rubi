@@ -639,6 +639,11 @@ export interface VoucherSettingsV1 {
   /** Registered supplier and leader used for this immutable output revision. */
   brokerId?: string;
   leaderId?: string;
+  /** Optional transfer supplier; omitted means the hotel supplier. */
+  transferBrokerId?: string;
+  transferBrokerName?: string;
+  /** Explicit per-output override; never changes the supplier directory. */
+  transferDetailsOverride?: boolean;
   text: Record<(typeof voucherTextKeys)[number], string> & {
     contractPartyName?: string;
   };

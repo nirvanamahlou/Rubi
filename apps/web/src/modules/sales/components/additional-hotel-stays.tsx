@@ -1,4 +1,6 @@
 'use client';
+import { useEffect, useRef, useState } from 'react';
+import { loadContractHotels } from '../api/hotel-catalog';
 import {
   defaultSalesRoomCategory,
   salesRoomCategories,
@@ -22,13 +24,44 @@ export function AdditionalHotelStays({
   state,
   patch,
   hotels,
+  cities = [],
   roomTypes,
 }: {
   state: SalesFormState;
   patch: (patch: Partial<SalesFormState>) => void;
   hotels: readonly MasterDataRecord[];
+  cities?: readonly MasterDataRecord[];
   roomTypes: readonly MasterDataRecord[];
 }) {
+  const [catalog, setCatalog] = useState<readonly MasterDataRecord[] | null>(
+    null,
+  );
+  const [catalogError, setCatalogError] = useState('');
+  const [catalogBusy, setCatalogBusy] = useState(false);
+  const pendingCatalog = useRef<AbortController | null>(null);
+  const openHotelRow = useRef<number | null>(null);
+  useEffect(() => () => pendingCatalog.current?.abort(), []);
+  async function refreshCatalog() {
+    pendingCatalog.current?.abort();
+    const controller = new AbortController();
+    pendingCatalog.current = controller;
+    setCatalogBusy(true);
+    setCatalogError('');
+    try {
+      const result = await loadContractHotels(controller.signal);
+      if (!controller.signal.aborted) setCatalog(result);
+    } catch (error) {
+      if (!controller.signal.aborted)
+        setCatalogError(
+          error instanceof Error
+            ? error.message
+            : 'دریافت فهرست کامل هتل‌ها انجام نشد.',
+        );
+    } finally {
+      if (!controller.signal.aborted) setCatalogBusy(false);
+    }
+  }
+  const availableHotels = catalog ?? hotels;
   if (
     !state.serviceKinds.includes('HOTEL') ||
     state.tour ||
@@ -46,13 +79,25 @@ export function AdditionalHotelStays({
       aria-label="هتل‌های ترکیبی قرارداد"
     >
       <h3 className="font-bold">هتل‌های ترکیبی قرارداد</h3>
+      {catalogError && (
+        <div role="alert">
+          <p>{catalogError}</p>
+          <Button variant="outline" onClick={() => void refreshCatalog()}>
+            دریافت دوباره هتل‌ها
+          </Button>
+        </div>
+      )}
       {stays.map((stay, index) => {
         const update = (next: Partial<typeof stay>) =>
           save(
             stays.map((item, i) => (i === index ? { ...item, ...next } : item)),
           );
         const rooms = stay.rooms ?? [];
-        const options = salesHotelRoomTypes(stay.hotelId, hotels, roomTypes);
+        const options = salesHotelRoomTypes(
+          stay.hotelId,
+          availableHotels,
+          roomTypes,
+        );
         return (
           <section key={index} className="grid gap-3 rounded-xl border p-3">
             <div className="flex items-center justify-between">
@@ -65,25 +110,53 @@ export function AdditionalHotelStays({
                 حذف هتل
               </Button>
             </div>
+            <SearchableReference
+              label="شهر مقصد"
+              value={stay.cityId}
+              options={cities}
+              showAllOptionsOnOpen
+              onChange={(cityId) => {
+                if (cityId !== stay.cityId)
+                  update({
+                    cityId,
+                    hotelId: '',
+                    hotelNameSnapshot: '',
+                    rooms: [],
+                  });
+              }}
+            />
             <div className="grid grid-cols-[minmax(0,1fr)_6rem] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_9rem]">
               <SearchableReference
                 label="هتل"
                 value={stay.hotelId}
-                options={hotels.filter(
+                options={availableHotels.filter(
                   (h) =>
+                    Boolean(stay.cityId) &&
+                    h.attributes.cityId === stay.cityId &&
                     h.id !== state.hotel.hotelId &&
                     !stays.some(
                       (other, i) => i !== index && other.hotelId === h.id,
                     ),
                 )}
                 showAllOptionsOnOpen
+                loading={catalogBusy}
+                onOpenChange={(open) => {
+                  if (open && openHotelRow.current !== index) {
+                    openHotelRow.current = index;
+                    void refreshCatalog();
+                  } else if (!open && openHotelRow.current === index) {
+                    openHotelRow.current = null;
+                  }
+                }}
                 preferEnglishName
                 onChange={(id) => {
-                  const hotel = hotels.find((h) => h.id === id);
+                  const hotel = availableHotels.find((h) => h.id === id);
+                  if (id && (!hotel || hotel.attributes.cityId !== stay.cityId))
+                    return;
                   update({
                     hotelId: id,
                     hotelNameSnapshot: hotel?.name ?? '',
-                    cityId: String(hotel?.attributes.cityId ?? ''),
+                    cityId: stay.cityId,
                     rooms: [],
                   });
                 }}
@@ -200,6 +273,7 @@ export function AdditionalHotelStays({
                     value={room.roomTypeId}
                     options={options}
                     showAllOptionsOnOpen
+                    loading={catalogBusy}
                     preferEnglishName
                     onChange={(id) =>
                       change({

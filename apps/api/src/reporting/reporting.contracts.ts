@@ -181,11 +181,11 @@ export interface ReportingExportAuditV1 {
   expiresAtUtc?: string;
 }
 
-/** Public, versioned read model for the local CRM dashboard. Values are
- * pre-aggregated from the approved travel fact grain; UI components never
+/** Public, versioned read model for the CRM dashboard. Values are
+ * aggregated by approved producer-owned sources; UI components never
  * calculate financial totals from row-level data. */
 export interface DashboardProjectionV1 {
-  state: 'ready' | 'empty';
+  state: 'ready' | 'empty' | 'blocked';
   message: string;
   metadata: {
     generatedAt: string;
@@ -193,9 +193,16 @@ export interface DashboardProjectionV1 {
     timezone: 'Asia/Tehran';
     dateBasis: string;
     currencyFxBasis: string;
-    reportVersion: 'reporting.dashboard.travel.v1';
+    reportVersion:
+      'reporting.dashboard.travel.v1' | 'reporting.dashboard.native.v1';
     permissionSnapshot: string;
   } | null;
+  unavailableMetrics?: Readonly<Record<string, string>>;
+  sourceCoverage?: readonly {
+    source: string;
+    state: string;
+    reason?: string;
+  }[];
   filterOptions?: {
     salesChannel: readonly string[];
     branch: readonly string[];

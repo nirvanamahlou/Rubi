@@ -4189,6 +4189,9 @@ model SalesContractPriceComponent {
 }
 
 model SalesContractPaymentEntry {
+  destinationAccountId    String?                     @map("destination_account_id") @db.Uuid
+  destinationAccountTitle String?                     @map("destination_account_title") @db.VarChar(250)
+  destinationAccount      FinanceSettlementAccount?   @relation("SalesPaymentDestinationAccount", fields: [destinationAccountId], references: [id], onDelete: Restrict, map: "sales_payment_destination_account_fk")
   allocations             SalesReceiptAllocation[]
   refunds                 SalesPaymentRefund[]
   financeRefundRequests   FinanceOperationalRequest[]
@@ -4689,6 +4692,7 @@ enum FinanceSupplierPaymentStatus {
 }
 
 model FinanceSettlementAccount {
+  salesDestinationPayments   SalesContractPaymentEntry[]            @relation("SalesPaymentDestinationAccount")
   workflowRefunds            AccountingWorkflow[]
   bankIdentifiers            Json?
   maskedAccountNumber        String?                                @db.VarChar(40)

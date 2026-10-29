@@ -10,6 +10,7 @@ vi.mock('react', async (original) => ({
     return [i in state.values ? state.values[i] : initial, vi.fn()];
   },
   useEffect: vi.fn(),
+  useImperativeHandle: vi.fn(),
 }));
 function nodes(
   n: ReactNode,
@@ -34,6 +35,7 @@ beforeEach(() => {
         nationalityCode: 'IR',
       },
     ],
+    [],
     true,
     true,
     false,
