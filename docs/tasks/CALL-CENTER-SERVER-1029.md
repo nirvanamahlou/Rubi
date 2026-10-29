@@ -21,3 +21,5 @@ Five synthetic tests pass on server Python: env_file preservation, ambiguous lay
 Root execution requested; success not yet claimed. After receipt verification, create another encrypted export and synchronize to the existing off-server backup destination. Images/data/Web remain preserved.
 
 VPN/SSH information was supplied separately; secrets are excluded from source, arguments and reports. VPN protocol, PBX destination/port and host identity remain unconfirmed; user is obtaining them from IT. Configure the secure path/provider only after verification. Review production staff mappings/access instead of copying localhost. Real-call, recovery and recording acceptance remain required; Worker transport readiness alone is not full telephony readiness.
+
+Console usability: user cannot paste the long inline command in VNC. Added run-production-worker-setup.py, delivered as /home/rubi-deploy/run-worker-1029.py. Short command: python3 -I /home/rubi-deploy/run-worker-1029.py. Launcher checks the pinned payload hash; a non-root smoke verifies hash acceptance followed by the expected root guard, without mutation. Root execution is still pending.
