@@ -140,7 +140,7 @@ export function hotelPurchaseTotal(
   return total;
 }
 
-/** Blank guests remain unpriced; only explicitly entered positive nightly prices form the revision. */
+/** Blank guests remain unpriced; explicit zero nightly prices are recorded. */
 export function hotelPassengerPurchaseInput(
   passengers: readonly Passenger[],
   nightly: Readonly<Record<string, string>>,
@@ -152,8 +152,8 @@ export function hotelPassengerPurchaseInput(
     .filter((person) => nightly[person.id]?.trim())
     .map((person) => {
       const amount = moneyUnits(nightly[person.id]!);
-      if (amount <= 0n)
-        throw new Error('قیمت هر شب هر مسافر باید مبلغی مثبت باشد.');
+      if (amount < 0n)
+        throw new Error('قیمت هر شب هر مسافر باید صفر یا بیشتر باشد.');
       return { customerId: person.id, nightlyAmount: moneyDecimal(amount) };
     });
   if (!passengerPrices.length)
@@ -472,9 +472,9 @@ export function ReservationHotelPurchase({
       }
       if (
         !purchases.length ||
-        purchases.some((purchase) => moneyUnits(purchase.amount) <= 0n)
+        purchases.some((purchase) => moneyUnits(purchase.amount) < 0n)
       )
-        throw new Error('مبلغ خرید باید مثبت باشد.');
+        throw new Error('مبلغ خرید باید صفر یا بیشتر باشد.');
       const base = getPublicApiBaseUrl();
       if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
       const payload = JSON.stringify({
