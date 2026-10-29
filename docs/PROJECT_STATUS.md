@@ -1703,6 +1703,14 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
 
 # وضعیت پروژه
 
+REPORT-CANCELLED-TOTALS-1029 (PC-C): pipeline confirmed-sales currency totals now
+exclude cancelled/draft status rows while retaining their separate amounts.
+Legacy revenue/profit/agency/attribution totals exclude cancelled contracts;
+historical receipt/refund events remain intact. Native Sales revenue already
+filters confirmed active contracts. Added preview/export and cancelled-only
+regression. Test/lint could not start due unavailable reused API dependencies;
+no successful test, merge or operational rollout claimed. See task document.
+
 ## DASHBOARD-LIVE-SOURCES-1027 — PC-C — READY_FOR_REVIEW
 
 Production diagnosis confirmed the Dashboard reads an empty reporting_travel_facts staging table with no native producer writer. Added producer-owned, permission-scoped Sales/Customer/Lead aggregates and independent Dashboard composition, retaining actual zero versus unavailable state, Decimal currency separation, discounts/refunds and own/branch scope. Issuer context does not filter operational records. UI exposes partial/blocked source messages. Unsupported profit, journal balance and HR measures stay unavailable; no production fixtures inserted. Reporting regression64 and API lint/types/build pass; final Web/translation verification and hosted checks are recorded in docs/tasks/DASHBOARDS-LIVE-SOURCES-1027.md. No migration or permission changes. No production source rollout yet; current SSH policy requires a root-approved deployment plan.
