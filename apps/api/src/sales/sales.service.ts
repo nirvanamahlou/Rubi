@@ -2031,7 +2031,9 @@ export class SalesService {
     )
       throw new BadRequestException('فیلتر مانده قابل دریافت معتبر نیست.');
     const filters = validated.value as SalesReceivablesQuery;
-    const rows = await this.repository.dashboardRows(this.readScope(actor));
+    const rows = (
+      await this.repository.dashboardRows(this.readScope(actor))
+    ).filter((row) => row.status !== 'CANCELLED');
     const buyers = await this.customers.partyKinds(
       [...new Set(rows.map((row) => row.customerId))],
       actor,
@@ -2163,9 +2165,9 @@ export class SalesService {
         message: 'مجوز داشبورد فروش وجود ندارد.',
       });
     const rows = await this.repository.dashboardRows(scope);
-    const details = rows.map((row) =>
-      presentSalesContract(row, undefined, this.buyerCrypto),
-    );
+    const details = rows
+      .filter((row) => row.status !== 'CANCELLED')
+      .map((row) => presentSalesContract(row, undefined, this.buyerCrypto));
     const today = new Date().toISOString().slice(0, 10);
     const balances = details.flatMap((item) => item.balances);
     const currencyCodes = [

@@ -70,6 +70,70 @@ function row(
 }
 
 describe('Sales dashboard overpayments', () => {
+  it('excludes cancelled contracts from every operational count and currency total while retaining completed sales', async () => {
+    const unpaid = row('unpaid', 'IRR', '100', '0');
+    unpaid.settlementStatus = 'UNPAID';
+    const completed = row('completed', 'IRR', '25', '5');
+    completed.status = 'COMPLETED';
+    completed.settlementStatus = 'PARTIALLY_SETTLED';
+    const settled = row('settled', 'IRR', '20', '20');
+    settled.settlementStatus = 'SETTLED';
+    const foreign = row('foreign', 'USD', '10.25', '15.2501');
+    const cancelled = (
+      ['UNPAID', 'PARTIALLY_SETTLED', 'SETTLED', 'OVERPAID'] as const
+    ).map((settlementStatus) => {
+      const contract = row(
+        `cancelled-${settlementStatus}`,
+        'EUR',
+        '999999',
+        '100',
+      );
+      contract.status = 'CANCELLED';
+      contract.settlementStatus = settlementStatus;
+      contract.ownerUserId = 'cancelled-owner';
+      contract.reservationStatus = 'QUEUED';
+      contract.payments[0]!.status = 'PENDING_FINANCE_CONFIRMATION';
+      return contract;
+    });
+    const dashboardRows = vi
+      .fn()
+      .mockResolvedValue([unpaid, completed, settled, foreign, ...cancelled]);
+    const service = new SalesService(
+      { dashboardRows } as unknown as SalesRepository,
+      {} as SalesCustomersPublicAdapter,
+      {} as SalesTicketAvailabilityPort,
+    );
+    const actor = {
+      userId: 'owner',
+      branchIds: ['branch'],
+      permissions: ['sales.contracts.read.own'],
+    } as AuthenticatedActor;
+    const { data } = await service.dashboard(actor);
+    expect(data).toMatchObject({
+      todayContracts: 4,
+      activeContracts: 3,
+      unpaidContracts: 1,
+      partiallySettledContracts: 1,
+      settledContracts: 1,
+      rialSales: '145',
+      foreignCommitments: [{ currencyCode: 'USD', amount: '10.25' }],
+      outstanding: [
+        { currencyCode: 'IRR', amount: '120' },
+        { currencyCode: 'USD', amount: '-5.0001' },
+      ],
+      pendingFinancePayments: 0,
+      pendingReservationActions: 0,
+      salesByCounter: [
+        { ownerUserId: 'owner', currencyCode: 'IRR', amount: '145' },
+        { ownerUserId: 'owner', currencyCode: 'USD', amount: '10.25' },
+      ],
+    });
+    expect(dashboardRows).toHaveBeenCalledWith({
+      branchId: { in: ['branch'] },
+      ownerUserId: 'owner',
+    });
+  });
+
   it('keeps signed outstanding totals per currency and retains authorization scope', async () => {
     const dashboardRows = vi
       .fn()
@@ -152,6 +216,34 @@ describe('filtered receivables', () => {
     );
     return { service, dashboardRows, partyKinds };
   }
+  it('omits cancelled rows from filtered counts, balances and route/agency choices', async () => {
+    const { service, dashboardRows, partyKinds } = setup();
+    const source = await dashboardRows();
+    const cancelled = row('cancelled', 'EUR', '999999', '0');
+    cancelled.status = 'CANCELLED';
+    cancelled.customerId = 'cancelled-agency';
+    cancelled.originId = '55555555-5555-4555-8555-555555555555';
+    cancelled.destinationId = '66666666-6666-4666-8666-666666666666';
+    dashboardRows.mockResolvedValue([...source, cancelled]);
+    partyKinds.mockResolvedValue([
+      { id: agencyId, kind: 'ORGANIZATION' },
+      { id: 'person', kind: 'PERSON' },
+      { id: 'cancelled-agency', kind: 'ORGANIZATION' },
+    ]);
+    const { data } = await service.receivables({}, actor);
+    expect(data.contractCount).toBe(2);
+    expect(data.balances).toEqual([
+      { currencyCode: 'IRR', amount: '80.25' },
+      { currencyCode: 'USD', amount: '-2' },
+    ]);
+    expect(data.routes).toHaveLength(1);
+    expect(data.agencies.map(({ id }) => id)).toEqual([agencyId]);
+    expect(partyKinds).toHaveBeenCalledWith([agencyId, 'person'], actor);
+    expect(
+      (await service.receivables({ search: 'cancelled' }, actor)).data,
+    ).toMatchObject({ contractCount: 0, balances: [] });
+  });
+
   it('restricts agency contracts before repository pagination and preserves read scope', async () => {
     const list = vi
       .fn()

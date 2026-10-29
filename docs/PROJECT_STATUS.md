@@ -7953,3 +7953,8 @@ Validation:20 focused API/repository tests and4 real PostgreSQL numbering proofs
 ## COMPOSITE-CITY-HOTELS-1029 — PC-A
 
 New-contract additional hotel stays now select their own destination from the full paginated active-city catalogue, then show only that city's hotels. City changes clear incompatible hotel/name/room selections while retaining stay dates; mismatched hotel callbacks are rejected and duplicate hotels remain excluded. Primary hotel selection stays limited to the main contract destination even in multihotel mode; predefined composites are filtered by their authoritative first-member city.16 focused additional-stay/composite/reference-refresh tests pass. No API/schema/migration/dependency/runtime change. User authorizes develop merge after exact-head hosted checks.
+
+
+## EXCLUDE-CANCELLED-SALES-COUNTS-1029 - PC-A
+
+Cancelled contracts are excluded before Sales dashboard metrics and currency sums, filtered receivable amounts/counts and reference choices. The ordinary contract list, pagination total and Excel share the same noncancelled predicate; an explicit CANCELLED status query retains historical access under existing own/branch/all scope. Completed sales remain in valid revenue and receivable totals. Existing contract/payment/refund/settlement history and stored balances are unchanged.33 focused dashboard/receivable/list/search/export tests pass; scoped lint, API types/build and final-head hosted gates precede the owner-authorized develop merge. No migration, schema, API shape, dependency, production data or runtime change. Source reservations release on verified merge.
