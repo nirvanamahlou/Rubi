@@ -39,22 +39,77 @@ function row(id = 'test-request'): RequestView {
   };
 }
 describe('reservations workspace access and states', () => {
-  it('defaults to contract creation order before pagination despite reversed receipt dates and urgency', () => {
+  it('keeps natural numeric order across scripts, status updates, refreshes and legacy sort preferences', () => {
+    const rows = [
+      { ...row('ten'), contractNumber: '۱۰', status: 'COMPLETED' as const },
+      { ...row('two'), contractNumber: '٢' },
+      { ...row('one'), contractNumber: '1' },
+    ];
+    for (const sort of [
+      'contract',
+      'newest',
+      'oldest',
+      'priority',
+      'deadline',
+    ] as const) {
+      const result = queryRows(rows, { ...defaultQuery, sort, pageSize: 2 });
+      expect(result.filteredRows.map((r) => r.id)).toEqual([
+        'one',
+        'two',
+        'ten',
+      ]);
+      expect(result.rows.map((r) => r.id)).toEqual(['one', 'two']);
+      expect(
+        queryRows([...rows].reverse(), {
+          ...defaultQuery,
+          sort,
+          pageSize: 2,
+          page: 2,
+        }).rows.map((r) => r.id),
+      ).toEqual(['ten']);
+    }
+    expect(rows.map((r) => r.id)).toEqual(['ten', 'two', 'one']);
+    expect(
+      queryRows(
+        [
+          { ...row('b'), contractNumber: 'SC-2026-10' },
+          { ...row('a'), contractNumber: 'SC-2026-2' },
+        ],
+        defaultQuery,
+      ).rows.map((r) => r.id),
+    ).toEqual(['a', 'b']);
+    expect(
+      queryRows(
+        [
+          { ...row('b'), contractNumber: '2' },
+          { ...row('a'), contractNumber: '۲' },
+        ],
+        defaultQuery,
+      ).rows.map((r) => r.id),
+    ).toEqual(['a', 'b']);
+  });
+  it('orders contract numbers before pagination despite reversed receipt dates and urgency', () => {
     const oldest = {
       ...row('old'),
+      contractNumber: '120001',
       createdAt: '2026-09-01T09:00:00Z',
       receivedAt: '2026-09-08T09:00:00Z',
     };
     const newest = {
       ...row('new'),
+      contractNumber: '120003',
       createdAt: '2026-09-07T09:00:00Z',
       receivedAt: '2026-09-07T09:00:00Z',
       priority: 'URGENT' as const,
       deadline: '2026-09-07T10:00:00Z',
     };
-    const middle = { ...row('middle'), createdAt: '2026-09-04T09:00:00Z' };
+    const middle = {
+      ...row('middle'),
+      contractNumber: '120002',
+      createdAt: '2026-09-04T09:00:00Z',
+    };
     const source = [newest, oldest, middle];
-    expect(defaultQuery.sort).toBe('oldest');
+    expect(defaultQuery.sort).toBe('contract');
     const first = queryRows(source, { ...defaultQuery, pageSize: 2 });
     expect(first.filteredRows.map((r) => r.id)).toEqual([
       'old',
@@ -88,7 +143,7 @@ describe('reservations workspace access and states', () => {
       queryRows(refreshed, { ...defaultQuery, sort: 'newest' }).rows.map(
         (r) => r.id,
       ),
-    ).toEqual(['c', 'a', 'b']);
+    ).toEqual(['a', 'b', 'c']);
   });
   it('does not show a standalone bottom history button for a selected contract', () => {
     const html = renderToStaticMarkup(
