@@ -1,3 +1,27 @@
+## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
+
+Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.
+
+## CONTRACT-ROUTE-ARROW-1029 — PC-A — VALIDATING
+
+Isolate customer contract preview/PDF flight routes as LTR with independently isolated airport labels and origin-to-destination arrows. Return rows retain their actual saved endpoints. Keep escaping, direction captions and all saved commercial/identity data unchanged. Focused output regressions and exact-head full hosted checks gate authorized develop merge. No schema/migration/dependency or server deployment.
+
+## PASSENGER-SALE-NO-ROOM-PRICE-1029 — PC-A
+
+Removed obsolete room sale-amount entry and its callback from the contract total panel. Passenger-total drafts calculate directly from entered passenger IRR/foreign amounts and deductions, without parsing stale room amounts first or adjusting the contract total on room edits. The shared preview/PDF keeps room type, category and guest counts but omits room amounts and inferred adult room shares; historical saved totals and explicitly saved passenger prices remain authoritative. Existing historical financial records, procurement costs and package prices are not rewritten. Regressions cover stale valid/invalid room values, exact independent passenger currency totals, blank birth dates and historical output without completed passenger identities. No migration/API/dependency/runtime or production deployment. Final-head hosted quality/test/build/database gates precede the user-authorized develop merge.
+
+## CONTRACT-PDF-PARTIAL-1029 — PC-A
+
+Authenticated UI inspection reproduced the reported output failure for the user-supplied contract number; no real contract content is stored in Git. Four synthetic optional-reference failures (network, non-JSON, missing data, absent attributes) reproduce the generic503 before the fix. The server PDF/share route now treats master-reference enrichment as optional, matching the browser preview policy, while canonical saved-output authorization/data and actual renderer failure stay mandatory. No financial values, identities, room/service assignments or source snapshots change. PDF/print/output/runtime unit checks57 pass with one opt-in smoke skip; explicit actual-runtime smoke and final quality/type/build/full-suite/database gates precede authorized develop merge. The production-specific root cause is not asserted without server diagnostics; no production rollout is performed.
+Historical room-share regression reproduced the preparation exception when adult birth dates are optional/blank. Print-only fallback now uses booked ADT for unknown age, preserves known-age hotel rules, and omits guessed per-person room shares when aggregate room/adult identities do not match. Saved room/contract totals remain displayed unchanged; shared create/update validators are untouched. Initial explicit local Chromium smoke was blocked by graphics access and normal-process timeout, so it is not reported as passed. Full final-head CI remains mandatory.
+
+## SALES-PAYMENT-ACCOUNT-1027 — PC-A
+
+The Sales Add payment dialog now loads active contract-branch receipt accounts and requires an explicit choice matching the selected currency; currency changes clear incompatible selections. Saved payments retain the canonical destination title and FK independently of Finance approval. Finance inbox prefers the declared account when still eligible; inactive/unavailable choices do not silently fall back to another account. Existing older clients may omit the additive field; permissions, CAS/replay, exact amounts and receipt-upload continuation remain. Additive nullable migration20261027160000; no production or runtime change. Focused account/authorization/persistence/UI checks and all exact-head hosted gates precede owner-authorized develop merge.
+## CONTRACT-PAYMENT-RECEIPT-1027 — PC-A
+
+The add-payment form accepts an optional PDF/JPG/PNG before submission and attaches it to the exact newly saved payment. Existing and later receipts can be listed/uploaded/downloaded by authorized contract readers through a bounded Sales route, without general Documents or payment-creation grants. Sales validates contract/payment membership; Documents retains fixed receipt references, branch ownership, file validation/scanning and audit. Receipt-only history omits payment amounts for readers without existing payment-history permission. Failed uploads preserve the payment/file for retry; uncertain upload outcomes require review rather than blind retry. Web16 and API14 focused service/HTTP tests plus3 English coverage checks pass. No schema/migration/dependency or production deployment; final integrated-head quality/test/build/database checks gate owner-authorized develop merge.
+
 ## VOUCHER-TRANSFER-OVERRIDES-1027 — PC-A
 
 Voucher transfer supplier can differ from the hotel broker while defaulting to it. Registered leader/contact/Board defaults remain automatic; an explicit per-voucher option unlocks bounded Board, name and phone edits. Leader selection no longer blocks saving or issuance, including when no transfer is selected. Selected references still require authorized directory validation; sent hotel supplier, financial delivery, insurance, CAS and branch protections remain. Optional JSON revision fields only, no migration/dependency/runtime change. Focused Web/API and exact-head hosted checks gate owner-authorized develop merge. See VOUCHER-TRANSFER-OVERRIDES-1027 in DECISIONS.md.
@@ -7780,6 +7804,20 @@ Supplier reservation header returns to four fields without a total. Section06 no
 - Hotel editing reads actual ordered contract rooms, keeps saved type snapshots visible while references load, and uses the same shared room categories as creation. Room type/FK, names, categories and counts update together; explicit room prices and independent extra hotel stays are preserved. Legacy room summaries can be explicitly configured into ordered rooms. Default passenger stays follow edited shared dates; explicitly different dates are retained.
 - Focused Web 32 unique checks (including English coverage) and API 33 checks, scoped ESLint and final Web typecheck passed. A subsequent concurrent local run hit host-load timeouts; final changed membership/hotel/render regressions passed 10/10 with a single worker. Old contract-wide totals are never automatically assigned to a removed person: missing individual prices require explicit price-table review before membership changes. Hosted full quality/types/tests/production builds/PostgreSQL gates precede owner-authorized develop merge. No schema, migration, dependency, operational database/runtime or deployment changes. Bounded source locks release after verified merge.
 
+## 2026-10-29 — CONTRACT-TOTAL-PRICE-1029 — PC-A — READY_FOR_CI
+
+Passenger corrections normalize saved rial/foreign person totals before submission, removing obsolete split flight/hotel pricing flags through the existing versioned price serializer. Sales validates canonical total-price metadata without requiring stale split-flight values; genuine legacy-only split contracts retain their compatibility checks. Contract output always labels rial/foreign columns and groups saved total/agreed prices by currency, falling back to actual legacy allocations only where total prices are absent. No guessed per-person allocation, schema/migration/dependency or operational data/runtime changes. Initial71 API and48 Web tests pass; targeted stale-metadata migration regression, scoped lint and full final-head hosted gates precede owner-authorized develop merge. Source reservations release upon verified merge.
+
+## 2026-10-29 — COMPOSITE-CONTRACT-OUTPUT-1029 — PC-A — READY_FOR_CI
+
+Contract preview and PDF share a hotel enrichment helper that follows each actual hotel to its registered city and English name, including later stays. Every stay uses the same hotel-details and room-composition tables with English city columns; second stay is labelled explicitly and room prices are not duplicated. Later-stay UI no longer requests independent guest counts/ages or a manually selected city: hotel choice supplies city, and primary room guest composition is synchronized in UI, payload and validation while later hotel/type/category/date choices remain independent. Old stored records are not rewritten; unknown reference facts stay blank.
+
+PDF requests resolve relative API configuration against the incoming origin and preserve actual upstream denial/status messages. Browser download recovers an expired session once and retries the same private PDF request; genuine 403/409 failures remain enforced. The screenshot's production response is not replayed against live data; regression tests prove scoped denial preservation, session recovery, actual hotel-city enrichment and both-table output. No authorization bypass, schema/migration/dependency/runtime or deployment changes. Focused tests, Web typecheck and scoped ESLint pass before final-head hosted full checks and owner-authorized develop merge. Source reservations release on verified merge.
+
+## 2026-10-29 — RESERVATION-CONTRACT-ORDER-1029 — PC-A — READY_FOR_CI
+
+Reservation queues use fixed ascending natural contract-number order before pagination and Excel selection. Persian/Arabic digits normalize before numeric comparison; matching numbers use stable request ID ties. Creation/receipt dates, urgency, status updates and old sort tokens no longer reorder the list. The sort display shows the fixed ascending rule; filters/date window/permissions and all-page loading remain unchanged.63 focused workspace/feed/table/English tests and scoped lint pass. No API/schema/migration/dependency/runtime changes. Final-head full quality/types/tests/build/PostgreSQL checks precede owner-authorized develop merge; bounded source locks release after verified merge.
+
 ## 2026-10-25 — RESERVATION-CALENDAR-BASIS-1025 — PC-A — READY_FOR_CI
 
 Reservation contract-detail travel dates and flight timestamps now honor per-service dateCalendarSystem metadata; hotel-only route dates use the hotel's basis, flight legs can differ, and timestamp display consistently uses Tehran while date-only stays preserve their ISO day. Sales keeps each flight calendar choice in the browser draft and writes it, plus the existing independent hotel calendar, to service metadata without converting dates. Producer/consumer ship together; legacy snapshots without basis retain compatible flight Persian/hotel Gregorian defaults because the original choice was not stored. No migration, API shape, permission, operational database/runtime or deployment changes. Focused54 and Sales/hotel/draft33 tests plus scoped ESLint pass; full Web types/build and exact-head hosted gates precede user-authorized develop merge. Source locks freeze/release with publication.
@@ -7886,6 +7924,25 @@ HR-PAYROLL-FINANCE-APPROVAL-1027 validation:208 HR/Finance API tests passed (50 
 
 Clicking a Sales contract row, including its existing action controls, keeps that contract highlighted light blue until another row is selected. Selection uses the stable contract ID and survives scrolling and data refresh; keyboard focus within a row also selects it. Selected styling takes precedence over zebra/status backgrounds, while existing status badges and business data remain unchanged. No scroll/focus commands, API, schema, dependency or deployment change. Existing focused table tests and scoped lint are the local verification; full final-head hosted gates precede user-authorized develop merge.
 
+## REPORTING-LIVE-SOURCES-1027 — PC-C — source integration and read-only verification
+
+Dedicated branch codex/pc-c-reporting-live-sources-1027. The approved root-console
+audit confirms operational Sales data exists while reporting_travel_facts is empty.
+Five bounded native report codes now use Sales-owned read-only producers through
+the same preview/export path, with native own/branch/all authorization, Decimal
+currency separation and no passenger/service revenue multiplication. Remaining
+catalogue reports still require their source producers; this is not full catalogue
+completion. Organization and route totals were independently reconciled against
+production SQL for three currencies. Pipeline generated real rows; confirmed
+receipt/refund source was genuinely empty. Four server-generated XLSX outputs
+were parsed independently, rendered and checked for valid XML/styles, 16pt title,
+hidden gridlines and formula errors. Service-combination implementation was added
+after that receipt and still needs its live reconciliation. Actual business files
+and receipts remain private and ignored; no seeds, migrations or DB writes occurred.
+No application deployment or authenticated user acceptance occurred. Preserve the
+parallel Dashboard task's shared constructor/module/dashboard changes. Details,
+source map and remaining rollout/verification gates are in
+docs/tasks/REPORTING-LIVE-SOURCES-1027.md.
 HR-PAYROLL-FINANCE-APPROVAL-1027 stage semantics: HR author confirmation submits only; independent final approval remains Finance-owned. No permission grant or self-approval bypass in Finance.
 
 # DASHBOARDS-COMPLETE-SOURCES-1027 — PC-C — IN_PROGRESS
@@ -7901,3 +7958,29 @@ and new-order count. Web production build also passed (66 pages). Full widget/ch
 coverage, reconciliation, quality/build, final-head CI and authorized PR/merge remain.
 No production business writes, migration, deployment or localhost restart.
 See `docs/tasks/DASHBOARDS-COMPLETE-SOURCES-1027.md`.
+
+## 2026-10-29 — LEGACY-UNNAMED-PURCHASE-1029 — PC-A
+
+Historical per-service counts now produce numbered adult/child/infant purchase slots when no actual passenger roster exists. Explicit legacyGuestPrices ordinals are server-validated and priced using contractual nights, persisted in existing purchase JSON and projected back for editor reopening; no fake customer IDs/records. Real UUID pricing, permissions, branch/CAS/idempotency and Finance totals unchanged.36 focused shared/API/Web tests passed; scoped API/Web lint and shared Contracts typecheck passed. Final type/build/review checks pending; no PR/merge/deployment claimed. See docs/tasks/LEGACY-UNNAMED-PURCHASE-1029.md.
+## 2026-10-29 — CONTRACT-CUSTOMER-ACCESS-1029 — PC-A
+
+Contract-only Customer producer remains scoped. Fix receipt-backed registration replay when a creation response is lost without national ID; bounded automatic retry, stable original input/key, definitive conflict handling and existing-profile refresh before retry. Existing audit transaction/actor/branch scope; no schema/dependency/global grant or runtime changes. See docs/tasks/CONTRACT-CUSTOMER-ACCESS-1029.md. Initial focused Web75/API56 tests passed; final concurrency regression and quality gates in progress. GitHub CLI authentication expired; user received web-login command. No PR/merge claimed.
+
+## CONTRACT-TRANSACTIONAL-NUMBERING-1029 — PC-A
+
+Replaces nontransactional sequence allocation with an additive Sales singleton counter, incremented in the same Serializable create transaction as contract/service/passenger/payment/history/audit writes. Bounded serialization retries preserve concurrency without consuming numbers after rollback. Existing numbers/gaps remain immutable; the counter starts above existing contract numbers and the legacy sequence high-water mark. Unit and isolated PostgreSQL regressions cover later-write rollback, duplicate-request rollback, concurrent unique consecutive commits, imported-number/high-water initialization and exhaustion. Stop legacy API writers before migration and deploy only the new allocator. No operational migration, production-data or runtime change performed. Validation and exact-head CI gate the owner-authorized develop merge.
+
+Validation:20 focused API/repository tests and4 real PostgreSQL numbering proofs pass. Scoped ESLint, API typecheck/build, schema format/validation, Prettier and diff checks pass. All eight hosted gates passed on e2a8055d1; integration preserves the subsequently merged composite-city hotel correction and requires refreshed final-head gates. Source/migration reservations release upon verified develop merge. No operational rollout.
+
+## COMPOSITE-CITY-HOTELS-1029 — PC-A
+
+New-contract additional hotel stays now select their own destination from the full paginated active-city catalogue, then show only that city's hotels. City changes clear incompatible hotel/name/room selections while retaining stay dates; mismatched hotel callbacks are rejected and duplicate hotels remain excluded. Primary hotel selection stays limited to the main contract destination even in multihotel mode; predefined composites are filtered by their authoritative first-member city.16 focused additional-stay/composite/reference-refresh tests pass. No API/schema/migration/dependency/runtime change. User authorizes develop merge after exact-head hosted checks.
+
+## ZERO-HOTEL-TRANSFER-PURCHASE-1029 — PC-A
+
+Explicit zero hotel passenger nightly prices and transfer unit/base prices are accepted and stored as actual zero-cost purchases; blank values remain unpriced, negatives invalid, and nights/factors/passenger counts stay positive. Batch and single-service validation preserve positive insurance/flight costs. Zero-cost lines do not create an unnecessary positive-only Finance FX baseline. Forward migration20261029120000 relaxes existing hotel/service amount checks only for HOTEL/TRANSFER and still rejects nonfinite/negative values; no historical rows rewritten.24 focused API,13 Web and10 shared calculation tests pass (5 opt-in database tests skipped locally because Docker is unavailable). Hosted full quality/build/types and real PostgreSQL migration checks required before user-authorized develop merge. No live deployment requested.
+
+
+## EXCLUDE-CANCELLED-SALES-COUNTS-1029 - PC-A
+
+Cancelled contracts are excluded before Sales dashboard metrics and currency sums, filtered receivable amounts/counts and reference choices. The ordinary contract list, pagination total and Excel share the same noncancelled predicate; an explicit CANCELLED status query retains historical access under existing own/branch/all scope. Completed sales remain in valid revenue and receivable totals. Existing contract/payment/refund/settlement history and stored balances are unchanged.33 focused dashboard/receivable/list/search/export tests pass; scoped lint, API types/build and final-head hosted gates precede the owner-authorized develop merge. No migration, schema, API shape, dependency, production data or runtime change. Source reservations release on verified merge.

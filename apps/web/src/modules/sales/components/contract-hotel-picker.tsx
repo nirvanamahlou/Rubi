@@ -10,6 +10,7 @@ import {
   contractHotelChoices,
   selectedContractHotelKey,
   compositeHotelChoice,
+  hotelsAtContractDestination,
 } from '../model/composite-hotel-selection';
 import { SearchableReference } from './searchable-reference';
 
@@ -29,7 +30,9 @@ export function ContractHotelPicker({
   const [options, setOptions] = useState<MasterDataRecord[]>([]);
   const [error, setError] = useState('');
   const allowComposite = !state.tour;
-  const composites = allowComposite ? options : [];
+  const composites = allowComposite
+    ? hotelsAtContractDestination(options, state.destinationId)
+    : [];
   useEffect(() => {
     let active = true;
     if (!allowComposite) return;
@@ -69,7 +72,10 @@ export function ContractHotelPicker({
       <SearchableReference
         label="هتل"
         value={selectedContractHotelKey(state, composites)}
-        options={contractHotelChoices(hotels, composites)}
+        options={contractHotelChoices(
+          hotelsAtContractDestination(hotels, state.destinationId),
+          composites,
+        )}
         showAllOptionsOnOpen
         preferEnglishName
         onChange={(id) => {

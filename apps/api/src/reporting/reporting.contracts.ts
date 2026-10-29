@@ -114,9 +114,12 @@ export interface TravelReportRowV1 {
 
 export interface TravelReportResultV1 {
   reportCode: string;
-  reportVersion: 1;
-  grain: 'ORDER_ITEM_CURRENCY';
-  sourceProjection: 'reporting.travel.facts.v1';
+  reportVersion: number;
+  grain: 'ORDER_ITEM_CURRENCY' | 'CONTRACT_CURRENCY' | 'PAYMENT';
+  sourceProjection:
+    | 'reporting.travel.facts.v1'
+    | 'sales.reporting.contract-currency.v1'
+    | 'sales.reporting.payment-events.v1';
   columns: readonly {
     key: keyof TravelReportRowV1;
     label: string;

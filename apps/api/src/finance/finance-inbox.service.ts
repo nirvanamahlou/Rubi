@@ -296,6 +296,7 @@ export class FinanceInboxService {
         origin: 'PERSISTED_SOURCE',
       })),
       ...salesItems.map((item): FinanceInboxItemV1 => ({
+        destinationAccountId: item.destinationAccountId ?? null,
         version: 1,
         id: `sales:${item.paymentId}`,
         source: 'SALES',

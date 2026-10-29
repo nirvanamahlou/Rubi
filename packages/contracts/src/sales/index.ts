@@ -201,7 +201,17 @@ export interface SalesPriceComponentInput extends SalesMoney {
   title: string;
 }
 
+export interface SalesPaymentAccountV1 {
+  id: string;
+  title: string;
+  currencyCode: string;
+  kind: string;
+  maskedIdentifier: string | null;
+}
+
 export interface SalesPaymentInput extends SalesMoney {
+  /** Sales-declared destination; does not confirm receipt or post accounting. */
+  destinationAccountId?: string | null;
   dueAt: string;
   method: SalesPaymentMethod;
   description?: string | null;
@@ -347,6 +357,7 @@ export interface SalesContractDetail extends SalesContractSummary {
   hotelSelection: SalesHotelSelectionInput | null;
   priceComponents: readonly SalesPriceComponentInput[];
   payments: readonly (SalesPaymentInput & {
+    destinationAccountTitle?: string | null;
     id: string;
     status: SalesPaymentStatus;
     createdByUserId?: string;
@@ -466,6 +477,7 @@ export interface SalesFinanceSubmissionV1 {
 }
 
 export interface SalesFinanceInboxPaymentV1 {
+  destinationAccountId?: string | null;
   version: 1;
   paymentId: string;
   contractId: string;

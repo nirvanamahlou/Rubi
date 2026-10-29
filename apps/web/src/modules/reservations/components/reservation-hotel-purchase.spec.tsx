@@ -26,6 +26,59 @@ const request = (workflow?: TravelWorkflowStateV1) =>
     workflow?: TravelWorkflowStateV1;
   };
 
+it('prices unnamed legacy hotel guests from service counts without customer identities', () => {
+  const snapshot = {
+    passengerIds: [],
+    passengerAssignments: [],
+    serviceSelections: [
+      {
+        clientKey: 'hotel',
+        kind: 'HOTEL',
+        metadata: {
+          legacyServicePartiesV2: JSON.stringify({
+            hotel: { adults: 2, children: 1, infants: 1 },
+          }),
+        },
+      },
+    ],
+    hotelSelection: {
+      serviceClientKey: 'hotel',
+      hotelNameSnapshot: 'Hotel',
+      checkInDate: '2026-10-01',
+      checkOutDate: '2026-10-07',
+    },
+  } as unknown as ReservationIntakeV1['snapshot'];
+  const guests = reservationHotelPassengers(snapshot, 'hotel');
+  expect(guests.map((p) => [p.name, p.age])).toEqual([
+    ['مسافر 1', 'ADT'],
+    ['مسافر 2', 'ADT'],
+    ['مسافر 3', 'CHD'],
+    ['مسافر 4', 'INF'],
+  ]);
+  const pricing = hotelPassengerPurchaseInput(
+    guests,
+    { 'legacy:0': '10', 'legacy:2': '5' },
+    6,
+  );
+  expect(pricing).toEqual({
+    amount: '90',
+    passengerPrices: [],
+    legacyGuestPrices: [
+      { guestIndex: 0, nightlyAmount: '10' },
+      { guestIndex: 2, nightlyAmount: '5' },
+    ],
+  });
+  const html = renderToStaticMarkup(
+    <ReservationHotelPurchase
+      request={{ ...request(), snapshot }}
+      onSaved={() => {}}
+    />,
+  );
+  expect(html).toContain('قیمت هر شب مسافر 1');
+  expect(html).toContain('نوزاد');
+  expect(snapshot.passengerIds).toEqual([]);
+});
+
 it('shows contract purchase margin in the purchase form only for finance', () => {
   const render = (permissions: string[]) =>
     renderToStaticMarkup(
@@ -311,8 +364,14 @@ it('prices only entered guests with exact nightly arithmetic and leaves blank gu
   expect(() =>
     hotelPassengerPurchaseInput(passengers, { one: '10', two: 'bad' }, 7),
   ).toThrow();
+  expect(hotelPassengerPurchaseInput(passengers, { one: '0' }, 7)).toEqual({
+    amount: '0',
+    passengerPrices: [{ customerId: 'one', nightlyAmount: '0' }],
+  });
+  expect(transferPurchaseTotal('0', '2')).toBe('0');
+  expect(() => hotelPassengerPurchaseInput(passengers, {}, 7)).toThrow();
   expect(() =>
-    hotelPassengerPurchaseInput(passengers, { one: '0' }, 7),
+    hotelPassengerPurchaseInput(passengers, { one: '-1' }, 7),
   ).toThrow();
 });
 it('renders hotel guest names and age categories and restores only saved passenger prices', () => {

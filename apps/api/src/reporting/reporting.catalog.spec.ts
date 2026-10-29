@@ -4,7 +4,7 @@ import { REPORTING_CATALOG_V1 } from './reporting.catalog';
 
 describe('REPORTING_CATALOG_V1', () => {
   it('publishes the approved travel demo suite and keeps unreleased producers closed', () => {
-    expect(REPORTING_CATALOG_V1).toHaveLength(20);
+    expect(REPORTING_CATALOG_V1).toHaveLength(21);
     expect(new Set(REPORTING_CATALOG_V1.map((item) => item.code)).size).toBe(
       REPORTING_CATALOG_V1.length,
     );
@@ -12,12 +12,12 @@ describe('REPORTING_CATALOG_V1', () => {
       expect.arrayContaining([
         expect.objectContaining({
           code: 'sales_by_organization',
-          approvedView: 'sales.reporting.organization.v2',
-          version: 2,
+          approvedView: 'sales.reporting.contract-currency.v1',
+          version: 3,
         }),
         expect.objectContaining({
           code: 'sales_by_service_route',
-          approvedView: 'reporting.travel.facts.v1',
+          approvedView: 'sales.reporting.contract-currency.v1',
         }),
         expect.objectContaining({
           code: 'lead_to_order_conversion',

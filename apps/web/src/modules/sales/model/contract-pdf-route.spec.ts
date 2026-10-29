@@ -45,6 +45,7 @@ describe('Saved contract PDF download route', () => {
     expect(mocks.render).not.toHaveBeenCalled();
   });
   it('downloads actual bytes with private attachment headers from saved output', async () => {
+    // Route enrichment uses hotel-owned city references; authorization remains upstream.
     mocks.fetch.mockImplementation(async (url: string) =>
       url.includes('/sales/contracts/')
         ? Response.json({ data: printFixture })
@@ -65,6 +66,57 @@ describe('Saved contract PDF download route', () => {
     expect(mocks.render.mock.calls[0]?.[0]).toEqual(printFixture);
     expect(mocks.fetch.mock.calls[0]?.[1].headers.cookie).toBe(
       'nora_access=test-session',
+    );
+  });
+  it('preserves the actual upstream confirmation or access explanation instead of a misleading generic download error', async () => {
+    mocks.fetch.mockResolvedValue(
+      Response.json(
+        { error: { message: 'Synthetic scoped denial' } },
+        { status: 403 },
+      ),
+    );
+    const response = await GET(new Request('https://web.test'), {
+      params: Promise.resolve({ id }),
+    });
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      message: 'Synthetic scoped denial',
+    });
+    expect(mocks.render).not.toHaveBeenCalled();
+  });
+  it('enriches both hotel cities through their actual master records before PDF generation', async () => {
+    const saved = structuredClone(printFixture);
+    saved.contract.hotelSelection!.additionalStays = [
+      {
+        hotelId: 'second-hotel',
+        hotelNameSnapshot: 'Second',
+        cityId: 'stale',
+        checkInDate: '2026-10-05',
+        checkOutDate: '2026-10-08',
+      },
+    ];
+    mocks.fetch.mockImplementation(async (url: string) => {
+      if (url.endsWith('/output')) return Response.json({ data: saved });
+      if (url.endsWith('/hotels/second-hotel'))
+        return Response.json({
+          data: {
+            name: 'Second',
+            attributes: { cityId: 'izmir', englishName: 'SECOND HOTEL' },
+          },
+        });
+      if (url.endsWith('/cities/izmir'))
+        return Response.json({
+          data: { name: 'ازمیر', attributes: { englishName: 'IZMIR' } },
+        });
+      return new Response('', { status: 403 });
+    });
+    mocks.render.mockResolvedValue(Buffer.from('%PDF'));
+    const response = await GET(new Request('https://web.test'), {
+      params: Promise.resolve({ id }),
+    });
+    expect(response.status).toBe(200);
+    expect(mocks.render.mock.calls[0]![1].hotels['second-hotel']).toMatchObject(
+      { name: 'SECOND HOTEL', city: 'IZMIR' },
     );
   });
   it('reports unavailable renderer without leaking internal errors', async () => {
@@ -165,5 +217,60 @@ describe('Saved contract PDF download route', () => {
       expect.objectContaining({ publicDocumentUrl: share.url }),
       'fa',
     );
+  });
+  it.each(['network', 'json', 'missing-data', 'missing-attributes'])(
+    'renders the authorized contract when optional hotel references fail (%s)',
+    async (failure) => {
+      mocks.fetch.mockImplementation(async (url: string) => {
+        if (url.endsWith('/output'))
+          return Response.json({ data: printFixture });
+        if (url.includes('/selections/sales/hotels/')) {
+          if (failure === 'network') throw Error('Synthetic reference timeout');
+          if (failure === 'json')
+            return new Response('<unavailable>', { status: 200 });
+          if (failure === 'missing-data') return Response.json({ data: null });
+          return Response.json({ data: { name: 'Saved reference' } });
+        }
+        return new Response('', { status: 403 });
+      });
+      mocks.render.mockResolvedValue(Buffer.from('%PDF-authorized-contract'));
+      const before = structuredClone(printFixture);
+      const r = await GET(new Request('http://web.test'), {
+        params: Promise.resolve({ id }),
+      });
+      expect(r.status).toBe(200);
+      expect(await r.text()).toBe('%PDF-authorized-contract');
+      expect(mocks.render.mock.calls[0]?.[0]).toEqual(before);
+      expect(printFixture).toEqual(before);
+    },
+  );
+  it('keeps a share preview available when optional references fail without invoking Chromium', async () => {
+    mocks.fetch.mockImplementation(async (url: string) => {
+      if (url.endsWith('/output')) return Response.json({ data: printFixture });
+      throw Error('Synthetic optional reference failure');
+    });
+    const save = vi.fn();
+    mocks.share.mockReturnValue({
+      url: 'https://example.test/d/' + 'b'.repeat(32),
+      save,
+    });
+    mocks.prepare.mockResolvedValue(
+      '<!doctype html><html>authorized saved contract</html>',
+    );
+    const result = await GET(new Request('http://web.test?format=share'), {
+      params: Promise.resolve({ id }),
+    });
+    expect(result.status).toBe(200);
+    expect(save).toHaveBeenCalledOnce();
+    expect(mocks.render).not.toHaveBeenCalled();
+  });
+  it('still rejects unavailable canonical output rather than rendering guessed contract data', async () => {
+    mocks.fetch.mockRejectedValue(Error('Synthetic canonical output failure'));
+    const result = await GET(new Request('http://web.test'), {
+      params: Promise.resolve({ id }),
+    });
+    expect(result.status).toBe(503);
+    expect(mocks.prepare).not.toHaveBeenCalled();
+    expect(mocks.render).not.toHaveBeenCalled();
   });
 });

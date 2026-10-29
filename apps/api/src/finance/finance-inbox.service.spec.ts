@@ -266,6 +266,7 @@ describe('FinanceInboxService', () => {
           method: 'BANK_TRANSFER',
           description: 'واریز قرارداد',
           paymentReference: 'TRACK-1',
+          destinationAccountId: 'destination-account',
           dueAt: '2026-09-13T08:00:00.000Z',
           createdAt: '2026-09-12T08:00:00.000Z',
           createdByUserId: 'sales-user',
@@ -378,6 +379,10 @@ describe('FinanceInboxService', () => {
       'PURCHASES',
       'RESERVATIONS',
     ]);
+    expect(
+      result.items.find((item) => item.source === 'SALES')
+        ?.destinationAccountId,
+    ).toBe('destination-account');
     expect(
       result.items.every(({ origin }) => origin === 'PERSISTED_SOURCE'),
     ).toBe(true);

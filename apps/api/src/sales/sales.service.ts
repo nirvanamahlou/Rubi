@@ -138,6 +138,8 @@ function paymentInput(row: SalesContractRow['payments'][number]) {
     method: row.method,
     description: row.description,
     paymentReference: row.paymentReference,
+    destinationAccountId: row.destinationAccountId,
+    destinationAccountTitle: row.destinationAccountTitle,
     check,
   };
 }
@@ -1106,6 +1108,7 @@ export class SalesService {
       method: row.method,
       description: row.description,
       paymentReference: row.paymentReference,
+      destinationAccountId: row.destinationAccountId,
       dueAt: row.dueAt.toISOString(),
       createdAt: row.createdAt.toISOString(),
       createdByUserId: row.createdByUserId,
@@ -1122,6 +1125,27 @@ export class SalesService {
     return { data: presentSalesContract(row, undefined, this.buyerCrypto) };
   }
 
+  async paymentReceiptScope(
+    id: string,
+    actor: AuthenticatedActor,
+    paymentId?: string,
+  ) {
+    const row = await this.repository.findById(id);
+    if (!row) throw new NotFoundException('قرارداد یافت نشد.');
+    this.assertRead(row, actor);
+    if (paymentId && !row.payments.some((p) => p.id === paymentId))
+      throw new NotFoundException('پرداخت متعلق به این قرارداد نیست.');
+    return {
+      branchId: row.branchId,
+      contractNumber: row.contractNumber,
+      ownerUserId: row.ownerUserId,
+      entries: row.payments.map((p) => ({
+        id: p.id,
+        paymentReference: p.paymentReference ?? null,
+        dueAt: p.dueAt.toISOString(),
+      })),
+    };
+  }
   async detail(id: string, actor: AuthenticatedActor) {
     const row = await this.repository.findById(id);
     if (!row)
@@ -1658,6 +1682,18 @@ export class SalesService {
     return this.detail(id, actor);
   }
 
+  async paymentAccounts(id: string, actor: AuthenticatedActor) {
+    const row = await this.repository.findById(id);
+    if (!row) throw new NotFoundException('قرارداد یافت نشد.');
+    this.assertRead(row, actor);
+    if (
+      !has(actor, 'sales.payments.create') &&
+      !canSelfServeSalesContract(actor, row)
+    )
+      throw new ForbiddenException('مجوز ثبت پرداخت وجود ندارد.');
+    return { data: await this.repository.paymentAccounts(row.branchId) };
+  }
+
   async addPayment(
     id: string,
     input: SalesPaymentCreateRequest,
@@ -1995,7 +2031,9 @@ export class SalesService {
     )
       throw new BadRequestException('فیلتر مانده قابل دریافت معتبر نیست.');
     const filters = validated.value as SalesReceivablesQuery;
-    const rows = await this.repository.dashboardRows(this.readScope(actor));
+    const rows = (
+      await this.repository.dashboardRows(this.readScope(actor))
+    ).filter((row) => row.status !== 'CANCELLED');
     const buyers = await this.customers.partyKinds(
       [...new Set(rows.map((row) => row.customerId))],
       actor,
@@ -2127,9 +2165,9 @@ export class SalesService {
         message: 'مجوز داشبورد فروش وجود ندارد.',
       });
     const rows = await this.repository.dashboardRows(scope);
-    const details = rows.map((row) =>
-      presentSalesContract(row, undefined, this.buyerCrypto),
-    );
+    const details = rows
+      .filter((row) => row.status !== 'CANCELLED')
+      .map((row) => presentSalesContract(row, undefined, this.buyerCrypto));
     const today = new Date().toISOString().slice(0, 10);
     const balances = details.flatMap((item) => item.balances);
     const currencyCodes = [

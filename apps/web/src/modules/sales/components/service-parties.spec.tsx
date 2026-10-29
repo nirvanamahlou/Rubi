@@ -223,12 +223,16 @@ it('defaults a double with children without extra beds and saves an editable ext
     '',
     'DOUBLE',
     'DOUBLE_EXTRA',
+    'FAMILY',
   ]);
   fixture.categorySelects[0]!.onValueChange('DOUBLE_EXTRA');
   expect(patch.mock.calls[0]![0].hotel.rooms[0].roomCategory).toBe(
     'DOUBLE_EXTRA',
   );
   expect(patch.mock.calls[0]![0].hotel.extraBedCount).toBe(1);
+  fixture.categorySelects[0]!.onValueChange('FAMILY');
+  expect(patch.mock.calls[1]![0].hotel.rooms[0].roomCategory).toBe('FAMILY');
+  expect(patch.mock.calls[1]![0].hotel.extraBedCount).toBe(0);
 });
 
 it('adding a room infant creates the flight infant composition without an extra seat or bed', () => {

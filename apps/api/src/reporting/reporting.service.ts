@@ -224,13 +224,18 @@ export class ReportingService {
           })
         : null;
       try {
-        const facts = await this.repository.facts(query, serverBranchScope);
-        const result = buildTravelReportResult({
-          code,
-          query,
-          facts,
-          now: new Date(),
-        });
+        const native = await this.repository.nativeResult?.(code, query, actor);
+        const facts = native
+          ? []
+          : await this.repository.facts(query, serverBranchScope);
+        const result =
+          native ??
+          buildTravelReportResult({
+            code,
+            query,
+            facts,
+            now: new Date(),
+          });
         if (run)
           await this.repository.finishRun(
             String(run.id),
@@ -1475,16 +1480,26 @@ export class ReportingService {
     );
     if (!this.repository)
       throw new ConflictException('Persistence گزارش در دسترس نیست.');
-    const facts = await this.repository.facts(query, serverBranchScope);
+    const native = await this.repository.nativeResult?.(
+      code,
+      query,
+      actor,
+      true,
+    );
+    const facts = native
+      ? []
+      : await this.repository.facts(query, serverBranchScope);
     return {
       report,
-      result: buildTravelReportResult({
-        code,
-        query,
-        facts,
-        now: new Date(),
-        includeAllRows: true,
-      }),
+      result:
+        native ??
+        buildTravelReportResult({
+          code,
+          query,
+          facts,
+          now: new Date(),
+          includeAllRows: true,
+        }),
     };
   }
 

@@ -13,7 +13,17 @@ import {
 } from './reservation-hotel-purchase.service';
 
 describe('hotel purchase input', () => {
-  it.each(['0', '-10', '1e3', '1.12345', '1,000'])('rejects %s', (amount) =>
+  it('accepts an explicit zero hotel cost', () => {
+    expect(() =>
+      validateHotelPurchase({
+        version: 1,
+        expectedVersion: 0,
+        amount: '0',
+        currencyCode: 'IRR',
+      }),
+    ).not.toThrow();
+  });
+  it.each(['', '-10', '1e3', '1.12345', '1,000'])('rejects %s', (amount) =>
     expect(() =>
       validateHotelPurchase({
         version: 1,

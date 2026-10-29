@@ -3,6 +3,12 @@ import { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import type { ReportQueryV1 } from './reporting.contracts';
+import {
+  NATIVE_SALES_REPORTS,
+  nativeSalesReport,
+} from './reporting-native-sales';
+import type { SalesReportingActor } from '../sales/sales-reporting.public';
+import { nativePaymentReport } from './reporting-native-payments';
 
 export interface ReportingFactRow {
   id: string;
@@ -71,6 +77,29 @@ export class ReportingRepository {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
+
+  nativeResult(
+    code: string,
+    query: ReportQueryV1,
+    actor: SalesReportingActor,
+    includeAllRows = false,
+  ) {
+    if (code === 'payments_refunds')
+      return nativePaymentReport(
+        this.database.client,
+        query,
+        actor,
+        includeAllRows,
+      );
+    if (!NATIVE_SALES_REPORTS.has(code)) return undefined;
+    return nativeSalesReport(
+      this.database.client,
+      code,
+      query,
+      actor,
+      includeAllRows,
+    );
+  }
 
   async facts(input: ReportQueryV1, serverBranchIds: readonly string[]) {
     const conditions: Prisma.Sql[] = [];
