@@ -25,6 +25,16 @@ const request: RequestView = {
   issues: [],
 };
 describe('selected contract actions', () => {
+  it('identifies a cancelled selection explicitly without labelling active contracts cancelled', () => {
+    expect(
+      renderToStaticMarkup(
+        <ContractActionPanel request={{ ...request, status: 'CANCELLED' }} />,
+      ),
+    ).toContain('این قرارداد باطل شده است');
+    expect(
+      renderToStaticMarkup(<ContractActionPanel request={request} />),
+    ).not.toContain('این قرارداد باطل شده است');
+  });
   it('keeps only receipt history under contract operations', () => {
     const operations = contractActionGroups.find(
       (group) => group.title === 'عملیات قرارداد',

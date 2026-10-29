@@ -297,8 +297,16 @@ export function contractPrintHtml(
   const passengerAgeLabel = (p: (typeof c.passengersDetail)[number]) => {
     if (p.ageCategory !== 'CHD')
       return p.ageCategory === 'INF' ? 'نوزاد' : 'بزرگسال';
-    const age = hotelAgeOn(p.birthDate, c.departureDate);
-    if (age === null || age === undefined) return 'کودک';
+    const age = hotelAgeOn(
+      p.birthDate,
+      c.hotelSelection?.checkInDate || c.departureDate,
+    );
+    if (age === null || age === undefined)
+      return p.childAgeBand === 'AGE_2_6'
+        ? 'کودک (2-6)'
+        : p.childAgeBand === 'AGE_6_12'
+          ? 'کودک (6-12)'
+          : 'کودک';
     return age < 6 ? 'کودک (2-6)' : age < 12 ? 'کودک (6-12)' : 'کودک (12-18)';
   };
   const passengerAgeHtml = (p: (typeof c.passengersDetail)[number]) =>
