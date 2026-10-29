@@ -55,7 +55,7 @@ export class SalesPartyCorrectionService {
         !/^\+?[0-9]{10,15}$/.test(c.phone.trim()) ||
         !c.address.trim() ||
         c.address.length > 1000 ||
-        !/^[0-9]{10}$/.test(c.postalCode.trim())
+        (!!c.postalCode.trim() && !/^[0-9]{10}$/.test(c.postalCode.trim()))
       )
         throw new BadRequestException(
           'مشخصات مشتری طرف حساب را کامل و معتبر وارد کنید.',
