@@ -44,7 +44,20 @@ python3 -I /home/rubi-deploy/run-vpn-1029.py
 Python compilation and five offline safety checks passed on the production host as the
 unprivileged deployment account. These checks did not install or start the VPN.
 Network installer: no application lint/typecheck/build or migration is applicable.
-Actual root execution and authenticated network acceptance remain pending.
+First root execution did not establish the connection: receipt reports
+authenticated_l2tp_probe RuntimeError, L2TP_TIMEOUT, and preserved=true. ERP health
+is independently confirmed healthy. The receipt does not establish successful IPsec
+authentication. Normal deploy-user journal access returns no entries.
+
+Inspection found iproute2 renders protocol186 as bgp; rollback originally compared only
+the numeric representation and left its unreachable /32 fallback. The cleanup now accepts
+both representations. A separate root-only, hash-pinned diagnostic extracts only VPN daemon
+logs with supplied credentials redacted, and removes that exact owned fallback only when
+own services are inactive. It does not retry a connection or alter PBX/application settings.
+Run from any directory: python3 -I /home/rubi-deploy/check-vpn-1029.py.
+Inspect /opt/rubi/CALL-CENTER-VPN-DIAG-1029.json before preparing any retry.
+Diagnostic compilation and installer safety checks pass; root diagnostic execution is pending.
+Authenticated network acceptance remains pending.
 Sanitized result: /opt/rubi/CALL-CENTER-VPN-1029.json.
 Do not print private inputs, ipsec secrets, PPP options or prepared AMI client credentials.
 

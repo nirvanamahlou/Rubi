@@ -177,7 +177,7 @@ def cleanup(originals):
         run(['iptables','-w','-X',chain], required=False)
     routes = json.loads(run(['ip','-j','route','show','exact',TARGET]))
     for route in routes:
-        if str(route.get('protocol')) != '186': continue
+        if str(route.get('protocol')) not in ('186', 'bgp'): continue
         args=['ip','route','del']
         if route.get('type')=='unreachable': args+=['unreachable']
         args += [TARGET,'proto','186','metric',str(route.get('metric',0))]
