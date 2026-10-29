@@ -165,7 +165,7 @@ describe('CustomerService', () => {
       permissions: ['sales.contracts.create'],
     } as AuthenticatedActor;
     await service.createForSales(
-      { ...mutation, nationalId: undefined },
+      { ...mutation, nationalId: null },
       creator,
       undefined,
       'trace',
