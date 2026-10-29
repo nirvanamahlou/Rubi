@@ -31,6 +31,70 @@ const row = {
 };
 
 describe('CustomerRepository', () => {
+  it('replays one registration only for its original actor, branch and payload', async () => {
+    let receipt: Record<string, unknown> | null = null;
+    const transaction = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      customer: {
+        create: vi.fn().mockResolvedValue(row),
+        findFirst: vi.fn().mockResolvedValue(row),
+      },
+      customerStatusHistory: { create: vi.fn() },
+      customerAuditEvent: {
+        findFirst: vi.fn().mockImplementation(async () => receipt),
+        create: vi.fn().mockImplementation(async ({ data }) => {
+          if (data.action === 'customers.sales-registration') receipt = data;
+        }),
+      },
+    };
+    const repository = new CustomerRepository({
+      client: {
+        $transaction: async (
+          work: (tx: typeof transaction) => Promise<unknown>,
+        ) => work(transaction),
+      },
+    } as unknown as DatabaseService);
+    for (let attempt = 0; attempt < 2; attempt++)
+      expect(
+        await repository.createSalesRegistration(
+          {},
+          'actor',
+          row.ownerBranchId,
+          'key',
+          'hash',
+        ),
+      ).toMatchObject({ id: row.id });
+    expect(transaction.customer.create).toHaveBeenCalledTimes(1);
+    expect(transaction.customerAuditEvent.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          actorUserId: 'actor',
+          actorBranchId: row.ownerBranchId,
+          traceId: 'sales-person:key',
+        }),
+      }),
+    );
+    await expect(
+      repository.createSalesRegistration(
+        {},
+        'actor',
+        row.ownerBranchId,
+        'key',
+        'changed',
+      ),
+    ).rejects.toThrow('different input');
+    expect(transaction.customer.create).toHaveBeenCalledTimes(1);
+    transaction.customer.findFirst.mockResolvedValueOnce(null);
+    await expect(
+      repository.createSalesRegistration(
+        {},
+        'actor',
+        row.ownerBranchId,
+        'key',
+        'hash',
+      ),
+    ).rejects.toThrow('no longer available');
+  });
   it('restricts registration recovery to exact fingerprint, active unmerged people and actor branches', async () => {
     const findFirst = vi
       .fn()

@@ -245,6 +245,7 @@ describe('fixed Sales people-entry slots', () => {
         acquaintanceMethodId: 'registered-method',
         roles: ['customer', 'passenger'],
       }),
+      expect.any(String),
     );
     expect(result.patch.customerId).toBe(
       result.patch.passengers[0]?.customerId,
@@ -320,6 +321,50 @@ describe('fixed Sales people-entry slots', () => {
     ).resolves.toMatchObject({ patch: { customerId: 'saved' } });
     expect(api.create).toHaveBeenCalledTimes(2);
   });
+  it('refreshes a conflicting existing profile before retrying its edited fields', async () => {
+    const profile = { ...savedPerson(), version: 7 };
+    const selected = selectedPeopleRow(profile);
+    let progress = {
+      ...filled(),
+      rows: {
+        p0: {
+          ...selected,
+          values: { ...selected.values, firstName: 'Corrected' },
+        },
+      },
+    };
+    const update = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new CustomersApiError('concurrent', 409, 'CONCURRENT_MODIFICATION'),
+      )
+      .mockResolvedValueOnce({
+        data: { ...profile, firstName: 'Corrected', version: 9 },
+      });
+    const api = {
+      create: vi.fn(),
+      addContact: vi.fn(),
+      update,
+      detail: vi.fn().mockResolvedValue({ data: { ...profile, version: 8 } }),
+    };
+    await expect(
+      saveSalesPeopleDraft(
+        one,
+        progress,
+        (next) => {
+          progress = next as typeof progress;
+        },
+        api,
+      ),
+    ).rejects.toThrow('concurrent');
+    expect(progress.rows.p0.reviewRequired).toBe(true);
+    await saveSalesPeopleDraft(one, progress, vi.fn(), api);
+    expect(update.mock.calls[1]?.[1]).toMatchObject({
+      firstName: 'Corrected',
+      version: 8,
+    });
+    expect(api.create).not.toHaveBeenCalled();
+  });
   it('recovers a committed creation after lost response without creating twice', async () => {
     let progress = filled();
     const api = {
@@ -346,6 +391,35 @@ describe('fixed Sales people-entry slots', () => {
         nationalId: progress.rows.p0!.values.nationalId,
       }),
     );
+  });
+  it('recovers a lost registration response without national ID using the original receipt and input', async () => {
+    let progress = filled();
+    progress.rows.p0!.values.nationalId = '';
+    const original = { ...progress.rows.p0!.values };
+    const api = {
+      create: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('network'))
+        .mockResolvedValue({ data: savedPerson(original) }),
+      addContact: vi.fn(),
+      registrationLookup: vi.fn(),
+    };
+    await expect(
+      saveSalesPeopleDraft(
+        one,
+        progress,
+        (next) => {
+          progress = next;
+        },
+        api,
+      ),
+    ).rejects.toThrow('قطعی نشد');
+    const receipt = progress.rows.p0!.pendingRegistration;
+    expect(receipt?.key).toMatch(/^[0-9a-f-]{36}$/);
+    const result = await saveSalesPeopleDraft(one, progress, vi.fn(), api);
+    expect(result.patch.customerId).toBe('saved');
+    expect(api.create.mock.calls[1]).toEqual(api.create.mock.calls[0]);
+    expect(api.registrationLookup).not.toHaveBeenCalled();
   });
   it('retries the same identity only after an authorized lookup found no previous record', async () => {
     let progress = filled();
@@ -488,6 +562,7 @@ describe('fixed Sales people-entry slots', () => {
     await saveSalesPeopleDraft(one, draft, vi.fn(), api);
     expect(api.create).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ nationalId: draft.rows.p0.values.nationalId }),
+      expect.any(String),
     );
     expect(api.update).not.toHaveBeenCalled();
   });
