@@ -1,4 +1,5 @@
 import { enforceSalesHotelCapacity } from '@nora/contracts';
+import { withCompositeGuests } from './composite-guests';
 import {
   salesHotelGuestAges,
   type SalesPassengerAgeCategory,
@@ -1270,6 +1271,7 @@ export function salesHotelRoomTypes(
 }
 
 export function salesHotelValid(state: SalesFormState): boolean {
+  state = withCompositeGuests(state);
   if (state.hotel.multiHotel && !state.hotel.additionalStays?.length)
     return false;
   let previousOut = state.hotel.checkOut;
@@ -1490,6 +1492,7 @@ export function salesPayload(
   state: SalesFormState,
   aggregateLegacy = false,
 ): SalesContractCreateRequest {
+  state = withCompositeGuests(state);
   if (state.legacyContract) {
     const plain = {
       ...state,

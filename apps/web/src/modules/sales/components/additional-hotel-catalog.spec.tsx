@@ -104,9 +104,9 @@ it('refreshes an incomplete initial list and selects registered Ramada/city with
     ).toContain('RAMADA RESORT & GOLF'),
   );
   expect(picker().loading).toBe(false);
-  expect(
-    (picker().options as MasterDataRecord[]).map((x) => x.name),
-  ).not.toContain('Other city');
+  expect((picker().options as MasterDataRecord[]).map((x) => x.name)).toContain(
+    'Other city',
+  );
   expect(h.patch).not.toHaveBeenCalled();
   (picker().onChange as (id: string) => void)('RAMADA RESORT & GOLF');
   expect(h.patch.mock.calls[0]![0].hotel.additionalStays[0]).toMatchObject({

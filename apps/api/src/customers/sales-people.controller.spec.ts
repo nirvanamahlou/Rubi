@@ -170,3 +170,30 @@ it('rejects organization mutation, missing capability, missing branch, anonymous
   actor = { ...actor, permissions: ['sales.contracts.create'], branchIds: [] };
   await http.get('/sales/people').set('Cookie', 'nora_access=test').expect(403);
 });
+it('forwards a validated registration receipt with contract-only permission', async () => {
+  const key = '55555555-5555-4555-8555-555555555555';
+  await request(app.getHttpServer())
+    .post('/sales/people')
+    .set('Cookie', 'nora_access=test')
+    .set('x-registration-key', key)
+    .send(mutation)
+    .expect(201);
+  expect(service.createForSales).toHaveBeenCalledWith(
+    mutation,
+    expect.objectContaining({
+      permissions: expect.arrayContaining([
+        'customers.create',
+        'customers.update',
+      ]),
+    }),
+    undefined,
+    undefined,
+    key,
+  );
+  await request(app.getHttpServer())
+    .post('/sales/people')
+    .set('Cookie', 'nora_access=test')
+    .set('x-registration-key', 'invalid')
+    .send(mutation)
+    .expect(400);
+});

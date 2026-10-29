@@ -7808,6 +7808,12 @@ Supplier reservation header returns to four fields without a total. Section06 no
 
 Passenger corrections normalize saved rial/foreign person totals before submission, removing obsolete split flight/hotel pricing flags through the existing versioned price serializer. Sales validates canonical total-price metadata without requiring stale split-flight values; genuine legacy-only split contracts retain their compatibility checks. Contract output always labels rial/foreign columns and groups saved total/agreed prices by currency, falling back to actual legacy allocations only where total prices are absent. No guessed per-person allocation, schema/migration/dependency or operational data/runtime changes. Initial71 API and48 Web tests pass; targeted stale-metadata migration regression, scoped lint and full final-head hosted gates precede owner-authorized develop merge. Source reservations release upon verified merge.
 
+## 2026-10-29 — COMPOSITE-CONTRACT-OUTPUT-1029 — PC-A — READY_FOR_CI
+
+Contract preview and PDF share a hotel enrichment helper that follows each actual hotel to its registered city and English name, including later stays. Every stay uses the same hotel-details and room-composition tables with English city columns; second stay is labelled explicitly and room prices are not duplicated. Later-stay UI no longer requests independent guest counts/ages or a manually selected city: hotel choice supplies city, and primary room guest composition is synchronized in UI, payload and validation while later hotel/type/category/date choices remain independent. Old stored records are not rewritten; unknown reference facts stay blank.
+
+PDF requests resolve relative API configuration against the incoming origin and preserve actual upstream denial/status messages. Browser download recovers an expired session once and retries the same private PDF request; genuine 403/409 failures remain enforced. The screenshot's production response is not replayed against live data; regression tests prove scoped denial preservation, session recovery, actual hotel-city enrichment and both-table output. No authorization bypass, schema/migration/dependency/runtime or deployment changes. Focused tests, Web typecheck and scoped ESLint pass before final-head hosted full checks and owner-authorized develop merge. Source reservations release on verified merge.
+
 ## 2026-10-25 — RESERVATION-CALENDAR-BASIS-1025 — PC-A — READY_FOR_CI
 
 Reservation contract-detail travel dates and flight timestamps now honor per-service dateCalendarSystem metadata; hotel-only route dates use the hotel's basis, flight legs can differ, and timestamp display consistently uses Tehran while date-only stays preserve their ISO day. Sales keeps each flight calendar choice in the browser draft and writes it, plus the existing independent hotel calendar, to service metadata without converting dates. Producer/consumer ship together; legacy snapshots without basis retain compatible flight Persian/hotel Gregorian defaults because the original choice was not stored. No migration, API shape, permission, operational database/runtime or deployment changes. Focused54 and Sales/hotel/draft33 tests plus scoped ESLint pass; full Web types/build and exact-head hosted gates precede user-authorized develop merge. Source locks freeze/release with publication.
@@ -7935,6 +7941,12 @@ source map and remaining rollout/verification gates are in
 docs/tasks/REPORTING-LIVE-SOURCES-1027.md.
 HR-PAYROLL-FINANCE-APPROVAL-1027 stage semantics: HR author confirmation submits only; independent final approval remains Finance-owned. No permission grant or self-approval bypass in Finance.
 
+## 2026-10-29 — LEGACY-UNNAMED-PURCHASE-1029 — PC-A
+
+Historical per-service counts now produce numbered adult/child/infant purchase slots when no actual passenger roster exists. Explicit legacyGuestPrices ordinals are server-validated and priced using contractual nights, persisted in existing purchase JSON and projected back for editor reopening; no fake customer IDs/records. Real UUID pricing, permissions, branch/CAS/idempotency and Finance totals unchanged.36 focused shared/API/Web tests passed; scoped API/Web lint and shared Contracts typecheck passed. Final type/build/review checks pending; no PR/merge/deployment claimed. See docs/tasks/LEGACY-UNNAMED-PURCHASE-1029.md.
+## 2026-10-29 — CONTRACT-CUSTOMER-ACCESS-1029 — PC-A
+
+Contract-only Customer producer remains scoped. Fix receipt-backed registration replay when a creation response is lost without national ID; bounded automatic retry, stable original input/key, definitive conflict handling and existing-profile refresh before retry. Existing audit transaction/actor/branch scope; no schema/dependency/global grant or runtime changes. See docs/tasks/CONTRACT-CUSTOMER-ACCESS-1029.md. Initial focused Web75/API56 tests passed; final concurrency regression and quality gates in progress. GitHub CLI authentication expired; user received web-login command. No PR/merge claimed.
 
 ## CONTRACT-TRANSACTIONAL-NUMBERING-1029 — PC-A
 
