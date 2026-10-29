@@ -2,6 +2,15 @@ import type { MasterDataRecord } from '@nora/contracts';
 import type { SalesFormState } from './sales-form';
 
 const compositePrefix = 'composite:';
+export function hotelsAtContractDestination(
+  hotels: readonly MasterDataRecord[],
+  destinationId: string,
+) {
+  return hotels.filter(
+    (hotel) =>
+      Boolean(destinationId) && hotel.attributes.cityId === destinationId,
+  );
+}
 export function contractHotelChoices(
   hotels: readonly MasterDataRecord[],
   composites: readonly MasterDataRecord[],
