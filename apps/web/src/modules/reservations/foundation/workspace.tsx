@@ -606,13 +606,7 @@ export function ReservationOperationsWorkspace({
                   </label>
                   <label>
                     مرتب‌سازی
-                    <Select
-                      dir="rtl"
-                      value={query.sort}
-                      onValueChange={(value) =>
-                        changeQuery({ sort: value as Query['sort'] })
-                      }
-                    >
+                    <Select dir="rtl" value="contract" disabled>
                       <SelectTrigger
                         aria-label="مرتب‌سازی"
                         className="min-w-0 text-xs"
@@ -623,14 +617,9 @@ export function ReservationOperationsWorkspace({
                         align="start"
                         className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
                       >
-                        <SelectItem value="oldest">
-                          قدیمی‌ترین قرارداد
+                        <SelectItem value="contract">
+                          شماره قرارداد (از کوچک به بزرگ)
                         </SelectItem>
-                        <SelectItem value="deadline">
-                          نزدیک‌ترین مهلت
-                        </SelectItem>
-                        <SelectItem value="newest">جدیدترین درخواست</SelectItem>
-                        <SelectItem value="priority">بیشترین اولویت</SelectItem>
                       </SelectContent>
                     </Select>
                   </label>
