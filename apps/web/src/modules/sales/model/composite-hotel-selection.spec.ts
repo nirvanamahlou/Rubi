@@ -6,6 +6,7 @@ import {
   contractHotelChoices,
   selectedContractHotelKey,
   compositeHotelChoice,
+  hotelsAtContractDestination,
 } from './composite-hotel-selection';
 import { restoreContractDraft } from './restore-contract-draft';
 
@@ -20,6 +21,23 @@ const record = {
     ]),
   },
 } as unknown as MasterDataRecord;
+it('limits primary hotel and composite choices to the selected destination city', () => {
+  const items = [
+    { id: 'first', attributes: { cityId: 'c1' } },
+    { id: 'other', attributes: { cityId: 'c2' } },
+    {
+      id: 'composite',
+      attributes: { cityId: 'c1', memberHotelIds: 'first,other' },
+    },
+  ] as unknown as MasterDataRecord[];
+  expect(
+    hotelsAtContractDestination(items, 'c1').map((hotel) => hotel.id),
+  ).toEqual(['first', 'composite']);
+  expect(
+    hotelsAtContractDestination(items, 'c2').map((hotel) => hotel.id),
+  ).toEqual(['other']);
+  expect(hotelsAtContractDestination(items, '')).toEqual([]);
+});
 it('lists real hotels and composites together without ID collisions or stale English titles', () => {
   const hotel = {
     id: 'composite-1',
