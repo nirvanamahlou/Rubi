@@ -30,7 +30,8 @@ it('prints all flight currencies and compatible legacy room shares without doubl
   ];
   const html = contractPrintHtml(out, printReferences),
     table = html.split('PASSENGERS & PRICING')[1]!.split('</table>')[0]!;
-  expect(table).toContain('مبلغ پرواز');
+  expect(table).toContain('قیمت ریالی');
+  expect(table).not.toContain('مبلغ پرواز');
   expect(table).toContain('قیمت ارزی');
   expect(table).toContain('50 $');
   expect(table).toContain('12.50 $');
@@ -63,9 +64,9 @@ it('hides only the main hotel room-type column for mixed types', () => {
   expect(section).toContain('SINGLE VIEW');
   expect(section).toContain('DOUBLE VIEW');
 });
-it('does not infer legacy flight prices from all-service prices', () => {
+it('keeps unknown passenger amounts blank without labeling whole-service prices as flights', () => {
   const html = contractPrintHtml(printFixture, printReferences);
   expect(html.split('PASSENGERS & PRICING')[1]!.split('</table>')[0]).toContain(
-    'ثبت نشده',
+    '<td class="contract-total">—</td>',
   );
 });

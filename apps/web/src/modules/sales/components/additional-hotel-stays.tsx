@@ -24,11 +24,13 @@ export function AdditionalHotelStays({
   state,
   patch,
   hotels,
+  cities = [],
   roomTypes,
 }: {
   state: SalesFormState;
   patch: (patch: Partial<SalesFormState>) => void;
   hotels: readonly MasterDataRecord[];
+  cities?: readonly MasterDataRecord[];
   roomTypes: readonly MasterDataRecord[];
 }) {
   const [catalog, setCatalog] = useState<readonly MasterDataRecord[] | null>(
@@ -108,12 +110,29 @@ export function AdditionalHotelStays({
                 حذف هتل
               </Button>
             </div>
+            <SearchableReference
+              label="شهر مقصد"
+              value={stay.cityId}
+              options={cities}
+              showAllOptionsOnOpen
+              onChange={(cityId) => {
+                if (cityId !== stay.cityId)
+                  update({
+                    cityId,
+                    hotelId: '',
+                    hotelNameSnapshot: '',
+                    rooms: [],
+                  });
+              }}
+            />
             <div className="grid grid-cols-[minmax(0,1fr)_6rem] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_9rem]">
               <SearchableReference
                 label="هتل"
                 value={stay.hotelId}
                 options={availableHotels.filter(
                   (h) =>
+                    Boolean(stay.cityId) &&
+                    h.attributes.cityId === stay.cityId &&
                     h.id !== state.hotel.hotelId &&
                     !stays.some(
                       (other, i) => i !== index && other.hotelId === h.id,
@@ -132,10 +151,12 @@ export function AdditionalHotelStays({
                 preferEnglishName
                 onChange={(id) => {
                   const hotel = availableHotels.find((h) => h.id === id);
+                  if (id && (!hotel || hotel.attributes.cityId !== stay.cityId))
+                    return;
                   update({
                     hotelId: id,
                     hotelNameSnapshot: hotel?.name ?? '',
-                    cityId: String(hotel?.attributes.cityId ?? ''),
+                    cityId: stay.cityId,
                     rooms: [],
                   });
                 }}

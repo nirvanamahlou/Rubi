@@ -404,10 +404,7 @@ export function SalesContractForm() {
   const selectableHotels = useMemo(() => {
     const hotelsAtDestination = references.hotels.filter(
       (hotel) =>
-        (state.hotel.multiHotel ||
-          Boolean(state.hotel.additionalStays?.length) ||
-          hotel.attributes.cityId === state.destinationId ||
-          hotel.id === state.hotel.hotelId) &&
+        hotel.attributes.cityId === state.destinationId &&
         (!state.tour ||
           (
             state.publishedPackageHotelIds ?? state.tour.package.hotelIds
@@ -421,9 +418,6 @@ export function SalesContractForm() {
     );
   }, [
     references.hotels,
-    state.hotel.multiHotel,
-    state.hotel.additionalStays,
-    state.hotel.hotelId,
     state.destinationId,
     state.tour,
     state.publishedPackageHotelIds,
@@ -1834,6 +1828,7 @@ export function SalesContractForm() {
               state={state}
               patch={patchState}
               hotels={references.hotels}
+              cities={references.cities}
               roomTypes={references.roomTypes}
             />
           </>
