@@ -70,34 +70,43 @@ export async function GET(
     await Promise.all(
       keys.map(async ([resource, key]) => {
         if (!key) return;
-        const response = await get(
-          '/master-data/selections/sales/' +
-            resource +
-            '/' +
-            encodeURIComponent(key),
-        );
-        if (!response.ok) return;
-        const { data } = (await response.json()) as { data: MasterDataRecord };
-        refs.names[key] = data.name;
-        if (
-          resource === 'cities' &&
-          (await printCityInternational(data, async (id) => {
-            const response = await get(
-              '/master-data/selections/sales/countries/' +
-                encodeURIComponent(id),
-            );
-            if (!response.ok) return undefined;
-            return ((await response.json()) as { data: MasterDataRecord }).data;
-          }))
-        )
-          refs.international = true;
-        if (resource === 'hotels' && data.attributes.starRating != null)
-          refs.hotelGrade = String(data.attributes.starRating);
-        if (resource === 'hotels') {
-          if (typeof data.attributes.englishName === 'string')
-            refs.hotelLatinName = data.attributes.englishName.trim();
-          if (typeof data.attributes.website === 'string')
-            refs.hotelWebsite = data.attributes.website.trim();
+        try {
+          const response = await get(
+            '/master-data/selections/sales/' +
+              resource +
+              '/' +
+              encodeURIComponent(key),
+          );
+          if (!response.ok) return;
+          const { data } = (await response.json()) as {
+            data: MasterDataRecord;
+          };
+          if (!data || typeof data.name !== 'string') return;
+          refs.names[key] = data.name;
+          if (
+            resource === 'cities' &&
+            data.attributes &&
+            (await printCityInternational(data, async (id) => {
+              const response = await get(
+                '/master-data/selections/sales/countries/' +
+                  encodeURIComponent(id),
+              );
+              if (!response.ok) return undefined;
+              return ((await response.json()) as { data: MasterDataRecord })
+                .data;
+            }))
+          )
+            refs.international = true;
+          if (resource === 'hotels' && data.attributes?.starRating != null)
+            refs.hotelGrade = String(data.attributes.starRating);
+          if (resource === 'hotels' && data.attributes) {
+            if (typeof data.attributes.englishName === 'string')
+              refs.hotelLatinName = data.attributes.englishName.trim();
+            if (typeof data.attributes.website === 'string')
+              refs.hotelWebsite = data.attributes.website.trim();
+          }
+        } catch {
+          // Reference enrichment is optional; the saved authorized contract is authoritative.
         }
       }),
     );
