@@ -73,10 +73,24 @@ export class SalesPeopleController {
     @Req() req: AuthenticatedRequest,
     @Headers('x-branch-id') branch?: string,
     @Headers('x-request-id') trace?: string,
+    @Headers('x-registration-key') registrationKey?: string,
   ) {
     const actor = this.service.salesEntryActor(req.actor);
     if (dto.kind !== 'person') throw new BadRequestException();
-    return this.service.createForSales(dto, actor, branch, trace);
+    if (
+      registrationKey &&
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        registrationKey,
+      )
+    )
+      throw new BadRequestException('Invalid registration key.');
+    return this.service.createForSales(
+      dto,
+      actor,
+      branch,
+      trace,
+      registrationKey,
+    );
   }
   @Patch(':id')
   async update(
