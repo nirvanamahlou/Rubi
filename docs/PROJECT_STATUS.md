@@ -7937,6 +7937,12 @@ source map and remaining rollout/verification gates are in
 docs/tasks/REPORTING-LIVE-SOURCES-1027.md.
 HR-PAYROLL-FINANCE-APPROVAL-1027 stage semantics: HR author confirmation submits only; independent final approval remains Finance-owned. No permission grant or self-approval bypass in Finance.
 
+## 2026-10-29 — LEGACY-UNNAMED-PURCHASE-1029 — PC-A
+
+Historical per-service counts now produce numbered adult/child/infant purchase slots when no actual passenger roster exists. Explicit legacyGuestPrices ordinals are server-validated and priced using contractual nights, persisted in existing purchase JSON and projected back for editor reopening; no fake customer IDs/records. Real UUID pricing, permissions, branch/CAS/idempotency and Finance totals unchanged.36 focused shared/API/Web tests passed; scoped API/Web lint and shared Contracts typecheck passed. Final type/build/review checks pending; no PR/merge/deployment claimed. See docs/tasks/LEGACY-UNNAMED-PURCHASE-1029.md.
+## 2026-10-29 — CONTRACT-CUSTOMER-ACCESS-1029 — PC-A
+
+Contract-only Customer producer remains scoped. Fix receipt-backed registration replay when a creation response is lost without national ID; bounded automatic retry, stable original input/key, definitive conflict handling and existing-profile refresh before retry. Existing audit transaction/actor/branch scope; no schema/dependency/global grant or runtime changes. See docs/tasks/CONTRACT-CUSTOMER-ACCESS-1029.md. Initial focused Web75/API56 tests passed; final concurrency regression and quality gates in progress. GitHub CLI authentication expired; user received web-login command. No PR/merge claimed.
 
 ## CONTRACT-TRANSACTIONAL-NUMBERING-1029 — PC-A
 

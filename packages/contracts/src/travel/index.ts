@@ -1,4 +1,5 @@
 export * from './hotel-savings';
+export * from './legacy-purchase-guests';
 export * from './ticket-flight-output';
 import type { HotelPurchaseSavingsV1 } from './hotel-savings';
 import type { SalesReservationRequestV1 } from '../sales';
@@ -323,6 +324,7 @@ export interface ReservationManifestTicketExportInputV1 {
 }
 
 export interface ReservationServicePurchaseV1 {
+  legacyGuestPrices?: readonly ReservationLegacyGuestPurchasePriceV1[];
   hotelSavings?: HotelPurchaseSavingsV1;
   pricingCalculation?: ReservationServicePurchaseCalculationV1;
   id: string;
@@ -368,7 +370,17 @@ export interface ReservationPassengerPurchasePriceV1 {
   totalAmount: string;
 }
 
+export interface ReservationLegacyGuestPurchasePriceV1 {
+  guestIndex: number;
+  ageCategory: 'ADT' | 'CHD' | 'INF';
+  passengerName: string;
+  nightlyAmount: string;
+  nights: number;
+  totalAmount: string;
+}
+
 export interface ReservationServicePurchaseInputV1 {
+  legacyGuestPrices?: readonly { guestIndex: number; nightlyAmount: string }[];
   purchaseRateToIrr?: string;
   pricingCalculation?: {
     baseAmount: string;

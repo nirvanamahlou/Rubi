@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import type {
   CustomerAddressRequest,
   CustomerContactRequest,
@@ -560,6 +560,77 @@ export class CustomerRepository {
         traceId,
         transaction,
       );
+    });
+  }
+
+  async createSalesRegistration(
+    data: Record<string, unknown>,
+    actorUserId: string,
+    actorBranchId: string,
+    key: string,
+    requestHash: string,
+    traceId?: string,
+  ) {
+    return this.database.client.$transaction(async (transaction) => {
+      const receipt = `sales-person:${key}`;
+      const lock = JSON.stringify([receipt, actorUserId, actorBranchId]);
+      await transaction.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${lock}, 0))`;
+      const previous = await transaction.customerAuditEvent.findFirst({
+        where: {
+          actorUserId,
+          actorBranchId,
+          action: 'customers.sales-registration',
+          traceId: receipt,
+          outcome: AuditOutcome.SUCCESS,
+        },
+        select: { entityId: true, afterSnapshot: true },
+      });
+      if (previous) {
+        if (!previous.entityId)
+          throw new ConflictException('Registration receipt is incomplete.');
+        const snapshot = previous.afterSnapshot as {
+          requestHash?: string;
+        } | null;
+        if (snapshot?.requestHash !== requestHash)
+          throw new ConflictException(
+            'Registration key was already used for different input.',
+          );
+        const row = await transaction.customer.findFirst({
+          where: {
+            id: previous.entityId,
+            ownerBranchId: actorBranchId,
+            kind: 'PERSON',
+            mergedIntoId: null,
+            isActive: true,
+          },
+          include: detailInclude,
+        });
+        if (!row)
+          throw new ConflictException(
+            'Registered person is no longer available.',
+          );
+        return row as unknown as CustomerRow;
+      }
+      const row = await this.create(
+        data,
+        actorUserId,
+        actorBranchId,
+        traceId,
+        transaction,
+      );
+      await transaction.customerAuditEvent.create({
+        data: {
+          actorUserId,
+          actorBranchId,
+          action: 'customers.sales-registration',
+          entityType: 'customer',
+          entityId: row.id,
+          outcome: AuditOutcome.SUCCESS,
+          traceId: receipt,
+          afterSnapshot: json({ requestHash }),
+        },
+      });
+      return row;
     });
   }
 

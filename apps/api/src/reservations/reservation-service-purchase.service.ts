@@ -18,6 +18,7 @@ import {
 } from '@nestjs/common';
 import {
   hotelNights,
+  legacyPurchaseGuests,
   moneyDecimal,
   moneyUnits,
   reservationServicePurchaseTotal,
@@ -93,6 +94,7 @@ export function validateServicePurchase(
           'amount',
           'currencyCode',
           'passengerPrices',
+          'legacyGuestPrices',
           'coveredServiceClientKeys',
           'transferUnitAmount',
           'pricingCalculation',
@@ -105,6 +107,21 @@ export function validateServicePurchase(
         input.coveredServiceClientKeys.length > 100 ||
         input.coveredServiceClientKeys.some(
           (key) => typeof key !== 'string' || !key.trim() || key.length > 160,
+        ))) ||
+    (input.legacyGuestPrices !== undefined &&
+      (input.passengerPrices !== undefined ||
+        !Array.isArray(input.legacyGuestPrices) ||
+        input.legacyGuestPrices.length === 0 ||
+        input.legacyGuestPrices.length > 500 ||
+        input.legacyGuestPrices.some(
+          (price) =>
+            !price ||
+            !Number.isSafeInteger(price.guestIndex) ||
+            price.guestIndex < 0 ||
+            typeof price.nightlyAmount !== 'string' ||
+            Object.keys(price).some(
+              (key) => !['guestIndex', 'nightlyAmount'].includes(key),
+            ),
         ))) ||
     (input.passengerPrices !== undefined &&
       (!Array.isArray(input.passengerPrices) ||
@@ -130,7 +147,10 @@ export function validateServicePurchase(
         : 'هزینه خرید باید مبلغی مثبت با حداکثر چهار رقم اعشار باشد.',
     );
   }
-  for (const price of input.passengerPrices ?? []) {
+  for (const price of [
+    ...(input.passengerPrices ?? []),
+    ...(input.legacyGuestPrices ?? []),
+  ]) {
     try {
       if (moneyUnits(price.nightlyAmount) < 0n) throw new Error();
     } catch {
@@ -152,6 +172,7 @@ export function validateServicePurchase(
         (!Number.isSafeInteger(calculation.chargeablePassengerCount) ||
           calculation.chargeablePassengerCount <= 0)) ||
       input.passengerPrices !== undefined ||
+      input.legacyGuestPrices !== undefined ||
       input.transferUnitAmount !== undefined
     )
       throw new BadRequestException('فرمول خرید خدمت معتبر نیست.');
@@ -171,10 +192,57 @@ export function hotelPassengerPurchase(
   snapshot: SalesReservationRequestV1,
   serviceClientKey: string,
   prices: NonNullable<ReservationServicePurchaseInputV1['passengerPrices']>,
+  legacyPrices?: ReservationServicePurchaseInputV1['legacyGuestPrices'],
 ) {
   const hotel = snapshot.hotelSelection;
   if (!hotel || hotel.serviceClientKey !== serviceClientKey)
     throw new BadRequestException('اقامت هتل انتخاب‌شده معتبر نیست.');
+  if (legacyPrices !== undefined) {
+    const guests = legacyPurchaseGuests(snapshot, serviceClientKey);
+    if (
+      prices.length ||
+      !legacyPrices.length ||
+      new Set(legacyPrices.map((p) => p.guestIndex)).size !==
+        legacyPrices.length ||
+      legacyPrices.some(
+        (p) => !guests.some((guest) => guest.guestIndex === p.guestIndex),
+      )
+    )
+      throw new BadRequestException('اطلاعات خرید خدمت معتبر نیست.');
+    let nights: number;
+    try {
+      nights = hotelNights(hotel.checkInDate, hotel.checkOutDate);
+    } catch {
+      throw new BadRequestException('تاریخ ورود و خروج هتل معتبر نیست.');
+    }
+    const legacyGuestPrices = legacyPrices.map((price) => {
+      const guest = guests.find(
+        (item) => item.guestIndex === price.guestIndex,
+      )!;
+      const units = moneyUnits(price.nightlyAmount);
+      if (units < 0n)
+        throw new BadRequestException(
+          'قیمت هر شب هر مسافر باید صفر یا بیشتر باشد.',
+        );
+      return {
+        ...guest,
+        passengerName: `مسافر ${guest.guestIndex + 1}`,
+        nightlyAmount: moneyDecimal(units),
+        nights,
+        totalAmount: moneyDecimal(units * BigInt(nights)),
+      };
+    });
+    return {
+      passengerPrices: [],
+      legacyGuestPrices,
+      amount: moneyDecimal(
+        legacyGuestPrices.reduce(
+          (sum, p) => sum + moneyUnits(p.totalAmount),
+          0n,
+        ),
+      ),
+    };
+  }
   const assigned = (
     snapshot.passengerAssignments?.length
       ? snapshot.passengerAssignments.filter((passenger) =>
@@ -391,12 +459,18 @@ export class ReservationServicePurchaseService {
             snapshot,
             row.serviceClientKey,
             row.passengerPrices ?? [],
+            row.legacyGuestPrices,
           );
           amount = pricing.amount;
-          passengerPrices = pricing.passengerPrices as Prisma.InputJsonValue;
+          passengerPrices = pricing.legacyGuestPrices
+            ? ({
+                legacyGuests: pricing.legacyGuestPrices,
+              } as Prisma.InputJsonValue)
+            : (pricing.passengerPrices as Prisma.InputJsonValue);
         } else {
           if (
             row.passengerPrices ||
+            row.legacyGuestPrices ||
             row.coveredServiceClientKeys?.length !== transferKeys.length ||
             transferKeys.some(
               (serviceKey) =>
@@ -617,6 +691,7 @@ export class ReservationServicePurchaseService {
             snapshot,
             service.clientKey,
             input.passengerPrices ?? [],
+            input.legacyGuestPrices,
           )
         : null;
     if (
@@ -626,7 +701,10 @@ export class ReservationServicePurchaseService {
       throw new BadRequestException(
         'جمع قیمت مسافران هتل با مبلغ خرید یکسان نیست.',
       );
-    if (service.kind !== 'HOTEL' && input.passengerPrices)
+    if (
+      service.kind !== 'HOTEL' &&
+      (input.passengerPrices || input.legacyGuestPrices)
+    )
       throw new BadRequestException(
         'قیمت مسافری فقط برای خرید هتل ثبت می‌شود.',
       );
@@ -716,9 +794,14 @@ export class ReservationServicePurchaseService {
             currencyCode: input.currencyCode,
             ...(hotelPricing
               ? {
-                  passengerPrices: (hotelSavings
-                    ? { passengers: hotelPricing.passengerPrices, hotelSavings }
-                    : hotelPricing.passengerPrices) as unknown as Prisma.InputJsonValue,
+                  passengerPrices: (hotelPricing.legacyGuestPrices
+                    ? { legacyGuests: hotelPricing.legacyGuestPrices }
+                    : hotelSavings
+                      ? {
+                          passengers: hotelPricing.passengerPrices,
+                          hotelSavings,
+                        }
+                      : hotelPricing.passengerPrices) as unknown as Prisma.InputJsonValue,
                 }
               : {}),
             actorUserId: actor.userId,
