@@ -1,4 +1,8 @@
-## CONTRACT-PDF-PARTIAL-1029 — PC-A — READY_FOR_CI
+## PASSENGER-SALE-NO-ROOM-PRICE-1029 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-passenger-sale-no-room-price-1029 from develop1f1caa975. User clarifies that passenger IRR/foreign amounts are the sale price and requests removing obsolete room amounts. Reserve Sales contract total component, current passenger-pricing state guard, print preparation/output and focused regressions plus own status notes. Remove room-price entry and printed/derived room shares; current passenger prices and deductions remain authoritative, while historical stored financial amounts, procurement/package prices and saved contract totals remain unchanged. Validation:69 focused Web tests and Web typecheck pass; scoped lint and all exact-head hosted quality/test/build/database gates precede merge. No migration/schema/API/dependency, operational data or deployment. Prior PDF task PR1186 merged and source scope released; no overlapping active target writer found. All exact-head hosted checks precede authorized develop merge.
+
+## CONTRACT-PDF-PARTIAL-1029 — PC-A — MERGED
 
 COMPUTER_ID=PC-A; branch codex/pc-a-contract-pdf-partial-1029 from latest origin/develop. User requests fixing PDF failure on some contracts and develop merge. Reserve bounded Sales PDF route, print/render preparation and focused regression tests plus own status notes. Investigate optional reference enrichment and incomplete historical output separately from actual Chromium/font failures; keep authorized saved output, currency precision, source data and permission checks. No active overlapping PDF writer found; previous published tasks release source reservations. No schema/migration/dependency, operational data, runtime/server rollout. Exact-head lint/types/tests/build/database gates precede authorized merge.
 
