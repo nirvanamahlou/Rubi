@@ -1,3 +1,7 @@
+## CONTRACT-ROUTE-ARROW-1029 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-contract-route-arrow-1029 from latest develop. User requests correct flight-route arrows in customer contract preview/PDF and develop merge. Reserve only contract-print.ts route markup and focused output regression plus own notes. Previous print task PR1186 is merged and released. Isolate origin-to-destination route LTR with independently isolated endpoints and rightward arrow; keep actual return origin/destination rather than reversing data. Preserve escaping, saved flights, direction captions, all monetary/identity content. No schema/migration/dependency/server or business-data changes. Exact-head full CI gates merge.
+
 ## CONTRACT-PDF-PARTIAL-1029 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-contract-pdf-partial-1029 from latest origin/develop. User requests fixing PDF failure on some contracts and develop merge. Reserve bounded Sales PDF route, print/render preparation and focused regression tests plus own status notes. Investigate optional reference enrichment and incomplete historical output separately from actual Chromium/font failures; keep authorized saved output, currency precision, source data and permission checks. No active overlapping PDF writer found; previous published tasks release source reservations. No schema/migration/dependency, operational data, runtime/server rollout. Exact-head lint/types/tests/build/database gates precede authorized merge.

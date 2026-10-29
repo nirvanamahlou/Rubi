@@ -2,6 +2,26 @@ import { describe, expect, it } from 'vitest';
 import { contractPrintHtml, contractMoney } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it('isolates outward and return routes so arrows point from origin to destination in RTL output', () => {
+    const output = structuredClone(printFixture);
+    const before = structuredClone(output);
+    const html = contractPrintHtml(output, {
+      ...printReferences,
+      names: {
+        ...printReferences.names,
+        tehran: 'TEHRAN (IKA)',
+        antalya: 'Isparta (ISE)',
+      },
+    });
+    expect(html).toContain(
+      '<bdi dir="ltr"><bdi>TEHRAN (IKA)</bdi> → <bdi>Isparta (ISE)</bdi></bdi>',
+    );
+    expect(html).toContain(
+      '<bdi dir="ltr"><bdi>Isparta (ISE)</bdi> → <bdi>TEHRAN (IKA)</bdi></bdi>',
+    );
+    expect(html).not.toContain(' ← ');
+    expect(output).toEqual(before);
+  });
   it('prints saved agreed prices by currency without obsolete flight columns or stale split amounts', () => {
     const output = structuredClone(printFixture);
     output.contract.passengersDetail[0]!.agreedPrices = [

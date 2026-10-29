@@ -1,3 +1,7 @@
+## CONTRACT-ROUTE-ARROW-1029 — PC-A — VALIDATING
+
+Isolate customer contract preview/PDF flight routes as LTR with independently isolated airport labels and origin-to-destination arrows. Return rows retain their actual saved endpoints. Keep escaping, direction captions and all saved commercial/identity data unchanged. Focused output regressions and exact-head full hosted checks gate authorized develop merge. No schema/migration/dependency or server deployment.
+
 ## CONTRACT-PDF-PARTIAL-1029 — PC-A
 
 Authenticated UI inspection reproduced the reported output failure for the user-supplied contract number; no real contract content is stored in Git. Four synthetic optional-reference failures (network, non-JSON, missing data, absent attributes) reproduce the generic503 before the fix. The server PDF/share route now treats master-reference enrichment as optional, matching the browser preview policy, while canonical saved-output authorization/data and actual renderer failure stay mandatory. No financial values, identities, room/service assignments or source snapshots change. PDF/print/output/runtime unit checks57 pass with one opt-in smoke skip; explicit actual-runtime smoke and final quality/type/build/full-suite/database gates precede authorized develop merge. The production-specific root cause is not asserted without server diagnostics; no production rollout is performed.
