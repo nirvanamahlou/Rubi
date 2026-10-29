@@ -116,7 +116,7 @@ pass peer = no
 autodial = yes
 redial = yes
 redial timeout = 20
-max redials = 1
+max redials = 5
 ''' % (GATEWAY, PRIVATE),
     }
 
@@ -382,7 +382,7 @@ WantedBy=multi-user.target
             await_link()
             report['stage']='reconnect'
             config=PRIVATE/'xl2tpd.conf'
-            config.write_text(config.read_text().replace('max redials = 1','max redials = 999999'))
+            config.write_text(config.read_text().replace('max redials = 5','max redials = 999999'))
             run(['systemctl','restart','rubi-issabel-vpn.service'],timeout=75)
             await_link()
             report['stage']='docker_tls_ami'

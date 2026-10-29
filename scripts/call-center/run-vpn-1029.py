@@ -12,6 +12,6 @@ with os.fdopen(fd, 'rb') as stream:
     if not stat.S_ISREG(info.st_mode) or info.st_size > 100000:
         raise SystemExit('Unexpected installer file')
     source = stream.read()
-if hashlib.sha256(source).hexdigest() != 'df11f1c582742eccfc72e43425dbc52f042c4fa6ed79804f926d49625579233b':
+if hashlib.sha256(source).hexdigest() != 'e743a781775e5be201f53d701dbef80d56ee054e57c4a4044817270cf25f8b53':
     raise SystemExit('Installer changed; execution refused')
 exec(compile(source, str(path), 'exec'), {'__name__': '__main__', '__file__': str(path)})

@@ -102,6 +102,21 @@ is retained. Retry2 uses another fresh private directory, original-baseline veri
 and already installed packages. Seven safety checks, including a delayed-control-socket
 regression, and Python compilation pass. Root retry2 is staged under the same short
 command; it has not executed. No connection success or provider activation is claimed.
+
+## Retry2 result and retry3 preparation
+
+Retry2 establishes authenticated IKE_SA and installed CHILD_SA with the designated
+gateway over UDP4500. xl2tpd confirms the L2TP control tunnel is established, then
+magic_lac_dial refuses progression with maximum retries exceeded; no pppd startup appears.
+Upstream xl2tpd.c magic_lac_dial increments rtries before both the initial tunnel dial
+and the subsequent session dial, so the installer limit1 blocks even a successful tunnel.
+Source inspected: https://raw.githubusercontent.com/xelerance/xl2tpd/master/xl2tpd.c
+Correct bounded bootstrap budget to5; promote to persistent redial only after real PPP/PBX
+acceptance as before. Add a regression requiring budget2..5 and keep the overall70-second
+probe deadline. Eight safety checks and compilation pass. Retry3 uses a fresh private
+attempt directory and refreshed payload hash. It is staged, not executed. PPP credentials,
+PBX reachability, Docker AMI and persistence remain unverified; no end-to-end success claimed.
+Receipt preserved=true and public API health confirmed healthy after rollback.
 Sanitized result: /opt/rubi/CALL-CENTER-VPN-1029.json.
 Do not print private inputs, ipsec secrets, PPP options or prepared AMI client credentials.
 

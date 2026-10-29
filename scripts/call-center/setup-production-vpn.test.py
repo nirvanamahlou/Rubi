@@ -12,6 +12,14 @@ spec.loader.exec_module(bootstrap)
 
 
 class BootstrapSafety(unittest.TestCase):
+    def test_l2tp_budget_allows_tunnel_then_ppp_session(self):
+        rendered = bootstrap.files({'password': 'synthetic-password', 'psk': 'synthetic-psk'})
+        config = rendered[bootstrap.PRIVATE / 'xl2tpd.conf']
+        # xl2tpd increments rtries on tunnel dial and again on session dial.
+        limit = int(config.split('max redials = ')[1].splitlines()[0])
+        self.assertGreaterEqual(limit, 2)
+        self.assertLessEqual(limit, 5)
+
     def test_waits_for_control_socket_not_just_running_service(self):
         replies = [CompletedProcess([], 1, b''),
                    CompletedProcess([], 0, b'Listening IP addresses:\n  192.0.2.1\n')]
