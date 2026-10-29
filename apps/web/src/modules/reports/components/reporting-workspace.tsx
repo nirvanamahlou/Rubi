@@ -1216,11 +1216,26 @@ export function ReportResultPanel({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(reportSortLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
+                    {Object.entries(reportSortLabels)
+                      .filter(
+                        ([value]) =>
+                          !result.columns ||
+                          result.columns.some(
+                            (column) =>
+                              column.key ===
+                              ({
+                                amount: 'salesAmount',
+                                branchId: 'primaryDimension',
+                                ownerUserId: 'secondaryDimension',
+                                contractCount: 'orderCount',
+                              }[value] ?? value),
+                          ),
+                      )
+                      .map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </FormField>
@@ -1248,13 +1263,25 @@ export function ReportResultPanel({
                   <tr>
                     <ResultSortHeader
                       column="branchId"
-                      label={report.dimensions[0] ?? 'بُعد اصلی'}
+                      label={
+                        result?.columns?.find(
+                          (column) => column.key === 'primaryDimension',
+                        )?.label ??
+                        report.dimensions[0] ??
+                        'بُعد اصلی'
+                      }
                       onSortChange={onSortChange}
                       sort={sort}
                     />
                     <ResultSortHeader
                       column="ownerUserId"
-                      label={report.dimensions[1] ?? 'بُعد تکمیلی'}
+                      label={
+                        result?.columns?.find(
+                          (column) => column.key === 'secondaryDimension',
+                        )?.label ??
+                        report.dimensions[1] ??
+                        'بُعد تکمیلی'
+                      }
                       onSortChange={onSortChange}
                       sort={sort}
                     />
@@ -1266,13 +1293,23 @@ export function ReportResultPanel({
                     />
                     <ResultSortHeader
                       column="contractCount"
-                      label="تعداد"
+                      label={
+                        result.columns?.find(
+                          (column) => column.key === 'orderCount',
+                        )?.label ?? 'تعداد'
+                      }
                       onSortChange={onSortChange}
                       sort={sort}
                     />
                     <ResultSortHeader
                       column="amount"
-                      label={report.measures[0] ?? 'مبلغ'}
+                      label={
+                        result.columns?.find(
+                          (column) => column.key === 'salesAmount',
+                        )?.label ??
+                        report.measures[0] ??
+                        'مبلغ'
+                      }
                       onSortChange={onSortChange}
                       sort={sort}
                     />
@@ -1862,12 +1899,12 @@ export function ReportingWorkspace({
     if (filter === 'شعبه')
       return (producerFilterOptions?.branchIds ?? []).map((value) => ({
         value,
-        label: value,
+        label: producerFilterOptions?.labels?.[value] ?? value,
       }));
     if (filter === 'کارشناس')
       return (producerFilterOptions?.ownerUserIds ?? []).map((value) => ({
         value,
-        label: value,
+        label: producerFilterOptions?.labels?.[value] ?? value,
       }));
     if (filter === 'وضعیت') {
       const allowed = new Set(producerFilterOptions?.statuses ?? []);
@@ -2479,14 +2516,16 @@ export function ReportingWorkspace({
                   onToDateChange={setToDate}
                   toDate={toDate}
                 />
-                <ReportSearchableSelect
-                  allLabel="همه شرکت‌ها"
-                  id="report-company"
-                  label="شرکت"
-                  onValueChange={setLegalEntity}
-                  options={legalEntityOptions}
-                  value={legalEntity}
-                />
+                {!selected.approvedView.startsWith('sales.reporting.') ? (
+                  <ReportSearchableSelect
+                    allLabel="همه شرکت‌ها"
+                    id="report-company"
+                    label="شرکت"
+                    onValueChange={setLegalEntity}
+                    options={legalEntityOptions}
+                    value={legalEntity}
+                  />
+                ) : null}
               </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <ReportSearchableSelect

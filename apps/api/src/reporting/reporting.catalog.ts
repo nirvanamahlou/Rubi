@@ -53,18 +53,18 @@ function readyPublicProjection(
 export const REPORTING_CATALOG_V1: readonly ReportingCatalogEntryV1[] = [
   readyPublicProjection(
     'sales_by_organization',
-    'کدام شرکت، سایت، شعبه یا کارشناس بیشترین فروش را ایجاد کرده است؟',
+    'هر کارشناس چه تعداد قرارداد و چه مبلغ فروشی ثبت کرده است؟',
     'CONTRACT_CURRENCY',
     'reporting.sales.read',
-    'sales.reporting.organization.v2',
-    2,
+    'sales.reporting.contract-currency.v1',
+    3,
   ),
   readyPublicProjection(
     'sales_by_service_route',
-    'کدام خدمت، مسیر یا شهر مقصد بیشترین فروش را ایجاد کرده است؟',
-    'CONTRACT_SERVICE',
+    'کدام ترکیب خدمات و مسیر بیشترین فروش قرارداد را داشته است؟',
+    'CONTRACT_CURRENCY',
     'reporting.sales.read',
-    'reporting.travel.facts.v1',
+    'sales.reporting.contract-currency.v1',
   ),
   readyPublicProjection(
     'purchase_by_supplier',
@@ -110,10 +110,10 @@ export const REPORTING_CATALOG_V1: readonly ReportingCatalogEntryV1[] = [
   ),
   readyPublicProjection(
     'payments_refunds',
-    'چه میزان دریافت، پرداخت و استرداد انجام شده است؟',
+    'چه میزان دریافت تأییدشده از مشتری و استرداد قطعی انجام شده است؟',
     'PAYMENT',
     'reporting.finance.read',
-    'reporting.travel.facts.v1',
+    'sales.reporting.payment-events.v1',
   ),
   readyPublicProjection(
     'paid_not_issued',
@@ -181,9 +181,16 @@ export const REPORTING_CATALOG_V1: readonly ReportingCatalogEntryV1[] = [
   readyPublicProjection(
     'route_passengers',
     'کدام مقصدها و مسیرهای سفر بیشترین سفارش و مسافر را داشته‌اند؟',
-    'PASSENGER',
+    'CONTRACT_CURRENCY',
     'reporting.sales.read',
-    'reporting.travel.facts.v1',
+    'sales.reporting.contract-currency.v1',
+  ),
+  readyPublicProjection(
+    'sales_contract_pipeline',
+    'قراردادهای فروش در هر مرحله چه تعداد و چه مبلغی دارند؟',
+    'CONTRACT_CURRENCY',
+    'reporting.sales.read',
+    'sales.reporting.contract-currency.v1',
   ),
   pending(
     'export_audit',

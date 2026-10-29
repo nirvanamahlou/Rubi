@@ -2,6 +2,26 @@ import { describe, expect, it } from 'vitest';
 import { contractPrintHtml, contractMoney } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it('isolates outward and return routes so arrows point from origin to destination in RTL output', () => {
+    const output = structuredClone(printFixture);
+    const before = structuredClone(output);
+    const html = contractPrintHtml(output, {
+      ...printReferences,
+      names: {
+        ...printReferences.names,
+        tehran: 'TEHRAN (IKA)',
+        antalya: 'Isparta (ISE)',
+      },
+    });
+    expect(html).toContain(
+      '<bdi dir="ltr"><bdi>TEHRAN (IKA)</bdi> → <bdi>Isparta (ISE)</bdi></bdi>',
+    );
+    expect(html).toContain(
+      '<bdi dir="ltr"><bdi>Isparta (ISE)</bdi> → <bdi>TEHRAN (IKA)</bdi></bdi>',
+    );
+    expect(html).not.toContain(' ← ');
+    expect(output).toEqual(before);
+  });
   it('prints saved agreed prices by currency without obsolete flight columns or stale split amounts', () => {
     const output = structuredClone(printFixture);
     output.contract.passengersDetail[0]!.agreedPrices = [
@@ -42,13 +62,13 @@ describe('Saved contract print output', () => {
     });
     expect(html).toContain('SECOND &lt;HOTEL&gt;');
     expect(html).toContain('City Two');
-    expect(html).toContain('اقامت‌های بعدی');
+    expect(html).toContain('اقامت دوم');
     expect(html).toContain('Suite &lt;SEA&gt;');
-    expect(html).toContain('2 بزرگسال');
-    expect(html).toContain('1 کودک');
-    expect(html).toContain('1 نوزاد');
+    const second = html.split('data-stay="2"')[1]!.split('</section>')[0]!;
+    expect(second.match(/<table/g)).toHaveLength(2);
+    expect(second.match(/<th>شهر<\/th>/g)).toHaveLength(2);
+    expect(second).toContain('City Two');
     expect(html).toContain('Double + 1 Extra Bed');
-    expect(html).toContain('4 نفر');
     expect(output).toEqual(before);
   });
   it('shows the saved cheque policy and total including interest without changing passenger service prices', () => {

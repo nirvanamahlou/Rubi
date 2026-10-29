@@ -1,4 +1,5 @@
 import { readContractFlightFacts } from '@/modules/sales/model/contract-flight-facts';
+import { enrichContractHotels } from '@/modules/sales/model/contract-hotel-references';
 import { languageFromCookies } from '@/i18n/language';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -38,7 +39,7 @@ export async function GET(
       { status: 503, headers },
     );
   const get = (path: string) =>
-    fetch(base + path, {
+    fetch(new URL(base + path, request.url).toString(), {
       headers: {
         cookie: request.headers.get('cookie') ?? '',
         accept: 'application/json',
@@ -49,11 +50,22 @@ export async function GET(
     });
   try {
     const response = await get('/sales/contracts/' + id + '/output');
-    if (!response.ok)
+    if (!response.ok) {
+      const body = (await response.json().catch(() => null)) as {
+        message?: unknown;
+        error?: { message?: unknown };
+      } | null;
+      const message = body?.error?.message ?? body?.message;
       return Response.json(
-        { message: 'دریافت قرارداد مجاز نیست یا قرارداد هنوز تأیید نشده است.' },
+        {
+          message:
+            typeof message === 'string'
+              ? message
+              : 'دریافت قرارداد انجام نشد؛ دوباره تلاش کنید.',
+        },
         { status: response.status, headers },
       );
+    }
     const { data: output } = (await response.json()) as {
       data: SalesContractOutputV1;
     };
@@ -110,6 +122,16 @@ export async function GET(
         }
       }),
     );
+    await enrichContractHotels(output, refs, async (resource, key) => {
+      const response = await get(
+        '/master-data/selections/sales/' +
+          resource +
+          '/' +
+          encodeURIComponent(key),
+      );
+      if (!response.ok) return undefined;
+      return ((await response.json()) as { data: MasterDataRecord }).data;
+    });
     const logo = legalEntityBrand(output.company.code).src;
     refs.logoDataUrl =
       'data:image/png;base64,' +
