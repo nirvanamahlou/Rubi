@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { loadContractHotels } from '../api/hotel-catalog';
+import { withCompositeGuests } from '../model/composite-guests';
 import {
   defaultSalesRoomCategory,
   salesRoomCategories,
@@ -9,7 +10,7 @@ import {
   type MasterDataRecord,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
-import { Input, FormField } from '@/components/ui/form-controls';
+import { FormField } from '@/components/ui/form-controls';
 import type { SalesFormState } from '../model/sales-form';
 import {
   salesHotelCalendarSystem,
@@ -18,10 +19,9 @@ import {
 import { SearchableReference } from './searchable-reference';
 import { SalesDatePicker } from './sales-date-picker';
 import { SalesThemedSelect } from './sales-themed-select';
-import { PassengerAgeField } from './passenger-age-field';
 
 export function AdditionalHotelStays({
-  state,
+  state: source,
   patch,
   hotels,
   cities = [],
@@ -33,6 +33,7 @@ export function AdditionalHotelStays({
   cities?: readonly MasterDataRecord[];
   roomTypes: readonly MasterDataRecord[];
 }) {
+  const state = withCompositeGuests(source);
   const [catalog, setCatalog] = useState<readonly MasterDataRecord[] | null>(
     null,
   );
@@ -71,7 +72,10 @@ export function AdditionalHotelStays({
   const stays = state.hotel.additionalStays ?? [];
   const save = (next: typeof stays) =>
     patch({
-      hotel: { ...state.hotel, multiHotel: true, additionalStays: next },
+      hotel: withCompositeGuests({
+        ...state,
+        hotel: { ...state.hotel, multiHotel: true, additionalStays: next },
+      }).hotel,
     });
   return (
     <section
@@ -79,6 +83,7 @@ export function AdditionalHotelStays({
       aria-label="هتل‌های ترکیبی قرارداد"
     >
       <h3 className="font-bold">هتل‌های ترکیبی قرارداد</h3>
+      <p>ترکیب مهمانان اقامت‌های بعدی از اقامت اول خوانده می‌شود.</p>
       {catalogError && (
         <div role="alert">
           <p>{catalogError}</p>
@@ -110,29 +115,12 @@ export function AdditionalHotelStays({
                 حذف هتل
               </Button>
             </div>
-            <SearchableReference
-              label="شهر مقصد"
-              value={stay.cityId}
-              options={cities}
-              showAllOptionsOnOpen
-              onChange={(cityId) => {
-                if (cityId !== stay.cityId)
-                  update({
-                    cityId,
-                    hotelId: '',
-                    hotelNameSnapshot: '',
-                    rooms: [],
-                  });
-              }}
-            />
             <div className="grid grid-cols-[minmax(0,1fr)_6rem] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_9rem]">
               <SearchableReference
                 label="هتل"
                 value={stay.hotelId}
                 options={availableHotels.filter(
                   (h) =>
-                    Boolean(stay.cityId) &&
-                    h.attributes.cityId === stay.cityId &&
                     h.id !== state.hotel.hotelId &&
                     !stays.some(
                       (other, i) => i !== index && other.hotelId === h.id,
@@ -151,50 +139,40 @@ export function AdditionalHotelStays({
                 preferEnglishName
                 onChange={(id) => {
                   const hotel = availableHotels.find((h) => h.id === id);
-                  if (id && (!hotel || hotel.attributes.cityId !== stay.cityId))
+                  if (id && !hotel) return;
+                  if (
+                    id &&
+                    (id === state.hotel.hotelId ||
+                      stays.some(
+                        (other, i) => i !== index && other.hotelId === id,
+                      ))
+                  )
                     return;
                   update({
                     hotelId: id,
                     hotelNameSnapshot: hotel?.name ?? '',
-                    cityId: stay.cityId,
-                    rooms: [],
+                    cityId:
+                      typeof hotel?.attributes.cityId === 'string'
+                        ? hotel.attributes.cityId
+                        : '',
+                    rooms: rooms.map((room) => ({
+                      ...room,
+                      roomTypeId: '',
+                      roomTypeNameSnapshot: '',
+                    })),
                   });
                 }}
               />
-              <label className="grid min-w-0 gap-1">
-                تعداد اتاق
-                <Input
-                  type="number"
-                  min={1}
-                  max={Math.min(50, Math.max(1, state.hotel.occupancy))}
-                  disabled={!stay.hotelId}
-                  value={rooms.length || ''}
-                  onChange={(e) => {
-                    const count = Math.max(
-                      1,
-                      Math.min(
-                        50,
-                        Math.max(1, state.hotel.occupancy),
-                        Number(e.target.value) || 1,
-                      ),
-                    );
-                    update({
-                      rooms: Array.from(
-                        { length: count },
-                        (_, i) =>
-                          rooms[i] ?? {
-                            ordinal: i + 1,
-                            roomTypeId: '',
-                            roomTypeNameSnapshot: '',
-                            adults: 1,
-                            childAges: [],
-                          },
-                      ),
-                    });
-                  }}
-                />
-              </label>
             </div>
+            <p>
+              شهر هتل:{' '}
+              {String(
+                cities.find((c) => c.id === stay.cityId)?.attributes
+                  ?.englishName ??
+                  cities.find((c) => c.id === stay.cityId)?.name ??
+                  '—',
+              )}
+            </p>
             <div className="grid gap-3 sm:grid-cols-2">
               {(['checkInDate', 'checkOutDate'] as const).map((field) => (
                 <FormField
@@ -229,39 +207,6 @@ export function AdditionalHotelStays({
                   ),
                 });
               const category = defaultSalesRoomCategory(room);
-              const children = room.childAges.filter(
-                (age) => age === null || age >= 2,
-              );
-              const infants = room.childAges.filter(
-                (age): age is number => age !== null && age < 2,
-              );
-              const otherGuests = rooms.reduce(
-                (sum, r, i) =>
-                  i === roomIndex ? sum : sum + r.adults + r.childAges.length,
-                0,
-              );
-              const remaining = Math.max(
-                0,
-                state.hotel.occupancy - otherGuests,
-              );
-              const maxAdults = Math.max(
-                1,
-                Math.min(20, remaining - room.childAges.length),
-              );
-              const maxChildren = Math.max(
-                0,
-                Math.min(
-                  20 - infants.length,
-                  remaining - room.adults - infants.length,
-                ),
-              );
-              const maxInfants = Math.max(
-                0,
-                Math.min(
-                  20 - children.length,
-                  remaining - room.adults - children.length,
-                ),
-              );
               return (
                 <div
                   key={room.ordinal}
@@ -308,95 +253,6 @@ export function AdditionalHotelStays({
                           ?.attributes?.referenceCapacity
                       : 'ظرفیت پس از انتخاب تاریخ و نوع اتاق بررسی می‌شود.'}
                   </p>
-                  <FormField label="تعداد بزرگسال اتاق">
-                    <Input
-                      type="number"
-                      min={1}
-                      max={maxAdults}
-                      value={room.adults}
-                      onChange={(e) =>
-                        change({
-                          adults: Math.max(
-                            1,
-                            Math.min(maxAdults, Number(e.target.value) || 1),
-                          ),
-                        })
-                      }
-                    />
-                  </FormField>
-                  <FormField label="تعداد کودک اتاق">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={maxChildren}
-                      value={children.length}
-                      onChange={(e) =>
-                        change({
-                          childAges: [
-                            ...Array.from(
-                              {
-                                length: Math.max(
-                                  0,
-                                  Math.min(
-                                    maxChildren,
-                                    Number(e.target.value) || 0,
-                                  ),
-                                ),
-                              },
-                              (_, i) => children[i] ?? null,
-                            ),
-                            ...infants,
-                          ],
-                        })
-                      }
-                    />
-                  </FormField>
-                  <FormField label="تعداد نوزاد اتاق">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={maxInfants}
-                      value={infants.length}
-                      onChange={(e) =>
-                        change({
-                          childAges: [
-                            ...children,
-                            ...Array.from(
-                              {
-                                length: Math.max(
-                                  0,
-                                  Math.min(
-                                    maxInfants,
-                                    Number(e.target.value) || 0,
-                                  ),
-                                ),
-                              },
-                              (_, i) => infants[i] ?? 0,
-                            ),
-                          ],
-                        })
-                      }
-                    />
-                  </FormField>
-                  {room.childAges.map((age, childIndex) => (
-                    <PassengerAgeField
-                      key={childIndex}
-                      label={`${age !== null && age < 2 ? 'سن نوزاد' : 'سن کودک'} ${room.childAges.slice(0, childIndex + 1).filter((a) => (a !== null && a < 2) === (age !== null && age < 2)).length}`}
-                      infant={age !== null && age < 2}
-                      value={age}
-                      onChange={(value) =>
-                        change({
-                          childAges: room.childAges.map((old, i) =>
-                            i === childIndex
-                              ? age !== null && age < 2
-                                ? (value ?? 0)
-                                : value
-                              : old,
-                          ),
-                        })
-                      }
-                    />
-                  ))}
                   <p>تعداد نفرات اتاق: {room.adults + room.childAges.length}</p>
                 </div>
               );
