@@ -1,3 +1,7 @@
+## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
+
+Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.
+
 ## CONTRACT-ROUTE-ARROW-1029 — PC-A — VALIDATING
 
 Isolate customer contract preview/PDF flight routes as LTR with independently isolated airport labels and origin-to-destination arrows. Return rows retain their actual saved endpoints. Keep escaping, direction captions and all saved commercial/identity data unchanged. Focused output regressions and exact-head full hosted checks gate authorized develop merge. No schema/migration/dependency or server deployment.
