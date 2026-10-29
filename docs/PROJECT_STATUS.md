@@ -7894,3 +7894,10 @@ HR-PAYROLL-FINANCE-APPROVAL-1027 validation:208 HR/Finance API tests passed (50 
 Clicking a Sales contract row, including its existing action controls, keeps that contract highlighted light blue until another row is selected. Selection uses the stable contract ID and survives scrolling and data refresh; keyboard focus within a row also selects it. Selected styling takes precedence over zebra/status backgrounds, while existing status badges and business data remain unchanged. No scroll/focus commands, API, schema, dependency or deployment change. Existing focused table tests and scoped lint are the local verification; full final-head hosted gates precede user-authorized develop merge.
 
 HR-PAYROLL-FINANCE-APPROVAL-1027 stage semantics: HR author confirmation submits only; independent final approval remains Finance-owned. No permission grant or self-approval bypass in Finance.
+
+
+## CONTRACT-TRANSACTIONAL-NUMBERING-1029 — PC-A
+
+Replaces nontransactional sequence allocation with an additive Sales singleton counter, incremented in the same Serializable create transaction as contract/service/passenger/payment/history/audit writes. Bounded serialization retries preserve concurrency without consuming numbers after rollback. Existing numbers/gaps remain immutable; the counter starts above existing contract numbers and the legacy sequence high-water mark. Unit and isolated PostgreSQL regressions cover later-write rollback, duplicate-request rollback, concurrent unique consecutive commits, imported-number/high-water initialization and exhaustion. Stop legacy API writers before migration and deploy only the new allocator. No operational migration, production-data or runtime change performed. Validation and exact-head CI gate the owner-authorized develop merge.
+
+Local validation:20 focused numbering/repository tests passed;4 PostgreSQL tests are gated for disposable CI. Scoped ESLint, schema format/validation, Prettier and diff checks pass. Local typecheck/build and final-head hosted quality/tests/build/database gates remain required.
