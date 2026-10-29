@@ -154,6 +154,43 @@ describe('current identity for authorized contract output', () => {
 });
 
 describe('CustomerService', () => {
+  it('uses actor-scoped receipt persistence for a contract creator without Customer permissions', async () => {
+    const repository = {
+      createSalesRegistration: vi.fn().mockResolvedValue(row),
+      create: vi.fn(),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    const creator = {
+      ...actor,
+      permissions: ['sales.contracts.create'],
+    } as AuthenticatedActor;
+    await service.createForSales(
+      { ...mutation, nationalId: undefined },
+      creator,
+      undefined,
+      'trace',
+      'receipt',
+    );
+    expect(repository.createSalesRegistration).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'PERSON' }),
+      actor.userId,
+      actor.branchIds[0],
+      'receipt',
+      expect.stringMatching(/^[a-f0-9]{64}$/),
+      'trace',
+    );
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(creator.permissions).toEqual(['sales.contracts.create']);
+    await expect(
+      service.createForSales(
+        mutation,
+        { ...creator, permissions: [] },
+        undefined,
+        undefined,
+        'receipt',
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
   it('enforces positive manual field grants on actual updates, even without legacy deny tokens', async () => {
     const repository = {
       find: vi.fn().mockResolvedValue(row),

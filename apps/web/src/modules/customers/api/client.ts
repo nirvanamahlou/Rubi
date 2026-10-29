@@ -259,8 +259,33 @@ export const salesPeopleApi = {
       false,
       'sales/people',
     ),
-  create: (input: CustomerMutationRequest) =>
-    request<{ data: CustomerDetail }>('', body(input), false, 'sales/people'),
+  create: async (input: CustomerMutationRequest, registrationKey?: string) => {
+    const save = () =>
+      request<{ data: CustomerDetail }>(
+        '',
+        {
+          ...body(input),
+          ...(registrationKey
+            ? { headers: { 'x-registration-key': registrationKey } }
+            : {}),
+        },
+        false,
+        'sales/people',
+      );
+    try {
+      return await save();
+    } catch (error) {
+      // Only receipt-backed creates can be replayed after an uncertain response.
+      if (
+        !registrationKey ||
+        (error instanceof CustomersApiError &&
+          error.status > 0 &&
+          error.status < 500)
+      )
+        throw error;
+      return save();
+    }
+  },
   update: (id: string, input: CustomerMutationRequest) =>
     request<{ data: CustomerDetail }>(
       `/${encodeURIComponent(id)}`,

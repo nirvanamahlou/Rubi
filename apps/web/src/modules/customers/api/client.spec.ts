@@ -11,6 +11,55 @@ afterEach(() => {
 });
 
 describe('customers browser client', () => {
+  it('retries a lost Sales creation response once with the same registration receipt', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError('network'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { id: 'saved' } }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+    const input = {
+      kind: 'person',
+      firstName: 'Synthetic',
+      lastName: 'Person',
+      displayName: 'Synthetic Person',
+      roles: ['passenger'],
+    } as const;
+    await expect(salesPeopleApi.create(input, 'receipt')).resolves.toEqual({
+      data: { id: 'saved' },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0]).toEqual(fetchMock.mock.calls[1]);
+    expect(fetchMock.mock.calls[0]?.[1].headers['x-registration-key']).toBe(
+      'receipt',
+    );
+  });
+  it('does not replay denied Sales creation or an unkeyed uncertain creation', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({
+        ok: false,
+        status: 403,
+        json: async () => ({ message: 'denied' }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+    const input = {
+      kind: 'person',
+      displayName: 'Synthetic Person',
+      roles: ['passenger'],
+    } as const;
+    await expect(salesPeopleApi.create(input, 'receipt')).rejects.toThrow(
+      'denied',
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fetchMock.mockReset().mockRejectedValue(new TypeError('network'));
+    await expect(salesPeopleApi.create(input)).rejects.toThrow('network');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
   it('recovers registration by a credentialed non-cacheable POST without putting identity in the URL', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const fetchMock = vi

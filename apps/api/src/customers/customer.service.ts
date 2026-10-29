@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   canViewRoute,
   hasSalesContractSelfService,
@@ -870,6 +871,7 @@ export class CustomerService {
     actor: AuthenticatedActor,
     requestedBranch?: string,
     traceId?: string,
+    registrationKey?: string,
   ) {
     const salesActor = this.salesEntryActor(actor);
     if (input.kind !== 'person') throw new BadRequestException();
@@ -880,6 +882,7 @@ export class CustomerService {
       traceId,
       true,
       true,
+      registrationKey,
     );
   }
 
@@ -907,29 +910,44 @@ export class CustomerService {
     traceId: string | undefined,
     nationalIdOptional: boolean,
     birthDateOptional = false,
+    registrationKey?: string,
   ) {
     this.assertMutationFields(input, actor);
     let row;
     try {
-      row = await this.repository.create(
-        prepareMutation(
-          input,
-          false,
-          input.kind === 'person' && input.nationalId
-            ? this.nationalIdProtector.protect(input.nationalId)
-            : undefined,
-          input.kind === 'person' && input.passportNumber
-            ? this.nationalIdProtector.protectPassportNumber(
-                input.passportNumber,
-              )
-            : undefined,
-          nationalIdOptional,
-          birthDateOptional,
-        ),
-        actor.userId,
-        branchOf(actor, requestedBranch),
-        traceId,
+      const data = prepareMutation(
+        input,
+        false,
+        input.kind === 'person' && input.nationalId
+          ? this.nationalIdProtector.protect(input.nationalId)
+          : undefined,
+        input.kind === 'person' && input.passportNumber
+          ? this.nationalIdProtector.protectPassportNumber(input.passportNumber)
+          : undefined,
+        nationalIdOptional,
+        birthDateOptional,
       );
+      const branch = branchOf(actor, requestedBranch);
+      row = registrationKey
+        ? await this.repository.createSalesRegistration(
+            data,
+            actor.userId,
+            branch,
+            registrationKey,
+            createHash('sha256')
+              .update(
+                JSON.stringify(
+                  Object.fromEntries(
+                    Object.entries(input).sort(([a], [b]) =>
+                      a.localeCompare(b),
+                    ),
+                  ),
+                ),
+              )
+              .digest('hex'),
+            traceId,
+          )
+        : await this.repository.create(data, actor.userId, branch, traceId);
     } catch (error) {
       if (prismaCode(error) === 'P2003')
         throw new BadRequestException({

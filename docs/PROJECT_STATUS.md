@@ -7894,3 +7894,7 @@ HR-PAYROLL-FINANCE-APPROVAL-1027 validation:208 HR/Finance API tests passed (50 
 Clicking a Sales contract row, including its existing action controls, keeps that contract highlighted light blue until another row is selected. Selection uses the stable contract ID and survives scrolling and data refresh; keyboard focus within a row also selects it. Selected styling takes precedence over zebra/status backgrounds, while existing status badges and business data remain unchanged. No scroll/focus commands, API, schema, dependency or deployment change. Existing focused table tests and scoped lint are the local verification; full final-head hosted gates precede user-authorized develop merge.
 
 HR-PAYROLL-FINANCE-APPROVAL-1027 stage semantics: HR author confirmation submits only; independent final approval remains Finance-owned. No permission grant or self-approval bypass in Finance.
+
+## 2026-10-29 — CONTRACT-CUSTOMER-ACCESS-1029 — PC-A
+
+Contract-only Customer producer remains scoped. Fix receipt-backed registration replay when a creation response is lost without national ID; bounded automatic retry, stable original input/key, definitive conflict handling and existing-profile refresh before retry. Existing audit transaction/actor/branch scope; no schema/dependency/global grant or runtime changes. See docs/tasks/CONTRACT-CUSTOMER-ACCESS-1029.md. Initial focused Web75/API56 tests passed; final concurrency regression and quality gates in progress. GitHub CLI authentication expired; user received web-login command. No PR/merge claimed.

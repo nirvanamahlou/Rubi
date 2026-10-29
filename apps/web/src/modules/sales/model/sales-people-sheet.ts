@@ -31,6 +31,7 @@ export interface PeopleRow {
   person?: { id: string; displayName: string };
   reviewRequired?: boolean;
   pendingNationalId?: string;
+  pendingRegistration?: { key: string; input: CustomerMutationRequest };
   previousRegistrationRetained?: boolean;
   profile?: CustomerDetail;
   savedPassportNumber?: string;
@@ -594,6 +595,25 @@ export async function saveSalesPeopleDraft(
   ]) {
     let row = peopleRow(current, key);
     if (!row.reviewRequired && !(row.person && !row.profile)) continue;
+    if (
+      !row.person &&
+      !normalizeNationalId(row.values.nationalId) &&
+      row.pendingRegistration
+    ) {
+      const profile = (
+        await api.create(
+          row.pendingRegistration.input,
+          row.pendingRegistration.key,
+        )
+      ).data;
+      current = editPeopleRow(
+        current,
+        key,
+        adoptRegisteredPerson(row, profile),
+      );
+      onProgress(current);
+      continue;
+    }
     if (!row.person && !normalizeNationalId(row.values.nationalId))
       throw new Error(
         'نتیجه ثبت مشتری قطعی نیست؛ پرونده موجود مشتری را انتخاب کنید تا ثبت تکراری انجام نشود.',
@@ -700,41 +720,51 @@ export async function saveSalesPeopleDraft(
           ]),
         ];
         const number = row.values.passportNumber.trim();
-        const updated = (
-          await api.update(row.person.id, {
-            kind: 'person',
-            displayName: Object.values(
-              registrationNames(row, passportIdentity && key !== 'primary'),
-            ).join(' '),
-            ...registrationNames(row, passportIdentity && key !== 'primary'),
-            acquaintanceMethodId: acquaintanceChanged
-              ? row.values.acquaintanceMethodId || null
-              : profile.acquaintanceMethodId,
-            roles,
-            version: profile.version,
-            ...(row.values.nationalId !== baseline.nationalId
-              ? { nationalId: normalizeNationalId(row.values.nationalId) }
-              : {}),
-            ...(row.values.birthDate
-              ? { birthDate: row.values.birthDate }
-              : {}),
-            passportFirstName: row.values.passportFirstName || null,
-            passportLastName: row.values.passportLastName || null,
-            gender: (row.values.gender || null) as 'M' | 'F' | null,
-            nationalityCode: row.values.nationalityCode || null,
-            passportIssuingCountryCode:
-              row.values.passportIssuingCountryCode || null,
-            birthCountryCode: row.values.birthCountryCode || null,
-            ...(passportChanged
-              ? { passportExpiryDate: row.values.passportExpiryDate || null }
-              : {}),
-            ...(number &&
-            number !== profile.maskedPassportNumber &&
-            number !== profile.passportNumber
-              ? { passportNumber: number }
-              : {}),
-          })
-        ).data;
+        let updated: CustomerDetail;
+        try {
+          updated = (
+            await api.update(row.person.id, {
+              kind: 'person',
+              displayName: Object.values(
+                registrationNames(row, passportIdentity && key !== 'primary'),
+              ).join(' '),
+              ...registrationNames(row, passportIdentity && key !== 'primary'),
+              acquaintanceMethodId: acquaintanceChanged
+                ? row.values.acquaintanceMethodId || null
+                : profile.acquaintanceMethodId,
+              roles,
+              version: profile.version,
+              ...(row.values.nationalId !== baseline.nationalId
+                ? { nationalId: normalizeNationalId(row.values.nationalId) }
+                : {}),
+              ...(row.values.birthDate
+                ? { birthDate: row.values.birthDate }
+                : {}),
+              passportFirstName: row.values.passportFirstName || null,
+              passportLastName: row.values.passportLastName || null,
+              gender: (row.values.gender || null) as 'M' | 'F' | null,
+              nationalityCode: row.values.nationalityCode || null,
+              passportIssuingCountryCode:
+                row.values.passportIssuingCountryCode || null,
+              birthCountryCode: row.values.birthCountryCode || null,
+              ...(passportChanged
+                ? { passportExpiryDate: row.values.passportExpiryDate || null }
+                : {}),
+              ...(number &&
+              number !== profile.maskedPassportNumber &&
+              number !== profile.passportNumber
+                ? { passportNumber: number }
+                : {}),
+            })
+          ).data;
+        } catch (error) {
+          current = editPeopleRow(current, key, {
+            ...row,
+            reviewRequired: mutationNeedsReview(error),
+          });
+          onProgress(current);
+          throw error;
+        }
         current = editPeopleRow(current, key, {
           ...row,
           profile: updated,
@@ -791,26 +821,31 @@ export async function saveSalesPeopleDraft(
       continue;
     }
     let created: CustomerDetail;
+    const registrationInput = peopleCreateInput(
+      row,
+      key === 'primary' || (draft.mode === 'first-passenger' && key === 'p0'),
+      key !== 'primary',
+      passportIdentity && key !== 'primary',
+    );
+    const registration =
+      row.pendingRegistration &&
+      JSON.stringify(row.pendingRegistration.input) ===
+        JSON.stringify(registrationInput)
+        ? row.pendingRegistration
+        : { key: crypto.randomUUID(), input: registrationInput };
     try {
-      created = (
-        await api.create(
-          peopleCreateInput(
-            row,
-            key === 'primary' ||
-              (draft.mode === 'first-passenger' && key === 'p0'),
-            key !== 'primary',
-            passportIdentity && key !== 'primary',
-          ),
-        )
-      ).data;
+      created = (await api.create(registration.input, registration.key)).data;
     } catch (error) {
-      const uncertain = mutationNeedsReview(error);
+      const uncertain =
+        mutationNeedsReview(error) &&
+        !(error instanceof CustomersApiError && error.status === 409);
       current = editPeopleRow(current, key, {
         ...row,
         reviewRequired: uncertain,
         ...(uncertain
           ? {
               pendingNationalId: normalizeNationalId(row.values.nationalId),
+              pendingRegistration: registration,
             }
           : {}),
       });
