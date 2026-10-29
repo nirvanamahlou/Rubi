@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { CustomerMutationRequest } from '@nora/contracts';
 import { customersApi, salesPeopleApi, customerErrorMessage } from './client';
 import { SessionRefreshUnavailableError } from '@/lib/auth-session';
 
@@ -21,13 +22,13 @@ describe('customers browser client', () => {
         json: async () => ({ data: { id: 'saved' } }),
       });
     vi.stubGlobal('fetch', fetchMock);
-    const input = {
+    const input: CustomerMutationRequest = {
       kind: 'person',
       firstName: 'Synthetic',
       lastName: 'Person',
       displayName: 'Synthetic Person',
       roles: ['passenger'],
-    } as const;
+    };
     await expect(salesPeopleApi.create(input, 'receipt')).resolves.toEqual({
       data: { id: 'saved' },
     });
@@ -45,11 +46,11 @@ describe('customers browser client', () => {
       json: async () => ({ message: 'denied' }),
     });
     vi.stubGlobal('fetch', fetchMock);
-    const input = {
+    const input: CustomerMutationRequest = {
       kind: 'person',
       displayName: 'Synthetic Person',
       roles: ['passenger'],
-    } as const;
+    };
     await expect(salesPeopleApi.create(input, 'receipt')).rejects.toThrow(
       'denied',
     );
