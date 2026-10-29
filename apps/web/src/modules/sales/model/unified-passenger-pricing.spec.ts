@@ -114,3 +114,41 @@ it('resolves foreign countries from canonical references and falls back without 
     await printCityInternational({ attributes: {} }, async () => undefined),
   ).toBe(false);
 });
+
+it('uses passenger IRR and foreign sale amounts without adding historical room amounts', () => {
+  const state = {
+    ...emptySalesForm,
+    passengerTotalPricing: true,
+    serviceKinds: ['HOTEL'] as typeof emptySalesForm.serviceKinds,
+    passengers: [
+      { customerId: 'a', displayName: 'Synthetic Guest', birthDate: '' },
+    ],
+    passengerPrices: {
+      a: [
+        { currencyCode: 'IRR', amount: '25000.125' },
+        { currencyCode: 'EUR', amount: '75.5' },
+      ],
+    },
+    hotel: {
+      ...emptySalesForm.hotel,
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: 'room',
+          roomTypeNameSnapshot: 'Synthetic Room',
+          adults: 1,
+          childAges: [],
+          agreedPrice: { currencyCode: 'USD', amount: '999999' },
+        },
+      ],
+    },
+  };
+  const before = structuredClone(state);
+  expect(
+    contractSaleComponents(state).map((p) => [p.currencyCode, p.amount]),
+  ).toEqual([
+    ['IRR', '25000.125'],
+    ['EUR', '75.5'],
+  ]);
+  expect(state).toEqual(before);
+});

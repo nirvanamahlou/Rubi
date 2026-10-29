@@ -4,7 +4,7 @@ import { readPassengerTotalPrices } from '@nora/contracts';
 import { readPassengerHotelStays } from '@nora/contracts';
 import { salesRoomDisplayName } from '@nora/contracts';
 import { readAgencyCommission } from '@nora/contracts';
-import { roomPriceShares, hotelAgeOn } from '@nora/contracts';
+import { hotelAgeOn } from '@nora/contracts';
 import { readPassengerFlightPrices } from '@nora/contracts';
 import {
   readPassengerHotelPrices,
@@ -242,8 +242,6 @@ export function contractPrintHtml(
         0,
       )
     : (hotel?.occupancy ?? 0);
-  const showRoomPrices =
-    hotel?.rooms?.some((room) => room.agreedPrice) ?? false;
   const hotelSection = (stay: SalesHotelStayInput, index: number) => {
     const reference = refs.hotels?.[stay.hotelId];
     const rooms: readonly SalesHotelRoomV1[] =
@@ -284,7 +282,7 @@ export function contractPrintHtml(
       reference?.grade ?? (index === 0 ? refs.hotelGrade : undefined);
     const website =
       reference?.website ?? (index === 0 ? refs.hotelWebsite : undefined);
-    return `<section class="hotel-stay" data-stay="${index + 1}">${index === 0 ? heading(5, 'HOTEL INFORMATION', title) : `<h3>${e(title)}</h3>`}<table><thead><tr><th style="width:30%">نام هتل</th><th>شهر</th><th>درجه</th><th>خدمات</th><th>ورود</th><th>خروج</th>${mixed ? '' : '<th>نوع اتاق</th>'}</tr></thead><tbody><tr><td><bdi>${e(hotelName)}</bdi><small><bdi>${e(website ?? 'وب‌سایت ثبت نشده')}</bdi></small></td><td><bdi dir="ltr">${e(city)}</bdi></td><td>${e(grade)}</td><td>${e(name(hotel?.mealServiceId))}</td><td class="stay-date-cell"><bdi class="stay-date" dir="ltr">${e(stayDate(stay.checkInDate))}</bdi></td><td class="stay-date-cell"><bdi class="stay-date" dir="ltr">${e(stayDate(stay.checkOutDate))}</bdi></td>${mixed ? '' : `<td class="room-type"><bdi>${e(rooms[0]?.roomTypeNameSnapshot ?? room)}</bdi></td>`}</tr></tbody></table><div class="hotel-room-summary"><span>تعداد اتاق‌ها: <b>${e(summary.roomCount)}</b></span><span>مجموع مهمانان هتل: <b>${e(summary.occupancy)}</b></span></div><table class="hotel-rooms"><thead><tr><th>اتاق</th><th>شهر</th><th>نوع و دسته‌بندی اتاق</th><th>بزرگسال</th><th>سن کودکان</th><th>تعداد نفرات اتاق</th>${showRoomPrices ? '<th>مبلغ توافق‌شدهٔ اتاق</th>' : ''}</tr></thead><tbody>${rooms.length ? rooms.map((r) => `<tr><td>${e(r.ordinal)}</td><td><bdi dir="ltr">${e(city)}</bdi></td><td class="room-type"><bdi>${e(salesRoomDisplayName(r))}</bdi></td><td>${e(r.adults)}</td><td>${e(r.childAges.join(', ') || '—')}</td><td>${e(r.adults + r.childAges.length)}</td>${showRoomPrices ? `<td>${index === 0 && r.agreedPrice ? `<bdi class="money">${contractMoney(r.agreedPrice.amount)} ${contractCurrency(r.agreedPrice.currencyCode)}</bdi>` : '—'}</td>` : ''}</tr>`).join('') : `<tr><td colspan="6">${e(room)}</td></tr>`}</tbody></table></section>`;
+    return `<section class="hotel-stay" data-stay="${index + 1}">${index === 0 ? heading(5, 'HOTEL INFORMATION', title) : `<h3>${e(title)}</h3>`}<table><thead><tr><th style="width:30%">نام هتل</th><th>شهر</th><th>درجه</th><th>خدمات</th><th>ورود</th><th>خروج</th>${mixed ? '' : '<th>نوع اتاق</th>'}</tr></thead><tbody><tr><td><bdi>${e(hotelName)}</bdi><small><bdi>${e(website ?? 'وب‌سایت ثبت نشده')}</bdi></small></td><td><bdi dir="ltr">${e(city)}</bdi></td><td>${e(grade)}</td><td>${e(name(hotel?.mealServiceId))}</td><td class="stay-date-cell"><bdi class="stay-date" dir="ltr">${e(stayDate(stay.checkInDate))}</bdi></td><td class="stay-date-cell"><bdi class="stay-date" dir="ltr">${e(stayDate(stay.checkOutDate))}</bdi></td>${mixed ? '' : `<td class="room-type"><bdi>${e(rooms[0]?.roomTypeNameSnapshot ?? room)}</bdi></td>`}</tr></tbody></table><div class="hotel-room-summary"><span>تعداد اتاق‌ها: <b>${e(summary.roomCount)}</b></span><span>مجموع مهمانان هتل: <b>${e(summary.occupancy)}</b></span></div><table class="hotel-rooms"><thead><tr><th>اتاق</th><th>شهر</th><th>نوع و دسته‌بندی اتاق</th><th>بزرگسال</th><th>سن کودکان</th><th>تعداد نفرات اتاق</th></tr></thead><tbody>${rooms.length ? rooms.map((r) => `<tr><td>${e(r.ordinal)}</td><td><bdi dir="ltr">${e(city)}</bdi></td><td class="room-type"><bdi>${e(salesRoomDisplayName(r))}</bdi></td><td>${e(r.adults)}</td><td>${e(r.childAges.join(', ') || '—')}</td><td>${e(r.adults + r.childAges.length)}</td></tr>`).join('') : `<tr><td colspan="6">${e(room)}</td></tr>`}</tbody></table></section>`;
   };
   const totalPrices = readPassengerTotalPrices(
     c.servicesDetail,
@@ -296,26 +294,6 @@ export function contractPrintHtml(
   const hotelPrices = totalPrices
     ? undefined
     : readPassengerHotelPrices(c.servicesDetail, c.passengersDetail);
-  const hotelGuestIds = c.passengersDetail
-    .filter((p) => {
-      if (!p.serviceClientKeys.includes(hotel?.serviceClientKey ?? 'hotel'))
-        return false;
-      const age = hotelAgeOn(
-        p.birthDate || '',
-        hotel?.checkInDate ?? c.departureDate,
-      );
-      return age === null ? p.ageCategory === 'ADT' : age >= 15;
-    })
-    .map((p) => p.customerId);
-  const rooms = hotel?.rooms ?? [];
-  // Aggregate historical contracts may not yet have passenger identities. Keep their
-  // saved room totals without inventing a per-person allocation.
-  const shares =
-    hotelPrices ||
-    hotelGuestIds.length !==
-      rooms.reduce((count, room) => count + room.adults, 0)
-      ? {}
-      : roomPriceShares(rooms, hotelGuestIds);
   const passengerAgeLabel = (p: (typeof c.passengersDetail)[number]) => {
     if (p.ageCategory !== 'CHD')
       return p.ageCategory === 'INF' ? 'نوزاد' : 'بزرگسال';
@@ -347,7 +325,7 @@ export function contractPrintHtml(
           ? p.agreedPrices
           : [
               ...(flightPrices?.[p.customerId] ?? []),
-              ...(hotelPrices?.[p.customerId] ?? shares[p.customerId] ?? []),
+              ...(hotelPrices?.[p.customerId] ?? []),
             ]);
       const renderPrices = (foreign: boolean) =>
         prices
