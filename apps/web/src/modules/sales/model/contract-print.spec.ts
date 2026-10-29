@@ -564,3 +564,65 @@ it('renders the supplied seller safely in the header shared by preview and PDF',
   );
   expect(html).not.toContain('Actual <Seller>');
 });
+
+it('prints saved room prices for booked adults without optional birth dates', () => {
+  const output = structuredClone(printFixture);
+  output.contract.passengersDetail = output.contract.passengersDetail.map(
+    (p) => ({ ...p, birthDate: '', ageCategory: 'ADT' }),
+  );
+  output.contract.hotelSelection!.rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: 'room',
+      roomTypeNameSnapshot: 'Synthetic Double',
+      adults: 2,
+      childAges: [],
+      agreedPrice: { amount: '100', currencyCode: 'USD' },
+    },
+  ];
+  const before = structuredClone(output);
+  expect(() => contractPrintHtml(output, printReferences)).not.toThrow();
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('50');
+  expect(html).toContain('Synthetic Double');
+  expect(output).toEqual(before);
+});
+
+it('keeps saved room totals printable before historical passenger slots are completed', () => {
+  const output = structuredClone(printFixture);
+  output.contract.passengersDetail = [];
+  output.contract.hotelSelection!.rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: 'room',
+      roomTypeNameSnapshot: 'Synthetic Double',
+      adults: 2,
+      childAges: [],
+      agreedPrice: { amount: '123.4567', currencyCode: 'USD' },
+    },
+  ];
+  const before = structuredClone(output);
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('123.4567');
+  expect(output).toEqual(before);
+});
+it('does not allocate a room share to a child whose birth date is absent', () => {
+  const output = structuredClone(printFixture);
+  output.contract.passengersDetail = output.contract.passengersDetail.map(
+    (p) => ({ ...p, birthDate: '' }),
+  );
+  output.contract.hotelSelection!.rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: 'room',
+      roomTypeNameSnapshot: 'Synthetic Double',
+      adults: 2,
+      childAges: [],
+      agreedPrice: { amount: '123.4567', currencyCode: 'USD' },
+    },
+  ];
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('123.4567');
+  expect(html).not.toContain('61.7283');
+  expect(html).not.toContain('61.7284');
+});

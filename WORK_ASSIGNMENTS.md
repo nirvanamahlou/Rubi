@@ -1,3 +1,9 @@
+## CONTRACT-PDF-PARTIAL-1029 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-contract-pdf-partial-1029 from latest origin/develop. User requests fixing PDF failure on some contracts and develop merge. Reserve bounded Sales PDF route, print/render preparation and focused regression tests plus own status notes. Investigate optional reference enrichment and incomplete historical output separately from actual Chromium/font failures; keep authorized saved output, currency precision, source data and permission checks. No active overlapping PDF writer found; previous published tasks release source reservations. No schema/migration/dependency, operational data, runtime/server rollout. Exact-head lint/types/tests/build/database gates precede authorized merge.
+
+Root-cause regression extends scope to existing contract-print.ts/spec: optional blank adult birth dates previously excluded booked adults from roomPriceShares and threw during both share preview and PDF preparation. Preserve known-age hotel rules and booked ADT fallback, suppress only ambiguous derived room shares, and retain saved totals/identities; no global validation relaxation. Scope is print-only, no financial source mutation. Actual UI reproduction and synthetic data only; no real contract content in Git.
+
 ## SALES-PAYMENT-ACCOUNT-1027 — PC-A — READY_FOR_CI
 
 Validation:92 focused Sales/Finance API tests,13 Sales/Finance Web interaction/presentation tests and3 translation regressions pass. Scoped lint and API/Web typechecks pass; Web production build succeeds with66 routes. API build and all final-head hosted quality/test/build/PostgreSQL gates remain mandatory. Bounded generated API/legacy English catalogues are synchronized with existing peer entries. No operational database, account balances or runtime modified.
