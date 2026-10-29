@@ -21,6 +21,7 @@ TARGET = PBX + '/32'
 ROOT = Path('/opt/rubi')
 PRIVATE = ROOT / 'private/call-center-vpn-1029'
 INPUT = Path('/home/rubi-deploy/.rubi-vpn-1029.json')
+PSK_FILE = Path('/etc/ipsec.d/rubi-issabel-1029.secrets')
 UNIT = Path('/etc/systemd/system/rubi-issabel-vpn.service')
 TLS_UNIT = Path('/etc/systemd/system/rubi-issabel-tls.service')
 CONN = 'rubi-issabel-1029'
@@ -80,7 +81,7 @@ def files(doc):
     keyingtries=1
     auto=add
 ''' % (CONN, GATEWAY),
-        PRIVATE / 'connection.secrets': ': PSK ' + quote(doc['psk']) + '\n',
+        PSK_FILE: ': PSK ' + quote(doc['psk']) + '\n',
         PRIVATE / 'ppp.options': '''ipcp-accept-local
 ipcp-accept-remote
 noauth
@@ -290,12 +291,13 @@ s.on('error',()=>process.exit(5));s.on('close',()=>{if(!done)process.exit(6)});}
     return {'host':host,'port':15039,'docker_ami_authenticated':True,'tls_verified':True}
 
 
-def main():
+def main(retry=False):
     if os.geteuid()!=0 or len(sys.argv)!=1: raise SystemExit('Run as root without arguments')
     os.umask(0o077)
-    if PRIVATE.exists() or UNIT.exists() or TLS_UNIT.exists(): raise SystemExit('Existing setup requires inspection; no automatic overwrite')
+    if PRIVATE.exists() or UNIT.exists() or TLS_UNIT.exists() or PSK_FILE.exists(): raise SystemExit('Existing setup requires inspection; no automatic overwrite')
     for name in ('ipsec','xl2tpd','pppd','stunnel4'):
-        if shutil.which(name): raise SystemExit('Pre-existing VPN software requires inspection')
+        if not retry and shutil.which(name): raise SystemExit('Pre-existing VPN software requires inspection')
+        if retry and not shutil.which(name): raise SystemExit('Expected installed package missing')
     if json.loads(run(['ip','-j','route','show','exact',TARGET])):
         raise SystemExit('Pre-existing PBX route requires inspection')
     for chain in (OUT_CHAIN,IN_CHAIN):
@@ -312,8 +314,9 @@ def main():
         try:
             report['stage']='packages'
             # Packages are installed only if no VPN exists. No application container is recreated.
-            run(['apt-get','update'],timeout=300)
-            run(['apt-get','install','-y','--no-install-recommends','strongswan','strongswan-starter','xl2tpd','ppp','stunnel4'],timeout=600)
+            if not retry:
+                run(['apt-get','update'],timeout=300)
+                run(['apt-get','install','-y','--no-install-recommends','strongswan','strongswan-starter','xl2tpd','ppp','stunnel4'],timeout=600)
             run(['systemctl','disable','--now','xl2tpd.service'],required=False)
             run(['systemctl','disable','--now','stunnel4.service'],required=False)
             report['stage']='configuration'
@@ -322,9 +325,17 @@ def main():
                 if path.exists(): shutil.copy2(path,PRIVATE/(path.name+'.before'))
             if re.search(r'^\s*conn\s+(?!%default)',Path('/etc/ipsec.conf').read_text(),re.M):
                 raise RuntimeError('Unexpected pre-existing IPsec connection')
+            originals[PSK_FILE]=None
             for path,data in files(secret).items(): write(path,data)
             write(PRIVATE/'ip-up',HOOK,0o700);write(PRIVATE/'ip-down',HOOK,0o700);write(PRIVATE/'guard',GUARD,0o700)
-            for path,include in [(Path('/etc/ipsec.conf'),PRIVATE/'connection.conf'),(Path('/etc/ipsec.secrets'),PRIVATE/'connection.secrets')]:
+            write(PRIVATE/'verify-ipsec', '''#!/usr/bin/python3
+import subprocess,sys
+p=subprocess.run(['ipsec','statusall'],capture_output=True,text=True,timeout=10)
+lines=[line for line in p.stdout.splitlines() if 'rubi-issabel-1029' in line]
+if p.returncode or not any('ESTABLISHED' in s for s in lines) or not any('INSTALLED' in s for s in lines):
+    sys.exit('IPsec is not established and installed; L2TP start refused')
+''',0o700)
+            for path,include in [(Path('/etc/ipsec.conf'),PRIVATE/'connection.conf'),(Path('/etc/ipsec.secrets'),PSK_FILE)]:
                 with path.open('a') as stream: stream.write('\n# rubi-issabel-1029\ninclude '+str(include)+'\n')
             unit='''[Unit]
 Description=Rubi dedicated Issabel L2TP IPsec client
@@ -338,6 +349,7 @@ RuntimeDirectory=rubi-issabel-vpn
 RuntimeDirectoryMode=0700
 ExecStartPre=%s/guard
 ExecStartPre=/usr/sbin/ipsec up %s
+ExecStartPre=%s/verify-ipsec
 ExecStart=/usr/sbin/xl2tpd -D -c %s/xl2tpd.conf -p /run/rubi-issabel-vpn/xl2tpd.pid -C /run/rubi-issabel-vpn/control
 ExecStopPost=-/usr/sbin/ipsec down %s
 Restart=on-failure
@@ -346,7 +358,7 @@ TimeoutStartSec=60
 KillMode=control-group
 [Install]
 WantedBy=multi-user.target
-''' % (PRIVATE,CONN,PRIVATE,CONN)
+''' % (PRIVATE,CONN,PRIVATE,PRIVATE,CONN)
             write(UNIT,unit,0o644)
             run(['systemctl','daemon-reload'])
             run(['systemctl','enable','--now','strongswan-starter.service'])
@@ -369,6 +381,11 @@ WantedBy=multi-user.target
         except Exception as error:
             report['failure_type']=type(error).__name__
             report['failure_stage']=report.get('stage')
+            recent=run(['journalctl','--since','-10 minutes','-t','charon','-t','ipsec','-t','xl2tpd','-t','pppd','-n','120','--no-pager','-o','cat'],required=False)
+            for value in (secret['password'],secret['psk'],secret['amiSecret']):
+                recent=recent.replace(value,'[REDACTED]')
+            report['network_diagnostics']=[line[:1500] for line in recent.splitlines()
+                if not re.search(r'password|secret|CHAP.*(?:challenge|response)|PAP.*(?:AuthReq|password)',line,re.I)]
             logs=run(['journalctl','-u','rubi-issabel-vpn.service','-u','strongswan-starter.service','-n','150','--no-pager','-o','cat'],required=False)
             report['signals']=[label for label,pattern in [
                 ('IPSEC_ESTABLISHED',r'IKE_SA .*established|CHILD_SA .*established'),

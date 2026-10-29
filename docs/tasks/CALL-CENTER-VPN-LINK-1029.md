@@ -62,6 +62,30 @@ ERP inspection confirms a separate approved deployment is active and API health 
 The diagnostic now waits up to600 seconds for that lock without cancelling the deployment
 or modifying anything during the wait; timeout exits cleanly. The launcher hash is refreshed.
 Authenticated network acceptance remains pending.
+
+## Inspected retry1
+
+Root diagnostic completed and removed the exact leftover fallback; target route list and
+XFRM policies are empty. Logs show a successful IKE proposal/KE exchange followed by
+"no shared key found", then firewall rejection of unprotected L2TP as intended. Thus the
+initial L2TP timeout was secondary, not evidence that the remote server rejected PPP.
+The installed AppArmor charon profile allows /etc/ipsec.d/** and does not allow /opt/rubi.
+The original included PSK file was under /opt/rubi/private; this is an installer defect.
+Move the key include into an exclusive root-private /etc/ipsec.d/rubi-issabel-1029.secrets
+without changing AppArmor. The profile status/audit denial is not independently captured;
+key-loading success must be established by the next actual negotiation.
+
+Add a hard gate requiring both ESTABLISHED IKE and INSTALLED CHILD status before L2TP
+starts. Failure receipts now contain bounded credential-redacted daemon messages to avoid
+another separate root diagnostic round trip. No credential is in Git or process arguments.
+The inspected retry launcher verifies the installer hash, requires the previous preserved
+rollback, compares current IPsec configuration to original backups and refuses active VPN
+services. It uses already installed packages and a fresh private attempt directory; it does
+not overwrite failed-attempt evidence. New PSK file is removed on failed rollback.
+
+Root command: python3 -I /home/rubi-deploy/retry-vpn-1029.py.
+Six offline safety checks and both Python compilations passed; non-root launcher correctly
+refuses execution. Root retry has not run, so connection is not yet established.
 Sanitized result: /opt/rubi/CALL-CENTER-VPN-1029.json.
 Do not print private inputs, ipsec secrets, PPP options or prepared AMI client credentials.
 

@@ -11,6 +11,12 @@ spec.loader.exec_module(bootstrap)
 
 
 class BootstrapSafety(unittest.TestCase):
+    def test_psk_uses_existing_apparmor_allowed_directory(self):
+        rendered = bootstrap.files({'password': 'synthetic-password', 'psk': 'synthetic-psk'})
+        self.assertEqual(bootstrap.PSK_FILE.parent, Path('/etc/ipsec.d'))
+        self.assertIn(bootstrap.PSK_FILE, rendered)
+        self.assertNotIn(bootstrap.PRIVATE / 'connection.secrets', rendered)
+
     def test_routes_and_ppp_never_replace_default_or_dns(self):
         rendered = bootstrap.files({'password': 'synthetic-password', 'psk': 'synthetic-psk'})
         options = rendered[bootstrap.PRIVATE / 'ppp.options']
