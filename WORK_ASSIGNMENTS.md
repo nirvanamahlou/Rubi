@@ -1,5 +1,7 @@
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
+CI follow-up: reserve the existing ServiceParties category-option assertion only, adding Family to the expected choices and verifying its onValueChange persists Family with no fabricated extra bed. Full suite identified exactly this stale expectation (4121 other Web tests pass); preserve all other assertions and gates.
+
 COMPUTER_ID=PC-A; branch codex/pc-a-family-room-child-1029 from develop8a1acec9c. Owner requests Family as an additional room-category option for two adults and one or more children, with develop merge. Reserve shared Sales hotel-rooms category helper/regressions and focused existing Web consumer tests plus own status notes. Existing Sales primary/additional hotel and Reservations amendment selectors/server validation consume this same public helper; no shape/API change. Keep Double default and Extra option, prior adult-only rules, actual hotel capacity/rate/age/party checks and saved data. No migration/schema/dependency or runtime/server changes. Full exact-head CI gates authorized merge; no overlapping active helper writer found.
 
 ## CONTRACT-ROUTE-ARROW-1029 — PC-A — IN_PROGRESS
