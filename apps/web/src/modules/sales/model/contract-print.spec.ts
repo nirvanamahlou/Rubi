@@ -603,7 +603,7 @@ it('renders the supplied seller safely in the header shared by preview and PDF',
   expect(html).not.toContain('Actual <Seller>');
 });
 
-it('prints saved room prices for booked adults without optional birth dates', () => {
+it('omits room amounts and derived shares for adults without optional birth dates', () => {
   const output = structuredClone(printFixture);
   output.contract.passengersDetail = output.contract.passengersDetail.map(
     (p) => ({ ...p, birthDate: '', ageCategory: 'ADT' }),
@@ -621,12 +621,13 @@ it('prints saved room prices for booked adults without optional birth dates', ()
   const before = structuredClone(output);
   expect(() => contractPrintHtml(output, printReferences)).not.toThrow();
   const html = contractPrintHtml(output, printReferences);
-  expect(html).toContain('50');
+  expect(html).not.toContain('مبلغ توافق‌شدهٔ اتاق');
+  expect(html).not.toContain('50 $');
   expect(html).toContain('Synthetic Double');
   expect(output).toEqual(before);
 });
 
-it('keeps saved room totals printable before historical passenger slots are completed', () => {
+it('keeps historical room details printable without obsolete room amounts', () => {
   const output = structuredClone(printFixture);
   output.contract.passengersDetail = [];
   output.contract.hotelSelection!.rooms = [
@@ -641,7 +642,8 @@ it('keeps saved room totals printable before historical passenger slots are comp
   ];
   const before = structuredClone(output);
   const html = contractPrintHtml(output, printReferences);
-  expect(html).toContain('123.4567');
+  expect(html).not.toContain('123.4567');
+  expect(html).toContain('Synthetic Double');
   expect(output).toEqual(before);
 });
 it('does not allocate a room share to a child whose birth date is absent', () => {
@@ -660,7 +662,8 @@ it('does not allocate a room share to a child whose birth date is absent', () =>
     },
   ];
   const html = contractPrintHtml(output, printReferences);
-  expect(html).toContain('123.4567');
+  expect(html).not.toContain('123.4567');
+  expect(html).toContain('Synthetic Double');
   expect(html).not.toContain('61.7283');
   expect(html).not.toContain('61.7284');
 });

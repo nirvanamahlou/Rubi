@@ -451,6 +451,7 @@ export function SalesContractForm() {
       if (
         patch.hotel?.rooms &&
         current.priceEntryMode === 'CONTRACT_TOTAL' &&
+        !current.passengerTotalPricing &&
         (current.hotel.rooms?.some((r) => r.agreedPrice) ||
           patch.hotel.rooms.some((r) => r.agreedPrice))
       )
