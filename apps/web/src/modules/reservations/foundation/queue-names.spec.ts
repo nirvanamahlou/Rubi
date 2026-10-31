@@ -28,7 +28,22 @@ beforeEach(() => {
 });
 
 it('loads each composite hotel and keeps all names when one reference fails', async () => {
-  const row = {
+  const row: RequestView = {
+    id: 'synthetic-request',
+    contractNumber: 'SYNTHETIC',
+    branchId: 'branch',
+    branchName: 'Branch',
+    issuerName: '',
+    customerName: '',
+    salesCounter: '',
+    assignee: null,
+    passengerNames: [],
+    services: ['HOTEL'],
+    priority: 'UNSPECIFIED',
+    deadline: null,
+    createdAt: '2026-10-31T00:00:00Z',
+    status: 'NEW',
+    issues: [],
     hotelId: 'primary',
     hotelName: 'FIRST / SECOND / THIRD',
     hotels: [
@@ -36,7 +51,7 @@ it('loads each composite hotel and keeps all names when one reference fails', as
       { hotelId: 'second', name: 'SECOND' },
       { hotelId: 'third', name: 'THIRD' },
     ],
-  } as RequestView;
+  };
   harness.detail.mockImplementation(async (_resource: string, id: string) => {
     if (id === 'second') throw Error('Unavailable reference');
     return {
