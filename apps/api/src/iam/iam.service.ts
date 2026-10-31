@@ -456,16 +456,42 @@ export class IamService implements IamStepUpPort {
     }
     if (claims.type !== 'access')
       throw new UnauthorizedException('دسترسی معتبر نیست.');
+    return this.authenticateSessionReferenceV1(claims.sub, claims.sid);
+  }
+
+  /** Trusted protocol adapters only; never an unauthenticated browser endpoint. */
+  async authenticateSessionReferenceV1(
+    userId: string,
+    sessionId: string,
+    followRotation = false,
+  ): Promise<AuthenticatedActor> {
+    if (![userId, sessionId].every((value) => /^[0-9a-f-]{36}$/i.test(value)))
+      throw new UnauthorizedException('دسترسی معتبر نیست.');
     const session = await this.database.client.session.findFirst({
       where: {
-        id: claims.sid,
-        userId: claims.sub,
-        status: SessionStatus.ACTIVE,
+        id: sessionId,
+        userId,
+        status: followRotation
+          ? { in: [SessionStatus.ACTIVE, SessionStatus.ROTATED] }
+          : SessionStatus.ACTIVE,
         expiresAt: { gt: new Date() },
       },
       include: { user: { include: this.userAccessInclude() } },
     });
     if (!session || session.user.status !== UserStatus.ACTIVE)
+      throw new UnauthorizedException('دسترسی معتبر نیست.');
+    if (
+      session.status === SessionStatus.ROTATED &&
+      !(await this.database.client.session.findFirst({
+        where: {
+          familyId: session.familyId,
+          userId,
+          status: SessionStatus.ACTIVE,
+          expiresAt: { gt: new Date() },
+        },
+        select: { id: true },
+      }))
+    )
       throw new UnauthorizedException('دسترسی معتبر نیست.');
     return {
       userId: session.userId,
