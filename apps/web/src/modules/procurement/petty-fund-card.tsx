@@ -209,9 +209,7 @@ export function PettyFundCard({ bootstrap }: { bootstrap: Bootstrap }) {
                   tone="error"
                   title="دریافت تنخواه ناموفق بود"
                   description={
-                    query.error instanceof Error
-                      ? query.error.message
-                      : undefined
+                    query.error instanceof Error ? query.error.message : ''
                   }
                 />
                 <Button
