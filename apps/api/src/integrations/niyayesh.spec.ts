@@ -261,3 +261,125 @@ describe('Niyayesh native editor and period reports', () => {
     expect(report.registrySystemId).toBe('registered-site');
   });
 });
+
+describe('Independent site reporting connections', () => {
+  it('resolves each exact registry ID with its own origin and personal scope, with no fallback', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'nora-site-reports-'));
+    const file = join(dir, 'connection.json');
+    const primary = {
+      ...config,
+      registrySystemId: 'site-a',
+      users: [
+        {
+          ...config.users[0]!,
+          resources: ['site-analytics', 'customer-accounts'],
+        },
+      ],
+    };
+    const second = {
+      ...config,
+      registrySystemId: 'site-b',
+      origin: 'https://second.example',
+      secret: 'another-private-key'.repeat(3),
+      users: [
+        {
+          ...config.users[0]!,
+          subject: 'person-b',
+          resources: ['site-analytics', 'customer-accounts'],
+        },
+      ],
+    };
+    await writeFile(
+      file,
+      JSON.stringify({ ...primary, reportConnections: [second] }),
+    );
+    vi.stubEnv('NIYAYESH_CONNECTION_FILE', file);
+    const service = new NiyayeshService();
+    const read = vi.spyOn(service, 'read').mockImplementation(async (c) => ({
+      from: '2026-10-01',
+      to: '2026-10-31',
+      metrics: { users: { value: c.registrySystemId === 'site-a' ? 2 : 7 } },
+      totals: {},
+      trends: {},
+      activity: [],
+      activityAvailable: true,
+    }));
+    try {
+      const a = await service.report(
+        actor,
+        'branch-a',
+        '2026-10-01',
+        '2026-10-31',
+        'site-a',
+      );
+      const b = await service.report(
+        actor,
+        'branch-a',
+        '2026-10-01',
+        '2026-10-31',
+        'site-b',
+      );
+      expect(a.registrySystemId).toBe('site-a');
+      expect(a.metrics.users!.value).toBe(2);
+      expect(b.registrySystemId).toBe('site-b');
+      expect(b.metrics.users!.value).toBe(7);
+      expect(read.mock.calls[1]![0].origin).toBe('https://second.example');
+      expect(read.mock.calls[1]![1]).toBe('person-b');
+      await service.resources(
+        actor,
+        'branch-a',
+        'customer-accounts',
+        '0',
+        undefined,
+        undefined,
+        'users',
+        '2026-10-01',
+        '2026-10-31',
+        'site-b',
+      );
+      expect(read.mock.calls[2]![0].registrySystemId).toBe('site-b');
+      await expect(
+        service.report(
+          actor,
+          'branch-a',
+          '2026-10-01',
+          '2026-10-31',
+          'unknown',
+        ),
+      ).rejects.toThrow('اتصال گزارش این سایت تنظیم نشده است.');
+      await expect(
+        service.report(
+          actor,
+          'branch-other',
+          '2026-10-01',
+          '2026-10-31',
+          'site-b',
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.report(
+          { ...actor, userId: 'other-user' },
+          'branch-a',
+          '2026-10-01',
+          '2026-10-31',
+          'site-b',
+        ),
+      ).rejects.toThrow();
+      expect(read).toHaveBeenCalledTimes(3);
+      expect((await service.configuration())?.registrySystemId).toBe('site-a');
+      await writeFile(
+        file,
+        JSON.stringify({
+          ...primary,
+          reportConnections: [{ ...second, registrySystemId: 'site-a' }],
+        }),
+      );
+      await expect(
+        service.report(actor, 'branch-a', '2026-10-01', '2026-10-31', 'site-a'),
+      ).rejects.toThrow('تنظیمات امن اتصال کامل نیست.');
+      expect(read).toHaveBeenCalledTimes(3);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});

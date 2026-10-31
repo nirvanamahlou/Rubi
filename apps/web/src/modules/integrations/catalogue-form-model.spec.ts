@@ -4,7 +4,13 @@ import {
   decimalField,
   normaliseValue,
 } from './catalogue-form-model';
-import { dailySeries, decimalText, reportMetricText } from './report-model';
+import {
+  dailySeries,
+  decimalText,
+  reportMetricText,
+  scopedSiteReport,
+  activityTitle,
+} from './report-model';
 import type { EditorSchema, SiteReport } from './api/client';
 const baseReport: SiteReport = {
   schemaVersion: 1,
@@ -102,5 +108,35 @@ describe('native site catalogue and report models', () => {
     expect(dailySeries(report, 'orders').map((r) => r.value)).toEqual([
       0, 2, 0,
     ]);
+  });
+});
+
+describe('site-specific report presentation', () => {
+  it('never shows another site or stale period in the selected site panel', () => {
+    const report = { ...baseReport, registrySystemId: 'site-a' };
+    const result = { report, state: 'available' as const };
+    expect(scopedSiteReport(result, 'site-a', report.from, report.to)).toBe(
+      report,
+    );
+    expect(
+      scopedSiteReport(result, 'site-b', report.from, report.to),
+    ).toBeNull();
+    expect(
+      scopedSiteReport(result, 'site-a', '2026-10-01', report.to),
+    ).toBeNull();
+    expect(
+      scopedSiteReport(undefined, 'site-b', report.from, report.to),
+    ).toBeNull();
+  });
+  it('translates activity without exposing internal resource and operation codes', () => {
+    expect(activityTitle('customer-orders', 'upsert')).toBe(
+      'ثبت یا ویرایش سفارش',
+    );
+    expect(activityTitle('customer-travelers', 'archive')).toBe(
+      'بایگانی مسافر',
+    );
+    expect(activityTitle('unknown-table', 'strange-code')).toBe(
+      'تغییر اطلاعات سایت',
+    );
   });
 });

@@ -66,9 +66,10 @@ export const integrationsApi = {
     from: string,
     to: string,
     signal?: AbortSignal,
+    systemId?: string,
   ) =>
     request<SiteReport>(
-      `/niyayesh/report${branchQuery(branchId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+      `/niyayesh/report${branchQuery(branchId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${systemId ? `&systemId=${encodeURIComponent(systemId)}` : ''}`,
       signal ? { signal } : {},
     ),
   niyayeshEditor: (
@@ -191,7 +192,7 @@ export const integrationsApi = {
     after: number,
     signal?: AbortSignal,
     metric?: string,
-    report?: { metric: string; from: string; to: string },
+    report?: { metric: string; from: string; to: string; systemId?: string },
   ) =>
     request<{
       schemaVersion: number;
@@ -204,7 +205,7 @@ export const integrationsApi = {
       nextId: number;
       hasMore: boolean;
     }>(
-      `/niyayesh/resources${branchQuery(branchId)}&resource=${encodeURIComponent(resource)}&after=${after}${metric ? `&metric=${encodeURIComponent(metric)}` : ''}${report ? `&reportMetric=${encodeURIComponent(report.metric)}&from=${encodeURIComponent(report.from)}&to=${encodeURIComponent(report.to)}` : ''}`,
+      `/niyayesh/resources${branchQuery(branchId)}&resource=${encodeURIComponent(resource)}&after=${after}${metric ? `&metric=${encodeURIComponent(metric)}` : ''}${report ? `&reportMetric=${encodeURIComponent(report.metric)}&from=${encodeURIComponent(report.from)}&to=${encodeURIComponent(report.to)}${report.systemId ? `&systemId=${encodeURIComponent(report.systemId)}` : ''}` : ''}`,
       signal ? { signal } : {},
     ),
   async branches(): Promise<BranchReference[]> {

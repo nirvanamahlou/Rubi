@@ -34,8 +34,9 @@ export class NiyayeshController {
     @Query('branchId') branch: string,
     @Query('from') from: string,
     @Query('to') to: string,
+    @Query('systemId') systemId?: string,
   ) {
-    return this.service.report(r.actor, branch, from, to);
+    return this.service.report(r.actor, branch, from, to, systemId);
   }
   @Get('catalogue/:resource')
   @Header('Cache-Control', 'private, no-store')
@@ -152,6 +153,7 @@ export class NiyayeshController {
     @Query('reportMetric') reportMetric?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
+    @Query('systemId') systemId?: string,
   ) {
     const data = await this.service.resources(
       r.actor,
@@ -163,6 +165,7 @@ export class NiyayeshController {
       reportMetric,
       from,
       to,
+      systemId,
     );
     await this.iam.recordSelfActivity(
       r.actor,

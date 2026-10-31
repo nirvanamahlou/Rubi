@@ -43,3 +43,53 @@ export function dailySeries(report: SiteReport, metric: string) {
   }
   return series;
 }
+
+export type SiteReportResult = {
+  report: SiteReport | null;
+  state: 'available' | 'unconfigured' | 'forbidden' | 'error';
+  message?: string;
+};
+export function scopedSiteReport(
+  result: SiteReportResult | undefined,
+  systemId: string,
+  from: string,
+  to: string,
+) {
+  const report = result?.state === 'available' ? result.report : null;
+  return report?.registrySystemId === systemId &&
+    report.from === from &&
+    report.to === to
+    ? report
+    : null;
+}
+const resourceTitles: Record<string, string> = {
+  'customer-orders': 'سفارش',
+  'customer-accounts': 'حساب مشتری',
+  'customer-travelers': 'مسافر',
+  'customer-cart-items': 'سبد خرید',
+  tours: 'تور',
+  hotels: 'هتل',
+  countries: 'کشور',
+  airlines: 'شرکت هواپیمایی',
+  destinations: 'مقصد',
+  categories: 'دسته‌بندی',
+  visas: 'ویزا',
+  'service-offers': 'بلیت و خدمات',
+  'editorial-content': 'محتوا',
+  'exchange-rates': 'نرخ ارز',
+  'support-threads': 'گفتگوی پشتیبانی',
+  'travel-requests': 'درخواست سفر',
+};
+export function activityTitle(resource: string, operation: string) {
+  const action =
+    (
+      {
+        upsert: 'ثبت یا ویرایش',
+        create: 'ثبت',
+        update: 'ویرایش',
+        archive: 'بایگانی',
+        delete: 'حذف',
+      } as Record<string, string>
+    )[operation] ?? 'تغییر';
+  return `${action} ${resourceTitles[resource] ?? 'اطلاعات سایت'}`;
+}

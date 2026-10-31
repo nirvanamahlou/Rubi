@@ -6,6 +6,7 @@ import { BlockList } from 'node:net';
 
 export interface NiyayeshConnection {
   registrySystemId?: string;
+  reportConnections?: Omit<NiyayeshConnection, 'reportConnections'>[];
   origin: string;
   local: boolean;
   client: string;

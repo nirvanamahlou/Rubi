@@ -51,11 +51,16 @@ import {
   type PeriodKey,
 } from '../dashboard-model';
 import styles from './brands-dashboard.module.css';
-import { integrationsApi, type SiteReport } from '../api/client';
+import { integrationsApi, IntegrationsApiError } from '../api/client';
 import { ExternalFields } from './niyayesh-data';
 import { Alert } from '@/components/ui/surfaces';
-import { reportMetricText, reportCount } from '../report-model';
-import { SiteTrend, SiteVisits } from './site-report';
+import {
+  reportMetricText,
+  reportCount,
+  scopedSiteReport,
+  type SiteReportResult,
+} from '../report-model';
+import { SiteTrend, SiteVisits, SiteActivity } from './site-report';
 
 const palettes = ['sand', 'blue', 'violet', 'teal'] as const;
 const symbols = [Landmark, Plane, Wallet, Globe2];
@@ -137,8 +142,35 @@ export function BrandsDashboard({
   const systems = catalogueSystems(data, undefined, true);
   const rangeValid = validRange(range.from, range.to);
   const label = periodLabel(range.from, range.to);
-  const [report, setReport] = useState<SiteReport | null>(null);
-  const [reportError, setReportError] = useState('');
+  const [siteResults, setSiteResults] = useState<{
+    scope: string;
+    results: Record<string, SiteReportResult>;
+  }>({ scope: '', results: {} });
+  const [selectedSite, setSelectedSite] = useState('');
+  const siteIds = systems.map((system) => system.id).join(',');
+  const scope = `${data.branchId}:${range.from}:${range.to}:${siteIds}`;
+  const results = siteResults.scope === scope ? siteResults.results : {};
+  const activeId = systems.some((system) => system.id === selectedSite)
+    ? selectedSite
+    : (systems.find((system) => results[system.id]?.report)?.id ??
+      systems[0]?.id ??
+      '');
+  const activeSite = systems.find((system) => system.id === activeId);
+  const connected = scopedSiteReport(
+    results[activeId],
+    activeId,
+    range.from,
+    range.to,
+  );
+  const reportError =
+    results[activeId]?.state === 'error' ||
+    results[activeId]?.state === 'forbidden'
+      ? results[activeId]?.message
+      : '';
+  function siteReport(id: string) {
+    return scopedSiteReport(results[id], id, range.from, range.to);
+  }
+
   const [loading, setLoading] = useState(false);
   const [revision, setRevision] = useState(0);
   const [rows, setRows] = useState<
@@ -149,51 +181,85 @@ export function BrandsDashboard({
   const [detailError, setDetailError] = useState('');
   const [detailBusy, setDetailBusy] = useState(false);
   const detailGeneration = useRef(0);
-  const connected =
-    report && systems.some((system) => system.id === report.registrySystemId)
-      ? report
-      : null;
   function value(system: IntegrationSystemConfigV1, key: MetricKey) {
     if (key === 'sales' && system.businessDomain !== 'TRAVEL') return 'نامرتبط';
-    return system.id === connected?.registrySystemId
-      ? reportMetricText(connected, key)
-      : metricState(system, key);
+    const report = siteReport(system.id);
+    return report ? reportMetricText(report, key) : metricState(system, key);
   }
   useEffect(() => {
     const control = new AbortController();
     void (async () => {
       await Promise.resolve();
+      if (control.signal.aborted) return;
       detailGeneration.current++;
       setMetric(null);
       setRows([]);
       setDetailBusy(false);
-      setReport(null);
-      setReportError('');
+      setSiteResults({ scope, results: {} });
       setLoading(true);
       if (!rangeValid) {
         setLoading(false);
         return;
       }
-      try {
-        const result = await integrationsApi.niyayeshReport(
-          data.branchId,
-          range.from,
-          range.to,
-          control.signal,
-        );
-        if (!control.signal.aborted) setReport(result);
-      } catch (error) {
-        if (!control.signal.aborted)
-          setReportError(
-            error instanceof Error ? error.message : 'دریافت گزارش انجام نشد.',
-          );
-      } finally {
-        if (!control.signal.aborted) setLoading(false);
+      const entries = await Promise.all(
+        siteIds
+          .split(',')
+          .filter(Boolean)
+          .map(async (id) => {
+            try {
+              const report = await integrationsApi.niyayeshReport(
+                data.branchId,
+                range.from,
+                range.to,
+                control.signal,
+                id,
+              );
+              if (
+                report.registrySystemId !== id ||
+                report.from !== range.from ||
+                report.to !== range.to
+              )
+                throw new Error('پاسخ گزارش با سایت انتخاب‌شده مطابقت ندارد.');
+              return [id, { report, state: 'available' }] as const;
+            } catch (error) {
+              const status =
+                error instanceof IntegrationsApiError ? error.status : 0;
+              return [
+                id,
+                {
+                  report: null,
+                  state:
+                    status === 404
+                      ? 'unconfigured'
+                      : status === 403
+                        ? 'forbidden'
+                        : 'error',
+                  message:
+                    error instanceof Error
+                      ? error.message
+                      : 'دریافت گزارش انجام نشد.',
+                },
+              ] as const;
+            }
+          }),
+      );
+      if (!control.signal.aborted) {
+        setSiteResults({ scope, results: Object.fromEntries(entries) });
+        setLoading(false);
       }
     })();
     return () => control.abort();
-  }, [data.branchId, range.from, range.to, rangeValid, revision]);
+  }, [
+    data.branchId,
+    range.from,
+    range.to,
+    rangeValid,
+    revision,
+    siteIds,
+    scope,
+  ]);
   async function loadDetails(key: MetricKey, after = 0) {
+    if (!connected) return;
     const generation = ++detailGeneration.current;
     setDetailBusy(true);
     setDetailError('');
@@ -205,7 +271,7 @@ export function BrandsDashboard({
         after,
         undefined,
         undefined,
-        { metric: key, from: range.from, to: range.to },
+        { metric: key, from: range.from, to: range.to, systemId: activeId },
       );
       if (generation !== detailGeneration.current) return;
       setRows((old) => [...(after ? old : []), ...result.items]);
@@ -279,29 +345,51 @@ export function BrandsDashboard({
           description={reportError}
         />
       ) : null}
-      <div className="flex flex-wrap items-center gap-3 text-sm">
-        <span>
-          {loading
-            ? 'در حال دریافت گزارش…'
-            : connected
-              ? `گزارش واقعی یک سامانه از ${systems.length.toLocaleString('fa-IR')} سامانه؛ سایر منابع هنوز متصل نیستند`
-              : 'منبع گزارش قابل دسترس نیست؛ نبود داده به معنی صفر نیست'}
-        </span>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={loading}
-          onClick={() => setRevision((v) => v + 1)}
-        >
-          به‌روزرسانی گزارش
-        </Button>
-        {connected ? (
+      <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl border border-border bg-surface p-4">
+        <label className="grid min-w-56 gap-2 text-sm font-semibold">
+          گزارش سایت
+          <NativeSearchSelect
+            aria-label="سایت گزارش"
+            value={activeId}
+            onChange={(event) => {
+              detailGeneration.current++;
+              setSelectedSite(event.target.value);
+              setMetric(null);
+              setRows([]);
+              setHasMore(false);
+              setDetailBusy(false);
+            }}
+          >
+            {systems.map((system) => (
+              <option key={system.id} value={system.id}>
+                {system.name}
+              </option>
+            ))}
+          </NativeSearchSelect>
+        </label>
+        <div className="flex flex-wrap items-center gap-3">
           <Badge>
-            {connected.environment === 'LOCAL'
-              ? 'داده نسخه محلی نیایش'
-              : connected.environment}
+            {loading
+              ? 'دریافت گزارش…'
+              : connected
+                ? connected.environment === 'LOCAL'
+                  ? 'متصل · نسخه محلی'
+                  : 'متصل'
+                : results[activeId]?.state === 'forbidden'
+                  ? 'بدون دسترسی'
+                  : results[activeId]?.state === 'error'
+                    ? 'خطای اتصال'
+                    : 'آماده اتصال'}
           </Badge>
-        ) : null}
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={loading}
+            onClick={() => setRevision((v) => v + 1)}
+          >
+            به‌روزرسانی
+          </Button>
+        </div>
       </div>
       <Card className={styles.systemPanel}>
         <PanelTitle
@@ -333,7 +421,7 @@ export function BrandsDashboard({
                   </div>
                   <span className={styles.ready}>
                     <span />
-                    {system.id === connected?.registrySystemId
+                    {siteReport(system.id)
                       ? 'متصل به منبع گزارش'
                       : 'آماده اتصال'}
                   </span>
@@ -341,8 +429,10 @@ export function BrandsDashboard({
                 <div className={styles.miniMetrics}>
                   <div>
                     <strong>
-                      {system.id === connected?.registrySystemId
-                        ? reportCount(connected.totals['customer-accounts'])
+                      {siteReport(system.id)
+                        ? reportCount(
+                            siteReport(system.id)?.totals['customer-accounts'],
+                          )
                         : '—'}
                     </strong>
                     <span>کل کاربران</span>
@@ -361,8 +451,8 @@ export function BrandsDashboard({
                   </div>
                 </div>
                 <p className={styles.cardNote}>
-                  {system.id === connected?.registrySystemId
-                    ? `تورهای ثبت‌شده: ${reportCount(connected.totals.tours)} · هتل‌ها: ${reportCount(connected.totals.hotels)} · ${label}`
+                  {siteReport(system.id)
+                    ? `تورهای ثبت‌شده: ${reportCount(siteReport(system.id)?.totals.tours)} · هتل‌ها: ${reportCount(siteReport(system.id)?.totals.hotels)} · ${label}`
                     : 'داده عملیاتی هنوز دریافت نشده است'}
                 </p>
                 <button
@@ -412,6 +502,9 @@ export function BrandsDashboard({
           </button>
         </div>
       </Card>
+      <h3 className="text-sm font-semibold">
+        آمار {activeSite?.name ?? 'سایت انتخاب‌شده'}
+      </h3>
       <div className={styles.kpiGrid}>
         {metrics.map((key) => {
           const Icon = metricIcons[key];
@@ -433,13 +526,15 @@ export function BrandsDashboard({
                 <h3>{metricTitles[key]}</h3>
                 <strong>
                   {connected
-                    ? reportMetricText(connected, key)
+                    ? activeSite?.businessDomain !== 'TRAVEL' && key === 'sales'
+                      ? 'نامرتبط'
+                      : reportMetricText(connected, key)
                     : loading
                       ? 'در حال دریافت…'
                       : 'داده موجود نیست'}
                 </strong>
                 <span>
-                  مشاهده جزئیات سامانه‌ها
+                  مشاهده جزئیات سایت
                   <ChevronLeft className="size-3" />
                 </span>
               </div>
@@ -452,12 +547,16 @@ export function BrandsDashboard({
       </div>
       <p className={styles.info}>
         <Info />
-        با انتخاب هر شاخص، جزئیات سامانه‌ها در بازه انتخابی نمایش داده می‌شود.
-        نبود داده به معنی صفر نیست. فروش، جمع اقلام سفارش پرداخت‌شده و لغونشدهٔ
-        سایت با ارز اصلی است؛ تأیید مالی نورا نیست. سفارش منتظر، وضعیت فعلیِ
-        منقضی‌نشده در میان سفارش‌های ایجادشده در بازه است.
+        آمار و جزئیات مربوط به {activeSite?.name ?? 'سایت انتخاب‌شده'} در بازهٔ
+        انتخابی است.
       </p>
-      <SiteVisits report={connected} label={label} />
+      <SiteVisits
+        report={connected}
+        label={label}
+        siteName={activeSite?.name ?? 'سایت انتخاب‌شده'}
+        loading={loading}
+        state={results[activeId]?.state}
+      />
       <div className={styles.middleGrid}>
         <Card className={styles.panel}>
           <PanelTitle
@@ -535,7 +634,7 @@ export function BrandsDashboard({
               </NativeSearchSelect>
             }
           >
-            روند عملکرد
+            روند {activeSite?.name}
           </PanelTitle>
           <p className={styles.caption}>{label}</p>
           <SiteTrend
@@ -579,55 +678,20 @@ export function BrandsDashboard({
           </button>
         </Card>
         <Card className={styles.panel}>
-          <PanelTitle icon={<Clock3 />}>آخرین فعالیت‌ها</PanelTitle>
-          {data.lastChange ? (
-            <div className={styles.activity}>
-              <span className={`${styles.symbol} ${styles.blue}`}>
-                <Settings2 />
-              </span>
-              <div>
-                <h3>{data.lastChange.reason}</h3>
-                <p>
-                  تغییر تنظیمات فهرست · نسخه{' '}
-                  {data.version.toLocaleString('fa-IR')}
-                </p>
-                <time dateTime={data.lastChange.occurredAt}>
-                  {new Date(data.lastChange.occurredAt).toLocaleString(
-                    'fa-IR',
-                    { timeZone: 'Asia/Tehran' },
-                  )}
-                </time>
-              </div>
-            </div>
-          ) : (
-            <p className={styles.caption}>
-              {allowedSections && !allowedSections.includes('logs')
-                ? 'مجوز مشاهده سوابق را ندارید.'
-                : 'تغییری در تنظیمات ثبت نشده است.'}
-            </p>
-          )}
-          <div className={styles.operationEmpty}>
-            {connected?.activity.length ? (
-              connected.activity.map((row) => (
-                <p key={row.version}>
-                  {row.resource} · شناسه {row.externalId} · {row.operation} ·{' '}
-                  {new Date(row.occurredAt).toLocaleString('fa-IR')}
-                </p>
-              ))
-            ) : (
-              <p>
-                {connected?.activityAvailable
-                  ? 'فعالیتی در این بازه ثبت نشده است.'
-                  : 'سابقه بیرونی در دسترس نیست یا مجوز مشاهده ندارید.'}
-              </p>
-            )}
-          </div>
+          <PanelTitle icon={<Clock3 />}>
+            فعالیت‌های {activeSite?.name}
+          </PanelTitle>
+          <SiteActivity
+            report={connected}
+            siteName={activeSite?.name ?? ''}
+            loading={loading}
+          />
           <button
             className={styles.textButton}
-            disabled={allowedSections && !allowedSections.includes('logs')}
-            onClick={() => onSection('logs')}
+            disabled={!activeId}
+            onClick={() => onOpen(activeId)}
           >
-            مشاهده سوابق
+            مدیریت این سایت
             <ChevronLeft className="size-3" />
           </button>
         </Card>
@@ -655,16 +719,16 @@ export function BrandsDashboard({
                       </button>
                     </th>
                     <td>
-                      {system.id === connected?.registrySystemId
-                        ? reportCount(connected.totals['customer-accounts'])
+                      {siteReport(system.id)
+                        ? reportCount(
+                            siteReport(system.id)?.totals['customer-accounts'],
+                          )
                         : '—'}
                     </td>
                     <td>{value(system, 'sales')}</td>
                     <td>
                       <span className={styles.ready}>
-                        {system.id === connected?.registrySystemId
-                          ? 'گزارش متصل'
-                          : 'آماده اتصال'}
+                        {siteReport(system.id) ? 'گزارش متصل' : 'آماده اتصال'}
                       </span>
                     </td>
                   </tr>
@@ -703,8 +767,8 @@ export function BrandsDashboard({
                 <DialogTitle>{metricDetails[metric]}</DialogTitle>
               </div>
               <DialogDescription>
-                توزیع شاخص بین سامانه‌های در فهرست؛ مقادیر پس از اتصال منبع
-                معتبر نمایش داده می‌شوند.
+                مقایسه سایت‌ها در بازهٔ انتخابی؛ جزئیات رکوردها برای{' '}
+                {activeSite?.name} نمایش داده می‌شود.
               </DialogDescription>
               <div className={styles.rangeBadge}>
                 <CalendarDays className="size-4" />
@@ -720,9 +784,7 @@ export function BrandsDashboard({
                       </th>
                       <th>{metricTitles[metric]}</th>
                       {metric === 'sales' ? <th>سفارش‌ها</th> : null}
-                      <th>
-                        {metric === 'pending' ? 'وضعیت دریافت' : 'سهم از کل'}
-                      </th>
+                      <th>وضعیت گزارش</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -736,23 +798,27 @@ export function BrandsDashboard({
                         </th>
                         <td>
                           {metric === 'pending'
-                            ? 'پس از دریافت نوع رویداد'
+                            ? 'پنل سایت'
                             : `${domainLabels[system.businessDomain]} · ${system.kind}`}
                         </td>
                         <td>{value(system, metric)}</td>
                         {metric === 'sales' ? (
                           <td>
-                            {system.id === connected?.registrySystemId
-                              ? reportCount(connected.metrics.sales?.value)
+                            {siteReport(system.id)
+                              ? reportCount(
+                                  siteReport(system.id)?.metrics.sales?.value,
+                                )
                               : 'داده موجود نیست'}
                           </td>
                         ) : null}
                         <td>
                           {metricState(system, metric) === 'نامرتبط'
                             ? 'نامرتبط'
-                            : metric === 'pending'
-                              ? 'متصل نشده'
-                              : 'قابل محاسبه نیست'}
+                            : siteReport(system.id)
+                              ? 'متصل'
+                              : results[system.id]?.state === 'forbidden'
+                                ? 'بدون دسترسی'
+                                : 'آماده اتصال'}
                         </td>
                       </tr>
                     ))}
@@ -767,13 +833,13 @@ export function BrandsDashboard({
                   <tfoot>
                     <tr>
                       <th colSpan={2}>
-                        مجموع منابع متصل: {metricTitles[metric]}
+                        {activeSite?.name}: {metricTitles[metric]}
                       </th>
                       <td colSpan={metric === 'sales' ? 3 : 2}>
                         {connected
                           ? reportMetricText(connected, metric)
                           : 'داده موجود نیست'}{' '}
-                        · فقط منابع متصل
+                        · سایت انتخاب‌شده
                       </td>
                     </tr>
                   </tfoot>

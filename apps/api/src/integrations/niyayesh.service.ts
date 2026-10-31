@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { readFile } from 'node:fs/promises';
@@ -143,6 +144,7 @@ export class NiyayeshService {
     branch: string,
     from: string,
     to: string,
+    systemId?: string,
   ) {
     if (!canViewScreen(actor.permissions, 'integrations.niyayesh.analytics'))
       throw new ForbiddenException('مجوز گزارش سایت را ندارید.');
@@ -152,7 +154,7 @@ export class NiyayeshService {
       from > to
     )
       throw new BadRequestException('بازه گزارش معتبر نیست.');
-    const binding = await this.binding(actor, branch, 'brands');
+    const binding = await this.binding(actor, branch, 'brands', systemId);
     if (!binding || !binding.user.resources.includes('site-analytics'))
       throw new ForbiddenException();
     const result = (await this.read(
@@ -187,6 +189,9 @@ export class NiyayeshService {
       : [];
     return {
       ...result,
+      activityAvailable:
+        result.activityAvailable === true &&
+        canViewIntegrationSection(actor.permissions, 'logs'),
       registrySystemId: binding.config.registrySystemId,
       environment: binding.config.local ? 'LOCAL' : binding.config.environment,
     };
@@ -301,7 +306,7 @@ export class NiyayeshService {
     });
   }
   // Reload local server configuration for every request: revocation is immediate.
-  async configuration() {
+  async configuration(systemId?: string) {
     const file = process.env.NIYAYESH_CONNECTION_FILE;
     if (!file) return null;
     let config: NiyayeshConnection;
@@ -309,6 +314,23 @@ export class NiyayeshService {
       const content = await readFile(file, 'utf8');
       if (content.length > 65536) throw Error();
       config = JSON.parse(content) as NiyayeshConnection;
+      if (systemId !== undefined) {
+        if (!/^[a-zA-Z0-9-]{1,80}$/.test(systemId))
+          throw new BadRequestException('شناسه سایت معتبر نیست.');
+        if (
+          !Array.isArray(config.reportConnections ?? []) ||
+          (config.reportConnections?.length ?? 0) > 50
+        )
+          throw Error();
+        const connections = [config, ...(config.reportConnections ?? [])];
+        const matches = connections.filter(
+          (connection) => connection.registrySystemId === systemId,
+        );
+        if (!matches.length)
+          throw new NotFoundException('اتصال گزارش این سایت تنظیم نشده است.');
+        if (matches.length !== 1) throw Error();
+        config = matches[0]!;
+      }
       if (
         !config.origin ||
         !config.organization ||
@@ -322,7 +344,12 @@ export class NiyayeshService {
         !Array.isArray(config.users)
       )
         throw Error();
-    } catch {
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
       throw new ServiceUnavailableException('تنظیمات امن اتصال کامل نیست.');
     }
     return config;
@@ -331,14 +358,19 @@ export class NiyayeshService {
     actor: AuthenticatedActor,
     branch: string,
     section: 'connections' | 'brands' = 'connections',
+    systemId?: string,
   ) {
     if (
       !actor.branchIds.includes(branch) ||
       !canViewIntegrationSection(actor.permissions, section)
     )
       throw new ForbiddenException('مجوز مشاهده اتصال یا شعبه را ندارید.');
-    const config = await this.configuration();
-    if (!config) return null;
+    const config = await this.configuration(systemId);
+    if (!config) {
+      if (systemId)
+        throw new NotFoundException('اتصال گزارش این سایت تنظیم نشده است.');
+      return null;
+    }
     let user = config.users.find(
       (u) => u.userId === actor.userId && u.branchId === branch,
     );
@@ -431,6 +463,7 @@ export class NiyayeshService {
     reportMetric?: string,
     from?: string,
     to?: string,
+    systemId?: string,
   ) {
     if (
       !Object.hasOwn(NIYAYESH_RESOURCES, resource) ||
@@ -459,6 +492,7 @@ export class NiyayeshService {
       actor,
       branch,
       reportMetric ? 'brands' : 'connections',
+      reportMetric ? systemId : undefined,
     );
     if (!binding)
       throw new ServiceUnavailableException('اتصال تنظیم نشده است.');
