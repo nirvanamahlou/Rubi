@@ -1,8 +1,8 @@
-## HOTEL-REFERENCE-CURRENCY-1031 — PC-B — LOCAL_VERIFIED
+## HOTEL-REFERENCE-CURRENCY-1031 — PC-B — READY_FOR_CI
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hotel-reference-currency-1031 from develop5b6b560b7. Owner requests a hotel-currency dropdown sourced from Master Data currencies. Reserve hotel catalog/reference mapping, native writable/validation/projection, optional MasterHotel.currencyId FK/inverse/index and one additive migration, own regressions/translations/docs. Prior migration lock released on merged PR1232; no overlapping schema writer found. Preserve old/import rows with NULL, validate supplied active currency, retain omitted edit values and allow explicit clearing. Reference metadata only: no exchange-rate conversion/pricing/Finance change. No dependency/grant/runtime or operational migration. No new publication request inferred from this form-only turn.
 
-Local verification complete: schema validation/generation, Database/Contracts builds, focused service/repository/reference/form/accommodation/English regressions, scoped lint, Web types and66-route production Web build passed. Source changes are locally committed, not pushed/merged/deployed. Migration remains unapplied to operational databases; this bounded unpublished schema/source reservation remains active until publication/handoff.
+Local verification complete: schema validation/generation, Database/Contracts builds, focused service/repository/reference/form/accommodation/English regressions, scoped lint, Web types and66-route production Web build passed. Owner now explicitly authorizes push and develop merge after exact-head hosted gates. Migration remains unapplied to operational databases; source/migration reservations release on verified merge. No operational deployment is included.
 
 ## TOUR-OPTIONAL-FIELDS-1031 — PC-A — READY_FOR_CI
 

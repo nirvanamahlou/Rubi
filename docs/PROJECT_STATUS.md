@@ -1,4 +1,4 @@
-## HOTEL-REFERENCE-CURRENCY-1031 — PC-B — LOCAL_VERIFIED
+## HOTEL-REFERENCE-CURRENCY-1031 — PC-B — READY_FOR_CI
 
 Optional hotel currency dropdown reads native Master Data currencies and persists a real nullable currency FK. Supplied missing/inactive references are rejected; clearing and omission preserve normal native edit semantics. Existing hotels/imports stay NULL without backfill; no pricing/conversion behavior changes. Additive migration prepared, not applied to operational databases. Schema validation, Database/Contracts builds, focused API/reference/form/accommodation/English checks, scoped lint, Web types and66-route production build passed. See tasks/HOTEL-REFERENCE-CURRENCY-1031.md. Locally committed; no publication or deployment was requested in this turn.
 
