@@ -153,8 +153,14 @@ export function TravelWorkflowForm({
           expectedVersion: intake.workflow.version,
           note: operationNote,
           branding: {
-            kind: brandKind === 'NONE' ? 'OWN' : brandKind,
-            referenceId: agencyId,
+            kind:
+              brandKind === 'NONE'
+                ? (intake.workflow.branding?.kind ?? 'OWN')
+                : brandKind,
+            referenceId:
+              brandKind === 'NONE'
+                ? (intake.workflow.branding?.referenceId ?? agencyId)
+                : agencyId,
             ...(action === 'بلیط'
               ? { ticketWithoutLogo: brandKind === 'NONE' }
               : action === 'واچر'

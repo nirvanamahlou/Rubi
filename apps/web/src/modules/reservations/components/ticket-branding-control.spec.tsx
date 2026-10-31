@@ -132,3 +132,29 @@ it('offers independent no-logo selection in voucher branding', () => {
     ),
   ).toHaveLength(3);
 });
+
+it('preserves the saved agency identity when selecting no-logo mode', async () => {
+  const value = h.values[3] as { workflow: { branding: unknown } };
+  value.workflow.branding = {
+    kind: 'AGENCY',
+    referenceId: 'saved-agency',
+    name: 'Agency',
+  };
+  const radios = render('واچر').filter(
+    (n) => n.type === 'input' && n.props.type === 'radio',
+  );
+  (radios[2]!.props.onChange as () => void)();
+  (
+    render('واچر').find(
+      (n) => n.type === Button && n.props.children === 'ثبت سربرگ',
+    )!.props.onClick as () => void
+  )();
+  await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+  expect(
+    JSON.parse(String(vi.mocked(fetch).mock.calls[0]![1]!.body)).branding,
+  ).toMatchObject({
+    kind: 'AGENCY',
+    referenceId: 'saved-agency',
+    voucherWithoutLogo: true,
+  });
+});

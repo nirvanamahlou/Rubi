@@ -187,9 +187,7 @@ export class TravelWorkflowService {
       if (
         [ticketWithoutLogo, voucherWithoutLogo].some(
           (value) => value !== undefined && typeof value !== 'boolean',
-        ) ||
-        ((ticketWithoutLogo === true || voucherWithoutLogo === true) &&
-          command.branding?.kind !== 'OWN')
+        )
       )
         throw new BadRequestException('سربرگ معتبر انتخاب کنید.');
       if (command.branding?.kind === 'OWN') {
@@ -202,8 +200,6 @@ export class TravelWorkflowService {
           name: data.legalEntity.persianName,
           logoFileId: data.legalEntity.logoFileId,
           companyCode: data.legalEntity.code,
-          ...(ticketWithoutLogo === true ? { ticketWithoutLogo: true } : {}),
-          ...(voucherWithoutLogo === true ? { voucherWithoutLogo: true } : {}),
         };
       } else if (
         command.branding?.kind === 'AGENCY' &&
@@ -276,12 +272,14 @@ export class TravelWorkflowService {
       if (branding)
         next.branding = {
           ...branding,
-          ...(command.branding?.ticketWithoutLogo === undefined &&
-          state.branding?.ticketWithoutLogo === true
+          ...(command.branding?.ticketWithoutLogo === true ||
+          (command.branding?.ticketWithoutLogo === undefined &&
+            state.branding?.ticketWithoutLogo === true)
             ? { ticketWithoutLogo: true }
             : {}),
-          ...(command.branding?.voucherWithoutLogo === undefined &&
-          state.branding?.voucherWithoutLogo === true
+          ...(command.branding?.voucherWithoutLogo === true ||
+          (command.branding?.voucherWithoutLogo === undefined &&
+            state.branding?.voucherWithoutLogo === true)
             ? { voucherWithoutLogo: true }
             : {}),
         };

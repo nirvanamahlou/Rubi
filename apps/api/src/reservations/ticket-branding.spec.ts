@@ -34,10 +34,18 @@ function setup() {
       },
     })),
   };
+  const agencies = {
+    agencyReference: vi.fn(async () => ({
+      id: '11111111-1111-4111-8111-111111111111',
+      displayName: 'Agency',
+      isActive: true,
+      logoFileReference: 'agency-logo',
+    })),
+  };
   const service = new TravelWorkflowService(
     db as never,
     entities as never,
-    {} as never,
+    agencies as never,
     {} as never,
     {} as never,
   );
@@ -57,7 +65,7 @@ function setup() {
     expectedVersion: 0,
     branding: { kind: 'OWN', ticketWithoutLogo: true },
   };
-  return { service, current, command, actor, create, entities };
+  return { service, current, command, actor, create, entities, agencies };
 }
 beforeEach(() => vi.restoreAllMocks());
 it('persists explicit ticket-only suppression while retaining canonical issuer/logo for other documents and permits restoring normal branding', async () => {
@@ -142,4 +150,27 @@ it('keeps ticket and voucher suppression independent across versioned branding s
   expect(normalVoucher.branding).not.toHaveProperty('voucherWithoutLogo');
   const restored = await save({ kind: 'OWN', ticketWithoutLogo: false });
   expect(restored.branding).not.toHaveProperty('ticketWithoutLogo');
+});
+
+it('retains an active agency issuer when suppressing its logo on only one document', async () => {
+  const s = setup();
+  const branding = {
+    kind: 'AGENCY' as const,
+    referenceId: '11111111-1111-4111-8111-111111111111',
+    voucherWithoutLogo: true,
+  };
+  const result = await s.service.update(
+    'intake',
+    { ...s.command, branding },
+    s.actor as never,
+  );
+  expect(result.branding).toMatchObject({
+    kind: 'AGENCY',
+    referenceId: branding.referenceId,
+    name: 'Agency',
+    logoFileId: 'agency-logo',
+    voucherWithoutLogo: true,
+  });
+  expect(s.entities.current).not.toHaveBeenCalled();
+  expect(s.agencies.agencyReference).toHaveBeenCalledWith(branding.referenceId);
 });
