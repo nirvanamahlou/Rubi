@@ -53,6 +53,7 @@ export interface DashboardVisualCurrencySeriesSnapshot {
   currencyCode: string;
   labels: readonly string[];
   values: readonly number[];
+  series?: readonly DashboardVisualSeriesSnapshot[];
   unit?: string;
   comparison?: DashboardComparisonSnapshot;
   trend?: DashboardTrendSnapshot;
@@ -64,6 +65,7 @@ export interface DashboardVisualSeriesSnapshot {
 }
 
 export interface DashboardVisualSnapshot {
+  notice?: string;
   labels: readonly string[];
   values: readonly number[];
   unit?: string;
@@ -89,6 +91,7 @@ export interface DashboardProjectionSnapshot {
   state: DashboardProjectionState;
   message: string;
   unavailableMetrics?: Readonly<Record<string, string>>;
+  unavailableVisuals?: Readonly<Record<string, string>>;
   metadata: DashboardMetadata | null;
   filterOptions?: DashboardFilterOptions;
   metrics: Readonly<Record<string, DashboardMetricSnapshot>>;

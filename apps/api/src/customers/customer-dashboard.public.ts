@@ -48,7 +48,7 @@ export class CustomerDashboardSource {
       source,
       state: 'ready',
       metrics: {
-        'new-customers': {
+        'registered-customers': {
           kind: 'count',
           aggregation:
             'count distinct registered Customer identities by CREATED_AT; exclude merged identities and passenger-only records',

@@ -327,7 +327,7 @@ vi.mock('@nora/contracts', async (original) => ({
   enforceSalesHotelCapacity: () => true,
 }));
 
-it('uses outbound departure day for overnight flights even when the package starts tomorrow', () => {
+it('uses outbound arrival day for overnight flights while retaining manual check-in', () => {
   const outboundOffer = {
     ...offer('2026-10-24T19:00:00Z'),
     arrivalAt: '2026-10-25T02:00:00Z',
@@ -341,13 +341,13 @@ it('uses outbound departure day for overnight flights even when the package star
       SalesFormState['tour']
     >,
   });
-  expect(next.hotel.checkIn).toBe('2026-10-24');
+  expect(next.hotel.checkIn).toBe('2026-10-25');
   expect(next.hotel.checkOut).toBe('2026-10-30');
   const manual = {
     ...next,
-    hotel: { ...next.hotel, checkIn: '2026-10-25', checkInManual: true },
+    hotel: { ...next.hotel, checkIn: '2026-10-26', checkInManual: true },
   };
-  expect(withSalesHotelDates(next, manual).hotel.checkIn).toBe('2026-10-25');
+  expect(withSalesHotelDates(next, manual).hotel.checkIn).toBe('2026-10-26');
 });
 
 it('uses the selected outbound day before floating flight details are complete with a legacy next-day flag', () => {

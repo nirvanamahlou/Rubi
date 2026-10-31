@@ -1023,7 +1023,9 @@ function Metric({
           >
             {metric
               ? `${latinizeDashboardNumericText(metric.value)}${isPercentageMetric ? '%' : ''}`
-              : '—'}
+              : definition?.id === 'gross-profit'
+                ? 'قابل محاسبه نیست'
+                : '—'}
           </span>
           <span aria-hidden="true" />
         </span>
@@ -3123,15 +3125,21 @@ function ProjectionSlot({
                 trendCalendarSystem={trendCalendarSystem}
                 unit={displayUnit}
                 values={displayData.values}
-                series={data?.series}
+                series={displayData.series}
               />
             )
           ) : (
             <>
               <EmptyVisualCanvas kind={kind} />
-              <p className="sr-only">دادهٔ تأییدشده برای نمایش موجود نیست</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                دادهٔ تأییدشده برای نمایش موجود نیست؛ منبع، دسترسی و فیلترهای
+                این نمودار باید بررسی شوند.
+              </p>
             </>
           )}
+          {data?.notice ? (
+            <p className="mt-2 text-xs text-muted-foreground">{data.notice}</p>
+          ) : null}
           {displayData?.values.length ? (
             <>
               {kind === 'donut' && resolvedKind !== 'donut' ? (
@@ -3868,7 +3876,8 @@ export function DashboardWorkspace() {
           ) : null}
           {query.data?.state === 'blocked' ||
           (query.data?.state === 'ready' &&
-            Object.keys(query.data.unavailableMetrics ?? {}).length > 0) ? (
+            (Object.keys(query.data.unavailableMetrics ?? {}).length > 0 ||
+              Object.keys(query.data.unavailableVisuals ?? {}).length > 0)) ? (
             <Alert
               title="وضعیت اتصال داده‌های داشبورد"
               description={query.data.message}

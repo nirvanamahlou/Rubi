@@ -27,15 +27,18 @@ export function ProcurementDocumentPicker({
   invoiceUpload?: {
     requestId: string;
     requestNumber: string;
-    purpose?: 'ORDER' | 'RETURN';
+    purpose?: 'ORDER' | 'RETURN' | 'REQUEST';
+    sourceEntityType?: 'ProcurementRequest' | 'ProcurementDraft';
   };
 }) {
   const uploadLabel =
-    invoiceUpload?.purpose === 'ORDER'
-      ? 'سند سفارش'
-      : invoiceUpload?.purpose === 'RETURN'
-        ? 'مدرک مرجوعی'
-        : 'فاکتور';
+    invoiceUpload?.purpose === 'REQUEST'
+      ? 'فیش'
+      : invoiceUpload?.purpose === 'ORDER'
+        ? 'سند سفارش'
+        : invoiceUpload?.purpose === 'RETURN'
+          ? 'مدرک مرجوعی'
+          : 'فاکتور';
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<readonly DocumentListItemV1[]>([]);
@@ -136,7 +139,10 @@ export function ProcurementDocumentPicker({
       form.set('branchId', branchId);
       form.set('ownerUserId', owner.id);
       form.set('sourceModule', 'PROCUREMENT');
-      form.set('sourceEntityType', 'ProcurementRequest');
+      form.set(
+        'sourceEntityType',
+        invoiceUpload.sourceEntityType ?? 'ProcurementRequest',
+      );
       form.set('sourceEntityId', invoiceUpload.requestId);
       form.set(
         'sourceDisplayLabel',

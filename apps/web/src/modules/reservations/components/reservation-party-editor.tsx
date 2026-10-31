@@ -1,7 +1,7 @@
 'use client';
 import { isOptionalOperationReason } from '@nora/contracts';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   CustomerSummary,
   SalesContractDetail,
@@ -10,8 +10,9 @@ import type {
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';
 import { salesApi } from '@/modules/sales/api/client';
-import { customersApi } from '@/modules/customers/api/client';
+import { salesPeopleApi as customersApi } from '@/modules/customers/api/client';
 import { SalesOrganizationCustomer } from '@/modules/sales/components/sales-organization-customer';
+import { SalesPersonCreate } from '@/modules/sales/components/sales-person-create';
 import { SalesPersonSearch } from '@/modules/sales/components/sales-person-search';
 
 export function ReservationPartyEditor({
@@ -35,6 +36,20 @@ export function ReservationPartyEditor({
   );
   const [reason, setReason] = useState('');
   const [search, setSearch] = useState(false);
+  const [create, setCreate] = useState(false);
+  const choices = useRef<
+    Partial<
+      Record<
+        'person' | 'organization',
+        {
+          customerId: string;
+          name: string;
+          organizationId: string;
+          contact: SalesBuyerContactV1;
+        }
+      >
+    >
+  >({});
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [directoryBusy, setDirectoryBusy] = useState(false);
@@ -62,26 +77,34 @@ export function ReservationPartyEditor({
     };
   }, [contract.customerId]);
   function select(person: CustomerSummary) {
+    setKind(person.kind);
     setCustomerId(person.id);
     setName(person.displayName);
     setOrganizationId(person.organizationId ?? '');
     setContact({
-      name: person.displayName,
       phone: '',
       address: '',
       postalCode: '',
+      ...(create ||
+      customerId === person.id ||
+      (!customerId && kind === 'person')
+        ? contact
+        : person.id === contract.customerId
+          ? contract.buyerContact
+          : {}),
+      name: person.displayName,
     });
     setSearch(false);
+    setCreate(false);
   }
   async function save() {
-    if (
-      busy ||
-      directoryBusy ||
-      !ready ||
-      !customerId ||
-      !isOptionalOperationReason(reason)
-    )
+    if (busy || directoryBusy || !ready || !isOptionalOperationReason(reason))
       return;
+    if (!customerId) {
+      setError('طرف قرارداد را انتخاب کنید.');
+      setSearch(kind === 'person');
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -128,17 +151,28 @@ export function ReservationPartyEditor({
                 name="contract-party-kind"
                 checked={kind === value}
                 onChange={() => {
+                  choices.current[kind] = {
+                    customerId,
+                    name,
+                    organizationId,
+                    contact,
+                  };
+                  const saved = choices.current[value];
                   setKind(value);
-                  setCustomerId('');
-                  setName('');
-                  setOrganizationId('');
-                  setSearch(value === 'person');
-                  setContact({
-                    name: '',
-                    phone: '',
-                    address: '',
-                    postalCode: '',
-                  });
+                  setCustomerId(saved?.customerId ?? '');
+                  setName(saved?.name ?? '');
+                  setOrganizationId(saved?.organizationId ?? '');
+                  setSearch(value === 'person' && !saved?.customerId);
+                  setCreate(false);
+                  setError('');
+                  setContact(
+                    saved?.contact ?? {
+                      name: '',
+                      phone: '',
+                      address: '',
+                      postalCode: '',
+                    },
+                  );
                 }}
               />{' '}
               {value === 'person' ? 'مشتری' : 'آژانس'}
@@ -153,6 +187,10 @@ export function ReservationPartyEditor({
             onSelected={select}
             onBusyChange={setDirectoryBusy}
             disabled={busy}
+            onClear={() => {
+              setCustomerId('');
+              setName('');
+            }}
           />
         ) : (
           <>
@@ -163,8 +201,27 @@ export function ReservationPartyEditor({
             >
               انتخاب مشتری دیگر
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setCreate((v) => !v);
+                setSearch(false);
+              }}
+            >
+              افزودن مشتری جدید
+            </Button>
+            {create && (
+              <SalesPersonCreate
+                mode="customer"
+                onCreated={select}
+                onCancel={() => setCreate(false)}
+                onBusyChange={setDirectoryBusy}
+              />
+            )}
             {search && (
               <SalesPersonSearch
+                query={contact.name}
                 purpose="customer"
                 selectedIds={[]}
                 onSelect={select}
@@ -184,7 +241,7 @@ export function ReservationPartyEditor({
                   {label}
                   <Input
                     aria-label={label}
-                    required
+                    required={key !== 'postalCode'}
                     value={contact[key]}
                     maxLength={
                       key === 'address'
@@ -195,9 +252,11 @@ export function ReservationPartyEditor({
                             ? 16
                             : 10
                     }
-                    onChange={(e) =>
-                      setContact((v) => ({ ...v, [key]: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      setContact((v) => ({ ...v, [key]: e.target.value }));
+                      if (key === 'name' && !customerId && !create)
+                        setSearch(true);
+                    }}
                   />
                 </label>
               ))}
@@ -217,10 +276,7 @@ export function ReservationPartyEditor({
           با ثبت، بدهی و دریافت‌های این قرارداد به طرف حساب انتخاب‌شده منتقل
           می‌شوند؛ سابقهٔ دریافت‌ها حفظ می‌شود.
         </p>
-        <Button
-          type="submit"
-          disabled={!customerId || !isOptionalOperationReason(reason)}
-        >
+        <Button type="submit" disabled={!isOptionalOperationReason(reason)}>
           {busy ? 'در حال ذخیره…' : 'ثبت اصلاح طرف قرارداد'}
         </Button>
       </fieldset>

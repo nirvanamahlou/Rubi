@@ -18,8 +18,9 @@ export function validateSupplierFormPrices(
         !price ||
         typeof price.amount !== 'string' ||
         !/^\d{1,18}(?:\.\d{1,4})?$/.test(price.amount) ||
-        typeof price.currencyCode !== 'string' ||
-        !/^[A-Z]{3}$/.test(price.currencyCode),
+        (key !== 'ratio' &&
+          (typeof price.currencyCode !== 'string' ||
+            !/^[A-Z]{3}$/.test(price.currencyCode))),
     )
   )
     throw new Error('جدول قیمت فرم رزرواسیون معتبر نیست.');
@@ -234,7 +235,9 @@ export function validateVoucherSettings(
           supplierFormPrices: Object.fromEntries(
             Object.entries(v.supplierFormPrices).map(([key, price]) => [
               key,
-              { amount: price.amount, currencyCode: price.currencyCode },
+              key === 'ratio'
+                ? { amount: price.amount }
+                : { amount: price.amount, currencyCode: price.currencyCode },
             ]),
           ),
         }

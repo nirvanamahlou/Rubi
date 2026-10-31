@@ -47,6 +47,7 @@ import { ProcurementSelect } from './procurement-select';
 import { ProcurementRecordActions } from './record-actions';
 import { MasterDataDateRangeFilter } from '@/modules/master-data/components/master-data-date-range-filter';
 import { cn } from '@/lib/utils';
+import { PettyFundCard } from './petty-fund-card';
 import {
   usePageBreadcrumbs,
   type PageBreadcrumb,
@@ -100,7 +101,7 @@ const sectionKeys = [
 ] as const;
 function sectionIndex(value: string | null): number {
   const index = sectionKeys.findIndex((key) => key === value);
-  return index < 0 || index === 7 ? 0 : index;
+  return index < 0 || index === 7 || index === 5 ? 0 : index;
 }
 const nextAction: Record<ProcurementRequestV1['status'], string> = {
   DRAFT: 'تکمیل و ارسال درخواست',
@@ -246,6 +247,7 @@ function WorkspaceState({
   );
   const navigateGroup = useCallback(
     (index: number) => {
+      if (index === 5) index = 0;
       setGroup(index);
       setPage(1);
       setSelectedId(null);
@@ -378,6 +380,7 @@ function WorkspaceState({
     setCreating(false);
     setEditing(false);
     openRequest(request.id);
+    void client.invalidateQueries({ queryKey: ['procurement', 'petty-fund'] });
     client.setQueryData(['procurement', 'request', request.id], request);
     void client.invalidateQueries({ queryKey: ['procurement', 'requests'] });
     void client.invalidateQueries({
@@ -578,8 +581,8 @@ function WorkspaceState({
               </Card>
             ))}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {([1, 3, 5] as const).map((index) => {
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {([1, 3] as const).map((index) => {
               const tone = areaTone[index];
               const Icon = tone.icon;
               return (
@@ -616,6 +619,7 @@ function WorkspaceState({
                 </button>
               );
             })}
+            <PettyFundCard bootstrap={bootstrap} />
           </div>
           <Card className="overflow-hidden border-blue-300/70 dark:border-blue-400/25">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-gradient-to-l from-blue-400/15 to-transparent p-5 dark:from-blue-400/8">

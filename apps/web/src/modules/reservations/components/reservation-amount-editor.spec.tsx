@@ -110,7 +110,7 @@ afterEach(() => vi.unstubAllGlobals());
 it('offers a direct save-only action without requiring or sending to a broker', async () => {
   const controls = elements(render());
   const action = controls.find(
-    (n) => n.type === Button && n.props.children === 'ثبت مبلغ فرم',
+    (n) => n.type === Button && n.props.children === 'ذخیره',
   );
   expect(action?.props.disabled).toBe(false);
   (action!.props.onClick as () => void)();
@@ -143,7 +143,7 @@ it('uses grouped money input while preserving the canonical decimal string', () 
 
 it('keeps amount saving disabled for cancelled requests', async () => {
   const action = elements(render(true)).find(
-    (n) => n.type === Button && n.props.children === 'ثبت مبلغ فرم',
+    (n) => n.type === Button && n.props.children === 'ذخیره',
   );
   expect(action?.props.disabled).toBe(true);
   (action!.props.onClick as () => void)();
@@ -183,4 +183,11 @@ it('preserves entered amount and currency when choosing a broker after the amoun
   expect(
     (h.states[0] as { hotelPurchasePrices: unknown }).hotelPurchasePrices,
   ).toEqual([{ amount: '1250000.50', currencyCode: 'IRR' }]);
+});
+
+it('shows Hotel P.P and never offers a currency for Ratio', () => {
+  const nodes = elements(render());
+  expect(nodes.some((n) => n.props.children === 'Hotel P.P')).toBe(true);
+  expect(nodes.some((n) => n.props.label === 'ارز Ratio')).toBe(false);
+  expect(nodes.some((n) => n.props['aria-label'] === 'مبلغ Ratio')).toBe(true);
 });

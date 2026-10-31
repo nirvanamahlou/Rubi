@@ -68,7 +68,7 @@ describe('voucher directory snapshot and sent-form gate', () => {
       voucherSettings: {
         supplierFormPrices: {
           pp: { amount: '1', currencyCode: 'JPY' },
-          ratio: { amount: '2', currencyCode: 'JPY' },
+          ratio: { amount: '2' },
         },
       },
     } as never;
