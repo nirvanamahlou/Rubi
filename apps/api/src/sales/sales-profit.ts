@@ -58,6 +58,23 @@ export function contractProfit(
           } as (typeof services)[number]);
     }
   }
+  for (const purchase of intake?.servicePurchases ?? []) {
+    if (
+      !purchase.hotelStayKey ||
+      !['HOTEL', 'TRANSFER'].includes(purchase.serviceKind)
+    )
+      continue;
+    for (const key of purchase.coveredServiceClientKeys?.length
+      ? purchase.coveredServiceClientKeys
+      : [purchase.serviceClientKey]) {
+      if (!services.some((service) => service.clientKey === key))
+        services.push({
+          clientKey: key,
+          kind: purchase.serviceKind,
+          titleSnapshot: purchase.serviceTitle,
+        } as (typeof services)[number]);
+    }
+  }
   const title = (key: string) =>
     services.find((s) => s.clientKey === key)?.titleSnapshot ||
     (

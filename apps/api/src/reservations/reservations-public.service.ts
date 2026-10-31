@@ -128,6 +128,12 @@ function present(
         ...(!Array.isArray(purchase.passengerPrices) &&
         purchase.passengerPrices &&
         typeof purchase.passengerPrices === 'object' &&
+        typeof purchase.passengerPrices.hotelStayKey === 'string'
+          ? { hotelStayKey: purchase.passengerPrices.hotelStayKey }
+          : {}),
+        ...(!Array.isArray(purchase.passengerPrices) &&
+        purchase.passengerPrices &&
+        typeof purchase.passengerPrices === 'object' &&
         'roomPurchase' in purchase.passengerPrices
           ? {
               roomPurchase: purchase.passengerPrices
