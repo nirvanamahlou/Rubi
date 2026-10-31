@@ -1,3 +1,4 @@
+import { voucherHotelDocuments } from '../model/voucher-hotel-documents';
 import { supplierPriceTableData } from '../model/supplier-form-prices';
 import { localizeDocumentHtml } from '@/i18n/document';
 import {
@@ -30,6 +31,52 @@ export function voucherPdfHtml(
   voucher = false,
   origin = '',
   publicDocumentUrl?: string,
+) {
+  const documents = voucher ? voucherHotelDocuments(intake, refs) : [];
+  if (documents.length < 2)
+    return voucherHotelPdfHtml(
+      intake,
+      refs,
+      logo,
+      css,
+      voucher,
+      origin,
+      publicDocumentUrl,
+    );
+  const rendered = documents.map((document) =>
+    voucherHotelPdfHtml(
+      document.intake,
+      refs,
+      logo,
+      css,
+      true,
+      origin,
+      publicDocumentUrl,
+      document.pageOffset,
+      document.totalPages,
+    ),
+  );
+  const bodies = rendered
+    .map((html) =>
+      html.slice(html.indexOf('<body>') + 6, html.lastIndexOf('</body>')),
+    )
+    .join('');
+  return (
+    rendered[0]!.slice(0, rendered[0]!.indexOf('<body>') + 6) +
+    bodies +
+    '</body></html>'
+  );
+}
+function voucherHotelPdfHtml(
+  intake: ReservationFormIntake,
+  refs: ReservationFormReferences,
+  logo: string,
+  css: string,
+  voucher = false,
+  origin = '',
+  publicDocumentUrl?: string,
+  pageOffset = 0,
+  totalPages?: number,
 ) {
   const settings = voucher
     ? intake.workflow.voucherSettings
@@ -67,7 +114,53 @@ export function voucherPdfHtml(
     !settings || settings.flags.hotel
       ? reservationRoomAppendices(data.roomBreakdown)
       : [];
-  const pageCount = pages.length + roomAppendices.length;
+  const hotelHtml =
+    !settings || settings.flags.hotel
+      ? `    ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
+          [
+            'HOTEL',
+            'CITY',
+            'STAR',
+            'SERVICE',
+            ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
+            'CHECK-IN',
+            'CHECK-OUT',
+          ],
+          [
+            [
+              data.hotel,
+              data.destination,
+              data.stars,
+              data.meal,
+              ...(!data.roomBreakdown.length ? [data.roomType] : []),
+              data.checkIn,
+              data.checkOut,
+            ],
+          ],
+        )}
+    ${
+      data.roomBreakdown.length
+        ? table(
+            ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'],
+            data.roomBreakdown
+              .slice(0, 4)
+              .map((r) => [
+                r.ordinal,
+                r.roomType,
+                r.adults,
+                r.childAges.join(', ') || '-',
+                r.adults + r.childAges.length,
+              ]),
+            'roomBreakdown',
+          ).replace(
+            '<thead>',
+            '<caption>ROOM QUANTITIES BY TYPE</caption><thead>',
+          )
+        : ''
+    }
+`
+      : '';
+  const pageCount = totalPages ?? pages.length + roomAppendices.length;
   let first = 0;
   const sheets = pages
     .map((people, index) => {
@@ -119,48 +212,7 @@ export function voucherPdfHtml(
       'summary',
     )}
     </section>${heading('02', 'FLIGHT INFORMATION', 'Departure & return · Tehran time')}${table(['AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'], data.flights.length ? data.flights.map((f) => [f.airline, f.number, f.date, f.time]) : [['-', '-', '-', '-']])}
-    ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
-      [
-        'HOTEL',
-        'CITY',
-        'STAR',
-        'SERVICE',
-        ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
-        'CHECK-IN',
-        'CHECK-OUT',
-      ],
-      [
-        [
-          data.hotel,
-          data.destination,
-          data.stars,
-          data.meal,
-          ...(!data.roomBreakdown.length ? [data.roomType] : []),
-          data.checkIn,
-          data.checkOut,
-        ],
-      ],
-    )}
-    ${
-      data.roomBreakdown.length
-        ? table(
-            ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'],
-            data.roomBreakdown
-              .slice(0, 4)
-              .map((r) => [
-                r.ordinal,
-                r.roomType,
-                r.adults,
-                r.childAges.join(', ') || '-',
-                r.adults + r.childAges.length,
-              ]),
-            'roomBreakdown',
-          ).replace(
-            '<thead>',
-            '<caption>ROOM QUANTITIES BY TYPE</caption><thead>',
-          )
-        : ''
-    }
+    ${hotelHtml}
     ${heading('04', 'TOUR SERVICES', 'Leader & board')}${table(['TRANSFER', 'TOUR LEADER', 'BOARD'], [[data.transfer, data.leader, settings?.text.transferBoard?.trim() || '-']])}
     ${heading('05', voucher ? 'PASSENGER SERVICES' : 'PASSENGERS', 'Passenger manifest')}${
       voucher
@@ -192,7 +244,7 @@ export function voucherPdfHtml(
           )
     }
     ${!voucher ? heading('06', 'PRICES', 'Supplier quotation') + table(supplierPriceTableData(intake).headers, supplierPriceTableData(intake).rows) : ''}${heading(voucher ? '06' : '07', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
-    <footer class="footer"><div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin, intake.workflow.branding?.companyCode, data.brand, publicDocumentUrl, voucher)}</div><div><span></span></div><b>${index + 1} / ${pageCount}</b></footer></article>`;
+    <footer class="footer"><div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin, intake.workflow.branding?.companyCode, data.brand, publicDocumentUrl, voucher)}</div><div><span></span></div><b>${pageOffset + index + 1} / ${pageCount}</b></footer></article>`;
     })
     .join('');
   const appendices = roomAppendices
@@ -207,7 +259,7 @@ export function voucherPdfHtml(
             r.childAges.join(', ') || '-',
             r.adults + r.childAges.length,
           ]),
-        )}<footer class="footer"><b>${pages.length + index + 1} / ${pageCount}</b></footer></article>`,
+        )}<footer class="footer"><b>${pageOffset + pages.length + index + 1} / ${pageCount}</b></footer></article>`,
     )
     .join('');
   const html = `<!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:"><title>${escape(data.request)}</title><style>${css}\n@page{size:A4;margin:0}html,body{margin:0;padding:0}.page{margin:0;break-after:page}.page:last-child{break-after:auto}.passengers th:nth-child(2){width:56%}</style></head><body>${sheets}${appendices}</body></html>`;
