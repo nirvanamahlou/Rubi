@@ -106,11 +106,11 @@ export function hrCompanies(data: HrBootstrapDto) {
   }
   if (headquarters && !grouped.has('دفتر مرکزی'))
     grouped.set('دفتر مرکزی', {
-      id: headquarters.id,
+      id: 'hr-headquarters',
       branchId: headquarters.id,
       name: 'دفتر مرکزی',
       organizationBranchId: '',
-      aliases: [headquarters.id],
+      aliases: ['hr-headquarters'],
       branchIds: [headquarters.id],
       isHeadquarters: true,
     });
