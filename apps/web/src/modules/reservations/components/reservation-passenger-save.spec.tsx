@@ -345,3 +345,56 @@ it('removes the selected passenger row without requiring prices and prevents rem
   expect(sent.preserveContractPrices).toBe(true);
   expect(writes()).toHaveLength(0);
 });
+
+it('shows a newly registered customer in the table before final membership save and removes only the draft link', async () => {
+  await ready();
+  const props = parent().find(
+    (p) => p.contractId === 'contract' && p.onRegistered,
+  )!;
+  const values = {
+    firstName: 'New',
+    lastName: 'Traveler',
+    passportFirstName: 'NEW',
+    passportLastName: 'TRAVELER',
+    birthDate: '',
+    nationalId: '',
+    passportNumber: '',
+    passportExpiryDate: '',
+    passportIssuingCountryCode: '',
+    nationalityCode: '',
+    birthCountryCode: '',
+    gender: '',
+  };
+  (props.onRegistered as (value: unknown) => void)({
+    person: { id: 'p3', displayName: 'New Traveler' },
+    values,
+  });
+  const draft =
+    props.draft as import('@nora/contracts').SalesContractAmendmentV1;
+  const { changeAmendmentMembership } = await import('./amendment-membership');
+  (props.onChange as (value: unknown) => void)(
+    changeAmendmentMembership(
+      draft,
+      {
+        add: {
+          customerId: 'p3',
+          displayNameSnapshot: 'New Traveler',
+          birthDate: '',
+          serviceClientKeys: ['flight'],
+        },
+        category: 'ADT',
+      },
+      true,
+    ),
+  );
+  expect(rows().find((p) => p['aria-label'] === 'نام مسافر 2')?.value).toBe(
+    'New',
+  );
+  expect(rows().find((p) => p['aria-label'] === 'نام مسافر 2')?.disabled).toBe(
+    true,
+  );
+  const buttons = rows().filter((p) => p.children === 'حذف مسافر');
+  (buttons[1]!.onClick as () => void)();
+  expect(rows().some((p) => p.value === 'NEW')).toBe(false);
+  expect(writes()).toHaveLength(0);
+});

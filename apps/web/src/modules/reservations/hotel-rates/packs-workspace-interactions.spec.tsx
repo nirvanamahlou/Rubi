@@ -6,6 +6,9 @@ import { HotelRatePacksWorkspace } from './packs-workspace';
 import styles from './rates.module.css';
 import { OccupancyBulkPanel } from './occupancy-bulk-panel';
 import { ManualHotelPanel, ManualHotelSelector } from './manual-hotel-panel';
+import { buildManualRates, defaultCombinations } from './manual-coefficients';
+
+const savedRequests = vi.hoisted(() => [] as RequestInit[]);
 
 const hooks = vi.hoisted(() => ({
   states: [] as unknown[],
@@ -49,7 +52,11 @@ vi.mock('@/lib/auth-session', () => ({
 }));
 vi.mock('./controls', async (original) => ({
   ...(await original<Record<string, unknown>>()),
-  rateRequest: async (path: string) => {
+  rateRequest: async (path: string, init?: RequestInit) => {
+    if (path === '/packs' && init?.method === 'POST') {
+      savedRequests.push(init);
+      return { id: 'saved-pack', version: 1, batchId: 'saved-batch' };
+    }
     const kind = new URL(path, 'http://test').searchParams.get('kind');
     const data =
       kind === 'countries'
@@ -62,6 +69,11 @@ vi.mock('./controls', async (original) => ({
                   id: 'hotel',
                   name: 'Synthetic hotel',
                   roomTypes: [{ id: 'room', name: 'Land' }],
+                },
+                {
+                  id: 'second',
+                  name: 'Second hotel',
+                  roomTypes: [{ id: 'sea', name: 'Sea' }],
                 },
               ]
             : [];
@@ -223,6 +235,76 @@ it('keeps selected draft when discarding is declined', async () => {
   expect(
     nodes(render()).find((n) => n.type === ManualHotelPanel)?.props.hotelId,
   ).toBe('hotel');
+});
+
+it('saves all selected hotel panels together and links the saved batch to package management', async () => {
+  await settle();
+  savedRequests.length = 0;
+  const selector = nodes(render()).find((n) => n.type === ManualHotelSelector)!;
+  const choose = selector.props.onChoose as (id: string) => void;
+  choose('hotel');
+  choose('second');
+  const date = nodes(render()).find((n) => n.props.name === 'checkIn')!;
+  (date.props.onChange as (value: string) => void)('2026-10-01');
+  const nights = nodes(render()).find(
+    (n) => n.props['aria-label'] === 'تعداد شب اقامت',
+  )!;
+  (nights.props.onChange as (event: unknown) => void)({
+    target: { value: '5' },
+  });
+  const panel = nodes(render()).find((n) => n.type === ManualHotelPanel)!;
+  for (const [id, roomTypeId, amount] of [
+    ['hotel', 'room', '100'],
+    ['second', 'sea', '200'],
+  ]) {
+    (panel.props.onChange as (id: string, patch: unknown) => void)(id!, {
+      broker: { id: 'broker', name: 'Synthetic broker' },
+      base: '1',
+      roomRates: [
+        {
+          roomTypeId,
+          roomTypeName: roomTypeId,
+          factor: '1',
+          maxAdults: '2',
+          maxChildren2To6: '0',
+          maxChildren6To12: '0',
+          maxInfants: '0',
+          occupancyRates: buildManualRates(
+            defaultCombinations(),
+            amount!,
+            'EUR',
+            '2026-10-01',
+            '2026-10-06',
+          ),
+        },
+      ],
+    });
+    (panel.props.onValidityChange as (id: string, valid: boolean) => void)(
+      id!,
+      true,
+    );
+  }
+  const form = nodes(render()).find((n) => n.type === 'form')!;
+  await (form.props.onSubmit as (event: unknown) => Promise<void>)({
+    preventDefault() {},
+  });
+  expect(savedRequests).toHaveLength(1);
+  const payload = JSON.parse(savedRequests[0]!.body as string);
+  expect(payload.rows.map((row: { hotelId: string }) => row.hotelId)).toEqual([
+    'hotel',
+    'second',
+  ]);
+  expect(
+    payload.rows.map(
+      (row: { roomRates: { occupancyRates: { amount: string }[] }[] }) =>
+        row.roomRates[0]!.occupancyRates[0]!.amount,
+    ),
+  ).toEqual(['200.00', '400.00']);
+  expect(
+    nodes(render()).some((n) =>
+      String(n.props.href ?? '').includes('batch=saved-batch'),
+    ),
+  ).toBe(true);
 });
 
 it('preserves saved room rates absent from refreshed hotel master links', async () => {
