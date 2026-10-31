@@ -90,7 +90,16 @@ vi.mock('./ticket-offer-picker', () => ({
   },
 }));
 vi.mock('./sales-people-sheet', () => ({
-  SalesPeopleSheet: () => <div>passenger table</div>,
+  SalesPeopleSheet: ({
+    beforePassengers,
+  }: {
+    beforePassengers?: React.ReactNode;
+  }) => (
+    <>
+      {beforePassengers}
+      <div>passenger table</div>
+    </>
+  ),
 }));
 vi.mock('./hotel-stay-dates', () => ({
   HotelStayDates: () => <div>shared hotel stay dates</div>,
