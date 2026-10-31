@@ -1,6 +1,7 @@
 # General Ledger live-source parity — 2026-10-31
 
 Status: **in progress, not full parity and not merged**. PC-B owns this task.
+Draft PR: https://github.com/nirvanamahlou/Rubi/pull/1253.
 Source inspection is read-only. No source records, amounts or transactions are copied.
 Working branch: `codex/pc-b-general-ledger-parity-1031`.
 
@@ -37,6 +38,21 @@ Working branch: `codex/pc-b-general-ledger-parity-1031`.
   and other legal forms remain to be completed.
 
 ## Validation so far
+
+- Fresh source report captures now replace the earlier loading-only captures for
+  account browser, chart structure, matrix, legal ledgers, ledgers, debit/credit
+  notice, period nature conflict and comparison. Control validation has also been
+  captured. This is evidence collection, not a full implementation certification.
+- Source comparison's account-specification selector exposes non-currency/currency
+  choices. Nora incorrectly mapped report/account specification controls to an
+  account-group FK. Removed that wrong substitution; those controls remain disabled
+  until real currency presentation semantics are implemented. Four regression cases
+  prevent the substitution from returning.
+- Web finance suite: 212 pass, one existing skip; the subsequent report-model suite
+  passes seven cases. API numbering/filter suites: 32 pass, including selected-only
+  numbering, stale/missing/closed/empty rejection before writes. Backend activation
+  on the shared API4192 runtime has not yet occurred; copying source into the build
+  stage does not activate the new handler. Do not claim local end-to-end readiness.
 
 - Follow-up source reads captured review, reorder, numbering and posting forms.
   Numbering proceeds directly from introduction to its list in this source state;

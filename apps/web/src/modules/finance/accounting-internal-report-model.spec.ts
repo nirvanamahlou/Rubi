@@ -3,8 +3,25 @@ import {
   internalReportQuery,
   sumReportValues,
   internalAccountingReportKind,
+  internalReportFieldKey,
 } from './accounting-internal-report-model';
 describe('internal report query and matrix totals', () => {
+  it.each([
+    'lkpReportFeature_ComboBox_Input',
+    'lkpAccountSpecification_ComboBox_Input',
+    'cboAccountSpecification_Input',
+    'cmbAccountSpecification_Input',
+  ])(
+    'does not reinterpret source currency specification %s as an account group',
+    (sourceControlId) => {
+      expect(
+        internalReportFieldKey(
+          { sourceControlId, label: 'ویژگی', type: 'text', disabled: false },
+          'ledgers',
+        ),
+      ).toBeUndefined();
+    },
+  );
   it('uses explicit routes, preserves booleans and normalizes document numbers', () => {
     expect(internalAccountingReportKind('general-ledger/reports/matrix')).toBe(
       'matrix',
