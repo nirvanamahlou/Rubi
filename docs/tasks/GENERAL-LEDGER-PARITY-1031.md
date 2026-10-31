@@ -38,6 +38,25 @@ Working branch: `codex/pc-b-general-ledger-parity-1031`.
 
 ## Validation so far
 
+- Follow-up source reads captured review, reorder, numbering and posting forms.
+  Numbering proceeds directly from introduction to its list in this source state;
+  its nine column filters were missing locally. Added column filters and clear
+  action; the numbering payload uses the same filtered row projection, retaining
+  original IDs and optimistic concurrency versions. Two focused regression cases
+  verify combined Persian/Arabic text/digit filters and empty selection.
+- GL voucher continuation is blocked by no eligible posted journal. Posting has
+  a disabled start date and editable end date, then blocks because no reviewed
+  journal exists. No source final action was invoked.
+- Standard mapping has standard/protocol/entity fields, unmapped-turnover checkbox,
+  standard/unmapped/mapped code panels and bidirectional assignment controls.
+  Standard report has standard/protocol, date/fiscal-year range, supplementary
+  journal switches and voucher-type multiselect. Formula has title/version/standard,
+  two subsidiary-factor grids with negative-effect flags, relation operator and
+  detail-code grids. Their raw observations are saved locally; implementation is
+  still outstanding. Removed the catalogue's incorrect electronic-book alias claim.
+- Integrated origin/develop into this task branch, preserving both status entries.
+  No remote merge has occurred.
+
 - 7 targeted tests pass (source-blocked shell and evidence catalogue).
 - Scoped ESLint passes for those edits.
 - Authenticated localhost3100 shows observed closing introduction; Continue shows

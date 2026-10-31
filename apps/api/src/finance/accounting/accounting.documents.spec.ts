@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  numberJournalPreview,
   reorderJournals,
   validateTemplateAssignments,
 } from './accounting.documents';
@@ -35,6 +36,71 @@ const fixture = () => {
   };
   return { rows, update, tx, payload };
 };
+
+describe('filtered numbering selection', () => {
+  const numbering = () => {
+    const base = fixture();
+    const tx = {
+      ...base.tx,
+      accountingJournal: {
+        ...base.tx.accountingJournal,
+        findMany: vi.fn().mockResolvedValue([base.rows[0]]),
+        aggregate: vi.fn().mockResolvedValue({ _max: { number: 42 } }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      accountingBook: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue({ nextNumber: 50 }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+    };
+    const payload = {
+      periodId,
+      selectedOnly: true,
+      items: [{ id: first, expectedVersion: 2 }],
+    };
+    return { tx, payload };
+  };
+  it('scopes selection to this book, open period and editable statuses, retaining other numbers', async () => {
+    const { tx, payload } = numbering();
+    const result = await numberJournalPreview(tx as never, bookId, payload);
+    expect(tx.accountingJournal.findMany).toHaveBeenCalledWith({
+      where: {
+        bookId,
+        periodId,
+        status: { in: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'] },
+        id: { in: [first] },
+      },
+      take: 501,
+    });
+    expect(tx.accountingJournal.updateMany).toHaveBeenCalledWith({
+      where: { bookId, id: { in: [first] } },
+      data: { number: null },
+    });
+    expect(tx.accountingJournal.update).toHaveBeenCalledTimes(1);
+    expect(result.rows).toEqual([{ id: first, oldNumber: 10, newNumber: 43 }]);
+    expect(tx.accountingBook.update).toHaveBeenCalledWith({
+      where: { id: bookId },
+      data: { nextNumber: 50 },
+    });
+  });
+  it.each(['stale', 'missing', 'closed', 'empty'] as const)(
+    'rejects %s before any numbering write',
+    async (condition) => {
+      const { tx, payload } = numbering();
+      if (condition === 'stale') payload.items[0]!.expectedVersion = 1;
+      if (condition === 'missing')
+        tx.accountingJournal.findMany.mockResolvedValue([]);
+      if (condition === 'closed')
+        tx.accountingPeriod.findFirst.mockResolvedValue(null as never);
+      if (condition === 'empty') payload.items = [];
+      await expect(
+        numberJournalPreview(tx as never, bookId, payload),
+      ).rejects.toThrow();
+      expect(tx.accountingJournal.updateMany).not.toHaveBeenCalled();
+      expect(tx.accountingJournal.update).not.toHaveBeenCalled();
+    },
+  );
+});
 describe('same-date document reorder', () => {
   it('changes only daily order and version, preserving dates, period, amount and journal numbers', async () => {
     const { tx, payload, update } = fixture();
