@@ -1,6 +1,12 @@
+
+## STACKED-HOTEL-RATE-PACKS-1029 - PC-A - VALIDATING
+
+Hotel purchase rate packs now use searchable hotel checkboxes and a selected-hotel summary. All selected hotel panels stay visible in one vertical editor. First room only is selected for new hotel drafts; additional rooms require explicit selection and valid bases, while saved room choices and per-room coefficients survive reopening. Save remains one pack revision for all selected hotels and links its immutable saved batch/date range to existing Package Management manual/group sale adjustments. Purchase/sale boundaries, imported prices, branch/date checks and history are unchanged. Web130 focused rate/package tests and13 workflow/translation checks pass, scoped lint and Web typecheck pass after rebuilding local shared declarations. Web production build passed with66 routes; hosted final-head gates remain pending. No migration, operational data or runtime deployment.
+
 ## 2026-10-31 — SALES-COUNT-TEN-1031 — PC-A
 
 Hotel/room-composition header now displays the canonical total selected passenger count, including adults, children and infants. It updates with the draft and does not sum duplicate service or room allocations. Sales defaults to ten latest contracts per page with matching pagination/hint; date-filtered expanded results, existing ordering and server authorization remain unchanged. Persian/English labels covered. Focused existing ServiceParties/list/translation regressions, lint, Web typecheck and production build validate the candidate; final-head full hosted gates precede authorized develop merge. No schema/migration/dependency, operational data or runtime deployment. Bounded source reservation freezes on publication and releases on verified merge.
+
 
 ## 2026-10-31 — TRANSFER-FLIGHT-FORM-1031 — PC-A
 
@@ -8032,7 +8038,9 @@ Cancelled contracts are excluded before Sales dashboard metrics and currency sum
 
 Supplier form Ratio is a dimensionless decimal without a currency selector, currency directory lookup or PDF currency suffix. Historical ratio currencies remain readable and are removed when saving a new revision. Hotel P.P replaces P.P in input and both preview/PDF rendering. Explicit Save stores settings without sending/issuing; passenger ticket PDF downloads remain while the two browser print buttons are removed. No schema/migration/deployment. Focused validation and hosted gates precede authorized develop merge.
 
+## CONTRACT-CHILD-BANDS-1031 — PC-A
 
+Contract output services and prices use the explicitly booked/corrected child age band (2–6 or6–12), with DOB/check-in inference retained when no explicit band exists. New-contract booked child slots retain the band through people registration, form state, payload and unregistered review, including optional DOB; preview honors explicit ADT/CHD/INF instead of guessing adult for blank DOB. Reservations add-passenger exposes the same child-band choices; existing canonical amendment, capacity/CAS, monetary redistribution and Customer identity boundaries remain intact. Membership verification covers add/remove, zero price, duplicate/last-passenger safeguards and survivor totals; rooms must still match the resulting accommodation composition before saving. No migration, data rewrite or server deployment. Final local/hosted gates precede user-authorized develop merge.
 ## 2026-10-31 — PETTY-CASH-RECEIPT-1031 — PC-B
 
 Independent branch petty fund replaces the Orders workspace card; historical Orders records/API are preserved. Account/bank/IBAN/card and balance edit in a modal, with existing procurement.assign permission, fixed currency and CAS. Publication in a configured branch debits a positive same-currency amount atomically, once per request; insufficient/concurrent funds roll back. Drafts do not debit; movements survive request deletion, not treated as refunds. Finance remains disconnected per owner. Request form removes follow-up picker, aligns unit/category and uploads receipts to Documents with immutable version references, blocked submission during upload. Additive migration only; no live apply/rollout, operational data or permission changes. 57 isolated PostgreSQL tests and final ledger/purge/permission rerun passed;64 Procurement Web,3 card (including exact Decimal display) and3 translation checks passed. Scoped lint, API/Web typechecks and production builds passed. Exact-head hosted checks gate the authorized develop merge; no authenticated browser QA claimed.

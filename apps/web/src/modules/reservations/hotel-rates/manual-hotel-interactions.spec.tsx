@@ -3,7 +3,11 @@ import type { ReactElement, ReactNode } from 'react';
 import type * as ReactModule from 'react';
 import { canonicalTestTree } from '@/i18n/test-tree';
 import { Choice } from './controls';
-import { HotelCoefficients, type ManualHotelRow } from './manual-hotel-panel';
+import {
+  HotelCoefficients,
+  ManualHotelSelector,
+  type ManualHotelRow,
+} from './manual-hotel-panel';
 
 const hooks = vi.hoisted(() => ({
   states: [] as unknown[],
@@ -81,6 +85,13 @@ const prices = () =>
   row.roomRates.map((r) =>
     r.occupancyRates!.map((rate) => [rate.amount, rate.saleAmount]),
   );
+function selectRoom(name: string, checked = true) {
+  const node = nodes(render()).find(
+    (n) =>
+      n.type === 'input' && n.props['aria-label'] === `انتخاب نوع اتاق ${name}`,
+  )!;
+  (node.props.onChange as (event: unknown) => void)({ target: { checked } });
+}
 beforeEach(() => {
   hooks.states = [];
   hooks.events = [];
@@ -105,6 +116,90 @@ beforeEach(() => {
     inCityList: true,
     roomRates: [],
   };
+});
+it('selects only the first room by default even when lookup initializes all empty room rows', () => {
+  row.roomRates = row.hotel.roomTypes!.map((room) => ({
+    roomTypeId: room.id,
+    roomTypeName: room.name,
+    factor: '1',
+    maxAdults: '2',
+    maxChildren2To6: '0',
+    maxChildren6To12: '0',
+    maxInfants: '0',
+  }));
+  input('قیمت پایه Land', '100');
+  expect(row.roomRates.map((room) => room.roomTypeId)).toEqual(['land']);
+  selectRoom('Sea');
+  expect(valid).toHaveBeenLastCalledWith(false);
+  input('قیمت پایه Sea', '200');
+  expect(valid).toHaveBeenLastCalledWith(true);
+  selectRoom('Land', false);
+  expect(row.roomRates.map((room) => room.roomTypeId)).toEqual(['sea']);
+  selectRoom('Land');
+  expect(prices()).toEqual([[['200.00', '200.00']], [['400.00', '400.00']]]);
+});
+it('keeps saved room choices after reopening instead of reverting to the first room', () => {
+  selectRoom('Sea');
+  input('قیمت پایه Sea', '200');
+  selectRoom('Land', false);
+  hooks.states = [];
+  hooks.effects = [];
+  const tree = nodes(render());
+  expect(
+    tree.find((n) => n.props['aria-label'] === 'انتخاب نوع اتاق Sea')?.props
+      .checked,
+  ).toBe(true);
+  expect(
+    tree.find((n) => n.props['aria-label'] === 'انتخاب نوع اتاق Land')?.props
+      .checked,
+  ).toBe(false);
+  expect(row.roomRates.map((room) => room.roomTypeId)).toEqual(['sea']);
+});
+it('searches hotels without losing selected rows and supports checkbox removal', () => {
+  const choose = vi.fn();
+  const remove = vi.fn();
+  const rows = [
+    row,
+    {
+      ...row,
+      selected: false,
+      hotel: { ...row.hotel, id: 'other', name: 'Other hotel' },
+    },
+  ];
+  function selector() {
+    hooks.stateIndex = 0;
+    return nodes(
+      ManualHotelSelector({
+        rows,
+        hotelId: '',
+        onChoose: choose,
+        onRemove: remove,
+      }),
+    );
+  }
+  let tree = selector();
+  const checks = tree.filter(
+    (n) => n.type === 'input' && n.props.type === 'checkbox',
+  );
+  (checks[1]!.props.onChange as (event: unknown) => void)({
+    target: { checked: true },
+  });
+  expect(choose).toHaveBeenCalledWith('other');
+  (checks[0]!.props.onChange as (event: unknown) => void)({
+    target: { checked: false },
+  });
+  expect(remove).toHaveBeenCalledWith('hotel');
+  (
+    tree.find((n) => n.props['aria-label'] === 'جست‌وجوی هتل‌های شهر')!.props
+      .onChange as (event: unknown) => void
+  )({ target: { value: 'other' } });
+  tree = selector();
+  expect(
+    tree.filter((n) => n.type === 'input' && n.props.type === 'checkbox'),
+  ).toHaveLength(1);
+  expect(
+    tree.some((n) => n.type === 'td' && n.props.children === 'Synthetic'),
+  ).toBe(true);
 });
 it('marks duplicate composition or invalid child range unsavable instead of keeping stale prices', () => {
   input('قیمت پایه Land', '100');
@@ -140,6 +235,7 @@ it('retains local inputs and synchronizes new dates and currency with valid meta
   expect(row.roomRates).toHaveLength(0);
 });
 it('edits each room coefficient and child composition independently', () => {
+  selectRoom('Sea');
   input('قیمت پایه Land', '100');
   input('قیمت پایه Sea', '200');
   input('ضریب ترکیب اتاق', '2.5', 2);
@@ -183,6 +279,7 @@ it('has no sale controls and preserves historical sale metadata when editing pur
 });
 
 it('restores different coefficients per room and keeps both after save/reopen', () => {
+  selectRoom('Sea');
   input('قیمت پایه Land', '100');
   input('قیمت پایه Sea', '200');
   input('ضریب ترکیب اتاق', '3', 3);
@@ -198,6 +295,7 @@ it('restores different coefficients per room and keeps both after save/reopen', 
   );
 });
 it('adds and removes compositions only in the associated room, including newly linked room types', () => {
+  selectRoom('Sea');
   input('قیمت پایه Land', '100');
   input('قیمت پایه Sea', '200');
   const click = (roomId: string, text: string) => {
@@ -225,6 +323,7 @@ it('adds and removes compositions only in the associated room, including newly l
       roomTypes: [...row.hotel.roomTypes!, { id: 'suite', name: 'Suite' }],
     },
   };
+  selectRoom('Suite');
   input('قیمت پایه Suite', '300');
   expect(
     row.roomRates.find((r) => r.roomTypeId === 'suite')!.occupancyRates![0]!

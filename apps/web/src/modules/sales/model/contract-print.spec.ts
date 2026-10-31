@@ -15,7 +15,7 @@ describe('Saved contract print output', () => {
     expect(html.match(/کودک \(<bdi dir="ltr">2-6<\/bdi>\)/g)).toHaveLength(2);
     expect(output).toEqual(before);
   });
-  it('calculates the child band at hotel check-in when a birthday follows departure', () => {
+  it('retains the explicitly corrected child band when DOB implies a different band', () => {
     const output = structuredClone(printFixture);
     output.contract.departureDate = '2026-09-19';
     output.contract.hotelSelection = {
@@ -29,7 +29,7 @@ describe('Saved contract print output', () => {
           : p,
     );
     expect(contractPrintHtml(output, printReferences)).toContain(
-      'کودک (<bdi dir="ltr">6-12</bdi>)',
+      'کودک (<bdi dir="ltr">2-6</bdi>)',
     );
   });
   it('isolates outward and return routes so arrows point from origin to destination in RTL output', () => {

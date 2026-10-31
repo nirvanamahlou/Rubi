@@ -1,5 +1,6 @@
 'use client';
 import { currencySymbol } from '@/lib/currency-symbol';
+import Link from '@/i18n/link';
 
 import { useEffect, useRef, useState } from 'react';
 import { ManualHotelPanel, ManualHotelSelector } from './manual-hotel-panel';
@@ -257,6 +258,7 @@ export function HotelRatePacksWorkspace({
   const [editing, setEditing] = useState<{
     id: string;
     version: number;
+    managementHref?: string;
   } | null>(null);
   const inputMode = initialMode === 'excel' ? 'excel' : 'manual';
   const [draftGeneration, setDraftGeneration] = useState(0);
@@ -663,7 +665,11 @@ export function HotelRatePacksWorkspace({
       if (!city?.countryId)
         throw new Error('کشور شهر این بسته در اطلاعات پایه مشخص نیست.');
       setCountryId(city.countryId);
-      setEditing({ id: item.id, version: item.version });
+      setEditing({
+        id: item.id,
+        version: item.version,
+        managementHref: `/sales/pricing/management?batch=${encodeURIComponent(item.batchId)}&city=${encodeURIComponent(item.cityId)}&branch=${encodeURIComponent(item.branchId)}&from=${item.checkIn}&to=${item.checkOut}`,
+      });
       setEditorMode('edit');
       setDraftGeneration((value) => value + 1);
       setBranch(item.branchId);
@@ -810,13 +816,21 @@ export function HotelRatePacksWorkspace({
       pending.current = { route, body, key: crypto.randomUUID() };
     setBusy(true);
     try {
-      const result = await rateRequest<{ id: string; version: number }>(route, {
+      const result = await rateRequest<{
+        id: string;
+        version: number;
+        batchId: string;
+      }>(route, {
         method: editing ? 'PATCH' : 'POST',
         body,
         headers: { 'idempotency-key': pending.current.key },
       });
       pending.current = null;
-      setEditing({ id: result.id, version: result.version });
+      setEditing({
+        id: result.id,
+        version: result.version,
+        managementHref: `/sales/pricing/management?batch=${encodeURIComponent(result.batchId)}&city=${encodeURIComponent(cityId)}&branch=${encodeURIComponent(branch)}&from=${checkIn}&to=${checkOut}`,
+      });
       setEditorMode('edit');
       setRevision((value) => value + 1);
       setMessage(
@@ -957,6 +971,7 @@ export function HotelRatePacksWorkspace({
                   rows={rows}
                   hotelId={manualHotelId}
                   onChoose={chooseManualHotel}
+                  onRemove={(id) => changeRow(id, { selected: false })}
                 />
               ) : (
                 <p>برای نمایش هتل‌ها، شهر را انتخاب کنید.</p>
@@ -1134,6 +1149,11 @@ export function HotelRatePacksWorkspace({
                       )),
                   )}
                   <div className={styles.saveBar}>
+                    {editing?.managementHref && (
+                      <Link href={editing.managementHref}>
+                        بستن پکیج با هتل‌های این بازه
+                      </Link>
+                    )}
                     <span>
                       {selected.length.toLocaleString('fa-IR')} هتل منتخب
                     </span>
