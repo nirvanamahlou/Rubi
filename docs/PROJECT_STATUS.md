@@ -2,6 +2,10 @@
 
 Reservations queue retains the primary hotel and ordered additional stays from the existing Sales snapshot. The Hotel cell joins all names with " / "; English-name enrichment resolves every hotel independently and retains each saved snapshot on lookup failure. Primary hotel ID, meal/stars and operational actions remain unchanged. The same enriched label feeds existing search and Excel export. Focused regressions cover multi/single/empty hotels, partial reference failure, itinerary order, primary-ID preservation and search/export. No API/schema/migration/dependency, operational data or runtime/server change. Full final-head hosted quality/tests/build/database gates precede authorized develop merge; bounded source reservation releases on verified merge.
 
+## 2026-10-31 — TRANSFER-FLIGHT-FORM-1031 — PC-A
+
+Supplier reservation preview and PDF include arrival/departure airline, flight number, date and time whenever the contract includes any transfer, including a single passenger among a mixed roster. Existing saved supplier flight fields and allocations remain authoritative; no invented flight facts.43 focused output/model regressions and scoped ESLint pass. Web typecheck passes; local Turbopack is blocked by out-of-root dependency junctions, alternate webpack compilation passed and final build is running. No schema/migration/dependency/data/runtime change. Push and PR1207 creation succeeded through the authorized elevated GitHub context; final-head CI gates the authorized develop merge. Source remains on codex/pc-a-transfer-flight-1031; no merge claimed.
+
 ## RESERVATION-DEFAULTS-1029 — PC-A — VALIDATING
 
 Cancelled selections now explicitly identify cancellation. Automatic return regressions prove the configured outbound load/day offset selects its unique return and preserves manual choices. Hotel default follows outbound arrival (manual dates preserved); scoped Customers identity projection evaluates child bands at saved hotel check-in without exposing DOB. Missing form sex defaults Male, known/saved Female remains intact. Contract services/pricing tables show child bands from DOB at hotel check-in, with booked-band fallback for missing DOB and departure fallback for ticket-only contracts. Web92 and API18 focused tests pass; lint/typechecks and exact-head hosted full tests/build/database gates precede authorized develop merge. No schema/migration/live-data or server rollout.
@@ -13,6 +17,10 @@ Shared room categories now additionally offer Family for two adults with at leas
 ## CONTRACT-ROUTE-ARROW-1029 — PC-A — VALIDATING
 
 Isolate customer contract preview/PDF flight routes as LTR with independently isolated airport labels and origin-to-destination arrows. Return rows retain their actual saved endpoints. Keep escaping, direction captions and all saved commercial/identity data unchanged. Focused output regressions and exact-head full hosted checks gate authorized develop merge. No schema/migration/dependency or server deployment.
+
+## CONTRACT-PARTY-SAVE-1029 — PC-A
+
+Counterparty correction keeps independent person/agency selections and contact drafts when switching kind, uses the existing Sales-scoped people directory, and opens inline customer lookup from the name field. Existing canonical person registration is available in the same editor; contact inputs are retained when its newly registered customer is selected. Changing the pending agency clears the old canonical identity. Missing selection now reports an explicit error instead of silently disabling submission. Postal code is optional in both the editor and Sales correction validator; supplied invalid postal codes still fail. Existing Finance authority for payer transfer, active allocation protection, branch/version/CAS/audit, encryption and receipt amounts remain unchanged. No migration/dependency/shared API shape or production deployment. Focused interaction and service regressions plus final-head quality/test/build/database gates precede the authorized develop merge.
 
 ## PASSENGER-SALE-NO-ROOM-PRICE-1029 — PC-A
 
