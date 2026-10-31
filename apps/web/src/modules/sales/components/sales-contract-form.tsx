@@ -7,6 +7,7 @@ import {
   Plane,
   Building2,
   CarFront,
+  UsersRound,
   ShieldCheck,
   MapPinned,
   Armchair,
@@ -138,6 +139,7 @@ import {
   salesSelectedFlightsReady,
   patchContractFlight,
   salesPayload,
+  salesAdditionalServices,
   salesSteps,
   salesFlightSeats,
   salesPassengerAgeLabel,
@@ -1530,7 +1532,10 @@ export function SalesContractForm() {
                 <div className="contents">
                   {serviceOptions
                     .filter(
-                      ([kind]) => kind !== 'FLIGHT' && kind !== 'TRANSFER',
+                      ([kind]) =>
+                        kind !== 'FLIGHT' &&
+                        kind !== 'TRANSFER' &&
+                        kind !== 'CIP',
                     )
                     .map(([kind, label]) => (
                       <button
@@ -1579,16 +1584,68 @@ export function SalesContractForm() {
                       </button>
                     ))}
                 </div>
+                {!state.legacyContract &&
+                  (
+                    Object.entries(salesAdditionalServices) as [
+                      keyof typeof salesAdditionalServices,
+                      string,
+                    ][]
+                  ).map(([role, label]) => {
+                    const selected =
+                      state.additionalServices?.includes(role) ?? false;
+                    const Icon = role === 'CITY_TOUR' ? MapPinned : UsersRound;
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        role="checkbox"
+                        aria-checked={selected}
+                        className={`${serviceStyles.card} ${role === 'CITY_TOUR' ? serviceStyles.cityTour : serviceStyles.tourGuide} ${selected ? serviceStyles.selected : ''}`}
+                        onClick={() =>
+                          patchState((current) => ({
+                            additionalServices:
+                              current.additionalServices?.includes(role)
+                                ? current.additionalServices.filter(
+                                    (item) => item !== role,
+                                  )
+                                : [...(current.additionalServices ?? []), role],
+                          }))
+                        }
+                      >
+                        <span className={serviceStyles.label}>
+                          <Icon
+                            className={serviceStyles.icon}
+                            aria-hidden="true"
+                          />
+                          {label}
+                        </span>
+                        <span
+                          className={serviceStyles.check}
+                          aria-hidden="true"
+                        >
+                          {selected ? <Check className="size-4" /> : null}
+                        </span>
+                      </button>
+                    );
+                  })}
                 <div className={serviceStyles.summary} aria-live="polite">
                   <Check
                     className="size-5 shrink-0 text-primary"
                     aria-hidden="true"
                   />
-                  <span className="font-bold">{state.serviceKinds.length}</span>
+                  <span className="font-bold">
+                    {state.serviceKinds.length +
+                      (state.additionalServices?.length ?? 0)}
+                  </span>
                   <span>
                     {serviceOptions
                       .filter(([kind]) => state.serviceKinds.includes(kind))
                       .map(([, label]) => label)
+                      .concat(
+                        (state.additionalServices ?? []).map(
+                          (role) => salesAdditionalServices[role],
+                        ),
+                      )
                       .join(' · ')}
                   </span>
                 </div>

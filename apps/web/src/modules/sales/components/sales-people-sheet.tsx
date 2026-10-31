@@ -22,7 +22,6 @@ import { SalesPersonSearch } from './sales-person-search';
 import { SalesThemedSelect } from './sales-themed-select';
 import { loadSalesAcquaintanceMethods } from '../api/acquaintance-methods';
 import {
-  salesAdditionalServices,
   salesPassengerFlightDirections,
   salesDirections,
   salesPassengerAgeLabel,
@@ -869,32 +868,6 @@ export function SalesPeopleSheet({
 
       {!state.legacyContract && (
         <div className={peopleStyles.extras}>
-          {(
-            Object.entries(salesAdditionalServices) as [
-              keyof typeof salesAdditionalServices,
-              string,
-            ][]
-          ).map(([role, label]) => (
-            <label
-              key={role}
-              className="flex cursor-pointer items-center gap-2 text-sm font-semibold"
-            >
-              <input
-                type="checkbox"
-                className="size-4 accent-primary"
-                checked={state.additionalServices?.includes(role) ?? false}
-                disabled={busy || Boolean(state.tour)}
-                onChange={() =>
-                  onGuestStateChange?.({
-                    additionalServices: state.additionalServices?.includes(role)
-                      ? state.additionalServices.filter((item) => item !== role)
-                      : [...(state.additionalServices ?? []), role],
-                  })
-                }
-              />
-              {label}
-            </label>
-          ))}
           <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
             <input
               type="checkbox"
