@@ -162,6 +162,9 @@ function NewAmendmentPassenger({
   });
   const [calendar, setCalendar] = useState<CustomerCalendarMode>('gregorian');
   const [category, setCategory] = useState<SalesPassengerAgeCategory>('ADT');
+  const [childAgeBand, setChildAgeBand] = useState<'AGE_2_6' | 'AGE_6_12' | ''>(
+    '',
+  );
   const [services, setServices] = useState<string[]>(() =>
     draft.services
       .filter((s) => !s.metadata?.insuranceAgeSurcharge)
@@ -261,6 +264,7 @@ function NewAmendmentPassenger({
               displayNameSnapshot: selected.person!.displayName,
               birthDate: selected.values.birthDate,
               ageCategory: category,
+              ...(category === 'CHD' && childAgeBand ? { childAgeBand } : {}),
               serviceClientKeys: services,
               ...(draft.hotelSelection &&
               services.includes(draft.hotelSelection.serviceClientKey)
@@ -275,6 +279,7 @@ function NewAmendmentPassenger({
         ),
       );
       setPerson({ values: emptyPeopleValues() });
+      setChildAgeBand('');
       setServices([]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'ثبت مسافران ناموفق بود.');
@@ -362,6 +367,21 @@ function NewAmendmentPassenger({
             <option value="INF">نوزاد</option>
           </NativeSearchSelect>
         </label>
+        {category === 'CHD' && (
+          <label>
+            رده سنی کودک
+            <NativeSearchSelect
+              value={childAgeBand}
+              onChange={(e) =>
+                setChildAgeBand(e.target.value as typeof childAgeBand)
+              }
+            >
+              <option value="">انتخاب رده سنی کودک</option>
+              <option value="AGE_2_6">۲ تا ۶ سال</option>
+              <option value="AGE_6_12">۶ تا ۱۲ سال</option>
+            </NativeSearchSelect>
+          </label>
+        )}
         <div className="flex flex-wrap gap-3">
           {draft.services
             .filter((s) => !s.metadata?.insuranceAgeSurcharge)

@@ -213,3 +213,39 @@ it('adds a named passenger without a price, keeps both currencies and removes ob
   expect(() => validatePassengerHotelStays(next)).not.toThrow();
   expect(old.passengers).toHaveLength(2);
 });
+
+it('round trips a child addition/removal without changing survivor prices, bands or identities', () => {
+  const old = draft();
+  const added = changeAmendmentMembership(old, {
+    add: {
+      customerId: 'child',
+      displayNameSnapshot: 'SYNTHETIC CHILD',
+      birthDate: '',
+      ageCategory: 'CHD',
+      childAgeBand: 'AGE_6_12',
+      serviceClientKeys: ['transfer'],
+    },
+    category: 'CHD',
+    prices: [{ amount: '0', currencyCode: 'USD' }],
+  });
+  expect(added.passengers[2]).toMatchObject({
+    childAgeBand: 'AGE_6_12',
+    birthDate: '',
+    agreedPrices: [{ amount: '0', currencyCode: 'USD' }],
+  });
+  const removed = changeAmendmentMembership(added, { remove: 'child' });
+  expect(removed.passengers).toEqual(old.passengers);
+  expect(removed.passengerCategories).toEqual(old.passengerCategories);
+  expect(
+    removed.priceComponents.map(({ amount, currencyCode }) => ({
+      amount,
+      currencyCode,
+    })),
+  ).toEqual(
+    old.priceComponents.map(({ amount, currencyCode }) => ({
+      amount,
+      currencyCode,
+    })),
+  );
+  expect(removed.services[1]!.metadata!.passengerCount).toBe(2);
+});
