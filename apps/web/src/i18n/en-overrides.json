@@ -7,6 +7,8 @@
   "نوع اتاق‌های": "Room types for",
   "هتل‌های انتخاب‌شده": "Selected hotels",
   "هتلی با این جست‌وجو پیدا نشد.": "No hotels match this search.",
+  "این قرارداد باطل شده است": "This contract has been cancelled",
+  "دادهٔ تأییدشده برای نمایش موجود نیست؛ منبع، دسترسی و فیلترهای این نمودار باید بررسی شوند.": "Verified data is unavailable. Check this chart's source, access permissions and filters.",
   "بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ تراکنش دارد.": "Narrow the date range; the report exceeds 10,000 transactions.",
   "بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ قرارداد دارد.": "Narrow the date range; the report exceeds 10,000 contracts.",
   "ترکیب خدمات قرارداد": "Contract service combination",
@@ -4696,5 +4698,8 @@
   "نسخه مبنای جدول حقوق تغییر کرده است.": "The payroll worksheet source version has changed.",
   "انتخاب فایل مدرک پرداخت": "Select a payment receipt file",
   "رسید همین پرداخت را پیوست کنید.": "Attach the receipt for this payment.",
-  "ثبت پرداخت": "Save payment"
+  "ثبت پرداخت": "Save payment",
+  "قیمت هر شب هر مسافر باید صفر یا بیشتر باشد.": "Each passenger's nightly price must be zero or greater.",
+  "مبلغ خرید باید صفر یا بیشتر باشد.": "The purchase amount must be zero or greater.",
+  "هزینه خرید باید صفر یا بیشتر با حداکثر چهار رقم اعشار باشد.": "The purchase cost must be zero or greater, with up to four decimal places."
 }

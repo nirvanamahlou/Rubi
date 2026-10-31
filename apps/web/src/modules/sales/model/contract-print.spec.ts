@@ -2,6 +2,36 @@ import { describe, expect, it } from 'vitest';
 import { contractPrintHtml, contractMoney } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it('prints the booked child band in services and prices even without a birth date', () => {
+    const output = structuredClone(printFixture);
+    output.contract.passengersDetail = output.contract.passengersDetail.map(
+      (p) =>
+        p.ageCategory === 'CHD'
+          ? { ...p, birthDate: '', childAgeBand: 'AGE_2_6' }
+          : p,
+    );
+    const before = structuredClone(output);
+    const html = contractPrintHtml(output, printReferences);
+    expect(html.match(/کودک \(<bdi dir="ltr">2-6<\/bdi>\)/g)).toHaveLength(2);
+    expect(output).toEqual(before);
+  });
+  it('calculates the child band at hotel check-in when a birthday follows departure', () => {
+    const output = structuredClone(printFixture);
+    output.contract.departureDate = '2026-09-19';
+    output.contract.hotelSelection = {
+      ...output.contract.hotelSelection!,
+      checkInDate: '2026-09-21',
+    };
+    output.contract.passengersDetail = output.contract.passengersDetail.map(
+      (p) =>
+        p.ageCategory === 'CHD'
+          ? { ...p, birthDate: '2020-09-20', childAgeBand: 'AGE_2_6' }
+          : p,
+    );
+    expect(contractPrintHtml(output, printReferences)).toContain(
+      'کودک (<bdi dir="ltr">6-12</bdi>)',
+    );
+  });
   it('isolates outward and return routes so arrows point from origin to destination in RTL output', () => {
     const output = structuredClone(printFixture);
     const before = structuredClone(output);

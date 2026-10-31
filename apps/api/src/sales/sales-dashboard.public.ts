@@ -81,6 +81,7 @@ export class SalesDashboardSource {
         ],
       },
       select: {
+        services: { select: { kind: true } },
         createdAt: true,
         confirmedAt: true,
         priceComponents: {
@@ -106,9 +107,66 @@ export class SalesDashboardSource {
         reason: 'SOURCE_ROW_LIMIT',
         metrics: {},
       };
+    // New orders are a created-at cohort, independent of finalization. Do not
+    // relabel finalized sales as new orders or require a confirmation date.
+    const created = await this.db.client.salesContract.findMany({
+      where: {
+        AND: [
+          scope,
+          ...(query.branchId ? [{ branchId: query.branchId }] : []),
+          { createdAt: { gte: query.from, lt: query.to } },
+          ...(query.filters.status
+            ? [{ status: query.filters.status as SalesContractStatus }]
+            : []),
+          ...(query.filters.currencyCode
+            ? [
+                {
+                  priceComponents: {
+                    some: { currencyCode: query.filters.currencyCode },
+                  },
+                },
+              ]
+            : []),
+        ],
+      },
+      select: { createdAt: true },
+      take: 10001,
+    });
+    if (created.length > 10000)
+      return {
+        source,
+        state: 'unavailable',
+        reason: 'SOURCE_ROW_LIMIT',
+        metrics: {},
+      };
     const gross: DashboardObservation[] = [],
-      net: DashboardObservation[] = [];
+      net: DashboardObservation[] = [],
+      discounts: DashboardObservation[] = [],
+      finalized: DashboardObservation[] = [];
     for (const row of rows) {
+      const kinds = [
+        ...new Set((row.services ?? []).map((service) => service.kind)),
+      ].sort();
+      const serviceLabels: Readonly<Record<string, string>> = {
+        FLIGHT: 'پرواز',
+        HOTEL: 'هتل',
+        VISA: 'ویزا',
+        INSURANCE: 'بیمه',
+        TRANSFER: 'ترانسفر',
+        TOUR: 'تور',
+        BUS: 'اتوبوس',
+        TRAIN: 'قطار',
+        CIP: 'تشریفات فرودگاهی',
+        OTHER: 'سایر خدمات',
+      };
+      const dimensions = {
+        service:
+          kinds.length > 1
+            ? 'خدمات ترکیبی'
+            : kinds.length === 1
+              ? (serviceLabels[kinds[0]!] ?? kinds[0]!)
+              : 'خدمت ثبت نشده',
+      };
       const at =
         query.dateBasis === 'created' ? row.createdAt : row.confirmedAt!;
       const balances = calculateSalesBalances(
@@ -118,6 +176,13 @@ export class SalesDashboardSource {
         })),
         [],
       );
+      if (
+        !query.filters.currencyCode ||
+        balances.some(
+          (balance) => balance.currencyCode === query.filters.currencyCode,
+        )
+      )
+        finalized.push({ at, value: '1' });
       for (const balance of balances) {
         if (
           query.filters.currencyCode &&
@@ -131,15 +196,31 @@ export class SalesDashboardSource {
             (sum, refund) => sum.plus(refund.amount),
             new Prisma.Decimal(0),
           );
+        const discount = row.priceComponents
+          .filter(
+            (component) =>
+              component.type === 'DISCOUNT' &&
+              component.currencyCode === balance.currencyCode,
+          )
+          .reduce(
+            (total, component) => total.plus(component.amount.abs()),
+            new Prisma.Decimal(0),
+          );
+        discounts.push({
+          at,
+          currencyCode: balance.currencyCode,
+          value: discount.toString(),
+        });
         gross.push({
           at,
           currencyCode: balance.currencyCode,
-          value: balance.amount,
+          value: new Prisma.Decimal(balance.amount).plus(discount).toString(),
         });
         net.push({
           at,
           currencyCode: balance.currencyCode,
           value: new Prisma.Decimal(balance.amount).minus(refunded).toString(),
+          dimensions,
         });
       }
     }
@@ -147,16 +228,44 @@ export class SalesDashboardSource {
       source,
       state: 'ready',
       metrics: {
+        'new-orders': {
+          kind: 'count',
+          aggregation:
+            'distinct contracts created in selected window, including draft and subsequently cancelled contracts; CREATED_AT',
+          observations: created.map((row) => ({
+            at: row.createdAt,
+            value: '1',
+          })),
+        },
+        'finalized-sales-count': {
+          kind: 'count',
+          aggregation:
+            'distinct eligible confirmed contracts in selected date window; counted once across currencies',
+          observations: finalized,
+        },
+        'discount-amount': {
+          kind: 'money',
+          aggregation:
+            'absolute canonical DISCOUNT components on confirmed contracts; CONTRACT_CURRENCY',
+          observations: discounts,
+        },
         'gross-sales': {
           kind: 'money',
           aggregation:
-            'canonical confirmed contract sale total after source discounts, before completed refunds; CONTRACT_CURRENCY',
+            'canonical confirmed contract sale total before discounts and completed refunds; CONTRACT_CURRENCY',
           observations: gross,
         },
         'net-sales': {
           kind: 'money',
           aggregation:
             'confirmed contract cohort sale total minus completed refunds allocated to those contracts before window end; CONTRACT_CURRENCY',
+          observations: net,
+        },
+        'average-sale-value': {
+          kind: 'money',
+          calculation: 'mean',
+          aggregation:
+            'net sale total divided by priced confirmed contracts in each source currency; recomputed from contract observations',
           observations: net,
         },
       },

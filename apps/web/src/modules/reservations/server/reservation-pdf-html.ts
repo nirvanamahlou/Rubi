@@ -170,6 +170,21 @@ export function reservationPdfHtml(
         : ''
     }
     <table class="table"><tbody><tr><th>CHECK-IN</th><td>${escape(data.checkIn)}</td><th>CHECK-OUT</th><td>${escape(data.checkOut)}</td></tr></tbody></table>
+    ${
+      intake.snapshot.serviceSelections.some((s) => s.kind === 'TRANSFER')
+        ? heading('03A', 'FLIGHT INFORMATION', 'Arrival & departure') +
+          table(
+            ['DIRECTION', 'AIRLINE', 'FLIGHT', 'DATE', 'TIME'],
+            data.flights.map((flight) => [
+              flight.leg,
+              flight.airline,
+              flight.number,
+              flight.date,
+              flight.time,
+            ]),
+          )
+        : ''
+    }
     ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table(['TRANSFER', 'TOUR LEADER', 'EXCURSION'], [[voucher ? data.transfer + ' · Board: ' + (settings?.text.transferBoard?.trim() || '-') : data.transfer, data.leader, data.excursion]])}
     ${heading('05', 'PASSENGERS', 'Passenger services')}${table(
       [

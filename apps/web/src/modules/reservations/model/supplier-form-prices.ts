@@ -6,7 +6,7 @@ import type { ReservationFormIntake } from './reservation-form';
 import { supplierFormData } from './voucher-settings';
 import { reservationFormPriceText } from './reservation-form-price';
 export const supplierPriceColumns = [
-  { key: 'pp', label: 'P.P' },
+  { key: 'pp', label: 'Hotel P.P' },
   { key: 'ratio', label: 'Ratio' },
   { key: 'transferPp', label: 'Transfer P.P' },
 ] as const;
@@ -69,12 +69,19 @@ export function supplierPriceTableData(intake: ReservationFormIntake) {
   const prices = intake.workflow.supplierFormSettings?.supplierFormPrices;
   return {
     headers: [
-      'P.P',
+      'Hotel P.P',
       'Ratio',
       `Transfer P.P (OUTBOUND: ${counts.outbound ?? '-'} / RETURN: ${counts.returning ?? '-'})`,
     ],
     values: supplierPriceColumns.map(({ key }) =>
-      prices?.[key] ? reservationFormPriceText([prices[key]!], 'code') : '-',
+      prices?.[key]
+        ? key === 'ratio'
+          ? prices.ratio!.amount
+          : reservationFormPriceText(
+              [prices[key] as { amount: string; currencyCode: string }],
+              'code',
+            )
+        : '-',
     ),
   };
 }
@@ -86,13 +93,18 @@ export function normalizeSupplierFormPrices(
   return Object.fromEntries(
     supplierPriceColumns.flatMap(({ key }) => {
       const price = prices?.[key];
-      if (!price || (!price.amount.trim() && !price.currencyCode)) return [];
+      if (
+        !price ||
+        (!price.amount.trim() && (key === 'ratio' || !price.currencyCode))
+      )
+        return [];
       if (
         !/^\d{1,18}(?:\.\d{1,4})?$/.test(price.amount) ||
-        !currencies.some((currency) => currency.code === price.currencyCode)
+        (key !== 'ratio' &&
+          !currencies.some((currency) => currency.code === price.currencyCode))
       )
         throw Error('مبلغ و ارز هر ستون قیمت را کامل و از فهرست انتخاب کنید.');
-      return [[key, { ...price }]];
+      return [[key, key === 'ratio' ? { amount: price.amount } : { ...price }]];
     }),
   );
 }

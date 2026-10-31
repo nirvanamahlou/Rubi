@@ -182,6 +182,11 @@ export function ContractActionPanel({
           <ReservationResponsibility key={request.id} id={request.id} />
         )}
       </div>
+      {request?.status === 'CANCELLED' && (
+        <div className={styles.cancelled} role="status">
+          این قرارداد باطل شده است
+        </div>
+      )}
       <div className={styles.groups}>
         {contractActionGroups.map((group, groupIndex) => (
           <section

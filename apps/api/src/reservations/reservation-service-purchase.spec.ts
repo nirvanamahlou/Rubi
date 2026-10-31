@@ -91,111 +91,142 @@ it('validates and prices only the actual unnamed legacy hotel guest ordinals', (
 });
 
 describe('service purchase validation', () => {
-  it('persists legacy guest purchase amounts and rejects a forged total before writing', async () => {
-    const snapshot = {
-      passengerIds: [],
-      serviceSelections: [
+  it('accepts explicit zero only when hotel/transfer scope permits it, keeping blank and negative invalid', () => {
+    expect(() =>
+      validateServicePurchase(
         {
-          clientKey: 'hotel-1',
-          kind: 'HOTEL',
-          metadata: {
-            legacyServicePartiesV2: JSON.stringify({
-              'hotel-1': { adults: 2, children: 0, infants: 0 },
-            }),
-          },
+          ...valid,
+          amount: '0',
+          pricingCalculation: { baseAmount: '0', factor: '2' },
         },
-      ],
-      hotelSelection: {
-        serviceClientKey: 'hotel-1',
-        checkInDate: '2026-10-01',
-        checkOutDate: '2026-10-07',
-      },
-    };
-    const create = vi.fn().mockImplementation(async ({ data }) => ({
-      ...data,
-      id: 'saved',
-      createdAt: new Date(),
-    }));
-    const transaction = {
-      $queryRaw: vi.fn(),
-      reservationIntake: {
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-      reservationServicePurchase: { create },
-    };
-    const database = {
-      client: {
-        reservationIntake: {
-          findUnique: vi
-            .fn()
-            .mockResolvedValue({ branchId: 'branch', snapshot }),
-        },
-        reservationServicePurchase: {
-          findUnique: vi.fn().mockResolvedValue(null),
-        },
-        $transaction: async (
-          work: (tx: typeof transaction) => Promise<unknown>,
-        ) => work(transaction),
-      },
-    };
-    const directory = {
-      brokerReference: vi.fn().mockResolvedValue({
-        id: valid.supplierOrganizationId,
-        name: 'Broker',
-      }),
-      currencyReference: vi.fn().mockResolvedValue({ code: 'IRR' }),
-    };
-    const service = new ReservationServicePurchaseService(
-      database as never,
-      directory as never,
-    );
-    const actor = {
-      userId: 'user',
-      branchIds: ['branch'],
-      permissions: ['reservations.read', 'reservations.hotel_purchase.write'],
-    } as never;
-    const purchase = {
-      ...valid,
-      amount: '60',
-      coveredServiceClientKeys: ['hotel-1'],
-      legacyGuestPrices: [{ guestIndex: 0, nightlyAmount: '10' }],
-    };
-    await expect(
-      service.recordBatch(
-        'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-        {
-          version: 1,
-          expectedVersion: 0,
-          purchases: [{ ...purchase, amount: '1' }],
-        },
-        actor,
-        'tampered',
+        true,
       ),
-    ).rejects.toThrow(BadRequestException);
-    expect(create).not.toHaveBeenCalled();
-    await service.recordBatch(
-      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-      { version: 1, expectedVersion: 0, purchases: [purchase] },
-      actor,
-      'valid',
-    );
-    expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          amount: '60',
-          passengerPrices: {
-            legacyGuests: [
-              expect.objectContaining({
-                guestIndex: 0,
-                passengerName: 'مسافر 1',
-                totalAmount: '60',
-              }),
-            ],
-          },
-        }),
-      }),
-    );
+    ).not.toThrow();
+    expect(() =>
+      validateServicePurchase(
+        {
+          ...valid,
+          amount: '0',
+          passengerPrices: [
+            { customerId: valid.supplierOrganizationId, nightlyAmount: '0' },
+          ],
+        },
+        true,
+      ),
+    ).not.toThrow();
+    for (const amount of ['', '-1'])
+      expect(() =>
+        validateServicePurchase({ ...valid, amount }, true),
+      ).toThrow();
   });
+  it.each(['0', '10'])(
+    'persists legacy guest purchase amount %s and rejects a forged total before writing',
+    async (nightlyAmount) => {
+      const snapshot = {
+        passengerIds: [],
+        serviceSelections: [
+          {
+            clientKey: 'hotel-1',
+            kind: 'HOTEL',
+            metadata: {
+              legacyServicePartiesV2: JSON.stringify({
+                'hotel-1': { adults: 2, children: 0, infants: 0 },
+              }),
+            },
+          },
+        ],
+        hotelSelection: {
+          serviceClientKey: 'hotel-1',
+          checkInDate: '2026-10-01',
+          checkOutDate: '2026-10-07',
+        },
+      };
+      const create = vi.fn().mockImplementation(async ({ data }) => ({
+        ...data,
+        id: 'saved',
+        createdAt: new Date(),
+      }));
+      const transaction = {
+        $queryRaw: vi.fn(),
+        reservationIntake: {
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
+        reservationServicePurchase: { create },
+      };
+      const database = {
+        client: {
+          reservationIntake: {
+            findUnique: vi
+              .fn()
+              .mockResolvedValue({ branchId: 'branch', snapshot }),
+          },
+          reservationServicePurchase: {
+            findUnique: vi.fn().mockResolvedValue(null),
+          },
+          $transaction: async (
+            work: (tx: typeof transaction) => Promise<unknown>,
+          ) => work(transaction),
+        },
+      };
+      const directory = {
+        brokerReference: vi.fn().mockResolvedValue({
+          id: valid.supplierOrganizationId,
+          name: 'Broker',
+        }),
+        currencyReference: vi.fn().mockResolvedValue({ code: 'IRR' }),
+      };
+      const service = new ReservationServicePurchaseService(
+        database as never,
+        directory as never,
+      );
+      const actor = {
+        userId: 'user',
+        branchIds: ['branch'],
+        permissions: ['reservations.read', 'reservations.hotel_purchase.write'],
+      } as never;
+      const purchase = {
+        ...valid,
+        amount: nightlyAmount === '0' ? '0' : '60',
+        coveredServiceClientKeys: ['hotel-1'],
+        legacyGuestPrices: [{ guestIndex: 0, nightlyAmount }],
+      };
+      await expect(
+        service.recordBatch(
+          'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          {
+            version: 1,
+            expectedVersion: 0,
+            purchases: [{ ...purchase, amount: '1' }],
+          },
+          actor,
+          'tampered',
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(create).not.toHaveBeenCalled();
+      await service.recordBatch(
+        'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        { version: 1, expectedVersion: 0, purchases: [purchase] },
+        actor,
+        'valid',
+      );
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            amount: nightlyAmount === '0' ? '0' : '60',
+            passengerPrices: {
+              legacyGuests: [
+                expect.objectContaining({
+                  guestIndex: 0,
+                  passengerName: 'مسافر 1',
+                  totalAmount: nightlyAmount === '0' ? '0' : '60',
+                }),
+              ],
+            },
+          }),
+        }),
+      );
+    },
+  );
   it('accepts a positive service purchase with broker and currency', () => {
     expect(() => validateServicePurchase(valid)).not.toThrow();
   });
@@ -341,12 +372,13 @@ it('accepts the hotel embedded in a legacy reservation snapshot', () => {
   });
 });
 
-it.each([false, true, 'split', 'partial', 'unsent'])(
+it.each([false, true, 'split', 'partial', 'unsent', 'zero'])(
   'records hotel and both transfer directions atomically (formula=%s)',
   async (mode) => {
     const partial = mode === 'partial';
-    const formula = partial || mode === 'unsent' ? false : mode;
-    const hotelAmount = partial ? '300' : '450';
+    const zero = mode === 'zero';
+    const formula = partial || mode === 'unsent' || zero ? false : mode;
+    const hotelAmount = zero ? '0' : partial ? '300' : '450';
     const create = vi.fn().mockResolvedValue({});
     const updateMany = vi.fn().mockResolvedValue({ count: 1 });
     const database = {
@@ -514,11 +546,11 @@ it.each([false, true, 'split', 'partial', 'unsent'])(
                 passengerPrices: [
                   {
                     customerId: '11111111-1111-4111-8111-111111111111',
-                    nightlyAmount: '100',
+                    nightlyAmount: zero ? '0' : '100',
                   },
                   {
                     customerId: '22222222-2222-4222-8222-222222222222',
-                    nightlyAmount: '50',
+                    nightlyAmount: zero ? '0' : '50',
                   },
                 ].slice(0, partial ? 1 : 2),
               },
@@ -526,9 +558,9 @@ it.each([false, true, 'split', 'partial', 'unsent'])(
                 serviceClientKey: 'outbound',
                 coveredServiceClientKeys: ['outbound', 'return'],
                 supplierOrganizationId: valid.supplierOrganizationId,
-                amount: '80',
+                amount: zero ? '0' : '80',
                 currencyCode: 'IRR',
-                transferUnitAmount: '40',
+                transferUnitAmount: zero ? '0' : '40',
               },
             ],
       },
@@ -575,7 +607,7 @@ it.each([false, true, 'split', 'partial', 'unsent'])(
       expect(back.coveredServiceClientKeys).toEqual(['return']);
       expect(back.batchId).toBe(hotel.batchId);
     }
-    expect(transfer.amount).toBe(formula ? '50' : '80');
+    expect(transfer.amount).toBe(zero ? '0' : formula ? '50' : '80');
     if (formula) {
       expect(hotel.passengerPrices).toEqual({
         hotelSavings,

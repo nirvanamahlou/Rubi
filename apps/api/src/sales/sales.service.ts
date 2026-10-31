@@ -1691,7 +1691,9 @@ export class SalesService {
       !canSelfServeSalesContract(actor, row)
     )
       throw new ForbiddenException('مجوز ثبت پرداخت وجود ندارد.');
-    return { data: await this.repository.paymentAccounts(row.branchId) };
+    return {
+      data: await this.repository.paymentAccounts(row.branchId, actor.userId),
+    };
   }
 
   async addPayment(

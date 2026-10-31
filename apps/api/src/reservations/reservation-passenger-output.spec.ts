@@ -14,6 +14,32 @@ const actor = {
   permissions: ['reservations.read'],
   branchIds: ['branch'],
 } as AuthenticatedActor;
+it('falls back to Tehran arrival day when no hotel check-in is saved', async () => {
+  const reservationOutputIdentity = vi
+    .fn()
+    .mockResolvedValue({ customerId: 'a', hotelChildAgeBand: null });
+  await reservationOutputPassengers(
+    {
+      ...snapshot,
+      hotelSelection: undefined,
+      passengerIds: ['a'],
+      ticketSelections: [
+        {
+          direction: 'OUTBOUND',
+          departureAt: '2026-10-16T18:00:00Z',
+          arrivalAt: '2026-10-17T22:00:00Z',
+        },
+      ] as never,
+    } as unknown as SalesReservationRequestV1,
+    { reservationOutputIdentity } as never,
+    actor,
+  );
+  expect(reservationOutputIdentity).toHaveBeenCalledWith(
+    'a',
+    '2026-10-18',
+    actor,
+  );
+});
 it('loads the saved buyer through Sales only after authorizing the historical request and leaves passengers empty', async () => {
   const detail = vi.fn().mockResolvedValue({
     contractId: 'contract',
@@ -95,7 +121,7 @@ it('checks request branch before any identity reads and rejects readers without 
   ).rejects.toThrow();
   expect(detail).not.toHaveBeenCalled();
 });
-it('uses the Tehran departure day rather than UTC, issuance time or hotel arrival for age calculation', async () => {
+it('uses hotel check-in rather than flight departure for child age calculation', async () => {
   const reservationOutputIdentity = vi.fn().mockResolvedValue({
     customerId: 'a',
     passportName: 'TEST / A',
@@ -106,7 +132,11 @@ it('uses the Tehran departure day rather than UTC, issuance time or hotel arriva
       ...snapshot,
       passengerIds: ['a'],
       ticketSelections: [
-        { direction: 'OUTBOUND', departureAt: '2026-10-17T22:00:00Z' },
+        {
+          direction: 'OUTBOUND',
+          departureAt: '2026-10-16T22:00:00Z',
+          arrivalAt: '2026-10-17T02:00:00Z',
+        },
       ] as never,
     },
     { reservationOutputIdentity } as never,

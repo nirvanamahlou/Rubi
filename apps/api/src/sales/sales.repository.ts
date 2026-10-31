@@ -1,6 +1,6 @@
 import { captureSalesContractAccounting } from '../finance/accounting/sales-contract-accounting.public';
 import {
-  salesReceiptAccounts,
+  SalesReceiptAccountsPublic,
   salesReceiptDestination,
 } from '../finance/payments/sales-receipt-accounts.public';
 import { assertRevenueEditable } from '../finance/accounting/accounting-workflows.public';
@@ -93,6 +93,9 @@ export class SalesRepository {
     @Optional()
     @Inject(SalesBuyerContactCrypto)
     private readonly buyerCrypto?: SalesBuyerContactCrypto,
+    @Optional()
+    @Inject(SalesReceiptAccountsPublic)
+    private readonly receiptAccounts?: SalesReceiptAccountsPublic,
   ) {}
 
   findById(id: string): Promise<SalesContractRow | null> {
@@ -1022,8 +1025,12 @@ export class SalesRepository {
     );
   }
 
-  paymentAccounts(branchId: string) {
-    return salesReceiptAccounts(this.database.client, branchId);
+  paymentAccounts(branchId: string, actorUserId: string) {
+    if (!this.receiptAccounts)
+      throw new InternalServerErrorException(
+        'Payment account provider is unavailable.',
+      );
+    return this.receiptAccounts.list(branchId, actorUserId);
   }
 
   async addPayment(

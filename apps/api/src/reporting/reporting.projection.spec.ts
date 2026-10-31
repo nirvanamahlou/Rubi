@@ -46,6 +46,68 @@ function fact(overrides: Partial<ReportingFactRow> = {}): ReportingFactRow {
 }
 
 describe('travel reporting approved projection', () => {
+  it('keeps cancelled pipeline rows separate without adding them or drafts to confirmed sales totals', () => {
+    const input = {
+      code: 'sales_contract_pipeline',
+      query: {
+        filters: {},
+        page: 1,
+        pageSize: 1,
+        timezone: 'Asia/Tehran' as const,
+      },
+      now: new Date(),
+      facts: [
+        fact({ id: 'active', salesAmount: new Prisma.Decimal(100) }),
+        fact({
+          id: 'cancelled',
+          orderNumber: 'cancelled',
+          orderStatus: 'CANCELLED',
+          salesAmount: new Prisma.Decimal(900),
+        }),
+        fact({
+          id: 'draft',
+          orderNumber: 'draft',
+          orderStatus: 'DRAFT',
+          salesAmount: new Prisma.Decimal(50),
+        }),
+      ],
+    };
+    const preview = buildTravelReportResult(input);
+    const exported = buildTravelReportResult({
+      ...input,
+      includeAllRows: true,
+    });
+    expect(
+      exported.rows.some(
+        (row) =>
+          row.primaryDimension === 'CANCELLED' && row.salesAmount === '900',
+      ),
+    ).toBe(true);
+    expect(exported.totalsByCurrency[0]?.salesAmount).toBe('100');
+    expect(preview.totalsByCurrency).toEqual(exported.totalsByCurrency);
+    for (const code of [
+      'sales_by_organization',
+      'sales_by_service_route',
+      'route_passengers',
+      'contract_service_profit',
+      'agency_performance',
+      'lead_to_order_conversion',
+    ]) {
+      const result = buildTravelReportResult({
+        ...input,
+        code,
+        facts: input.facts.slice(0, 2),
+        includeAllRows: true,
+      });
+      expect(result.totalsByCurrency[0]?.salesAmount).toBe('100');
+    }
+    const cancelledOnly = buildTravelReportResult({
+      ...input,
+      facts: [input.facts[1]!],
+    });
+    expect(cancelledOnly.total).toBe(1);
+    expect(cancelledOnly.totalsByCurrency).toEqual([]);
+  });
   it('excludes issued, unpaid, cancelled and unknown issuance before preview/export reconciliation', () => {
     const input = {
       code: 'paid_not_issued',
