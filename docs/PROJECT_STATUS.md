@@ -1,6 +1,9 @@
 ## ACCOUNTING-NO-BOOK-PICKER-1031
 
 Removed manual create/select-ledger prompts from both no-book chart form locations. Existing automatic resolution and write guards preserved; no data or runtime changes. Updated empty-chart regression. Static diff check passes; runtime tests/build pending because this checkout has no node_modules.
+## DASHBOARDS-OPERATIONAL-1031 — PC-C — VALIDATING
+
+Owner-confirmed unconverted new-lead semantics now use canonical customer/accepted-handoff references through the Sales-owned paid-purchase public boundary. Paid, confirmed history remains customer-conversion evidence after later cancellation; no revenue/refund/history rows change. Added equal-period lead growth with unavailable zero/missing denominator, Tehran weekday net-sales breakdown, honest missing-accounting/cost explanations and signed/nontruncating chart scales. Read-only actual-module inventory covers84 KPI and91 visual IDs; most still need owner-public producers and must not be described as finalized. Independent candidate SQL reconciliation passes11 checks without exposing amounts or identities.53 targeted API tests and initial39 Web tests pass; final lint/types/build/CI and backed-up production overlay publication remain in progress. Preserve every active Call Center overlay; no IAM/schema/migration/dependency or operational data write. See docs/tasks/DASHBOARDS-OPERATIONAL-1031.md.
 
 ## CONTRACT-FIRST-PASSENGER-PRICE-1031 — PC-A — READY_FOR_CI
 
@@ -8181,9 +8184,14 @@ Request detail keeps cancellation plus the shared-form edit entry, removing appr
 
 Added fixed-origin HTTPS Travis/Noyan sandbox catalogue integration and private, branch/settings-authorized Insurance settings discovery. Owner key validated with the actual implementation:195 countries,21 durations,5 plans; no credential in projected output. Web retrieves provider data and selects country/plan codes without changing manual rates or Master Data automatically.32 API tests and3 English coverage tests pass; scoped lint passes. Shared generated dependencies are being rebuilt before final type verification. User selected backed-up Avina activation, preserving its independent current API/Web fixes. No policy issuance, passenger export, schema/migration or financial write. See docs/tasks/TRAVIS-SANDBOX-CONNECTION-1031.md.
 
+## CALL-CENTER-RECORDING-DOWNLOAD-1031 — production accepted 2026-10-31
+
+Read-only PBX SSH/CDR/CEL correlation and finalized WAV pull enabled independently of workstation. Encrypted native upload/publication and90-day retention preserved;15 already-scoped accounts received only recording-read via native administrator/IAM CAS/audit. Native own read/checksum, unrelated-expert denial,2 global accounts and3 same-unit manager checks passed. Owner confirms UI download and playback. Seven Python safety checks, Node syntax/format and systemd validation passed; no application image/schema/UI changes. Private minute timer enabled. Unrecorded source calls remain without invented audio. Limits, rollback and receipts: docs/tasks/CALL-CENTER-RECORDING-DOWNLOAD-1031.md.
 ## HR-MANUAL-PERSONNEL-CODE-1031 / PC-B
 Employee create/edit personnel code is editable through existing validated form state and submission. Automatic suggestion retained; inaccurate automatic-only helper copy removed. Existing required/50-character/duplicate validation and API/FK identity preserved. No API/schema/dependency or server rollout. Targeted and final-head checks gate owner-authorized develop merge.
 
+## HR-SHARED-BRANCHES-1031 / PC-B
+Candidate: canonical deduplicated HR company options and Headquarters; explicit common nonpersonal reference definitions materialized/synchronized per authorized native branch under restrictive HrRecord sharedSource self-FK. Single-branch readers retain local applicability; common edits/delete require all affected branch scopes and preserve dependency checks. Employee correction supports authorized destination branch/company, destination unit/manager/user validation, encrypted identity/contact rebind and immutable operational history plus assignment audit. Employee form submits manually entered personnel codes on create/edit. Additive migration only; focused and full PostgreSQL/type/UI checks and final-head hosted gates precede develop merge/local3100 activation.
 ## 2026-10-31 — PETTY-NO-SAMPLES-1031
 
 Overview uses only server-returned request rows. Removed synthetic fallback on empty baseline and its redundant baseline request; empty/deleted/filtered results remain empty and pagination comes from the API. No operational data deleted or changed. Existing Samples fixtures stay isolated for tests/previews. Scoped lint, module tests, Web build and hosted checks gate authorized develop merge; no server deployment claimed.
@@ -8198,3 +8206,7 @@ Five open Amin-tech11 PRs integrated, retaining their actual heads and complete 
 
 Fresh read-only Rahkaran audit found generic closing/year-end form mismatches and previously missed legal-report flyout forms. Owner explicitly requested inaccessible closing/nature-adjustment stages stay empty: observed introductions/navigation are now rendered on localhost3100 with no inferred financial inputs or issue actions. Closing page no longer takes its title from a source precondition error.7 targeted tests and scoped ESLint pass; integrated stage typecheck reports unrelated stale HR/shared-contract declarations. No source-system data writes, database changes, push or merge. Full audit/implementation remains incomplete; see [audit status](tasks/GENERAL-LEDGER-PARITY-1031.md).
 
+
+## HR-HEADQUARTERS-CHOICE-1031 / PC-B
+
+Merged PR1248 (206 Web/46 isolated PostgreSQL checks; eight hosted gates). Integrated local production Web/API built, additive local migrations applied after backup and runtime activated on3100/4192. Final browser verification identified virtual Headquarters option-value collision with an existing native branch; use a distinct UI-only value and preserve native branch FK ownership. Targeted regression and final hosted gates precede follow-up merge.

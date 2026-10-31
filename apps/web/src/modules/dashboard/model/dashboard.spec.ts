@@ -1,7 +1,7 @@
 import { assistantViewForDashboardPage } from '@/modules/assistant/dashboard-location';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { dashboardProjectionClient } from './projection-client';
 import {
@@ -561,7 +561,9 @@ describe('dashboard URL filters', () => {
 });
 
 describe('dashboard permission and data states', () => {
+  afterEach(() => vi.unstubAllEnvs());
   it('keeps a blocked state when the API base URL is unavailable', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '');
     await expect(
       dashboardProjectionClient.load({
         filters: defaultDashboardFilters,
@@ -861,14 +863,10 @@ describe('dashboard permission and data states', () => {
     expect(source).not.toContain('آخرین Refresh');
     expect(source).toContain('دادهٔ تأییدشده برای نمایش موجود نیست');
     expect(source).not.toContain('KPI و تحلیل‌های عملیاتی');
-    for (const title of [
-      'فروش امروز',
-      'فروش این هفته',
-      'فروش این ماه',
-      'فروش این فصل',
-      'فروش بازه انتخابی',
-    ])
-      expect(source).toContain(title);
+    expect(source).not.toContain('executiveSalesTitles');
+    expect(dashboardKpis.find((kpi) => kpi.id === 'collected')?.title).toBe(
+      'وصول',
+    );
     expect(source).toContain('items-baseline');
     expect(source).toContain('dashboard-sidebar-filters-title');
     expect(source).toContain('ActivePageIcon');

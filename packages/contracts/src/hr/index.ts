@@ -63,6 +63,8 @@ export interface HrRecordDto {
 
 /** Typed command inputs; no provider receipts or binary content are accepted. */
 export interface HrWorkflowData {
+  /** Shared reference applicability; membership is captured and enforced by the server. */
+  allBranches?: boolean;
   /** Persistent diagram offsets in CSS pixels, independent of personnel assignments. */
   chartX?: number;
   chartY?: number;
@@ -138,7 +140,12 @@ export interface HrEmployeeCreate {
   startedAtValue: string;
   status?: string;
 }
-export type HrEmployeeUpdate = Partial<HrEmployeeCreate> & {
+export type HrEmployeeUpdate = Omit<
+  Partial<HrEmployeeCreate>,
+  'organizationBranchId'
+> & {
+  /** Null selects the owning branch without a company-specific assignment. */
+  organizationBranchId?: string | null;
   version: number;
   /** Complete identity/contact snapshot required when editing private profile values. */
   profileRecords?: { id: string; version: number }[];

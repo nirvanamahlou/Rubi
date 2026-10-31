@@ -10354,11 +10354,27 @@ TRAVIS-SANDBOX-CONNECTION-1031 follow-up: owner explicitly selected Avina server
 
 TRAVIS-SANDBOX-CONNECTION-1031 verification:32 targeted API and3 English coverage tests passed; Contracts/Database regeneration/build, API/Web typechecks and scoped API/Web lint passed. Actual service sandbox call returned195/21/5 with no credential in projection. Server target hashes match original connector files; read-only rollout will preserve independent currently running base images. Final-head CI gates precede activation.
 
+## CALL-CENTER-RECORDING-DOWNLOAD-1031 — PC-C — IN_PROGRESS
+
+User explicitly requests production call-audio downloads. Reserve bounded recording ingestion/transfer scripts, recording readiness integration and focused tests, existing UI data wiring only if necessary, and own status/docs. Preserve approved form/UI, native call/answer/branch scopes,90-day retention and real WAV integrity; use VPN/SSH read-only source access, no PBX routing changes or guessed call correlation. Verify actual CDR/CEL and finalization before importing; no schema/dependency lock acquired. Current deployed API/Web overlays must be preserved, and deployment lock awaited. Permission changes require owning IAM boundary and explicit existing authority, never raw cross-module writes.
+
+CALL-CENTER-RECORDING-DOWNLOAD-1031 — implementation/production ACCEPTED; source READY_FOR_REVIEW. Existing real-call API/Web/Worker images and UI preserved. Dedicated source/upload credentials remain root-private; PBX files/CDR are read-only. Nine initial roots imported, native audio checksum and own/unit/global/denial checks passed, owner downloaded/played WAV. Recording-read added through existing native administrator and owning IAM service for15 pre-scoped mapped/global accounts; no wider call grants. Ninety-day expiry remains native, minute timer enabled,7 safety checks pass. Source reservation freezes on publication; no schema/dependency locks. See own task note.
+
 ## HR-MANUAL-PERSONNEL-CODE-1031 — PC-B — RESERVED
 
 COMPUTER_ID=PC-B; codex/pc-b-hr-manual-personnel-code-1031 from origin/develop1c8c45291. Owner authorizes manually editable employee personnel code in create/edit and push/develop merge. Reserve only new-employee-dialog.tsx, existing hr-workspace form assertions and own status notes. Existing automatic suggestion, required/length/duplicate validation and API/FK identity remain unchanged. No schema/API/dependency or active local runtime replacement. No overlapping active form writer found. Final-head hosted checks precede authorized merge.
 
 HR-MANUAL-PERSONNEL-CODE-1031:51 existing Web regressions and scoped ESLint passed. Shared create/edit controls remain bound to existing validated form state. Documentation formatting corrected after the first hosted quality check; all final-head hosted gates required before merge. Source reservation releases on verified develop merge.
+
+## HR-SHARED-BRANCHES-1031 — PC-B — RESERVED
+
+Owner explicitly requests deduplicated HR branch choices, Headquarters for shared registrations across branches, employee branch editing, tests/push/develop merge and local3100 rollout. Reserve HR company/reference/form helpers, employee create/edit consumer, HR service/validation/contracts and focused regression suites, own translations/docs. Preserve real owning branch FKs, authorization and immutable history; shared applicability must be explicit, limited to authorized branches and exclude personal/financial records. Existing runtime and independently merged features must be retained. Previous personnel-code1235 merged and released. No dependency changes; the additive schema reservation is below.
+
+HR-SHARED-BRANCHES-1031 reserves sole additive schema/Migration ownership for HrRecord.sharedSourceId self-FK and source/branch uniqueness. Latest prior schema migration is already merged; no overlapping active migration writer found. Shared nonpersonal reference definitions materialize one native-branch record per authorized branch, synchronize centrally, and require management scope for all affected branches. No IAM scope expansion or financial/personal replication.
+
+HR-SHARED-BRANCHES-1031 candidate verification:46 complete isolated real PostgreSQL HR command tests passed, including common source/copy FKs, cross-branch synchronization, source/copy optimistic conflicts, partial-scope denial, native parent-copy integrity, destination branch checks and encrypted current-profile rebind while preserving attendance history.53 targeted Web form regressions include editable branch with locked employment status and deduplicated names. Full API/Web typechecks and scoped lint passed before final alias compatibility refinements; final-head checks and local preview activation remain required. Runtime base9d86fad32 is an ancestor of this candidate; preserve the independent employment-order preview changes during local rollout.
+
+HR-SHARED-BRANCHES-1031 final candidate:206 HR Web regressions and46 full isolated PostgreSQL commands passed; final targeted crypto/assignment checks and hosted gates protect publication. Source includes dependent native parent copies, assignment before/after audit, current private profile/pay-configuration rebind and case-normalized branch aliases without deleting historical definitions. Scoped lint and full API/Web types passed; final preview build/activation is a separate preserved-runtime merge after develop publication.
 
 ## PETTY-NO-SAMPLES-1031 — PC-B — RESERVED
 
@@ -10379,3 +10395,17 @@ CALL-POPUP-REFRESH-1031 source frozen for review;8 targeted checks/scoped lint/f
 ## CALL-CENTER-FINAL-MERGE-1031 — PC-C — IN_PROGRESS
 
 Owner authorizes reviewing and merging all own PRs after full CI and final develop localhost3000. Integration branch fromd78aa76fc preserves original heads of PR1206/1222/1228/1239/1241. Reserve integration conflicts and own coordination only; source/docs merges preserve both sides. No live server/PBX/data change. Final exact-head CI including database gate is mandatory before merge; local runtime uses isolated checkout and backup before additive local migrations.
+
+## DASHBOARDS-OPERATIONAL-1031 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-operational-1031 from develop f3632a7a9. Owner requests continuation of Dashboard production finalization with the new erp-server SSH connection. Reserve Dashboard Web/model/tests, Reporting native Dashboard aggregation/tests only and own domain/status notes. Read-only runtime/source/SQL reconciliation first; no business data, IAM grants, dependency, shared contract or schema changes. Preserve every independently deployed Call Center/API/Web/Worker overlay and runtime environment. Never run obsolete1029 deployment plans against the newer production release. Dashboard-only verified overlay publication remains within the owner's prior backed-up deployment authorization; exact-head CI precedes develop integration. Any source lacking its owner-approved public measurement remains explicitly unavailable, never inferred from unrelated records.
+
+Reserve only eleven new Dashboard English override entries and the matching one API notice translation, preserving every existing catalogue entry. No general catalogue rewrite or shared contract change.
+
+Owner clarification during this task: new leads exclude people who have already made a successful purchase; first successful purchase belongs to new customers instead. Reserve LeadDashboardSource and SalesDashboardCustomers public leaf plus their focused regressions. Sales owns the permission-scoped paid-purchase decision and returns only minimal canonical reference matches to the authorized Lead consumer; no name/phone matching, private cross-module queries, schema or IAM edits. Accepted handoff contract IDs and canonical customer IDs are the only matching paths. Historical paid, confirmed purchases remain conversion evidence after cancellation; revenue exclusion and refund records are unchanged. This bounded additive internal public method has no HTTP/root contract change.
+
+## HR-HEADQUARTERS-CHOICE-1031 — PC-B — RESERVED
+
+PR1248 merged at f3632a7a9; HR-SHARED-BRANCHES-1031 source/schema lease released after eight successful hosted gates. Reserve only hr-live-data.ts, its directory-form regression and own closeout notes. Browser verification found virtual Headquarters reused the first native branch option value and was folded away by the selector. Give the virtual UI choice a distinct nonpersistent identifier; native branch ownership remains unchanged. No schema, contract, dependency or data mutation. Local integrated production build/API passed; localhost3100 is active and final option verification follows this correction.
+
+HR-HEADQUARTERS-CHOICE-1031 also reserves the existing organization-chart-live selector expectation: the UI-only common option now has hr-headquarters identity, while every native chart root and branch FK remains unchanged. Full hosted suite identified this stale expectation; source correction itself passed quality/build/migration gates.

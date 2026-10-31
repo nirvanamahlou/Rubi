@@ -57,7 +57,7 @@ const value: NewEmployeeFormValue = {
 };
 
 describe('employee assignment editor and shared job titles', () => {
-  it('enables unit, grade, title and manager during edit while retaining branch/start/status restrictions', () => {
+  it('enables branch, unit, grade, title and manager during edit while retaining start/status restrictions', () => {
     const html = renderToStaticMarkup(
       <NewEmployeeForm
         personnelMode
@@ -93,7 +93,7 @@ describe('employee assignment editor and shared job titles', () => {
     expect(html).toContain('کد پستی');
     expect(
       html.match(/<input[^>]*id="hr-new-employee-branch"[^>]*>/)?.[0],
-    ).toMatch(/\sdisabled=/);
+    ).not.toMatch(/\sdisabled=/);
   });
   it('offers the shared active catalogue in each branch without sharing unit references', () => {
     const data = {
