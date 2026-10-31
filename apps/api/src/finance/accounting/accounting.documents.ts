@@ -117,6 +117,11 @@ export async function numberJournalPreview(
       bookId,
       periodId,
       status: { in: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'] },
+      // A filtered grid submits an explicit selection. Book, period, status and
+      // per-row version guards still apply; unselected numbers are preserved.
+      ...(payload.selectedOnly === true
+        ? { id: { in: items.map((item) => item.id) } }
+        : {}),
       ...(payload.filter ? { AND: [journalFilter(payload.filter)] } : {}),
     },
     take: 501,

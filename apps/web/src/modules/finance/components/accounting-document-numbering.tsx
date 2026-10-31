@@ -4,8 +4,10 @@ import type {
   AccountingJournalV1,
   AccountingSnapshotV1,
 } from '@nora/contracts';
-import { ArrowLeft, ArrowRight, X, ListOrdered } from 'lucide-react';
+import { ArrowLeft, ArrowRight, X, ListOrdered, FilterX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/form-controls';
+import { filterNumberingRows } from '../accounting-numbering-filter';
 import { accountingApi } from '../api/accounting-api';
 import {
   Tooltip,
@@ -39,6 +41,7 @@ export function AccountingDocumentNumbering({
     'description',
   );
   const [rows, setRows] = useState<AccountingJournalV1[]>([]);
+  const [filters, setFilters] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<
@@ -79,6 +82,7 @@ export function AccountingDocumentNumbering({
       if (new Set(all.map((row) => row.id)).size !== all.length)
         throw new Error('فهرست اسناد تغییر کرده است؛ دوباره ادامه را بزنید.');
       setRows(all);
+      setFilters([]);
       setStep('list');
     } catch (cause) {
       setError(
@@ -89,11 +93,13 @@ export function AccountingDocumentNumbering({
     }
   };
   const number = async () => {
+    if (!visibleRows.length || busy || loading) return;
     const response = await run<{ rows: typeof result }>(
       'number-journal-preview',
       {
         periodId,
-        items: rows.map((row) => ({
+        selectedOnly: filters.some((value) => value.trim()),
+        items: visibleRows.map((row) => ({
           id: row.id,
           expectedVersion: row.version,
         })),
@@ -106,6 +112,7 @@ export function AccountingDocumentNumbering({
   };
   const cancel = () => {
     setRows([]);
+    setFilters([]);
     setResult([]);
     setStep('description');
     setError('');
@@ -153,6 +160,18 @@ export function AccountingDocumentNumbering({
     'شماره روزانه',
     'صادر کننده',
   ];
+  const cells = (row: AccountingJournalV1) => [
+    row.number ?? '',
+    row.documentDate ?? '',
+    statuses[row.status] ?? row.status,
+    book.configurations.find((item) => item.id === row.typeId)?.title ?? '',
+    row.description,
+    row.reference ?? '',
+    String(row.attributes.auxiliaryNumber ?? ''),
+    String(row.attributes.dailyNumber ?? ''),
+    row.makerName ?? '',
+  ];
+  const visibleRows = filterNumberingRows(rows, filters, cells);
   return (
     <section
       className="space-y-4"
@@ -162,13 +181,14 @@ export function AccountingDocumentNumbering({
           !event.altKey ||
           busy ||
           loading ||
-          event.target instanceof HTMLInputElement
+          event.target instanceof HTMLInputElement ||
+          event.target instanceof HTMLSelectElement
         )
           return;
         if (event.key === 'ArrowLeft') {
           event.preventDefault();
           if (step === 'description') void fetchPreview();
-          else if (step === 'list' && rows.length && !busy && !loading)
+          else if (step === 'list' && visibleRows.length && !busy && !loading)
             void number();
         }
         if (event.key === 'ArrowRight') {
@@ -178,6 +198,10 @@ export function AccountingDocumentNumbering({
         if (event.key === 'Escape') {
           event.preventDefault();
           cancel();
+        }
+        if (step === 'list' && event.code === 'KeyF' && event.shiftKey) {
+          event.preventDefault();
+          setFilters([]);
         }
       }}
     >
@@ -230,7 +254,13 @@ export function AccountingDocumentNumbering({
               'Alt+ArrowLeft',
               () => void number(),
               <ListOrdered className="size-4" />,
-              !rows.length,
+              !visibleRows.length,
+            )}
+            {action(
+              'حذف فیلتر',
+              'Alt+Shift+F',
+              () => setFilters([]),
+              <FilterX className="size-4" />,
             )}
             {action('انصراف', 'Alt+Escape', cancel, <X className="size-4" />)}
           </>
@@ -257,22 +287,53 @@ export function AccountingDocumentNumbering({
                   </th>
                 ))}
               </tr>
+              <tr>
+                {columns.map((title, index) => (
+                  <th key={title} className="border p-1">
+                    {index === 2 ? (
+                      <select
+                        aria-label={`فیلتر ${title}`}
+                        className="h-9 w-full rounded border bg-background text-xs"
+                        value={filters[index] ?? ''}
+                        disabled={busy || loading}
+                        onChange={(event) =>
+                          setFilters((current) =>
+                            columns.map((_, n) =>
+                              n === index
+                                ? event.target.value
+                                : (current[n] ?? ''),
+                            ),
+                          )
+                        }
+                      >
+                        <option value="">همه</option>
+                        <option value="موقت">موقت</option>
+                        <option value="بررسی شده">بررسی شده</option>
+                      </select>
+                    ) : (
+                      <Input
+                        aria-label={`فیلتر ${title}`}
+                        value={filters[index] ?? ''}
+                        disabled={busy || loading}
+                        onChange={(event) =>
+                          setFilters((current) =>
+                            columns.map((_, n) =>
+                              n === index
+                                ? event.target.value
+                                : (current[n] ?? ''),
+                            ),
+                          )
+                        }
+                      />
+                    )}
+                  </th>
+                ))}
+              </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {visibleRows.map((row) => (
                 <tr key={row.id}>
-                  {[
-                    row.number ?? '',
-                    row.documentDate ?? '',
-                    statuses[row.status] ?? row.status,
-                    book.configurations.find((item) => item.id === row.typeId)
-                      ?.title ?? '',
-                    row.description,
-                    row.reference ?? '',
-                    String(row.attributes.auxiliaryNumber ?? ''),
-                    String(row.attributes.dailyNumber ?? ''),
-                    row.makerName ?? '',
-                  ].map((value, index) => (
+                  {cells(row).map((value, index) => (
                     <td key={index} className="border p-2">
                       {value}
                     </td>
@@ -281,7 +342,7 @@ export function AccountingDocumentNumbering({
               ))}
             </tbody>
           </table>
-          {!rows.length ? (
+          {!visibleRows.length ? (
             <p className="p-4">سندی برای شماره گذاری وجود ندارد.</p>
           ) : null}
         </div>

@@ -1,3 +1,6 @@
+## ACCOUNTING-NO-BOOK-PICKER-1031
+
+Removed manual create/select-ledger prompts from both no-book chart form locations. Existing automatic resolution and write guards preserved; no data or runtime changes. Updated empty-chart regression. Static diff check passes; runtime tests/build pending because this checkout has no node_modules.
 ## DASHBOARDS-OPERATIONAL-1031 — PC-C — VALIDATING
 
 Owner-confirmed unconverted new-lead semantics now use canonical customer/accepted-handoff references through the Sales-owned paid-purchase public boundary. Paid, confirmed history remains customer-conversion evidence after later cancellation; no revenue/refund/history rows change. Added equal-period lead growth with unavailable zero/missing denominator, Tehran weekday net-sales breakdown, honest missing-accounting/cost explanations and signed/nontruncating chart scales. Read-only actual-module inventory covers84 KPI and91 visual IDs; most still need owner-public producers and must not be described as finalized. Independent candidate SQL reconciliation passes11 checks without exposing amounts or identities.53 targeted API tests and initial39 Web tests pass; final lint/types/build/CI and backed-up production overlay publication remain in progress. Preserve every active Call Center overlay; no IAM/schema/migration/dependency or operational data write. See docs/tasks/DASHBOARDS-OPERATIONAL-1031.md.
@@ -8199,6 +8202,10 @@ Fixed useRef-only popup presentation memory with actor-isolated tab-session rece
 
 ## CALL-CENTER-FINAL-MERGE-1031 — PC-C
 Five open Amin-tech11 PRs integrated, retaining their actual heads and complete history. Quality failures in1239/1241 were WORK_ASSIGNMENTS formatting only and repaired. Final combined CI gates before authorized develop merge. Local runtime preparation isolated on C drive; no production deployment.
+## GENERAL-LEDGER-PARITY-1031 — PC-B — IN_PROGRESS
+
+Fresh read-only Rahkaran audit found generic closing/year-end form mismatches and previously missed legal-report flyout forms. Owner explicitly requested inaccessible closing/nature-adjustment stages stay empty: observed introductions/navigation are now rendered on localhost3100 with no inferred financial inputs or issue actions. Closing page no longer takes its title from a source precondition error.7 targeted tests and scoped ESLint pass; integrated stage typecheck reports unrelated stale HR/shared-contract declarations. No source-system data writes, database changes, push or merge. Full audit/implementation remains incomplete; see [audit status](tasks/GENERAL-LEDGER-PARITY-1031.md).
+
 
 ## HR-HEADQUARTERS-CHOICE-1031 / PC-B
 

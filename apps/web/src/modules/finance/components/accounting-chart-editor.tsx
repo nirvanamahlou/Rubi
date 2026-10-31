@@ -2,7 +2,6 @@
 
 import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from '@/i18n/link';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import type {
@@ -300,22 +299,8 @@ export function AccountingChartEditor({
       {!book && (
         <div className="mb-3 space-y-2 rounded border border-sky-200 bg-sky-50 p-3 text-sm">
           <p role="status">
-            برای ثبت حساب‌ها، ابتدا دفتر کل ایجاد یا انتخاب کنید. ساختار زیر
-            هنوز به دفتری متصل نیست.
+            ساختار حساب برای شرکت جاری هنوز راه‌اندازی نشده است.
           </p>
-          <Link
-            className="text-primary underline"
-            href="/finance/accounting/general-ledger/base-information/ledgers?new=1"
-          >
-            ایجاد دفتر کل
-          </Link>
-          {' · '}
-          <Link
-            className="text-primary underline"
-            href="/finance/accounting/general-ledger/base-information/lists/ledgers"
-          >
-            انتخاب دفتر کل
-          </Link>
           <label className="block">
             نمایش فرم
             <select
@@ -462,22 +447,9 @@ export function AccountingChartEditor({
                           {!book && (
                             <div className="mb-3 space-y-2 rounded border border-sky-200 bg-sky-50 p-3 text-sm">
                               <p role="status">
-                                برای ثبت حساب‌ها، ابتدا دفتر کل ایجاد یا انتخاب
-                                کنید. ساختار زیر هنوز به دفتری متصل نیست.
+                                ساختار حساب برای شرکت جاری هنوز راه‌اندازی نشده
+                                است.
                               </p>
-                              <Link
-                                className="text-primary underline"
-                                href="/finance/accounting/general-ledger/base-information/ledgers?new=1"
-                              >
-                                ایجاد دفتر کل
-                              </Link>
-                              {' · '}
-                              <Link
-                                className="text-primary underline"
-                                href="/finance/accounting/general-ledger/base-information/lists/ledgers"
-                              >
-                                انتخاب دفتر کل
-                              </Link>
                               <label className="block">
                                 نمایش فرم
                                 <select

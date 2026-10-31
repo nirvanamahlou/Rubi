@@ -289,7 +289,7 @@ const explicitGaps: readonly AccountingParityCapture[] = [
     columns: [],
     actions: [],
     blocker:
-      'منوی منبع صفحه مستقلی را اثبات نکرد و alias مشاهده‌شده متعلق به دفاتر تجاری الکترونیکی بود',
+      'زیرمنوی مستقل شامل معرفی کدینگ استاندارد، نگاشت کدهای استاندارد، گزارش کدینگ استاندارد، فرمول کدینگ استاندارد و صحت سنجی کنترل است؛ پیاده‌سازی این فرم‌ها هنوز کامل نشده است',
     stage: 'گزارش‌های قانونی',
   },
   {
@@ -382,7 +382,7 @@ for (const capture of [
   definitions.set(capture.route, {
     route: capture.route,
     title:
-      capture.title === 'خطا' || capture.stage === 'خطا'
+      capture.title.startsWith('خطا') || capture.stage === 'خطا'
         ? capture.sourcePath.split('/').at(-1)!.trim()
         : capture.title,
     sourcePath: capture.sourcePath,
