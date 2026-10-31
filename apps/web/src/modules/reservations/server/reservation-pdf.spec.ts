@@ -240,8 +240,8 @@ describe('reservation PDF route', () => {
     );
     expect(html).toContain('CHD 2-6');
     expect(html).toContain('CHD 6-12');
-    expect(html).toContain('CHILDREN 2-6');
-    expect(html).toContain('CHILDREN 6-12');
+    expect(html).not.toContain('BOOKING SUMMARY');
+    expect(html).not.toContain('Reservation details');
     expect(html).not.toContain('HOTEL CHILD AGE');
     expect(html).toContain('YOUNGER CHILD');
     expect(html).toContain('OLDER CHILD');
@@ -660,7 +660,7 @@ it('prints supplier service allocations from the contract and reserves a repeati
   expect(html).toContain('<th>TRF IN</th>');
   expect(html).toContain('<th>TRF OUT</th>');
   expect(html).toContain('FLIGHT INFORMATION');
-  expect(html).toContain('class="roomsNights"');
+  expect(html).not.toContain('class="bookingSection"');
   expect(html).toContain('table hotelInformation');
   expect(html).toContain(
     'ALPHA / ONE</td><td dir="auto">Male</td><td dir="auto">ADL</td><td dir="auto">✓</td><td dir="auto">-</td><td dir="auto">01 NOV 2026',

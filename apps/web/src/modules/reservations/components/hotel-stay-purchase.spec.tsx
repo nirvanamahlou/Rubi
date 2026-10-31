@@ -8,7 +8,9 @@ const h = vi.hoisted(() => ({
   index: 0,
   ref: 0,
   saved: vi.fn(),
+  request: vi.fn(),
 }));
+vi.mock('./travel-workflow-form', () => ({ travelRequest: h.request }));
 vi.mock('react', async (original) => ({
   ...(await original<typeof ReactModule>()),
   useState: (initial: unknown) => {
@@ -95,6 +97,7 @@ beforeEach(() => {
   h.states = [];
   h.refs = [];
   h.saved.mockReset();
+  h.request.mockReset();
   vi.stubGlobal(
     'fetch',
     vi.fn(async () => ({ ok: true })),
@@ -349,3 +352,89 @@ it('exposes both transfer checkboxes and enables independent return quotation wi
     ).some((node) => node.props.label === 'کارگزار ترانسفر برگشت'),
   ).toBe(true);
 });
+
+it('reloads the latest saved stay quote instead of stale page or sent prices, then purchases against that revision', async () => {
+  let tree = render();
+  const latest = structuredClone(request);
+  const settings = structuredClone(latest.workflow.supplierFormSettings!);
+  settings.hotelRoomPrices!.rooms[0]!.baseAmount = '150.25';
+  settings.hotelRoomPrices!.rooms[0]!.factor = '2';
+  settings.text.checkOut = '2026-11-06';
+  latest.workflow.version = 12;
+  latest.workflow.hotelSupplierForms = { h: { settings, status: 'NEW' } };
+  // Older aggregate and sent forms must not win over this stay's latest draft.
+  latest.workflow.sentSupplierFormSettings =
+    request.workflow.supplierFormSettings!;
+  h.request.mockResolvedValue({ data: latest });
+  const load = tree.find(
+    (n) =>
+      n.type === Button && n.props.children === 'بارگذاری قیمت پیشنهادی فرم',
+  )!;
+  (load.props.onClick as () => void)();
+  await vi.waitFor(() =>
+    expect(h.request).toHaveBeenCalledWith(
+      'reservations/requests/test/workflow',
+    ),
+  );
+  tree = render();
+  const editor = tree.find((n) => n.type === HotelRoomQuotationEditor)!;
+  expect(
+    (editor.props.draft as typeof settings).hotelRoomPrices!.rooms[0]!
+      .baseAmount,
+  ).toBe('150.25');
+  expect(fetch).not.toHaveBeenCalled();
+  const save = tree.find(
+    (n) =>
+      n.type === Button && n.props.children === 'ثبت خرید این هتل و ترانسفر',
+  )!;
+  (save.props.onClick as () => void)();
+  await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+  const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]![1]!.body));
+  expect(body.supplierFormVersion).toBe(12);
+  expect(body.purchases[0].amount).toBe('1502.5');
+});
+
+it.each(['missing', 'network'])(
+  'retains purchase draft if saved quote loading fails: %s',
+  async (failure) => {
+    let tree = render();
+    const editor = tree.find((n) => n.type === HotelRoomQuotationEditor)!;
+    const changed = structuredClone(
+      editor.props.draft as ReturnType<typeof defaultVoucherSettings>,
+    );
+    changed.hotelRoomPrices!.rooms[0]!.baseAmount = '222';
+    (editor.props.update as (value: typeof changed) => void)(changed);
+    if (failure === 'network')
+      h.request.mockRejectedValue(new Error('offline'));
+    else {
+      const empty = structuredClone(request);
+      delete empty.workflow.supplierFormSettings;
+      h.request.mockResolvedValue({ data: empty });
+    }
+    tree = render();
+    const load = tree.find(
+      (n) =>
+        n.type === Button && n.props.children === 'بارگذاری قیمت پیشنهادی فرم',
+    )!;
+    (load.props.onClick as () => void)();
+    await vi.waitFor(() => expect(h.request).toHaveBeenCalledTimes(1));
+    tree = render();
+    expect(
+      (
+        tree.find((n) => n.type === HotelRoomQuotationEditor)!.props
+          .draft as typeof changed
+      ).hotelRoomPrices!.rooms[0]!.baseAmount,
+    ).toBe('222');
+    expect(
+      tree.some(
+        (n) =>
+          n.props.role === 'status' &&
+          n.props.children ===
+            (failure === 'network'
+              ? 'offline'
+              : 'برای این اقامت، قیمت فرم رزرواسیون ذخیره نشده است.'),
+      ),
+    ).toBe(true);
+    expect(fetch).not.toHaveBeenCalled();
+  },
+);

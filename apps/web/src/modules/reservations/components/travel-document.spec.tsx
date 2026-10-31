@@ -105,6 +105,8 @@ describe('travel output branding and readiness', () => {
     );
     expect(html.match(/data-document-preview/g)).toHaveLength(1);
     expect(html.match(/data-reservation-form-page/g)).toHaveLength(1);
+    expect(html).not.toContain('BOOKING SUMMARY');
+    expect(html).not.toContain('Reservation details');
     expect(html.indexOf('role="combobox"')).toBeLessThan(
       html.indexOf('data-document-preview'),
     );
