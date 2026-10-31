@@ -8193,3 +8193,7 @@ Fixed useRef-only popup presentation memory with actor-isolated tab-session rece
 
 ## CALL-CENTER-FINAL-MERGE-1031 — PC-C
 Five open Amin-tech11 PRs integrated, retaining their actual heads and complete history. Quality failures in1239/1241 were WORK_ASSIGNMENTS formatting only and repaired. Final combined CI gates before authorized develop merge. Local runtime preparation isolated on C drive; no production deployment.
+
+## REQUIRED-CALL-OUTCOME-PREVIEW-1031 — PC-C
+
+Required result in CallForm and authenticated business-save DTO;8 Web and5 HTTP tests plus scoped lint and API/Web build/typecheck passed. Preview activation pending because automatic approval rejected stop/restart of existing local services. No production rollout or migration.
