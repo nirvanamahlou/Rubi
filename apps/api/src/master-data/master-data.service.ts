@@ -481,6 +481,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'facilityIds',
   ],
   hotels: [
+    'currencyId',
     'name',
     'englishName',
     'cityId',
@@ -2157,6 +2158,7 @@ export class MasterDataService {
       if (data[optionalReference] === '') data[optionalReference] = null;
     }
     if (data.chainId === '') data.chainId = null;
+    if (resource === 'hotels' && data.currencyId === '') data.currencyId = null;
     if (resource === 'insurance-plans' && data.validTo === '')
       data.validTo = null;
     if (resource === 'insurance-plans' && data.maximumAge === '')
@@ -3475,6 +3477,14 @@ export class MasterDataService {
       const country = await this.repository.find('countries', data.countryId);
       if (!country?.isActive)
         throw new BadRequestException('کشور فعال برای شرکت حمل‌ونقل یافت نشد.');
+    }
+    if (resource === 'hotels' && typeof data.currencyId === 'string') {
+      const currency = await this.repository.find(
+        'currencies',
+        data.currencyId,
+      );
+      if (!currency?.isActive)
+        throw new BadRequestException('ارز فعال یافت نشد.');
     }
     if (resource === 'insurers' && typeof data.countryId === 'string') {
       const country = await this.repository.find('countries', data.countryId);

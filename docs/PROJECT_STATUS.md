@@ -1,3 +1,7 @@
+## HOTEL-REFERENCE-CURRENCY-1031 — PC-B — LOCAL_VERIFIED
+
+Optional hotel currency dropdown reads native Master Data currencies and persists a real nullable currency FK. Supplied missing/inactive references are rejected; clearing and omission preserve normal native edit semantics. Existing hotels/imports stay NULL without backfill; no pricing/conversion behavior changes. Additive migration prepared, not applied to operational databases. Schema validation, Database/Contracts builds, focused API/reference/form/accommodation/English checks, scoped lint, Web types and66-route production build passed. See tasks/HOTEL-REFERENCE-CURRENCY-1031.md. Locally committed; no publication or deployment was requested in this turn.
+
 ## MASTER-DATA-UI-CLEANUP-1031 — PC-B — VALIDATING
 
 Owner's17-item cleanup implemented: currency/base placeholders and section title, persisted list ordering, bank branch/account delete controls, airport clear placement, dossier copy/filter/related-contract placement, commission empty space, desktop one-row filters, hidden hotel import version badge and optional rail/bus organization association. Finance account deletion preserves audit and rejects referenced accounts; rail FK remains valid for existing links.107 API tests, Web typecheck and scoped lint passed; isolated PostgreSQL18 migration/data-preservation proof passed. Final Web/regression/build and exact-head hosted gates precede authorized develop merge. No server deployment or operational migration. See [scope and evidence](tasks/MASTER-DATA-UI-CLEANUP-1031.md).
