@@ -1,3 +1,7 @@
+## RESERVATION-HOTEL-NAMES-1031 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-hotel-names-1031 from develop1a9a528b2. User requests all composite-contract hotel names in the Reservations Hotel column, separated by " / ", and authorizes develop merge. Reserve bounded foundation intake decoder/local RequestView hotel list, English-name enrichment hook/pure helper and focused projection/search/export regressions plus own notes. Preserve primary hotel ID for existing actions/meal/stars, saved itinerary order, snapshot fallbacks, filters, permissions and historical data. Read existing optional additionalStays already produced by Sales; no API/schema/migration/dependency or runtime/server change. Prior source reservations are merged/released; no active overlapping writer found. Final-head hosted quality/full tests/build/database gates precede merge.
+
 ## RESERVATION-DEFAULTS-1029 — PC-A — IN_PROGRESS
 
 User additionally requests child age bands in contract preview/PDF. Extend bounded reservation to contract-print.ts and its existing regressions (prior print task merged/released). Use saved hotel check-in for DOB calculation, falling back to contract departure for ticket-only contracts; when DOB is absent retain the explicitly booked child band rather than silently printing only Child. No operational reservation overrides or source mutation.
