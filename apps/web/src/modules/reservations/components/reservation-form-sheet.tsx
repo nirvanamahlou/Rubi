@@ -246,7 +246,14 @@ export function ReservationFormSheet({
                 }
               >
                 <div>
-                  <h1>{voucher ? 'HOTEL VOUCHER' : 'RESERVATION FORM'}</h1>
+                  <h1>
+                    {voucher
+                      ? 'HOTEL VOUCHER'
+                      : intake.supplierDocumentKind &&
+                          intake.supplierDocumentKind !== 'HOTEL'
+                        ? 'TRANSFER FORM'
+                        : 'RESERVATION FORM'}
+                  </h1>
                   <p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p>
                 </div>
                 <div

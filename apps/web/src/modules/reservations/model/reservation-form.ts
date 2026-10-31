@@ -31,6 +31,7 @@ import type {
 export type ReservationFormIntake = ReservationIntakeV1 & {
   workflow: TravelWorkflowStateV1;
   hotelStayKey?: string;
+  supplierDocumentKind?: 'HOTEL' | 'TRANSFER' | 'OUTBOUND' | 'RETURN';
   hotelStayOrdinal?: number;
   contractPartyName?: string | null;
   /** Minimal request-scoped Customer projection; no DOB or passport numbers. */

@@ -67,6 +67,39 @@ export function supplierTransferCounts(intake: ReservationFormIntake) {
   return { outbound: count('OUTBOUND'), returning: count('RETURN') };
 }
 export function supplierPriceTableData(intake: ReservationFormIntake) {
+  if (intake.supplierDocumentKind && intake.supplierDocumentKind !== 'HOTEL') {
+    const settings = intake.workflow.supplierFormSettings;
+    const price = settings?.supplierFormPrices?.transferPp;
+    const count =
+      (settings?.hotelTransferCounts?.outbound ?? 0) +
+      (settings?.hotelTransferCounts?.returning ?? 0);
+    let total = '-';
+    try {
+      if (price) {
+        reservationServicePurchaseTotal(price.amount, '1', 1);
+        total = count
+          ? reservationServicePurchaseTotal(price.amount, String(count), 1)
+          : '0';
+      }
+    } catch {
+      /* Incomplete quotation. */
+    }
+    return {
+      headers: ['Transfer P.P', 'QUANTITY', 'TRANSFER TOTAL'],
+      values: [
+        price ? price.amount + ' ' + price.currencyCode : '-',
+        String(count),
+        price ? total + ' ' + price.currencyCode : '-',
+      ],
+      rows: [
+        [
+          price ? price.amount + ' ' + price.currencyCode : '-',
+          String(count),
+          price ? total + ' ' + price.currencyCode : '-',
+        ],
+      ],
+    };
+  }
   const counts = supplierTransferCounts(intake);
   const settings = intake.workflow.supplierFormSettings;
   const prices = settings?.supplierFormPrices;
@@ -122,23 +155,26 @@ export function supplierPriceTableData(intake: ReservationFormIntake) {
     } catch {
       /* Unavailable quote. */
     }
-    rows.push([
-      'TRANSFER',
-      'OUTBOUND: ' +
-        transferCounts.outbound +
-        ' / RETURN: ' +
-        transferCounts.returning,
-      trf ? trf.amount + ' ' + trf.currencyCode : '-',
-      String(count),
-      '-',
-      trf ? total + ' ' + trf.currencyCode : '-',
-    ]);
+    if (intake.supplierDocumentKind !== 'HOTEL')
+      rows.push([
+        'TRANSFER',
+        'OUTBOUND: ' +
+          transferCounts.outbound +
+          ' / RETURN: ' +
+          transferCounts.returning,
+        trf ? trf.amount + ' ' + trf.currencyCode : '-',
+        String(count),
+        '-',
+        trf ? total + ' ' + trf.currencyCode : '-',
+      ]);
     return {
       headers: [
         'ROOM',
         'ROOM TYPE',
-        'Hotel P.P / Transfer P.P',
-        'Ratio / COUNT',
+        intake.supplierDocumentKind === 'HOTEL'
+          ? 'Hotel P.P'
+          : 'Hotel P.P / Transfer P.P',
+        intake.supplierDocumentKind === 'HOTEL' ? 'Ratio' : 'Ratio / COUNT',
         'NIGHTS',
         'PROPOSED PURCHASE',
       ],

@@ -4,6 +4,7 @@ import {
   type AuthenticatedActor,
   reservationHotelStays,
   reservationHotelTransferKeys,
+  reservationHotelTransferLegKeys,
   type ReservationPurchaseBatchInputV1,
 } from '@nora/contracts';
 import { ReservationServicePurchaseService } from './reservation-service-purchase.service';
@@ -280,4 +281,75 @@ it('rejects a concurrently changed supplier form inside the locked purchase tran
     ),
   ).rejects.toThrow();
   expect(create).not.toHaveBeenCalled();
+});
+
+it('atomically prices independent outbound and return brokers by their own counts without room or night multiplication', async () => {
+  const { service, create, updateMany } = setup();
+  const keys = reservationHotelTransferLegKeys(snapshot as never, key);
+  const body = {
+    ...input,
+    hotelTransferCounts: { outbound: 2, returning: 1 },
+    purchases: [
+      input.purchases[0]!,
+      ...keys.map((serviceClientKey, index) => ({
+        serviceClientKey,
+        coveredServiceClientKeys: [serviceClientKey],
+        supplierOrganizationId: index
+          ? '33333333-3333-4333-8333-333333333333'
+          : '22222222-2222-4222-8222-222222222222',
+        currencyCode: 'IRR',
+        amount: index ? '20.5' : '20.25',
+        pricingCalculation: {
+          baseAmount: index ? '20.5' : '10.125',
+          factor: index ? '1' : '2',
+          chargeablePassengerCount: index ? 1 : 2,
+        },
+      })),
+    ],
+  };
+  await service.recordBatch(
+    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    body,
+    actor,
+    'split-hotel-batch',
+  );
+  expect(create).toHaveBeenCalledTimes(3);
+  expect(create.mock.calls[1]![0].data).toMatchObject({
+    amount: '20.25',
+    supplierBrokerId: '22222222-2222-4222-8222-222222222222',
+    passengerPrices: { hotelTransferCounts: { outbound: 2, returning: 0 } },
+  });
+  expect(create.mock.calls[2]![0].data).toMatchObject({
+    amount: '20.5',
+    supplierBrokerId: '33333333-3333-4333-8333-333333333333',
+    passengerPrices: { hotelTransferCounts: { outbound: 0, returning: 1 } },
+  });
+  expect(updateMany).toHaveBeenCalledWith(
+    expect.objectContaining({ data: { purchaseVersion: { increment: 3 } } }),
+  );
+  const invalid = setup();
+  await expect(
+    invalid.service.recordBatch(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      {
+        ...body,
+        purchases: body.purchases.map((row, i) =>
+          i === 2
+            ? {
+                ...row,
+                pricingCalculation: {
+                  baseAmount: '20.5',
+                  factor: '2',
+                  chargeablePassengerCount: 2,
+                },
+                amount: '41',
+              }
+            : row,
+        ),
+      },
+      actor,
+      'wrong-leg-count',
+    ),
+  ).rejects.toThrow();
+  expect(invalid.create).not.toHaveBeenCalled();
 });

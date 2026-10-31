@@ -41,7 +41,7 @@ import { useReservationFormReferences } from './reservation-form-sheet';
 import { DatePicker } from '@/components/ui/date-picker';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { ReservationFiles } from '../passenger-files/files';
-import { TravelDocument } from './travel-document';
+import { SupplierScopedDocuments } from './travel-document';
 import {
   findReservationEditReference,
   reservationEditReferenceOption,
@@ -381,6 +381,9 @@ export function ReservationSettingsForm({
           note: sectionLabels[section] + ' فقط در فرم رزواسیون',
           voucherSettings: {
             ...draft,
+            hotelTransferReturn: draft.hotelTransferSplit
+              ? draft.hotelTransferReturn
+              : undefined,
             supplierFormPrices,
             text: {
               ...draft.text,
@@ -600,6 +603,13 @@ export function ReservationSettingsForm({
           )}
           {!!draft.rooms?.length && (
             <HotelRoomQuotationEditor
+              requestId={intake.id}
+              canSplitTransfers={
+                (intake.hotelStayOrdinal ?? 1) > 1 ||
+                intake.snapshot.serviceSelections.filter(
+                  (service) => service.kind === 'TRANSFER',
+                ).length !== 1
+              }
               draft={draft}
               update={update}
               currencies={currencyDirectory.currencies}
@@ -759,7 +769,7 @@ export function ReservationSettingsForm({
                 بازگشت به نسخهٔ فعلی
               </Button>
             )}
-            <TravelDocument
+            <SupplierScopedDocuments
               intake={past ? { ...intake, workflow: past } : intake}
               historical={Boolean(past)}
               {...(!past
@@ -1277,7 +1287,7 @@ export function ReservationSettingsForm({
           <Button variant="outline" onClick={() => setPast(undefined)}>
             بستن نسخهٔ قبلی
           </Button>
-          <TravelDocument
+          <SupplierScopedDocuments
             intake={
               intake.hotelStayKey
                 ? hotelFormScope(
