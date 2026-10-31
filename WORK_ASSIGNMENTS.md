@@ -10401,3 +10401,31 @@ Owner clarification during this task: new leads exclude people who have already 
 PR1248 merged at f3632a7a9; HR-SHARED-BRANCHES-1031 source/schema lease released after eight successful hosted gates. Reserve only hr-live-data.ts, its directory-form regression and own closeout notes. Browser verification found virtual Headquarters reused the first native branch option value and was folded away by the selector. Give the virtual UI choice a distinct nonpersistent identifier; native branch ownership remains unchanged. No schema, contract, dependency or data mutation. Local integrated production build/API passed; localhost3100 is active and final option verification follows this correction.
 
 HR-HEADQUARTERS-CHOICE-1031 also reserves the existing organization-chart-live selector expectation: the UI-only common option now has hr-headquarters identity, while every native chart root and branch FK remains unchanged. Full hosted suite identified this stale expectation; source correction itself passed quality/build/migration gates.
+
+## CALL-CENTER-ALL-USER-POPUPS-1031 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C. Owner authorizes own-extension incoming/outgoing popups for all active employees and correction of unknown destination for HR extension369. Reserve bounded Call Center destination hydration/helper/tests, native IAM/Integration administrative readiness script and own deployment/docs. Start from latest origin/develop; preserve deployed5b6b560b7 overlays, existing own/unit/global scopes, encrypted recordings and approved UI. No schema/migration/dependency changes. Public IAM/Integration services only for grants/mappings; no guessed employee links or global access. Historical unanswered calls may display only proven unambiguous destination with answeredAt null, never create actual-answer responsibilities. Source reservations of prior Call Center tasks are published/released; no overlapping active writer found.
+
+CALL-CENTER-ALL-USER-POPUPS-1031 — DEPLOYED / SOURCE_READY_FOR_REVIEW: reserve AppShell's existing operational listener mount and telephony-hold regression as the bounded central consumer; preserve hidden technical UI. API read-only destination hydration and resilient Web polling activated on exact production5b source with all unrelated overlays retained.28 targeted API/6 Web tests, scoped lint, full API/Web typecheck/build passed. Native13-account routing/own snapshots and foreign-offer denial verified; old unanswered destination label resolves with answeredAt=null. No IAM/schema/PBX/audio-policy mutation. Broader API4 fixture failures reproduce unchanged on base;166 pass/35 opt-in skip. User Chrome test deferred. Source reservation freezes on publication; own task note contains backup/release evidence.
+
+## CALL-RECIPIENT-ALIAS-1031 — PC-C — ACTIVE
+
+COMPUTER_ID=PC-C. Owner confirms one employee uses two extensions. Reserve new scripts/hr/additional-extension.mjs and its isolated tests, plus own documentation. HR-owned bounded administrative command preserves primary extension, requires authenticated HR management scope, records audit, rejects ambiguous assignments and never backdates access. Existing published popup source frozen and retained; no existing HR source, IAM, schema, PBX routing or deployed images changed. Investigate second unknown recipient read-only; never invent an answer.
+
+CALL-RECIPIENT-ALIAS-1031 — COMPLETE: explicitly confirmed additional internal registered through bounded HR-owned administrative command, preserving original internal; audit and replay verified. Six targeted tests pass. Actual production call projection resolves full label. Exact PBX CEL/CDR proves second case never reached an internal; no recipient fabricated. No image/schema/IAM/PBX/runtime replacement. Evidence: docs/tasks/CALL-RECIPIENT-ALIAS-1031.md.
+
+## REQUIRED-CALL-OUTCOME-1031 — PC-C — ACTIVE
+
+COMPUTER_ID=PC-C. Reserve call-form.tsx/spec and CallCenterCallDto/HTTP boundary tests, plus own docs. Owner requests a required explicit result in call popups. Enforce existing outcome choices at business save only; provider event ingestion and incomplete historical calls stay valid. No schema/data/PBX/production mutation. Existing published form scopes released. Validate API/Web and activate localhost preview after preserving current runtime.
+
+REQUIRED-CALL-OUTCOME-1031 — VALIDATED:8 form and5 HTTP boundary checks pass. Scoped lint passes. Local preview uses exact four-file patch on existing runtime baseline; current develop's newer HR generated contracts require matching release dependencies. No migration/production change. Source reservation freezes on publication.
+
+## CALL-PHONE-LABEL-1031 — PC-C — ACTIVE
+
+COMPUTER_ID=PC-C. Owner follow-up authorizes the single CallForm phone label cleanup on this task branch; preserve required outcome changes. Remove only the optional suffix, with no phone validation/data/provider behavior changes. Existing publication reservation is reopened for this bounded same-owner follow-up.
+
+CALL-PHONE-LABEL-1031 — COMPLETE: single label cleanup, scoped lint passed; preview build prepared before activation. Previously blocked runtime restart remains pending owner stop. No phone/schema/data behavior changed. Reservation freezes on publication.
+
+## CALL-CENTER-DEPLOY-FINAL-1031 — PC-C — ACTIVE
+
+Owner authorizes all completed Call Center source PRs, CI repair/normal merge after every required check succeeds, and final develop production deployment. Reserve merge conflict resolution and own rollout documentation/scripts. Preserve peer work, deployed overlays, recording credential/retention, existing data, rollback and shared deployment lock; no guessed recipient or destructive migration. Draft peer work is reviewed separately and not presumed complete.
