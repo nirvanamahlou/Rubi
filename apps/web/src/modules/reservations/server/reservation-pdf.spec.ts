@@ -671,3 +671,15 @@ it('prints supplier service allocations from the contract and reserves a repeati
   expect(html.match(/<div data-reservation-contact/g)).toHaveLength(1);
   expect(html).not.toMatch(/[\u0600-\u06ff]/);
 });
+
+it.each(['?formScope=FOREIGN', '?kind=voucher&formScope=RETURN'])(
+  'rejects an invalid or voucher transfer form scope before reading data: %s',
+  async (query) => {
+    vi.stubGlobal('fetch', vi.fn());
+    const response = await GET(new Request(request().url + query), {
+      params: Promise.resolve({ id }),
+    });
+    expect(response.status).toBe(400);
+    expect(fetch).not.toHaveBeenCalled();
+  },
+);

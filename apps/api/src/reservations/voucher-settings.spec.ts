@@ -367,3 +367,70 @@ it('accepts legacy ratio currency but persists the factor without money semantic
     ratio: { amount: '2' },
   });
 });
+
+it('persists validated separate transfer suppliers and return quotation while rejecting malformed modes or prices', () => {
+  const value = {
+    ...settings(),
+    brokerId: '11111111-1111-4111-8111-111111111111',
+    transferBrokerId: '22222222-2222-4222-8222-222222222222',
+    hotelTransferSeparate: true,
+    hotelTransferSplit: true,
+    hotelTransferReturn: {
+      amount: '0',
+      currencyCode: 'EUR',
+      brokerId: '33333333-3333-4333-8333-333333333333',
+      brokerName: 'Return supplier',
+    },
+  };
+  const saved = validateVoucherSettings(value, ['p']);
+  expect(saved).toMatchObject({
+    hotelTransferSeparate: true,
+    hotelTransferSplit: true,
+    hotelTransferReturn: value.hotelTransferReturn,
+  });
+  expect(saved.hotelTransferReturn).not.toBe(value.hotelTransferReturn);
+  for (const invalid of [
+    { ...value, hotelTransferSeparate: false },
+    { ...value, hotelTransferSplit: 'yes' },
+    {
+      ...value,
+      hotelTransferReturn: { ...value.hotelTransferReturn, amount: '-1' },
+    },
+    {
+      ...value,
+      hotelTransferReturn: {
+        ...value.hotelTransferReturn,
+        brokerId: 'foreign',
+      },
+    },
+  ])
+    expect(() => validateVoucherSettings(invalid, ['p'])).toThrow();
+});
+
+it('requires both declared transfer brokers before sending and freezes their quotation in the sent snapshot', () => {
+  const current = initialTravelWorkflow();
+  current.supplierFormSettings = {
+    ...settings(),
+    brokerId: '11111111-1111-4111-8111-111111111111',
+    hotelTransferSeparate: true,
+    hotelTransferSplit: true,
+    hotelTransferReturn: { amount: '15', currencyCode: 'EUR' },
+  };
+  const command = {
+    action: 'REQUEST_SUPPLIER',
+    expectedVersion: 0,
+    note: 'Synthetic send',
+  } as const;
+  expect(() => transition(current, command, ['p'])).toThrow('کارگزار');
+  current.supplierFormSettings.transferBrokerId =
+    '22222222-2222-4222-8222-222222222222';
+  expect(() => transition(current, command, ['p'])).toThrow('کارگزار');
+  current.supplierFormSettings.hotelTransferReturn!.brokerId =
+    '33333333-3333-4333-8333-333333333333';
+  const sent = transition(current, command, ['p']);
+  expect(sent.sentSupplierFormSettings!.hotelTransferReturn).toEqual(
+    current.supplierFormSettings.hotelTransferReturn,
+  );
+  current.supplierFormSettings.hotelTransferReturn!.amount = '99';
+  expect(sent.sentSupplierFormSettings!.hotelTransferReturn!.amount).toBe('15');
+});

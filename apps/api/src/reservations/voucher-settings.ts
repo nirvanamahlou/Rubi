@@ -39,6 +39,32 @@ export function validateVoucherSettings(
   };
   if (!value || typeof value !== 'object') return fail();
   const v = value as VoucherSettingsV1;
+  if (
+    [v.hotelTransferSeparate, v.hotelTransferSplit].some(
+      (flag) => flag !== undefined && typeof flag !== 'boolean',
+    )
+  )
+    return fail();
+  if (v.hotelTransferSplit && !v.hotelTransferSeparate) return fail();
+  if (
+    v.hotelTransferReturn &&
+    (typeof v.hotelTransferReturn !== 'object' ||
+      Object.keys(v.hotelTransferReturn).some(
+        (key) =>
+          !['amount', 'currencyCode', 'brokerId', 'brokerName'].includes(key),
+      ) ||
+      typeof v.hotelTransferReturn.amount !== 'string' ||
+      !/^\d{1,18}(?:\.\d{1,4})?$/.test(v.hotelTransferReturn.amount) ||
+      !/^[A-Z]{3}$/.test(v.hotelTransferReturn.currencyCode) ||
+      (v.hotelTransferReturn.brokerId !== undefined &&
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          v.hotelTransferReturn.brokerId,
+        )) ||
+      (v.hotelTransferReturn.brokerName !== undefined &&
+        (typeof v.hotelTransferReturn.brokerName !== 'string' ||
+          v.hotelTransferReturn.brokerName.length > 200)))
+  )
+    return fail();
   try {
     if (v.hotelRoomPrices) {
       if (
@@ -245,6 +271,15 @@ export function validateVoucherSettings(
       return fail();
   }
   return {
+    ...(v.hotelTransferSeparate !== undefined
+      ? { hotelTransferSeparate: v.hotelTransferSeparate }
+      : {}),
+    ...(v.hotelTransferSplit !== undefined
+      ? { hotelTransferSplit: v.hotelTransferSplit }
+      : {}),
+    ...(v.hotelTransferReturn
+      ? { hotelTransferReturn: { ...v.hotelTransferReturn } }
+      : {}),
     ...(v.rooms !== undefined
       ? {
           rooms: v.rooms.map((room) => ({

@@ -4,20 +4,25 @@ import {
   reservationServicePurchaseTotal,
   type VoucherSettingsV1,
 } from '@nora/contracts';
+import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { MoneyInput } from '@/components/ui/money-input';
 import { Input } from '@/components/ui/form-controls';
 import { ReservationCurrencySelect } from './reservation-currencies';
 export function HotelRoomQuotationEditor({
   draft,
+  requestId,
   update,
   currencies,
   busy,
+  canSplitTransfers = true,
   nights,
 }: {
   draft: VoucherSettingsV1;
+  requestId: string;
   update: (value: VoucherSettingsV1) => void;
   currencies: readonly { code: string; name: string }[];
   busy: boolean;
+  canSplitTransfers?: boolean;
   nights: number;
 }) {
   const rooms = draft.rooms ?? [];
@@ -55,15 +60,37 @@ export function HotelRoomQuotationEditor({
   try {
     if (transfer.amount && transfer.currencyCode)
       transferTotal =
-        counts.outbound + counts.returning === 0
+        (draft.hotelTransferSplit
+          ? counts.outbound
+          : counts.outbound + counts.returning) === 0
           ? '0'
           : reservationServicePurchaseTotal(
               transfer.amount,
-              String(counts.outbound + counts.returning),
+              String(
+                draft.hotelTransferSplit
+                  ? counts.outbound
+                  : counts.outbound + counts.returning,
+              ),
               1,
             );
   } catch {
     /* Incomplete draft. */
+  }
+  let returnTotal = '—';
+  try {
+    const price = draft.hotelTransferReturn;
+    if (price?.amount && price.currencyCode) {
+      reservationServicePurchaseTotal(price.amount, '1', 1);
+      returnTotal = counts.returning
+        ? reservationServicePurchaseTotal(
+            price.amount,
+            String(counts.returning),
+            1,
+          )
+        : '0';
+    }
+  } catch {
+    /* Incomplete return draft. */
   }
   return (
     <div className="grid gap-3">
@@ -149,6 +176,74 @@ export function HotelRoomQuotationEditor({
       </p>
       <fieldset className="grid gap-2 rounded-xl border border-border p-3">
         <legend>ترانسفر مستقل این هتل</legend>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            disabled={busy}
+            checked={draft.hotelTransferSeparate ?? false}
+            onChange={(event) =>
+              update({
+                ...draft,
+                hotelTransferSeparate: event.target.checked,
+                ...(!event.target.checked ? { hotelTransferSplit: false } : {}),
+              })
+            }
+          />
+          ترانسفر از کارگزار دیگر
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            disabled={busy || !canSplitTransfers}
+            checked={draft.hotelTransferSplit ?? false}
+            onChange={(event) =>
+              update({
+                ...draft,
+                hotelTransferSplit: event.target.checked,
+                ...(event.target.checked
+                  ? {
+                      hotelTransferSeparate: true,
+                      hotelTransferReturn: draft.hotelTransferReturn ?? {
+                        amount: transfer.amount,
+                        currencyCode: transfer.currencyCode,
+                      },
+                    }
+                  : {}),
+              })
+            }
+          />
+          کارگزار رفت و برگشت جدا
+        </label>
+        {(draft.hotelTransferSeparate ?? false) && (
+          <ReservationPurchaseBrokerLookup
+            requestId={requestId}
+            label={
+              draft.hotelTransferSplit
+                ? 'کارگزار ترانسفر رفت'
+                : 'کارگزار ترانسفر'
+            }
+            value={
+              draft.transferBrokerId
+                ? {
+                    id: draft.transferBrokerId,
+                    name: draft.transferBrokerName ?? '',
+                  }
+                : null
+            }
+            onChange={(value) => {
+              const next = { ...draft };
+              if (value) {
+                next.transferBrokerId = value.id;
+                next.transferBrokerName = value.name;
+              } else {
+                delete next.transferBrokerId;
+                delete next.transferBrokerName;
+              }
+              update(next);
+            }}
+          />
+        )}
+
         <MoneyInput
           aria-label="Transfer P.P"
           value={transfer.amount}
@@ -200,8 +295,78 @@ export function HotelRoomQuotationEditor({
             />
           </label>
         ))}
+
+        {draft.hotelTransferSplit && (
+          <fieldset className="grid gap-2 rounded-xl border p-3">
+            <legend>ترانسفر برگشت</legend>
+            <p>
+              جمع ترانسفر برگشت:{' '}
+              <bdi>
+                {returnTotal} {draft.hotelTransferReturn?.currencyCode}
+              </bdi>
+            </p>
+            <ReservationPurchaseBrokerLookup
+              requestId={requestId}
+              label="کارگزار ترانسفر برگشت"
+              value={
+                draft.hotelTransferReturn?.brokerId
+                  ? {
+                      id: draft.hotelTransferReturn.brokerId,
+                      name: draft.hotelTransferReturn.brokerName ?? '',
+                    }
+                  : null
+              }
+              onChange={(value) => {
+                const next = {
+                  amount: '',
+                  currencyCode: '',
+                  ...draft.hotelTransferReturn,
+                };
+                if (value) {
+                  next.brokerId = value.id;
+                  next.brokerName = value.name;
+                } else {
+                  delete next.brokerId;
+                  delete next.brokerName;
+                }
+                update({ ...draft, hotelTransferReturn: next });
+              }}
+            />
+            <MoneyInput
+              aria-label="Transfer P.P برگشت"
+              value={draft.hotelTransferReturn?.amount ?? ''}
+              disabled={busy}
+              onValueChange={(amount) =>
+                update({
+                  ...draft,
+                  hotelTransferReturn: {
+                    currencyCode: '',
+                    ...draft.hotelTransferReturn,
+                    amount,
+                  },
+                })
+              }
+            />
+            <ReservationCurrencySelect
+              label="ارز ترانسفر برگشت"
+              value={draft.hotelTransferReturn?.currencyCode ?? ''}
+              currencies={currencies}
+              disabled={busy}
+              onChange={(currencyCode) =>
+                update({
+                  ...draft,
+                  hotelTransferReturn: {
+                    amount: '',
+                    ...draft.hotelTransferReturn,
+                    currencyCode,
+                  },
+                })
+              }
+            />
+          </fieldset>
+        )}
         <p>
-          جمع ترانسفر:{' '}
+          {draft.hotelTransferSplit ? 'جمع ترانسفر رفت:' : 'جمع ترانسفر:'}{' '}
           <bdi>
             {transferTotal} {transfer.currencyCode}
           </bdi>

@@ -6,7 +6,8 @@ import {
   hotelNights,
   hotelRoomQuotationTotal,
   reservationHotelStays,
-  reservationHotelTransferKeys,
+  reservationHotelTransferLegKeys,
+  reservationHotelTransferCounts,
   reservationServicePurchaseTotal,
   type ReservationIntakeV1,
   type TravelWorkflowStateV1,
@@ -103,15 +104,58 @@ export function HotelStayPurchase({
     checkOutDate:
       quote.text.checkOut || scoped.snapshot.hotelSelection!.checkOutDate,
   };
-  const transferKeys = reservationHotelTransferKeys(request.snapshot, stayKey);
+  const transferKeys = reservationHotelTransferLegKeys(
+    request.snapshot,
+    stayKey,
+  );
   const purchase = request.servicePurchases?.find(
     (p) => p.serviceClientKey === stayKey,
   );
+  const outboundKey =
+    transferKeys.find(
+      (key) =>
+        reservationHotelTransferCounts(request.snapshot, stayKey, [key], {
+          outbound: 1,
+          returning: 0,
+        }).outbound === 1,
+    ) ?? transferKeys[0]!;
+  const returnKey = transferKeys.find((key) => key !== outboundKey);
   const transfer = request.servicePurchases?.find(
-    (p) => p.serviceClientKey === transferKeys[0],
+    (p) =>
+      p.serviceClientKey === outboundKey ||
+      p.coveredServiceClientKeys?.includes(outboundKey),
+  );
+  const returnPurchase = request.servicePurchases?.find(
+    (p) =>
+      p.serviceClientKey === returnKey &&
+      (p.coveredServiceClientKeys?.length ?? 1) === 1,
   );
   const [draft, setDraft] = useState<VoucherSettingsV1>(() => ({
     ...quote,
+    ...(transfer
+      ? {
+          transferBrokerId: transfer.supplierOrganizationId,
+          transferBrokerName: transfer.supplierName,
+          hotelTransferSeparate:
+            Boolean(returnPurchase) ||
+            quote.hotelTransferSeparate === true ||
+            transfer.supplierOrganizationId !==
+              purchase?.supplierOrganizationId,
+          hotelTransferSplit: Boolean(returnPurchase),
+        }
+      : {}),
+    ...(returnPurchase?.pricingCalculation
+      ? {
+          hotelTransferSplit: true,
+          hotelTransferSeparate: true,
+          hotelTransferReturn: {
+            amount: returnPurchase.pricingCalculation.baseAmount,
+            currencyCode: returnPurchase.currencyCode,
+            brokerId: returnPurchase.supplierOrganizationId,
+            brokerName: returnPurchase.supplierName,
+          },
+        }
+      : {}),
     ...(purchase?.roomPrices
       ? {
           hotelRoomPrices: {
@@ -134,7 +178,10 @@ export function HotelStayPurchase({
               transfer.hotelTransferCounts?.outbound ??
               transfer.pricingCalculation.chargeablePassengerCount ??
               0,
-            returning: transfer.hotelTransferCounts?.returning ?? 0,
+            returning:
+              returnPurchase?.hotelTransferCounts?.returning ??
+              transfer.hotelTransferCounts?.returning ??
+              0,
           },
         }
       : {}),
@@ -144,13 +191,6 @@ export function HotelStayPurchase({
       ? { id: purchase.supplierOrganizationId, name: purchase.supplierName }
       : quote.brokerId
         ? { id: quote.brokerId, name: quote.text.broker }
-        : null,
-  );
-  const [transferBroker, setTransferBroker] = useState<Option | null>(
-    transfer
-      ? { id: transfer.supplierOrganizationId, name: transfer.supplierName }
-      : quote.transferBrokerId
-        ? { id: quote.transferBrokerId, name: quote.transferBrokerName ?? '' }
         : null,
   );
   const currencies = useReservationCurrencies(request.id);
@@ -200,12 +240,62 @@ export function HotelStayPurchase({
         nights,
         (hotel.rooms ?? []).map((room) => room.ordinal),
       );
-      const transferAmount =
-        count === 0
-          ? '0'
-          : reservationServicePurchaseTotal(trf.amount, String(count), 1);
+
       // A blank rate must never become an invented zero even when count is zero.
       reservationServicePurchaseTotal(trf.amount, '1', 1);
+      if (draft.hotelTransferSplit && !returnKey)
+        throw Error(
+          'خدمات خرید باید دقیقاً با هتل و ترانسفرهای قرارداد منطبق باشند.',
+        );
+      const separate =
+        draft.hotelTransferSeparate ??
+        Boolean(draft.transferBrokerId && draft.transferBrokerId !== broker.id);
+      const groups = draft.hotelTransferSplit
+        ? [[outboundKey], [returnKey!]]
+        : [transferKeys];
+      const transferRows = groups.map((keys, index) => {
+        const price = index === 1 ? draft.hotelTransferReturn : trf;
+        const supplier = separate
+          ? index === 1
+            ? draft.hotelTransferReturn?.brokerId
+            : draft.transferBrokerId
+          : broker.id;
+        const counts = reservationHotelTransferCounts(
+          request.snapshot,
+          stayKey,
+          keys,
+          draft.hotelTransferCounts ?? { outbound: 0, returning: 0 },
+        );
+        const passengers = counts.outbound + counts.returning;
+        if (
+          !supplier ||
+          !price ||
+          !currencies.currencies.some((c) => c.code === price.currencyCode)
+        )
+          throw Error('کارگزار، ارز و قیمت ترانسفر را تکمیل کنید.');
+        reservationServicePurchaseTotal(price.amount, '1', 1);
+        return {
+          serviceClientKey: keys[0]!,
+          coveredServiceClientKeys: keys,
+          supplierOrganizationId: supplier,
+          currencyCode: price.currencyCode,
+          amount: passengers
+            ? reservationServicePurchaseTotal(
+                price.amount,
+                String(passengers),
+                1,
+              )
+            : '0',
+          pricingCalculation: {
+            baseAmount: price.amount,
+            factor: passengers ? String(passengers) : '1',
+            chargeablePassengerCount: passengers,
+          },
+          ...(rates[price.currencyCode]
+            ? { purchaseRateToIrr: rates[price.currencyCode] }
+            : {}),
+        };
+      });
       const fx = (code: string) =>
         rates[code] ? { purchaseRateToIrr: rates[code] } : {};
       const body: ReservationPurchaseBatchInputV1 = {
@@ -227,19 +317,7 @@ export function HotelStayPurchase({
             roomPrices: draft.hotelRoomPrices.rooms,
             ...fx(draft.hotelRoomPrices.currencyCode),
           },
-          {
-            serviceClientKey: transferKeys[0]!,
-            coveredServiceClientKeys: transferKeys,
-            supplierOrganizationId: (transferBroker ?? broker).id,
-            currencyCode: trf.currencyCode,
-            amount: transferAmount,
-            pricingCalculation: {
-              baseAmount: trf.amount,
-              factor: count ? String(count) : '1',
-              chargeablePassengerCount: count,
-            },
-            ...fx(trf.currencyCode),
-          },
+          ...transferRows,
         ],
       };
       const payload = JSON.stringify(body),
@@ -297,14 +375,6 @@ export function HotelStayPurchase({
         disabled={busy}
         onClick={() => {
           setDraft(quote);
-          setTransferBroker(
-            quote.transferBrokerId
-              ? {
-                  id: quote.transferBrokerId,
-                  name: quote.transferBrokerName ?? '',
-                }
-              : null,
-          );
           setBroker(
             quote.brokerId
               ? { id: quote.brokerId, name: quote.text.broker }
@@ -321,23 +391,22 @@ export function HotelStayPurchase({
         onChange={setBroker}
       />
       <HotelRoomQuotationEditor
+        requestId={request.id}
+        canSplitTransfers={transferKeys.length > 1}
         draft={draft}
         update={setDraft}
         currencies={currencies.currencies}
         busy={busy || currencies.loading}
         nights={nights}
       />
-      <ReservationPurchaseBrokerLookup
-        requestId={request.id}
-        label="کارگزار ترانسفر"
-        value={transferBroker ?? broker}
-        onChange={setTransferBroker}
-      />
       {[
         ...new Set(
           [
             draft.hotelRoomPrices?.currencyCode,
             draft.supplierFormPrices?.transferPp?.currencyCode,
+            ...(draft.hotelTransferSplit
+              ? [draft.hotelTransferReturn?.currencyCode]
+              : []),
           ].filter((code): code is string => !!code),
         ),
       ].map((code) => (
@@ -399,6 +468,15 @@ export function HotelStayPurchase({
             {purchase.amount} {purchase.currencyCode}
           </bdi>{' '}
           · {purchase.finance.status}
+        </p>
+      )}
+      {returnPurchase && (
+        <p>
+          جمع ترانسفر برگشت:{' '}
+          <bdi>
+            {returnPurchase.amount} {returnPurchase.currencyCode}
+          </bdi>{' '}
+          · {returnPurchase.supplierName} · {returnPurchase.finance.status}
         </p>
       )}
       {transfer && (
