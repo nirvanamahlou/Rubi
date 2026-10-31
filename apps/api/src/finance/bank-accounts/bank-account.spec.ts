@@ -112,15 +112,13 @@ describe('company bank account owner commands', () => {
         .mockImplementation(async () =>
           [...rows.values()].filter((row) => !row.deletedAt),
         ),
-      findUniqueOrThrow: vi
-        .fn()
-        .mockImplementation(async ({ where }) => ({
-          ...rows.get(where.id),
-          _count: rows.get(where.id)?._count ?? {
-            bankAccountAudits: 1,
-            supplierPayments: 0,
-          },
-        })),
+      findUniqueOrThrow: vi.fn().mockImplementation(async ({ where }) => ({
+        ...rows.get(where.id),
+        _count: rows.get(where.id)?._count ?? {
+          bankAccountAudits: 1,
+          supplierPayments: 0,
+        },
+      })),
       findUnique: vi
         .fn()
         .mockImplementation(async ({ where }) => rows.get(where.id) ?? null),
