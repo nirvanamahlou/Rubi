@@ -45,8 +45,10 @@ export function useReservationFormReferences(
     ...hotels.flatMap((hotel) => [
       ['cities', hotel.cityId],
       ['hotels', hotel.hotelId],
-      ['room-types', hotel.roomTypeId],
-      ...(hotel.rooms ?? []).map((r) => ['room-types', r.roomTypeId]),
+      ...(hotel.roomTypeId ? [['room-types', hotel.roomTypeId]] : []),
+      ...(hotel.rooms ?? [])
+        .filter((r) => r.roomTypeId)
+        .map((r) => ['room-types', r.roomTypeId]),
       ...(hotel.mealServiceId ? [['meal-services', hotel.mealServiceId]] : []),
     ]),
     ...(!hotels.length && flights[0]?.destinationId
