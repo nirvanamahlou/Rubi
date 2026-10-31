@@ -8195,3 +8195,7 @@ Fixed useRef-only popup presentation memory with actor-isolated tab-session rece
 
 ## CALL-CENTER-FINAL-MERGE-1031 — PC-C
 Five open Amin-tech11 PRs integrated, retaining their actual heads and complete history. Quality failures in1239/1241 were WORK_ASSIGNMENTS formatting only and repaired. Final combined CI gates before authorized develop merge. Local runtime preparation isolated on C drive; no production deployment.
+
+## REQUIRED-CALL-OUTCOME-1031 — PC-C
+
+Existing CallForm now requires an explicit outcome, and authenticated business-save DTO rejects absent/null/empty/unsupported values. Telephony ingestion and historical incomplete calls unchanged.8 form/5 HTTP regressions pass; localhost preview retains its existing validated runtime baseline. No migration/production rollout. See tasks/REQUIRED-CALL-OUTCOME-1031.md.

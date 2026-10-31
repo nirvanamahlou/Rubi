@@ -10387,3 +10387,9 @@ CALL-POPUP-REFRESH-1031 source frozen for review;8 targeted checks/scoped lint/f
 ## CALL-CENTER-FINAL-MERGE-1031 — PC-C — IN_PROGRESS
 
 Owner authorizes reviewing and merging all own PRs after full CI and final develop localhost3000. Integration branch fromd78aa76fc preserves original heads of PR1206/1222/1228/1239/1241. Reserve integration conflicts and own coordination only; source/docs merges preserve both sides. No live server/PBX/data change. Final exact-head CI including database gate is mandatory before merge; local runtime uses isolated checkout and backup before additive local migrations.
+
+## REQUIRED-CALL-OUTCOME-1031 — PC-C — ACTIVE
+
+COMPUTER_ID=PC-C. Reserve call-form.tsx/spec and CallCenterCallDto/HTTP boundary tests, plus own docs. Owner requests a required explicit result in call popups. Enforce existing outcome choices at business save only; provider event ingestion and incomplete historical calls stay valid. No schema/data/PBX/production mutation. Existing published form scopes released. Validate API/Web and activate localhost preview after preserving current runtime.
+
+REQUIRED-CALL-OUTCOME-1031 — VALIDATED:8 form and5 HTTP boundary checks pass. Scoped lint passes. Local preview uses exact four-file patch on existing runtime baseline; current develop's newer HR generated contracts require matching release dependencies. No migration/production change. Source reservation freezes on publication.
