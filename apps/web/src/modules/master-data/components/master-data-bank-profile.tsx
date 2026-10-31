@@ -20,6 +20,7 @@ import {
 } from './master-data-profile-details';
 import { MasterDataLogoCell } from './master-data-logo-cell';
 import { CompanyBankAccounts } from '@/modules/finance/components/company-bank-accounts';
+import { MasterDataDeleteButton } from './master-data-delete-button';
 
 const branchDefinition = getMasterDataDefinition('bank-branches');
 
@@ -169,6 +170,10 @@ export function MasterDataBankProfile({
                         </td>
                         <td className="p-3 text-center">
                           <div className="flex justify-center gap-2">
+                            <MasterDataDeleteButton
+                              record={branch}
+                              onDeleted={load}
+                            />
                             <Button
                               aria-label={`مشاهده ${branch.name}`}
                               onClick={() => {
