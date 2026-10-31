@@ -8144,3 +8144,6 @@ Request detail keeps cancellation plus the shared-form edit entry, removing appr
 ## TRAVIS-SANDBOX-CONNECTION-1031 — PC-A
 
 Added fixed-origin HTTPS Travis/Noyan sandbox catalogue integration and private, branch/settings-authorized Insurance settings discovery. Owner key validated with the actual implementation:195 countries,21 durations,5 plans; no credential in projected output. Web retrieves provider data and selects country/plan codes without changing manual rates or Master Data automatically.32 API tests and3 English coverage tests pass; scoped lint passes. Shared generated dependencies are being rebuilt before final type verification. User selected backed-up Avina activation, preserving its independent current API/Web fixes. No policy issuance, passenger export, schema/migration or financial write. See docs/tasks/TRAVIS-SANDBOX-CONNECTION-1031.md.
+
+## CALL-CENTER-FILTERS-STATUS-1031 — PC-C
+Requested filter cleanup/canonical options and expert waiting-state vs unit-manager close policy implemented.19 Web tests +8 API input checks pass;19 PostgreSQL checks skipped; full build/types blocked by dependency environment. No migration/deploy. See tasks/CALL-CENTER-FILTERS-STATUS-1031.md.

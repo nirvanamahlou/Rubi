@@ -10305,3 +10305,9 @@ TRAVIS-SANDBOX-CONNECTION-1031 bounded config scope includes example environment
 TRAVIS-SANDBOX-CONNECTION-1031 follow-up: owner explicitly selected Avina server activation. Reserve bounded compose/API-only private sandbox env injection and backed-up overlay deployment of the reviewed connector onto current independent API/Web base images; no worker/telephony/environment replacement, migrations or policy operations. Target source hashes all match the branch base; unrelated active hotfixes must be retained.
 
 TRAVIS-SANDBOX-CONNECTION-1031 verification:32 targeted API and3 English coverage tests passed; Contracts/Database regeneration/build, API/Web typechecks and scoped API/Web lint passed. Actual service sandbox call returned195/21/5 with no credential in projection. Server target hashes match original connector files; read-only rollout will preserve independent currently running base images. Final-head CI gates precede activation.
+
+## CALL-CENTER-FILTERS-STATUS-1031 — PC-C — IN_PROGRESS
+Base40916ebe1; user explicitly authorizes removing branch/contact-scope/registration-method filters, matching source/unit filter options to call form, and expert waiting-state edits with close limited to current unit managers. Reserve Call Center workspace/filter model/request editor, Customer Affairs workflow/read queries and focused regressions, existing IAM public capability consumer and own docs. No schema/dependency or production changes. Preserve active recording-download task and its data wiring; no recording files reserved.
+
+
+CALL-CENTER-FILTERS-STATUS-1031 source frozen for draft review. Scoped lint/format and19 Web/8 API checks pass; database/full build gates pending clean environment. No source overlap with recording-download; no live release claimed.

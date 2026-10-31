@@ -352,7 +352,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         for (const change of [
           { title: 'Forged title' },
           { priority: 'HIGH' },
-          { status: 'WAITING_CUSTOMER' },
+          { status: 'CLOSED' },
           { ownerId: null },
         ]) {
           await expect(
@@ -384,6 +384,20 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           reason: 'Agent progress',
           result: 'Agent findings',
         });
+        for (const [index, status] of [
+          'WAITING_CUSTOMER',
+          'IN_PROGRESS',
+        ].entries()) {
+          const saved = await workflow.saveRequest(actor, branchId, contactId, {
+            ...input,
+            status,
+            expectedVersion: 2 + index,
+            commandId: randomUUID(),
+          });
+          expect(saved.data.find((row) => row.id === input.id)?.status).toBe(
+            status,
+          );
+        }
       } finally {
         vi.mocked(directory.canManageRequest).mockResolvedValue(true);
         await db.customerAffairsTicket.delete({ where: { id: input.id } });
