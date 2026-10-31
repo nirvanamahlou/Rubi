@@ -1,3 +1,5 @@
+import { Optional } from '@nestjs/common';
+import { TravisSandboxService } from './travis-sandbox.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -95,6 +97,9 @@ export class InsuranceSettingsService {
     @Inject(SystemManagementService)
     private readonly settings: SystemManagementService,
     @Inject(MasterDataService) private readonly master: MasterDataService,
+    @Optional()
+    @Inject(TravisSandboxService)
+    private readonly provider?: TravisSandboxService,
   ) {}
 
   authorize(actor: AuthenticatedActor, branchId: string, write = false) {
@@ -130,7 +135,9 @@ export class InsuranceSettingsService {
         : { schemaVersion: 1 as const, countries: [] },
       version: scoped?.version ?? 0,
       canManage: this.canManage(actor),
-      providerStatus: 'NOT_CONFIGURED' as const,
+      providerStatus: this.provider?.configured()
+        ? ('SANDBOX_CONFIGURED' as const)
+        : ('NOT_CONFIGURED' as const),
     };
   }
   async save(branchId: string, raw: unknown, actor: AuthenticatedActor) {
@@ -184,6 +191,12 @@ export class InsuranceSettingsService {
       {},
     );
     return this.read(branchId, actor);
+  }
+  async providerCatalog(branchId: string, actor: AuthenticatedActor) {
+    this.authorize(actor, branchId, true);
+    if (!this.provider)
+      throw new BadRequestException('اتصال آزمایشی بیمه تنظیم نشده است.');
+    return this.provider.catalog();
   }
   async references(
     branchId: string,
