@@ -4775,5 +4775,9 @@
   "کشور ·": "countries ·",
   "طرح ·": "plans ·",
   "دلیل لغو": "Cancellation reason",
-  "علت اصلاح پس از ارسال لازم است.": "An amendment reason is required after submission."
+  "علت اصلاح پس از ارسال لازم است.": "An amendment reason is required after submission.",
+  "دامنه اطلاعات مشترک تغییرپذیر نیست.": "The scope of a shared definition cannot be changed.",
+  "دامنه شعبه معتبر نیست.": "Invalid branch scope.",
+  "والد اطلاعات مشترک باید برای همه شعبه‌ها تعریف شده باشد.": "The parent of a shared definition must be available in every branch.",
+  "ویرایش اطلاعات مشترک نیازمند دسترسی همه شعبه‌ها است.": "Editing a shared definition requires access to every affected branch."
 }

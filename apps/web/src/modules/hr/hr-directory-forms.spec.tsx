@@ -8,6 +8,7 @@ import {
   type HrBootstrapDto,
   type HrRecordDto,
 } from '@nora/contracts';
+import { hrCompanies } from './hr-live-data';
 import { employeeOrganizationOptions } from './hr-employees';
 import {
   validateDocumentUpload,
@@ -25,6 +26,61 @@ const employee = {
   position: 'سمت',
 };
 describe('cross-module form reference values', () => {
+  it('keeps the branch editable while employment status remains locked in employee correction', () => {
+    const html = renderToStaticMarkup(
+      <NewEmployeeForm
+        existingPersonnelCodes={[]}
+        managerOptions={[]}
+        branchOptions={['دفتر مرکزی', 'شعبه دیگر']}
+        lockAssignment
+        onCancel={() => undefined}
+        onSubmit={() => undefined}
+      />,
+    );
+    const branch = html.match(/<select[^>]*name="branch"[^>]*>/)?.[0];
+    expect(branch).toBeDefined();
+    expect(branch).not.toMatch(/disabled/);
+    expect(html.match(/<select[^>]*name="status"[^>]*>/)?.[0]).toMatch(
+      /disabled/,
+    );
+  });
+  it('deduplicates company names and exposes Headquarters once with all organizational references', () => {
+    const data = {
+      branches: [
+        { id: 'scope', name: 'دفتر مرکزی' },
+        { id: 'academy-scope', name: 'جهان آکادمی' },
+      ],
+      records: [
+        {
+          id: 'academy',
+          branchId: 'scope',
+          section: 'organization',
+          tab: 'branches',
+          deletedAt: null,
+          status: 'فعال',
+          values: ['جهان آکادمی'],
+          data: {},
+        },
+        {
+          id: 'academy2',
+          branchId: 'scope',
+          section: 'organization',
+          tab: 'branches',
+          deletedAt: null,
+          status: 'فعال',
+          values: ['جهان آكادمی'],
+          data: {},
+        },
+      ],
+      employees: [],
+    } as unknown as HrBootstrapDto;
+    const companies = hrCompanies(data);
+    expect(companies.filter((c) => c.name === 'جهان آکادمی')).toHaveLength(1);
+    expect(companies.filter((c) => c.isHeadquarters)).toHaveLength(1);
+    expect(companies.find((c) => c.name === 'جهان آکادمی')!.aliases).toContain(
+      'academy2',
+    );
+  });
   it('shows employee units and positions from the selected company catalog', () => {
     const catalog = (
       id: string,

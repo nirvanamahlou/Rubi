@@ -1,5 +1,7 @@
 import {
   getHrResource,
+  hrBranchName,
+  hrBranchKey,
   type HrRecordDto,
   type HrBootstrapDto,
 } from '@nora/contracts';
@@ -59,7 +61,7 @@ export function hrCompanies(data: HrBootstrapDto) {
       !item.deletedAt &&
       item.status === 'فعال',
   );
-  return [
+  const options = [
     ...catalog.map((item) => ({
       id: item.id,
       branchId: item.branchId,
@@ -76,4 +78,41 @@ export function hrCompanies(data: HrBootstrapDto) {
         organizationBranchId: '',
       })),
   ];
+  const headquarters =
+    data.branches.find((b) => hrBranchName(b.name) === 'دفتر مرکزی') ??
+    data.branches[0];
+  const grouped = new Map<
+    string,
+    (typeof options)[number] & {
+      aliases: string[];
+      branchIds: string[];
+      isHeadquarters: boolean;
+    }
+  >();
+  for (const item of options) {
+    const key = hrBranchKey(item.name);
+    const existing = grouped.get(key);
+    if (existing) {
+      existing.aliases.push(item.id);
+      existing.branchIds.push(item.branchId);
+    } else
+      grouped.set(key, {
+        ...item,
+        name: hrBranchName(item.name),
+        aliases: [item.id],
+        branchIds: [item.branchId],
+        isHeadquarters: key === 'دفتر مرکزی',
+      });
+  }
+  if (headquarters && !grouped.has('دفتر مرکزی'))
+    grouped.set('دفتر مرکزی', {
+      id: headquarters.id,
+      branchId: headquarters.id,
+      name: 'دفتر مرکزی',
+      organizationBranchId: '',
+      aliases: [headquarters.id],
+      branchIds: [headquarters.id],
+      isHeadquarters: true,
+    });
+  return [...grouped.values()];
 }

@@ -1,4 +1,5 @@
 'use client';
+import { hrBranchKey } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState, type FormEvent } from 'react';
@@ -202,7 +203,16 @@ export function NewEmployeeForm({
 }: NewEmployeeFormProps) {
   const [value, setValue] = useState<NewEmployeeFormValue>(
     () =>
-      initialValue ?? {
+      (initialValue
+        ? {
+            ...initialValue,
+            branch:
+              branchOptions.find(
+                (option) =>
+                  hrBranchKey(option) === hrBranchKey(initialValue.branch),
+              ) ?? initialValue.branch,
+          }
+        : undefined) ?? {
         ...defaultEmployeeValue,
         ...(personnelMode
           ? { identityValues: [...defaultPersonnelIdentity], contactValues: [] }
@@ -249,7 +259,12 @@ export function NewEmployeeForm({
       [field]: nextValue,
       ...(field === 'branch' ? { userId: '', groupId: '' } : {}),
       ...(field === 'branch' && organizationOptions
-        ? { unit: '', position: '', grade: '' }
+        ? {
+            unit: '',
+            grade: '',
+            manager: 'بدون مدیر مستقیم',
+            groupId: '',
+          }
         : {}),
     }));
     setErrors((current) => {
@@ -547,17 +562,23 @@ export function NewEmployeeForm({
               className={styles.control}
               id="hr-new-employee-branch"
               {...errorProps('branch')}
-              disabled={lockAssignment}
               name="branch"
               onChange={(event) => update('branch', event.target.value)}
               required
               value={value.branch}
             >
-              {branchOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
+              {branchOptions
+                .filter(
+                  (name, index, all) =>
+                    all.findIndex(
+                      (other) => hrBranchKey(other) === hrBranchKey(name),
+                    ) === index,
+                )
+                .map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
             </NativeSearchSelect>
             <FieldError errors={errors} field="branch" />
           </label>

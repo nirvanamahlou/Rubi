@@ -229,3 +229,35 @@ export function getHrResource(
 export const HR_RESOURCE_KEYS = Object.keys(
   HR_RESOURCE_COLUMNS,
 ) as HrResourceKey[];
+
+/** Only reference definitions can be shared; personnel and operational records retain their owner scope. */
+export function isHrSharedResource(section: string, tab: string) {
+  return (
+    (section === 'organization' &&
+      ['branches', 'units', 'positions', 'grades', 'groups'].includes(tab)) ||
+    (section === 'time' &&
+      [
+        'workingHours',
+        'shiftTemplates',
+        'templateDays',
+        'calculationSettings',
+        'leavePolicies',
+        'leaveTypes',
+        'holidays',
+      ].includes(tab)) ||
+    (section === 'settings' &&
+      ['customFields', 'workflows', 'notifications'].includes(tab))
+  );
+}
+export function hrBranchName(value: string) {
+  return value
+    .normalize('NFKC')
+    .replace(/ي/g, 'ی')
+    .replace(/ك/g, 'ک')
+    .replace(/[\s\u200c]+/g, ' ')
+    .trim();
+}
+
+export function hrBranchKey(value: string) {
+  return hrBranchName(value).replace(/[آأإ]/g, 'ا');
+}
