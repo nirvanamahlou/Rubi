@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Wallet } from 'lucide-react';
+import { Plus, Wallet } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -57,36 +57,51 @@ export function PettyFundCard({ bootstrap }: { bootstrap: Bootstrap }) {
     enabled: Boolean(branchId),
   });
   const editable = bootstrap.permissions.includes('procurement.assign');
+  function openConfiguration() {
+    if (query.isError) {
+      void query.refetch();
+      return;
+    }
+    setDraft(query.data ?? empty);
+    setError('');
+    setOpen(true);
+  }
   return (
     <>
-      <button
-        type="button"
-        className="min-h-40 rounded-2xl border border-emerald-300 bg-gradient-to-bl from-emerald-100 to-surface p-5 text-right shadow-sm focus-visible:ring-2 focus-visible:ring-ring dark:from-emerald-950"
-        disabled={query.isPending}
-        onClick={() => {
-          if (query.isError) {
-            void query.refetch();
-            return;
-          }
-          setDraft(query.data ?? empty);
-          setError('');
-          setOpen(true);
-        }}
-      >
-        <span className="flex items-center gap-3 font-bold">
-          <Wallet aria-hidden="true" className="size-6" />
-          تنخواه
-        </span>
-        <span className="mt-5 block text-xl font-bold">
-          {query.isPending
-            ? 'در حال دریافت…'
-            : query.isError
-              ? 'دریافت موجودی ناموفق بود'
-              : query.data
-                ? `${pettyBalanceLabel(query.data.balance)} ${query.data.currencyCode}`
-                : 'ثبت موجودی'}
-        </span>
-      </button>
+      <div className="flex min-w-0 items-stretch gap-2">
+        <button
+          type="button"
+          className="min-h-40 min-w-0 flex-1 rounded-2xl border border-emerald-300 bg-gradient-to-bl from-emerald-100 to-surface p-5 text-right shadow-sm focus-visible:ring-2 focus-visible:ring-ring dark:from-emerald-950"
+          disabled={query.isPending}
+          onClick={openConfiguration}
+        >
+          <span className="flex items-center gap-3 font-bold">
+            <Wallet aria-hidden="true" className="size-6" />
+            تنخواه
+          </span>
+          <span className="mt-5 block text-xl font-bold">
+            {query.isPending
+              ? 'در حال دریافت…'
+              : query.isError
+                ? 'دریافت موجودی ناموفق بود'
+                : query.data
+                  ? `${pettyBalanceLabel(query.data.balance)} ${query.data.currencyCode}`
+                  : 'ثبت موجودی'}
+          </span>
+        </button>
+        {editable && (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-auto w-12 shrink-0 rounded-2xl border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+            aria-label="موجودی و حساب تنخواه"
+            disabled={query.isPending || busy}
+            onClick={openConfiguration}
+          >
+            <Plus aria-hidden="true" className="size-5" />
+          </Button>
+        )}
+      </div>
       <Dialog
         open={open}
         onOpenChange={(value) => {
