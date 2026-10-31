@@ -81,6 +81,23 @@ describe('cross-module form reference values', () => {
       'academy2',
     );
   });
+  it('keeps virtual Headquarters distinct from the native branch already in the selector', () => {
+    const companies = hrCompanies({
+      branches: [{ id: 'academy-scope', name: 'جهان آکادمی' }],
+      records: [],
+      employees: [],
+    } as unknown as HrBootstrapDto);
+    expect(new Set(companies.map((company) => company.id)).size).toBe(
+      companies.length,
+    );
+    const headquarters = companies.find((company) => company.isHeadquarters)!;
+    expect(headquarters.branchId).toBe('academy-scope');
+    expect(headquarters.id).not.toBe('academy-scope');
+    expect(
+      companies.find((company) => company.aliases.includes('academy-scope'))!
+        .name,
+    ).toBe('جهان آکادمی');
+  });
   it('shows employee units and positions from the selected company catalog', () => {
     const catalog = (
       id: string,

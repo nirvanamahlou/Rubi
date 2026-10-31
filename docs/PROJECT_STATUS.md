@@ -8195,3 +8195,8 @@ Fixed useRef-only popup presentation memory with actor-isolated tab-session rece
 
 ## CALL-CENTER-FINAL-MERGE-1031 — PC-C
 Five open Amin-tech11 PRs integrated, retaining their actual heads and complete history. Quality failures in1239/1241 were WORK_ASSIGNMENTS formatting only and repaired. Final combined CI gates before authorized develop merge. Local runtime preparation isolated on C drive; no production deployment.
+
+## HR-HEADQUARTERS-CHOICE-1031 / PC-B
+
+Merged PR1248 (206 Web/46 isolated PostgreSQL checks; eight hosted gates). Integrated local production Web/API built, additive local migrations applied after backup and runtime activated on3100/4192. Final browser verification identified virtual Headquarters option-value collision with an existing native branch; use a distinct UI-only value and preserve native branch FK ownership. Targeted regression and final hosted gates precede follow-up merge.
+
