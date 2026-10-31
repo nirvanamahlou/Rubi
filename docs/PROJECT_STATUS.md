@@ -8011,3 +8011,7 @@ Cancelled contracts are excluded before Sales dashboard metrics and currency sum
 ## SUPPLIER-RATIO-SAVE-1029 — PC-A
 
 Supplier form Ratio is a dimensionless decimal without a currency selector, currency directory lookup or PDF currency suffix. Historical ratio currencies remain readable and are removed when saving a new revision. Hotel P.P replaces P.P in input and both preview/PDF rendering. Explicit Save stores settings without sending/issuing; passenger ticket PDF downloads remain while the two browser print buttons are removed. No schema/migration/deployment. Focused validation and hosted gates precede authorized develop merge.
+
+## CALL-CENTER-LIVE-INGRESS-1029 — production accepted 2026-10-31
+
+PC-C awaited the colleague deployment lock, retained actual base358bf900, rebuilt the bounded API overlay and passed206 tests/25 files. Real Issabel AMI and Worker/API authentication succeeded. Owner's actual answered/ended call persisted with answer responsibility; three DONE receipts, no pending outbox. Web unchanged; Worker recreated with API to retain its shared network namespace. Dedicated VPN watchdog enabled. Audio transfer/CDR recovery remain disabled;114/203 lack account links. Evidence and future-release requirements: docs/tasks/CALL-CENTER-LIVE-INGRESS-1029.md.
