@@ -164,6 +164,56 @@ describe('versioned amendment membership', () => {
   });
 });
 
+it('changes an unpriced historical roster without allocating or changing the contract amount', () => {
+  const old = draft();
+  old.passengers = old.passengers.map((p) => {
+    const copy = { ...p };
+    delete copy.agreedPrices;
+    return copy;
+  });
+  const next = changeAmendmentMembership(old, { remove: 'b' }, true);
+  expect(next.passengers.map((p) => p.customerId)).toEqual(['a']);
+  expect(next.priceComponents).toEqual(old.priceComponents);
+  expect(next.passengers.every((p) => p.agreedPrices === undefined)).toBe(true);
+  expect(next.preserveContractPrices).toBe(true);
+  expect(next.hotelSelection?.occupancy).toBe(1);
+  expect(readPassengerTotalPrices(next.services, next.passengers)).toBeNull();
+  expect(
+    next.services.every((s) => s.metadata?.contractPackagePricingVersion === 1),
+  ).toBe(true);
+  expect(() => validatePassengerHotelStays(next)).not.toThrow();
+  expect(() => changeAmendmentMembership(next, { remove: 'a' }, true)).toThrow(
+    'حداقل',
+  );
+});
+it('adds a named passenger without a price, keeps both currencies and removes obsolete per-person pricing', () => {
+  const old = draft();
+  old.priceComponents = [
+    ...old.priceComponents,
+    { type: 'BASE', title: 'Rial', amount: '123456.125', currencyCode: 'IRR' },
+  ];
+  const next = changeAmendmentMembership(
+    old,
+    {
+      add: {
+        customerId: 'c',
+        displayNameSnapshot: 'Synthetic C',
+        birthDate: '',
+        serviceClientKeys: ['hotel', 'transfer'],
+      },
+      category: 'CHD',
+    },
+    true,
+  );
+  expect(next.passengers).toHaveLength(3);
+  expect(next.priceComponents).toEqual(old.priceComponents);
+  expect(next.hotelSelection?.occupancy).toBe(3);
+  expect(next.services[1]?.metadata?.passengerCount).toBe(3);
+  expect(readPassengerDeductions(next.services, next.passengers)).toEqual({});
+  expect(() => validatePassengerHotelStays(next)).not.toThrow();
+  expect(old.passengers).toHaveLength(2);
+});
+
 it('round trips a child addition/removal without changing survivor prices, bands or identities', () => {
   const old = draft();
   const added = changeAmendmentMembership(old, {
