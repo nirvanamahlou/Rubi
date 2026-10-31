@@ -8171,3 +8171,7 @@ Overview uses only server-returned request rows. Removed synthetic fallback on e
 ## CALL-CENTER-ALL-USER-POPUPS-1031 — deployed 2026-10-31
 
 Incoming destination hydration now uses a unique provider-observed destination or actual answer without changing business outcomes/responsibilities. Operational polling resumes after visible focus/online/session recovery and refreshed IAM authorization. All13 uniquely linked active employee accounts pass native own-offer/route/mapping readiness; no grants changed. API/Web scoped lint/typechecks/builds and28 API/6 Web checks passed; broader4 HTTP-fixture failures reproduce on the original production image. Deployment preserves current5b overlays, unchanged Worker image, recording timer/90-day policy and data services; native exact old missed-call label and foreign-offer denial verified. User browser acceptance deferred. See docs/tasks/CALL-CENTER-ALL-USER-POPUPS-1031.md.
+
+## CALL-RECIPIENT-ALIAS-1031 — PC-C
+
+Confirmed additional employee internal registered without replacing the original, with native IAM authentication, HR authorization, transaction and audit. Production recipient projection verified. Second unknown case confirmed in exact PBX CEL/CDR as external-only PBX answer, no employee bridge; no identity guessed. Six targeted tests pass; no application deployment or migration. See tasks/CALL-RECIPIENT-ALIAS-1031.md.
