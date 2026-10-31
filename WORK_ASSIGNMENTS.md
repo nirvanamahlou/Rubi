@@ -1,3 +1,7 @@
+## TRANSFER-FLIGHT-FORM-1031 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-transfer-flight-1031 from origin/develop7979c704a. User authorizes flight information whenever even one passenger has transfer, and develop merge. Reserve supplier reservation sheet/PDF flight table, focused output regressions and own status notes. Prior footer/sex/default tasks merged PR1056/1061/1203; no active overlapping writer. Preserve saved supplier flight overrides, passenger allocations and voucher. No contract/schema/migration/dependency/runtime changes. Final checks gate merge; PR1207 targets develop; final-head hosted gates precede merge.
+
 ## RESERVATION-DEFAULTS-1029 — PC-A — IN_PROGRESS
 
 User additionally requests child age bands in contract preview/PDF. Extend bounded reservation to contract-print.ts and its existing regressions (prior print task merged/released). Use saved hotel check-in for DOB calculation, falling back to contract departure for ticket-only contracts; when DOB is absent retain the explicitly booked child band rather than silently printing only Child. No operational reservation overrides or source mutation.
