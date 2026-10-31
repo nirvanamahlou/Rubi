@@ -89,9 +89,9 @@ Web-only rollout receipt:
 Image `rubi-production:call-popup-recipient-current-1031`, immutable ID
 `sha256:e7ae1335eafa7360e485ae39bdf22740478db307833a0f0d31f790df21cd202f`.
 All15 login-page JavaScript assets returned200; Web mounts preserved and
-API/Worker/PostgreSQL/Redis container IDs unchanged. Owner requested to refresh
-Chrome after saving any existing draft and verify the incoming404 name after an
-actual answer; that final visual acceptance is pending.
+API/Worker/PostgreSQL/Redis container IDs unchanged. After refreshing Chrome and
+testing an incoming404 call, the owner explicitly confirmed the title/name display
+after answer is fixed. Both-direction popups and the recipient refresh are accepted.
 
 Future Web builds must preserve this source and popup build flag. Future API
 deployments must preserve private notification settings and answered-access code,
