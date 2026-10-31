@@ -333,7 +333,7 @@ it('renders voucher booking references and a separated summary without letterhea
   expect(html).toMatch(/SUPPLIER<\/span><b dir="auto">0<\/b>/);
   expect(html).not.toContain('SYNTHETIC BROKER');
   expect(html).toContain('<section class="bookingSection">');
-  expect(html).toContain('ROOM TYPE');
+  expect(html).not.toContain('HOTEL INFORMATION');
   expect(html).toContain('TRANSFER');
   expect(html).toContain('<th>BOARD</th>');
   expect(html).toContain('>BROKER BOARD</td>');
