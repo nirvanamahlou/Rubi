@@ -1109,6 +1109,7 @@ export class SalesService {
       description: row.description,
       paymentReference: row.paymentReference,
       destinationAccountId: row.destinationAccountId,
+      destinationAccountTitle: row.destinationAccountTitle,
       dueAt: row.dueAt.toISOString(),
       createdAt: row.createdAt.toISOString(),
       createdByUserId: row.createdByUserId,

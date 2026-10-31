@@ -482,6 +482,8 @@ export interface SalesFinanceSubmissionV1 {
 }
 
 export interface SalesFinanceInboxPaymentV1 {
+  /** Existing Sales declaration; optional for historical payments. */
+  destinationAccountTitle?: string | null;
   destinationAccountId?: string | null;
   version: 1;
   paymentId: string;
