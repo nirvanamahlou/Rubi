@@ -75,6 +75,8 @@ export function moveToCalendarMonth(
 }
 
 export interface TicketDatePickerProps {
+  markedDates?: readonly string[];
+  onVisibleRangeChange?: (start: string, end: string) => void;
   id?: string;
   name?: string;
   value?: string;
@@ -93,6 +95,8 @@ export interface TicketDatePickerProps {
 }
 
 export function TicketDatePicker({
+  markedDates,
+  onVisibleRangeChange,
   calendarSystem: controlledCalendarSystem,
   className,
   defaultValue = '',
@@ -131,6 +135,13 @@ export function TicketDatePicker({
   const currentParts = calendarParts(anchor, calendarSystem);
   const days = calendarMonthDays(anchor, calendarSystem);
   const today = toIsoDate(new Date());
+  const monthStart = days.find((day) => day.isCurrentMonth)?.isoDate ?? '';
+  const monthEnd =
+    days.filter((day) => day.isCurrentMonth).at(-1)?.isoDate ?? '';
+  React.useEffect(() => {
+    if (open && monthStart && monthEnd)
+      onVisibleRangeChange?.(monthStart, monthEnd);
+  }, [open, monthStart, monthEnd, onVisibleRangeChange]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -390,7 +401,7 @@ export function TicketDatePicker({
                           aria-label={`${day.year}/${day.month}/${day.day}`}
                           aria-pressed={day.isoDate === selectedDate}
                           className={cn(
-                            'flex size-9 items-center justify-center justify-self-center rounded-lg text-xs font-medium outline-none transition hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
+                            'relative flex size-9 items-center justify-center justify-self-center rounded-lg text-xs font-medium outline-none transition hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring',
                             day.isoDate === selectedDate &&
                               'bg-primary text-primary-foreground hover:bg-primary',
                             day.isoDate !== selectedDate &&
@@ -401,7 +412,21 @@ export function TicketDatePicker({
                           onClick={() => selectDay(day.isoDate)}
                           type="button"
                         >
-                          {formatNumber(day.day)}
+                          <span
+                            className={cn(
+                              markedDates?.includes(day.isoDate) &&
+                                day.isoDate !== selectedDate &&
+                                'font-bold text-red-600',
+                            )}
+                          >
+                            {formatNumber(day.day)}
+                          </span>
+                          {markedDates?.includes(day.isoDate) && (
+                            <span
+                              aria-label="دارای پرواز"
+                              className="absolute bottom-0.5 size-1.5 rounded-full bg-red-600"
+                            />
+                          )}
                         </button>
                       ) : (
                         <span aria-hidden="true" key={`empty-${index}`} />
