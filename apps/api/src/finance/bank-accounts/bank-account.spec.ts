@@ -107,13 +107,27 @@ describe('company bank account owner commands', () => {
     rows = new Map();
     audit = vi.fn().mockResolvedValue({});
     const accounts = {
-      findMany: vi.fn().mockImplementation(async () => [...rows.values()]),
+      findMany: vi
+        .fn()
+        .mockImplementation(async () =>
+          [...rows.values()].filter((row) => !row.deletedAt),
+        ),
+      findUniqueOrThrow: vi
+        .fn()
+        .mockImplementation(async ({ where }) => ({
+          ...rows.get(where.id),
+          _count: rows.get(where.id)?._count ?? {
+            bankAccountAudits: 1,
+            supplierPayments: 0,
+          },
+        })),
       findUnique: vi
         .fn()
         .mockImplementation(async ({ where }) => rows.get(where.id) ?? null),
       findFirst: vi.fn().mockImplementation(async ({ where }) => {
         const row = rows.get(where.id);
         return row &&
+          !row.deletedAt &&
           row.bankId === where.bankId &&
           where.branchId.in.includes(row.branchId)
           ? row
@@ -181,6 +195,49 @@ describe('company bank account owner commands', () => {
     await expect(
       service.save(bankId, null, { ...first, title: 'Changed' }, actor),
     ).rejects.toThrow();
+  });
+  it('removes only an unused scoped account, preserves audit and prevents later reveal', async () => {
+    const row = await service.save(bankId, null, input(), actor);
+    await service.remove(
+      bankId,
+      row.id,
+      { expectedVersion: row.version },
+      actor,
+    );
+    expect(rows.get(row.id)?.deletedAt).toBeInstanceOf(Date);
+    expect((await service.list(bankId, '1', actor)).items).toEqual([]);
+    await expect(service.details(bankId, row.id, actor)).rejects.toThrow();
+    expect(audit.mock.calls.at(-1)?.[0].data.action).toBe('DELETE');
+  });
+  it('rejects referenced, stale, unauthorized and cross-branch deletions', async () => {
+    const row = await service.save(bankId, null, input(), actor);
+    await expect(
+      service.remove(bankId, row.id, { expectedVersion: 2 }, actor),
+    ).rejects.toThrow();
+    await expect(
+      service.remove(
+        bankId,
+        row.id,
+        { expectedVersion: 1 },
+        { ...actor, permissions: ['finance.read', 'master_data.read'] },
+      ),
+    ).rejects.toThrow();
+    await expect(
+      service.remove(
+        bankId,
+        row.id,
+        { expectedVersion: 1 },
+        { ...actor, branchIds: [] },
+      ),
+    ).rejects.toThrow();
+    rows.set(row.id, {
+      ...rows.get(row.id),
+      _count: { bankAccountAudits: 2, salesDestinationPayments: 1 },
+    });
+    await expect(
+      service.remove(bankId, row.id, { expectedVersion: 1 }, actor),
+    ).rejects.toThrow('استفاده');
+    expect(rows.get(row.id)?.deletedAt).toBeUndefined();
   });
   it('audits explicit details and preserves omitted identifiers but clears explicit null', async () => {
     const row = await service.save(bankId, null, input(), actor);

@@ -1,0 +1,9 @@
+# Master Data and agency dossier UI cleanup
+
+COMPUTER_ID=PC-B. Branch codex/pc-b-master-data-ui-cleanup-1031, base develop58d78567d. User requests seventeen bounded presentation/form/order repairs, tests, push and develop merge. No deployment requested. Implementation and publication are pending.
+
+Scope: currency base presentation and finance section naming; actual Master Data display-order behavior; branch/account delete controls; airport reset placement; agency activity/rate/contract copy cleanup; related-contract selector placement; commission subsection clarification; contract filter refresh removal; compact Master Data filter rows; hotel import technical version display; optional hidden rail/bus organization selectors and compatible native writers.
+
+Progress: base-currency form/KPI/detail placeholders removed, finance section renamed, requested activity/rate/contract copy removed, contract filter refresh removed, hotel version badge removed, rail/bus organization inputs removed and bus required-field validation relaxed. These changes remain untested and uncommitted. Rail organizationId is NOT NULL in Prisma and needs a coordinated nullable migration before the hidden input is publishable. User clarification resolves commission request as empty space below the form. Remaining order/delete/filter/selector/layout repairs and all verification/publication are pending. Do not publish this partial candidate.
+
+Preserve financial calculations, approval semantics, audit storage, protected delete rules, template version wire contracts and historical organization foreign keys. HOTEL_IMPORT_V1 is a visible-label removal request, not authorization to break the import protocol. Hidden rail/bus organization fields require backend validation review before removal. Do not remove active financial warnings without ensuring the actual operation remains correctly represented. No unrelated PC-A Finance/Reservations source changes.

@@ -1150,13 +1150,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: 'Rail Company',
       },
       {
-        key: 'organizationId',
-        label: 'سازمان ریلی',
-        type: 'text',
-        placeholder: '',
-        required: true,
-      },
-      {
         key: 'countryId',
         label: 'کشور',
         type: 'text',
@@ -1242,13 +1235,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'نام انگلیسی',
         type: 'text',
         placeholder: 'Bus Company',
-      },
-      {
-        key: 'organizationId',
-        label: 'سازمان شرکت اتوبوس',
-        type: 'text',
-        placeholder: '',
-        required: true,
       },
       {
         key: 'countryId',
