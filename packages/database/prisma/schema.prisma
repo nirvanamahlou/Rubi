@@ -30,6 +30,10 @@ enum AuditOutcome {
 }
 
 model User {
+  pettyCashEntries ProcurementPettyEntry[]
+
+  pettyCashFunds ProcurementPettyFund[]
+
   insurancePolicyRevisions ReservationInsuranceRevision[]
   financialWorkflows       AccountingWorkflow[]
   telephonyCommands        IntegrationTelephonyCommand[]
@@ -265,6 +269,8 @@ model RolePermission {
 }
 
 model Branch {
+  pettyCashFunds ProcurementPettyFund[]
+
   financialWorkflows   AccountingWorkflow[]
   telephonyConnections IntegrationTelephonyConnection[]
   receiptAllocations   SalesReceiptAllocation[]
@@ -6091,6 +6097,8 @@ model CustomerAffairsAuditEvent {
 }
 
 model ProcurementRequest {
+  pettyEntries ProcurementPettyEntry[]
+
   receiptAdjustments                        ProcurementReceiptAdjustment[]
   exportJobs                                ProcurementExportJob[]
   id                                        String                         @id @default(uuid()) @db.Uuid
@@ -8218,4 +8226,38 @@ model ReservationInsuranceRevision {
 
   @@unique([policyId, version])
   @@map("reservation_insurance_revisions")
+}
+
+model ProcurementPettyFund {
+  id            String                  @id @default(uuid()) @db.Uuid
+  branchId      String                  @unique @db.Uuid
+  custodianId   String                  @db.Uuid
+  currencyCode  String                  @db.VarChar(3)
+  balance       Decimal                 @db.Decimal(24, 4)
+  bankName      String                  @default("") @db.VarChar(120)
+  accountNumber String                  @default("") @db.VarChar(40)
+  iban          String                  @default("") @db.VarChar(34)
+  cardNumber    String                  @default("") @db.VarChar(20)
+  version       Int                     @default(1)
+  branch        Branch                  @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  custodian     User                    @relation(fields: [custodianId], references: [id], onDelete: Restrict)
+  entries       ProcurementPettyEntry[]
+
+  @@map("procurement_petty_funds")
+}
+
+model ProcurementPettyEntry {
+  requestId  String?              @db.Uuid
+  request    ProcurementRequest?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  id         String               @id @default(uuid()) @db.Uuid
+  fundId     String               @db.Uuid
+  requestKey String?              @unique @db.Uuid
+  amount     Decimal              @db.Decimal(24, 4)
+  actorId    String               @db.Uuid
+  createdAt  DateTime             @default(now()) @db.Timestamptz(3)
+  actor      User                 @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  fund       ProcurementPettyFund @relation(fields: [fundId], references: [id], onDelete: Restrict)
+
+  @@index([fundId, createdAt])
+  @@map("procurement_petty_entries")
 }
