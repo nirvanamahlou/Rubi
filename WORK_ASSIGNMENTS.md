@@ -10367,3 +10367,7 @@ CALL-CENTER-FILTERS-STATUS-1031 source frozen for draft review. Scoped lint/form
 COMPUTER_ID=PC-C; base6021f304e. User authorizes preventing automatic replay of previously shown unresolved call popups after browser refresh. Reserve telephony-attention.tsx, new tab-session shown-call helper/tests, telephony-hold regression and own docs. Preserve manual reopening, new incoming calls, user/offer/branch authorization, server unresolved queue and unrelated recording task. No API/schema/dependency/production mutations.
 
 CALL-POPUP-REFRESH-1031 source frozen for review;8 targeted checks/scoped lint/format pass. No schema, data or runtime change. Receipts persist across refresh within the same tab, isolated by actor; full build/release gate pending.
+
+## CALL-CENTER-FINAL-MERGE-1031 — PC-C — IN_PROGRESS
+
+Owner authorizes reviewing and merging all own PRs after full CI and final develop localhost3000. Integration branch fromd78aa76fc preserves original heads of PR1206/1222/1228/1239/1241. Reserve integration conflicts and own coordination only; source/docs merges preserve both sides. No live server/PBX/data change. Final exact-head CI including database gate is mandatory before merge; local runtime uses isolated checkout and backup before additive local migrations.

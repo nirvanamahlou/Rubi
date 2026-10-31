@@ -8187,3 +8187,6 @@ Overview uses only server-returned request rows. Removed synthetic fallback on e
 Requested filter cleanup/canonical options and expert waiting-state vs unit-manager close policy implemented.19 Web tests +8 API input checks pass;19 PostgreSQL checks skipped; full build/types blocked by dependency environment. No migration/deploy. See tasks/CALL-CENTER-FILTERS-STATUS-1031.md.
 ## CALL-POPUP-REFRESH-1031 — PC-C
 Fixed useRef-only popup presentation memory with actor-isolated tab-session receipts.8 targeted tests/scoped lint pass. No server resolution/queue mutation; new calls and manual reopen preserved. Full clean build and production release pending. See tasks/CALL-POPUP-REFRESH-1031.md.
+
+## CALL-CENTER-FINAL-MERGE-1031 — PC-C
+Five open Amin-tech11 PRs integrated, retaining their actual heads and complete history. Quality failures in1239/1241 were WORK_ASSIGNMENTS formatting only and repaired. Final combined CI gates before authorized develop merge. Local runtime preparation isolated on C drive; no production deployment.
