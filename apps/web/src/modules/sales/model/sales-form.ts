@@ -391,7 +391,7 @@ export function contractSaleComponents(
   if (state.tour && state.packageSaleAvailable && !state.packageSaleQuote)
     throw Error('برای ترکیب انتخاب‌شده قیمت منتشرشده موجود نیست.');
   const automatic =
-    (!state.packageSaleQuote || state.passengerHotelPrices !== undefined) &&
+    !state.packageSaleQuote &&
     state.automaticComponentPricing &&
     state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'HOTEL');
   if (
@@ -432,6 +432,7 @@ export function contractSaleComponents(
     totals.set(price.currencyCode, moneyUnits(price.amount));
   }
   if (
+    !state.packageSaleQuote &&
     state.passengerHotelPrices === undefined &&
     state.serviceKinds.includes('HOTEL')
   )
@@ -463,7 +464,9 @@ export function contractSaleComponents(
         ),
     );
   const components = [...totals]
-    .filter(([, value]) => value > 0n)
+    .filter(
+      ([currencyCode, value]) => value > 0n || reference.has(currencyCode),
+    )
     .flatMap(([currencyCode, value]): SalesPriceComponentInput[] => {
       const base = reference.get(currencyCode) ?? value;
       if (base <= value)
@@ -490,7 +493,9 @@ export function contractSaleComponents(
         },
       ];
     });
-  const deductions = salesPassengerDeductions(state);
+  const deductions = state.packageSaleQuote
+    ? {}
+    : salesPassengerDeductions(state);
   if (Object.keys(deductions).length) salesNetServicePrices(state);
   return [
     ...components,
@@ -1824,16 +1829,21 @@ export function salesPayload(
     };
   }
   readAgencyCommission(services);
-  const deductions = salesPassengerDeductions(state);
+  const deductions = state.packageSaleQuote
+    ? {}
+    : salesPassengerDeductions(state);
   if (Object.keys(deductions).length && services[0])
     services[0].metadata = {
       ...services[0].metadata,
       [PASSENGER_DEDUCTIONS]: JSON.stringify(deductions),
     };
-  const flightPrices = passengerFlightSalePrices(state);
+  const flightPrices = state.packageSaleQuote
+    ? {}
+    : passengerFlightSalePrices(state);
   const flightPriceService = services.find((s) => s.kind === 'FLIGHT');
   if (
     flightPriceService &&
+    !state.packageSaleQuote &&
     !state.passengerTotalPricing &&
     state.passengerFlightPrices !== undefined
   )

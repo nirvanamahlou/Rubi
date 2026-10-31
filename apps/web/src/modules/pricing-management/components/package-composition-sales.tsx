@@ -176,7 +176,7 @@ export function PackageCompositionSales({
                 <tr>
                   <th>انتخاب</th>
                   <th>ترکیب اتاق</th>
-                  <th>قیمت خرید</th>
+                  <th>قیمت خرید هتل</th>
                   <th>قیمت فروش</th>
                 </tr>
               </thead>
@@ -202,7 +202,8 @@ export function PackageCompositionSales({
                       </td>
                       <td>{packageRoomTitle(price.roomCode)}</td>
                       <td>
-                        {price.hotelPurchase} {currencySymbol(price.currencyCode)}
+                        {price.hotelPurchase}{' '}
+                        {currencySymbol(price.currencyCode)}
                       </td>
                       <td className="p-2">
                         {price.currencyAmounts.map((p) => {
