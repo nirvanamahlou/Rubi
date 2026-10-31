@@ -276,7 +276,7 @@ jobs:
       - name: Prove durable Call Center history, replay and branch isolation
         env:
           NORA_RUN_CALL_CENTER_POSTGRES_TESTS: '1'
-        run: pnpm --filter @nora/api exec vitest run src/customer-affairs/call-center.spec.ts src/customer-affairs/call-center-workflow.spec.ts src/customer-affairs/call-center-access.postgres.spec.ts src/customer-affairs/call-center-read.spec.ts src/integrations/telephony.spec.ts src/integrations/issabel/issabel.postgres.spec.ts --maxWorkers=1
+        run: pnpm --filter @nora/api exec vitest run src/customer-affairs/call-center.spec.ts src/customer-affairs/call-center-workflow.spec.ts src/customer-affairs/call-center-access.postgres.spec.ts src/customer-affairs/call-center-answered-access.postgres.spec.ts src/customer-affairs/call-center-read.spec.ts src/integrations/telephony.spec.ts src/integrations/issabel/issabel.postgres.spec.ts --maxWorkers=1
 
   build:
     name: Full production build

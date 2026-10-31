@@ -8115,6 +8115,10 @@ Validation:20 focused API/repository tests and4 real PostgreSQL numbering proofs
 
 New-contract additional hotel stays now select their own destination from the full paginated active-city catalogue, then show only that city's hotels. City changes clear incompatible hotel/name/room selections while retaining stay dates; mismatched hotel callbacks are rejected and duplicate hotels remain excluded. Primary hotel selection stays limited to the main contract destination even in multihotel mode; predefined composites are filtered by their authoritative first-member city.16 focused additional-stay/composite/reference-refresh tests pass. No API/schema/migration/dependency/runtime change. User authorizes develop merge after exact-head hosted checks.
 
+## CALL-CENTER-ANSWERED-ACCESS-1029 — PC-C — VERIFIED / SOURCE_RELEASED_ON_PUSH
+
+Implements the approved trusted-ANSWERED responsibility policy with ingress-time HR/IAM account snapshots, additive restrictive call/user/inbox FKs and earliest-answer idempotency. Shared extensions and transfers retain all answering accounts. Consistent contact/search/history/report/KPI/recording predicates exclude claims/manual ownership/outcomes as evidence. Exact unit IDs isolate companies; explicitly configured active executive/demo IDs receive only request-local Call Center scope, while Customers ports retain their native actor scope. Conservative admin-only historical projection is dry-run by default, bounded, audited and does not replay business/telephony side effects. Company production defaults strict; server-only LOCAL_TEST preserves existing localhost behavior.226 tests/30 files, API types/build, scoped lint/format and199 fresh disposable migrations pass. No operational deployment, account grant, HR mutation or UI change. See tasks/CALL-CENTER-ANSWERED-ACCESS-1029.md for rollout and history limitations.
+
 ## ZERO-HOTEL-TRANSFER-PURCHASE-1029 — PC-A
 
 Explicit zero hotel passenger nightly prices and transfer unit/base prices are accepted and stored as actual zero-cost purchases; blank values remain unpriced, negatives invalid, and nights/factors/passenger counts stay positive. Batch and single-service validation preserve positive insurance/flight costs. Zero-cost lines do not create an unnecessary positive-only Finance FX baseline. Forward migration20261029120000 relaxes existing hotel/service amount checks only for HOTEL/TRANSFER and still rejects nonfinite/negative values; no historical rows rewritten.24 focused API,13 Web and10 shared calculation tests pass (5 opt-in database tests skipped locally because Docker is unavailable). Hosted full quality/build/types and real PostgreSQL migration checks required before user-authorized develop merge. No live deployment requested.
@@ -8131,6 +8135,9 @@ Reservations correction adds count-driven independent entry rows and per-row pas
 
 Supplier form Ratio is a dimensionless decimal without a currency selector, currency directory lookup or PDF currency suffix. Historical ratio currencies remain readable and are removed when saving a new revision. Hotel P.P replaces P.P in input and both preview/PDF rendering. Explicit Save stores settings without sending/issuing; passenger ticket PDF downloads remain while the two browser print buttons are removed. No schema/migration/deployment. Focused validation and hosted gates precede authorized develop merge.
 
+## CALL-CENTER-LIVE-INGRESS-1029 — production accepted 2026-10-31
+
+PC-C awaited the colleague deployment lock, retained actual base358bf900, rebuilt the bounded API overlay and passed206 tests/25 files. Real Issabel AMI and Worker/API authentication succeeded. Owner's actual answered/ended call persisted with answer responsibility; three DONE receipts, no pending outbox. Web unchanged; Worker recreated with API to retain its shared network namespace. Dedicated VPN watchdog enabled. Audio transfer/CDR recovery remain disabled;114/203 lack account links. Evidence and future-release requirements: docs/tasks/CALL-CENTER-LIVE-INGRESS-1029.md.
 ## CONTRACT-CHILD-BANDS-1031 — PC-A
 
 Contract output services and prices use the explicitly booked/corrected child age band (2–6 or6–12), with DOB/check-in inference retained when no explicit band exists. New-contract booked child slots retain the band through people registration, form state, payload and unregistered review, including optional DOB; preview honors explicit ADT/CHD/INF instead of guessing adult for blank DOB. Reservations add-passenger exposes the same child-band choices; existing canonical amendment, capacity/CAS, monetary redistribution and Customer identity boundaries remain intact. Membership verification covers add/remove, zero price, duplicate/last-passenger safeguards and survivor totals; rooms must still match the resulting accommodation composition before saving. No migration, data rewrite or server deployment. Final local/hosted gates precede user-authorized develop merge.
@@ -8150,6 +8157,15 @@ Composite vouchers now render all itinerary hotels with independent hotel/date/r
 
 A separate accessible plus button beside the petty cash card opens its existing balance, bank, account, IBAN and card modal. Card activation uses the same shared handler and preserves fetched values/version; no nested buttons. Management permission, pending-load guard and one fund per branch remain unchanged. No API/schema/monetary behavior change. Tests/build/hosted gates precede authorized merge and local rollout.
 
+## CALL-CENTER-LIVE-POPUPS-1031 — production enabled 2026-10-31
+
+Owner-authorized operational inbound/outbound popups deployed over Web358bf900; current answered-access API preserved and native notifications enabled. Scoped lint,5 Web tests, typecheck and Web build pass. AMI/Worker readiness verified; both direction offers created for mapped404. Popup visibly opened on Dashboard; owner confirms Chrome display after same-user verification-browser lease was released. Incoming-only browser acceptance pending. No technical widget, new grants, schema or dependency changes. See docs/tasks/CALL-CENTER-LIVE-POPUPS-1031.md.
+
+CALL-CENTER-LIVE-POPUPS-1031 acceptance update: owner confirms both incoming and outgoing popups in Chrome. Follow-up answer-name refresh has2 regression tests plus lint/types/production build passing; deployment pending backup disk-space guard and explicit archival approval for three old unmounted releases. Existing popup release remains active. No claim that the answer-name follow-up is deployed.
+
+CALL-CENTER-LIVE-POPUPS-1031 update: approved old-release archive verified at F:/ERP-Backups/Rubi/Old-Releases-20261031; exact unmounted server directories removed after verification, existing backups/data preserved. Disk-space guard retained and fresh encrypted backup succeeds. Answer-recipient refresh rebuilt over actual Travis Web base and deployed Web-only;7 tests/lint/types/build pass,15 assets verified, API/Worker/DB unchanged. Browser confirmation of the updated name after answer remains pending.
+
+CALL-CENTER-LIVE-POPUPS-1031 FINAL ACCEPTANCE: owner confirms incoming404 title/name now displays correctly after the deployed refresh. Incoming/outgoing popups, Chrome lease handoff and answer-recipient refresh accepted. Source and deployment evidence retained in the task note; archive remains verified off-server.
 ## 2026-10-31 — PETTY-OPEN-FIX-1031
 
 The fund GET explicitly serializes JSON null for unconfigured branches rather than relying on Nest's empty null response. Card/plus remain activatable during loading/error; dialog shows error/retry and save stays disabled until authoritative data loads. Retry populates the form with returned values/version. No migration/data/permission change. Browser automation initialization failed (os error3); targeted controller/card tests and builds validate the repair before local rollout.
@@ -8167,3 +8183,10 @@ Employee create/edit personnel code is editable through existing validated form 
 ## 2026-10-31 — PETTY-NO-SAMPLES-1031
 
 Overview uses only server-returned request rows. Removed synthetic fallback on empty baseline and its redundant baseline request; empty/deleted/filtered results remain empty and pagination comes from the API. No operational data deleted or changed. Existing Samples fixtures stay isolated for tests/previews. Scoped lint, module tests, Web build and hosted checks gate authorized develop merge; no server deployment claimed.
+## CALL-CENTER-FILTERS-STATUS-1031 — PC-C
+Requested filter cleanup/canonical options and expert waiting-state vs unit-manager close policy implemented.19 Web tests +8 API input checks pass;19 PostgreSQL checks skipped; full build/types blocked by dependency environment. No migration/deploy. See tasks/CALL-CENTER-FILTERS-STATUS-1031.md.
+## CALL-POPUP-REFRESH-1031 — PC-C
+Fixed useRef-only popup presentation memory with actor-isolated tab-session receipts.8 targeted tests/scoped lint pass. No server resolution/queue mutation; new calls and manual reopen preserved. Full clean build and production release pending. See tasks/CALL-POPUP-REFRESH-1031.md.
+
+## CALL-CENTER-FINAL-MERGE-1031 — PC-C
+Five open Amin-tech11 PRs integrated, retaining their actual heads and complete history. Quality failures in1239/1241 were WORK_ASSIGNMENTS formatting only and repaired. Final combined CI gates before authorized develop merge. Local runtime preparation isolated on C drive; no production deployment.

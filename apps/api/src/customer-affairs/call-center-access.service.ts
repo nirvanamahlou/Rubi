@@ -12,6 +12,8 @@ import {
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
+import { IamCallCenterDirectory } from '../iam/iam-call-center-directory';
+import { answeredCallAccess } from '../iam/call-center-answer-policy';
 
 type Purpose = 'contacts' | 'reports' | 'workflow';
 @Injectable()
@@ -20,9 +22,13 @@ export class CallCenterAccessService {
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(IamWorkbenchRequestDirectory)
     private readonly directory: IamWorkbenchRequestDirectory,
+    @Inject(IamCallCenterDirectory)
+    private readonly accounts: IamCallCenterDirectory = new IamCallCenterDirectory(
+      db,
+    ),
   ) {}
   scoped(actor: AuthenticatedActor) {
-    return hasScopedCallCenterAccess(actor.permissions);
+    return answeredCallAccess() || hasScopedCallCenterAccess(actor.permissions);
   }
   authorize(actor: AuthenticatedActor, branchId: string) {
     if (
@@ -39,14 +45,17 @@ export class CallCenterAccessService {
     tx?: Prisma.TransactionClient,
   ): Promise<string[] | null> {
     this.authorize(actor, branchId);
+    if (await this.accounts.globalCallCenter(actor, tx)) return null;
     if (!this.scoped(actor)) return null; // Preserve pre-existing legacy grants; never infer from role label.
     await this.directory.callCenterOperator(actor, branchId, tx);
     const prefix =
       purpose === 'workflow' ? 'workflow.manage' : `${purpose}.read`;
     const permissions: readonly string[] = actor.permissions;
-    const own = permissions.includes(
-      `customer_affairs.call_center.${purpose === 'workflow' ? prefix : prefix + '.own'}`,
-    );
+    const own =
+      answeredCallAccess() ||
+      permissions.includes(
+        `customer_affairs.call_center.${purpose === 'workflow' ? prefix : prefix + '.own'}`,
+      );
     const team = permissions.includes(
       `customer_affairs.call_center.${prefix}.team`,
     );
@@ -67,7 +76,20 @@ export class CallCenterAccessService {
     tx?: Prisma.TransactionClient,
   ): Promise<Prisma.CallCenterContactWhereInput> {
     const users = await this.users(actor, branchId, purpose, tx);
-    return { branchId, ...(users ? { ownerUserId: { in: users } } : {}) };
+    return {
+      branchId,
+      ...(users
+        ? answeredCallAccess()
+          ? {
+              calls: {
+                some: {
+                  answerResponsibilities: { some: { userId: { in: users } } },
+                },
+              },
+            }
+          : { ownerUserId: { in: users } }
+        : {}),
+    };
   }
   async contact(
     actor: AuthenticatedActor,
@@ -93,6 +115,14 @@ export class CallCenterAccessService {
     tx?: Prisma.TransactionClient,
   ) {
     const users = await this.users(actor, branchId, purpose, tx);
+    if (answeredCallAccess())
+      return users === null
+        ? Prisma.sql`TRUE`
+        : users.length
+          ? Prisma.sql`EXISTS(SELECT 1 FROM call_center_answer_responsibilities ar
+          JOIN customer_affairs_calls answered ON answered.id=ar."callId"
+          WHERE answered.contact_id=c.id AND ar."userId" IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))}))`
+          : Prisma.sql`FALSE`;
     if (purpose === 'reports' && users !== null)
       return users.length
         ? Prisma.sql`(a.created_by_user_id IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))}) OR EXISTS(SELECT 1 FROM call_center_telephony_sessions s WHERE s."callId"=a.id AND s."claimUserId" IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))})))`

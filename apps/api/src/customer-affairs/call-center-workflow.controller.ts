@@ -1,3 +1,4 @@
+import { CallCenterActorGuard } from './call-center-actor.guard';
 import {
   Body,
   Controller,
@@ -28,7 +29,7 @@ import {
   CallCenterLinkDto,
 } from './call-center-workflow.dto';
 
-@UseGuards(AuthGuard, PermissionGuard)
+@UseGuards(AuthGuard, CallCenterActorGuard, PermissionGuard)
 @Controller('customer-affairs/call-center')
 export class CallCenterWorkflowController {
   constructor(

@@ -52,3 +52,7 @@ Acceptance: own/peer/foreign-unit/foreign-branch isolation; manager self plus te
 executive/demo complete scope; shared extension; two own extensions; transferred
 call retains both employees; ring-only denial; duplicate/out-of-order answers;
 historical repeatable backfill; all affected read endpoints; local test access.
+
+## Source implementation — 2026-10-29
+
+Implemented the approved policy as a source candidate in CALL-CENTER-ANSWERED-ACCESS-1029: additive answer-responsibility storage, ingress identity snapshots, consistent contact/history/report/recording predicates and configured executive/demo scope. Historical projection is conservative and repeatable; missing evidence is reported. Production activation/identity provisioning is still pending and no operational permissions/data were modified. See CALL-CENTER-ANSWERED-ACCESS-1029.md for current test and rollout evidence; the original device/connectivity paragraph above is historical context, not the current connectivity audit.
