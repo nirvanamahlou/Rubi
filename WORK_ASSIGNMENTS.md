@@ -10404,3 +10404,14 @@ CALL-CENTER-ALL-USER-POPUPS-1031 — DEPLOYED / SOURCE_READY_FOR_REVIEW: reserve
 COMPUTER_ID=PC-C. Owner confirms one employee uses two extensions. Reserve new scripts/hr/additional-extension.mjs and its isolated tests, plus own documentation. HR-owned bounded administrative command preserves primary extension, requires authenticated HR management scope, records audit, rejects ambiguous assignments and never backdates access. Existing published popup source frozen and retained; no existing HR source, IAM, schema, PBX routing or deployed images changed. Investigate second unknown recipient read-only; never invent an answer.
 
 CALL-RECIPIENT-ALIAS-1031 — COMPLETE: explicitly confirmed additional internal registered through bounded HR-owned administrative command, preserving original internal; audit and replay verified. Six targeted tests pass. Actual production call projection resolves full label. Exact PBX CEL/CDR proves second case never reached an internal; no recipient fabricated. No image/schema/IAM/PBX/runtime replacement. Evidence: docs/tasks/CALL-RECIPIENT-ALIAS-1031.md.
+## REQUIRED-CALL-OUTCOME-1031 — PC-C — ACTIVE
+
+COMPUTER_ID=PC-C. Reserve call-form.tsx/spec and CallCenterCallDto/HTTP boundary tests, plus own docs. Owner requests a required explicit result in call popups. Enforce existing outcome choices at business save only; provider event ingestion and incomplete historical calls stay valid. No schema/data/PBX/production mutation. Existing published form scopes released. Validate API/Web and activate localhost preview after preserving current runtime.
+
+REQUIRED-CALL-OUTCOME-1031 — VALIDATED:8 form and5 HTTP boundary checks pass. Scoped lint passes. Local preview uses exact four-file patch on existing runtime baseline; current develop's newer HR generated contracts require matching release dependencies. No migration/production change. Source reservation freezes on publication.
+
+## CALL-PHONE-LABEL-1031 — PC-C — ACTIVE
+
+COMPUTER_ID=PC-C. Owner follow-up authorizes the single CallForm phone label cleanup on this task branch; preserve required outcome changes. Remove only the optional suffix, with no phone validation/data/provider behavior changes. Existing publication reservation is reopened for this bounded same-owner follow-up.
+
+CALL-PHONE-LABEL-1031 — COMPLETE: single label cleanup, scoped lint passed; preview build prepared before activation. Previously blocked runtime restart remains pending owner stop. No phone/schema/data behavior changed. Reservation freezes on publication.
