@@ -354,11 +354,11 @@
 }
 
 .jahanBrand {
-  background: white;
-  border-radius: 2mm;
-  padding: 1mm;
+  background: transparent;
+  padding: 0;
 }
 .jahanLogo {
+  filter: brightness(0) invert(1);
   max-height: 23mm;
 }
 

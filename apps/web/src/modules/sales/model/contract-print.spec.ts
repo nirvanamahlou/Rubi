@@ -476,7 +476,12 @@ it('uses the Jahan Bastan issuer throughout the contract without Niyayesh contac
   output.company.latinName = 'JAHAN BASTAN';
   const html = contractPrintHtml(output, printReferences);
   expect(html).toContain('ارسال درخواست به آژانس جهان باستان');
-  expect(html).toContain('jahan-brand');
+  expect(html).toContain('header .jahan-brand{background:transparent');
+  expect(html).toContain(
+    'header .jahan-brand img{filter:brightness(0) invert(1)}',
+  );
+  expect(html).toContain('<strong>جهان باستان</strong>');
+  expect(html).not.toContain('header .jahan-brand{background:white');
   expect(html).not.toContain('نیایش');
   expect(html).not.toContain('Nystkt.ir');
   expect(html).not.toContain('niyayeshseir.com');
