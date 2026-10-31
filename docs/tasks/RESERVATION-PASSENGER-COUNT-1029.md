@@ -17,3 +17,7 @@ Existing clients omitting the command retain the existing per-person price valid
 ## Verification
 
 Focused component/model/API tests cover multirow count expansion, hotel-count expansion, pending-entry save blocking, targeted deletion and last-passenger protection, historical unpriced contracts, exact multi-currency totals, removal of stale pricing maps, canonical republishing/capacity callbacks, authorization and rejection of changed amounts. Final lint/types/build and hosted gates are recorded in the handoff below.
+
+## Handoff
+
+PR: https://github.com/nirvanamahlou/Rubi/pull/1215. Twenty focused Web and25 API amendment/repository checks pass, including newly registered-row visibility and targeted removal before membership save. Local API and Web production builds pass; Web includes TypeScript and66 generated pages. Shared Contracts/Database builds, standalone Web types and translation synchronization pass. Scoped lint covers changed production files and tests. Full independent API types and all hosted quality/test/build/PostgreSQL outcomes are verified against the final PR head before merge. The local standalone API typecheck initially exhausted the default heap and a subsequent run overlapped source integration/stale generated dependencies; neither is treated as a passing gate. No authenticated browser QA or production business writes were performed. The server was not redeployed by this source task.

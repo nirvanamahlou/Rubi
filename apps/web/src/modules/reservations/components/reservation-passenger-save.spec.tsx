@@ -1,7 +1,10 @@
 import { isValidElement, type ReactNode } from 'react';
 import type * as ReactModule from 'react';
 import { beforeEach, expect, it, vi } from 'vitest';
-import type { SalesContractDetail } from '@nora/contracts';
+import type {
+  SalesContractDetail,
+  SalesContractAmendmentV1,
+} from '@nora/contracts';
 import { canonicalTestTree } from '@/i18n/test-tree';
 import { ReservationSalesAmendment } from './reservation-sales-amendment';
 import { ReservationPassengers } from '../passenger-files/passengers';
@@ -349,7 +352,7 @@ it('removes the selected passenger row without requiring prices and prevents rem
 it('shows a newly registered customer in the table before final membership save and removes only the draft link', async () => {
   await ready();
   const props = parent().find(
-    (p) => p.contractId === 'contract' && p.onRegistered,
+    (p) => p.contractId === contract.id && p.onRegistered,
   )!;
   const values = {
     firstName: 'New',
@@ -369,8 +372,7 @@ it('shows a newly registered customer in the table before final membership save 
     person: { id: 'p3', displayName: 'New Traveler' },
     values,
   });
-  const draft =
-    props.draft as import('@nora/contracts').SalesContractAmendmentV1;
+  const draft = props.draft as SalesContractAmendmentV1;
   const { changeAmendmentMembership } = await import('./amendment-membership');
   (props.onChange as (value: unknown) => void)(
     changeAmendmentMembership(
