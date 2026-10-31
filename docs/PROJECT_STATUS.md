@@ -8067,3 +8067,5 @@ Removed the Jahan-specific white logo card from contract and shared reservation/
 ## 2026-10-31 — PETTY-PLUS-1031 — PC-B
 
 A separate accessible plus button beside the petty cash card opens its existing balance, bank, account, IBAN and card modal. Card activation uses the same shared handler and preserves fetched values/version; no nested buttons. Management permission, pending-load guard and one fund per branch remain unchanged. No API/schema/monetary behavior change. Tests/build/hosted gates precede authorized merge and local rollout.
+
+PETTY-PLUS-1031 release: PR1220 merged after8 successful hosted gates. Local Web/API builds and3 focused regressions passed. Web3100/API4192 restarted with source92a53d17b/build5m6_H3_L4d1v8QYZtjS-A, preserving existing database/files; no migration or grant. Runtime identity, login and health verified. No authenticated browser claim.
