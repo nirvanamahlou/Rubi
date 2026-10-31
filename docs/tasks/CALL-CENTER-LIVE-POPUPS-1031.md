@@ -42,9 +42,33 @@ Owner initially reported no popup in separate Chrome. The same-account in-app
 browser held the existing single-tab lease. Closing the in-app verification tab
 released it; the owner explicitly confirmed the popup then opened in Chrome.
 Both real incoming/outgoing offers were verified for the404 mapped account.
-Independent incoming popup acceptance after finishing/closing the current popup
-remains pending the owner's next test. Preserve the existing lease rather than
-duplicating operational popups across browsers or weakening claims.
+Owner then explicitly confirmed the incoming popup also opened in Chrome.
+Preserve the existing lease rather than duplicating operational popups across
+browsers or weakening claims.
+
+## Follow-up: confirmed answer identity refresh
+
+Owner observed a missing404 employee name in the incoming form. The popup loaded
+its call once at ringing; the provider-confirmed answer snapshot arrived afterward
+but the mounted form never reloaded it. Refresh the offered call on session-version
+changes, merging only operator/answerRecipient into the initial snapshot. Stable
+form identity preserves typed fields, and the initial business snapshot remains
+the conflict baseline instead of silently accepting concurrent edits. No employee
+is inferred merely from the offer before an actual answer.
+
+Two focused preservation/unknown-recipient tests, scoped lint, Web typecheck and
+production build passed. Candidate `rubi-production:call-popup-recipient-1031`, ID
+`sha256:08a81359cd5002d49177da49fac8c5555cac7ce80dc757d58fe321343446d736`.
+Deployment is pending: free disk fell below the existing backup helper's5GiB
+guard during another colleague's build. That deployment lock was awaited normally;
+the live popup/API images remain unchanged. Only identified failed own build
+artifacts and the downloadable APT archive cache were removed; no Docker prune,
+database, recording, release source or encrypted backup was deleted.
+
+Owner approval requested before archiving then removing three unmounted old
+release directories (`8a380e10`, `73e60ef1`, `c52e41b3`, approximately2.1GiB) to
+the approved off-server backup destination. Do not bypass the backup space guard
+or treat the answer-name follow-up as deployed before a successful release receipt.
 
 Future Web builds must preserve this source and popup build flag. Future API
 deployments must preserve private notification settings and answered-access code,

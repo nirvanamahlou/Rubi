@@ -8076,3 +8076,5 @@ A separate accessible plus button beside the petty cash card opens its existing 
 ## CALL-CENTER-LIVE-POPUPS-1031 — production enabled 2026-10-31
 
 Owner-authorized operational inbound/outbound popups deployed over Web358bf900; current answered-access API preserved and native notifications enabled. Scoped lint,5 Web tests, typecheck and Web build pass. AMI/Worker readiness verified; both direction offers created for mapped404. Popup visibly opened on Dashboard; owner confirms Chrome display after same-user verification-browser lease was released. Incoming-only browser acceptance pending. No technical widget, new grants, schema or dependency changes. See docs/tasks/CALL-CENTER-LIVE-POPUPS-1031.md.
+
+CALL-CENTER-LIVE-POPUPS-1031 acceptance update: owner confirms both incoming and outgoing popups in Chrome. Follow-up answer-name refresh has2 regression tests plus lint/types/production build passing; deployment pending backup disk-space guard and explicit archival approval for three old unmounted releases. Existing popup release remains active. No claim that the answer-name follow-up is deployed.

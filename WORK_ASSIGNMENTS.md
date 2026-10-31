@@ -10197,3 +10197,5 @@ PC-B; branch codex/pc-b-petty-plus-1031. Reserve petty-fund-card.tsx/spec and ow
 
 ## CALL-CENTER-LIVE-POPUPS-1031 — PC-C — IN_PROGRESS
 User explicitly authorizes global operational incoming/outgoing call popups in production. Reserve bounded TelephonyAttention listener direction option, AppShell mount option, focused tests and own docs; historical shell locks released. Preserve hidden technical widget, native offer/claim/branch authorization, existing form and provider capture. Build only these Web files over actual deployed358bf900; preserve current answered-access API overlay and Worker configuration. Enable provider notifications only after tested Web build. No schema/dependency or new grants.
+
+CALL-CENTER-LIVE-POPUPS-1031 scope extension: owner confirms both popup directions in Chrome and reports missing404 name in incoming Connected-to field. Reserve OperationalCallPopup technical-recipient refresh and focused regression only. Preserve unsaved business inputs, initial conflict baseline, stable form identity and provider-confirmed answer responsibility; do not infer an answered employee from the popup recipient.
