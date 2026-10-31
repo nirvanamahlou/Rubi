@@ -229,6 +229,10 @@ describe('compact sales contract form', () => {
     expect(html).not.toContain('از 5');
     expect(html).not.toContain('جزئیات سفر');
     expect(html).toContain('مسیر سفر');
+    expect(html).toContain('ویزا');
+    expect(html).toContain('گشت شهری');
+    expect(html).toContain('راهنما');
+    expect(html).not.toContain('CIP');
     expect(html).not.toContain('تعداد مسافران');
     expect(html).not.toContain('type="number"');
     expect(html).toContain('aria-label="مبدأ سفر"');
