@@ -32,6 +32,31 @@ const row = {
 };
 
 describe('MasterDataService', () => {
+  it.each(['rail-companies', 'bus-companies'] as const)(
+    'persists %s without inventing an organization',
+    async (resource) => {
+      const countryId = '55555555-5555-4555-8555-555555555555';
+      const repository = {
+        codeExists: vi.fn().mockResolvedValue(false),
+        fieldExists: vi.fn().mockResolvedValue(false),
+        find: vi.fn().mockResolvedValue({ id: countryId, isActive: true }),
+        create: vi
+          .fn()
+          .mockImplementation(async (_resource, data) => ({ ...row, ...data })),
+      } as unknown as MasterDataRepository;
+      await new MasterDataService(repository).create(
+        resource,
+        { name: 'Synthetic operator', countryId },
+        actor,
+      );
+      expect(repository.create).toHaveBeenCalledWith(
+        resource,
+        expect.not.objectContaining({ organizationId: expect.any(String) }),
+        actor.userId,
+        actor.branchIds[0],
+      );
+    },
+  );
   it.each([
     '+03:30',
     '+05:45',

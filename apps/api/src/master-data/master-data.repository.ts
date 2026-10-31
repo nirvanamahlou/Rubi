@@ -1239,7 +1239,16 @@ export class MasterDataRepository {
         : query.sortBy === 'code'
           ? codeFields[resource]
           : query.sortBy;
-    const orderBy = { [sortField]: query.sortDirection };
+    // Every reference resource except rate history has a persisted displayOrder.
+    // Apply it before pagination; sorting only the loaded page loses placement.
+    const orderBy =
+      query.sortBy === 'name' && resource !== 'exchange-rates'
+        ? [
+            { displayOrder: 'asc' },
+            { [sortField]: query.sortDirection },
+            { id: 'asc' },
+          ]
+        : { [sortField]: query.sortDirection };
     const args: Record<string, unknown> = {
       where,
       orderBy,

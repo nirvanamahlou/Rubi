@@ -158,7 +158,6 @@ describe('Master Data visual polish contract', () => {
     for (const label of [
       'کل ارزها',
       'ارز فعال',
-      'ارز پایه سازمان',
       'آخرین همگام‌سازی',
       'نرخ جاری',
       'تغییر نسبت به نرخ قبل',

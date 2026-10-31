@@ -15,7 +15,6 @@ import type {
 } from '@nora/contracts';
 import {
   ArrowRight,
-  Building2,
   ChartNoAxesCombined,
   CheckCircle2,
   CircleDollarSign,
@@ -621,13 +620,6 @@ export function MasterDataFinanceWorkspace() {
             tone: 'emerald',
           },
           {
-            label: 'ارز پایه سازمان',
-            value: '—',
-            icon: Building2,
-            tone: 'violet',
-            hint: 'پس از اتصال قرارداد Finance',
-          },
-          {
             label: 'آخرین همگام‌سازی',
             value: latestReferenceUpdatedAt
               ? faDate(latestReferenceUpdatedAt)
@@ -834,7 +826,7 @@ export function MasterDataFinanceWorkspace() {
 
       <Card className="overflow-x-auto p-2">
         <nav
-          aria-label="زیرمجموعه‌های مالی و پولی"
+          aria-label="زیرمجموعه‌های ارز و بانک"
           className="flex min-w-max gap-1 rounded-xl bg-primary/5 p-1"
         >
           {visibleTabs.map((item) => {
@@ -1341,7 +1333,6 @@ export function MasterDataFinanceWorkspace() {
                   'وضعیت ارز',
                   selectedCurrency.status === 'active' ? 'فعال' : 'غیرفعال',
                 ],
-                ['ارز پایه', 'نامشخص — در انتظار اتصال مالی'],
               ].map(([label, value]) => (
                 <MasterDataDetailItem
                   key={label}
