@@ -73,13 +73,21 @@ export function transitionTravelWorkflow(
       voucherIssued: false,
       supplierFormSettings: entry?.settings,
       sentSupplierFormSettings: entry?.sentSettings,
+      sentSupplierFormVersion: entry?.sentVersion,
     } as TravelWorkflowStateV1;
     if (!entry && key === hotelKeys[0]) {
       if (current.supplierFormSettings)
         scoped.supplierFormSettings = current.supplierFormSettings;
       if (current.sentSupplierFormSettings)
         scoped.sentSupplierFormSettings = current.sentSupplierFormSettings;
+      if (current.sentSupplierFormVersion !== undefined)
+        scoped.sentSupplierFormVersion = current.sentSupplierFormVersion;
     }
+    if (!scoped.supplierFormSettings) delete scoped.supplierFormSettings;
+    if (!scoped.sentSupplierFormSettings)
+      delete scoped.sentSupplierFormSettings;
+    if (scoped.sentSupplierFormVersion === undefined)
+      delete scoped.sentSupplierFormVersion;
     const { hotelStayKey: _key, ...action } = command;
     void _key;
     const result = transitionTravelWorkflow(
@@ -98,17 +106,29 @@ export function transitionTravelWorkflow(
         : {}),
       ...(key === hotelKeys[0]
         ? {
-            supplierFormSettings: result.supplierFormSettings,
-            sentSupplierFormSettings: result.sentSupplierFormSettings,
-            sentSupplierFormVersion: result.sentSupplierFormVersion,
+            ...(result.supplierFormSettings
+              ? { supplierFormSettings: result.supplierFormSettings }
+              : {}),
+            ...(result.sentSupplierFormSettings
+              ? { sentSupplierFormSettings: result.sentSupplierFormSettings }
+              : {}),
+            ...(result.sentSupplierFormVersion !== undefined
+              ? { sentSupplierFormVersion: result.sentSupplierFormVersion }
+              : {}),
           }
         : {}),
       hotelSupplierForms: {
         ...current.hotelSupplierForms,
         [key]: {
-          settings: result.supplierFormSettings,
-          sentSettings: result.sentSupplierFormSettings,
-          sentVersion: result.sentSupplierFormVersion,
+          ...(result.supplierFormSettings
+            ? { settings: result.supplierFormSettings }
+            : {}),
+          ...(result.sentSupplierFormSettings
+            ? { sentSettings: result.sentSupplierFormSettings }
+            : {}),
+          ...(result.sentSupplierFormVersion !== undefined
+            ? { sentVersion: result.sentSupplierFormVersion }
+            : {}),
           status:
             result.supplierStatus === 'REQUESTED'
               ? ('REQUESTED' as const)

@@ -80,6 +80,8 @@ it('saves/sends independent immutable hotel forms while preserving other supplie
   expect(state.hotelSupplierForms!.extra!.settings!.brokerId).toBe(
     second.brokerId,
   );
+  expect(state.hotelSupplierForms!.extra).not.toHaveProperty('sentVersion');
+  expect(state.hotelSupplierForms!.extra).not.toHaveProperty('sentSettings');
   expect(state.voucherSettings).toBeUndefined();
   expect(state.voucherIssued).toBe(false);
   expect(first.hotelRoomPrices!.rooms[0]!.baseAmount).toBe('120');

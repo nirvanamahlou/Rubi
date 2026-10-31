@@ -496,7 +496,9 @@ export class ReservationServicePurchaseService {
     const expectedKeys = [hotelKey, ...transferKeys].filter(
       (value): value is string => Boolean(value),
     );
-    const rows = input.purchases.map((purchase) => {
+    const rows = (
+      input.purchases as ReservationPurchaseBatchInputV1['purchases']
+    ).map((purchase) => {
       const full = {
         ...purchase,
         version: 1 as const,

@@ -43,7 +43,9 @@ const snapshot = {
   },
 } as unknown as SalesReservationRequestV1;
 it('projects each canonical stay and its own dates/rooms without mutating the source', () => {
-  const original = structuredClone(snapshot),
+  const original = JSON.parse(
+      JSON.stringify(snapshot),
+    ) as SalesReservationRequestV1,
     stays = reservationHotelStays(snapshot);
   const scoped = scopeReservationHotel(snapshot, stays[1]!.key);
   expect(scoped.hotelSelection).toMatchObject({
