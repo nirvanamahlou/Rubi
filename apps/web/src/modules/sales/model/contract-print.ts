@@ -303,6 +303,14 @@ export function contractPrintHtml(
   const hotelPrices = servicePriceFallback
     ? readPassengerHotelPrices(c.servicesDetail, c.passengersDetail)
     : undefined;
+  // Owner-approved display allocation for historical whole-contract totals.
+  // Explicit passenger prices always retain their saved allocation.
+  const firstPassengerTotals =
+    contractPackagePricing &&
+    !totalPrices &&
+    c.passengersDetail.every((p) => !p.agreedPrices?.length)
+      ? c.balances.map(({ currencyCode, amount }) => ({ currencyCode, amount }))
+      : null;
   const passengerAgeLabel = (p: (typeof c.passengersDetail)[number]) => {
     if (p.ageCategory !== 'CHD')
       return p.ageCategory === 'INF' ? 'نوزاد' : 'بزرگسال';
@@ -340,6 +348,10 @@ export function contractPrintHtml(
           : [
               ...(flightPrices?.[p.customerId] ?? []),
               ...(hotelPrices?.[p.customerId] ?? []),
+              ...(firstPassengerTotals?.map((price) => ({
+                ...price,
+                amount: i === 0 ? price.amount : '0',
+              })) ?? []),
             ]);
       const renderPrices = (foreign: boolean) =>
         prices
