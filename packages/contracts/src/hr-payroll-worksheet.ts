@@ -16,9 +16,20 @@ export const PAYROLL_INPUTS = [
   'benefits',
   'account',
   'bank',
+  'children',
+  'childRate',
+  'overtimeHourly',
+  'shortageHourly',
 ] as const;
 export type PayrollInput = (typeof PAYROLL_INPUTS)[number];
-export type PayrollRow = Record<PayrollInput, string> & { id: string };
+export type PayrollRow = Record<PayrollInput, string> & {
+  id: string;
+  employeeId?: string;
+  children?: string;
+  childRate?: string;
+  overtimeHourly?: string;
+  shortageHourly?: string;
+};
 export const PAYROLL_COLUMNS = [
   ['start', 'شروع کار'],
   ['name', 'نام و نام خانوادگی'],
@@ -31,6 +42,11 @@ export const PAYROLL_COLUMNS = [
   ['housing', 'حق مسکن'],
   ['food', 'بن کارگری'],
   ['married', 'حق تاهل'],
+  ['children', 'تعداد فرزند'],
+  ['childRate', 'حق اولاد هر فرزند'],
+  ['childPay', 'حق اولاد'],
+  ['overtimeHourly', 'نرخ هر ساعت اضافه کار'],
+  ['shortageHourly', 'نرخ هر ساعت کسر کار'],
   ['subject', 'مزایا ماهانه مشمول'],
   ['employeeInsurance', 'حق بیمه سهم کارمند'],
   ['unemployment', 'حق بیمه بیکاری'],
@@ -114,6 +130,7 @@ export const payrollTextInput = (key: string) =>
   ['start', 'name', 'ot', 'short', 'account', 'bank'].includes(key);
 export function payrollCell(key: PayrollInput, input: string): string {
   const value = payrollDigits(input);
+  if (!value && ['overtimeHourly', 'shortageHourly'].includes(key)) return '';
   if (value.length > 160 || value.includes('\0'))
     throw new Error('مقدار سلول معتبر نیست.');
   if (key === 'ot' || key === 'short') {
@@ -128,6 +145,8 @@ export function payrollCell(key: PayrollInput, input: string): string {
       throw new Error('تاریخ را به شکل 1405/07/01 وارد کنید.');
   } else if (!payrollTextInput(key)) {
     if (!value) return '0';
+    if (key === 'children' && Number(value) > 100)
+      throw new Error('تعداد فرزند معتبر نیست.');
     if (!/^\d{1,12}$/.test(value) || (key === 'days' && Number(value) > 31))
       throw new Error('عدد واردشده معتبر نیست.');
     return BigInt(value).toString();
@@ -139,7 +158,13 @@ export function emptyPayrollRow(id: string): PayrollRow {
     ['id', id],
     ...PAYROLL_INPUTS.map((k) => [
       k,
-      payrollTextInput(k) ? (['ot', 'short'].includes(k) ? '0:00' : '') : '0',
+      ['overtimeHourly', 'shortageHourly'].includes(k)
+        ? ''
+        : payrollTextInput(k)
+          ? ['ot', 'short'].includes(k)
+            ? '0:00'
+            : ''
+          : '0',
     ]),
   ]) as PayrollRow;
 }
@@ -161,20 +186,23 @@ export function calculatePayroll(
   const employeeInsurance = insurance(rates.employee),
     unemployment = insurance(rates.unemployment),
     employerInsurance = insurance(rates.employer);
-  const legalNet = monthly + subject - employeeInsurance - n('tax');
-  const otPay = rounded(
-    n('daily') * minutes('ot') * BigInt(rates.overtime),
-    BigInt(rates.dailyMinutes) * 10000n,
-  );
-  const shortPay = rounded(
-    n('daily') * minutes('short'),
-    BigInt(rates.dailyMinutes),
-  );
+  const childPay = n('children') * n('childRate');
+  const legalNet = monthly + subject + childPay - employeeInsurance - n('tax');
+  const otPay = row.overtimeHourly
+    ? rounded(n('overtimeHourly') * minutes('ot'), 60n)
+    : rounded(
+        n('daily') * minutes('ot') * BigInt(rates.overtime),
+        BigInt(rates.dailyMinutes) * 10000n,
+      );
+  const shortPay = row.shortageHourly
+    ? rounded(n('shortageHourly') * minutes('short'), 60n)
+    : rounded(n('daily') * minutes('short'), BigInt(rates.dailyMinutes));
   const bonus =
     n('agreed') - legalNet - n('advance') + n('benefits') + otPay - shortPay;
   const net = legalNet + n('advance') + bonus;
   return {
     ...row,
+    childPay: childPay.toString(),
     monthly: monthly.toString(),
     subject: subject.toString(),
     employeeInsurance: employeeInsurance.toString(),
@@ -192,4 +220,23 @@ export function calculatePayroll(
     net: net.toString(),
     remaining: (net - n('advance')).toString(),
   };
+}
+
+export const EMPLOYMENT_DEFAULTS = {
+  married: '5000000',
+  childRate: '16625550',
+  housing: '30000000',
+  food: '22000000',
+  overtimeHourly: '',
+  shortageHourly: '',
+  days: '',
+};
+export const EMPLOYEE_PAY_DEFAULTS = {
+  daily: '0',
+  seniority: '0',
+  children: '0',
+};
+export function payrollMonthDays(period: string) {
+  const month = Number(period.split(/[-/]/)[1]);
+  return String(month <= 6 ? 31 : month <= 11 ? 30 : 29);
 }

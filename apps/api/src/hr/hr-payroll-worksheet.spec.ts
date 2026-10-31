@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 import {
   PAYROLL_DEFAULT_RATES,
+  EMPLOYMENT_DEFAULTS,
+  payrollMonthDays,
   PAYROLL_COLUMNS,
   calculatePayroll,
   emptyPayrollRow,
@@ -92,6 +94,15 @@ function fixture() {
       stored = { ...data, version: 1, deletedAt: null, updatedAt: new Date() };
       return stored;
     }),
+    update: vi.fn(async ({ data }) => {
+      assertBounded(data.data);
+      stored = {
+        ...stored,
+        data: data.data,
+        version: Number(stored!.version) + 1,
+      };
+      return stored;
+    }),
     updateMany: vi.fn(async ({ where, data }) => {
       if (!matches(where)) return { count: 0 };
       if (data.data) assertBounded(data.data);
@@ -162,7 +173,7 @@ describe('payroll worksheet arithmetic and validation', () => {
     ).toBe('DRAFT');
   });
   it('preserves all 28 Excel columns including sequence, and exact formulas', () => {
-    expect(PAYROLL_COLUMNS).toHaveLength(27);
+    expect(PAYROLL_COLUMNS).toHaveLength(32);
     const row = sample(),
       result = calculatePayroll(row, rates);
     expect(result).toMatchObject({
@@ -180,6 +191,100 @@ describe('payroll worksheet arithmetic and validation', () => {
       remaining: '171706250',
     });
     expect(result.account).toBe('SYNTHETIC-ACCOUNT');
+  });
+  it('applies requested IRR defaults, Persian month day counts, children and explicit hourly rates', () => {
+    expect(EMPLOYMENT_DEFAULTS).toMatchObject({
+      married: '5000000',
+      housing: '30000000',
+      food: '22000000',
+      childRate: '16625550',
+    });
+    expect(
+      Array.from({ length: 12 }, (_, i) =>
+        payrollMonthDays(`1405-${String(i + 1).padStart(2, '0')}`),
+      ),
+    ).toEqual([
+      '31',
+      '31',
+      '31',
+      '31',
+      '31',
+      '31',
+      '30',
+      '30',
+      '30',
+      '30',
+      '30',
+      '29',
+    ]);
+    const row = {
+      ...sample(),
+      ...EMPLOYMENT_DEFAULTS,
+      days: '31',
+      children: '2',
+      overtimeHourly: '1000000',
+      shortageHourly: '600000',
+      ot: '2:30',
+      short: '0:15',
+    };
+    const result = calculatePayroll(row, rates);
+    expect(result.childPay).toBe('33251100');
+    expect(result.otPay).toBe('2500000');
+    expect(result.shortPay).toBe('150000');
+    const old = { ...sample() } as Record<string, unknown>;
+    for (const key of [
+      'children',
+      'childRate',
+      'overtimeHourly',
+      'shortageHourly',
+    ])
+      delete old[key];
+    expect(
+      validatePayrollSnapshot({ rows: [old], rates }).rows[0]!.childRate,
+    ).toBe('0');
+  });
+  it('guards configuration scope, sensitivity and write permission', async () => {
+    const f = fixture();
+    await expect(
+      f.service.configuration(otherBranch, 'defaults', actor),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      f.service.configuration(branchId, 'defaults', {
+        ...actor,
+        permissions: ['hr.read'],
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      f.service.configuration(
+        branchId,
+        'defaults',
+        { ...actor, permissions: ['hr.read', 'hr.sensitive'] },
+        { version: 0, values: EMPLOYMENT_DEFAULTS },
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(await f.service.configuration(branchId, 'defaults', actor)).toEqual({
+      version: 0,
+      values: EMPLOYMENT_DEFAULTS,
+    });
+    await expect(
+      f.service.configuration(branchId, 'defaults', actor, {
+        version: 5,
+        values: EMPLOYMENT_DEFAULTS,
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    const saved = await f.service.configuration(branchId, 'defaults', actor, {
+      version: 0,
+      values: EMPLOYMENT_DEFAULTS,
+    });
+    expect(saved.values.housing).toBe('30000000');
+    expect(saved.values.days).toBe('');
+    const edited = await f.service.configuration(branchId, 'defaults', actor, {
+      version: 1,
+      values: { ...EMPLOYMENT_DEFAULTS, housing: '35000000' },
+    });
+    expect(edited.version).toBe(2);
+    expect(edited.values.housing).toBe('35000000');
+    expect(JSON.stringify(f.row().data)).not.toContain('30000000');
   });
   it('retains exact integer totals beyond binary floating-point precision', () => {
     const row = {

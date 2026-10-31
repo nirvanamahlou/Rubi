@@ -10,6 +10,8 @@ import {
 import { Prisma } from '@nora/database';
 import {
   PAYROLL_INPUTS,
+  EMPLOYMENT_DEFAULTS,
+  EMPLOYEE_PAY_DEFAULTS,
   PAYROLL_DEFAULT_RATES,
   payrollCell,
   calculatePayroll,
@@ -52,15 +54,26 @@ export function validatePayrollSnapshot(input: unknown): PayrollSnapshot {
     throw new BadRequestException('حداکثر ۵۰۰ ردیف مجاز است.');
   const ids = new Set<string>();
   const rows = data.rows.map((value) => {
-    const row = object(value, ['id', ...PAYROLL_INPUTS]);
+    const row = object(value, ['id', 'employeeId', ...PAYROLL_INPUTS]);
     const id = uuid(row.id);
     if (ids.has(id)) throw new BadRequestException('شناسه ردیف تکراری است.');
     ids.add(id);
     try {
       return {
         id,
+        ...(row.employeeId ? { employeeId: uuid(row.employeeId) } : {}),
         ...Object.fromEntries(
           PAYROLL_INPUTS.map((key) => {
+            if (
+              row[key] === undefined &&
+              [
+                'children',
+                'childRate',
+                'overtimeHourly',
+                'shortageHourly',
+              ].includes(key)
+            )
+              return [key, key.endsWith('Hourly') ? '' : '0'];
             if (typeof row[key] !== 'string') throw new Error();
             return [key, payrollCell(key, row[key])];
           }),
@@ -187,6 +200,97 @@ export class HrPayrollWorksheetService {
       },
     });
   }
+  async configuration(
+    branchInput: string,
+    employeeInput: string,
+    actor: AuthenticatedActor,
+    body?: unknown,
+  ) {
+    this.guard(actor, body !== undefined);
+    const branchId = uuid(branchInput);
+    if (!actor.branchIds.includes(branchId)) throw new ForbiddenException();
+    const employeeId =
+      employeeInput === 'defaults' ? null : uuid(employeeInput);
+    if (
+      employeeId &&
+      !(await this.database.client.hrEmployee.findFirst({
+        where: { id: employeeId, branchId, deletedAt: null },
+      }))
+    )
+      throw new NotFoundException();
+    const defaults = employeeId ? EMPLOYEE_PAY_DEFAULTS : EMPLOYMENT_DEFAULTS;
+    const code = `PAYCFG-${employeeId ?? branchId}`;
+    return this.database.client.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${code}, 0))::text`;
+      let record = await tx.hrRecord.findUnique({ where: { code } });
+      if (
+        record &&
+        (record.branchId !== branchId ||
+          record.section !== SECTION ||
+          record.tab !== 'configuration' ||
+          record.deletedAt)
+      )
+        throw new ConflictException();
+      if (body !== undefined) {
+        const input = object(body, ['version', 'values']);
+        if (input.version !== (record?.version ?? 0))
+          throw new ConflictException(
+            'اطلاعات تغییر کرده است؛ دوباره بارگذاری کنید.',
+          );
+        const values = object(input.values, Object.keys(defaults));
+        const clean = Object.fromEntries(
+          Object.keys(defaults).map((key) => {
+            if (typeof values[key] !== 'string')
+              throw new BadRequestException();
+            const value =
+              key === 'days' && values[key] === ''
+                ? ''
+                : payrollCell(
+                    key as (typeof PAYROLL_INPUTS)[number],
+                    values[key],
+                  );
+            if (key === 'children' && Number(value) > 100)
+              throw new BadRequestException();
+            return [key, value];
+          }),
+        );
+        const id = record?.id ?? randomUUID();
+        const data = protectHrValues(
+          [JSON.stringify(clean)],
+          context({ id, branchId }),
+        );
+        record = record
+          ? await tx.hrRecord.update({
+              where: { id },
+              data: { data, version: { increment: 1 } },
+            })
+          : await tx.hrRecord.create({
+              data: {
+                id,
+                code,
+                branchId,
+                employeeId,
+                section: SECTION,
+                tab: 'configuration',
+                values: [],
+                data,
+              },
+            });
+        await this.audit(tx, actor, record, 'payroll.configuration.update');
+      }
+      if (record)
+        await this.audit(tx, actor, record, 'payroll.configuration.read');
+      return {
+        version: record?.version ?? 0,
+        values: record
+          ? {
+              ...defaults,
+              ...JSON.parse(revealHrValues(record.data, context(record))[0]!),
+            }
+          : defaults,
+      };
+    });
+  }
   async list(actor: AuthenticatedActor) {
     this.guard(actor);
     const rows = await this.database.client.hrRecord.findMany({
@@ -302,6 +406,19 @@ export class HrPayrollWorksheetService {
         where: { ...this.scope(actor), id: uuid(id) },
       });
       if (!row) throw new NotFoundException('حقوق پیدا نشد.');
+      for (const entry of snapshot.rows) {
+        if (
+          entry.employeeId &&
+          !(await tx.hrEmployee.findFirst({
+            where: {
+              id: entry.employeeId,
+              branchId: row.branchId,
+              deletedAt: null,
+            },
+          }))
+        )
+          throw new BadRequestException('کارمند معتبر نیست.');
+      }
       // A lost response may be retried with the immediately preceding version.
       // Return only an identical committed snapshot; never overwrite a newer edit.
       if (
@@ -354,6 +471,7 @@ export class HrPayrollWorksheetService {
               code: `PWR-${row.id}-${String(index).padStart(3, '0')}`,
               branchId: row.branchId,
               parentId: row.id,
+              employeeId: entry.employeeId ?? null,
               section: SECTION,
               tab: 'row',
               values: [],

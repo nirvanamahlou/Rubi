@@ -21,6 +21,23 @@ export class HrPayrollWorksheetController {
     @Inject(HrPayrollWorksheetService)
     private readonly service: HrPayrollWorksheetService,
   ) {}
+  @Get('configuration/:branchId/:employeeId')
+  @Header('Cache-Control', 'private, no-store')
+  configuration(
+    @Param('branchId') branch: string,
+    @Param('employeeId') employee: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.configuration(branch, employee, req.actor);
+  }
+  @Post('configuration/:branchId/:employeeId') saveConfiguration(
+    @Param('branchId') branch: string,
+    @Param('employeeId') employee: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.configuration(branch, employee, req.actor, body);
+  }
   @Get() @Header('Cache-Control', 'private, no-store') list(
     @Req() req: AuthenticatedRequest,
   ) {

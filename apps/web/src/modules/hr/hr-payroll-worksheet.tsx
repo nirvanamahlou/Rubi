@@ -5,6 +5,8 @@ import {
   PAYROLL_COLUMNS,
   calculatePayroll,
   emptyPayrollRow,
+  EMPLOYMENT_DEFAULTS,
+  payrollMonthDays,
   isPayrollInput,
   payrollCell,
   payrollTextInput,
@@ -36,6 +38,11 @@ import {
   type PayrollListFilters,
 } from './hr-payroll-list';
 
+import {
+  HrPayrollConfiguration,
+  payrollConfiguration,
+  type PayConfiguration,
+} from './hr-payroll-configuration';
 const api = '/payroll-worksheets';
 const number = (v: string | bigint | number) =>
   BigInt(v).toLocaleString('fa-IR');
@@ -119,6 +126,8 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
   const [listFilters, setListFilters] = useState<PayrollListFilters>({
     ...defaultPayrollListFilters,
   });
+  const [orderOpen, setOrderOpen] = useState(false);
+  const [orderBranch, setOrderBranch] = useState(data.branches[0]?.id ?? '');
   const [ratesOpen, setRatesOpen] = useState(false);
   const [removeId, setRemoveId] = useState<string | null>(null);
   const lock = useRef(false);
@@ -233,9 +242,26 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
       setBusy(false);
     }
   }
-  function addRow() {
+  async function addRow() {
     if (!editable || !draft || draft.rows.length >= 500) return;
-    const row = emptyPayrollRow(crypto.randomUUID());
+    setBusy(true);
+    let defaults = { ...EMPLOYMENT_DEFAULTS };
+    try {
+      defaults = (
+        await hrRequest<PayConfiguration>(payrollConfiguration(sheet!.branchId))
+      ).values as typeof defaults;
+    } catch {
+      setError('دریافت حکم کارگزینی انجام نشد.');
+      setBusy(false);
+      return;
+    }
+    setBusy(false);
+    const row = {
+      ...emptyPayrollRow(crypto.randomUUID()),
+      ...defaults,
+      days: defaults.days || payrollMonthDays(sheet!.period),
+    };
+
     setQuery('');
     setDraft((previous) =>
       previous ? { ...previous, rows: [...previous.rows, row] } : previous,
@@ -249,6 +275,61 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
           ?.focus(),
       0,
     );
+  }
+  async function selectEmployee(rowId: string, employeeId: string) {
+    const employee = (data.employees ?? []).find(
+      (e) => e.id === employeeId && e.branchId === sheet?.branchId,
+    );
+    if (!employee || !editable) return;
+    setBusy(true);
+    try {
+      const [defaults, pay] = await Promise.all([
+        hrRequest<PayConfiguration>(payrollConfiguration(employee.branchId)),
+        hrRequest<PayConfiguration>(
+          payrollConfiguration(employee.branchId, employeeId),
+        ),
+      ]);
+      setDraft((previous) =>
+        previous
+          ? {
+              ...previous,
+              rows: previous.rows.map((row) =>
+                row.id === rowId
+                  ? {
+                      ...row,
+                      ...defaults.values,
+                      ...pay.values,
+                      overtimeHourly:
+                        defaults.values.overtimeHourly ||
+                        (
+                          (BigInt(pay.values.daily || '0') *
+                            BigInt(previous.rates.overtime) *
+                            60n +
+                            BigInt(previous.rates.dailyMinutes) * 5000n) /
+                          (BigInt(previous.rates.dailyMinutes) * 10000n)
+                        ).toString(),
+                      shortageHourly:
+                        defaults.values.shortageHourly ||
+                        (
+                          (BigInt(pay.values.daily || '0') * 60n +
+                            BigInt(previous.rates.dailyMinutes) / 2n) /
+                          BigInt(previous.rates.dailyMinutes)
+                        ).toString(),
+                      employeeId,
+                      name: employee.name,
+                      days:
+                        defaults.values.days || payrollMonthDays(sheet!.period),
+                    }
+                  : row,
+              ),
+            }
+          : previous,
+      );
+    } catch {
+      setError('دریافت اطلاعات حقوق کارکن انجام نشد.');
+    } finally {
+      setBusy(false);
+    }
   }
   function update(id: string, field: PayrollColumn, value: string) {
     if (!editable || !isPayrollInput(field)) return;
@@ -380,6 +461,36 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
     );
   return (
     <div className={styles.workspace}>
+      <Dialog open={orderOpen} onOpenChange={setOrderOpen}>
+        <DialogContent
+          style={{
+            maxWidth: 920,
+            width: 'calc(100vw - 32px)',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+          }}
+        >
+          <DialogTitle>حکم کارگزینی</DialogTitle>
+          <NativeSearchSelect
+            aria-label="شعبه حکم کارگزینی"
+            value={orderBranch}
+            onChange={(e) => setOrderBranch(e.target.value)}
+          >
+            {data.branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </NativeSearchSelect>
+          {orderBranch && (
+            <HrPayrollConfiguration
+              key={orderBranch}
+              branchId={orderBranch}
+              writable={writable}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
       {sheet ? (
         <div className={styles.actions}>
           <HrButton
@@ -527,7 +638,27 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
                         <td>{number(index + 1)}</td>
                         {PAYROLL_COLUMNS.map(([key, label]) => (
                           <td key={key}>
-                            {isPayrollInput(key) ? (
+                            {key === 'name' ? (
+                              <NativeSearchSelect
+                                aria-label={`کارکن، ردیف ${index + 1}`}
+                                value={row.employeeId ?? ''}
+                                disabled={!editable}
+                                onChange={(e) =>
+                                  void selectEmployee(row.id, e.target.value)
+                                }
+                              >
+                                <option value="">
+                                  {row.name || 'انتخاب کارکن'}
+                                </option>
+                                {(data.employees ?? [])
+                                  .filter((e) => e.branchId === sheet?.branchId)
+                                  .map((e) => (
+                                    <option key={e.id} value={e.id}>
+                                      {e.name} — {e.personnelCode}
+                                    </option>
+                                  ))}
+                              </NativeSearchSelect>
+                            ) : isPayrollInput(key) ? (
                               <Cell
                                 id={row.id}
                                 field={key}
@@ -607,7 +738,17 @@ export function HrPayrollWorksheet({ data }: { data: HrBootstrapDto }) {
           </HrPanel>
         </>
       ) : (
-        <HrPanel title="تنظیمات حقوق" actions={createButton}>
+        <HrPanel
+          title="تنظیمات حقوق"
+          actions={
+            <div style={{ display: 'flex', gap: 8 }}>
+              {createButton}
+              <HrButton disabled={!writable} onClick={() => setOrderOpen(true)}>
+                حکم کارگزینی
+              </HrButton>
+            </div>
+          }
+        >
           <div
             className={styles.listFilters}
             role="search"

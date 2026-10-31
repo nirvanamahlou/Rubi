@@ -1,4 +1,5 @@
 'use client';
+import { HrPayrollConfiguration } from './hr-payroll-configuration';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { useRouteAccess } from '@/modules/iam/access-context';
 
@@ -314,144 +315,162 @@ export function HrEmployeeProfile({
           </>
         }
       />
-      <HrPanel title={group.label}>
-        <div className={ui.filters}>
-          <label>
-            نمایش
-            <NativeSearchSelect
-              value={source.tab}
-              onChange={(event) => setTab(event.target.value)}
-            >
-              {group.sources.map((item) => (
-                <option key={item.tab} value={item.tab}>
-                  {item.label}
-                </option>
-              ))}
-            </NativeSearchSelect>
-          </label>
-        </div>
-        {source.tab === 'summary' ? (
-          profile.loading ? (
-            <p role="status">در حال دریافت اطلاعات…</p>
-          ) : profile.error ? (
-            <div role="alert">
-              {profile.error}
-              <HrButton onClick={profile.retry}>تلاش دوباره</HrButton>
+      {groupId === 'pay' ? (
+        <HrPanel title="حقوق و پرداخت‌ها">
+          <HrPayrollConfiguration
+            key={employee.id}
+            branchId={employee.branchId}
+            employeeId={employee.id}
+            writable={
+              store.data!.capabilities.write &&
+              store.data!.capabilities.sensitive
+            }
+          />
+        </HrPanel>
+      ) : (
+        <>
+          <HrPanel title={group.label}>
+            <div className={ui.filters}>
+              <label>
+                نمایش
+                <NativeSearchSelect
+                  value={source.tab}
+                  onChange={(event) => setTab(event.target.value)}
+                >
+                  {group.sources.map((item) => (
+                    <option key={item.tab} value={item.tab}>
+                      {item.label}
+                    </option>
+                  ))}
+                </NativeSearchSelect>
+              </label>
             </div>
-          ) : (
-            <HrEmployeeSummary
-              employee={employee}
-              records={profile.records ?? []}
-              references={references.data.records}
-              sensitive={store.data!.capabilities.sensitive}
-              userLabel={userLabel}
-            />
-          )
-        ) : source.tab === 'audit' ? (
-          store.data!.capabilities.audit ? (
-            <HrAudit store={store} employeeId={employee.id} />
-          ) : (
-            <p>دسترسی مشاهده تاریخچه برای شما فعال نیست.</p>
-          )
-        ) : timeline.loading ? (
-          <p role="status">در حال دریافت اطلاعات…</p>
-        ) : timeline.error ? (
-          <div role="alert">
-            {timeline.error}
-            <HrButton onClick={timeline.retry}>تلاش دوباره</HrButton>
-          </div>
-        ) : source.tab === 'requests' ? (
-          <HrTable
-            {...rowSelection}
-            data={{
-              columns: ['کد', 'درخواست', 'وضعیت'],
-              rows: records
-                .filter(
-                  (item) => getHrResource(item.section, item.tab)?.approval,
+            {source.tab === 'summary' ? (
+              profile.loading ? (
+                <p role="status">در حال دریافت اطلاعات…</p>
+              ) : profile.error ? (
+                <div role="alert">
+                  {profile.error}
+                  <HrButton onClick={profile.retry}>تلاش دوباره</HrButton>
+                </div>
+              ) : (
+                <HrEmployeeSummary
+                  employee={employee}
+                  records={profile.records ?? []}
+                  references={references.data.records}
+                  sensitive={store.data!.capabilities.sensitive}
+                  userLabel={userLabel}
+                />
+              )
+            ) : source.tab === 'audit' ? (
+              store.data!.capabilities.audit ? (
+                <HrAudit store={store} employeeId={employee.id} />
+              ) : (
+                <p>دسترسی مشاهده تاریخچه برای شما فعال نیست.</p>
+              )
+            ) : timeline.loading ? (
+              <p role="status">در حال دریافت اطلاعات…</p>
+            ) : timeline.error ? (
+              <div role="alert">
+                {timeline.error}
+                <HrButton onClick={timeline.retry}>تلاش دوباره</HrButton>
+              </div>
+            ) : source.tab === 'requests' ? (
+              <HrTable
+                {...rowSelection}
+                data={{
+                  columns: ['کد', 'درخواست', 'وضعیت'],
+                  rows: records
+                    .filter(
+                      (item) => getHrResource(item.section, item.tab)?.approval,
+                    )
+                    .map((item) => [
+                      item.code,
+                      sourceForRecord(item).label,
+                      item.status,
+                    ]),
+                  totalLabel: '',
+                }}
+                onOpen={(index) => {
+                  const item = records.filter(
+                    (item) => getHrResource(item.section, item.tab)?.approval,
+                  )[index]!;
+                  onSelect(item, sourceForRecord(item));
+                }}
+              />
+            ) : (
+              <HrTable
+                data={data}
+                {...rowSelection}
+                {...(needsHrDetail(
+                  realSource.section,
+                  realSource.tab,
+                  Boolean(
+                    getHrResource(realSource.section, realSource.tab)?.approval,
+                  ),
                 )
-                .map((item) => [
-                  item.code,
-                  sourceForRecord(item).label,
-                  item.status,
-                ]),
-              totalLabel: '',
-            }}
-            onOpen={(index) => {
-              const item = records.filter(
-                (item) => getHrResource(item.section, item.tab)?.approval,
-              )[index]!;
-              onSelect(item, sourceForRecord(item));
-            }}
-          />
-        ) : (
-          <HrTable
-            data={data}
-            {...rowSelection}
-            {...(needsHrDetail(
-              realSource.section,
-              realSource.tab,
-              Boolean(
-                getHrResource(realSource.section, realSource.tab)?.approval,
-              ),
-            )
-              ? {
-                  onOpen: (index: number) =>
-                    onSelect(selected[index]!, realSource),
-                }
-              : {})}
-            {...(canManage
-              ? {
-                  onDelete: (index: number) => setRemoving(selected[index]!),
-                  onEdit: (index: number) =>
-                    onForm({
-                      source: realSource,
-                      record: selected[index]!,
-                      employeeId: employee.id,
-                    }),
-                }
-              : {})}
-          />
-        )}
-      </HrPanel>
-      <div className={ui.grid}>
-        <div className={ui.card}>
-          <span>مرخصی باقی‌مانده</span>
-          <strong className={ui.metric}>
-            {balances
-              ? balances.items
-                  .reduce((sum, item) => sum + Number(item.balance), 0)
-                  .toLocaleString('fa-IR')
-              : '—'}{' '}
-            روز
-          </strong>
-        </div>
-        <div className={ui.card}>
-          <span>درخواست در انتظار</span>
-          <strong className={ui.metric}>
-            {pending.length.toLocaleString('fa-IR')}
-          </strong>
-        </div>
-        <div className={ui.card}>
-          <span>قرارداد ثبت‌شده</span>
-          <strong className={ui.metric}>
-            {records
-              .filter(
-                (item) => item.section === 'contracts' && item.tab === 'active',
-              )
-              .length.toLocaleString('fa-IR')}
-          </strong>
-        </div>
-        <div className={ui.card}>
-          <span>تجهیزات تحویلی</span>
-          <strong className={ui.metric}>
-            {records
-              .filter(
-                (item) => item.section === 'assets' && item.tab === 'list',
-              )
-              .length.toLocaleString('fa-IR')}
-          </strong>
-        </div>
-      </div>
+                  ? {
+                      onOpen: (index: number) =>
+                        onSelect(selected[index]!, realSource),
+                    }
+                  : {})}
+                {...(canManage
+                  ? {
+                      onDelete: (index: number) =>
+                        setRemoving(selected[index]!),
+                      onEdit: (index: number) =>
+                        onForm({
+                          source: realSource,
+                          record: selected[index]!,
+                          employeeId: employee.id,
+                        }),
+                    }
+                  : {})}
+              />
+            )}
+          </HrPanel>
+          <div className={ui.grid}>
+            <div className={ui.card}>
+              <span>مرخصی باقی‌مانده</span>
+              <strong className={ui.metric}>
+                {balances
+                  ? balances.items
+                      .reduce((sum, item) => sum + Number(item.balance), 0)
+                      .toLocaleString('fa-IR')
+                  : '—'}{' '}
+                روز
+              </strong>
+            </div>
+            <div className={ui.card}>
+              <span>درخواست در انتظار</span>
+              <strong className={ui.metric}>
+                {pending.length.toLocaleString('fa-IR')}
+              </strong>
+            </div>
+            <div className={ui.card}>
+              <span>قرارداد ثبت‌شده</span>
+              <strong className={ui.metric}>
+                {records
+                  .filter(
+                    (item) =>
+                      item.section === 'contracts' && item.tab === 'active',
+                  )
+                  .length.toLocaleString('fa-IR')}
+              </strong>
+            </div>
+            <div className={ui.card}>
+              <span>تجهیزات تحویلی</span>
+              <strong className={ui.metric}>
+                {records
+                  .filter(
+                    (item) => item.section === 'assets' && item.tab === 'list',
+                  )
+                  .length.toLocaleString('fa-IR')}
+              </strong>
+            </div>
+          </div>
+        </>
+      )}
       {source.tab === 'leave' && balances ? (
         <HrPanel title="گردش مانده مرخصی">
           <HrLeaveGrant employeeId={employee.id} store={store} />
