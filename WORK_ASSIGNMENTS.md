@@ -10246,7 +10246,6 @@ COMPUTER_ID=PC-A; branch codex/pc-a-jahan-document-brand-1031 from origin/develo
 
 JAHAN-TRANSPARENT-DOCUMENTS-1031 implemented:83 focused branding/contract/preview/PDF tests passed. Three actual synthetic one-page A4 PDFs visually checked; existing transparent asset reused without bitmap modification. Header white cards removed with high-contrast white logo; canonical Jahan-only footer verified for all three outputs even with stale Niyayesh display name. Web types/lint and hosted gates required; source reservations release on verified merge. No deployment/data/schema changes.
 
-
 LIVE-PRESENCE-DEVELOP-1031 CI repair scope: reserve apps/web/src/app/(crm)/users/section-access.spec.ts for explicit regression coverage of the15 existing added site controls (no grants changed), en-integrations.json for missing own labels and deterministic derived API/legacy catalogue synchronization. Keep all CI gates intact; no dependency or migration repair planned.
 
 LIVE-PRESENCE-DEVELOP-1031 bounded contract repair: reserve only manualSectionForScreen in packages/contracts/src/iam/manual-access.ts and new section-isolation regression. The broad legacy .tours heuristic incorrectly classifies the new Niyayesh tour-management checkbox under native Tours. Preserve group=integrations before route/name heuristics, with exact26-screen Web assertion and native route regression. No stored permission, seed, migration, other module semantics or ownership changes. No active overlapping file reservation found.
