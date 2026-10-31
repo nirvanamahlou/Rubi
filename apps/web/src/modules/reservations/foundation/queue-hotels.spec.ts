@@ -31,7 +31,8 @@ it('keeps every hotel in itinerary order through partial English-name resolution
     status: 'NEW',
   } as unknown as RequestView;
   expect(
-    queryRows([row], { ...defaultQuery, search: 'SECOND SNAPSHOT' }).filteredRows,
+    queryRows([row], { ...defaultQuery, search: 'SECOND SNAPSHOT' })
+      .filteredRows,
   ).toEqual([row]);
   expect(
     reservationExportRows([row])[1]?.[reservationColumns.indexOf('Hotel')],
