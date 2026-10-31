@@ -125,6 +125,44 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
       );
     });
 
+    it('persists an incomplete definition, blocks departure, and allows completing its route later', async () => {
+      const created = await service.createPackage(
+        { name: 'Minimal draft' },
+        actor,
+        branchId,
+        randomUUID(),
+      );
+      expect(created.data.originId).toBe('');
+      await expect(
+        service.createDeparture(
+          {
+            packageId: created.data.id,
+            packageVersion: 1,
+            startsOn: '2099-10-01',
+            endsOn: '2099-10-08',
+            outboundOfferId: randomUUID(),
+          },
+          actor,
+          branchId,
+          randomUUID(),
+        ),
+      ).rejects.toThrow('شهر مبدأ و مقصد');
+      const updated = await service.updatePackage(
+        created.data.id,
+        { ...definition, expectedVersion: created.data.version },
+        actor,
+        branchId,
+      );
+      expect(updated.data.originId).toBe(definition.originId);
+      expect(updated.data.destinationId).toBe(definition.destinationId);
+      await service.deletePackage(
+        updated.data.id,
+        { expectedVersion: updated.data.version },
+        actor,
+        branchId,
+      );
+    });
+
     it('tour and standalone reservations cannot oversell the same offers; repetition preserves old stock', async () => {
       const salesActor: AuthenticatedActor = {
         ...actor,

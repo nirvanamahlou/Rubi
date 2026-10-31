@@ -1,4 +1,16 @@
 {
+  "جمع ترانسفر برگشت:": "Return transfer total:",
+  "جمع ترانسفر رفت:": "Outbound transfer total:",
+  "کارگزار، ارز و قیمت ترانسفر را تکمیل کنید.": "Complete the transfer supplier, currency and price.",
+  "فرم جداگانه ترانسفر": "Separate transfer form",
+  "فرم ترانسفر برگشت": "Return transfer form",
+  "فرم ترانسفر رفت": "Outbound transfer form",
+  "ارز ترانسفر برگشت": "Return transfer currency",
+  "Transfer P.P برگشت": "Return Transfer P.P",
+  "کارگزار ترانسفر برگشت": "Return transfer supplier",
+  "کارگزار ترانسفر رفت": "Outbound transfer supplier",
+  "کارگزار رفت و برگشت جدا": "Different suppliers for outbound and return",
+  "ترانسفر از کارگزار دیگر": "Transfer from a different supplier",
   "بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ تراکنش دارد.": "Narrow the date range; the report exceeds 10,000 transactions.",
   "بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ قرارداد دارد.": "Narrow the date range; the report exceeds 10,000 contracts.",
   "ترکیب خدمات قرارداد": "Contract service combination",
@@ -4743,5 +4755,13 @@
   "Ratio اتاق": "Room ratio",
   "حساب مقصد ثبت‌شده در پرداخت قابل تغییر نیست.": "The destination account declared in the payment cannot be changed.",
   "حساب ثبت‌شده در پرداخت": "Account declared in the payment",
-  "حساب مقصد قبلاً در پرداخت ثبت شده است.": "The destination account was already declared in the payment."
+  "حساب مقصد قبلاً در پرداخت ثبت شده است.": "The destination account was already declared in the payment.",
+  "اتصال آزمایشی بیمه تنظیم نشده است.": "The insurance sandbox connection is not configured.",
+  "اتصال آزمایشی تراویس": "Travis sandbox connection",
+  "دریافت اطلاعات بیمه‌گر": "Retrieve insurer information",
+  "انتخاب کشور از بیمه‌گر": "Select insurer country",
+  "انتخاب طرح از بیمه‌گر": "Select insurer plan",
+  "مدت اقامت": "Stay duration",
+  "کشور ·": "countries ·",
+  "طرح ·": "plans ·"
 }

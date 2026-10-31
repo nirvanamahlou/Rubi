@@ -279,6 +279,39 @@ describe('explicit manifest template public boundary', () => {
 });
 
 describe('public travel reference boundary', () => {
+  it('skips unselected draft cities while still checking supplied insurance and cities', async () => {
+    const detail = vi.fn(async () => ({
+      data: { status: 'active', attributes: {} },
+    }));
+    const directory = new MasterTravelDirectory({
+      detail,
+    } as unknown as MasterDataService);
+    await directory.assertTourReferences({
+      originId: '',
+      destinationId: '',
+      hotelIds: [],
+    });
+    expect(detail).not.toHaveBeenCalled();
+    await directory.assertTourReferences({
+      originId: 'origin',
+      destinationId: '',
+      hotelIds: [],
+      insuranceId: 'plan',
+    });
+    expect(detail.mock.calls).toEqual([
+      ['cities', 'origin'],
+      ['insurance-plans', 'plan'],
+    ]);
+    detail.mockResolvedValue({ data: { status: 'inactive', attributes: {} } });
+    await expect(
+      directory.assertTourReferences({
+        originId: '',
+        destinationId: '',
+        hotelIds: [],
+        insuranceId: 'plan',
+      }),
+    ).rejects.toThrow('بیمه');
+  });
   const input = {
     originId: 'origin',
     destinationId: 'destination',

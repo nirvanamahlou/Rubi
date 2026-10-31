@@ -248,6 +248,15 @@ export function transitionTravelWorkflow(
     case 'BRANDING':
       break;
     case 'REQUEST_SUPPLIER':
+      if (
+        current.supplierFormSettings?.hotelTransferSeparate &&
+        (!current.supplierFormSettings.transferBrokerId ||
+          (current.supplierFormSettings.hotelTransferSplit &&
+            !current.supplierFormSettings.hotelTransferReturn?.brokerId))
+      )
+        throw Error(
+          'پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.',
+        );
       if (!current.supplierFormSettings?.brokerId)
         throw new Error(
           'پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.',

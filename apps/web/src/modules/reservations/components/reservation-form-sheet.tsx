@@ -1,5 +1,6 @@
 'use client';
 import { SupplierPriceTable } from './supplier-price-table';
+import { reservationHotelStays } from '@nora/contracts';
 import { VoucherFormSheet } from './voucher-form-sheet';
 
 import { loadOutputReferences } from '../model/output-references';
@@ -33,21 +34,26 @@ export function useReservationFormReferences(
     references: ReservationFormReferences;
     failed: boolean;
   }>();
-  const hotel = intake.snapshot.hotelSelection;
+  const hotels = reservationHotelStays(intake.snapshot).map(
+    (stay) => stay.hotel,
+  );
   const flights = salesContractFlights(
     intake.snapshot.serviceSelections,
     intake.snapshot.ticketSelections ?? [],
   );
   const entries = [
-    hotel?.cityId
-      ? ['cities', hotel.cityId]
-      : flights[0]?.destinationId
-        ? ['cities', flights[0].destinationId]
-        : null,
-    hotel ? ['hotels', hotel.hotelId] : null,
-    hotel?.roomTypeId ? ['room-types', hotel.roomTypeId] : null,
-    ...(hotel?.rooms ?? []).map((r) => ['room-types', r.roomTypeId]),
-    hotel?.mealServiceId ? ['meal-services', hotel.mealServiceId] : null,
+    ...hotels.flatMap((hotel) => [
+      ['cities', hotel.cityId],
+      ['hotels', hotel.hotelId],
+      ...(hotel.roomTypeId ? [['room-types', hotel.roomTypeId]] : []),
+      ...(hotel.rooms ?? [])
+        .filter((r) => r.roomTypeId)
+        .map((r) => ['room-types', r.roomTypeId]),
+      ...(hotel.mealServiceId ? [['meal-services', hotel.mealServiceId]] : []),
+    ]),
+    ...(!hotels.length && flights[0]?.destinationId
+      ? [['cities', flights[0].destinationId]]
+      : []),
     ...flights.map((f) => ['airline-name', f.carrierNameSnapshot]),
   ].filter((entry): entry is string[] => !!entry);
   const key = JSON.stringify({ entries, requestId: intake.id });
@@ -240,7 +246,14 @@ export function ReservationFormSheet({
                 }
               >
                 <div>
-                  <h1>{voucher ? 'HOTEL VOUCHER' : 'RESERVATION FORM'}</h1>
+                  <h1>
+                    {voucher
+                      ? 'HOTEL VOUCHER'
+                      : intake.supplierDocumentKind &&
+                          intake.supplierDocumentKind !== 'HOTEL'
+                        ? 'TRANSFER FORM'
+                        : 'RESERVATION FORM'}
+                  </h1>
                   <p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p>
                 </div>
                 <div

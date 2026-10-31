@@ -65,7 +65,7 @@ export function TourOverview({
   const today = tourDay();
   const metrics = tourMetrics(departures, today);
   const city = (id: string) =>
-    cities.find((item) => item.id === id)?.name ?? 'شهر ثبت‌شده';
+    id ? (cities.find((item) => item.id === id)?.name ?? 'شهر ثبت‌شده') : '—';
   const matches = (item: TourPackageV1) =>
     `${item.name} ${city(item.originId)} ${city(item.destinationId)}`.includes(
       search.trim(),
