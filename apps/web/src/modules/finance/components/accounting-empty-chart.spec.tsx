@@ -27,7 +27,9 @@ describe('accounting chart without an accessible book', () => {
     expect(html).toContain('coa-title');
     expect(html).not.toContain('ایجاد دفتر کل');
     expect(html).not.toContain('انتخاب دفتر کل');
-    expect(html).toContain('ساختار حساب برای شرکت جاری هنوز راه‌اندازی نشده است.');
+    expect(html).toContain(
+      'ساختار حساب برای شرکت جاری هنوز راه‌اندازی نشده است.',
+    );
     expect(html).toContain('حساب معین');
     const saves = html.match(/<button[^>]*type="submit"[^>]*>/g) ?? [];
     expect(saves).toHaveLength(3);

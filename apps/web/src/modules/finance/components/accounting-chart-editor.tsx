@@ -447,7 +447,8 @@ export function AccountingChartEditor({
                           {!book && (
                             <div className="mb-3 space-y-2 rounded border border-sky-200 bg-sky-50 p-3 text-sm">
                               <p role="status">
-                                ساختار حساب برای شرکت جاری هنوز راه‌اندازی نشده است.
+                                ساختار حساب برای شرکت جاری هنوز راه‌اندازی نشده
+                                است.
                               </p>
                               <label className="block">
                                 نمایش فرم
