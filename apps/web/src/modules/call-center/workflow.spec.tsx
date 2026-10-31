@@ -120,7 +120,7 @@ it('locks only management fields for an ordinary agent and keeps progress text e
   expect(
     html.match(/<input[^>]*aria-label="کارشناس مسئول"[^>]*>/)?.[0],
   ).toContain('readOnly');
-  expect(html.match(/<button[^>]*aria-label="وضعیت"[^>]*>/)?.[0]).toContain(
+  expect(html.match(/<button[^>]*aria-label="وضعیت"[^>]*>/)?.[0]).not.toContain(
     'disabled',
   );
   expect(html.match(/<button[^>]*aria-label="اولویت"[^>]*>/)?.[0]).toContain(
@@ -138,4 +138,25 @@ it('locks only management fields for an ordinary agent and keeps progress text e
   expect(manager.match(/<input[^>]*name="title"[^>]*>/)?.[0]).not.toContain(
     'readOnly',
   );
+  const closed = renderToStaticMarkup(
+    <WorkflowEditor
+      {...props}
+      editor={{ kind: 'request', item: { ...item, status: 'CLOSED' } }}
+    />,
+  );
+  expect(closed.match(/<button[^>]*aria-label="وضعیت"[^>]*>/)?.[0]).toContain(
+    'disabled',
+  );
+  const closedManager = renderToStaticMarkup(
+    <WorkflowEditor
+      {...props}
+      editor={{
+        kind: 'request',
+        item: { ...item, status: 'CLOSED', canEditManagement: true },
+      }}
+    />,
+  );
+  expect(
+    closedManager.match(/<button[^>]*aria-label="وضعیت"[^>]*>/)?.[0],
+  ).not.toContain('disabled');
 });

@@ -717,3 +717,38 @@ it('cannot publish a public ticket through an unauthorized request', async () =>
   ).toBe(403);
   expect(publishing.documents).toHaveLength(0);
 });
+
+it.each([false, true])(
+  'downloads explicit no-issuer-logo tickets without a logo dependency (Sales=%s)',
+  async (sales) => {
+    const saved = structuredClone(intake);
+    saved.workflow.branding = {
+      ...saved.workflow.branding!,
+      ticketWithoutLogo: true,
+      logoFileId: 'unavailable-logo',
+    };
+    const fetcher = vi.fn(async (url: string) => {
+      if (url.endsWith('/workflow') || url.endsWith('/travel-documents'))
+        return Response.json({ data: saved });
+      if (url.includes('/documents/'))
+        throw Error('Issuer logo must not be fetched');
+      return Response.json({
+        data:
+          url.includes('airlines?') || url.endsWith('/passengers')
+            ? []
+            : { name: 'City', attributes: { englishName: 'CITY' } },
+      });
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const response = await GET(
+      request(sales ? '?salesContractId=' + saved.snapshot.contractId : ''),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(brandAssetReader).not.toHaveBeenCalled();
+    expect(renderer.mock.calls[0]![0]).not.toContain('class="agency-logo"');
+    expect(renderer.mock.calls[0]![0]).toContain('FLIGHT TICKET');
+    expect(saved.workflow.branding!.logoFileId).toBe('unavailable-logo');
+  },
+);

@@ -15,6 +15,7 @@ import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './telephony.module.css';
 import { telephonyDraftName } from './telephony-draft';
 import { OperationalCallPopup } from './operational-call-popup';
+import { shownCallSession } from './shown-call-session';
 export interface AttentionCall {
   id: string;
   callId: string;
@@ -55,15 +56,19 @@ const states: Record<string, string> = {
 };
 export function TelephonyAttention({
   outboundOnly = false,
+  bothDirections = false,
 }: {
   outboundOnly?: boolean;
+  bothDirections?: boolean;
 }) {
   const actor = useAccessActor();
   // Explicit local rollout hold: no automatic attention UI before owner activation.
   if (
-    outboundOnly
-      ? process.env.NEXT_PUBLIC_CALL_CENTER_OUTBOUND_POPUPS_ENABLED !== 'true'
-      : process.env.NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED === 'false'
+    bothDirections
+      ? process.env.NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED !== 'true'
+      : outboundOnly
+        ? process.env.NEXT_PUBLIC_CALL_CENTER_OUTBOUND_POPUPS_ENABLED !== 'true'
+        : process.env.NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED === 'false'
   )
     return null;
   const allowed =
@@ -75,16 +80,22 @@ export function TelephonyAttention({
     <Attention
       key={actor.userId + actor.branchIds.join(',')}
       branch={actor.branchIds[0] ?? ''}
+      actorId={actor.userId}
       outboundOnly={outboundOnly}
+      bothDirections={bothDirections}
     />
   );
 }
 function Attention({
   branch,
+  actorId,
   outboundOnly,
+  bothDirections,
 }: {
   branch: string;
+  actorId: string;
   outboundOnly: boolean;
+  bothDirections: boolean;
 }) {
   const [rows, setRows] = useState<AttentionCall[]>([]),
     [total, setTotal] = useState(0),
@@ -106,7 +117,7 @@ function Attention({
   const [tab] = useState(() => crypto.randomUUID());
   const currentRef = useRef<AttentionCall | null>(null),
     button = useRef<HTMLButtonElement>(null),
-    seen = useRef(new Set<string>());
+    seen = useRef(shownCallSession(actorId, () => window.sessionStorage));
   useUnsavedGuard(dirty);
   useEffect(() => {
     currentRef.current = current;
@@ -147,6 +158,7 @@ function Attention({
         const attention = (data.incoming ?? data.data).filter(
           (row) =>
             !outboundOnly ||
+            bothDirections ||
             (!row.synthetic && row.call.direction === 'OUTBOUND'),
         );
         const visibleRows = [
@@ -183,7 +195,7 @@ function Attention({
             });
             setDirty(false);
             setOpen(true);
-            if (outboundOnly)
+            if (outboundOnly && incoming.call.direction === 'OUTBOUND')
               window.dispatchEvent(new Event('call-center:outbound-received'));
           }
         }
@@ -211,7 +223,7 @@ function Attention({
       abort.abort();
       clearTimeout(timer);
     };
-  }, [branch, page, blocked, tab, outboundOnly]);
+  }, [branch, page, blocked, tab, outboundOnly, bothDirections]);
   const currentId = current?.id,
     currentBranch = current?.branchId;
   useEffect(() => {

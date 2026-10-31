@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { callContactPrefill } from './call-contact-prefill';
 import { HrCallAnswerDirectory } from '../hr/hr-call-answer-directory';
+import { answeredCallAccess } from '../iam/call-center-answer-policy';
 import {
   BadRequestException,
   ConflictException,
@@ -62,6 +63,7 @@ export class CallCenterTelephonyService {
       creatorId: string;
       synthetic: boolean;
       receivedAt: Date;
+      answerEvidence?: { inboxId: string; userIds: string[] };
       recipient: {
         userId: string;
         version: number;
@@ -277,6 +279,13 @@ export class CallCenterTelephonyService {
         },
       });
     }
+    await this.recordAnswer(
+      tx,
+      row.callId,
+      event,
+      context.synthetic,
+      context.answerEvidence,
+    );
     if (
       this.answerDirectory &&
       technical.lastAnswer &&
@@ -392,6 +401,74 @@ export class CallCenterTelephonyService {
         },
       });
     return row.id;
+  }
+
+  /** Public evidence projection for Integrations live ingestion and receipt-only backfill.
+   * Never resolves current labels, claims, manual owners or outcomes into an identity.
+   */
+  async recordAnswer(
+    tx: Prisma.TransactionClient,
+    callId: string,
+    event: TelephonyEventV1,
+    synthetic: boolean,
+    evidence?: { inboxId: string; userIds: string[] },
+  ) {
+    if (synthetic || event.kind !== 'ANSWERED' || !event.extension || !evidence)
+      return 0;
+    const userIds = [...new Set(evidence.userIds)];
+    if (!userIds.every((id) => /^[0-9a-f-]{36}$/i.test(id)))
+      throw new BadRequestException();
+    for (const userId of userIds) {
+      await tx.callCenterAnswerResponsibility.upsert({
+        where: { callId_userId: { callId, userId } },
+        create: {
+          callId,
+          userId,
+          inboxId: evidence.inboxId,
+          answeredAt: new Date(event.occurredAt),
+        },
+        update: {},
+      });
+      await tx.callCenterAnswerResponsibility.updateMany({
+        where: {
+          callId,
+          userId,
+          answeredAt: { gt: new Date(event.occurredAt) },
+        },
+        data: {
+          answeredAt: new Date(event.occurredAt),
+          inboxId: evidence.inboxId,
+        },
+      });
+    }
+    return userIds.length;
+  }
+
+  async reprojectAnswer(
+    tx: Prisma.TransactionClient,
+    event: TelephonyEventV1,
+    branchId: string,
+    evidence: { inboxId: string; userIds: string[] },
+    apply: boolean,
+  ) {
+    if (event.kind !== 'ANSWERED' || !event.extension) return false;
+    const rootFingerprint = this.crypto.fingerprint(
+      `telephony:root:${event.connectionId}:${event.rootCallId ?? event.externalCallId}`,
+    );
+    await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${rootFingerprint},0))`;
+    const session = await tx.callCenterTelephonySession.findFirst({
+      where: {
+        connectionId: event.connectionId,
+        rootFingerprint,
+        synthetic: false,
+        call: { contact: { branchId } },
+      },
+      select: { callId: true },
+    });
+    if (!session) return false;
+    if (apply)
+      await this.recordAnswer(tx, session.callId, event, false, evidence);
+    return true;
   }
   private async reviewScope(
     branchIds: readonly string[],
@@ -561,10 +638,30 @@ export class CallCenterTelephonyService {
     )
       throw new ForbiddenException();
     const session = await tx.callCenterTelephonySession.findFirst({
-      where: { ...this.scope(actor), connectionId, rootFingerprint },
-      select: { id: true, encryptedTechnical: true, keyVersion: true },
+      where: {
+        ...(answeredCallAccess()
+          ? { call: { contact: { branchId: { in: [...actor.branchIds] } } } }
+          : this.scope(actor)),
+        connectionId,
+        rootFingerprint,
+      },
+      select: {
+        id: true,
+        encryptedTechnical: true,
+        keyVersion: true,
+        call: {
+          select: { contactId: true, contact: { select: { branchId: true } } },
+        },
+      },
     });
     if (!session) throw new NotFoundException();
+    await this.calls.access.contact(
+      actor,
+      session.call.contact.branchId,
+      session.call.contactId,
+      'contacts',
+      tx,
+    );
     const technical = this.crypto.decrypt<TelephonyTechnical>(
       session.encryptedTechnical,
       session.keyVersion,

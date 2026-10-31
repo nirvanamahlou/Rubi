@@ -10,6 +10,12 @@ import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { authenticatedPermissionCodes } from './authenticated-permissions';
 import { canViewRoute, hasScopedCallCenterAccess } from '@nora/contracts';
+import { CALL_CENTER_SALES_MANAGER } from '@nora/contracts';
+import {
+  answeredCallAccess,
+  globalCallCenterIds,
+  callCenterScopedActor,
+} from './call-center-answer-policy';
 
 /** Public, branch-scoped directory. Does not expose roles or personnel data. */
 @Injectable()
@@ -21,6 +27,62 @@ export class IamCallCenterDirectory {
       database,
     ),
   ) {}
+
+  async globalCallCenter(
+    actor: AuthenticatedActor,
+    tx?: Prisma.TransactionClient,
+  ) {
+    if (!answeredCallAccess() || !globalCallCenterIds().includes(actor.userId))
+      return false;
+    return !!(await (tx ?? this.database.client).user.findFirst({
+      where: { id: actor.userId, status: 'ACTIVE', b2bOrganizationUser: null },
+      select: { id: true },
+    }));
+  }
+
+  async callCenterActor(actor: AuthenticatedActor) {
+    if (!(await this.globalCallCenter(actor))) return actor;
+    const branches = await this.database.client.branch.findMany({
+      where: { isActive: true },
+      select: { id: true },
+    });
+    return callCenterScopedActor(actor, {
+      ...actor,
+      branchIds: branches.map((branch) => branch.id),
+      permissions: [
+        ...new Set([
+          ...actor.permissions,
+          ...CALL_CENTER_SALES_MANAGER,
+          'customer_affairs.call_center.recordings.read' as const,
+        ]),
+      ],
+    });
+  }
+
+  async answeredAccounts(
+    branchId: string,
+    extension: string,
+    at: string,
+    tx: Prisma.TransactionClient,
+  ) {
+    const ids = await this.personnel.callCenterAnswerAccounts(
+      branchId,
+      extension,
+      new Date(at),
+      tx,
+    );
+    if (!ids.length) return [];
+    const users = await tx.user.findMany({
+      where: {
+        id: { in: ids },
+        status: 'ACTIVE',
+        b2bOrganizationUser: null,
+        branches: { some: { branchId, branch: { isActive: true } } },
+      },
+      select: { id: true },
+    });
+    return users.map((user) => user.id);
+  }
 
   /** Management fields follow the current assignee's unit, or creator for unassigned requests. */
   async canManageRequest(
@@ -36,6 +98,7 @@ export class IamCallCenterDirectory {
       )
     )
       return false;
+    if (await this.globalCallCenter(actor, tx)) return true;
     const client = tx ?? this.database.client;
     if (tx) {
       await tx.$queryRaw`SELECT id FROM iam_users WHERE id IN (${actor.userId}::uuid, ${responsibleUserId ?? actor.userId}::uuid) ORDER BY id FOR SHARE`;
@@ -55,6 +118,7 @@ export class IamCallCenterDirectory {
     });
     if (!account) return false;
     if (
+      !answeredCallAccess() &&
       (process.env.CALL_CENTER_REQUEST_GLOBAL_USERNAMES ?? '')
         .split(',')
         .map((value) => value.trim())
@@ -103,12 +167,15 @@ export class IamCallCenterDirectory {
     )
       throw new ForbiddenException();
     const client = tx ?? this.database.client;
+    const approvedGlobal = await this.globalCallCenter(actor, tx);
     const account = await client.user.findFirst({
       where: {
         id: actor.userId,
         status: 'ACTIVE',
         b2bOrganizationUser: null,
-        branches: { some: { branchId, branch: { isActive: true } } },
+        ...(!approvedGlobal
+          ? { branches: { some: { branchId, branch: { isActive: true } } } }
+          : {}),
       },
       select: {
         username: true,
@@ -120,12 +187,15 @@ export class IamCallCenterDirectory {
       },
     });
     if (!account) throw new ForbiddenException();
-    const global = new Set(
-      (process.env.CALL_CENTER_REQUEST_GLOBAL_USERNAMES ?? '')
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-    ).has(account.username);
+    const global =
+      approvedGlobal ||
+      (!answeredCallAccess() &&
+        new Set(
+          (process.env.CALL_CENTER_REQUEST_GLOBAL_USERNAMES ?? '')
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean),
+        ).has(account.username));
     const unitId = account.profile?.organizationUnitId;
     const team =
       actor.permissions.includes(

@@ -18,6 +18,7 @@ import { DatabaseService } from '../database/database.service';
 import { CallCenterCrypto } from './call-center.crypto';
 import { CallCenterAccessService } from './call-center-access.service';
 import { HrCallAnswerDirectory } from '../hr/hr-call-answer-directory';
+import { answeredCallAccess } from '../iam/call-center-answer-policy';
 import type { TelephonyTechnical } from './telephony-state';
 import type {
   CallCenterCallDto,
@@ -479,7 +480,11 @@ export class CallCenterService {
           throw new ConflictException(
             'شناسه تماس قبلاً برای اطلاعات دیگری استفاده شده است.',
           );
-        if (this.access.scoped(actor))
+        // Exact creator/branch/payload replay above is a write receipt, not dossier access.
+        if (
+          this.access.scoped(actor) &&
+          !(answeredCallAccess() && prior.origin === 'MANUAL')
+        )
           await this.access.contact(
             actor,
             branchId,
@@ -506,7 +511,7 @@ export class CallCenterService {
         },
         update: {},
       });
-      if (this.access.scoped(actor))
+      if (this.access.scoped(actor) && (priorContact || !answeredCallAccess()))
         await this.access.contact(actor, branchId, contact.id, 'contacts', tx);
       if (!priorContact && this.access.scoped(actor))
         await tx.customerAffairsAuditEvent.create({

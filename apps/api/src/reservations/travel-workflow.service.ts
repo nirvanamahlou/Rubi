@@ -182,6 +182,14 @@ export class TravelWorkflowService {
     const intake = await this.detail(id, actor.branchIds, currentOutput);
     let branding: TravelWorkflowStateV1['branding'] = null;
     if (command?.action === 'BRANDING') {
+      const ticketWithoutLogo = command.branding?.ticketWithoutLogo;
+      const voucherWithoutLogo = command.branding?.voucherWithoutLogo;
+      if (
+        [ticketWithoutLogo, voucherWithoutLogo].some(
+          (value) => value !== undefined && typeof value !== 'boolean',
+        )
+      )
+        throw new BadRequestException('سربرگ معتبر انتخاب کنید.');
       if (command.branding?.kind === 'OWN') {
         const { data } = await this.entities.current(actor);
         if (!data.legalEntity)
@@ -261,7 +269,20 @@ export class TravelWorkflowService {
           error instanceof Error ? error.message : 'عملیات نامعتبر',
         );
       }
-      if (branding) next.branding = branding;
+      if (branding)
+        next.branding = {
+          ...branding,
+          ...(command.branding?.ticketWithoutLogo === true ||
+          (command.branding?.ticketWithoutLogo === undefined &&
+            state.branding?.ticketWithoutLogo === true)
+            ? { ticketWithoutLogo: true }
+            : {}),
+          ...(command.branding?.voucherWithoutLogo === true ||
+          (command.branding?.voucherWithoutLogo === undefined &&
+            state.branding?.voucherWithoutLogo === true)
+            ? { voucherWithoutLogo: true }
+            : {}),
+        };
       if (
         ['REQUEST_SUPPLIER', 'CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(
           command.action,

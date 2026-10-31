@@ -495,13 +495,10 @@ export function NewEmployeeForm({
               maxLength={50}
               name="personnelCode"
               placeholder="برای نمونه HR-1001"
-              readOnly
+              onChange={(event) => update('personnelCode', event.target.value)}
               required
               value={value.personnelCode}
             />
-            <small className={styles.fieldHint}>
-              این کد به‌صورت خودکار تخصیص داده می‌شود.
-            </small>
             <FieldError errors={errors} field="personnelCode" />
           </label>
           <label

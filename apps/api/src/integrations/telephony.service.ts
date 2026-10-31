@@ -14,6 +14,7 @@ import type { AuthenticatedActor, TelephonyEventV1 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import { IamCallCenterDirectory } from '../iam/iam-call-center-directory';
 import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
+import { answeredCallAccess } from '../iam/call-center-answer-policy';
 import { CallCenterTelephonyService } from '../customer-affairs/call-center-telephony.service';
 import { IntegrationRegistryService } from './integration-registry.service';
 import { validateTelephonyEvent } from './telephony.validation';
@@ -27,6 +28,7 @@ type Envelope = {
   event: TelephonyEventV1;
   recipient: { userId: string; version: number; teamId: string | null } | null;
   historical?: true;
+  answerRecipients?: { version: 1; userIds: string[] };
 };
 @Injectable()
 export class TelephonyIntegrationService {
@@ -222,6 +224,122 @@ export class TelephonyIntegrationService {
   async receive(input: TelephonyEventV1, provider?: 'ISSABEL' | 'RELAY') {
     return this.receiveInternal(input, provider, false);
   }
+
+  /** Operator-only, receipt-only backfill. No PBX commands, projection replay, ownership or popup writes. */
+  async reprojectAnsweredAccess(
+    actor: AuthenticatedActor,
+    input: { after?: string; limit?: number; apply?: boolean } = {},
+  ) {
+    this.admin(actor);
+    if (input.apply === true && !answeredCallAccess())
+      throw new ForbiddenException(
+        'Answer access backfill is disabled in the local legacy policy.',
+      );
+    const limit = input.limit ?? 100;
+    if (
+      !Number.isInteger(limit) ||
+      limit < 1 ||
+      limit > 200 ||
+      (input.after && !/^[0-9a-f-]{36}$/i.test(input.after))
+    )
+      throw new BadRequestException();
+    const rows = await this.db.client.integrationTelephonyInbox.findMany({
+      where: {
+        ...(input.after ? { id: { gt: input.after } } : {}),
+        status: 'DONE',
+        connection: {
+          synthetic: false,
+          branchId: { in: [...actor.branchIds] },
+        },
+      },
+      orderBy: { id: 'asc' },
+      take: limit,
+      select: { id: true },
+    });
+    const result = {
+      scanned: rows.length,
+      answers: 0,
+      matched: 0,
+      unresolved: 0,
+      payloadUnavailable: 0,
+      applied: input.apply === true,
+      next: rows.length === limit ? rows.at(-1)!.id : null,
+    };
+    for (const candidate of rows)
+      await this.db.client.$transaction(
+        async (tx) => {
+          const row = await tx.integrationTelephonyInbox.findUniqueOrThrow({
+            where: { id: candidate.id },
+            include: { connection: true },
+          });
+          if (!row.encryptedPayload) {
+            result.payloadUnavailable++;
+            return;
+          }
+          const envelope = this.domain.crypto.decrypt<Envelope>(
+            row.encryptedPayload,
+            row.keyVersion,
+            `telephony:inbox:${row.id}`,
+          );
+          if (envelope.event.kind !== 'ANSWERED' || !envelope.event.extension)
+            return;
+          result.answers++;
+          // Validate retained canonical evidence; expiry is irrelevant for historic reads.
+          const event = validateTelephonyEvent(
+            envelope.event,
+            row.connection,
+            new Date(),
+            false,
+          );
+          if (
+            event.connectionId !== row.connectionId ||
+            row.connection.synthetic
+          )
+            throw new BadRequestException();
+          const userIds =
+            envelope.answerRecipients?.version === 1
+              ? envelope.answerRecipients.userIds
+              : await this.directory.answeredAccounts(
+                  row.connection.branchId,
+                  event.extension!,
+                  event.occurredAt,
+                  tx,
+                );
+          if (!userIds.length) {
+            result.unresolved++;
+            return;
+          }
+          const matched = await this.domain.reprojectAnswer(
+            tx,
+            event,
+            row.connection.branchId,
+            { inboxId: row.id, userIds },
+            input.apply === true,
+          );
+          if (matched) {
+            result.matched++;
+            if (input.apply === true)
+              await tx.integrationTelephonyAudit.create({
+                data: {
+                  connectionId: row.connectionId,
+                  entityId: row.id,
+                  actorUserId: actor.userId,
+                  action: 'ANSWER_ACCESS_REPROJECT',
+                  metadata: {
+                    recipients: userIds.length,
+                    evidence:
+                      envelope.answerRecipients?.version === 1
+                        ? 'RECEIPT'
+                        : 'UNCHANGED_HR',
+                  },
+                },
+              });
+          } else result.unresolved++;
+        },
+        { timeout: 15000 },
+      );
+    return result;
+  }
   /** Only a verified server-side recovery adapter may call this port. No HTTP route. */
   async receiveRecovered(input: TelephonyEventV1) {
     if (this.config.get<string>('ISSABEL_RECOVERY_ENABLED') !== 'true')
@@ -359,6 +477,19 @@ export class TelephonyIntegrationService {
         : false;
       const envelope: Envelope = {
         event,
+        ...(realProvider && event.kind === 'ANSWERED' && event.extension
+          ? {
+              answerRecipients: {
+                version: 1 as const,
+                userIds: await this.directory.answeredAccounts(
+                  c.branchId,
+                  event.extension,
+                  event.occurredAt,
+                  tx,
+                ),
+              },
+            }
+          : {}),
         ...(recovery ? { historical: true as const } : {}),
         recipient:
           eligible && mapping
@@ -506,6 +637,15 @@ export class TelephonyIntegrationService {
           synthetic: row.connection.synthetic,
           receivedAt: row.receivedAt,
           recipient: envelope.historical ? null : envelope.recipient,
+          ...(!row.connection.synthetic &&
+          envelope.answerRecipients?.version === 1
+            ? {
+                answerEvidence: {
+                  inboxId: row.id,
+                  userIds: envelope.answerRecipients.userIds,
+                },
+              }
+            : {}),
         });
         await tx.integrationTelephonyAudit.create({
           data: {

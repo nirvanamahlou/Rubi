@@ -82,8 +82,11 @@ function voucherHotelPdfHtml(
     ? intake.workflow.voucherSettings
     : intake.workflow.supplierFormSettings;
   const withLetterhead = settings?.flags.withLetterhead !== false;
-  if (
+  const withLogo =
     withLetterhead &&
+    !(voucher && intake.workflow.branding?.voucherWithoutLogo === true);
+  if (
+    withLogo &&
     !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(logo)
   )
     throw new Error('PDF_LOGO_INVALID');
@@ -186,7 +189,7 @@ function voucherHotelPdfHtml(
         ];
       });
       first += people.length;
-      return `<article class="page" ${voucher ? 'data-voucher' : ''} dir="ltr"><header class="${withLetterhead ? 'header' : 'plainHeader'}"><div><h1>${voucher ? 'HOTEL VOUCHER' : 'RESERVATION FORM'}</h1><p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p></div><div class="brand${intake.workflow.branding?.kind === 'OWN' && intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? ' jahanBrand' : ''}">${withLetterhead ? `<img class="${intake.workflow.branding?.kind === 'OWN' ? (intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? 'jahanLogo' : 'logo') : 'agencyLogo'}" src="${logo}" alt=""/>` : ''}</div></header>
+      return `<article class="page" ${voucher ? 'data-voucher' : ''} dir="ltr"><header class="${withLetterhead ? 'header' : 'plainHeader'}"><div><h1>${voucher ? 'HOTEL VOUCHER' : 'RESERVATION FORM'}</h1><p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p></div><div class="brand${intake.workflow.branding?.kind === 'OWN' && intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? ' jahanBrand' : ''}">${withLogo ? `<img class="${intake.workflow.branding?.kind === 'OWN' ? (intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? 'jahanLogo' : 'logo') : 'agencyLogo'}" src="${logo}" alt=""/>` : ''}</div></header>
     ${fields(
       [
         [voucher ? 'BOOKING NO.' : 'REQUEST NO.', data.request],
