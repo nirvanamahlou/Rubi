@@ -295,7 +295,7 @@ describe('MasterDataRepository financial reference listing', () => {
       expect.objectContaining({
         where: { isActive: true, bankId, cityId },
         include: { bank: true, city: true },
-        orderBy: { name: 'asc' },
+        orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }, { id: 'asc' }],
       }),
     );
   });

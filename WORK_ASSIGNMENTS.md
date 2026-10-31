@@ -10,6 +10,14 @@ COMPUTER_ID=PC-A; branch codex/pc-a-tour-optional-fields-1031 from origin/develo
 
 COMPUTER_ID=PC-A; branch codex/pc-a-buyer-before-route-1031 from origin/develop. User authorizes moving the buyer/counterparty box before route selection and develop merge. Reserve only SalesPeopleSheet and SalesContractForm layout composition and existing flight-search harness slot forwarding plus own status notes. Keep one people controller and unchanged buyer/passenger callbacks; route and service selection remains between buyer and passenger table. Preserve validation, registration, permissions and saved data. No schema/migration/dependency/API/runtime/deployment changes. 118 focused Web checks pass; scoped lint/type checks and final-head quality/full tests/build/database gates precede merge.
 
+## MASTER-DATA-UI-CLEANUP-1031 — PC-B — READY_FOR_CI
+
+Owner explicitly approves nullable rail-company organization linkage with historical links preserved. Reserve sole bounded schema/migration lock for MasterRailCompany.organizationId nullable only; prior numbering/payment migration candidates are published. No operational migration or deployment authorized. Shared existing API keeps organizationId optional and retains FK validation when supplied.
+
+Bounded bank-account deletion extension: user item4 authorizes a delete action for company bank accounts. Finance remains producer; add versioned scoped DELETE, audit-preserving deletedAt and reject accounts referenced by any financial operation. Existing account audits remain immutable and unrelated active Finance receipt scopes are untouched. Reserve bank-account service/controller/tests, Web owner client/component and this one additive column. Master Data default name lists apply saved displayOrder before pagination with deterministic name/id ties, explicit code/date sorts unchanged. No API sort-enum change or dependency/lockfile mutation.
+
+COMPUTER_ID=PC-B; branch codex/pc-b-master-data-ui-cleanup-1031 initially from develop58d78567d, integrated with subsequent develop. Owner requests seventeen Master Data and agency dossier UI/order/form repairs and push/develop merge. Reserve bounded Master Data finance/currency/catalog/filter/order/airport/bank child controls, Organizations activity/rates/agreement presentation and native validation compatibility, tests/translations and own notes. Preserve PC-A Finance receipt and Reservations sources. Owner-approved one additive migration is prepared; no dependency or operational rollout changes. Financial rules, delete guards, audit and hotel template protocol remain. Commission clarification is empty space, not deletion of stored commissions.107 focused API checks,2 HTTP checks, final27 Web checks, scoped lint/Web types and isolated PostgreSQL18 preservation proof pass; final hosted gates precede merge. Source reservations release on verified merge. No orchestration/delegation.
+
 ## COMPOSITE-VOUCHER-1031 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-composite-voucher-1031 from current origin/develop. User authorizes complete composite hotel voucher tables/services and develop merge. Reserve new voucher-hotel-documents read-only model/spec; voucher-form-sheet.tsx and voucher-pdf-html.ts wrappers/global pagination; bounded additional-hotel reference entries in reservation-form-sheet useReservationFormReferences and reservations requests PDF route. New task-specific preview/PDF regressions only: preserve JAHAN-TRANSPARENT-DOCUMENTS CSS/footer/tests reservation and every other writer. Every hotel must retain its own name/city/dates/room composition and passenger service dates in preview/PDF. Preserve saved primary overrides, selected passenger identities, flags, single-hotel and supplier-form scoping. No schema/API/dependency/migration/production change. All final-head checks precede authorized merge.
@@ -10273,6 +10281,18 @@ LIVE-PRESENCE-DEVELOP-1031 source freeze: latest develop integrated, exact26-scr
 ## PETTY-PLUS-1031 — PC-B — RESERVED
 
 PC-B; branch codex/pc-b-petty-plus-1031. Reserve petty-fund-card.tsx/spec and own status notes: explicit accessible plus button adjacent to existing fund card opens same bank/balance configuration modal, preserving populated fields/CAS/permissions and one fund per branch. Existing scopes released; no schema/API/dependency/permission change. User authorizes push/develop merge and local3100 rollout. Preserve other checkouts and prior runtime.
+
+## PETTY-OPEN-FIX-1031 — PC-B — RESERVED
+
+Reserve petty-fund-card.tsx/spec and own status notes. Card/plus must open dialog even on query failure/loading; retain save guard until successful data load, show retry inside modal, avoid stale values after retry. Existing source scopes released. No API/schema/permissions changes. User reports no opening after prior change; repair and local rollout within authorized scope.
+
+PETTY-OPEN-FIX-1031 extension: reserve only petty-fund controller GET response to explicitly serialize JSON null for unconfigured branches. Nest default null otherwise sends an empty body, failing the client's JSON parser. No service/schema or permission change.
+
+## REQUEST-DETAIL-SIMPLE-1031 — PC-B — RESERVED
+
+Reserve Procurement workspace request detail, draft form/API save consumer, targeted tests and own notes. Remove lifecycle/assignment controls except cancellation; remove owner/next-action/acceptance metadata. Enable edit through existing DraftForm for nonfinal requests under existing permissions; supply explicit user edit reason for post-publication audit. Existing money/approval/CAS guards stay authoritative. Preserve pending petty-dialog repair. No schema/migration/permission changes.
+
+REQUEST-DETAIL-SIMPLE-1031 verification:67 module checks plus11 focused action/PATCH-reason checks and scoped lint passed; Web production build passed. PR1233 published. Local3100 rollout not performed: port taken concurrently by Next dev from C:/Users/admin/.codex/worktrees/hr-payroll-finance-approval-1027/Rubi (parent28716/listener17088); existing runtime not stopped or overwritten. Source locks released; shared runtime handoff requires coordination. Final accepted-fund amount changes remain guarded by existing server policy. No schema or operational mutations.
 
 ## TRAVIS-SANDBOX-CONNECTION-1031 — PC-A — RESERVED
 

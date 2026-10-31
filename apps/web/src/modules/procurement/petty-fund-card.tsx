@@ -58,13 +58,14 @@ export function PettyFundCard({ bootstrap }: { bootstrap: Bootstrap }) {
   });
   const editable = bootstrap.permissions.includes('procurement.assign');
   function openConfiguration() {
-    if (query.isError) {
-      void query.refetch();
-      return;
-    }
     setDraft(query.data ?? empty);
     setError('');
     setOpen(true);
+    if (query.isPending || query.isError) {
+      void query.refetch().then((result) => {
+        if (result.isSuccess) setDraft(result.data ?? empty);
+      });
+    }
   }
   return (
     <>
@@ -72,7 +73,7 @@ export function PettyFundCard({ bootstrap }: { bootstrap: Bootstrap }) {
         <button
           type="button"
           className="min-h-40 min-w-0 flex-1 rounded-2xl border border-emerald-300 bg-gradient-to-bl from-emerald-100 to-surface p-5 text-right shadow-sm focus-visible:ring-2 focus-visible:ring-ring dark:from-emerald-950"
-          disabled={query.isPending}
+          disabled={busy}
           onClick={openConfiguration}
         >
           <span className="flex items-center gap-3 font-bold">
@@ -95,7 +96,7 @@ export function PettyFundCard({ bootstrap }: { bootstrap: Bootstrap }) {
             variant="outline"
             className="h-auto w-12 shrink-0 rounded-2xl border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
             aria-label="موجودی و حساب تنخواه"
-            disabled={query.isPending || busy}
+            disabled={busy}
             onClick={openConfiguration}
           >
             <Plus aria-hidden="true" className="size-5" />
@@ -141,7 +142,10 @@ export function PettyFundCard({ bootstrap }: { bootstrap: Bootstrap }) {
                 .finally(() => setBusy(false));
             }}
           >
-            <fieldset disabled={busy || !editable} className="contents">
+            <fieldset
+              disabled={busy || !editable || query.isPending || query.isError}
+              className="contents"
+            >
               <FormField id="petty-branch" label="شعبه">
                 <ProcurementSelect
                   id="petty-branch"
@@ -200,7 +204,27 @@ export function PettyFundCard({ bootstrap }: { bootstrap: Bootstrap }) {
               ))}
             </fieldset>
             {query.isError && (
-              <Alert tone="error" title="دریافت تنخواه ناموفق بود" />
+              <div className="space-y-2 sm:col-span-2">
+                <Alert
+                  tone="error"
+                  title="دریافت تنخواه ناموفق بود"
+                  description={
+                    query.error instanceof Error ? query.error.message : ''
+                  }
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  loading={query.isFetching}
+                  onClick={() => {
+                    void query.refetch().then((result) => {
+                      if (result.isSuccess) setDraft(result.data ?? empty);
+                    });
+                  }}
+                >
+                  تلاش دوباره
+                </Button>
+              </div>
             )}
             {error && (
               <Alert tone="error" title="ذخیره انجام نشد" description={error} />

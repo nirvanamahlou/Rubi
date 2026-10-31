@@ -24,7 +24,6 @@ import type {
 import { b2bAgreementTermsIssue, B2B_AGREEMENT_TYPES } from '@nora/contracts';
 import {
   Plus,
-  RefreshCw,
   FileText,
   History,
   Send,
@@ -1238,33 +1237,6 @@ export function AgreementWorkflowPanel({
       <div className="agreement-row-title agreement-toolbar dossier-filter-grid">
         <div className="commercial-section-heading">
           <div className="commercial-section-actions">
-            {canManage &&
-            view !== 'agreements' &&
-            permissions.includes('b2b.credit.manage') ? (
-              <label className="field">
-                <NativeSearchSelect
-                  className="input"
-                  aria-label="انتخاب قرارداد مرتبط"
-                  value=""
-                  disabled={loading || !branchId}
-                  onChange={(e) => {
-                    const selected = records.find(
-                      (r) => r.id === e.target.value,
-                    );
-                    if (selected) edit(selected);
-                  }}
-                >
-                  <option value="">انتخاب قرارداد مرتبط</option>
-                  {records
-                    .filter((r) => r.revisions[0]?.status !== 'PENDING')
-                    .map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.title}
-                      </option>
-                    ))}
-                </NativeSearchSelect>
-              </label>
-            ) : null}
             {canManage && view === 'agreements' && !headerActionTargetId ? (
               <button
                 className="btn primary"
@@ -1340,14 +1312,6 @@ export function AgreementWorkflowPanel({
             ))}
           </NativeSearchSelect>
         </label>
-        <button
-          className="btn"
-          disabled={loading}
-          onClick={() => setRefresh((n) => n + 1)}
-        >
-          <RefreshCw size={16} />
-          تازه‌سازی
-        </button>
       </div>
 
       {error ? (
@@ -1523,6 +1487,36 @@ export function AgreementWorkflowPanel({
           </button>
         </div>
       ) : null}
+      {canManage &&
+      view !== 'agreements' &&
+      permissions.includes('b2b.credit.manage') ? (
+        <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-4">
+          <label className="field">
+            <span>انتخاب قرارداد مرتبط</span>
+            <NativeSearchSelect
+              className="input"
+              aria-label="انتخاب قرارداد مرتبط"
+              value=""
+              disabled={loading || !branchId}
+              onChange={(event) => {
+                const selected = records.find(
+                  (record) => record.id === event.target.value,
+                );
+                if (selected) edit(selected);
+              }}
+            >
+              <option value="">انتخاب قرارداد مرتبط</option>
+              {records
+                .filter((record) => record.revisions[0]?.status !== 'PENDING')
+                .map((record) => (
+                  <option key={record.id} value={record.id}>
+                    {record.title}
+                  </option>
+                ))}
+            </NativeSearchSelect>
+          </label>
+        </div>
+      ) : null}
       {currentEditor ? (
         <Dialog
           open
@@ -1546,9 +1540,6 @@ export function AgreementWorkflowPanel({
                   ? 'ویرایش و نسخه‌بندی قرارداد'
                   : 'قرارداد جدید'}
             </DialogTitle>
-            <DialogDescription>
-              قرارداد و سقف‌های ارزی پس از تأیید مستقل فعال می‌شوند.
-            </DialogDescription>
             <AgreementTermsEditor
               focus={view === 'agreements' ? 'all' : view}
               value={currentEditor.terms}

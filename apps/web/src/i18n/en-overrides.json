@@ -1,4 +1,10 @@
 {
+  "ارز و بانک": "Currencies and banks",
+  "حذف حساب بانکی": "Delete bank account",
+  "حذف حساب بانکی ناموفق بود.": "Could not delete the bank account.",
+  "حساب بانکی استفاده‌شده قابل حذف نیست.": "A bank account used in financial operations cannot be deleted.",
+  "زیرمجموعه‌های ارز و بانک": "Currency and bank sections",
+  "فقط حساب بدون استفاده حذف می‌شود و سابقه عملیات باقی می‌ماند.": "Only unused accounts can be deleted. The audit history is retained.",
   "جمع ترانسفر برگشت:": "Return transfer total:",
   "جمع ترانسفر رفت:": "Outbound transfer total:",
   "کارگزار، ارز و قیمت ترانسفر را تکمیل کنید.": "Complete the transfer supplier, currency and price.",
@@ -4763,5 +4769,7 @@
   "انتخاب طرح از بیمه‌گر": "Select insurer plan",
   "مدت اقامت": "Stay duration",
   "کشور ·": "countries ·",
-  "طرح ·": "plans ·"
+  "طرح ·": "plans ·",
+  "دلیل لغو": "Cancellation reason",
+  "علت اصلاح پس از ارسال لازم است.": "An amendment reason is required after submission."
 }

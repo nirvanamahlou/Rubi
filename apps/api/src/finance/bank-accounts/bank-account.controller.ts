@@ -1,5 +1,6 @@
 import {
   Body,
+  Delete,
   Controller,
   Get,
   Header,
@@ -81,5 +82,20 @@ export class BankAccountController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.details(bankId, id, req.actor);
+  }
+  @Delete(':id')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions(
+    'finance.read',
+    'master_data.read',
+    'finance.account.manage',
+  )
+  remove(
+    @Param('bankId') bankId: string,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.remove(bankId, id, body, req.actor);
   }
 }
