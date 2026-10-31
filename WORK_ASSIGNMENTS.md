@@ -10361,3 +10361,9 @@ PC-B reserves workspace.tsx overview data projection and own status notes. Remov
 Base40916ebe1; user explicitly authorizes removing branch/contact-scope/registration-method filters, matching source/unit filter options to call form, and expert waiting-state edits with close limited to current unit managers. Reserve Call Center workspace/filter model/request editor, Customer Affairs workflow/read queries and focused regressions, existing IAM public capability consumer and own docs. No schema/dependency or production changes. Preserve active recording-download task and its data wiring; no recording files reserved.
 
 CALL-CENTER-FILTERS-STATUS-1031 source frozen for draft review. Scoped lint/format and19 Web/8 API checks pass; database/full build gates pending clean environment. No source overlap with recording-download; no live release claimed.
+
+## CALL-POPUP-REFRESH-1031 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; base6021f304e. User authorizes preventing automatic replay of previously shown unresolved call popups after browser refresh. Reserve telephony-attention.tsx, new tab-session shown-call helper/tests, telephony-hold regression and own docs. Preserve manual reopening, new incoming calls, user/offer/branch authorization, server unresolved queue and unrelated recording task. No API/schema/dependency/production mutations.
+
+CALL-POPUP-REFRESH-1031 source frozen for review;8 targeted checks/scoped lint/format pass. No schema, data or runtime change. Receipts persist across refresh within the same tab, isolated by actor; full build/release gate pending.

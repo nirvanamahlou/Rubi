@@ -15,6 +15,7 @@ import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './telephony.module.css';
 import { telephonyDraftName } from './telephony-draft';
 import { OperationalCallPopup } from './operational-call-popup';
+import { shownCallSession } from './shown-call-session';
 export interface AttentionCall {
   id: string;
   callId: string;
@@ -79,6 +80,7 @@ export function TelephonyAttention({
     <Attention
       key={actor.userId + actor.branchIds.join(',')}
       branch={actor.branchIds[0] ?? ''}
+      actorId={actor.userId}
       outboundOnly={outboundOnly}
       bothDirections={bothDirections}
     />
@@ -86,10 +88,12 @@ export function TelephonyAttention({
 }
 function Attention({
   branch,
+  actorId,
   outboundOnly,
   bothDirections,
 }: {
   branch: string;
+  actorId: string;
   outboundOnly: boolean;
   bothDirections: boolean;
 }) {
@@ -113,7 +117,7 @@ function Attention({
   const [tab] = useState(() => crypto.randomUUID());
   const currentRef = useRef<AttentionCall | null>(null),
     button = useRef<HTMLButtonElement>(null),
-    seen = useRef(new Set<string>());
+    seen = useRef(shownCallSession(actorId, () => window.sessionStorage));
   useUnsavedGuard(dirty);
   useEffect(() => {
     currentRef.current = current;
