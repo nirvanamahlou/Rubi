@@ -4763,5 +4763,7 @@
   "انتخاب طرح از بیمه‌گر": "Select insurer plan",
   "مدت اقامت": "Stay duration",
   "کشور ·": "countries ·",
-  "طرح ·": "plans ·"
+  "طرح ·": "plans ·",
+  "دلیل لغو": "Cancellation reason",
+  "علت اصلاح پس از ارسال لازم است.": "An amendment reason is required after submission."
 }
