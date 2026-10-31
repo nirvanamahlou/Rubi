@@ -2271,7 +2271,6 @@ export function SalesContractForm() {
           : null}
         {step === 0 ? (
           <SalesPeopleSheet
-            onToggleVisa={() => toggleService('VISA')}
             refreshRevision={referenceRefresh.revision}
             onGuestStateChange={(patch) => {
               if (patch.flightOnlyPassengers) setPeopleDirty(true);

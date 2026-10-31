@@ -321,7 +321,7 @@ it('keeps transfer selections and places the three hotel stay columns last in th
   for (const input of transfers) expect(input[0]).toContain('checked');
 });
 
-it('keeps visa above the passenger table after city tour and guide move to service cards', () => {
+it('keeps all duplicate service toggles out of the passenger header', () => {
   const html = renderToStaticMarkup(
     <SalesPeopleSheet
       state={{
@@ -335,19 +335,12 @@ it('keeps visa above the passenger table after city tour and guide move to servi
       onBusyChange={vi.fn()}
       onAddInfant={vi.fn()}
       onGuestStateChange={vi.fn()}
-      onToggleVisa={vi.fn()}
     />,
   );
   const beforeTable = html.slice(0, html.indexOf('<table'));
   expect(beforeTable).not.toContain('گشت شهری');
   expect(beforeTable).not.toContain('راهنما');
-  expect(beforeTable).toContain('ویزا');
-  const toggles = [
-    ...beforeTable.matchAll(/<input[^>]*type="checkbox"[^>]*>/g),
-  ].map((m) => m[0]);
-  expect(
-    toggles.filter((input) => input.includes('checked')).length,
-  ).toBeGreaterThanOrEqual(1);
+  expect(beforeTable).not.toContain('ویزا');
 });
 
 it('legacy contracts show customer controls without passenger spreadsheet or composition', () => {
