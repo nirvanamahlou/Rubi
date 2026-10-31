@@ -43,6 +43,8 @@ describe('Independent petty fund card', () => {
     expect(html).toContain((1250).toLocaleString('fa-IR'));
     expect(html).toContain('IRR');
     expect(html).not.toContain('سفارش‌های خرید');
+    expect(html).toContain('aria-label="موجودی و حساب تنخواه"');
+    expect(html).toContain('lucide-plus');
   });
   it('does not open an empty configuration before the balance has loaded', () => {
     const html = render(new QueryClient());

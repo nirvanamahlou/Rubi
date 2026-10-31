@@ -8063,3 +8063,7 @@ Independent branch petty fund replaces the Orders workspace card; historical Ord
 ## JAHAN-TRANSPARENT-DOCUMENTS-1031 — PC-A
 
 Removed the Jahan-specific white logo card from contract and shared reservation/voucher styles. The existing transparent supplied mark uses a white foreground filter for contrast on the navy header; other issuers and agency cards retain their styling. Canonical JAHAN_BASTAN footer/issuer handling is retained and regression-tested against stale Niyayesh snapshot names/contact details.83 focused contract/preview/PDF tests pass. Three synthetic actual A4 PDFs (contract, reservation, voucher) rendered with isolated Chrome and were visually checked after PDFium rasterization: transparent headers, readable mark and Jahan-only footers. No logo asset alteration, production data rewrite, migration, dependency or runtime deployment. Final exact-head hosted checks precede owner-authorized develop merge.
+
+## 2026-10-31 — PETTY-PLUS-1031 — PC-B
+
+A separate accessible plus button beside the petty cash card opens its existing balance, bank, account, IBAN and card modal. Card activation uses the same shared handler and preserves fetched values/version; no nested buttons. Management permission, pending-load guard and one fund per branch remain unchanged. No API/schema/monetary behavior change. Tests/build/hosted gates precede authorized merge and local rollout.
