@@ -282,7 +282,15 @@ export function ServiceParties({
       )}
       {state.serviceKinds.includes('HOTEL') && (
         <section className="grid gap-3 rounded-xl border p-4">
-          <h3 className="font-bold">هتل و ترکیب هر اتاق</h3>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-bold">هتل و ترکیب هر اتاق</h3>
+            <p
+              className="rounded-lg bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary"
+              role="status"
+            >
+              تعداد کل مسافران انتخاب‌شده: {party.total.toLocaleString('fa-IR')}
+            </p>
+          </div>
           {!state.tour && (
             <label className="flex items-center gap-2">
               <input

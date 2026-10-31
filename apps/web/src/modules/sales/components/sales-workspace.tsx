@@ -44,7 +44,7 @@ import { ContractTableScroll } from './contract-table-scroll';
 import { SalesReceivablesCard } from './sales-receivables-card';
 import { PassengerCorrectionButton } from './passenger-correction';
 
-export const DEFAULT_CONTRACT_PAGE_SIZE = 20;
+export const DEFAULT_CONTRACT_PAGE_SIZE = 10;
 export const DATE_FILTERED_CONTRACT_PAGE_SIZE = 10_000;
 
 export function contractRowClassName(
@@ -444,7 +444,7 @@ export function SalesWorkspace() {
         <p className="mt-3 text-xs text-muted-foreground">
           {dateFilterApplied
             ? 'همهٔ قراردادهای بازهٔ تاریخ ثبت انتخاب‌شده نمایش داده می‌شوند.'
-            : 'بدون فیلتر تاریخ، فقط ۲۰ قراردادِ آخر نمایش داده می‌شود.'}
+            : 'بدون فیلتر تاریخ، فقط ۱۰ قراردادِ آخر نمایش داده می‌شود.'}
         </p>
       </section>
       {!loading && !error && contracts.length === 0 ? (
