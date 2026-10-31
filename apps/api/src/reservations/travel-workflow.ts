@@ -75,8 +75,10 @@ export function transitionTravelWorkflow(
       sentSupplierFormSettings: entry?.sentSettings,
     } as TravelWorkflowStateV1;
     if (!entry && key === hotelKeys[0]) {
-      scoped.supplierFormSettings = current.supplierFormSettings;
-      scoped.sentSupplierFormSettings = current.sentSupplierFormSettings;
+      if (current.supplierFormSettings)
+        scoped.supplierFormSettings = current.supplierFormSettings;
+      if (current.sentSupplierFormSettings)
+        scoped.sentSupplierFormSettings = current.sentSupplierFormSettings;
     }
     const { hotelStayKey: _key, ...action } = command;
     void _key;
