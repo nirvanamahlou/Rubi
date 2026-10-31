@@ -43,7 +43,8 @@ vi.mock('./reservation-currencies', () => ({
 vi.mock('@/lib/environment', () => ({
   getPublicApiBaseUrl: () => 'https://api.test/api/v1',
 }));
-import { HotelStayPurchase } from './hotel-stay-purchase';
+import { HotelStayPurchase, HotelStayPurchases } from './hotel-stay-purchase';
+import { ReservationHotelPurchase, LegacyReservationHotelPurchase } from './reservation-hotel-purchase';
 import { HotelRoomQuotationEditor } from './hotel-room-quotation-editor';
 import { Button } from '@/components/ui/button';
 import { defaultVoucherSettings } from '../model/voucher-settings';
@@ -144,4 +145,10 @@ it('prefills the supplier proposal and makes no request until explicit purchase 
     request.workflow.supplierFormSettings!.hotelRoomPrices!.rooms[0]!
       .baseAmount,
   ).toBe('90');
+});
+
+it('routes canonical rooms to hotel purchases and keeps roomless historical purchase editing compatible', () => {
+  expect(ReservationHotelPurchase({ request, onSaved: h.saved }).type).toBe(HotelStayPurchases);
+  const legacy = { ...request, snapshot: { ...request.snapshot, hotelSelection: { ...request.snapshot.hotelSelection!, rooms: [] } }, workflow: { ...request.workflow, supplierFormSettings: undefined } } as unknown as ReservationFormIntake;
+  expect(ReservationHotelPurchase({ request: legacy, onSaved: h.saved }).type).toBe(LegacyReservationHotelPurchase);
 });

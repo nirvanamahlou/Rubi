@@ -66,7 +66,7 @@ export function HotelStayPurchases({
           ))}
         </section>
       )}
-      {canProfit && <ContractProfit contractId={request.contractId} />}
+      {canProfit && <ContractProfit id={request.contractId} />}
     </div>
   );
 }

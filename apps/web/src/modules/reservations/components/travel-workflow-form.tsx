@@ -163,9 +163,12 @@ export function TravelWorkflowForm({
   }
   if (!intake) return <p role="status">{error || 'در حال دریافت اطلاعات…'}</p>;
   const state = intake.workflow;
+  const SupplierDocument = reservationHotelStays(intake.snapshot).length > 1
+    ? SupplierHotelDocuments
+    : TravelDocument;
   if (readOnly)
     return (
-      <SupplierHotelDocuments
+      <SupplierDocument
         historical
         intake={{
           ...intake,
@@ -201,7 +204,7 @@ export function TravelWorkflowForm({
         >
           اصلاح
         </Button>
-        <SupplierHotelDocuments
+        <SupplierDocument
           downloadLabel="دانلود"
           intake={{
             ...intake,
