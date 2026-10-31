@@ -10393,3 +10393,9 @@ Owner authorizes reviewing and merging all own PRs after full CI and final devel
 COMPUTER_ID=PC-C. Reserve call-form.tsx/spec and CallCenterCallDto/HTTP boundary tests, plus own docs. Owner requests a required explicit result in call popups. Enforce existing outcome choices at business save only; provider event ingestion and incomplete historical calls stay valid. No schema/data/PBX/production mutation. Existing published form scopes released. Validate API/Web and activate localhost preview after preserving current runtime.
 
 REQUIRED-CALL-OUTCOME-1031 — VALIDATED:8 form and5 HTTP boundary checks pass. Scoped lint passes. Local preview uses exact four-file patch on existing runtime baseline; current develop's newer HR generated contracts require matching release dependencies. No migration/production change. Source reservation freezes on publication.
+
+## CALL-PHONE-LABEL-1031 — PC-C — ACTIVE
+
+COMPUTER_ID=PC-C. Owner follow-up authorizes the single CallForm phone label cleanup on this task branch; preserve required outcome changes. Remove only the optional suffix, with no phone validation/data/provider behavior changes. Existing publication reservation is reopened for this bounded same-owner follow-up.
+
+CALL-PHONE-LABEL-1031 — COMPLETE: single label cleanup, scoped lint passed; preview build prepared before activation. Previously blocked runtime restart remains pending owner stop. No phone/schema/data behavior changed. Reservation freezes on publication.

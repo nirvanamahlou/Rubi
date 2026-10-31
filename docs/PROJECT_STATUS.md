@@ -8199,3 +8199,7 @@ Five open Amin-tech11 PRs integrated, retaining their actual heads and complete 
 ## REQUIRED-CALL-OUTCOME-1031 — PC-C
 
 Existing CallForm now requires an explicit outcome, and authenticated business-save DTO rejects absent/null/empty/unsupported values. Telephony ingestion and historical incomplete calls unchanged.8 form/5 HTTP regressions pass; localhost preview retains its existing validated runtime baseline. No migration/production rollout. See tasks/REQUIRED-CALL-OUTCOME-1031.md.
+
+## CALL-PHONE-LABEL-1031 — PC-C
+
+CallForm phone label now reads only شماره تماس. Removed optional suffix only; validation, automatic Issabel capture and required outcome behavior unchanged. Scoped lint passed. Local activation remains pending the previously requested stop of old services.
