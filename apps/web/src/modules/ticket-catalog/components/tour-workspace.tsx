@@ -57,7 +57,10 @@ function Choice({
   return (
     <div className="grid gap-1">
       <span className="text-sm font-semibold">{label}</span>
-      <Select value={value} onValueChange={onChange}>
+      <Select
+        value={value || 'none'}
+        onValueChange={(next) => onChange(next === 'none' ? '' : next)}
+      >
         <SelectTrigger aria-label={label}>
           <SelectValue placeholder="انتخاب کنید" />
         </SelectTrigger>
@@ -69,6 +72,9 @@ function Choice({
             onKeyDown={(event) => event.stopPropagation()}
             onChange={(event) => setSearch(event.target.value)}
           />
+          {!options.some((item) => item.id === 'none') && (
+            <SelectItem value="none">انتخاب نشده</SelectItem>
+          )}
           {options
             .filter((item) =>
               item.name.toLowerCase().includes(search.toLowerCase()),
@@ -210,7 +216,14 @@ export function TourWorkspace({
 
   useEffect(() => {
     let cancelled = false;
-    if (!pack || !dates.start || !dates.end) return;
+    if (
+      !pack ||
+      !pack.originId ||
+      !pack.destinationId ||
+      !dates.start ||
+      !dates.end
+    )
+      return;
     if (dates.end < dates.start) return;
     void Promise.all([
       toursApi.offers(
@@ -461,9 +474,10 @@ export function TourWorkspace({
               disabled={busy}
               className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 [&_input:not([type=checkbox])]:h-9 [&_button[role=combobox]]:h-9"
             >
-              <FormField id="tour-name" label="عنوان تور">
+              <FormField id="tour-name" label="عنوان تور" required>
                 <Input
                   id="tour-name"
+                  maxLength={160}
                   value={draft.name}
                   onChange={(event) =>
                     setDraft({ ...draft, name: event.target.value })
@@ -772,6 +786,7 @@ export function TourWorkspace({
                         />
                         <Button
                           variant="outline"
+                          disabled={!pack?.originId || !pack.destinationId}
                           onClick={() => newFlight(direction)}
                         >
                           تعریف بلیط برای این روز

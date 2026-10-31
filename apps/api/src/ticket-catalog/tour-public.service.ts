@@ -506,6 +506,10 @@ export class TourPublicService {
         if (pack.version !== input.packageVersion)
           throw new ConflictException('نسخه تعریف تور تغییر کرده است.');
         const definition = packageView(pack);
+        if (!definition.originId || !definition.destinationId)
+          throw new BadRequestException(
+            'پیش از ثبت نوبت، شهر مبدأ و مقصد تور را تکمیل کنید.',
+          );
         const outbound = await tx.ticketPublishedOffer.findFirst({
           where: { id: input.outboundOfferId, branchId, status: 'ACTIVE' },
         });
