@@ -163,9 +163,10 @@ export function TravelWorkflowForm({
   }
   if (!intake) return <p role="status">{error || 'در حال دریافت اطلاعات…'}</p>;
   const state = intake.workflow;
-  const SupplierDocument = reservationHotelStays(intake.snapshot).length > 1
-    ? SupplierHotelDocuments
-    : TravelDocument;
+  const SupplierDocument =
+    reservationHotelStays(intake.snapshot).length > 1
+      ? SupplierHotelDocuments
+      : TravelDocument;
   if (readOnly)
     return (
       <SupplierDocument
