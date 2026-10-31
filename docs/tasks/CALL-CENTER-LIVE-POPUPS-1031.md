@@ -59,16 +59,39 @@ is inferred merely from the offer before an actual answer.
 Two focused preservation/unknown-recipient tests, scoped lint, Web typecheck and
 production build passed. Candidate `rubi-production:call-popup-recipient-1031`, ID
 `sha256:08a81359cd5002d49177da49fac8c5555cac7ce80dc757d58fe321343446d736`.
-Deployment is pending: free disk fell below the existing backup helper's5GiB
+Initial deployment was blocked: free disk fell below the existing backup helper's5GiB
 guard during another colleague's build. That deployment lock was awaited normally;
 the live popup/API images remain unchanged. Only identified failed own build
 artifacts and the downloadable APT archive cache were removed; no Docker prune,
 database, recording, release source or encrypted backup was deleted.
 
-Owner approval requested before archiving then removing three unmounted old
-release directories (`8a380e10`, `73e60ef1`, `c52e41b3`, approximately2.1GiB) to
-the approved off-server backup destination. Do not bypass the backup space guard
-or treat the answer-name follow-up as deployed before a successful release receipt.
+Owner explicitly approved archival and removal of the three unmounted old release
+directories (`8a380e10`, `73e60ef1`, `c52e41b3`). The AES256/PBKDF2 encrypted
+archive was compared against the original files before removal; its off-server
+size and SHA256 and its RSA-wrapped recovery key were verified. Final archive:
+`F:/ERP-Backups/Rubi/Old-Releases-20261031`, including manifest and recovery notes.
+Archive SHA256 `792eec0c702763ee843c61cebc9d49f6cdb7e620a8f05b76c443db8e05e18e93`.
+Only the exact approved release folders and newly created archive-transfer staging
+were removed, after rechecking resolved paths and all container mount references.
+Existing encrypted backups, operational data, recordings and active releases were
+preserved. Space recovered to approximately14.5GiB, including asynchronous
+reclamation from the earlier identified obsolete own build layers.
+
+Another colleague release changed the actual Web base to
+`rubi-production:travis-sandbox-1031-7e31198756-web`. Its recipient component
+matched the previous source after newline normalization. The refresh was rebuilt
+over that actual image; both-direction listener and all colleague changes remained.
+All7 focused tests, scoped lint, Web typecheck and production build passed again.
+
+Fresh encrypted backup succeeded without weakening the5GiB guard. Successful
+Web-only rollout receipt:
+`/opt/rubi/CALL-POPUP-RECIPIENT-CURRENT-RELEASE-1031.json`.
+Image `rubi-production:call-popup-recipient-current-1031`, immutable ID
+`sha256:e7ae1335eafa7360e485ae39bdf22740478db307833a0f0d31f790df21cd202f`.
+All15 login-page JavaScript assets returned200; Web mounts preserved and
+API/Worker/PostgreSQL/Redis container IDs unchanged. Owner requested to refresh
+Chrome after saving any existing draft and verify the incoming404 name after an
+actual answer; that final visual acceptance is pending.
 
 Future Web builds must preserve this source and popup build flag. Future API
 deployments must preserve private notification settings and answered-access code,

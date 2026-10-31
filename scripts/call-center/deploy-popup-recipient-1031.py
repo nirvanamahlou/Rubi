@@ -22,17 +22,17 @@ def main():
         raise SystemExit('Root required')
     os.umask(0o077)
     root = Path('/opt/rubi')
-    work = root/'private/call-popup-recipient-1031'
+    work = root/'private/call-popup-recipient-current-1031'
     if work.exists():
         raise SystemExit('Existing attempt requires inspection')
-    report = json.loads((root/'CALL-POPUP-RECIPIENT-BUILD-1031.json').read_text())
-    image = 'rubi-production:call-popup-recipient-1031'
+    report = json.loads((root/'CALL-POPUP-RECIPIENT-CURRENT-BUILD-1031.json').read_text())
+    image = 'rubi-production:call-popup-recipient-current-1031'
     if not report['complete'] or json.loads(run(['docker', 'image', 'inspect', image]))[0]['Id'] != report['image_id']:
         raise SystemExit('Validated image required')
     def inspect(n):
         return json.loads(run(['docker', 'inspect', 'rubi-production-'+n+'-1']))[0]
     before = {n: inspect(n) for n in ('web', 'api', 'worker', 'postgres', 'redis')}
-    old = 'rubi-production:call-popups-1031'
+    old = 'rubi-production:travis-sandbox-1031-7e31198756-web'
     if before['web']['Config']['Image'] != old:
         raise SystemExit('Unexpected Web base')
     path = root/'compose.yaml'
@@ -86,7 +86,7 @@ def main():
             replace(original)
             run(command+['up', '-d', '--no-deps', 'web'], 180)
             result.update(failure=str(error), rolled_back=True)
-        target = root/'CALL-POPUP-RECIPIENT-RELEASE-1031.json'
+        target = root/'CALL-POPUP-RECIPIENT-CURRENT-RELEASE-1031.json'
         target.write_text(json.dumps(result, indent=2))
         os.chmod(target, 0o644)
         print(json.dumps(result))
