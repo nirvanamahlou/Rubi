@@ -1,3 +1,7 @@
+## STACKED-HOTEL-RATE-PACKS-1029 - PC-A - VALIDATING
+
+Hotel purchase rate packs now use searchable hotel checkboxes and a selected-hotel summary. All selected hotel panels stay visible in one vertical editor. First room only is selected for new hotel drafts; additional rooms require explicit selection and valid bases, while saved room choices and per-room coefficients survive reopening. Save remains one pack revision for all selected hotels and links its immutable saved batch/date range to existing Package Management manual/group sale adjustments. Purchase/sale boundaries, imported prices, branch/date checks and history are unchanged. Web130 focused rate/package tests and13 workflow/translation checks pass, scoped lint and Web typecheck pass after rebuilding local shared declarations. Production build and hosted final-head gates remain pending. No migration, operational data or runtime deployment.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
 Shared room categories now additionally offer Family for two adults with at least one child. Keep Double default and Extra choice; preserve three-plus-adult Family eligibility, child-age validation and actual hotel capacity checks. Existing primary/additional hotel selectors, amendment editors and server validation consume the same public helper. Regressions cover one/multiple children, explicit Family preservation, unchanged defaults and rejection of solo/adult-only/invalid-age cases. No DTO/schema/migration/dependency or runtime/business-data changes. Exact-head full CI gates user-authorized develop merge.

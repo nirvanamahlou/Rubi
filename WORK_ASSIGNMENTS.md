@@ -1,3 +1,7 @@
+## STACKED-HOTEL-RATE-PACKS-1029 - PC-A - VALIDATING
+
+COMPUTER_ID=PC-A; branch codex/pc-a-stacked-hotel-rate-packs-1029 from origin/develop9ecf78b43. User requests searchable checkbox hotel selection, selected-hotel summary, stacked independent coefficient/base panels, first room selected by default, final save and existing Package Management sale adjustments. Reserve Reservations hotel-rates manual panel/workspace/styles and focused tests, read-only verification of Pricing Management consumer, and own status notes. No active overlapping editor writer found. Include only the eight new Web labels in en-overrides.json and the saved-batch management link; no API or standalone catalogue shape change. Preserve immutable pack revisions, branch/date/currency validation, imported rates and public API boundaries. No schema, migration, dependency, operational data or server change. User-authorized develop merge follows quality gates.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
 CI follow-up: reserve the existing ServiceParties category-option assertion only, adding Family to the expected choices and verifying its onValueChange persists Family with no fabricated extra bed. Full suite identified exactly this stale expectation (4121 other Web tests pass); preserve all other assertions and gates.

@@ -25,7 +25,7 @@ const row: ManualHotelRow = {
   roomRates: [],
 };
 describe('manual hotel coefficient tables', () => {
-  it('keeps both selected hotel panels mounted, hiding only the inactive hotel', () => {
+  it('shows all selected hotel panels stacked without hiding inactive hotels', () => {
     const html = renderToStaticMarkup(
       <ManualHotelPanel
         rows={[
@@ -41,7 +41,7 @@ describe('manual hotel coefficient tables', () => {
       />,
     );
     expect(html.match(/<article /g)).toHaveLength(2);
-    expect(html).toContain('hidden=""');
+    expect(html).not.toContain('hidden=""');
   });
   it('renders searchable hotel, composition selectors, room bases and purchase/sale columns', () => {
     const html = renderToStaticMarkup(
@@ -67,8 +67,8 @@ describe('manual hotel coefficient tables', () => {
       'ردهٔ سنی هر کودک',
     ])
       expect(html).toContain(text);
-    expect(html.match(/data-room-type=/g)).toHaveLength(2);
-    for (const room of ['Land View', 'Sea View']) {
+    expect(html.match(/data-room-type=/g)).toHaveLength(1);
+    for (const room of ['Land View']) {
       expect(html).toContain('aria-label="جدول ضرایب هتل ' + room + '"');
       expect(html).toContain('aria-label="قیمت ترکیب‌های ' + room + '"');
     }
@@ -78,7 +78,8 @@ describe('manual hotel coefficient tables', () => {
     expect(html).toContain('role="combobox"');
     expect(html).not.toContain('<select');
     expect(html).toContain('قیمت پایه Land View');
-    expect(html).toContain('قیمت پایه Sea View');
+    expect(html).not.toContain('قیمت پایه Sea View');
+    expect(html).toContain('انتخاب نوع اتاق Sea View');
     expect(html).toContain('data-source="brokers"');
     expect(html).not.toContain('data-source="organizations"');
   });
