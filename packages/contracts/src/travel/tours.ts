@@ -3,7 +3,9 @@ import type { TicketOfferV1 } from './index';
 /** Ticket Catalog owns this bundle; capacity always belongs to its ticket offers. */
 export interface TourPackageInputV1 {
   name: string;
+  /** Empty until the draft route is selected; required before departure creation. */
   originId: string;
+  /** Empty until selected; required before assigning hotels or departures. */
   destinationId: string;
   hotelIds: string[];
   insuranceId?: string;
