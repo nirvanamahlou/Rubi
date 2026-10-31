@@ -10141,7 +10141,6 @@ COMPUTER_ID=PC-A; branch codex/pc-a-supplier-ratio-save-1029. User requires curr
 
 SUPPLIER-RATIO-SAVE-1029 validation:25 API and33 Web focused checks passed, plus3 English coverage checks. Shared Contracts build and Web typecheck passed. API full typecheck encountered stale generated Prisma fields in unrelated Sales code and an ENOSPC cache write; regenerating local client before retry. Scoped lint passed after removing unused ticket print state. No operational data or server deployment.
 
-
 ## PETTY-CASH-RECEIPT-1031 — PC-B — IN_PROGRESS
 
 COMPUTER_ID=PC-B; branch codex/pc-b-petty-cash-flow-1031 from origin/develop. Reserve Procurement draft form/document picker and focused tests plus own status notes. Add direct receipt upload into existing Documents and persist immutable document/version references with draft; guard submission during upload. No schema/migration/dependency/permission/runtime changes. Existing primary checkout edits preserved. Larger petty cash request debit requires Finance public contract reconciliation; existing Finance balance counts confirmed movements, not submitted Procurement requests. User authorizes push/develop merge after checks.
