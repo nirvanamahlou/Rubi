@@ -8154,3 +8154,6 @@ Added fixed-origin HTTPS Travis/Noyan sandbox catalogue integration and private,
 
 ## HR-MANUAL-PERSONNEL-CODE-1031 / PC-B
 Employee create/edit personnel code is editable through existing validated form state and submission. Automatic suggestion retained; inaccurate automatic-only helper copy removed. Existing required/50-character/duplicate validation and API/FK identity preserved. No API/schema/dependency or server rollout. Targeted and final-head checks gate owner-authorized develop merge.
+
+## CALL-POPUP-REFRESH-1031 — PC-C
+Fixed useRef-only popup presentation memory with actor-isolated tab-session receipts.8 targeted tests/scoped lint pass. No server resolution/queue mutation; new calls and manual reopen preserved. Full clean build and production release pending. See tasks/CALL-POPUP-REFRESH-1031.md.

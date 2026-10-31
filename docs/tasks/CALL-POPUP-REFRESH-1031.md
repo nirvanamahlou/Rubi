@@ -1,0 +1,9 @@
+# CALL-POPUP-REFRESH-1031
+
+Cause: TelephonyAttention tracks displayed offer/call IDs only in a useRef(Set). Browser refresh rebuilds it empty while the server correctly returns unresolved nondeferred offers. The lease is reacquired and each offer is automatically opened again.
+
+Fix: presentation receipts use tab sessionStorage, namespaced by authenticated actor ID. Both inbound/outbound listeners merge the same user receipts; receipt is written at the existing display/manual-selection boundary, before opening. Server queues, offers, deferred flags, results, claims, permissions and business data remain unchanged. No contact details, tokens or notes are persisted, only call/offer identifiers. A different account is isolated; a new tab session starts fresh. Manual selection is never blocked by the receipt. Restricted/quota-failed storage falls back to the existing in-memory protection; cross-refresh persistence cannot be guaranteed if browser storage is denied. First rollout cannot recover receipts for popups displayed before the fix existed.
+
+Validation:8 targeted tests passed across shown-call-session, telephony-hold and telephony-draft; scoped ESLint and formatting pass. Tests cover refresh plus new-call eligibility, account isolation, listener merging and denied storage. Full build/types are not verified locally: existing dependency runtime is reused, with known stale generated artifacts/external-junction Turbopack limitation recorded by CALL-CENTER-FILTERS-STATUS-1031. Hosted clean build is required before release.
+
+No schema, migration, dependency, live DB or production change. User scope is browser Refresh replay prevention, not dismissing all historic unfinished calls across devices or marking calls resolved. Source branch codex/pc-c-call-popup-refresh-1031 from6021f304e. Active recording task and PR1239 filter/status files are preserved.

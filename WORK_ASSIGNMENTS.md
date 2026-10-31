@@ -10321,3 +10321,9 @@ TRAVIS-SANDBOX-CONNECTION-1031 verification:32 targeted API and3 English coverag
 COMPUTER_ID=PC-B; codex/pc-b-hr-manual-personnel-code-1031 from origin/develop1c8c45291. Owner authorizes manually editable employee personnel code in create/edit and push/develop merge. Reserve only new-employee-dialog.tsx, existing hr-workspace form assertions and own status notes. Existing automatic suggestion, required/length/duplicate validation and API/FK identity remain unchanged. No schema/API/dependency or active local runtime replacement. No overlapping active form writer found. Final-head hosted checks precede authorized merge.
 
 HR-MANUAL-PERSONNEL-CODE-1031:51 existing Web regressions and scoped ESLint passed. Shared create/edit controls remain bound to existing validated form state. Documentation formatting corrected after the first hosted quality check; all final-head hosted gates required before merge. Source reservation releases on verified develop merge.
+
+## CALL-POPUP-REFRESH-1031 — PC-C — IN_PROGRESS
+COMPUTER_ID=PC-C; base6021f304e. User authorizes preventing automatic replay of previously shown unresolved call popups after browser refresh. Reserve telephony-attention.tsx, new tab-session shown-call helper/tests, telephony-hold regression and own docs. Preserve manual reopening, new incoming calls, user/offer/branch authorization, server unresolved queue and unrelated recording task. No API/schema/dependency/production mutations.
+
+
+CALL-POPUP-REFRESH-1031 source frozen for review;8 targeted checks/scoped lint/format pass. No schema, data or runtime change. Receipts persist across refresh within the same tab, isolated by actor; full build/release gate pending.
