@@ -1,4 +1,6 @@
 import {
+  reservationHotelStays,
+  reservationHotelTransferKeys,
   readLegacyServiceParties,
   moneyDecimal,
   moneyUnits,
@@ -27,9 +29,52 @@ export function contractProfit(
 ): SalesContractProfitV1 {
   const costs: SalesContractProfitV1['costs'][number][] = [];
   const covered = new Set<string>();
-  const services = contract.servicesDetail.filter(
-    (s) => s.metadata?.insuranceAgeSurcharge !== true,
-  );
+  const services = [
+    ...contract.servicesDetail.filter(
+      (s) => s.metadata?.insuranceAgeSurcharge !== true,
+    ),
+  ];
+  if (
+    intake?.servicePurchases?.some((purchase) => purchase.roomPrices?.length)
+  ) {
+    for (const stay of reservationHotelStays(
+      intake.purchaseSnapshot ?? intake.snapshot,
+    )) {
+      if (!services.some((service) => service.clientKey === stay.key))
+        services.push({
+          clientKey: stay.key,
+          kind: 'HOTEL',
+          titleSnapshot: stay.hotel.hotelNameSnapshot,
+        } as (typeof services)[number]);
+      for (const key of reservationHotelTransferKeys(
+        intake.purchaseSnapshot ?? intake.snapshot,
+        stay.key,
+      ))
+        if (!services.some((service) => service.clientKey === key))
+          services.push({
+            clientKey: key,
+            kind: 'TRANSFER',
+            titleSnapshot: 'Transfer · ' + stay.hotel.hotelNameSnapshot,
+          } as (typeof services)[number]);
+    }
+  }
+  for (const purchase of intake?.servicePurchases ?? []) {
+    if (
+      !purchase.hotelStayKey ||
+      !['HOTEL', 'TRANSFER'].includes(purchase.serviceKind)
+    )
+      continue;
+    for (const key of purchase.coveredServiceClientKeys?.length
+      ? purchase.coveredServiceClientKeys
+      : [purchase.serviceClientKey]) {
+      if (!services.some((service) => service.clientKey === key))
+        services.push({
+          clientKey: key,
+          kind: purchase.serviceKind,
+          titleSnapshot: purchase.serviceTitle,
+        } as (typeof services)[number]);
+    }
+  }
   const title = (key: string) =>
     services.find((s) => s.clientKey === key)?.titleSnapshot ||
     (

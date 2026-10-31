@@ -1,3 +1,4 @@
+import { hotelFormScope } from '@/modules/reservations/model/hotel-form-scope';
 import { loadOutputReferences } from '@/modules/reservations/model/output-references';
 import { salesContractFlights } from '@nora/contracts';
 import { languageFromCookies } from '@/i18n/language';
@@ -30,6 +31,8 @@ export async function GET(
   const kind = new URL(request.url).searchParams.get('kind');
   if (kind && kind !== 'voucher') return fail('نوع سند معتبر نیست.', 400);
   const voucher = kind === 'voucher';
+  const hotelStayKey = new URL(request.url).searchParams.get('hotelStayKey');
+  if (voucher && hotelStayKey) return fail('نوع سند معتبر نیست.', 400);
   if (
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
   )
@@ -50,9 +53,17 @@ export async function GET(
         'دریافت فرم مجاز نیست؛ نشست و دسترسی رزرواسیون را بررسی کنید.',
         response.status,
       );
-    const { data: intake } = (await response.json()) as {
+    const { data: rawIntake } = (await response.json()) as {
       data: ReservationFormIntake;
     };
+    let intake = rawIntake;
+    if (hotelStayKey) {
+      try {
+        intake = hotelFormScope(rawIntake, hotelStayKey);
+      } catch {
+        return fail('اقامت هتل معتبر نیست.', 400);
+      }
+    }
     if (!voucher && intake.workflow.sentSupplierFormSettings) {
       intake.workflow.supplierFormSettings =
         intake.workflow.sentSupplierFormSettings;

@@ -1,4 +1,7 @@
 'use client';
+import { HotelRoomQuotationEditor } from './hotel-room-quotation-editor';
+import { hotelFormScope } from '../model/hotel-form-scope';
+import { reservationHotelStays } from '@nora/contracts';
 import { MoneyInput } from '@/components/ui/money-input';
 import {
   ReservationCurrencySelect,
@@ -347,7 +350,11 @@ export function ReservationSettingsForm({
     let savedWorkflow: TravelWorkflowStateV1 | undefined;
     try {
       const supplierFormPrices = normalizeSupplierFormPrices(
-        draft.supplierFormPrices,
+        draft.rooms?.length
+          ? draft.supplierFormPrices?.transferPp
+            ? { transferPp: draft.supplierFormPrices.transferPp }
+            : {}
+          : draft.supplierFormPrices,
         currencyDirectory.currencies,
       );
       let currentVersion = intake.workflow.version;
@@ -368,6 +375,7 @@ export function ReservationSettingsForm({
         `reservations/requests/${intake.id}/workflow`,
         {
           action: 'SUPPLIER_FORM_SETTINGS',
+          ...(intake.hotelStayKey ? { hotelStayKey: intake.hotelStayKey } : {}),
           applyToContractAndVoucher: false,
           expectedVersion: currentVersion,
           note: sectionLabels[section] + ' فقط در فرم رزواسیون',
@@ -399,7 +407,7 @@ export function ReservationSettingsForm({
       );
       savedWorkflow = r.data;
       const result = sendToBroker
-        ? await sendSavedReservationForm(intake.id, r.data)
+        ? await sendSavedReservationForm(intake.id, r.data, intake.hotelStayKey)
         : r;
       onSaved(result.data);
       setMessage('نسخهٔ جدید با موفقیت ثبت شد.');
@@ -590,7 +598,30 @@ export function ReservationSettingsForm({
           {currencyDirectory.error && (
             <p role="alert">{currencyDirectory.error}</p>
           )}
-          <table className="w-full text-sm">
+          {!!draft.rooms?.length && (
+            <HotelRoomQuotationEditor
+              draft={draft}
+              update={update}
+              currencies={currencyDirectory.currencies}
+              busy={busy || currencyDirectory.loading}
+              nights={
+                intake.snapshot.hotelSelection
+                  ? Math.round(
+                      (Date.parse(
+                        draft.text.checkOut ||
+                          intake.snapshot.hotelSelection.checkOutDate,
+                      ) -
+                        Date.parse(
+                          draft.text.checkIn ||
+                            intake.snapshot.hotelSelection.checkInDate,
+                        )) /
+                        86400000,
+                    )
+                  : 0
+              }
+            />
+          )}
+          <table className={draft.rooms?.length ? 'hidden' : 'w-full text-sm'}>
             <thead>
               <tr>
                 {supplierPriceColumns.map((column) => (
@@ -660,7 +691,11 @@ export function ReservationSettingsForm({
             type="button"
             variant="outline"
             disabled={busy}
-            onClick={() => update({ ...draft, supplierFormPrices: {} })}
+            onClick={() => {
+              const cleared = { ...draft, supplierFormPrices: {} };
+              cleared.hotelRoomPrices = null;
+              update(cleared);
+            }}
           >
             پاک‌کردن مبلغ فرم
           </Button>
@@ -1206,7 +1241,15 @@ export function ReservationSettingsForm({
         <summary>سابقهٔ فرم رزواسیون (۱۰۰ نسخهٔ اخیر)</summary>
         <div className="grid gap-2">
           {history
-            .filter((item) => item.state.supplierFormSettings)
+            .filter((item) =>
+              intake.hotelStayKey
+                ? item.state.hotelSupplierForms?.[intake.hotelStayKey]
+                    ?.settings ||
+                  (intake.hotelStayKey ===
+                    intake.snapshot.hotelSelection?.serviceClientKey &&
+                    item.state.supplierFormSettings)
+                : item.state.supplierFormSettings,
+            )
             .map((h) => (
               <div
                 key={h.version}
@@ -1234,7 +1277,17 @@ export function ReservationSettingsForm({
           <Button variant="outline" onClick={() => setPast(undefined)}>
             بستن نسخهٔ قبلی
           </Button>
-          <TravelDocument intake={{ ...intake, workflow: past }} historical />
+          <TravelDocument
+            intake={
+              intake.hotelStayKey
+                ? hotelFormScope(
+                    { ...intake, workflow: past },
+                    intake.hotelStayKey,
+                  )
+                : { ...intake, workflow: past }
+            }
+            historical
+          />
         </div>
       )}
     </section>
@@ -1250,6 +1303,45 @@ export function ReservationSettings(props: {
   section?: ReservationSettingsSection;
   partyName?: string;
 }) {
+  const stays = reservationHotelStays(props.intake.snapshot);
+  const [selectedKey, setSelectedKey] = useState(stays[0]?.key ?? '');
+  const key = stays.some((stay) => stay.key === selectedKey)
+    ? selectedKey
+    : stays[0]?.key;
+
+  return (
+    <div className="grid gap-4">
+      {stays.length > 1 && (
+        <nav className="flex flex-wrap gap-2">
+          {stays.map((stay) => (
+            <Button
+              key={stay.key}
+              variant={stay.key === key ? 'primary' : 'outline'}
+              onClick={() => setSelectedKey(stay.key)}
+            >
+              اقامت {stay.ordinal} · {stay.hotel.hotelNameSnapshot}
+            </Button>
+          ))}
+        </nav>
+      )}
+      {stays.length ? (
+        stays.map((stay) => (
+          <div key={stay.key} hidden={stay.key !== key}>
+            <HotelReservationSettings
+              {...props}
+              intake={hotelFormScope(props.intake, stay.key)}
+            />
+          </div>
+        ))
+      ) : (
+        <HotelReservationSettings {...props} />
+      )}
+    </div>
+  );
+}
+function HotelReservationSettings(
+  props: Parameters<typeof ReservationSettings>[0],
+) {
   const refs = useReservationFormReferences(props.intake, true);
   return refs.ready ? (
     <ReservationSettingsForm {...props} refs={refs.references} />
@@ -1261,8 +1353,15 @@ export function ReservationSettings(props: {
 export async function sendSavedReservationForm(
   id: string,
   state: TravelWorkflowStateV1,
+  hotelStayKey?: string,
 ) {
-  if (!state.supplierFormSettings?.brokerId)
+  if (
+    !(
+      hotelStayKey
+        ? state.hotelSupplierForms?.[hotelStayKey]?.settings
+        : state.supplierFormSettings
+    )?.brokerId
+  )
     throw new Error(
       'پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.',
     );
@@ -1270,6 +1369,7 @@ export async function sendSavedReservationForm(
     `reservations/requests/${id}/workflow`,
     {
       action: 'REQUEST_SUPPLIER',
+      ...(hotelStayKey ? { hotelStayKey } : {}),
       expectedVersion: state.version,
       note: 'ثبت ارسال فرم رزرواسیون به کارگزار',
     },

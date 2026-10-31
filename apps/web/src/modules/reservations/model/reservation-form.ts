@@ -30,6 +30,8 @@ import type {
 } from '@nora/contracts';
 export type ReservationFormIntake = ReservationIntakeV1 & {
   workflow: TravelWorkflowStateV1;
+  hotelStayKey?: string;
+  hotelStayOrdinal?: number;
   contractPartyName?: string | null;
   /** Minimal request-scoped Customer projection; no DOB or passport numbers. */
   outputPassengers?: readonly {
@@ -134,12 +136,11 @@ export function reservationFormData(
     );
     const hotelChildAgeBand =
       age === 'CHILD'
-        ? identity?.hotelChildAgeBand ||
-          (person?.childAgeBand === 'AGE_2_6'
-            ? 'CHD_2_TO_6'
-            : person?.childAgeBand === 'AGE_6_12'
-              ? 'CHD_6_TO_12'
-              : undefined)
+        ? person?.childAgeBand === 'AGE_2_6'
+          ? 'CHD_2_TO_6'
+          : person?.childAgeBand === 'AGE_6_12'
+            ? 'CHD_6_TO_12'
+            : identity?.hotelChildAgeBand || undefined
         : undefined;
     const allocated = services.filter((service) =>
       person?.serviceClientKeys?.includes(service.clientKey),

@@ -1,4 +1,5 @@
 import {
+  hotelRoomQuotationTotal,
   voucherTextKeys,
   voucherNumberKeys,
   voucherFlagKeys,
@@ -38,6 +39,38 @@ export function validateVoucherSettings(
   };
   if (!value || typeof value !== 'object') return fail();
   const v = value as VoucherSettingsV1;
+  try {
+    if (v.hotelRoomPrices) {
+      if (
+        Object.keys(v.hotelRoomPrices).some(
+          (key) => !['currencyCode', 'rooms'].includes(key),
+        )
+      )
+        return fail();
+      if (!/^[A-Z]{3}$/.test(v.hotelRoomPrices.currencyCode)) return fail();
+      hotelRoomQuotationTotal(
+        v.hotelRoomPrices.rooms,
+        1,
+        (v.rooms ?? []).map((room) => room.ordinal),
+      );
+    }
+    if (
+      v.hotelTransferCounts &&
+      Object.keys(v.hotelTransferCounts).some(
+        (key) => !['outbound', 'returning'].includes(key),
+      )
+    )
+      return fail();
+    if (
+      v.hotelTransferCounts &&
+      [v.hotelTransferCounts.outbound, v.hotelTransferCounts.returning].some(
+        (count) => !Number.isSafeInteger(count) || count < 0 || count > 500,
+      )
+    )
+      return fail();
+  } catch {
+    return fail();
+  }
   try {
     validateSupplierFormPrices(v.supplierFormPrices);
   } catch {
@@ -221,6 +254,12 @@ export function validateVoucherSettings(
             childAges: [...room.childAges],
           })),
         }
+      : {}),
+    ...(v.hotelRoomPrices
+      ? { hotelRoomPrices: structuredClone(v.hotelRoomPrices) }
+      : {}),
+    ...(v.hotelTransferCounts
+      ? { hotelTransferCounts: { ...v.hotelTransferCounts } }
       : {}),
     ...(v.hotelPurchasePrices !== undefined
       ? {
