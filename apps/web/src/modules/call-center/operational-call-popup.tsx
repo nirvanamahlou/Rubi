@@ -4,6 +4,15 @@ import { HostedCallForm } from './call-form-host';
 import { callCenterRequest } from './client';
 import type { AttentionCall } from './telephony-attention';
 import type { Call } from './model';
+
+export function refreshCallRecipient(current: Call | null, latest: Call): Call {
+  if (!current) return latest;
+  const refreshed = { ...current, operator: latest.operator };
+  if (latest.answerRecipient)
+    refreshed.answerRecipient = latest.answerRecipient;
+  else delete refreshed.answerRecipient;
+  return refreshed;
+}
 type OfferedCall = {
   call: Call;
   version: number;
@@ -60,7 +69,7 @@ export function OperationalCallPopup({
           branch,
         );
         if (live) {
-          setCall(result.call);
+          setCall((current) => refreshCallRecipient(current, result.call));
           setCanLinkRequests(result.canLinkRequests);
           setError('');
         }
@@ -75,7 +84,7 @@ export function OperationalCallPopup({
     return () => {
       live = false;
     };
-  }, [sessionId, branch, tabId, leader, retry]);
+  }, [sessionId, branch, tabId, leader, retry, row.version]);
   if (!call)
     return (
       <Dialog

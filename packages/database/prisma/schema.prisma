@@ -47,6 +47,7 @@ model User {
   accountingSourceEvents   FinanceAccountingEvent[]         @relation("FinancialEventActor")
 
   callCenterCalls                                  CallCenterCall[]
+  callAnswerResponsibilities                       CallCenterAnswerResponsibility[]
   callCenterNotes                                  CallCenterNote[]
   callCenterOwnedContacts                          CallCenterContact[]                       @relation("CallCenterContactOwner")
   internalLettersAuthored                          CorrespondenceLetter[]                    @relation("CorrespondenceAuthor")
@@ -1211,6 +1212,7 @@ model MasterRailTerminal {
 }
 
 model MasterCurrency {
+  hotels                               MasterHotel[]
   procurementRequestCurrencycodeRows   ProcurementRequest[]        @relation("ProcurementRequestCurrencycode")
   procurementQuotationCurrencycodeRows ProcurementQuotation[]      @relation("ProcurementQuotationCurrencycode")
   procurementOrderCurrencycodeRows     ProcurementOrder[]          @relation("ProcurementOrderCurrencycode")
@@ -2208,6 +2210,8 @@ model MasterBusTypeFacility {
 }
 
 model MasterHotel {
+  currencyId           String?                      @db.Uuid
+  currency             MasterCurrency?              @relation(fields: [currencyId], references: [id], onDelete: Restrict)
   salesHotelStays      SalesContractHotelStay[]
   groupRates           ReservationHotelGroupRate[]
   id                   String                       @id @default(uuid()) @db.Uuid
@@ -2260,6 +2264,7 @@ model MasterHotel {
 
   @@index([cityId, isActive, name])
   @@index([chainId, isActive, name])
+  @@index([currencyId])
   @@index([isSaleableReference, isActive, name])
   @@index([mealServiceId])
   @@index([defaultRoomTypeId])
@@ -7860,27 +7865,28 @@ model CallCenterContact {
 model CallCenterCall {
   telephonySession CallCenterTelephonySession?
 
-  searchTokens       String[]               @default([]) @map("search_tokens")
-  sourceToken        String?                @map("source_token") @db.Char(64)
-  unitToken          String?                @map("unit_token") @db.Char(64)
-  needsCompletion    Boolean?               @map("needs_completion")
-  searchVersion      Int                    @default(0) @map("search_version")
-  ticketId           String?                @map("ticket_id") @db.Uuid
-  ticket             CustomerAffairsTicket? @relation(fields: [ticketId], references: [id], onDelete: Restrict, map: "cc_call_ticket_fk")
-  outcome            String?                @db.VarChar(32)
-  origin             String?                @db.VarChar(16)
-  id                 String                 @id @db.Uuid
-  contactId          String                 @map("contact_id") @db.Uuid
-  createdByUserId    String                 @map("created_by_user_id") @db.Uuid
-  direction          String                 @db.VarChar(8)
-  status             String                 @db.VarChar(40)
-  occurredAt         DateTime               @map("occurred_at") @db.Timestamptz(3)
-  encryptedPayload   String                 @map("encrypted_payload") @db.Text
-  keyVersion         Int                    @map("key_version")
-  requestFingerprint String                 @map("request_fingerprint") @db.Char(64)
-  createdAt          DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
-  contact            CallCenterContact      @relation(fields: [contactId], references: [id], onDelete: Restrict, map: "call_contact_fk")
-  createdBy          User                   @relation(fields: [createdByUserId], references: [id], onDelete: Restrict, map: "call_creator_fk")
+  searchTokens           String[]                         @default([]) @map("search_tokens")
+  sourceToken            String?                          @map("source_token") @db.Char(64)
+  unitToken              String?                          @map("unit_token") @db.Char(64)
+  needsCompletion        Boolean?                         @map("needs_completion")
+  searchVersion          Int                              @default(0) @map("search_version")
+  ticketId               String?                          @map("ticket_id") @db.Uuid
+  ticket                 CustomerAffairsTicket?           @relation(fields: [ticketId], references: [id], onDelete: Restrict, map: "cc_call_ticket_fk")
+  outcome                String?                          @db.VarChar(32)
+  origin                 String?                          @db.VarChar(16)
+  id                     String                           @id @db.Uuid
+  contactId              String                           @map("contact_id") @db.Uuid
+  createdByUserId        String                           @map("created_by_user_id") @db.Uuid
+  direction              String                           @db.VarChar(8)
+  status                 String                           @db.VarChar(40)
+  occurredAt             DateTime                         @map("occurred_at") @db.Timestamptz(3)
+  encryptedPayload       String                           @map("encrypted_payload") @db.Text
+  keyVersion             Int                              @map("key_version")
+  requestFingerprint     String                           @map("request_fingerprint") @db.Char(64)
+  createdAt              DateTime                         @default(now()) @map("created_at") @db.Timestamptz(3)
+  contact                CallCenterContact                @relation(fields: [contactId], references: [id], onDelete: Restrict, map: "call_contact_fk")
+  createdBy              User                             @relation(fields: [createdByUserId], references: [id], onDelete: Restrict, map: "call_creator_fk")
+  answerResponsibilities CallCenterAnswerResponsibility[]
 
   @@index([contactId, occurredAt, id], map: "call_contact_calls_idx")
   @@index([ticketId], map: "cc_call_ticket_idx")
@@ -7947,20 +7953,21 @@ model IntegrationTelephonyMapping {
 }
 
 model IntegrationTelephonyInbox {
-  id                  String                         @id @default(uuid()) @db.Uuid
-  connectionId        String                         @db.Uuid
-  externalFingerprint String                         @db.Char(64)
-  payloadFingerprint  String                         @db.Char(64)
-  encryptedPayload    String?                        @db.Text
-  keyVersion          Int
-  receivedAt          DateTime                       @default(now()) @db.Timestamptz(3)
-  status              String                         @default("PENDING") @db.VarChar(16)
-  attempts            Int                            @default(0)
-  errorCode           String?                        @db.VarChar(32)
-  processedAt         DateTime?                      @db.Timestamptz(3)
-  connection          IntegrationTelephonyConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
-  dispatch            IntegrationTelephonyOutbox?
-  answer              IntegrationTelephonyAnswer?
+  id                         String                           @id @default(uuid()) @db.Uuid
+  connectionId               String                           @db.Uuid
+  externalFingerprint        String                           @db.Char(64)
+  payloadFingerprint         String                           @db.Char(64)
+  encryptedPayload           String?                          @db.Text
+  keyVersion                 Int
+  receivedAt                 DateTime                         @default(now()) @db.Timestamptz(3)
+  status                     String                           @default("PENDING") @db.VarChar(16)
+  attempts                   Int                              @default(0)
+  errorCode                  String?                          @db.VarChar(32)
+  processedAt                DateTime?                        @db.Timestamptz(3)
+  connection                 IntegrationTelephonyConnection   @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  dispatch                   IntegrationTelephonyOutbox?
+  answer                     IntegrationTelephonyAnswer?
+  callAnswerResponsibilities CallCenterAnswerResponsibility[]
 
   @@unique([connectionId, externalFingerprint], map: "integration_telephony_inbox_connectionId_externalFingerprint_ke")
   @@index([status, receivedAt])
@@ -8231,6 +8238,23 @@ model ReservationInsuranceRevision {
 
   @@unique([policyId, version])
   @@map("reservation_insurance_revisions")
+}
+
+// Customer Affairs-owned additive responsibility; only trusted answer receipts may create rows.
+model CallCenterAnswerResponsibility {
+  callId     String                    @db.Uuid
+  userId     String                    @db.Uuid
+  inboxId    String                    @db.Uuid
+  answeredAt DateTime                  @db.Timestamptz(3)
+  createdAt  DateTime                  @default(now()) @db.Timestamptz(3)
+  call       CallCenterCall            @relation(fields: [callId], references: [id], onDelete: Restrict)
+  user       User                      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  inbox      IntegrationTelephonyInbox @relation(fields: [inboxId], references: [id], onDelete: Restrict)
+
+  @@id([callId, userId])
+  @@index([userId, callId])
+  @@index([inboxId])
+  @@map("call_center_answer_responsibilities")
 }
 
 model ProcurementPettyFund {

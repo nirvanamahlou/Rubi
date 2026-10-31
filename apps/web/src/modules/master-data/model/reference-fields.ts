@@ -179,6 +179,7 @@ const configs: Partial<
     countryId: { target: 'countries', payload: 'id' },
   },
   hotels: {
+    currencyId: { target: 'currencies', payload: 'id', optional: true },
     cityId: { target: 'cities', payload: 'id' },
     chainId: {
       target: 'hotel-chains',

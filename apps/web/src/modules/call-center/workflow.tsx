@@ -1216,7 +1216,10 @@ export function WorkflowEditor({
                   label="وضعیت"
                   name="status"
                   value={status}
-                  disabled={busy || managementLocked}
+                  disabled={
+                    busy ||
+                    (managementLocked && editor.item?.status === 'CLOSED')
+                  }
                   onValueChange={(value) => {
                     setStatus(value);
                     setDirty(true);
@@ -1228,10 +1231,15 @@ export function WorkflowEditor({
                         : taskLabels,
                     ).filter(
                       ([key]) =>
-                        editor.item ||
-                        (editor.kind === 'request'
-                          ? key === 'IN_PROGRESS'
-                          : key === 'OPEN'),
+                        (editor.kind !== 'request' ||
+                          !managementLocked ||
+                          key === 'IN_PROGRESS' ||
+                          key === 'WAITING_CUSTOMER' ||
+                          key === editor.item?.status) &&
+                        (editor.item ||
+                          (editor.kind === 'request'
+                            ? key === 'IN_PROGRESS'
+                            : key === 'OPEN')),
                     ),
                   )}
                 />

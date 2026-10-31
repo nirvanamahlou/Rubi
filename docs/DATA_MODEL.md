@@ -1,3 +1,7 @@
+## Hotel reference currency — 2026-10-31
+
+MasterHotel.currencyId optionally references MasterCurrency.id with a restrictive FK and index. This is native hotel reference metadata, separate from dated hotel purchase/sale currencies and rates. Old hotels/imports remain NULL; no currency is inferred or backfilled. Apply migration20261031170000_hotel_reference_currency before the matching API/Web release. New selections must reference an active currency; omission preserves an existing value and explicit clearing stores NULL.
+
 ## Reference UI cleanup — 2026-10-31
 
 MasterRailCompany.organizationId is optional; existing unique organization links and the real foreign key remain. FinanceSettlementAccount.deletedAt marks audited removal of an unused company bank account. Removal sets isActive=false, increments the version, retains the row/audits, rejects every financial reference and excludes the record from company-bank account lists and detail/edit reads. Apply migration20261031160000_optional_rail_company_organization before the matching API/Web release. Reverting the nullable rail association requires explicit review of newly unlinked companies; do not invent organizations or delete records to force rollback.
@@ -995,6 +999,10 @@ SalesContractPassenger.birthDate is nullable to represent an unknown real birth 
 ## Additional hotel stay room composition — 2026-10-27
 
 SalesContractHotelStayRoom belongs to SalesContractHotelStay and references the actual MasterRoomType. Ordered room snapshots retain adults and child ages independently per itinerary hotel. Unique(stayId, ordinal), restricted room-type deletion and cascade from the stay preserve integrity. Migration20261027120000 is additive; existing stays without room children remain valid historical records. SalesHotelStayInput.rooms is optional for old clients; omission during compatible amendment preserves existing room children. New explicit room lists are validated and do not create additional charges or supplier bookings. See tasks/CONTRACT-MULTI-HOTEL-1027.md.
+
+## Trusted answered-call responsibility — 2026-10-29
+
+CallCenterAnswerResponsibility is Customer Affairs-owned, additive and separate from manual contact ownership/request execution assignment. Primary key(callId,userId) references real immutable call/user identities; inboxId references the trusted integration receipt, all with restrictive deletion. answeredAt and createdAt are UTC timestamptz(3); indexes(userId,callId) and inboxId support scoped reads and FK maintenance. A call's existing contact and branch FK supplies tenant scope. No phone/name/credential text is duplicated. Only trusted canonical ANSWERED evidence and its authoritative account snapshot create responsibility. Repeated/late answers retain the earliest timestamp/source. Integration snapshot version1 is an additive encrypted-envelope field; old receipts remain readable, but uncertain historical account mappings are reported instead of guessed. Migration20261029120000 is additive, contains no historical backfill and must precede API rollout. Keep the table on application rollback. See tasks/CALL-CENTER-ANSWERED-ACCESS-1029.md.
 
 ## Explicit zero hotel and transfer purchases — 2026-10-29
 

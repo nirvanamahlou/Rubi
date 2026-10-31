@@ -1313,6 +1313,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       'پروفایل مرجع هتل، موقعیت، زنجیره و کاتالوگ خدمات؛ قرارداد و موجودی خارج از Master Data است.',
     fields: [
       nameField,
+      { key: 'currencyId', label: 'ارز هتل', type: 'text', placeholder: '' },
       {
         key: 'englishName',
         label: 'نام انگلیسی',
