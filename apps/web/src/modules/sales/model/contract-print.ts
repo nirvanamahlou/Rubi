@@ -288,12 +288,21 @@ export function contractPrintHtml(
     c.servicesDetail,
     c.passengersDetail,
   );
-  const flightPrices = totalPrices
-    ? undefined
-    : readPassengerFlightPrices(c.servicesDetail);
-  const hotelPrices = totalPrices
-    ? undefined
-    : readPassengerHotelPrices(c.servicesDetail, c.passengersDetail);
+  // Saved package totals/passenger sale prices supersede obsolete service splits.
+  // Historical whole-contract bookings may retain empty hotel/flight maps.
+  const contractPackagePricing =
+    c.servicesDetail.length > 0 &&
+    c.servicesDetail.every(
+      (s) => s.metadata?.contractPackagePricingVersion === 1,
+    );
+  const servicePriceFallback =
+    !totalPrices && !completePrices && !contractPackagePricing;
+  const flightPrices = servicePriceFallback
+    ? readPassengerFlightPrices(c.servicesDetail)
+    : undefined;
+  const hotelPrices = servicePriceFallback
+    ? readPassengerHotelPrices(c.servicesDetail, c.passengersDetail)
+    : undefined;
   const passengerAgeLabel = (p: (typeof c.passengersDetail)[number]) => {
     if (p.ageCategory !== 'CHD')
       return p.ageCategory === 'INF' ? 'نوزاد' : 'بزرگسال';
