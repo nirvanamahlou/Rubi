@@ -20,6 +20,7 @@ import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';
 import { ContractProfit } from '@/modules/finance/components/contract-profit';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import { hotelFormScope } from '../model/hotel-form-scope';
+import { contractHotelTransferCounts } from '../model/hotel-transfer-counts';
 import { defaultSupplierFormSettings } from '../model/voucher-settings';
 import { HotelRoomQuotationEditor } from './hotel-room-quotation-editor';
 import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
@@ -112,6 +113,7 @@ export function HotelStayPurchase({
   );
   const [draft, setDraft] = useState<VoucherSettingsV1>(() => ({
     ...quote,
+    hotelTransferCounts: contractHotelTransferCounts(request.snapshot, stayKey),
     ...(purchase?.roomPrices
       ? {
           hotelRoomPrices: {
@@ -137,6 +139,9 @@ export function HotelStayPurchase({
             returning: transfer.hotelTransferCounts?.returning ?? 0,
           },
         }
+      : {}),
+    ...(transfer?.hotelTransferCounts
+      ? { hotelTransferCounts: { ...transfer.hotelTransferCounts } }
       : {}),
   }));
   const [broker, setBroker] = useState<Option | null>(

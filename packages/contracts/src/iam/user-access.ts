@@ -599,6 +599,66 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
     route: '/integrations',
   },
   {
+    id: 'integrations.niyayesh.login',
+    group: 'integrations',
+    title: 'ورود شخصی به پنل نیایش',
+    route: '/integrations',
+  },
+  {
+    id: 'integrations.niyayesh.provision',
+    group: 'integrations',
+    title: 'ساخت حساب متصل نیایش در اولین ورود',
+    route: '/integrations',
+  },
+  {
+    id: 'integrations.niyayesh.analytics',
+    group: 'integrations',
+    title: 'گزارش و بازدیدهای سایت نیایش',
+    route: '/integrations',
+  },
+  {
+    id: 'integrations.niyayesh.publish',
+    group: 'integrations',
+    title: 'انتشار اطلاعات در سایت نیایش',
+    route: '/integrations',
+  },
+  ...(
+    [
+      ['tours', 'مدیریت کامل تورهای نیایش'],
+      ['hotels', 'مدیریت کامل هتل‌های نیایش'],
+      ['service-offers', 'مدیریت کامل بلیت و خدمات نیایش'],
+      ['visas', 'مدیریت ویزاهای نیایش'],
+      ['destinations', 'مدیریت مقصدهای نیایش'],
+      ['countries', 'مدیریت کشورهای نیایش'],
+      ['airlines', 'مدیریت شرکت‌های هواپیمایی نیایش'],
+      ['categories', 'تعریف دسته‌بندی تور نیایش'],
+      ['editorial-content', 'مدیریت محتوای سایت نیایش'],
+    ] as const
+  ).map(([code, title]) => ({
+    id: `integrations.niyayesh.manage.${code}` as const,
+    group: 'integrations' as const,
+    title,
+    route: '/integrations' as const,
+  })),
+  {
+    id: 'integrations.niyayesh.import.hotels',
+    group: 'integrations',
+    title: 'ورود و به‌روزرسانی Excel هتل‌های نیایش',
+    route: '/integrations',
+  },
+  {
+    id: 'integrations.niyayesh.import.tour-prices',
+    group: 'integrations',
+    title: 'ورود و به‌روزرسانی Excel قیمت تورهای نیایش',
+    route: '/integrations',
+  },
+  {
+    id: 'integrations.niyayesh.import.tickets',
+    group: 'integrations',
+    title: 'ورود و به‌روزرسانی Excel بلیت‌های نیایش',
+    route: '/integrations',
+  },
+  {
     id: 'system.home',
     group: 'system',
     title: 'مدیریت سیستم',

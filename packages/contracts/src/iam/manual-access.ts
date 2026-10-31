@@ -60,6 +60,7 @@ export function manualSectionForScreen(screen: {
   group: string;
   route: string;
 }) {
+  if (screen.group === 'integrations') return 'integrations';
   if (screen.route === '/customer-affairs/call-center') return 'call-center';
   if (screen.route.startsWith('/sales/ticket-prices')) return 'flight-pricing';
   if (screen.route.startsWith('/sales/pricing')) return 'packages';
