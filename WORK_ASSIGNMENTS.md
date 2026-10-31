@@ -10194,3 +10194,9 @@ JAHAN-TRANSPARENT-DOCUMENTS-1031 implemented:83 focused branding/contract/previe
 ## PETTY-PLUS-1031 — PC-B — RESERVED
 
 PC-B; branch codex/pc-b-petty-plus-1031. Reserve petty-fund-card.tsx/spec and own status notes: explicit accessible plus button adjacent to existing fund card opens same bank/balance configuration modal, preserving populated fields/CAS/permissions and one fund per branch. Existing scopes released; no schema/API/dependency/permission change. User authorizes push/develop merge and local3100 rollout. Preserve other checkouts and prior runtime.
+
+## PETTY-OPEN-FIX-1031 — PC-B — RESERVED
+
+Reserve petty-fund-card.tsx/spec and own status notes. Card/plus must open dialog even on query failure/loading; retain save guard until successful data load, show retry inside modal, avoid stale values after retry. Existing source scopes released. No API/schema/permissions changes. User reports no opening after prior change; repair and local rollout within authorized scope.
+
+PETTY-OPEN-FIX-1031 extension: reserve only petty-fund controller GET response to explicitly serialize JSON null for unconfigured branches. Nest default null otherwise sends an empty body, failing the client's JSON parser. No service/schema or permission change.

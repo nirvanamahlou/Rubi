@@ -46,9 +46,9 @@ describe('Independent petty fund card', () => {
     expect(html).toContain('aria-label="موجودی و حساب تنخواه"');
     expect(html).toContain('lucide-plus');
   });
-  it('does not open an empty configuration before the balance has loaded', () => {
+  it('keeps the configuration trigger available while balance loads', () => {
     const html = render(new QueryClient());
     expect(html).toContain('در حال دریافت');
-    expect(html).toContain('disabled=""');
+    expect(html).not.toContain('disabled=""');
   });
 });

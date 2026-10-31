@@ -8072,3 +8072,7 @@ Removed the Jahan-specific white logo card from contract and shared reservation/
 ## 2026-10-31 — PETTY-PLUS-1031 — PC-B
 
 A separate accessible plus button beside the petty cash card opens its existing balance, bank, account, IBAN and card modal. Card activation uses the same shared handler and preserves fetched values/version; no nested buttons. Management permission, pending-load guard and one fund per branch remain unchanged. No API/schema/monetary behavior change. Tests/build/hosted gates precede authorized merge and local rollout.
+
+## 2026-10-31 — PETTY-OPEN-FIX-1031
+
+The fund GET explicitly serializes JSON null for unconfigured branches rather than relying on Nest's empty null response. Card/plus remain activatable during loading/error; dialog shows error/retry and save stays disabled until authoritative data loads. Retry populates the form with returned values/version. No migration/data/permission change. Browser automation initialization failed (os error3); targeted controller/card tests and builds validate the repair before local rollout.
