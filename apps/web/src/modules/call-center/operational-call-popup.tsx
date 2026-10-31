@@ -8,7 +8,8 @@ import type { Call } from './model';
 export function refreshCallRecipient(current: Call | null, latest: Call): Call {
   if (!current) return latest;
   const refreshed = { ...current, operator: latest.operator };
-  if (latest.answerRecipient) refreshed.answerRecipient = latest.answerRecipient;
+  if (latest.answerRecipient)
+    refreshed.answerRecipient = latest.answerRecipient;
   else delete refreshed.answerRecipient;
   return refreshed;
 }
