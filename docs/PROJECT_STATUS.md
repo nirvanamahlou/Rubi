@@ -8015,3 +8015,7 @@ Cancelled contracts are excluded before Sales dashboard metrics and currency sum
 ## SUPPLIER-RATIO-SAVE-1029 — PC-A
 
 Supplier form Ratio is a dimensionless decimal without a currency selector, currency directory lookup or PDF currency suffix. Historical ratio currencies remain readable and are removed when saving a new revision. Hotel P.P replaces P.P in input and both preview/PDF rendering. Explicit Save stores settings without sending/issuing; passenger ticket PDF downloads remain while the two browser print buttons are removed. No schema/migration/deployment. Focused validation and hosted gates precede authorized develop merge.
+
+## CONTRACT-CHILD-BANDS-1031 — PC-A
+
+Contract output services and prices use the explicitly booked/corrected child age band (2–6 or6–12), with DOB/check-in inference retained when no explicit band exists. New-contract booked child slots retain the band through people registration, form state, payload and unregistered review, including optional DOB; preview honors explicit ADT/CHD/INF instead of guessing adult for blank DOB. Reservations add-passenger exposes the same child-band choices; existing canonical amendment, capacity/CAS, monetary redistribution and Customer identity boundaries remain intact. Membership verification covers add/remove, zero price, duplicate/last-passenger safeguards and survivor totals; rooms must still match the resulting accommodation composition before saving. No migration, data rewrite or server deployment. Final local/hosted gates precede user-authorized develop merge.
