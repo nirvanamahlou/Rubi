@@ -40,3 +40,16 @@ it('keeps the outbound listener separately opt-in and never restores the technic
   expect(html).not.toContain('ایزابل متصل نشده');
   expect(html).not.toContain('تلاش مجدد');
 });
+
+it('requires explicit activation for both directions while keeping the technical widget hidden', () => {
+  vi.stubEnv('NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED', 'false');
+  expect(
+    renderToStaticMarkup(<TelephonyAttention outboundOnly bothDirections />),
+  ).toBe('');
+  vi.stubEnv('NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED', 'true');
+  const html = renderToStaticMarkup(
+    <TelephonyAttention outboundOnly bothDirections />,
+  );
+  expect(html).not.toContain('تماس‌ها (');
+  expect(html).not.toContain('تلاش مجدد');
+});
