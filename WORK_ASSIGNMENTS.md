@@ -10309,3 +10309,9 @@ TRAVIS-SANDBOX-CONNECTION-1031 bounded config scope includes example environment
 TRAVIS-SANDBOX-CONNECTION-1031 follow-up: owner explicitly selected Avina server activation. Reserve bounded compose/API-only private sandbox env injection and backed-up overlay deployment of the reviewed connector onto current independent API/Web base images; no worker/telephony/environment replacement, migrations or policy operations. Target source hashes all match the branch base; unrelated active hotfixes must be retained.
 
 TRAVIS-SANDBOX-CONNECTION-1031 verification:32 targeted API and3 English coverage tests passed; Contracts/Database regeneration/build, API/Web typechecks and scoped API/Web lint passed. Actual service sandbox call returned195/21/5 with no credential in projection. Server target hashes match original connector files; read-only rollout will preserve independent currently running base images. Final-head CI gates precede activation.
+
+## HR-MANUAL-PERSONNEL-CODE-1031 — PC-B — RESERVED
+
+COMPUTER_ID=PC-B; codex/pc-b-hr-manual-personnel-code-1031 from origin/develop1c8c45291. Owner authorizes manually editable employee personnel code in create/edit and push/develop merge. Reserve only new-employee-dialog.tsx, existing hr-workspace form assertions and own status notes. Existing automatic suggestion, required/length/duplicate validation and API/FK identity remain unchanged. No schema/API/dependency or active local runtime replacement. No overlapping active form writer found. Final-head hosted checks precede authorized merge.
+
+HR-MANUAL-PERSONNEL-CODE-1031:51 existing Web regressions and scoped ESLint passed. Shared create/edit controls remain bound to existing validated form state. Documentation formatting corrected after the first hosted quality check; all final-head hosted gates required before merge. Source reservation releases on verified develop merge.
