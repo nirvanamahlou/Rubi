@@ -59,7 +59,10 @@ export function ReservationTickets({
     return () =>
       window.removeEventListener('reservation-workflow-changed', refresh);
   }, []);
-  const { logo } = useTravelLogo(branding);
+  const { logo } = useTravelLogo(
+    branding,
+    branding?.ticketWithoutLogo === true,
+  );
   const canEdit =
     useAccessPermissions()?.includes('reservations.documents.manage') ?? false;
   const [flightNumbers, setFlightNumbers] = useState<Record<string, string>>(

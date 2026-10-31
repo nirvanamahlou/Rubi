@@ -242,6 +242,8 @@
   "یادداشت/پیوست": "Note/attachment",
   "ارز فعال یافت نشد.": "An active currency was not found.",
   "ارز هتل": "Hotel currency",
+  "برای این اقامت، قیمت فرم رزرواسیون ذخیره نشده است.": "No reservation form price is saved for this stay.",
+  "قیمت‌های ذخیره‌شدهٔ فرم رزرواسیون بارگذاری شد.": "Saved reservation form prices loaded.",
   "ارز و بانک": "Currencies and banks",
   "حذف حساب بانکی": "Delete bank account",
   "حذف حساب بانکی ناموفق بود.": "Could not delete the bank account.",

@@ -303,41 +303,6 @@ export function ReservationFormSheet({
                   </div>
                 ))}
               </div>
-              <section className={styles.bookingSection}>
-                <Heading
-                  number="01"
-                  title="BOOKING SUMMARY"
-                  note="Reservation details"
-                />
-                <div className={styles.summary}>
-                  {[
-                    ['ADULTS', data.adults],
-                    ['CHILDREN 6-12', data.children6To12],
-                    ['CHILDREN 2-6', data.children2To6],
-                    ...(data.childrenUnclassified
-                      ? [['CHILDREN (UNSPECIFIED)', data.childrenUnclassified]]
-                      : []),
-                    ['INFANTS', data.infants],
-                    ['DESTINATION', data.destination],
-                    [
-                      'ROOMS / NIGHTS',
-                      `${data.rooms} ROOMS / ${data.nights} NIGHTS`,
-                    ],
-                  ].map(([label, value]) => (
-                    <div
-                      key={label}
-                      className={
-                        label === 'ROOMS / NIGHTS'
-                          ? styles.roomsNights
-                          : undefined
-                      }
-                    >
-                      <span>{label}</span>
-                      <b dir="auto">{value}</b>
-                    </div>
-                  ))}
-                </div>
-              </section>
               {(!settings || settings.flags.hotel) && (
                 <>
                   <Heading

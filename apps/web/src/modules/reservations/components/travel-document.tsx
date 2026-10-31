@@ -19,14 +19,18 @@ import { documentsApi } from '@/modules/documents/api/client';
 import { DocumentPreview } from './document-preview';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
-export function useTravelLogo(branding: TravelBrandingV1 | null) {
+export function useTravelLogo(
+  branding: TravelBrandingV1 | null,
+  withoutLogo = false,
+) {
   const [loaded, setLoaded] = useState<{
     id: string;
     logo: string;
     error: string;
   }>();
   const fileId =
-    branding?.kind === 'OWN' && branding.companyCode === 'JAHAN_BASTAN'
+    withoutLogo ||
+    (branding?.kind === 'OWN' && branding.companyCode === 'JAHAN_BASTAN')
       ? null
       : branding?.logoFileId;
   useEffect(() => {
@@ -54,6 +58,7 @@ export function useTravelLogo(branding: TravelBrandingV1 | null) {
       if (url) URL.revokeObjectURL(url);
     };
   }, [fileId]);
+  if (withoutLogo) return { logo: '', error: '' };
   if (fileId) return loaded?.id === fileId ? loaded : { logo: '', error: '' };
   if (!branding) return { logo: '', error: '' };
   if (branding.kind === 'OWN' && branding.companyCode === 'NIYAYESH_SEIR_SAHAR')
@@ -87,7 +92,10 @@ export function TravelDocument({
     sourcePreviewSettings && !voucher
       ? intake.workflow.supplierFormSettings
       : undefined;
-  const { logo, error } = useTravelLogo(intake.workflow.branding);
+  const { logo, error } = useTravelLogo(
+    intake.workflow.branding,
+    voucher && intake.workflow.branding?.voucherWithoutLogo === true,
+  );
   const [printError, setPrintError] = useState('');
   const [downloading, setDownloading] = useState(false);
   const state = intake.workflow;
@@ -105,6 +113,7 @@ export function TravelDocument({
         ));
   const enabled =
     (!!logo ||
+      (voucher && state.branding?.voucherWithoutLogo === true) ||
       (voucher && state.voucherSettings?.flags.withLetterhead === false)) &&
     !!state.branding &&
     state.supplierStatus !== 'CANCELLED' &&

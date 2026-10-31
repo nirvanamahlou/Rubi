@@ -26,6 +26,7 @@ import { defaultSupplierFormSettings } from '../model/voucher-settings';
 import { HotelRoomQuotationEditor } from './hotel-room-quotation-editor';
 import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { useReservationCurrencies } from './reservation-currencies';
+import { travelRequest } from './travel-workflow-form';
 import type { Option } from '../hotel-rates/controls';
 type Request = ReservationIntakeV1 & {
   workflow?: TravelWorkflowStateV1 | null;
@@ -95,16 +96,6 @@ export function HotelStayPurchase({
     stayKey,
   );
   const quote = defaultSupplierFormSettings(scoped, {});
-  const hotel = {
-    ...scoped.snapshot.hotelSelection!,
-    rooms: quote.rooms?.length
-      ? quote.rooms.map((room) => ({ ...room, roomTypeId: '' }))
-      : scoped.snapshot.hotelSelection!.rooms,
-    checkInDate:
-      quote.text.checkIn || scoped.snapshot.hotelSelection!.checkInDate,
-    checkOutDate:
-      quote.text.checkOut || scoped.snapshot.hotelSelection!.checkOutDate,
-  };
   const transferKeys = reservationHotelTransferLegKeys(
     request.snapshot,
     stayKey,
@@ -191,6 +182,16 @@ export function HotelStayPurchase({
       ? { hotelTransferCounts: { ...transfer.hotelTransferCounts } }
       : {}),
   }));
+  const hotel = {
+    ...scoped.snapshot.hotelSelection!,
+    rooms: draft.rooms?.length
+      ? draft.rooms.map((room) => ({ ...room, roomTypeId: '' }))
+      : scoped.snapshot.hotelSelection!.rooms,
+    checkInDate:
+      draft.text.checkIn || scoped.snapshot.hotelSelection!.checkInDate,
+    checkOutDate:
+      draft.text.checkOut || scoped.snapshot.hotelSelection!.checkOutDate,
+  };
   const [broker, setBroker] = useState<Option | null>(
     purchase
       ? { id: purchase.supplierOrganizationId, name: purchase.supplierName }
@@ -199,6 +200,9 @@ export function HotelStayPurchase({
         : null,
   );
   const currencies = useReservationCurrencies(request.id);
+  const [supplierFormVersion, setSupplierFormVersion] = useState(
+    request.workflow?.version ?? 0,
+  );
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState('');
   const [rates, setRates] = useState<Record<string, string>>({});
@@ -208,6 +212,38 @@ export function HotelStayPurchase({
     [],
   );
   const attempt = useRef<{ payload: string; key: string } | null>(null);
+  async function loadSavedQuote() {
+    if (busy) return;
+    setBusy(true);
+    setMessage('');
+    try {
+      const { data } = await travelRequest<{
+        data: Request & { workflow: TravelWorkflowStateV1 };
+      }>(`reservations/requests/${request.id}/workflow`);
+      const source = hotelFormScope(
+        { ...data, workflow: data.workflow },
+        stayKey,
+      );
+      const settings = source.workflow.supplierFormSettings;
+      if (!settings?.hotelRoomPrices)
+        throw Error('برای این اقامت، قیمت فرم رزرواسیون ذخیره نشده است.');
+      const latest = defaultSupplierFormSettings(source, {});
+      setDraft(latest);
+      setBroker(
+        latest.brokerId
+          ? { id: latest.brokerId, name: latest.text.broker }
+          : null,
+      );
+      setSupplierFormVersion(data.workflow.version);
+      setMessage('قیمت‌های ذخیره‌شدهٔ فرم رزرواسیون بارگذاری شد.');
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : 'دریافت اطلاعات انجام نشد.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   let nights = 0;
   try {
     nights = hotelNights(hotel.checkInDate, hotel.checkOutDate);
@@ -307,7 +343,7 @@ export function HotelStayPurchase({
         version: 1,
         expectedVersion: request.purchaseVersion ?? 0,
         hotelStayKey: stayKey,
-        supplierFormVersion: request.workflow?.version ?? 0,
+        supplierFormVersion,
         hotelTransferCounts: draft.hotelTransferCounts ?? {
           outbound: 0,
           returning: 0,
@@ -378,14 +414,7 @@ export function HotelStayPurchase({
       <Button
         variant="outline"
         disabled={busy}
-        onClick={() => {
-          setDraft(quote);
-          setBroker(
-            quote.brokerId
-              ? { id: quote.brokerId, name: quote.text.broker }
-              : null,
-          );
-        }}
+        onClick={() => void loadSavedQuote()}
       >
         بارگذاری قیمت پیشنهادی فرم
       </Button>
