@@ -28,6 +28,39 @@ const bootstrap: Bootstrap = {
   travel: 'NOT_CONNECTED',
 };
 describe('Purchase draft accessibility and persisted input', () => {
+  it('offers receipt upload for a new request and retains saved document versions', () => {
+    const draft = {
+      ...emptyDraft(),
+      branchId: 'branch-1',
+      documents: [{ id: 'receipt-file', versionId: 'receipt-version' }],
+    };
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={new QueryClient()}>
+        <DraftForm
+          bootstrap={{ ...bootstrap, documents: 'AVAILABLE' }}
+          request={{
+            id: 'request-1',
+            number: 'PR-1',
+            version: 1,
+            requesterUserId: 'user',
+            requesterEmployeeId: null,
+            ownerUserId: null,
+            createdAt: '',
+            updatedAt: '',
+            status: 'DRAFT',
+            draft,
+          }}
+          onClose={() => undefined}
+          onSaved={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+    expect(html).toContain('بارگذاری فایل فیش');
+    expect(html).toContain('type="file"');
+    expect(html).toContain('receipt-file');
+    expect(html).toContain('فیش و پیوست‌های درخواست');
+  });
+
   it('adds a newly saved custom choice to the reusable options immediately', () => {
     const client = new QueryClient();
     client.setQueryData(savedRequestFieldOptionsKey, {
@@ -130,7 +163,7 @@ describe('Purchase draft accessibility and persisted input', () => {
         />
       </QueryClientProvider>,
     );
-    expect(html).toContain('مسئول پیگیری');
+    expect(html).not.toContain('مسئول پیگیری');
     expect(html).not.toContain('برای نمایش مسئولان');
     expect(html).not.toContain('اختیار تأیید فقط از سیاست مصوب خرید می‌آید');
   });

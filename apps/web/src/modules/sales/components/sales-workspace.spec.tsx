@@ -234,7 +234,7 @@ describe('sales dashboard loading', () => {
     expect(api.list).toHaveBeenCalledWith({
       search: 'OTHER-CONTRACT-TRACK',
       page: 1,
-      pageSize: 20,
+      pageSize: 10,
       sortBy: 'updatedAt',
       sortDirection: 'desc',
     });
@@ -257,7 +257,7 @@ describe('sales dashboard loading', () => {
       search: 'Example',
       settlementStatus: 'SETTLED',
       page: 3,
-      pageSize: 20,
+      pageSize: 10,
       sortBy: 'updatedAt',
       sortDirection: 'desc',
     });
@@ -305,7 +305,7 @@ describe('sales dashboard loading', () => {
     expect(html).toContain('از تاریخ مانده قابل دریافت');
     expect(html).toContain('تا تاریخ مانده قابل دریافت');
     expect(html).toContain(
-      'بدون فیلتر تاریخ، فقط ۲۰ قراردادِ آخر نمایش داده می‌شود.',
+      'بدون فیلتر تاریخ، فقط ۱۰ قراردادِ آخر نمایش داده می‌شود.',
     );
     expect(html).not.toContain('اولین قرارداد سفر را ثبت کنید');
   });
@@ -314,7 +314,7 @@ describe('sales dashboard loading', () => {
       dashboard: vi.fn().mockRejectedValue(new Error('statistics unavailable')),
       list: vi.fn().mockResolvedValue({
         data: [],
-        meta: { page: 1, pageSize: 20, total: 0 },
+        meta: { page: 1, pageSize: 10, total: 0 },
       }),
     } satisfies Pick<typeof salesApi, 'dashboard' | 'list'>;
     const result = await loadSalesWorkspace(api);
@@ -325,7 +325,7 @@ describe('sales dashboard loading', () => {
     });
     expect(api.list).toHaveBeenCalledWith({
       page: 1,
-      pageSize: 20,
+      pageSize: 10,
       sortBy: 'updatedAt',
       sortDirection: 'desc',
     });
