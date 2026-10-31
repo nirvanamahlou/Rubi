@@ -692,11 +692,15 @@ export class CallCenterWorkflowService
         const changed =
           saved.title !== input.title.trim() ||
           (current.executionOwnerUserId ?? null) !== (input.ownerId ?? null) ||
-          (current.status === 'NEW' ? 'IN_PROGRESS' : current.status) !==
-            input.status ||
           current.priority !== input.priority;
         if (
-          changed &&
+          (changed ||
+            ((current.status === 'NEW' ? 'IN_PROGRESS' : current.status) !==
+              input.status &&
+              (current.status === 'CLOSED' ||
+                !['IN_PROGRESS', 'WAITING_CUSTOMER'].includes(
+                  input.status,
+                )))) &&
           !(await this.directory.canManageRequest(
             actor,
             branchId,

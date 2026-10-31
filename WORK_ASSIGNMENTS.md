@@ -10355,3 +10355,9 @@ HR-MANUAL-PERSONNEL-CODE-1031:51 existing Web regressions and scoped ESLint pass
 ## PETTY-NO-SAMPLES-1031 — PC-B — RESERVED
 
 PC-B reserves workspace.tsx overview data projection and own status notes. Remove automatic synthetic request fallback and redundant baseline query; only API rows/pagination authoritative after deletion/filtering. Existing source scopes released. No schema/API/data/dependency/runtime mutation. User authorizes push/develop merge; no production deployment requested.
+
+## CALL-CENTER-FILTERS-STATUS-1031 — PC-C — IN_PROGRESS
+
+Base40916ebe1; user explicitly authorizes removing branch/contact-scope/registration-method filters, matching source/unit filter options to call form, and expert waiting-state edits with close limited to current unit managers. Reserve Call Center workspace/filter model/request editor, Customer Affairs workflow/read queries and focused regressions, existing IAM public capability consumer and own docs. No schema/dependency or production changes. Preserve active recording-download task and its data wiring; no recording files reserved.
+
+CALL-CENTER-FILTERS-STATUS-1031 source frozen for draft review. Scoped lint/format and19 Web/8 API checks pass; database/full build gates pending clean environment. No source overlap with recording-download; no live release claimed.

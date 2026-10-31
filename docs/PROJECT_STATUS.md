@@ -8183,3 +8183,5 @@ Employee create/edit personnel code is editable through existing validated form 
 ## 2026-10-31 — PETTY-NO-SAMPLES-1031
 
 Overview uses only server-returned request rows. Removed synthetic fallback on empty baseline and its redundant baseline request; empty/deleted/filtered results remain empty and pagination comes from the API. No operational data deleted or changed. Existing Samples fixtures stay isolated for tests/previews. Scoped lint, module tests, Web build and hosted checks gate authorized develop merge; no server deployment claimed.
+## CALL-CENTER-FILTERS-STATUS-1031 — PC-C
+Requested filter cleanup/canonical options and expert waiting-state vs unit-manager close policy implemented.19 Web tests +8 API input checks pass;19 PostgreSQL checks skipped; full build/types blocked by dependency environment. No migration/deploy. See tasks/CALL-CENTER-FILTERS-STATUS-1031.md.
