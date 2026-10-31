@@ -9151,7 +9151,7 @@ COMPUTER_ID=PC-D. Reserve consumer Integrations presence leaf service/controller
 
 LIVE-SITE-MONITORING-1031 source freeze: targeted tests/builds, disposable migration/concurrency and local HTTP acceptance pass; source locks and site migration ownership released. Browser visual QA unavailable. No PR/merge/production authorized for this work item.
 
-## LIVE-PRESENCE-DEVELOP-1031 — PC-D — IN_PROGRESS
+## LIVE-PRESENCE-DEVELOP-1031 — PC-D — SOURCE_COMPLETE / LOCKS_RELEASED
 
 Owner explicitly authorizes Nora-only publication, CI, PR and reviewed green merge to develop on2026-10-31. Reuse codex/pc-d-live-site-monitoring-1031; integrate latest origin/develop with all already delivered Nora connector/SSO/catalogue/site-report/presence prerequisites. Reserve bounded merge resolution in WORK_ASSIGNMENTS.md and docs/PROJECT_STATUS.md, affected own source/test/i18n formatting only as CI requires. Preserve peer module changes and all work records. No site erp_panel merge, production deployment, Docker runtime replacement, dependency or migration changes. Integration target for this explicit request is develop; main untouched.
 
@@ -10230,3 +10230,5 @@ JAHAN-TRANSPARENT-DOCUMENTS-1031 implemented:83 focused branding/contract/previe
 LIVE-PRESENCE-DEVELOP-1031 CI repair scope: reserve apps/web/src/app/(crm)/users/section-access.spec.ts for explicit regression coverage of the15 existing added site controls (no grants changed), en-integrations.json for missing own labels and deterministic derived API/legacy catalogue synchronization. Keep all CI gates intact; no dependency or migration repair planned.
 
 LIVE-PRESENCE-DEVELOP-1031 bounded contract repair: reserve only manualSectionForScreen in packages/contracts/src/iam/manual-access.ts and new section-isolation regression. The broad legacy .tours heuristic incorrectly classifies the new Niyayesh tour-management checkbox under native Tours. Preserve group=integrations before route/name heuristics, with exact26-screen Web assertion and native route regression. No stored permission, seed, migration, other module semantics or ownership changes. No active overlapping file reservation found.
+
+LIVE-PRESENCE-DEVELOP-1031 source freeze: latest develop integrated, exact26-screen permission regression and220-label translation coverage repaired;18 API/IAM,41 Web/i18n and6 contract tests pass locally. Hosted production build and PostgreSQL gate pass. Full hosted tests/quality and PR checks still gate the explicitly authorized merge. No source reservation remains active; any new failure repair must stay bounded to this task. GitHub PR/merge records are the final publication authority.
