@@ -10,6 +10,7 @@ import { canSelfServeSalesContract } from '@nora/contracts';
 import { useAccessActor } from '@/modules/iam/access-context';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { SalesThemedSelect } from './sales-themed-select';
+import { SearchCombobox } from '@/components/ui/search-combobox';
 import { PaymentDocuments } from './payment-documents';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type {
@@ -61,10 +62,41 @@ export function ContractPaymentAccountSelect({
   const eligible = accounts.filter(
     (account) => account.currencyCode === currencyCode,
   );
+  const selected = eligible.find((account) => account.id === value);
+  const accountLabel = (account: SalesPaymentAccountV1) => (
+    <span className="flex min-w-0 flex-col gap-1 whitespace-normal text-start">
+      <span className="font-medium">
+        {[account.bankName, account.title].filter(Boolean).join(' · ')}
+      </span>
+      {(
+        [
+          ['شماره حساب', account.accountNumber],
+          ['شماره کارت', account.cardNumber],
+          ['شماره شبا', account.iban],
+        ] as const
+      ).map(([label, number]) =>
+        number ? (
+          <span key={label} className="text-xs">
+            {label}:{' '}
+            <bdi dir="ltr" className="break-all font-mono">
+              {number}
+            </bdi>
+          </span>
+        ) : null,
+      )}
+      {!account.accountNumber &&
+      !account.cardNumber &&
+      !account.iban &&
+      account.maskedIdentifier ? (
+        <bdi dir="ltr">{account.maskedIdentifier}</bdi>
+      ) : null}
+    </span>
+  );
   return (
     <FormField label="حساب مقصد پرداخت" required>
-      <SalesThemedSelect
+      <SearchCombobox
         label="حساب مقصد پرداخت"
+        placeholder="انتخاب حساب مقصد"
         required
         value={value}
         disabled={!eligible.length}
@@ -73,12 +105,15 @@ export function ContractPaymentAccountSelect({
           { value: '', label: 'انتخاب حساب مقصد' },
           ...eligible.map((account) => ({
             value: account.id,
-            label: [account.title, account.maskedIdentifier]
-              .filter(Boolean)
-              .join(' · '),
+            label: accountLabel(account),
           })),
         ]}
       />
+      {selected ? (
+        <div className="mt-2 rounded-xl border border-input bg-surface p-3">
+          {accountLabel(selected)}
+        </div>
+      ) : null}
       {!eligible.length ? (
         <p role="status" className="text-sm text-muted-foreground">
           حساب فعالی برای ارز پرداخت در این شعبه موجود نیست.
