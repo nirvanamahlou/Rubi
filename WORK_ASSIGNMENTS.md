@@ -10329,3 +10329,7 @@ TRAVIS-SANDBOX-CONNECTION-1031 verification:32 targeted API and3 English coverag
 COMPUTER_ID=PC-B; codex/pc-b-hr-manual-personnel-code-1031 from origin/develop1c8c45291. Owner authorizes manually editable employee personnel code in create/edit and push/develop merge. Reserve only new-employee-dialog.tsx, existing hr-workspace form assertions and own status notes. Existing automatic suggestion, required/length/duplicate validation and API/FK identity remain unchanged. No schema/API/dependency or active local runtime replacement. No overlapping active form writer found. Final-head hosted checks precede authorized merge.
 
 HR-MANUAL-PERSONNEL-CODE-1031:51 existing Web regressions and scoped ESLint passed. Shared create/edit controls remain bound to existing validated form state. Documentation formatting corrected after the first hosted quality check; all final-head hosted gates required before merge. Source reservation releases on verified develop merge.
+
+## PETTY-NO-SAMPLES-1031 — PC-B — RESERVED
+
+PC-B reserves workspace.tsx overview data projection and own status notes. Remove automatic synthetic request fallback and redundant baseline query; only API rows/pagination authoritative after deletion/filtering. Existing source scopes released. No schema/API/data/dependency/runtime mutation. User authorizes push/develop merge; no production deployment requested.
