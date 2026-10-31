@@ -4693,5 +4693,15 @@
   "ثبت پرداخت": "Save payment",
   "قیمت هر شب هر مسافر باید صفر یا بیشتر باشد.": "Each passenger's nightly price must be zero or greater.",
   "مبلغ خرید باید صفر یا بیشتر باشد.": "The purchase amount must be zero or greater.",
-  "هزینه خرید باید صفر یا بیشتر با حداکثر چهار رقم اعشار باشد.": "The purchase cost must be zero or greater, with up to four decimal places."
+  "هزینه خرید باید صفر یا بیشتر با حداکثر چهار رقم اعشار باشد.": "The purchase cost must be zero or greater, with up to four decimal places.",
+  "ثبت موجودی": "Set balance",
+  "دریافت تنخواه ناموفق بود": "Could not load the petty cash fund",
+  "دریافت موجودی ناموفق بود": "Could not load the balance",
+  "دفتر مستقل تنخواه": "Independent petty cash register",
+  "شبا": "IBAN",
+  "فیش": "Receipt",
+  "فیش و پیوست‌های درخواست": "Request receipts and attachments",
+  "موجودی": "Balance",
+  "موجودی و حساب تنخواه": "Petty cash balance and bank account",
+  "نام بانک": "Bank name"
 }
