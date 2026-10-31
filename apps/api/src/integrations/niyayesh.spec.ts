@@ -383,3 +383,29 @@ describe('Independent site reporting connections', () => {
     }
   });
 });
+
+describe('Per-site live presence reader', () => {
+  it('uses the exact registered site binding and analytics permission without write grants', async () => {
+    const service = new NiyayeshService();
+    const binding = vi.spyOn(service, 'binding').mockResolvedValue({
+      config: { ...config, registrySystemId: 'site-b' },
+      user: { ...config.users[0]!, resources: ['site-analytics'] },
+    });
+    const read = vi.spyOn(service, 'read').mockResolvedValue({
+      schemaVersion: 1,
+      state: 'ACTIVE',
+      total: 0,
+      nodes: [],
+      edges: [],
+    });
+    const result = await service.presence(actor, 'branch-a', 'site-b');
+    expect(result.registrySystemId).toBe('site-b');
+    expect(result.total).toBe(0);
+    expect(binding).toHaveBeenCalledWith(actor, 'branch-a', 'brands', 'site-b');
+    expect(read.mock.calls[0]![2]).toBe('/api/v1/integration/presence');
+    await expect(
+      service.presence({ ...actor, permissions: [] }, 'branch-a', 'site-b'),
+    ).rejects.toThrow();
+    expect(read).toHaveBeenCalledTimes(1);
+  });
+});

@@ -147,7 +147,7 @@ export async function niyayeshRead(
   } = {},
 ): Promise<unknown> {
   if (
-    !/^\/api\/v1\/integration\/(capabilities$|dashboard$|report\?from=|catalogue\/[a-z-]+\/(?:schema$|value\/\d+$)|resources\/[a-z-]+(?:[/?]|$)|workbooks\/hotels\/export\?city=|workbooks\/(hotels|tour-prices|tickets)(\/template)?$)/.test(
+    !/^\/api\/v1\/integration\/(capabilities$|dashboard$|presence$|report\?from=|catalogue\/[a-z-]+\/(?:schema$|value\/\d+$)|resources\/[a-z-]+(?:[/?]|$)|workbooks\/hotels\/export\?city=|workbooks\/(hotels|tour-prices|tickets)(\/template)?$)/.test(
       path,
     ) &&
     !/^\/api\/v1\/admin\/(tours|hotels|service-offers|visas|destinations|countries|airlines|categories|editorial-content)(\/\d+)?$/.test(

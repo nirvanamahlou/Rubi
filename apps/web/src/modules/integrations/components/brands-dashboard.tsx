@@ -60,6 +60,7 @@ import {
   scopedSiteReport,
   type SiteReportResult,
 } from '../report-model';
+import { SitePresence } from './site-presence';
 import { SiteTrend, SiteVisits, SiteActivity } from './site-report';
 
 const palettes = ['sand', 'blue', 'violet', 'teal'] as const;
@@ -550,6 +551,14 @@ export function BrandsDashboard({
         آمار و جزئیات مربوط به {activeSite?.name ?? 'سایت انتخاب‌شده'} در بازهٔ
         انتخابی است.
       </p>
+      {activeId ? (
+        <SitePresence
+          key={`${data.branchId}:${activeId}`}
+          branchId={data.branchId}
+          siteId={activeId}
+          siteName={activeSite?.name ?? 'سایت'}
+        />
+      ) : null}
       <SiteVisits
         report={connected}
         label={label}

@@ -139,6 +139,35 @@ export class NiyayeshService {
       },
     );
   }
+  async presence(actor: AuthenticatedActor, branch: string, systemId: string) {
+    if (
+      !systemId ||
+      !canViewScreen(actor.permissions, 'integrations.niyayesh.analytics')
+    )
+      throw new ForbiddenException('مجوز مانیتورینگ سایت فعال نیست.');
+    const binding = await this.binding(actor, branch, 'brands', systemId);
+    if (!binding || !binding.user.resources.includes('site-analytics'))
+      throw new ForbiddenException();
+    const result = (await this.read(
+      binding.config,
+      binding.user.subject,
+      '/api/v1/integration/presence',
+    )) as {
+      schemaVersion: number;
+      state: string;
+      checkedAt: string;
+      activeWindowSeconds: number;
+      heartbeatSeconds: number;
+      total: number | null;
+      nodes: unknown[];
+      edges: unknown[];
+    };
+    return {
+      ...result,
+      registrySystemId: binding.config.registrySystemId,
+      environment: binding.config.local ? 'LOCAL' : binding.config.environment,
+    };
+  }
   async report(
     actor: AuthenticatedActor,
     branch: string,
@@ -162,6 +191,9 @@ export class NiyayeshService {
       binding.user.subject,
       `/api/v1/integration/report?from=${from}&to=${to}`,
     )) as Record<string, unknown> & {
+      salesByCurrency:
+        { currency: string; amount: string | null; complete: boolean }[] | null;
+      activityAvailable: boolean;
       metrics: Record<string, { value: number | null; state: string }>;
       totals: Record<string, number | null>;
       trends: Record<string, unknown>;
@@ -409,6 +441,8 @@ export class NiyayeshService {
       return await niyayeshRead(config, subject, path, options);
     } catch (error) {
       const code = error instanceof Error ? error.message : '';
+      if (code === 'UPSTREAM_404')
+        throw new NotFoundException('این قابلیت یا رکورد در سایت موجود نیست.');
       if (code === 'UPSTREAM_409')
         throw new ConflictException(
           error instanceof NiyayeshUpstreamError && error.details

@@ -27,6 +27,15 @@ export class NiyayeshController {
     @Inject(NiyayeshService) private readonly service: NiyayeshService,
     @Inject(IamService) private readonly iam: IamService,
   ) {}
+  @Get('presence')
+  @Header('Cache-Control', 'private, no-store')
+  presence(
+    @Req() r: AuthenticatedRequest,
+    @Query('branchId') branch: string,
+    @Query('systemId') systemId: string,
+  ) {
+    return this.service.presence(r.actor, branch, systemId);
+  }
   @Get('report')
   @Header('Cache-Control', 'private, no-store')
   report(

@@ -61,6 +61,11 @@ async function request<T>(
 const branchQuery = (branchId: string) =>
   `?branchId=${encodeURIComponent(branchId)}`;
 export const integrationsApi = {
+  sitePresence: (branchId: string, systemId: string, signal: AbortSignal) =>
+    request<SitePresenceV1>(
+      `/niyayesh/presence${branchQuery(branchId)}&systemId=${encodeURIComponent(systemId)}`,
+      { signal },
+    ),
   niyayeshReport: (
     branchId: string,
     from: string,
@@ -309,4 +314,24 @@ export type SiteReport = {
     version: number;
   }[];
   activityAvailable: boolean;
+};
+
+export type SitePresenceV1 = {
+  schemaVersion: 1;
+  state: 'ACTIVE' | 'NOT_CONFIGURED';
+  registrySystemId: string;
+  environment: string;
+  checkedAt: string;
+  activeWindowSeconds: number;
+  heartbeatSeconds: number;
+  total: number | null;
+  nodes: {
+    id: string;
+    title: string;
+    kind: string;
+    column: number | null;
+    row: number | null;
+    count: number | null;
+  }[];
+  edges: { from: string; to: string }[];
 };
