@@ -8726,6 +8726,9 @@ COMPUTER_ID=PC-D. Owner requests complete native catalogue create/edit forms ins
 
 Validation and limitations recorded in docs/tasks/SITE-CATALOGUE-ANALYTICS-1027.md and PROJECT_STATUS. All source locks for this task release on publication; migration/dependency ownership unchanged.
 
-## SITE-REPORT-SEPARATION-1031 — PC-D — IN_PROGRESS
+## SITE-REPORT-SEPARATION-1031 — PC-D — LOCAL_UI_VERIFIED / PUBLISHED
 
 COMPUTER_ID=PC-D. Task branch codex/pc-d-site-report-separation-1031 from PC-D-Integration plus published catalogue prerequisites. Reserve Integrations report configuration/client/service/controller/spec, Web report model/client/Brands dashboard/site-report and dedicated styles/tests; docs/status. Owner requests per-site reporting/activity isolation and concise readable visitor UI. Existing native report producer contract unchanged; consumer adds optional explicit registrySystemId, preserving legacy requests. Additional report connections are explicit independent server-only configurations (same existing signed protocol), each with personal actor/branch/resource allowlist. No name/domain inference, no shared credentials or cross-site fallback. No IAM/schema/migration/dependency/SSO/write behavior changes. Local runtime only. No active overlapping source lock found; release after publication.
+
+
+SITE-REPORT-SEPARATION-1031 acceptance:14 API/SSO +31 Web tests, scoped lint/format, Web typecheck, API build and full Web production build (65 pages) pass. Real local HTTP verifies exact registry IDs, personal scope and no primary fallback; real IAB checks all four site selections, today/30-day changes, readable visitor tiles/daily table and Persian activity timeline at existing635px viewport. Final1031 API/Web images run healthy on prior Compose; previous local projects restored after approved Docker recovery. No site producer/schema/dependency/permissions/business writes changed. Task source locks released. See docs/tasks/SITE-REPORT-SEPARATION-1031.md.
