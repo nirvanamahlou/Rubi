@@ -61,6 +61,9 @@ export function AmendmentPassengerMembership({
   });
   const [calendar, setCalendar] = useState<CustomerCalendarMode>('gregorian');
   const [category, setCategory] = useState<SalesPassengerAgeCategory>('ADT');
+  const [childAgeBand, setChildAgeBand] = useState<'AGE_2_6' | 'AGE_6_12' | ''>(
+    '',
+  );
   const [services, setServices] = useState<string[]>([]);
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('');
@@ -167,6 +170,7 @@ export function AmendmentPassengerMembership({
             displayNameSnapshot: selected.person!.displayName,
             birthDate: selected.values.birthDate,
             ageCategory: category,
+            ...(category === 'CHD' && childAgeBand ? { childAgeBand } : {}),
             serviceClientKeys: services,
             ...(draft.hotelSelection &&
             services.includes(draft.hotelSelection.serviceClientKey)
@@ -182,6 +186,7 @@ export function AmendmentPassengerMembership({
       setOpen(false);
       setPerson({ values: emptyPeopleValues() });
       setAmount('');
+      setChildAgeBand('');
       setServices([]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'ثبت مسافران ناموفق بود.');
@@ -317,6 +322,21 @@ export function AmendmentPassengerMembership({
               <option value="INF">نوزاد</option>
             </NativeSearchSelect>
           </label>
+          {category === 'CHD' && (
+            <label>
+              رده سنی کودک
+              <NativeSearchSelect
+                value={childAgeBand}
+                onChange={(e) =>
+                  setChildAgeBand(e.target.value as typeof childAgeBand)
+                }
+              >
+                <option value="">انتخاب رده سنی کودک</option>
+                <option value="AGE_2_6">۲ تا ۶ سال</option>
+                <option value="AGE_6_12">۶ تا ۱۲ سال</option>
+              </NativeSearchSelect>
+            </label>
+          )}
           <div className="flex flex-wrap gap-3">
             {draft.services
               .filter((s) => !s.metadata?.insuranceAgeSurcharge)

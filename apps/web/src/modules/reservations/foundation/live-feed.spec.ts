@@ -45,6 +45,46 @@ function intake(id = 'one', receivedAt = '2026-09-08T09:00:00Z') {
 const envelope = (data = [intake()]) => ({ version: 1, data });
 const row = (id = 'one', time?: string) =>
   decodeIntake(envelope([intake(id, time)]), session)[0]!;
+it('retains all composite hotels in saved itinerary order for the queue Hotel column', () => {
+  const input = intake();
+  const decoded = decodeIntake(
+    envelope([
+      {
+        ...input,
+        snapshot: {
+          ...input.snapshot,
+          hotelSelection: {
+            hotelId: 'primary',
+            hotelNameSnapshot: 'FIRST HOTEL',
+            checkInDate: '2026-10-01',
+            additionalStays: [
+              {
+                hotelId: 'second',
+                hotelNameSnapshot: 'SECOND HOTEL',
+                checkInDate: '2026-10-03',
+              },
+              {
+                hotelId: 'third',
+                hotelNameSnapshot: 'THIRD HOTEL',
+                checkInDate: '2026-10-05',
+              },
+            ],
+          },
+        },
+      },
+    ] as never),
+    session,
+  );
+  expect(decoded[0]).toMatchObject({
+    hotelId: 'primary',
+    hotelName: 'FIRST HOTEL / SECOND HOTEL / THIRD HOTEL',
+    hotels: [
+      { hotelId: 'primary', name: 'FIRST HOTEL' },
+      { hotelId: 'second', name: 'SECOND HOTEL' },
+      { hotelId: 'third', name: 'THIRD HOTEL' },
+    ],
+  });
+});
 it('uses completed canonical passenger names instead of an empty or stale historical snapshot', () => {
   const input = {
     ...intake(),
