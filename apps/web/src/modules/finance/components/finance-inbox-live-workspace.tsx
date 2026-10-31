@@ -1,5 +1,9 @@
 import { useAccessPermissions } from '@/modules/iam/access-context';
-import { initialReceiptAccount } from '../model/receipt-account';
+import {
+  initialReceiptAccount,
+  receiptAccountLabel,
+  declaredReceiptAccountLabel,
+} from '../model/receipt-account';
 import {
   PurchaseFxSummary,
   PurchaseFxCapture,
@@ -1417,6 +1421,15 @@ export function FinanceInboxLiveWorkspace() {
                         selected.partyDisplaySnapshot ?? '—',
                       ],
                       ['مبلغ', money(selected)],
+                      ...(selected.source === 'SALES' &&
+                      selected.destinationAccountId
+                        ? [
+                            [
+                              'حساب مقصد',
+                              declaredReceiptAccountLabel(selected, accounts),
+                            ],
+                          ]
+                        : []),
                       ...(selected.ticketPurchase
                         ? [
                             [
@@ -1929,40 +1942,53 @@ export function FinanceInboxLiveWorkspace() {
                 </>
               ) : null}
               {actionKind === 'APPROVE' && actionItem?.source === 'SALES' ? (
-                <label className="grid gap-2">
-                  <span>واریز به حساب</span>
-                  <Select value={accountId} onValueChange={setAccountId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="انتخاب حساب مقصد" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts
-                        .filter(
-                          (account) =>
-                            account.branchId === actionItem?.branchReference &&
-                            account.currencyCode === paymentCurrency,
-                        )
-                        .map((account) => (
-                          <SelectItem key={account.id} value={account.id}>
-                            {account.title} ·{' '}
-                            {currencySymbol(account.currencyCode ?? '')}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setAccountDialog(true);
-                      setActionError('');
-                    }}
-                  >
-                    <PlusCircle className="size-4" />
-                    تعریف حساب جدید
-                  </Button>
-                </label>
+                actionItem.destinationAccountId ? (
+                  <div className="grid gap-2 rounded-xl border bg-muted/30 p-3">
+                    <span>واریز به حساب</span>
+                    <p className="font-semibold" dir="auto">
+                      {declaredReceiptAccountLabel(actionItem, accounts)}
+                    </p>
+                    <small className="text-muted-foreground">
+                      حساب مقصد قبلاً در پرداخت ثبت شده است.
+                    </small>
+                  </div>
+                ) : (
+                  <label className="grid gap-2">
+                    <span>واریز به حساب</span>
+                    <Select value={accountId} onValueChange={setAccountId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="انتخاب حساب مقصد" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts
+                          .filter(
+                            (account) =>
+                              account.branchId ===
+                                actionItem?.branchReference &&
+                              account.currencyCode === paymentCurrency,
+                          )
+                          .map((account) => (
+                            <SelectItem key={account.id} value={account.id}>
+                              {receiptAccountLabel(account)} ·{' '}
+                              {currencySymbol(account.currencyCode ?? '')}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setAccountDialog(true);
+                        setActionError('');
+                      }}
+                    >
+                      <PlusCircle className="size-4" />
+                      تعریف حساب جدید
+                    </Button>
+                  </label>
+                )
               ) : null}
               {actionKind === 'APPROVE' && actionItem?.source === 'SALES' ? (
                 <div className="grid gap-3 rounded-2xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-900 dark:bg-blue-950/20">

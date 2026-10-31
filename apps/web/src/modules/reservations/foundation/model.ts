@@ -80,6 +80,7 @@ export interface RequestView {
   destination?: string;
   hotelName?: string;
   hotelId?: string | undefined;
+  hotels?: readonly { hotelId?: string | undefined; name: string }[];
   serviceTitles?: readonly string[];
   serviceItems?: readonly { kind: string; title: string }[];
   mealServiceId?: string | undefined;
