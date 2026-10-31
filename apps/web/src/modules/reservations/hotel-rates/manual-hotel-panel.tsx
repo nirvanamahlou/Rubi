@@ -145,13 +145,16 @@ export function ManualHotelSelector({
                   : onRemove?.(row.hotel.id)
               }
             />
-            {row.hotel.name}
+            <span>{row.hotel.name}</span>
           </label>
         ))}
         {!matches.length && <p>هتلی با این جست‌وجو پیدا نشد.</p>}
       </div>
       {selected.length > 0 && (
-        <table className={styles.priceTable} aria-label="هتل‌های انتخاب‌شده">
+        <table
+          className={styles.selectedHotels}
+          aria-label="هتل‌های انتخاب‌شده"
+        >
           <thead>
             <tr>
               <th>هتل</th>

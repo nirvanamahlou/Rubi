@@ -4749,5 +4749,13 @@
   "Ratio اتاق": "Room ratio",
   "حساب مقصد ثبت‌شده در پرداخت قابل تغییر نیست.": "The destination account declared in the payment cannot be changed.",
   "حساب ثبت‌شده در پرداخت": "Account declared in the payment",
-  "حساب مقصد قبلاً در پرداخت ثبت شده است.": "The destination account was already declared in the payment."
+  "حساب مقصد قبلاً در پرداخت ثبت شده است.": "The destination account was already declared in the payment.",
+  "اتصال آزمایشی بیمه تنظیم نشده است.": "The insurance sandbox connection is not configured.",
+  "اتصال آزمایشی تراویس": "Travis sandbox connection",
+  "دریافت اطلاعات بیمه‌گر": "Retrieve insurer information",
+  "انتخاب کشور از بیمه‌گر": "Select insurer country",
+  "انتخاب طرح از بیمه‌گر": "Select insurer plan",
+  "مدت اقامت": "Stay duration",
+  "کشور ·": "countries ·",
+  "طرح ·": "plans ·"
 }
