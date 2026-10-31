@@ -8197,3 +8197,7 @@ Five open Amin-tech11 PRs integrated, retaining their actual heads and complete 
 ## REQUIRED-CALL-OUTCOME-PREVIEW-1031 — PC-C
 
 Required result in CallForm and authenticated business-save DTO;8 Web and5 HTTP tests plus scoped lint and API/Web build/typecheck passed. Preview activation pending because automatic approval rejected stop/restart of existing local services. No production rollout or migration.
+
+## CALL-PHONE-LABEL-1031 — PC-C
+
+CallForm phone label now reads only شماره تماس. Removed optional suffix only; validation, automatic Issabel capture and required outcome behavior unchanged. Scoped lint passed. Local activation remains pending the previously requested stop of old services.

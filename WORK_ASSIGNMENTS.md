@@ -10383,3 +10383,9 @@ Owner authorizes reviewing and merging all own PRs after full CI and final devel
 Reserve four CallForm/CallCenterCallDto files and own docs for localhost preview of REQUIRED-CALL-OUTCOME-1031. Preserve the existing runtime base and all unrelated data/services; newer develop HR schema changes are outside this UI request. No production deployment.
 
 REQUIRED-CALL-OUTCOME-PREVIEW-1031 — BUILT / ACTIVATION_PENDING: exact four-file change validated by8 Web/5 HTTP tests, scoped API/Web lint, full API build and Web typecheck/production build. Existing localhost stop/restart rejected by automatic approval policy; owner action requested. No existing services stopped or production modified.
+
+## CALL-PHONE-LABEL-1031 — PC-C — ACTIVE
+
+COMPUTER_ID=PC-C. Owner follow-up authorizes the single CallForm phone label cleanup on this task branch; preserve required outcome changes. Remove only the optional suffix, with no phone validation/data/provider behavior changes. Existing publication reservation is reopened for this bounded same-owner follow-up.
+
+CALL-PHONE-LABEL-1031 — COMPLETE: single label cleanup, scoped lint passed; preview build prepared before activation. Previously blocked runtime restart remains pending owner stop. No phone/schema/data behavior changed. Reservation freezes on publication.

@@ -238,7 +238,7 @@ export function CallForm({
               <h3>اطلاعات مخاطب</h3>
               <div className={styles.formGrid}>
                 <label>
-                  شماره تماس (اختیاری)
+                  شماره تماس
                   <input
                     name="phone"
                     dir="ltr"
