@@ -459,3 +459,99 @@ it('migrates a named total into passenger pricing without republishing operation
   ).toBeUndefined();
   expect(row.payments[0]!.status).toBe('FINANCE_CONFIRMED');
 });
+
+function rosterInput(): SalesContractAmendmentV1 {
+  return {
+    ...input,
+    preserveContractPrices: true,
+    services: input.services.map((s) => ({
+      ...s,
+      metadata: { contractPackagePricingVersion: 1 },
+    })),
+    passengers: input.passengers.map((p) => {
+      const copy = { ...p };
+      delete copy.agreedPrices;
+      return copy;
+    }),
+  };
+}
+it('adds a passenger without repricing and publishes the exact new roster under the canonical amendment transaction', async () => {
+  const { service, repo, tickets } = setup();
+  const next = rosterInput();
+  const added = '10000000-0000-4000-8000-000000000009';
+  next.passengers = [
+    ...next.passengers,
+    {
+      customerId: added,
+      displayNameSnapshot: 'Synthetic Added',
+      birthDate: '',
+      ageCategory: 'ADT',
+      serviceClientKeys: ['other'],
+    },
+  ];
+  next.passengerCategories = { ...next.passengerCategories, [added]: 'ADT' };
+  await service.update(id, next, actor, undefined, next.passengerCategories);
+  const saved = repo.updateDraft.mock.calls[0]?.[1] as SalesContractAmendmentV1;
+  expect(saved.priceComponents).toEqual(input.priceComponents);
+  expect(saved.passengers).toHaveLength(2);
+  expect(saved.passengers.every((p) => p.agreedPrices === undefined)).toBe(
+    true,
+  );
+  const amendment = repo.updateDraft.mock.calls[0]?.[5] as {
+    snapshot: { passengerAssignments: unknown[] };
+    reserve: (tx: unknown) => Promise<void>;
+  };
+  expect(amendment.snapshot.passengerAssignments).toHaveLength(2);
+  await amendment.reserve({});
+  expect(tickets.amend).toHaveBeenCalledWith({}, [], 'branch', id, 2, {});
+  expect(saved).not.toHaveProperty('payments');
+});
+it('removes a contract passenger while keeping the exact contract price and at least one member', async () => {
+  const { service, repo, row } = setup();
+  row.passengers.push({
+    ...row.passengers[0]!,
+    customerId: '10000000-0000-4000-8000-000000000009',
+  });
+  const next = rosterInput();
+  await service.update(id, next, actor, undefined, next.passengerCategories);
+  expect(
+    (repo.updateDraft.mock.calls[0]?.[1] as SalesContractAmendmentV1)
+      .passengers,
+  ).toHaveLength(1);
+  repo.updateDraft.mockClear();
+  const empty: SalesContractAmendmentV1 = {
+    ...next,
+    passengers: [],
+    passengerCategories: {},
+  };
+  await expect(
+    service.update(id, empty, actor, undefined, {}),
+  ).rejects.toThrow();
+  expect(repo.updateDraft).not.toHaveBeenCalled();
+});
+it('does not allow preserved-price membership mode to lower recorded prices or bypass amendment authorization', async () => {
+  const { service, repo } = setup();
+  const next = rosterInput();
+  await expect(
+    service.update(
+      id,
+      {
+        ...next,
+        priceComponents: [{ ...next.priceComponents[0]!, amount: '1' }],
+      },
+      actor,
+      undefined,
+      next.passengerCategories,
+    ),
+  ).rejects.toThrow('مبلغ');
+  await expect(
+    service.update(
+      id,
+      next,
+      { ...actor, permissions: ['sales.contracts.update.branch'] },
+      undefined,
+      next.passengerCategories,
+    ),
+  ).rejects.toThrow();
+  expect(repo.updateDraft).not.toHaveBeenCalled();
+});

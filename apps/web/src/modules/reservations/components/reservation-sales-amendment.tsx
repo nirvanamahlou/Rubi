@@ -1,6 +1,8 @@
 'use client';
+import type { PassengerName } from '../passenger-files/client';
 import { AmendmentPassengerPriceTable } from './amendment-passenger-price-table';
 import { AmendmentPassengerMembership } from './amendment-passenger-membership';
+import { changeAmendmentMembership } from './amendment-membership';
 import { AmendmentHotelRooms } from './amendment-hotel-rooms';
 import { PassengerCompletion } from '@/modules/sales/components/passenger-completion';
 import { PassengerServiceEditor } from './passenger-service-editor';
@@ -79,6 +81,9 @@ export function ReservationSalesAmendment({
   const [direction, setDirection] = useState<SalesTicketDirection>('OUTBOUND');
   const [airline, setAirline] = useState('');
   const [day, setDay] = useState(() => amendmentFlightDay(draft, 'OUTBOUND'));
+  const [pendingPassengers, setPendingPassengers] = useState<PassengerName[]>(
+    [],
+  );
   useEffect(() => {
     let live = true;
     const resources: MasterDataResource[] = [
@@ -158,9 +163,6 @@ export function ReservationSalesAmendment({
     return !!code && !['IR', 'IRN', 'IRAN'].includes(code);
   });
   const hotel = draft.hotelSelection;
-  const membershipChanged =
-    draft.passengers.map((p) => p.customerId).join('|') !==
-    contract.passengersDetail.map((p) => p.customerId).join('|');
   function changeHotel(v: Partial<SalesHotelSelectionInput>) {
     if (hotel) {
       const nextHotel = { ...hotel, ...v };
@@ -211,16 +213,15 @@ export function ReservationSalesAmendment({
         }
       }
       const corrected = applyManualAmendmentFlights(
-        section === 'PRICES' || section === 'CORRECTION' || membershipChanged
-          ? prepareAmendmentPersonPrices(draft)
-          : draft,
+        section === 'PRICES' ? prepareAmendmentPersonPrices(draft) : draft,
         Object.fromEntries(
           Object.entries(manualFlights).filter(([key]) =>
             manualDirty.includes(key as SalesTicketDirection),
           ),
         ),
       );
-      const derived = amendmentPriceComponents(corrected);
+      const derived =
+        section === 'CORRECTION' ? null : amendmentPriceComponents(corrected);
       await salesApi.amend(
         contract.id,
         derived
@@ -252,37 +253,9 @@ export function ReservationSalesAmendment({
         </p>
       )}
       <fieldset
-        disabled={
-          busy || completionPending || (section !== 'CORRECTION' && saved)
-        }
+        disabled={busy || (section !== 'CORRECTION' && saved)}
         className="grid gap-4"
       >
-        {section === 'CORRECTION' &&
-          requestId &&
-          (!contract.passengersDetail.length &&
-          readLegacyServiceParties(draft.services) ? (
-            <PassengerCompletion
-              contractId={contract.id}
-              onSaved={onSaved}
-              onPending={setCompletionPending}
-            />
-          ) : (
-            <AmendmentPassengerMembership
-              contractId={contract.id}
-              draft={draft}
-              disabled={busy || saved}
-              currencies={(refs.currencies ?? []).map((c) => ({
-                code: c.code ?? '',
-                name: c.name,
-                status: c.status,
-              }))}
-              onChange={(next) => {
-                setDraft(next);
-                setPriceError('');
-              }}
-              onPending={setCompletionPending}
-            />
-          ))}
         {section === 'FLIGHT' && (
           <>
             <label className="flex items-center gap-3 rounded-xl bg-primary/5 p-3">
@@ -524,12 +497,105 @@ export function ReservationSalesAmendment({
             </label>
           </>
         )}
+        {section === 'CORRECTION' &&
+          requestId &&
+          (!contract.passengersDetail.length &&
+          readLegacyServiceParties(draft.services) ? (
+            <PassengerCompletion
+              contractId={contract.id}
+              onSaved={onSaved}
+              onPending={setCompletionPending}
+            />
+          ) : (
+            <AmendmentPassengerMembership
+              contractId={contract.id}
+              draft={draft}
+              requestedCount={
+                hotel?.rooms?.length
+                  ? hotel.rooms.reduce(
+                      (n, r) => n + r.adults + r.childAges.length,
+                      0,
+                    ) +
+                    draft.passengers.filter(
+                      (p) =>
+                        !p.serviceClientKeys.includes(hotel.serviceClientKey),
+                    ).length
+                  : undefined
+              }
+              disabled={busy || saved}
+              onChange={(next) => {
+                setDraft(next);
+                setPriceError('');
+              }}
+              onPending={setCompletionPending}
+              onRegistered={(person) => {
+                const v = person.values;
+                setPendingPassengers((old) => [
+                  ...old.filter((p) => p.id !== person.person!.id),
+                  {
+                    id: person.person!.id,
+                    displayName: person.person!.displayName,
+                    firstName: v.firstName,
+                    lastName: v.lastName,
+                    passportFirstName: v.passportFirstName,
+                    passportLastName: v.passportLastName,
+                    birthDate: v.birthDate,
+                    birthDateMasked: false,
+                    nationalId: v.nationalId,
+                    nationalIdMasked: false,
+                    passportNumber: v.passportNumber,
+                    passportNumberMasked: false,
+                    passportExpiryDate: v.passportExpiryDate,
+                    passportIssuePlace: v.passportIssuingCountryCode,
+                    nationalityCode: v.nationalityCode,
+                    birthCountryCode: v.birthCountryCode,
+                    gender:
+                      v.gender === 'M' || v.gender === 'F' ? v.gender : null,
+                    ageCategory: null,
+                    version: person.profile?.version ?? 1,
+                  },
+                ]);
+              }}
+            />
+          ))}
         {section === 'CORRECTION' && requestId && (
           <>
             <ReservationPassengers
               id={requestId}
               customerIds={draft.passengers.map((p) => p.customerId)}
+              pendingRows={pendingPassengers}
               saveRef={passengerEditor}
+              rowActions={(customerId) => (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={
+                    busy ||
+                    saved ||
+                    completionPending ||
+                    draft.passengers.length <= 1
+                  }
+                  onClick={() => {
+                    try {
+                      setDraft(
+                        changeAmendmentMembership(
+                          draft,
+                          { remove: customerId },
+                          true,
+                        ),
+                      );
+                      setError('');
+                    } catch (e) {
+                      setError(
+                        e instanceof Error ? e.message : 'ثبت انجام نشد.',
+                      );
+                    }
+                  }}
+                >
+                  حذف مسافر
+                </Button>
+              )}
               onDirty={() => setSaved(false)}
               serviceEditor={(customerId) => (
                 <PassengerServiceEditor
@@ -582,12 +648,7 @@ export function ReservationSalesAmendment({
             />
           </>
         )}
-        {(section === 'PRICES' ||
-          (section === 'CORRECTION' &&
-            (membershipChanged ||
-              contract.passengersDetail.some(
-                (p) => !p.agreedPrices?.length,
-              )))) && (
+        {section === 'PRICES' && (
           <>
             <AmendmentPassengerPriceTable
               key={draft.passengers.map((p) => p.customerId).join('|')}

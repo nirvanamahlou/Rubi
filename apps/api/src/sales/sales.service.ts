@@ -1250,6 +1250,7 @@ export class SalesService {
     input: SalesContractCreateRequest & {
       version: number;
       reason?: string | null;
+      preserveContractPrices?: true;
     },
     actor: AuthenticatedActor,
     traceId?: string,
@@ -1287,18 +1288,18 @@ export class SalesService {
           'طرف قرارداد را در بخش طرف قرارداد اصلاح کنید.',
         );
       if (
-        Object.keys(categories).length !== row.passengers.length ||
-        input.passengers.length !== row.passengers.length ||
-        row.passengers.some(
+        Object.keys(categories).length !== input.passengers.length ||
+        input.passengers.some(
           (p) =>
             !['ADT', 'CHD', 'INF'].includes(categories[p.customerId] ?? '') ||
-            !input.passengers.some(
-              (n) =>
-                n.customerId === p.customerId &&
-                n.birthDate.slice(0, 10) ===
-                  (p.birthDate?.toISOString().slice(0, 10) ?? '') &&
-                n.displayNameSnapshot === p.displayNameSnapshot,
-            ),
+            (row.passengers.some((old) => old.customerId === p.customerId) &&
+              !row.passengers.some(
+                (n) =>
+                  n.customerId === p.customerId &&
+                  (n.birthDate?.toISOString().slice(0, 10) ?? '') ===
+                    p.birthDate.slice(0, 10) &&
+                  n.displayNameSnapshot === p.displayNameSnapshot,
+              )),
         )
       )
         throw new BadRequestException(
@@ -1478,7 +1479,42 @@ export class SalesService {
           'نوع اقامت ذخیره‌شده مسافر را مشخص کنید؛ حذف ضمنی آن مجاز نیست.',
         );
     }
-    if (row.passengers.some((passenger) => passenger.agreedPrices?.length))
+    const preservePrices = input.preserveContractPrices === true;
+    if (preservePrices) {
+      const componentFacts = (
+        components: readonly {
+          type: string;
+          title: string;
+          amount: unknown;
+          currencyCode: string;
+        }[],
+      ) =>
+        JSON.stringify(
+          components.map((p) => [
+            p.type,
+            p.title,
+            String(p.amount),
+            p.currencyCode,
+          ]),
+        );
+      if (
+        !categories ||
+        input.passengers.length < 1 ||
+        input.passengers.some((p) => p.agreedPrices !== undefined) ||
+        input.services.some(
+          (s) => s.metadata?.contractPackagePricingVersion !== 1,
+        ) ||
+        componentFacts(input.priceComponents) !==
+          componentFacts(row.priceComponents)
+      )
+        throw new BadRequestException(
+          'اصلاح تعداد مسافران نباید مبلغ ثبت‌شده قرارداد را تغییر دهد.',
+        );
+    }
+    if (
+      !preservePrices &&
+      row.passengers.some((passenger) => passenger.agreedPrices?.length)
+    )
       domainCall(() => {
         try {
           validatePassengerPackagePrices(
