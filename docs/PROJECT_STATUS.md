@@ -1,3 +1,7 @@
+## ACCOUNTING-NO-BOOK-PICKER-1031
+
+Removed manual create/select-ledger prompts from both no-book chart form locations. Existing automatic resolution and write guards preserved; no data or runtime changes. Updated empty-chart regression. Static diff check passes; runtime tests/build pending because this checkout has no node_modules.
+
 ## CONTRACT-FIRST-PASSENGER-PRICE-1031 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-contract-first-passenger-price-1031 from origin/develop. Owner explicitly chooses assigning the full recorded IRR/foreign total to the first passenger and zero to remaining passengers when a whole-contract booking has no saved passenger prices. Reserve only Sales contract-print.ts and focused print/share-route tests plus own status notes. Read-only production diagnosis confirmed a completed historical roster with aggregate components, empty old maps and no passenger prices. Use exact saved balance amounts per currency only for explicitly whole-contract-priced records with no personal-price source; preserve existing complete/partial per-person pricing, service details, authorization, financial balances and immutable history. No schema/migration/dependency or operational data mutation. 77 synthetic print/output/PDF/share-route tests and scoped lint pass; final-head types/full tests/build/PostgreSQL gates precede integration. User requests correction across matching contracts.
@@ -8190,3 +8194,7 @@ Fixed useRef-only popup presentation memory with actor-isolated tab-session rece
 
 ## CALL-CENTER-FINAL-MERGE-1031 — PC-C
 Five open Amin-tech11 PRs integrated, retaining their actual heads and complete history. Quality failures in1239/1241 were WORK_ASSIGNMENTS formatting only and repaired. Final combined CI gates before authorized develop merge. Local runtime preparation isolated on C drive; no production deployment.
+## GENERAL-LEDGER-PARITY-1031 — PC-B — IN_PROGRESS
+
+Fresh read-only Rahkaran audit found generic closing/year-end form mismatches and previously missed legal-report flyout forms. Owner explicitly requested inaccessible closing/nature-adjustment stages stay empty: observed introductions/navigation are now rendered on localhost3100 with no inferred financial inputs or issue actions. Closing page no longer takes its title from a source precondition error.7 targeted tests and scoped ESLint pass; integrated stage typecheck reports unrelated stale HR/shared-contract declarations. No source-system data writes, database changes, push or merge. Full audit/implementation remains incomplete; see [audit status](tasks/GENERAL-LEDGER-PARITY-1031.md).
+

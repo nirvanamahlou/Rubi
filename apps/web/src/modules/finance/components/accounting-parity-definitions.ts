@@ -382,7 +382,7 @@ for (const capture of [
   definitions.set(capture.route, {
     route: capture.route,
     title:
-      capture.title === 'خطا' || capture.stage === 'خطا'
+      capture.title.startsWith('خطا') || capture.stage === 'خطا'
         ? capture.sourcePath.split('/').at(-1)!.trim()
         : capture.title,
     sourcePath: capture.sourcePath,

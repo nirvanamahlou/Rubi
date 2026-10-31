@@ -10,13 +10,23 @@ import { FormField, Input } from '@/components/ui/form-controls';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import { DatePicker } from '@/components/ui/date-picker';
 import Link from '@/i18n/link';
+import { AccountingObservedYearEnd } from './accounting-observed-year-end';
 type Preflight = {
   unfinished: number;
   checksum: string;
   lines?: { accountId: string; debit: string; credit: string }[];
   balances: { accountId: string; balance: string; permanent: boolean }[];
 };
-export function AccountingYearEndWorkspace({
+export function AccountingYearEndWorkspace(
+  props: Parameters<typeof YearEndWorkspace>[0],
+) {
+  if (props.mode === 'closing' || props.mode === 'nature-adjustment') {
+    return <AccountingObservedYearEnd key={props.mode} mode={props.mode} />;
+  }
+  return <YearEndWorkspace {...props} />;
+}
+
+function YearEndWorkspace({
   book,
   run,
   busy,
