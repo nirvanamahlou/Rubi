@@ -68,7 +68,7 @@ describe('voucher directory snapshot and sent-form gate', () => {
       voucherSettings: {
         supplierFormPrices: {
           pp: { amount: '1', currencyCode: 'JPY' },
-          ratio: { amount: '2', currencyCode: 'JPY' },
+          ratio: { amount: '2' },
         },
       },
     } as never;
@@ -323,4 +323,50 @@ it('preserves an independent transfer supplier when an older editor omits the ne
     }),
     expect.anything(),
   );
+});
+
+it('validates the independent return currency and resolves its broker name after request authorization', async () => {
+  const s = setup();
+  const input = {
+    action: 'SUPPLIER_FORM_SETTINGS',
+    expectedVersion: 1,
+    voucherSettings: {
+      hotelTransferSeparate: true,
+      hotelTransferSplit: true,
+      hotelTransferReturn: {
+        amount: '0',
+        currencyCode: 'JPY',
+        brokerId: '33333333-3333-4333-8333-333333333333',
+        brokerName: 'untrusted display',
+      },
+    },
+  } as unknown as TravelWorkflowCommandV1;
+  await s.controller.workflowUpdate('request', input, s.request);
+  expect(s.detail).toHaveBeenCalledWith('request', ['branch']);
+  expect(s.currencyReference).toHaveBeenCalledWith('JPY');
+  expect(input.voucherSettings!.hotelTransferReturn!.brokerName).toBe(
+    'Canonical broker',
+  );
+});
+it('rejects malformed independent return data before directory queries or workflow writes', async () => {
+  const s = setup();
+  await expect(
+    s.controller.workflowUpdate(
+      'request',
+      {
+        action: 'SUPPLIER_FORM_SETTINGS',
+        expectedVersion: 1,
+        voucherSettings: {
+          hotelTransferReturn: {
+            amount: '-1',
+            currencyCode: 'JPY',
+            brokerId: 'bad',
+          },
+        },
+      } as never,
+      s.request,
+    ),
+  ).rejects.toThrow('جدول قیمت فرم رزرواسیون معتبر نیست.');
+  expect(s.currencyReference).not.toHaveBeenCalled();
+  expect(s.update).not.toHaveBeenCalled();
 });

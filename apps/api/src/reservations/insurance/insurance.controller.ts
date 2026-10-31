@@ -69,6 +69,14 @@ export class ReservationInsuranceController {
     return this.settings.save(branchId, body, req.actor);
   }
   @Header('Cache-Control', 'private, no-store')
+  @Get('provider/catalog')
+  providerCatalog(
+    @Query('branchId', ParseUUIDPipe) branchId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.settings.providerCatalog(branchId, req.actor);
+  }
+  @Header('Cache-Control', 'private, no-store')
   @Get('references')
   references(
     @Query('branchId', ParseUUIDPipe) branchId: string,

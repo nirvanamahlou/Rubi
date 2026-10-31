@@ -198,6 +198,7 @@ export interface DashboardProjectionV1 {
     permissionSnapshot: string;
   } | null;
   unavailableMetrics?: Readonly<Record<string, string>>;
+  unavailableVisuals?: Readonly<Record<string, string>>;
   sourceCoverage?: readonly {
     source: string;
     state: string;
@@ -239,6 +240,7 @@ export interface DashboardProjectionV1 {
         aggregation?: string;
         currencyCode?: string;
         currencySeries?: readonly DashboardVisualCurrencySeriesV1[];
+        notice?: string;
         series?: readonly DashboardVisualSeriesV1[];
         comparison?: DashboardComparisonV1;
         trend?: DashboardTrendV1;
@@ -266,6 +268,7 @@ export interface DashboardVisualCurrencySeriesV1 {
   currencyCode: string;
   labels: readonly string[];
   values: readonly number[];
+  series?: readonly DashboardVisualSeriesV1[];
   comparison?: DashboardComparisonV1;
   trend?: DashboardTrendV1;
 }

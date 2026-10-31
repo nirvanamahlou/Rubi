@@ -1,3 +1,8 @@
+import {
+  contractPrintHtml,
+  type ContractPrintReferences,
+} from './contract-print';
+import type { SalesContractOutputV1 } from '@nora/contracts';
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { GET } from '../../../app/sales/contracts/[id]/pdf/route';
 import { printFixture } from './contract-print.fixture';
@@ -45,6 +50,7 @@ describe('Saved contract PDF download route', () => {
     expect(mocks.render).not.toHaveBeenCalled();
   });
   it('downloads actual bytes with private attachment headers from saved output', async () => {
+    // Route enrichment uses hotel-owned city references; authorization remains upstream.
     mocks.fetch.mockImplementation(async (url: string) =>
       url.includes('/sales/contracts/')
         ? Response.json({ data: printFixture })
@@ -65,6 +71,57 @@ describe('Saved contract PDF download route', () => {
     expect(mocks.render.mock.calls[0]?.[0]).toEqual(printFixture);
     expect(mocks.fetch.mock.calls[0]?.[1].headers.cookie).toBe(
       'nora_access=test-session',
+    );
+  });
+  it('preserves the actual upstream confirmation or access explanation instead of a misleading generic download error', async () => {
+    mocks.fetch.mockResolvedValue(
+      Response.json(
+        { error: { message: 'Synthetic scoped denial' } },
+        { status: 403 },
+      ),
+    );
+    const response = await GET(new Request('https://web.test'), {
+      params: Promise.resolve({ id }),
+    });
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      message: 'Synthetic scoped denial',
+    });
+    expect(mocks.render).not.toHaveBeenCalled();
+  });
+  it('enriches both hotel cities through their actual master records before PDF generation', async () => {
+    const saved = structuredClone(printFixture);
+    saved.contract.hotelSelection!.additionalStays = [
+      {
+        hotelId: 'second-hotel',
+        hotelNameSnapshot: 'Second',
+        cityId: 'stale',
+        checkInDate: '2026-10-05',
+        checkOutDate: '2026-10-08',
+      },
+    ];
+    mocks.fetch.mockImplementation(async (url: string) => {
+      if (url.endsWith('/output')) return Response.json({ data: saved });
+      if (url.endsWith('/hotels/second-hotel'))
+        return Response.json({
+          data: {
+            name: 'Second',
+            attributes: { cityId: 'izmir', englishName: 'SECOND HOTEL' },
+          },
+        });
+      if (url.endsWith('/cities/izmir'))
+        return Response.json({
+          data: { name: 'ازمیر', attributes: { englishName: 'IZMIR' } },
+        });
+      return new Response('', { status: 403 });
+    });
+    mocks.render.mockResolvedValue(Buffer.from('%PDF'));
+    const response = await GET(new Request('https://web.test'), {
+      params: Promise.resolve({ id }),
+    });
+    expect(response.status).toBe(200);
+    expect(mocks.render.mock.calls[0]![1].hotels['second-hotel']).toMatchObject(
+      { name: 'SECOND HOTEL', city: 'IZMIR' },
     );
   });
   it('reports unavailable renderer without leaking internal errors', async () => {
@@ -220,5 +277,40 @@ describe('Saved contract PDF download route', () => {
     expect(result.status).toBe(503);
     expect(mocks.prepare).not.toHaveBeenCalled();
     expect(mocks.render).not.toHaveBeenCalled();
+  });
+  it('prepares a real share HTML for whole-contract hotel pricing without obsolete per-person splits', async () => {
+    const saved = structuredClone(printFixture);
+    for (const p of saved.contract.passengersDetail) delete p.agreedPrices;
+    for (const s of saved.contract.servicesDetail)
+      s.metadata = { ...s.metadata, contractPackagePricingVersion: 1 };
+    const hotel = saved.contract.servicesDetail.find(
+      (s) => s.kind === 'HOTEL',
+    )!;
+    hotel.metadata = { ...hotel.metadata, passengerHotelPricesV1: '{}' };
+    mocks.fetch.mockImplementation(async (url: string) =>
+      url.endsWith('/output')
+        ? Response.json({ data: saved })
+        : new Response('', { status: 403 }),
+    );
+    const save = vi.fn();
+    mocks.share.mockReturnValue({
+      url: 'https://example.test/d/' + 'c'.repeat(32),
+      save,
+    });
+    mocks.prepare.mockImplementation(
+      async (output: SalesContractOutputV1, refs: ContractPrintReferences) =>
+        contractPrintHtml(output, refs),
+    );
+    const before = structuredClone(saved);
+    const response = await GET(new Request('http://web.test?format=share'), {
+      params: Promise.resolve({ id }),
+    });
+    expect(response.status).toBe(200);
+    const result = await response.json();
+    expect(result.html).toContain('123,456,789.25');
+    expect(result.html).toContain('HOTEL INFORMATION');
+    expect(save).toHaveBeenCalledWith(result.html);
+    expect(mocks.render).not.toHaveBeenCalled();
+    expect(saved).toEqual(before);
   });
 });

@@ -30,6 +30,10 @@ enum AuditOutcome {
 }
 
 model User {
+  pettyCashEntries ProcurementPettyEntry[]
+
+  pettyCashFunds ProcurementPettyFund[]
+
   insurancePolicyRevisions ReservationInsuranceRevision[]
   financialWorkflows       AccountingWorkflow[]
   telephonyCommands        IntegrationTelephonyCommand[]
@@ -266,6 +270,8 @@ model RolePermission {
 }
 
 model Branch {
+  pettyCashFunds ProcurementPettyFund[]
+
   financialWorkflows   AccountingWorkflow[]
   telephonyConnections IntegrationTelephonyConnection[]
   receiptAllocations   SalesReceiptAllocation[]
@@ -1206,6 +1212,7 @@ model MasterRailTerminal {
 }
 
 model MasterCurrency {
+  hotels                               MasterHotel[]
   procurementRequestCurrencycodeRows   ProcurementRequest[]        @relation("ProcurementRequestCurrencycode")
   procurementQuotationCurrencycodeRows ProcurementQuotation[]      @relation("ProcurementQuotationCurrencycode")
   procurementOrderCurrencycodeRows     ProcurementOrder[]          @relation("ProcurementOrderCurrencycode")
@@ -2073,25 +2080,25 @@ model MasterManifestTemplate {
 }
 
 model MasterRailCompany {
-  isUnderReview       Boolean            @default(false)
-  id                  String             @id @default(uuid()) @db.Uuid
-  organizationId      String             @unique @db.Uuid
-  countryId           String             @db.Uuid
-  code                String             @unique @db.VarChar(32)
-  name                String             @db.VarChar(160)
-  englishName         String?            @db.VarChar(160)
-  logoFileReference   String?            @db.Uuid
-  displayOrder        Int                @default(0)
-  isActive            Boolean            @default(true)
-  version             Int                @default(1)
-  createdByUserId     String             @db.Uuid
-  updatedByUserId     String             @db.Uuid
-  deactivatedByUserId String?            @db.Uuid
-  deactivatedAt       DateTime?          @db.Timestamptz(3)
-  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
-  organization        MasterOrganization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  country             MasterCountry      @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  isUnderReview       Boolean             @default(false)
+  id                  String              @id @default(uuid()) @db.Uuid
+  organizationId      String?             @unique @db.Uuid
+  countryId           String              @db.Uuid
+  code                String              @unique @db.VarChar(32)
+  name                String              @db.VarChar(160)
+  englishName         String?             @db.VarChar(160)
+  logoFileReference   String?             @db.Uuid
+  displayOrder        Int                 @default(0)
+  isActive            Boolean             @default(true)
+  version             Int                 @default(1)
+  createdByUserId     String              @db.Uuid
+  updatedByUserId     String              @db.Uuid
+  deactivatedByUserId String?             @db.Uuid
+  deactivatedAt       DateTime?           @db.Timestamptz(3)
+  createdAt           DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime            @updatedAt @db.Timestamptz(3)
+  organization        MasterOrganization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  country             MasterCountry       @relation(fields: [countryId], references: [id], onDelete: Restrict)
 
   @@index([countryId, isActive, name])
   @@map("master_rail_companies")
@@ -2203,6 +2210,8 @@ model MasterBusTypeFacility {
 }
 
 model MasterHotel {
+  currencyId           String?                      @db.Uuid
+  currency             MasterCurrency?              @relation(fields: [currencyId], references: [id], onDelete: Restrict)
   salesHotelStays      SalesContractHotelStay[]
   groupRates           ReservationHotelGroupRate[]
   id                   String                       @id @default(uuid()) @db.Uuid
@@ -2255,6 +2264,7 @@ model MasterHotel {
 
   @@index([cityId, isActive, name])
   @@index([chainId, isActive, name])
+  @@index([currencyId])
   @@index([isSaleableReference, isActive, name])
   @@index([mealServiceId])
   @@index([defaultRoomTypeId])
@@ -4700,6 +4710,7 @@ enum FinanceSupplierPaymentStatus {
 }
 
 model FinanceSettlementAccount {
+  deletedAt                  DateTime?                              @db.Timestamptz(3)
   salesDestinationPayments   SalesContractPaymentEntry[]            @relation("SalesPaymentDestinationAccount")
   workflowRefunds            AccountingWorkflow[]
   bankIdentifiers            Json?
@@ -6092,6 +6103,8 @@ model CustomerAffairsAuditEvent {
 }
 
 model ProcurementRequest {
+  pettyEntries ProcurementPettyEntry[]
+
   receiptAdjustments                        ProcurementReceiptAdjustment[]
   exportJobs                                ProcurementExportJob[]
   id                                        String                         @id @default(uuid()) @db.Uuid
@@ -8238,4 +8251,38 @@ model CallCenterAnswerResponsibility {
   @@index([userId, callId])
   @@index([inboxId])
   @@map("call_center_answer_responsibilities")
+}
+
+model ProcurementPettyFund {
+  id            String                  @id @default(uuid()) @db.Uuid
+  branchId      String                  @unique @db.Uuid
+  custodianId   String                  @db.Uuid
+  currencyCode  String                  @db.VarChar(3)
+  balance       Decimal                 @db.Decimal(24, 4)
+  bankName      String                  @default("") @db.VarChar(120)
+  accountNumber String                  @default("") @db.VarChar(40)
+  iban          String                  @default("") @db.VarChar(34)
+  cardNumber    String                  @default("") @db.VarChar(20)
+  version       Int                     @default(1)
+  branch        Branch                  @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  custodian     User                    @relation(fields: [custodianId], references: [id], onDelete: Restrict)
+  entries       ProcurementPettyEntry[]
+
+  @@map("procurement_petty_funds")
+}
+
+model ProcurementPettyEntry {
+  requestId  String?              @db.Uuid
+  request    ProcurementRequest?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  id         String               @id @default(uuid()) @db.Uuid
+  fundId     String               @db.Uuid
+  requestKey String?              @unique @db.Uuid
+  amount     Decimal              @db.Decimal(24, 4)
+  actorId    String               @db.Uuid
+  createdAt  DateTime             @default(now()) @db.Timestamptz(3)
+  actor      User                 @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  fund       ProcurementPettyFund @relation(fields: [fundId], references: [id], onDelete: Restrict)
+
+  @@index([fundId, createdAt])
+  @@map("procurement_petty_entries")
 }

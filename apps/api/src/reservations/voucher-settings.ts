@@ -1,4 +1,5 @@
 import {
+  hotelRoomQuotationTotal,
   voucherTextKeys,
   voucherNumberKeys,
   voucherFlagKeys,
@@ -18,8 +19,9 @@ export function validateSupplierFormPrices(
         !price ||
         typeof price.amount !== 'string' ||
         !/^\d{1,18}(?:\.\d{1,4})?$/.test(price.amount) ||
-        typeof price.currencyCode !== 'string' ||
-        !/^[A-Z]{3}$/.test(price.currencyCode),
+        (key !== 'ratio' &&
+          (typeof price.currencyCode !== 'string' ||
+            !/^[A-Z]{3}$/.test(price.currencyCode))),
     )
   )
     throw new Error('جدول قیمت فرم رزرواسیون معتبر نیست.');
@@ -37,6 +39,64 @@ export function validateVoucherSettings(
   };
   if (!value || typeof value !== 'object') return fail();
   const v = value as VoucherSettingsV1;
+  if (
+    [v.hotelTransferSeparate, v.hotelTransferSplit].some(
+      (flag) => flag !== undefined && typeof flag !== 'boolean',
+    )
+  )
+    return fail();
+  if (v.hotelTransferSplit && !v.hotelTransferSeparate) return fail();
+  if (
+    v.hotelTransferReturn &&
+    (typeof v.hotelTransferReturn !== 'object' ||
+      Object.keys(v.hotelTransferReturn).some(
+        (key) =>
+          !['amount', 'currencyCode', 'brokerId', 'brokerName'].includes(key),
+      ) ||
+      typeof v.hotelTransferReturn.amount !== 'string' ||
+      !/^\d{1,18}(?:\.\d{1,4})?$/.test(v.hotelTransferReturn.amount) ||
+      !/^[A-Z]{3}$/.test(v.hotelTransferReturn.currencyCode) ||
+      (v.hotelTransferReturn.brokerId !== undefined &&
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          v.hotelTransferReturn.brokerId,
+        )) ||
+      (v.hotelTransferReturn.brokerName !== undefined &&
+        (typeof v.hotelTransferReturn.brokerName !== 'string' ||
+          v.hotelTransferReturn.brokerName.length > 200)))
+  )
+    return fail();
+  try {
+    if (v.hotelRoomPrices) {
+      if (
+        Object.keys(v.hotelRoomPrices).some(
+          (key) => !['currencyCode', 'rooms'].includes(key),
+        )
+      )
+        return fail();
+      if (!/^[A-Z]{3}$/.test(v.hotelRoomPrices.currencyCode)) return fail();
+      hotelRoomQuotationTotal(
+        v.hotelRoomPrices.rooms,
+        1,
+        (v.rooms ?? []).map((room) => room.ordinal),
+      );
+    }
+    if (
+      v.hotelTransferCounts &&
+      Object.keys(v.hotelTransferCounts).some(
+        (key) => !['outbound', 'returning'].includes(key),
+      )
+    )
+      return fail();
+    if (
+      v.hotelTransferCounts &&
+      [v.hotelTransferCounts.outbound, v.hotelTransferCounts.returning].some(
+        (count) => !Number.isSafeInteger(count) || count < 0 || count > 500,
+      )
+    )
+      return fail();
+  } catch {
+    return fail();
+  }
   try {
     validateSupplierFormPrices(v.supplierFormPrices);
   } catch {
@@ -211,6 +271,15 @@ export function validateVoucherSettings(
       return fail();
   }
   return {
+    ...(v.hotelTransferSeparate !== undefined
+      ? { hotelTransferSeparate: v.hotelTransferSeparate }
+      : {}),
+    ...(v.hotelTransferSplit !== undefined
+      ? { hotelTransferSplit: v.hotelTransferSplit }
+      : {}),
+    ...(v.hotelTransferReturn
+      ? { hotelTransferReturn: { ...v.hotelTransferReturn } }
+      : {}),
     ...(v.rooms !== undefined
       ? {
           rooms: v.rooms.map((room) => ({
@@ -220,6 +289,12 @@ export function validateVoucherSettings(
             childAges: [...room.childAges],
           })),
         }
+      : {}),
+    ...(v.hotelRoomPrices
+      ? { hotelRoomPrices: structuredClone(v.hotelRoomPrices) }
+      : {}),
+    ...(v.hotelTransferCounts
+      ? { hotelTransferCounts: { ...v.hotelTransferCounts } }
       : {}),
     ...(v.hotelPurchasePrices !== undefined
       ? {
@@ -234,7 +309,9 @@ export function validateVoucherSettings(
           supplierFormPrices: Object.fromEntries(
             Object.entries(v.supplierFormPrices).map(([key, price]) => [
               key,
-              { amount: price.amount, currencyCode: price.currencyCode },
+              key === 'ratio'
+                ? { amount: price.amount }
+                : { amount: price.amount, currencyCode: price.currencyCode },
             ]),
           ),
         }

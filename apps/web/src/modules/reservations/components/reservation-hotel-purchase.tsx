@@ -1,4 +1,5 @@
 'use client';
+import { HotelStayPurchases } from './hotel-stay-purchase';
 import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';
 
@@ -15,6 +16,7 @@ import { ReservationInsurancePurchase } from './reservation-insurance-purchase';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   hotelNights,
+  legacyPurchaseGuests,
   moneyDecimal,
   moneyUnits,
   reservationServicePurchaseTotal,
@@ -38,7 +40,23 @@ type PurchaseRequest = ReservationIntakeV1 & {
 };
 type PurchasableService =
   ReservationIntakeV1['snapshot']['serviceSelections'][number];
-type Passenger = { id: string; name: string; age: SalesPassengerAgeCategory };
+type Passenger = {
+  id: string;
+  name: string;
+  age: SalesPassengerAgeCategory;
+  guestIndex?: number;
+};
+
+const unnamedPurchaseGuests = (
+  snapshot: ReservationIntakeV1['snapshot'],
+  serviceKey: string,
+): Passenger[] =>
+  legacyPurchaseGuests(snapshot, serviceKey).map((guest) => ({
+    id: `legacy:${guest.guestIndex}`,
+    name: `مسافر ${guest.guestIndex + 1}`,
+    age: guest.ageCategory,
+    guestIndex: guest.guestIndex,
+  }));
 
 export const reservationPurchaseServices = (
   snapshot: ReservationIntakeV1['snapshot'],
@@ -74,7 +92,9 @@ export const reservationHotelPassengers = (
           name: passenger.displayNameSnapshot || passenger.customerId,
           age: passenger.ageCategory,
         }))
-    : snapshot.passengerIds.map((id) => ({ id, name: id, age: 'ADT' }));
+    : snapshot.passengerIds.length
+      ? snapshot.passengerIds.map((id) => ({ id, name: id, age: 'ADT' }))
+      : unnamedPurchaseGuests(snapshot, serviceClientKey);
 
 export const reservationTransferPassengers = (
   snapshot: ReservationIntakeV1['snapshot'],
@@ -90,7 +110,12 @@ export const reservationTransferPassengers = (
           name: passenger.displayNameSnapshot || passenger.customerId,
           age: passenger.ageCategory,
         }))
-    : snapshot.passengerIds.map((id) => ({ id, name: id, age: 'ADT' }));
+    : snapshot.passengerIds.length
+      ? snapshot.passengerIds.map((id) => ({ id, name: id, age: 'ADT' }))
+      : serviceKeys.reduce<Passenger[]>((largest, key) => {
+          const guests = unnamedPurchaseGuests(snapshot, key);
+          return guests.length > largest.length ? guests : largest;
+        }, []);
 
 export function transferPurchaseTotal(price: string, count: string) {
   if (
@@ -116,7 +141,7 @@ export function hotelPurchaseTotal(
   return total;
 }
 
-/** Blank guests remain unpriced; only explicitly entered positive nightly prices form the revision. */
+/** Blank guests remain unpriced; explicit zero nightly prices are recorded. */
 export function hotelPassengerPurchaseInput(
   passengers: readonly Passenger[],
   nightly: Readonly<Record<string, string>>,
@@ -128,8 +153,8 @@ export function hotelPassengerPurchaseInput(
     .filter((person) => nightly[person.id]?.trim())
     .map((person) => {
       const amount = moneyUnits(nightly[person.id]!);
-      if (amount <= 0n)
-        throw new Error('قیمت هر شب هر مسافر باید مبلغی مثبت باشد.');
+      if (amount < 0n)
+        throw new Error('قیمت هر شب هر مسافر باید صفر یا بیشتر باشد.');
       return { customerId: person.id, nightlyAmount: moneyDecimal(amount) };
     });
   if (!passengerPrices.length)
@@ -141,7 +166,21 @@ export function hotelPassengerPurchaseInput(
     ),
   );
   moneyUnits(amount);
-  return { passengerPrices, amount };
+  const legacy = passengers.some((person) => person.guestIndex !== undefined);
+  return {
+    passengerPrices: legacy ? [] : passengerPrices,
+    amount,
+    ...(legacy
+      ? {
+          legacyGuestPrices: passengerPrices.map((price) => ({
+            guestIndex: passengers.find(
+              (person) => person.id === price.customerId,
+            )!.guestIndex!,
+            nightlyAmount: price.nightlyAmount,
+          })),
+        }
+      : {}),
+  };
 }
 
 export function SupplierFormPurchaseContext({
@@ -213,7 +252,23 @@ export function latestTransferPurchase(
     ? purchase
     : undefined;
 }
-export function ReservationHotelPurchase({
+export function ReservationHotelPurchase(props: {
+  request: PurchaseRequest;
+  onSaved: () => void;
+}) {
+  const request = {
+    ...props.request,
+    snapshot: props.request.purchaseSnapshot ?? props.request.snapshot,
+  };
+  return request.snapshot.hotelSelection?.rooms?.length ||
+    request.snapshot.hotelSelection?.additionalStays?.length ||
+    request.workflow?.supplierFormSettings?.rooms?.length ? (
+    <HotelStayPurchases {...props} request={request} />
+  ) : (
+    <LegacyReservationHotelPurchase {...props} />
+  );
+}
+export function LegacyReservationHotelPurchase({
   request,
   onSaved,
 }: {
@@ -247,11 +302,20 @@ export function ReservationHotelPurchase({
     : [];
   const [nightlyPrices, setNightlyPrices] = useState<Record<string, string>>(
     () =>
-      Object.fromEntries(
-        (hotelPurchase?.passengerPrices ?? [])
+      Object.fromEntries([
+        ...(hotelPurchase?.passengerPrices ?? [])
           .filter((price) => price.nightlyAmount !== undefined)
           .map((price) => [price.customerId, price.nightlyAmount!]),
-      ),
+        ...(hotelPurchase?.legacyGuestPrices ?? [])
+          .filter((price) =>
+            hotelPassengers.some(
+              (person) =>
+                person.guestIndex === price.guestIndex &&
+                person.age === price.ageCategory,
+            ),
+          )
+          .map((price) => [`legacy:${price.guestIndex}`, price.nightlyAmount]),
+      ]),
   );
   type TransferDraft = {
     supplier: Option | null;
@@ -377,6 +441,11 @@ export function ReservationHotelPurchase({
           throw new Error(
             'کارگزار، ارز، تاریخ اقامت و حداقل یک قیمت خرید مسافر را تکمیل کنید.',
           );
+        const hotelPricing = hotelPassengerPurchaseInput(
+          hotelPassengers,
+          nightlyPrices,
+          nights,
+        );
         purchases.push({
           serviceClientKey: hotel.clientKey,
           coveredServiceClientKeys: [hotel.clientKey],
@@ -386,11 +455,9 @@ export function ReservationHotelPurchase({
           ...(fxRates[hotelCurrency.id]
             ? { purchaseRateToIrr: fxRates[hotelCurrency.id] }
             : {}),
-          passengerPrices: hotelPassengerPurchaseInput(
-            hotelPassengers,
-            nightlyPrices,
-            nights,
-          ).passengerPrices,
+          ...(hotelPricing.legacyGuestPrices
+            ? { legacyGuestPrices: hotelPricing.legacyGuestPrices }
+            : { passengerPrices: hotelPricing.passengerPrices }),
         });
       }
       if (transfers.length) {
@@ -422,9 +489,9 @@ export function ReservationHotelPurchase({
       }
       if (
         !purchases.length ||
-        purchases.some((purchase) => moneyUnits(purchase.amount) <= 0n)
+        purchases.some((purchase) => moneyUnits(purchase.amount) < 0n)
       )
-        throw new Error('مبلغ خرید باید مثبت باشد.');
+        throw new Error('مبلغ خرید باید صفر یا بیشتر باشد.');
       const base = getPublicApiBaseUrl();
       if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
       const payload = JSON.stringify({

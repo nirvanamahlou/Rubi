@@ -32,6 +32,88 @@ const row = {
 };
 
 describe('MasterDataService', () => {
+  it.each([undefined, '', '55555555-5555-4555-8555-555555555555'])(
+    'persists optional hotel currency %s',
+    async (currencyId) => {
+      const cityId = '66666666-6666-4666-8666-666666666666';
+      const repository = {
+        codeExists: vi.fn().mockResolvedValue(false),
+        fieldExists: vi.fn().mockResolvedValue(false),
+        find: vi.fn().mockImplementation(async (_resource, id) => ({
+          id,
+          isActive: true,
+        })),
+        create: vi
+          .fn()
+          .mockImplementation(async (_resource, data) => ({ ...row, ...data })),
+      } as unknown as MasterDataRepository;
+      await new MasterDataService(repository).create(
+        'hotels',
+        {
+          name: 'Synthetic hotel',
+          cityId,
+          ...(currencyId !== undefined ? { currencyId } : {}),
+        },
+        actor,
+      );
+      const saved = vi.mocked(repository.create).mock.calls[0]?.[1];
+      if (currencyId === undefined)
+        expect(saved).not.toHaveProperty('currencyId');
+      else expect(saved).toHaveProperty('currencyId', currencyId || null);
+    },
+  );
+  it.each([null, { isActive: false }])(
+    'rejects a missing or inactive hotel currency before persistence',
+    async (currency) => {
+      const repository = {
+        codeExists: vi.fn().mockResolvedValue(false),
+        fieldExists: vi.fn().mockResolvedValue(false),
+        find: vi
+          .fn()
+          .mockImplementation(async (resource) =>
+            resource === 'currencies' ? currency : { isActive: true },
+          ),
+        create: vi.fn(),
+      } as unknown as MasterDataRepository;
+      await expect(
+        new MasterDataService(repository).create(
+          'hotels',
+          {
+            name: 'Synthetic hotel',
+            cityId: '66666666-6666-4666-8666-666666666666',
+            currencyId: '55555555-5555-4555-8555-555555555555',
+          },
+          actor,
+        ),
+      ).rejects.toThrow('ارز');
+      expect(repository.create).not.toHaveBeenCalled();
+    },
+  );
+  it.each(['rail-companies', 'bus-companies'] as const)(
+    'persists %s without inventing an organization',
+    async (resource) => {
+      const countryId = '55555555-5555-4555-8555-555555555555';
+      const repository = {
+        codeExists: vi.fn().mockResolvedValue(false),
+        fieldExists: vi.fn().mockResolvedValue(false),
+        find: vi.fn().mockResolvedValue({ id: countryId, isActive: true }),
+        create: vi
+          .fn()
+          .mockImplementation(async (_resource, data) => ({ ...row, ...data })),
+      } as unknown as MasterDataRepository;
+      await new MasterDataService(repository).create(
+        resource,
+        { name: 'Synthetic operator', countryId },
+        actor,
+      );
+      expect(repository.create).toHaveBeenCalledWith(
+        resource,
+        expect.not.objectContaining({ organizationId: expect.any(String) }),
+        actor.userId,
+        actor.branchIds[0],
+      );
+    },
+  );
   it.each([
     '+03:30',
     '+05:45',

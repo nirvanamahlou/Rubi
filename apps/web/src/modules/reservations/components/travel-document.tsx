@@ -1,29 +1,36 @@
 'use client';
+import {
+  supplierDocumentKinds,
+  supplierDocumentScope,
+  type SupplierDocumentKind,
+} from '../model/supplier-document-scope';
+import { hotelFormScope } from '../model/hotel-form-scope';
+import { reservationHotelStays } from '@nora/contracts';
+import type { ReservationFormIntake } from '../model/reservation-form';
 import { usePublicDocumentLink } from '@/modules/travel-documents/public/use-public-document-link';
 import {
   ReservationFormSheet,
   useReservationFormReferences,
 } from './reservation-form-sheet';
 import { useEffect, useState } from 'react';
-import type {
-  ReservationIntakeV1,
-  TravelBrandingV1,
-  TravelWorkflowStateV1,
-  VoucherSettingsV1,
-} from '@nora/contracts';
+import type { TravelBrandingV1, VoucherSettingsV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { documentsApi } from '@/modules/documents/api/client';
 import { DocumentPreview } from './document-preview';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
-export function useTravelLogo(branding: TravelBrandingV1 | null) {
+export function useTravelLogo(
+  branding: TravelBrandingV1 | null,
+  withoutLogo = false,
+) {
   const [loaded, setLoaded] = useState<{
     id: string;
     logo: string;
     error: string;
   }>();
   const fileId =
-    branding?.kind === 'OWN' && branding.companyCode === 'JAHAN_BASTAN'
+    withoutLogo ||
+    (branding?.kind === 'OWN' && branding.companyCode === 'JAHAN_BASTAN')
       ? null
       : branding?.logoFileId;
   useEffect(() => {
@@ -51,6 +58,7 @@ export function useTravelLogo(branding: TravelBrandingV1 | null) {
       if (url) URL.revokeObjectURL(url);
     };
   }, [fileId]);
+  if (withoutLogo) return { logo: '', error: '' };
   if (fileId) return loaded?.id === fileId ? loaded : { logo: '', error: '' };
   if (!branding) return { logo: '', error: '' };
   if (branding.kind === 'OWN' && branding.companyCode === 'NIYAYESH_SEIR_SAHAR')
@@ -61,21 +69,33 @@ export function useTravelLogo(branding: TravelBrandingV1 | null) {
 }
 
 export function TravelDocument({
-  intake,
+  intake: sourceIntake,
+  formScope = 'HOTEL',
   voucher = false,
   historical = false,
-  previewSettings,
+  previewSettings: sourcePreviewSettings,
   dirty = false,
   downloadLabel,
 }: {
-  intake: ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
+  intake: ReservationFormIntake;
+  formScope?: SupplierDocumentKind;
   voucher?: boolean;
   historical?: boolean;
   previewSettings?: VoucherSettingsV1 | undefined;
   dirty?: boolean;
   downloadLabel?: string;
 }) {
-  const { logo, error } = useTravelLogo(intake.workflow.branding);
+  const intake = voucher
+    ? sourceIntake
+    : supplierDocumentScope(sourceIntake, formScope, sourcePreviewSettings);
+  const previewSettings =
+    sourcePreviewSettings && !voucher
+      ? intake.workflow.supplierFormSettings
+      : undefined;
+  const { logo, error } = useTravelLogo(
+    intake.workflow.branding,
+    voucher && intake.workflow.branding?.voucherWithoutLogo === true,
+  );
   const [printError, setPrintError] = useState('');
   const [downloading, setDownloading] = useState(false);
   const state = intake.workflow;
@@ -93,6 +113,7 @@ export function TravelDocument({
         ));
   const enabled =
     (!!logo ||
+      (voucher && state.branding?.voucherWithoutLogo === true) ||
       (voucher && state.voucherSettings?.flags.withLetterhead === false)) &&
     !!state.branding &&
     state.supplierStatus !== 'CANCELLED' &&
@@ -109,7 +130,13 @@ export function TravelDocument({
       ? '/reservations/requests/' +
           encodeURIComponent(intake.id) +
           '/pdf?' +
-          new URLSearchParams({ ...(voucher ? { kind: 'voucher' } : {}) })
+          new URLSearchParams({
+            ...(voucher ? { kind: 'voucher' } : {}),
+            ...(!voucher && formScope !== 'HOTEL' ? { formScope } : {}),
+            ...(!voucher && intake.hotelStayKey
+              ? { hotelStayKey: intake.hotelStayKey }
+              : {}),
+          })
       : undefined,
     JSON.stringify([state, intake.snapshot]),
   );
@@ -129,7 +156,7 @@ export function TravelDocument({
     try {
       const send = () =>
         fetch(
-          `/reservations/requests/${encodeURIComponent(intake.id)}/pdf${voucher ? '?kind=voucher' : ''}`,
+          `/reservations/requests/${encodeURIComponent(intake.id)}/pdf?${new URLSearchParams({ ...(voucher ? { kind: 'voucher' } : {}), ...(!voucher && formScope !== 'HOTEL' ? { formScope } : {}), ...(!voucher && intake.hotelStayKey ? { hotelStayKey: intake.hotelStayKey } : {}) })}`,
           {
             credentials: 'include',
             cache: 'no-store',
@@ -152,7 +179,7 @@ export function TravelDocument({
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${voucher ? 'hotel-voucher' : 'reservation-form'}-${intake.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_')}.pdf`;
+      link.download = `${voucher ? 'hotel-voucher' : formScope === 'HOTEL' ? 'reservation-form' : 'transfer-' + formScope.toLowerCase()}-${intake.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_')}${!voucher && intake.hotelStayKey ? '-' + (intake.snapshot.hotelSelection?.hotelNameSnapshot ?? intake.hotelStayKey).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 60) : ''}.pdf`;
       document.body.append(link);
       link.click();
       link.remove();
@@ -197,6 +224,54 @@ export function TravelDocument({
               : 'در حال آماده‌سازی بارکد مدرک…'}
           </p>
         ))}
+    </div>
+  );
+}
+
+export function SupplierHotelDocuments(
+  props: Omit<Parameters<typeof TravelDocument>[0], 'voucher'>,
+) {
+  const stays = reservationHotelStays(props.intake.snapshot);
+  if (!stays.length) return <TravelDocument {...props} />;
+  return (
+    <div className="grid gap-4">
+      {stays.map((stay) => {
+        const intake = hotelFormScope(props.intake, stay.key);
+        if (intake.workflow.sentSupplierFormSettings)
+          intake.workflow.supplierFormSettings =
+            intake.workflow.sentSupplierFormSettings;
+        return (
+          <section key={stay.key} className="grid gap-2">
+            <h3>{stay.hotel.hotelNameSnapshot}</h3>
+            <SupplierScopedDocuments {...props} intake={intake} />
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+export function SupplierScopedDocuments(
+  props: Omit<Parameters<typeof TravelDocument>[0], 'voucher' | 'formScope'>,
+) {
+  const settings =
+    props.previewSettings ?? props.intake.workflow.supplierFormSettings;
+  return (
+    <div className="grid gap-4">
+      {supplierDocumentKinds(settings).map((kind) => (
+        <section key={kind} className="grid gap-2">
+          {kind !== 'HOTEL' && (
+            <h3>
+              {kind === 'OUTBOUND'
+                ? 'فرم ترانسفر رفت'
+                : kind === 'RETURN'
+                  ? 'فرم ترانسفر برگشت'
+                  : 'فرم جداگانه ترانسفر'}
+            </h3>
+          )}
+          <TravelDocument {...props} formScope={kind} />
+        </section>
+      ))}
     </div>
   );
 }

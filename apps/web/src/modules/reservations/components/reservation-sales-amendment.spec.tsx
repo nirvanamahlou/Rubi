@@ -73,8 +73,8 @@ it('exposes add/remove alongside the contract room category in the correction ta
     />,
   );
   expect(html).toContain('افزودن مسافر');
-  expect(html.match(/>حذف مسافر</g)).toHaveLength(2);
-  expect(html).toContain('Synthetic A');
+  expect(html).toContain('تعداد مسافران قرارداد');
+  expect(html).not.toContain('قیمت کل مسافر');
   expect(html).toContain('Saved Deluxe');
   expect(html).toContain('Double');
 });

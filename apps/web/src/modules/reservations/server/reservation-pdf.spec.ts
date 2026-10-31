@@ -130,7 +130,9 @@ describe('reservation PDF route', () => {
     );
     expect(html).not.toContain('PROPOSED PURCHASE PRICE');
     expect(html).toContain('9,007,199,254,740,993.25 EUR');
-    expect(html).toContain('100.50 USD');
+    expect(html).toContain('100.50</td>');
+    expect(html).not.toContain('100.50 USD');
+    expect(html).toContain('Hotel P.P');
     expect(html).toContain('0 JPY');
     expect(html).toContain('<b>06</b><strong>PRICES</strong>');
     expect(html).toContain('<b>07</b><strong>NOTICE</strong>');
@@ -238,8 +240,8 @@ describe('reservation PDF route', () => {
     );
     expect(html).toContain('CHD 2-6');
     expect(html).toContain('CHD 6-12');
-    expect(html).toContain('CHILDREN 2-6');
-    expect(html).toContain('CHILDREN 6-12');
+    expect(html).not.toContain('BOOKING SUMMARY');
+    expect(html).not.toContain('Reservation details');
     expect(html).not.toContain('HOTEL CHILD AGE');
     expect(html).toContain('YOUNGER CHILD');
     expect(html).toContain('OLDER CHILD');
@@ -331,7 +333,7 @@ it('renders voucher booking references and a separated summary without letterhea
   expect(html).toMatch(/SUPPLIER<\/span><b dir="auto">0<\/b>/);
   expect(html).not.toContain('SYNTHETIC BROKER');
   expect(html).toContain('<section class="bookingSection">');
-  expect(html).toContain('ROOM TYPE');
+  expect(html).not.toContain('HOTEL INFORMATION');
   expect(html).toContain('TRANSFER');
   expect(html).toContain('<th>BOARD</th>');
   expect(html).toContain('>BROKER BOARD</td>');
@@ -657,15 +659,67 @@ it('prints supplier service allocations from the contract and reserves a repeati
   expect(html).toContain('<th>FLIGHT OUT</th>');
   expect(html).toContain('<th>TRF IN</th>');
   expect(html).toContain('<th>TRF OUT</th>');
-  expect(html).not.toContain('FLIGHT INFORMATION');
-  expect(html).toContain('class="roomsNights"');
+  expect(html).toContain('FLIGHT INFORMATION');
+  expect(html).not.toContain('class="bookingSection"');
   expect(html).toContain('table hotelInformation');
   expect(html).toContain(
-    'ALPHA / ONE</td><td dir="auto">-</td><td dir="auto">ADL</td><td dir="auto">✓</td><td dir="auto">-</td><td dir="auto">01 NOV 2026',
+    'ALPHA / ONE</td><td dir="auto">Male</td><td dir="auto">ADL</td><td dir="auto">✓</td><td dir="auto">-</td><td dir="auto">01 NOV 2026',
   );
   expect(html).toContain('INSURANCE');
   expect(html).toContain('position:fixed;height:26mm;display:block;bottom:0');
   expect(html).toContain('margin:8.5mm');
   expect(html.match(/<div data-reservation-contact/g)).toHaveLength(1);
   expect(html).not.toMatch(/[\u0600-\u06ff]/);
+});
+
+it.each(['?formScope=FOREIGN', '?kind=voucher&formScope=RETURN'])(
+  'rejects an invalid or voucher transfer form scope before reading data: %s',
+  async (query) => {
+    vi.stubGlobal('fetch', vi.fn());
+    const response = await GET(new Request(request().url + query), {
+      params: Promise.resolve({ id }),
+    });
+    expect(response.status).toBe(400);
+    expect(fetch).not.toHaveBeenCalled();
+  },
+);
+
+it('publishes logo-free vouchers without fetching issuer logo and preserves normal supplier output and issuance guards', async () => {
+  publishing.enabled = true;
+  const value = structuredClone(intake);
+  value.workflow.branding = {
+    ...value.workflow.branding!,
+    voucherWithoutLogo: true,
+    logoFileId: 'unavailable-logo',
+  };
+  value.workflow.voucherIssued = true;
+  value.workflow.voucherSettings = {
+    ...value.workflow.supplierFormSettings!,
+    leaderId: id,
+  };
+  const fetcher = vi.fn(async (url: string) => {
+    if (url.includes('/documents/'))
+      throw Error('Voucher issuer logo must not be fetched');
+    return Response.json({ data: value });
+  });
+  vi.stubGlobal('fetch', fetcher);
+  const response = await GET(
+    new Request(request().url + '?kind=voucher&format=share'),
+    { params: Promise.resolve({ id }) },
+  );
+  expect(response.status).toBe(200);
+  expect(publishing.html).toContain('HOTEL VOUCHER');
+  expect(publishing.html).toContain('<header class="header">');
+  expect(publishing.html).not.toMatch(
+    /<img[^>]*class="(?:logo|jahanLogo|agencyLogo)"/,
+  );
+  expect(() => reservationPdfHtml(value, {}, '', '', false)).toThrow(
+    'PDF_LOGO_INVALID',
+  );
+  value.workflow.voucherIssued = false;
+  const denied = await GET(
+    new Request(request().url + '?kind=voucher&format=share'),
+    { params: Promise.resolve({ id }) },
+  );
+  expect(denied.status).toBe(409);
 });

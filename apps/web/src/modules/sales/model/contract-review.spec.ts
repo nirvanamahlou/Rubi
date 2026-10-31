@@ -125,3 +125,39 @@ describe('unregistered contract review', () => {
     );
   });
 });
+
+it.each(['AGE_2_6', 'AGE_6_12'] as const)(
+  'keeps unknown-DOB child %s through payload, preview and both output tables',
+  (childAgeBand) => {
+    const next = {
+      ...state,
+      passengers: [
+        {
+          customerId: 'child',
+          displayName: 'SYNTHETIC CHILD',
+          birthDate: '',
+          ageCategory: 'CHD' as const,
+          childAgeBand,
+        },
+      ],
+    };
+    expect(salesPayload(next).passengers[0]).toMatchObject({
+      ageCategory: 'CHD',
+      childAgeBand,
+      birthDate: '',
+    });
+    const output = contractReviewOutput(next, printFixture.company, now);
+    expect(output.contract.passengersDetail[0]).toMatchObject({
+      ageCategory: 'CHD',
+      childAgeBand,
+    });
+    const html = contractPrintHtml(output, { names: {} });
+    expect(
+      html.match(
+        childAgeBand === 'AGE_2_6'
+          ? /کودک \(<bdi dir="ltr">2-6<\/bdi>\)/g
+          : /کودک \(<bdi dir="ltr">6-12<\/bdi>\)/g,
+      ),
+    ).toHaveLength(2);
+  },
+);

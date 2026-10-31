@@ -37,7 +37,9 @@ export function getHealthEndpoint(): string | null {
 }
 
 function isLocalHostname(hostname: string): boolean {
-  return ['localhost', '127.0.0.1', '::1', '[::1]'].includes(hostname);
+  return ['localhost', '127.0.0.1', '::1', '[::1]', 'nora.localhost'].includes(
+    hostname,
+  );
 }
 
 function isLocalRuntimeHostname(hostname: string): boolean {

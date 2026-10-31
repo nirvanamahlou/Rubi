@@ -19,11 +19,17 @@ import {
   calculateSalesCheque,
   salesPrincipal,
   type SalesContractOutputV1,
+  type SalesHotelStayInput,
+  type SalesHotelRoomV1,
 } from '@nora/contracts';
 import { publicDocumentQr } from '@/modules/travel-documents/public/document-qr';
 import { contractPendingQrHtml } from './contract-pending-qr';
 
 export interface ContractPrintReferences {
+  hotels?: Record<
+    string,
+    { name: string; city?: string; grade?: string; website?: string }
+  >;
   publicDocumentUrl?: string;
   names: Record<string, string>;
   flightFacts?: Record<string, TicketDocumentFacts>;
@@ -226,9 +232,6 @@ export function contractPrintHtml(
   const contractPartyName = c.customerNameSnapshot;
   const hotel = c.hotelSelection;
   // Hotel room product is a Master Data reference, not a passenger bed/age category.
-  const mixedRoomTypes =
-    !!hotel?.rooms?.length &&
-    new Set(hotel.rooms.map((r) => r.roomTypeId)).size > 1;
   const room = hotel
     ? name(hotel.rooms?.[0]?.roomTypeId ?? hotel.roomTypeId)
     : '—';
@@ -239,20 +242,84 @@ export function contractPrintHtml(
         0,
       )
     : (hotel?.occupancy ?? 0);
+  const hotelSection = (stay: SalesHotelStayInput, index: number) => {
+    const reference = refs.hotels?.[stay.hotelId];
+    const rooms: readonly SalesHotelRoomV1[] =
+      index === 0
+        ? (hotel?.rooms ?? [])
+        : hotel?.rooms?.length
+          ? hotel.rooms.map((first, i) => ({
+              ...(stay.rooms?.[i] ?? {
+                ordinal: i + 1,
+                roomTypeId: '',
+                roomTypeNameSnapshot: '—',
+              }),
+              adults: first.adults,
+              childAges: first.childAges,
+            }))
+          : (stay.rooms ?? []);
+    const mixed = new Set(rooms.map((r) => r.roomTypeId)).size > 1;
+    const fallbackCity = refs.names[stay.cityId];
+    const city =
+      reference?.city ??
+      (fallbackCity && !/[\u0600-\u06ff]/.test(fallbackCity)
+        ? fallbackCity
+        : '—');
+    const title =
+      index === 0
+        ? 'اطلاعات هتل'
+        : index === 1
+          ? 'اقامت دوم'
+          : `اقامت ${index + 1}`;
+    const summary = rooms.length
+      ? salesHotelRoomSummary(rooms)
+      : { roomCount, occupancy: roomGuestCount };
+    const hotelName =
+      reference?.name ??
+      (index === 0 ? refs.hotelLatinName : undefined) ??
+      stay.hotelNameSnapshot;
+    const grade =
+      reference?.grade ?? (index === 0 ? refs.hotelGrade : undefined);
+    const website =
+      reference?.website ?? (index === 0 ? refs.hotelWebsite : undefined);
+    return `<section class="hotel-stay" data-stay="${index + 1}">${index === 0 ? heading(5, 'HOTEL INFORMATION', title) : `<h3>${e(title)}</h3>`}<table><thead><tr><th style="width:30%">نام هتل</th><th>شهر</th><th>درجه</th><th>خدمات</th><th>ورود</th><th>خروج</th>${mixed ? '' : '<th>نوع اتاق</th>'}</tr></thead><tbody><tr><td><bdi>${e(hotelName)}</bdi><small><bdi>${e(website ?? 'وب‌سایت ثبت نشده')}</bdi></small></td><td><bdi dir="ltr">${e(city)}</bdi></td><td>${e(grade)}</td><td>${e(name(hotel?.mealServiceId))}</td><td class="stay-date-cell"><bdi class="stay-date" dir="ltr">${e(stayDate(stay.checkInDate))}</bdi></td><td class="stay-date-cell"><bdi class="stay-date" dir="ltr">${e(stayDate(stay.checkOutDate))}</bdi></td>${mixed ? '' : `<td class="room-type"><bdi>${e(rooms[0]?.roomTypeNameSnapshot ?? room)}</bdi></td>`}</tr></tbody></table><div class="hotel-room-summary"><span>تعداد اتاق‌ها: <b>${e(summary.roomCount)}</b></span><span>مجموع مهمانان هتل: <b>${e(summary.occupancy)}</b></span></div><table class="hotel-rooms"><thead><tr><th>اتاق</th><th>شهر</th><th>نوع و دسته‌بندی اتاق</th><th>بزرگسال</th><th>سن کودکان</th><th>تعداد نفرات اتاق</th></tr></thead><tbody>${rooms.length ? rooms.map((r) => `<tr><td>${e(r.ordinal)}</td><td><bdi dir="ltr">${e(city)}</bdi></td><td class="room-type"><bdi>${e(salesRoomDisplayName(r))}</bdi></td><td>${e(r.adults)}</td><td>${e(r.childAges.join(', ') || '—')}</td><td>${e(r.adults + r.childAges.length)}</td></tr>`).join('') : `<tr><td colspan="6">${e(room)}</td></tr>`}</tbody></table></section>`;
+  };
   const totalPrices = readPassengerTotalPrices(
     c.servicesDetail,
     c.passengersDetail,
   );
-  const flightPrices = totalPrices
-    ? undefined
-    : readPassengerFlightPrices(c.servicesDetail);
-  const hotelPrices = totalPrices
-    ? undefined
-    : readPassengerHotelPrices(c.servicesDetail, c.passengersDetail);
+  // Saved package totals/passenger sale prices supersede obsolete service splits.
+  // Historical whole-contract bookings may retain empty hotel/flight maps.
+  const contractPackagePricing =
+    c.servicesDetail.length > 0 &&
+    c.servicesDetail.every(
+      (s) => s.metadata?.contractPackagePricingVersion === 1,
+    );
+  const servicePriceFallback =
+    !totalPrices && !completePrices && !contractPackagePricing;
+  const flightPrices = servicePriceFallback
+    ? readPassengerFlightPrices(c.servicesDetail)
+    : undefined;
+  const hotelPrices = servicePriceFallback
+    ? readPassengerHotelPrices(c.servicesDetail, c.passengersDetail)
+    : undefined;
+  // Owner-approved display allocation for historical whole-contract totals.
+  // Explicit passenger prices always retain their saved allocation.
+  const firstPassengerTotals =
+    contractPackagePricing &&
+    !totalPrices &&
+    c.passengersDetail.every((p) => !p.agreedPrices?.length)
+      ? c.balances.map(({ currencyCode, amount }) => ({ currencyCode, amount }))
+      : null;
   const passengerAgeLabel = (p: (typeof c.passengersDetail)[number]) => {
     if (p.ageCategory !== 'CHD')
       return p.ageCategory === 'INF' ? 'نوزاد' : 'بزرگسال';
-    const age = hotelAgeOn(p.birthDate, c.departureDate);
+    if (p.childAgeBand === 'AGE_2_6') return 'کودک (2-6)';
+    if (p.childAgeBand === 'AGE_6_12') return 'کودک (6-12)';
+    const age = hotelAgeOn(
+      p.birthDate,
+      c.hotelSelection?.checkInDate || c.departureDate,
+    );
     if (age === null || age === undefined) return 'کودک';
     return age < 6 ? 'کودک (2-6)' : age < 12 ? 'کودک (6-12)' : 'کودک (12-18)';
   };
@@ -281,6 +348,10 @@ export function contractPrintHtml(
           : [
               ...(flightPrices?.[p.customerId] ?? []),
               ...(hotelPrices?.[p.customerId] ?? []),
+              ...(firstPassengerTotals?.map((price) => ({
+                ...price,
+                amount: i === 0 ? price.amount : '0',
+              })) ?? []),
             ]);
       const renderPrices = (foreign: boolean) =>
         prices
@@ -420,7 +491,7 @@ export function contractPrintHtml(
   header .subtitle:before,header .subtitle:after{content:"";height:1px;background:#38aeb1;flex:1;min-width:6mm}
   header .brand{width:54mm;flex-shrink:0;text-align:center;font-size:10.5pt}
   header img{display:block;max-width:52mm;max-height:17mm;margin:0 auto 1mm;object-fit:contain;filter:brightness(0) invert(1)}
-  header .brand small{color:white}header .jahan-brand{background:white;color:#102d54;border-radius:2mm;padding:1mm}header .jahan-brand small{color:#102d54}header .jahan-brand img{filter:none}
+  header .brand small{color:white}header .jahan-brand{background:transparent;color:white;padding:0}header .jahan-brand small{color:white}header .jahan-brand img{filter:brightness(0) invert(1)}
   .meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#eaf0f4;padding:2mm 0;margin-bottom:2mm}
   .meta>div{text-align:center;border-left:1px solid #aebccc;font-size:10pt}.meta>div:last-child{border-left:0}.meta strong{display:block;font-size:11pt;margin-top:.4mm}
   small{display:block;font-size:8pt;color:#59708b;font-weight:normal;margin-top:.5mm}
@@ -486,9 +557,7 @@ ${
   `
 }
 <section>${heading(4, 'FLIGHT INFORMATION', 'اطلاعات پرواز')}<table><thead><tr><th>مسیر</th><th>ایرلاین</th><th>شماره</th><th>تاریخ</th><th>ساعت</th><th>کلاس</th></tr></thead><tbody>${flights || '<tr><td colspan="6">پرواز در این قرارداد انتخاب نشده است.</td></tr>'}</tbody></table></section>
-  <section>${heading(5, 'HOTEL INFORMATION', 'اطلاعات هتل')}${hotel ? `<table><thead><tr><th style="width:30%">نام هتل</th><th>درجه</th><th>خدمات</th><th>ورود</th><th>خروج</th>${mixedRoomTypes ? '' : '<th>نوع اتاق</th>'}</tr></thead><tbody><tr><td><bdi>${e(refs.hotelLatinName ?? 'ثبت نشده')}</bdi><small><bdi>${e(refs.hotelWebsite ?? 'وب‌سایت ثبت نشده')}</bdi></small></td><td>${e(refs.hotelGrade)}</td><td>${e(name(hotel.mealServiceId))}</td><td class="stay-date-cell"><bdi class="stay-date" dir="ltr">${e(stayDate(hotel.checkInDate))}</bdi></td><td class="stay-date-cell"><bdi class="stay-date" dir="ltr">${e(stayDate(hotel.checkOutDate))}</bdi></td>${mixedRoomTypes ? '' : `<td class="room-type"><bdi>${e(room)}</bdi></td>`}</tr></tbody></table><div class="hotel-room-summary"><span>تعداد اتاق‌ها: <b>${e(roomCount)}</b></span><span>مجموع مهمانان هتل: <b>${e(roomGuestCount)}</b></span></div>${hotel.rooms?.length ? `<table class="hotel-rooms"><colgroup>${[8, 40, 12, 20, 20].map((width) => `<col width="${width}%">`).join('')}</colgroup><thead><tr><th>اتاق</th><th>نوع و دسته‌بندی اتاق</th><th>بزرگسال</th><th>سن کودکان</th><th>تعداد نفرات اتاق</th></tr></thead><tbody>${hotel.rooms.map((r) => `<tr><td>${e(r.ordinal)}</td><td class="room-type"><bdi>${e(salesRoomDisplayName(r))}</bdi></td><td>${e(r.adults)}</td><td>${e(r.childAges.join(', ') || '—')}</td><td>${e(r.adults + r.childAges.length)}</td></tr>`).join('')}</tbody></table>` : ''}` : 'هتل در این قرارداد انتخاب نشده است.'}</section>
-
-  ${hotel?.additionalStays?.length ? `<section><h3>اقامت‌های بعدی</h3><table><thead><tr><th>هتل</th><th>شهر</th><th>ورود</th><th>خروج</th><th>اتاق‌ها و نفرات</th></tr></thead><tbody>${hotel.additionalStays.map((stay) => `<tr><td>${e(stay.hotelNameSnapshot)}</td><td>${e(name(stay.cityId))}</td><td>${e(stayDate(stay.checkInDate))}</td><td>${e(stayDate(stay.checkOutDate))}</td><td>${(stay.rooms ?? []).map((room) => `${e(salesRoomDisplayName(room))} · ${e(room.adults)} بزرگسال · ${e(room.childAges.filter((age) => age >= 2).length)} کودک · ${e(room.childAges.filter((age) => age < 2).length)} نوزاد · ${e(room.adults + room.childAges.length)} نفر`).join('<br>') || '—'}</td></tr>`).join('')}</tbody></table></section>` : ''}
+  ${hotel ? [hotel, ...(hotel.additionalStays ?? [])].map(hotelSection).join('') : '<section>هتل در این قرارداد انتخاب نشده است.</section>'}
   ${contractNotice ? `<section class="contract-notice"><h3>یادداشت قرارداد <span dir="ltr">NOTICE</span></h3><p>${e(contractNotice)}</p></section>` : ''}
 </td></tr></tbody><tfoot><tr><td class="document-footer">  <div class="contract-closing"><section>${heading(6, 'APPROVAL & SIGNATURE', 'تأیید و امضا')}<div class="signatures"><div>نام و امضای مسافر / نماینده<span class="signature-line">....................................</span></div><div>نام و امضای مسئول فروش<span class="signature-line">....................................</span></div></div></section>
   <div class="customer-terms">

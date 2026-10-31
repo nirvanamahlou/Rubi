@@ -1,3 +1,4 @@
+import { contractRoomDefaults } from './contract-room-defaults';
 import { salesRoomCategoryLabel } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
 import type { voucherNumberKeys, voucherFlagKeys } from '@nora/contracts';
@@ -49,6 +50,7 @@ export function defaultVoucherSettings(
       text[`${prefix}Time`] = f.time;
     }
   const defaults: VoucherSettingsV1 = {
+    hotelTransferCounts: { outbound: 0, returning: 0 },
     ...(h?.rooms?.length
       ? {
           rooms: h.rooms.map((room) => ({
@@ -92,14 +94,29 @@ export function defaultVoucherSettings(
         returnTransfer: p.returnTransfer,
         hotel: Boolean(p.checkIn && p.checkIn !== '-'),
       },
-      sex: p.sex === 'Male' ? 'MALE' : p.sex === 'Female' ? 'FEMALE' : '',
+      sex: p.sex === 'Female' ? 'FEMALE' : 'MALE',
       age: p.age.startsWith('CHD') ? 'CHD' : p.age === 'INF' ? 'INF' : 'ADL',
       hotelChildAgeBand: (p.hotelChildAgeBand ?? '') as
         'CHD_2_TO_6' | 'CHD_6_TO_12' | '',
     })),
   };
-  if (!saved) return defaults;
-  return {
+  if (!saved) return contractRoomDefaults(defaults);
+  return contractRoomDefaults({
+    ...(saved.hotelTransferSeparate !== undefined
+      ? { hotelTransferSeparate: saved.hotelTransferSeparate }
+      : {}),
+    ...(saved.hotelTransferSplit !== undefined
+      ? { hotelTransferSplit: saved.hotelTransferSplit }
+      : {}),
+    ...(saved.hotelTransferReturn
+      ? { hotelTransferReturn: { ...saved.hotelTransferReturn } }
+      : {}),
+    ...(saved.hotelRoomPrices
+      ? { hotelRoomPrices: structuredClone(saved.hotelRoomPrices) }
+      : {}),
+    hotelTransferCounts: {
+      ...(saved.hotelTransferCounts ?? defaults.hotelTransferCounts!),
+    },
     ...(saved.supplierFormPrices !== undefined
       ? { supplierFormPrices: structuredClone(saved.supplierFormPrices) }
       : {}),
@@ -162,11 +179,11 @@ export function defaultVoucherSettings(
         '',
       hotelChildAgeBand:
         saved.passengers?.find((item) => item.id === passenger.id)
-          ?.hotelChildAgeBand ??
-        passenger.hotelChildAgeBand ??
+          ?.hotelChildAgeBand ||
+        passenger.hotelChildAgeBand ||
         '',
     })),
-  };
+  });
 }
 export type VoucherTextFieldKey =
   (typeof voucherTextKeys)[number] | 'contractPartyName';
@@ -381,6 +398,10 @@ export function supplierFormData(
           return {
             ...person,
             hotelChildAgeBand: person.hotelChildAgeBand,
+            ...(intake.supplierDocumentKind &&
+            intake.supplierDocumentKind !== 'HOTEL'
+              ? { otherServices: '-' }
+              : {}),
             ...(saved?.services
               ? {
                   outboundFlight: saved.services.outboundFlight,
@@ -401,6 +422,22 @@ export function supplierFormData(
               : {}),
           };
         }),
+        ...(intake.supplierDocumentKind
+          ? {
+              transfer:
+                intake.supplierDocumentKind === 'HOTEL'
+                  ? '-'
+                  : (intake.supplierDocumentKind === 'RETURN'
+                      ? 'RETURN ONLY'
+                      : intake.supplierDocumentKind === 'OUTBOUND'
+                        ? 'OUTBOUND ONLY'
+                        : 'ROUND TRIP') +
+                    ' · ' +
+                    ((settings.hotelTransferCounts?.outbound ?? 0) +
+                      (settings.hotelTransferCounts?.returning ?? 0)) +
+                    ' PAX',
+            }
+          : {}),
         supplier: englishOutputName(settings.text.broker?.trim() || '-', refs),
         leader: settings.text.leaderLanguage?.trim() || 'Persian',
       }
@@ -421,4 +458,16 @@ function voucherDate(value?: string) {
   return value && /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(value)
     ? reservationFormDate(value)
     : value || '-';
+}
+
+/** Supplier quotation defaults must never inherit the voucher's different broker. */
+export function defaultSupplierFormSettings(
+  intake: ReservationFormIntake,
+  refs: ReservationFormReferences = {},
+) {
+  const source = { ...intake, workflow: { ...intake.workflow } };
+  delete source.workflow.voucherSettings;
+  if (source.workflow.supplierFormSettings)
+    source.workflow.voucherSettings = source.workflow.supplierFormSettings;
+  return defaultVoucherSettings(source, refs);
 }

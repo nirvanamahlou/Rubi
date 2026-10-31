@@ -1,4 +1,5 @@
 import { enforceSalesHotelCapacity } from '@nora/contracts';
+import { withCompositeGuests } from './composite-guests';
 import {
   salesHotelGuestAges,
   type SalesPassengerAgeCategory,
@@ -268,6 +269,7 @@ export interface SalesFormState {
     displayName: string;
     birthDate: string;
     ageCategory?: SalesPassengerAgeCategory;
+    childAgeBand?: 'AGE_2_6' | 'AGE_6_12';
   }>;
   priceComponents: SalesPriceComponentInput[];
   payments: SalesPaymentInput[];
@@ -1191,9 +1193,10 @@ export function salesHotelDate(
 
 export function salesOutboundHotelCheckIn(state: SalesFormState): string {
   if (!salesDirections(state, 'FLIGHT').includes('OUTBOUND')) return '';
-  const departureAt = salesFlightSelection(state, 'OUTBOUND')?.departureAt;
+  const flight = salesFlightSelection(state, 'OUTBOUND');
   return salesHotelDate(
-    departureAt ||
+    flight?.arrivalAt ||
+      flight?.departureAt ||
       (state.departureDate
         ? `${state.departureDate}T00:00:00+03:30`
         : undefined),
@@ -1206,9 +1209,8 @@ export function withSalesHotelDates(
   next: SalesFormState,
 ): SalesFormState {
   const suggestion = (state: SalesFormState, field: 'checkIn' | 'checkOut') => {
-    // Flight-linked automatic check-in follows the outbound day, including
-    // overnight flights. A package start or a legacy next-day draft flag
-    // must not silently add a night; explicit manual dates remain below.
+    // Hotel check-in follows outbound arrival, including overnight flights.
+    // Explicit manual dates remain authoritative below.
     const flightCheckIn = salesOutboundHotelCheckIn(state);
     if (field === 'checkIn' && flightCheckIn) return flightCheckIn;
     return state.tour && state.packageSaleAvailable
@@ -1270,6 +1272,7 @@ export function salesHotelRoomTypes(
 }
 
 export function salesHotelValid(state: SalesFormState): boolean {
+  state = withCompositeGuests(state);
   if (state.hotel.multiHotel && !state.hotel.additionalStays?.length)
     return false;
   let previousOut = state.hotel.checkOut;
@@ -1490,6 +1493,7 @@ export function salesPayload(
   state: SalesFormState,
   aggregateLegacy = false,
 ): SalesContractCreateRequest {
+  state = withCompositeGuests(state);
   if (state.legacyContract) {
     const plain = {
       ...state,
@@ -2106,6 +2110,7 @@ export function salesPayload(
           }
         : {}),
       birthDate: item.birthDate,
+      ...(item.childAgeBand ? { childAgeBand: item.childAgeBand } : {}),
       ...(!item.birthDate && item.ageCategory
         ? { ageCategory: item.ageCategory }
         : {}),

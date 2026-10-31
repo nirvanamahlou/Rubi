@@ -18,6 +18,20 @@ const baseRow = {
   roles: [{ roleCode: 'AGENCY' }],
 };
 
+it('projects the persisted hotel currency id and canonical reference name/code', () => {
+  const currencyId = '55555555-5555-4555-8555-555555555555';
+  const record = toMasterDataRecord('hotels', {
+    ...baseRow,
+    currencyId,
+    currency: { id: currencyId, code: 'USD', name: 'دلار آمریکا' },
+  });
+  expect(record.attributes).toMatchObject({
+    currencyId,
+    currencyCode: 'USD',
+    currencyName: 'دلار آمریکا',
+  });
+});
+
 describe('MasterDataRepository code allocation', () => {
   it.each(['suppliers', 'brokers'] as const)(
     'reads saved canonical contact masks and address for %s without exposing ciphertext',
@@ -295,7 +309,7 @@ describe('MasterDataRepository financial reference listing', () => {
       expect.objectContaining({
         where: { isActive: true, bankId, cityId },
         include: { bank: true, city: true },
-        orderBy: { name: 'asc' },
+        orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }, { id: 'asc' }],
       }),
     );
   });

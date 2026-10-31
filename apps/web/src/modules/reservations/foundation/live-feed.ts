@@ -1,4 +1,5 @@
 import { reservationRoomCategoryCounts } from './room-category-counts';
+import { queueHotelName } from './queue-hotels';
 import { z } from 'zod';
 import { voucherActionAvailable } from '../model/voucher-readiness';
 import type { LoginResponse } from '@nora/contracts';
@@ -87,6 +88,15 @@ const snapshotSchema = z.object({
     .object({
       hotelNameSnapshot: z.string().max(200),
       hotelId: id.optional(),
+      additionalStays: z
+        .array(
+          z.object({
+            hotelId: id.optional(),
+            hotelNameSnapshot: z.string().max(240),
+          }),
+        )
+        .max(50)
+        .optional(),
       mealServiceId: id.nullable().optional(),
       cityId: id.optional(),
       checkOutDate: z.string().refine(isCivilDate).optional(),
@@ -220,6 +230,15 @@ export function decodeIntake(
         throw new ReservationFeedError('ERROR');
       seen.add(row.id);
       const snapshot = row.snapshot;
+      const hotels = snapshot.hotelSelection
+        ? [
+            snapshot.hotelSelection,
+            ...(snapshot.hotelSelection.additionalStays ?? []),
+          ].map((hotel) => ({
+            hotelId: hotel.hotelId,
+            name: hotel.hotelNameSnapshot,
+          }))
+        : [];
       const roomSummary = snapshot.hotelSelection?.rooms?.length
         ? reservationRoomCategoryCounts(snapshot.hotelSelection.rooms)
         : undefined;
@@ -382,7 +401,8 @@ export function decodeIntake(
         ...(travelDate ? { travelDate } : {}),
         ...(snapshot.hotelSelection
           ? {
-              hotelName: snapshot.hotelSelection.hotelNameSnapshot,
+              hotels,
+              hotelName: queueHotelName({ hotels }),
               hotelId: snapshot.hotelSelection.hotelId,
             }
           : {}),

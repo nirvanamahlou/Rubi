@@ -3,7 +3,11 @@ import type {
   FinanceInboxItemV1,
   FinanceSettlementAccountV1,
 } from '@nora/contracts';
-import { initialReceiptAccount } from './receipt-account';
+import {
+  initialReceiptAccount,
+  receiptAccountLabel,
+  declaredReceiptAccountLabel,
+} from './receipt-account';
 const item = {
   branchReference: 'branch',
   amount: { currencyCode: 'IRR' },
@@ -30,8 +34,36 @@ it('never silently substitutes another account if the declared account is inacti
     ).toBe('');
   expect(initialReceiptAccount(item, [accounts[0]!])).toBe('');
 });
-it('preserves the previous default for old payments with no declared destination', () => {
+it('requires explicit Finance selection for old payments with no declared destination', () => {
   expect(
     initialReceiptAccount({ ...item, destinationAccountId: null }, accounts),
-  ).toBe('first');
+  ).toBe('');
+});
+
+it('shows the registered title, bank and masked identifier instead of only currency', () => {
+  const account = {
+    ...accounts[1]!,
+    title: 'Operating account',
+    bankName: 'Test bank',
+    maskedIdentifier: '****1234',
+  };
+  expect(receiptAccountLabel(account)).toBe(
+    'Operating account · Test bank · ****1234',
+  );
+  expect(declaredReceiptAccountLabel(item, [account])).toBe(
+    'Operating account · Test bank · ****1234',
+  );
+  expect(
+    declaredReceiptAccountLabel(
+      { ...item, destinationAccountTitle: 'Saved account title' },
+      [],
+    ),
+  ).toBe('Saved account title');
+  expect(
+    receiptAccountLabel({
+      title: 'Cash desk',
+      bankName: null,
+      maskedIdentifier: null,
+    }),
+  ).toBe('Cash desk');
 });

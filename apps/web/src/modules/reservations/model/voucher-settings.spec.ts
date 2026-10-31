@@ -7,6 +7,36 @@ import {
 } from './voucher-settings';
 import type { ReservationFormIntake } from './reservation-form';
 
+it('defaults missing form sex to Male while preserving known and saved Female values', () => {
+  const intake = {
+    snapshot: {
+      contractNumber: 'SYNTHETIC',
+      passengerIds: ['a', 'b'],
+      passengerAssignments: [],
+      serviceSelections: [],
+    },
+    workflow: { roomOrder: [], ageOverrides: {}, note: '' },
+    outputPassengers: [
+      {
+        customerId: 'b',
+        gender: 'F',
+        passportName: 'TEST / B',
+        hotelChildAgeBand: null,
+      },
+    ],
+  } as unknown as ReservationFormIntake;
+  const defaults = defaultVoucherSettings(intake, {});
+  expect(defaults.passengers.map((p) => p.sex)).toEqual(['MALE', 'FEMALE']);
+  intake.workflow.voucherSettings = {
+    ...defaults,
+    passengers: defaults.passengers.map((p) => ({ ...p, sex: 'FEMALE' })),
+  };
+  expect(
+    defaultVoucherSettings(intake, {}).passengers.map((p) => p.sex),
+  ).toEqual(['FEMALE', 'FEMALE']);
+  expect(intake.outputPassengers).toHaveLength(1);
+});
+
 it('uses saved voucher settings, selected passengers and service flags without rewriting the source', () => {
   const intake = {
     receivedAt: '2026-09-10T00:00:00Z',

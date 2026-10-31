@@ -111,12 +111,27 @@ const props: ComponentProps<typeof ServiceParties> = {
 };
 it('shows independent room cards, visa child ages and compact responsive columns', () => {
   const html = renderToStaticMarkup(<ServiceParties {...props} />);
+  expect(html).toContain('تعداد کل مسافران انتخاب‌شده: ۶');
   expect(html).toContain('اتاق 1');
   expect(html).toContain('اتاق 2');
   expect(html).toContain('lg:grid-cols-2');
   expect(fixture.inputs.map((p) => p.value)).toEqual([
     2, 1, 6, 2, 2, 1, 0, 1, 0, 0,
   ]);
+});
+it('updates the selected passenger total including infants without summing room or visa assignments', () => {
+  const html = renderToStaticMarkup(
+    <ServiceParties
+      {...props}
+      state={{
+        ...state,
+        passengerComposition: { adults: 4, children: 2, infants: 1 },
+        infantAges: [0],
+      }}
+    />,
+  );
+  expect(html).toContain('تعداد کل مسافران انتخاب‌شده: ۷');
+  expect(props.patch).not.toHaveBeenCalled();
 });
 it('changing a room affects that room without changing the flight party', () => {
   const patch = vi.fn();
@@ -223,12 +238,16 @@ it('defaults a double with children without extra beds and saves an editable ext
     '',
     'DOUBLE',
     'DOUBLE_EXTRA',
+    'FAMILY',
   ]);
   fixture.categorySelects[0]!.onValueChange('DOUBLE_EXTRA');
   expect(patch.mock.calls[0]![0].hotel.rooms[0].roomCategory).toBe(
     'DOUBLE_EXTRA',
   );
   expect(patch.mock.calls[0]![0].hotel.extraBedCount).toBe(1);
+  fixture.categorySelects[0]!.onValueChange('FAMILY');
+  expect(patch.mock.calls[1]![0].hotel.rooms[0].roomCategory).toBe('FAMILY');
+  expect(patch.mock.calls[1]![0].hotel.extraBedCount).toBe(0);
 });
 
 it('adding a room infant creates the flight infant composition without an extra seat or bed', () => {

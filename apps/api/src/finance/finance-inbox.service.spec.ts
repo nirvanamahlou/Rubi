@@ -267,6 +267,7 @@ describe('FinanceInboxService', () => {
           description: 'واریز قرارداد',
           paymentReference: 'TRACK-1',
           destinationAccountId: 'destination-account',
+          destinationAccountTitle: 'Declared title',
           dueAt: '2026-09-13T08:00:00.000Z',
           createdAt: '2026-09-12T08:00:00.000Z',
           createdByUserId: 'sales-user',
@@ -384,6 +385,10 @@ describe('FinanceInboxService', () => {
         ?.destinationAccountId,
     ).toBe('destination-account');
     expect(
+      result.items.find((item) => item.source === 'SALES')
+        ?.destinationAccountTitle,
+    ).toBe('Declared title');
+    expect(
       result.items.every(({ origin }) => origin === 'PERSISTED_SOURCE'),
     ).toBe(true);
     expect(result.sources).toMatchObject([
@@ -464,7 +469,7 @@ describe('FinanceInboxService', () => {
     expect(sales.financeInbox).not.toHaveBeenCalled();
   });
 
-  it('approves a persisted Sales receipt through the Sales public service', async () => {
+  it('approves a persisted legacy Sales receipt through the Sales public service', async () => {
     const sales = {
       financeReceipt: vi.fn().mockResolvedValue({
         id: 'payment-1',
@@ -789,5 +794,78 @@ describe('FinanceInboxService', () => {
       }),
       ['branch-a'],
     );
+  });
+});
+
+describe('declared and legacy receipt accounts', () => {
+  const setup = (destinationAccountId: string | null) => {
+    const sales = {
+      financeReceipt: vi.fn().mockResolvedValue({
+        status: 'PENDING_FINANCE_CONFIRMATION',
+        currencyCode: 'IRR',
+        destinationAccountId,
+        contract: { branchId: 'branch-a' },
+      }),
+      applyFinancePaymentConfirmed: vi.fn().mockResolvedValue('confirmed'),
+    };
+    const findFirst = vi.fn().mockResolvedValue({ id: 'declared' });
+    const service = new FinanceInboxService(
+      sales as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      { client: { financeSettlementAccount: { findFirst } } } as never,
+      emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
+    );
+    return { service, sales, findFirst };
+  };
+  const command = {
+    version: 1,
+    contractId: 'contract',
+    action: 'APPROVE',
+  } as const;
+  it('uses the saved destination when the client omits account selection', async () => {
+    const { service, sales, findFirst } = setup('declared');
+    await service.decideReceipt('payment', command, actor);
+    expect(findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'declared',
+        branchId: 'branch-a',
+        currencyCode: 'IRR',
+        isActive: true,
+      },
+      select: { id: true },
+    });
+    expect(sales.applyFinancePaymentConfirmed).toHaveBeenCalledWith(
+      expect.objectContaining({ receiptAccountId: 'declared' }),
+    );
+  });
+  it('rejects replacement of a declared destination before confirmation', async () => {
+    const { service, sales, findFirst } = setup('declared');
+    await expect(
+      service.decideReceipt(
+        'payment',
+        { ...command, accountId: 'changed' },
+        actor,
+      ),
+    ).rejects.toThrow('حساب مقصد ثبت‌شده در پرداخت قابل تغییر نیست.');
+    expect(findFirst).not.toHaveBeenCalled();
+    expect(sales.applyFinancePaymentConfirmed).not.toHaveBeenCalled();
+  });
+  it('requires an explicit account for a legacy payment', async () => {
+    const { service, sales } = setup(null);
+    await expect(
+      service.decideReceipt('payment', command, actor),
+    ).rejects.toThrow('حساب مقصد دریافت را انتخاب کنید.');
+    expect(sales.applyFinancePaymentConfirmed).not.toHaveBeenCalled();
+  });
+  it('rejects an unavailable saved account without falling back', async () => {
+    const { service, sales, findFirst } = setup('declared');
+    findFirst.mockResolvedValueOnce(null as never);
+    await expect(
+      service.decideReceipt('payment', command, actor),
+    ).rejects.toThrow('حساب مقصد فعال و هم‌ارز با پرداخت نیست.');
+    expect(sales.applyFinancePaymentConfirmed).not.toHaveBeenCalled();
   });
 });

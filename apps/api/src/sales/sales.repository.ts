@@ -1,6 +1,6 @@
 import { captureSalesContractAccounting } from '../finance/accounting/sales-contract-accounting.public';
 import {
-  salesReceiptAccounts,
+  SalesReceiptAccountsPublic,
   salesReceiptDestination,
 } from '../finance/payments/sales-receipt-accounts.public';
 import { assertRevenueEditable } from '../finance/accounting/accounting-workflows.public';
@@ -12,6 +12,7 @@ import {
 import { salesHotelRoomSummary } from '@nora/contracts';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import {
+  BadRequestException,
   Inject,
   Injectable,
   Optional,
@@ -93,6 +94,9 @@ export class SalesRepository {
     @Optional()
     @Inject(SalesBuyerContactCrypto)
     private readonly buyerCrypto?: SalesBuyerContactCrypto,
+    @Optional()
+    @Inject(SalesReceiptAccountsPublic)
+    private readonly receiptAccounts?: SalesReceiptAccountsPublic,
   ) {}
 
   findById(id: string): Promise<SalesContractRow | null> {
@@ -193,6 +197,7 @@ export class SalesRepository {
         dueAt: true,
         currencyCode: true,
         financeReceiptAccountId: true,
+        destinationAccountId: true,
         contract: { select: { branchId: true } },
       },
     });
@@ -397,7 +402,9 @@ export class SalesRepository {
         query.ownerUserId ? { ownerUserId: query.ownerUserId } : {},
         query.originId ? { originId: query.originId } : {},
         query.destinationId ? { destinationId: query.destinationId } : {},
-        query.status ? { status: query.status } : {},
+        query.status
+          ? { status: query.status }
+          : { status: { not: 'CANCELLED' } },
         query.settlementStatus
           ? { settlementStatus: query.settlementStatus }
           : {},
@@ -1020,8 +1027,12 @@ export class SalesRepository {
     );
   }
 
-  paymentAccounts(branchId: string) {
-    return salesReceiptAccounts(this.database.client, branchId);
+  paymentAccounts(branchId: string, actorUserId: string) {
+    if (!this.receiptAccounts)
+      throw new InternalServerErrorException(
+        'Payment account provider is unavailable.',
+      );
+    return this.receiptAccounts.list(branchId, actorUserId);
   }
 
   async addPayment(
@@ -1267,6 +1278,13 @@ export class SalesRepository {
           },
         });
         if (!payment) return 'not-found';
+        if (
+          payment.destinationAccountId &&
+          payment.destinationAccountId !== event.receiptAccountId
+        )
+          throw new BadRequestException(
+            'حساب مقصد ثبت‌شده در پرداخت قابل تغییر نیست.',
+          );
         if (payment.financeConfirmedByRef) {
           if (payment.financeReceiptAccountId !== event.receiptAccountId)
             throw new ConflictException(

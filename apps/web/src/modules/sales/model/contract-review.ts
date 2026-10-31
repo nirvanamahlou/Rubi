@@ -69,7 +69,8 @@ export function contractReviewOutput(
         ...p,
         id: 'preview-' + i,
         ageCategory:
-          salesPassengerAgeLabel(p.birthDate ?? '', payload.departureDate) ===
+          p.ageCategory ??
+          (salesPassengerAgeLabel(p.birthDate ?? '', payload.departureDate) ===
           'نوزاد'
             ? 'INF'
             : salesPassengerAgeLabel(
@@ -77,7 +78,7 @@ export function contractReviewOutput(
                   payload.departureDate,
                 ) === 'کودک'
               ? 'CHD'
-              : 'ADT',
+              : 'ADT'),
       })),
       ticketSelections: payload.ticketSelections ?? [],
       hotelSelection: payload.hotelSelection ?? null,

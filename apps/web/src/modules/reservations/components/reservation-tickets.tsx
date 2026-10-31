@@ -59,7 +59,10 @@ export function ReservationTickets({
     return () =>
       window.removeEventListener('reservation-workflow-changed', refresh);
   }, []);
-  const { logo, error: logoError } = useTravelLogo(branding);
+  const { logo } = useTravelLogo(
+    branding,
+    branding?.ticketWithoutLogo === true,
+  );
   const canEdit =
     useAccessPermissions()?.includes('reservations.documents.manage') ?? false;
   const [flightNumbers, setFlightNumbers] = useState<Record<string, string>>(
@@ -210,9 +213,8 @@ export function ReservationTickets({
     revision,
     suppliedRequest,
   ]);
-  const [printAll, setPrintAll] = useState(false);
-  const [printing, setPrinting] = useState(false);
-  const [printDocument, setPrintDocument] = useState('');
+  const printAll = false;
+  const printDocument = '';
   const [downloading, setDownloading] = useState(false);
   const ticket = tickets.find((item) => item.passengerId === selected);
   const shared = usePublicDocumentLink(
@@ -341,69 +343,6 @@ export function ReservationTickets({
       );
     } finally {
       setIssuing(false);
-    }
-  }
-  async function print(all: boolean) {
-    try {
-      await ensureNumbers(all);
-    } catch (error) {
-      setWarning(
-        error instanceof Error ? error.message : 'ثبت شماره انجام نشد.',
-      );
-      return;
-    }
-    if (branding && (!logo || logoError)) {
-      setWarning(logoError || 'در حال دریافت لوگو');
-      return;
-    }
-    flushSync(() => {
-      setPrintAll(all);
-      setPrinting(true);
-    });
-    try {
-      const parameters = new URLSearchParams({
-        format: 'share',
-        ...(salesContractId ? { salesContractId } : {}),
-        ...(!all && ticket ? { passengerId: ticket.passengerId } : {}),
-      });
-      const response = await fetch(
-        '/reservations/requests/' +
-          encodeURIComponent(request.id) +
-          '/tickets/pdf?' +
-          parameters,
-        { credentials: 'include', cache: 'no-store' },
-      );
-      const result = (await response.json()) as {
-        code?: string;
-        message?: string;
-        documents?: Array<{ html: string }>;
-      };
-      if (!response.ok && result.code !== 'PUBLIC_DOCUMENTS_DISABLED')
-        throw new Error(result.message || 'دریافت بلیط انجام نشد.');
-      const pages =
-        result.documents
-          ?.map(
-            (item) =>
-              item.html.match(/<body[^>]*>([\s\S]*)<\/body>/i)?.[1] ?? '',
-          )
-          .join('') ?? '';
-      const style =
-        result.documents?.[0]?.html.match(
-          /<head[^>]*>([\s\S]*)<\/head>/i,
-        )?.[1] ?? '';
-      flushSync(() => setPrintDocument(pages ? style + pages : ''));
-      await Promise.all(
-        Array.from(
-          document.querySelectorAll<HTMLImageElement>(
-            '[data-reservation-ticket-print] img',
-          ),
-        ).map((img) => img.decode()),
-      );
-      window.print();
-    } catch {
-      setWarning('لوگو بارگذاری نشد؛ دوباره چاپ را بزنید.');
-    } finally {
-      setPrinting(false);
     }
   }
   async function download(all: boolean) {
@@ -556,35 +495,6 @@ export function ReservationTickets({
                   onClick={() => void download(true)}
                 >
                   دانلود PDF همهٔ مسافران
-                </Button>
-                <Button
-                  variant="outline"
-                  disabled={
-                    !ready ||
-                    flightNumbersReady !== flightContextKey ||
-                    issuing ||
-                    factsReady !== request ||
-                    passengersReady !== request.id ||
-                    printing ||
-                    !ticket
-                  }
-                  onClick={() => void print(false)}
-                >
-                  چاپ این مسافر
-                </Button>
-                <Button
-                  variant="outline"
-                  disabled={
-                    !ready ||
-                    flightNumbersReady !== flightContextKey ||
-                    issuing ||
-                    factsReady !== request ||
-                    passengersReady !== request.id ||
-                    printing
-                  }
-                  onClick={() => void print(true)}
-                >
-                  چاپ همهٔ مسافران
                 </Button>
               </div>
               {warning ? (

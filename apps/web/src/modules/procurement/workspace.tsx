@@ -35,7 +35,6 @@ import { statusLabels } from './model';
 import { InternalSections } from './internal-sections';
 import { PurchaseOrdersSection } from './orders-section';
 import { DocumentLinks, recordData } from './record-details';
-import { ProcurementOwnerPicker } from './owner-picker';
 import { ProcurementExportPanel } from './export-panel';
 import { formatProcurementDate } from './presentation';
 import {
@@ -47,6 +46,7 @@ import { ProcurementSelect } from './procurement-select';
 import { ProcurementRecordActions } from './record-actions';
 import { MasterDataDateRangeFilter } from '@/modules/master-data/components/master-data-date-range-filter';
 import { cn } from '@/lib/utils';
+import { PettyFundCard } from './petty-fund-card';
 import {
   usePageBreadcrumbs,
   type PageBreadcrumb,
@@ -100,19 +100,8 @@ const sectionKeys = [
 ] as const;
 function sectionIndex(value: string | null): number {
   const index = sectionKeys.findIndex((key) => key === value);
-  return index < 0 || index === 7 ? 0 : index;
+  return index < 0 || index === 7 || index === 5 ? 0 : index;
 }
-const nextAction: Record<ProcurementRequestV1['status'], string> = {
-  DRAFT: 'تکمیل و ارسال درخواست',
-  SUBMITTED: 'تعیین مسئول و بررسی',
-  IN_REVIEW: 'ثبت تصمیم تأییدکننده',
-  CHANGES_REQUESTED: 'اصلاح و ارسال مجدد',
-  APPROVED: 'دریافت پیشنهاد تأمین‌کنندگان',
-  SOURCING: 'پیگیری سفارش و تحویل',
-  REJECTED: 'پایان بررسی',
-  CANCELLED: 'لغوشده',
-  CLOSED: 'پرونده بسته است',
-};
 const errorText = (error: unknown) =>
   error instanceof Error ? error.message : 'دریافت اطلاعات ناموفق بود.';
 function Pager({
@@ -246,6 +235,7 @@ function WorkspaceState({
   );
   const navigateGroup = useCallback(
     (index: number) => {
+      if (index === 5) index = 0;
       setGroup(index);
       setPage(1);
       setSelectedId(null);
@@ -378,6 +368,7 @@ function WorkspaceState({
     setCreating(false);
     setEditing(false);
     openRequest(request.id);
+    void client.invalidateQueries({ queryKey: ['procurement', 'petty-fund'] });
     client.setQueryData(['procurement', 'request', request.id], request);
     void client.invalidateQueries({ queryKey: ['procurement', 'requests'] });
     void client.invalidateQueries({
@@ -578,8 +569,8 @@ function WorkspaceState({
               </Card>
             ))}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {([1, 3, 5] as const).map((index) => {
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {([1, 3] as const).map((index) => {
               const tone = areaTone[index];
               const Icon = tone.icon;
               return (
@@ -616,6 +607,7 @@ function WorkspaceState({
                 </button>
               );
             })}
+            <PettyFundCard bootstrap={bootstrap} />
           </div>
           <Card className="overflow-hidden border-blue-300/70 dark:border-blue-400/25">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-gradient-to-l from-blue-400/15 to-transparent p-5 dark:from-blue-400/8">
@@ -759,7 +751,6 @@ export function RequestDetail({
     heading.current?.focus();
   }, []);
   const [reason, setReason] = useState('');
-  const [owner, setOwner] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const identity = useRef<ReturnType<typeof commandAttempt> | null>(null);
@@ -784,7 +775,9 @@ export function RequestDetail({
       setBusy(false);
     }
   }
-  const editable = ['DRAFT', 'CHANGES_REQUESTED'].includes(request.status);
+  const editable = !['CANCELLED', 'CLOSED', 'REJECTED'].includes(
+    request.status,
+  );
   return (
     <div className="space-y-5">
       <Card className="overflow-hidden border-primary/15 p-4 sm:p-6">
@@ -812,8 +805,6 @@ export function RequestDetail({
             ],
             ['شرح نیاز', request.draft.needReason || 'ثبت نشده'],
             ['تحویل', request.draft.deliveryLocation || 'ثبت نشده'],
-            ['مسئول', request.ownerUserId ?? 'بدون مسئول'],
-            ['اقدام بعدی', nextAction[request.status]],
           ].map(([label, value]) => (
             <div
               key={label}
@@ -828,8 +819,7 @@ export function RequestDetail({
           {request.draft.items.map((item) => (
             <p className="rounded-lg bg-muted/40 p-3 text-sm" key={item.id}>
               {item.kind === 'GOODS' ? 'کالا' : 'خدمت'} · {item.description} ·{' '}
-              {item.quantity} {item.unit} · معیار پذیرش:{' '}
-              {item.acceptanceCriteria || 'ثبت نشده'}
+              {item.quantity} {item.unit}
             </p>
           ))}
         </div>
@@ -846,7 +836,7 @@ export function RequestDetail({
           className="mt-5 space-y-4 rounded-xl border border-primary/15 bg-primary/5 p-4"
         >
           <legend className="mb-3 font-semibold">اقدامات پرونده</legend>
-          <FormField id="proc-action-reason" label="دلیل تصمیم یا لغو">
+          <FormField id="proc-action-reason" label="دلیل لغو">
             <Textarea
               id="proc-action-reason"
               value={reason}
@@ -858,68 +848,6 @@ export function RequestDetail({
               <Button variant="outline" onClick={onEdit}>
                 ویرایش درخواست
               </Button>
-            )}
-            {!['CANCELLED', 'CLOSED', 'REJECTED'].includes(request.status) &&
-              can('procurement.order.cancel') && (
-                <Button
-                  variant="outline"
-                  disabled={!isOptionalOperationReason(reason)}
-                  onClick={() => {
-                    if (
-                      uiConfirm(
-                        'پرونده پس از کنترل بسته‌بودن سفارش‌ها و تعیین تکلیف مغایرت‌ها بسته شود؟',
-                      )
-                    )
-                      void command({ action: 'CLOSE_REQUEST', reason });
-                  }}
-                >
-                  بستن پرونده خرید
-                </Button>
-              )}
-            {editable && can('procurement.request.submit') && (
-              <Button onClick={() => void command({ action: 'PUBLISH' })}>
-                تأیید و انتشار
-              </Button>
-            )}
-            {request.status === 'SUBMITTED' &&
-              can('procurement.request.submit') && (
-                <Button onClick={() => void command({ action: 'SUBMIT' })}>
-                  ارسال برای تأیید
-                </Button>
-              )}
-            {request.status === 'IN_REVIEW' && can('procurement.approve') && (
-              <>
-                <Button
-                  onClick={() =>
-                    void command({
-                      action: 'DECIDE',
-                      decision: 'APPROVED',
-                      reason,
-                    })
-                  }
-                >
-                  تأیید
-                </Button>
-                <Button
-                  variant="destructive"
-                  disabled={
-                    !isOptionalOperationReason(reason) ||
-                    !can('procurement.request.cancel') ||
-                    !can('procurement.assign')
-                  }
-                  onClick={() => {
-                    if (!uiConfirm('درخواست رد و برای همیشه حذف شود؟')) return;
-                    void command({
-                      action: 'DECIDE',
-                      decision: 'REJECTED',
-                      deleteRejected: true,
-                      reason,
-                    });
-                  }}
-                >
-                  رد درخواست
-                </Button>
-              </>
             )}
             {!['CANCELLED', 'CLOSED', 'REJECTED'].includes(request.status) &&
               can('procurement.request.cancel') && (
@@ -935,26 +863,6 @@ export function RequestDetail({
                 </Button>
               )}
           </div>
-          {can('procurement.assign') && (
-            <div className="flex flex-wrap items-end gap-3">
-              <ProcurementOwnerPicker
-                showSearch={false}
-                showHints={false}
-                branchId={request.draft.branchId}
-                value={owner}
-                onChange={setOwner}
-              />
-              <Button
-                variant="outline"
-                disabled={!owner.trim()}
-                onClick={() =>
-                  void command({ action: 'ASSIGN', ownerUserId: owner })
-                }
-              >
-                تخصیص مسئول
-              </Button>
-            </div>
-          )}
         </fieldset>
       </Card>
     </div>
