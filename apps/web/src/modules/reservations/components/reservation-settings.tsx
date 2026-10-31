@@ -693,7 +693,7 @@ export function ReservationSettingsForm({
             disabled={busy}
             onClick={() => {
               const cleared = { ...draft, supplierFormPrices: {} };
-              delete cleared.hotelRoomPrices;
+              cleared.hotelRoomPrices = null;
               update(cleared);
             }}
           >

@@ -188,6 +188,25 @@ export function transitionTravelWorkflow(
         next.supplierFormSettings.supplierFormPrices = structuredClone(
           current.supplierFormSettings.supplierFormPrices,
         );
+      if (
+        command.voucherSettings?.hotelRoomPrices === undefined &&
+        current.supplierFormSettings?.hotelRoomPrices &&
+        current.supplierFormSettings.brokerId ===
+          next.supplierFormSettings.brokerId &&
+        JSON.stringify(current.supplierFormSettings.rooms) ===
+          JSON.stringify(next.supplierFormSettings.rooms)
+      )
+        next.supplierFormSettings.hotelRoomPrices = structuredClone(
+          current.supplierFormSettings.hotelRoomPrices,
+        );
+      if (hotelKeys[0] && current.hotelSupplierForms?.[hotelKeys[0]])
+        next.hotelSupplierForms = {
+          ...current.hotelSupplierForms,
+          [hotelKeys[0]]: {
+            ...current.hotelSupplierForms[hotelKeys[0]]!,
+            settings: next.supplierFormSettings,
+          },
+        };
       break;
     case 'VOUCHER_SETTINGS':
       if (current.supplierStatus === 'CANCELLED')
@@ -221,6 +240,21 @@ export function transitionTravelWorkflow(
           current.supplierFormSettings,
         );
       next.sentSupplierFormVersion = next.version;
+      if (
+        hotelKeys[0] &&
+        current.hotelSupplierForms?.[hotelKeys[0]] &&
+        next.supplierFormSettings
+      )
+        next.hotelSupplierForms = {
+          ...current.hotelSupplierForms,
+          [hotelKeys[0]]: {
+            ...current.hotelSupplierForms[hotelKeys[0]]!,
+            settings: next.supplierFormSettings,
+            sentSettings: structuredClone(next.supplierFormSettings),
+            sentVersion: next.version,
+            status: 'REQUESTED',
+          },
+        };
       break;
     case 'CONFIRM_SUPPLIER':
       if (current.supplierStatus !== 'REQUESTED')
