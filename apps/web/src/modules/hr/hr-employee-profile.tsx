@@ -1,5 +1,6 @@
 'use client';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
+import { useRouteAccess } from '@/modules/iam/access-context';
 
 import Image from '@/i18n/image';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -10,7 +11,6 @@ import { employeeGroups, resolveHrGroup, type HrSource } from './hr-navigation';
 import { employeeProfileSources } from './employee-profile-data';
 import { recordsDataset } from './hr-live-data';
 import type { HrStore } from './hr-store';
-import { allHrRecords } from './hr-store';
 import type { HrFormTarget } from './hr-record-form';
 import {
   HrButton,
@@ -31,6 +31,13 @@ import { sourceForRecord } from './hr-record-source';
 import ui from './hr-unified.module.css';
 import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
 import { needsHrDetail } from './hr-form-model';
+import {
+  HrEmployeeSummary,
+  employeeSummaryFields,
+} from './hr-employee-summary';
+import { useHrEmployeeRecords } from './hr-employee-records';
+import { useHrReferenceData } from './hr-reference-data';
+import { useHrFormReferences } from './hr-directory-picker';
 
 interface LeaveBalances {
   employeeId: string;
@@ -50,14 +57,38 @@ export function HrEmployeeProfile({
   onForm: (target: HrFormTarget) => void;
   onSelect: (record: HrRecordDto, source: HrSource) => void;
 }) {
-  const first = resolveHrGroup(employeeGroups, initialTab);
+  const profile = useHrEmployeeRecords(employee.id, store.revision);
+  const references = useHrReferenceData(store);
+  const external = useHrFormReferences(employee.id);
+  const userLabel = external.data?.users.find(
+    (u) => u.id === employee.userId,
+  )?.label;
+  const requestedTab = initialTab === 'contract' ? 'active' : initialTab;
+  const allowed = useRouteAccess();
+  const groups = employeeGroups
+    .map((item) => ({
+      ...item,
+      sources: item.sources.filter((entry) => {
+        const mapped = employeeProfileSources[entry.tab];
+        return allowed(
+          `/hr?section=${mapped?.[0] ?? entry.section}&tab=${mapped?.[1] ?? entry.tab}`,
+        );
+      }),
+    }))
+    .filter((item) => item.sources.length);
+  const first = resolveHrGroup(
+    groups.length ? groups : employeeGroups,
+    requestedTab,
+  );
   const [groupId, setGroupId] = useState(first.id);
-  const group = employeeGroups.find((item) => item.id === groupId) ?? first;
-  const [tab, setTab] = useState(initialTab ?? first.sources[0]!.tab);
+  const group = groups.find((item) => item.id === groupId) ?? first;
+  const [tab, setTab] = useState(requestedTab ?? first.sources[0]!.tab);
   const source =
     group.sources.find((item) => item.tab === tab) ?? group.sources[0]!;
-  const [records, setRecords] = useState<HrRecordDto[]>([]);
-  const [balances, setBalances] = useState<LeaveBalances | null>(null);
+  const [balanceResult, setBalanceResult] = useState<{
+    key: string;
+    balances: LeaveBalances;
+  }>();
   const [photo, setPhoto] = useState('');
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
@@ -66,35 +97,28 @@ export function HrEmployeeProfile({
   const [uploading, setUploading] = useState(false);
   const [photoExpiry, setPhotoExpiry] = useState('');
   const photoUrl = useRef('');
+  const timeline = useHrEmployeeRecords(employee.id, store.revision, range);
+  const records = timeline.records ?? [];
+  const balanceKey = JSON.stringify([employee.id, range.to, store.revision]);
+  const balances =
+    balanceResult?.key === balanceKey ? balanceResult.balances : null;
   const { remember } = store;
   useEffect(() => {
+    if (timeline.records) remember(timeline.records);
+  }, [timeline.records, remember]);
+  useEffect(() => {
     let active = true;
-    void allHrRecords({
-      employeeId: employee.id,
-      ...(range.from ? { from: range.from } : {}),
-      ...(range.to ? { to: range.to } : {}),
-    })
-      .then((items) => {
-        if (active) {
-          setRecords(items);
-          remember(items);
-        }
-      })
-      .catch((e) => {
-        if (active)
-          setError(e instanceof Error ? e.message : 'دریافت پرونده انجام نشد.');
-      });
     void hrRequest<LeaveBalances>(
       `/leave/balances?employeeId=${employee.id}&asOf=${range.to || new Date().toISOString().slice(0, 10)}`,
     )
       .then((result) => {
-        if (active) setBalances(result);
+        if (active) setBalanceResult({ key: balanceKey, balances: result });
       })
       .catch(() => undefined);
     return () => {
       active = false;
     };
-  }, [employee.id, range, store.revision, remember]);
+  }, [employee.id, range.to, store.revision, balanceKey]);
   useEffect(() => {
     let active = true;
     if (employee.photoDocumentId)
@@ -125,26 +149,14 @@ export function HrEmployeeProfile({
   const data =
     source.tab === 'summary'
       ? {
-          columns: [
-            'کد پرسنلی',
-            'نام و نام خانوادگی',
-            'شرکت',
-            'واحد',
-            'سمت',
-            'رده',
-            'وضعیت',
-          ],
-          rows: [
-            [
-              employee.personnelCode,
-              employee.name,
-              employee.companyName,
-              employee.unit,
-              employee.position,
-              employee.grade,
-              employee.status,
-            ],
-          ],
+          columns: ['مشخصات', 'مقدار'],
+          rows: employeeSummaryFields(
+            employee,
+            profile.records ?? [],
+            references.data.records,
+            store.data!.capabilities.sensitive,
+            userLabel,
+          ),
           totalLabel: '',
         }
       : source.tab === 'requests'
@@ -170,6 +182,10 @@ export function HrEmployeeProfile({
     store.data!.branches.find((item) => item.id === employee.branchId)?.name ||
     '';
   const canWrite = store.data!.capabilities.write;
+  const resource = getHrResource(realSource.section, realSource.tab);
+  const canManage = canWrite && Boolean(resource && !resource.readOnly);
+  if (!groups.length)
+    return <p role="alert">دسترسی به زیربخش‌های این صفحه فعال نیست.</p>;
   return (
     <div className={ui.spaced}>
       <HrPanel title="پرونده شخصی کارمند">
@@ -264,45 +280,15 @@ export function HrEmployeeProfile({
           {error}
         </p>
       ) : null}
-      <div className={ui.grid}>
-        <div className={ui.card}>
-          <span>مرخصی باقی‌مانده</span>
-          <strong className={ui.metric}>
-            {balances
-              ? balances.items
-                  .reduce((sum, item) => sum + Number(item.balance), 0)
-                  .toLocaleString('fa-IR')
-              : '—'}{' '}
-            روز
-          </strong>
-        </div>
-        <div className={ui.card}>
-          <span>درخواست در انتظار</span>
-          <strong className={ui.metric}>
-            {pending.length.toLocaleString('fa-IR')}
-          </strong>
-        </div>
-        <div className={ui.card}>
-          <span>قرارداد ثبت‌شده</span>
-          <strong className={ui.metric}>
-            {records
-              .filter(
-                (item) => item.section === 'contracts' && item.tab === 'active',
-              )
-              .length.toLocaleString('fa-IR')}
-          </strong>
-        </div>
-        <div className={ui.card}>
-          <span>تجهیزات تحویلی</span>
-          <strong className={ui.metric}>
-            {records
-              .filter(
-                (item) => item.section === 'assets' && item.tab === 'list',
-              )
-              .length.toLocaleString('fa-IR')}
-          </strong>
-        </div>
-      </div>
+      <HrTabs
+        items={groups}
+        value={group.id}
+        onChange={(id) => {
+          setGroupId(id);
+          setTab(groups.find((item) => item.id === id)!.sources[0]!.tab);
+        }}
+        label="بخش‌های پرونده کارمند"
+      />
       <HrRangeBar
         onApply={(from, to) => setRange({ from, to })}
         actions={
@@ -315,9 +301,7 @@ export function HrEmployeeProfile({
               data={source.tab === 'summary' ? data : exportData}
               title={`${employee.name} · ${source.label}`}
             />
-            {canWrite &&
-            !getHrResource(realSource.section, realSource.tab)?.readOnly &&
-            source.tab !== 'summary' ? (
+            {canManage ? (
               <HrButton
                 primary
                 onClick={() =>
@@ -329,17 +313,6 @@ export function HrEmployeeProfile({
             ) : null}
           </>
         }
-      />
-      <HrTabs
-        items={employeeGroups}
-        value={group.id}
-        onChange={(id) => {
-          setGroupId(id);
-          setTab(
-            employeeGroups.find((item) => item.id === id)!.sources[0]!.tab,
-          );
-        }}
-        label="بخش‌های پرونده کارمند"
       />
       <HrPanel title={group.label}>
         <div className={ui.filters}>
@@ -358,33 +331,35 @@ export function HrEmployeeProfile({
           </label>
         </div>
         {source.tab === 'summary' ? (
-          <dl className={ui.properties}>
-            {[
-              ['نام و نام خانوادگی', employee.name],
-              ['کد پرسنلی', employee.personnelCode],
-              ['شرکت', branch],
-              ['واحد', employee.unit],
-              ['نوع همکاری', employee.kind],
-              ['سمت', employee.position],
-              ['رده', employee.grade],
-              ['مدیر مستقیم', employee.manager],
-              [
-                'تاریخ شروع',
-                new Date(employee.startedAtValue).toLocaleDateString('fa-IR'),
-              ],
-            ].map(([label, value]) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
+          profile.loading ? (
+            <p role="status">در حال دریافت اطلاعات…</p>
+          ) : profile.error ? (
+            <div role="alert">
+              {profile.error}
+              <HrButton onClick={profile.retry}>تلاش دوباره</HrButton>
+            </div>
+          ) : (
+            <HrEmployeeSummary
+              employee={employee}
+              records={profile.records ?? []}
+              references={references.data.records}
+              sensitive={store.data!.capabilities.sensitive}
+              userLabel={userLabel}
+            />
+          )
         ) : source.tab === 'audit' ? (
           store.data!.capabilities.audit ? (
             <HrAudit store={store} employeeId={employee.id} />
           ) : (
             <p>دسترسی مشاهده تاریخچه برای شما فعال نیست.</p>
           )
+        ) : timeline.loading ? (
+          <p role="status">در حال دریافت اطلاعات…</p>
+        ) : timeline.error ? (
+          <div role="alert">
+            {timeline.error}
+            <HrButton onClick={timeline.retry}>تلاش دوباره</HrButton>
+          </div>
         ) : source.tab === 'requests' ? (
           <HrTable
             {...rowSelection}
@@ -424,17 +399,59 @@ export function HrEmployeeProfile({
                     onSelect(selected[index]!, realSource),
                 }
               : {})}
-            {...(canWrite &&
-            !getHrResource(realSource.section, realSource.tab)?.readOnly
+            {...(canManage
               ? {
                   onDelete: (index: number) => setRemoving(selected[index]!),
                   onEdit: (index: number) =>
-                    onForm({ source: realSource, record: selected[index]! }),
+                    onForm({
+                      source: realSource,
+                      record: selected[index]!,
+                      employeeId: employee.id,
+                    }),
                 }
               : {})}
           />
         )}
       </HrPanel>
+      <div className={ui.grid}>
+        <div className={ui.card}>
+          <span>مرخصی باقی‌مانده</span>
+          <strong className={ui.metric}>
+            {balances
+              ? balances.items
+                  .reduce((sum, item) => sum + Number(item.balance), 0)
+                  .toLocaleString('fa-IR')
+              : '—'}{' '}
+            روز
+          </strong>
+        </div>
+        <div className={ui.card}>
+          <span>درخواست در انتظار</span>
+          <strong className={ui.metric}>
+            {pending.length.toLocaleString('fa-IR')}
+          </strong>
+        </div>
+        <div className={ui.card}>
+          <span>قرارداد ثبت‌شده</span>
+          <strong className={ui.metric}>
+            {records
+              .filter(
+                (item) => item.section === 'contracts' && item.tab === 'active',
+              )
+              .length.toLocaleString('fa-IR')}
+          </strong>
+        </div>
+        <div className={ui.card}>
+          <span>تجهیزات تحویلی</span>
+          <strong className={ui.metric}>
+            {records
+              .filter(
+                (item) => item.section === 'assets' && item.tab === 'list',
+              )
+              .length.toLocaleString('fa-IR')}
+          </strong>
+        </div>
+      </div>
       {source.tab === 'leave' && balances ? (
         <HrPanel title="گردش مانده مرخصی">
           <HrLeaveGrant employeeId={employee.id} store={store} />

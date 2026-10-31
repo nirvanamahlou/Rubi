@@ -69,7 +69,9 @@ it('prints actual hotel and flight amounts in any currency and omits only empty 
     .split('</table>')[0]!;
   expect(table).toContain('قیمت ارزی');
   expect(table).toContain('80 $');
-  expect(table).toContain('5,000 ﷼');
+  expect(table).toContain(
+    '5,000 <span class="currency-symbol" dir="ltr">IRR</span>',
+  );
   expect(table).toContain('30 $');
   expect(table).toContain('<th>تخفیف</th>');
   expect(table).not.toContain('<th>کمیسیون</th>');
@@ -93,7 +95,7 @@ it('uses English Gregorian travel dates for international prints, without changi
     international: true,
   });
   expect(html.split('FLIGHT INFORMATION')[1]).toContain('19 September 2026');
-  expect(html.split('HOTEL INFORMATION')[1]).toContain('20 September 2026');
+  expect(html.split('HOTEL INFORMATION')[1]).toContain('20/09/2026');
 });
 it('resolves foreign countries from canonical references and falls back without inventing geography', async () => {
   expect(
@@ -111,4 +113,42 @@ it('resolves foreign countries from canonical references and falls back without 
   expect(
     await printCityInternational({ attributes: {} }, async () => undefined),
   ).toBe(false);
+});
+
+it('uses passenger IRR and foreign sale amounts without adding historical room amounts', () => {
+  const state = {
+    ...emptySalesForm,
+    passengerTotalPricing: true,
+    serviceKinds: ['HOTEL'] as typeof emptySalesForm.serviceKinds,
+    passengers: [
+      { customerId: 'a', displayName: 'Synthetic Guest', birthDate: '' },
+    ],
+    passengerPrices: {
+      a: [
+        { currencyCode: 'IRR', amount: '25000.125' },
+        { currencyCode: 'EUR', amount: '75.5' },
+      ],
+    },
+    hotel: {
+      ...emptySalesForm.hotel,
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: 'room',
+          roomTypeNameSnapshot: 'Synthetic Room',
+          adults: 1,
+          childAges: [],
+          agreedPrice: { currencyCode: 'USD', amount: '999999' },
+        },
+      ],
+    },
+  };
+  const before = structuredClone(state);
+  expect(
+    contractSaleComponents(state).map((p) => [p.currencyCode, p.amount]),
+  ).toEqual([
+    ['IRR', '25000.125'],
+    ['EUR', '75.5'],
+  ]);
+  expect(state).toEqual(before);
 });

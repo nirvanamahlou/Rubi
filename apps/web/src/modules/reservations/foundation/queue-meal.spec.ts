@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { hotelMealLabel, queueMealName } from './queue-meal';
-import { reservationExportRows } from './reservation-table';
+import { reservationColumns, reservationExportRows } from './reservation-table';
 import type { RequestView } from './model';
 
 it('reads hotel meal codes, keeping multiple actual services and deduplicating them', () => {
@@ -17,9 +17,11 @@ it('uses the selected hotel for old contracts without a meal selection and expor
   } as unknown as RequestView;
   const mealServiceName = queueMealName(row, { 'hotel-meals:hotel': 'UALL' });
   expect(mealServiceName).toBe('UALL');
-  expect(reservationExportRows([{ ...row, mealServiceName }])[1]?.[16]).toBe(
-    'UALL',
-  );
+  expect(
+    reservationExportRows([{ ...row, mealServiceName }])[1]?.[
+      reservationColumns.indexOf('سرویس هتل')
+    ],
+  ).toBe('UALL');
 });
 it('preserves an explicit contract service and does not silently substitute another on failed lookup', () => {
   const row = { hotelId: 'hotel', mealServiceId: 'meal' } as RequestView;

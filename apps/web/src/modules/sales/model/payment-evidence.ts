@@ -46,15 +46,7 @@ export function paymentEvidenceForm(
     throw new Error(
       'دسترسی یا اطلاعات پایهٔ بارگذاری رسید مالی در این شعبه موجود نیست.',
     );
-  if (
-    !['application/pdf', 'image/jpeg', 'image/png'].includes(file.type) ||
-    !type.allowedMimeTypes.includes(file.type) ||
-    !options.uploadPolicy.allowedMimeTypes.includes(file.type) ||
-    file.size <= 0 ||
-    file.size >
-      Math.min(type.maxFileSizeBytes, options.uploadPolicy.maxFileSizeBytes)
-  )
-    throw new Error('مدرک باید PDF، JPG یا PNG و در محدودهٔ حجم مجاز باشد.');
+  validatePaymentEvidenceFile(options, file);
   const form = new FormData();
   form.set('file', file);
   form.set('title', 'مدرک پرداخت قرارداد ' + contract.contractNumber);
@@ -71,6 +63,31 @@ export function paymentEvidenceForm(
     'پرداخت ' + paymentId + ' / ' + contract.contractNumber,
   );
   return form;
+}
+
+export function validatePaymentEvidenceFile(
+  options: DocumentOptionsResponseV1['data'],
+  file: File,
+) {
+  const type = options.documentTypes.find(
+    (item) =>
+      item.code === 'RECEIPT' &&
+      item.domain === 'FINANCE' &&
+      !item.requiresExpiry,
+  );
+  if (!type)
+    throw new Error(
+      'دسترسی یا اطلاعات پایهٔ بارگذاری رسید مالی در این شعبه موجود نیست.',
+    );
+  if (
+    !['application/pdf', 'image/jpeg', 'image/png'].includes(file.type) ||
+    !type.allowedMimeTypes.includes(file.type) ||
+    !options.uploadPolicy.allowedMimeTypes.includes(file.type) ||
+    file.size <= 0 ||
+    file.size >
+      Math.min(type.maxFileSizeBytes, options.uploadPolicy.maxFileSizeBytes)
+  )
+    throw new Error('مدرک باید PDF، JPG یا PNG و در محدودهٔ حجم مجاز باشد.');
 }
 
 export const paymentDocumentScanLabel = (status: string) =>

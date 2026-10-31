@@ -87,6 +87,11 @@ export function createReturnTicketDraft(source: ProductInput): ProductInput {
     ...source,
     title: '',
     journeyRole: 'return',
+    saleRoutes:
+      source.saleRoutes?.map((r) => ({
+        originId: r.destinationId,
+        destinationId: r.originId,
+      })) ?? [],
     returnMinDays: null,
     returnMaxDays: null,
     fare: { ...source.fare },
@@ -561,7 +566,6 @@ function RouteFields({
                 onSegment({
                   [`${end}CountryId`]: ref?.id ?? '',
                   [`${end}CityId`]: '',
-                  [`${end}AirportId`]: '',
                   [zoneKey]: 'Asia/Tehran',
                 });
               }}
@@ -580,7 +584,6 @@ function RouteFields({
                 if (ref) onReference?.(ref);
                 onSegment({
                   [`${end}CityId`]: ref?.id ?? '',
-                  [`${end}AirportId`]: '',
                   [zoneKey]: 'Asia/Tehran',
                 });
               }}
@@ -592,8 +595,7 @@ function RouteFields({
                 label={`فرودگاه ${side}${suffix}`}
                 resource="airports"
                 readOnly={readOnly}
-                countryId={segment[`${end}CountryId`]}
-                cityId={segment[`${end}CityId`]}
+
                 value={references.find(
                   (r) =>
                     r.kind === 'airport' && r.id === segment[`${end}AirportId`],

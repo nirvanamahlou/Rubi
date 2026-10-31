@@ -20,29 +20,44 @@ export function salesReferenceDisplayName(
 
 export function SearchableReference({
   label,
+  hideLabel = false,
   value,
   options,
   onChange,
   disabled = false,
+  loading = false,
   preferEnglishName = false,
+  showAllOptionsOnOpen = false,
+  required = true,
+  onOpenChange,
 }: {
   label: string;
+  hideLabel?: boolean;
   value: string;
   options: readonly (Pick<MasterDataRecord, 'id' | 'name' | 'code'> &
     Partial<MasterDataRecord>)[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  loading?: boolean;
+  required?: boolean;
+  onOpenChange?: (open: boolean) => void;
   showAllOptionsOnOpen?: boolean;
   preferEnglishName?: boolean;
 }) {
   const id = useId();
   return (
-    <FormField id={id} label={label} required>
+    <FormField
+      id={id}
+      label={label}
+      labelClassName={hideLabel ? 'sr-only' : ''}
+      required={required && !hideLabel}
+    >
       <SearchCombobox
         id={id}
         label={label}
         value={value}
         disabled={disabled}
+        loading={loading}
         placeholder={
           disabled ? 'ابتدا کشور را انتخاب کنید' : 'جست‌وجو و انتخاب…'
         }
@@ -57,6 +72,8 @@ export function SearchableReference({
             ' ' +
             String(item.attributes?.englishName ?? ''),
         }))}
+        optionLimit={showAllOptionsOnOpen ? Number.POSITIVE_INFINITY : 5}
+        {...(onOpenChange ? { onOpenChange } : {})}
         onValueChange={onChange}
       />
     </FormField>

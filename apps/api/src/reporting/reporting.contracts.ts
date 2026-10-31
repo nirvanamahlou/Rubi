@@ -114,9 +114,12 @@ export interface TravelReportRowV1 {
 
 export interface TravelReportResultV1 {
   reportCode: string;
-  reportVersion: 1;
-  grain: 'ORDER_ITEM_CURRENCY';
-  sourceProjection: 'reporting.travel.facts.v1';
+  reportVersion: number;
+  grain: 'ORDER_ITEM_CURRENCY' | 'CONTRACT_CURRENCY' | 'PAYMENT';
+  sourceProjection:
+    | 'reporting.travel.facts.v1'
+    | 'sales.reporting.contract-currency.v1'
+    | 'sales.reporting.payment-events.v1';
   columns: readonly {
     key: keyof TravelReportRowV1;
     label: string;
@@ -178,11 +181,11 @@ export interface ReportingExportAuditV1 {
   expiresAtUtc?: string;
 }
 
-/** Public, versioned read model for the local CRM dashboard. Values are
- * pre-aggregated from the approved travel fact grain; UI components never
+/** Public, versioned read model for the CRM dashboard. Values are
+ * aggregated by approved producer-owned sources; UI components never
  * calculate financial totals from row-level data. */
 export interface DashboardProjectionV1 {
-  state: 'ready' | 'empty';
+  state: 'ready' | 'empty' | 'blocked';
   message: string;
   metadata: {
     generatedAt: string;
@@ -190,9 +193,17 @@ export interface DashboardProjectionV1 {
     timezone: 'Asia/Tehran';
     dateBasis: string;
     currencyFxBasis: string;
-    reportVersion: 'reporting.dashboard.travel.v1';
+    reportVersion:
+      'reporting.dashboard.travel.v1' | 'reporting.dashboard.native.v1';
     permissionSnapshot: string;
   } | null;
+  unavailableMetrics?: Readonly<Record<string, string>>;
+  unavailableVisuals?: Readonly<Record<string, string>>;
+  sourceCoverage?: readonly {
+    source: string;
+    state: string;
+    reason?: string;
+  }[];
   filterOptions?: {
     salesChannel: readonly string[];
     branch: readonly string[];
@@ -229,6 +240,7 @@ export interface DashboardProjectionV1 {
         aggregation?: string;
         currencyCode?: string;
         currencySeries?: readonly DashboardVisualCurrencySeriesV1[];
+        notice?: string;
         series?: readonly DashboardVisualSeriesV1[];
         comparison?: DashboardComparisonV1;
         trend?: DashboardTrendV1;
@@ -256,6 +268,7 @@ export interface DashboardVisualCurrencySeriesV1 {
   currencyCode: string;
   labels: readonly string[];
   values: readonly number[];
+  series?: readonly DashboardVisualSeriesV1[];
   comparison?: DashboardComparisonV1;
   trend?: DashboardTrendV1;
 }

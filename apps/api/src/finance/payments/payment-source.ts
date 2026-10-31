@@ -8,8 +8,9 @@ export async function paymentSource(
   input: { accountId?: string | null; payingSupplierId?: string | null },
   currencyCode: string,
   branchId: string,
+  policy: 'SUPPLIER_FOR_FOREIGN' | 'ACCOUNT_ONLY' = 'SUPPLIER_FOR_FOREIGN',
 ) {
-  if (currencyCode !== 'IRR') {
+  if (currencyCode !== 'IRR' && policy !== 'ACCOUNT_ONLY') {
     if (!input.payingSupplierId || input.accountId || !directory)
       throw new BadRequestException(
         'برای پرداخت ارزی تأمین‌کننده پرداخت‌کننده را انتخاب کنید.',
@@ -28,9 +29,7 @@ export async function paymentSource(
     };
   }
   if (!input.accountId || input.payingSupplierId)
-    throw new BadRequestException(
-      'برای پرداخت ریالی حساب پرداخت‌کننده را انتخاب کنید.',
-    );
+    throw new BadRequestException('حساب فعال هم‌ارز برای پرداخت معتبر نیست.');
   const account = await tx.financeSettlementAccount.findFirst({
     where: { id: input.accountId, branchId, currencyCode, isActive: true },
   });

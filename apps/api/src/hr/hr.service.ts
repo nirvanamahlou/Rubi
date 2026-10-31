@@ -1,3 +1,4 @@
+import { buildDashboardCharts, dashboardPeriods } from './hr-dashboard.domain';
 import { configuredAttendance } from './hr-attendance-settings';
 import { readPayslipWorkbook } from './hr-payslip-import';
 import {
@@ -13,6 +14,7 @@ import {
   jalaliYear,
   selection,
   transferSplit,
+  validateCompletionValues,
 } from './hr-radan-completion.domain';
 import { HR_RADAN_REQUEST_TYPES } from '@nora/contracts';
 import { isOptionalOperationReason } from '@nora/contracts';
@@ -53,7 +55,14 @@ type AssignmentLabels = {
   branches: Map<string, string>;
   managers: Map<string, string>;
 };
+const employeeExtensionProjection = {
+  where: { section: 'employee', tab: 'internalContact', deletedAt: null },
+  select: { values: true },
+  take: 1,
+} as const;
 const employeeKeys = [
+  'jobTitleId',
+  'extension',
   'identityValues',
   'contactValues',
   'firstName',
@@ -185,7 +194,7 @@ export class HrService {
   private recordScope(actor: AuthenticatedActor): Prisma.HrRecordWhereInput {
     this.readable(actor);
     return {
-      section: { not: 'connections' },
+      section: { notIn: ['connections', 'payrollWorksheets'] },
       branchId: { in: actor.branchIds },
       deletedAt: null,
       ...(this.has(actor, 'hr.read') || this.has(actor, 'hr.manage')
@@ -238,6 +247,7 @@ export class HrService {
       include: {
         manager: { select: { name: true } },
         organizationBranch: true,
+        records: employeeExtensionProjection,
       },
     });
     if (!result)
@@ -256,11 +266,16 @@ export class HrService {
     row: Employee & {
       manager?: { name: string } | null;
       organizationBranch?: RecordRow | null;
+      records?: { values: Prisma.JsonValue }[];
     },
   ): HrEmployeeDto {
     return {
       id: row.id,
       personnelCode: row.personnelCode,
+      jobTitleId: row.jobTitleId,
+      extension: String(
+        (row.records?.[0]?.values as string[] | undefined)?.[0] ?? '',
+      ),
       branchId: row.branchId,
       userId: row.userId,
       photoDocumentId: row.photoDocumentId,
@@ -364,6 +379,7 @@ export class HrService {
       tab: row.tab,
       employeeId: row.employeeId,
       parentId: row.parentId,
+      jobTitleId: row.jobTitleId,
       columns: [...schema.columns],
       values: sensitive ? schema.columns.map(() => '••••') : values,
       status: row.status,
@@ -376,6 +392,137 @@ export class HrService {
       data: sensitive ? {} : (publicHrData(row.data) as HrWorkflowData),
     };
   }
+  async dashboardCharts(
+    input: Record<string, unknown>,
+    actor: AuthenticatedActor,
+  ) {
+    this.readable(actor);
+    validate.object(input, ['organizationBranchId', 'unit']);
+    const organizationBranchId = input.organizationBranchId
+      ? validate.uuid(input.organizationBranchId)
+      : undefined;
+    const unit = input.unit
+      ? validate.text(input.unit, 'واحد', 200)
+      : undefined;
+    const branchNames = new Map(
+      (await this.iam.listRolesAndBranches()).branches.map((branch) => [
+        branch.id,
+        branch.name,
+      ]),
+    );
+    const now = new Date();
+    const periods = dashboardPeriods(now);
+    const result = await this.database.client.$transaction(
+      async (tx) => {
+        const employees = await tx.hrEmployee.findMany({
+          where: {
+            AND: [
+              this.employeeScope(actor),
+              {
+                ...(organizationBranchId ? { organizationBranchId } : {}),
+                ...(unit ? { unit } : {}),
+              },
+            ],
+          },
+          select: {
+            id: true,
+            name: true,
+            unit: true,
+            branchId: true,
+            organizationBranchId: true,
+            organizationBranch: { select: { values: true } },
+          },
+          orderBy: { id: 'asc' },
+          take: 10001,
+        });
+        if (employees.length > 10000)
+          throw new ConflictException('حجم گزارش بیش از حد مجاز است.');
+        const ids = employees.map((e) => e.id);
+        const [records, entries] = await Promise.all([
+          tx.hrRecord.findMany({
+            where: {
+              AND: [
+                this.recordScope(actor),
+                {
+                  employeeId: { in: ids },
+                  OR: [
+                    {
+                      section: 'time',
+                      tab: 'attendance',
+                      OR: [
+                        {
+                          effectiveAt: {
+                            gte: validate.isoDate(periods.quarterFrom),
+                            lte: validate.isoDate(periods.today),
+                          },
+                        },
+                        { effectiveAt: null },
+                      ],
+                    },
+                    {
+                      section: { in: ['time', 'requests'] },
+                      tab: { in: ['leave', 'radanLeave'] },
+                    },
+                    { section: 'time', tab: 'minuteLedger' },
+                  ],
+                },
+              ],
+            },
+            select: {
+              id: true,
+              employeeId: true,
+              section: true,
+              tab: true,
+              values: true,
+              data: true,
+              status: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+            take: 100001,
+          }),
+          tx.hrLeaveEntry.findMany({
+            where: {
+              employeeId: { in: ids },
+              year: Number(periods.today.slice(0, 4)),
+              createdAt: { lte: now },
+            },
+            select: {
+              employeeId: true,
+              year: true,
+              days: true,
+              createdAt: true,
+            },
+            take: 100001,
+          }),
+        ]);
+        if (records.length > 100000 || entries.length > 100000)
+          throw new ConflictException('حجم گزارش بیش از حد مجاز است.');
+        return buildDashboardCharts(
+          employees.map((e) => ({
+            ...e,
+            company:
+              (e.organizationBranch?.values as string[] | undefined)?.[0] ||
+              branchNames.get(e.branchId) ||
+              'شعبه',
+          })),
+          records,
+          entries,
+          now,
+        );
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        timeout: 30000,
+      },
+    );
+    await this.auditRead(
+      actor,
+      'dashboard.charts',
+      result.charts.reduce((sum, chart) => sum + chart.points.length, 0),
+    );
+    return result;
+  }
   async bootstrap(actor: AuthenticatedActor): Promise<HrBootstrapDto> {
     this.readable(actor);
     // An authorized HR read advances already approved, due changes transactionally.
@@ -384,26 +531,43 @@ export class HrService {
       this.has(actor, 'hr.manage') && this.has(actor, 'hr.approve')
         ? await this.applyDue(actor)
         : [];
-    const [employees, records, recordCount, options] = await Promise.all([
-      this.database.client.hrEmployee.findMany({
-        where: this.employeeScope(actor),
-        include: {
-          manager: { select: { name: true } },
-          organizationBranch: true,
-        },
-        orderBy: { name: 'asc' },
-        take: 2000,
-      }),
-      this.database.client.hrRecord.findMany({
-        where: this.recordScope(actor),
-        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-        take: 500,
-      }),
-      this.database.client.hrRecord.count({ where: this.recordScope(actor) }),
-      this.iam.listRolesAndBranches(),
-    ]);
+    const [employees, records, recordCount, options, jobTitles] =
+      await Promise.all([
+        this.database.client.hrEmployee.findMany({
+          where: this.employeeScope(actor),
+          include: {
+            manager: { select: { name: true } },
+            organizationBranch: true,
+            records: employeeExtensionProjection,
+          },
+          orderBy: { name: 'asc' },
+          take: 2000,
+        }),
+        this.database.client.hrRecord.findMany({
+          where: this.recordScope(actor),
+          orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+          take: 500,
+        }),
+        this.database.client.hrRecord.count({ where: this.recordScope(actor) }),
+        this.iam.listRolesAndBranches(),
+        this.database.client.hrRecord.findMany({
+          where: {
+            section: 'organization',
+            tab: 'positions',
+            employeeId: null,
+            deletedAt: null,
+          },
+          select: { id: true, values: true, status: true },
+          orderBy: { id: 'asc' },
+        }),
+      ]);
     await this.auditRead(actor, 'bootstrap', records.length);
     return {
+      jobTitles: jobTitles.map((row) => ({
+        id: row.id,
+        name: (row.values as string[])[1] || (row.values as string[])[0] || '',
+        status: row.status,
+      })),
       employees: employees.map((row) => this.employeeDto(row)),
       records: await this.recordDtos(records, actor),
       recordCount,
@@ -760,6 +924,148 @@ export class HrService {
       throw new BadRequestException('حساب کاربری فعال در شعبه پیدا نشد.');
     return userId;
   }
+  private async setEmployeeExtension(
+    tx: Tx,
+    employee: Employee,
+    value: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    if (value === undefined) return;
+    const extension = validate.digits(
+      validate.text(value, 'شماره داخلی', 20, true),
+    );
+    if (extension && !/^\d{1,20}$/.test(extension))
+      throw new BadRequestException('شماره داخلی باید فقط شامل رقم باشد.');
+    const row = await tx.hrRecord.findFirst({
+      where: {
+        employeeId: employee.id,
+        branchId: employee.branchId,
+        section: 'employee',
+        tab: 'internalContact',
+        deletedAt: null,
+      },
+    });
+    if (
+      (row?.values as string[] | undefined)?.[0] === extension ||
+      (!row && !extension)
+    )
+      return;
+    const saved = row
+      ? await tx.hrRecord.update({
+          where: { id: row.id },
+          data: {
+            values: [extension],
+            searchText: extension,
+            version: { increment: 1 },
+            ...(extension ? {} : { deletedAt: new Date() }),
+          },
+        })
+      : await tx.hrRecord.create({
+          data: {
+            employeeId: employee.id,
+            branchId: employee.branchId,
+            section: 'employee',
+            tab: 'internalContact',
+            code: `HR-EXT-${randomUUID()}`,
+            values: [extension],
+            searchText: extension,
+            status: 'فعال',
+          },
+        });
+    await this.audit(
+      tx,
+      actor,
+      {
+        employeeId: employee.id,
+        branchId: employee.branchId,
+        recordId: saved.id,
+      },
+      'employee.extension',
+      { before: row?.values ?? [], after: extension ? [extension] : [] },
+      saved.version,
+    );
+  }
+  private async employeeJobTitle(
+    tx: Tx,
+    input: Record<string, unknown>,
+    existing?: Employee,
+  ) {
+    if (
+      input.jobTitleId === undefined &&
+      (input.position === undefined || input.position === existing?.position)
+    )
+      return undefined;
+    // Legacy clients may create their historical free-text title; the current editor sends a catalogue ID.
+    if (input.jobTitleId === undefined && !existing) return undefined;
+    const name = validate.text(
+      input.position ?? existing?.position,
+      'عنوان شغلی',
+    );
+    const title =
+      input.jobTitleId === undefined
+        ? null
+        : await tx.hrRecord.findFirst({
+            where: {
+              section: 'organization',
+              tab: 'positions',
+              employeeId: null,
+              deletedAt: null,
+              status: 'فعال',
+              id: validate.uuid(input.jobTitleId, 'عنوان شغلی'),
+            },
+          });
+    // Name-only edits resolve the canonical catalogue without accepting an arbitrary assignment.
+    const candidates =
+      input.jobTitleId === undefined
+        ? await tx.hrRecord.findMany({
+            where: {
+              section: 'organization',
+              tab: 'positions',
+              employeeId: null,
+              deletedAt: null,
+              status: 'فعال',
+            },
+            orderBy: { id: 'asc' },
+          })
+        : title
+          ? [title]
+          : [];
+    const result = candidates.find(
+      (row) =>
+        ((row.values as string[])[1] || (row.values as string[])[0]) === name,
+    );
+    if (!result)
+      throw new BadRequestException('عنوان شغلی فعال را از فهرست انتخاب کنید.');
+    return result;
+  }
+  private async validateEmployeeUnit(
+    tx: Tx,
+    value: unknown,
+    employee: Employee,
+  ) {
+    const unit = validate.text(value, 'واحد', 160, true);
+    if (!unit) return '';
+    const rows = await tx.hrRecord.findMany({
+      where: {
+        section: 'organization',
+        tab: 'units',
+        branchId: employee.branchId,
+        deletedAt: null,
+        status: 'فعال',
+      },
+    });
+    if (
+      !rows.some(
+        (row) =>
+          (row.values as string[])[0] === unit &&
+          (!(row.data as HrWorkflowData).organizationBranchId ||
+            (row.data as HrWorkflowData).organizationBranchId ===
+              employee.organizationBranchId),
+      )
+    )
+      throw new BadRequestException('واحد فعال همان شرکت را انتخاب کنید.');
+    return unit;
+  }
   private async insertEmployee(
     tx: Tx,
     input: Record<string, unknown>,
@@ -767,9 +1073,11 @@ export class HrService {
     photoDocumentId: string | null = null,
   ) {
     const branchId = this.branch(actor, input.branchId);
+    const jobTitle = await this.employeeJobTitle(tx, input);
     const row = await tx.hrEmployee.create({
       data: {
         branchId,
+        jobTitleId: jobTitle?.id ?? null,
         userId: await this.userReference(input.userId, branchId),
         photoDocumentId,
         organizationBranchId: input.organizationBranchId
@@ -786,19 +1094,21 @@ export class HrService {
         name: validate.text(input.name, 'نام'),
         kind: validate.text(input.kind, 'نوع همکاری', 80),
         unit: input.unit ? validate.text(input.unit, 'واحد') : '',
-        position: validate.text(input.position, 'سمت'),
+        position: validate.text(input.position, 'عنوان شغلی'),
         grade: validate.text(input.grade, 'رده', 40),
         managerId: await this.manager(tx, input.managerId, branchId, actor),
         startedAt: validate.isoDate(input.startedAtValue),
         status: input.status ? validate.status(input.status, false) : 'فعال',
       },
     });
+    await this.setEmployeeExtension(tx, row, input.extension, actor);
     if (input.groupId !== undefined)
       await this.setEmployeeGroup(tx, row, input.groupId, actor);
     const assignment = await tx.hrRecord.create({
       data: {
         branchId,
         employeeId: row.id,
+        jobTitleId: jobTitle?.id ?? null,
         code: `HR-ASG-${randomUUID().slice(0, 12).toUpperCase()}`,
         section: 'employee',
         tab: 'assignment',
@@ -825,6 +1135,107 @@ export class HrService {
       row.status,
     );
     return row;
+  }
+  private chartCoordinates(schema: HrResourceDefinition, data: HrWorkflowData) {
+    if (
+      (data.chartX !== undefined || data.chartY !== undefined) &&
+      ![
+        'organization.branches',
+        'organization.units',
+        'organization.chartEmployees',
+      ].includes(schema.key)
+    )
+      throw new BadRequestException(
+        'مختصات فقط برای گره‌های چارت سازمانی مجاز است.',
+      );
+  }
+  private async chartEmployee(
+    tx: Tx,
+    schema: HrResourceDefinition,
+    employee: Employee | null,
+    branchId: string,
+    parentId: string | null,
+    data: HrWorkflowData,
+    actor: AuthenticatedActor,
+    id?: string,
+  ) {
+    if (schema.key !== 'organization.chartEmployees') return;
+    if (!employee || employee.branchId !== branchId)
+      throw new BadRequestException('کارمند گره باید متعلق به همان شعبه باشد.');
+    if (
+      await tx.hrRecord.count({
+        where: {
+          section: 'organization',
+          tab: 'chartEmployees',
+          employeeId: employee.id,
+          branchId,
+          ...(employee.organizationBranchId
+            ? {
+                OR: [
+                  {
+                    data: {
+                      path: ['organizationBranchId'],
+                      equals: employee.organizationBranchId,
+                    },
+                  },
+                  {
+                    data: {
+                      path: ['organizationBranchId'],
+                      equals: Prisma.DbNull,
+                    },
+                  },
+                ],
+              }
+            : {}),
+          deletedAt: null,
+          ...(id ? { id: { not: id } } : {}),
+        },
+      })
+    )
+      throw new ConflictException('این کارمند قبلاً در چارت قرار گرفته است.');
+    let cursor = parentId;
+    const seen = new Set(id ? [id] : []);
+    let company: string | null | undefined =
+      data.organizationBranchId || employee.organizationBranchId;
+    while (cursor) {
+      if (seen.has(cursor) || seen.size > 1000)
+        throw new BadRequestException('چرخه ساختار سازمانی مجاز نیست.');
+      seen.add(cursor);
+      const parent = await this.record(tx, cursor, actor);
+      if (
+        parent.branchId !== branchId ||
+        !['organization.units', 'organization.chartEmployees'].includes(
+          `${parent.section}.${parent.tab}`,
+        ) ||
+        parent.status !== 'فعال'
+      )
+        throw new BadRequestException(
+          'والد گره باید فعال و متعلق به همان شعبه باشد.',
+        );
+      if (parent.employeeId === employee.id)
+        throw new BadRequestException('کارمند نمی‌تواند والد خودش باشد.');
+      const parentCompany = (parent.data as HrWorkflowData)
+        .organizationBranchId;
+      if (parentCompany && company && company !== parentCompany)
+        throw new BadRequestException(
+          'گره و والد باید متعلق به یک شرکت باشند.',
+        );
+      company ||= parentCompany;
+      cursor = parent.parentId;
+    }
+    if (
+      company &&
+      employee.organizationBranchId &&
+      company !== employee.organizationBranchId
+    )
+      throw new BadRequestException(
+        'کارمند و گره باید متعلق به یک شرکت باشند.',
+      );
+    if (company) {
+      await this.organizationBranch(tx, company, branchId, actor);
+      data.organizationBranchId = company;
+      if (id) await this.assertChartDescendantsCompany(tx, id, company);
+    }
   }
   private async organizationBranch(
     tx: Tx,
@@ -890,47 +1301,93 @@ export class HrService {
         branchId,
         actor,
       );
-    if (id && data.organizationBranchId) {
-      let frontier = [id],
-        inspected = 0;
-      while (frontier.length) {
-        const children = await tx.hrRecord.findMany({
-          where: {
-            parentId: { in: frontier },
-            section: 'organization',
-            tab: 'units',
-            deletedAt: null,
-          },
-          select: { id: true, data: true },
-          take: 2001,
-        });
-        inspected += children.length;
-        if (inspected > 2000)
-          throw new ConflictException(
-            'ساختار بزرگ است؛ تغییر شرکت نیازمند بررسی سازمانی است.',
-          );
-        if (
-          children.some((child) => {
-            const company = (child.data as HrWorkflowData).organizationBranchId;
-            return company && company !== data.organizationBranchId;
-          })
-        )
-          throw new BadRequestException(
-            'واحد دارای زیرمجموعه متعلق به شرکت دیگر است.',
-          );
-        frontier = children.map((child) => child.id);
+    if (id && data.organizationBranchId)
+      await this.assertChartDescendantsCompany(
+        tx,
+        id,
+        data.organizationBranchId,
+      );
+  }
+  private async assertChartDescendantsCompany(
+    tx: Tx,
+    id: string,
+    companyId: string,
+  ) {
+    let frontier = [id],
+      inspected = 0;
+    const seen = new Set([id]);
+    while (frontier.length) {
+      const children = await tx.hrRecord.findMany({
+        where: {
+          parentId: { in: frontier },
+          section: 'organization',
+          tab: { in: ['units', 'chartEmployees'] },
+          deletedAt: null,
+        },
+        select: { id: true, data: true },
+        take: 2001,
+      });
+      inspected += children.length;
+      if (inspected > 2000)
+        throw new ConflictException(
+          'ساختار بزرگ است؛ تغییر شرکت نیازمند بررسی سازمانی است.',
+        );
+      if (
+        children.some((child) => {
+          const company = (child.data as HrWorkflowData).organizationBranchId;
+          return company && company !== companyId;
+        })
+      )
+        throw new BadRequestException(
+          'واحد دارای زیرمجموعه متعلق به شرکت دیگر است.',
+        );
+      frontier = [];
+      for (const child of children) {
+        if (seen.has(child.id))
+          throw new BadRequestException('چرخه ساختار سازمانی مجاز نیست.');
+        seen.add(child.id);
+        frontier.push(child.id);
       }
     }
+  }
+  private compatibleTimeInput(value: unknown, row: RecordRow) {
+    const legacy =
+      row.section === 'time'
+        ? (
+            { workingHours: 8, leaveTransferRules: 9 } as Record<string, number>
+          )[row.tab]
+        : undefined;
+    if (
+      legacy !== undefined &&
+      Array.isArray(value) &&
+      value.length === legacy &&
+      Array.isArray(row.values) &&
+      row.values.length > legacy
+    )
+      return [...value, ...row.values.slice(legacy)];
+    return value;
+  }
+  private compatibleIdentityInput(value: unknown, row?: RecordRow) {
+    if (!Array.isArray(value) || value.length !== 14 || !row) return value;
+    const previous = revealHrValues(
+      row.data,
+      `${row.branchId}:${row.employeeId ?? row.parentId}:employee.identity`,
+    );
+    return [...value, previous[14] ?? ''];
   }
   private async insertPersonnelProfile(
     tx: Tx,
     employee: Employee,
     input: Record<string, unknown>,
     actor: AuthenticatedActor,
+    existing: RecordRow[] = [],
   ) {
     const identitySchema = validate.resource('employee', 'identity');
     const identity = validate.recordValues(
-      input.identityValues,
+      this.compatibleIdentityInput(
+        input.identityValues,
+        existing.find((row) => row.tab === 'identity'),
+      ),
       identitySchema,
     );
     this.nameParts({ firstName: identity[0], lastName: identity[1] });
@@ -950,39 +1407,85 @@ export class HrService {
         throw new BadRequestException('شماره تماس تکراری است.');
       seen.add(normalized);
     }
+    const remaining = [...existing];
     for (const [schema, values] of [
       [identitySchema, identity],
       ...phones.map((phone) => [phoneSchema, phone] as const),
     ] as const) {
-      const row = await tx.hrRecord.create({
-        data: {
-          branchId: employee.branchId,
-          employeeId: employee.id,
-          section: schema.section,
-          tab: schema.tab,
-          code: `HR-PRIVATE-${randomUUID().slice(0, 16)}`,
-          values: values.map(() => '••••'),
-          searchText: '',
-          status: 'فعال',
-          data: protectHrValues(
+      const index = remaining.findIndex((row) => row.tab === schema.tab);
+      const previous = index < 0 ? undefined : remaining.splice(index, 1)[0];
+      const data = {
+        values: values.map(() => '••••'),
+        searchText: '',
+        data: json({
+          ...(previous ? publicHrData(previous.data) : {}),
+          ...protectHrValues(
             values,
             `${employee.branchId}:${employee.id}:${schema.key}`,
           ),
-        },
-      });
+        }),
+      };
+      let recordId: string;
+      let version: number;
+      if (previous) {
+        const changed = await tx.hrRecord.updateMany({
+          where: {
+            id: previous.id,
+            version: previous.version,
+            deletedAt: null,
+          },
+          data: { ...data, version: { increment: 1 } },
+        });
+        if (changed.count !== 1)
+          throw new ConflictException('نسخه رکورد تغییر کرده است.');
+        recordId = previous.id;
+        version = previous.version + 1;
+      } else {
+        const row = await tx.hrRecord.create({
+          data: {
+            ...data,
+            branchId: employee.branchId,
+            employeeId: employee.id,
+            section: schema.section,
+            tab: schema.tab,
+            code: `HR-PRIVATE-${randomUUID().slice(0, 16)}`,
+            status: 'فعال',
+          },
+        });
+        recordId = row.id;
+        version = row.version;
+      }
       await this.audit(
         tx,
         actor,
         {
           branchId: employee.branchId,
           employeeId: employee.id,
-          recordId: row.id,
+          recordId,
         },
-        'personnel.profile.create',
+        previous ? 'personnel.profile.update' : 'personnel.profile.create',
         { fields: schema.columns },
-        row.version,
-        undefined,
-        row.status,
+        version,
+      );
+    }
+    for (const previous of remaining) {
+      const changed = await tx.hrRecord.updateMany({
+        where: { id: previous.id, version: previous.version, deletedAt: null },
+        data: { deletedAt: new Date(), version: { increment: 1 } },
+      });
+      if (changed.count !== 1)
+        throw new ConflictException('نسخه رکورد تغییر کرده است.');
+      await this.audit(
+        tx,
+        actor,
+        {
+          branchId: employee.branchId,
+          employeeId: employee.id,
+          recordId: previous.id,
+        },
+        'personnel.profile.remove',
+        { fields: ['شماره‌های تماس'] },
+        previous.version + 1,
       );
     }
   }
@@ -1023,11 +1526,31 @@ export class HrService {
   async updateEmployee(id: string, body: unknown, actor: AuthenticatedActor) {
     this.require(actor, 'hr.manage');
     const input = validate.object(body, [
-      ...employeeKeys.filter(
-        (key) => !['identityValues', 'contactValues'].includes(key),
-      ),
+      ...employeeKeys,
+      'profileRecords',
       'version',
     ]);
+    const privateProfile =
+      input.identityValues !== undefined || input.contactValues !== undefined;
+    if (privateProfile) {
+      this.require(actor, 'hr.sensitive');
+      if (
+        !Array.isArray(input.identityValues) ||
+        !Array.isArray(input.contactValues)
+      )
+        throw new BadRequestException('اطلاعات هویتی و تماس الزامی است.');
+      if (
+        !Array.isArray(input.profileRecords) ||
+        input.profileRecords.length > 100
+      )
+        throw new BadRequestException('نسخه اطلاعات هویتی و تماس الزامی است.');
+      for (const record of input.profileRecords) {
+        const value = validate.object(record, ['id', 'version']);
+        validate.text(value.id, 'شناسه رکورد', 100);
+        validate.version(value.version);
+      }
+    } else if (input.profileRecords !== undefined)
+      throw new BadRequestException('اطلاعات هویتی و تماس الزامی است.');
     const expected = validate.version(input.version);
     const photo = input.photoDocumentId
       ? await this.documentReference(
@@ -1040,18 +1563,12 @@ export class HrService {
       const existing = await this.employee(tx, id, actor);
       if (existing.version !== expected)
         throw new ConflictException('نسخه کارمند تغییر کرده است.');
-      for (const key of [
-        'branchId',
-        'unit',
-        'position',
-        'grade',
-        'managerId',
-        'startedAtValue',
-      ])
+      for (const key of ['branchId', 'startedAtValue'])
         if (input[key] !== undefined)
           throw new BadRequestException(
             'تغییر انتصاب باید از گردش ارتقا یا انتقال با تاریخ اثر ثبت شود.',
           );
+      const jobTitle = await this.employeeJobTitle(tx, input, existing);
       const data: Prisma.HrEmployeeUncheckedUpdateManyInput = {
         version: { increment: 1 },
       };
@@ -1062,6 +1579,21 @@ export class HrService {
             key,
             key === 'personnelCode' ? 50 : key === 'kind' ? 80 : 160,
           );
+      if (jobTitle) data.jobTitleId = jobTitle.id;
+      if (input.unit !== undefined && input.unit !== existing.unit)
+        data.unit = await this.validateEmployeeUnit(tx, input.unit, existing);
+      if (input.position !== undefined)
+        data.position = validate.text(input.position, 'عنوان شغلی');
+      if (input.grade !== undefined)
+        data.grade = validate.text(input.grade, 'رده', 40);
+      if (input.managerId !== undefined)
+        data.managerId = await this.manager(
+          tx,
+          input.managerId,
+          existing.branchId,
+          actor,
+          id,
+        );
       const nameParts = this.nameParts(input);
       if (nameParts) data.name = nameParts.join(' ');
       if (input.status !== undefined && input.status !== existing.status)
@@ -1094,7 +1626,104 @@ export class HrService {
       });
       if (changed.count !== 1)
         throw new ConflictException('نسخه کارمند تغییر کرده است.');
-      if (typeof data.name === 'string')
+      const assignmentChanged =
+        input.jobTitleId !== undefined ||
+        ['unit', 'position', 'grade', 'managerId'].some(
+          (key) =>
+            input[key] !== undefined &&
+            input[key] !== existing[key as keyof Employee],
+        );
+      if (assignmentChanged) {
+        const current = await tx.hrEmployee.findUniqueOrThrow({
+          where: { id },
+        });
+        const effectiveAt = new Date();
+        const assignment = await tx.hrRecord.create({
+          data: {
+            branchId: existing.branchId,
+            employeeId: id,
+            jobTitleId: current.jobTitleId,
+            section: 'employee',
+            tab: 'assignment',
+            code: `HR-ASG-${randomUUID()}`,
+            values: [
+              current.branchId,
+              current.unit,
+              current.position,
+              current.managerId ?? '',
+              effectiveAt.toISOString().slice(0, 10),
+            ],
+            effectiveAt,
+            appliedAt: effectiveAt,
+            status: current.status,
+          },
+        });
+        await this.audit(
+          tx,
+          actor,
+          {
+            branchId: existing.branchId,
+            employeeId: id,
+            recordId: assignment.id,
+          },
+          'employee.assignment.correct',
+          {
+            before: {
+              unit: existing.unit,
+              position: existing.position,
+              grade: existing.grade,
+              managerId: existing.managerId,
+            },
+            after: {
+              unit: current.unit,
+              position: current.position,
+              grade: current.grade,
+              managerId: current.managerId,
+            },
+          },
+          expected + 1,
+        );
+      }
+      await this.setEmployeeExtension(tx, existing, input.extension, actor);
+      if (privateProfile) {
+        const records = await tx.hrRecord.findMany({
+          where: {
+            employeeId: id,
+            branchId: existing.branchId,
+            section: 'employee',
+            tab: { in: ['identity', 'phones'] },
+            deletedAt: null,
+          },
+          orderBy: { id: 'asc' },
+        });
+        const snapshot = input.profileRecords as {
+          id: string;
+          version: number;
+        }[];
+        if (
+          snapshot.length !== records.length ||
+          new Set(snapshot.map((r) => r.id)).size !== snapshot.length ||
+          records.some(
+            (r) =>
+              !snapshot.some((v) => v.id === r.id && v.version === r.version),
+          )
+        )
+          throw new ConflictException(
+            'نسخه اطلاعات هویتی و تماس تغییر کرده است.',
+          );
+        if (records.filter((r) => r.tab === 'identity').length > 1)
+          throw new ConflictException('بیش از یک پرونده هویتی ثبت شده است.');
+        await this.insertPersonnelProfile(
+          tx,
+          {
+            ...existing,
+            name: typeof data.name === 'string' ? data.name : existing.name,
+          },
+          input,
+          actor,
+          records,
+        );
+      } else if (typeof data.name === 'string')
         await this.syncIdentityNames(tx, existing, data.name, nameParts, actor);
       await this.audit(
         tx,
@@ -1111,6 +1740,7 @@ export class HrService {
         where: { id },
         include: {
           organizationBranch: true,
+          records: employeeExtensionProjection,
           manager: { select: { name: true } },
         },
       });
@@ -1501,6 +2131,7 @@ export class HrService {
     const input = validate.object(body, recordKeys);
     const schema = validate.resource(input.section, input.tab);
     const data = validate.workflowData(input.data);
+    this.chartCoordinates(schema, data);
     const networkPassword = this.devicePassword(
       input.privateData,
       schema,
@@ -1562,11 +2193,22 @@ export class HrService {
               !schema.parentResources.includes(
                 `${parent.section}.${parent.tab}`,
               )) ||
-            (parent.employeeId && parent.employeeId !== employee?.id))
+            (parent.employeeId &&
+              parent.employeeId !== employee?.id &&
+              schema.key !== 'organization.chartEmployees'))
         )
           throw new BadRequestException(
             'ارتباط پرونده والد با این رکورد معتبر نیست.',
           );
+        await this.chartEmployee(
+          tx,
+          schema,
+          employee,
+          branchId,
+          parent?.id ?? null,
+          data,
+          actor,
+        );
         if (schema.key === 'organization.units')
           await this.unitCompany(tx, branchId, parent?.id ?? null, data, actor);
         if (missionExpenseResources.has(schema.key))
@@ -1767,9 +2409,11 @@ export class HrService {
       let parentId = row.parentId;
       if (input.parentId !== undefined) {
         if (
-          !['organization.units', 'recruitment.applicants'].includes(
-            schema.key,
-          ) &&
+          ![
+            'organization.units',
+            'organization.chartEmployees',
+            'recruitment.applicants',
+          ].includes(schema.key) &&
           !missionExpenseResources.has(schema.key)
         )
           throw new BadRequestException(
@@ -1793,7 +2437,12 @@ export class HrService {
             throw new BadRequestException(
               'رکورد مرتبط باید از نوع مجاز و متعلق به همان شعبه باشد.',
             );
-          cursor = schema.key === 'organization.units' ? parent.parentId : null;
+          cursor = [
+            'organization.units',
+            'organization.chartEmployees',
+          ].includes(schema.key)
+            ? parent.parentId
+            : null;
         }
       }
       if (schema.key === 'time.checkins') {
@@ -1964,6 +2613,17 @@ export class HrService {
           : undefined;
       if (missionParent !== undefined)
         this.expenseMission(missionParent, employee, data);
+      this.chartCoordinates(schema, data);
+      await this.chartEmployee(
+        tx,
+        schema,
+        employee,
+        row.branchId,
+        parentId,
+        data,
+        actor,
+        row.id,
+      );
       if (schema.key === 'organization.units')
         await this.unitCompany(tx, row.branchId, parentId, data, actor, row.id);
       const values =
@@ -1979,7 +2639,9 @@ export class HrService {
           : await this.values(
               tx,
               schema,
-              input.values ?? row.values,
+              schema.key === 'employee.identity'
+                ? this.compatibleIdentityInput(input.values ?? row.values, row)
+                : this.compatibleTimeInput(input.values ?? row.values, row),
               employee,
               row.branchId,
               data,
@@ -2726,6 +3388,7 @@ export class HrService {
     if (data.managerId !== undefined) change.managerId = managerId;
     if (row.tab === 'promotion') {
       change.position = validate.text(values[3], 'سمت');
+      change.jobTitleId = null;
       change.grade = validate.text(values[4], 'رده', 40);
     }
     if (row.tab === 'transfer') {
@@ -2781,6 +3444,7 @@ export class HrService {
       data: {
         branchId: updated.branchId,
         employeeId: updated.id,
+        jobTitleId: updated.jobTitleId,
         section: 'employee',
         tab: 'assignment',
         code: `HR-ASG-${randomUUID().slice(0, 12)}`,
@@ -3888,6 +4552,7 @@ export class HrService {
       'duration',
       'type',
       'ruleId',
+      'transfer',
     ]);
     if (
       !Array.isArray(input.employeeIds) ||
@@ -3896,23 +4561,84 @@ export class HrService {
       new Set(input.employeeIds).size !== input.employeeIds.length
     )
       throw new BadRequestException('یک تا صد کارمند یکتا انتخاب کنید.');
+    const employeeIds = input.employeeIds.map((id: unknown) =>
+      validate.uuid(id).toLowerCase(),
+    );
+    if (new Set(employeeIds).size !== employeeIds.length)
+      throw new BadRequestException('یک تا صد کارمند یکتا انتخاب کنید.');
     const year = jalaliYear(input.year),
       type = validate.text(input.type, 'نوع مرخصی', 80);
+    if (input.ruleId && input.transfer)
+      throw new BadRequestException('یک روش انتقال انتخاب کنید.');
+    let inlineRule: string[] | undefined;
+    if (input.transfer !== undefined) {
+      const transfer = validate.object(input.transfer, [
+        'greaterThan',
+        'lessThan',
+        'greaterCarry',
+        'greaterBurn',
+        'greaterBuyback',
+        'lessCarry',
+        'lessBurn',
+        'lessBuyback',
+      ]);
+      inlineRule = [
+        'انتقال عمومی مرخصی',
+        String(year),
+        ...[
+          'greaterThan',
+          'greaterCarry',
+          'greaterBurn',
+          'greaterBuyback',
+          'lessCarry',
+          'lessBurn',
+          'lessBuyback',
+          'lessThan',
+        ].map((field) => validate.text(transfer[field], field, 12)),
+      ];
+      validateCompletionValues(
+        'time.leaveTransferRules',
+        getHrResource('time', 'leaveTransferRules')!.columns,
+        inlineRule,
+      );
+    }
+    if ((inlineRule || input.ruleId) && year === 1600)
+      throw new BadRequestException('سال مقصد خارج از محدوده مجاز است.');
     return this.command(
       actor,
       key,
       { operation: 'leave.minutes', input },
       async (tx) => {
         const ids: string[] = [];
-        for (const id of input.employeeIds as unknown[]) {
+        const inlineRules = new Map<string, RecordRow>();
+        for (const id of [...employeeIds].sort()) {
           const employee = await this.employee(tx, validate.uuid(id), actor);
           await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${employee.id + ':minute-leave'}, 0))::text`;
-          if (input.ruleId) {
-            const rule = await this.record(
-              tx,
-              validate.uuid(input.ruleId),
-              actor,
-            );
+          if (input.ruleId || inlineRule) {
+            let rule = inlineRules.get(employee.branchId);
+            if (!rule && inlineRule) {
+              rule = await tx.hrRecord.create({
+                data: {
+                  branchId: employee.branchId,
+                  section: 'time',
+                  tab: 'leaveTransferRules',
+                  code: `HR-TRANSFER-${randomUUID()}`,
+                  values: inlineRule,
+                  data: {},
+                  status: 'فعال',
+                },
+              });
+              inlineRules.set(employee.branchId, rule);
+              await this.audit(
+                tx,
+                actor,
+                { branchId: employee.branchId, recordId: rule.id },
+                'leave.transfer.configure',
+                { year },
+                1,
+              );
+            }
+            rule ??= await this.record(tx, validate.uuid(input.ruleId), actor);
             if (
               rule.branchId !== employee.branchId ||
               rule.section !== 'time' ||
@@ -3942,6 +4668,8 @@ export class HrService {
               year,
               type,
             );
+            if (inlineRule && balance === 0)
+              throw new ConflictException('مانده صفر قابل انتقال نیست.');
             if (balance < 0)
               throw new ConflictException('مانده منفی قابل انتقال نیست.');
             const split = transferSplit(balance, rule.values as string[]);
@@ -4020,6 +4748,211 @@ export class HrService {
       },
     );
   }
+  async attendanceReportData(
+    query: Record<string, unknown>,
+    actor: AuthenticatedActor,
+  ) {
+    validate.object(query, ['from', 'to']);
+    this.readable(actor);
+    const from = query.from
+      ? validate.isoDate(query.from).toISOString().slice(0, 10)
+      : '';
+    const to = query.to
+      ? validate.isoDate(query.to).toISOString().slice(0, 10)
+      : '';
+    if (from && to && from > to)
+      throw new BadRequestException('پایان باید پس از شروع باشد.');
+    return this.database.client.$transaction(
+      async (tx) => {
+        const employees = await tx.hrEmployee.findMany({
+          where: this.employeeScope(actor),
+          take: 10001,
+          orderBy: [{ personnelCode: 'asc' }, { id: 'asc' }],
+        });
+        if (employees.length > 10000)
+          throw new ConflictException('فهرست پرسنل بیش از حد مجاز است.');
+        const scope: Prisma.HrRecordWhereInput = {
+          AND: [
+            this.recordScope(actor),
+            {
+              OR: [
+                { employeeId: null },
+                { employee: this.employeeScope(actor) },
+              ],
+            },
+          ],
+        };
+        const eventSources = [
+          ['time', 'attendance'],
+          ['time', 'checkins'],
+          ['time', 'leave'],
+          ['time', 'remote'],
+          ['time', 'overtime'],
+          ['time', 'mission'],
+          ['requests', 'leave'],
+          ['requests', 'radanLeave'],
+          ['requests', 'radanMission'],
+          ['expenses', 'mission'],
+        ];
+        const eventFilters: Prisma.HrRecordWhereInput[] = eventSources.map(
+          ([section, tab]) => {
+            const columns = getHrResource(section!, tab!)!.columns;
+            const startIndex = columns.findIndex((label) =>
+              [
+                'از تاریخ',
+                'تاریخ رفت',
+                'تاریخ کارکرد',
+                'تاریخ تردد',
+                'تاریخ',
+              ].includes(label),
+            );
+            const endLabel = ['تا تاریخ', 'تاریخ برگشت'].find((label) =>
+              columns.includes(label),
+            );
+            const endIndex = endLabel ? columns.indexOf(endLabel) : startIndex;
+            const dates: Prisma.HrRecordWhereInput[] = [];
+            if (from)
+              dates.push(
+                endIndex >= 0
+                  ? { values: { path: [String(endIndex)], gte: from } }
+                  : { effectiveAt: { gte: new Date(from) } },
+              );
+            if (to)
+              dates.push(
+                startIndex >= 0
+                  ? { values: { path: [String(startIndex)], lte: to } }
+                  : { effectiveAt: { lte: new Date(to) } },
+              );
+            return { section: section!, tab: tab!, AND: dates };
+          },
+        );
+        const [operational, references] = await Promise.all([
+          tx.hrRecord.findMany({
+            where: { AND: [scope, { OR: eventFilters }] },
+            take: 100001,
+            orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+          }),
+          tx.hrRecord.findMany({
+            where: {
+              AND: [scope],
+              OR: [
+                {
+                  section: 'time',
+                  tab: {
+                    in: [
+                      'shift',
+                      'calculationSettings',
+                      'leavePolicies',
+                      'biometric',
+                    ],
+                  },
+                },
+                {
+                  section: 'requests',
+                  tab: { in: ['patterns', 'patternAssignments'] },
+                },
+                { section: 'contracts', tab: 'active' },
+                {
+                  section: 'organization',
+                  tab: { in: ['groups', 'groupMembers'] },
+                },
+              ],
+            },
+            take: 50001,
+            orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+          }),
+        ]);
+        if (operational.length > 100000 || references.length > 50000)
+          throw new ConflictException('حجم گزارش بیش از حد مجاز است.');
+        return {
+          employees: employees.map((employee) => this.employeeDto(employee)),
+          records: await this.recordDtos(operational, actor),
+          references: await this.recordDtos(references, actor),
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        maxWait: 10000,
+        timeout: 30000,
+      },
+    );
+  }
+  async leavePersonnel(actor: AuthenticatedActor) {
+    const items = await this.database.client.hrEmployee.findMany({
+      where: this.employeeScope(actor),
+      take: 10001,
+      orderBy: [{ personnelCode: 'asc' }, { id: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        personnelCode: true,
+        unit: true,
+        branchId: true,
+      },
+    });
+    if (items.length > 10000)
+      throw new ConflictException('فهرست پرسنل بیش از حد مجاز است.');
+    return { items };
+  }
+  async leaveReport(query: Record<string, unknown>, actor: AuthenticatedActor) {
+    validate.object(query, ['employeeIds', 'year']);
+    this.readable(actor);
+    const year = jalaliYear(query.year);
+    const ids = validate
+      .text(query.employeeIds, 'پرسنل', 3700)
+      .split(',')
+      .map((id) => validate.uuid(id).toLowerCase());
+    if (!ids.length || ids.length > 100 || new Set(ids).size !== ids.length)
+      throw new BadRequestException('یک تا صد کارمند یکتا انتخاب کنید.');
+    return this.database.client.$transaction(
+      async (tx) => {
+        const employees = await tx.hrEmployee.findMany({
+          where: { AND: [this.employeeScope(actor), { id: { in: ids } }] },
+          select: { id: true, name: true, personnelCode: true },
+        });
+        if (employees.length !== ids.length)
+          throw new NotFoundException('پرسنل انتخاب‌شده در دسترس نیست.');
+        const records = await tx.hrRecord.findMany({
+          where: {
+            AND: [
+              this.recordScope(actor),
+              { employee: this.employeeScope(actor) },
+            ],
+            employeeId: { in: ids },
+            section: 'time',
+            tab: 'minuteLedger',
+            status: 'تأییدشده',
+            deletedAt: null,
+          },
+          take: 100001,
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        });
+        if (records.length > 100000)
+          throw new ConflictException('حجم گزارش بیش از حد مجاز است.');
+        const selected = records.filter(
+          (row) => Number((row.values as string[])[1]) === year,
+        );
+        return {
+          year,
+          items: employees.map((employee) => ({
+            ...employee,
+            balanceMinutes: selected
+              .filter((row) => row.employeeId === employee.id)
+              .reduce(
+                (sum, row) => sum + Number((row.values as string[])[5]),
+                0,
+              ),
+          })),
+          records: await this.recordDtos(selected, actor),
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        maxWait: 10000,
+        timeout: 30000,
+      },
+    );
+  }
   async minuteCardex(
     query: Record<string, unknown>,
     actor: AuthenticatedActor,
@@ -4038,6 +4971,8 @@ export class HrService {
         section: 'time',
         tab: 'minuteLedger',
         deletedAt: null,
+        status: 'تأییدشده',
+        AND: [this.recordScope(actor)],
       },
       take: 10001,
       orderBy: { createdAt: 'asc' },

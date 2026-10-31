@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { Alert } from '@/components/ui/surfaces';
-import { customersApi } from '@/modules/customers/api/client';
+import { salesPeopleApi as customersApi } from '@/modules/customers/api/client';
 
 export interface SalesPersonDraft {
   firstName: string;
@@ -31,7 +31,7 @@ export function salesPersonInput(
     .trim()
     .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
     .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
-  if (!/^\d{10}$/.test(nationalId))
+  if (nationalId && !/^\d{10}$/.test(nationalId))
     throw new Error('کد ملی باید دقیقاً ۱۰ رقم باشد.');
   return {
     kind: 'person',
@@ -152,7 +152,7 @@ export function SalesPersonCreate({
             onChange={(birthDate) => setDraft({ ...draft, birthDate })}
           />
         </FormField>
-        <FormField label="کد ملی ۱۰رقمی" required>
+        <FormField label="کد ملی ۱۰رقمی">
           <Input
             aria-label="کد ملی ۱۰رقمی"
             dir="ltr"

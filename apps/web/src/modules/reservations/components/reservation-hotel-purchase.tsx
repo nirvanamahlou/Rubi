@@ -1,4 +1,6 @@
 'use client';
+import { HotelStayPurchases } from './hotel-stay-purchase';
+import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';
 
 import { ContractProfit } from '@/modules/finance/components/contract-profit';
@@ -14,6 +16,7 @@ import { ReservationInsurancePurchase } from './reservation-insurance-purchase';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   hotelNights,
+  legacyPurchaseGuests,
   moneyDecimal,
   moneyUnits,
   reservationServicePurchaseTotal,
@@ -37,7 +40,23 @@ type PurchaseRequest = ReservationIntakeV1 & {
 };
 type PurchasableService =
   ReservationIntakeV1['snapshot']['serviceSelections'][number];
-type Passenger = { id: string; name: string; age: SalesPassengerAgeCategory };
+type Passenger = {
+  id: string;
+  name: string;
+  age: SalesPassengerAgeCategory;
+  guestIndex?: number;
+};
+
+const unnamedPurchaseGuests = (
+  snapshot: ReservationIntakeV1['snapshot'],
+  serviceKey: string,
+): Passenger[] =>
+  legacyPurchaseGuests(snapshot, serviceKey).map((guest) => ({
+    id: `legacy:${guest.guestIndex}`,
+    name: `مسافر ${guest.guestIndex + 1}`,
+    age: guest.ageCategory,
+    guestIndex: guest.guestIndex,
+  }));
 
 export const reservationPurchaseServices = (
   snapshot: ReservationIntakeV1['snapshot'],
@@ -73,7 +92,9 @@ export const reservationHotelPassengers = (
           name: passenger.displayNameSnapshot || passenger.customerId,
           age: passenger.ageCategory,
         }))
-    : snapshot.passengerIds.map((id) => ({ id, name: id, age: 'ADT' }));
+    : snapshot.passengerIds.length
+      ? snapshot.passengerIds.map((id) => ({ id, name: id, age: 'ADT' }))
+      : unnamedPurchaseGuests(snapshot, serviceClientKey);
 
 export const reservationTransferPassengers = (
   snapshot: ReservationIntakeV1['snapshot'],
@@ -89,7 +110,12 @@ export const reservationTransferPassengers = (
           name: passenger.displayNameSnapshot || passenger.customerId,
           age: passenger.ageCategory,
         }))
-    : snapshot.passengerIds.map((id) => ({ id, name: id, age: 'ADT' }));
+    : snapshot.passengerIds.length
+      ? snapshot.passengerIds.map((id) => ({ id, name: id, age: 'ADT' }))
+      : serviceKeys.reduce<Passenger[]>((largest, key) => {
+          const guests = unnamedPurchaseGuests(snapshot, key);
+          return guests.length > largest.length ? guests : largest;
+        }, []);
 
 export function transferPurchaseTotal(price: string, count: string) {
   if (
@@ -115,19 +141,55 @@ export function hotelPurchaseTotal(
   return total;
 }
 
+/** Blank guests remain unpriced; explicit zero nightly prices are recorded. */
+export function hotelPassengerPurchaseInput(
+  passengers: readonly Passenger[],
+  nightly: Readonly<Record<string, string>>,
+  nights: number,
+) {
+  if (!Number.isSafeInteger(nights) || nights <= 0)
+    throw new Error('تاریخ اقامت معتبر نیست');
+  const passengerPrices = passengers
+    .filter((person) => nightly[person.id]?.trim())
+    .map((person) => {
+      const amount = moneyUnits(nightly[person.id]!);
+      if (amount < 0n)
+        throw new Error('قیمت هر شب هر مسافر باید صفر یا بیشتر باشد.');
+      return { customerId: person.id, nightlyAmount: moneyDecimal(amount) };
+    });
+  if (!passengerPrices.length)
+    throw new Error('حداقل یک قیمت خرید مسافر را وارد کنید.');
+  const amount = moneyDecimal(
+    passengerPrices.reduce(
+      (sum, price) => sum + moneyUnits(price.nightlyAmount) * BigInt(nights),
+      0n,
+    ),
+  );
+  moneyUnits(amount);
+  const legacy = passengers.some((person) => person.guestIndex !== undefined);
+  return {
+    passengerPrices: legacy ? [] : passengerPrices,
+    amount,
+    ...(legacy
+      ? {
+          legacyGuestPrices: passengerPrices.map((price) => ({
+            guestIndex: passengers.find(
+              (person) => person.id === price.customerId,
+            )!.guestIndex!,
+            nightlyAmount: price.nightlyAmount,
+          })),
+        }
+      : {}),
+  };
+}
+
 export function SupplierFormPurchaseContext({
   request,
 }: {
   request: PurchaseRequest;
 }) {
   const settings = request.workflow?.sentSupplierFormSettings;
-  if (!settings)
-    return (
-      <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-        هنوز نسخه‌ای از فرم رزواسیون برای کارگزار ارسال نشده است؛ مبلغ خرید را
-        پس از ارسال فرم ثبت کنید.
-      </p>
-    );
+  if (!settings) return null;
   const selected = settings.passengers.filter(
     (passenger) => passenger.selected,
   );
@@ -190,7 +252,23 @@ export function latestTransferPurchase(
     ? purchase
     : undefined;
 }
-export function ReservationHotelPurchase({
+export function ReservationHotelPurchase(props: {
+  request: PurchaseRequest;
+  onSaved: () => void;
+}) {
+  const request = {
+    ...props.request,
+    snapshot: props.request.purchaseSnapshot ?? props.request.snapshot,
+  };
+  return request.snapshot.hotelSelection?.rooms?.length ||
+    request.snapshot.hotelSelection?.additionalStays?.length ||
+    request.workflow?.supplierFormSettings?.rooms?.length ? (
+    <HotelStayPurchases {...props} request={request} />
+  ) : (
+    <LegacyReservationHotelPurchase {...props} />
+  );
+}
+export function LegacyReservationHotelPurchase({
   request,
   onSaved,
 }: {
@@ -219,11 +297,25 @@ export function ReservationHotelPurchase({
       ? { id: hotelPurchase.currencyCode, name: hotelPurchase.currencyCode }
       : null,
   );
-  const [hotelBase, setHotelBase] = useState(
-    hotelPurchase?.pricingCalculation?.baseAmount ?? '',
-  );
-  const [hotelFactor, setHotelFactor] = useState(
-    hotelPurchase?.pricingCalculation?.factor ?? '1',
+  const hotelPassengers = hotel
+    ? reservationHotelPassengers(request.snapshot, hotel.clientKey)
+    : [];
+  const [nightlyPrices, setNightlyPrices] = useState<Record<string, string>>(
+    () =>
+      Object.fromEntries([
+        ...(hotelPurchase?.passengerPrices ?? [])
+          .filter((price) => price.nightlyAmount !== undefined)
+          .map((price) => [price.customerId, price.nightlyAmount!]),
+        ...(hotelPurchase?.legacyGuestPrices ?? [])
+          .filter((price) =>
+            hotelPassengers.some(
+              (person) =>
+                person.guestIndex === price.guestIndex &&
+                person.age === price.ageCategory,
+            ),
+          )
+          .map((price) => [`legacy:${price.guestIndex}`, price.nightlyAmount]),
+      ]),
   );
   type TransferDraft = {
     supplier: Option | null;
@@ -307,11 +399,11 @@ export function ReservationHotelPurchase({
   let hotelTotal = '';
 
   try {
-    hotelTotal = reservationServicePurchaseTotal(
-      hotelBase,
-      hotelFactor,
+    hotelTotal = hotelPassengerPurchaseInput(
+      hotelPassengers,
+      nightlyPrices,
       nights,
-    );
+    ).amount;
   } catch {
     /* Validated on save. */
   }
@@ -347,8 +439,13 @@ export function ReservationHotelPurchase({
       if (hotel) {
         if (!hotelSupplier || !hotelCurrency || !nights || !hotelTotal)
           throw new Error(
-            'کارگزار، ارز، قیمت پایه، ضریب و تاریخ اقامت قرارداد را تکمیل کنید.',
+            'کارگزار، ارز، تاریخ اقامت و حداقل یک قیمت خرید مسافر را تکمیل کنید.',
           );
+        const hotelPricing = hotelPassengerPurchaseInput(
+          hotelPassengers,
+          nightlyPrices,
+          nights,
+        );
         purchases.push({
           serviceClientKey: hotel.clientKey,
           coveredServiceClientKeys: [hotel.clientKey],
@@ -358,7 +455,9 @@ export function ReservationHotelPurchase({
           ...(fxRates[hotelCurrency.id]
             ? { purchaseRateToIrr: fxRates[hotelCurrency.id] }
             : {}),
-          pricingCalculation: { baseAmount: hotelBase, factor: hotelFactor },
+          ...(hotelPricing.legacyGuestPrices
+            ? { legacyGuestPrices: hotelPricing.legacyGuestPrices }
+            : { passengerPrices: hotelPricing.passengerPrices }),
         });
       }
       if (transfers.length) {
@@ -390,9 +489,9 @@ export function ReservationHotelPurchase({
       }
       if (
         !purchases.length ||
-        purchases.some((purchase) => moneyUnits(purchase.amount) <= 0n)
+        purchases.some((purchase) => moneyUnits(purchase.amount) < 0n)
       )
-        throw new Error('مبلغ خرید باید مثبت باشد.');
+        throw new Error('مبلغ خرید باید صفر یا بیشتر باشد.');
       const base = getPublicApiBaseUrl();
       if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
       const payload = JSON.stringify({
@@ -471,8 +570,8 @@ export function ReservationHotelPurchase({
           </h4>
           <div className="grid gap-3 sm:grid-cols-2">
             <FormField label="کارگزار هتل">
-              <Lookup
-                kind="brokers"
+              <ReservationPurchaseBrokerLookup
+                requestId={request.id}
                 label="کارگزار هتل"
                 value={hotelSupplier}
                 onChange={setHotelSupplier}
@@ -493,24 +592,65 @@ export function ReservationHotelPurchase({
           <p className="text-xs text-muted-foreground">
             اقامت قرارداد: {checkIn || '—'} تا {checkOut || '—'}
           </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <FormField label="قیمت پایه هتل">
-              <MoneyInput
-                aria-label="قیمت پایه هتل"
-                value={hotelBase}
-                onValueChange={setHotelBase}
-              />
-            </FormField>
-            <FormField label="ضریب هتل">
-              <MoneyInput
-                aria-label="ضریب هتل"
-                value={hotelFactor}
-                onValueChange={setHotelFactor}
-              />
-            </FormField>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr>
+                  <th>مسافر</th>
+                  <th>رده سنی</th>
+                  <th>قیمت هر شب</th>
+                  <th>جمع خرید</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hotelPassengers.map((person) => {
+                  let total = '';
+                  try {
+                    if (nightlyPrices[person.id]?.trim())
+                      total = hotelPurchaseTotal(
+                        nightlyPrices[person.id]!,
+                        'NIGHT',
+                        checkIn,
+                        checkOut,
+                      );
+                  } catch {
+                    /* Keep invalid input visible for correction. */
+                  }
+                  return (
+                    <tr key={person.id}>
+                      <td className="p-2">{person.name}</td>
+                      <td className="p-2">
+                        {person.age === 'CHD'
+                          ? 'کودک'
+                          : person.age === 'INF'
+                            ? 'نوزاد'
+                            : 'بزرگسال'}
+                      </td>
+                      <td className="p-2">
+                        <MoneyInput
+                          aria-label={`قیمت هر شب ${person.name}`}
+                          value={nightlyPrices[person.id] ?? ''}
+                          onValueChange={(value) =>
+                            setNightlyPrices((previous) => ({
+                              ...previous,
+                              [person.id]: value,
+                            }))
+                          }
+                        />
+                      </td>
+                      <td className="p-2">
+                        {total ? formatSalesMoney(total) : '—'}{' '}
+                        {hotelCurrency?.id ?? ''}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          <p className="text-sm text-muted-foreground">
-            قیمت پایه × ضریب × {nights || '—'} شب قرارداد
+          <p className="text-xs text-muted-foreground">
+            قیمت‌های خالی در جمع خرید محاسبه نمی‌شوند؛ مبلغ هر مسافر در تعداد شب
+            قرارداد ضرب می‌شود.
           </p>
           {hotelPurchase && (
             <p className="text-sm">
@@ -577,8 +717,8 @@ export function ReservationHotelPurchase({
               )}
               <div className="grid gap-3 sm:grid-cols-2">
                 <FormField label="کارگزار ترانسفر">
-                  <Lookup
-                    kind="brokers"
+                  <ReservationPurchaseBrokerLookup
+                    requestId={request.id}
                     label={title + ' · کارگزار ترانسفر'}
                     value={
                       draft.supplier ?? (!splitTransfers ? hotelSupplier : null)

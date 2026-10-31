@@ -155,7 +155,7 @@ export function ticketPurchaseDate(
   return dateBy === 'ENTRY'
     ? item.request.createdAt
     : dateBy === 'DEPARTURE'
-      ? item.request.serviceDate
+      ? (item.flightGroup?.departureDate ?? item.request.serviceDate)
       : dateBy === 'PURCHASE'
         ? (item.cost?.createdAt ?? null)
         : null;

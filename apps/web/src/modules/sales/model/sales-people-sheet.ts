@@ -1,4 +1,7 @@
-import { usesRoomDrivenGuests } from './contract-guest-stays';
+import {
+  usesRoomDrivenGuests,
+  roomDrivenFlightParty,
+} from './contract-guest-stays';
 import { tehranToday } from '@/lib/passport-dates';
 import type {
   CustomerDetail,
@@ -6,7 +9,7 @@ import type {
   SalesBuyerContactV1,
 } from '@nora/contracts';
 import {
-  customersApi,
+  salesPeopleApi as customersApi,
   CustomersApiError,
   isValidIranianNationalId,
   normalizeNationalId,
@@ -28,6 +31,7 @@ export interface PeopleRow {
   person?: { id: string; displayName: string };
   reviewRequired?: boolean;
   pendingNationalId?: string;
+  pendingRegistration?: { key: string; input: CustomerMutationRequest };
   previousRegistrationRetained?: boolean;
   profile?: CustomerDetail;
   savedPassportNumber?: string;
@@ -88,13 +92,15 @@ export function initialSalesPeopleDraft(
     mode:
       state.customerKind === 'organization'
         ? 'organization'
-        : state.firstPassengerIsCustomer === false && state.buyerContact
+        : state.legacyContract ||
+            (state.firstPassengerIsCustomer === false && state.buyerContact)
           ? 'person'
           : 'first-passenger',
     rows,
     separateCustomer:
-      state.firstPassengerIsCustomer === false &&
-      Boolean(state.buyerContact) &&
+      (state.legacyContract ||
+        (state.firstPassengerIsCustomer === false &&
+          Boolean(state.buyerContact))) &&
       state.customerKind !== 'organization',
     ...(state.buyerContact ? { buyerContact: state.buyerContact } : {}),
     organization:
@@ -128,21 +134,68 @@ export function normalizeSalesPeopleDraft(
     rows: { ...draft.rows, ...(payer ? { p0: payer, primary: payer } : {}) },
   };
 }
-export const passengerSlotKeys = (state: SalesFormState) => [
-  ...Array.from(
-    {
-      length:
-        salesPassengerCounts(state).total -
-        (usesRoomDrivenGuests(state)
-          ? (state.flightOnlyPassengers?.length ?? 0)
-          : 0),
-    },
-    (_, index) => 'p' + index,
-  ),
-  ...(usesRoomDrivenGuests(state)
-    ? (state.flightOnlyPassengers ?? []).map((p) => p.key)
-    : []),
-];
+export const passengerSlotKeys = (state: SalesFormState) =>
+  state.legacyContract
+    ? []
+    : [
+        ...Array.from(
+          {
+            length:
+              salesPassengerCounts(state).total -
+              (usesRoomDrivenGuests(state)
+                ? (state.flightOnlyPassengers?.length ?? 0)
+                : 0),
+          },
+          (_, index) => 'p' + index,
+        ),
+        ...(usesRoomDrivenGuests(state)
+          ? (state.flightOnlyPassengers ?? []).map((p) => p.key)
+          : []),
+      ];
+
+export function bookedSlotCategory(
+  state: SalesFormState,
+  key: string,
+): 'ADT' | 'CHD' | 'INF' {
+  const extra = state.flightOnlyPassengers?.find((p) => p.key === key);
+  if (extra) return extra.age < 2 ? 'INF' : extra.age < 12 ? 'CHD' : 'ADT';
+  const counts = usesRoomDrivenGuests(state)
+    ? roomDrivenFlightParty(state.hotel.rooms, {
+        adults: 0,
+        childAges: [],
+        infantAges: [],
+      }).passengerComposition
+    : salesPassengerCounts(state);
+  const index = passengerSlotKeys(state).indexOf(key);
+  return index < counts.adults
+    ? 'ADT'
+    : index < counts.adults + counts.children
+      ? 'CHD'
+      : 'INF';
+}
+/** Preserve the explicitly booked child slot even when DOB is optional. */
+export function bookedSlotChildBand(state: SalesFormState, key: string) {
+  if (bookedSlotCategory(state, key) !== 'CHD') return undefined;
+  const extra = state.flightOnlyPassengers?.find((p) => p.key === key);
+  const party = usesRoomDrivenGuests(state)
+    ? roomDrivenFlightParty(state.hotel.rooms, {
+        adults: 0,
+        childAges: [],
+        infantAges: [],
+      })
+    : {
+        passengerComposition: salesPassengerCounts(state),
+        childAges: state.childAges ?? [],
+      };
+  const index =
+    passengerSlotKeys(state).indexOf(key) - party.passengerComposition.adults;
+  const age = extra?.age ?? party.childAges[index];
+  return typeof age === 'number' && age >= 2 && age < 12
+    ? age < 6
+      ? ('AGE_2_6' as const)
+      : ('AGE_6_12' as const)
+    : undefined;
+}
 export const peopleRow = (draft: SalesPeopleDraft, key: string): PeopleRow =>
   draft.rows[key] ?? { values: emptyPeopleValues() };
 export function selectedPeopleRow(person: CustomerDetail): PeopleRow {
@@ -338,20 +391,16 @@ export function peopleCreateInput(
     throw new Error('نام و نام خانوادگی لاتین پاسپورت را کامل کنید.');
   const nationalId = normalizeNationalId(v.nationalId);
   if (
-    (passenger || nationalId) &&
+    nationalId &&
     (!/^\d{10}$/.test(nationalId) || !isValidIranianNationalId(nationalId))
   )
     throw new Error('کد ملی معتبر ۱۰رقمی وارد کنید.');
-  if (passenger && !v.birthDate)
-    throw new Error('تاریخ تولد مسافر الزامی است.');
   const passportNumber = v.passportNumber
     .trim()
     .toUpperCase()
     .replace(/\s+/g, '');
   if (passportNumber && !/^[A-Z0-9-]{4,24}$/.test(passportNumber))
     throw new Error('شماره پاسپورت معتبر نیست.');
-  if (passportIdentity && (!passportNumber || !v.passportExpiryDate))
-    throw new Error('شماره و انقضای پاسپورت برای سفر خارجی الزامی است.');
   if (v.phone.trim() && !/^\+?[0-9]{10,15}$/.test(v.phone.trim()))
     throw new Error('شماره تلفن معتبر وارد کنید.');
   if (v.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email.trim()))
@@ -393,6 +442,7 @@ export function peopleCreateInput(
           birthCountryCode: v.birthCountryCode.trim().toUpperCase(),
         }
       : {}),
+    ...(v.gender ? { gender: v.gender as 'M' | 'F' } : {}),
   };
 }
 export function validateSalesPeopleDraft(
@@ -400,23 +450,23 @@ export function validateSalesPeopleDraft(
   draft: SalesPeopleDraft,
 ) {
   const keys = passengerSlotKeys(state);
-  if (!keys.length) throw new Error('تعداد مسافران را در مرحله اول مشخص کنید.');
+  if (!state.legacyContract && !keys.length)
+    throw new Error('تعداد مسافران را در مرحله اول مشخص کنید.');
   if (draft.buyerContact) {
     const buyer = draft.buyerContact;
     if (
-      !buyer.name.trim() ||
       buyer.name.length > 200 ||
-      !/^\+?[0-9]{10,15}$/.test(buyer.phone.trim()) ||
-      !buyer.address.trim() ||
+      (buyer.phone.trim() !== '' &&
+        !/^\+?[0-9]{10,15}$/.test(buyer.phone.trim())) ||
       buyer.address.length > 1000 ||
       (buyer.postalCode.trim() !== '' &&
         !/^[0-9]{10}$/.test(buyer.postalCode.trim())) ||
       (buyer.landline !== undefined &&
         buyer.landline.trim() !== '' &&
-        !/^\+?[0-9]{10,15}$/.test(buyer.landline.trim()))
+        !/^\+?[0-9]+$/.test(buyer.landline.trim()))
     )
       throw new Error(
-        'نام، شماره تماس و آدرس مشتری را کامل کنید؛ تلفن ثابت اختیاری است و کد پستی در صورت ورود باید ۱۰ رقم باشد.',
+        'اطلاعات واردشده مشتری معتبر نیست؛ شماره تماس، آدرس، تلفن ثابت و کد پستی اختیاری‌اند؛ کد پستی در صورت ورود باید ۱۰ رقم باشد.',
       );
   }
   if (draft.mode === 'organization' && !draft.organization)
@@ -436,15 +486,6 @@ export function validateSalesPeopleDraft(
         `${label}: نتیجه ثبت قبلی نیازمند بررسی است؛ پرونده موجود را انتخاب کنید.`,
       );
     validatePassport(row);
-    if (
-      key !== 'primary' &&
-      row.profile &&
-      !row.profile.roles?.includes('passenger') &&
-      !row.values.nationalId.trim()
-    )
-      throw new Error(
-        `${label}: برای ثبت مشتری به‌عنوان مسافر، کد ملی معتبر را وارد کنید.`,
-      );
     if (international && key !== 'primary') {
       const v = row.values;
       if (
@@ -453,10 +494,6 @@ export function validateSalesPeopleDraft(
       )
         throw new Error(
           `${label}: نام و نام خانوادگی لاتین پاسپورت الزامی است.`,
-        );
-      if (!v.passportNumber.trim() || !v.passportExpiryDate)
-        throw new Error(
-          `${label}: شماره و انقضای پاسپورت برای سفر خارجی الزامی است.`,
         );
       if (!['M', 'F'].includes(v.gender))
         throw new Error(`${label}: جنسیت را با M یا F ثبت کنید.`);
@@ -506,13 +543,15 @@ export function validateSalesPeopleDraft(
     customerId: key,
     displayName: key,
     birthDate: peopleRow(draft, key).values.birthDate,
+    ageCategory: bookedSlotCategory(state, key),
   }));
   if (
-    !salesTravelDate(state) ||
+    !state.legacyContract &&
+    salesTravelDate(state) &&
     !salesPassengerCompositionMatches({ ...state, passengers })
   )
     throw new Error(
-      'تاریخ تولد همه مسافران را کامل کنید؛ تعداد بزرگسال، کودک و نوزاد باید با مرحله اول یکسان باشد.',
+      'تعداد و رده سنی مسافران باید با ترکیب ثبت‌شده در مرحله اول یکسان باشد.',
     );
 }
 function registrationNames(row: PeopleRow, passportIdentity: boolean) {
@@ -561,8 +600,10 @@ export async function saveSalesPeopleDraft(
 ) {
   draft = normalizeSalesPeopleDraft(draft);
   const contractAcquaintanceMethodId =
-    draft.acquaintanceMethodId ??
-    peopleRow(draft, 'p0').values.acquaintanceMethodId;
+    draft.mode === 'organization'
+      ? undefined
+      : (draft.acquaintanceMethodId ??
+        peopleRow(draft, 'p0').values.acquaintanceMethodId);
   if (contractAcquaintanceMethodId)
     draft = setSalesPeopleAcquaintanceMethod(
       draft,
@@ -578,10 +619,25 @@ export async function saveSalesPeopleDraft(
     let row = peopleRow(current, key);
     if (!row.reviewRequired && !(row.person && !row.profile)) continue;
     if (
-      key === 'primary' &&
       !row.person &&
-      !normalizeNationalId(row.values.nationalId)
-    )
+      !normalizeNationalId(row.values.nationalId) &&
+      row.pendingRegistration
+    ) {
+      const profile = (
+        await api.create(
+          row.pendingRegistration.input,
+          row.pendingRegistration.key,
+        )
+      ).data;
+      current = editPeopleRow(
+        current,
+        key,
+        adoptRegisteredPerson(row, profile),
+      );
+      onProgress(current);
+      continue;
+    }
+    if (!row.person && !normalizeNationalId(row.values.nationalId))
       throw new Error(
         'نتیجه ثبت مشتری قطعی نیست؛ پرونده موجود مشتری را انتخاب کنید تا ثبت تکراری انجام نشود.',
       );
@@ -687,41 +743,51 @@ export async function saveSalesPeopleDraft(
           ]),
         ];
         const number = row.values.passportNumber.trim();
-        const updated = (
-          await api.update(row.person.id, {
-            kind: 'person',
-            displayName: Object.values(
-              registrationNames(row, passportIdentity && key !== 'primary'),
-            ).join(' '),
-            ...registrationNames(row, passportIdentity && key !== 'primary'),
-            acquaintanceMethodId: acquaintanceChanged
-              ? row.values.acquaintanceMethodId || null
-              : profile.acquaintanceMethodId,
-            roles,
-            version: profile.version,
-            ...(row.values.nationalId !== baseline.nationalId
-              ? { nationalId: normalizeNationalId(row.values.nationalId) }
-              : {}),
-            ...(row.values.birthDate
-              ? { birthDate: row.values.birthDate }
-              : {}),
-            passportFirstName: row.values.passportFirstName || null,
-            passportLastName: row.values.passportLastName || null,
-            gender: (row.values.gender || null) as 'M' | 'F' | null,
-            nationalityCode: row.values.nationalityCode || null,
-            passportIssuingCountryCode:
-              row.values.passportIssuingCountryCode || null,
-            birthCountryCode: row.values.birthCountryCode || null,
-            ...(passportChanged
-              ? { passportExpiryDate: row.values.passportExpiryDate || null }
-              : {}),
-            ...(number &&
-            number !== profile.maskedPassportNumber &&
-            number !== profile.passportNumber
-              ? { passportNumber: number }
-              : {}),
-          })
-        ).data;
+        let updated: CustomerDetail;
+        try {
+          updated = (
+            await api.update(row.person.id, {
+              kind: 'person',
+              displayName: Object.values(
+                registrationNames(row, passportIdentity && key !== 'primary'),
+              ).join(' '),
+              ...registrationNames(row, passportIdentity && key !== 'primary'),
+              acquaintanceMethodId: acquaintanceChanged
+                ? row.values.acquaintanceMethodId || null
+                : profile.acquaintanceMethodId,
+              roles,
+              version: profile.version,
+              ...(row.values.nationalId !== baseline.nationalId
+                ? { nationalId: normalizeNationalId(row.values.nationalId) }
+                : {}),
+              ...(row.values.birthDate
+                ? { birthDate: row.values.birthDate }
+                : {}),
+              passportFirstName: row.values.passportFirstName || null,
+              passportLastName: row.values.passportLastName || null,
+              gender: (row.values.gender || null) as 'M' | 'F' | null,
+              nationalityCode: row.values.nationalityCode || null,
+              passportIssuingCountryCode:
+                row.values.passportIssuingCountryCode || null,
+              birthCountryCode: row.values.birthCountryCode || null,
+              ...(passportChanged
+                ? { passportExpiryDate: row.values.passportExpiryDate || null }
+                : {}),
+              ...(number &&
+              number !== profile.maskedPassportNumber &&
+              number !== profile.passportNumber
+                ? { passportNumber: number }
+                : {}),
+            })
+          ).data;
+        } catch (error) {
+          current = editPeopleRow(current, key, {
+            ...row,
+            reviewRequired: mutationNeedsReview(error),
+          });
+          onProgress(current);
+          throw error;
+        }
         current = editPeopleRow(current, key, {
           ...row,
           profile: updated,
@@ -778,26 +844,31 @@ export async function saveSalesPeopleDraft(
       continue;
     }
     let created: CustomerDetail;
+    const registrationInput = peopleCreateInput(
+      row,
+      key === 'primary' || (draft.mode === 'first-passenger' && key === 'p0'),
+      key !== 'primary',
+      passportIdentity && key !== 'primary',
+    );
+    const registration =
+      row.pendingRegistration &&
+      JSON.stringify(row.pendingRegistration.input) ===
+        JSON.stringify(registrationInput)
+        ? row.pendingRegistration
+        : { key: crypto.randomUUID(), input: registrationInput };
     try {
-      created = (
-        await api.create(
-          peopleCreateInput(
-            row,
-            key === 'primary' ||
-              (draft.mode === 'first-passenger' && key === 'p0'),
-            key !== 'primary',
-            passportIdentity && key !== 'primary',
-          ),
-        )
-      ).data;
+      created = (await api.create(registration.input, registration.key)).data;
     } catch (error) {
-      const uncertain = mutationNeedsReview(error);
+      const uncertain =
+        mutationNeedsReview(error) &&
+        !(error instanceof CustomersApiError && error.status === 409);
       current = editPeopleRow(current, key, {
         ...row,
         reviewRequired: uncertain,
         ...(uncertain
           ? {
               pendingNationalId: normalizeNationalId(row.values.nationalId),
+              pendingRegistration: registration,
             }
           : {}),
       });
@@ -904,6 +975,7 @@ export async function saveSalesPeopleDraft(
   validateSalesPeopleDraft(state, current);
   const passengers = keys.map((key) => {
     const row = peopleRow(current, key);
+    const childAgeBand = bookedSlotChildBand(state, key);
     return {
       customerId: row.person!.id,
       displayName:
@@ -913,28 +985,35 @@ export async function saveSalesPeopleDraft(
           ? `${row.values.passportFirstName.trim()} ${row.values.passportLastName.trim()}`.toUpperCase()
           : row.person!.displayName,
       birthDate: row.values.birthDate,
+      ...(childAgeBand ? { childAgeBand } : {}),
+      ...(!row.values.birthDate
+        ? { ageCategory: bookedSlotCategory(state, key) }
+        : {}),
     };
   });
   const customer =
     draft.mode === 'organization'
       ? draft.organization!
       : peopleRow(current, draft.mode === 'person' ? 'primary' : 'p0').person!;
+  const buyer = current.buyerContact;
+  const buyerContact = buyer
+    ? {
+        name: buyer.name.trim() || customer.displayName,
+        phone: buyer.phone.trim(),
+        address: buyer.address.trim(),
+        postalCode: buyer.postalCode.trim(),
+        ...(buyer.landline !== undefined
+          ? { landline: buyer.landline.trim() }
+          : {}),
+      }
+    : undefined;
   return {
-    draft: current,
+    draft: buyerContact ? { ...current, buyerContact } : current,
     patch: {
       passengers,
       customerId: customer.id,
-      customerName: draft.buyerContact?.name.trim() ?? customer.displayName,
-      ...(draft.buyerContact
-        ? {
-            buyerContact: Object.fromEntries(
-              Object.entries(draft.buyerContact).map(([key, value]) => [
-                key,
-                value.trim(),
-              ]),
-            ) as SalesBuyerContactV1,
-          }
-        : {}),
+      customerName: buyerContact?.name || customer.displayName,
+      ...(buyerContact ? { buyerContact } : {}),
       customerKind:
         draft.mode === 'organization'
           ? ('organization' as const)

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { customersApi, customerErrorMessage } from './client';
+import type { CustomerMutationRequest } from '@nora/contracts';
+import { customersApi, salesPeopleApi, customerErrorMessage } from './client';
+import { SessionRefreshUnavailableError } from '@/lib/auth-session';
 
 const originalBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 afterEach(() => {
@@ -10,6 +12,53 @@ afterEach(() => {
 });
 
 describe('customers browser client', () => {
+  it('retries a lost Sales creation response once with the same registration receipt', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError('network'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { id: 'saved' } }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+    const input: CustomerMutationRequest = {
+      kind: 'person',
+      firstName: 'Synthetic',
+      lastName: 'Person',
+      displayName: 'Synthetic Person',
+      roles: ['passenger'],
+    };
+    await expect(salesPeopleApi.create(input, 'receipt')).resolves.toEqual({
+      data: { id: 'saved' },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0]).toEqual(fetchMock.mock.calls[1]);
+    expect(fetchMock.mock.calls[0]?.[1].headers['x-registration-key']).toBe(
+      'receipt',
+    );
+  });
+  it('does not replay denied Sales creation or an unkeyed uncertain creation', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: async () => ({ message: 'denied' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const input: CustomerMutationRequest = {
+      kind: 'person',
+      displayName: 'Synthetic Person',
+      roles: ['passenger'],
+    };
+    await expect(salesPeopleApi.create(input, 'receipt')).rejects.toThrow(
+      'denied',
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fetchMock.mockReset().mockRejectedValue(new TypeError('network'));
+    await expect(salesPeopleApi.create(input)).rejects.toThrow('network');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
   it('recovers registration by a credentialed non-cacheable POST without putting identity in the URL', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const fetchMock = vi
@@ -42,7 +91,7 @@ describe('customers browser client', () => {
     ];
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ user: { branches } }),
+      json: async () => ({ user: { id: 'synthetic-user', branches } }),
     });
     vi.stubGlobal('fetch', fetchMock);
     const [first, second] = await Promise.all([
@@ -69,11 +118,11 @@ describe('customers browser client', () => {
       .mockRejectedValueOnce(new Error('network failure'))
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ user: { branches: [] } }),
+        json: async () => ({ user: { id: 'synthetic-user', branches: [] } }),
       });
     vi.stubGlobal('fetch', fetchMock);
-    await expect(customersApi.branchReferences()).rejects.toThrow(
-      'دریافت نام شعب مجاز ناموفق بود.',
+    await expect(customersApi.branchReferences()).rejects.toBeInstanceOf(
+      SessionRefreshUnavailableError,
     );
     await expect(customersApi.branchReferences()).resolves.toEqual([]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -186,7 +235,7 @@ describe('customers browser client', () => {
       .mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => ({ user: { branches: [] } }),
+        json: async () => ({ user: { id: 'synthetic-user', branches: [] } }),
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -230,4 +279,42 @@ it('shows actual validation fields in Persian while retaining business errors', 
       },
     }),
   ).toBe('پرونده موجود است.');
+});
+
+it('routes new-contract person operations to the bounded Sales workflow surface', async () => {
+  process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValue({ ok: true, json: async () => ({ data: null }) });
+  vi.stubGlobal('fetch', fetchMock);
+  await salesPeopleApi.detail('person', 'customer-verification');
+  await salesPeopleApi.create({
+    kind: 'person',
+    displayName: 'Synthetic Person',
+    firstName: 'Synthetic',
+    lastName: 'Person',
+    roles: ['passenger'],
+  });
+  await salesPeopleApi.update('person', {
+    kind: 'person',
+    displayName: 'Synthetic Person',
+    version: 1,
+    roles: ['passenger'],
+  });
+  await salesPeopleApi.addContact('person', {
+    type: 'phone',
+    value: '09120000000',
+    version: 1,
+  });
+  expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+    'http://localhost:4000/api/v1/sales/people/person',
+    'http://localhost:4000/api/v1/sales/people',
+    'http://localhost:4000/api/v1/sales/people/person',
+    'http://localhost:4000/api/v1/sales/people/person/contacts',
+  ]);
+  for (const call of fetchMock.mock.calls)
+    expect(call[1]).toMatchObject({
+      credentials: 'include',
+      cache: 'no-store',
+    });
 });

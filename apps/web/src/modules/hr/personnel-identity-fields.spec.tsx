@@ -74,9 +74,6 @@ describe('observed Radan personnel entry', () => {
       />,
     );
     for (const label of [
-      'اطلاعات فردی',
-      'اطلاعات کاربری',
-      'تایید و ثبت',
       'کد ملی',
       'شماره شناسنامه',
       'نام پدر',
@@ -92,11 +89,11 @@ describe('observed Radan personnel entry', () => {
     ])
       expect(html).toContain(label);
     expect(html).toContain('accept="image/jpeg,image/png,image/webp"');
-    expect(html).toContain('aria-current="step"');
+    expect(html).not.toContain('مراحل فرم پرسنلی');
     expect(html).toContain('value="مرد"');
   });
-  it('blocks incomplete identity and accepts a Persian-digit national code', () => {
-    expect(personnelIdentityError(defaultPersonnelIdentity)).not.toBe('');
+  it('accepts an optional national code and still requires province before city', () => {
+    expect(personnelIdentityError(defaultPersonnelIdentity)).toBe('');
     const values = [...defaultPersonnelIdentity];
     values[2] = '۰۱۲۳۴۵۶۷۸۹';
     expect(personnelIdentityError(values)).toBe('');
@@ -121,5 +118,33 @@ describe('observed Radan personnel entry', () => {
         Array.from({ length: 20 }, (_, i) => ['موبایل', String(i)]),
       ),
     ).not.toBe('');
+  });
+});
+
+describe('optional personnel national ID', () => {
+  it('allows missing or blank IDs and validates supplied digits', () => {
+    for (const id of ['', '   ', '0123456789', '۰۱۲۳۴۵۶۷۸۹']) {
+      const values = [...defaultPersonnelIdentity];
+      values[2] = id;
+      expect(personnelIdentityError(values)).toBe('');
+    }
+    const invalid = [...defaultPersonnelIdentity];
+    invalid[2] = '123';
+    expect(personnelIdentityError(invalid)).not.toBe('');
+    const html = renderToStaticMarkup(
+      <PersonnelIdentityFields
+        values={[...defaultPersonnelIdentity]}
+        onChange={() => {}}
+        groupControl={null}
+        contacts={[]}
+        onContacts={() => {}}
+        onPhoto={() => {}}
+        onPhotoValidUntil={() => {}}
+        photoValidityError=""
+        error=""
+      />,
+    );
+    expect(html).not.toMatch(/required=""/);
+    expect(html).not.toContain('کد ملی *');
   });
 });

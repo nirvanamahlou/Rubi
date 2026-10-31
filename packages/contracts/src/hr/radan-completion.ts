@@ -16,6 +16,7 @@ export const HR_RADAN_COMPLETION_COLUMNS = {
     'ملیت',
     'وضعیت نظام وظیفه',
     'نشانی',
+    'کد پستی',
   ],
   'employee.phones': ['نوع شماره تماس', 'شماره تماس'],
   'time.calculationSettings': [
@@ -58,6 +59,7 @@ export const HR_RADAN_COMPLETION_COLUMNS = {
     'انتقال کمتر ساعت:دقیقه',
     'سوخت کمتر ساعت:دقیقه',
     'بازخرید کمتر ساعت:دقیقه',
+    'حد پایین ساعت:دقیقه',
   ],
   'requests.patterns': ['نام الگو', 'توضیحات'],
   'requests.patternAssignments': ['کارمند'],

@@ -26,7 +26,15 @@ test('PBX uploader preserves bytes, stable replay identity and does not expose c
     assert.ok(!JSON.stringify(body).includes('synthetic'.repeat(5)));
     requests.push({ path: request.url, body });
     response.writeHead(201, { 'content-type': 'application/json' });
-    response.end('{}');
+    response.end(
+      JSON.stringify(
+        request.url.endsWith('/chunks')
+          ? { ok: true }
+          : request.url.endsWith('/complete')
+            ? { id: request.url.split('/')[2], state: 'COMPLETE' }
+            : { id: body.id, state: 'UPLOADING' },
+      ),
+    );
   }).listen(0, '127.0.0.1');
   await once(server, 'listening');
   const env = {

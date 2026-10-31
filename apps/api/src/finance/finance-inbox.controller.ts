@@ -230,6 +230,35 @@ export class FinanceInboxController {
     };
   }
 
+  @Get('reservation-document-delivery/:contractId')
+  @RequirePermissions('reservations.documents.manage')
+  @Header('Cache-Control', 'private, no-store')
+  async reservationDocumentDelivery(
+    @Param('contractId', ParseUUIDPipe) contractId: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return {
+      data: await this.inbox.reservationDocumentDelivery(
+        contractId,
+        request.actor,
+      ),
+    };
+  }
+  @Post('reservation-document-delivery/:contractId')
+  @RequirePermissions('reservations.documents.manage')
+  async reservationDocumentDeliveryDecision(
+    @Param('contractId', ParseUUIDPipe) contractId: string,
+    @Body() input: FinanceCustomerDocumentDeliveryCommandV1,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return {
+      data: await this.inbox.decideReservationDocumentDelivery(
+        contractId,
+        input,
+        request.actor,
+      ),
+    };
+  }
   @Post('customer-document-delivery/:contractId')
   @RequirePermissions('finance.financial_release.approve')
   async customerDocumentDeliveryDecision(

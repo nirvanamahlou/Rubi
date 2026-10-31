@@ -118,3 +118,14 @@ describe('tour departure ticket range', () => {
     );
   });
 });
+
+it('loads authorized charter history separately from selectable inventory', async () => {
+  vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+  const data = [{ originId: 'a', destinationId: 'b' }];
+  const fetcher = vi
+    .fn()
+    .mockResolvedValue({ ok: true, json: async () => ({ version: 1, data }) });
+  vi.stubGlobal('fetch', fetcher);
+  expect((await toursApi.charterRoutes()).data).toEqual(data);
+  expect(fetcher.mock.calls[0]?.[0]).toContain('/offers/charter-routes');
+});

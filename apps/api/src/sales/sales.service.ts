@@ -1,11 +1,22 @@
+import { contractPassengerAgeCategory } from './sales.domain';
+import {
+  readLegacyServiceParties,
+  legacyServiceHeadcount,
+} from '@nora/contracts';
+import { salesListTravelSummary } from './sales-list-summary';
+import {
+  canSelfServeSalesContract,
+  hasSalesContractSelfService,
+} from '@nora/contracts';
+import { enforceSalesHotelCapacity } from '@nora/contracts';
 import {
   hasConfirmedReceiptFunds,
   netSalesPayments,
 } from './sales-financial-settlement';
 import { financialDate } from '../finance/accounting/financial-event.public';
 import { PackageTourPricingService } from '../package-pricing/package-tour-pricing.service';
-import { isOptionalOperationReason } from '@nora/contracts';
-import { salesHotelRoomSummary } from '@nora/contracts';
+import { canViewRoute, isOptionalOperationReason } from '@nora/contracts';
+import { salesHotelRoomSummary, salesRoomCategories } from '@nora/contracts';
 import type { DisplayLanguage } from '../common/i18n/language';
 import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { expectedTicketSale } from './sales-ticket-quote';
@@ -60,7 +71,6 @@ import {
 import {
   calculateSalesBalances,
   passengerAgeYears,
-  passengerAgeCategory,
   SalesDomainError,
   salesFingerprint,
   sumSalesDecimals,
@@ -128,6 +138,8 @@ function paymentInput(row: SalesContractRow['payments'][number]) {
     method: row.method,
     description: row.description,
     paymentReference: row.paymentReference,
+    destinationAccountId: row.destinationAccountId,
+    destinationAccountTitle: row.destinationAccountTitle,
     check,
   };
 }
@@ -211,11 +223,35 @@ export function presentSalesContract(
     financeConfirmedAt: date(item.financeConfirmedAt),
     financeDecisionReason: item.financeDecisionReason,
   }));
+  const servicesDetail = row.services.map((service) => ({
+    clientKey: service.clientKey,
+    kind: service.kind,
+    referenceId: service.referenceId,
+    titleSnapshot: service.titleSnapshot,
+    status: service.status,
+    ...(Array.isArray(service.pricing)
+      ? {
+          pricing: service.pricing as unknown as SalesServicePricingV1[],
+        }
+      : {}),
+    ...(service.metadata &&
+    typeof service.metadata === 'object' &&
+    !Array.isArray(service.metadata)
+      ? {
+          metadata: service.metadata as Record<
+            string,
+            string | number | boolean | null
+          >,
+        }
+      : {}),
+  }));
+  const legacyCount = legacyServiceHeadcount(servicesDetail);
   return {
     id: row.id,
     contractNumber: row.contractNumber,
     customerId: row.customerId,
     customerNameSnapshot: row.customerNameSnapshot,
+    ...(legacyCount !== null ? { passengerCount: legacyCount } : {}),
     passengerNames: row.passengers.map(
       ({ displayNameSnapshot }) => displayNameSnapshot,
     ),
@@ -239,33 +275,12 @@ export function presentSalesContract(
     updatedAt: row.updatedAt.toISOString(),
     tripType: row.tripType,
     payerCustomerId: row.payerCustomerId,
-    servicesDetail: row.services.map((service) => ({
-      clientKey: service.clientKey,
-      kind: service.kind,
-      referenceId: service.referenceId,
-      titleSnapshot: service.titleSnapshot,
-      status: service.status,
-      ...(Array.isArray(service.pricing)
-        ? {
-            pricing: service.pricing as unknown as SalesServicePricingV1[],
-          }
-        : {}),
-      ...(service.metadata &&
-      typeof service.metadata === 'object' &&
-      !Array.isArray(service.metadata)
-        ? {
-            metadata: service.metadata as Record<
-              string,
-              string | number | boolean | null
-            >,
-          }
-        : {}),
-    })),
+    servicesDetail,
     passengersDetail: row.passengers.map((passenger) => ({
       id: passenger.id,
       customerId: passenger.customerId,
       displayNameSnapshot: passenger.displayNameSnapshot,
-      birthDate: passenger.birthDate.toISOString().slice(0, 10),
+      birthDate: passenger.birthDate?.toISOString().slice(0, 10) ?? '',
       ageCategory: passenger.ageCategory,
       ...(passenger.childAgeBand === 'AGE_2_6' ||
       passenger.childAgeBand === 'AGE_6_12'
@@ -316,6 +331,36 @@ export function presentSalesContract(
             row.services.find(({ id }) => id === row.hotelSelection?.serviceId)
               ?.clientKey ?? '',
           hotelId: row.hotelSelection.hotelId,
+          ...(row.hotelSelection.additionalStays?.length
+            ? {
+                additionalStays: row.hotelSelection.additionalStays.map(
+                  (stay) => ({
+                    hotelId: stay.hotelId,
+                    hotelNameSnapshot: stay.hotelNameSnapshot,
+                    cityId: stay.cityId,
+                    checkInDate: stay.checkInDate.toISOString().slice(0, 10),
+                    checkOutDate: stay.checkOutDate.toISOString().slice(0, 10),
+                    ...(stay.rooms?.length
+                      ? {
+                          rooms: stay.rooms.map((room) => ({
+                            ordinal: room.ordinal,
+                            roomTypeId: room.roomTypeId,
+                            roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                            adults: room.adults,
+                            childAges: room.childAges as number[],
+                            ...(room.roomCategory
+                              ? {
+                                  roomCategory:
+                                    room.roomCategory as SalesRoomCategory,
+                                }
+                              : {}),
+                          })),
+                        }
+                      : {}),
+                  }),
+                ),
+              }
+            : {}),
           hotelNameSnapshot: row.hotelSelection.hotelNameSnapshot,
           cityId: row.hotelSelection.cityId,
           checkInDate: row.hotelSelection.checkInDate
@@ -396,11 +441,15 @@ export function presentSalesContract(
 
 function summary(detail: SalesContractDetail): SalesContractSummary {
   return {
+    ...salesListTravelSummary(detail),
     id: detail.id,
     contractNumber: detail.contractNumber,
     customerId: detail.customerId,
     customerNameSnapshot: detail.customerNameSnapshot,
     passengerNames: detail.passengerNames,
+    ...(detail.passengerCount !== undefined
+      ? { passengerCount: detail.passengerCount }
+      : {}),
     ownerUserId: detail.ownerUserId,
     assignedUserId: detail.assignedUserId,
     branchId: detail.branchId,
@@ -460,6 +509,71 @@ export class SalesService {
       data: await this.hotelRates.availableRoomRates({ branchId, ...input }),
     };
   }
+  private async assertAdditionalHotelStays(
+    input: SalesContractCreateRequest,
+    existing?: SalesContractDetail['hotelSelection'],
+  ) {
+    const hotel = input.hotelSelection;
+    if (!hotel?.additionalStays?.length) return;
+    if (
+      input.services.some(
+        (service) =>
+          service.metadata?.packagePublishedSale ||
+          service.metadata?.tourDepartureId,
+      )
+    )
+      throw new BadRequestException(
+        'Composite itinerary is not part of this published package',
+      );
+    if (!this.references)
+      throw new BadRequestException('Hotel reference service unavailable');
+    for (const stay of [hotel, ...hotel.additionalStays]) {
+      const previous =
+        existing &&
+        [existing, ...(existing.additionalStays ?? [])].find(
+          (item) =>
+            item.hotelId === stay.hotelId &&
+            item.cityId === stay.cityId &&
+            item.hotelNameSnapshot === stay.hotelNameSnapshot &&
+            item.checkInDate === stay.checkInDate &&
+            item.checkOutDate === stay.checkOutDate &&
+            JSON.stringify(item.rooms ?? []) ===
+              JSON.stringify(stay.rooms ?? []),
+        );
+      if (previous) continue;
+      const reference = (await this.references.detail('hotels', stay.hotelId))
+        .data;
+      if (
+        reference.status !== 'active' ||
+        String(reference.attributes.cityId) !== stay.cityId ||
+        reference.attributes.isSaleableReference === false
+      )
+        throw new BadRequestException('Invalid hotel itinerary reference');
+      if (stay.hotelNameSnapshot !== reference.name)
+        throw new BadRequestException(
+          'Hotel reference changed; refresh the selection',
+        );
+      if (stay !== hotel && stay.rooms?.length) {
+        const linked = String(reference.attributes.roomTypeIds ?? '')
+          .split(',')
+          .map((id) => id.trim());
+        for (const room of stay.rooms) {
+          const roomReference = (
+            await this.references.detail('room-types', room.roomTypeId)
+          ).data;
+          if (
+            !linked.includes(room.roomTypeId) ||
+            roomReference.status !== 'active' ||
+            roomReference.name !== room.roomTypeNameSnapshot
+          )
+            throw new BadRequestException(
+              'نوع اتاق به هتل انتخاب‌شده متصل نیست.',
+            );
+        }
+      }
+    }
+  }
+
   private async assertIndividualHotelRooms(
     hotel: NonNullable<SalesContractCreateRequest['hotelSelection']>,
     branchId: string,
@@ -502,6 +616,7 @@ export class SalesService {
     input: SalesContractCreateRequest,
     branchId: string,
   ): Promise<void> {
+    if (!enforceSalesHotelCapacity()) return;
     const hotel = input.hotelSelection;
     if (!hotel) return;
     if (!this.hotelRates)
@@ -555,6 +670,7 @@ export class SalesService {
   private async assertPresentedHotelRoomCapacity(
     contract: SalesContractDetail,
   ): Promise<void> {
+    if (!enforceSalesHotelCapacity()) return;
     const hotel = contract.hotelSelection;
     if (!hotel) return;
     if (!this.hotelRates)
@@ -624,6 +740,13 @@ export class SalesService {
   }
 
   private assertRead(row: SalesContractRow, actor: AuthenticatedActor): void {
+    if (
+      has(actor, 'sales.contracts.create') &&
+      canViewRoute(actor.permissions, '/sales/contracts/new') &&
+      row.ownerUserId === actor.userId &&
+      actor.branchIds.includes(row.branchId)
+    )
+      return;
     if (has(actor, 'sales.contracts.read.all')) return;
     if (
       has(actor, 'sales.contracts.read.branch') &&
@@ -643,6 +766,7 @@ export class SalesService {
   }
 
   private assertUpdate(row: SalesContractRow, actor: AuthenticatedActor): void {
+    if (canSelfServeSalesContract(actor, row)) return;
     if (
       has(actor, 'sales.contracts.update.branch') &&
       actor.branchIds.includes(row.branchId)
@@ -984,6 +1108,8 @@ export class SalesService {
       method: row.method,
       description: row.description,
       paymentReference: row.paymentReference,
+      destinationAccountId: row.destinationAccountId,
+      destinationAccountTitle: row.destinationAccountTitle,
       dueAt: row.dueAt.toISOString(),
       createdAt: row.createdAt.toISOString(),
       createdByUserId: row.createdByUserId,
@@ -1000,6 +1126,27 @@ export class SalesService {
     return { data: presentSalesContract(row, undefined, this.buyerCrypto) };
   }
 
+  async paymentReceiptScope(
+    id: string,
+    actor: AuthenticatedActor,
+    paymentId?: string,
+  ) {
+    const row = await this.repository.findById(id);
+    if (!row) throw new NotFoundException('قرارداد یافت نشد.');
+    this.assertRead(row, actor);
+    if (paymentId && !row.payments.some((p) => p.id === paymentId))
+      throw new NotFoundException('پرداخت متعلق به این قرارداد نیست.');
+    return {
+      branchId: row.branchId,
+      contractNumber: row.contractNumber,
+      ownerUserId: row.ownerUserId,
+      entries: row.payments.map((p) => ({
+        id: p.id,
+        paymentReference: p.paymentReference ?? null,
+        dueAt: p.dueAt.toISOString(),
+      })),
+    };
+  }
   async detail(id: string, actor: AuthenticatedActor) {
     const row = await this.repository.findById(id);
     if (!row)
@@ -1008,12 +1155,15 @@ export class SalesService {
         message: 'قرارداد یافت نشد.',
       });
     this.assertRead(row, actor);
-    const mayReadPayments = has(actor, 'sales.payments.read');
-    const creators = mayReadPayments
-      ? await this.repository.findUserDisplayNames(
-          row.payments.map(({ createdByUserId }) => createdByUserId),
-        )
-      : [];
+    const mayReadPayments =
+      has(actor, 'sales.payments.read') ||
+      canSelfServeSalesContract(actor, row);
+    const creators =
+      mayReadPayments && row.payments.length
+        ? await this.repository.findUserDisplayNames(
+            row.payments.map(({ createdByUserId }) => createdByUserId),
+          )
+        : [];
     const detail = presentSalesContract(
       row,
       new Map(
@@ -1021,6 +1171,11 @@ export class SalesService {
       ),
       this.buyerCrypto,
     );
+    if (this.tickets.currentSelections)
+      detail.ticketSelections = await this.tickets.currentSelections(
+        detail.ticketSelections,
+        row.branchId,
+      );
     return {
       data: mayReadPayments ? detail : { ...detail, payments: [] },
     };
@@ -1070,6 +1225,7 @@ export class SalesService {
     } else if (input.services.some((s) => s.metadata?.packagePublishedSale))
       throw new BadRequestException('قیمت فروش معتبر نیست.');
     await this.assertTour(input, branchId, validatedPublishedHotelId);
+    await this.assertAdditionalHotelStays(input);
     await this.assertHotelRoomCapacity(input, branchId);
     const customer = await this.customers.resolveSnapshot(
       input.customerId,
@@ -1094,6 +1250,7 @@ export class SalesService {
     input: SalesContractCreateRequest & {
       version: number;
       reason?: string | null;
+      preserveContractPrices?: true;
     },
     actor: AuthenticatedActor,
     traceId?: string,
@@ -1131,18 +1288,18 @@ export class SalesService {
           'طرف قرارداد را در بخش طرف قرارداد اصلاح کنید.',
         );
       if (
-        Object.keys(categories).length !== row.passengers.length ||
-        input.passengers.length !== row.passengers.length ||
-        row.passengers.some(
+        Object.keys(categories).length !== input.passengers.length ||
+        input.passengers.some(
           (p) =>
             !['ADT', 'CHD', 'INF'].includes(categories[p.customerId] ?? '') ||
-            !input.passengers.some(
-              (n) =>
-                n.customerId === p.customerId &&
-                n.birthDate.slice(0, 10) ===
-                  p.birthDate.toISOString().slice(0, 10) &&
-                n.displayNameSnapshot === p.displayNameSnapshot,
-            ),
+            (row.passengers.some((old) => old.customerId === p.customerId) &&
+              !row.passengers.some(
+                (n) =>
+                  n.customerId === p.customerId &&
+                  (n.birthDate?.toISOString().slice(0, 10) ?? '') ===
+                    p.birthDate.slice(0, 10) &&
+                  n.displayNameSnapshot === p.displayNameSnapshot,
+              )),
         )
       )
         throw new BadRequestException(
@@ -1150,6 +1307,73 @@ export class SalesService {
         );
       if (row.status === 'CANCELLED')
         throw new ConflictException('قرارداد ابطال‌شده قابل اصلاح نیست.');
+    }
+    if (
+      row.hotelSelection?.additionalStays?.length &&
+      input.hotelSelection &&
+      !Object.hasOwn(input.hotelSelection, 'additionalStays')
+    ) {
+      if (input.hotelSelection.hotelId !== row.hotelSelection.hotelId)
+        throw new BadRequestException(
+          'Review the full hotel itinerary before changing the primary hotel',
+        );
+      input = {
+        ...input,
+        hotelSelection: {
+          ...input.hotelSelection,
+          additionalStays: presentSalesContract(
+            row,
+            undefined,
+            this.buyerCrypto,
+          ).hotelSelection!.additionalStays!,
+        },
+      };
+    }
+    if (
+      input.hotelSelection?.additionalStays &&
+      row.hotelSelection?.additionalStays?.length
+    ) {
+      const saved =
+        presentSalesContract(row, undefined, this.buyerCrypto).hotelSelection
+          ?.additionalStays ?? [];
+      input = {
+        ...input,
+        hotelSelection: {
+          ...input.hotelSelection,
+          additionalStays: input.hotelSelection.additionalStays.map((stay) => {
+            const previous = saved.find(
+              (item) => item.hotelId === stay.hotelId,
+            );
+            if (stay.rooms === undefined && previous?.rooms?.length)
+              return { ...stay, rooms: previous.rooms };
+            if (!Array.isArray(stay.rooms) || !previous?.rooms) return stay;
+            return {
+              ...stay,
+              rooms: stay.rooms.map((room) => {
+                if (
+                  !room ||
+                  typeof room !== 'object' ||
+                  !Array.isArray(room.childAges)
+                )
+                  return room;
+                const old = previous.rooms?.find(
+                  (item) =>
+                    item.ordinal === room.ordinal &&
+                    item.roomTypeId === room.roomTypeId,
+                );
+                return room.roomCategory === undefined &&
+                  old?.roomCategory &&
+                  salesRoomCategories(
+                    room.adults,
+                    room.childAges.length,
+                  ).includes(old.roomCategory)
+                  ? { ...room, roomCategory: old.roomCategory }
+                  : room;
+              }),
+            };
+          }),
+        },
+      };
     }
     if (row.paymentTerms != null && input.paymentTerms === null)
       throw new BadRequestException(
@@ -1164,7 +1388,7 @@ export class SalesService {
         );
         const age =
           categories?.[passenger.customerId] ??
-          passengerAgeCategory(passenger.birthDate, input.departureDate);
+          contractPassengerAgeCategory(passenger, input.departureDate);
         return age === 'CHD' &&
           (before?.childAgeBand === 'AGE_2_6' ||
             before?.childAgeBand === 'AGE_6_12')
@@ -1233,6 +1457,10 @@ export class SalesService {
           );
     }
     await this.assertTour(input, row.branchId, validatedPublishedHotelId);
+    await this.assertAdditionalHotelStays(
+      input,
+      presentSalesContract(row, undefined, this.buyerCrypto).hotelSelection,
+    );
     await this.assertHotelRoomCapacity(input, row.branchId);
     for (const passenger of row.passengers) {
       const next = input.passengers.find(
@@ -1251,7 +1479,42 @@ export class SalesService {
           'نوع اقامت ذخیره‌شده مسافر را مشخص کنید؛ حذف ضمنی آن مجاز نیست.',
         );
     }
-    if (row.passengers.some((passenger) => passenger.agreedPrices?.length))
+    const preservePrices = input.preserveContractPrices === true;
+    if (preservePrices) {
+      const componentFacts = (
+        components: readonly {
+          type: string;
+          title: string;
+          amount: unknown;
+          currencyCode: string;
+        }[],
+      ) =>
+        JSON.stringify(
+          components.map((p) => [
+            p.type,
+            p.title,
+            String(p.amount),
+            p.currencyCode,
+          ]),
+        );
+      if (
+        !categories ||
+        input.passengers.length < 1 ||
+        input.passengers.some((p) => p.agreedPrices !== undefined) ||
+        input.services.some(
+          (s) => s.metadata?.contractPackagePricingVersion !== 1,
+        ) ||
+        componentFacts(input.priceComponents) !==
+          componentFacts(row.priceComponents)
+      )
+        throw new BadRequestException(
+          'اصلاح تعداد مسافران نباید مبلغ ثبت‌شده قرارداد را تغییر دهد.',
+        );
+    }
+    if (
+      !preservePrices &&
+      row.passengers.some((passenger) => passenger.agreedPrices?.length)
+    )
       domainCall(() => {
         try {
           validatePassengerPackagePrices(
@@ -1311,7 +1574,21 @@ export class SalesService {
           titleSnapshot: s.titleSnapshot,
           status: s.status,
           referenceId: s.referenceId,
-          metadata: s.metadata,
+          metadata: Object.fromEntries(
+            Object.entries(s.metadata ?? {}).filter(
+              ([key]) =>
+                ![
+                  'legacyRowPricesV1',
+                  'passengerPackagePricingVersion',
+                  'contractPackagePricingVersion',
+                  'automaticFlightRoomTotalV1',
+                  'passengerHotelPricesV1',
+                  'passengerTotalPricesV1',
+                  'passengerDeductionsV1',
+                  'passengerFlightPricesV1',
+                ].includes(key),
+            ),
+          ),
         })),
       });
     const changedExecution =
@@ -1389,22 +1666,44 @@ export class SalesService {
             reserve: async (tx) => {
               if (!this.tickets.amend)
                 throw new ConflictException('اصلاح ظرفیت بلیت در دسترس نیست.');
+              const legacyParties = readLegacyServiceParties(input.services);
               await this.tickets.amend(
                 tx,
-                input.ticketSelections ?? [],
+                (input.ticketSelections ?? []).filter((selection) =>
+                  legacyParties?.[selection.serviceClientKey]
+                    ? legacyParties[selection.serviceClientKey]!.adults +
+                        legacyParties[selection.serviceClientKey]!.children >
+                      0
+                    : input.passengers.some(
+                        (p) =>
+                          categories[p.customerId] !== 'INF' &&
+                          p.serviceClientKeys.includes(
+                            selection.serviceClientKey,
+                          ),
+                      ),
+                ),
                 row.branchId,
                 id,
-                input.passengers.filter(
-                  (p) => categories[p.customerId] !== 'INF',
-                ).length,
+                legacyParties
+                  ? Math.max(
+                      ...Object.values(legacyParties).map(
+                        (p) => p.adults + p.children,
+                      ),
+                    )
+                  : input.passengers.filter(
+                      (p) => categories[p.customerId] !== 'INF',
+                    ).length,
                 Object.fromEntries(
                   (input.ticketSelections ?? []).map((t) => [
                     t.serviceClientKey,
-                    input.passengers.filter(
-                      (p) =>
-                        categories[p.customerId] !== 'INF' &&
-                        p.serviceClientKeys.includes(t.serviceClientKey),
-                    ).length,
+                    legacyParties?.[t.serviceClientKey]
+                      ? legacyParties[t.serviceClientKey]!.adults +
+                        legacyParties[t.serviceClientKey]!.children
+                      : input.passengers.filter(
+                          (p) =>
+                            categories[p.customerId] !== 'INF' &&
+                            p.serviceClientKeys.includes(t.serviceClientKey),
+                        ).length,
                   ]),
                 ),
               );
@@ -1420,6 +1719,20 @@ export class SalesService {
     return this.detail(id, actor);
   }
 
+  async paymentAccounts(id: string, actor: AuthenticatedActor) {
+    const row = await this.repository.findById(id);
+    if (!row) throw new NotFoundException('قرارداد یافت نشد.');
+    this.assertRead(row, actor);
+    if (
+      !has(actor, 'sales.payments.create') &&
+      !canSelfServeSalesContract(actor, row)
+    )
+      throw new ForbiddenException('مجوز ثبت پرداخت وجود ندارد.');
+    return {
+      data: await this.repository.paymentAccounts(row.branchId, actor.userId),
+    };
+  }
+
   async addPayment(
     id: string,
     input: SalesPaymentCreateRequest,
@@ -1427,7 +1740,10 @@ export class SalesService {
     idempotencyKey: string | undefined,
     traceId?: string,
   ) {
-    if (!has(actor, 'sales.payments.create'))
+    if (
+      !has(actor, 'sales.payments.create') &&
+      !hasSalesContractSelfService(actor.permissions)
+    )
       throw new ForbiddenException('مجوز ثبت پرداخت وجود ندارد.');
     if (!idempotencyKey?.trim())
       throw new BadRequestException('Idempotency-Key الزامی است.');
@@ -1440,6 +1756,11 @@ export class SalesService {
         message: 'قرارداد یافت نشد.',
       });
     this.assertRead(row, actor);
+    if (
+      !has(actor, 'sales.payments.create') &&
+      !canSelfServeSalesContract(actor, row)
+    )
+      throw new ForbiddenException('مجوز ثبت پرداخت وجود ندارد.');
     domainCall(() => validateSalesPayment(input));
     if (
       (row.paymentTerms as unknown as SalesContractDetail['paymentTerms'])
@@ -1479,10 +1800,13 @@ export class SalesService {
     idempotencyKey: string | undefined,
     traceId?: string,
   ) {
-    if (
-      !has(actor, 'sales.contracts.confirm') ||
-      !has(actor, 'sales.reservation_request.create')
-    )
+    const entryCreator =
+      has(actor, 'sales.contracts.create') &&
+      canViewRoute(actor.permissions, '/sales/contracts/new');
+    const fullConfirmation =
+      has(actor, 'sales.contracts.confirm') &&
+      has(actor, 'sales.reservation_request.create');
+    if (!fullConfirmation && !entryCreator)
       throw new ForbiddenException('مجوز تأیید و ارسال رزرو وجود ندارد.');
     if (!idempotencyKey?.trim())
       throw new BadRequestException('Idempotency-Key الزامی است.');
@@ -1494,7 +1818,15 @@ export class SalesService {
         code: 'SALES_CONTRACT_NOT_FOUND',
         message: 'قرارداد یافت نشد.',
       });
-    this.assertRead(row, actor);
+    if (!fullConfirmation) {
+      if (
+        row.ownerUserId !== actor.userId ||
+        !actor.branchIds.includes(row.branchId) ||
+        (!['DRAFT', 'PENDING_CONFIRMATION'].includes(row.status) &&
+          row.confirmIdempotencyKey !== idempotencyKey)
+      )
+        throw new ForbiddenException();
+    } else this.assertRead(row, actor);
     const fingerprint = salesFingerprint({ id, version });
     if (row.confirmIdempotencyKey === idempotencyKey) {
       if (row.confirmRequestFingerprint !== fingerprint)
@@ -1510,19 +1842,31 @@ export class SalesService {
     await this.customers.resolveSnapshot(row.customerId, actor);
     await this.customers.assertPassengers(row.passengers, actor);
     const presented = presentSalesContract(row, undefined, this.buyerCrypto);
+    if (this.tickets.currentSelections)
+      presented.ticketSelections = await this.tickets.currentSelections(
+        presented.ticketSelections,
+        row.branchId,
+      );
     await this.assertPresentedHotelRoomCapacity(presented);
-    const seatCount = presented.passengersDetail.filter(
-      ({ ageCategory }) => ageCategory !== 'INF',
-    ).length;
+    const legacyParties = readLegacyServiceParties(presented.servicesDetail);
+    const legacyFlight = presented.ticketSelections[0]
+      ? legacyParties?.[presented.ticketSelections[0].serviceClientKey]
+      : undefined;
+    const seatCount = legacyFlight
+      ? legacyFlight.adults + legacyFlight.children
+      : presented.passengersDetail.filter(
+          ({ ageCategory }) => ageCategory !== 'INF',
+        ).length;
     const ticketCheck = presented.ticketSelections.length
       ? await this.tickets.reserve(
           presented.ticketSelections,
           row.branchId,
           row.id,
           seatCount,
-          presented.servicesDetail.some(
-            (service) => service.kind === 'HOTEL' || service.kind === 'TOUR',
-          )
+          legacyParties ||
+            presented.servicesDetail.some(
+              (service) => service.kind === 'HOTEL' || service.kind === 'TOUR',
+            )
             ? undefined
             : Object.fromEntries(
                 presented.servicesDetail
@@ -1541,11 +1885,14 @@ export class SalesService {
           Object.fromEntries(
             presented.ticketSelections.map((t) => [
               t.serviceClientKey,
-              presented.passengersDetail.filter(
-                (p) =>
-                  p.ageCategory !== 'INF' &&
-                  p.serviceClientKeys.includes(t.serviceClientKey),
-              ).length,
+              legacyParties?.[t.serviceClientKey]
+                ? legacyParties[t.serviceClientKey]!.adults +
+                  legacyParties[t.serviceClientKey]!.children
+                : presented.passengersDetail.filter(
+                    (p) =>
+                      p.ageCategory !== 'INF' &&
+                      p.serviceClientKeys.includes(t.serviceClientKey),
+                  ).length,
             ]),
           ),
         )
@@ -1621,7 +1968,15 @@ export class SalesService {
       });
     }
     return {
-      ...(await this.detail(id, actor)),
+      ...(await this.detail(
+        id,
+        fullConfirmation
+          ? actor
+          : {
+              ...actor,
+              permissions: [...actor.permissions, 'sales.contracts.read.own'],
+            },
+      )),
       meta: { reservationRequest: snapshot, idempotentReplay: false },
     };
   }
@@ -1715,7 +2070,9 @@ export class SalesService {
     )
       throw new BadRequestException('فیلتر مانده قابل دریافت معتبر نیست.');
     const filters = validated.value as SalesReceivablesQuery;
-    const rows = await this.repository.dashboardRows(this.readScope(actor));
+    const rows = (
+      await this.repository.dashboardRows(this.readScope(actor))
+    ).filter((row) => row.status !== 'CANCELLED');
     const buyers = await this.customers.partyKinds(
       [...new Set(rows.map((row) => row.customerId))],
       actor,
@@ -1765,6 +2122,14 @@ export class SalesService {
           [
             row.contractNumber,
             row.customerNameSnapshot,
+            ...(row.services ?? []).flatMap(({ metadata }) =>
+              metadata &&
+              typeof metadata === 'object' &&
+              !Array.isArray(metadata) &&
+              typeof metadata.contractNotice === 'string'
+                ? [metadata.contractNotice]
+                : [],
+            ),
             ...(has(actor, 'sales.payments.read')
               ? row.payments.map((payment) => payment.paymentReference ?? '')
               : []),
@@ -1839,9 +2204,9 @@ export class SalesService {
         message: 'مجوز داشبورد فروش وجود ندارد.',
       });
     const rows = await this.repository.dashboardRows(scope);
-    const details = rows.map((row) =>
-      presentSalesContract(row, undefined, this.buyerCrypto),
-    );
+    const details = rows
+      .filter((row) => row.status !== 'CANCELLED')
+      .map((row) => presentSalesContract(row, undefined, this.buyerCrypto));
     const today = new Date().toISOString().slice(0, 10);
     const balances = details.flatMap((item) => item.balances);
     const currencyCodes = [

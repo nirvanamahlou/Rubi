@@ -21,6 +21,11 @@ it('prints the edited room composition and child ages from the saved supplier re
     { amount: '2500000', currencyCode: 'IRR' },
     { amount: '123.50', currencyCode: 'EUR' },
   ];
+  settings.supplierFormPrices = {
+    pp: { amount: '100.50', currencyCode: 'EUR' },
+    ratio: { amount: '2', currencyCode: 'USD' },
+    transferPp: { amount: '1000', currencyCode: 'JPY' },
+  };
   settings.rooms = [
     {
       ordinal: 1,
@@ -51,13 +56,14 @@ it('prints the edited room composition and child ages from the saved supplier re
   expect(html).toContain('4, 10');
   expect(html).toContain('ROOM TYPE');
   expect(html).not.toContain('undefined');
-  expect(html).toContain('2,500,000 IRR · 123.50 EUR');
-  expect(html.indexOf('PROPOSED PURCHASE PRICE')).toBeGreaterThan(
-    html.indexOf('SUPPLIER'),
-  );
-  expect(html.indexOf('PROPOSED PURCHASE PRICE')).toBeLessThan(
-    html.indexOf('DATE OF ISSUE'),
-  );
+  expect(html).not.toContain('PROPOSED PURCHASE PRICE');
+  expect(html).not.toContain('2,500,000');
+  expect(html).toContain('100.50 EUR');
+  expect(html).toContain('1,000 JPY');
+  expect(html).toContain('Ratio');
+  expect(html).toContain('Transfer P.P');
+  expect(html.indexOf('PRICES')).toBeLessThan(html.indexOf('NOTICE'));
+  expect(html).toMatch(/07<\/b><strong>NOTICE/);
   expect(html).not.toContain('HOTEL TOTAL');
   intake.workflow.voucherSettings = settings;
   const voucherHtml = renderToStaticMarkup(
@@ -66,4 +72,6 @@ it('prints the edited room composition and child ages from the saved supplier re
   expect(voucherHtml).not.toContain('PROPOSED PURCHASE PRICE');
   expect(voucherHtml).not.toContain('2,500,000');
   expect(voucherHtml).not.toContain('123.50');
+  expect(voucherHtml).not.toContain('100.50 EUR');
+  expect(voucherHtml).not.toContain('Transfer P.P');
 });

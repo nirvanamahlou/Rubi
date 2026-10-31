@@ -28,6 +28,12 @@ export interface IssuedPdfData {
 const columns = [
   ['contractNumber', 'قرارداد'],
   ['passengerDisplayName', 'مسافر'],
+  ['serviceKind', 'نوع خدمت'],
+  ['serviceTitle', 'خدمت'],
+  ['reportStatus', 'وضعیت خدمت'],
+  ['hotelName', 'هتل'],
+  ['checkInDate', 'ورود هتل'],
+  ['checkOutDate', 'خروج هتل'],
   ['ticketNumber', 'شماره بلیط'],
   ['issuedAt', 'تاریخ صدور'],
   ['origin', 'مبدأ'],
@@ -55,12 +61,23 @@ export function issuedPrintHtml(
         timeStyle: 'short',
         hourCycle: 'h23',
       }).format(new Date(value));
+    if (key === 'reportStatus')
+      return value === 'ALLOCATED'
+        ? 'تخصیص‌یافته'
+        : value === 'CANCELLED'
+          ? 'باطل‌شده'
+          : 'صادرشده';
     if (key === 'direction') return value === 'OUTBOUND' ? 'رفت' : 'برگشت';
-    if (key === 'status') return value === 'voided' ? 'ابطال شده' : 'صادرشده';
+    if (key === 'status')
+      return value === 'allocated'
+        ? 'تخصیص‌یافته'
+        : value === 'voided'
+          ? 'ابطال شده'
+          : 'صادرشده';
     if (key === 'source') return value === 'AUTO' ? 'خودکار' : 'دستی';
     return value;
   };
-  return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; font-src data:"><style>@font-face{font-family:Report;src:url(data:font/woff2;base64,${fontData})}@page{size:A4;margin:12mm}body{font:12px Report,Tahoma;color:#163553}h1{font-size:20px}article{break-inside:avoid;border:1px solid #cbd8e8;border-radius:8px;margin:12px 0;padding:12px}dl{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:0}dt{color:#54677e;font-size:10px}dd{margin:3px 0;overflow-wrap:anywhere}footer{font-size:10px}</style></head><body><h1>گزارش بلیط‌های صادرشده مسافران</h1><p>تعداد ردیف پرواز: ${snapshot.data.length} — زمان‌ها به وقت تهران</p>${snapshot.data.map((row, i) => `<article><b>ردیف ${i + 1}</b><dl>${columns.map(([key, label]) => `<div><dt>${escape(label!)}</dt><dd>${escape(display(key!, row[key!] ?? null))}</dd></div>`).join('')}</dl></article>`).join('') || '<p>بلیطی با این فیلترها یافت نشد.</p>'}<footer>هر ردیف یک قطعه پرواز از بلیط صادرشده مسافر است.</footer></body></html>`;
+  return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; font-src data:"><style>@font-face{font-family:Report;src:url(data:font/woff2;base64,${fontData})}@page{size:A4;margin:12mm}body{font:12px Report,Tahoma;color:#163553}h1{font-size:20px}article{break-inside:avoid;border:1px solid #cbd8e8;border-radius:8px;margin:12px 0;padding:12px}dl{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:0}dt{color:#54677e;font-size:10px}dd{margin:3px 0;overflow-wrap:anywhere}footer{font-size:10px}</style></head><body><h1>گزارش خدمات مسافران</h1><p>تعداد ردیف: ${snapshot.data.length} — زمان‌ها به وقت تهران</p>${snapshot.data.map((row, i) => `<article><b>ردیف ${i + 1}</b><dl>${columns.map(([key, label]) => `<div><dt>${escape(label!)}</dt><dd>${escape(display(key!, row[key!] ?? null))}</dd></div>`).join('')}</dl></article>`).join('') || '<p>بلیطی با این فیلترها یافت نشد.</p>'}<footer>وضعیت تخصیص خدمت و صدور مدرک جداگانه نمایش داده می‌شود.</footer></body></html>`;
 }
 export async function resolveIssuedChrome(
   env: NodeJS.ProcessEnv = process.env,

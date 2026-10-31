@@ -59,6 +59,22 @@ export class ProcurementController {
   ) {
     return procurementBoundary(() => this.service.orders(query, req.actor));
   }
+  @Get('petty-fund')
+  @Header('Cache-Control', 'private, no-store')
+  pettyFund(
+    @Query('branchId') branchId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return procurementBoundary(() =>
+      this.service.pettyFund(branchId, req.actor),
+    );
+  }
+  @Post('petty-fund')
+  savePettyFund(@Body() body: unknown, @Req() req: AuthenticatedRequest) {
+    return procurementBoundary(() =>
+      this.service.savePettyFund(body, req.actor),
+    );
+  }
   @Get('bootstrap')
   @Header('Cache-Control', 'private, no-store')
   bootstrap(@Req() req: AuthenticatedRequest) {

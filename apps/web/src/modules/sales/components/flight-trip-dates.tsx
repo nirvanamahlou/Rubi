@@ -38,17 +38,28 @@ export function FlightTripDates({
   international = false,
   destinationId,
   roundTrip,
+  primaryDirection = 'OUTBOUND',
   seats,
   requireFare,
   value,
   onChange,
   onReturningOffers,
+  calendarSystems,
+  onCalendarSystemChange,
 }: {
+  calendarSystems?: Partial<
+    Record<'OUTBOUND' | 'RETURN', 'persian' | 'gregorian'>
+  >;
+  onCalendarSystemChange?: (
+    direction: 'OUTBOUND' | 'RETURN',
+    calendar: 'persian' | 'gregorian',
+  ) => void;
   onReturningOffers?: (offers: TicketOfferV1[]) => void;
   originId: string;
   international?: boolean;
   destinationId: string;
   roundTrip: boolean;
+  primaryDirection?: 'OUTBOUND' | 'RETURN';
   seats: number;
   requireFare: boolean;
   value: FlightDateRange;
@@ -157,7 +168,7 @@ export function FlightTripDates({
     <div className="grid gap-3 rounded-xl border-2 border-primary/40 bg-primary/5 p-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-semibold">
-          بلیط رفت
+          {primaryDirection === 'RETURN' ? 'بلیط برگشت' : 'بلیط رفت'}
           <DatePicker
             key={international ? 'foreign' : 'local'}
             {...(international
@@ -165,10 +176,26 @@ export function FlightTripDates({
               : {})}
             gregorianEnglish
             value={value.from}
+            {...(calendarSystems
+              ? {
+                  calendarSystem:
+                    calendarSystems[primaryDirection] ??
+                    (international
+                      ? ('gregorian' as const)
+                      : ('persian' as const)),
+                }
+              : {})}
+            onCalendarSystemChange={(calendar) =>
+              onCalendarSystemChange?.(primaryDirection, calendar)
+            }
             markedDates={days}
 
             disabled={!readyRoute}
-            aria-label="تاریخ بلیط رفت"
+            aria-label={
+              primaryDirection === 'RETURN'
+                ? 'تاریخ بلیط برگشت'
+                : 'تاریخ بلیط رفت'
+            }
             onChange={(from) => {
               const paired = roundTrip
                 ? pairedReturnDate(
@@ -193,6 +220,18 @@ export function FlightTripDates({
                 : {})}
               gregorianEnglish
               value={value.to}
+              {...(calendarSystems
+                ? {
+                    calendarSystem:
+                      calendarSystems.RETURN ??
+                      (international
+                        ? ('gregorian' as const)
+                        : ('persian' as const)),
+                  }
+                : {})}
+              onCalendarSystemChange={(calendar) =>
+                onCalendarSystemChange?.('RETURN', calendar)
+              }
               markedDates={returnDays}
               minimumDate={value.from}
               disabled={!readyRoute || !value.from}

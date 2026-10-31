@@ -21,9 +21,28 @@ import {
   normalizeRouteSearch,
   toggleSalesDirectionalService,
   salesTravelDate,
+  salesStandaloneDateServiceKeys,
+  salesStandaloneServiceDatesValid,
 } from './sales-form';
 
 describe('sales contract form payload', () => {
+  it('persists each flight and hotel calendar without converting ISO dates', () => {
+    const payload = salesPayload({
+      ...emptySalesForm,
+      serviceKinds: ['FLIGHT', 'HOTEL'],
+      tripType: 'ROUND_TRIP',
+      departureDate: '2026-10-01',
+      returnDate: '2026-10-07',
+      flightCalendarSystems: { OUTBOUND: 'gregorian', RETURN: 'persian' },
+      hotel: { ...emptySalesForm.hotel, calendarSystem: 'persian' },
+    });
+    const calendar = (key: string) =>
+      payload.services.find((service) => service.clientKey === key)?.metadata
+        ?.dateCalendarSystem;
+    expect(calendar('flight-outbound')).toBe('gregorian');
+    expect(calendar('flight-return')).toBe('persian');
+    expect(calendar('hotel')).toBe('persian');
+  });
   it('keeps only explicit current hotel guest accommodation and requires an age-compatible selection', () => {
     const state = {
       ...emptySalesForm,
@@ -305,7 +324,7 @@ describe('sales contract form payload', () => {
       normalizeRouteSearch('انتالیا'),
     );
   });
-  it('requires passport identity only for an international flight, not a hotel stay', () => {
+  it('uses the same international identity fields for hotel stays and flights', () => {
     const internationalRoute = {
       ...emptySalesForm,
       originCountryCode: 'IRN',
@@ -316,7 +335,7 @@ describe('sales contract form payload', () => {
         ...internationalRoute,
         serviceKinds: ['HOTEL'],
       }),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       salesRequiresPassportIdentity({
         ...internationalRoute,
@@ -723,5 +742,201 @@ describe('explicit visa applicants', () => {
     ).toThrow();
     expect(() => salesPayload({ ...state, visaChildAges: [5] })).toThrow();
     expect(() => salesPayload({ ...state, visaApplicantIds: [] })).toThrow();
+  });
+});
+
+describe('legacy contract payload', () => {
+  it('keeps manually agreed totals and omits personal passenger rows for aggregate legacy services', () => {
+    const state = {
+      ...emptySalesForm,
+      legacyContract: true,
+      customerId: 'buyer',
+      customerName: 'Buyer',
+      originId: 'origin',
+      destinationId: 'destination',
+      departureDate: '2026-10-01',
+      serviceKinds: ['OTHER' as const],
+      passengerTotalPricing: true,
+      automaticComponentPricing: true,
+      contractPrices: [
+        { amount: '100', currencyCode: 'IRR' },
+        { amount: '50', currencyCode: 'USD' },
+      ],
+      passengers: [
+        {
+          customerId: 'old-person',
+          displayName: 'Old person',
+          birthDate: '1990-01-01',
+        },
+      ],
+      payments: [
+        {
+          amount: '40',
+          currencyCode: 'IRR',
+          method: 'CASH' as const,
+          dueAt: '2026-10-01',
+        },
+        {
+          amount: '60',
+          currencyCode: 'IRR',
+          method: 'BANK_TRANSFER' as const,
+          dueAt: '2026-10-02',
+        },
+      ],
+    };
+    const payload = salesPayload(state);
+    expect(payload.customerId).toBe('buyer');
+    expect(payload.passengers).toEqual([]);
+    expect(payload.ticketSelections).toEqual([]);
+    expect(payload.hotelSelection).toBeNull();
+    expect(payload.services[0]?.metadata?.legacyServicePartiesV2).toBeDefined();
+    expect(
+      payload.priceComponents.map((p) => [p.currencyCode, p.amount]),
+    ).toEqual([
+      ['IRR', '100'],
+      ['USD', '50'],
+    ]);
+    expect(payload.payments).toHaveLength(2);
+  });
+});
+
+describe('historical customer total pricing', () => {
+  const state = {
+    ...emptySalesForm,
+    legacyContract: true,
+    customerId: 'buyer',
+    customerName: 'Buyer',
+    originId: 'origin',
+    destinationId: 'destination',
+    departureDate: '2026-10-01',
+    serviceKinds: ['OTHER' as const],
+    contractPrices: [
+      { currencyCode: 'IRR', amount: '100000000' },
+      { currencyCode: 'EUR', amount: '915.125' },
+    ],
+    legacyDeductions: {
+      discount: { currencyCode: 'EUR', amount: '15.125' },
+      commission: { currencyCode: 'IRR', amount: '10000000' },
+    },
+    servicePricing: {
+      other: [
+        {
+          version: 1 as const,
+          currencyCode: 'USD',
+          daySale: { basis: 'TOTAL' as const, amount: '999' },
+          agreed: { basis: 'TOTAL' as const, amount: '999' },
+        },
+      ],
+    },
+  };
+  it('persists one customer total with separate-currency deductions and ignores stale service prices', () => {
+    const payload = salesPayload(state);
+    expect(payload.passengers).toEqual([]);
+    expect(
+      payload.priceComponents.map((p) => [p.type, p.currencyCode, p.amount]),
+    ).toEqual([
+      ['BASE', 'IRR', '100000000'],
+      ['BASE', 'EUR', '915.125'],
+      ['DISCOUNT', 'EUR', '15.125'],
+      ['DISCOUNT', 'IRR', '10000000'],
+    ]);
+    expect(payload.services[0]?.pricing).toBeUndefined();
+    expect(payload.services[0]?.metadata?.contractPackagePricingVersion).toBe(
+      1,
+    );
+  });
+  it('accepts foreign-only totals and refuses over-deduction or deduction in an absent currency', () => {
+    expect(
+      salesPayload({
+        ...state,
+        contractPrices: [
+          { currencyCode: 'IRR', amount: '' },
+          { currencyCode: 'EUR', amount: '20' },
+        ],
+        legacyDeductions: {},
+      }).priceComponents,
+    ).toHaveLength(1);
+    expect(() =>
+      salesPayload({
+        ...state,
+        legacyDeductions: {
+          discount: { currencyCode: 'EUR', amount: '900' },
+          commission: { currencyCode: 'EUR', amount: '16' },
+        },
+      }),
+    ).toThrow();
+    expect(() =>
+      salesPayload({
+        ...state,
+        legacyDeductions: { discount: { currencyCode: 'USD', amount: '1' } },
+      }),
+    ).toThrow();
+  });
+});
+
+describe('service dates replace the extra trip-start field', () => {
+  it('uses hotel or tour dates without a separate departure date and ignores deselected services', () => {
+    expect(
+      salesTravelDate({
+        ...emptySalesForm,
+        serviceKinds: ['HOTEL'],
+        hotel: { ...emptySalesForm.hotel, checkIn: '2026-10-05' },
+      }),
+    ).toBe('2026-10-05');
+    expect(
+      salesTravelDate({
+        ...emptySalesForm,
+        serviceKinds: ['TOUR'],
+        tour: { startsOn: '2026-10-06' } as never,
+      }),
+    ).toBe('2026-10-06');
+    const standalone = {
+      ...emptySalesForm,
+      serviceKinds: ['VISA' as const],
+      serviceDetails: {
+        VISA: { date: '2026-10-10' },
+        OTHER: { date: '2020-01-01' },
+      },
+    };
+    expect(salesTravelDate(standalone)).toBe('2026-10-10');
+    expect(salesStandaloneServiceDatesValid(standalone)).toBe(true);
+  });
+  it('requires dates only within standalone services and keeps flight/hotel date controls authoritative', () => {
+    expect(
+      salesStandaloneDateServiceKeys({
+        ...emptySalesForm,
+        serviceKinds: ['FLIGHT', 'TRANSFER'],
+      }),
+    ).toEqual([]);
+    expect(
+      salesStandaloneDateServiceKeys({
+        ...emptySalesForm,
+        serviceKinds: ['HOTEL', 'INSURANCE'],
+      }),
+    ).toEqual([]);
+    expect(
+      salesStandaloneServiceDatesValid({
+        ...emptySalesForm,
+        serviceKinds: ['OTHER'],
+      }),
+    ).toBe(false);
+    expect(
+      salesStandaloneServiceDatesValid({
+        ...emptySalesForm,
+        serviceKinds: ['OTHER'],
+        serviceDetails: { OTHER: { date: '2026-02-30' } },
+      }),
+    ).toBe(false);
+    const transfers = {
+      ...emptySalesForm,
+      tripType: 'ROUND_TRIP' as const,
+      serviceKinds: ['TRANSFER' as const],
+      serviceDetails: {
+        'TRANSFER-OUTBOUND': { date: '2026-10-01' },
+        'TRANSFER-RETURN': { date: '2026-10-08' },
+      },
+    };
+    expect(salesStandaloneServiceDatesValid(transfers)).toBe(true);
+    expect(salesTravelDate(transfers)).toBe('2026-10-01');
   });
 });

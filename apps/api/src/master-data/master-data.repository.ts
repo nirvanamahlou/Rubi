@@ -489,7 +489,10 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'composite-hotels')
     return {
       city: { include: { country: true, region: true } },
-      members: { include: { hotel: { include: { city: true } } } },
+      members: {
+        orderBy: { priority: 'asc' },
+        include: { hotel: { include: { city: true } } },
+      },
     };
   return undefined;
 }
@@ -961,6 +964,18 @@ export function toMasterDataRecord(
     attributes.memberHotelIds =
       compositeMembers?.map(({ hotel }) => String(hotel.id ?? '')).join(',') ??
       '';
+    attributes.memberHotels = JSON.stringify(
+      compositeMembers?.map(({ hotel, priority }) => {
+        const memberCity = hotel.city as Record<string, unknown> | undefined;
+        return {
+          hotelId: String(hotel.id ?? ''),
+          hotelName: String(hotel.name ?? ''),
+          cityId: String(hotel.cityId ?? memberCity?.id ?? ''),
+          cityName: String(memberCity?.name ?? ''),
+          priority,
+        };
+      }) ?? [],
+    );
     attributes.memberHotelNames =
       compositeMembers
         ?.map(({ hotel }) => String(hotel.name ?? ''))
@@ -1624,6 +1639,21 @@ export class MasterDataRepository {
         entityId: input.contactId,
         outcome: AuditOutcome.SUCCESS,
         afterSnapshot: { disclosure: 'SENSITIVE_CONTACT_UNMASKED' },
+      },
+    });
+  }
+
+  async salesOrganizationContacts(organizationId: string) {
+    return this.database.client.masterOrganizationContact.findMany({
+      where: { organizationId, isActive: true },
+      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
+      take: 10,
+      select: {
+        id: true,
+        phoneEncrypted: true,
+        phoneEncryptionIv: true,
+        phoneEncryptionAuthTag: true,
+        phoneEncryptionKeyVersion: true,
       },
     });
   }

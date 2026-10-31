@@ -13,6 +13,16 @@ import { getMasterDataFormFields } from './form-fields';
 import { validateMasterDataDraft } from './validation';
 
 describe('payment-method form fields', () => {
+  it('offers optional GMT on country create/edit and keeps saved values', () => {
+    const definition = getMasterDataDefinition('countries');
+    for (const mode of ['create', 'edit', 'view'] as const) {
+      const field = getMasterDataFormFields(definition, mode).find(
+        ({ key }) => key === 'gmtOffset',
+      );
+      expect(field).toMatchObject({ type: 'text', placeholder: '+03:30' });
+      expect(field?.required).not.toBe(true);
+    }
+  });
   it('keeps bank code optional in create/edit while retaining required name and country', () => {
     const definition = getMasterDataDefinition('banks');
     for (const mode of ['create', 'edit'] as const) {

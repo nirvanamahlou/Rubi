@@ -559,9 +559,6 @@ function AccountingNavigationWorkspaceContent() {
               <h1 className="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">
                 {selectedTitle ?? 'فضای کار حسابداری'}
               </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                دفاتر، حساب‌ها، اسناد و گزارش‌ها در یک محیط متمرکز و مدرن
-              </p>
             </div>
           </div>
           <div className="relative flex flex-wrap gap-2 text-[11px] font-bold text-slate-200">

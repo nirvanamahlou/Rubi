@@ -181,7 +181,26 @@ describe('weekly flight schedule', () => {
       auto
         .filter((p) => p.journeyRole !== 'return')
         .map((p) => p.returnMaxDays),
-    ).toEqual([3, 8]);
+    ).toEqual([2, 7]);
+    const both = buildWeekdayTickets(
+      dates,
+      outbound,
+      returning,
+      time,
+      time,
+      'batch',
+      utc,
+      true,
+      true,
+    );
+    expect(
+      both
+        .filter((p) => p.journeyRole !== 'return')
+        .map((p) => [p.returnMinDays, p.returnMaxDays]),
+    ).toEqual([
+      [2, 2],
+      [7, 7],
+    ]);
     const manual = buildWeekdayTickets(
       dates,
       { ...outbound, returnMaxDays: 15 },
@@ -197,6 +216,16 @@ describe('weekly flight schedule', () => {
         .filter((p) => p.journeyRole !== 'return')
         .map((p) => p.returnMaxDays),
     ).toEqual([15, 15]);
+    expect(
+      manual
+        .filter((p) => p.journeyRole !== 'return')
+        .map((p) => p.scheduledReturnDate),
+    ).toEqual(['2026-10-05', '2026-10-11']);
+    expect(
+      manual
+        .filter((p) => p.journeyRole === 'return')
+        .every((p) => !p.scheduledReturnDate),
+    ).toBe(true);
     const unlimited = buildWeekdayTickets(
       dates,
       { ...outbound, returnMaxDays: null },

@@ -16,6 +16,45 @@ vi.mock('./sales-date-picker', () => ({
 }));
 
 describe('Sales uses the Customers entry spreadsheet', () => {
+  it('shows birth date without a required marker while retaining the booked age hint', () => {
+    const html = renderToStaticMarkup(
+      <SalesPeopleSheet
+        state={emptySalesForm}
+        draft={null}
+        onDraftChange={vi.fn()}
+        onConfirmed={vi.fn()}
+        onBusyChange={vi.fn()}
+        onAddInfant={vi.fn()}
+      />,
+    );
+    const header = [...html.matchAll(/<th\b[^>]*>[\s\S]*?<\/th>/g)].find((m) =>
+      m[0].includes('تاریخ تولد'),
+    )?.[0];
+    expect(header).toBeDefined();
+    expect(header).not.toContain('*');
+    expect(html).not.toContain('تاریخ تولد را وارد کنید');
+  });
+  it('omits acquaintance selection and its loading messages for agency contracts', () => {
+    const html = renderToStaticMarkup(
+      <SalesPeopleSheet
+        state={{
+          ...emptySalesForm,
+          customerKind: 'organization',
+          customerId: 'agency',
+          customerName: 'Synthetic Agency',
+        }}
+        draft={null}
+        onDraftChange={vi.fn()}
+        onConfirmed={vi.fn()}
+        onBusyChange={vi.fn()}
+        onAddInfant={vi.fn()}
+      />,
+    );
+    expect(html).not.toContain('نحوه آشنایی');
+    expect(html).not.toContain('نحوه‌های آشنایی');
+    expect(html).toContain('Synthetic Agency');
+    expect(html).toContain('id="sales-entry-p0-first-name"');
+  });
   it('renders every requested passenger row immediately with the same columns', () => {
     const html = renderToStaticMarkup(
       <SalesPeopleSheet
@@ -28,10 +67,10 @@ describe('Sales uses the Customers entry spreadsheet', () => {
         onConfirmed={vi.fn()}
         onBusyChange={vi.fn()}
         onAddInfant={vi.fn()}
-        onTravelDateChange={vi.fn()}
       />,
     );
     expect(html).toContain('جدول ورود اطلاعات مشتری و مسافران');
+    expect(html).not.toContain('تاریخ شروع سفر');
     const birthHeader = [...html.matchAll(/<th\b[^>]*>[\s\S]*?<\/th>/g)].find(
       (m) => m[0].includes('تاریخ تولد'),
     )?.[0];
@@ -83,7 +122,6 @@ describe('Sales uses the Customers entry spreadsheet', () => {
         onConfirmed={vi.fn()}
         onBusyChange={vi.fn()}
         onAddInfant={vi.fn()}
-        onTravelDateChange={vi.fn()}
       />,
     );
     expect(html).toContain('مشتری و مسافر اول');
@@ -112,7 +150,6 @@ describe('Sales uses the Customers entry spreadsheet', () => {
         onConfirmed={vi.fn()}
         onBusyChange={vi.fn()}
         onAddInfant={vi.fn()}
-        onTravelDateChange={vi.fn()}
       />,
     );
     expect(html).toContain('نام انگلیسی مطابق پاسپورت');
@@ -125,7 +162,7 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     ).toEqual([
       'نام انگلیسی مطابق پاسپورت *',
       'نام خانوادگی انگلیسی مطابق پاسپورت *',
-      'کد ملی *',
+      'جنسیت *',
     ]);
     expect(html).toMatch(/id="sales-entry-p\d+-passport-first-name"/);
     expect(html).toMatch(/id="sales-entry-p\d+-national-id"/);
@@ -136,10 +173,53 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     expect(html).toContain('انقضای پاسپورت');
     expect(html).not.toContain('نام *');
     expect(html).not.toContain('نام خانوادگی *');
-    expect(html).toContain('کد ملی *');
+    expect(html).toContain('کد ملی');
+    expect(
+      html.match(/<input[^>]*id="sales-entry-p\d+-national-id"[^>]*>/)?.[0],
+    ).not.toContain('required');
     expect(html).toContain('جنسیت *');
   });
 });
+
+it.each([['HOTEL'], ['FLIGHT'], ['FLIGHT', 'HOTEL']] as const)(
+  'shows shared international fields and optional passport documents for %j',
+  (...serviceKinds) => {
+    const html = renderToStaticMarkup(
+      <SalesPeopleSheet
+        state={{
+          ...emptySalesForm,
+          serviceKinds: [...serviceKinds],
+          originCountryCode: 'IRN',
+          destinationCountryCode: 'TUR',
+          passengerComposition: { adults: 1, children: 0, infants: 0 },
+        }}
+        draft={null}
+        onDraftChange={vi.fn()}
+        onConfirmed={vi.fn()}
+        onBusyChange={vi.fn()}
+        onAddInfant={vi.fn()}
+      />,
+    );
+    expect(html).toContain('sales-entry-p0-passport-first-name');
+    expect(html).toContain('sales-entry-p0-passport-last-name');
+    const cells = [...html.matchAll(/<th\b[^>]*>(.*?)<\/th>/gs)].map((m) =>
+      m[1]!.replace(/<[^>]*>/g, ''),
+    );
+    expect(cells.indexOf('جنسیت *')).toBeLessThan(
+      cells.findIndex((c) => c.includes('تاریخ تولد')),
+    );
+    expect(cells.indexOf('کد ملی')).toBeGreaterThan(
+      cells.indexOf('انقضای پاسپورت'),
+    );
+    expect(cells).not.toContain('شماره پاسپورت *');
+    expect(cells).not.toContain('انقضای پاسپورت *');
+    const passport = html.match(
+      /<input[^>]*id="sales-entry-p0-passport-number"[^>]*>/,
+    )?.[0];
+    expect(passport).toBeDefined();
+    expect(passport).not.toMatch(/\brequired(?:=|\s|>)/);
+  },
+);
 
 it('allows passport entry for an existing floating-flight passenger before profile hydration', () => {
   const html = renderToStaticMarkup(
@@ -174,7 +254,6 @@ it('allows passport entry for an existing floating-flight passenger before profi
       onConfirmed={vi.fn()}
       onBusyChange={vi.fn()}
       onAddInfant={vi.fn()}
-      onTravelDateChange={vi.fn()}
     />,
   );
   for (const field of [
@@ -219,7 +298,6 @@ it('keeps transfer selections and places the three hotel stay columns last in th
       onConfirmed={vi.fn()}
       onBusyChange={vi.fn()}
       onAddInfant={vi.fn()}
-      onTravelDateChange={vi.fn()}
       onGuestStateChange={vi.fn()}
     />,
   );
@@ -256,7 +334,6 @@ it('shows the city tour, guide and existing visa toggles together above the pass
       onConfirmed={vi.fn()}
       onBusyChange={vi.fn()}
       onAddInfant={vi.fn()}
-      onTravelDateChange={vi.fn()}
       onGuestStateChange={vi.fn()}
       onToggleVisa={vi.fn()}
     />,
@@ -271,4 +348,22 @@ it('shows the city tour, guide and existing visa toggles together above the pass
   expect(
     toggles.filter((input) => input.includes('checked')).length,
   ).toBeGreaterThanOrEqual(3);
+});
+
+it('legacy contracts show customer controls without passenger spreadsheet or composition', () => {
+  const html = renderToStaticMarkup(
+    <SalesPeopleSheet
+      state={{ ...emptySalesForm, legacyContract: true }}
+      draft={null}
+      onDraftChange={vi.fn()}
+      onConfirmed={vi.fn()}
+      onBusyChange={vi.fn()}
+      onAddInfant={vi.fn()}
+    />,
+  );
+  expect(html).toContain('مشتری قرارداد قدیمی');
+  expect(html).not.toContain('<table');
+  expect(html).not.toContain('مشتری طرف حساب همان مسافر اول است');
+  expect(html).not.toContain('ردیف مسافر');
+  expect(html).toContain('نام مشتری');
 });

@@ -74,3 +74,18 @@ describe('compact contract payment plan', () => {
     expect(withPaymentMethod(check, 'CHECK').check).toEqual(check.check);
   });
 });
+
+it('provides an independent receipt selector under each planned payment', () => {
+  const html = renderToStaticMarkup(
+    <SalesPaymentPlan
+      payments={[cash, cash]}
+      currencies={currencies}
+      banks={[]}
+      onChange={vi.fn()}
+      onReceiptChange={vi.fn()}
+      receiptFiles={[]}
+    />,
+  );
+  expect(html.match(/type="file"/g)).toHaveLength(2);
+  expect(html).toContain('افزودن پرداخت');
+});

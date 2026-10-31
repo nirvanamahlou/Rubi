@@ -1,3 +1,4 @@
+import { grossAccrualCovers } from '../accounting/accounting.workflows';
 import { lockCustomerSettlement } from '../../sales/customer-purchase-settlement.public';
 import {
   lockReceiptFunds,
@@ -35,6 +36,8 @@ import { SalesService } from '../../sales/sales.service';
 import { DocumentsService } from '../../documents/documents.service';
 import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
 import { MasterOrganizationDirectory } from '../../master-data/master-organization-directory';
+import { PAYROLL_WORKSHEET_KIND } from './payroll-worksheet.public';
+import { payrollWorksheetPaymentSource } from '../../hr/hr-payroll-worksheet.public';
 
 @Injectable()
 export class FinancePayrollService {
@@ -156,6 +159,15 @@ export class FinancePayrollService {
         },
       });
     if (!initial) throw new NotFoundException('درخواست حقوق یافت نشد.');
+    if (initial.kind === PAYROLL_WORKSHEET_KIND && !initial.hrRecordId)
+      throw new ConflictException('منبع درخواست مالی حقوق معتبر نیست.');
+    if (
+      initial.kind === PAYROLL_WORKSHEET_KIND &&
+      ['PAY', 'RESUBMIT'].includes(action)
+    )
+      throw new BadRequestException(
+        'جدول حقوق از منابع انسانی اصلاح و ارسال می‌شود؛ این درخواست فقط برای تأیید مالی است.',
+      );
     const completed =
       await this.database.client.financeOperationalRevision.findUnique({
         where: { id: operationId },
@@ -173,14 +185,21 @@ export class FinancePayrollService {
       !actor.permissions.includes('finance.receipt.approve')
     )
       throw new ForbiddenException('مجوز تأیید دستی دریافت وجه لازم است.');
-    const source = initial.hrRecordId
-      ? await this.hr.approvedSource(initial.hrRecordId, actor.branchIds)
-      : {
-          id: initial.id,
-          version: initial.sourceVersion ?? 1,
-          amount: initial.amount.toString(),
-          currencyCode: initial.currencyCode,
-        };
+    const source =
+      initial.kind === PAYROLL_WORKSHEET_KIND && initial.hrRecordId
+        ? await payrollWorksheetPaymentSource(
+            this.database.client,
+            initial.hrRecordId,
+            actor.branchIds,
+          )
+        : initial.hrRecordId
+          ? await this.hr.approvedSource(initial.hrRecordId, actor.branchIds)
+          : {
+              id: initial.id,
+              version: initial.sourceVersion ?? 1,
+              amount: initial.amount.toString(),
+              currencyCode: initial.currencyCode,
+            };
     const refundReceipt = initial.refundReceiptId
       ? (
           await this.sales?.financeReceiptHistory(
@@ -213,6 +232,21 @@ export class FinancePayrollService {
     }
     try {
       await this.database.client.$transaction(async (tx) => {
+        if (initial.kind === 'PAYROLL' && action === 'APPROVE')
+          await tx.$queryRaw`SELECT id FROM accounting_books WHERE "branchId"=${initial.branchId}::uuid AND active=true AND "allowsPosting"=true ORDER BY id FOR SHARE`;
+        const grossCovered =
+          initial.kind === 'PAYROLL' &&
+          action === 'APPROVE' &&
+          initial.hrRecordId
+            ? await grossAccrualCovers(
+                tx,
+                initial.branchId,
+                initial.hrRecordId,
+                initial.amount.toString(),
+                initial.currencyCode,
+              )
+            : false;
+
         const replay = await tx.financeOperationalRevision.findUnique({
           where: { id: operationId },
         });
@@ -264,13 +298,9 @@ export class FinancePayrollService {
           throw new ForbiddenException(
             'بازارسال فقط توسط درخواست‌کننده مجاز است.',
           );
-        if (
-          isPetty &&
-          action === 'APPROVE' &&
-          current.requesterId === actor.userId
-        )
+        if (action === 'APPROVE' && current.requesterId === actor.userId)
           throw new ForbiddenException(
-            'تأیید تنخواه و هزینه آن باید توسط شخص دیگری انجام شود.',
+            'تأیید درخواست مالی باید توسط شخص دیگری انجام شود.',
           );
         if (action === 'CLOSE') {
           if (current.kind !== 'PETTY_CASH_ADVANCE')
@@ -395,6 +425,7 @@ export class FinancePayrollService {
             },
             current.currencyCode,
             current.branchId,
+            isPetty ? 'ACCOUNT_ONLY' : 'SUPPLIER_FOR_FOREIGN',
           );
           accountId = source.account?.id ?? null;
           payingSupplierId = source.payingSupplierId;
@@ -483,6 +514,7 @@ export class FinancePayrollService {
         });
         if (
           action === 'APPROVE' &&
+          !grossCovered &&
           ['PAYROLL', 'COMMISSION', 'ADJUSTMENT'].includes(current.kind) &&
           (await isNewAccountingSource(tx, current.createdAt))
         )
@@ -680,8 +712,8 @@ export class FinancePayrollService {
         160,
         true,
       );
-    if (counterpartyOrganizationId && kind === 'CHECK' && !reference.trim())
-      throw new BadRequestException('شماره چک طرف همکاری الزامی است.');
+    if (kind === 'CHECK' && !reference.trim())
+      throw new BadRequestException('شماره چک الزامی است.');
     const text = validate.text(input.amount, 'مبلغ', 30),
       currencyCode = validate.text(input.currencyCode, 'ارز', 3);
     if (

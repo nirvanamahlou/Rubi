@@ -590,3 +590,11 @@ The earlier package-three UI test guide requires restoration of this section bef
 - [ ] مقایسه بصری/رفتاری و مجوز هر تفاوت در گزارش پذیرش ثبت شود.
 
 مرجع لازم‌الاجرا: [حفظ طراحی کال سنتر](docs/tasks/CALL-CENTER-UI-PRESERVATION.md).
+
+## OUTBOUND-CALL-POPUP-1024
+
+- [x] Conditional authorized open-request choices in the approved call form.
+- [x] Real incoming/outgoing offer popup reuses CallForm and existing claim boundary.
+- [x] Explicit native outbound adapter and isolated PostgreSQL acceptance.
+- [ ] Production extension/account and trunk configuration on the deployment PC.
+- [ ] Controlled real inbound/outbound call acceptance after deployment.

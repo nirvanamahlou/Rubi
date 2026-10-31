@@ -82,7 +82,7 @@ describe('saved ticket document facts', () => {
       )['offer-1']?.baggageKg,
     ).toBe('30');
   });
-  it('does not use another offer, changed route or unrelated airport to fill missing facts', async () => {
+  it('rejects another offer or changed commercial route but allows an airport in another city', async () => {
     expect(
       await readTicketDocumentFacts([flight], get({ id: 'other' })),
     ).toEqual({});
@@ -98,8 +98,8 @@ describe('saved ticket document facts', () => {
     );
     expect(
       (await readTicketDocumentFacts([flight], source))['offer-1']
-        ?.originAirport,
-    ).toBeUndefined();
+        ?.originAirport?.code,
+    ).toBe('XYZ');
   });
   it('does not guess missing legacy airport or first-class allowances', async () => {
     const facts = await readTicketDocumentFacts(
@@ -118,4 +118,37 @@ describe('saved ticket document facts', () => {
       ),
     ).toEqual({});
   });
+});
+
+it('reads the selected airport city independently of the commercial destination', async () => {
+  const before = { ...flight };
+  const source = vi.fn(async (path: string) =>
+    Response.json({
+      data: path.includes('document-details')
+        ? details
+        : path.includes('/airports/')
+          ? {
+              code: 'AIR-999',
+              name: 'Airport',
+              attributes: {
+                iataCode: path.includes('/ika') ? 'IKA' : 'GZP',
+                cityId: path.includes('/ika') ? 'teh' : 'gazipasa',
+              },
+            }
+          : {
+              id: path.includes('/gazipasa') ? 'gazipasa' : 'teh',
+              name: 'شهر فرودگاه',
+              attributes: {
+                englishName: path.includes('/gazipasa') ? 'Gazipasa' : 'Tehran',
+              },
+            },
+    }),
+  );
+  const facts = await readTicketDocumentFacts([flight], source);
+  expect(facts['offer-1']?.destinationAirport).toMatchObject({
+    code: 'GZP',
+    cityName: 'Gazipasa',
+  });
+  expect(source).toHaveBeenCalledWith('/master-data/cities/gazipasa');
+  expect(flight).toEqual(before);
 });

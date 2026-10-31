@@ -101,30 +101,39 @@ async function waitForPdf(path: string): Promise<void> {
 }
 
 /** Renderer accepts saved, permission-scoped output only, never client HTML or URLs. */
+export async function prepareContractHtml(
+  output: SalesContractOutputV1,
+  refs: ContractPrintReferences,
+  language: DisplayLanguage = 'fa',
+): Promise<string> {
+  const { fontPath: font } = await resolveContractPdfRuntime();
+  let html = localizeDocumentHtml(contractPrintHtml(output, refs), language);
+  if (font) {
+    const fontBytes = await readFile(/* turbopackIgnore: true */ font);
+    if (fontBytes.length && fontBytes.length <= 5_000_000)
+      html = html.replace(
+        '</style>',
+        '@font-face{font-family:ContractNazanin;src:url(data:font/ttf;base64,' +
+          fontBytes.toString('base64') +
+          ') format("truetype");font-weight:normal}</style>',
+      );
+  }
+  if (Buffer.byteLength(html) > 10_000_000) throw new Error('PDF_TOO_LARGE');
+  return html;
+}
+
 export async function renderContractPdf(
   output: SalesContractOutputV1,
   refs: ContractPrintReferences,
   language: DisplayLanguage = 'fa',
 ): Promise<Buffer> {
-  const { chromePath: chrome, fontPath: font } =
-    await resolveContractPdfRuntime();
+  const { chromePath: chrome } = await resolveContractPdfRuntime();
   if (!chrome) throw new Error('PDF_RUNTIME_UNAVAILABLE');
   if (active >= 2) throw new Error('PDF_BUSY');
   active++;
   let directory: string | undefined;
   try {
-    let html = localizeDocumentHtml(contractPrintHtml(output, refs), language);
-    if (font) {
-      const fontBytes = await readFile(/* turbopackIgnore: true */ font);
-      if (fontBytes.length && fontBytes.length <= 5_000_000)
-        html = html.replace(
-          '</style>',
-          '@font-face{font-family:ContractNazanin;src:url(data:font/ttf;base64,' +
-            fontBytes.toString('base64') +
-            ') format("truetype");font-weight:normal}</style>',
-        );
-    }
-    if (Buffer.byteLength(html) > 10_000_000) throw new Error('PDF_TOO_LARGE');
+    const html = await prepareContractHtml(output, refs, language);
     directory = await mkdtemp(join(tmpdir(), 'nora-contract-pdf-'));
     const input = join(directory, 'contract.html');
     const result = join(directory, 'contract.pdf');

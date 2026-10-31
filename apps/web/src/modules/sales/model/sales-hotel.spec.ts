@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import type * as Contracts from '@nora/contracts';
+import { describe, expect, it, vi } from 'vitest';
 import type { HotelRoomRateV1, TicketOfferV1 } from '@nora/contracts';
 import {
   emptySalesForm,
@@ -306,16 +307,138 @@ it('derives floating hotel dates from selected calendar days before flight ident
   ).toBe('');
 });
 
-it('moves the whole hotel stay check-in to tomorrow only when requested', () => {
+it('ignores the legacy next-day flag for automatic flight-linked check-in', () => {
   const current = selected();
   const next = withSalesHotelDates(current, {
     ...current,
     hotelArrivesNextDay: true,
   });
-  expect(next.hotel.checkIn).toBe('2026-09-11');
+  expect(next.hotel.checkIn).toBe('2026-09-10');
   expect(next.hotel.checkOut).toBe(current.hotel.checkOut);
   expect(
     withSalesHotelDates(next, { ...next, hotelArrivesNextDay: false }).hotel
       .checkIn,
   ).toBe('2026-09-10');
+});
+
+// Exercise the retained strict algorithm separately from the current temporary policy.
+vi.mock('@nora/contracts', async (original) => ({
+  ...(await original<typeof Contracts>()),
+  enforceSalesHotelCapacity: () => true,
+}));
+
+it('uses outbound arrival day for overnight flights while retaining manual check-in', () => {
+  const outboundOffer = {
+    ...offer('2026-10-24T19:00:00Z'),
+    arrivalAt: '2026-10-25T02:00:00Z',
+  };
+  const next = withSalesHotelDates(base, {
+    ...base,
+    outboundOffer,
+    hotelArrivesNextDay: true,
+    packageSaleAvailable: true,
+    tour: { startsOn: '2026-10-25', endsOn: '2026-10-30' } as NonNullable<
+      SalesFormState['tour']
+    >,
+  });
+  expect(next.hotel.checkIn).toBe('2026-10-25');
+  expect(next.hotel.checkOut).toBe('2026-10-30');
+  const manual = {
+    ...next,
+    hotel: { ...next.hotel, checkIn: '2026-10-26', checkInManual: true },
+  };
+  expect(withSalesHotelDates(next, manual).hotel.checkIn).toBe('2026-10-26');
+});
+
+it('uses the selected outbound day before floating flight details are complete with a legacy next-day flag', () => {
+  const next = withSalesHotelDates(base, {
+    ...base,
+    departureDate: '2026-10-24',
+    hotelArrivesNextDay: true,
+    contractFlights: {
+      OUTBOUND: {
+        departureAt: '',
+        arrivalAt: '',
+        carrierName: '',
+        serviceNumber: '',
+        cabinClassCode: 'ECONOMY',
+      },
+    },
+  });
+  expect(next.hotel.checkIn).toBe('2026-10-24');
+});
+
+it('preserves aggregate legacy flight/hotel dates, age counts, real offer links and a single customer total without passenger identities', () => {
+  const current = selected();
+  const price = {
+    version: 1 as const,
+    currencyCode: 'USD',
+    daySale: { basis: 'TOTAL' as const, amount: '100' },
+    agreed: { basis: 'TOTAL' as const, amount: '100' },
+  };
+  const state: SalesFormState = {
+    ...current,
+    legacyContract: true,
+    customerId: 'buyer',
+    ticket: {
+      ...current.ticket,
+      outboundOfferId: current.outboundOffer!.id,
+      returnOfferId: current.returnOffer!.id,
+      outboundDepartureAt: current.outboundOffer!.departureAt,
+      outboundArrivalAt: current.outboundOffer!.arrivalAt,
+      returnDepartureAt: current.returnOffer!.departureAt,
+      returnArrivalAt: current.returnOffer!.arrivalAt,
+    },
+    passengerComposition: { adults: 2, children: 1, infants: 1 },
+    priceEntryMode: 'CONTRACT_TOTAL',
+    hotel: {
+      ...current.hotel,
+      hotelId: 'hotel',
+      name: 'Synthetic Hotel',
+      roomTypeId: '11111111-1111-4111-8111-111111111111',
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: '11111111-1111-4111-8111-111111111111',
+          roomTypeNameSnapshot: 'Standard',
+          adults: 2,
+          childAges: [5, 1],
+        },
+      ],
+    },
+    contractPrices: [{ currencyCode: 'USD', amount: '250' }],
+    servicePricing: {
+      'flight-outbound': [price],
+      'flight-return': [price],
+      hotel: [price],
+    },
+  };
+  const payload = salesPayload(state);
+  expect(payload.passengers).toEqual([]);
+  expect(payload.customerId).toBe('buyer');
+  expect(payload.ticketSelections).toHaveLength(2);
+  expect(payload.hotelSelection).toMatchObject({
+    occupancy: 4,
+    checkInDate: '2026-09-10',
+    checkOutDate: '2026-09-19',
+  });
+  const parties = JSON.parse(
+    String(payload.services[0]!.metadata!.legacyServicePartiesV2),
+  );
+  expect(parties.hotel).toEqual({ adults: 2, children: 1, infants: 1 });
+  expect(parties['flight-outbound']).toEqual({
+    adults: 2,
+    children: 1,
+    infants: 1,
+  });
+  expect(payload.services.map((s) => s.kind)).toEqual([
+    'FLIGHT',
+    'FLIGHT',
+    'HOTEL',
+  ]);
+  expect(
+    payload.priceComponents
+      .filter((p) => p.type === 'BASE')
+      .map((p) => p.amount),
+  ).toEqual(['250']);
 });

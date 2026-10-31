@@ -1,4 +1,6 @@
+import { latinDigits } from '@/i18n/translate';
 import { ticketSkyline, ticketWorldMap } from './ticket-artwork';
+import { publicDocumentQr } from '@/modules/travel-documents/public/document-qr';
 import { ticketReferenceQr } from './ticket-reference-qr';
 export interface TicketLayoutFlight {
   originId: string;
@@ -12,10 +14,12 @@ export interface TicketLayoutFlight {
   businessOutput?: boolean;
   contractOnly?: boolean;
   baggageKg?: string | null | undefined;
-  originAirport?: { code: string; name: string } | undefined;
-  destinationAirport?: { code: string; name: string } | undefined;
+  originAirport?: { code: string; name: string; cityName?: string } | undefined;
+  destinationAirport?:
+    { code: string; name: string; cityName?: string } | undefined;
 }
 export interface TicketLayoutData {
+  publicDocumentUrl?: string | undefined;
   passengerName: string;
   contractNumber?: string;
   ageCategory?: 'ADT' | 'CHD' | 'INF';
@@ -38,8 +42,9 @@ export type TicketLayoutAirline = {
   code?: string;
   logoDataUrl?: string;
 };
+export const TICKET_LATIN_FONT_URL = '/fonts/vazirmatn-latin-wght-normal.woff2';
 const escape = (v: unknown) =>
-  String(v ?? '')
+  latinDigits(String(v ?? ''))
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
@@ -72,6 +77,7 @@ const fmt = (v: string, options: Intl.DateTimeFormatOptions) => {
   if (!Number.isFinite(Date.parse(v))) return '—';
   return new Intl.DateTimeFormat('en-GB-u-ca-gregory', {
     timeZone: 'Asia/Tehran',
+    numberingSystem: 'latn',
     ...options,
   })
     .format(new Date(v))
@@ -122,23 +128,33 @@ export function ticketPageHtml(
   const carrier = [airline?.code, carrierName(offers[0]?.carrierName || '')]
     .filter(Boolean)
     .join(' — ');
-  const documentInfo = `<section class="document-info"><div><span>E-Ticket No</span><strong>${escape(data.eTicketNumber || '')}</strong></div><div><span>AIRLINE</span><strong>${escape(carrier)}</strong></div><div><span>RLOC</span><strong>${escape(offers.map((offer) => `${city(offer.originId)} → ${city(offer.destinationId)}`).join(' / '))}</strong></div><div><span>DATE OF ISSUE</span><strong>${data.issuedAt && Number.isFinite(Date.parse(data.issuedAt)) ? day(data.issuedAt) : ''}</strong></div></section>`;
+  const documentInfo = `<section class="document-info"><div><span>E-Ticket No</span><strong>${escape(data.eTicketNumber || '')}</strong></div><div><span>AIRLINE</span><strong>${escape(carrier)}</strong></div><div><span>RLOC</span><strong>${escape(offers.map((offer) => `${offer.originAirport?.cityName || offer.originAirport?.name || city(offer.originId)} → ${offer.destinationAirport?.cityName || offer.destinationAirport?.name || city(offer.destinationId)}`).join(' / '))}</strong></div><div><span>DATE OF ISSUE</span><strong>${data.issuedAt && Number.isFinite(Date.parse(data.issuedAt)) ? day(data.issuedAt) : ''}</strong></div></section>`;
   const traveler = [title, data.passengerName].filter(Boolean).join(' ');
-  const qr = ticketReferenceQr(data.contractNumber || '');
+  const qr =
+    publicDocumentQr(data.publicDocumentUrl) ??
+    ticketReferenceQr(data.contractNumber || '');
   const legs = offers
     .map((savedOffer, index) => {
       const offer = {
         ...savedOffer,
         carrierName: carrierName(savedOffer.carrierName),
       };
-      const origin = city(offer.originId),
-        destination = city(offer.destinationId);
-      const direction =
-        offer.direction === 'RETURN'
-          ? 'RETURN'
-          : index === 0
-            ? 'OUTBOUND'
-            : 'FLIGHT';
+      const origin =
+          offer.originAirport?.cityName ||
+          (offer.originAirport
+            ? offer.originAirport.name
+            : city(offer.originId)),
+        destination =
+          offer.destinationAirport?.cityName ||
+          (offer.destinationAirport
+            ? offer.destinationAirport.name
+            : city(offer.destinationId));
+      const returning = offer.direction === 'RETURN';
+      const direction = returning
+        ? 'DEPARTURE'
+        : offer.direction === 'OUTBOUND' || index === 0
+          ? 'ARRIVAL'
+          : 'FLIGHT';
       const cabin = offer.businessOutput
         ? 'BUSINESS'
         : offer.cabinClassCode || '—';
@@ -149,25 +165,27 @@ export function ticketPageHtml(
       ) =>
         `<div class="place ${departing ? '' : 'destination'}"><b class="city" dir="auto">${escape(name)}</b><strong class="airport-code">${escape(airport?.code || '')}</strong><span class="airport-name" dir="auto">${escape(airport?.name || '')}</span>${departing ? `<strong class="clock">${time(offer.departureAt)}</strong><b class="flight-date">${day(offer.departureAt)}</b>` : offer.arrivalAt ? `<span class="arrival">${time(offer.arrivalAt)} · ${day(offer.arrivalAt)}</span>` : ''}</div>`;
       const baggage =
-        offer.baggageKg != null && /^\d+(\.\d+)?$/.test(offer.baggageKg)
+        offer.baggageKg != null &&
+        /^\d+(\.\d+)?$/.test(latinDigits(offer.baggageKg))
           ? `${escape(offer.baggageKg)} KG`
           : '—';
-      return `<section class="leg ${direction === 'RETURN' ? 'return' : 'outbound'}"><div class="leg-head">${plane}<strong>${direction}</strong><span>${fmt(offer.departureAt, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</span></div><div class="route">${ticketSkyline(origin)}<div class="destination-landscape">${ticketSkyline(destination)}</div>${place(origin, offer.originAirport, true)}<div class="flight-path"><svg viewBox="0 0 260 58" aria-hidden="true"><path d="M9 44Q130-8 251 44" stroke="#315d7d" stroke-width="1.2" stroke-dasharray="3 3" fill="none"/><circle cx="9" cy="44" r="5.5" fill="#12aaa9"/><circle cx="251" cy="44" r="5.5" fill="#098ba0"/></svg><div class="path-plane">${plane}</div><div class="flight-facts"><span>${duration(offer.departureAt, offer.arrivalAt)}</span><span>${escape(offer.serviceNumber || '—')}</span></div><b class="route-label">${escape(origin)} &nbsp; → &nbsp; ${escape(destination)}</b><small class="carrier" dir="auto">${escape(offer.carrierName)}</small></div>${place(destination, offer.destinationAirport, false)}</div><div class="leg-foot"><div>${seatIcon}<p><span>CLASS</span><strong>${escape(cabin)}</strong></p></div><div>${statusIcon}<p><span>STATUS</span><strong>${offer.contractOnly ? 'PENDING RESERVATION' : data.issued ? 'ISSUED' : 'DRAFT'}</strong></p></div><div>${baggageIcon}<p><span>BAGGAGE</span><strong>${baggage}</strong></p></div></div></section>`;
+      return `<section class="leg ${returning ? 'return' : 'outbound'}"><div class="leg-head">${plane}<strong>${direction}</strong><span>${fmt(offer.departureAt, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</span></div><div class="route">${ticketSkyline(origin)}<div class="destination-landscape">${ticketSkyline(destination)}</div>${place(origin, offer.originAirport, true)}<div class="flight-path"><svg viewBox="0 0 260 58" aria-hidden="true"><path d="M9 44Q130-8 251 44" stroke="#315d7d" stroke-width="1.2" stroke-dasharray="3 3" fill="none"/><circle cx="9" cy="44" r="5.5" fill="#12aaa9"/><circle cx="251" cy="44" r="5.5" fill="#098ba0"/></svg><div class="path-plane">${plane}</div><div class="flight-facts"><span>${duration(offer.departureAt, offer.arrivalAt)}</span><span>${escape(offer.serviceNumber || '—')}</span></div><b class="route-label">${escape(origin)} &nbsp; → &nbsp; ${escape(destination)}</b><small class="carrier" dir="auto">${escape(offer.carrierName)}</small></div>${place(destination, offer.destinationAirport, false)}</div><div class="leg-foot"><div>${seatIcon}<p><span>CLASS</span><strong>${escape(cabin)}</strong></p></div><div>${statusIcon}<p><span>STATUS</span><strong>${offer.contractOnly ? 'PENDING RESERVATION' : data.issued ? 'ISSUED' : 'DRAFT'}</strong></p></div><div>${baggageIcon}<p><span>BAGGAGE</span><strong>${baggage}</strong></p></div></div></section>`;
     })
     .join('');
-  return `<article class="flight-ticket"><header><div class="heading"><h1>FLIGHT TICKET</h1><p>ELECTRONIC TICKET / ITINERARY</p></div><div class="logos${brand.companyCode === 'NIYAYESH_SEIR_SAHAR' ? ' niyayesh-logos' : ''}">${airlineMark}${safeImage(brand.logoDataUrl) ? `<img class="agency-logo" src="${brand.logoDataUrl}" alt="${escape(brand.companyCode === 'JAHAN_BASTAN' ? 'جهان باستان' : brand.name)}">` : ''}</div></header>${!data.issued ? '<div class="draft">DRAFT — NOT VALID FOR TRAVEL / پیش‌نمایش، فاقد اعتبار سفر</div>' : ''}<section class="identity"><div><i>${passengerIcon}</i><p><span>PASSENGER</span><strong dir="auto">${escape(traveler || '—')}</strong></p></div><div><i>${referenceIcon}</i><p><span>BOOKING REFERENCE</span><strong>${escape(data.contractNumber || '—')}</strong></p></div><small>A SAFER<br>BRIGHTER<br>JOURNEY</small></section>${documentInfo}${legs}<footer>${qr ? `<figure class="ticket-qr">${qr}<figcaption>${escape(data.contractNumber)}</figcaption></figure>` : ''}<div class="journey">${ticketWorldMap}<span>Good<br>Journeys</span></div></footer><div class="ticket-note">${data.transferDirections.length ? `TRANSFER INCLUDED: ${escape(data.transferDirections.join(' / '))} · ` : ''}FLIGHT TIMES: TEHRAN TIME · PRESENCE 03:00 BEFORE FLIGHT TIME AT THE AIRPORT IS MANDATORY<br><span lang="fa" dir="rtl">حضور در فرودگاه ۳ ساعت قبل از پرواز الزامی است.</span></div></article>`;
+  return `<article class="flight-ticket"><header><div class="heading"><h1>FLIGHT TICKET</h1><p>ELECTRONIC TICKET / ITINERARY</p></div><div class="logos${brand.companyCode === 'NIYAYESH_SEIR_SAHAR' ? ' niyayesh-logos' : ''}">${airlineMark}${safeImage(brand.logoDataUrl) ? `<img class="agency-logo" src="${brand.logoDataUrl}" alt="${escape(brand.companyCode === 'JAHAN_BASTAN' ? 'جهان باستان' : brand.name)}">` : ''}</div></header>${!data.issued ? '<div class="draft">DRAFT — NOT VALID FOR TRAVEL / پیش‌نمایش، فاقد اعتبار سفر</div>' : ''}<section class="identity"><div><i>${passengerIcon}</i><p><span>PASSENGER</span><strong dir="auto">${escape(traveler || '—')}</strong></p></div><div><i>${referenceIcon}</i><p><span>BOOKING REFERENCE</span><strong>${escape(data.contractNumber || '—')}</strong></p></div><small>A SAFER<br>BRIGHTER<br>JOURNEY</small></section>${documentInfo}${legs}<footer>${qr ? `<figure class="ticket-qr">${qr}<figcaption>${escape(data.contractNumber)}</figcaption></figure>` : ''}<div class="journey">${ticketWorldMap}<span>Good<br>Journeys</span></div></footer><div class="ticket-note">${data.transferDirections.length ? `TRANSFER INCLUDED: ${escape(data.transferDirections.map((direction) => (direction === 'OUTBOUND' ? 'ARRIVAL' : direction === 'RETURN' ? 'DEPARTURE' : direction)).join(' / '))} · ` : ''}FLIGHT TIMES: TEHRAN TIME · PRESENCE 03:00 BEFORE FLIGHT TIME AT THE AIRPORT IS MANDATORY<br><span lang="fa" dir="rtl">حضور در فرودگاه 3 ساعت قبل از پرواز الزامی است.</span></div></article>`;
 }
 export const ticketLayoutStyles = `
+@font-face{font-family:TicketLatin;src:url("${TICKET_LATIN_FONT_URL}") format("woff2");font-weight:100 900;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0100-024F}
 @page{size:A4 portrait;margin:0}
 .flight-ticket .document-info{display:grid;grid-template-columns:.9fr 1.3fr 1.7fr 1.1fr;border:1px solid #dce6ee;border-radius:2mm;margin:0 0 4mm;padding:2.5mm 3mm;gap:3mm;min-height:15mm}.flight-ticket .document-info>div+div{border-left:1px solid #dce6ee;padding-left:3mm}.flight-ticket .document-info span{display:block;font-size:7pt;letter-spacing:.25mm;color:#5c758a;margin-bottom:1mm}.flight-ticket .document-info strong{display:block;min-height:4mm;font-size:8pt;line-height:1.3;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
-.flight-ticket,.flight-ticket *{box-sizing:border-box}.flight-ticket{position:relative;width:210mm;min-height:297mm;padding:7mm;color:#102e52;background:white;font-family:"Segoe UI",Arial,ReservationNazanin,sans-serif;line-height:1.15;page-break-after:always;isolation:isolate}.flight-ticket:last-child{page-break-after:auto}
-.flight-ticket header{height:29mm;display:flex;align-items:flex-start;justify-content:space-between;gap:4mm}.flight-ticket h1{margin:1mm 0 2mm;font-size:31pt;font-weight:800;letter-spacing:.2mm;color:#071e44;white-space:nowrap}.flight-ticket header p{font-size:8.5pt;letter-spacing:1.3mm;margin:0;white-space:nowrap}.flight-ticket .logos{display:flex;align-items:center;justify-content:flex-end;flex-wrap:nowrap;gap:4mm;height:27mm;flex-shrink:0}.flight-ticket .airline-logo{width:34mm;height:27mm;object-fit:contain}.flight-ticket .agency-logo{width:32mm;height:27mm;object-fit:contain}.flight-ticket .airline-name{width:31mm;font-size:13pt;padding-top:8mm;overflow-wrap:anywhere}.flight-ticket .icon{width:8mm;height:8mm;flex-shrink:0}.flight-ticket .plane{fill:currentColor;stroke-width:.6}
+.flight-ticket,.flight-ticket *{box-sizing:border-box}.flight-ticket{position:relative;width:210mm;min-height:297mm;padding:7mm;color:#102e52;background:white;font-family:TicketLatin,"Segoe UI",Arial,ReservationNazanin,sans-serif;line-height:1.15;page-break-after:always;isolation:isolate}.flight-ticket:last-child{page-break-after:auto}
+.flight-ticket header{height:29mm;display:flex;align-items:flex-start;justify-content:space-between;gap:4mm}.flight-ticket h1{margin:1mm 0 2mm;font-size:31pt;font-weight:800;letter-spacing:.2mm;color:#071e44;white-space:nowrap}.flight-ticket header p{font-size:8.5pt;letter-spacing:1.3mm;margin:0;white-space:nowrap}.flight-ticket .logos{display:flex;align-items:center;justify-content:flex-end;flex-wrap:nowrap;gap:4mm;height:27mm;flex-shrink:0}.flight-ticket .airline-logo{width:34mm;height:27mm;object-fit:contain;background:transparent;mix-blend-mode:multiply}.flight-ticket .agency-logo{width:32mm;height:27mm;object-fit:contain}.flight-ticket .airline-name{width:31mm;font-size:13pt;padding-top:8mm;overflow-wrap:anywhere}.flight-ticket .icon{width:8mm;height:8mm;flex-shrink:0}.flight-ticket .plane{fill:currentColor;stroke-width:.6}
 .flight-ticket .identity{min-height:24mm;display:grid;grid-template-columns:1fr 1.12fr 18mm;align-items:center;gap:4mm;border-radius:3mm;background:linear-gradient(110deg,#f0f6fb,#eaf3fa);padding:3mm 6mm;margin-bottom:3mm}.flight-ticket .identity>div{display:flex;align-items:center;gap:5mm;min-width:0}.flight-ticket .identity>div+div{border-left:1px solid #c8d8e4;padding-left:6mm}.flight-ticket .identity i{display:grid;place-items:center;border:1px solid #193d61;border-radius:50%;width:15mm;height:15mm;flex-shrink:0}.flight-ticket .identity p{margin:0;min-width:0}.flight-ticket .identity span{display:block;font-size:8pt;margin-bottom:2mm}.flight-ticket .identity strong{display:block;font-size:12pt;color:#081e43;overflow-wrap:anywhere}.flight-ticket .identity small{font-size:5.5pt;line-height:2;letter-spacing:1mm;color:#7790a6}
 .flight-ticket .leg{border:1px solid #dde7ef;border-radius:3mm;overflow:hidden;margin-bottom:4mm;break-inside:avoid;box-shadow:0 1mm 3mm #c8d9e533}.flight-ticket .leg-head{height:12mm;background:linear-gradient(110deg,#103456,#173e64);color:white;display:flex;align-items:center;gap:5mm;padding:2mm 6mm}.flight-ticket .leg.return .leg-head{background:linear-gradient(110deg,#088799,#0c90a0)}.flight-ticket .leg-head strong{font-size:13pt;letter-spacing:.2mm}.flight-ticket .leg-head>span{font-size:10.5pt;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.15mm;border-left:1px solid #93a8ba;padding-left:5mm}
 .flight-ticket .route{position:relative;display:grid;grid-template-columns:1fr 1.55fr 1fr;align-items:center;gap:4mm;min-height:41mm;padding:3mm 20mm 3mm;isolation:isolate}.flight-ticket .place{display:flex;flex-direction:column;align-items:flex-start;min-width:0}.flight-ticket .city{font-size:10pt;font-weight:bold;text-transform:uppercase}.flight-ticket .airport-code{font-size:29pt;font-weight:800;color:#071e44;margin:.8mm 0}.flight-ticket .airport-name{font-size:7.5pt;max-width:35mm;min-height:7mm}.flight-ticket .clock{font-size:16pt;color:#081e43;margin-top:1.5mm}.flight-ticket .flight-date{font-size:10.5pt;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.15mm;margin-top:1.2mm}.flight-ticket .destination{align-self:start;padding-top:0}.flight-ticket .arrival{font-size:7pt;margin-top:4mm;line-height:1.4}.flight-ticket .landscape{position:absolute;width:43mm;height:32mm;bottom:0;left:0;z-index:-1;color:#d5e1ea;opacity:.5}.flight-ticket .destination-landscape{position:absolute;inset:0;z-index:-1;pointer-events:none}.flight-ticket .destination-landscape .landscape{left:auto;right:0}
 .flight-ticket .flight-path{text-align:center;position:relative;padding-top:10mm;min-width:0}.flight-ticket .flight-path>svg{width:100%;height:15mm;display:block}.flight-ticket .path-plane{position:absolute;top:10mm;left:calc(50% - 4mm);transform:rotate(-5deg);color:#124361}.flight-ticket .path-plane .icon{width:10mm;height:10mm}.flight-ticket .flight-facts{display:flex;align-items:center;justify-content:center;gap:5mm;margin:1mm 0 2mm;font-size:8pt}.flight-ticket .flight-facts span+span{border-left:1px solid #567187;padding-left:5mm}.flight-ticket .route-label{display:block;font-size:8.5pt;letter-spacing:.5mm;text-transform:uppercase;overflow-wrap:anywhere}.flight-ticket .carrier{display:block;font-size:6.5pt;color:#648197;margin-top:2mm}
 .flight-ticket .leg-foot{display:grid;grid-template-columns:repeat(3,1fr);background:#f6fafc;border-top:1px solid #e2ebf2;min-height:14mm;padding:2.5mm 9mm;gap:4mm}.flight-ticket .leg-foot>div{display:flex;align-items:center;gap:4mm}.flight-ticket .leg-foot>div+div{border-left:1px solid #c8d8e4;padding-left:8mm}.flight-ticket .leg-foot p{margin:0}.flight-ticket .leg-foot span{display:block;font-size:7.5pt;margin-bottom:1mm}.flight-ticket .leg-foot strong{font-size:9pt;color:#0b2245}
-.flight-ticket footer{display:flex;justify-content:space-between;align-items:center;min-height:26mm;margin-top:1mm}.flight-ticket .ticket-qr{margin:0;padding:1mm;background:#f2f7fb;border-radius:2mm;width:25mm}.flight-ticket .ticket-qr svg{display:block;width:22mm;height:22mm}.flight-ticket .ticket-qr figcaption{font-size:5pt;text-align:center;overflow-wrap:anywhere}.flight-ticket .journey{position:relative;width:73mm;height:26mm}.flight-ticket .world{position:absolute;inset:0;width:100%;height:100%;color:#dce5eb;opacity:.85}.flight-ticket .journey span{position:absolute;right:2mm;bottom:1mm;color:#1396a5;font-family:"Segoe Script","Brush Script MT",cursive;font-style:italic;font-size:19pt;line-height:1;transform:rotate(-15deg);border-bottom:1px solid #1396a5;padding-bottom:2mm}.flight-ticket .ticket-note{font-size:8pt;font-weight:600;line-height:1.65;color:#244660;text-align:center;margin-top:2mm;padding:2mm 3mm;border-top:1px solid #d8e4ed}.ticket-note span{font-size:10pt;font-family:ReservationNazanin,"Segoe UI",sans-serif}.flight-ticket .draft{font-size:8pt;color:#a62d2d;border:1px dashed #a62d2d;text-align:center;padding:1mm;margin-bottom:2mm}
+.flight-ticket footer{display:flex;justify-content:space-between;align-items:center;min-height:26mm;margin-top:1mm}.flight-ticket .ticket-qr{margin:0;padding:1mm;background:#f2f7fb;border-radius:2mm;width:25mm}.flight-ticket .ticket-qr svg{display:block;width:22mm;height:22mm}.flight-ticket .ticket-qr figcaption{font-size:5pt;text-align:center;overflow-wrap:anywhere}.flight-ticket .journey{position:relative;width:73mm;height:26mm}.flight-ticket .world{position:absolute;inset:0;width:100%;height:100%;color:#dce5eb;opacity:.85}.flight-ticket .journey span{position:absolute;right:2mm;bottom:1mm;color:#1396a5;font-family:"Segoe Script","Brush Script MT",cursive;font-style:italic;font-size:19pt;line-height:1;transform:rotate(-15deg);border-bottom:1px solid #1396a5;padding-bottom:2mm}.flight-ticket .ticket-note{font-size:8pt;font-weight:600;line-height:1.65;color:#244660;text-align:center;margin-top:2mm;padding:2mm 3mm;border-top:1px solid #d8e4ed}.ticket-note span{font-size:10pt;font-family:TicketLatin,ReservationNazanin,"Segoe UI",sans-serif}.flight-ticket .draft{font-size:8pt;color:#a62d2d;border:1px dashed #a62d2d;text-align:center;padding:1mm;margin-bottom:2mm}
 `;
 // Identical vertical anchors for departure/arrival; center facts beneath the route arc.
 export const ticketAlignmentStyles = `

@@ -12,12 +12,33 @@ const brandAssetReader = vi.hoisted(() =>
 );
 vi.mock('@/modules/reservations/server/ticket-pdf', () => ({
   renderTicketPdf: renderer,
+  prepareTicketHtml: async (html: string) => html,
 }));
 vi.mock('@/modules/reservations/server/ticket-pdf-assets', () => ({
   readTicketBrandAsset: brandAssetReader,
 }));
 vi.mock('@/lib/environment', () => ({
   getPublicApiBaseUrl: () => 'http://api.test/api/v1',
+}));
+const publishing = vi.hoisted(() => ({
+  enabled: false,
+  documents: [] as Array<{ url: string; html: string }>,
+}));
+vi.mock('@/modules/travel-documents/server/public-document-store', () => ({
+  createPublicDocument: () => {
+    if (!publishing.enabled) return undefined;
+    const url =
+      'https://example.test/d/' +
+      String(publishing.documents.length).padStart(32, 'a');
+    const entry = { url, html: '' };
+    publishing.documents.push(entry);
+    return {
+      url,
+      save: async (html: string) => {
+        entry.html = html;
+      },
+    };
+  },
 }));
 import { GET } from '@/app/reservations/requests/[id]/tickets/pdf/route';
 import { ticketPdfHtml } from './ticket-pdf-html';
@@ -90,10 +111,73 @@ const request = (query = '') =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  publishing.enabled = false;
+  publishing.documents.length = 0;
   vi.unstubAllGlobals();
 });
 
 describe('reservation ticket PDF', () => {
+  it.each([false, true])(
+    'downloads current flight facts for an already issued ticket (Sales=%s)',
+    async (sales) => {
+      const saved = structuredClone(intake);
+      Object.assign(saved.snapshot.ticketSelections![0]!, {
+        carrierNameSnapshot: 'UPDATED AIR',
+        serviceNumberSnapshot: 'UPDATED-9726',
+        departureAt: '2026-11-12T21:00:00Z',
+        arrivalAt: '2026-11-13T01:00:00Z',
+      });
+      saved.ticketDocuments = [
+        {
+          customerId: passengerId,
+          number: 'ISSUED-UNCHANGED',
+          issuedAt: '2026-09-12T00:00:00Z',
+          source: 'AUTO',
+        },
+      ] as never;
+      const fetcher = vi.fn(async (url: string) => {
+        if (url.endsWith('/workflow') || url.endsWith('/travel-documents'))
+          return Response.json({ data: saved });
+        if (url.endsWith('/document-details'))
+          return Response.json({
+            data: {
+              id: 'offer',
+              originId: cityOne,
+              destinationId: cityTwo,
+              economyBaggageKg: '35',
+              businessBaggageKg: '45',
+            },
+          });
+        if (
+          url.endsWith('/passengers') ||
+          url.includes('/master-data/airlines?')
+        )
+          return Response.json({ data: [] });
+        return Response.json({
+          data: { name: 'City', attributes: { englishName: 'CITY' } },
+        });
+      });
+      vi.stubGlobal('fetch', fetcher);
+      const query = sales
+        ? `?salesContractId=${saved.snapshot.contractId}`
+        : '';
+      expect(
+        (await GET(request(query), { params: Promise.resolve({ id }) })).status,
+      ).toBe(200);
+      const html = renderer.mock.calls[0]?.[0] as string;
+      expect(html).toContain('UPDATED AIR');
+      expect(html).toContain('UPDATED-9726');
+      expect(html).toContain('35 KG');
+      expect(html).toContain('ISSUED-UNCHANGED');
+      expect(html).not.toContain('TEST-01</span>');
+      expect(fetcher.mock.calls[0]?.[0]).toContain(
+        sales ? '/travel-documents' : '/workflow',
+      );
+      expect(intake.snapshot.ticketSelections?.[0]?.serviceNumberSnapshot).toBe(
+        'TEST-01',
+      );
+    },
+  );
   it('loads persisted output flight-number overrides into the downloaded PDF', async () => {
     const saved = structuredClone(intake);
     saved.workflow.ticketFlightNumbers = { 'flight-offer': 'B9 4599' };
@@ -440,7 +524,7 @@ describe('reservation ticket PDF', () => {
     expect(html).toContain(
       'PRESENCE 03:00 BEFORE FLIGHT TIME AT THE AIRPORT IS MANDATORY',
     );
-    expect(html).toContain('حضور در فرودگاه ۳ ساعت قبل از پرواز الزامی است.');
+    expect(html).toContain('حضور در فرودگاه 3 ساعت قبل از پرواز الزامی است.');
     expect(html).toContain('class="airline-logo"');
     expect(html).not.toContain('>20<');
   });
@@ -570,4 +654,66 @@ it('downloads Jahan tickets with the new bundled logo instead of a stale uploade
   ).toBe(false);
   expect(renderer.mock.calls[0]?.[0]).toContain('جهان باستان');
   expect(renderer.mock.calls[0]?.[0]).not.toContain('نیایش');
+});
+
+it('publishes separate single-passenger snapshots when exporting all issued tickets', async () => {
+  publishing.enabled = true;
+  const second = '00000000-0000-4000-8000-000000000099';
+  const saved = structuredClone(intake);
+  saved.snapshot.passengerIds = [passengerId, second];
+  saved.snapshot.passengerAssignments = [
+    {
+      ...saved.snapshot.passengerAssignments![0]!,
+      displayNameSnapshot: 'ALPHA PERSON',
+    },
+    {
+      ...saved.snapshot.passengerAssignments![0]!,
+      customerId: second,
+      displayNameSnapshot: 'BETA PERSON',
+    },
+  ];
+  saved.ticketDocuments = [passengerId, second].map((customerId, i) => ({
+    customerId,
+    number: String(100000 + i),
+    issuedAt: '2026-10-01T08:00:00Z',
+    source: 'AUTO',
+  }));
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) =>
+      Response.json({
+        data: url.endsWith('/workflow')
+          ? saved
+          : url.endsWith('/passengers') || url.includes('airlines?')
+            ? []
+            : { name: 'CITY', attributes: {} },
+      }),
+    ),
+  );
+  const result = await GET(request('?format=share'), {
+    params: Promise.resolve({ id }),
+  });
+  expect(result.status).toBe(200);
+  expect(publishing.documents).toHaveLength(2);
+  expect(publishing.documents[0]!.html).toContain('ALPHA PERSON');
+  expect(publishing.documents[0]!.html).not.toContain('BETA PERSON');
+  expect(publishing.documents[1]!.html).toContain('BETA PERSON');
+  expect(publishing.documents[1]!.html).not.toContain('ALPHA PERSON');
+  expect(publishing.documents[0]!.html).toContain(publishing.documents[0]!.url);
+  expect(publishing.documents[1]!.html).not.toContain(
+    publishing.documents[0]!.url,
+  );
+  expect(renderer).not.toHaveBeenCalled();
+});
+it('cannot publish a public ticket through an unauthorized request', async () => {
+  publishing.enabled = true;
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(new Response(null, { status: 403 })),
+  );
+  expect(
+    (await GET(request('?format=share'), { params: Promise.resolve({ id }) }))
+      .status,
+  ).toBe(403);
+  expect(publishing.documents).toHaveLength(0);
 });

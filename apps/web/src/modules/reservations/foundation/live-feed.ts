@@ -1,4 +1,5 @@
-import { salesHotelRoomSummary } from '@nora/contracts';
+import { reservationRoomCategoryCounts } from './room-category-counts';
+import { queueHotelName } from './queue-hotels';
 import { z } from 'zod';
 import { voucherActionAvailable } from '../model/voucher-readiness';
 import type { LoginResponse } from '@nora/contracts';
@@ -20,6 +21,7 @@ const flagSchema = z.object({
   actorName: z.string().nullable().optional(),
 });
 const summarySchema = z.object({
+  passengerNames: z.array(z.string().max(500)).max(1000).optional(),
   createdAt: instant,
   contractVersion: z.number().int().positive(),
   correctedAt: instant.nullable(),
@@ -86,6 +88,15 @@ const snapshotSchema = z.object({
     .object({
       hotelNameSnapshot: z.string().max(200),
       hotelId: id.optional(),
+      additionalStays: z
+        .array(
+          z.object({
+            hotelId: id.optional(),
+            hotelNameSnapshot: z.string().max(240),
+          }),
+        )
+        .max(50)
+        .optional(),
       mealServiceId: id.nullable().optional(),
       cityId: id.optional(),
       checkOutDate: z.string().refine(isCivilDate).optional(),
@@ -98,6 +109,9 @@ const snapshotSchema = z.object({
           z.object({
             adults: z.number().int().positive(),
             childAges: z.array(z.number().int().min(0).max(14)),
+            roomCategory: z
+              .enum(['SINGLE', 'DOUBLE', 'DOUBLE_EXTRA', 'TRIPLE', 'FAMILY'])
+              .optional(),
           }),
         )
         .max(50)
@@ -216,8 +230,17 @@ export function decodeIntake(
         throw new ReservationFeedError('ERROR');
       seen.add(row.id);
       const snapshot = row.snapshot;
+      const hotels = snapshot.hotelSelection
+        ? [
+            snapshot.hotelSelection,
+            ...(snapshot.hotelSelection.additionalStays ?? []),
+          ].map((hotel) => ({
+            hotelId: hotel.hotelId,
+            name: hotel.hotelNameSnapshot,
+          }))
+        : [];
       const roomSummary = snapshot.hotelSelection?.rooms?.length
-        ? salesHotelRoomSummary(snapshot.hotelSelection.rooms)
+        ? reservationRoomCategoryCounts(snapshot.hotelSelection.rooms)
         : undefined;
       const knownKinds = [
         'FLIGHT',
@@ -319,6 +342,10 @@ export function decodeIntake(
         serviceTitles: snapshot.serviceSelections
           .map((s) => s.titleSnapshot)
           .filter(Boolean),
+        serviceItems: snapshot.serviceSelections.map((s) => ({
+          kind: s.kind,
+          title: s.titleSnapshot,
+        })),
         mealServiceId: snapshot.hotelSelection?.mealServiceId ?? undefined,
         hotelNotes: row.arrangement?.reason,
         hasNotes:
@@ -330,9 +357,11 @@ export function decodeIntake(
               ),
           ) || !!row.workflow?.reservationNotes?.length,
         assignee: null,
-        passengerNames: (snapshot.passengerAssignments ?? []).flatMap((p) =>
-          p.displayNameSnapshot ? [p.displayNameSnapshot] : [],
-        ),
+        passengerNames:
+          row.tableSummary?.passengerNames ??
+          (snapshot.passengerAssignments ?? []).flatMap((p) =>
+            p.displayNameSnapshot ? [p.displayNameSnapshot] : [],
+          ),
         services,
         priority: 'UNSPECIFIED',
         deadline: null,
@@ -359,6 +388,7 @@ export function decodeIntake(
           roomSummary?.extraBedCount ??
           row.arrangement?.extraBedCount ??
           snapshot.hotelSelection?.extraBedCount,
+        familyTripleRooms: roomSummary?.familyTripleRoomCount,
         hotelRequested: ['REQUESTED', 'CONFIRMED'].includes(
           row.workflow?.supplierStatus ?? '',
         ),
@@ -371,7 +401,8 @@ export function decodeIntake(
         ...(travelDate ? { travelDate } : {}),
         ...(snapshot.hotelSelection
           ? {
-              hotelName: snapshot.hotelSelection.hotelNameSnapshot,
+              hotels,
+              hotelName: queueHotelName({ hotels }),
               hotelId: snapshot.hotelSelection.hotelId,
             }
           : {}),

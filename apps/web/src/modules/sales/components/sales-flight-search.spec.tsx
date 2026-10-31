@@ -4,7 +4,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, expect, it, vi } from 'vitest';
 import type { TicketOfferV1 } from '@nora/contracts';
 import type { FlightDateRange } from './flight-date-range';
-import { emptySalesForm, type SalesFormState } from '../model/sales-form';
+import {
+  emptySalesForm,
+  salesFlightsValid,
+  type SalesFormState,
+} from '../model/sales-form';
 import { SalesContractForm } from './sales-contract-form';
 
 const fixture = vi.hoisted(() => ({
@@ -14,13 +18,25 @@ const fixture = vi.hoisted(() => ({
   pickers: [] as {
     selectedId: string;
     onSelect: (offer: TicketOfferV1) => void;
-    query: { originId: string };
+    query: {
+      originId: string;
+      destinationId: string;
+      departureFrom: string;
+      departureTo: string;
+    };
+    exactDay: string;
+    requireStandaloneFare?: boolean;
   }[],
   dates: null as null | {
     onChange: (range: FlightDateRange) => void;
     onReturningOffers: (offers: TicketOfferV1[]) => void;
+    requireFare: boolean;
+    originId: string;
+    destinationId: string;
+    primaryDirection: string;
+    roundTrip: boolean;
   },
-  search: null as null | (() => void),
+  confirms: [] as (() => void)[],
 }));
 vi.mock('react', async (original) => ({
   ...(await original<typeof React>()),
@@ -52,8 +68,8 @@ vi.mock('@/modules/legal-entities/components/legal-entity-context', () => ({
 vi.mock('@/components/ui/button', async (original) => ({
   ...(await original<typeof ButtonModule>()),
   Button: (props: React.ComponentProps<'button'>) => {
-    if (props['aria-label'] === 'جست‌وجوی بلیط‌ها')
-      fixture.search = props.onClick as () => void;
+    if (props['aria-label'] === 'ثبت بلیط شناور')
+      fixture.confirms.push(props.onClick as () => void);
     return (
       <button type="button" disabled={props.disabled}>
         {props.children}
@@ -78,9 +94,6 @@ vi.mock('./sales-people-sheet', () => ({
 }));
 vi.mock('./hotel-stay-dates', () => ({
   HotelStayDates: () => <div>shared hotel stay dates</div>,
-}));
-vi.mock('./contract-flight-editor', () => ({
-  ContractFlightEditor: () => null,
 }));
 
 const out: TicketOfferV1 = {
@@ -115,6 +128,7 @@ const back: TicketOfferV1 = {
 function render() {
   fixture.cursor = 0;
   fixture.pickers = [];
+  fixture.confirms = [];
   return renderToStaticMarkup(<SalesContractForm />);
 }
 beforeEach(() => {
@@ -128,15 +142,55 @@ beforeEach(() => {
     passengerComposition: { adults: 2, children: 0, infants: 0 },
   };
 });
-it('waits for Search, selects the registered return, and keeps outbound when manually changing return date', () => {
+it.each(['ONE_WAY', 'ROUND_TRIP'] as const)(
+  'selects unpriced flight-only inventory without a hotel (%s)',
+  (tripType) => {
+    fixture.draft = { ...fixture.draft!, tripType };
+    const unpricedOut = {
+      ...out,
+      standaloneSalePrice: null,
+      roundTripSalePrices: [],
+    };
+    const unpricedBack = {
+      ...back,
+      standaloneSalePrice: null,
+      roundTripSalePrices: [],
+    };
+    render();
+    expect(fixture.dates!.requireFare).toBe(false);
+    fixture.dates!.onReturningOffers([unpricedBack]);
+    fixture.dates!.onChange({
+      from: '2099-10-01',
+      to: tripType === 'ROUND_TRIP' ? '2099-10-04' : '2099-10-01',
+    });
+    render();
+    expect(fixture.pickers[0]!.requireStandaloneFare).toBe(false);
+    fixture.pickers[0]!.onSelect(unpricedOut);
+    render();
+    const selected = fixture.cells.find((c): c is SalesFormState =>
+      Boolean(c && typeof c === 'object' && 'serviceKinds' in c),
+    )!;
+    expect(selected.ticket.outboundOfferId).toBe('out');
+    if (tripType === 'ROUND_TRIP') {
+      expect(selected.ticket.returnOfferId).toBe('back');
+      expect(fixture.pickers[1]!.requireStandaloneFare).toBe(false);
+    }
+    expect(salesFlightsValid(selected)).toBe(true);
+    expect(selected.servicePricing?.['flight-outbound']).toBeUndefined();
+  },
+);
+it('shows exact-date cards automatically, selects the registered return, and allows manual return changes', () => {
   render();
-  fixture.dates!.onReturningOffers([back]);
-  fixture.dates!.onChange({ from: '2099-10-01', to: '2099-10-06' });
-  const beforeSearch = render();
   expect(fixture.pickers).toHaveLength(0);
-  expect(beforeSearch).not.toContain('جزئیات سفر');
-  fixture.search!();
+  fixture.dates!.onReturningOffers([back]);
+  fixture.dates!.onChange({ from: '2099-10-01', to: '' });
+  render();
+  expect(fixture.pickers).toHaveLength(0);
+  fixture.dates!.onChange({ from: '2099-10-01', to: '2099-10-06' });
   const searched = render();
+  expect(fixture.pickers).toHaveLength(1);
+  expect(searched).not.toContain('جست‌وجوی بلیط‌ها');
+  expect(searched).not.toContain('جزئیات سفر');
   expect(searched.indexOf('flight cards')).toBeLessThan(
     searched.indexOf('passenger table'),
   );
@@ -155,9 +209,7 @@ it('waits for Search, selects the registered return, and keeps outbound when man
 
   fixture.dates!.onChange({ from: '2099-10-01', to: '2099-10-06' });
   render();
-  expect(fixture.pickers).toHaveLength(0);
-  fixture.search!();
-  render();
+  expect(fixture.pickers).toHaveLength(2);
   expect(fixture.pickers[0]?.selectedId).toBe('out');
   expect(fixture.pickers[1]?.selectedId).toBe('');
   const alternative = {
@@ -171,8 +223,6 @@ it('waits for Search, selects the registered return, and keeps outbound when man
   expect(fixture.pickers[1]?.selectedId).toBe('manual');
   fixture.dates!.onChange({ from: '2099-10-02', to: '2099-10-06' });
   render();
-  fixture.search!();
-  render();
   expect(fixture.pickers[0]?.selectedId).toBe('');
 });
 
@@ -180,8 +230,6 @@ it('clears the old return and both pair quotes when the next outbound has no eli
   render();
   fixture.dates!.onReturningOffers([back]);
   fixture.dates!.onChange({ from: '2099-10-01', to: '2099-10-04' });
-  render();
-  fixture.search!();
   render();
   fixture.pickers[0]!.onSelect(out);
   render();
@@ -227,8 +275,6 @@ it('sets shared hotel dates from selected registered flights and preserves dates
   fixture.dates!.onReturningOffers([back]);
   fixture.dates!.onChange({ from: '2099-10-01', to: '2099-10-06' });
   render();
-  fixture.search!();
-  render();
   fixture.pickers[0]!.onSelect(out);
   render();
   const selected = fixture.cells.find((c): c is SalesFormState =>
@@ -240,4 +286,92 @@ it('sets shared hotel dates from selected registered flights and preserves dates
     checkInManual: false,
     checkOutManual: false,
   });
+});
+
+it('confirms overnight floating tickets and enables continuation with confirmed passengers without catalog search', () => {
+  fixture.draft = {
+    ...fixture.draft!,
+    originCountryId: '10000000-0000-4000-8000-000000000010',
+    destinationCountryId: '10000000-0000-4000-8000-000000000011',
+    originId: '10000000-0000-4000-8000-000000000002',
+    destinationId: '10000000-0000-4000-8000-000000000003',
+    customerId: 'person',
+    passengerComposition: { adults: 1, children: 0, infants: 0 },
+    passengers: [
+      {
+        customerId: 'person',
+        displayName: 'Synthetic Person',
+        birthDate: '1990-01-01',
+      },
+    ],
+    contractFlights: {
+      OUTBOUND: {
+        carrierName: 'Synthetic',
+        serviceNumber: '119',
+        departureAt: '2099-10-01T01:08:00',
+        arrivalAt: '2099-10-01T00:02:00',
+        cabinClassCode: 'ECONOMY',
+      },
+      RETURN: {
+        carrierName: 'Synthetic',
+        serviceNumber: '120',
+        departureAt: '2099-10-04T01:16:00',
+        arrivalAt: '2099-10-04T08:16:00',
+        cabinClassCode: 'ECONOMY',
+      },
+    },
+  };
+  render();
+  expect(fixture.confirms).toHaveLength(2);
+  fixture.confirms[0]!();
+  render();
+  fixture.confirms[1]!();
+  const html = render();
+  expect(html).toContain('بلیط شناور ثبت شد.');
+  const button = [...html.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)]
+    .map((match) => match[0])
+    .find((markup) => markup.includes('تأیید مسیر و خدمات'));
+  expect(button).toBeDefined();
+  expect(button).not.toContain('disabled');
+});
+
+it('opens only the reverse-route return cards on the selected return day without choosing outbound', () => {
+  fixture.draft = {
+    ...fixture.draft!,
+    tripType: 'ONE_WAY',
+    serviceDirections: { FLIGHT: ['RETURN'] },
+  };
+  render();
+  expect(fixture.dates).toMatchObject({
+    originId: 'destination',
+    destinationId: 'origin',
+    primaryDirection: 'RETURN',
+    roundTrip: false,
+  });
+  fixture.dates!.onChange({ from: '2099-10-04', to: '2099-10-04' });
+  const html = render();
+  expect(html).not.toContain('ابتدا بلیط رفت');
+  expect(fixture.pickers).toHaveLength(1);
+  expect(fixture.pickers[0]).toMatchObject({
+    exactDay: '2099-10-04',
+    query: {
+      originId: 'destination',
+      destinationId: 'origin',
+      departureFrom: '2099-10-04T00:00:00+03:30',
+      departureTo: '2099-10-04',
+    },
+  });
+  fixture.pickers[0]!.onSelect(back);
+  render();
+  const selected = fixture.cells.find((c): c is SalesFormState =>
+    Boolean(c && typeof c === 'object' && 'serviceKinds' in c),
+  )!;
+  expect(selected.ticket.outboundOfferId).toBe('');
+  expect(selected.ticket.returnOfferId).toBe('back');
+  expect(salesFlightsValid(selected)).toBe(true);
+  fixture.dates!.onChange({ from: '2099-10-05', to: '2099-10-05' });
+  render();
+  expect(fixture.pickers).toHaveLength(1);
+  expect(fixture.pickers[0]!.exactDay).toBe('2099-10-05');
+  expect(fixture.pickers[0]!.selectedId).toBe('');
 });

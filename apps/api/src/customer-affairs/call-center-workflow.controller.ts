@@ -76,6 +76,15 @@ export class CallCenterWorkflowController {
   ) {
     return this.service.options(req.actor, branch);
   }
+  @Get('request-operators')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('customer_affairs.call_center.workflow.manage')
+  requestOptions(
+    @Req() req: AuthenticatedRequest,
+    @Headers('x-branch-id') branch?: string,
+  ) {
+    return this.service.requestOptions(req.actor, branch);
+  }
   @Get('contacts/:id/next-action')
   @Header('Cache-Control', 'private, no-store')
   @RequirePermissions('customer_affairs.call_center.read')
@@ -95,7 +104,15 @@ export class CallCenterWorkflowController {
     @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-branch-id') branch?: string,
   ) {
-    return this.service.list(req.actor, branch, id, query.page, query.taskPage);
+    return this.service.list(
+      req.actor,
+      branch,
+      id,
+      query.page,
+      query.taskPage,
+      query.requestId,
+      query.openOnly === 'true',
+    );
   }
   @Post('contacts/:id/requests')
   @Header('Cache-Control', 'private, no-store')

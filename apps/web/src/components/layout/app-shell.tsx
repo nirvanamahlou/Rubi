@@ -1,4 +1,5 @@
 'use client';
+import { CallFormProvider } from '@/modules/call-center/call-form-host';
 import { TelephonyAttention } from '@/modules/call-center/telephony-attention';
 import { assistantDashboardHref } from '@/modules/assistant/dashboard-location';
 import { FloatingAssistant } from '@/modules/assistant/floating-assistant';
@@ -742,9 +743,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     <AccessProvider>
       <LegalEntityProvider>
         <PageBreadcrumbProvider>
-          <AppShellContent>{children}</AppShellContent>
-          <FloatingAssistant />
-          <TelephonyAttention />
+          <CallFormProvider>
+            <AppShellContent>{children}</AppShellContent>
+            <FloatingAssistant />
+            <TelephonyAttention outboundOnly />
+          </CallFormProvider>
         </PageBreadcrumbProvider>
       </LegalEntityProvider>
     </AccessProvider>

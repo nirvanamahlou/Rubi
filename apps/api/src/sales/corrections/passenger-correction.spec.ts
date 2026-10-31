@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ConfigService } from '@nestjs/config';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { PassengerCorrectionCrypto } from './passenger-correction.crypto';
+import { CustomerService } from '../../customers/customer.service';
 import {
   PassengerCorrectionService,
   correctionDay,
@@ -125,6 +126,7 @@ function setup() {
     },
   };
   const customers = {
+    salesEntryActor: vi.fn(CustomerService.prototype.salesEntryActor),
     detail: vi.fn(async () => ({
       data: { passportNumber: 'OLD1234', passportExpiryDate: '2030-01-01' },
     })),
@@ -158,6 +160,46 @@ function setup() {
   };
 }
 describe('contract-specific passenger correction', () => {
+  it('retains existing sensitive readers without requiring the new-contract route', async () => {
+    const s = setup();
+    const reader = {
+      ...actor,
+      permissions: [...actor.permissions, 'sales.contracts.create'],
+    } as AuthenticatedActor;
+    await expect(s.service.form(id, reader)).resolves.toHaveProperty(
+      'passengers',
+    );
+    expect(s.customers.salesEntryActor).not.toHaveBeenCalled();
+    expect(s.customers.detail).toHaveBeenCalledWith(
+      customerId,
+      reader,
+      undefined,
+      'customer-verification',
+    );
+  });
+  it('lets a contract creator read owned passenger details using request-local Sales capabilities', async () => {
+    const s = setup();
+    const creator = {
+      ...actor,
+      permissions: ['sales.contracts.create'],
+    } as AuthenticatedActor;
+    await expect(s.service.form(id, creator)).resolves.toHaveProperty(
+      'passengers',
+    );
+    expect(s.customers.detail).toHaveBeenCalledWith(
+      customerId,
+      expect.objectContaining({
+        permissions: expect.arrayContaining(['customers.sensitive.read']),
+      }),
+      undefined,
+      'customer-verification',
+    );
+    expect(creator.permissions).toEqual(['sales.contracts.create']);
+    s.customers.detail.mockClear();
+    s.row.ownerUserId = 'other';
+    await expect(s.service.form(id, creator)).rejects.toThrow();
+    expect(s.customers.detail).not.toHaveBeenCalled();
+  });
   it('denies reading or changing another seller contract even when assigned to the actor', async () => {
     const s = setup();
     s.row.ownerUserId = 'other';
@@ -316,4 +358,21 @@ describe('contract-specific passenger correction', () => {
       'فیلتر',
     );
   });
+});
+it('allows a contract-area creator to read and edit their own passenger correction without separate grants', async () => {
+  const t = setup();
+  const creator = {
+    ...actor,
+    permissions: ['sales.contracts.create'],
+  } as AuthenticatedActor;
+  await expect(t.service.contract(id, creator)).resolves.toHaveProperty(
+    'id',
+    id,
+  );
+  await expect(t.service.contract(id, creator, true)).resolves.toHaveProperty(
+    'id',
+    id,
+  );
+  t.row.ownerUserId = 'other';
+  await expect(t.service.contract(id, creator, true)).rejects.toThrow();
 });

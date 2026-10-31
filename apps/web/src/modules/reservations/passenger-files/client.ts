@@ -1,6 +1,7 @@
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 export interface PassengerName {
+  insurancePolicyNumber?: string | null;
   id: string;
   firstName: string;
   lastName: string;

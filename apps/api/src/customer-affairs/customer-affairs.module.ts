@@ -1,3 +1,4 @@
+import { HrCallAnswerDirectory } from '../hr/hr-call-answer-directory';
 import { CallCenterTelephonyService } from './call-center-telephony.service';
 import { CallCenterAccessService } from './call-center-access.service';
 import { CallCenterOwnerService } from './call-center-owner.service';
@@ -76,6 +77,7 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     CustomerAffairsMarketingIntakeController,
   ],
   providers: [
+    HrCallAnswerDirectory,
     CallCenterOwnerService,
     CallCenterAccessService,
     CallCenterTelephonyService,

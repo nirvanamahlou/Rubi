@@ -11,17 +11,23 @@ const cards = [
   ['withoutOutcome', 'تماس‌های بدون نتیجه', 'نتیجه ثبت‌نشده · همه سوابق'],
   [
     'needsFollowUp',
-    'تماس‌های لازم به پیگیری',
-    'درخواست باز با اقدام پیگیری باز',
+    'تماس‌های ازدست‌رفته نیازمند تماس مجدد',
+    'شماره‌های یکتا · بدون مکالمه موفق بعدی',
   ],
 ] as const;
 
 export function CallKpiCards({
   branchId,
   revision,
+  onWithoutOutcome,
+  onMissedCallbacks,
+  onPeriod,
 }: {
   branchId: string;
   revision: string;
+  onWithoutOutcome?: (() => void) | undefined;
+  onPeriod?: ((period: 'today' | 'week') => void) | undefined;
+  onMissedCallbacks?: (() => void) | undefined;
 }) {
   const [data, setData] = useState<CallKpis | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +71,42 @@ export function CallKpiCards({
     <section aria-label="آمار تماس‌ها" aria-busy={loading}>
       <div className={styles.actionCards}>
         {cards.map(([key, label, description]) => (
-          <article key={key} aria-label={label} data-tone={key}>
+          <article
+            key={key}
+            aria-label={label}
+            data-tone={key}
+            role={
+              ((key === 'today' || key === 'week') && onPeriod) ||
+              (key === 'withoutOutcome' && onWithoutOutcome) ||
+              (key === 'needsFollowUp' && onMissedCallbacks)
+                ? 'button'
+                : undefined
+            }
+            tabIndex={
+              ((key === 'today' || key === 'week') && onPeriod) ||
+              (key === 'withoutOutcome' && onWithoutOutcome) ||
+              (key === 'needsFollowUp' && onMissedCallbacks)
+                ? 0
+                : undefined
+            }
+            onClick={
+              key === 'today' || key === 'week'
+                ? () => onPeriod?.(key)
+                : key === 'withoutOutcome'
+                  ? onWithoutOutcome
+                  : key === 'needsFollowUp'
+                    ? onMissedCallbacks
+                    : undefined
+            }
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                if (key === 'today' || key === 'week') onPeriod?.(key);
+                else if (key === 'withoutOutcome') onWithoutOutcome?.();
+                else onMissedCallbacks?.();
+              }
+            }}
+          >
             <span>{label}</span>
             <strong>
               {loading ? '…' : data ? faNumber(data.data[key]) : '—'}

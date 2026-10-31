@@ -1,0 +1,454 @@
+.workspace {
+  min-width: 0;
+}
+.navigation {
+  margin-bottom: 28px;
+}
+.navigation > nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 6px;
+  padding: 6px;
+}
+.navigation button {
+  min-height: 48px;
+  padding: 10px 8px;
+  line-height: 1.7;
+}
+.navigation button[aria-current='page'] {
+  box-shadow: 0 2px 6px rgb(15 35 65 / 8%);
+}
+.badge {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  padding: 5px 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.form,
+.report,
+.picker {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+}
+.sectionHeading,
+.listHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.sectionHeading h3,
+.sectionHeading h4,
+.reportTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--foreground);
+}
+.formGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.44fr);
+  align-items: start;
+  gap: 22px;
+}
+.settingsCard,
+.peopleCard {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.peopleCard {
+  gap: 18px;
+  background: color-mix(in srgb, var(--primary) 3%, var(--surface));
+}
+.fields,
+.filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: end;
+  min-width: 0;
+}
+.fields > label,
+.filters > label,
+.reportBar > label,
+.picker > label {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+.fields input,
+.fields select,
+.filters input,
+.filters select,
+.reportBar select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--input);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-weight: 500;
+}
+.fields input[dir='ltr'] {
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  font-size: 16px;
+}
+.fields [role='combobox'],
+.filters [role='combobox'],
+.reportBar [role='combobox'] {
+  min-height: 44px;
+  width: 100%;
+}
+.workspace input[type='checkbox'],
+.picker input[type='checkbox'] {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  margin: 0;
+  accent-color: var(--primary);
+}
+.workspace :is(input, select, button):focus-visible,
+.picker :is(input, button, summary):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+.months {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 20px 0 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+.months legend {
+  padding-inline-end: 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.checkLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.monthGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.month {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.month[data-selected='true'] {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+  color: var(--foreground);
+}
+.selectPeople {
+  width: 100%;
+  min-height: 44px;
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  color: var(--primary);
+}
+.empty {
+  margin: 0;
+  padding: 26px 12px;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+.selectedPeople {
+  display: grid;
+  gap: 10px;
+  max-height: 310px;
+  overflow-y: auto;
+}
+.selectedPerson,
+.personRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.selectedPerson {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.selectedPerson > span,
+.personLabel > span {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.selectedPerson strong,
+.personLabel strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.selectedPerson small,
+.personLabel small {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.selectedPerson button {
+  flex-shrink: 0;
+  min-width: 36px;
+  min-height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 20px;
+  cursor: pointer;
+}
+.formFooter,
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.formFooter > button {
+  min-width: 160px;
+  min-height: 44px;
+}
+.selectionCount {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.transferGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.transferCard .fields {
+  grid-template-columns: minmax(0, 1fr);
+}
+.transferCard {
+  min-width: 0;
+  margin: 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--muted) 55%, var(--surface));
+}
+.transferCard legend {
+  padding: 0 8px;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 700;
+}
+.reportBar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--primary) 3%, var(--surface));
+}
+.reportBar > label {
+  flex: 1;
+  max-width: 280px;
+  min-width: 150px;
+}
+.filters {
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 0.5fr) auto;
+}
+.personnelList {
+  overflow: clip;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.listHeading {
+  padding: 12px 18px;
+  background: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.personRow {
+  flex-wrap: wrap;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.personRow:last-child {
+  border-bottom: 0;
+}
+.personRow[data-selected='true'] {
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+}
+.personLabel {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 180px;
+  cursor: pointer;
+}
+.unit {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.results {
+  display: grid;
+  gap: 18px;
+  padding-top: 10px;
+}
+.results > button {
+  justify-self: end;
+}
+.error,
+.notice {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+}
+.error {
+  color: var(--destructive);
+  background: color-mix(in srgb, var(--destructive) 5%, var(--surface));
+}
+.notice {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+}
+.pickerDialog {
+  width: min(680px, calc(100vw - 32px));
+  max-width: 680px;
+}
+.transferDialog > label {
+  display: grid;
+  gap: 10px;
+  margin-block: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.transferDialog [role='combobox'] {
+  min-height: 44px;
+}
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.dialogActions > button {
+  min-height: 44px;
+  min-width: 100px;
+}
+.pickerTree {
+  display: grid;
+  gap: 12px;
+  padding: 4px;
+}
+.pickerTree details {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.pickerTree summary {
+  padding-bottom: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pickerTree label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  font-size: 0.875em;
+}
+@media (max-width: 1050px) {
+  .formGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .selectedPeople {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .navigation > nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .fields,
+  .filters,
+  .transferGrid,
+  .selectedPeople {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settingsCard,
+  .peopleCard {
+    padding: 16px;
+  }
+  .monthGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .month {
+    gap: 6px;
+    padding: 8px;
+  }
+  .formFooter > button,
+  .reportBar > button {
+    width: 100%;
+  }
+  .personLabel {
+    min-width: 150px;
+  }
+}

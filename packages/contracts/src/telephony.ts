@@ -15,6 +15,8 @@ export interface TelephonyEventV1 {
   kind: TelephonyEventKind;
   direction: 'IN' | 'OUT';
   caller: TelephonyNumberV1;
+  /** Optional, unverified provider display name; never an identity/routing key. */
+  callerName?: string | null;
   destination: TelephonyNumberV1;
   companyLine: string | null;
   extension: string | null;

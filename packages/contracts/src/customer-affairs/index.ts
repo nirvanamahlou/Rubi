@@ -15,6 +15,7 @@ export const CUSTOMER_AFFAIRS_PERMISSIONS = {
   callCenterScopedAccess: CALL_CENTER_SCOPED_ACCESS,
   callCenterWorkflowManage: 'customer_affairs.call_center.workflow.manage',
   callCenterRead: 'customer_affairs.call_center.read',
+  callCenterRecordingRead: 'customer_affairs.call_center.recordings.read',
   callCenterCallCreate: 'customer_affairs.call_center.calls.create',
   callCenterNoteCreate: 'customer_affairs.call_center.notes.create',
   leadRead: 'customer_affairs.lead.read',

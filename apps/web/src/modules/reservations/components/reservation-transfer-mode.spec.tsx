@@ -3,7 +3,7 @@ import type * as ReactModule from 'react';
 import type { ReservationIntakeV1 } from '@nora/contracts';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { canonicalTestTree } from '@/i18n/test-tree';
-import { ReservationHotelPurchase } from './reservation-hotel-purchase';
+import { LegacyReservationHotelPurchase as ReservationHotelPurchase } from './reservation-hotel-purchase';
 vi.mock('@/modules/iam/access-context', () => ({
   useAccessPermissions: () => [],
 }));
@@ -55,17 +55,17 @@ function nodes(node: ReactNode): Record<string, unknown>[] {
   if (!isValidElement<Record<string, unknown>>(node)) return [];
   return [node.props, ...nodes(node.props.children as ReactNode)];
 }
-function render() {
+function render(value = request, onSaved = vi.fn()) {
   state.index = 0;
   return nodes(
-    canonicalTestTree(ReservationHotelPurchase({ request, onSaved: vi.fn() })),
+    canonicalTestTree(ReservationHotelPurchase({ request: value, onSaved })),
   );
 }
-function change(label: string, value: unknown) {
+function change(label: string, value: unknown, source = request) {
   const control =
-    render().find(
+    render(source).find(
       (p) => p.label === label && typeof p.onChange === 'function',
-    ) ?? render().find((p) => p['aria-label'] === label);
+    ) ?? render(source).find((p) => p['aria-label'] === label);
   const handler = control?.onChange ?? control?.onValueChange;
   expect(handler).toBeTypeOf('function');
   (handler as (v: unknown) => void)(value);
@@ -74,6 +74,68 @@ beforeEach(() => {
   state.index = 0;
   state.values = [];
   vi.restoreAllMocks();
+});
+it('submits a new hotel purchase before any supplier form has been sent', async () => {
+  const unsent = {
+    ...request,
+    purchaseVersion: 0,
+    workflow: null,
+    snapshot: {
+      passengerIds: ['one'],
+      serviceSelections: [
+        { clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'Hotel' },
+      ],
+      passengerAssignments: [
+        {
+          customerId: 'one',
+          displayNameSnapshot: 'Guest One',
+          ageCategory: 'ADT',
+          serviceClientKeys: ['hotel'],
+        },
+      ],
+      hotelSelection: {
+        serviceClientKey: 'hotel',
+        hotelNameSnapshot: 'Hotel',
+        checkInDate: '2026-11-01',
+        checkOutDate: '2026-11-04',
+      },
+    },
+  } as unknown as ReservationIntakeV1;
+  const fetch = vi
+    .spyOn(globalThis, 'fetch')
+    .mockResolvedValue({ ok: true, status: 200 } as Response);
+  const onSaved = vi.fn();
+  const saveButton = () =>
+    render(unsent, onSaved).find(
+      (p) => p.children === 'ثبت درخواست خرید و ارسال به مالی',
+    );
+  expect(saveButton()?.disabled).toBe(true);
+  change('کارگزار هتل', { id: 'broker-a', name: 'Broker A' }, unsent);
+  change('ارز خرید هتل', { id: 'IRR', name: 'IRR' }, unsent);
+  change('قیمت هر شب Guest One', '125.1234', unsent);
+  expect(saveButton()?.disabled).toBe(false);
+  await (saveButton()!.onClick as () => Promise<void>)();
+  expect(fetch).toHaveBeenCalledTimes(1);
+  const [url, options] = fetch.mock.calls[0]!;
+  expect(url).toBe(
+    'http://test-api/reservations/requests/request/purchase-batches',
+  );
+  expect(options?.method).toBe('POST');
+  expect(JSON.parse(options!.body as string)).toEqual({
+    version: 1,
+    expectedVersion: 0,
+    purchases: [
+      {
+        serviceClientKey: 'hotel',
+        coveredServiceClientKeys: ['hotel'],
+        supplierOrganizationId: 'broker-a',
+        currencyCode: 'IRR',
+        amount: '375.3702',
+        passengerPrices: [{ customerId: 'one', nightlyAmount: '125.1234' }],
+      },
+    ],
+  });
+  expect(onSaved).toHaveBeenCalledTimes(1);
 });
 it('defaults to one transfer purchase and toggles independent suppliers without dropping either leg', async () => {
   const fetch = vi

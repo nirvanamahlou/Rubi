@@ -16,6 +16,43 @@ export class HrUserUnitDirectory {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
+  async callCenterUnit(
+    branchId: string,
+    id: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    if (tx)
+      await tx.$queryRaw`SELECT id FROM hr_records WHERE id=${id}::uuid FOR SHARE`;
+    return !!(await (tx ?? this.database.client).hrRecord.findFirst({
+      where: {
+        id,
+        branchId,
+        section: 'organization',
+        tab: 'units',
+        status: 'فعال',
+        deletedAt: null,
+      },
+      select: { id: true },
+    }));
+  }
+
+  /** Minimal public job identity for request routing; never returns private HR fields. */
+  async callCenterStaff(
+    branchId: string,
+    userIds: string[],
+    tx?: Prisma.TransactionClient,
+  ) {
+    return (tx ?? this.database.client).hrEmployee.findMany({
+      where: {
+        branchId,
+        userId: { in: userIds },
+        status: 'فعال',
+        deletedAt: null,
+      },
+      select: { userId: true, name: true, position: true },
+    });
+  }
+
   async list(actor: AuthenticatedActor) {
     if (!actor.permissions.includes('iam.users.manage'))
       throw new ForbiddenException();

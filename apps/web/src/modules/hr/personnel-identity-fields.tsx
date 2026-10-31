@@ -26,14 +26,17 @@ export const defaultPersonnelIdentity = [
   'ایرانی',
   'نامشخص',
   '',
+  '',
 ];
 const digits = (value: string) =>
   value.replace(/[۰-۹٠-٩]/g, (c) =>
     String(c.charCodeAt(0) - (c >= '۰' ? 1776 : 1632)),
   );
 export function personnelIdentityError(values: readonly string[]) {
-  if (!/^\d{10}$/.test(digits(values[2]?.trim() ?? '')))
+  if (values[2]?.trim() && !/^\d{10}$/.test(digits(values[2].trim())))
     return 'کد ملی باید ده رقم باشد.';
+  if (values[14]?.trim() && !/^\d{10}$/.test(digits(values[14].trim())))
+    return 'کد پستی باید ده رقم باشد.';
   if (values[9] && !values[8]) return 'ابتدا استان را انتخاب کنید.';
   return '';
 }
@@ -89,8 +92,12 @@ export function PersonnelIdentityFields({
   const [photoError, setPhotoError] = useState('');
   const update = (index: number, value: string) =>
     onChange(
-      values.map((current, i) =>
-        i === index ? value : i === 9 && index === 8 ? '' : current,
+      defaultPersonnelIdentity.map((fallback, i) =>
+        i === index
+          ? value
+          : i === 9 && index === 8
+            ? ''
+            : (values[i] ?? fallback),
       ),
     );
   return (
@@ -137,7 +144,6 @@ export function PersonnelIdentityFields({
                       : index === 13
                         ? 'آدرس'
                         : label}
-                  {index === 2 ? ' *' : ''}
                   {index === 5 ? (
                     <DatePicker
                       value={values[index] ?? ''}
@@ -152,7 +158,9 @@ export function PersonnelIdentityFields({
                     >
                       <option value="">انتخاب کنید</option>
                       {options.map((option) => (
-                        <option key={option}>{option}</option>
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
                       ))}
                     </NativeSearchSelect>
                   ) : index === 13 ? (
@@ -166,11 +174,12 @@ export function PersonnelIdentityFields({
                     <input
                       className={styles.control}
                       value={values[index] ?? ''}
-                      required={index === 2}
                       inputMode={
-                        index === 2 || index === 3 ? 'numeric' : 'text'
+                        [2, 3, 14].includes(index) ? 'numeric' : 'text'
                       }
-                      maxLength={index === 2 ? 10 : 160}
+                      dir={[2, 3, 14].includes(index) ? 'ltr' : undefined}
+                      autoComplete={index === 14 ? 'postal-code' : undefined}
+                      maxLength={index === 2 || index === 14 ? 10 : 160}
                       onChange={(event) => update(index, event.target.value)}
                       disabled={index === 9 && !values[8]}
                       list={index === 9 ? cityListId : undefined}
@@ -207,6 +216,7 @@ export function PersonnelIdentityFields({
           onClick={() => {
             setDraft(contacts.map((p) => [...p]));
             setPhoneError('');
+            setPhone(['موبایل', '']);
             setOpen(true);
           }}
         >
@@ -267,34 +277,47 @@ export function PersonnelIdentityFields({
         </label>
       ) : null}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent dir="rtl">
+        <DialogContent
+          dir="rtl"
+          className={`${styles.modal} ${styles.contactsModal}`}
+        >
           <DialogTitle>شماره‌های تماس</DialogTitle>
-          <label>
-            نوع شماره تماس
-            <NativeSearchSelect
-              value={phone[0] ?? ''}
-              onChange={(event) =>
-                setPhone([event.target.value, phone[1] ?? ''])
-              }
-            >
-              {HR_RADAN_COMPLETION_OPTIONS['نوع شماره تماس']!.map((option) => (
-                <option key={option}>{option}</option>
-              ))}
-            </NativeSearchSelect>
-          </label>
-          <label>
-            شماره تماس
-            <input
-              className={styles.control}
-              value={phone[1] ?? ''}
-              inputMode="tel"
-              maxLength={30}
-              onChange={(event) =>
-                setPhone([phone[0] ?? 'موبایل', event.target.value])
-              }
-            />
-          </label>
+          <div className={styles.contactFields}>
+            <label className={styles.fieldLabel}>
+              نوع شماره تماس
+              <NativeSearchSelect
+                value={phone[0] ?? ''}
+                onChange={(event) =>
+                  setPhone([event.target.value, phone[1] ?? ''])
+                }
+              >
+                {HR_RADAN_COMPLETION_OPTIONS['نوع شماره تماس']!.map(
+                  (option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ),
+                )}
+              </NativeSearchSelect>
+            </label>
+            <label className={styles.fieldLabel}>
+              شماره تماس
+              <input
+                className={styles.control}
+                value={phone[1] ?? ''}
+                type="tel"
+                dir="ltr"
+                aria-invalid={Boolean(phoneError)}
+                inputMode="tel"
+                maxLength={30}
+                onChange={(event) =>
+                  setPhone([phone[0] ?? 'موبایل', event.target.value])
+                }
+              />
+            </label>
+          </div>
           <button
+            className={buttonVariants({ variant: 'outline' })}
             type="button"
             onClick={() => {
               const error = personnelContactError(phone, draft);
@@ -307,12 +330,18 @@ export function PersonnelIdentityFields({
           >
             افزودن شماره تماس
           </button>
-          {phoneError ? <p role="alert">{phoneError}</p> : null}
-          <ul>
+          {phoneError ? (
+            <p className={styles.fieldError} role="alert">
+              {phoneError}
+            </p>
+          ) : null}
+          <ul className={styles.contactList}>
             {draft.map((p, i) => (
               <li key={i}>
-                {p[0]}: {p[1]}{' '}
+                <span className={styles.contactType}>{p[0]}</span>
+                <bdi className={styles.contactNumber}>{p[1]}</bdi>
                 <button
+                  className={buttonVariants({ variant: 'ghost' })}
                   type="button"
                   aria-label={`حذف شماره تماس ${i + 1}`}
                   onClick={() => setDraft(draft.filter((_, j) => i !== j))}
@@ -322,18 +351,25 @@ export function PersonnelIdentityFields({
               </li>
             ))}
           </ul>
-          <button type="button" onClick={() => setOpen(false)}>
-            لغو
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onContacts(draft);
-              setOpen(false);
-            }}
-          >
-            تایید
-          </button>
+          <div className={styles.modalFooter}>
+            <button
+              className={buttonVariants({ variant: 'outline' })}
+              type="button"
+              onClick={() => setOpen(false)}
+            >
+              لغو
+            </button>
+            <button
+              className={buttonVariants({ variant: 'primary' })}
+              type="button"
+              onClick={() => {
+                onContacts(draft);
+                setOpen(false);
+              }}
+            >
+              تایید
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </>

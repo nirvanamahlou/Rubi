@@ -13,6 +13,7 @@ let app: INestApplication;
 const costs = {
   purchaseInbox: vi.fn(async () => ({ data: [], meta: { canPrice: true } })),
   recordCost: vi.fn(async () => ({ id: 'cost' })),
+  recordGroupCost: vi.fn(async () => ({ operationId: 'group' })),
   recordPayment: vi.fn(),
 };
 beforeAll(async () => {
@@ -107,5 +108,24 @@ it('accepts a total purchase cost without requiring a rounded client unit price'
     '11111111-1111-4111-8111-111111111111',
     command,
     expect.anything(),
+  );
+});
+
+it('only a buyer can submit an atomic recurring purchase group', async () => {
+  const url = '/procurement/ticket-purchases/group-costs';
+  await request(app.getHttpServer()).post(url).send({ version: 1 }).expect(401);
+  await request(app.getHttpServer())
+    .post(url)
+    .set('Cookie', 'nora_access=finance')
+    .send({ version: 1 })
+    .expect(403);
+  await request(app.getHttpServer())
+    .post(url)
+    .set('Cookie', 'nora_access=buyer')
+    .send({ version: 1 })
+    .expect(201);
+  expect(costs.recordGroupCost).toHaveBeenCalledWith(
+    { version: 1 },
+    expect.objectContaining({ permissions: ['procurement.quote.manage'] }),
   );
 });

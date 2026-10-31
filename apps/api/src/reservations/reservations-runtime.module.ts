@@ -1,4 +1,9 @@
 import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
+import { validateSupplierFormPrices } from './voucher-settings';
+import { SystemManagementModule } from '../system-management/system-management.module';
+import { InsuranceSettingsService } from '../integrations/insurance/insurance-settings';
+import { ReservationInsuranceController } from './insurance/insurance.controller';
+import { ReservationInsuranceService } from './insurance/insurance.service';
 import { reservationOutputPassengers } from './reservation-passenger-output';
 import {
   BrokerPurchaseHistory,
@@ -126,6 +131,55 @@ export class ReservationRequestsController {
   ) {
     if (!this.ticketDocuments) throw new NotFoundException();
     return this.ticketDocuments.report(query, req.actor!);
+  }
+  @Get('service-report')
+  @Header('Cache-Control', 'private, no-store')
+  serviceReport(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!this.ticketDocuments) throw new NotFoundException();
+    return this.ticketDocuments.serviceReport(query, req.actor!);
+  }
+  @Get('service-report/export')
+  @Header('Cache-Control', 'private, no-store')
+  async serviceReportExport(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!this.ticketDocuments) throw new NotFoundException();
+    const { data } = await this.ticketDocuments.serviceReport(
+      query,
+      req.actor!,
+    );
+    const columns = [
+      ['contractNumber', 'شماره قرارداد'],
+      ['passengerDisplayName', 'مسافر'],
+      ['serviceKind', 'نوع خدمت'],
+      ['serviceTitle', 'خدمت'],
+      ['reportStatus', 'وضعیت خدمت'],
+      ['ticketNumber', 'شماره بلیط'],
+      ['origin', 'مبدأ'],
+      ['destination', 'مقصد'],
+      ['departureAt', 'زمان رفت'],
+      ['arrivalAt', 'زمان رسیدن'],
+      ['airline', 'ایرلاین'],
+      ['flightNumber', 'شماره پرواز'],
+      ['direction', 'رفت / برگشت'],
+      ['hotelName', 'هتل'],
+      ['checkInDate', 'ورود هتل'],
+      ['checkOutDate', 'خروج هتل'],
+    ] as const;
+    return new StreamableFile(
+      buildIssuedTicketWorkbook(
+        data.map((r) => columns.map(([k]) => String(r[k] ?? ''))),
+        columns.map(([, label]) => label),
+      ),
+      {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        disposition: 'attachment; filename="service-report.xlsx"',
+      },
+    );
   }
   @Get('purchases')
   @Header('Cache-Control', 'private, no-store')
@@ -369,13 +423,23 @@ export class ReservationRequestsController {
   async workflowDetail(
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,
+    @Query('historical') historical?: string,
   ) {
     if (!req.actor.permissions.includes('reservations.read'))
       throw new ForbiddenException();
-    const intake = await this.workflow.detail(id, req.actor.branchIds);
+    const intake = await this.workflow.detail(
+      id,
+      req.actor.branchIds,
+      historical !== '1',
+    );
+    const summaries = this.table
+      ? await this.table.read([intake.contractId], req.actor)
+      : new Map();
     return {
       data: {
         ...intake,
+        contractPartyName:
+          summaries.get(intake.contractId)?.contractPartyName ?? null,
         outputPassengers: await reservationOutputPassengers(
           intake.snapshot,
           this.customers,
@@ -414,27 +478,100 @@ export class ReservationRequestsController {
     @Req() req: AuthenticatedRequest,
   ) {
     if (
+      input.action === 'SUPPLIER_FORM_SETTINGS' &&
+      input.voucherSettings?.hotelRoomPrices
+    ) {
+      await this.workflow.detail(id, req.actor.branchIds);
+      await this.directory!.currencyReference(
+        input.voucherSettings.hotelRoomPrices.currencyCode,
+      );
+    }
+    if (
+      input.action === 'SUPPLIER_FORM_SETTINGS' &&
+      input.voucherSettings?.supplierFormPrices !== undefined
+    ) {
+      await this.workflow.detail(id, req.actor.branchIds);
+      let prices: ReturnType<typeof validateSupplierFormPrices>;
+      try {
+        prices = validateSupplierFormPrices(
+          input.voucherSettings.supplierFormPrices,
+        );
+      } catch {
+        throw new BadRequestException('جدول قیمت فرم رزرواسیون معتبر نیست.');
+      }
+      for (const currency of new Set(
+        Object.entries(prices ?? {}).flatMap(([key, price]) =>
+          key !== 'ratio' && price.currencyCode ? [price.currencyCode] : [],
+        ),
+      ))
+        await this.directory!.currencyReference(currency);
+    }
+    if (
       ['VOUCHER_SETTINGS', 'SUPPLIER_FORM_SETTINGS'].includes(input.action) &&
       input.voucherSettings?.brokerId
     ) {
-      await this.workflow.detail(id, req.actor.branchIds);
+      const context = await this.workflow.detail(id, req.actor.branchIds);
       const settings = input.voucherSettings;
+      const previous = context.workflow.voucherSettings;
+      if (
+        input.action === 'VOUCHER_SETTINGS' &&
+        !Object.hasOwn(settings, 'transferDetailsOverride') &&
+        previous?.brokerId === settings.brokerId &&
+        previous?.leaderId === settings.leaderId
+      ) {
+        if (
+          !Object.hasOwn(settings, 'transferBrokerId') &&
+          previous?.transferBrokerId
+        ) {
+          settings.transferBrokerId = previous.transferBrokerId;
+        }
+        if (previous?.transferDetailsOverride !== undefined)
+          settings.transferDetailsOverride = previous.transferDetailsOverride;
+      }
       const brokerId = settings.brokerId!;
       const brokerName = await this.directory!.voucherBrokerName(brokerId);
       settings.text.broker = brokerName;
+      const transferBrokerId = settings.transferBrokerId ?? brokerId;
+      if (settings.transferBrokerId) {
+        settings.transferBrokerName =
+          await this.directory!.voucherBrokerName(transferBrokerId);
+      } else {
+        delete settings.transferBrokerName;
+      }
+      const manual =
+        input.action === 'VOUCHER_SETTINGS' &&
+        settings.transferDetailsOverride === true;
+      if (
+        (manual || settings.transferBrokerId) &&
+        !req.actor.permissions.includes('reservations.documents.manage')
+      )
+        throw new ForbiddenException();
       if (settings.leaderId) {
         if (!req.actor.permissions.includes('reservations.documents.manage'))
           throw new ForbiddenException();
         const { data: leader } = await this.directory!.voucherLeaderContact(
-          brokerId,
+          transferBrokerId,
           settings.leaderId,
           req.actor,
         );
-        settings.text.leaderName = leader.name;
-        settings.text.leaderPhone = leader.phone || '';
-        if (input.action === 'VOUCHER_SETTINGS')
-          settings.text.transferBoard = leader.board ?? '';
-        settings.flags.tourLeader = true;
+        if (!manual) {
+          settings.text.leaderName = leader.name;
+          settings.text.leaderPhone = leader.phone || '';
+          if (input.action === 'VOUCHER_SETTINGS')
+            settings.text.transferBoard = leader.board ?? '';
+        }
+        settings.flags.tourLeader =
+          typeof settings.text.leaderName === 'string' &&
+          Boolean(settings.text.leaderName.trim());
+      } else if (manual) {
+        settings.flags.tourLeader =
+          typeof settings.text.leaderName === 'string' &&
+          Boolean(settings.text.leaderName.trim());
+      } else if (input.action === 'VOUCHER_SETTINGS') {
+        settings.text.leaderName = '';
+        settings.text.leaderPhone = '';
+        settings.text.transferBoard = '';
+        settings.flags.tourLeader = false;
       }
     }
     if (['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(input.action)) {
@@ -444,16 +581,17 @@ export class ReservationRequestsController {
           'ابتدا فرم رزرواسیون را آماده و ارسال درخواست به کارگزار را ثبت کنید.',
         );
       const settings = current.workflow.voucherSettings;
-      if (!settings?.brokerId || !settings.leaderId)
-        throw new BadRequestException(
-          'کارگزار و تورلیدر را انتخاب و ذخیره کنید.',
-        );
+      if (!settings?.brokerId)
+        throw new BadRequestException('کارگزار را انتخاب کنید.');
       await this.directory!.voucherBrokerName(settings.brokerId);
-      await this.directory!.voucherLeaderContact(
-        settings.brokerId,
-        settings.leaderId,
-        req.actor,
-      );
+      if (settings.transferBrokerId)
+        await this.directory!.voucherBrokerName(settings.transferBrokerId);
+      if (settings.leaderId)
+        await this.directory!.voucherLeaderContact(
+          settings.transferBrokerId ?? settings.brokerId,
+          settings.leaderId,
+          req.actor,
+        );
     }
     return { data: await this.workflow.update(id, input, req.actor) };
   }
@@ -678,6 +816,7 @@ export class ReservationRequestsController {
 }
 @Module({
   imports: [
+    SystemManagementModule,
     PurchaseFxModule,
     FinanceTicketCostModule,
     SalesOperationalAmendmentModule,
@@ -694,6 +833,7 @@ export class ReservationRequestsController {
     TicketRuntimeModule,
   ],
   controllers: [
+    ReservationInsuranceController,
     BrokerPurchaseHistoryController,
     ReservationHotelSavingsController,
     ReservationRequestsController,
@@ -702,6 +842,8 @@ export class ReservationRequestsController {
     ReservationManifestBatchController,
   ],
   providers: [
+    InsuranceSettingsService,
+    ReservationInsuranceService,
     BrokerPurchaseHistory,
     ReservationHotelSavingsService,
     ReservationTicketDocumentsService,

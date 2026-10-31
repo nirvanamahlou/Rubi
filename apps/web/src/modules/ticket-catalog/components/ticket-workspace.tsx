@@ -1,4 +1,5 @@
 'use client';
+import { loadWeekdayOffers } from '../model/load-weekday-edit';
 import { flightCabinCode } from '../model/flight-cabins';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -64,6 +65,7 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
 import {
+  publishedLoadGroups,
   catalogProductsFromOffers,
   catalogOffer,
   publishedOfferInput,
@@ -118,6 +120,7 @@ export function flightOfferInput(
   return {
     originAirportId: firstSegment.originAirportId || null,
     destinationAirportId: lastSegment.destinationAirportId || null,
+    saleRoutes: definition.saleRoutes ?? [],
     originId: firstSegment.originCityId,
     destinationId: lastSegment.destinationCityId,
     departureAt: firstSegment.departureAt,
@@ -283,6 +286,7 @@ function TicketCatalogWorkspace() {
   const [offerForm, setOfferForm] = useState<{
     offer: TicketOfferV1;
     readOnly: boolean;
+    weekdayOffers?: readonly TicketOfferV1[];
   } | null>(null);
   const displayedProducts = useMemo(
     () => catalogProductsFromOffers(products, publishedOffers, references),
@@ -568,10 +572,17 @@ function TicketCatalogWorkspace() {
     if (!hydrated) return;
     const cityIds = new Set(
       displayedProducts.flatMap((product) =>
-        product.definition.segments.flatMap((segment) => [
-          segment.originCityId,
-          segment.destinationCityId,
-        ]),
+        product.definition.segments
+          .flatMap((segment) => [
+            segment.originCityId,
+            segment.destinationCityId,
+          ])
+          .concat(
+            (product.definition.saleRoutes ?? []).flatMap((route) => [
+              route.originId,
+              route.destinationId,
+            ]),
+          ),
       ),
     );
     for (const id of cityIds) {
@@ -678,7 +689,13 @@ function TicketCatalogWorkspace() {
       pendingCreate.current = {
         signature,
         groupId,
-        ids: inputs.map((_, index) => `ticket-load:${groupId}:${index}`),
+        ids: inputs.map(
+          (input, index) =>
+            `ticket-load:${groupId}:${index}` +
+            (input.scheduledReturnDate
+              ? `:return-date:${input.scheduledReturnDate}`
+              : ''),
+        ),
       };
     }
     const createdIds: string[] = [];
@@ -931,6 +948,52 @@ function TicketCatalogWorkspace() {
       );
     }
   }
+  const editPublishedLoad = (visibleOffers: readonly TicketOfferV1[]) => {
+    const offers = publishedLoadGroups(
+      visibleOffers,
+      publishedOffers,
+      products,
+    );
+    const offer = visibleOffers[0];
+    if (!offer || !offers.length) {
+      setPublishedProblem('ردیفی برای ویرایش در این جدول وجود ندارد.');
+      return;
+    }
+    const selected = displayedProducts.find(
+      (item) => item.id === `offer:${offer.id}`,
+    );
+    const selectedSegment = selected?.definition.segments[0];
+    const grouped = offers.flatMap((item) => {
+      const product = displayedProducts.find(
+        (candidate) => candidate.id === `offer:${item.id}`,
+      );
+      if (!product || !selectedSegment) return [];
+      const segment = product.definition.segments[0]!;
+      const sameDirection =
+        segment.originCityId === selectedSegment.originCityId &&
+        segment.destinationCityId === selectedSegment.destinationCityId;
+      return [
+        {
+          ...product,
+          definition: {
+            ...product.definition,
+            journeyRole: sameDirection
+              ? ('outbound' as const)
+              : ('return' as const),
+          },
+        },
+      ];
+    });
+    const product = grouped.find((item) => item.id === `offer:${offer.id}`);
+    if (!product || grouped.length !== offers.length) {
+      setPublishedProblem(
+        'اطلاعات فرم این لود آماده نیست؛ فهرست را به‌روزرسانی کنید.',
+      );
+      return;
+    }
+    setOfferForm(null);
+    setForm({ mode: 'edit', product, products: grouped, offers });
+  };
   const renderOfferActions = (offer: TicketOfferV1) => (
     <div className="flex flex-wrap gap-2">
       <Button
@@ -940,55 +1003,78 @@ function TicketCatalogWorkspace() {
       >
         مشاهده
       </Button>
-      {new Date(offer.departureAt).getTime() > catalogNow ? (
-        <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setOfferForm({ offer, readOnly: false })}
-          >
-            ویرایش
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={statusSaving === offer.id}
-            aria-label={
-              offer.status === 'ACTIVE' ? 'غیرفعال کردن بلیت' : 'فعال کردن بلیت'
-            }
-            title={
-              offer.status === 'ACTIVE' ? 'غیرفعال کردن بلیت' : 'فعال کردن بلیت'
-            }
-            className={
-              offer.status === 'ACTIVE' ? 'text-red-600' : 'text-emerald-600'
-            }
-            onClick={() =>
-              void updatePublishedStatus(
-                offer,
-                offer.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE',
-              ).catch(() => undefined)
-            }
-          >
-            <Power className="size-5" aria-hidden />
-          </Button>
-          {offer.status === 'ACTIVE' ? (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={offer.remainingCapacity < 1}
-              onClick={() =>
-                updateCapacityHold({
-                  offer,
-                  quantity: 1,
-                  requesterName: '',
-                })
-              }
-            >
-              رزرو ظرفیت
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => editPublishedLoad([offer])}
+      >
+        ویرایش لود
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() =>
+          setOfferForm({
+            offer,
+            readOnly: false,
+            weekdayOffers: loadWeekdayOffers(offer, publishedOffers, products),
+          })
+        }
+      >
+        ویرایش روز هفته
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={
+          offer.status !== 'ACTIVE' ||
+          offer.remainingCapacity < 1 ||
+          new Date(offer.departureAt).getTime() <= catalogNow
+        }
+        title={
+          offer.status !== 'ACTIVE'
+            ? 'غیرفعال'
+            : new Date(offer.departureAt).getTime() <= catalogNow
+              ? 'تاریخ گذشته'
+              : offer.remainingCapacity < 1
+                ? 'ظرفیت تکمیل شده'
+                : undefined
+        }
+        onClick={() =>
+          updateCapacityHold({ offer, quantity: 1, requesterName: '' })
+        }
+      >
+        رزرو ظرفیت
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={statusSaving === offer.id}
+        aria-label={
+          offer.status === 'ACTIVE' ? 'غیرفعال کردن بلیت' : 'فعال کردن بلیت'
+        }
+        title={
+          offer.status === 'ACTIVE' ? 'غیرفعال کردن بلیت' : 'فعال کردن بلیت'
+        }
+        className={
+          offer.status === 'ACTIVE' ? 'text-red-600' : 'text-emerald-600'
+        }
+        onClick={() =>
+          void updatePublishedStatus(
+            offer,
+            offer.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE',
+          ).catch(() => undefined)
+        }
+      >
+        <Power className="size-5" aria-hidden />
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => setOfferForm({ offer, readOnly: false })}
+      >
+        ویرایش
+      </Button>
     </div>
   );
   return (
@@ -1033,9 +1119,11 @@ function TicketCatalogWorkspace() {
       >
         <DialogContent dir="rtl" className="start-auto! left-1/2! max-w-2xl">
           <DialogTitle>
-            {offerForm?.readOnly
-              ? 'مشاهده بلیط ثبت‌شده'
-              : 'ویرایش بلیط ثبت‌شده'}
+            {offerForm?.weekdayOffers
+              ? 'ویرایش روز هفته'
+              : offerForm?.readOnly
+                ? 'مشاهده بلیط ثبت‌شده'
+                : 'ویرایش بلیط ثبت‌شده'}
           </DialogTitle>
           <DialogDescription>
             اطلاعات این بلیط مستقیماً از سرور دریافت می‌شود.
@@ -1045,6 +1133,7 @@ function TicketCatalogWorkspace() {
               key={offerForm.offer.id}
               offer={offerForm.offer}
               readOnly={offerForm.readOnly}
+              weekdayOffers={offerForm.weekdayOffers}
               onSaved={async () => {
                 await refreshPublishedOffers();
                 setOfferForm(null);

@@ -251,6 +251,8 @@ it('offers the expert reservation note on sale pricing rather than only at final
   expect(html).toMatch(/maxlength="500"/i);
   expect(html).not.toContain('در توضیحات درخواست رزرواسیون نمایش داده می‌شود.');
   expect(html).toContain('یادداشت قیمت‌گذاری');
+  expect(html).toContain('یادداشت قرارداد / Notice (اختیاری)');
+  expect(html).toMatch(/maxlength="1000"/i);
   fixture.step = 2;
   const final = renderToStaticMarkup(<SalesContractForm />);
   fixture.step = 0;
@@ -441,7 +443,7 @@ it('places combined flight selection and stay dates before identities and hides 
     const people = html.indexOf('ورود یکجای مشتری و مسافران');
     expect(people).toBeGreaterThan(0);
     expect(html.indexOf('تاریخ اقامت مهمانان')).toBeLessThan(people);
-    expect(html.indexOf('جست‌وجوی بلیط‌ها')).toBeLessThan(people);
+    expect(html).not.toContain('جست‌وجوی بلیط‌ها');
     expect(html).not.toContain('انتخاب بلیط پرواز');
     expect(html).not.toContain('جزئیات سفر');
     expect(html).not.toContain('>تعداد مسافران</h2>');
@@ -496,3 +498,88 @@ it.each([0, 1, 2])(
     }
   },
 );
+
+it.each([
+  [false, '1960-01-01', false],
+  [true, '1960-01-01', true],
+  [true, '2000-01-01', false],
+] as const)(
+  'scopes the age-insurance notice to selected insurance and the current passenger (%s, %s)',
+  (insured, birthDate, visible) => {
+    fixture.step = 0;
+    fixture.ticketDraft = {
+      ...emptySalesForm,
+      serviceKinds: insured ? ['OTHER', 'INSURANCE'] : ['OTHER'],
+      departureDate: '2030-10-01',
+      passengers: [
+        { customerId: 'current', displayName: 'Synthetic Current', birthDate },
+      ],
+      insuranceExtraToman: { removed: '100' },
+    };
+    try {
+      const html = renderToStaticMarkup(<SalesContractForm />);
+      expect(html.includes('هزینه بیمه ممکن است بیشتر باشد.')).toBe(visible);
+      expect(html.includes('هزینه اضافه بیمه همین مسافر')).toBe(visible);
+      expect(html).not.toContain(
+        'در صورت انتخاب بیمه، فیلد هزینه اضافه فعال می‌شود.',
+      );
+    } finally {
+      fixture.ticketDraft = null;
+      fixture.step = 0;
+    }
+  },
+);
+
+it('legacy flow keeps services and age counts but still requires complete travel data without a passenger table', () => {
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    legacyContract: true,
+    serviceKinds: ['FLIGHT'],
+    customerId: 'buyer',
+    customerName: 'Synthetic Buyer',
+    originId: 'origin',
+    destinationId: 'destination',
+    departureDate: '2026-10-01',
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    expect(html).toContain('قرارداد قدیمی');
+    expect(html).toContain('مسیر سفر');
+    expect(html).not.toContain('تاریخ سفر');
+    expect(html).not.toContain('تاریخ شروع سفر');
+    expect(html).toContain('تعداد مسافران');
+    expect(html).not.toContain('<table');
+    const next = [...html.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)].find(
+      (match) => match[0].includes('تأیید مسیر و خدمات'),
+    )?.[0];
+    expect(next).toBeDefined();
+    expect(next).toMatch(/ disabled(?:=|>|\s)/);
+  } finally {
+    fixture.ticketDraft = null;
+  }
+});
+
+it('shows historical prices once in the customer table, with rial, foreign, discount and commission', () => {
+  fixture.step = 1;
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    legacyContract: true,
+    customerId: 'buyer',
+    customerName: 'Synthetic Historical Buyer',
+    serviceKinds: ['HOTEL', 'FLIGHT'],
+    contractPrices: [{ amount: '100', currencyCode: 'EUR' }],
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    expect(html).toContain('Synthetic Historical Buyer');
+    expect(html).toContain('aria-label="قیمت ریالی"');
+    expect(html).toContain('aria-label="قیمت ارزی"');
+    expect(html).toContain('aria-label="تخفیف"');
+    expect(html).toContain('aria-label="کمیسیون"');
+    expect(html).not.toContain('قیمت روز فروش');
+    expect(html).not.toContain('مبلغ توافق‌شده با مشتری');
+  } finally {
+    fixture.step = 0;
+    fixture.ticketDraft = null;
+  }
+});

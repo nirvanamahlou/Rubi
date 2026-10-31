@@ -109,6 +109,79 @@ const intake = {
 } as unknown as ReservationFormIntake;
 
 describe('reservation general details', () => {
+  it.each(['persian', 'gregorian'] as const)(
+    'uses the saved %s hotel calendar in hotel-only route dates',
+    (calendar) => {
+      const saved = structuredClone(intake);
+      saved.snapshot.ticketSelections = [];
+      saved.snapshot.serviceSelections =
+        saved.snapshot.serviceSelections.filter(
+          (service) => service.kind === 'HOTEL',
+        );
+      saved.snapshot.serviceSelections[0]!.metadata = {
+        dateCalendarSystem: calendar,
+      };
+      saved.snapshot.hotelSelection!.serviceClientKey = 'hotel';
+      const groups = reservationGeneralDetailGroups(saved, request);
+      const field = (label: string) =>
+        groups
+          .flatMap((group) => group.fields)
+          .find(([key]) => key === label)?.[1];
+      const expected = calendar === 'gregorian' ? '01/10/2026' : '۱۴۰۵/۷/۹';
+      expect(field('تاریخ رفت')).toBe(expected);
+      expect(field('ورود هتل')).toBe(expected);
+    },
+  );
+
+  it('keeps flight and hotel calendars independent and uses Tehran flight days', () => {
+    const saved = structuredClone(intake);
+    saved.snapshot.hotelSelection!.serviceClientKey = 'hotel';
+    saved.snapshot.serviceSelections[0]!.metadata = {
+      dateCalendarSystem: 'persian',
+    };
+    saved.snapshot.serviceSelections[1]!.metadata = {
+      dateCalendarSystem: 'gregorian',
+    };
+    saved.snapshot.ticketSelections![0]!.departureAt = '2026-10-01T23:00:00Z';
+    saved.snapshot.serviceSelections = [
+      ...saved.snapshot.serviceSelections,
+      {
+        ...saved.snapshot.serviceSelections[1]!,
+        clientKey: 'return',
+        metadata: { dateCalendarSystem: 'persian' },
+      },
+    ];
+    saved.snapshot.ticketSelections = [
+      ...saved.snapshot.ticketSelections!,
+      {
+        ...saved.snapshot.ticketSelections![0]!,
+        serviceClientKey: 'return',
+        direction: 'RETURN',
+        departureAt: '2026-10-07T07:30:00Z',
+      },
+    ];
+    const groups = reservationGeneralDetailGroups(saved, request);
+    const field = (label: string) =>
+      groups
+        .flatMap((group) => group.fields)
+        .find(([key]) => key === label)?.[1];
+    expect(field('تاریخ رفت')).toBe('02/10/2026');
+    expect(field('زمان رفت')).toContain('02/10/2026');
+    expect(field('ورود هتل')).toBe('۱۴۰۵/۷/۹');
+    expect(field('تاریخ برگشت')).toBe('۱۴۰۵/۷/۱۵');
+    expect(field('زمان برگشت')).toContain('۱۴۰۵/۷/۱۵');
+  });
+
+  it('uses compatible calendars when old contracts have no recorded basis', () => {
+    const groups = reservationGeneralDetailGroups(intake, request);
+    const field = (label: string) =>
+      groups
+        .flatMap((group) => group.fields)
+        .find(([key]) => key === label)?.[1];
+    expect(field('تاریخ رفت')).toBe('۱۴۰۵/۷/۹');
+    expect(field('ورود هتل')).toBe('01/10/2026');
+    expect(field('زمان برگشت')).toBe('در اطلاعات قرارداد ثبت نشده');
+  });
   it('shows the recorded contract, hotel, rooms, passengers, flight and prices', () => {
     const groups = reservationGeneralDetailGroups(
       intake,

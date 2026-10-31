@@ -116,7 +116,10 @@ export class SalesReservationTableService {
     )
       return null;
     const ages = guests.map((p) =>
-      hotelAgeOn(p.birthDate.toISOString().slice(0, 10), hotel.checkInDate),
+      hotelAgeOn(
+        p.birthDate?.toISOString().slice(0, 10) ?? '',
+        hotel.checkInDate,
+      ),
     );
     return ages.some((age) => age === null) ? null : (ages as number[]);
   }
@@ -138,7 +141,7 @@ export class SalesReservationTableService {
           where: {
             outcome: 'SUCCESS',
             action: {
-              in: ['SALES_PASSENGER_CORRECTION'],
+              in: ['SALES_PASSENGER_CORRECTION', 'SALES_PASSENGER_COMPLETION'],
             },
           },
           orderBy: { occurredAt: 'desc' },
@@ -194,22 +197,23 @@ export class SalesReservationTableService {
           };
           for (const person of row.passengers) {
             const birth = person.birthDate;
-            const age =
-              at.getUTCFullYear() -
-              birth.getUTCFullYear() -
-              (at.getUTCMonth() < birth.getUTCMonth() ||
-              (at.getUTCMonth() === birth.getUTCMonth() &&
-                at.getUTCDate() < birth.getUTCDate())
-                ? 1
-                : 0);
+            const age = birth
+              ? at.getUTCFullYear() -
+                birth.getUTCFullYear() -
+                (at.getUTCMonth() < birth.getUTCMonth() ||
+                (at.getUTCMonth() === birth.getUTCMonth() &&
+                  at.getUTCDate() < birth.getUTCDate())
+                  ? 1
+                  : 0)
+              : null;
             if (person.ageCategory === 'INF') counts.infants++;
             else if (person.ageCategory === 'ADT') counts.adults++;
             else if (person.ageCategory === 'CHD') {
-              if (age < 6) counts.children2To6++;
-              else counts.children6To12++;
-            } else if (age < 2) counts.infants++;
-            else if (age < 6) counts.children2To6++;
-            else if (age < 12) counts.children6To12++;
+              if (age !== null && age < 6) counts.children2To6++;
+              else if (age !== null) counts.children6To12++;
+            } else if (age !== null && age < 2) counts.infants++;
+            else if (age !== null && age < 6) counts.children2To6++;
+            else if (age !== null && age < 12) counts.children6To12++;
             else counts.adults++;
           }
           const outbound = row.ticketSelections.find(
@@ -242,6 +246,11 @@ export class SalesReservationTableService {
             row.id,
             {
               contractPartyName: row.customerNameSnapshot,
+              passengerNames: row.passengers.flatMap((person) =>
+                person.displayNameSnapshot?.trim()
+                  ? [person.displayNameSnapshot]
+                  : [],
+              ),
               createdAt: row.createdAt.toISOString(),
               contractVersion: row.version,
               correctedAt: row.auditEvents[0]?.occurredAt.toISOString() ?? null,

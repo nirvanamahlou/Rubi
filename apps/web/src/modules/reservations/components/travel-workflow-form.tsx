@@ -14,6 +14,8 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { agencyClient } from '@/modules/organizations/api/agency-client';
 import type { MasterDataRecord } from '@nora/contracts';
+import { SupplierHotelDocuments } from './travel-document';
+import { reservationHotelStays } from '@nora/contracts';
 import { TravelDocument } from './travel-document';
 import { ReservationSettings } from './reservation-settings';
 import { ReservationTickets } from './reservation-tickets';
@@ -65,12 +67,6 @@ export function workflowOperationNote(
       : '')
   );
 }
-const labels = {
-  NEW: 'درخواست جدید',
-  REQUESTED: 'در انتظار کارگزار',
-  CONFIRMED: 'آماده صدور واچر هتل',
-  CANCELLED: 'ابطال‌شده',
-};
 
 export function TravelWorkflowForm({
   id,
@@ -85,7 +81,7 @@ export function TravelWorkflowForm({
   const [editingForm, setEditingForm] = useState(false);
   const [leaderEditorOpen, setLeaderEditorOpen] = useState(false);
   const [intake, setIntake] = useState<WorkflowIntake>();
-  const [delivery, setDelivery] = useState<TravelDeliveryAuthorizationV1>();
+  const [, setDelivery] = useState<TravelDeliveryAuthorizationV1>();
   const [brandKind, setBrandKind] = useState<'OWN' | 'AGENCY'>('OWN');
   const [agencyId, setAgencyId] = useState('');
   const [search, setSearch] = useState('');
@@ -98,12 +94,21 @@ export function TravelWorkflowForm({
   const [ticket, setTicket] = useState(false);
   const [order, setOrder] = useState<string[]>([]);
   const [ages, setAges] = useState<TravelWorkflowStateV1['ageOverrides']>({});
+  const [dataRevision, setDataRevision] = useState(0);
+  useEffect(() => {
+    const refresh = () => {
+      if (!settingsDirty) setDataRevision((v) => v + 1);
+    };
+    window.addEventListener('reservation-workflow-changed', refresh);
+    return () =>
+      window.removeEventListener('reservation-workflow-changed', refresh);
+  }, [settingsDirty]);
   useEffect(() => {
     let active = true;
     void travelRequest<{
       data: WorkflowIntake;
       delivery: TravelDeliveryAuthorizationV1;
-    }>(`reservations/requests/${id}/workflow`)
+    }>(`reservations/requests/${id}/workflow${readOnly ? '?historical=1' : ''}`)
       .then((result) => {
         if (!active) return;
         setIntake(result.data);
@@ -121,7 +126,7 @@ export function TravelWorkflowForm({
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, dataRevision, readOnly]);
   async function run(operation: TravelWorkflowCommandV1['action']) {
     if (!intake || busy || readOnly) return;
     const operationNote = workflowOperationNote(operation, note);
@@ -158,9 +163,13 @@ export function TravelWorkflowForm({
   }
   if (!intake) return <p role="status">{error || 'در حال دریافت اطلاعات…'}</p>;
   const state = intake.workflow;
+  const SupplierDocument =
+    reservationHotelStays(intake.snapshot).length > 1
+      ? SupplierHotelDocuments
+      : TravelDocument;
   if (readOnly)
     return (
-      <TravelDocument
+      <SupplierDocument
         historical
         intake={{
           ...intake,
@@ -178,6 +187,9 @@ export function TravelWorkflowForm({
     );
   const closed = state.voucherIssued || state.supplierStatus === 'CANCELLED';
   const issuedForm = Boolean(
+    Object.values(state.hotelSupplierForms ?? {}).some(
+      (entry) => entry.sentSettings,
+    ) ||
     state.sentSupplierFormSettings ||
     state.voucherIssued ||
     (Number.isSafeInteger(state.sentSupplierFormVersion) &&
@@ -193,7 +205,7 @@ export function TravelWorkflowForm({
         >
           اصلاح
         </Button>
-        <TravelDocument
+        <SupplierDocument
           downloadLabel="دانلود"
           intake={{
             ...intake,
@@ -209,24 +221,6 @@ export function TravelWorkflowForm({
     );
   return (
     <div className="grid gap-4" dir="rtl">
-      <p role="status">
-        {state.voucherIssued
-          ? 'واچر صادر شد؛ عملیات رزرواسیون پایان یافت.'
-          : labels[state.supplierStatus]}{' '}
-        · نسخه {state.version}
-      </p>
-      <p className="text-sm">
-        تحویل مدارک به فروش:{' '}
-        {delivery?.approved
-          ? 'تأیید مالی ثبت شده'
-          : 'قفل؛ در انتظار تأیید مالی'}
-      </p>
-      {action === 'رزرواسیون' && (
-        <p className="text-sm text-muted-foreground">
-          قفل مالی فقط مربوط به تحویل مدارک به فروش است؛ دریافت فرم رزرواسیون
-          برای کارگزار نیاز به تأیید مالی ندارد.
-        </p>
-      )}
       {error && (
         <p role="alert" className="text-destructive">
           {error}
@@ -342,7 +336,7 @@ export function TravelWorkflowForm({
             </section>
           )}
           {(state.voucherIssued || hasSentReservationForm(state)) &&
-            (state.voucherIssued || state.voucherSettings?.leaderId) &&
+            (state.voucherIssued || state.voucherSettings?.brokerId) &&
             !settingsDirty && (
               <TravelDocument
                 key={`${intake.id}:${state.version}`}
@@ -359,7 +353,7 @@ export function TravelWorkflowForm({
       )}
       {action === 'رزرواسیون' && (editingForm || !issuedForm) && (
         <ReservationSettings
-          key={`${id}:${state.version}`}
+          key={`${id}:${intake.contractVersion}`}
           intake={intake}
           onDirty={() => setSettingsDirty(true)}
           showDocument
@@ -372,7 +366,10 @@ export function TravelWorkflowForm({
                 : {}),
             });
             setSettingsDirty(false);
-            if (workflow.sentSupplierFormVersion === workflow.version)
+            if (
+              reservationHotelStays(intake.snapshot).length <= 1 &&
+              workflow.sentSupplierFormVersion === workflow.version
+            )
               setEditingForm(false);
           }}
         />
@@ -499,7 +496,6 @@ export function TravelWorkflowForm({
                     busy ||
                     settingsDirty ||
                     !state.voucherSettings?.brokerId ||
-                    !state.voucherSettings?.leaderId ||
                     !hasSentReservationForm(state) ||
                     state.supplierStatus !== 'REQUESTED' ||
                     (!state.insuranceIssued && !acknowledge)
@@ -524,7 +520,6 @@ export function TravelWorkflowForm({
                   busy ||
                   settingsDirty ||
                   !state.voucherSettings?.brokerId ||
-                  !state.voucherSettings?.leaderId ||
                   !hasSentReservationForm(state) ||
                   !['REQUESTED', 'CONFIRMED'].includes(state.supplierStatus) ||
                   (!state.insuranceIssued && !acknowledge)

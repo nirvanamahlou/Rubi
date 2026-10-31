@@ -264,9 +264,12 @@ export class FinanceInboxService {
             : row.kind === 'PETTY_CASH_EXPENSE'
               ? 'NON_CASH'
               : 'PAYMENT',
-        source: row.kind === 'PAYROLL' ? 'HR' : 'FINANCE',
-        kind:
-          row.kind === 'PAYROLL' ? 'PAYROLL_REQUEST' : 'OPERATIONAL_REQUEST',
+        source: ['PAYROLL', 'PAYROLL_WORKSHEET'].includes(row.kind)
+          ? 'HR'
+          : 'FINANCE',
+        kind: ['PAYROLL', 'PAYROLL_WORKSHEET'].includes(row.kind)
+          ? 'PAYROLL_REQUEST'
+          : 'OPERATIONAL_REQUEST',
         sourceReference: row.id,
         sourceContextReference: row.hrRecordId ?? row.id,
         contractReference: row.reference,
@@ -293,6 +296,8 @@ export class FinanceInboxService {
         origin: 'PERSISTED_SOURCE',
       })),
       ...salesItems.map((item): FinanceInboxItemV1 => ({
+        destinationAccountId: item.destinationAccountId ?? null,
+        destinationAccountTitle: item.destinationAccountTitle ?? null,
         version: 1,
         id: `sales:${item.paymentId}`,
         source: 'SALES',
@@ -552,7 +557,10 @@ export class FinanceInboxService {
       this.sourceState(
         'HR',
         hrResult.status === 'fulfilled',
-        hrItems.length,
+        hrItems.length +
+          payrollRows.filter((row) =>
+            ['PAYROLL', 'PAYROLL_WORKSHEET'].includes(row.kind),
+          ).length,
         'ارجاع‌های ثبت‌شده منابع انسانی به واحد مالی',
       ),
       this.sourceState(
@@ -590,7 +598,9 @@ export class FinanceInboxService {
         {
           source: 'FINANCE',
           connection: 'CONNECTED',
-          itemCount: payrollRows.filter((row) => row.kind !== 'PAYROLL').length,
+          itemCount: payrollRows.filter(
+            (row) => !['PAYROLL', 'PAYROLL_WORKSHEET'].includes(row.kind),
+          ).length,
           message:
             'درخواست‌های استرداد، کمیسیون، چک، اصلاح مالی و تنخواه با رویداد حسابداری قابل پیگیری',
         },
@@ -779,6 +789,9 @@ export class FinanceInboxService {
     return Promise.all(
       candidates.map(async (candidate) => ({
         ...candidate,
+        canApproveReservationDelivery: actor.permissions.includes(
+          'reservations.documents.manage',
+        ),
         delivery: await this.delivery.readCustomerContract(
           candidate.contractId,
         ),
@@ -786,6 +799,39 @@ export class FinanceInboxService {
     );
   }
 
+  async reservationDocumentDelivery(
+    contractId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('reservations.documents.manage'))
+      throw new ForbiddenException('مجوز صدور رزرواسیون لازم است.');
+    await this.sales.financeCustomerDocumentDeliveryFacts(
+      contractId,
+      actor.branchIds,
+    );
+    return this.delivery.readCustomerContract(contractId);
+  }
+  async decideReservationDocumentDelivery(
+    contractId: string,
+    input: FinanceCustomerDocumentDeliveryCommandV1,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('reservations.documents.manage'))
+      throw new ForbiddenException('مجوز صدور رزرواسیون لازم است.');
+    if (input?.basis !== 'RESERVATION_PERMISSION')
+      throw new BadRequestException('مبنای مجوز رزرواسیون معتبر نیست.');
+    const facts = await this.sales.financeCustomerDocumentDeliveryFacts(
+      contractId,
+      actor.branchIds,
+    );
+    return this.delivery.updateCustomerContract(input, facts, actor, (tx) =>
+      this.sales.financeCustomerDocumentDeliveryFacts(
+        contractId,
+        actor.branchIds,
+        tx,
+      ),
+    );
+  }
   async decideCustomerDocumentDelivery(
     contractId: string,
     input: FinanceCustomerDocumentDeliveryCommandV1,
@@ -829,10 +875,20 @@ export class FinanceInboxService {
     );
     if (!receipt)
       throw new NotFoundException('درخواست دریافت در شعب مجاز یافت نشد.');
+    if (
+      input.action === 'APPROVE' &&
+      receipt.destinationAccountId &&
+      input.accountId &&
+      input.accountId !== receipt.destinationAccountId
+    )
+      throw new BadRequestException(
+        'حساب مقصد ثبت‌شده در پرداخت قابل تغییر نیست.',
+      );
+    const receiptAccountId = receipt.destinationAccountId ?? input.accountId;
     if (receipt.status === 'FINANCE_CONFIRMED') {
       if (
         input.action !== 'APPROVE' ||
-        receipt.financeReceiptAccountId !== input.accountId
+        receipt.financeReceiptAccountId !== receiptAccountId
       )
         throw new ConflictException(
           'دریافت قبلاً تأیید شده است؛ اصلاح از مسیر استرداد انجام می‌شود.',
@@ -870,12 +926,12 @@ export class FinanceInboxService {
       throw new ConflictException('دریافت در وضعیت بررسی مالی نیست.');
     const payment = { ...receipt, branchId: receipt.contract.branchId };
     if (input.action === 'APPROVE') {
-      if (!input.accountId)
+      if (!receiptAccountId)
         throw new BadRequestException('حساب مقصد دریافت را انتخاب کنید.');
       const account =
         await this.database.client.financeSettlementAccount.findFirst({
           where: {
-            id: input.accountId,
+            id: receiptAccountId,
             branchId: payment.branchId,
             currencyCode: payment.currencyCode,
             isActive: true,

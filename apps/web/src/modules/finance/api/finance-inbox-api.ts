@@ -183,6 +183,18 @@ export const financeInboxApi = {
         `/finance/customer-document-delivery?contractNumber=${encodeURIComponent(contractNumber)}`,
       )
     ).data,
+  reservationDocumentDelivery: (contractId: string) =>
+    apiRequest<{ data: FinanceCustomerDocumentDeliveryAuthorizationV1 }>(
+      `/finance/reservation-document-delivery/${encodeURIComponent(contractId)}`,
+    ),
+  decideReservationDocumentDelivery: (
+    contractId: string,
+    input: FinanceCustomerDocumentDeliveryCommandV1,
+  ) =>
+    apiRequest<{ data: FinanceCustomerDocumentDeliveryAuthorizationV1 }>(
+      `/finance/reservation-document-delivery/${encodeURIComponent(contractId)}`,
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
   decideCustomerDocumentDelivery: (
     contractId: string,
     input: FinanceCustomerDocumentDeliveryCommandV1,

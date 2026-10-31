@@ -1,5 +1,6 @@
 import type { MasterDataRecord, MasterDataResource } from '@nora/contracts';
 import { salesApi } from './client';
+import { loadContractHotels } from './hotel-catalog';
 
 const resources = {
   countries: 'countries',
@@ -29,6 +30,7 @@ export async function loadSalesReferences(
   ][];
   const results = await Promise.allSettled(
     entries.map(async ([, resource]) => {
+      if (resource === 'hotels') return loadContractHotels(signal, api.list);
       const data: MasterDataRecord[] = [];
       for (let page = 1; ; page++) {
         signal?.throwIfAborted();

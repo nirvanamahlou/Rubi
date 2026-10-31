@@ -55,7 +55,8 @@ describe('accommodation record mapping', () => {
             id: '10',
             code: 'HTL_1',
             name: 'هتل یک',
-            city: { name: 'استانبول' },
+            cityId: 'city-1',
+            city: { id: 'city-1', name: 'استانبول' },
           },
         },
       ],
@@ -67,5 +68,14 @@ describe('accommodation record mapping', () => {
       memberCount: 1,
     });
     expect(record.attributes).not.toHaveProperty('contractReference');
+    expect(JSON.parse(String(record.attributes.memberHotels))).toEqual([
+      {
+        hotelId: '10',
+        hotelName: 'هتل یک',
+        cityId: 'city-1',
+        cityName: 'استانبول',
+        priority: 1,
+      },
+    ]);
   });
 });

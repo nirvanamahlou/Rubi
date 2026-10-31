@@ -32,6 +32,72 @@ const row = {
 };
 
 describe('MasterDataService', () => {
+  it.each([
+    '+03:30',
+    '+05:45',
+    '-09:30',
+    '+14:00',
+    '-12:00',
+    '+00:00',
+    '-00:00',
+    '',
+    null,
+  ])('persists and returns country GMT offset %s', async (gmtOffset) => {
+    const repository = {
+      fieldExists: vi.fn().mockResolvedValue(false),
+      create: vi
+        .fn()
+        .mockImplementation(async (_resource, data) => ({ ...row, ...data })),
+    } as unknown as MasterDataRepository;
+    const result = await new MasterDataService(repository).create(
+      'countries',
+      { iso2Code: 'IR', name: 'ایران', gmtOffset },
+      actor,
+    );
+    const expected = gmtOffset === '-00:00' ? '+00:00' : gmtOffset || null;
+    expect(result.data.attributes.gmtOffset).toBe(expected);
+    expect(repository.create).toHaveBeenCalledWith(
+      'countries',
+      expect.objectContaining({ gmtOffset: expected }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+  it.each(['+14:01', '-12:01', '+03:60', '03:30', 'NaN', 3, ['+03:30']])(
+    'rejects invalid country GMT offset %s',
+    async (gmtOffset) => {
+      const repository = { create: vi.fn() } as unknown as MasterDataRepository;
+      await expect(
+        new MasterDataService(repository).create(
+          'countries',
+          { iso2Code: 'IR', name: 'ایران', gmtOffset },
+          actor,
+        ),
+      ).rejects.toMatchObject({ status: 400 });
+      expect(repository.create).not.toHaveBeenCalled();
+    },
+  );
+  it('supports updating and clearing GMT while omission preserves it', async () => {
+    const repository = {
+      update: vi.fn().mockResolvedValue(row),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    for (const [values, expected] of [
+      [{ gmtOffset: '+03:30' }, { gmtOffset: '+03:30' }],
+      [{ gmtOffset: '' }, { gmtOffset: null }],
+      [{ name: 'ایران' }, { name: 'ایران' }],
+    ] as const) {
+      await service.update('countries', row.id, values, 1, actor);
+      expect(repository.update).toHaveBeenLastCalledWith(
+        'countries',
+        row.id,
+        expected,
+        1,
+        actor.userId,
+        actor.branchIds[0],
+      );
+    }
+  });
   it('creates a broker with allowed data fields without requiring a hidden dossierVersion grant', async () => {
     const repository = {
       codeExists: vi.fn().mockResolvedValue(false),

@@ -1,3 +1,9 @@
+import { captureSalesContractAccounting } from '../finance/accounting/sales-contract-accounting.public';
+import {
+  SalesReceiptAccountsPublic,
+  salesReceiptDestination,
+} from '../finance/payments/sales-receipt-accounts.public';
+import { assertRevenueEditable } from '../finance/accounting/accounting-workflows.public';
 import { recalculateSalesSettlement } from './sales-financial-settlement';
 import {
   recordFinancialEvent,
@@ -6,6 +12,7 @@ import {
 import { salesHotelRoomSummary } from '@nora/contracts';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import {
+  BadRequestException,
   Inject,
   Injectable,
   Optional,
@@ -20,7 +27,11 @@ import type {
 import { AuditOutcome, Prisma, type SalesContractStatus } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
-import { salesFingerprint, passengerAgeCategory } from './sales.domain';
+import { salesFingerprint, contractPassengerAgeCategory } from './sales.domain';
+import {
+  allocateSalesContractNumber,
+  retrySalesContractCreate,
+} from './sales-contract-number';
 
 export const salesDetailInclude = {
   passengers: {
@@ -32,7 +43,15 @@ export const salesDetailInclude = {
   },
   services: { orderBy: { createdAt: 'asc' } },
   ticketSelections: { orderBy: { departureAt: 'asc' } },
-  hotelSelection: { include: { rooms: { orderBy: { ordinal: 'asc' } } } },
+  hotelSelection: {
+    include: {
+      rooms: { orderBy: { ordinal: 'asc' } },
+      additionalStays: {
+        orderBy: { ordinal: 'asc' },
+        include: { rooms: { orderBy: { ordinal: 'asc' } } },
+      },
+    },
+  },
   priceComponents: { orderBy: { createdAt: 'asc' } },
   payments: {
     include: { refunds: true, allocations: true },
@@ -75,6 +94,9 @@ export class SalesRepository {
     @Optional()
     @Inject(SalesBuyerContactCrypto)
     private readonly buyerCrypto?: SalesBuyerContactCrypto,
+    @Optional()
+    @Inject(SalesReceiptAccountsPublic)
+    private readonly receiptAccounts?: SalesReceiptAccountsPublic,
   ) {}
 
   findById(id: string): Promise<SalesContractRow | null> {
@@ -175,6 +197,7 @@ export class SalesRepository {
         dueAt: true,
         currencyCode: true,
         financeReceiptAccountId: true,
+        destinationAccountId: true,
         contract: { select: { branchId: true } },
       },
     });
@@ -361,6 +384,17 @@ export class SalesRepository {
                     mode: 'insensitive',
                   },
                 },
+                {
+                  services: {
+                    some: {
+                      metadata: {
+                        path: ['contractNotice'],
+                        string_contains: query.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                  },
+                },
               ],
             }
           : {},
@@ -368,7 +402,9 @@ export class SalesRepository {
         query.ownerUserId ? { ownerUserId: query.ownerUserId } : {},
         query.originId ? { originId: query.originId } : {},
         query.destinationId ? { destinationId: query.destinationId } : {},
-        query.status ? { status: query.status } : {},
+        query.status
+          ? { status: query.status }
+          : { status: { not: 'CANCELLED' } },
         query.settlementStatus
           ? { settlementStatus: query.settlementStatus }
           : {},
@@ -466,215 +502,239 @@ export class SalesRepository {
     fingerprint: string,
     actor: SalesActorContext,
   ): Promise<SalesContractRow> {
-    const id = await this.database.client.$transaction(
-      async (tx) => {
-        const [sequence] = await tx.$queryRaw<
-          Array<{ value: bigint }>
-        >`SELECT nextval('sales_contract_public_number_seq') AS value`;
-        if (!sequence)
-          throw new Error('Sales contract sequence did not return a value.');
-        const contractNumber = sequence.value.toString();
-        if (!/^[0-9]{6}$/.test(contractNumber))
-          throw new InternalServerErrorException(
-            'Contract number must contain six digits.',
-          );
-        const contract = await tx.salesContract.create({
-          data: {
-            contractNumber,
-            branchId: actor.branchId,
-            ownerUserId: actor.userId,
-            assignedUserId: input.assignedUserId ?? null,
-            customerId: input.customerId,
-            payerCustomerId: input.payerCustomerId ?? input.customerId,
-            customerNameSnapshot:
-              input.buyerContact?.name.trim() ?? customerNameSnapshot,
-            buyerContact: input.buyerContact
-              ? this.buyerContactJson(input.buyerContact)
-              : Prisma.DbNull,
-            tripType: input.tripType,
-            originId: input.originId,
-            destinationId: input.destinationId,
-            departureDate: startOfDay(input.departureDate),
-            returnNotBefore: input.returnNotBefore
-              ? startOfDay(input.returnNotBefore)
-              : null,
-            fxRate: input.fxSnapshot?.rate ?? null,
-            fxSource: input.fxSnapshot?.source ?? null,
-            fxObservedAt: input.fxSnapshot
-              ? new Date(input.fxSnapshot.observedAt)
-              : null,
-            pricingNotes: input.pricingNotes ?? null,
-            paymentTerms: input.paymentTerms
-              ? json(input.paymentTerms)
-              : Prisma.DbNull,
-            createIdempotencyKey: idempotencyKey,
-            createRequestFingerprint: fingerprint,
-          },
-        });
-        const serviceIds = new Map<string, string>();
-        for (const service of input.services) {
-          const created = await tx.salesContractService.create({
+    const id = await retrySalesContractCreate(() =>
+      this.database.client.$transaction(
+        async (tx) => {
+          const contractNumber = await allocateSalesContractNumber(tx);
+          const contract = await tx.salesContract.create({
             data: {
-              contractId: contract.id,
-              clientKey: service.clientKey,
-              kind: service.kind,
-              referenceId: service.referenceId ?? null,
-              titleSnapshot: service.titleSnapshot,
-              status: service.status ?? 'SELECTED',
-              pricing: service.pricing ? json(service.pricing) : Prisma.DbNull,
-              metadata: service.metadata
-                ? json(service.metadata)
-                : Prisma.JsonNull,
+              contractNumber,
+              branchId: actor.branchId,
+              ownerUserId: actor.userId,
+              assignedUserId: input.assignedUserId ?? null,
+              customerId: input.customerId,
+              payerCustomerId: input.payerCustomerId ?? input.customerId,
+              customerNameSnapshot:
+                input.buyerContact?.name.trim() ?? customerNameSnapshot,
+              buyerContact: input.buyerContact
+                ? this.buyerContactJson(input.buyerContact)
+                : Prisma.DbNull,
+              tripType: input.tripType,
+              originId: input.originId,
+              destinationId: input.destinationId,
+              departureDate: startOfDay(input.departureDate),
+              returnNotBefore: input.returnNotBefore
+                ? startOfDay(input.returnNotBefore)
+                : null,
+              fxRate: input.fxSnapshot?.rate ?? null,
+              fxSource: input.fxSnapshot?.source ?? null,
+              fxObservedAt: input.fxSnapshot
+                ? new Date(input.fxSnapshot.observedAt)
+                : null,
+              pricingNotes: input.pricingNotes ?? null,
+              paymentTerms: input.paymentTerms
+                ? json(input.paymentTerms)
+                : Prisma.DbNull,
+              createIdempotencyKey: idempotencyKey,
+              createRequestFingerprint: fingerprint,
             },
           });
-          serviceIds.set(service.clientKey, created.id);
-        }
-        for (const passenger of input.passengers) {
-          const created = await tx.salesContractPassenger.create({
-            data: {
-              contractId: contract.id,
-              customerId: passenger.customerId,
-              accommodationKind: passenger.accommodationKind ?? null,
-              childAgeBand: passenger.childAgeBand ?? null,
-              agreedPrices: { create: [...(passenger.agreedPrices ?? [])] },
-              displayNameSnapshot: passenger.displayNameSnapshot,
-              birthDate: startOfDay(passenger.birthDate),
-              ageCategory: passengerAgeCategory(
-                passenger.birthDate,
-                input.departureDate,
-              ),
-            },
-          });
-          await tx.salesPassengerServiceAllocation.createMany({
-            data: passenger.serviceClientKeys.map((key) => ({
-              passengerId: created.id,
-              serviceId: serviceIds.get(key)!,
-            })),
-          });
-        }
-        for (const ticket of input.ticketSelections ?? [])
-          await tx.salesContractTicketSelection.create({
-            data: {
-              contractId: contract.id,
-              serviceId: serviceIds.get(ticket.serviceClientKey)!,
-              direction: ticket.direction,
-              offerId: ticket.offerId,
-              originId: ticket.originId,
-              destinationId: ticket.destinationId,
-              departureAt: new Date(ticket.departureAt),
-              arrivalAt: new Date(ticket.arrivalAt),
-              carrierNameSnapshot: ticket.carrierNameSnapshot,
-              serviceNumberSnapshot: ticket.serviceNumberSnapshot,
-              cabinClassCode: ticket.cabinClassCode,
-              quotedAmount: ticket.quotedPrice?.amount ?? null,
-              quotedCurrencyCode:
-                ticket.quotedPrice?.currencyCode.toUpperCase() ?? null,
-            },
-          });
-        if (input.hotelSelection) {
-          const hotel = input.hotelSelection;
-          await tx.salesContractHotelSelection.create({
-            data: {
-              contractId: contract.id,
-              serviceId: serviceIds.get(hotel.serviceClientKey)!,
-              hotelId: hotel.hotelId,
-              hotelNameSnapshot: hotel.hotelNameSnapshot,
-              cityId: hotel.cityId,
-              checkInDate: startOfDay(hotel.checkInDate),
-              checkOutDate: startOfDay(hotel.checkOutDate),
-              roomCount: hotel.roomCount,
-              singleRoomCount: hotel.singleRoomCount ?? 0,
-              doubleRoomCount: hotel.doubleRoomCount ?? hotel.roomCount,
-              extraBedCount: hotel.extraBedCount ?? 0,
-              ...(hotel.rooms?.length
-                ? salesHotelRoomSummary(hotel.rooms)
-                : {}),
-              roomTypeId: hotel.roomTypeId,
-              ...(hotel.rooms?.length
-                ? {
+          const serviceIds = new Map<string, string>();
+          for (const service of input.services) {
+            const created = await tx.salesContractService.create({
+              data: {
+                contractId: contract.id,
+                clientKey: service.clientKey,
+                kind: service.kind,
+                referenceId: service.referenceId ?? null,
+                titleSnapshot: service.titleSnapshot,
+                status: service.status ?? 'SELECTED',
+                pricing: service.pricing
+                  ? json(service.pricing)
+                  : Prisma.DbNull,
+                metadata: service.metadata
+                  ? json(service.metadata)
+                  : Prisma.JsonNull,
+              },
+            });
+            serviceIds.set(service.clientKey, created.id);
+          }
+          for (const passenger of input.passengers) {
+            const created = await tx.salesContractPassenger.create({
+              data: {
+                contractId: contract.id,
+                customerId: passenger.customerId,
+                accommodationKind: passenger.accommodationKind ?? null,
+                childAgeBand: passenger.childAgeBand ?? null,
+                agreedPrices: { create: [...(passenger.agreedPrices ?? [])] },
+                displayNameSnapshot: passenger.displayNameSnapshot,
+                birthDate: passenger.birthDate
+                  ? startOfDay(passenger.birthDate)
+                  : null,
+                ageCategory: contractPassengerAgeCategory(
+                  passenger,
+                  input.departureDate,
+                ),
+              },
+            });
+            await tx.salesPassengerServiceAllocation.createMany({
+              data: passenger.serviceClientKeys.map((key) => ({
+                passengerId: created.id,
+                serviceId: serviceIds.get(key)!,
+              })),
+            });
+          }
+          for (const ticket of input.ticketSelections ?? [])
+            await tx.salesContractTicketSelection.create({
+              data: {
+                contractId: contract.id,
+                serviceId: serviceIds.get(ticket.serviceClientKey)!,
+                direction: ticket.direction,
+                offerId: ticket.offerId,
+                originId: ticket.originId,
+                destinationId: ticket.destinationId,
+                departureAt: new Date(ticket.departureAt),
+                arrivalAt: new Date(ticket.arrivalAt),
+                carrierNameSnapshot: ticket.carrierNameSnapshot,
+                serviceNumberSnapshot: ticket.serviceNumberSnapshot,
+                cabinClassCode: ticket.cabinClassCode,
+                quotedAmount: ticket.quotedPrice?.amount ?? null,
+                quotedCurrencyCode:
+                  ticket.quotedPrice?.currencyCode.toUpperCase() ?? null,
+              },
+            });
+          if (input.hotelSelection) {
+            const hotel = input.hotelSelection;
+            await tx.salesContractHotelSelection.create({
+              data: {
+                contractId: contract.id,
+                serviceId: serviceIds.get(hotel.serviceClientKey)!,
+                hotelId: hotel.hotelId,
+                hotelNameSnapshot: hotel.hotelNameSnapshot,
+                cityId: hotel.cityId,
+                checkInDate: startOfDay(hotel.checkInDate),
+                checkOutDate: startOfDay(hotel.checkOutDate),
+                roomCount: hotel.roomCount,
+                singleRoomCount: hotel.singleRoomCount ?? 0,
+                doubleRoomCount: hotel.doubleRoomCount ?? hotel.roomCount,
+                extraBedCount: hotel.extraBedCount ?? 0,
+                ...(hotel.rooms?.length
+                  ? salesHotelRoomSummary(hotel.rooms)
+                  : {}),
+                roomTypeId: hotel.roomTypeId,
+                ...(hotel.rooms?.length
+                  ? {
+                      rooms: {
+                        create: hotel.rooms.map((room) => ({
+                          ordinal: room.ordinal,
+                          roomTypeId: room.roomTypeId,
+                          roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                          ...(room.roomCategory
+                            ? { roomCategory: room.roomCategory }
+                            : {}),
+                          adults: room.adults,
+                          childAges: [...room.childAges],
+                          ...(room.agreedPrice
+                            ? { agreedPrice: { ...room.agreedPrice } }
+                            : {}),
+                        })),
+                      },
+                    }
+                  : {}),
+                mealServiceId: hotel.mealServiceId ?? null,
+                occupancy: hotel.occupancy,
+                inventoryStatus: hotel.inventoryStatus,
+                additionalStays: {
+                  create: (hotel.additionalStays ?? []).map((stay, index) => ({
+                    ordinal: index + 2,
+                    hotelId: stay.hotelId,
+                    cityId: stay.cityId,
+                    hotelNameSnapshot: stay.hotelNameSnapshot,
                     rooms: {
-                      create: hotel.rooms.map((room) => ({
+                      create: (stay.rooms ?? []).map((room) => ({
                         ordinal: room.ordinal,
                         roomTypeId: room.roomTypeId,
                         roomTypeNameSnapshot: room.roomTypeNameSnapshot,
-                        ...(room.roomCategory
-                          ? { roomCategory: room.roomCategory }
-                          : {}),
                         adults: room.adults,
                         childAges: [...room.childAges],
-                        ...(room.agreedPrice
-                          ? { agreedPrice: { ...room.agreedPrice } }
-                          : {}),
+                        roomCategory: room.roomCategory ?? null,
                       })),
                     },
-                  }
-                : {}),
-              mealServiceId: hotel.mealServiceId ?? null,
-              occupancy: hotel.occupancy,
-              inventoryStatus: hotel.inventoryStatus,
-            },
+                    checkInDate: startOfDay(stay.checkInDate),
+                    checkOutDate: startOfDay(stay.checkOutDate),
+                  })),
+                },
+              },
+            });
+          }
+          await tx.salesContractPriceComponent.createMany({
+            data: input.priceComponents.map((item) => ({
+              contractId: contract.id,
+              type: item.type,
+              title: item.title,
+              amount: item.amount,
+              currencyCode: item.currencyCode.toUpperCase(),
+            })),
           });
-        }
-        await tx.salesContractPriceComponent.createMany({
-          data: input.priceComponents.map((item) => ({
-            contractId: contract.id,
-            type: item.type,
-            title: item.title,
-            amount: item.amount,
-            currencyCode: item.currencyCode.toUpperCase(),
-          })),
-        });
-        for (const [index, payment] of (input.payments ?? []).entries())
-          await tx.salesContractPaymentEntry.create({
+          for (const [index, payment] of (input.payments ?? []).entries()) {
+            const destination = await salesReceiptDestination(
+              tx,
+              payment,
+              actor.branchId,
+            );
+            await tx.salesContractPaymentEntry.create({
+              data: {
+                ...destination,
+                contractId: contract.id,
+                amount: payment.amount,
+                currencyCode: payment.currencyCode.toUpperCase(),
+                dueAt: new Date(payment.dueAt),
+                method: payment.method,
+                status:
+                  payment.dueAt > new Date().toISOString()
+                    ? 'SCHEDULED'
+                    : 'PENDING_FINANCE_CONFIRMATION',
+                description: payment.description ?? null,
+                paymentReference: payment.paymentReference ?? null,
+                bankId: payment.check?.bankId ?? null,
+                checkSecureIdentifier: payment.check?.secureIdentifier ?? null,
+                checkOwnerName: payment.check?.ownerName ?? null,
+                checkDueDate: payment.check
+                  ? startOfDay(payment.check.dueDate)
+                  : null,
+                idempotencyKey: `${idempotencyKey}:payment:${index}`,
+                requestFingerprint: fingerprint,
+                createdByUserId: actor.userId,
+              },
+            });
+          }
+          await tx.salesContractStatusHistory.create({
             data: {
               contractId: contract.id,
-              amount: payment.amount,
-              currencyCode: payment.currencyCode.toUpperCase(),
-              dueAt: new Date(payment.dueAt),
-              method: payment.method,
-              status:
-                payment.dueAt > new Date().toISOString()
-                  ? 'SCHEDULED'
-                  : 'PENDING_FINANCE_CONFIRMATION',
-              description: payment.description ?? null,
-              paymentReference: payment.paymentReference ?? null,
-              bankId: payment.check?.bankId ?? null,
-              checkSecureIdentifier: payment.check?.secureIdentifier ?? null,
-              checkOwnerName: payment.check?.ownerName ?? null,
-              checkDueDate: payment.check
-                ? startOfDay(payment.check.dueDate)
-                : null,
-              idempotencyKey: `${idempotencyKey}:payment:${index}`,
-              requestFingerprint: fingerprint,
-              createdByUserId: actor.userId,
+              toStatus: 'DRAFT',
+              reason: 'ایجاد قرارداد',
+              changedByUserId: actor.userId,
             },
           });
-        await tx.salesContractStatusHistory.create({
-          data: {
-            contractId: contract.id,
-            toStatus: 'DRAFT',
-            reason: 'ایجاد قرارداد',
-            changedByUserId: actor.userId,
-          },
-        });
-        await tx.salesContractAuditEvent.create({
-          data: {
-            contractId: contract.id,
-            actorUserId: actor.userId,
-            actorBranchId: actor.branchId,
-            action: 'sales.contract.created',
-            outcome: AuditOutcome.SUCCESS,
-            afterSnapshot: json({
-              contractNumber,
-              customerId: input.customerId,
-              serviceKinds: input.services.map(({ kind }) => kind),
-            }),
-            traceId: actor.traceId ?? null,
-          },
-        });
-        return contract.id;
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+          await tx.salesContractAuditEvent.create({
+            data: {
+              contractId: contract.id,
+              actorUserId: actor.userId,
+              actorBranchId: actor.branchId,
+              action: 'sales.contract.created',
+              outcome: AuditOutcome.SUCCESS,
+              afterSnapshot: json({
+                contractNumber,
+                customerId: input.customerId,
+                serviceKinds: input.services.map(({ kind }) => kind),
+              }),
+              traceId: actor.traceId ?? null,
+            },
+          });
+          return contract.id;
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      ),
     );
     return (await this.findById(id))!;
   }
@@ -697,6 +757,7 @@ export class SalesRepository {
   ): Promise<boolean> {
     return this.database.client.$transaction(
       async (tx) => {
+        await assertRevenueEditable(tx, id, [actor.branchId]);
         const changed = await tx.salesContract.updateMany({
           where: {
             id,
@@ -807,10 +868,12 @@ export class SalesRepository {
               childAgeBand: passenger.childAgeBand ?? null,
               agreedPrices: { create: [...(passenger.agreedPrices ?? [])] },
               displayNameSnapshot: passenger.displayNameSnapshot,
-              birthDate: startOfDay(passenger.birthDate),
+              birthDate: passenger.birthDate
+                ? startOfDay(passenger.birthDate)
+                : null,
               ageCategory:
                 amendment?.categories[passenger.customerId] ??
-                passengerAgeCategory(passenger.birthDate, input.departureDate),
+                contractPassengerAgeCategory(passenger, input.departureDate),
             },
           });
           await tx.salesPassengerServiceAllocation.createMany({
@@ -880,6 +943,26 @@ export class SalesRepository {
               mealServiceId: hotel.mealServiceId ?? null,
               occupancy: hotel.occupancy,
               inventoryStatus: hotel.inventoryStatus,
+              additionalStays: {
+                create: (hotel.additionalStays ?? []).map((stay, index) => ({
+                  ordinal: index + 2,
+                  hotelId: stay.hotelId,
+                  cityId: stay.cityId,
+                  hotelNameSnapshot: stay.hotelNameSnapshot,
+                  rooms: {
+                    create: (stay.rooms ?? []).map((room) => ({
+                      ordinal: room.ordinal,
+                      roomTypeId: room.roomTypeId,
+                      roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                      adults: room.adults,
+                      childAges: [...room.childAges],
+                      roomCategory: room.roomCategory ?? null,
+                    })),
+                  },
+                  checkInDate: startOfDay(stay.checkInDate),
+                  checkOutDate: startOfDay(stay.checkOutDate),
+                })),
+              },
             },
           });
         }
@@ -937,10 +1020,19 @@ export class SalesRepository {
           },
         });
         await recalculateSalesSettlement(tx, id, actor.userId, false);
+        await captureSalesContractAccounting(tx, id, actor.userId);
         return true;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
+  }
+
+  paymentAccounts(branchId: string, actorUserId: string) {
+    if (!this.receiptAccounts)
+      throw new InternalServerErrorException(
+        'Payment account provider is unavailable.',
+      );
+    return this.receiptAccounts.list(branchId, actorUserId);
   }
 
   async addPayment(
@@ -968,8 +1060,14 @@ export class SalesRepository {
           data: { version: { increment: 1 } },
         });
         if (changed.count !== 1) return 'concurrent';
+        const destination = await salesReceiptDestination(
+          tx,
+          input,
+          actor.branchId,
+        );
         await tx.salesContractPaymentEntry.create({
           data: {
+            ...destination,
             contractId,
             amount: input.amount,
             currencyCode: input.currencyCode.toUpperCase(),
@@ -1001,6 +1099,7 @@ export class SalesRepository {
               amount: input.amount,
               currencyCode: input.currencyCode,
               method: input.method,
+              destinationAccountId: destination.destinationAccountId ?? null,
             }),
             traceId: actor.traceId ?? null,
           },
@@ -1025,6 +1124,8 @@ export class SalesRepository {
   ): Promise<boolean> {
     return this.database.client.$transaction(
       async (tx) => {
+        if (toStatus === 'CANCELLED')
+          await assertRevenueEditable(tx, id, [actor.branchId]);
         const changed = await tx.salesContract.updateMany({
           where: { id, version, status: { in: fromStatuses } },
           data: {
@@ -1080,6 +1181,8 @@ export class SalesRepository {
           },
         });
         await recalculateSalesSettlement(tx, id, actor.userId, false);
+        if (toStatus === 'SENT_TO_RESERVATIONS')
+          await captureSalesContractAccounting(tx, id, actor.userId, true);
         return true;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -1175,6 +1278,13 @@ export class SalesRepository {
           },
         });
         if (!payment) return 'not-found';
+        if (
+          payment.destinationAccountId &&
+          payment.destinationAccountId !== event.receiptAccountId
+        )
+          throw new BadRequestException(
+            'حساب مقصد ثبت‌شده در پرداخت قابل تغییر نیست.',
+          );
         if (payment.financeConfirmedByRef) {
           if (payment.financeReceiptAccountId !== event.receiptAccountId)
             throw new ConflictException(
@@ -1237,6 +1347,12 @@ export class SalesRepository {
           partyId: payment.contract.customerId,
           reference: payment.paymentReference,
         });
+        await captureSalesContractAccounting(
+          tx,
+          payment.contractId,
+          event.reviewedByUserId ?? payment.createdByUserId,
+          true,
+        );
         return 'confirmed';
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },

@@ -45,6 +45,96 @@ function intake(id = 'one', receivedAt = '2026-09-08T09:00:00Z') {
 const envelope = (data = [intake()]) => ({ version: 1, data });
 const row = (id = 'one', time?: string) =>
   decodeIntake(envelope([intake(id, time)]), session)[0]!;
+it('retains all composite hotels in saved itinerary order for the queue Hotel column', () => {
+  const input = intake();
+  const decoded = decodeIntake(
+    envelope([
+      {
+        ...input,
+        snapshot: {
+          ...input.snapshot,
+          hotelSelection: {
+            hotelId: 'primary',
+            hotelNameSnapshot: 'FIRST HOTEL',
+            checkInDate: '2026-10-01',
+            additionalStays: [
+              {
+                hotelId: 'second',
+                hotelNameSnapshot: 'SECOND HOTEL',
+                checkInDate: '2026-10-03',
+              },
+              {
+                hotelId: 'third',
+                hotelNameSnapshot: 'THIRD HOTEL',
+                checkInDate: '2026-10-05',
+              },
+            ],
+          },
+        },
+      },
+    ] as never),
+    session,
+  );
+  expect(decoded[0]).toMatchObject({
+    hotelId: 'primary',
+    hotelName: 'FIRST HOTEL / SECOND HOTEL / THIRD HOTEL',
+    hotels: [
+      { hotelId: 'primary', name: 'FIRST HOTEL' },
+      { hotelId: 'second', name: 'SECOND HOTEL' },
+      { hotelId: 'third', name: 'THIRD HOTEL' },
+    ],
+  });
+});
+it('uses completed canonical passenger names instead of an empty or stale historical snapshot', () => {
+  const input = {
+    ...intake(),
+    snapshot: {
+      ...intake().snapshot,
+      passengerAssignments: [
+        {
+          customerId: 'old',
+          displayNameSnapshot: 'Old snapshot name',
+          ageCategory: 'ADT',
+          serviceClientKeys: [],
+        },
+      ],
+    },
+  };
+  const summary = {
+    createdAt: input.receivedAt,
+    contractVersion: 2,
+    correctedAt: input.receivedAt,
+    cancelledAt: null,
+    departureDate: '2027-01-01',
+    returnDate: null,
+    passengerCount: 2,
+    adults: 1,
+    children2To6: 0,
+    children6To12: 0,
+    infants: 0,
+    saleRial: null,
+    saleForeign: null,
+    currencies: '',
+    discount: null,
+    commission: null,
+    debtRial: null,
+    debtForeign: null,
+  };
+  const decode = (tableSummary?: object) =>
+    decodeIntake(
+      { version: 1, data: [{ ...input, tableSummary }] },
+      session,
+    )[0]!;
+  expect(
+    decode({
+      ...summary,
+      passengerNames: ['FIRST TRAVELER', 'SECOND TRAVELER'],
+    }).passengerNames,
+  ).toEqual(['FIRST TRAVELER', 'SECOND TRAVELER']);
+  expect(decode({ ...summary, passengerNames: [] }).passengerNames).toEqual([]);
+  expect(decode(summary).passengerNames).toEqual(['Old snapshot name']);
+  expect(decode().passengerNames).toEqual(['Old snapshot name']);
+});
 it('decodes actual queue labels, meal reference and arrangement notes without defaults', () => {
   const input = intake();
   const result = decodeIntake(
@@ -82,6 +172,7 @@ it('decodes actual queue labels, meal reference and arrangement notes without de
     mealServiceId: 'meal',
     hotelNotes: 'TWIN BED',
     serviceTitles: ['Test hotel'],
+    serviceItems: [{ kind: 'HOTEL', title: 'Test hotel' }],
   });
 });
 describe('reservation feed boundary', () => {
@@ -410,8 +501,41 @@ it('derives canonical room counts despite stale arrangement and summary fields',
   );
   expect(rows[0]).toMatchObject({
     roomCount: 3,
-    singleRooms: 1,
+    singleRooms: 2,
+    doubleRooms: 0,
+    extraBeds: 0,
+    familyTripleRooms: 1,
+  });
+});
+
+it('preserves room categories through decoding and exports a separate family/triple counter', () => {
+  const source = intake();
+  const rows = decodeIntake(
+    envelope([
+      {
+        ...source,
+        snapshot: {
+          ...source.snapshot,
+          hotelSelection: {
+            hotelNameSnapshot: 'Synthetic hotel',
+            checkInDate: '2026-10-01',
+            rooms: [
+              { adults: 2, childAges: [5, 8], roomCategory: 'DOUBLE' },
+              { adults: 2, childAges: [], roomCategory: 'DOUBLE_EXTRA' },
+              { adults: 3, childAges: [], roomCategory: 'TRIPLE' },
+              { adults: 4, childAges: [7], roomCategory: 'FAMILY' },
+            ],
+          },
+        },
+      },
+    ] as never),
+    session,
+  );
+  expect(rows[0]).toMatchObject({
+    roomCount: 4,
+    singleRooms: 0,
     doubleRooms: 2,
-    extraBeds: 2,
+    extraBeds: 1,
+    familyTripleRooms: 2,
   });
 });

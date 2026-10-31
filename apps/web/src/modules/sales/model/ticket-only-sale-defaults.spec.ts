@@ -39,6 +39,27 @@ const price = (state: SalesFormState) =>
   state.servicePricing!['flight-outbound']![0]!;
 
 describe('new ticket-only catalog sale defaults', () => {
+  it('preserves manual contract pricing and inventory identity when the ticket has no sale fare', () => {
+    const manual = {
+      version: 1 as const,
+      currencyCode: 'IRR',
+      daySale: { basis: 'TOTAL' as const, amount: '500' },
+      agreed: { basis: 'TOTAL' as const, amount: '450' },
+    };
+    const state = ticketOnlySaleDefaults({
+      ...draft(),
+      outboundOffer: { ...offer, standaloneSalePrice: null },
+      servicePricing: { 'flight-outbound': [manual] },
+    });
+    expect(price(state)).toEqual(manual);
+    const payload = salesPayload(state);
+    expect(payload.ticketSelections?.[0]?.offerId).toBe(offer.id);
+    const flight = payload.services.find(
+      (service) => service.clientKey === 'flight-outbound',
+    )!;
+    expect(flight.pricing?.[0]?.agreed.amount).toBe('450');
+    expect(flight.metadata?.catalogSaleQuoteAmount).toBeUndefined();
+  });
   it('preserves an entered legacy draft amount even when its old day sale mirrored the agreement', () => {
     const initial = ticketOnlySaleDefaults(draft());
     const entered = {

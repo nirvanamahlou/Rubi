@@ -1,4 +1,5 @@
 export * from './hotel-rooms';
+export * from './passenger-age';
 import type { SalesHotelRoomV1 } from './hotel-rooms';
 import type { SalesServicePricingV1 } from './pricing';
 import type { LegalEntityCode } from '../legal-entities';
@@ -100,6 +101,9 @@ export interface SalesServiceInput {
   titleSnapshot: string;
   status?:
     'SELECTED' | 'AWAITING_PUBLIC_API' | 'NEEDS_RESERVATION_CONFIRMATION';
+  /** V1 remains customer-only OTHER. legacyServicePartiesV2 on the first service
+   * declares validated age-category counts for real historical service selections,
+   * with zero personal passengers. Both use the ordinary reservation dispatch. */
   metadata?: Readonly<Record<string, string | number | boolean | null>>;
 }
 
@@ -113,6 +117,9 @@ export interface SalesPassengerInput {
   agreedPrices?: readonly SalesMoney[];
   customerId: string;
   displayNameSnapshot: string;
+  /** Booked category when DOB is unknown; a supplied DOB remains authoritative. */
+  ageCategory?: SalesPassengerAgeCategory;
+  /** Empty string represents unknown DOB, persisted as SQL NULL. */
   birthDate: string;
   serviceClientKeys: readonly string[];
 }
@@ -152,7 +159,26 @@ export interface SalesTicketSelectionInput {
   quotedPrice?: SalesMoney;
 }
 
+/** Ordered additional hotel itinerary; dates are explicitly entered, not inferred. */
+export interface SalesHotelStayInput {
+  rooms?: readonly Pick<
+    SalesHotelRoomV1,
+    | 'ordinal'
+    | 'roomTypeId'
+    | 'roomTypeNameSnapshot'
+    | 'adults'
+    | 'childAges'
+    | 'roomCategory'
+  >[];
+  hotelId: string;
+  hotelNameSnapshot: string;
+  cityId: string;
+  checkInDate: string;
+  checkOutDate: string;
+}
+
 export interface SalesHotelSelectionInput {
+  additionalStays?: readonly SalesHotelStayInput[];
   rooms?: readonly SalesHotelRoomV1[];
   serviceClientKey: string;
   hotelId: string;
@@ -175,7 +201,22 @@ export interface SalesPriceComponentInput extends SalesMoney {
   title: string;
 }
 
+export interface SalesPaymentAccountV1 {
+  id: string;
+  title: string;
+  currencyCode: string;
+  kind: string;
+  maskedIdentifier: string | null;
+  /** Company payment instructions; available only to contract-authorized payers. */
+  bankName?: string | null;
+  accountNumber?: string | null;
+  cardNumber?: string | null;
+  iban?: string | null;
+}
+
 export interface SalesPaymentInput extends SalesMoney {
+  /** Sales-declared destination; does not confirm receipt or post accounting. */
+  destinationAccountId?: string | null;
   dueAt: string;
   method: SalesPaymentMethod;
   description?: string | null;
@@ -266,6 +307,17 @@ export interface SalesBalance extends SalesMoney {
 }
 
 export interface SalesContractSummary {
+  travelDates?: {
+    outbound: { date: string; calendar: 'persian' | 'gregorian' } | null;
+    returning: { date: string; calendar: 'persian' | 'gregorian' } | null;
+  };
+  passengerComposition?: {
+    adults: number;
+    children2To6: number;
+    children6To12: number;
+    infants: number;
+    childrenUnknownAge: number;
+  };
   customerDocumentDeliveryApproved?: boolean;
   sellerName?: string | null;
   reservationContractChanged?: boolean;
@@ -274,6 +326,8 @@ export interface SalesContractSummary {
   customerId: string;
   customerNameSnapshot: string;
   passengerNames: readonly string[];
+  /** Maximum declared service-party total for aggregate legacy contracts. */
+  passengerCount?: number;
   customerPhone?: string | null;
   originName?: string | null;
   destinationName?: string | null;
@@ -308,6 +362,7 @@ export interface SalesContractDetail extends SalesContractSummary {
   hotelSelection: SalesHotelSelectionInput | null;
   priceComponents: readonly SalesPriceComponentInput[];
   payments: readonly (SalesPaymentInput & {
+    destinationAccountTitle?: string | null;
     id: string;
     status: SalesPaymentStatus;
     createdByUserId?: string;
@@ -427,6 +482,9 @@ export interface SalesFinanceSubmissionV1 {
 }
 
 export interface SalesFinanceInboxPaymentV1 {
+  /** Existing Sales declaration; optional for historical payments. */
+  destinationAccountTitle?: string | null;
+  destinationAccountId?: string | null;
   version: 1;
   paymentId: string;
   contractId: string;
@@ -510,6 +568,8 @@ export interface SalesContractPartyCorrectionV1 {
 /** Explicit correction of a previously confirmed Sales contract. */
 export interface SalesContractAmendmentV1 extends SalesContractUpdateRequest {
   passengerCategories: Readonly<Record<string, SalesPassengerAgeCategory>>;
+  /** Roster correction only: retain the exact recorded contract components. */
+  preserveContractPrices?: true;
 }
 
 export * from './passenger-flight-prices';
@@ -517,3 +577,12 @@ export * from './passenger-flight-prices';
 export * from './agency-commission';
 export * from './passenger-deductions';
 export * from './passenger-total-prices';
+
+export * from './hotel-capacity-policy';
+
+export * from './owner-actions';
+
+export * from './legacy-service-parties';
+export * from './passenger-completion';
+
+export * from './legacy-row-prices';

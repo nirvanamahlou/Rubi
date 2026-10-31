@@ -1,4 +1,6 @@
 import {
+  LEGACY_ROW_PRICES,
+  PASSENGER_TOTAL_PRICES,
   flightRoomTotals,
   readPassengerFlightPrices,
   insuranceExtraRials,
@@ -8,6 +10,14 @@ import {
 } from '@nora/contracts';
 
 export function amendmentPriceComponents(input: SalesContractAmendmentV1) {
+  if (
+    input.services.some(
+      (s) =>
+        s.metadata?.[PASSENGER_TOTAL_PRICES] !== undefined ||
+        s.metadata?.[LEGACY_ROW_PRICES] !== undefined,
+    )
+  )
+    return null;
   if (
     !input.services.some((s) => s.metadata?.automaticFlightRoomTotalV1 === true)
   )

@@ -1,4 +1,5 @@
 'use client';
+import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';
 import { useCallback, useRef, useState } from 'react';
 import { moneyUnits, type ReservationIntakeV1 } from '@nora/contracts';
@@ -103,8 +104,8 @@ export function ReservationInsurancePurchase({
       <h4 className="font-bold">هزینه خرید بیمه — {service.titleSnapshot}</h4>
       <div className="grid gap-3 sm:grid-cols-3">
         <FormField label="کارگزار بیمه">
-          <Lookup
-            kind="brokers"
+          <ReservationPurchaseBrokerLookup
+            requestId={request.id}
             label="کارگزار بیمه"
             value={supplier}
             onChange={setSupplier}

@@ -1,0 +1,13 @@
+# CALL-CENTER-FINAL-RELEASE-1027
+
+PC-C; user explicitly requests final integration, PR to develop and merge after all CI/CD checks pass. Account Amin-tech11 (211146168) verified, repository write permission confirmed.
+
+Integrates d2807e203,216f6042b,9fc78e40d,adf4c7fa1,6bcacb9b4,02aaef595,ec6a4ac1f,8bee4b87b with develop7f0090415. Covers ten-second preferred-agent decision, historical staff labels, connected-to contact display, mandatory reason, form spacing, direct queue editor, global minimized forms and manager-only request management fields. Actual PBX timer installation remains a separate operational gate.
+
+Conflict resolution retains PR1130 inbound/outbound direction display and the reviewed contact headings/full destination. Append-only docs and English translation sets are preserved. Missing manager-only error translation added and generated API/legacy catalogs synchronized. No unrelated module implementation, new migration/dependency, operational data, environment/secret, local runtime switch or PBX change is part of this release. Existing generated next-env.d.ts in the prior worktree is untouched.
+
+All full hosted quality/types, tests, production build and PostgreSQL migration/seed checks must pass on the final PR head before the explicitly authorized normal merge. Branch protection is never bypassed. Prior feature-specific test/build/browser results remain historical evidence; final integrated validation follows below.
+
+Integrated local Web validation: all57 tests in14 Call Center files passed; offline catalog sync check and diff checks pass. Changed source formatting normalized to the repository Prettier rules. Publication: PR1151, https://github.com/nirvanamahlou/Rubi/pull/1151, author Amin-tech11. Final PR checks/merge metadata are authoritative; no earlier-head success substitutes for the final head. Source reservations release automatically only after normal authorized merge is verified.
+
+Final-base refresh: develop advanced to76ede9246 during the initial CI run. All eight checks passed on1b49f1417, but the final integrated head requires fresh gates. Retained both coordination histories. Added the existing Call Center access PostgreSQL suite to the existing database proof command, covering ordinary-expert closure denial and same-unit manager closure in CI. Local supplemental DB run failed from30s/60s setup deadlines and a5s Prisma transaction timeout under host resource pressure (12 pass,47 skipped); no production timeout/test assertion was relaxed. Hosted workflow/read/PostgreSQL gates passed already; expanded final gate must also pass. Scoped local lint was canceled after full hosted quality passed, to release host resources; not reported as a local success.

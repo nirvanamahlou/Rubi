@@ -39,6 +39,112 @@ function row(id = 'test-request'): RequestView {
   };
 }
 describe('reservations workspace access and states', () => {
+  it('keeps natural numeric order across scripts, status updates, refreshes and legacy sort preferences', () => {
+    const rows = [
+      { ...row('ten'), contractNumber: '۱۰', status: 'COMPLETED' as const },
+      { ...row('two'), contractNumber: '٢' },
+      { ...row('one'), contractNumber: '1' },
+    ];
+    for (const sort of [
+      'contract',
+      'newest',
+      'oldest',
+      'priority',
+      'deadline',
+    ] as const) {
+      const result = queryRows(rows, { ...defaultQuery, sort, pageSize: 2 });
+      expect(result.filteredRows.map((r) => r.id)).toEqual([
+        'one',
+        'two',
+        'ten',
+      ]);
+      expect(result.rows.map((r) => r.id)).toEqual(['one', 'two']);
+      expect(
+        queryRows([...rows].reverse(), {
+          ...defaultQuery,
+          sort,
+          pageSize: 2,
+          page: 2,
+        }).rows.map((r) => r.id),
+      ).toEqual(['ten']);
+    }
+    expect(rows.map((r) => r.id)).toEqual(['ten', 'two', 'one']);
+    expect(
+      queryRows(
+        [
+          { ...row('b'), contractNumber: 'SC-2026-10' },
+          { ...row('a'), contractNumber: 'SC-2026-2' },
+        ],
+        defaultQuery,
+      ).rows.map((r) => r.id),
+    ).toEqual(['a', 'b']);
+    expect(
+      queryRows(
+        [
+          { ...row('b'), contractNumber: '2' },
+          { ...row('a'), contractNumber: '۲' },
+        ],
+        defaultQuery,
+      ).rows.map((r) => r.id),
+    ).toEqual(['a', 'b']);
+  });
+  it('orders contract numbers before pagination despite reversed receipt dates and urgency', () => {
+    const oldest = {
+      ...row('old'),
+      contractNumber: '120001',
+      createdAt: '2026-09-01T09:00:00Z',
+      receivedAt: '2026-09-08T09:00:00Z',
+    };
+    const newest = {
+      ...row('new'),
+      contractNumber: '120003',
+      createdAt: '2026-09-07T09:00:00Z',
+      receivedAt: '2026-09-07T09:00:00Z',
+      priority: 'URGENT' as const,
+      deadline: '2026-09-07T10:00:00Z',
+    };
+    const middle = {
+      ...row('middle'),
+      contractNumber: '120002',
+      createdAt: '2026-09-04T09:00:00Z',
+    };
+    const source = [newest, oldest, middle];
+    expect(defaultQuery.sort).toBe('contract');
+    const first = queryRows(source, { ...defaultQuery, pageSize: 2 });
+    expect(first.filteredRows.map((r) => r.id)).toEqual([
+      'old',
+      'middle',
+      'new',
+    ]);
+    expect(first.rows.map((r) => r.id)).toEqual(['old', 'middle']);
+    expect(
+      queryRows(source, { ...defaultQuery, pageSize: 2, page: 2 }).rows.map(
+        (r) => r.id,
+      ),
+    ).toEqual(['new']);
+    expect(source.map((r) => r.id)).toEqual(['new', 'old', 'middle']);
+  });
+  it('appends newly created contracts after existing rows and breaks equal dates consistently', () => {
+    const initial = [row('b'), row('a')];
+    expect(queryRows(initial, defaultQuery).rows.map((r) => r.id)).toEqual([
+      'a',
+      'b',
+    ]);
+    const refreshed = [
+      { ...row('c'), createdAt: '2026-09-09T09:00:00Z' },
+      ...initial,
+    ];
+    expect(queryRows(refreshed, defaultQuery).rows.map((r) => r.id)).toEqual([
+      'a',
+      'b',
+      'c',
+    ]);
+    expect(
+      queryRows(refreshed, { ...defaultQuery, sort: 'newest' }).rows.map(
+        (r) => r.id,
+      ),
+    ).toEqual(['a', 'b', 'c']);
+  });
   it('does not show a standalone bottom history button for a selected contract', () => {
     const html = renderToStaticMarkup(
       <ReservationOperationsWorkspace
@@ -60,7 +166,7 @@ describe('reservations workspace access and states', () => {
     expect(source).toContain('<ContractCorrectionDeepLink />');
     expect(source).not.toContain('ContractCorrectionHistoryButton');
   });
-  it('marks corrected contracts with text and purple light/dark queue styling', () => {
+  it('marks corrected contracts only with a red caption below the contract number', () => {
     const html = renderToStaticMarkup(
       <ReservationOperationsWorkspace
         state="SUCCESS"
@@ -76,12 +182,11 @@ describe('reservations workspace access and states', () => {
       new URL('./workspace.module.css', import.meta.url),
       'utf8',
     );
-    expect(css).toContain('td:is(:nth-child(2), :nth-child(3))');
-    expect(css).not.toContain("tr[data-corrected='true'] td {");
-    expect(css).toMatch(/data-corrected='true'[\s\S]*?#f3e8ff/);
-    expect(css).toMatch(
-      /:global\(\.dark\)[^{}]*data-corrected='true'[\s\S]*?#3b0764/,
+    expect(html).toMatch(
+      /TEST-test-request<small class="[^"]*correctedLabel[^"]*">اصلاح‌شده<\/small>/,
     );
+    expect(css).not.toContain("tr[data-corrected='true']");
+    expect(css).toMatch(/\.correctedLabel\s*\{[^}]*color: #dc2626/);
   });
   it.each([
     'LOADING',

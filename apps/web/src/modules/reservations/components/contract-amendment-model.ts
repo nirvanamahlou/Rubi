@@ -184,3 +184,23 @@ export function applyManualAmendmentFlights(
   }
   return result;
 }
+
+/** Matches the contract-wide output flag used when a sales contract is created. */
+export function amendmentBusinessOutput(d: SalesContractAmendmentV1): boolean {
+  return d.services.some(
+    (s) => s.kind === 'FLIGHT' && s.metadata?.businessOutput === true,
+  );
+}
+export function withAmendmentBusinessOutput(
+  d: SalesContractAmendmentV1,
+  checked: boolean,
+): SalesContractAmendmentV1 {
+  return {
+    ...d,
+    services: d.services.map((s) =>
+      s.kind === 'FLIGHT'
+        ? { ...s, metadata: { ...s.metadata, businessOutput: checked } }
+        : s,
+    ),
+  };
+}

@@ -1,3 +1,10 @@
+import { DocumentsModule } from '../documents/documents.module';
+import { SalesReceiptAccountsModule } from '../finance/payments/sales-receipt-accounts.public';
+import {
+  SalesPaymentReceiptsController,
+  SalesPaymentReceiptsService,
+} from './sales-payment-receipts';
+import { SalesAgencyCustomerController } from './sales-agency-customer.controller';
 import { PackagePricingModule } from '../package-pricing/package-pricing.module';
 import { SalesPartyCorrectionService } from './sales-party-correction.service';
 import { PassengerCorrectionModule } from './corrections/passenger-correction.module';
@@ -29,6 +36,8 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
 
 @Module({
   imports: [
+    SalesReceiptAccountsModule,
+    DocumentsModule,
     PackagePricingModule,
     PassengerCorrectionModule,
     FinanceTicketCostModule,
@@ -40,11 +49,14 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
     ReservationsRuntimeModule,
   ],
   controllers: [
+    SalesPaymentReceiptsController,
     SalesController,
     SalesAssistantController,
     SalesReferencesController,
+    SalesAgencyCustomerController,
   ],
   providers: [
+    SalesPaymentReceiptsService,
     AuthGuard,
     SalesRepository,
     SalesPartyCorrectionService,

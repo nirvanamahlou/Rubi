@@ -25,6 +25,16 @@ const request: RequestView = {
   issues: [],
 };
 describe('selected contract actions', () => {
+  it('identifies a cancelled selection explicitly without labelling active contracts cancelled', () => {
+    expect(
+      renderToStaticMarkup(
+        <ContractActionPanel request={{ ...request, status: 'CANCELLED' }} />,
+      ),
+    ).toContain('این قرارداد باطل شده است');
+    expect(
+      renderToStaticMarkup(<ContractActionPanel request={request} />),
+    ).not.toContain('این قرارداد باطل شده است');
+  });
   it('keeps only receipt history under contract operations', () => {
     const operations = contractActionGroups.find(
       (group) => group.title === 'عملیات قرارداد',
@@ -43,7 +53,7 @@ describe('selected contract actions', () => {
 
   it('keeps remaining actions visible and disabled without a selection', () => {
     const html = renderToStaticMarkup(<ContractActionPanel />);
-    expect(html.match(/disabled=""/g) ?? []).toHaveLength(14);
+    expect(html.match(/disabled=""/g) ?? []).toHaveLength(15);
     for (const label of [
       'واچر',
       'فرم رزواسیون',
@@ -71,7 +81,7 @@ describe('selected contract actions', () => {
     expect(html).toContain('SYNTH-01');
     expect(html.match(/disabled=""/g)).toHaveLength(1);
     expect(html).toMatch(/disabled=""[^>]*aria-label="واچر"/);
-    expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(13);
+    expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(14);
     expect(html).not.toContain('href="/ticket-purchases?');
     expect(html).toContain('href="/contracts/terms.pdf"');
     expect(html).toContain('download="مفاد.pdf"');

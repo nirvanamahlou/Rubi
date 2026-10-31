@@ -7,6 +7,7 @@ export function validateTelephonyEvent(
   input: unknown,
   policy: { maxAgeSeconds: number; maxFutureSeconds: number },
   now = new Date(),
+  enforceClock = true,
 ): TelephonyEventV1 {
   if (
     !input ||
@@ -37,7 +38,7 @@ export function validateTelephonyEvent(
     'recordingReference',
   ];
   if (
-    Object.keys(e).some((k) => !keys.includes(k)) ||
+    Object.keys(e).some((k) => !keys.includes(k) && k !== 'callerName') ||
     keys.some((k) => !(k in e))
   )
     return fail();
@@ -92,6 +93,14 @@ export function validateTelephonyEvent(
   )
     return fail();
   number(e.caller);
+  if ('callerName' in e) {
+    str('callerName', true, 160);
+    if (
+      typeof e.callerName === 'string' &&
+      /[\u007f\u202a-\u202e\u2066-\u2069]/u.test(e.callerName)
+    )
+      fail();
+  }
   number(e.destination);
   if (
     e.schemaVersion !== 1 ||
@@ -126,12 +135,14 @@ export function validateTelephonyEvent(
   if (
     !/(?:Z|[+-]\d{2}:\d{2})$/.test(String(e.occurredAt)) ||
     !Number.isFinite(at) ||
-    at < now.getTime() - policy.maxAgeSeconds * 1000 ||
-    at > now.getTime() + policy.maxFutureSeconds * 1000
+    (enforceClock &&
+      (at < now.getTime() - policy.maxAgeSeconds * 1000 ||
+        at > now.getTime() + policy.maxFutureSeconds * 1000))
   )
     return fail();
   return {
     ...Object.fromEntries(keys.map((k) => [k, e[k]])),
+    ...('callerName' in e ? { callerName: e.callerName } : {}),
     caller: number(e.caller),
     destination: number(e.destination),
     occurredAt: new Date(at).toISOString(),

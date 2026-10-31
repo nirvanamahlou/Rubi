@@ -30,6 +30,10 @@ describe('Legacy Frappe directory compatibility fixtures', () => {
       'معرفی توسط کارکنان',
     );
     for (const workspace of frappeWorkspaces) {
+      if (workspace.id === 'tenure') {
+        expect(html).not.toContain('/hr?workspace=tenure');
+        continue;
+      }
       expect(html).toContain(workspace.shortTitle);
       expect(html).toContain(`/hr?workspace=${workspace.id}`);
     }

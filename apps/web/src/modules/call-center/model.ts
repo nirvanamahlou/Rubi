@@ -26,6 +26,7 @@ export type Status = (typeof statuses)[number];
 export type Direction = 'INBOUND' | 'OUTBOUND';
 /** Module-local UI input, not a published provider API contract. Times are UTC ISO. */
 export interface CallEvent {
+  completionToken?: string;
   id: string;
   phone: string;
   occurredAt: string;
@@ -33,6 +34,15 @@ export interface CallEvent {
   recordings: { id: string; url: string; title: string }[];
 }
 export interface Call extends CallEvent {
+  answerRecipient?: {
+    extension: string;
+    label: string;
+    shared: boolean;
+    answeredAt: string | null;
+    observedAt?: string;
+    labelSource?: 'CURRENT_DIRECTORY';
+  };
+  needsCompletion?: boolean | null;
   ticketId?: string | null;
   outcome?: string | null;
   origin?: string | null;
@@ -64,7 +74,7 @@ export function normalizePhone(value: string) {
   return phone;
 }
 export function validPhone(value: string) {
-  return /^(?:0\d{10}|\+[1-9]\d{7,14})$/.test(normalizePhone(value));
+  return /^(?:\d{1,15}|\+[1-9]\d{1,14})$/.test(normalizePhone(value));
 }
 export function saveCall(calls: Call[], call: Call): Call[] {
   if (

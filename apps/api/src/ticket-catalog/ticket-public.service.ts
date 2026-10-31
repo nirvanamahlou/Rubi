@@ -13,6 +13,7 @@ import * as Joi from 'joi';
 import { priceTierCreate, validatePriceTiers } from './ticket-sale-tiers';
 import {
   eligibleTicketReturn,
+  ticketOfferMatchesRoute,
   moneyUnits,
   ticketReturnBounds,
   validReturnWindow,
@@ -49,7 +50,7 @@ export function ticketLoadGroupId(
   auditAction?: string | null,
 ) {
   const match =
-    /^ticket-catalog:ticket-load:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):\d+$/i.exec(
+    /^ticket-catalog:ticket-load:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):\d+(?::return-date:\d{4}-\d{2}-\d{2})?$/i.exec(
       createKey ?? '',
     );
   if (match?.[1]) return match[1];
@@ -58,6 +59,27 @@ export function ticketLoadGroupId(
     : undefined;
   return auditGroup && !uuid.validate(auditGroup).error
     ? auditGroup
+    : undefined;
+}
+function selectedRoutesReverse(
+  selections: readonly SalesTicketSelectionInput[],
+) {
+  const outbound = selections.find((s) => s.direction === 'OUTBOUND'),
+    returning = selections.find((s) => s.direction === 'RETURN');
+  return (
+    !outbound ||
+    !returning ||
+    (outbound.originId === returning.destinationId &&
+      outbound.destinationId === returning.originId)
+  );
+}
+export function scheduledReturnDate(createKey: string | null | undefined) {
+  const day = /:return-date:(\d{4}-\d{2}-\d{2})$/.exec(createKey ?? '')?.[1];
+  if (!day) return undefined;
+  const value = new Date(day + 'T00:00:00Z');
+  return Number.isFinite(value.getTime()) &&
+    value.toISOString().slice(0, 10) === day
+    ? day
     : undefined;
 }
 const capacityHoldSchema = Joi.object({
@@ -70,7 +92,28 @@ type CapacityHoldInput = {
   expiresAt: string;
   requesterName?: string;
 };
+function offerFields(
+  value: TicketOfferCreateV1,
+): Omit<TicketOfferCreateV1, 'saleRoutes'> {
+  const fields = { ...value };
+  delete fields.saleRoutes;
+  return fields;
+}
+const routeSelect = { originId: true, destinationId: true } as const;
 const createSchema = Joi.object({
+  saleRoutes: Joi.array()
+    .items(
+      Joi.object({
+        originId: uuid.required(),
+        destinationId: uuid.invalid(Joi.ref('originId')).required(),
+      }),
+    )
+    .max(20)
+    .unique(
+      (a, b) =>
+        a.originId === b.originId && a.destinationId === b.destinationId,
+    )
+    .optional(),
   originAirportId: uuid.allow(null).optional(),
   destinationAirportId: uuid.allow(null).optional(),
   supplyType: Joi.string()
@@ -123,6 +166,14 @@ export function validateTicketOffer(input: unknown): TicketOfferCreateV1 {
     );
   if (new Date(value.arrivalAt) <= new Date(value.departureAt))
     throw new BadRequestException('زمان رسیدن باید پس از حرکت باشد.');
+  if (
+    value.saleRoutes?.some(
+      (r) =>
+        r.originId === value.originId &&
+        r.destinationId === value.destinationId,
+    )
+  )
+    throw new BadRequestException('اطلاعات بلیت معتبر نیست.');
   return value;
 }
 
@@ -180,30 +231,57 @@ export class TicketPublicService {
     private readonly master?: MasterDataService,
   ) {}
 
+  private async validateSaleRoutes(value: TicketOfferCreateV1) {
+    if (!value.saleRoutes?.length) return;
+    if (!this.master) throw new BadRequestException('اطلاعات بلیت معتبر نیست.');
+    for (const id of new Set(
+      value.saleRoutes.flatMap((r) => [r.originId, r.destinationId]),
+    )) {
+      const { data } = await this.master.detail('cities', id);
+      if (data.status !== 'active')
+        throw new BadRequestException('اطلاعات بلیت معتبر نیست.');
+    }
+  }
   private async validateAirports(value: TicketOfferCreateV1) {
-    for (const [id, cityId] of [
-      [value.originAirportId, value.originId],
-      [value.destinationAirportId, value.destinationId],
-    ]) {
+    for (const id of [value.originAirportId, value.destinationAirportId]) {
       if (!id) continue;
       if (!this.master)
         throw new BadRequestException('مرجع فرودگاه در دسترس نیست.');
       const { data } = await this.master.detail('airports', id);
-      if (data.status !== 'active' || data.attributes.cityId !== cityId)
-        throw new BadRequestException(
-          'فرودگاه انتخاب‌شده با شهر مسیر مطابقت ندارد.',
-        );
+      if (data.status !== 'active')
+        throw new BadRequestException('مرجع فرودگاه در دسترس نیست.');
     }
   }
 
   /** Reservations document numbering consumes only the assigned offer's supply type. */
-  async purchaseCapacityInventory(branchIds: readonly string[]) {
-    const rows = await this.database.client.ticketPublishedOffer.findMany({
-      where: { branchId: { in: [...branchIds] } },
+  async purchaseCapacityInventory(
+    branchIds: readonly string[],
+    transaction?: Prisma.TransactionClient,
+    offerIds?: readonly string[],
+  ) {
+    if (transaction && offerIds?.length)
+      await transaction.$queryRaw(
+        Prisma.sql`SELECT id FROM "TicketPublishedOffer" WHERE id IN (${Prisma.join([...offerIds].sort().map((id) => Prisma.sql`${id}::uuid`))}) FOR SHARE`,
+      );
+    const rows = await (
+      transaction ?? this.database.client
+    ).ticketPublishedOffer.findMany({
+      where: {
+        branchId: { in: [...branchIds] },
+        ...(offerIds ? { id: { in: [...offerIds] } } : {}),
+      },
       select: {
         id: true,
         branchId: true,
         supplyType: true,
+        version: true,
+        carrierName: true,
+        serviceNumber: true,
+        originId: true,
+        destinationId: true,
+        originAirportId: true,
+        destinationAirportId: true,
+        cabinClassCode: true,
         departureAt: true,
         arrivalAt: true,
         totalCapacity: true,
@@ -223,6 +301,42 @@ export class TicketPublicService {
     }));
   }
 
+  /** Current operational facts for already-authorized linked contracts, including sold/stopped offers. */
+  async currentSelections(
+    selections: readonly SalesTicketSelectionInput[],
+    branchId: string,
+  ): Promise<SalesTicketSelectionInput[]> {
+    if (!selections.length) return [];
+    const offers = await this.database.client.ticketPublishedOffer.findMany({
+      where: {
+        id: { in: [...new Set(selections.map((s) => s.offerId))] },
+        branchId,
+      },
+      select: {
+        id: true,
+        departureAt: true,
+        arrivalAt: true,
+        carrierName: true,
+        serviceNumber: true,
+        cabinClassCode: true,
+      },
+    });
+    const byId = new Map(offers.map((offer) => [offer.id, offer]));
+    return selections.map((selection) => {
+      const offer = byId.get(selection.offerId);
+      return offer
+        ? {
+            ...selection,
+            departureAt: offer.departureAt.toISOString(),
+            arrivalAt: offer.arrivalAt.toISOString(),
+            carrierNameSnapshot: offer.carrierName,
+            serviceNumberSnapshot: offer.serviceNumber,
+            cabinClassCode: offer.cabinClassCode,
+          }
+        : { ...selection };
+    });
+  }
+
   async documentSupply(id: string, branchIds: readonly string[]) {
     const row = await this.database.client.ticketPublishedOffer.findFirst({
       where: { id, branchId: { in: [...branchIds] } },
@@ -236,7 +350,10 @@ export class TicketPublicService {
     // Ticket output consumers need this minimal reference projection, not Catalog administration.
     if (
       !actor.permissions.includes('ticket_catalog.read') &&
-      !actor.permissions.includes('reservations.read')
+      !actor.permissions.includes('reservations.read') &&
+      !actor.permissions.includes('sales.contracts.read.own') &&
+      !actor.permissions.includes('sales.contracts.read.branch') &&
+      !actor.permissions.includes('sales.contracts.read.all')
     )
       throw new ForbiddenException('مجوز مشاهده اطلاعات بلیط وجود ندارد.');
     if (uuid.validate(id).error)
@@ -247,6 +364,7 @@ export class TicketPublicService {
         id: true,
         originId: true,
         destinationId: true,
+        saleRoutes: { select: routeSelect },
         originAirportId: true,
         destinationAirportId: true,
         economyBaggageKg: true,
@@ -356,6 +474,7 @@ export class TicketPublicService {
   }
 
   private offerView(row: {
+    saleRoutes?: readonly { originId: string; destinationId: string }[];
     originAirportId?: string | null;
     destinationAirportId?: string | null;
     supplyType?: string | null;
@@ -407,6 +526,7 @@ export class TicketPublicService {
     );
     return applySaleCommissions(
       {
+        saleRoutes: row.saleRoutes ?? [],
         id: row.id,
         originAirportId: row.originAirportId ?? null,
         destinationAirportId: row.destinationAirportId ?? null,
@@ -512,6 +632,37 @@ export class TicketPublicService {
     );
   }
 
+  async charterRoutes(actor: AuthenticatedActor) {
+    this.require(actor, 'ticket_catalog.manage');
+    const rows = await this.database.client.ticketPublishedOffer.findMany({
+      where: {
+        branchId: { in: actor.branchIds },
+        OR: [{ supplyType: 'COMPANY' }, { supplyType: null }],
+      },
+      select: {
+        originId: true,
+        destinationId: true,
+        saleRoutes: { select: { originId: true, destinationId: true } },
+      },
+    });
+    const routes = new Map<
+      string,
+      { originId: string; destinationId: string }
+    >();
+    for (const row of rows) {
+      for (const route of [
+        { originId: row.originId, destinationId: row.destinationId },
+        ...row.saleRoutes,
+      ]) {
+        routes.set(
+          JSON.stringify([route.originId, route.destinationId]),
+          route,
+        );
+      }
+    }
+    return { version: 1 as const, data: [...routes.values()] };
+  }
+
   async managed(actor: AuthenticatedActor, page = 1, includePast = false) {
     this.require(actor, 'ticket_catalog.manage');
     if (!Number.isInteger(page) || page < 1 || page > 10000)
@@ -525,6 +676,7 @@ export class TicketPublicService {
         ...(includePast ? {} : { departureAt: { gt: now } }),
       },
       include: {
+        saleRoutes: { select: routeSelect },
         capacityAllocations: {
           where: { status: 'ACTIVE' },
           select: { quantity: true },
@@ -579,6 +731,9 @@ export class TicketPublicService {
               }
             : {}),
           ...(loadGroupId ? { loadGroupId } : {}),
+          ...(scheduledReturnDate(row.createKey)
+            ? { scheduledReturnDate: scheduledReturnDate(row.createKey)! }
+            : {}),
         };
       }),
     };
@@ -620,12 +775,15 @@ export class TicketPublicService {
             branchId: { in: actor.branchIds },
             status: 'ACTIVE',
           },
+          include: { saleRoutes: { select: routeSelect } },
         });
       if (!outbound)
         throw new ForbiddenException('بلیط رفت در شعبه مجاز یافت نشد.');
       if (
-        query.originId !== outbound.destinationId ||
-        query.destinationId !== outbound.originId
+        !ticketOfferMatchesRoute(outbound, {
+          originId: query.destinationId,
+          destinationId: query.originId,
+        })
       )
         throw new BadRequestException('مسیر برگشت باید معکوس بلیط رفت باشد.');
       outboundBranch = outbound.branchId;
@@ -639,8 +797,17 @@ export class TicketPublicService {
       where: {
         branchId: outboundBranch ?? { in: actor.branchIds },
         status: 'ACTIVE',
-        originId: query.originId,
-        destinationId: query.destinationId,
+        OR: [
+          { originId: query.originId, destinationId: query.destinationId },
+          {
+            saleRoutes: {
+              some: {
+                originId: query.originId,
+                destinationId: query.destinationId,
+              },
+            },
+          },
+        ],
         departureAt: { gte: effectiveFrom, ...(to ? { lte: to } : {}) },
         ...(query.cabinClassCode
           ? { cabinClassCode: query.cabinClassCode }
@@ -648,6 +815,7 @@ export class TicketPublicService {
         totalCapacity: { gt: 0 },
       },
       include: {
+        saleRoutes: { select: routeSelect },
         audit: {
           where: { action: { startsWith: loadGroupAuditPrefix } },
           orderBy: { occurredAt: 'desc' },
@@ -691,7 +859,12 @@ export class TicketPublicService {
         );
         return {
           ...this.offerView(row),
+          originId: query.originId,
+          destinationId: query.destinationId,
           ...(loadGroupId ? { loadGroupId } : {}),
+          ...(scheduledReturnDate(row.createKey)
+            ? { scheduledReturnDate: scheduledReturnDate(row.createKey)! }
+            : {}),
         };
       }),
       hasMore: rows.length > 50,
@@ -712,6 +885,7 @@ export class TicketPublicService {
     const value = validateTicketOffer(input);
     await this.validateManifest(value);
     await this.validateAirports(value);
+    await this.validateSaleRoutes(value);
     const fingerprint = createHash('sha256')
       .update(JSON.stringify({ branchId, ...value }))
       .digest('hex');
@@ -720,6 +894,7 @@ export class TicketPublicService {
         Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${`ticket-flight:${branchId}`}))`,
       );
       const replay = await tx.ticketPublishedOffer.findUnique({
+        include: { saleRoutes: { select: routeSelect } },
         where: {
           createdByUserId_createKey: {
             createdByUserId: actor.userId,
@@ -730,6 +905,7 @@ export class TicketPublicService {
       if (replay) return replay;
       await assertUniqueTicketIdentity(tx, value, branchId);
       return tx.ticketPublishedOffer.upsert({
+        include: { saleRoutes: { select: routeSelect } },
         where: {
           createdByUserId_createKey: {
             createdByUserId: actor.userId,
@@ -738,7 +914,10 @@ export class TicketPublicService {
         },
         update: {},
         create: {
-          ...value,
+          ...offerFields(value),
+          ...(value.saleRoutes?.length
+            ? { saleRoutes: { create: [...value.saleRoutes] } }
+            : {}),
           branchId,
           departureAt: new Date(value.departureAt),
           arrivalAt: new Date(value.arrivalAt),
@@ -758,6 +937,16 @@ export class TicketPublicService {
     // Legacy fingerprints depended on JSON field order. Compare stored offer facts
     // before rejecting a retried key so semantically identical requests remain safe.
     const sameOffer =
+      JSON.stringify(
+        [...(row.saleRoutes ?? [])].sort((a, b) =>
+          JSON.stringify(a).localeCompare(JSON.stringify(b)),
+        ),
+      ) ===
+        JSON.stringify(
+          [...(value.saleRoutes ?? [])].sort((a, b) =>
+            JSON.stringify(a).localeCompare(JSON.stringify(b)),
+          ),
+        ) &&
       (row.supplyType ?? null) === (value.supplyType ?? null) &&
       (row.economyBaggageKg?.toString() ?? null) ===
         (value.economyBaggageKg == null
@@ -1182,6 +1371,7 @@ export class TicketPublicService {
               returnMinDays: true,
               returnMaxDays: true,
               totalCapacity: true,
+              saleRoutes: { select: routeSelect },
             },
           });
           const outbound = offers.find((offer) => offer.id === outboundOfferId);
@@ -1345,6 +1535,7 @@ export class TicketPublicService {
     const value = validateTicketOffer(input.offer);
     await this.validateManifest(value);
     await this.validateAirports(value);
+    await this.validateSaleRoutes(value);
     return this.database.client.$transaction(async (tx) => {
       await tx.$queryRaw(
         Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" = ${id}::uuid FOR UPDATE`,
@@ -1393,6 +1584,7 @@ export class TicketPublicService {
       validated.flatMap(({ offer }) => [
         this.validateManifest(offer),
         this.validateAirports(offer),
+        this.validateSaleRoutes(offer),
       ]),
     );
     const identity = (offer: TicketOfferCreateV1) =>
@@ -1469,6 +1661,7 @@ export class TicketPublicService {
       validated.flatMap((offer) => [
         this.validateManifest(offer),
         this.validateAirports(offer),
+        this.validateSaleRoutes(offer),
       ]),
     );
     const identity = (offer: TicketOfferCreateV1) =>
@@ -1596,7 +1789,7 @@ export class TicketPublicService {
         const createRows = additions.map((offer, offset) => {
           const createKey = `ticket-catalog:ticket-load:${groupId}:${firstIndex + offset}`;
           return {
-            ...offer,
+            ...offerFields(offer),
             branchId,
             departureAt: new Date(offer.departureAt),
             arrivalAt: new Date(offer.arrivalAt),
@@ -1617,6 +1810,16 @@ export class TicketPublicService {
               },
             })
           : [];
+        for (const row of created) {
+          const index = createRows.findIndex(
+            (r) => r.createKey === row.createKey,
+          );
+          const routes = additions[index]?.saleRoutes;
+          if (routes?.length)
+            await tx.ticketOfferSaleRoute.createMany({
+              data: routes.map((r) => ({ ...r, offerId: row.id })),
+            });
+        }
         if (created.length !== createRows.length)
           throw new ConflictException(
             'ثبت ردیف‌های جدید لود کامل نشد؛ هیچ تغییری ذخیره نشد.',
@@ -1685,6 +1888,7 @@ export class TicketPublicService {
         audit: { none: { action: 'ticket.offer.archived' } },
       },
       include: {
+        saleRoutes: { select: routeSelect },
         capacityAllocations: { where: { status: 'ACTIVE' } },
         capacityHolds: {
           where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
@@ -1748,21 +1952,49 @@ export class TicketPublicService {
       value.destinationAirportId === undefined
         ? row.destinationAirportId
         : value.destinationAirportId;
+    const routesEqual =
+      value.saleRoutes === undefined ||
+      JSON.stringify(
+        [...value.saleRoutes].sort((a, b) =>
+          JSON.stringify(a).localeCompare(JSON.stringify(b)),
+        ),
+      ) ===
+        JSON.stringify(
+          [...(row.saleRoutes ?? [])].sort((a, b) =>
+            JSON.stringify(a).localeCompare(JSON.stringify(b)),
+          ),
+        );
+    const inventoryIdentityUnchanged =
+      routesEqual &&
+      (row.supplyType ?? null) === (supplyType ?? null) &&
+      row.originId === value.originId &&
+      row.destinationId === value.destinationId &&
+      row.cabinClassCode === value.cabinClassCode;
+    const committedCapacity =
+      row.capacityAllocations.reduce(
+        (sum, allocation) => sum + allocation.quantity,
+        0,
+      ) + row.capacityHolds.reduce((sum, hold) => sum + hold.quantity, 0);
+    if (value.totalCapacity < committedCapacity)
+      throw new ConflictException(
+        'ظرفیت کل نمی‌تواند از تعداد صندلی‌های فروخته‌شده و رزروشده کمتر باشد.',
+      );
+    if (linkedSale && !inventoryIdentityUnchanged)
+      throw new ConflictException(
+        'تغییر مسیر، کلاس یا نوع تأمین بلیط فروخته‌شده نیازمند اصلاح قراردادهای متصل است.',
+      );
     const scheduleOnlyRevision =
+      inventoryIdentityUnchanged &&
       (row.originAirportId == null ||
         row.originAirportId === originAirportId) &&
       (row.destinationAirportId == null ||
         row.destinationAirportId === destinationAirportId) &&
-      (row.supplyType ?? null) === (supplyType ?? null) &&
       baggageValue(row.economyBaggageKg) === baggageValue(economyBaggageKg) &&
       baggageValue(row.businessBaggageKg) === baggageValue(businessBaggageKg) &&
       (row.returnMinDays ?? null) === (min ?? null) &&
       (row.returnMaxDays ?? null) === (max ?? null) &&
-      row.originId === value.originId &&
-      row.destinationId === value.destinationId &&
       row.carrierName === value.carrierName &&
       row.serviceNumber === value.serviceNumber &&
-      row.cabinClassCode === value.cabinClassCode &&
       row.totalCapacity === value.totalCapacity;
     const templateOnlyRevision =
       scheduleOnlyRevision &&
@@ -1772,18 +2004,20 @@ export class TicketPublicService {
       row.arrivalAt.getTime() === new Date(value.arrivalAt).getTime();
     if (
       !templateOnlyRevision &&
-      ((linkedSale && !scheduleOnlyRevision) ||
-        row.capacityHolds.length ||
+      (row.capacityHolds.length ||
         row.tourOutboundDepartures.length ||
         row.tourReturnDepartures.length)
     )
       throw new ConflictException(
-        'برای بلیط متصل به قرارداد فقط ساعت حرکت و رسیدن قابل ویرایش است؛ رزرو ظرفیت یا تور متصل باید ابتدا تعیین تکلیف شود.',
+        'رزرو ظرفیت یا تور متصل باید ابتدا تعیین تکلیف شود.',
       );
     const updated = await tx.ticketPublishedOffer.update({
       where: { id },
       data: {
-        ...value,
+        ...offerFields(value),
+        ...(value.saleRoutes === undefined
+          ? {}
+          : { saleRoutes: { deleteMany: {}, create: [...value.saleRoutes] } }),
         originAirportId,
         destinationAirportId,
         supplyType,
@@ -1827,6 +2061,7 @@ export class TicketPublicService {
     selections: readonly SalesTicketSelectionInput[] = [],
   ) {
     const available = await this.database.client.ticketPublishedOffer.findMany({
+      include: { saleRoutes: { select: routeSelect } },
       where: {
         id: { in: [...offerIds] },
         branchId,
@@ -1841,8 +2076,7 @@ export class TicketPublicService {
             .filter((selection) => selection.offerId === offer.id)
             .every(
               (selection) =>
-                selection.originId === offer.originId &&
-                selection.destinationId === offer.destinationId &&
+                ticketOfferMatchesRoute(offer, selection) &&
                 new Date(selection.departureAt).getTime() ===
                   offer.departureAt.getTime() &&
                 new Date(selection.arrivalAt).getTime() ===
@@ -1863,7 +2097,12 @@ export class TicketPublicService {
       (offer) =>
         offer.id === selections.find((s) => s.direction === 'RETURN')?.offerId,
     );
-    if (outbound && returning && !eligibleTicketReturn(outbound, returning))
+    if (
+      outbound &&
+      returning &&
+      (!selectedRoutesReverse(selections) ||
+        !eligibleTicketReturn(outbound, returning))
+    )
       found.delete(returning.id);
     const unavailableOfferIds = offerIds.filter((id) => !found.has(id));
     return { available: unavailableOfferIds.length === 0, unavailableOfferIds };
@@ -1912,6 +2151,7 @@ export class TicketPublicService {
     const offers = await tx.ticketPublishedOffer.findMany({
       where: { id: { in: ids }, branchId },
       include: {
+        saleRoutes: { select: routeSelect },
         capacityAllocations: { where: { status: 'ACTIVE' } },
         capacityHolds: {
           where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
@@ -1930,8 +2170,7 @@ export class TicketPublicService {
       if (
         !offer ||
         (!unchanged && offer.status !== 'ACTIVE') ||
-        selection.originId !== offer.originId ||
-        selection.destinationId !== offer.destinationId ||
+        !ticketOfferMatchesRoute(offer, selection) ||
         new Date(selection.departureAt).getTime() !==
           offer.departureAt.getTime() ||
         new Date(selection.arrivalAt).getTime() !== offer.arrivalAt.getTime() ||
@@ -2067,6 +2306,7 @@ export class TicketPublicService {
           status: 'ACTIVE',
         },
         include: {
+          saleRoutes: { select: routeSelect },
           capacityAllocations: {
             where: { status: 'ACTIVE' },
             select: { contractId: true, direction: true, quantity: true },
@@ -2097,15 +2337,13 @@ export class TicketPublicService {
               replay.status !== 'ACTIVE' ||
               replay.offerId !== offer.id ||
               replay.quantity !== quantity ||
-              selection.originId !== offer.originId ||
-              selection.destinationId !== offer.destinationId ||
+              !ticketOfferMatchesRoute(offer, selection) ||
               selection.cabinClassCode !== offer.cabinClassCode ||
               selection.carrierNameSnapshot !== offer.carrierName ||
               selection.serviceNumberSnapshot !== offer.serviceNumber
             );
           if (
-            selection.originId !== offer.originId ||
-            selection.destinationId !== offer.destinationId ||
+            !ticketOfferMatchesRoute(offer, selection) ||
             new Date(selection.departureAt).getTime() !==
               offer.departureAt.getTime() ||
             new Date(selection.arrivalAt).getTime() !==
@@ -2133,7 +2371,8 @@ export class TicketPublicService {
       if (
         outbound &&
         returning &&
-        !eligibleTicketReturn(outbound, returning) &&
+        (!selectedRoutesReverse(selections) ||
+          !eligibleTicketReturn(outbound, returning)) &&
         !unavailableOfferIds.includes(returning.id)
       )
         unavailableOfferIds.push(returning.id);
@@ -2372,6 +2611,7 @@ export class TicketPublicService {
           status: 'ACTIVE',
         },
         include: {
+          saleRoutes: { select: routeSelect },
           capacityAllocations: {
             where: { status: 'ACTIVE' },
             select: { quantity: true },

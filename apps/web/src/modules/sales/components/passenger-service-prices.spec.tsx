@@ -78,6 +78,7 @@ it('shows complete names once, actual services and individual hotel dates, with 
   expect(html).toContain('خدمات');
   expect(html).toContain('قیمت ریالی');
   expect(html).toContain('قیمت ارزی');
+  expect(html).toContain('صفر ریال');
   expect((html.match(/Full Passport Name/g) ?? []).length).toBe(1);
   expect(html).toContain('پرواز رفت');
   expect(html).toContain('dateTime="2026-11-02"');

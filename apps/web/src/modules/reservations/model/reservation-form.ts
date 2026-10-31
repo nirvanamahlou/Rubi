@@ -1,3 +1,5 @@
+import { readLegacyServiceParties } from '@nora/contracts';
+import { salesRoomDisplayName } from '@nora/contracts';
 import { readPassengerHotelStays } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
 export function englishOutputName(
@@ -14,7 +16,11 @@ export function englishOutputName(
   return typeof match?.attributes.englishName === 'string' &&
     match.attributes.englishName.trim()
     ? match.attributes.englishName.trim()
-    : value;
+    : typeof match?.name === 'string' &&
+        /[A-Za-z]/.test(match.name) &&
+        !/[\u0600-\u06ff]/.test(match.name)
+      ? match.name.trim()
+      : value;
 }
 import { salesContractFlights } from '@nora/contracts';
 import type {
@@ -24,13 +30,27 @@ import type {
 } from '@nora/contracts';
 export type ReservationFormIntake = ReservationIntakeV1 & {
   workflow: TravelWorkflowStateV1;
+  hotelStayKey?: string;
+  hotelStayOrdinal?: number;
+  contractPartyName?: string | null;
   /** Minimal request-scoped Customer projection; no DOB or passport numbers. */
   outputPassengers?: readonly {
     customerId: string;
     passportName: string | null;
+    gender?: 'M' | 'F' | null;
     hotelChildAgeBand: 'CHD_2_TO_6' | 'CHD_6_TO_12' | null;
   }[];
 };
+/** Historical counts do not imply named passenger records or identities. */
+export function isAggregateReservationForm(intake: ReservationFormIntake) {
+  return (
+    intake.snapshot.passengerIds?.length === 0 &&
+    (intake.snapshot.serviceSelections.some(
+      (service) => service.metadata?.legacyContractV1 === true,
+    ) ||
+      readLegacyServiceParties(intake.snapshot.serviceSelections) !== null)
+  );
+}
 export type ReservationFormReferences = Record<string, MasterDataRecord>;
 const text = (value: unknown) =>
   typeof value === 'string' && value.trim() ? value.trim() : '-';
@@ -66,6 +86,10 @@ export function reservationFormData(
     ? salesHotelRoomSummary(hotel.rooms)
     : undefined;
   const services = snapshot.serviceSelections;
+  const legacyParties = readLegacyServiceParties(services);
+  const legacyHotel = hotel
+    ? legacyParties?.[hotel.serviceClientKey]
+    : undefined;
   const passengerStays = readPassengerHotelStays(services, hotel);
   const flights = salesContractFlights(
     services,
@@ -90,8 +114,14 @@ export function reservationFormData(
     sex: string;
     age: string;
     hotelChildAgeBand?: string | undefined;
+    differentStay?: boolean;
     checkIn?: string;
     checkOut?: string;
+    outboundFlight: boolean;
+    returnFlight: boolean;
+    outboundTransfer: boolean;
+    returnTransfer: boolean;
+    otherServices: string;
   }> = ids.map((id) => {
     const person = snapshot.passengerAssignments?.find(
       (p) => p.customerId === id,
@@ -106,23 +136,81 @@ export function reservationFormData(
     );
     const hotelChildAgeBand =
       age === 'CHILD'
-        ? identity?.hotelChildAgeBand ||
-          (person?.childAgeBand === 'AGE_2_6'
-            ? 'CHD_2_TO_6'
-            : person?.childAgeBand === 'AGE_6_12'
-              ? 'CHD_6_TO_12'
-              : undefined)
+        ? person?.childAgeBand === 'AGE_2_6'
+          ? 'CHD_2_TO_6'
+          : person?.childAgeBand === 'AGE_6_12'
+            ? 'CHD_6_TO_12'
+            : identity?.hotelChildAgeBand || undefined
+        : undefined;
+    const allocated = services.filter((service) =>
+      person?.serviceClientKeys?.includes(service.clientKey),
+    );
+    const direction = (service: (typeof services)[number]) =>
+      service.metadata?.direction ??
+      flights.find((flight) => flight.serviceClientKey === service.clientKey)
+        ?.direction ??
+      (/(?:^|[-_])(?:out|outbound)$/.test(service.clientKey)
+        ? 'OUTBOUND'
+        : /(?:^|[-_])(?:return|back|in)$/.test(service.clientKey)
+          ? 'RETURN'
+          : undefined);
+    const has = (kind: 'FLIGHT' | 'TRANSFER', leg: string) =>
+      allocated.some(
+        (service) => service.kind === kind && direction(service) === leg,
+      );
+    const hotelGuest =
+      !!hotel && !!person?.serviceClientKeys?.includes(hotel.serviceClientKey);
+    const stay = passengerStays
+      ? passengerStays[id]
+      : hotelGuest
+        ? hotel
         : undefined;
     return {
       id,
-      ...(passengerStays
+      outboundFlight: has('FLIGHT', 'OUTBOUND'),
+      returnFlight: has('FLIGHT', 'RETURN'),
+      outboundTransfer: has('TRANSFER', 'OUTBOUND'),
+      returnTransfer: has('TRANSFER', 'RETURN'),
+      otherServices:
+        [
+          ...new Set(
+            allocated
+              .filter(
+                (service) =>
+                  !['FLIGHT', 'HOTEL', 'TRANSFER'].includes(service.kind) ||
+                  (service.kind === 'TRANSFER' && !direction(service)),
+              )
+              .map((service) =>
+                service.kind === 'OTHER'
+                  ? service.titleSnapshot?.trim() &&
+                    !/^(?:other|other services)$/i.test(
+                      service.titleSnapshot.trim(),
+                    ) &&
+                    !/[\u0600-\u06ff]/.test(service.titleSnapshot)
+                    ? service.titleSnapshot.trim()
+                    : ''
+                  : service.kind,
+              )
+              .filter(Boolean),
+          ),
+        ].join(' / ') || '-',
+
+      ...(passengerStays || stay
         ? {
-            checkIn: reservationFormDate(passengerStays[id]?.checkInDate),
-            checkOut: reservationFormDate(passengerStays[id]?.checkOutDate),
+            differentStay: Boolean(
+              stay && 'different' in stay && stay.different === true,
+            ),
+            checkIn: reservationFormDate(stay?.checkInDate),
+            checkOut: reservationFormDate(stay?.checkOutDate),
           }
         : {}),
       name: text(identity?.passportName || person?.displayNameSnapshot),
-      sex: '-',
+      sex:
+        identity?.gender === 'M'
+          ? 'Male'
+          : identity?.gender === 'F'
+            ? 'Female'
+            : '-',
       hotelChildAgeBand,
       age:
         !person && !workflow.ageOverrides[id]
@@ -183,6 +271,7 @@ export function reservationFormData(
       );
     })(),
     request: snapshot.contractNumber,
+    contractPartyName: intake.contractPartyName ?? '',
     issueDate: reservationFormDate(
       workflow.updatedAt ?? intake.receivedAt,
       'Asia/Tehran',
@@ -200,15 +289,19 @@ export function reservationFormData(
         ),
       ].join(' / ') || '-',
     destination: name(city),
-    adults: passengers.filter((p) => p.age === 'ADL').length,
-    children: passengers.filter((p) => p.age.startsWith('CHD')).length,
+    adults:
+      legacyHotel?.adults ?? passengers.filter((p) => p.age === 'ADL').length,
+    children:
+      legacyHotel?.children ??
+      passengers.filter((p) => p.age.startsWith('CHD')).length,
     children2To6: passengers.filter((p) => p.hotelChildAgeBand === 'CHD_2_TO_6')
       .length,
     children6To12: passengers.filter(
       (p) => p.hotelChildAgeBand === 'CHD_6_TO_12',
     ).length,
     childrenUnclassified: passengers.filter((p) => p.age === 'CHD').length,
-    infants: passengers.filter((p) => p.age === 'INF').length,
+    infants:
+      legacyHotel?.infants ?? passengers.filter((p) => p.age === 'INF').length,
     rooms:
       roomSummary?.roomCount ??
       intake.arrangement?.roomCount ??
@@ -236,7 +329,12 @@ export function reservationFormData(
       }).format(new Date(f.departureAt)),
     })),
     hotel: text(
-      hotelRecord?.attributes.englishName || hotel?.hotelNameSnapshot,
+      hotelRecord?.attributes.englishName ||
+        (typeof hotelRecord?.name === 'string' &&
+        /[A-Za-z]/.test(hotelRecord.name) &&
+        !/[\u0600-\u06ff]/.test(hotelRecord.name)
+          ? hotelRecord.name
+          : hotel?.hotelNameSnapshot),
     ),
     stars: text(
       String(
@@ -253,9 +351,12 @@ export function reservationFormData(
         ),
     roomBreakdown: (hotel?.rooms ?? []).map((r) => ({
       ordinal: r.ordinal,
-      roomType: references[r.roomTypeId]
-        ? name(references[r.roomTypeId])
-        : r.roomTypeNameSnapshot,
+      roomType: salesRoomDisplayName({
+        ...r,
+        roomTypeNameSnapshot: references[r.roomTypeId]
+          ? name(references[r.roomTypeId])
+          : r.roomTypeNameSnapshot,
+      }),
       adults: r.adults,
       childAges: [...r.childAges],
     })),
@@ -282,13 +383,13 @@ export function reservationFormData(
     brand:
       workflow.branding?.kind === 'OWN' &&
       workflow.branding.companyCode === 'JAHAN_BASTAN'
-        ? 'جهان باستان'
+        ? 'Jahan Bastan'
         : (workflow.branding?.name ?? ''),
   };
 }
 /** Estimate wrapped name rows so long names get room without shrinking or clipping. */
-export function reservationPassengerPages(
-  passengers: ReturnType<typeof reservationFormData>['passengers'],
+export function reservationPassengerPages<T extends { name: string }>(
+  passengers: T[],
   pageUnits = 10,
 ) {
   const pages: (typeof passengers)[] = [[]];

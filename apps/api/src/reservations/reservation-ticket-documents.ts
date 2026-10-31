@@ -1,4 +1,9 @@
 import {
+  allocatedServiceRows,
+  flightServiceRows,
+  filterServiceRows,
+} from './service-report';
+import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
@@ -104,10 +109,135 @@ export class ReservationTicketDocumentsService {
     }
     return { data: filterIssuedRows(rows, query) };
   }
+  async serviceReport(
+    query: Record<string, unknown>,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    const range = reportRange(query);
+    if (
+      query.dateBasis &&
+      !['ISSUED', 'TRAVEL'].includes(String(query.dateBasis))
+    )
+      throw new BadRequestException('فیلتر نامعتبر است.');
+    if (
+      query.serviceKind &&
+      ![
+        'all',
+        'FLIGHT',
+        'HOTEL',
+        'TRANSFER',
+        'INSURANCE',
+        'VISA',
+        'TOUR',
+        'TRAIN',
+        'BUS',
+        'CIP',
+        'OTHER',
+      ].includes(String(query.serviceKind))
+    )
+      throw new BadRequestException('فیلتر نامعتبر است.');
+    const intakes = await this.db.client.reservationIntake.findMany({
+      where: { branchId: { in: [...actor.branchIds] } },
+      orderBy: [{ contractId: 'asc' }, { contractVersion: 'desc' }],
+      take: 10001,
+      select: {
+        id: true,
+        contractId: true,
+        snapshot: true,
+        ticketDocuments: true,
+        workflowRevisions: {
+          orderBy: { version: 'desc' },
+          take: 1,
+          select: { state: true },
+        },
+      },
+    });
+    if (intakes.length > 10000)
+      throw new BadRequestException(
+        'بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ بلیط دارد.',
+      );
+    const seenContracts = new Set<string>();
+    const rows = intakes.flatMap((i) => {
+      const snapshot = i.snapshot as unknown as SalesReservationRequestV1;
+      const cancelled =
+        (
+          i.workflowRevisions[0]?.state as
+            { supplierStatus?: string } | undefined
+        )?.supplierStatus === 'CANCELLED';
+      const latest = !seenContracts.has(i.contractId);
+      seenContracts.add(i.contractId);
+      return [
+        ...flightServiceRows(
+          i.ticketDocuments.flatMap((d) => issuedRows(d, snapshot, cancelled)),
+        ),
+        ...(latest ? allocatedServiceRows(i.id, snapshot, cancelled) : []),
+      ];
+    });
+    if (rows.length > 20000)
+      throw new BadRequestException(
+        'بازه را کوچک‌تر کنید؛ گزارش بیش از ۲۰۰۰۰ قطعه پرواز دارد.',
+      );
+    const ids = [
+      ...new Set(
+        rows
+          .flatMap((r) => [r.originCityId, r.destinationCityId])
+          .filter(Boolean),
+      ),
+    ];
+    const names = new Map<string, string>();
+    for (let offset = 0; offset < ids.length; offset += 8)
+      await Promise.all(
+        ids.slice(offset, offset + 8).map(async (id) => {
+          try {
+            names.set(
+              id,
+              (await this.directory?.cityReference(id))?.name ??
+                'نام شهر ثبت نشده',
+            );
+          } catch {
+            names.set(id, 'نام شهر ثبت نشده');
+          }
+        }),
+      );
+    for (const row of rows) {
+      row.origin = names.get(row.originCityId) ?? '';
+      row.destination = names.get(row.destinationCityId) ?? '';
+    }
+    const dated = filterServiceRows(
+      rows,
+      { ...query, serviceKind: 'all', hotelId: 'all' },
+      range,
+    );
+    const options = {
+      origins: [
+        ...new Map(
+          rows
+            .filter((r) => r.serviceKind === 'FLIGHT' && r.originCityId)
+            .map((r) => [r.originCityId, r.origin]),
+        ),
+      ].map(([id, name]) => ({ id, name })),
+      destinations: [
+        ...new Map(
+          rows
+            .filter((r) => r.serviceKind === 'FLIGHT' && r.destinationCityId)
+            .map((r) => [r.destinationCityId, r.destination]),
+        ),
+      ].map(([id, name]) => ({ id, name })),
+      hotels: [
+        ...new Map(
+          rows.filter((r) => r.hotelId).map((r) => [r.hotelId, r.hotelName]),
+        ),
+      ].map(([id, name]) => ({ id, name })),
+    };
+    const selected = filterServiceRows(dated, query, range);
+    return { data: filterIssuedRows(selected, query), options };
+  }
   async choices(id: string, actor: AuthenticatedActor) {
     if (!actor.permissions.includes('reservations.read'))
       throw new ForbiddenException();
-    const intake = await this.workflow.detail(id, actor.branchIds);
+    const intake = await this.workflow.detail(id, actor.branchIds, true);
     if (intake.workflow.supplierStatus === 'CANCELLED')
       throw new BadRequestException('درخواست ابطال شده است.');
     const flights = salesContractFlights(

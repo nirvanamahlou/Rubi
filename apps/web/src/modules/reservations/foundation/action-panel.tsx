@@ -1,4 +1,5 @@
 'use client';
+import { ReservationDeliveryPermit } from '../components/reservation-delivery-permit';
 import { ReservationHotelCosts } from '../components/reservation-hotel-costs';
 import { ReservationPurchaseDialog } from '../components/reservation-hotel-purchase';
 import { ReservationNotes } from '../components/reservation-notes';
@@ -36,6 +37,7 @@ export const contractActionGroups = [
       'واچر',
       'دریافت‌ها',
       'بیمه‌نامه',
+      'مجوز تحویل مدارک',
     ],
   },
   {
@@ -55,6 +57,13 @@ export function ContractActionContent({
   action: string;
   request: RequestView;
 }) {
+  if (action === 'مجوز تحویل مدارک' && request.contractId)
+    return (
+      <ReservationDeliveryPermit
+        key={request.contractId}
+        contractId={request.contractId}
+      />
+    );
   if (action === 'سودآوری رزرواسیون هتل' && request.contractId)
     return <ReservationHotelCosts key={request.id} id={request.id} />;
   if (action === 'خرید') return <ReservationPurchaseDialog id={request.id} />;
@@ -173,6 +182,11 @@ export function ContractActionPanel({
           <ReservationResponsibility key={request.id} id={request.id} />
         )}
       </div>
+      {request?.status === 'CANCELLED' && (
+        <div className={styles.cancelled} role="status">
+          این قرارداد باطل شده است
+        </div>
+      )}
       <div className={styles.groups}>
         {contractActionGroups.map((group, groupIndex) => (
           <section

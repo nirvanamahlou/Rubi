@@ -3,6 +3,7 @@ import { reservationServicePurchaseTotal } from './index';
 
 describe('service purchase calculation', () => {
   it('multiplies base, fractional factor and contract nights exactly', () => {
+    expect(reservationServicePurchaseTotal('0', '2', 7)).toBe('0');
     expect(reservationServicePurchaseTotal('125.5', '1.5', 4)).toBe('753');
     expect(reservationServicePurchaseTotal('0.0001', '0.5', 3)).toBe('0.0002');
     expect(reservationServicePurchaseTotal('9007199254740993', '1', 2)).toBe(

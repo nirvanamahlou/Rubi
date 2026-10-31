@@ -1,5 +1,6 @@
 import {
   eligibleTicketReturn,
+  ticketOfferRoutes,
   moneyUnits,
   moneyDecimal,
   type TicketOfferV1,
@@ -141,11 +142,12 @@ export function filterTicketRows(
   label: (offer: TicketOfferV1) => string,
 ) {
   return rows.filter((row) => {
-    if (filters.originId && row.offer.originId !== filters.originId)
-      return false;
     if (
-      filters.destinationId &&
-      row.offer.destinationId !== filters.destinationId
+      !ticketOfferRoutes(row.offer).some(
+        (r) =>
+          (!filters.originId || r.originId === filters.originId) &&
+          (!filters.destinationId || r.destinationId === filters.destinationId),
+      )
     )
       return false;
     if (

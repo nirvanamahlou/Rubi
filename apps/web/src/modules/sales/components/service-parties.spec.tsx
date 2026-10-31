@@ -2,7 +2,12 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
 import { ServiceParties } from './service-parties';
-import { emptySalesForm, type SalesFormState } from '../model/sales-form';
+import {
+  emptySalesForm,
+  salesFlightSeats,
+  type SalesFormState,
+} from '../model/sales-form';
+import { passengerSlotKeys } from '../model/sales-people-sheet';
 const fixture = vi.hoisted(() => ({
   categorySelects: [] as {
     value: string;
@@ -106,15 +111,32 @@ const props: ComponentProps<typeof ServiceParties> = {
 };
 it('shows independent room cards, visa child ages and compact responsive columns', () => {
   const html = renderToStaticMarkup(<ServiceParties {...props} />);
+  expect(html).toContain('تعداد کل مسافران انتخاب‌شده: ۶');
   expect(html).toContain('اتاق 1');
   expect(html).toContain('اتاق 2');
   expect(html).toContain('lg:grid-cols-2');
-  expect(fixture.inputs.map((p) => p.value)).toEqual([2, 1, 6, 2, 2, 1, 1, 0]);
+  expect(fixture.inputs.map((p) => p.value)).toEqual([
+    2, 1, 6, 2, 2, 1, 0, 1, 0, 0,
+  ]);
+});
+it('updates the selected passenger total including infants without summing room or visa assignments', () => {
+  const html = renderToStaticMarkup(
+    <ServiceParties
+      {...props}
+      state={{
+        ...state,
+        passengerComposition: { adults: 4, children: 2, infants: 1 },
+        infantAges: [0],
+      }}
+    />,
+  );
+  expect(html).toContain('تعداد کل مسافران انتخاب‌شده: ۷');
+  expect(props.patch).not.toHaveBeenCalled();
 });
 it('changing a room affects that room without changing the flight party', () => {
   const patch = vi.fn();
   renderToStaticMarkup(<ServiceParties {...props} patch={patch} />);
-  fixture.inputs[6]!.onChange({ target: { value: '2' } });
+  fixture.inputs[7]!.onChange({ target: { value: '2' } });
   const next = patch.mock.calls[0]![0];
   expect(next.passengerComposition).toBeUndefined();
   expect(next.hotel.rooms[0]).toMatchObject(state.hotel.rooms![0]!);
@@ -163,9 +185,9 @@ it('caps each room at the remaining adults and children in the flight party', ()
   renderToStaticMarkup(
     <ServiceParties {...props} state={next} patch={patch} />,
   );
-  fixture.inputs[6]!.onChange({ target: { value: '9' } });
-  expect(patch.mock.calls[0]![0].hotel.rooms[1].adults).toBe(2);
   fixture.inputs[7]!.onChange({ target: { value: '9' } });
+  expect(patch.mock.calls[0]![0].hotel.rooms[1].adults).toBe(2);
+  fixture.inputs[8]!.onChange({ target: { value: '9' } });
   expect(patch.mock.calls[1]![0].hotel.rooms[1].childAges).toEqual([7]);
 });
 
@@ -216,10 +238,58 @@ it('defaults a double with children without extra beds and saves an editable ext
     '',
     'DOUBLE',
     'DOUBLE_EXTRA',
+    'FAMILY',
   ]);
   fixture.categorySelects[0]!.onValueChange('DOUBLE_EXTRA');
   expect(patch.mock.calls[0]![0].hotel.rooms[0].roomCategory).toBe(
     'DOUBLE_EXTRA',
   );
   expect(patch.mock.calls[0]![0].hotel.extraBedCount).toBe(1);
+  fixture.categorySelects[0]!.onValueChange('FAMILY');
+  expect(patch.mock.calls[1]![0].hotel.rooms[0].roomCategory).toBe('FAMILY');
+  expect(patch.mock.calls[1]![0].hotel.extraBedCount).toBe(0);
+});
+
+it('adding a room infant creates the flight infant composition without an extra seat or bed', () => {
+  const patch = vi.fn();
+  const driven = { ...state, roomDrivenGuests: true };
+  const html = renderToStaticMarkup(
+    <ServiceParties {...props} state={driven} patch={patch} />,
+  );
+  expect(html).toContain('تعداد بزرگسال اتاق');
+  expect(html).toContain('تعداد کودک اتاق');
+  expect(html).toContain('تعداد نوزاد اتاق');
+  fixture.inputs[6]!.onChange({ target: { value: '1' } });
+  const next = patch.mock.calls[0]![0];
+  expect(next.hotel.rooms[0].childAges).toEqual([5, 0]);
+  expect(next.passengerComposition).toEqual({
+    adults: 3,
+    children: 1,
+    infants: 1,
+  });
+  expect(next.infantAges).toEqual([0]);
+  const updated = { ...driven, ...next };
+  expect(passengerSlotKeys(updated)).toHaveLength(5);
+  expect(salesFlightSeats(updated, 'OUTBOUND')).toBe(4);
+  expect(next.hotel.rooms[0].roomCategory).toBe('DOUBLE');
+});
+
+it('assigns a declared infant to a legacy room without losing the child link', () => {
+  const patch = vi.fn();
+  const legacy = {
+    ...state,
+    passengerComposition: { adults: 4, children: 2, infants: 1 },
+    infantAges: [1],
+    hotelChildAssignments: { '1': ['child:0'], '2': [] },
+  };
+  renderToStaticMarkup(
+    <ServiceParties {...props} state={legacy} patch={patch} />,
+  );
+  fixture.inputs[6]!.onChange({ target: { value: '1' } });
+  expect(patch.mock.calls[0]![0].hotel.rooms[0].childAges).toEqual([5, 1]);
+  expect(patch.mock.calls[0]![0].hotelChildAssignments['1']).toEqual([
+    'child:0',
+    'infant:0',
+  ]);
+  expect(legacy.hotelChildAssignments['1']).toEqual(['child:0']);
 });

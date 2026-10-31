@@ -1,4 +1,5 @@
 'use client';
+import { usePublicDocumentLink } from '@/modules/travel-documents/public/use-public-document-link';
 import { travelRequest } from './travel-workflow-form';
 import type {
   ReservationTicketDocumentV1,
@@ -35,7 +36,7 @@ import {
 } from '../passenger-files/client';
 
 export function ReservationTickets({
-  request,
+  request: suppliedRequest,
   branding = null,
   salesContractId,
   onClose,
@@ -45,7 +46,20 @@ export function ReservationTickets({
   salesContractId?: string;
   onClose: () => void;
 }) {
-  const { logo, error: logoError } = useTravelLogo(branding);
+  const [currentRequest, setCurrentRequest] =
+    useState<ReservationIntakeV1 | null>(null);
+  const [revision, setRevision] = useState(0);
+  const request =
+    currentRequest?.id === suppliedRequest.id
+      ? currentRequest
+      : suppliedRequest;
+  useEffect(() => {
+    const refresh = () => setRevision((v) => v + 1);
+    window.addEventListener('reservation-workflow-changed', refresh);
+    return () =>
+      window.removeEventListener('reservation-workflow-changed', refresh);
+  }, []);
+  const { logo } = useTravelLogo(branding);
   const canEdit =
     useAccessPermissions()?.includes('reservations.documents.manage') ?? false;
   const [flightNumbers, setFlightNumbers] = useState<Record<string, string>>(
@@ -165,13 +179,16 @@ export function ReservationTickets({
   const [warning, setWarning] = useState('');
   useEffect(() => {
     let active = true;
-    void travelRequest<{ data: { workflow: TravelWorkflowStateV1 } }>(
+    void travelRequest<{
+      data: ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
+    }>(
       salesContractId
         ? `sales/contracts/${salesContractId}/travel-documents`
         : `reservations/requests/${request.id}/workflow`,
     )
       .then(({ data }) => {
         if (!active) return;
+        if (data.snapshot) setCurrentRequest(data);
         setFlightNumbers(data.workflow.ticketFlightNumbers ?? {});
         setFlightNumbersReady(flightContextKey);
       })
@@ -186,11 +203,30 @@ export function ReservationTickets({
     return () => {
       active = false;
     };
-  }, [request.id, salesContractId, flightContextKey]);
-  const [printAll, setPrintAll] = useState(false);
-  const [printing, setPrinting] = useState(false);
+  }, [
+    request.id,
+    salesContractId,
+    flightContextKey,
+    revision,
+    suppliedRequest,
+  ]);
+  const printAll = false;
+  const printDocument = '';
   const [downloading, setDownloading] = useState(false);
   const ticket = tickets.find((item) => item.passengerId === selected);
+  const shared = usePublicDocumentLink(
+    branding && documents.length
+      ? '/reservations/requests/' +
+          encodeURIComponent(request.id) +
+          '/tickets/pdf?' +
+          new URLSearchParams({
+            ...(salesContractId ? { salesContractId } : {}),
+          })
+      : undefined,
+    JSON.stringify([request.snapshot, documents, flightNumbers]),
+  );
+  const documentUrl = (passengerId: string) =>
+    shared?.documents?.find((item) => item.passengerId === passengerId)?.url;
   useEffect(() => {
     let active = true;
     const ids = [
@@ -304,38 +340,6 @@ export function ReservationTickets({
       );
     } finally {
       setIssuing(false);
-    }
-  }
-  async function print(all: boolean) {
-    try {
-      await ensureNumbers(all);
-    } catch (error) {
-      setWarning(
-        error instanceof Error ? error.message : 'ثبت شماره انجام نشد.',
-      );
-      return;
-    }
-    if (branding && (!logo || logoError)) {
-      setWarning(logoError || 'در حال دریافت لوگو');
-      return;
-    }
-    flushSync(() => {
-      setPrintAll(all);
-      setPrinting(true);
-    });
-    try {
-      await Promise.all(
-        Array.from(
-          document.querySelectorAll<HTMLImageElement>(
-            '[data-reservation-ticket-print] img',
-          ),
-        ).map((img) => img.decode()),
-      );
-      window.print();
-    } catch {
-      setWarning('لوگو بارگذاری نشد؛ دوباره چاپ را بزنید.');
-    } finally {
-      setPrinting(false);
     }
   }
   async function download(all: boolean) {
@@ -489,35 +493,6 @@ export function ReservationTickets({
                 >
                   دانلود PDF همهٔ مسافران
                 </Button>
-                <Button
-                  variant="outline"
-                  disabled={
-                    !ready ||
-                    flightNumbersReady !== flightContextKey ||
-                    issuing ||
-                    factsReady !== request ||
-                    passengersReady !== request.id ||
-                    printing ||
-                    !ticket
-                  }
-                  onClick={() => void print(false)}
-                >
-                  چاپ این مسافر
-                </Button>
-                <Button
-                  variant="outline"
-                  disabled={
-                    !ready ||
-                    flightNumbersReady !== flightContextKey ||
-                    issuing ||
-                    factsReady !== request ||
-                    passengersReady !== request.id ||
-                    printing
-                  }
-                  onClick={() => void print(true)}
-                >
-                  چاپ همهٔ مسافران
-                </Button>
               </div>
               {warning ? (
                 <p role="status" className="text-sm text-amber-700">
@@ -529,6 +504,7 @@ export function ReservationTickets({
                   <FlightTicketSheet
                     data={{
                       ...ticket,
+                      publicDocumentUrl: documentUrl(ticket.passengerId),
                       gender: passengerGender[ticket.passengerId] ?? null,
                       airlines: airlineMarks,
                       ...(branding
@@ -561,25 +537,30 @@ export function ReservationTickets({
               '@page {size: A4 portrait; margin:0} body > :not([data-reservation-ticket-print]){display:none!important} body{margin:0!important;padding:0!important;overflow:visible!important} [data-reservation-ticket-print]{display:block!important} [data-reservation-ticket-page]{break-after:page} [data-reservation-ticket-page]:last-child{break-after:auto}'
             }
           </style>
-          {(printAll ? tickets : ticket ? [ticket] : []).map((item) => (
-            <div key={item.passengerId} data-reservation-ticket-page>
-              <FlightTicketSheet
-                data={{
-                  ...item,
-                  ...(branding
-                    ? {
-                        branding: {
-                          name: branding.name,
-                          logo,
-                          companyCode: branding.companyCode ?? '',
-                        },
-                      }
-                    : {}),
-                }}
-                cityName={name}
-              />
-            </div>
-          ))}
+          {printDocument ? (
+            <div dangerouslySetInnerHTML={{ __html: printDocument }} />
+          ) : (
+            (printAll ? tickets : ticket ? [ticket] : []).map((item) => (
+              <div key={item.passengerId} data-reservation-ticket-page>
+                <FlightTicketSheet
+                  data={{
+                    ...item,
+                    publicDocumentUrl: documentUrl(item.passengerId),
+                    ...(branding
+                      ? {
+                          branding: {
+                            name: branding.name,
+                            logo,
+                            companyCode: branding.companyCode ?? '',
+                          },
+                        }
+                      : {}),
+                  }}
+                  cityName={name}
+                />
+              </div>
+            ))
+          )}
         </div>,
         document.body,
       )}

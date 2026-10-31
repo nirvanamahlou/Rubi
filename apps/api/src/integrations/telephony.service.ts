@@ -6,9 +6,10 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  HttpException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { AuthenticatedActor, TelephonyEventV1 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import { IamCallCenterDirectory } from '../iam/iam-call-center-directory';
@@ -16,10 +17,16 @@ import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-direc
 import { CallCenterTelephonyService } from '../customer-affairs/call-center-telephony.service';
 import { IntegrationRegistryService } from './integration-registry.service';
 import { validateTelephonyEvent } from './telephony.validation';
+import {
+  recordNativeAnswer,
+  selectPreviousAgent,
+  type MemberSnapshot,
+} from './issabel/sticky-sales';
 
 type Envelope = {
   event: TelephonyEventV1;
   recipient: { userId: string; version: number; teamId: string | null } | null;
+  historical?: true;
 };
 @Injectable()
 export class TelephonyIntegrationService {
@@ -212,14 +219,52 @@ export class TelephonyIntegrationService {
     });
   }
   /** Adapter-facing in-process port. There is deliberately no public provider webhook. */
-  async receive(input: TelephonyEventV1, provider?: 'ISSABEL') {
+  async receive(input: TelephonyEventV1, provider?: 'ISSABEL' | 'RELAY') {
+    return this.receiveInternal(input, provider, false);
+  }
+  /** Only a verified server-side recovery adapter may call this port. No HTTP route. */
+  async receiveRecovered(input: TelephonyEventV1) {
+    if (this.config.get<string>('ISSABEL_RECOVERY_ENABLED') !== 'true')
+      throw new ForbiddenException('Telephony recovery is disabled.');
+    // Separate receipt namespace from AMI, but retain the identical PBX root so
+    // live/recovered evidence projects into one call. Never replay a live offer.
+    const event = validateTelephonyEvent(
+      input,
+      { maxAgeSeconds: 0, maxFutureSeconds: 0 },
+      new Date(),
+      false,
+    );
+    const receipt = await this.receiveInternal(
+      {
+        ...event,
+        externalEventId:
+          'cdr-recovery:' +
+          createHash('sha256').update(event.externalEventId).digest('hex'),
+      },
+      'ISSABEL',
+      true,
+    );
+    await this.process(receipt.id);
+    const row = await this.db.client.integrationTelephonyInbox.findUnique({
+      where: { id: receipt.id },
+      select: { status: true },
+    });
+    if (row?.status !== 'DONE')
+      throw new ConflictException('Recovery projection is incomplete.');
+  }
+  private async receiveInternal(
+    input: TelephonyEventV1,
+    provider: 'ISSABEL' | 'RELAY' | undefined,
+    recovery: boolean,
+  ) {
     const c = await this.db.client.integrationTelephonyConnection.findUnique({
       where: { id: input.connectionId },
     });
+    const prefix = provider === 'RELAY' ? 'TELEPHONY_RELAY' : 'ISSABEL';
     const realProvider =
-      provider === 'ISSABEL' &&
-      this.config.get<string>('ISSABEL_ENABLED') === 'true' &&
-      this.config.get<string>('ISSABEL_CONNECTION_ID') === c?.id &&
+      !!provider &&
+      this.config.get<string>(`${prefix}_ENABLED`) === 'true' &&
+      this.config.get<string>(`${prefix}_CONNECTION_ID`) === c?.id &&
       !c?.synthetic;
     if (
       !c ||
@@ -229,7 +274,11 @@ export class TelephonyIntegrationService {
       throw new ForbiddenException(
         'No verified provider adapter is configured.',
       );
-    const event = validateTelephonyEvent(input, c);
+    // Validate structure before hashing; already accepted receipts remain retryable
+    // after the ingress age window. New identities still obey the clock policy.
+    const event = validateTelephonyEvent(input, c, new Date(), false);
+    if (!recovery && event.externalEventId.startsWith('cdr-recovery:'))
+      throw new BadRequestException('Reserved recovery identity.');
     const crypto = this.domain.crypto,
       externalFingerprint = crypto.fingerprint(
         `telephony:event:${c.id}:${event.externalEventId}`,
@@ -250,26 +299,56 @@ export class TelephonyIntegrationService {
           throw new ConflictException('Event identity collision.');
         return { id: prior.id, duplicate: true };
       }
+      if (recovery) {
+        // Historical age is allowed only on the private recovery port. Future
+        // timestamps remain forbidden; ordinary ingress keeps its original policy.
+        if (Date.parse(event.occurredAt) > Date.now())
+          throw new BadRequestException('Recovery event is in the future.');
+      } else validateTelephonyEvent(event, c);
       const count = await tx.integrationTelephonyInbox.count({
         where: {
           connectionId: c.id,
           receivedAt: { gte: new Date(Date.now() - 60000) },
         },
       });
-      if (count >= 120)
-        throw new BadRequestException(
+      const configuredLimit = Number(
+        this.config.get<string>('TELEPHONY_EVENTS_PER_MINUTE') ?? 120,
+      );
+      const limit =
+        !c.synthetic &&
+        Number.isInteger(configuredLimit) &&
+        configuredLimit >= 120 &&
+        configuredLimit <= 6000
+          ? configuredLimit
+          : 120;
+      if (count >= limit)
+        throw new HttpException(
           'Telephony connection rate limit exceeded.',
+          429,
         );
-      const mapping = event.extension
-        ? await tx.integrationTelephonyMapping.findUnique({
-            where: {
-              connectionId_extension: {
-                connectionId: c.id,
-                extension: event.extension,
+      const captureOnly =
+        provider === 'ISSABEL' &&
+        this.config.get<string>('ISSABEL_EVENT_MODE') ===
+          'NATIVE_QUEUE_CAPTURE';
+      const mapping =
+        !recovery &&
+        event.extension &&
+        (!captureOnly ||
+          this.config.get<string>('ISSABEL_USER_NOTIFICATIONS_ENABLED') ===
+            'true' ||
+          (event.direction === 'OUT' &&
+            this.config.get<string>(
+              'ISSABEL_OUTBOUND_NOTIFICATIONS_ENABLED',
+            ) === 'true'))
+          ? await tx.integrationTelephonyMapping.findUnique({
+              where: {
+                connectionId_extension: {
+                  connectionId: c.id,
+                  extension: event.extension,
+                },
               },
-            },
-          })
-        : null;
+            })
+          : null;
       const eligible = mapping?.active
         ? await this.directory.eligibleMapping(
             c.branchId,
@@ -280,6 +359,7 @@ export class TelephonyIntegrationService {
         : false;
       const envelope: Envelope = {
         event,
+        ...(recovery ? { historical: true as const } : {}),
         recipient:
           eligible && mapping
             ? {
@@ -301,8 +381,77 @@ export class TelephonyIntegrationService {
           dispatch: { create: {} },
         },
       });
+      if (captureOnly && !recovery)
+        await recordNativeAnswer(tx, crypto, event, id);
       return { id, duplicate: false };
     });
+  }
+  /** Admin/internal preview only; no public PBX endpoint and no dial action. */
+  async preferredAgent(
+    actor: AuthenticatedActor,
+    connectionId: string,
+    queue: string,
+    phone: string,
+    availability: MemberSnapshot | null,
+  ) {
+    this.admin(actor);
+    this.domain.authorize(actor);
+    const connection =
+      await this.db.client.integrationTelephonyConnection.findFirst({
+        where: {
+          id: connectionId,
+          branchId: { in: [...actor.branchIds] },
+          active: true,
+          synthetic: false,
+        },
+        select: { id: true },
+      });
+    if (!connection) throw new NotFoundException();
+    const queues = (this.config.get<string>('ISSABEL_INBOUND_QUEUES') ?? '')
+      .split(',')
+      .map((v) => v.trim());
+    if (
+      this.config.get<string>('ISSABEL_ENABLED') !== 'true' ||
+      this.config.get<string>('ISSABEL_EVENT_MODE') !==
+        'NATIVE_QUEUE_CAPTURE' ||
+      this.config.get<string>('ISSABEL_CONNECTION_ID') !== connectionId ||
+      !queues.includes(queue) ||
+      !/^[a-zA-Z0-9_.:-]{1,100}$/.test(queue)
+    )
+      throw new ForbiddenException();
+    return selectPreviousAgent(
+      this.db.client,
+      this.domain.crypto,
+      connectionId,
+      queue,
+      phone,
+      availability,
+    );
+  }
+  /** Integrations-owned receipt lookup for native AMI correlation/restart recovery. */
+  async acceptedEvent(
+    connectionId: string,
+    externalEventId: string,
+  ): Promise<TelephonyEventV1 | null> {
+    const row = await this.db.client.integrationTelephonyInbox.findUnique({
+      where: {
+        connectionId_externalFingerprint: {
+          connectionId,
+          externalFingerprint: this.domain.crypto.fingerprint(
+            `telephony:event:${connectionId}:${externalEventId}`,
+          ),
+        },
+      },
+    });
+    if (!row) return null;
+    // A tombstone must not be mistaken for a new call after private retention expiry.
+    if (!row.encryptedPayload)
+      throw new ConflictException('Telephony correlation expired.');
+    return this.domain.crypto.decrypt<Envelope>(
+      row.encryptedPayload,
+      row.keyVersion,
+      `telephony:inbox:${row.id}`,
+    ).event;
   }
   async pending() {
     // Processed canonical private input expires after seven days; HMAC dedupe tombstones remain.
@@ -356,7 +505,7 @@ export class TelephonyIntegrationService {
           creatorId: row.connection.createdByUserId,
           synthetic: row.connection.synthetic,
           receivedAt: row.receivedAt,
-          recipient: envelope.recipient,
+          recipient: envelope.historical ? null : envelope.recipient,
         });
         await tx.integrationTelephonyAudit.create({
           data: {
@@ -439,6 +588,7 @@ export class TelephonyIntegrationService {
   async operations(actor: AuthenticatedActor) {
     this.admin(actor);
     return {
+      health: await this.health(actor),
       unassigned: await this.domain.review(actor.branchIds),
       dead: await this.db.client.integrationTelephonyInbox.findMany({
         where: {
@@ -461,9 +611,84 @@ export class TelephonyIntegrationService {
       }),
     };
   }
+  /** Authorized operational counters; no payload decrypts or private fields. */
+  async health(actor: AuthenticatedActor) {
+    this.admin(actor);
+    this.domain.authorize(actor);
+    const scoped = {
+      connection: { branchId: { in: [...actor.branchIds] }, synthetic: false },
+    };
+    const now = new Date();
+    const [groups, oldest, commands, uploading, expired, unpublished] =
+      await this.db.client.$transaction(
+        [
+          this.db.client.integrationTelephonyInbox.groupBy({
+            by: ['status'],
+            where: scoped,
+            _count: true,
+          }),
+          this.db.client.integrationTelephonyInbox.findFirst({
+            where: { ...scoped, status: { in: ['PENDING', 'RETRY'] } },
+            orderBy: [{ receivedAt: 'asc' }, { id: 'asc' }],
+            select: { receivedAt: true },
+          }),
+          this.db.client.integrationTelephonyCommand.count({
+            where: { ...scoped, state: 'UNKNOWN' },
+          }),
+          this.db.client.integrationTelephonyRecording.count({
+            where: { ...scoped, state: 'UPLOADING' },
+          }),
+          this.db.client.integrationTelephonyRecording.count({
+            where: { ...scoped, expiresAt: { lte: now } },
+          }),
+          this.db.client.$queryRaw<Array<{ count: bigint }>>`
+        SELECT count(*) AS count FROM integration_telephony_recordings r
+        JOIN integration_telephony_connections c ON c.id=r."connectionId"
+        WHERE c."branchId"=ANY(${[...actor.branchIds]}::uuid[]) AND NOT c.synthetic
+          AND r.state='COMPLETE' AND r."expiresAt">${now} AND NOT EXISTS (
+            SELECT 1 FROM integration_telephony_audit a WHERE a."connectionId"=r."connectionId"
+              AND a."entityId"=r.id AND a.action='RECORDING_PUBLISHED')`,
+        ],
+        { isolationLevel: 'RepeatableRead' },
+      );
+    const count = (status: string) =>
+      groups.find((group) => group.status === status)?._count ?? 0;
+    const oldestPendingSeconds = oldest
+      ? Math.max(
+          0,
+          Math.floor((now.getTime() - oldest.receivedAt.getTime()) / 1000),
+        )
+      : null;
+    const alerts: string[] = [];
+    if (count('DEAD')) alerts.push('DEAD_LETTER');
+    if (oldestPendingSeconds !== null && oldestPendingSeconds >= 60)
+      alerts.push('PROCESSING_DELAY');
+    if (commands) alerts.push('COMMAND_OUTCOME_UNKNOWN');
+    if (expired) alerts.push('RETENTION_OVERDUE');
+    if (Number(unpublished[0]?.count ?? 0))
+      alerts.push('RECORDING_PUBLICATION_PENDING');
+    return {
+      asOf: now.toISOString(),
+      scope: 'authorized branches; excludes synthetic',
+      state: alerts.length ? 'ATTENTION_REQUIRED' : 'NO_INTERNAL_ALERT',
+      pending: count('PENDING'),
+      retrying: count('RETRY'),
+      dead: count('DEAD'),
+      processed: count('DONE'),
+      oldestPendingSeconds,
+      unknownCommands: commands,
+      uploadingRecordings: uploading,
+      expiredRecordings: expired,
+      unpublishedRecordings: Number(unpublished[0]?.count ?? 0),
+      alerts,
+      providerCoverage: 'NOT_VERIFIED',
+      liveAcceptance: false,
+    };
+  }
   async replay(actor: AuthenticatedActor, id: string) {
     this.admin(actor);
     return this.db.client.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM integration_telephony_inbox WHERE id=${id}::uuid FOR UPDATE`;
       const row = await tx.integrationTelephonyInbox.findFirst({
         where: {
           id,

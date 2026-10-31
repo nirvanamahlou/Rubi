@@ -46,7 +46,7 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
     group('structure', 'ساختار سازمانی', [
       source('organization', 'branches', 'شعبه‌ها'),
       source('organization', 'units', 'واحدها'),
-      source('organization', 'positions', 'شغل و سمت'),
+      source('organization', 'positions', 'عنوان‌های شغلی'),
       source('organization', 'grades', 'رده‌ها'),
     ]),
     group('groups', 'گروه‌های کارکنان', [
@@ -71,28 +71,26 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
       'shifts',
       'شیفت‌بندی',
       [
-        source('time', 'workingHours', 'ساعت کاری', 'تعریف ساعت کاری'),
         source('time', 'shiftTemplates', 'تعریف شیفت', 'تعریف شیفت'),
         source('time', 'templateDays', 'تقویم سالانه شیفت', 'ثبت روز تقویم'),
         source('time', 'shift', 'انتساب شیفت', 'انتساب شیفت'),
       ],
       'جزئیات شیفت',
     ),
-    group(
-      'leaves',
-      'مرخصی',
-      [
-        source('time', 'leave', 'تعریف مرخصی', 'تعریف مرخصی'),
-        source('time', 'minuteLedger', 'کاردکس دقیقه‌ای مرخصی', '', true),
-        source('time', 'leaveTransferRules', 'قواعد انتقال مرخصی'),
-      ],
-      'پرونده مرخصی',
-    ),
+    group('workingHours', 'ساعت کار', [
+      source('time', 'workingHours', 'ساعت کار', 'افزودن ساعت کار'),
+    ]),
+    group('leaveBalance', 'مانده مرخصی', [
+      source('time', 'minuteLedger', 'مانده مرخصی', '', true),
+      source('time', 'leaveTransferRules', 'انتقال مرخصی عمومی'),
+    ]),
     group('settings', 'تنظیمات کارکرد', [
       source('time', 'leavePolicies', 'سیاست و سهمیه', 'تعریف سیاست مرخصی'),
       source('time', 'holidays', 'تعطیلات', 'ثبت تعطیلی'),
-      source('time', 'biometric', 'دستگاه‌ها', 'افزودن دستگاه'),
       source('time', 'calculationSettings', 'تنظیمات محاسبات کارکرد'),
+    ]),
+    group('device', 'دستگاه', [
+      source('time', 'biometric', 'دستگاه', 'افزودن دستگاه'),
     ]),
   ],
   contracts: [
@@ -249,25 +247,6 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
     ]),
   ],
   payroll: [
-    group(
-      'periods',
-      'دوره‌های حقوق',
-      [
-        source('payroll', 'runs', 'دوره‌های حقوق', 'ایجاد دوره حقوق'),
-        source('finance', 'batch', 'مبانی پرداخت', 'آماده‌سازی مبانی پرداخت'),
-        source('finance', 'results', 'نتیجه حقوق', 'دریافت نتیجه', true),
-        source('payroll', 'payslips', 'فیش‌های حقوقی', 'مشاهده فیش', true),
-        source('payroll', 'importedPayslips', 'فیش‌های واردشده', '', true),
-        source('finance', 'payments', 'پرداخت و مغایرت', 'مشاهده پرداخت', true),
-        source('payroll', 'accounting', 'سند حسابداری', 'مشاهده سند', true),
-      ],
-      'پرونده دوره حقوق',
-    ),
-    group('adjustments', 'پرداخت و اصلاحات', [
-      source('payroll', 'additional', 'پرداخت اضافی', 'ثبت پرداخت اضافی'),
-      source('payroll', 'incentives', 'پاداش و مشوق', 'ثبت پاداش'),
-      source('payroll', 'corrections', 'اصلاح و معوق', 'ثبت اصلاح حقوق'),
-    ]),
     group('settings', 'تنظیمات حقوق', [
       source('payroll', 'structures', 'ساختار حقوق', 'تعریف ساختار حقوق'),
       source('payroll', 'components', 'دریافتی و کسورات', 'تعریف مؤلفه حقوق'),
@@ -295,15 +274,23 @@ export const employeeGroups: readonly HrGroup[] = [
     source('employee', 'phones', 'شماره‌های تماس'),
     source('employee', 'contact', 'اطلاعات تماس'),
   ]),
-  group('employment', 'همکاری و قرارداد', [
-    source('employee', 'assignment', 'انتصاب'),
-    source('employee', 'contract', 'قرارداد', '', true),
-  ]),
-  group('time', 'کارکرد و مرخصی', [
+  group('employment', 'همکاری', [source('employee', 'assignment', 'انتصاب')]),
+  ...hrGroups.lifecycle!.filter((item) =>
+    ['changes', 'exit'].includes(item.id),
+  ),
+  ...hrGroups.contracts!,
+  group(
+    'leaves',
+    'مرخصی',
+    [
+      source('time', 'leave', 'تعریف مرخصی', 'تعریف مرخصی'),
+      source('time', 'minuteLedger', 'کاردکس دقیقه‌ای مرخصی', '', true),
+    ],
+    'پرونده مرخصی',
+  ),
+  group('time', 'کارکرد', [
     source('employee', 'attendance', 'کارکرد', '', true),
     source('employee', 'shift', 'شیفت', '', true),
-    source('employee', 'leave', 'مرخصی', '', true),
-    source('employee', 'minuteLedger', 'کاردکس دقیقه‌ای مرخصی', '', true),
     source('employee', 'overtime', 'اضافه‌کاری', '', true),
   ]),
   group('pay', 'حقوق و پرداخت‌ها', [
@@ -339,15 +326,51 @@ export function resolveHrGroup(groups: readonly HrGroup[], tab?: string) {
 export function canonicalHrLocation(
   section: HrSectionId,
   tab?: string,
+  employeeId?: string,
 ): { section: HrSectionId; tab?: string } {
   if (section === 'finance')
     return tab === 'settlements'
-      ? { section: 'lifecycle', tab: 'settlements' }
-      : { section: 'payroll', tab: tab ?? 'periods' };
-  if (section === 'contracts' && tab === 'termination')
-    return { section: 'lifecycle', tab: 'termination' };
-  if (section === 'contracts' && tab === 'alerts')
-    return { section, tab: 'active' };
+      ? canonicalHrLocation('lifecycle', 'settlements', employeeId)
+      : { section: 'payroll', tab: 'settings' };
+  if (
+    section === 'payroll' &&
+    (!tab ||
+      [
+        'periods',
+        'adjustments',
+        'runs',
+        'batch',
+        'results',
+        'payslips',
+        'importedPayslips',
+        'payments',
+        'accounting',
+        'additional',
+        'incentives',
+        'corrections',
+      ].includes(tab))
+  )
+    return { section: 'payroll', tab: 'settings' };
+  if (
+    section === 'contracts' ||
+    section === 'lifecycle' ||
+    (section === 'time' &&
+      ['leave', 'leaves', 'minuteLedger'].includes(tab ?? ''))
+  ) {
+    const movedTab =
+      section === 'contracts'
+        ? !tab || tab === 'alerts'
+          ? 'active'
+          : tab
+        : section === 'lifecycle'
+          ? !tab || tab === 'onboarding'
+            ? 'changes'
+            : tab
+          : tab === 'leaves'
+            ? 'leave'
+            : tab!;
+    return { section: employeeId ? 'employee' : 'employees', tab: movedTab };
+  }
   if (section === 'fleet')
     return { section: 'assets', tab: tab === 'logs' ? 'logs' : 'vehicles' };
   return { section, ...(tab ? { tab } : {}) };

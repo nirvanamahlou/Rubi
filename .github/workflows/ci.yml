@@ -215,6 +215,11 @@ jobs:
           PURCHASE_FX_TEST: '1'
         run: pnpm --filter @nora/database exec vitest run test/purchase-fx-postgres.spec.ts
 
+      - name: Prove passenger insurance issuance and reference invariants
+        env:
+          INSURANCE_POLICY_TEST: '1'
+        run: pnpm --filter @nora/database exec vitest run test/insurance-policy-postgres.spec.ts
+
       - name: Prove hotel rate broker compatibility and foreign keys
         env:
           HOTEL_RATE_BROKER_TEST: '1'
@@ -231,7 +236,23 @@ jobs:
       - name: Prove financial source, refund and petty-cash atomicity
         env:
           NORA_RUN_FINANCIAL_EVENT_POSTGRES_TESTS: '1'
-        run: pnpm --filter @nora/api exec vitest run test/financial-events.postgres.spec.ts --maxWorkers=1
+        run: pnpm --filter @nora/api exec vitest run test/financial-events.postgres.spec.ts test/accounting-workflows.postgres.spec.ts --maxWorkers=1
+
+      - name: Prove rollback-safe consecutive Sales contract numbers
+        # The prior financial-source step has built the shared packages.
+        env:
+          NORA_RUN_SALES_NUMBER_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run test/sales-contract-number.postgres.spec.ts --maxWorkers=1
+
+      - name: Prove recurring flight purchase and payment atomicity
+        env:
+          NORA_RUN_FINANCE_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run src/finance/ticket-cost/finance-ticket-payment.postgres.spec.ts --maxWorkers=1
+
+      - name: Prove shared flight capacity across commercial destinations
+        env:
+          NORA_RUN_TICKET_ROUTES_POSTGRES_TESTS: '1'
+        run: pnpm --filter @nora/api exec vitest run src/ticket-catalog/ticket-sale-routes.postgres.spec.ts --maxWorkers=1
 
       - name: Prove company bank account encryption, CAS and audit atomicity
         env:
@@ -255,7 +276,7 @@ jobs:
       - name: Prove durable Call Center history, replay and branch isolation
         env:
           NORA_RUN_CALL_CENTER_POSTGRES_TESTS: '1'
-        run: pnpm --filter @nora/api exec vitest run src/customer-affairs/call-center.spec.ts src/customer-affairs/call-center-workflow.spec.ts src/customer-affairs/call-center-read.spec.ts src/integrations/telephony.spec.ts src/integrations/issabel/issabel.postgres.spec.ts --maxWorkers=1
+        run: pnpm --filter @nora/api exec vitest run src/customer-affairs/call-center.spec.ts src/customer-affairs/call-center-workflow.spec.ts src/customer-affairs/call-center-access.postgres.spec.ts src/customer-affairs/call-center-read.spec.ts src/integrations/telephony.spec.ts src/integrations/issabel/issabel.postgres.spec.ts --maxWorkers=1
 
   build:
     name: Full production build

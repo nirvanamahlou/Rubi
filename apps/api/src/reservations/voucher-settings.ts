@@ -1,12 +1,36 @@
 import {
+  hotelRoomQuotationTotal,
   voucherTextKeys,
   voucherNumberKeys,
   voucherFlagKeys,
   type VoucherSettingsV1,
 } from '@nora/contracts';
+export function validateSupplierFormPrices(
+  value: unknown,
+): VoucherSettingsV1['supplierFormPrices'] {
+  if (value === undefined) return undefined;
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    Object.entries(value).some(
+      ([key, price]) =>
+        !['pp', 'ratio', 'transferPp'].includes(key) ||
+        !price ||
+        typeof price.amount !== 'string' ||
+        !/^\d{1,18}(?:\.\d{1,4})?$/.test(price.amount) ||
+        (key !== 'ratio' &&
+          (typeof price.currencyCode !== 'string' ||
+            !/^[A-Z]{3}$/.test(price.currencyCode))),
+    )
+  )
+    throw new Error('جدول قیمت فرم رزرواسیون معتبر نیست.');
+  return value as NonNullable<VoucherSettingsV1['supplierFormPrices']>;
+}
 export function validateVoucherSettings(
   value: unknown,
   passengerIds: readonly string[],
+  allowEmptyPassengers = false,
 ): VoucherSettingsV1 {
   const fail = (): never => {
     throw new Error(
@@ -15,6 +39,43 @@ export function validateVoucherSettings(
   };
   if (!value || typeof value !== 'object') return fail();
   const v = value as VoucherSettingsV1;
+  try {
+    if (v.hotelRoomPrices) {
+      if (
+        Object.keys(v.hotelRoomPrices).some(
+          (key) => !['currencyCode', 'rooms'].includes(key),
+        )
+      )
+        return fail();
+      if (!/^[A-Z]{3}$/.test(v.hotelRoomPrices.currencyCode)) return fail();
+      hotelRoomQuotationTotal(
+        v.hotelRoomPrices.rooms,
+        1,
+        (v.rooms ?? []).map((room) => room.ordinal),
+      );
+    }
+    if (
+      v.hotelTransferCounts &&
+      Object.keys(v.hotelTransferCounts).some(
+        (key) => !['outbound', 'returning'].includes(key),
+      )
+    )
+      return fail();
+    if (
+      v.hotelTransferCounts &&
+      [v.hotelTransferCounts.outbound, v.hotelTransferCounts.returning].some(
+        (count) => !Number.isSafeInteger(count) || count < 0 || count > 500,
+      )
+    )
+      return fail();
+  } catch {
+    return fail();
+  }
+  try {
+    validateSupplierFormPrices(v.supplierFormPrices);
+  } catch {
+    return fail();
+  }
   if (
     v.hotelPurchasePrices !== undefined &&
     (!Array.isArray(v.hotelPurchasePrices) ||
@@ -59,7 +120,14 @@ export function validateVoucherSettings(
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (
     (v.brokerId !== undefined && !uuid.test(v.brokerId)) ||
-    (v.leaderId !== undefined && (!v.brokerId || !uuid.test(v.leaderId)))
+    (v.leaderId !== undefined && (!v.brokerId || !uuid.test(v.leaderId))) ||
+    (v.transferBrokerId !== undefined &&
+      (!v.brokerId || !uuid.test(v.transferBrokerId))) ||
+    (v.transferBrokerName !== undefined &&
+      (typeof v.transferBrokerName !== 'string' ||
+        v.transferBrokerName.length > 200)) ||
+    (v.transferDetailsOverride !== undefined &&
+      typeof v.transferDetailsOverride !== 'boolean')
   )
     return fail();
   if (
@@ -115,7 +183,8 @@ export function validateVoucherSettings(
   if (
     v.passengers.length !== passengerIds.length ||
     new Set(v.passengers.map((p) => p?.id)).size !== passengerIds.length ||
-    !v.passengers.some((p) => p.selected) ||
+    (!(allowEmptyPassengers && passengerIds.length === 0) &&
+      !v.passengers.some((p) => p.selected)) ||
     v.passengers.some(
       (p) =>
         !p ||
@@ -135,6 +204,29 @@ export function validateVoucherSettings(
   )
     return fail();
   for (const p of v.passengers) {
+    if (
+      p.roomOrdinal !== undefined &&
+      (!Number.isInteger(p.roomOrdinal) ||
+        !v.rooms?.some((room) => room.ordinal === p.roomOrdinal))
+    )
+      return fail();
+    if (
+      p.services !== undefined &&
+      (!p.services ||
+        typeof p.services !== 'object' ||
+        [
+          'outboundFlight',
+          'returnFlight',
+          'outboundTransfer',
+          'returnTransfer',
+          'hotel',
+        ].some(
+          (key) =>
+            typeof p.services?.[key as keyof NonNullable<typeof p.services>] !==
+            'boolean',
+        ))
+    )
+      return fail();
     if (p.sex !== undefined && !['MALE', 'FEMALE', ''].includes(p.sex))
       return fail();
     if (
@@ -163,6 +255,12 @@ export function validateVoucherSettings(
           })),
         }
       : {}),
+    ...(v.hotelRoomPrices
+      ? { hotelRoomPrices: structuredClone(v.hotelRoomPrices) }
+      : {}),
+    ...(v.hotelTransferCounts
+      ? { hotelTransferCounts: { ...v.hotelTransferCounts } }
+      : {}),
     ...(v.hotelPurchasePrices !== undefined
       ? {
           hotelPurchasePrices: v.hotelPurchasePrices.map((p) => ({
@@ -171,8 +269,27 @@ export function validateVoucherSettings(
           })),
         }
       : {}),
+    ...(v.supplierFormPrices !== undefined
+      ? {
+          supplierFormPrices: Object.fromEntries(
+            Object.entries(v.supplierFormPrices).map(([key, price]) => [
+              key,
+              key === 'ratio'
+                ? { amount: price.amount }
+                : { amount: price.amount, currencyCode: price.currencyCode },
+            ]),
+          ),
+        }
+      : {}),
     ...(v.brokerId ? { brokerId: v.brokerId } : {}),
     ...(v.leaderId ? { leaderId: v.leaderId } : {}),
+    ...(v.transferBrokerId ? { transferBrokerId: v.transferBrokerId } : {}),
+    ...(v.transferBrokerName !== undefined
+      ? { transferBrokerName: v.transferBrokerName.trim() }
+      : {}),
+    ...(v.transferDetailsOverride !== undefined
+      ? { transferDetailsOverride: v.transferDetailsOverride }
+      : {}),
     text: {
       ...(Object.fromEntries(
         voucherTextKeys.map((k) => [k, v.text[k].trim()]),
@@ -191,6 +308,18 @@ export function validateVoucherSettings(
       id: p.id,
       selected: p.selected,
       roomType: p.roomType.trim(),
+      ...(p.roomOrdinal !== undefined ? { roomOrdinal: p.roomOrdinal } : {}),
+      ...(p.services !== undefined
+        ? {
+            services: {
+              outboundFlight: p.services.outboundFlight,
+              returnFlight: p.services.returnFlight,
+              outboundTransfer: p.services.outboundTransfer,
+              returnTransfer: p.services.returnTransfer,
+              hotel: p.services.hotel,
+            },
+          }
+        : {}),
       age: p.age,
       hotelChildAgeBand: p.hotelChildAgeBand ?? '',
       sex: p.sex ?? '',

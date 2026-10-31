@@ -8,6 +8,7 @@ import {
   NotFoundException,
   type OnModuleDestroy,
   type OnModuleInit,
+  HttpException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { AuthenticatedActor } from '@nora/contracts';
@@ -19,6 +20,16 @@ import { IntegrationRegistryService } from '../integration-registry.service';
 import { AmiClient, type AmiMessage } from './ami';
 import { issabelOptions, type IssabelOptions } from './config';
 import { normalizeIssabelEvent } from './events';
+import { nativeEventNames, normalizeNativeQueueEvent } from './native-events';
+import { outboundEventNames, normalizeNativeOutbound } from './native-outbound';
+import {
+  companyInboundEvents,
+  normalizeCompanyInbound,
+} from './company-inbound';
+import { AmiContinuity } from './continuity';
+import { queueWrapupPolicy } from './queue-snapshot';
+import { fallback } from './sticky-sales';
+import { StickyPreviewBudget } from './sticky-preview';
 
 @Injectable()
 export class IssabelService implements OnModuleInit, OnModuleDestroy {
@@ -34,6 +45,10 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
   private stopped = false;
   private state = 'DISABLED';
   private gap = false;
+  private continuity?: AmiContinuity;
+  private running?: Promise<void>;
+  private shutdownDeadline = Infinity;
+  private readonly stickyPreviewBudget = new StickyPreviewBudget();
   constructor(
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(ConfigService) private readonly config: ConfigService,
@@ -46,6 +61,49 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
     @Inject(IntegrationRegistryService)
     private readonly registry: IntegrationRegistryService,
   ) {}
+  /** Server-only dry decision; never connected to a controller or PBX dial action. */
+  async previewPreviousAgent(
+    actor: AuthenticatedActor,
+    queue: string,
+    phone: string,
+  ) {
+    const options = this.options;
+    if (!options) throw new ForbiddenException();
+    return this.stickyPreviewBudget.run(queue, async (signal) => {
+      // Reuse Integrations' branch/permission/connection checks before querying AMI.
+      await this.events.preferredAgent(
+        actor,
+        options.connectionId,
+        queue,
+        phone,
+        null,
+      );
+      if (signal.aborted) return fallback(queue, 'LOOKUP_TIMEOUT');
+      const wrapup = queueWrapupPolicy(
+        this.config.get<string>('ISSABEL_STICKY_QUEUE_WRAPUP_SECONDS_JSON'),
+        queue,
+      );
+      if (wrapup === null) return fallback(queue, 'QUEUE_POLICY_UNVERIFIED');
+      const client = this.client;
+      if (!client?.connected || this.stopped)
+        return fallback(queue, 'AVAILABILITY_UNKNOWN');
+      const snapshot = await client.queueSnapshot(queue, wrapup);
+      if (signal.aborted) return fallback(queue, 'LOOKUP_TIMEOUT');
+      if (client !== this.client || !client.connected)
+        return fallback(queue, 'AVAILABILITY_UNKNOWN');
+      const decision = await this.events.preferredAgent(
+        actor,
+        options.connectionId,
+        queue,
+        phone,
+        snapshot,
+      );
+      if (signal.aborted) return fallback(queue, 'LOOKUP_TIMEOUT');
+      if (this.stopped || client !== this.client || !client.connected)
+        return fallback(queue, 'AVAILABILITY_UNKNOWN');
+      return decision;
+    });
+  }
   onModuleInit() {
     try {
       this.options = issabelOptions(this.config);
@@ -55,17 +113,48 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
       return;
     }
     if (!this.options) return;
+    this.continuity = new AmiContinuity(this.db, this.options.connectionId);
     this.state = 'NOT_CONNECTED';
     this.timer = setInterval(() => {
-      void this.tick();
+      this.runTick();
     }, 2000);
     this.timer.unref();
-    void this.tick();
+    this.runTick();
   }
-  onModuleDestroy() {
+  private runTick() {
+    if (!this.busy && !this.stopped) this.running = this.tick();
+  }
+  async onModuleDestroy() {
     this.stopped = true;
+    this.shutdownDeadline = Date.now() + 30000;
     clearInterval(this.timer);
     this.client?.close();
+    await this.running;
+    // Frames received before shutdown are still committed through normal ingress.
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const drained = await Promise.race([
+      this.eventTail.then(() => true),
+      new Promise<boolean>((resolve) => {
+        timeout = setTimeout(() => resolve(false), 30000);
+      }),
+    ]);
+    clearTimeout(timeout);
+    if (!drained) {
+      this.gap = true;
+      await this.continuity?.gap('SHUTDOWN_TIMEOUT').catch(() => {
+        this.logger.warn('Issabel continuity audit unavailable.');
+      });
+    }
+    await this.continuity?.stop().catch(() => {
+      this.logger.warn('Issabel continuity audit unavailable.');
+    });
+    this.state = 'DISABLED';
+  }
+  private markGap(reason: 'DISCONNECTED' | 'BUFFER_LIMIT' | 'INGRESS_FAILED') {
+    this.gap = true;
+    void this.continuity?.gap(reason).catch(() => {
+      this.logger.warn('Issabel continuity audit unavailable.');
+    });
   }
   private async connection() {
     const options = this.options ?? issabelOptions(this.config);
@@ -90,14 +179,27 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
           select: { id: true, active: true, branchId: true },
         })
       : null;
+    const continuity = connection
+      ? await new AmiContinuity(this.db, connection.id).snapshot()
+      : null;
     return {
       provider: 'ISSABEL',
       state: connection ? this.state : 'NOT_CONFIGURED',
       connectionId: connection?.id ?? null,
       branchId: connection?.branchId ?? null,
-      eventCoverage: this.gap ? 'GAP' : 'LIVE_ONLY',
+      eventCoverage: !connection
+        ? 'NOT_CONFIGURED'
+        : this.gap || continuity?.reconciliationRequired
+          ? 'GAP'
+          : 'LIVE_ONLY',
+      continuity,
+      popupDeliveryEnabled: !!connection?.active && !options?.nativeCapture,
+      pendingFrames: connection ? this.queuedEvents : null,
       reconciliationSupported: false,
-      outboundAvailable: !!connection?.active && !!this.client?.connected,
+      outboundAvailable:
+        !!connection?.active &&
+        !!this.client?.connected &&
+        !options?.nativeCapture,
     };
   }
   async activate(
@@ -156,6 +258,10 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
       throw new ForbiddenException();
     const connection = await this.connection();
     const options = this.options ?? issabelOptions(this.config)!;
+    if (options.nativeCapture)
+      throw new ForbiddenException(
+        'Native capture does not allow outbound commands.',
+      );
     if (
       input.connectionId !== connection.id ||
       !actor.branchIds.includes(connection.branchId)
@@ -259,8 +365,45 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
     if (!row) throw new NotFoundException();
     return row;
   }
-  private async incoming(message: AmiMessage) {
+  private async incoming(message: AmiMessage, receivedAt = new Date()) {
     const connection = await this.connection();
+    if (this.options?.nativeCapture) {
+      const outbound = await normalizeNativeOutbound(
+        connection.id,
+        message,
+        this.options.companyCapture
+          ? this.options.companyExtensions
+          : this.options.outboundExtensions,
+        this.options.outboundPeers,
+        (id) => this.events.acceptedEvent(connection.id, id),
+        receivedAt,
+      );
+      if (outbound) {
+        await this.events.receive(outbound, 'ISSABEL');
+        return;
+      }
+      if (this.options.companyCapture) {
+        const inbound = await normalizeCompanyInbound(
+          connection.id,
+          message,
+          this.options.inboundPeers,
+          this.options.companyExtensions,
+          (id) => this.events.acceptedEvent(connection.id, id),
+          receivedAt,
+        );
+        if (inbound) await this.events.receive(inbound, 'ISSABEL');
+        return;
+      }
+      const event = await normalizeNativeQueueEvent(
+        connection.id,
+        message,
+        this.options.inboundQueues,
+        (id) => this.events.acceptedEvent(connection.id, id),
+        receivedAt,
+      );
+      if (event) await this.events.receive(event, 'ISSABEL');
+      return;
+    }
     const actionId = message.actionid;
     if (
       message.event === 'OriginateResponse' &&
@@ -393,35 +536,71 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
       });
     }
   }
+  private async receiveWithRetry(message: AmiMessage, receivedAt: Date) {
+    for (let attempt = 0; ; attempt++) {
+      if (Date.now() >= this.shutdownDeadline)
+        throw Error('ISSABEL_DRAIN_EXPIRED');
+      try {
+        await this.incoming(message, receivedAt);
+        return;
+      } catch (error) {
+        const permanent =
+          (error instanceof Error &&
+            error.message === 'NATIVE_TIMESTAMP_INVALID') ||
+          (error instanceof HttpException &&
+            error.getStatus() < 500 &&
+            error.getStatus() !== 429);
+        if (permanent || attempt >= 5) throw error;
+        await new Promise((resolve) =>
+          setTimeout(
+            resolve,
+            Math.min(10000, 500 * 2 ** attempt) +
+              Math.floor(Math.random() * 250),
+          ),
+        );
+      }
+    }
+  }
   private async tick() {
     if (this.busy || this.stopped || !this.options) return;
     this.busy = true;
     try {
       await this.connection();
+      await this.continuity?.start();
+      if (this.stopped) return;
       if (!this.client?.connected) {
         if (Date.now() < this.nextConnect) return;
         const client = new AmiClient();
         this.client = client;
         client.on('disconnected', () => {
           this.state = 'NOT_CONNECTED';
-          this.gap = true;
+          if (!this.stopped) this.markGap('DISCONNECTED');
         });
         client.on('event', (message: AmiMessage) => {
+          if (this.stopped) return;
           if (
-            message.event !== 'UserEvent' &&
-            message.event !== 'OriginateResponse'
+            this.options?.nativeCapture
+              ? !nativeEventNames.has(message.event ?? '') &&
+                !outboundEventNames.has(message.event ?? '') &&
+                !(
+                  this.options.companyCapture &&
+                  companyInboundEvents.has(message.event ?? '')
+                )
+              : message.event !== 'UserEvent' &&
+                message.event !== 'OriginateResponse'
           )
             return;
+          const receivedAt = new Date();
           if (++this.queuedEvents > 500) {
             this.queuedEvents--;
-            this.gap = true;
+            this.markGap('BUFFER_LIMIT');
             client.close();
             return;
           }
           this.eventTail = this.eventTail
-            .then(() => this.incoming(message))
+            .then(() => this.receiveWithRetry(message, receivedAt))
             .catch(() => {
-              this.gap = true;
+              this.markGap('INGRESS_FAILED');
               this.logger.warn(
                 'Issabel event rejected or could not be persisted.',
               );
@@ -432,6 +611,11 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
         });
         try {
           await client.connect(this.options);
+          if (this.stopped) {
+            client.close();
+            return;
+          }
+          await this.continuity?.connected();
         } catch {
           client.close();
           throw Error('ISSABEL_UNAVAILABLE');
@@ -440,7 +624,7 @@ export class IssabelService implements OnModuleInit, OnModuleDestroy {
         this.state = 'CONNECTED';
       }
       await this.client.ping();
-      await this.dispatch();
+      if (!this.options.nativeCapture) await this.dispatch();
     } catch {
       this.client?.close();
       this.state = 'NOT_CONNECTED';

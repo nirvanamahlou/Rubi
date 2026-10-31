@@ -22,6 +22,12 @@ export class TelephonyActionDto extends TelephonyLeaseDto {
   @IsOptional() @IsString() @MaxLength(200) subject?: string;
   @IsOptional() @IsString() @MaxLength(100) name?: string;
   @IsOptional() @IsString() @MaxLength(2000) note?: string;
+  @IsOptional() @IsString() @Length(1, 100) source?: string;
+  @IsOptional() @IsString() @Length(1, 200) operator?: string;
+  @IsOptional()
+  @IsIn(['ANSWERED', 'NO_ANSWER', 'BUSY', 'FAILED'])
+  outcome?: string;
+  @IsOptional() @IsUUID('4') ticketId?: string;
   @IsOptional() @IsUUID() targetUserId?: string;
 }
 export class TelephonySyntheticDto {

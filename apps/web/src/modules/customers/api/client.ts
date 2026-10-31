@@ -88,10 +88,11 @@ async function request<T>(
   path: string,
   init?: RequestInit,
   retriedAfterRefresh = false,
+  scope = 'customers',
 ): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new CustomersApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await localizedFetch(`${baseUrl}/customers${path}`, {
+  const response = await localizedFetch(`${baseUrl}/${scope}${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,
@@ -106,7 +107,7 @@ async function request<T>(
     !retriedAfterRefresh &&
     (await refreshAuthenticatedSession(baseUrl))
   )
-    return request<T>(path, init, true);
+    return request<T>(path, init, true, scope);
   if (!response.ok) {
     const envelope = (await response.json().catch(() => null)) as {
       code?: string;
@@ -233,4 +234,70 @@ export const customersApi = {
       mergeResult: { status: string } | null;
     }>(`/duplicate-candidates/${encodeURIComponent(id)}/review`, body(input));
   },
+};
+
+/** Bounded Customer producer consumed by the new-contract workflow. */
+export const salesPeopleApi = {
+  list: (query: CustomerListQuery) =>
+    request<CustomerListResponse>(
+      `?${serializeCustomerListQuery(query)}`,
+      undefined,
+      false,
+      'sales/people',
+    ),
+  detail: (id: string, reason?: string) =>
+    request<{ data: CustomerDetail }>(
+      `/${encodeURIComponent(id)}`,
+      reason ? { headers: { 'x-sensitive-read-reason': reason } } : undefined,
+      false,
+      'sales/people',
+    ),
+  registrationLookup: (input: CustomerRegistrationLookupRequest) =>
+    request<{ data: CustomerDetail | null }>(
+      '/registration-lookup',
+      body(input),
+      false,
+      'sales/people',
+    ),
+  create: async (input: CustomerMutationRequest, registrationKey?: string) => {
+    const save = () =>
+      request<{ data: CustomerDetail }>(
+        '',
+        {
+          ...body(input),
+          ...(registrationKey
+            ? { headers: { 'x-registration-key': registrationKey } }
+            : {}),
+        },
+        false,
+        'sales/people',
+      );
+    try {
+      return await save();
+    } catch (error) {
+      // Only receipt-backed creates can be replayed after an uncertain response.
+      if (
+        !registrationKey ||
+        (error instanceof CustomersApiError &&
+          error.status > 0 &&
+          error.status < 500)
+      )
+        throw error;
+      return save();
+    }
+  },
+  update: (id: string, input: CustomerMutationRequest) =>
+    request<{ data: CustomerDetail }>(
+      `/${encodeURIComponent(id)}`,
+      { method: 'PATCH', body: JSON.stringify(input) },
+      false,
+      'sales/people',
+    ),
+  addContact: (id: string, input: CustomerContactRequest) =>
+    request<{ data: CustomerDetail }>(
+      `/${encodeURIComponent(id)}/contacts`,
+      body(input),
+      false,
+      'sales/people',
+    ),
 };

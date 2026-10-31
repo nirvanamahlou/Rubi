@@ -22,7 +22,15 @@ import {
 } from '../model/published-catalog';
 import { TicketDatePicker } from './ticket-date-picker';
 import { ManifestTemplatePicker } from './manifest-template-picker';
+import {
+  loadWeekdayRevisions,
+  loadWeekdayMoveRevisions,
+  offerWeekday,
+  weekdayMoveDays,
+} from '../model/load-weekday-edit';
+import { scheduleWeekdays } from '../model/weekday-schedule';
 import { TicketBaggageFields } from './ticket-baggage-fields';
+import { ReferencePicker } from './reference-picker';
 export function tehranWallTime(instant: string) {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Tehran',
@@ -50,10 +58,12 @@ export function PublishedOfferForm({
   offer,
   readOnly,
   onSaved,
+  weekdayOffers,
 }: {
   offer: TicketOfferV1;
   readOnly: boolean;
   onSaved: () => Promise<void>;
+  weekdayOffers?: readonly TicketOfferV1[] | undefined;
 }) {
   const initialDeparture = tehranWallTime(offer.departureAt);
   const initialArrival = arrivalWallTimeAfterMidnight(
@@ -61,12 +71,42 @@ export function PublishedOfferForm({
     tehranWallTime(offer.arrivalAt),
   );
   const [draft, setDraft] = useState(publishedOfferInput(offer));
+  const [airline, setAirline] = useState<Reference | undefined>({
+    id: `registered-carrier:${offer.id}`,
+    kind: 'airline',
+    name: offer.carrierName,
+    active: true,
+  });
   const [departure, setDeparture] = useState(initialDeparture);
   const [arrival, setArrival] = useState(initialArrival);
   const [cities, setCities] = useState<Reference[]>([]);
   const [problem, setProblem] = useState('');
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
+  const [targetWeekday, setTargetWeekday] = useState(
+    offerWeekday(offer.departureAt),
+  );
+  const shiftDays = weekdayMoveDays(offer.departureAt, targetWeekday);
+
+  async function moveWeekday() {
+    if (readOnly || savingRef.current || !weekdayOffers || !shiftDays) return;
+    savingRef.current = true;
+    setSaving(true);
+    setProblem('');
+    try {
+      await toursApi.reviseOfferBatch(
+        loadWeekdayMoveRevisions(offer, weekdayOffers, targetWeekday),
+      );
+      await onSaved();
+    } catch (error) {
+      setProblem(
+        error instanceof Error ? error.message : 'ویرایش بلیط ناموفق بود.',
+      );
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  }
 
   function changeDeparture(value: string) {
     setDeparture(value);
@@ -108,7 +148,7 @@ export function PublishedOfferForm({
   }, []);
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (readOnly || savingRef.current) return;
+    if (readOnly || savingRef.current || !draft.carrierName.trim()) return;
     savingRef.current = true;
     setSaving(true);
     setProblem('');
@@ -123,11 +163,16 @@ export function PublishedOfferForm({
         adjustedArrival === tehranWallTime(offer.arrivalAt)
           ? offer.arrivalAt
           : wallTimeToUtc(adjustedArrival, 'Asia/Tehran', '+03:30');
-      await toursApi.reviseOffer(offer.id, offer.version, {
+      const next = {
         ...draft,
         departureAt,
         arrivalAt,
-      });
+      };
+      if (weekdayOffers)
+        await toursApi.reviseOfferBatch(
+          loadWeekdayRevisions(offer, weekdayOffers, next),
+        );
+      else await toursApi.reviseOffer(offer.id, offer.version, next);
       await onSaved();
     } catch (error) {
       setProblem(
@@ -141,6 +186,9 @@ export function PublishedOfferForm({
   return (
     <form onSubmit={(event) => void submit(event)} className="space-y-4">
       {problem ? <Alert tone="error" title={problem} /> : null}
+      {weekdayOffers ? (
+        <p>تعداد پروازهای همین روز هفته در این لود: {weekdayOffers.length}</p>
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
         <FormField label="نوع تأمین">
           <select
@@ -227,21 +275,20 @@ export function PublishedOfferForm({
             </Select>
           </FormField>
         ))}
-        <FormField label="ایرلاین">
-          <Input
-            required
-            maxLength={160}
-            value={draft.carrierName}
-            readOnly={readOnly}
-            disabled={saving}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                carrierName: event.target.value,
-              }))
-            }
-          />
-        </FormField>
+        <ReferencePicker
+          id={`published-airline-${offer.id}`}
+          label="ایرلاین"
+          resource="airlines"
+          value={airline}
+          readOnly={readOnly || saving}
+          onSelect={(reference) => {
+            setAirline(reference);
+            setDraft((current) => ({
+              ...current,
+              carrierName: reference?.name ?? '',
+            }));
+          }}
+        />
         <FormField label="شماره پرواز">
           <Input
             required
@@ -258,24 +305,77 @@ export function PublishedOfferForm({
           />
         </FormField>
         <FormField label="حرکت — ساعت تهران">
-          <TicketDatePicker
-            includeTime
-            value={departure}
-            readOnly={readOnly}
-            disabled={saving}
-            required
-            onChange={changeDeparture}
-          />
+          {weekdayOffers ? (
+            <Input
+              type="time"
+              required
+              value={departure.slice(11, 16)}
+              disabled={saving}
+              onChange={(event) =>
+                changeDeparture(
+                  initialDeparture.slice(0, 10) + 'T' + event.target.value,
+                )
+              }
+            />
+          ) : (
+            <TicketDatePicker
+              includeTime
+              value={departure}
+              readOnly={readOnly}
+              disabled={saving}
+              required
+              onChange={changeDeparture}
+            />
+          )}
         </FormField>
         <FormField label="رسیدن — ساعت تهران">
-          <TicketDatePicker
-            includeTime
-            value={arrival}
-            readOnly={readOnly}
-            disabled={saving}
-            required
-            onChange={changeArrival}
-          />
+          {weekdayOffers ? (
+            <div className="flex gap-2">
+              <Input
+                type="time"
+                required
+                value={arrival.slice(11, 16)}
+                disabled={saving}
+                onChange={(event) =>
+                  changeArrival(arrival.slice(0, 10) + 'T' + event.target.value)
+                }
+              />
+              <select
+                aria-label="روز رسیدن"
+                disabled={saving}
+                value={Math.round(
+                  (Date.parse(arrival.slice(0, 10)) -
+                    Date.parse(departure.slice(0, 10))) /
+                    86400000,
+                )}
+                onChange={(event) =>
+                  setArrival(
+                    new Date(
+                      Date.parse(departure.slice(0, 10)) +
+                        Number(event.target.value) * 86400000,
+                    )
+                      .toISOString()
+                      .slice(0, 10) +
+                      'T' +
+                      arrival.slice(11, 16),
+                  )
+                }
+              >
+                <option value="0">همان روز</option>
+                <option value="1">روز بعد</option>
+                <option value="2">دو روز بعد</option>
+              </select>
+            </div>
+          ) : (
+            <TicketDatePicker
+              includeTime
+              value={arrival}
+              readOnly={readOnly}
+              disabled={saving}
+              required
+              onChange={changeArrival}
+            />
+          )}
         </FormField>
         <FormField label="ظرفیت کل">
           <Input
@@ -324,10 +424,61 @@ export function PublishedOfferForm({
         }
       />
       {readOnly ? null : (
-        <Button type="submit" loading={saving} disabled={saving}>
+        <Button
+          type="submit"
+          loading={saving}
+          disabled={saving || !draft.carrierName.trim()}
+        >
           ذخیره تغییرات
         </Button>
       )}
+      {weekdayOffers && !readOnly ? (
+        <fieldset className="space-y-3 rounded-lg border p-3" disabled={saving}>
+          <legend className="px-1 font-semibold">تغییر روز</legend>
+          <p className="text-sm text-muted-foreground">
+            پروازهای همین روز و مسیر، با اطلاعات ثبت‌شده در همان هفته جابه‌جا
+            می‌شوند؛ ساعت‌ها و سایر اطلاعات حفظ می‌شوند.
+          </p>
+          <FormField label="روز جدید">
+            <select
+              aria-label="روز جدید"
+              className="h-10 w-full rounded-md border bg-background px-3"
+              value={targetWeekday}
+              onChange={(event) => {
+                setTargetWeekday(Number(event.target.value));
+                setProblem('');
+              }}
+            >
+              {scheduleWeekdays.map((day) => (
+                <option key={day.day} value={day.day}>
+                  {day.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
+          {shiftDays !== 0 ? (
+            <p dir="ltr" className="text-center text-sm">
+              <time>{initialDeparture.slice(0, 10)}</time>
+              {' → '}
+              <time>
+                {tehranWallTime(
+                  new Date(
+                    Date.parse(offer.departureAt) + shiftDays * 86400000,
+                  ).toISOString(),
+                ).slice(0, 10)}
+              </time>
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            loading={saving}
+            disabled={saving || !shiftDays}
+            onClick={() => void moveWeekday()}
+          >
+            تغییر روز
+          </Button>
+        </fieldset>
+      ) : null}
     </form>
   );
 }

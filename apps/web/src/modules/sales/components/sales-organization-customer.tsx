@@ -4,60 +4,35 @@ import { useEffect, useRef, useState } from 'react';
 import type { CustomerSummary, MasterDataRecord } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/surfaces';
-import { customersApi } from '@/modules/customers/api/client';
 import { salesApi } from '../api/client';
 import { SearchableReference } from './searchable-reference';
 
-export async function loadOrganizationCustomers(
-  api: Pick<typeof customersApi, 'list'> = customersApi,
+export async function loadSalesOrganizations(
+  api: Pick<typeof salesApi, 'listReferences'> = salesApi,
 ) {
-  const data: CustomerSummary[] = [];
+  const records: MasterDataRecord[] = [];
   for (let page = 1; ; page++) {
-    const response = await api.list({
+    const response = await api.listReferences('organizations', {
       search: '',
-      kind: 'organization',
-      status: 'all',
-      role: 'all',
-      branchId: 'all',
-      createdFrom: null,
-      createdTo: null,
-      updatedFrom: null,
-      updatedTo: null,
-      sortBy: 'displayName',
+      status: 'active',
+      sortBy: 'name',
       sortDirection: 'asc',
       page,
       pageSize: 100,
     });
-    data.push(...response.data);
-    if (!response.data.length || data.length >= response.meta.total)
-      return data;
+    records.push(...response.data);
+    if (!response.data.length || records.length >= response.meta.total)
+      return records;
   }
 }
 
 export async function resolveOrganizationCustomer(
   organization: MasterDataRecord,
-  api: Pick<typeof customersApi, 'list' | 'create'> = customersApi,
+  api: Pick<typeof salesApi, 'resolveAgencyCustomer'> = salesApi,
 ) {
   if (!organization.id || organization.status !== 'active')
     throw new Error('سازمان فعال را انتخاب کنید.');
-  const matches = (await loadOrganizationCustomers(api)).filter(
-    (person) => person.organizationId === organization.id,
-  );
-  const existing = matches.find(
-    (person) => person.status === 'active' && person.roles.includes('customer'),
-  );
-  if (existing) return existing;
-  if (matches.length)
-    throw new Error(
-      'پرونده این سازمان موجود است؛ فعال‌سازی یا نقش مشتری را در بخش مشتریان اصلاح کنید.',
-    );
-  const response = await api.create({
-    kind: 'organization',
-    organizationId: organization.id,
-    displayName: organization.name,
-    roles: ['customer'],
-  });
-  return response.data;
+  return (await api.resolveAgencyCustomer(organization.id)).data;
 }
 
 export function SalesOrganizationCustomer({
@@ -89,24 +64,9 @@ export function SalesOrganizationCustomer({
       setLoading(true);
       setError('');
       void (async () => {
-        const records: MasterDataRecord[] = [];
-        for (let page = 1; ; page++) {
-          const response = await salesApi.listReferences('organizations', {
-            search: '',
-            status: 'active',
-            sortBy: 'name',
-            sortDirection: 'asc',
-            page,
-            pageSize: 100,
-          });
-          records.push(...response.data);
-          if (!response.data.length || records.length >= response.meta.total)
-            break;
-        }
-        const people = await loadOrganizationCustomers();
+        const records = await loadSalesOrganizations();
         if (active) {
           setOrganizations(records);
-          setCustomers(people);
         }
       })()
         .catch((reason: unknown) => {
@@ -182,6 +142,7 @@ export function SalesOrganizationCustomer({
           label="سازمان / آژانس"
           value={organizationId}
           options={organizations}
+          showAllOptionsOnOpen
           disabled={busy || disabled}
           onChange={(id) => {
             setOrganizationId(id);

@@ -53,6 +53,8 @@ describe('Sales Finance inbox projection', () => {
           method: 'BANK_TRANSFER',
           description: 'تسویه قرارداد',
           paymentReference: 'TRACK-1',
+          destinationAccountId: 'declared',
+          destinationAccountTitle: 'Saved title',
           dueAt: new Date('2026-09-13T08:00:00.000Z'),
           createdAt: new Date('2026-09-12T08:00:00.000Z'),
           createdByUserId: 'sales-user',
@@ -88,6 +90,8 @@ describe('Sales Finance inbox projection', () => {
         paymentId: 'payment-1',
         contractNumber: 'CNT-100',
         amount: '4200.50',
+        destinationAccountId: 'declared',
+        destinationAccountTitle: 'Saved title',
         createdByName: 'کارشناس فروش',
       },
     ]);
@@ -109,4 +113,29 @@ describe('Sales Finance inbox projection', () => {
     ).rejects.toThrow('مجوز مشاهده کارتابل مالی');
     expect(repository.pendingFinancePayments).not.toHaveBeenCalled();
   });
+});
+
+it('rejects a changed destination inside the locked Sales confirmation transaction', async () => {
+  const update = vi.fn();
+  const tx = {
+    $queryRaw: vi.fn(),
+    salesContractPaymentEntry: {
+      findFirst: vi
+        .fn()
+        .mockResolvedValue({ id: 'payment', destinationAccountId: 'declared' }),
+      update,
+    },
+  };
+  const repository = new SalesRepository({
+    client: { $transaction: (work: (tx: unknown) => unknown) => work(tx) },
+  } as never);
+  await expect(
+    repository.applyFinanceConfirmation({
+      contractId: 'contract',
+      paymentId: 'payment',
+      receiptAccountId: 'changed',
+    } as never),
+  ).rejects.toThrow('حساب مقصد ثبت‌شده در پرداخت قابل تغییر نیست.');
+  expect(tx.$queryRaw).toHaveBeenCalled();
+  expect(update).not.toHaveBeenCalled();
 });

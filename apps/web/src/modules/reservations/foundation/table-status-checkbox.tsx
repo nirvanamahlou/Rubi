@@ -6,14 +6,7 @@ import type {
 } from '@nora/contracts';
 import { travelRequest } from '../components/travel-workflow-form';
 import type { RequestView } from './model';
-export const tableFlagColumns: Partial<
-  Record<number, ReservationTableFlagKey>
-> = {
-  28: 'visaRequested',
-  29: 'visaConfirmed',
-  30: 'flightRequested',
-  31: 'flightConfirmed',
-};
+export { tableFlagColumns } from './reservation-table';
 export function TableStatusCheckbox({
   row,
   flag,

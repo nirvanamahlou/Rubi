@@ -177,15 +177,24 @@ export class ProcurementPublicService {
     return this.toTicketPurchase(row);
   }
 
-  async forFinance(requestId: string, branchIds: readonly string[]) {
-    const row =
-      await this.database.client.procurementTicketPurchaseRequest.findFirst({
-        where: {
-          id: requestId,
-          branchId: { in: [...branchIds] },
-          status: 'PENDING',
-        },
-      });
+  async forFinance(
+    requestId: string,
+    branchIds: readonly string[],
+    transaction?: Prisma.TransactionClient,
+  ) {
+    if (transaction)
+      await transaction.$queryRaw(
+        Prisma.sql`SELECT id FROM "ProcurementTicketPurchaseRequest" WHERE id = ${requestId}::uuid FOR SHARE`,
+      );
+    const row = await (
+      transaction ?? this.database.client
+    ).procurementTicketPurchaseRequest.findFirst({
+      where: {
+        id: requestId,
+        branchId: { in: [...branchIds] },
+        status: 'PENDING',
+      },
+    });
     if (!row)
       throw new NotFoundException('درخواست خرید بلیت در شعب مجاز یافت نشد.');
     return this.toTicketPurchase(row);

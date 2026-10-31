@@ -506,6 +506,23 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         tabId,
         subject: 'Completed offered call',
       });
+      const partial = await db.callCenterTelephonySession.findUniqueOrThrow({
+        where: { id },
+      });
+      expect(partial.completed).toBe(false);
+      await expect(
+        access.contact(expert, branchId, contactIds[1]!),
+      ).rejects.toThrow();
+      await telephony.action(expert, id, {
+        action: 'SAVE',
+        version: partial.version,
+        tabId,
+        name: 'Synthetic offered caller',
+        subject: 'Completed offered call',
+        source: 'Synthetic source',
+        operator: 'Synthetic unit',
+        outcome: 'ANSWERED',
+      });
       expect(
         (
           await db.callCenterTelephonySession.findUniqueOrThrow({
@@ -550,7 +567,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         title: 'Synthetic own request',
         status: 'NEW',
         priority: 'NORMAL',
-        reason: '',
+        reason: 'Synthetic request reason',
         ownerId: expertId,
       };
       const first = await workflow.saveRequest(
@@ -601,9 +618,18 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         status: 'COMPLETED',
         result: 'Synthetic complete',
       });
+      await expect(
+        workflow.saveRequest(expert, branchId, contactIds[0]!, {
+          ...input,
+          commandId: randomUUID(),
+          expectedVersion: 1,
+          status: 'CLOSED',
+          reason: 'Completed',
+        }),
+      ).rejects.toThrow('فقط برای مدیر واحد');
       expect(
         (
-          await workflow.saveRequest(expert, branchId, contactIds[0]!, {
+          await workflow.saveRequest(manager, branchId, contactIds[0]!, {
             ...input,
             commandId: randomUUID(),
             expectedVersion: 1,

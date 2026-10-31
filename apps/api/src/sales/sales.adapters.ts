@@ -18,6 +18,10 @@ export const SALES_TICKET_AVAILABILITY_PORT = Symbol(
 );
 
 export interface SalesTicketAvailabilityPort {
+  currentSelections?(
+    selections: readonly SalesTicketSelectionInput[],
+    branchId: string,
+  ): Promise<SalesTicketSelectionInput[]>;
   amend?(
     tx: Prisma.TransactionClient,
     selections: readonly SalesTicketSelectionInput[],
@@ -54,6 +58,12 @@ export class SalesTicketsPublicAdapter implements SalesTicketAvailabilityPort {
   constructor(
     @Inject(TicketPublicService) private readonly catalog: TicketPublicService,
   ) {}
+  currentSelections(
+    selections: readonly SalesTicketSelectionInput[],
+    branchId: string,
+  ) {
+    return this.catalog.currentSelections(selections, branchId);
+  }
   amend(
     tx: Prisma.TransactionClient,
     selections: readonly SalesTicketSelectionInput[],

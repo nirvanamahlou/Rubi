@@ -18,11 +18,17 @@ import { NiyayeshService } from './niyayesh.service';
 import { NiyayeshSsoService } from './niyayesh-sso.service';
 import { NiyayeshSsoController } from './niyayesh-sso.controller';
 import { IssabelService } from './issabel/issabel.service';
+import { IssabelRecoveryService } from './issabel/recovery.service';
 import { IssabelRecordingsService } from './issabel/recordings.service';
+import {
+  TelephonyRelayController,
+  TelephonyRelayGuard,
+} from './telephony-relay.controller';
 import {
   IssabelController,
   IssabelRecordingController,
   IssabelRecordingGuard,
+  TelephonyRecordingReadController,
 } from './issabel/issabel.controller';
 
 @Module({
@@ -33,6 +39,8 @@ import {
     SystemManagementModule,
   ],
   controllers: [
+    TelephonyRelayController,
+    TelephonyRecordingReadController,
     IssabelController,
     IssabelRecordingController,
     TelephonyIntegrationController,
@@ -43,7 +51,9 @@ import {
     NiyayeshSsoController,
   ],
   providers: [
+    TelephonyRelayGuard,
     IssabelService,
+    IssabelRecoveryService,
     IssabelRecordingsService,
     IssabelRecordingGuard,
     TelephonyIntegrationService,

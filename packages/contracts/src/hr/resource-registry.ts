@@ -27,6 +27,10 @@ export interface HrResourceDefinition {
 
 const parentResources: Record<string, string[]> = {
   'organization.units': ['organization.units'],
+  'organization.chartEmployees': [
+    'organization.units',
+    'organization.chartEmployees',
+  ],
   'organization.groupMembers': ['organization.groups'],
   'time.shift': ['time.workingHours', 'time.shiftTemplates'],
   'time.templateDays': ['time.shiftTemplates'],
@@ -56,6 +60,7 @@ const parentResources: Record<string, string[]> = {
   'fleet.logs': ['fleet.vehicles', 'assets.vehicles'],
 };
 const readOnly = new Set([
+  'employee.internalContact',
   'requests.approvalAssignments',
   'time.minuteLedger',
   'payroll.importedPayslips',
@@ -144,10 +149,10 @@ export function getHrResource(
                 ? 'decimal'
                 : 'text',
     required:
-      index === 0 ||
+      (index === 0 && key !== 'organization.positions') ||
+      (key === 'organization.positions' && label === 'عنوان شغلی') ||
       label === 'کارمند' ||
-      (key === 'employee.identity' &&
-        ['نام خانوادگی', 'کد ملی'].includes(label)) ||
+      (key === 'employee.identity' && label === 'نام خانوادگی') ||
       (key === 'employee.phones' && label === 'شماره تماس') ||
       (key === 'requests.approvalStages' && label === 'اولویت') ||
       (key === 'requests.procedures' && label === 'درخواست‌ها') ||
@@ -173,11 +178,14 @@ export function getHrResource(
         ['از تاریخ', 'تا تاریخ', 'نوع دورکاری'].includes(label)) ||
       (key === 'time.biometric' &&
         ['آدرس دستگاه', 'نوع دستگاه'].includes(label)),
-    maxLength: ['اجزای کارکرد', 'درخواست‌ها'].includes(label)
-      ? 8000
-      : /شرح|تعهدات|بازخورد|توضیح/.test(label)
-        ? 4000
-        : 500,
+    maxLength:
+      key === 'organization.positions' && label === 'عنوان شغلی'
+        ? 160
+        : ['اجزای کارکرد', 'درخواست‌ها'].includes(label)
+          ? 8000
+          : /شرح|تعهدات|بازخورد|توضیح/.test(label)
+            ? 4000
+            : 500,
   }));
   return {
     key,
@@ -209,6 +217,7 @@ export function getHrResource(
     selfService: selfService.has(key),
     parentResources: parentResources[key] ?? [],
     parentOptional: [
+      'organization.chartEmployees',
       'organization.units',
       'time.shift',
       'expenses.travel',

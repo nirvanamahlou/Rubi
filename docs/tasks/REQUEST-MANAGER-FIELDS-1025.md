@@ -1,0 +1,11 @@
+# REQUEST-MANAGER-FIELDS-1025
+
+PC-C. User requests existing request title, assignee, status and priority editable only by the responsible unit manager. Existing configured global accounts retain their previously authorized cross-unit management. Relevant unit follows current assignee, falling back to creator for unassigned requests. Existing creation rules and reason/result edits are preserved.
+
+IAM exposes a public branch/account/unit authorization check using the current active account, workflow team permission and HR unit validity; other module tables are not accessed by customer-affairs. The workflow service compares persisted protected fields inside its locked/versioned transaction and rejects unauthorized changes before mutation. Reads return an optional canEditManagement capability; old/missing capability fails closed in Web. Read-only title and assignee and disabled status/priority controls retain saved values in submissions. Reason/result remain editable under existing workflow permissions. Required reason star shares the title span.
+
+No schema/dependency/migration change. Tests cover ordinary agents, same/other-unit managers, global configuration, forged protected-field changes and agent progress-only updates. Existing generated next-env.d.ts remains excluded. Verification/runtime results below on completion.
+
+Validation: 59 isolated PostgreSQL workflow/read/access tests, 12 IAM authorization tests and 5 Web workflow tests passed. Scoped API/Web lint and affected API source/test typecheck/build passed. Existing access regression now proves agent closure rejection and real same-unit manager closure. Production customer records were not modified. API runtime24108 uses tmp/request-manager-fields-1025/api-runtime, preserving prior env and rollout policy. Web build/browser acceptance pending below.
+
+Final acceptance: full Web TypeScript and production build (65 pages) passed. Local Web PID9500 serves tmp/request-manager-fields-1025/apps/web with .next-request-reason-1025; API PID24108 above. Browser verified existing current-user request title/owner readOnly=true, status/priority disabled, reason editable. Required-star and title text both top271px (same line). No form submitted. Proof is ignored tmp/request-manager-fields-1025/verified.png. All76 targeted tests pass; no migration. Source reservations released on push.

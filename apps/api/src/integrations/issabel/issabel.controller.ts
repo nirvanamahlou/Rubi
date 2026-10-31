@@ -11,6 +11,7 @@ import {
   ParseUUIDPipe,
   Post,
   Req,
+  Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
@@ -27,7 +28,7 @@ import {
   Min,
 } from 'class-validator';
 import { timingSafeEqual } from 'node:crypto';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { AuthGuard } from '../../iam/auth.guard';
 import { PermissionGuard } from '../../iam/permission.guard';
 import { RequirePermissions } from '../../iam/iam.decorators';
@@ -112,7 +113,11 @@ export class IssabelRecordingGuard implements CanActivate {
     if (
       this.config.get<string>('ISSABEL_ENABLED') !== 'true' ||
       secret.length < 32 ||
-      secret === this.config.get<string>('TELEPHONY_WORKER_SECRET') ||
+      [
+        'TELEPHONY_WORKER_SECRET',
+        'TELEPHONY_RELAY_SECRET',
+        'ISSABEL_AMI_SECRET',
+      ].some((key) => secret === this.config.get<string>(key)) ||
       Buffer.byteLength(secret) !== Buffer.byteLength(supplied) ||
       !timingSafeEqual(Buffer.from(secret), Buffer.from(supplied))
     )
@@ -139,5 +144,65 @@ export class IssabelRecordingController {
   }
   @Post(':id/complete') finish(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.finish(id);
+  }
+}
+
+@Controller('integrations/telephony/recordings')
+@UseGuards(AuthGuard, PermissionGuard)
+@RequirePermissions(
+  'customer_affairs.call_center.read',
+  'customer_affairs.call_center.recordings.read',
+)
+export class TelephonyRecordingReadController {
+  constructor(
+    @Inject(IssabelRecordingsService)
+    private readonly service: IssabelRecordingsService,
+  ) {}
+  @Get('calls/:callId')
+  @Header('Cache-Control', 'private, no-store')
+  forCall(
+    @Req() req: AuthenticatedRequest,
+    @Param('callId', ParseUUIDPipe) callId: string,
+  ) {
+    return this.service.forCall(req.actor, callId);
+  }
+  @Get('calls/:callId/:id/audio')
+  async download(
+    @Req() req: AuthenticatedRequest,
+    @Param('callId', ParseUUIDPipe) callId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() response: Response,
+  ) {
+    const result = await this.service.read(req.actor, id, undefined, callId);
+    response.set({
+      'Cache-Control': 'private, no-store',
+      'Content-Type': 'audio/wav',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Disposition': `attachment; filename="recording-${id}.wav"`,
+      'Content-Length': String(result.audio.length),
+    });
+    response.status(200).send(result.audio);
+  }
+  @Get(':id/audio')
+  async audio(
+    @Req() req: AuthenticatedRequest & Request,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() response: Response,
+  ) {
+    const result = await this.service.read(req.actor, id, req.headers.range);
+    response.set({
+      'Cache-Control': 'private, no-store',
+      'Content-Type': 'audio/wav',
+      'X-Content-Type-Options': 'nosniff',
+      'Accept-Ranges': 'bytes',
+      'Content-Disposition': `inline; filename="recording-${id}.wav"`,
+      'Content-Length': String(result.audio.length),
+      ...(result.partial
+        ? {
+            'Content-Range': `bytes ${result.start}-${result.end}/${result.size}`,
+          }
+        : {}),
+    });
+    response.status(result.partial ? 206 : 200).send(result.audio);
   }
 }

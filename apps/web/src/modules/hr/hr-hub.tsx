@@ -45,10 +45,10 @@ const toneClasses: Record<Tone, { icon: string; glow: string }> = {
 const sectionLabels: Partial<Record<HrSectionId, readonly string[]>> = {
   dashboard: ['شاخص‌های کارکنان', 'حضور و مرخصی', 'هشدار قراردادها'],
   employees: employeeGroups.map((group) => group.label),
-  organization: ['چارت سازمانی', 'شعبه‌ها', 'واحدها', 'شغل و سمت'],
+  organization: ['چارت سازمانی', 'شعبه‌ها', 'واحدها', 'عنوان شغلی'],
   requests: ['کارتابل', 'درخواست‌ها', 'تأییدها'],
   surveys: ['نظرسنجی‌های میزکار', 'پیشنهادها'],
-  reports: ['گزارش کارکنان', 'گزارش بخش‌ها', 'تاریخچه تغییرات'],
+  reports: ['گزارش‌های حضور و غیاب', 'گزارش کارکنان', 'Audit اختصاصی'],
 };
 
 export function HrHub({ data }: { data: HrBootstrapDto }) {

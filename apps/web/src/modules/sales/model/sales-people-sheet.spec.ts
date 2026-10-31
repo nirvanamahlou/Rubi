@@ -11,10 +11,12 @@ import {
   initialSalesPeopleDraft,
   normalizeSalesPeopleDraft,
   passengerSlotKeys,
+  bookedSlotChildBand,
   peopleRow,
   selectedPeopleRow,
   validateSalesPeopleDraft,
   saveSalesPeopleDraft,
+  peopleCreateInput,
   linkCustomerAsFirst,
   editPeopleRow,
   refreshPeopleRow,
@@ -69,6 +71,102 @@ const detail = (id: string, input: Partial<CustomerDetail> = {}) =>
     maskedPrimaryContact: null,
     ...input,
   }) as CustomerDetail;
+
+it.each([['OTHER'], ['FLIGHT'], ['HOTEL'], ['FLIGHT', 'HOTEL']] as const)(
+  'registers unknown DOB for %j without fabricating dates and retains booked adult, child and infant slots',
+  async (...serviceKinds) => {
+    const entryState = {
+      ...state,
+      serviceKinds: [...serviceKinds],
+      originCountryCode: 'IRN',
+      destinationCountryCode: 'TUR',
+      childAges: [5],
+    };
+    const draft = filled();
+    for (const row of Object.values(draft.rows))
+      Object.assign(row.values, {
+        birthDate: '',
+        passportFirstName: 'SYNTHETIC',
+        passportLastName: 'TRAVELER',
+        gender: 'M',
+      });
+    expect(() => validateSalesPeopleDraft(entryState, draft)).not.toThrow();
+    let nextId = 0;
+    const create = vi.fn(async (input: CustomerMutationRequest) => ({
+      data: detail('registered-' + nextId++, {
+        ...input,
+        birthDate: null,
+        roles: input.roles,
+        contacts: [],
+      } as Partial<CustomerDetail>),
+    }));
+    const result = await saveSalesPeopleDraft(entryState, draft, vi.fn(), {
+      create,
+      addContact: vi.fn(),
+    });
+    expect(result.patch.passengers![2]?.childAgeBand).toBe('AGE_2_6');
+    expect(create).toHaveBeenCalledTimes(4);
+    for (const [input] of create.mock.calls)
+      expect(input).not.toHaveProperty('birthDate');
+    expect(result.patch.passengers!.map((p) => p.birthDate)).toEqual([
+      '',
+      '',
+      '',
+      '',
+    ]);
+    expect(result.patch.passengers!.map((p) => p.ageCategory)).toEqual([
+      'ADT',
+      'ADT',
+      'CHD',
+      'INF',
+    ]);
+  },
+);
+
+it.each([['HOTEL'], ['FLIGHT'], ['FLIGHT', 'HOTEL']] as const)(
+  'accepts blank passport documents for international %j while validating supplied documents',
+  (...serviceKinds) => {
+    const draft = filled();
+    draft.buyerContact = {
+      name: '',
+      phone: '',
+      address: '',
+      postalCode: '',
+      landline: '',
+    };
+    for (const row of Object.values(draft.rows)) {
+      Object.assign(row.values, {
+        nationalId: '',
+        phone: '',
+        email: '',
+        passportFirstName: 'SYNTHETIC',
+        passportLastName: 'TRAVELER',
+        gender: 'M',
+      });
+      const input = peopleCreateInput(row, false, true, true);
+      expect(input).not.toHaveProperty('passportNumber');
+      expect(input).not.toHaveProperty('nationalId');
+      expect(input).not.toHaveProperty('passportExpiryDate');
+      expect(input.gender).toBe('M');
+    }
+    const travel = {
+      ...state,
+      serviceKinds: [...serviceKinds],
+      originCountryCode: 'IRN',
+      destinationCountryCode: 'TUR',
+    };
+    expect(() => validateSalesPeopleDraft(travel, draft)).not.toThrow();
+    draft.rows.p0!.values.passportNumber = '!';
+    expect(() => validateSalesPeopleDraft(travel, draft)).toThrow(
+      'شماره پاسپورت معتبر نیست',
+    );
+    draft.rows.p0!.values.passportNumber = '';
+    draft.rows.p0!.values.passportExpiryDate = 'invalid';
+    expect(() => validateSalesPeopleDraft(travel, draft)).toThrow(
+      'تاریخ انقضای پاسپورت معتبر نیست',
+    );
+  },
+);
 describe('fixed Sales people-entry slots', () => {
   it('defaults new contract passenger country fields to IRN while keeping them editable', () => {
     expect(emptyPeopleValues()).toMatchObject({
@@ -150,6 +248,7 @@ describe('fixed Sales people-entry slots', () => {
         acquaintanceMethodId: 'registered-method',
         roles: ['customer', 'passenger'],
       }),
+      expect.any(String),
     );
     expect(result.patch.customerId).toBe(
       result.patch.passengers[0]?.customerId,
@@ -225,6 +324,50 @@ describe('fixed Sales people-entry slots', () => {
     ).resolves.toMatchObject({ patch: { customerId: 'saved' } });
     expect(api.create).toHaveBeenCalledTimes(2);
   });
+  it('refreshes a conflicting existing profile before retrying its edited fields', async () => {
+    const profile = { ...savedPerson(), version: 7 };
+    const selected = selectedPeopleRow(profile);
+    let progress = {
+      ...filled(),
+      rows: {
+        p0: {
+          ...selected,
+          values: { ...selected.values, firstName: 'Corrected' },
+        },
+      },
+    };
+    const update = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new CustomersApiError('concurrent', 409, 'CONCURRENT_MODIFICATION'),
+      )
+      .mockResolvedValueOnce({
+        data: { ...profile, firstName: 'Corrected', version: 9 },
+      });
+    const api = {
+      create: vi.fn(),
+      addContact: vi.fn(),
+      update,
+      detail: vi.fn().mockResolvedValue({ data: { ...profile, version: 8 } }),
+    };
+    await expect(
+      saveSalesPeopleDraft(
+        one,
+        progress,
+        (next) => {
+          progress = next as typeof progress;
+        },
+        api,
+      ),
+    ).rejects.toThrow('concurrent');
+    expect(progress.rows.p0.reviewRequired).toBe(true);
+    await saveSalesPeopleDraft(one, progress, vi.fn(), api);
+    expect(update.mock.calls[1]?.[1]).toMatchObject({
+      firstName: 'Corrected',
+      version: 8,
+    });
+    expect(api.create).not.toHaveBeenCalled();
+  });
   it('recovers a committed creation after lost response without creating twice', async () => {
     let progress = filled();
     const api = {
@@ -251,6 +394,35 @@ describe('fixed Sales people-entry slots', () => {
         nationalId: progress.rows.p0!.values.nationalId,
       }),
     );
+  });
+  it('recovers a lost registration response without national ID using the original receipt and input', async () => {
+    let progress = filled();
+    progress.rows.p0!.values.nationalId = '';
+    const original = { ...progress.rows.p0!.values };
+    const api = {
+      create: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('network'))
+        .mockResolvedValue({ data: savedPerson(original) }),
+      addContact: vi.fn(),
+      registrationLookup: vi.fn(),
+    };
+    await expect(
+      saveSalesPeopleDraft(
+        one,
+        progress,
+        (next) => {
+          progress = next;
+        },
+        api,
+      ),
+    ).rejects.toThrow('قطعی نشد');
+    const receipt = progress.rows.p0!.pendingRegistration;
+    expect(receipt?.key).toMatch(/^[0-9a-f-]{36}$/);
+    const result = await saveSalesPeopleDraft(one, progress, vi.fn(), api);
+    expect(result.patch.customerId).toBe('saved');
+    expect(api.create.mock.calls[1]).toEqual(api.create.mock.calls[0]);
+    expect(api.registrationLookup).not.toHaveBeenCalled();
   });
   it('retries the same identity only after an authorized lookup found no previous record', async () => {
     let progress = filled();
@@ -313,7 +485,7 @@ describe('fixed Sales people-entry slots', () => {
       const previousId = draft.rows.p0!.values.nationalId;
       const values = {
         ...draft.rows.p0!.values,
-        nationalId: '',
+        nationalId: national('009000009'),
         firstName: 'Corrected',
       };
       draft.rows.p0 = {
@@ -393,6 +565,7 @@ describe('fixed Sales people-entry slots', () => {
     await saveSalesPeopleDraft(one, draft, vi.fn(), api);
     expect(api.create).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ nationalId: draft.rows.p0.values.nationalId }),
+      expect.any(String),
     );
     expect(api.update).not.toHaveBeenCalled();
   });
@@ -785,10 +958,11 @@ describe('fixed Sales people-entry slots', () => {
     );
     expect(result.patch.hotel.guestCustomerIds).toHaveLength(4);
   });
-  it('preserves an organization payer independently from passengers', async () => {
+  it('preserves an organization payer and ignores its hidden contract acquaintance choice', async () => {
     const draft = {
       ...filled(),
       mode: 'organization' as const,
+      acquaintanceMethodId: 'stale-personal-selection',
       organization: {
         id: 'agency-customer',
         displayName: 'Synthetic Agency',
@@ -804,6 +978,11 @@ describe('fixed Sales people-entry slots', () => {
     const result = await saveSalesPeopleDraft(state, draft, vi.fn(), api);
     expect(result.patch.customerId).toBe('agency-customer');
     expect(result.patch.firstPassengerIsCustomer).toBe(false);
+    expect(
+      api.create.mock.calls.every(
+        ([input]) => input.acquaintanceMethodId === undefined,
+      ),
+    ).toBe(true);
     expect(
       api.create.mock.calls.every(
         ([input]) => input.roles.join() === 'passenger',
@@ -1007,8 +1186,44 @@ describe('contract buyer independent from passengers', () => {
   });
 });
 
+describe('optional contract national ID', () => {
+  it('saves multiple passenger rows without manufacturing national IDs', async () => {
+    const draft = filled();
+    for (const row of Object.values(draft.rows)) row.values.nationalId = '';
+    const create = vi.fn(async (input: CustomerMutationRequest) => ({
+      data: detail('passenger-' + input.birthDate, {
+        ...input,
+        roles: input.roles,
+      }),
+    }));
+    const saved = await saveSalesPeopleDraft(state, draft, vi.fn(), {
+      create,
+      addContact: vi.fn(),
+    });
+    expect(saved.patch.passengers).toHaveLength(4);
+    expect(create).toHaveBeenCalledTimes(4);
+    for (const [input] of create.mock.calls)
+      expect(input).not.toHaveProperty('nationalId');
+  });
+  it('does not blindly retry uncertain passenger creation without national ID', async () => {
+    const draft = filled();
+    draft.rows.p0!.values.nationalId = '';
+    draft.rows.p0!.reviewRequired = true;
+    const api = {
+      create: vi.fn(),
+      registrationLookup: vi.fn(),
+      addContact: vi.fn(),
+    };
+    await expect(
+      saveSalesPeopleDraft(state, draft, vi.fn(), api),
+    ).rejects.toThrow('ثبت تکراری');
+    expect(api.create).not.toHaveBeenCalled();
+    expect(api.registrationLookup).not.toHaveBeenCalled();
+  });
+});
+
 describe('customer-only purchase identity safety', () => {
-  it('requires passenger identity when promoting a customer-only record into a passenger slot', () => {
+  it('allows a customer-only record without national ID in a contract passenger slot', () => {
     const one = {
       ...state,
       passengerComposition: { adults: 1, children: 0, infants: 0 },
@@ -1022,7 +1237,7 @@ describe('customer-only purchase identity safety', () => {
       ...initialSalesPeopleDraft(one),
       rows: { p0: selectedPeopleRow(person) },
     };
-    expect(() => validateSalesPeopleDraft(one, draft)).toThrow('کد ملی');
+    expect(() => validateSalesPeopleDraft(one, draft)).not.toThrow();
   });
   it('does not retry an uncertain customer-only creation without a safe identity match', async () => {
     const one = {
@@ -1240,6 +1455,50 @@ it('retains transfer leg exclusions when temporary passenger slots become saved 
   ]);
 });
 
+it('uses the actual passenger identity when optional buyer fields are blank', async () => {
+  const travel = {
+    ...state,
+    passengerComposition: { adults: 1, children: 0, infants: 0 },
+  };
+  const draft = filled();
+  draft.rows = { p0: draft.rows.p0! };
+  Object.assign(draft.rows.p0!.values, {
+    nationalId: '',
+    phone: '',
+    email: '',
+  });
+  draft.buyerContact = {
+    name: ' ',
+    phone: ' ',
+    address: ' ',
+    postalCode: ' ',
+    landline: ' ',
+  };
+  const create = vi.fn(async () => ({ data: detail('actual-passenger') }));
+  const addContact = vi.fn();
+  const result = await saveSalesPeopleDraft(travel, draft, vi.fn(), {
+    create,
+    addContact,
+  } as never);
+  expect(result.patch).toMatchObject({
+    customerId: 'actual-passenger',
+    customerName: 'Synthetic Person',
+    buyerContact: {
+      name: 'Synthetic Person',
+      phone: '',
+      address: '',
+      postalCode: '',
+      landline: '',
+    },
+  });
+  expect(create).toHaveBeenCalledTimes(1);
+  expect(create.mock.calls[0]).toBeDefined();
+  expect(addContact).not.toHaveBeenCalled();
+  expect(salesPayload({ ...travel, ...result.patch }).buyerContact).toEqual(
+    result.patch.buyerContact,
+  );
+});
+
 it.each([undefined, '', '   ', '02112345678'])(
   'accepts optional buyer landline %s',
   (landline) => {
@@ -1268,4 +1527,111 @@ it('rejects a malformed nonempty optional landline', () => {
     },
   };
   expect(() => validateSalesPeopleDraft(state, draft)).toThrow('تلفن ثابت');
+});
+
+it.each(['1', '021', '1234567', '+123'])(
+  'accepts short numeric agency landline %s',
+  (landline) => {
+    const draft = {
+      ...filled(),
+      mode: 'organization' as const,
+      organization: {
+        id: 'agency',
+        displayName: 'Synthetic Agency',
+        organizationId: null,
+      },
+      buyerContact: {
+        name: 'Synthetic Agency',
+        phone: '09120000000',
+        address: 'Synthetic address',
+        postalCode: '',
+        landline,
+      },
+    };
+    expect(() => validateSalesPeopleDraft(state, draft)).not.toThrow();
+  },
+);
+
+it('saves a legacy customer without creating a passenger or requiring date of birth', async () => {
+  const legacyState = { ...state, legacyContract: true };
+  const draft = initialSalesPeopleDraft(legacyState);
+  draft.buyerContact = {
+    name: 'Synthetic Buyer',
+    phone: '09120000000',
+    address: 'Synthetic address',
+    postalCode: '',
+  };
+  draft.rows.primary = {
+    values: {
+      ...emptyPeopleValues(),
+      firstName: 'Synthetic',
+      lastName: 'Buyer',
+      phone: '09120000000',
+    },
+  };
+  const create = vi.fn(async (input: CustomerMutationRequest) => {
+    expect(input.roles).toEqual(['customer']);
+    return { data: detail('buyer', { birthDate: null }) };
+  });
+  const result = await saveSalesPeopleDraft(legacyState, draft, vi.fn(), {
+    create,
+    addContact: vi.fn(async () => ({
+      data: detail('buyer', { birthDate: null }),
+    })),
+  } as never);
+  expect(create).toHaveBeenCalledTimes(1);
+  expect(create.mock.calls[0]?.[0]).toMatchObject({ roles: ['customer'] });
+  expect(result.patch.customerId).toBe('buyer');
+  expect(result.patch.passengers).toEqual([]);
+  expect(passengerSlotKeys(legacyState)).toEqual([]);
+});
+
+it('can confirm identities before service dates, then rechecks ages against the selected service date', () => {
+  const withoutDate = { ...state, departureDate: '' };
+  expect(() => validateSalesPeopleDraft(withoutDate, filled())).not.toThrow();
+  expect(() =>
+    validateSalesPeopleDraft(
+      { ...withoutDate, serviceDetails: { OTHER: { date: '2099-10-01' } } },
+      filled(),
+    ),
+  ).toThrow('مرحله اول');
+});
+
+it.each([
+  [2, 'AGE_2_6'],
+  [5, 'AGE_2_6'],
+  [6, 'AGE_6_12'],
+  [11, 'AGE_6_12'],
+] as const)(
+  'preserves the booked band for child slot age %s without DOB',
+  (age, band) => {
+    const next = { ...state, childAges: [age] };
+    expect(bookedSlotChildBand(next, 'p2')).toBe(band);
+    expect(bookedSlotChildBand(next, 'p0')).toBeUndefined();
+  },
+);
+
+it('maps room-derived child slots and independent flight-only children to their own age bands', () => {
+  const next: SalesFormState = {
+    ...state,
+    serviceKinds: ['FLIGHT', 'HOTEL'],
+    roomDrivenGuests: true,
+    hotel: {
+      ...state.hotel,
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: 'room',
+          roomTypeNameSnapshot: 'Synthetic',
+          adults: 1,
+          childAges: [5, 8],
+          roomCategory: 'DOUBLE',
+        },
+      ],
+    },
+    flightOnlyPassengers: [{ key: 'extra', age: 4 }],
+  };
+  expect(bookedSlotChildBand(next, 'p1')).toBe('AGE_2_6');
+  expect(bookedSlotChildBand(next, 'p2')).toBe('AGE_6_12');
+  expect(bookedSlotChildBand(next, 'extra')).toBe('AGE_2_6');
 });

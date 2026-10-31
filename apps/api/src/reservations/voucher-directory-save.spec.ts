@@ -25,6 +25,7 @@ function setup(sent = true) {
       board: 'Canonical board',
     },
   });
+  const currencyReference = vi.fn().mockResolvedValue({ code: 'JPY' });
   const controller = new ReservationRequestsController(
     {} as never,
     {} as never,
@@ -38,6 +39,7 @@ function setup(sent = true) {
     {
       voucherBrokerName: vi.fn().mockResolvedValue('Canonical broker'),
       voucherLeaderContact,
+      currencyReference,
     } as never,
   );
   const request = {
@@ -47,10 +49,38 @@ function setup(sent = true) {
       permissions: ['reservations.read', 'reservations.documents.manage'],
     },
   } as never;
-  return { controller, request, update, voucherLeaderContact };
+  return {
+    controller,
+    request,
+    update,
+    voucherLeaderContact,
+    currencyReference,
+    detail,
+  };
 }
 
 describe('voucher directory snapshot and sent-form gate', () => {
+  it('validates every chosen quotation currency through the request-scoped registered directory', async () => {
+    const s = setup();
+    const input = {
+      action: 'SUPPLIER_FORM_SETTINGS',
+      expectedVersion: 1,
+      voucherSettings: {
+        supplierFormPrices: {
+          pp: { amount: '1', currencyCode: 'JPY' },
+          ratio: { amount: '2' },
+        },
+      },
+    } as never;
+    await s.controller.workflowUpdate('intake', input, s.request);
+    expect(s.currencyReference).toHaveBeenCalledExactlyOnceWith('JPY');
+    s.update.mockClear();
+    s.currencyReference.mockRejectedValueOnce(new Error('Unknown currency'));
+    await expect(
+      s.controller.workflowUpdate('intake', input, s.request),
+    ).rejects.toThrow('Unknown currency');
+    expect(s.update).not.toHaveBeenCalled();
+  });
   it('validates and persists a canonical 300-character Board and child-band snapshot end to end', async () => {
     const s = setup();
     s.voucherLeaderContact.mockResolvedValueOnce({
@@ -150,5 +180,147 @@ describe('voucher directory snapshot and sent-form gate', () => {
       expect(s.update).not.toHaveBeenCalled();
       expect(s.voucherLeaderContact).not.toHaveBeenCalled();
     },
+  );
+});
+
+it('validates a separate transfer supplier while preserving explicit per-voucher details', async () => {
+  const s = setup();
+  const input = {
+    action: 'VOUCHER_SETTINGS',
+    expectedVersion: 1,
+    note: '',
+    voucherSettings: {
+      brokerId: 'hotel-broker',
+      transferBrokerId: 'transfer-broker',
+      leaderId: 'leader',
+      transferDetailsOverride: true,
+      text: {
+        broker: '',
+        leaderName: 'SPECIAL LEADER',
+        leaderPhone: 'SPECIAL PHONE',
+        transferBoard: 'SPECIAL BOARD',
+      },
+      flags: { tourLeader: false },
+    },
+  } as unknown as TravelWorkflowCommandV1;
+  await s.controller.workflowUpdate('intake', input, s.request);
+  expect(s.voucherLeaderContact).toHaveBeenCalledWith(
+    'transfer-broker',
+    'leader',
+    expect.anything(),
+  );
+  expect(s.update).toHaveBeenCalledWith(
+    'intake',
+    expect.objectContaining({
+      voucherSettings: expect.objectContaining({
+        brokerId: 'hotel-broker',
+        transferBrokerId: 'transfer-broker',
+        transferDetailsOverride: true,
+        text: expect.objectContaining({
+          broker: 'Canonical broker',
+          leaderName: 'SPECIAL LEADER',
+          leaderPhone: 'SPECIAL PHONE',
+          transferBoard: 'SPECIAL BOARD',
+        }),
+      }),
+    }),
+    expect.anything(),
+  );
+});
+
+it.each(['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'] as const)(
+  'permits %s without a leader for a voucher without transfer',
+  async (action) => {
+    const s = setup();
+    s.detail.mockResolvedValue({
+      workflow: {
+        sentSupplierFormSettings: { brokerId: 'broker' },
+        voucherSettings: { brokerId: 'broker', flags: { transfer: false } },
+      },
+    });
+    await s.controller.workflowUpdate(
+      'intake',
+      { action, expectedVersion: 1, note: '' },
+      s.request,
+    );
+    expect(s.update).toHaveBeenCalled();
+    expect(s.voucherLeaderContact).not.toHaveBeenCalled();
+  },
+);
+
+it('keeps contact authorization mandatory even when manual overrides are requested', async () => {
+  const s = setup();
+  s.voucherLeaderContact.mockRejectedValueOnce(
+    new Error('Contact is not authorized'),
+  );
+  await expect(
+    s.controller.workflowUpdate(
+      'intake',
+      {
+        action: 'VOUCHER_SETTINGS',
+        expectedVersion: 1,
+        note: '',
+        voucherSettings: {
+          brokerId: 'broker',
+          leaderId: 'foreign-leader',
+          transferDetailsOverride: true,
+          text: { broker: '', leaderName: 'MANUAL' },
+          flags: {},
+        } as never,
+      },
+      s.request,
+    ),
+  ).rejects.toThrow('Contact is not authorized');
+  expect(s.update).not.toHaveBeenCalled();
+});
+
+it('preserves an independent transfer supplier when an older editor omits the new fields', async () => {
+  const s = setup();
+  s.detail.mockResolvedValue({
+    workflow: {
+      sentSupplierFormSettings: { brokerId: 'broker' },
+      voucherSettings: {
+        brokerId: 'broker',
+        leaderId: 'leader',
+        transferBrokerId: 'transfer-broker',
+        transferDetailsOverride: true,
+      },
+    },
+  });
+  await s.controller.workflowUpdate(
+    'intake',
+    {
+      action: 'VOUCHER_SETTINGS',
+      expectedVersion: 1,
+      note: '',
+      voucherSettings: {
+        brokerId: 'broker',
+        leaderId: 'leader',
+        text: {
+          broker: '',
+          leaderName: 'KEPT',
+          leaderPhone: '',
+          transferBoard: 'KEPT BOARD',
+        },
+        flags: {},
+      } as never,
+    },
+    s.request,
+  );
+  expect(s.voucherLeaderContact).toHaveBeenCalledWith(
+    'transfer-broker',
+    'leader',
+    expect.anything(),
+  );
+  expect(s.update).toHaveBeenCalledWith(
+    'intake',
+    expect.objectContaining({
+      voucherSettings: expect.objectContaining({
+        transferBrokerId: 'transfer-broker',
+        transferDetailsOverride: true,
+        text: expect.objectContaining({ transferBoard: 'KEPT BOARD' }),
+      }),
+    }),
+    expect.anything(),
   );
 });

@@ -375,6 +375,10 @@ export interface FinanceInboxSourceStateV1 {
 }
 
 export interface FinanceInboxItemV1 {
+  /** Existing Sales declaration; optional for historical payments. */
+  destinationAccountTitle?: string | null;
+  /** Sales-declared destination; Finance must independently approve the receipt. */
+  destinationAccountId?: string | null;
   /** Absent in older producers. Internal expense clearance is not a second cash payment. */
   direction?: 'RECEIPT' | 'PAYMENT' | 'NON_CASH';
   purchaseFx?: readonly FinancePurchaseFxV1[];
@@ -530,7 +534,10 @@ export interface FinanceBankOptionV1 {
 }
 
 export type FinanceCustomerDocumentDeliveryBasisV1 =
-  'AFTER_RECEIPT' | 'FULL_SETTLEMENT' | 'MANAGER_EXCEPTION';
+  | 'AFTER_RECEIPT'
+  | 'FULL_SETTLEMENT'
+  | 'MANAGER_EXCEPTION'
+  | 'RESERVATION_PERMISSION';
 
 export interface FinanceCustomerDocumentDeliveryAuthorizationV1 {
   version: number;
@@ -543,6 +550,7 @@ export interface FinanceCustomerDocumentDeliveryAuthorizationV1 {
 }
 
 export interface FinanceCustomerDocumentDeliveryCandidateV1 {
+  canApproveReservationDelivery?: boolean;
   contractId: string;
   contractNumber: string;
   branchId: string;

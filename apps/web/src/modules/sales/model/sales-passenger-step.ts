@@ -13,12 +13,12 @@ export function salesPassengerStepError(
   hotelCapacityError: string | null,
 ): string | null {
   if (!state.customerId) return 'مشتری قرارداد را مشخص کنید.';
+  if (state.legacyContract)
+    return peopleDirty ? 'اطلاعات مشتری را تأیید کنید.' : null;
   if (!state.passengers.length) return 'حداقل یک مسافر اضافه کنید.';
   if (peopleDirty)
     return 'اطلاعات جدول را با دکمه «ثبت و تأیید افراد» تأیید کنید.';
-  if (!state.passengers.every((p) => p.birthDate) || !salesTravelDate(state))
-    return 'تاریخ تولد مسافران و تاریخ سفر را کامل کنید.';
-  if (!salesPassengerCompositionMatches(state))
+  if (salesTravelDate(state) && !salesPassengerCompositionMatches(state))
     return 'تعداد و رده سنی مسافران باید با ترکیب ثبت‌شده در مرحله اول یکسان باشد.';
   const guests = salesHotelGuestIds(state);
   if (state.serviceKinds.includes('HOTEL')) {

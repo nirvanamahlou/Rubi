@@ -1,15 +1,25 @@
 'use client';
-import { PASSENGER_FLIGHT_PRICES, type SalesMoney } from '@nora/contracts';
+import type { PassengerName } from '../passenger-files/client';
+import { AmendmentPassengerPriceTable } from './amendment-passenger-price-table';
+import { AmendmentPassengerMembership } from './amendment-passenger-membership';
+import { changeAmendmentMembership } from './amendment-membership';
+import { AmendmentHotelRooms } from './amendment-hotel-rooms';
+import { PassengerCompletion } from '@/modules/sales/components/passenger-completion';
+import { PassengerServiceEditor } from './passenger-service-editor';
+import { prepareAmendmentPersonPrices } from './amendment-passenger-prices';
 import { amendmentPriceComponents } from './amendment-price-components';
 import { isOptionalOperationReason } from '@nora/contracts';
 
-import { ReservationPassengers } from '../passenger-files/passengers';
+import {
+  ReservationPassengers,
+  type ReservationPassengerEditor,
+} from '../passenger-files/passengers';
 import {
   PassengerAgeEditor,
   changeAmendmentPassengerAge,
 } from './passenger-age-editor';
 import { currencySymbol } from '@/lib/currency-symbol';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   MasterDataRecord,
   MasterDataResource,
@@ -19,10 +29,9 @@ import type {
   SalesTicketDirection,
 } from '@nora/contracts';
 import {
-  moneyUnits,
-  moneyDecimal,
-  SALES_CHEQUE_FEE,
   salesChequeComponents,
+  readLegacyServiceParties,
+  readPassengerHotelStays,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';
@@ -39,6 +48,8 @@ import {
 } from './amendment-flight-search';
 import {
   amendmentFromContract,
+  amendmentBusinessOutput,
+  withAmendmentBusinessOutput,
   manualAmendmentFlights,
   applyManualAmendmentFlights,
   replaceAmendmentFlight,
@@ -55,6 +66,7 @@ export function ReservationSalesAmendment({
   section: 'FLIGHT' | 'HOTEL' | 'OTHER' | 'CORRECTION' | 'PRICES';
   onSaved: () => void;
 }) {
+  const passengerEditor = useRef<ReservationPassengerEditor>(null);
   const [draft, setDraft] = useState(() => amendmentFromContract(contract));
   const [manualDirty, setManualDirty] = useState<SalesTicketDirection[]>([]);
   const [manualFlights, setManualFlights] = useState(() =>
@@ -62,11 +74,16 @@ export function ReservationSalesAmendment({
   );
   const [refs, setRefs] = useState<Record<string, MasterDataRecord[]>>({});
   const [error, setError] = useState('');
+  const [priceError, setPriceError] = useState('');
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [completionPending, setCompletionPending] = useState(false);
   const [direction, setDirection] = useState<SalesTicketDirection>('OUTBOUND');
   const [airline, setAirline] = useState('');
   const [day, setDay] = useState(() => amendmentFlightDay(draft, 'OUTBOUND'));
+  const [pendingPassengers, setPendingPassengers] = useState<PassengerName[]>(
+    [],
+  );
   useEffect(() => {
     let live = true;
     const resources: MasterDataResource[] = [
@@ -113,19 +130,11 @@ export function ReservationSalesAmendment({
       live = false;
     };
   }, []);
-  const automaticPricing = draft.services.some(
-    (s) => s.metadata?.automaticFlightRoomTotalV1 === true,
-  );
-  const flightPriceService = draft.services.find(
-    (s) => s.metadata?.[PASSENGER_FLIGHT_PRICES] !== undefined,
-  );
-  const flightPrices: Record<string, SalesMoney[]> = flightPriceService
-    ? JSON.parse(String(flightPriceService.metadata![PASSENGER_FLIGHT_PRICES]))
-    : {};
   const patch = (v: Partial<SalesContractAmendmentV1>) =>
     setDraft((d) => {
       const next = { ...d, ...v };
       if (
+        section !== 'CORRECTION' &&
         next.services.some(
           (s) => s.metadata?.automaticFlightRoomTotalV1 === true,
         )
@@ -155,37 +164,64 @@ export function ReservationSalesAmendment({
   });
   const hotel = draft.hotelSelection;
   function changeHotel(v: Partial<SalesHotelSelectionInput>) {
-    if (hotel)
+    if (hotel) {
+      const nextHotel = { ...hotel, ...v };
+      const stays = readPassengerHotelStays(draft.services, nextHotel);
       patch({
-        hotelSelection: { ...hotel, ...v },
-        ...(v.hotelId
-          ? {
-              services: draft.services.map((s) =>
-                s.clientKey === hotel.serviceClientKey
+        hotelSelection: nextHotel,
+        services: draft.services.map((s) =>
+          s.clientKey === hotel.serviceClientKey
+            ? {
+                ...s,
+                ...(v.hotelId ? { referenceId: v.hotelId } : {}),
+                titleSnapshot: v.hotelNameSnapshot ?? s.titleSnapshot,
+                ...(stays
                   ? {
-                      ...s,
-                      referenceId: v.hotelId!,
-                      titleSnapshot: v.hotelNameSnapshot ?? s.titleSnapshot,
+                      metadata: {
+                        ...s.metadata,
+                        passengerHotelStaysV1: JSON.stringify(stays),
+                      },
                     }
-                  : s,
-              ),
-            }
-          : {}),
+                  : {}),
+              }
+            : s,
+        ),
       });
+    }
   }
   async function submit() {
+    if (priceError) {
+      setError(priceError);
+      return;
+    }
     setBusy(true);
     setError('');
     try {
+      if (section === 'CORRECTION' && requestId) {
+        const unchanged =
+          JSON.stringify({ ...draft, reason: '' }) ===
+          JSON.stringify(amendmentFromContract(contract));
+        if (
+          !passengerEditor.current ||
+          !(await passengerEditor.current.savePending())
+        )
+          return;
+        if (unchanged) {
+          setSaved(true);
+          onSaved();
+          return;
+        }
+      }
       const corrected = applyManualAmendmentFlights(
-        draft,
+        section === 'PRICES' ? prepareAmendmentPersonPrices(draft) : draft,
         Object.fromEntries(
           Object.entries(manualFlights).filter(([key]) =>
             manualDirty.includes(key as SalesTicketDirection),
           ),
         ),
       );
-      const derived = amendmentPriceComponents(corrected);
+      const derived =
+        section === 'CORRECTION' ? null : amendmentPriceComponents(corrected);
       await salesApi.amend(
         contract.id,
         derived
@@ -207,41 +243,6 @@ export function ReservationSalesAmendment({
       setBusy(false);
     }
   }
-  function passengerPrice(index: number, currencyCode: string, amount: string) {
-    const passengers = draft.passengers.map((p, i) =>
-      i === index
-        ? {
-            ...p,
-            agreedPrices: (p.agreedPrices ?? []).map((v) =>
-              v.currencyCode === currencyCode ? { ...v, amount } : v,
-            ),
-          }
-        : p,
-    );
-    try {
-      const totals = new Map<string, bigint>();
-      for (const p of passengers)
-        for (const v of p.agreedPrices ?? [])
-          totals.set(
-            v.currencyCode,
-            (totals.get(v.currencyCode) ?? 0n) + moneyUnits(v.amount),
-          );
-      patch({
-        passengers,
-        priceComponents: [
-          ...Array.from(totals, ([currencyCode, amount]) => ({
-            type: 'BASE' as const,
-            title: 'مبلغ توافق‌شده',
-            currencyCode,
-            amount: moneyDecimal(amount),
-          })),
-          ...draft.priceComponents.filter((p) => p.title === SALES_CHEQUE_FEE),
-        ],
-      });
-    } catch {
-      patch({ passengers });
-    }
-  }
   const chosen = draft.ticketSelections?.find((t) => t.direction === direction);
   return (
     <div className="grid gap-4">
@@ -257,6 +258,19 @@ export function ReservationSalesAmendment({
       >
         {section === 'FLIGHT' && (
           <>
+            <label className="flex items-center gap-3 rounded-xl bg-primary/5 p-3">
+              <input
+                type="checkbox"
+                className="size-4 accent-primary"
+                checked={amendmentBusinessOutput(draft)}
+                onChange={(event) =>
+                  patch(
+                    withAmendmentBusinessOutput(draft, event.target.checked),
+                  )
+                }
+              />
+              این بلیط بیزینس است — درج در خروجی
+            </label>
             <div className="grid gap-3 md:grid-cols-3">
               <SearchableReference
                 label="مبدأ"
@@ -371,7 +385,7 @@ export function ReservationSalesAmendment({
             />
           </>
         )}
-        {section === 'HOTEL' &&
+        {(section === 'HOTEL' || (section === 'CORRECTION' && hotel)) &&
           (hotel ? (
             <div className="grid gap-3 md:grid-cols-3">
               <SearchableReference
@@ -391,11 +405,15 @@ export function ReservationSalesAmendment({
                     });
                 }}
               />
-              <SearchableReference
-                label="نوع اتاق"
-                value={hotel.roomTypeId}
-                options={refs['room-types'] ?? []}
-                onChange={(roomTypeId) => changeHotel({ roomTypeId })}
+              <AmendmentHotelRooms
+                hotel={hotel}
+                roomTypes={refs['room-types'] ?? []}
+                currencies={(refs.currencies ?? []).map((c) => ({
+                  code: c.code ?? '',
+                  name: c.name,
+                  status: c.status,
+                }))}
+                onChange={(hotelSelection) => patch({ hotelSelection })}
               />
               <SearchableReference
                 label="سرویس هتل"
@@ -423,27 +441,28 @@ export function ReservationSalesAmendment({
                   onChange={(checkOutDate) => changeHotel({ checkOutDate })}
                 />
               </label>
-              {(
-                [
-                  'roomCount',
-                  'singleRoomCount',
-                  'doubleRoomCount',
-                  'extraBedCount',
-                  'occupancy',
-                ] as const
-              ).map((key, i) => (
-                <label key={key}>
-                  {['تعداد اتاق', 'SGL', 'DBL', 'EXT', 'ظرفیت اتاق'][i]}
-                  <Input
-                    type="number"
-                    min={key === 'roomCount' || key === 'occupancy' ? 1 : 0}
-                    value={hotel[key] ?? 0}
-                    onChange={(e) =>
-                      changeHotel({ [key]: Number(e.target.value) })
-                    }
-                  />
-                </label>
-              ))}
+              {!hotel.rooms?.length &&
+                (
+                  [
+                    'roomCount',
+                    'singleRoomCount',
+                    'doubleRoomCount',
+                    'extraBedCount',
+                    'occupancy',
+                  ] as const
+                ).map((key, i) => (
+                  <label key={key}>
+                    {['تعداد اتاق', 'SGL', 'DBL', 'EXT', 'ظرفیت اتاق'][i]}
+                    <Input
+                      type="number"
+                      min={key === 'roomCount' || key === 'occupancy' ? 1 : 0}
+                      value={hotel[key] ?? 0}
+                      onChange={(e) =>
+                        changeHotel({ [key]: Number(e.target.value) })
+                      }
+                    />
+                  </label>
+                ))}
             </div>
           ) : (
             <p>این قرارداد هتل ندارد.</p>
@@ -478,255 +497,175 @@ export function ReservationSalesAmendment({
             </label>
           </>
         )}
-        {section === 'CORRECTION' && requestId && (
-          <ReservationPassengers
-            id={requestId}
-            ageEditor={(customerId) => {
-              const passenger = draft.passengers.find(
-                (p) => p.customerId === customerId,
-              );
-              if (!passenger) return '—';
-              return (
-                <PassengerAgeEditor
-                  passenger={passenger}
-                  category={draft.passengerCategories[customerId]!}
-                  disabled={busy || saved}
-                  onCategory={(category) =>
-                    setDraft((current) =>
-                      changeAmendmentPassengerAge(
-                        current,
-                        customerId,
-                        category,
-                      ),
-                    )
-                  }
-                  onBand={(childAgeBand) =>
-                    patch({
-                      passengers: draft.passengers.map((p) =>
-                        p.customerId === customerId
-                          ? { ...p, childAgeBand: childAgeBand ?? null }
-                          : p,
-                      ),
-                    })
-                  }
-                  onAccommodation={(accommodationKind) =>
-                    patch({
-                      passengers: draft.passengers.map((p) =>
-                        p.customerId === customerId
-                          ? { ...p, accommodationKind }
-                          : p,
-                      ),
-                    })
-                  }
-                />
-              );
-            }}
-          />
-        )}
-        {section === 'PRICES' && (
-          <>
-            {Object.entries(flightPrices).map(([id, prices]) => (
-              <div key={id} className="grid gap-2 rounded-xl border p-3">
-                <strong>
+        {section === 'CORRECTION' &&
+          requestId &&
+          (!contract.passengersDetail.length &&
+          readLegacyServiceParties(draft.services) ? (
+            <PassengerCompletion
+              contractId={contract.id}
+              onSaved={onSaved}
+              onPending={setCompletionPending}
+            />
+          ) : (
+            <AmendmentPassengerMembership
+              contractId={contract.id}
+              draft={draft}
+              requestedCount={
+                hotel?.rooms?.length
+                  ? hotel.rooms.reduce(
+                      (n, r) => n + r.adults + r.childAges.length,
+                      0,
+                    ) +
+                    draft.passengers.filter(
+                      (p) =>
+                        !p.serviceClientKeys.includes(hotel.serviceClientKey),
+                    ).length
+                  : undefined
+              }
+              disabled={busy || saved}
+              onChange={(next) => {
+                setDraft(next);
+                setPriceError('');
+              }}
+              onPending={setCompletionPending}
+              onRegistered={(person) => {
+                const v = person.values;
+                setPendingPassengers((old) => [
+                  ...old.filter((p) => p.id !== person.person!.id),
                   {
-                    draft.passengers.find((p) => p.customerId === id)
-                      ?.displayNameSnapshot
+                    id: person.person!.id,
+                    displayName: person.person!.displayName,
+                    firstName: v.firstName,
+                    lastName: v.lastName,
+                    passportFirstName: v.passportFirstName,
+                    passportLastName: v.passportLastName,
+                    birthDate: v.birthDate,
+                    birthDateMasked: false,
+                    nationalId: v.nationalId,
+                    nationalIdMasked: false,
+                    passportNumber: v.passportNumber,
+                    passportNumberMasked: false,
+                    passportExpiryDate: v.passportExpiryDate,
+                    passportIssuePlace: v.passportIssuingCountryCode,
+                    nationalityCode: v.nationalityCode,
+                    birthCountryCode: v.birthCountryCode,
+                    gender:
+                      v.gender === 'M' || v.gender === 'F' ? v.gender : null,
+                    ageCategory: null,
+                    version: person.profile?.version ?? 1,
+                  },
+                ]);
+              }}
+            />
+          ))}
+        {section === 'CORRECTION' && requestId && (
+          <>
+            <ReservationPassengers
+              id={requestId}
+              customerIds={draft.passengers.map((p) => p.customerId)}
+              pendingRows={pendingPassengers}
+              saveRef={passengerEditor}
+              rowActions={(customerId) => (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={
+                    busy ||
+                    saved ||
+                    completionPending ||
+                    draft.passengers.length <= 1
                   }
-                </strong>
-                {prices.map((price, index) => (
-                  <label key={price.currencyCode}>
-                    قیمت پرواز · {currencySymbol(price.currencyCode)}
-                    <Input
-                      dir="ltr"
-                      inputMode="decimal"
-                      value={price.amount}
-                      onChange={(e) =>
-                        patch({
-                          services: draft.services.map((service) =>
-                            service === flightPriceService
-                              ? {
-                                  ...service,
-                                  metadata: {
-                                    ...service.metadata,
-                                    [PASSENGER_FLIGHT_PRICES]: JSON.stringify({
-                                      ...flightPrices,
-                                      [id]: prices.map((p, i) =>
-                                        i === index
-                                          ? { ...p, amount: e.target.value }
-                                          : p,
-                                      ),
-                                    }),
-                                  },
-                                }
-                              : service,
-                          ),
-                        })
-                      }
-                    />
-                  </label>
-                ))}
-              </div>
-            ))}
-
-            {hotel?.rooms?.map((room, index) => (
-              <div
-                key={room.ordinal}
-                className="grid gap-2 rounded-xl border p-3 sm:grid-cols-2"
-              >
-                <strong>
-                  {room.ordinal} · {room.roomTypeNameSnapshot}
-                </strong>
-                <label>
-                  قیمت اتاق
-                  <Input
-                    dir="ltr"
-                    inputMode="decimal"
-                    value={room.agreedPrice?.amount ?? ''}
-                    onChange={(e) =>
-                      changeHotel({
-                        rooms: hotel.rooms!.map((r, i) =>
-                          i === index
-                            ? {
-                                ...r,
-                                agreedPrice: {
-                                  amount: e.target.value,
-                                  currencyCode:
-                                    r.agreedPrice?.currencyCode ?? '',
-                                },
-                              }
-                            : r,
+                  onClick={() => {
+                    try {
+                      setDraft(
+                        changeAmendmentMembership(
+                          draft,
+                          { remove: customerId },
+                          true,
+                        ),
+                      );
+                      setError('');
+                    } catch (e) {
+                      setError(
+                        e instanceof Error ? e.message : 'ثبت انجام نشد.',
+                      );
+                    }
+                  }}
+                >
+                  حذف مسافر
+                </Button>
+              )}
+              onDirty={() => setSaved(false)}
+              serviceEditor={(customerId) => (
+                <PassengerServiceEditor
+                  draft={draft}
+                  customerId={customerId}
+                  disabled={busy || saved}
+                  onChange={setDraft}
+                />
+              )}
+              ageEditor={(customerId) => {
+                const passenger = draft.passengers.find(
+                  (p) => p.customerId === customerId,
+                );
+                if (!passenger) return '—';
+                return (
+                  <PassengerAgeEditor
+                    passenger={passenger}
+                    category={draft.passengerCategories[customerId]!}
+                    disabled={busy || saved}
+                    onCategory={(category) =>
+                      setDraft((current) =>
+                        changeAmendmentPassengerAge(
+                          current,
+                          customerId,
+                          category,
+                        ),
+                      )
+                    }
+                    onBand={(childAgeBand) =>
+                      patch({
+                        passengers: draft.passengers.map((p) =>
+                          p.customerId === customerId
+                            ? { ...p, childAgeBand: childAgeBand ?? null }
+                            : p,
+                        ),
+                      })
+                    }
+                    onAccommodation={(accommodationKind) =>
+                      patch({
+                        passengers: draft.passengers.map((p) =>
+                          p.customerId === customerId
+                            ? { ...p, accommodationKind }
+                            : p,
                         ),
                       })
                     }
                   />
-                </label>
-                <div>
-                  <SearchableReference
-                    label="ارز اتاق"
-                    value={
-                      refs.currencies?.find(
-                        (c) => c.code === room.agreedPrice?.currencyCode,
-                      )?.id ?? ''
-                    }
-                    options={(refs.currencies ?? []).filter(
-                      (c) => c.code !== 'IRR',
-                    )}
-                    onChange={(id) => {
-                      const code = refs.currencies?.find(
-                        (c) => c.id === id,
-                      )?.code;
-                      if (code)
-                        changeHotel({
-                          rooms: hotel.rooms!.map((r, i) =>
-                            i === index
-                              ? {
-                                  ...r,
-                                  agreedPrice: {
-                                    amount: r.agreedPrice?.amount ?? '0',
-                                    currencyCode: code,
-                                  },
-                                }
-                              : r,
-                          ),
-                        });
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-
-            {draft.services.some(
-              (s) =>
-                s.pricing?.length &&
-                s.metadata?.passengerPackagePricingVersion !== 1 &&
-                s.metadata?.contractPackagePricingVersion !== 1,
-            )
-              ? draft.services.map((s) => (
-                  <div
-                    key={s.clientKey}
-                    className="grid gap-2 rounded-xl border p-3"
-                  >
-                    <strong>{s.titleSnapshot}</strong>
-                    {s.pricing?.map((v, i) => (
-                      <label key={v.currencyCode}>
-                        {currencySymbol(v.currencyCode ?? '')} ·{' '}
-                        {v.agreed.basis === 'NIGHT' ? 'هر شب' : 'مبلغ کل'}
-                        <Input
-                          dir="ltr"
-                          inputMode="decimal"
-                          value={v.agreed.amount}
-                          onChange={(e) =>
-                            patch({
-                              services: draft.services.map((t) =>
-                                t.clientKey === s.clientKey
-                                  ? {
-                                      ...t,
-                                      pricing: (t.pricing ?? []).map((p, j) =>
-                                        i === j
-                                          ? {
-                                              ...p,
-                                              agreed: {
-                                                ...p.agreed,
-                                                amount: e.target.value,
-                                              },
-                                              daySale: {
-                                                ...p.agreed,
-                                                amount: e.target.value,
-                                              },
-                                            }
-                                          : p,
-                                      ),
-                                    }
-                                  : t,
-                              ),
-                            })
-                          }
-                        />
-                      </label>
-                    ))}
-                  </div>
-                ))
-              : draft.passengers.some((p) => p.agreedPrices?.length)
-                ? draft.passengers.map((p, i) => (
-                    <div
-                      key={p.customerId}
-                      className="grid gap-2 rounded-xl border p-3 md:grid-cols-3"
-                    >
-                      <strong>{p.displayNameSnapshot}</strong>
-                      {p.agreedPrices?.map((v) => (
-                        <label key={v.currencyCode}>
-                          {currencySymbol(v.currencyCode ?? '')}
-                          <Input
-                            dir="ltr"
-                            inputMode="decimal"
-                            value={v.amount}
-                            onChange={(e) =>
-                              passengerPrice(i, v.currencyCode, e.target.value)
-                            }
-                          />
-                        </label>
-                      ))}
-                    </div>
-                  ))
-                : draft.priceComponents.map((p, i) => (
-                    <label key={i}>
-                      {p.title} · {currencySymbol(p.currencyCode ?? '')}
-                      <Input
-                        dir="ltr"
-                        inputMode="decimal"
-                        value={p.amount}
-                        readOnly={automaticPricing}
-                        onChange={(e) =>
-                          patch({
-                            priceComponents: draft.priceComponents.map(
-                              (v, j) =>
-                                j === i ? { ...v, amount: e.target.value } : v,
-                            ),
-                          })
-                        }
-                      />
-                    </label>
-                  ))}
+                );
+              }}
+            />
+          </>
+        )}
+        {section === 'PRICES' && (
+          <>
+            <AmendmentPassengerPriceTable
+              key={draft.passengers.map((p) => p.customerId).join('|')}
+              draft={draft}
+              currencies={(refs.currencies ?? []).map((c) => ({
+                code: c.code ?? '',
+                name: c.name,
+                status: c.status,
+              }))}
+              onChange={setDraft}
+              onError={setPriceError}
+            />
+            {priceError && (
+              <p role="alert" className="text-destructive">
+                {priceError}
+              </p>
+            )}
             <div className="flex flex-wrap gap-4">
               {draft.priceComponents.map((p, i) => (
                 <span key={i}>
@@ -748,7 +687,13 @@ export function ReservationSalesAmendment({
           />
         </label>
         <Button
-          disabled={busy || saved || !isOptionalOperationReason(draft.reason)}
+          disabled={
+            busy ||
+            completionPending ||
+            saved ||
+            !!priceError ||
+            !isOptionalOperationReason(draft.reason)
+          }
           onClick={() => void submit()}
         >
           {busy ? 'در حال ثبت…' : 'ثبت اصلاح قرارداد'}

@@ -1,3 +1,7 @@
+import type {
+  TravelWorkflowStateV1 as HotelFormWorkflowState,
+  SalesReservationRequestV1 as HotelFormSourceSnapshot,
+} from '@nora/contracts';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { Optional } from '@nestjs/common';
@@ -79,6 +83,11 @@ function present(
         latestServicePurchases.set(key, purchase);
   }
   return {
+    purchaseSnapshot: ((
+      row.workflowRevisions?.[0]?.state as unknown as
+        HotelFormWorkflowState | undefined
+    )?.outputSourceSnapshot ??
+      row.snapshot) as unknown as HotelFormSourceSnapshot,
     workflow: row.workflowRevisions?.[0]?.state ?? null,
     salesOwnerUserId: row.salesOwnerUserId,
     purchaseVersion: row.purchaseVersion,
@@ -119,6 +128,53 @@ function present(
         ...(!Array.isArray(purchase.passengerPrices) &&
         purchase.passengerPrices &&
         typeof purchase.passengerPrices === 'object' &&
+        typeof purchase.passengerPrices.hotelStayKey === 'string'
+          ? { hotelStayKey: purchase.passengerPrices.hotelStayKey }
+          : {}),
+        ...(!Array.isArray(purchase.passengerPrices) &&
+        purchase.passengerPrices &&
+        typeof purchase.passengerPrices === 'object' &&
+        'roomPurchase' in purchase.passengerPrices
+          ? {
+              roomPurchase: purchase.passengerPrices
+                .roomPurchase as unknown as NonNullable<
+                NonNullable<
+                  ReservationIntakeV1['servicePurchases']
+                >[number]['roomPurchase']
+              >,
+            }
+          : {}),
+        ...(!Array.isArray(purchase.passengerPrices) &&
+        purchase.passengerPrices &&
+        typeof purchase.passengerPrices === 'object' &&
+        'hotelTransferCounts' in purchase.passengerPrices
+          ? {
+              hotelTransferCounts: purchase.passengerPrices
+                .hotelTransferCounts as unknown as {
+                outbound: number;
+                returning: number;
+              },
+            }
+          : {}),
+        ...(!Array.isArray(purchase.passengerPrices) &&
+        purchase.passengerPrices &&
+        typeof purchase.passengerPrices === 'object' &&
+        'roomPrices' in purchase.passengerPrices
+          ? {
+              roomPrices: purchase.passengerPrices
+                .roomPrices as unknown as NonNullable<
+                NonNullable<
+                  ReservationIntakeV1['servicePurchases']
+                >[number]['roomPrices']
+              >,
+              hotelStayKey: (
+                purchase.passengerPrices as { hotelStayKey: string }
+              ).hotelStayKey,
+            }
+          : {}),
+        ...(!Array.isArray(purchase.passengerPrices) &&
+        purchase.passengerPrices &&
+        typeof purchase.passengerPrices === 'object' &&
         'calculation' in purchase.passengerPrices
           ? {
               pricingCalculation: purchase.passengerPrices
@@ -130,6 +186,19 @@ function present(
               hotelSavings: hotelPurchaseSavingsEvidence(
                 purchase.passengerPrices,
               )!,
+            }
+          : {}),
+        ...(!Array.isArray(purchase.passengerPrices) &&
+        purchase.passengerPrices &&
+        typeof purchase.passengerPrices === 'object' &&
+        'legacyGuests' in purchase.passengerPrices
+          ? {
+              legacyGuestPrices: purchase.passengerPrices
+                .legacyGuests as unknown as NonNullable<
+                NonNullable<
+                  ReservationIntakeV1['servicePurchases']
+                >[number]['legacyGuestPrices']
+              >,
             }
           : {}),
         passengerPrices: Array.isArray(purchase.passengerPrices)
@@ -295,6 +364,14 @@ export class ReservationsPublicService {
     });
     if (!row) throw new NotFoundException('درخواست در دسترس نیست.');
     const result = present(row);
+    if (this.tickets?.currentSelections)
+      result.snapshot = {
+        ...result.snapshot,
+        ticketSelections: await this.tickets.currentSelections(
+          result.snapshot.ticketSelections ?? [],
+          row.branchId,
+        ),
+      };
     const types = await Promise.all(
       (result.snapshot.ticketSelections ?? []).map(
         async (ticket) =>
@@ -551,7 +628,26 @@ export class ReservationsPublicService {
       take: 100,
       skip: (page - 1) * 100,
     });
-    return rows.map(present);
+    const result = rows.map(present);
+    if (this.tickets?.currentSelections) {
+      for (const branchId of [...new Set(rows.map((row) => row.branchId))]) {
+        const linked = result.filter((item) => item.branchId === branchId);
+        const current = await this.tickets.currentSelections(
+          linked.flatMap((item) => item.snapshot.ticketSelections ?? []),
+          branchId,
+        );
+        let offset = 0;
+        for (const item of linked) {
+          const count = item.snapshot.ticketSelections?.length ?? 0;
+          item.snapshot = {
+            ...item.snapshot,
+            ticketSelections: current.slice(offset, offset + count),
+          };
+          offset += count;
+        }
+      }
+    }
+    return result;
   }
 
   async updateArrangement(

@@ -1,3 +1,42 @@
+## CONTRACT-TRANSACTIONAL-NUMBERING-1029 — 2026-10-29
+
+Owner supersedes the prior rollback-gap allowance and requests consecutive numbers for newly committed contracts. A Sales-owned singleton counter is updated inside the existing Serializable create transaction. Failed contract/service/payment/history writes roll back allocation; only proven serialization aborts are retried. Historical numbers and missing records are not fabricated or renumbered. The additive migration initializes above stored numbers and the old sequence high-water mark, preserving numbers possibly already shown to users. Stop all legacy API writers for migration/cutover and deploy only the new allocator; do not roll back to the old allocator after cutover. No API/event/dependency or production-data mutation is requested; user explicitly authorizes develop merge.
+
+## VOUCHER-TRANSFER-OVERRIDES-1027 — supplier defaults with per-voucher exceptions
+
+Owner explicitly permits a transfer supplier different from the hotel supplier and optional Board/leader corrections for a specific voucher. This supersedes the blanket leader-selection requirement and the no-client-text rule only for an explicit transferDetailsOverride=true voucher revision. Default mode still resolves the selected leader through the authorized audited directory; a supplied leader ID is always validated against transferBrokerId or, when omitted, the hotel broker. The sent hotel broker continues to identify the hotel confirmation recipient. Board/name/phone overrides are bounded output text, never directory writes, new reference identities or changes to Sales, purchases or issued files. Leader selection is optional, including vouchers without transfer. Financial release, branch/permission, version and insurance rules remain required. Producer/consumer optional fields ship together; no schema migration.
+## AGENCY-CONTACT-ROUNDTRIP-1026 — 2026-10-26
+
+Owner explicitly approves saving agency mobile numbers through the ordinary staff-authorized contact API without SMS verification or any verified-phone claim. Agency registration therefore skips the development-only verification stage; Corporate-customer verification and portal authentication policies are unchanged. Separate office phones reuse the existing encrypted organization-contacts model and Excel conventions. Hidden executive job titles remain stored, without an editable agency job-title input. No new IAM grant or schema change; see tasks/AGENCY-CONTACT-ROUNDTRIP-1026.md.
+
+## LEGACY-CONTRACT-TOTAL-1025 — 2026-10-25
+
+Owner supersedes per-service historical sale prices with one customer contract table: separate IRR/foreign gross amounts, discount and commission in their own selected currency, no FX conversion. Both deductions subtract from the same-currency gross total. Persist ordinary BASE/DISCOUNT components and existing contractPackagePricingVersion alongside legacyServicePartiesV2; service selections, age counts and real capacity references remain. Existing saved per-service historical contracts are not rewritten. Old unfinished draft service prices cannot override the newly entered customer total. Registered flight return defaults retain original load priority; explicit pair IDs disambiguate recurring dates and late calendar responses fill only an empty return, preserving manual choices. No schema/migration or permission changes.
+
+## 2026-10-25 — FLIGHT-WEEKDAY-PURCHASE-1025
+
+Owner authorizes grouping recurring company capacity by exact flight identity and Tehran weekday. Preserve existing per-offer Procurement and Finance FKs/payables; create all cost revisions atomically, with exact apportioned invoice totals and immutable pool evidence in the existing reason field. Contract and unsold-seat costs consume the pool total/seat denominator, never the rounded per-offer share or a duplicate pooled payable. New dates do not expand historical pools; paid/partial-paid or incomplete original-group amendments fail. Additive public types/endpoint and optional transaction-backed producer reads retain legacy compatibility. No schema/migration; see tasks/FLIGHT-WEEKDAY-PURCHASE-1025.md.
+
+## LEGACY-CONTRACT-SERVICES-1025 — owner-approved aggregate historical services (2026-10-25)
+
+The owner explicitly retains ordinary service/date/inventory selection and pricing in Legacy Contract while omitting the personal passenger table. V2 first-service metadata legacyServicePartiesV2 carries strictly validated adult/child/infant counts per selected service; real catalog ticket/hotel references remain and no synthetic Customer/passenger identity or manifest name is created. Historical adults plus children reserve real ticket capacity through the existing idempotent reserve/confirm path; infants do not consume seats. Counts are included in the immutable reservation snapshot and read by output consumers. Summary count is the maximum service-party total rather than a sum across both flight legs. Shared metadata producer is Sales; consumers are Sales validation/confirmation, Reservations supplier output and contract/list/Excel output. Existing V1 customer-only OTHER records and ordinary personal-passenger rules remain compatible. No database schema, migration, role or dependency changes. Manual historical service prices use the existing exact-decimal service pricing contract; current published sale-price assertions are not imposed on historical agreed prices, while canonical route/date/active inventory/capacity checks stay in force. Explicit review submission and immutable financial approval/payment controls remain.
+
+## HOTEL-CHECKIN-DEPARTURE-DAY-1024 — owner clarification (2026-10-24)
+
+Automatic check-in with an outbound flight uses its displayed Tehran departure day, including overnight arrivals and published packages. This supersedes the earlier whole-stay next-day flag for flight-linked automatic dates; stale draft flags must not advance check-in. Explicit manual check-in remains authoritative. Hotel-only/package-only dates, checkout policy and per-guest stay overrides remain unchanged. No persisted records are rewritten.
+
+## RESERVATION-DELIVERY-PERMIT-1024 — owner-approved exception (2026-10-24)
+
+The owner explicitly permits Reservations to authorize customer document delivery without confirmed receipt/full settlement or another Finance approval, with a mandatory5–500-character reason. This supersedes the Finance-only decision-maker wording solely for this pathway. Finance remains owner of the existing immutable customer delivery revisions: new basis RESERVATION_PERMISSION, same version/branch/contract lock, canonical cancellation check, actor/time and Sales notification. Existing reservations.documents.manage is required; read-only Reservations, Finance-only actors and unrelated branches cannot grant this basis. A dedicated minimal read/command port avoids giving Reservations access to Finance queues or payment authority. Reservations may revoke only this pathway; Finance retains revocation authority. A valid authorization from another pathway cannot be silently replaced. No second approver/expiry is required for this owner-chosen pathway; manager exceptions keep their existing controls. Refund/balance changes retain this explicit override; contract cancellation still revokes it. No blanket user/role grants or operational records are changed by implementation.
+
+## DOCUMENT-QR-LINKS-1021 — public document capabilities (2026-10-21)
+
+The owner explicitly chooses unauthenticated viewing through an unguessable link scoped to the scanned document. Authenticated, permission-scoped canonical Web PDF producers alone publish immutable distribution artifacts; no public API reads domain records and no client HTML is accepted. Each contract, supplier form, voucher and individual passenger ticket receives a separate random 192-bit capability. Batch ticket downloads publish passenger-isolated snapshots. Existing branch, cancellation, supplier/leader and financial-delivery guards execute before publication; local unsaved edits are never published.
+
+Web owns these encrypted HTML distribution artifacts, not a second Sales/Reservations source of truth. AES-256-GCM uses a runtime-only key, token-bound AAD and hash-only filenames. Exact GET/HEAD /d/<32-character-token> bypasses login; no listing, mutation, identifier lookup or general proxy exception exists. Responses are no-store/noindex/noreferrer with script/form/network-restricting CSP. Previously issued snapshots remain immutable; updating a document creates a new link. Physical artifact removal revokes that capability. Existing legacy QR content cannot be made into a URL retroactively: regenerate outputs after activation.
+
+Activation requires all three PUBLIC_TRAVEL_DOCUMENTS_* settings: HTTPS canonical origin (short enough for the 78-byte QR), absolute persistent private root, and independently generated 32-byte key represented as 64 hex characters. Mount the directory into Web, keep it out of public/static paths, restrict access logs containing capability paths, and include both encrypted artifacts and the separately protected key in recovery procedures. Preserve them across container replacement. Missing all settings keeps existing output compatible and does not expose records; partial configuration fails closed. No schema, dependency or domain API contract changes. Merge/rollout remain separately owner-authorized.
+
 ## RATE-ACTIONS-CHART-1019 — reference correction policy (2026-10-19)
 
 The owner explicitly permits editing/removing registered Master Data reference quotes. Dedicated versioned PATCH/DELETE commands supersede blanket immutability only for these non-authoritative reference rows: edit amount/source, retaining original pair/type/observation/validity/status; removal logically deactivates with actor/time/version. All previous values remain in transactional audit, inactive rows are excluded from current/history and cannot be approved through legacy commands. This is not Finance rate approval, financial document rewriting or physical audit deletion. Preserve native update/delete authority, manual resource/field access, permitted audit branch, exact positive Decimal strings and compare-and-swap. Removing the visible isAuthoritative=false badge never changes the stored flag. No schema/migration or operational data change.
@@ -582,3 +621,101 @@ Owner explicitly replaces mandatory hotel/flight membership equality with per-le
 ## ISSABEL-ADAPTER-1020 — bounded recording storage
 
 Owner explicitly requests saved call audio without ERP playback. For this initial integration, actual audio is stored as authenticated encrypted32KiB chunks in Integration-owned PostgreSQL tables, rather than exposing an external recording URL or claiming that metadata is an audio backup. This is a bounded exception to general Documents/S3 file storage:20MiB WAV maximum, approved retention required, explicit byte/hash finalization and private PBX uploader. No cross-module Documents table access. Reassess storage/backup volume with measured call traffic before Production. AMI UserEvent hooks express verified PBX facts; generic channel Hangup/IVR Up is insufficient evidence of linked-call completion/human answer. Actual installed-version hook compatibility and reconciliation remain live-acceptance requirements, not assumptions.
+
+## LOAD-CONTRACT-TICKET-SYNC-1022 — current flight schedule projection
+
+Owner explicitly requires load revisions to reach existing linked contracts and already issued ticket downloads. Current authorized reads overlay the exact catalog offer's operational schedule, including stopped/archived but still linked offers. Saved contract amounts and immutable issue/history/QR artifacts remain historical records; new current previews/downloads use the latest schedule. This resolves earlier snapshot-only display wording without mutating financial or historical source records. No migration or automatic external reissuance is implied.
+
+## HR-JOB-TITLES-PROFILE-1022 — employee assignment corrections
+
+Owner explicitly permits unit, job title, grade and direct-manager correction from the employee editor. This supersedes the earlier editor-only prohibition for these four fields. Branch, employment start and exit remain in their established workflows. Corrections require HR management, branch scope and employee CAS, validate canonical references and append an applied assignment snapshot plus before/after audit in the same serializable transaction. Job titles are shared through an HR-owned minimal catalogue (ID/name/status); underlying record mutation remains branch-authorized. Existing stored position slots and identity14 payloads remain compatible; postal code appends identity slot14 and stays encrypted. A forward migration adds nullable employee/assignment job-title FKs without the ordinary parent branch constraint. No historical rewrite or backfill.
+
+## 2026-10-24 — Contract-only person entry authorization
+Owner explicitly authorizes the entire new-contract person workflow under sales.contracts.create and visibility of /sales/contracts/new. Customers exposes a bounded sales/people entry adapter using its existing validation/encryption/branch/CAS/audit producer. It derives request-local read/create/update/sensitive/contact and Customer field capabilities solely for those actions; general Customers administration remains unchanged and no grants are stored. Role/status/merge/archive and organization mutation remain outside this adapter. Active agency resolution stays on the existing Sales reference endpoint.
+
+
+## 2026-10-24 — Current contract amendment output and passenger pricing
+
+CONTRACT-EDIT-PASSENGER-PRICES-1024: owner requests passenger prices and deductions together in Reservations amendment, and current outputs after edits. Current form/ticket reads use a Sales-owned branch-scoped execution projection; historical workflow reads retain the stored intake. Reservations rebases changed canonical hotel/flight/age/service facts while retaining broker/leader/notes and unchanged output-only overrides. A server-owned optional outputSourceSnapshot on workflow state records the last acknowledged base, so a later price-only revision cannot erase output-only customizations; no command accepts this field. Old states fall back to their intake snapshot. Existing issued artifacts and public bearer-link files remain immutable; newly generated previews/PDFs/shares use current facts. Downloaded copies cannot be changed remotely.
+
+Passenger-total amendments persist gross totals, deductions, net agreed prices and contract totals together with per-currency Decimal math and existing cheque/insurance rules. They omit obsolete room-price controls. Pure monetary metadata changes do not publish a new execution intake or reset approvals. Existing receipts, audit revisions, branch/own permissions and CAS remain. Customers exposes current name/DOB only for an already authorized Sales output path, audited without decrypting document numbers. No schema/migration/dependency or new permission grant.
+
+## 2026-10-24 — Immediate raster image preview (IMAGE-PREVIEW-NO-SCAN-WAIT-1024)
+
+Owner requests removing antivirus wait from uploaded photo preview. This supersedes the general CLEAN-only rule solely for authenticated JPEG/PNG preview, including PREVIEW step-up grants. Permit explicit non-infected scan states without relabeling them CLEAN. All existing branch, domain, file-read, confidentiality, archive and step-up checks remain. Infected/quarantined images remain blocked. Download, template execution and non-image delivery retain their original scan requirements. Existing MIME detection, response isolation and browser rasterization remain in place. No migration or scanner shutdown.
+
+
+## 2026-10-24 — Optional national ID in New Contract only
+
+SALES-OPTIONAL-NATIONAL-ID-1024: owner explicitly scopes optional national ID to New Contract. Customers-owned createForSales applies this policy only after validating contract-create, screen and actor branch access; general directory create remains strict. Missing ID is omitted (never fabricated), provided IDs retain normalization/protection/uniqueness. Sales entry relaxes national-ID required attributes through an opt-in shared component prop, leaving default consumers unchanged. Birth date/passport and all other identity rules remain. Uncertain no-ID creation requires choosing the existing record instead of unsafe automatic re-creation. No schema/migration or permission grant changes.
+
+## 2026-10-24 — Temporary Sales hotel capacity exception
+
+Owner explicitly disables blocking hotel room capacity and guest-age/composition matching while room capacities are incomplete. Shared Sales policy governs Web save and API save/confirmation. Actual passenger allocations, valid room IDs/ordinals, stay dates and money checks stay authoritative; absent tariff matches do not create quotes or erase negotiated prices. Re-enabling requires a new owner request. Agency buyer landlines accept any nonempty digit sequence (optional leading +), without a minimum national-number length; mobile number validation remains unchanged. Owner also authorizes develop merge and production rollout.
+
+## 2026-10-24 — Contract owner self-service
+
+Owner authorizes visible Sales contract-area users to export, amend and record additional payments for their own contracts in their allowed branches, without separate export/update/payment grants. Existing explicit screen denies, broader native permissions, contract state/CAS/idempotency and payment validation stay authoritative. This grants no receipt approval, financial release, payer transfer or access to other owners' contracts. The old flight/room party equality error follows the already-approved temporary hotel-capacity policy. Develop merge and production rollout explicitly authorized.
+
+## 2026-10-25 — Call Center request assignee scope
+
+Explicit owner approval makes request execution assignment self-only for ordinary agents, current-unit-only for team managers, and cross-unit for an explicitly configured executive/demo allowlist. Use active native ERP identities and the existing team-management permission with exact organizationUnitId; never infer authority from display names or phone extensions. A dedicated request directory avoids widening telephony/referral eligibility. Server-side assignment validation is authoritative. HR's public minimal projection supplies full name/title; unknown titles remain unknown. Branch and contact permissions remain intact, and accounts/grants are not implicitly created. See tasks/CALL-REQUEST-ASSIGNEES-1025.md.
+
+## 2026-10-25 — Evidence-backed financial workflow completion
+
+Owner authorizes implementation, develop merge and3100 rollout without orchestration or automatic banking, preserving current forms. Principal/agent is explicit; outgoing agency commission is not earned revenue. Actual imported gross/deduction/net payroll is reconciled with the approved HR request, without invented statutory rates. Posted original payable carrying and prior valid revaluations determine realised FX; actual cash is never journalled twice. Failed payouts remain, and actual refunds/write-offs are separately evidenced and capped. Immutable source facts, independent posting/cancellation, additive FKs and isolated tests are mandatory. IFRS15/IAS19/IAS21 inform treatment, not a claim of Iranian statutory compliance; source-specific operational rules are explicitly documented as inference in docs/tasks/FINANCIAL-WORKFLOWS-COMPLETION-1025.md. Legal exports remain deferred by owner.
+
+## CONTRACT-SELLER-NAME-1025 — 2026-10-25
+
+Owner authorizes showing the responsible seller in readable contract outputs without global IAM users-directory access. Sales authorizes the saved contract first, then requests only contract.ownerUserId through an IAM-owned internal document identity projection selecting ID/displayName. Current exporter identity must never replace the seller. User status/branch reassignment does not erase the name from a historical readable contract. No new client-selectable identity endpoint, role grant, schema or shared wire change; preview/PDF retain the existing ownerName contract. Missing identities remain null rather than inventing an actor name.
+
+## REMOVE-EXTRA-TRAVEL-DATE-1025 — 2026-10-25
+
+The owner removes redundant trip-start inputs from New Contract. Identity registration must not demand a second date before service selection. Actual flight/hotel/tour dates remain canonical for travel/age/output; service-only contracts use execution dates attached to selected services rather than an identity-sheet date. Missing birth dates, mismatched ages after date selection, invalid service dates, inventory and allocation validation remain. Keep the existing departureDate wire/DB field as a derived summary and legacy draft fallback, with no schema/migration or invented current-date default.
+# COMPOSITE-HOTELS-CITIES-1026 — owner-directed multicity composition
+
+2026-10-26: owner replaces the old same-city alternative-hotel reference editor
+with one title and ordered repeatable city/hotel selections and native inline
+Hotel creation. This explicitly supersedes the same-city member invariant in
+Accommodation Master Data. Keep actual Hotel FKs and existing member priorities;
+derive each city's identity from its real Hotel. The existing parent city FK is
+a backward-compatible first-member anchor, not a restriction on later members.
+No automatic dates, prices, bookings, availability or financial writes are inferred.
+Owner clarified that every hotel loads into the contract and its dates are entered
+independently there. Add optional SalesHotelSelectionInput.additionalStays, one
+normalized Sales-owned child table with actual Hotel/City FKs, explicit ordered
+dates and historical name snapshots. Keep the primary selection/room allocation
+and contract-total pricing protocol intact; no cloned charged services or inferred
+dates/prices. Additional stays accompany the immutable reservation snapshot and
+contract output, not automatic hotel purchases. Old contracts need no backfill.
+Omitted itinerary fields on compatible updates preserve saved stays; an explicit
+empty list removes them. Published Tour prices cannot be reused for a changed
+composite itinerary. Rollback retains storage and must not allow old application
+writes to multi-stay contracts. No production migration or rollout requested.
+
+## 2026-10-26 — COMPLETION-NAME-ONLY-1026
+
+Owner supersedes mandatory passport/birth fields in correction Add passenger: only first and last names are mandatory. Missing birth dates persist as SQL NULL with the existing booked age category; do not invent identity dates. A contract-authorized Customer completion policy permits name-only profiles without weakening ordinary Customer/new-contract validation. Optional supplied facts remain validated and known birth dates cannot contradict booked categories. Nullable Sales read projections preserve output compatibility with empty strings and unknown child bands. Apply the additive migration before API rollout. No production deployment is requested.
+
+## 2026-10-26 — PURCHASE-BROKER-ENGLISH-COMPAT-1026
+
+Owner requires English Purchase broker labels even for remaining Persian-only records. Official registered Latin names remain authoritative; missing/non-Latin English fields use a display-only Latin transcription, never a new official name or Master data update. After the asynchronous preference question and response opportunity, this visible implementation assumption follows the repeated Latin-display request. Source names, IDs, payable parties and snapshots remain unchanged. The existing generic options API and modern picker share one pure naming helper; no API shape or permission change. Production publication is a separate operation from the requested repository merge.
+
+## 2026-10-27 — CONTRACT-PASSENGER-FIELDS-1027
+
+Owner supersedes the prior mandatory passport-number/expiry rule at new-contract entry: those two documents are optional for hotel-only, flight-only and combined contracts. International hotel guest identity fields now match international flight identity fields. Supplied document values still validate; no generated identity or relaxation of operational Manifest completeness. Gender and national-ID columns exchange positions; domestic gender stays optional and persists when supplied. Correction Add passenger requires only first/last name; skip national-ID matching when absent rather than sending an empty ID to a ten-digit lookup. Existing supplied-ID matching/review and Customer identity checks remain intact. No database/API contract change; user authorizes develop merge and backed-up Avina rollout.
+
+## 2026-10-27 — CONTRACT-OPTIONAL-BIRTH-1027
+
+Owner explicitly makes birth date optional during new-contract entry and authorizes develop merge/Avina rollout. Extend the existing scoped Customer Sales-entry policy without weakening ordinary Customer creation. Reuse nullable Customer and Sales passenger columns; persist SQL NULL and an explicit booked ADT/CHD/INF category, never an inferred birthday. The additive optional request ageCategory is consumed only when DOB is absent; a supplied DOB remains authoritative and validated. Sales Web derives booked categories from step-one composition, including room-driven/flight-only slots. Hotel room/visa composition matching allocates unknown identities to already-booked slots without changing identity data; count and known-DOB contradictions still reject. Existing consumer projections already expose empty DOB with stored category. No schema/dependency migration is needed.
+# Reservation defaults — 2026-10-29
+
+The product owner now explicitly requests hotel check-in to default to outbound arrival day (including overnight flights), superseding the earlier departure-day default. Preserve manual check-in. Reservation child bands use the saved hotel check-in date, falling back to outbound arrival/departure if no hotel date exists; DOB stays in Customers. Bands remain [2,6) and [6,12). Missing form sex defaults Male without modifying canonical passenger identity or saved Female values. Automatic returns remain uniquely paired by the configured load/return date window; never guess another load.
+
+## HOTEL-ROOM-RESERVATION-1031 — 2026-10-31
+
+Owner confirms independent broker/form/quotation per hotel stay, room-level P.P × Ratio × stay nights with one room currency per hotel, and independent count-based transfers allowing zero. Quotation edits are not financial writes; purchases remain editable drafts until explicitly registered through existing Reservations purchase/Finance approval boundaries. Store bounded additive snapshots in existing workflow/purchase JSON, retaining source FK, history, CAS and idempotency. Per-hotel cost coverage preserves primary legacy keys and sums current costs per currency without duplicate legacy fallback. No Sales allocation/price rewrite, new payment approval, schema or dependency change. Details: [HOTEL-ROOM-RESERVATION-1031](tasks/HOTEL-ROOM-RESERVATION-1031.md).
+
+## 2026-10-31 — Independent Procurement petty ledger
+
+Owner explicitly requests replacing the Orders entry point with an independent petty fund card, debit at request publication, and no Finance integration for now. Procurement owns this operational ledger; it does not represent a Finance payment, settlement, accounting balance or permission grant. One fund per authorized branch, with fixed currency and session-user custodian on creation. Existing procurement.assign permits initial balance/account configuration and audited absolute balance adjustments. Publication of a request in a configured branch debits its positive estimate in the same idempotent transaction; insufficient balance or CAS conflict rolls back publication. Drafts do not spend funds. Legacy branches without a configured fund retain their previous workflow until initial configuration. Published request charge keys survive request purge and movements cannot be edited/deleted; removing a request is not a refund. Previously charged amount/currency/branch cannot be changed by republication. Original Orders data/API remains intact for historical references; its workspace entry and old orders URL redirect to home. No actual bank transfer or Finance record is created.

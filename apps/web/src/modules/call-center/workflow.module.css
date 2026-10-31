@@ -53,6 +53,9 @@
 .panel summary {
   cursor: pointer;
 }
+.editorContact {
+  margin-block-end: 16px;
+}
 .form fieldset {
   display: grid;
   gap: 12px;
@@ -244,6 +247,16 @@
   font-size: 28px;
   line-height: 1.3;
 }
+.actionCards article[role='button'] {
+  cursor: pointer;
+}
+.actionCards article[role='button']:hover {
+  border-color: #1875e5;
+}
+.actionCards article[role='button']:focus-visible {
+  outline: 2px solid #1875e5;
+  outline-offset: 3px;
+}
 .actionCards small {
   font-size: 12px;
 }
@@ -265,6 +278,26 @@
 }
 .queue header button {
   margin: 0;
+}
+.queue header .queueAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px;
+  min-height: 40px;
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--surface, #fff);
+  border: 1px solid var(--cc-border, var(--border));
+  color: var(--cc-ink, var(--foreground));
+}
+.queue header .queueAction:hover {
+  background: var(--muted, #eef5ff);
+  border-color: #1875e5;
 }
 .queue p {
   margin-block: 4px;
@@ -328,4 +361,53 @@
   font-size: 12px;
   color: var(--muted-foreground);
   margin-block: 8px 0;
+}
+
+.queuePagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  width: 100%;
+}
+
+/* Center every queue header and cell, including request titles. */
+.queueColumns > *,
+.queueRow > * {
+  text-align: center;
+  justify-self: center;
+  align-self: center;
+  min-width: 0;
+}
+.queueRow > strong {
+  max-width: 100%;
+}
+.queueRow .status,
+.queueRow .priority {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.7;
+  width: fit-content;
+}
+.priority {
+  background: #e7f1ff;
+  color: #176cc7;
+}
+.priority[data-priority='LOW'] {
+  background: #f0f2f5;
+  color: #475467;
+}
+.priority[data-priority='HIGH'] {
+  background: #fff1d6;
+  color: #925b07;
+}
+.priority[data-priority='URGENT'] {
+  background: #ffe4e8;
+  color: #b42338;
 }

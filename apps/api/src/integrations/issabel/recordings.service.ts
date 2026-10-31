@@ -6,11 +6,14 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  HttpException,
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'node:crypto';
+import type { AuthenticatedActor } from '@nora/contracts';
+import { recordingRange } from './recording-range';
 import { DatabaseService } from '../../database/database.service';
 import { CallCenterTelephonyService } from '../../customer-affairs/call-center-telephony.service';
 import { TelephonyIntegrationService } from '../telephony.service';
@@ -28,6 +31,7 @@ export interface RecordingStart {
 export class IssabelRecordingsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(IssabelRecordingsService.name);
   private timer?: ReturnType<typeof setInterval>;
+  private maintaining = false;
   constructor(
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(ConfigService) private readonly config: ConfigService,
@@ -38,11 +42,41 @@ export class IssabelRecordingsService implements OnModuleInit, OnModuleDestroy {
   ) {}
   onModuleInit() {
     this.timer = setInterval(() => {
-      void this.prune().catch(() => {
+      void this.maintain().catch(() => {
         this.logger.warn('Issabel recording expiry could not complete.');
       });
     }, 60000);
     this.timer.unref();
+  }
+  async maintain() {
+    if (this.maintaining) return;
+    this.maintaining = true;
+    try {
+      await this.prune();
+      if (this.config.get<string>('ISSABEL_ENABLED') !== 'true') return;
+      const { connectionId } = await this.policy();
+      // Existing audit is the durable publication receipt. A crash between inbox
+      // commit and this receipt is safe: receive() deduplicates the same identity.
+      const rows = await this.db.client.$queryRaw<Array<{ id: string }>>`
+        SELECT r.id FROM integration_telephony_recordings r
+        WHERE r."connectionId"=${connectionId}::uuid AND r.state='COMPLETE'
+          AND r."expiresAt">now() AND NOT EXISTS (
+            SELECT 1 FROM integration_telephony_audit a
+            WHERE a."connectionId"=r."connectionId" AND a."entityId"=r.id
+              AND a.action='RECORDING_PUBLISHED')
+        ORDER BY r."completedAt",r.id LIMIT 20`;
+      for (const row of rows) {
+        try {
+          await this.finish(row.id);
+        } catch {
+          this.logger.warn(
+            'Recording publication pending; durable audio retained.',
+          );
+        }
+      }
+    } finally {
+      this.maintaining = false;
+    }
   }
   onModuleDestroy() {
     clearInterval(this.timer);
@@ -285,7 +319,152 @@ export class IssabelRecordingsService implements OnModuleInit, OnModuleDestroy {
       },
       'ISSABEL',
     );
+    await this.db.client.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM integration_telephony_recordings WHERE id=${id}::uuid FOR UPDATE`;
+      if (
+        !(await tx.integrationTelephonyAudit.findFirst({
+          where: { connectionId, entityId: id, action: 'RECORDING_PUBLISHED' },
+          select: { id: true },
+        }))
+      )
+        await tx.integrationTelephonyAudit.create({
+          data: {
+            connectionId,
+            entityId: id,
+            action: 'RECORDING_PUBLISHED',
+            metadata: {},
+          },
+        });
+    });
     return { id, state: 'COMPLETE', sizeBytes: row.sizeBytes };
+  }
+  async forCall(actor: AuthenticatedActor, callId: string) {
+    const context = await this.domain.callRecordingContext(actor, callId);
+    if (!context) return { data: [] };
+    const ids = context.references.flatMap((reference) => {
+      const match = /^issabel-recording:([0-9a-f-]{36})$/i.exec(reference);
+      return match ? [match[1]!] : [];
+    });
+    const rows = await this.db.client.integrationTelephonyRecording.findMany({
+      where: {
+        id: { in: ids },
+        connectionId: context.connectionId,
+        rootFingerprint: context.rootFingerprint,
+        state: 'COMPLETE',
+        expiresAt: { gt: new Date() },
+        connection: { branchId: { in: [...actor.branchIds] } },
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      select: { id: true, sizeBytes: true },
+    });
+    return { data: rows };
+  }
+  async read(
+    actor: AuthenticatedActor,
+    id: string,
+    range?: string,
+    callId?: string,
+  ) {
+    if (!callId) this.domain.authorize(actor);
+    if (
+      !actor.permissions.includes(
+        'customer_affairs.call_center.recordings.read',
+      )
+    )
+      throw new ForbiddenException();
+    return this.db.client.$transaction(
+      async (tx) => {
+        const row = await tx.integrationTelephonyRecording.findFirst({
+          where: {
+            id,
+            state: 'COMPLETE',
+            expiresAt: { gt: new Date() },
+            connection: { branchId: { in: [...actor.branchIds] } },
+          },
+        });
+        if (!row) throw new NotFoundException();
+        if (callId) {
+          const context = await this.domain.callRecordingContext(
+            actor,
+            callId,
+            tx,
+          );
+          if (
+            !context ||
+            context.connectionId !== row.connectionId ||
+            context.rootFingerprint !== row.rootFingerprint ||
+            !context.references.includes(`issabel-recording:${id}`)
+          )
+            throw new NotFoundException();
+        } else
+          await this.domain.authorizeRecording(
+            actor,
+            row.connectionId,
+            row.rootFingerprint,
+            `issabel-recording:${id}`,
+            tx,
+          );
+        const bytes = recordingRange(range, row.sizeBytes);
+        await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${'telephony:media-read:' + actor.userId},0))`;
+        const recent = await tx.integrationTelephonyAudit.count({
+          where: {
+            actorUserId: actor.userId,
+            action: 'RECORDING_READ',
+            createdAt: { gte: new Date(Date.now() - 60000) },
+          },
+        });
+        if (recent >= 60)
+          throw new HttpException('Recording read rate exceeded.', 429);
+        const first = Math.floor(bytes.start / RECORDING_CHUNK_BYTES);
+        const last = Math.floor(bytes.end / RECORDING_CHUNK_BYTES);
+        const chunks = await tx.integrationTelephonyRecordingChunk.findMany({
+          where: { recordingId: id, index: { gte: first, lte: last } },
+          orderBy: { index: 'asc' },
+          take: 640,
+        });
+        if (chunks.length !== last - first + 1)
+          throw new ConflictException('Audio integrity failure.');
+        const audio = Buffer.concat(
+          chunks.map((chunk, offset) => {
+            const encoded = this.domain.crypto.decrypt<string>(
+              chunk.encryptedAudio,
+              chunk.keyVersion,
+              `issabel:audio:${id}:${chunk.index}`,
+            );
+            const data = Buffer.from(encoded, 'base64');
+            if (
+              chunk.index !== first + offset ||
+              this.domain.crypto.fingerprint(encoded) !== chunk.fingerprint ||
+              data.length !==
+                Math.min(
+                  RECORDING_CHUNK_BYTES,
+                  row.sizeBytes - chunk.index * RECORDING_CHUNK_BYTES,
+                )
+            )
+              throw new ConflictException('Audio integrity failure.');
+            return data;
+          }),
+        );
+        await tx.integrationTelephonyAudit.create({
+          data: {
+            connectionId: row.connectionId,
+            actorUserId: actor.userId,
+            entityId: id,
+            action: 'RECORDING_READ',
+            metadata: { start: bytes.start, end: bytes.end },
+          },
+        });
+        const offset = bytes.start - first * RECORDING_CHUNK_BYTES;
+        return {
+          ...bytes,
+          size: row.sizeBytes,
+          audio: audio.subarray(offset, offset + bytes.end - bytes.start + 1),
+        };
+      },
+      // ReadCommitted makes the rate count fresh after the per-actor lock.
+      // Concurrent expiry/missing chunks fails closed rather than serving old data.
+      { isolationLevel: 'ReadCommitted', timeout: 15000 },
+    );
   }
   async prune() {
     const rows = await this.db.client.integrationTelephonyRecording.findMany({

@@ -297,9 +297,9 @@
   --tone-text: #ffffff;
 }
 .workspace [data-tone='red'] {
-  --tone-bg: #fee2e2;
-  --tone-edge: #dc2626;
-  --tone-text: #991b1b;
+  --tone-bg: #f87171;
+  --tone-edge: #b91c1c;
+  --tone-text: #450a0a;
 }
 .workspace [data-tone='neutral'] {
   --tone-bg: #f7faff;
@@ -416,9 +416,9 @@
   --tone-text: #f3f8fb;
 }
 :global(.dark) .workspace [data-tone='red'] {
-  --tone-bg: #482426;
-  --tone-edge: #ff9494;
-  --tone-text: #ffd7d7;
+  --tone-bg: #7f1d1d;
+  --tone-edge: #f87171;
+  --tone-text: #fef2f2;
 }
 :global(.dark) .workspace [data-tone='neutral'] {
   --tone-bg: #232327;
@@ -525,6 +525,31 @@
   border-inline-end: 1px solid var(--border);
   white-space: nowrap;
 }
+.serviceGroups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 300px;
+  max-width: 300px;
+  margin: 0;
+  padding: 3px 0;
+  list-style: none;
+  text-align: start;
+  white-space: normal;
+}
+.serviceGroups li {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  max-width: 100%;
+  padding: 2px 6px;
+  font-size: 11px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+.serviceGroups strong {
+  flex-shrink: 0;
+}
 .requestTable tbody tr {
   background: var(--tone-bg);
   color: var(--tone-text);
@@ -573,10 +598,17 @@
   gap: 12px;
   margin: 12px 0;
 }
-.requestTable td:nth-child(n + 15):nth-child(-n + 19) {
+.requestTable td:nth-child(n + 16):nth-child(-n + 20) {
   max-width: 230px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.requestTable th[data-room-category],
+.requestTable td[data-room-category] {
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  box-sizing: border-box;
 }
 .exportBar small {
   color: var(--muted-foreground);
@@ -591,23 +623,16 @@
   line-height: 12px;
 }
 
-/* Keep the notes marker visible when the request is selected. */
-.requestTable
-  tbody
-  tr[data-corrected='true']
-  td:is(:nth-child(2), :nth-child(3)) {
-  background: #f3e8ff;
-  color: #581c87;
-  border-color: #d8b4fe;
+.correctedLabel {
+  display: block;
+  color: #dc2626;
+  font-weight: 700;
 }
-:global(.dark)
-  .requestTable
-  tbody
-  tr[data-corrected='true']
-  td:is(:nth-child(2), :nth-child(3)) {
-  background: #3b0764;
-  color: #f3e8ff;
-  border-color: #a855f7;
+:global(.dark) .correctedLabel {
+  color: #fca5a5;
+}
+.requestTable tr[data-selected='true'] .correctedLabel {
+  color: #fecaca;
 }
 
 /* Keep the notes marker visible when the request is selected. */

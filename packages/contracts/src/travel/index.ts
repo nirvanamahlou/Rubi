@@ -1,4 +1,5 @@
 export * from './hotel-savings';
+export * from './legacy-purchase-guests';
 export * from './ticket-flight-output';
 import type { HotelPurchaseSavingsV1 } from './hotel-savings';
 import type { SalesReservationRequestV1 } from '../sales';
@@ -99,7 +100,19 @@ export {
   validReturnWindow,
 } from './ticket-return-window';
 
+export interface TicketSaleRouteV1 {
+  originId: string;
+  destinationId: string;
+}
+export {
+  ticketOfferMatchesRoute,
+  ticketOfferRoutes,
+} from './ticket-sale-routes';
 export interface TicketOfferV1 {
+  /** Additional commercial routes sharing this exact offer/inventory. */
+  saleRoutes?: readonly TicketSaleRouteV1[];
+  /** Explicit planned return day from the registered schedule, never inferred from Min/Max. */
+  scheduledReturnDate?: string;
   /** Actual airports chosen in ticket definition; absent on legacy offers. */
   originAirportId?: string | null;
   destinationAirportId?: string | null;
@@ -233,6 +246,8 @@ export interface ReservationTicketDocumentV1 {
   issuedAt: string;
 }
 export interface ReservationIntakeV1 {
+  /** Latest server-owned Sales execution snapshot captured by the supplier form. */
+  purchaseSnapshot?: SalesReservationRequestV1;
   ticketDocuments?: readonly ReservationTicketDocumentV1[];
   contractEditVersion?: number;
   purchaseVersion?: number;
@@ -311,6 +326,20 @@ export interface ReservationManifestTicketExportInputV1 {
 }
 
 export interface ReservationServicePurchaseV1 {
+  roomPurchase?: {
+    checkInDate: string;
+    checkOutDate: string;
+    nights: number;
+    supplierFormVersion: number;
+    rooms: (ReservationRoomPriceV1 & {
+      roomTypeNameSnapshot: string;
+      totalAmount: string;
+    })[];
+  };
+  hotelTransferCounts?: { outbound: number; returning: number };
+  roomPrices?: readonly ReservationRoomPriceV1[];
+  hotelStayKey?: string;
+  legacyGuestPrices?: readonly ReservationLegacyGuestPurchasePriceV1[];
   hotelSavings?: HotelPurchaseSavingsV1;
   pricingCalculation?: ReservationServicePurchaseCalculationV1;
   id: string;
@@ -356,7 +385,18 @@ export interface ReservationPassengerPurchasePriceV1 {
   totalAmount: string;
 }
 
+export interface ReservationLegacyGuestPurchasePriceV1 {
+  guestIndex: number;
+  ageCategory: 'ADT' | 'CHD' | 'INF';
+  passengerName: string;
+  nightlyAmount: string;
+  nights: number;
+  totalAmount: string;
+}
+
 export interface ReservationServicePurchaseInputV1 {
+  roomPrices?: readonly ReservationRoomPriceV1[];
+  legacyGuestPrices?: readonly { guestIndex: number; nightlyAmount: string }[];
   purchaseRateToIrr?: string;
   pricingCalculation?: {
     baseAmount: string;
@@ -378,6 +418,10 @@ export interface ReservationServicePurchaseInputV1 {
 }
 
 export interface ReservationPurchaseBatchInputV1 {
+  supplierFormVersion?: number;
+  hotelTransferCounts?: { outbound: number; returning: number };
+  /** Restricts this atomic purchase to one canonical hotel stay. */
+  hotelStayKey?: string;
   version: 1;
   expectedVersion: number;
   purchases: readonly Omit<
@@ -400,21 +444,22 @@ export function reservationServicePurchaseTotal(
   factor: string,
   nights: number,
 ): string {
-  const units = (value: string) => {
+  const units = (value: string, allowZero = false) => {
     if (typeof value !== 'string' || !/^\d{1,18}(?:\.\d{1,4})?$/.test(value))
       throw new Error(
         'قیمت پایه و ضریب باید مثبت و حداکثر چهار رقم اعشار باشند.',
       );
     const [whole, fraction = ''] = value.split('.');
     const result = BigInt(whole!) * 10000n + BigInt(fraction.padEnd(4, '0'));
-    if (result <= 0n) throw new Error('قیمت پایه و ضریب باید مثبت باشند.');
+    if (result < 0n || (!allowZero && result === 0n))
+      throw new Error('قیمت پایه و ضریب باید مثبت باشند.');
     return result;
   };
   if (!Number.isSafeInteger(nights) || nights <= 0)
     throw new Error('تعداد شب قرارداد معتبر نیست.');
-  const total =
-    (units(baseAmount) * units(factor) * BigInt(nights) + 5000n) / 10000n;
-  if (total <= 0n || total >= 10n ** 22n)
+  const baseUnits = units(baseAmount, true);
+  const total = (baseUnits * units(factor) * BigInt(nights) + 5000n) / 10000n;
+  if ((total === 0n && baseUnits > 0n) || total < 0n || total >= 10n ** 22n)
     throw new Error('مبلغ کل خرید خارج از محدوده است.');
   const fraction = (total % 10000n)
     .toString()
@@ -476,6 +521,8 @@ export interface ReservationTableFlagV1 {
   actorName?: string | null | undefined;
 }
 export interface ReservationTableSummaryV1 {
+  /** Current canonical contract names, including completed historical passenger slots. */
+  passengerNames?: readonly string[] | undefined;
   contractPartyName?: string;
   createdAt: string;
   contractVersion: number;
@@ -497,6 +544,9 @@ export interface ReservationTableSummaryV1 {
   debtForeign: string | null;
 }
 export interface TravelWorkflowStateV1 {
+  /** Server-owned base for rebasing current output; never accepted in a workflow command. */
+  outputSourceSnapshot?: SalesReservationRequestV1;
+
   tableFlags?: Partial<Record<ReservationTableFlagKey, ReservationTableFlagV1>>;
   version: number;
   supplierStatus: 'NEW' | 'REQUESTED' | 'CONFIRMED' | 'CANCELLED';
@@ -508,6 +558,15 @@ export interface TravelWorkflowStateV1 {
   branding: TravelBrandingV1 | null;
   roomOrder: string[];
   ageOverrides: Record<string, 'ADULT' | 'CHILD' | 'INFANT'>;
+  hotelSupplierForms?: Record<
+    string,
+    {
+      settings?: VoucherSettingsV1;
+      sentSettings?: VoucherSettingsV1;
+      sentVersion?: number;
+      status: 'NEW' | 'REQUESTED';
+    }
+  >;
   supplierFormSettings?: VoucherSettingsV1;
   sentSupplierFormSettings?: VoucherSettingsV1;
   sentSupplierFormVersion?: number;
@@ -521,6 +580,7 @@ export interface TravelWorkflowStateV1 {
   updatedByUserId: string | null;
 }
 export interface TravelWorkflowCommandV1 {
+  hotelStayKey?: string;
   expectedVersion: number;
   action:
     | 'TABLE_STATUS'
@@ -602,7 +662,17 @@ export const voucherFlagKeys = [
   'excursion',
   'specialRoom',
 ] as const;
+export interface ReservationRoomPriceV1 {
+  roomOrdinal: number;
+  baseAmount: string;
+  factor: string;
+}
 export interface VoucherSettingsV1 {
+  hotelRoomPrices?: {
+    currencyCode: string;
+    rooms: ReservationRoomPriceV1[];
+  } | null;
+  hotelTransferCounts?: { outbound: number; returning: number };
   /** Immutable room composition for this output revision; legacy revisions omit it. */
   rooms?: {
     ordinal: number;
@@ -612,9 +682,18 @@ export interface VoucherSettingsV1 {
   }[];
   /** Supplier-form display only; never posts a purchase or changes sale totals. */
   hotelPurchasePrices?: { amount: string; currencyCode: string }[];
+  /** Supplier quotation display only, independent per column; never a payable or total. */
+  supplierFormPrices?: Partial<
+    Record<'pp' | 'transferPp', { amount: string; currencyCode: string }>
+  > & { ratio?: { amount: string; currencyCode?: string } };
   /** Registered supplier and leader used for this immutable output revision. */
   brokerId?: string;
   leaderId?: string;
+  /** Optional transfer supplier; omitted means the hotel supplier. */
+  transferBrokerId?: string;
+  transferBrokerName?: string;
+  /** Explicit per-output override; never changes the supplier directory. */
+  transferDetailsOverride?: boolean;
   text: Record<(typeof voucherTextKeys)[number], string> & {
     contractPartyName?: string;
   };
@@ -624,6 +703,15 @@ export interface VoucherSettingsV1 {
     id: string;
     selected: boolean;
     roomType: string;
+    /** Supplier-form revision only; canonical contract allocations are untouched. */
+    roomOrdinal?: number | undefined;
+    services?: {
+      outboundFlight: boolean;
+      returnFlight: boolean;
+      outboundTransfer: boolean;
+      returnTransfer: boolean;
+      hotel: boolean;
+    };
     age: 'ADL' | 'CHD' | 'INF';
     /** Hotel-only split for a child. Ticket age remains CHD. */
     hotelChildAgeBand?: 'CHD_2_TO_6' | 'CHD_6_TO_12' | '';
@@ -643,4 +731,7 @@ export interface ReservationOperationSummaryV1 {
   lastOperation: { occurredAt: string; actorName: string | null } | null;
 }
 
-export type { TicketPurchaseInboxItemV1 } from './ticket-purchase-inbox';
+export type {
+  TicketPurchaseInboxItemV1,
+  TicketPurchaseGroupCommandV1,
+} from './ticket-purchase-inbox';

@@ -7,6 +7,8 @@ import type {
 } from '@nora/contracts';
 import {
   amendmentFromContract,
+  amendmentBusinessOutput,
+  withAmendmentBusinessOutput,
   replaceAmendmentFlight,
 } from './contract-amendment-model';
 const contract = {
@@ -130,4 +132,57 @@ it('edits floating flight times in Tehran without creating a catalog allocation'
     '2099-01-01T22:30:00.000Z',
   );
   expect(next.services[0]?.metadata?.flightNumber).toBe('42');
+});
+
+it('persists both business-output states on all flight services and preserves unrelated contract data', () => {
+  const draft = amendmentFromContract({
+    ...contract,
+    servicesDetail: [
+      {
+        clientKey: 'out',
+        kind: 'FLIGHT',
+        titleSnapshot: 'Out',
+        metadata: {
+          direction: 'OUTBOUND',
+          businessOutput: true,
+          reservationNote: 'KEEP',
+        },
+      },
+      {
+        clientKey: 'back',
+        kind: 'FLIGHT',
+        titleSnapshot: 'Back',
+        metadata: { direction: 'RETURN', contractFlightVersion: 1 },
+      },
+      {
+        clientKey: 'hotel',
+        kind: 'HOTEL',
+        titleSnapshot: 'Hotel',
+        metadata: { reservationNote: 'HOTEL' },
+      },
+    ],
+  });
+  const before = JSON.stringify(draft);
+  expect(amendmentBusinessOutput(draft)).toBe(true);
+  const off = withAmendmentBusinessOutput(draft, false);
+  expect(amendmentBusinessOutput(off)).toBe(false);
+  expect(
+    off.services.slice(0, 2).map((s) => s.metadata?.businessOutput),
+  ).toEqual([false, false]);
+  expect(off.services[0]?.metadata?.reservationNote).toBe('KEEP');
+  expect(off.services[1]?.metadata?.contractFlightVersion).toBe(1);
+  expect(off.services[2]).toBe(draft.services[2]);
+  expect(off.ticketSelections).toBe(draft.ticketSelections);
+  expect(off.priceComponents).toBe(draft.priceComponents);
+  expect(off.passengers).toBe(draft.passengers);
+  const on = withAmendmentBusinessOutput(off, true);
+  expect(
+    on.services.slice(0, 2).map((s) => s.metadata?.businessOutput),
+  ).toEqual([true, true]);
+  expect(JSON.stringify(draft)).toBe(before);
+  expect(
+    amendmentBusinessOutput(
+      amendmentFromContract({ ...contract, servicesDetail: [] }),
+    ),
+  ).toBe(false);
 });

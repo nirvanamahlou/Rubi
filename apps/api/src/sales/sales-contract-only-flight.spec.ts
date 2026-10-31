@@ -200,6 +200,44 @@ describe('Contract-only flights remain outside ticket inventory', () => {
       }),
     ).toThrow();
   });
+  it('rejects a floating return paired with a company inventory outbound', () => {
+    expect(() =>
+      validateSalesContract({
+        ...input,
+        tripType: 'ROUND_TRIP',
+        returnNotBefore: '2026-10-02',
+        services: [
+          {
+            clientKey: 'flight-outbound',
+            kind: 'FLIGHT',
+            titleSnapshot: 'Out',
+            metadata: { direction: 'OUTBOUND' },
+          },
+          {
+            clientKey: 'flight-return',
+            kind: 'FLIGHT',
+            titleSnapshot: 'Back',
+            status: 'NEEDS_RESERVATION_CONFIRMATION',
+            metadata: contractFlightMetadata({
+              ...flight,
+              direction: 'RETURN',
+              originId: destinationId,
+              destinationId: originId,
+              departureAt: '2026-10-02T06:00:00Z',
+              arrivalAt: '2026-10-02T08:00:00Z',
+            }),
+          },
+        ],
+        ticketSelections: [
+          {
+            ...flight,
+            offerId: 'catalog',
+            serviceClientKey: 'flight-outbound',
+          },
+        ],
+      }),
+    ).toThrow('برای بلیت رفت از سهمیه شرکت');
+  });
   it('persists the service metadata and never writes a ticket selection', async () => {
     const create = vi.fn().mockResolvedValue({ id: 'service' }),
       ticketCreate = vi.fn();
@@ -317,4 +355,120 @@ describe('Contract-only flights remain outside ticket inventory', () => {
       ).rejects.toThrow('مجوز');
     },
   );
+});
+
+it('allows a contract creator to submit only their own branch draft without separate confirmation grants', async () => {
+  const saved = row();
+  const repository = {
+    findById: vi.fn().mockResolvedValue(saved),
+    transition: vi.fn().mockResolvedValue(true),
+  };
+  const service = new SalesService(
+    repository as unknown as SalesRepository,
+    {
+      resolveSnapshot: vi.fn(),
+      assertPassengers: vi.fn(),
+    } as unknown as SalesCustomersPublicAdapter,
+    {
+      reserve: vi.fn(),
+      release: vi.fn(),
+    } as unknown as SalesTicketAvailabilityPort,
+  );
+  const creator = {
+    ...actor,
+    permissions: ['sales.contracts.create'],
+  } as AuthenticatedActor;
+  await service.confirm('contract', 1, null, creator, 'entry-submit');
+  await expect(service.detail('contract', creator)).resolves.toHaveProperty(
+    'data.contractNumber',
+    'SAMPLE',
+  );
+  expect(repository.transition).toHaveBeenCalledOnce();
+  await expect(
+    service.confirm(
+      'contract',
+      1,
+      null,
+      { ...creator, userId: 'other' },
+      'other-submit',
+    ),
+  ).rejects.toThrow();
+  await expect(
+    service.confirm(
+      'contract',
+      1,
+      null,
+      { ...creator, branchIds: ['other'] },
+      'wrong-branch',
+    ),
+  ).rejects.toThrow();
+});
+
+it('reserves aggregate historical adults and children per catalog leg and keeps anonymous identities out of the snapshot', async () => {
+  const saved = row();
+  saved.passengers = [];
+  saved.services = [
+    {
+      ...saved.services[0]!,
+      metadata: {
+        direction: 'OUTBOUND',
+        legacyServicePartiesV2: JSON.stringify({
+          'flight-outbound': { adults: 2, children: 1, infants: 1 },
+        }),
+      },
+    },
+  ];
+  saved.ticketSelections = [
+    {
+      ...flight,
+      departureAt: new Date(flight.departureAt),
+      arrivalAt: new Date(flight.arrivalAt),
+      offerId: 'catalog',
+      serviceId: 'service',
+      serviceClientKey: 'flight-outbound',
+    },
+  ] as unknown as SalesContractRow['ticketSelections'];
+  const reserve = vi.fn().mockResolvedValue({
+    available: true,
+    unavailableOfferIds: [],
+    createdAllocationIds: ['allocation'],
+  });
+  const transition = vi.fn().mockResolvedValue(saved);
+  const service = new SalesService(
+    {
+      findById: vi.fn().mockResolvedValue(saved),
+      transition,
+    } as unknown as SalesRepository,
+    {
+      resolveSnapshot: vi.fn(),
+      assertPassengers: vi.fn(),
+    } as unknown as SalesCustomersPublicAdapter,
+    { reserve, release: vi.fn() } as unknown as SalesTicketAvailabilityPort,
+  );
+  await service.confirm('contract', 1, null, actor, 'legacy-confirm');
+  expect(reserve).toHaveBeenCalledWith(
+    expect.any(Array),
+    'branch',
+    'contract',
+    3,
+    undefined,
+    { 'flight-outbound': 3 },
+  );
+  const snapshot = transition.mock.calls[0]![8];
+  expect(presentSalesContract(saved).passengerCount).toBe(4);
+  expect(snapshot.passengerIds).toEqual([]);
+  expect(snapshot.passengerAssignments).toEqual([]);
+  expect(
+    snapshot.serviceSelections[0].metadata.legacyServicePartiesV2,
+  ).toBeDefined();
+  transition.mockClear();
+  reserve.mockResolvedValueOnce({
+    available: false,
+    unavailableOfferIds: ['catalog'],
+    createdAllocationIds: [],
+  });
+  await expect(
+    service.confirm('contract', 1, null, actor, 'legacy-full'),
+  ).rejects.toThrow('ظرفیت');
+  expect(transition).not.toHaveBeenCalled();
 });

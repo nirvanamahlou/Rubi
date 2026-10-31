@@ -2903,9 +2903,9 @@ export function CustomerWorkspace() {
   }, [branchNamesAttempt]);
   const [calendarMode, setCalendarMode] = useState<CustomerCalendarMode>(
     () =>
-      (searchParams.get('calendar') === 'gregorian'
-        ? 'gregorian'
-        : 'persian') as CustomerCalendarMode,
+      (searchParams.get('calendar') === 'persian'
+        ? 'persian'
+        : 'gregorian') as CustomerCalendarMode,
   );
   const [acquaintanceMethodId, setAcquaintanceMethodId] = useState(
     () => searchParams.get('acquaintanceMethodId') ?? 'all',

@@ -13,6 +13,8 @@ import { callCenterRequest, CallCenterHttpError } from './client';
 import { workflowApi, type Operator } from './workflow-client';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './telephony.module.css';
+import { telephonyDraftName } from './telephony-draft';
+import { OperationalCallPopup } from './operational-call-popup';
 export interface AttentionCall {
   id: string;
   callId: string;
@@ -22,9 +24,16 @@ export interface AttentionCall {
   synthetic: boolean;
   claimed: boolean;
   deferred: boolean;
-  call: { phone: string; name: string; subject: string; note: string };
+  call: {
+    direction?: string;
+    phone: string;
+    name: string;
+    subject: string;
+    note: string;
+  };
   technical: {
     caller: { kind: string; value: string | null };
+    callerName?: string | null;
     destination: { kind: string; value: string | null };
     extension: string | null;
     occurredAt: string;
@@ -44,8 +53,19 @@ const states: Record<string, string> = {
   ENDED: 'پایان‌یافته',
   UNKNOWN: 'وضعیت نامشخص',
 };
-export function TelephonyAttention() {
+export function TelephonyAttention({
+  outboundOnly = false,
+}: {
+  outboundOnly?: boolean;
+}) {
   const actor = useAccessActor();
+  // Explicit local rollout hold: no automatic attention UI before owner activation.
+  if (
+    outboundOnly
+      ? process.env.NEXT_PUBLIC_CALL_CENTER_OUTBOUND_POPUPS_ENABLED !== 'true'
+      : process.env.NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED === 'false'
+  )
+    return null;
   const allowed =
     !!actor?.permissions.includes(
       'customer_affairs.call_center.workflow.manage',
@@ -55,10 +75,17 @@ export function TelephonyAttention() {
     <Attention
       key={actor.userId + actor.branchIds.join(',')}
       branch={actor.branchIds[0] ?? ''}
+      outboundOnly={outboundOnly}
     />
   );
 }
-function Attention({ branch }: { branch: string }) {
+function Attention({
+  branch,
+  outboundOnly,
+}: {
+  branch: string;
+  outboundOnly: boolean;
+}) {
   const [rows, setRows] = useState<AttentionCall[]>([]),
     [total, setTotal] = useState(0),
     [page, setPage] = useState(1);
@@ -76,8 +103,8 @@ function Attention({ branch }: { branch: string }) {
     [busy, setBusy] = useState(false),
     [operators, setOperators] = useState<Operator[]>([]),
     [target, setTarget] = useState('');
-  const tab = useRef(''),
-    currentRef = useRef<AttentionCall | null>(null),
+  const [tab] = useState(() => crypto.randomUUID());
+  const currentRef = useRef<AttentionCall | null>(null),
     button = useRef<HTMLButtonElement>(null),
     seen = useRef(new Set<string>());
   useUnsavedGuard(dirty);
@@ -85,15 +112,14 @@ function Attention({ branch }: { branch: string }) {
     currentRef.current = current;
   }, [current]);
   useEffect(() => {
-    tab.current = crypto.randomUUID();
     return () => {
       void callCenterRequest('/telephony/lease', branch, {
         method: 'POST',
-        body: JSON.stringify({ tabId: tab.current, release: true }),
+        body: JSON.stringify({ tabId: tab, release: true }),
         keepalive: true,
       }).catch(() => {});
     };
-  }, [branch]);
+  }, [branch, tab]);
   useEffect(() => {
     if (blocked) return;
     let disposed = false;
@@ -107,7 +133,7 @@ function Attention({ branch }: { branch: string }) {
           branch,
           {
             method: 'POST',
-            body: JSON.stringify({ tabId: tab.current, release: !visible }),
+            body: JSON.stringify({ tabId: tab, release: !visible }),
             signal: abort.signal,
           },
         );
@@ -118,7 +144,11 @@ function Attention({ branch }: { branch: string }) {
         );
         if (disposed) return;
         setLeader(lease.leader);
-        const attention = data.incoming ?? data.data;
+        const attention = (data.incoming ?? data.data).filter(
+          (row) =>
+            !outboundOnly ||
+            (!row.synthetic && row.call.direction === 'OUTBOUND'),
+        );
         const visibleRows = [
           ...new Map(
             [...data.data, ...attention].map((row) => [row.id, row]),
@@ -147,12 +177,14 @@ function Attention({ branch }: { branch: string }) {
             seen.current.add(incoming.id);
             setCurrent(incoming);
             setDraft({
-              name: incoming.call.name,
+              name: telephonyDraftName(incoming),
               subject: incoming.call.subject,
               note: incoming.call.note,
             });
             setDirty(false);
             setOpen(true);
+            if (outboundOnly)
+              window.dispatchEvent(new Event('call-center:outbound-received'));
           }
         }
       } catch (e) {
@@ -179,7 +211,7 @@ function Attention({ branch }: { branch: string }) {
       abort.abort();
       clearTimeout(timer);
     };
-  }, [branch, page, blocked]);
+  }, [branch, page, blocked, tab, outboundOnly]);
   const currentId = current?.id,
     currentBranch = current?.branchId;
   useEffect(() => {
@@ -217,7 +249,7 @@ function Attention({ branch }: { branch: string }) {
     }
     setCurrent(row);
     setDraft({
-      name: row.call.name,
+      name: telephonyDraftName(row),
       subject: row.call.subject,
       note: row.call.note,
     });
@@ -238,7 +270,7 @@ function Attention({ branch }: { branch: string }) {
           method: 'POST',
           body: JSON.stringify({
             version: current.version,
-            tabId: tab.current,
+            tabId: tab,
             action: kind,
             ...(kind === 'SAVE' ? draft : {}),
             ...(kind === 'TRANSFER' ? { targetUserId: target } : {}),
@@ -267,17 +299,40 @@ function Attention({ branch }: { branch: string }) {
     }
   }
   return (
-    <aside className={styles.attention} aria-label="صف تماس تلفنی">
-      <button ref={button} type="button" onClick={() => setOpen(true)}>
-        <Phone size={18} /> تماس‌ها ({total})
-      </button>
-      <small role="status">{status}</small>
-      {blocked && (
-        <button onClick={() => setBlocked(false)} type="button">
-          <RotateCcw size={14} /> تلاش مجدد
-        </button>
+    <aside
+      className={outboundOnly ? undefined : styles.attention}
+      aria-label="صف تماس تلفنی"
+    >
+      {!outboundOnly && (
+        <>
+          <button ref={button} type="button" onClick={() => setOpen(true)}>
+            <Phone size={18} /> تماس‌ها ({total})
+          </button>
+          <small role="status">{status}</small>
+          {blocked && (
+            <button onClick={() => setBlocked(false)} type="button">
+              <RotateCcw size={14} /> تلاش مجدد
+            </button>
+          )}
+        </>
       )}
-      <Dialog open={open} onOpenChange={(value) => setOpen(value)}>
+      {open && current && !current.synthetic && (
+        <OperationalCallPopup
+          key={current.id}
+          row={current}
+          tabId={tab}
+          leader={leader}
+          onClose={() => {
+            setOpen(false);
+            setCurrent(null);
+            setDirty(false);
+          }}
+        />
+      )}
+      <Dialog
+        open={!outboundOnly && open && (!current || current.synthetic)}
+        onOpenChange={(value) => setOpen(value)}
+      >
         <DialogContent
           className={styles.dialog}
           onCloseAutoFocus={(event) => {

@@ -1,6 +1,8 @@
+import { TicketPublicService } from '../../ticket-catalog/ticket-public.service';
 import { createRequire } from 'node:module';
 import { randomUUID } from 'node:crypto';
-import { readFileSync, readdirSync } from 'node:fs';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { resolve } from 'node:path';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import type { AuthenticatedActor } from '@nora/contracts';
@@ -48,19 +50,28 @@ describe.skipIf(!enabled)('Finance ticket payment isolated PostgreSQL', () => {
       throw new Error('An isolated local database is required');
     await sql('postgres', `CREATE DATABASE "${databaseName}";`);
     created = true;
-    const root = resolve(
-      process.cwd(),
-      '../../packages/database/prisma/migrations',
-    );
-    const migrations = readdirSync(root, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((entry) =>
-        readFileSync(resolve(root, entry.name, 'migration.sql'), 'utf8'),
-      )
-      .join('\n');
-    await sql(databaseName, migrations);
     url.pathname = `/${databaseName}`;
+    // Use the real migration engine so accounting activation metadata is present.
+    await promisify(execFile)(
+      process.execPath,
+      [
+        resolve(
+          process.cwd(),
+          '../../packages/database/node_modules/prisma/build/index.js',
+        ),
+        'migrate',
+        'deploy',
+        '--schema',
+        'prisma/schema.prisma',
+      ],
+      {
+        cwd: resolve(process.cwd(), '../../packages/database'),
+        env: { ...process.env, DATABASE_URL: url.toString() },
+        timeout: 120000,
+        windowsHide: true,
+        maxBuffer: 8 * 1024 * 1024,
+      },
+    );
     client = createDatabaseClient(url.toString());
   }, 120000);
   afterAll(async () => {
@@ -245,4 +256,131 @@ describe.skipIf(!enabled)('Finance ticket payment isolated PostgreSQL', () => {
       }),
     ).toBe(2);
   });
+  it('atomically prices recurring capacity under real row locks, replays concurrently, and feeds exact contract cost', async () => {
+    const f = await fixture();
+    const procurement = new ProcurementPublicService({ client } as never);
+    const catalog = new TicketPublicService({ client } as never, procurement);
+    const service = new FinanceTicketCostService(
+      { client } as never,
+      procurement,
+      undefined,
+      catalog,
+    );
+    const route = { originId: randomUUID(), destinationId: randomUUID() };
+    const requests = [];
+    for (let i = 0; i < 2; i++) {
+      const key = randomUUID(),
+        seatCount = i === 0 ? 2 : 1;
+      const offer = await client.ticketPublishedOffer.create({
+        data: {
+          ...route,
+          branchId: f.actor.branchIds[0]!,
+          createdByUserId: f.actor.userId,
+          createKey: key,
+          fingerprint: '0'.repeat(64),
+          departureAt: new Date(
+            i ? '2026-10-12T10:00:00Z' : '2026-10-05T10:00:00Z',
+          ),
+          arrivalAt: new Date(
+            i ? '2026-10-12T12:00:00Z' : '2026-10-05T12:00:00Z',
+          ),
+          carrierName: 'SYNTHETIC AIRLINE',
+          serviceNumber: '9740',
+          cabinClassCode: 'ECONOMY',
+          totalCapacity: seatCount,
+          supplyType: 'COMPANY',
+        },
+      });
+      requests.push(
+        await client.procurementTicketPurchaseRequest.create({
+          data: {
+            branchId: f.actor.branchIds[0]!,
+            createdByUserId: f.actor.userId,
+            catalogProductReference: key,
+            title: 'Synthetic recurring departure',
+            supplierDisplaySnapshot: 'SYNTHETIC AIRLINE',
+            offerId: offer.id,
+            offerVersion: offer.version,
+            seatCount,
+            createKey: key,
+            fingerprint: '0'.repeat(64),
+          },
+        }),
+      );
+    }
+    const input = {
+      version: 1 as const,
+      operationId: randomUUID(),
+      members: requests.map((r) => ({
+        requestId: r.id,
+        expectedCostVersion: 0,
+      })),
+      seatCount: 3,
+      totalCost: '100',
+      currencyCode: 'IRR',
+    };
+    const [a, b] = await Promise.all([
+      service.recordGroupCost(input, f.actor),
+      service.recordGroupCost(input, f.actor),
+    ]);
+    expect(a).toEqual(b);
+    const saved = await client.financeTicketPurchaseCostRevision.findMany({
+      where: { requestId: { in: requests.map((r) => r.id) } },
+      orderBy: { requestId: 'asc' },
+    });
+    expect(saved).toHaveLength(2);
+    expect(
+      saved.reduce((sum, r) => sum + Number(r.invoiceAmount.toString()), 0),
+    ).toBe(100);
+    const recorded = await service.recordedCostsForOffers(
+      requests.map((r) => r.offerId!),
+      f.actor.branchIds[0]!,
+    );
+    expect(
+      recorded.every(
+        (r) => r.poolCost?.seatCount === 3 && r.poolCost.totalCost === '100',
+      ),
+    ).toBe(true);
+    const incomplete = {
+      ...input,
+      operationId: randomUUID(),
+      members: input.members.map((m, i) => ({
+        ...m,
+        expectedCostVersion: i === 0 ? 1 : 0,
+      })),
+    };
+    await expect(
+      service.recordGroupCost(incomplete, f.actor),
+    ).rejects.toThrow();
+    expect(
+      await client.financeTicketPurchaseCostRevision.count({
+        where: { requestId: { in: requests.map((r) => r.id) } },
+      }),
+    ).toBe(2);
+    const failures = new FinanceTicketCostService(
+      { client } as never,
+      procurement,
+      undefined,
+      catalog,
+      {
+        capture: async () => {
+          throw Error('synthetic FX rollback');
+        },
+      } as never,
+    );
+    const next = {
+      ...input,
+      operationId: randomUUID(),
+      members: input.members.map((m) => ({ ...m, expectedCostVersion: 1 })),
+      totalCost: '200',
+    };
+    await expect(failures.recordGroupCost(next, f.actor)).rejects.toThrow(
+      'synthetic FX rollback',
+    );
+    expect(
+      await client.financeTicketPurchaseCostRevision.count({
+        where: { requestId: { in: requests.map((r) => r.id) } },
+      }),
+    ).toBe(2);
+  }, 30000);
 });

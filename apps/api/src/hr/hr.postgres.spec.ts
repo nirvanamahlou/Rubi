@@ -1,3 +1,4 @@
+import { dashboardPeriods } from './hr-dashboard.domain';
 import { revealHrValues } from './hr-private-values';
 import { getHrResource } from '@nora/contracts';
 import { zipSync, strToU8, unzipSync } from 'fflate';
@@ -75,7 +76,12 @@ function sql(database: string, input: string) {
       '-v',
       'ON_ERROR_STOP=1',
     ],
-    { input, encoding: 'utf8', stdio: 'pipe', timeout: 60000 },
+    {
+      input,
+      encoding: 'utf8',
+      stdio: 'pipe',
+      timeout: process.env.NORA_HR_TEST_SLOW_HOST === '1' ? 120000 : 60000,
+    },
   );
 }
 async function actor(
@@ -305,7 +311,115 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         service.createEmployee(employeeInput('Wrong branch'), key(), outsider),
       ).rejects.toThrow();
     });
-    it('loses exactly one stale concurrent edit and forbids direct job assignment changes', async () => {
+    it('persists employee extensions through create, replay, partial edit and clear with scope and CAS guards', async () => {
+      const input = employeeInput('Synthetic Extension', { extension: '۰۰۱۲' });
+      const commandKey = key();
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/hr/employees')
+        .set('Cookie', adminCookie)
+        .set('Idempotency-Key', commandKey)
+        .send(input)
+        .expect(201);
+      const target = response.body as HrEmployeeDto;
+      expect(target.extension).toBe('0012');
+      expect(
+        (await service.createEmployee(input, commandKey, admin)).extension,
+      ).toBe('0012');
+      expect(
+        await client.hrRecord.count({
+          where: {
+            employeeId: target.id,
+            tab: 'internalContact',
+            deletedAt: null,
+          },
+        }),
+      ).toBe(1);
+      expect(
+        (await service.bootstrap(reader)).employees.find(
+          (e) => e.id === target.id,
+        )?.extension,
+      ).toBe('0012');
+      const edited = await service.updateEmployee(
+        target.id,
+        { version: 1, extension: '0024' },
+        admin,
+      );
+      expect(edited.extension).toBe('0024');
+      await expect(
+        service.updateEmployee(
+          target.id,
+          { version: 1, extension: '999' },
+          admin,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.updateEmployee(
+          target.id,
+          { version: 2, extension: '888' },
+          outsider,
+        ),
+      ).rejects.toThrow();
+      const partial = await service.updateEmployee(
+        target.id,
+        { version: 2, kind: 'پاره‌وقت' },
+        admin,
+      );
+      expect(partial.extension).toBe('0024');
+      await expect(
+        service.updateEmployee(
+          target.id,
+          { version: 3, extension: '*123' },
+          admin,
+        ),
+      ).rejects.toThrow();
+      const cleared = await service.updateEmployee(
+        target.id,
+        { version: 3, extension: '' },
+        admin,
+      );
+      expect(cleared.extension).toBe('');
+      expect(
+        await client.hrRecord.count({
+          where: {
+            employeeId: target.id,
+            tab: 'internalContact',
+            deletedAt: null,
+          },
+        }),
+      ).toBe(0);
+      for (const extension of ['abc', '1'.repeat(21), 123])
+        await expect(
+          service.createEmployee(
+            employeeInput('Invalid Extension', { extension }),
+            key(),
+            admin,
+          ),
+        ).rejects.toThrow();
+      expect(
+        await client.hrEmployee.count({ where: { name: 'Invalid Extension' } }),
+      ).toBe(0);
+      await expect(
+        service.createRecord(
+          {
+            section: 'employee',
+            tab: 'internalContact',
+            employeeId: target.id,
+            values: ['999'],
+          },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow();
+      await client.hrRecord.updateMany({
+        where: { employeeId: target.id },
+        data: { deletedAt: new Date() },
+      });
+      await client.hrEmployee.update({
+        where: { id: target.id },
+        data: { deletedAt: new Date() },
+      });
+    });
+    it('loses exactly one stale concurrent edit and rejects unknown job titles', async () => {
       const outcomes = await Promise.allSettled([
         service.updateEmployee(
           employee.id,
@@ -331,7 +445,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           { version: 2, position: 'Forged promotion' },
           admin,
         ),
-      ).rejects.toThrow('تاریخ اثر');
+      ).rejects.toThrow('عنوان شغلی');
     });
     it('allows self leave requests only for the linked employee and rejects unauthorized approval', async () => {
       const body = {
@@ -2369,7 +2483,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
             identityRow.data,
             `${branchA}:${id}:employee.identity`,
           ),
-        ).toEqual(identity);
+        ).toEqual([...identity, '']);
         expect(JSON.stringify(rows)).not.toContain(identity[13]);
         expect(JSON.stringify(created)).not.toContain(identity[2]);
         expect(
@@ -2379,7 +2493,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
               admin,
             )
           ).items[0]?.values,
-        ).toEqual(identity);
+        ).toEqual([...identity, '']);
         const audit = await client.hrAuditEvent.findMany({
           where: { employeeId: id },
         });
@@ -2478,6 +2592,436 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         else process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 = previousKey;
       }
     });
+    it('atomically edits the complete personnel form with private snapshot, rollback and permission guards', async () => {
+      const previousKey = process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
+      process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 =
+        randomBytes(32).toString('base64');
+      let id: string | undefined;
+      const identity = [
+        'Unified',
+        'Worker',
+        '',
+        '',
+        '',
+        '1990-01-02',
+        'مرد',
+        'مجرد',
+        'تهران',
+        'تهران',
+        'کارشناسی',
+        'ایرانی',
+        'نامشخص',
+        'Synthetic edit address',
+      ];
+      try {
+        const created = await service.createEmployee(
+          employeeInput('Unified Worker', {
+            identityValues: identity,
+            contactValues: [
+              ['موبایل', '09123456789'],
+              ['خانه', '02112345678'],
+            ],
+          }),
+          key(),
+          admin,
+        );
+        id = created.id;
+        const privateRows = () =>
+          client.hrRecord.findMany({
+            where: {
+              employeeId: created.id,
+              section: 'employee',
+              tab: { in: ['identity', 'phones'] },
+              deletedAt: null,
+            },
+            orderBy: { id: 'asc' },
+          });
+        const original = await privateRows();
+        const snapshot = original.map(({ id, version }) => ({ id, version }));
+        const input = {
+          version: created.version,
+          firstName: 'Edited',
+          lastName: 'Worker',
+          identityValues: [
+            'Edited',
+            identity[1]!,
+            '0123456789',
+            ...identity.slice(3),
+            '۰۱۲۳۴۵۶۷۸۹',
+          ],
+          contactValues: [['محل کار', '02187654321']],
+          profileRecords: snapshot,
+          extension: '0019',
+        };
+        await expect(
+          service.updateEmployee(id, input, {
+            ...admin,
+            permissions: admin.permissions.filter((p) => p !== 'hr.sensitive'),
+          }),
+        ).rejects.toThrow();
+        await expect(
+          service.updateEmployee(id, input, outsider),
+        ).rejects.toThrow();
+        await expect(
+          service.updateEmployee(id, { ...input, profileRecords: [] }, admin),
+        ).rejects.toThrow();
+        await expect(
+          service.updateEmployee(
+            id,
+            { ...input, contactValues: [['موبایل', 'invalid']] },
+            admin,
+          ),
+        ).rejects.toThrow();
+        expect(
+          (await client.hrEmployee.findUniqueOrThrow({ where: { id } }))
+            .version,
+        ).toBe(created.version);
+        expect(await privateRows()).toEqual(original);
+        const auditSpy = vi
+          .spyOn(
+            service as unknown as {
+              audit: (...args: unknown[]) => Promise<unknown>;
+            },
+            'audit',
+          )
+          .mockRejectedValueOnce(new Error('Synthetic audit failure'));
+        await expect(
+          service.updateEmployee(id, input, admin),
+        ).rejects.toThrow();
+        auditSpy.mockRestore();
+        expect(
+          (await client.hrEmployee.findUniqueOrThrow({ where: { id } })).name,
+        ).toBe('Unified Worker');
+        expect(await privateRows()).toEqual(original);
+        const response = await request(app.getHttpServer())
+          .patch(`/api/v1/hr/employees/${id}`)
+          .set('Cookie', adminCookie)
+          .send(input)
+          .expect(200);
+        const edited = response.body as HrEmployeeDto;
+        expect(edited.name).toBe('Edited Worker');
+        expect(edited.extension).toBe('0019');
+        const rows = await privateRows();
+        expect(rows).toHaveLength(2);
+        expect(rows.find((r) => r.tab === 'identity')?.id).toBe(
+          original.find((r) => r.tab === 'identity')?.id,
+        );
+        expect(
+          revealHrValues(
+            rows.find((r) => r.tab === 'identity')!.data,
+            `${branchA}:${id}:employee.identity`,
+          ),
+        ).toEqual(input.identityValues);
+        expect(
+          revealHrValues(
+            rows.find((r) => r.tab === 'phones')!.data,
+            `${branchA}:${id}:employee.phones`,
+          ),
+        ).toEqual(input.contactValues[0]);
+        expect(JSON.stringify(rows)).not.toContain(identity[13]);
+        expect(
+          JSON.stringify(
+            await client.hrAuditEvent.findMany({ where: { employeeId: id } }),
+          ),
+        ).not.toContain(identity[13]);
+        // Employee version is current, but an independently edited private record is stale.
+        await expect(
+          service.updateEmployee(
+            id,
+            { ...input, version: edited.version },
+            admin,
+          ),
+        ).rejects.toThrow();
+        const beforeLegacy = rows.find((r) => r.tab === 'identity')!;
+        const legacyEdit = await service.updateRecord(
+          beforeLegacy.id,
+          {
+            version: beforeLegacy.version,
+            values: input.identityValues.slice(0, 14),
+          },
+          admin,
+        );
+        expect(legacyEdit.values[14]).toBe('۰۱۲۳۴۵۶۷۸۹');
+        const currentSnapshot = rows.map(({ id, version }) => ({
+          id,
+          version,
+        }));
+        const identityRow = rows.find((r) => r.tab === 'identity')!;
+        await client.hrRecord.update({
+          where: { id: identityRow.id },
+          data: { version: { increment: 1 } },
+        });
+        await expect(
+          service.updateEmployee(
+            id,
+            {
+              ...input,
+              version: edited.version,
+              profileRecords: currentSnapshot,
+            },
+            admin,
+          ),
+        ).rejects.toThrow();
+        expect(
+          (await client.hrEmployee.findUniqueOrThrow({ where: { id } }))
+            .version,
+        ).toBe(edited.version);
+        const fresh = (await privateRows()).map(({ id, version }) => ({
+          id,
+          version,
+        }));
+        const cleared = await service.updateEmployee(
+          id,
+          {
+            ...input,
+            version: edited.version,
+            profileRecords: fresh,
+            contactValues: [],
+            identityValues: ['Edited', ...identity.slice(1)],
+          },
+          admin,
+        );
+        expect(
+          (await privateRows()).filter((r) => r.tab === 'phones'),
+        ).toHaveLength(0);
+        // Legacy public partial edits preserve private information.
+        const partial = await service.updateEmployee(
+          id,
+          { version: cleared.version, extension: '0020' },
+          admin,
+        );
+        expect(
+          (await privateRows()).find((r) => r.tab === 'identity'),
+        ).toBeDefined();
+        const finalRecords = await privateRows();
+        const finalIdentity = finalRecords.find((r) => r.tab === 'identity')!;
+        expect(
+          revealHrValues(
+            finalIdentity.data,
+            `${branchA}:${id}:employee.identity`,
+          )[14],
+        ).toBe('۰۱۲۳۴۵۶۷۸۹');
+        await service.updateEmployee(
+          id,
+          {
+            version: partial.version,
+            identityValues: ['Edited', ...identity.slice(1), ''],
+            contactValues: [],
+            profileRecords: finalRecords.map(({ id, version }) => ({
+              id,
+              version,
+            })),
+          },
+          admin,
+        );
+        const emptyPostal = (await privateRows()).find(
+          (r) => r.tab === 'identity',
+        )!;
+        expect(
+          revealHrValues(
+            emptyPostal.data,
+            `${branchA}:${id}:employee.identity`,
+          )[14],
+        ).toBe('');
+      } finally {
+        vi.restoreAllMocks();
+        if (id) {
+          await client.hrRecord.updateMany({
+            where: { employeeId: id },
+            data: { deletedAt: new Date() },
+          });
+          await client.hrEmployee.update({
+            where: { id },
+            data: { deletedAt: new Date() },
+          });
+        }
+        if (previousKey === undefined)
+          delete process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
+        else process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 = previousKey;
+      }
+    });
+    it('shares only job-title metadata across branches and atomically corrects employee assignments with canonical references', async () => {
+      const branchAdmin = { ...admin, branchIds: [branchA] };
+      const title = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'positions',
+          branchId: branchB,
+          values: ['', 'Shared synthetic title', '', '', '', ''],
+          status: 'فعال',
+        },
+        key(),
+        outsider,
+      );
+      const unit = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'units',
+          branchId: branchA,
+          values: ['Synthetic corrected unit', '', '', '', '', ''],
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      const foreignUnit = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'units',
+          branchId: branchB,
+          values: ['Synthetic foreign unit', '', '', '', '', ''],
+          status: 'فعال',
+        },
+        key(),
+        outsider,
+      );
+      const catalogue = (await service.bootstrap(branchAdmin)).jobTitles!;
+      expect(catalogue.find((t) => t.id === title.id)).toEqual({
+        id: title.id,
+        name: 'Shared synthetic title',
+        status: 'فعال',
+      });
+      expect(
+        (
+          await service.listRecords(
+            { section: 'organization', tab: 'positions' },
+            branchAdmin,
+          )
+        ).items.some((r) => r.id === title.id),
+      ).toBe(false);
+      await expect(
+        service.updateRecord(
+          title.id,
+          { version: title.version, values: title.values },
+          branchAdmin,
+        ),
+      ).rejects.toThrow();
+      const target = await service.createEmployee(
+        employeeInput('Synthetic job correction', {
+          position: 'Shared synthetic title',
+          jobTitleId: title.id,
+        }),
+        key(),
+        admin,
+      );
+      expect(
+        await client.hrRecord.findFirst({
+          where: {
+            employeeId: target.id,
+            tab: 'assignment',
+            jobTitleId: title.id,
+          },
+        }),
+      ).not.toBeNull();
+      const before = await client.hrRecord.count({
+        where: { employeeId: target.id, tab: 'assignment' },
+      });
+      const input = {
+        version: target.version,
+        unit: unit.values[0],
+        grade: 'مدیر',
+        managerId: employee.id,
+      };
+      await expect(
+        service.updateEmployee(
+          target.id,
+          { ...input, unit: foreignUnit.values[0] },
+          admin,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        service.updateEmployee(target.id, input, reader),
+      ).rejects.toThrow();
+      await expect(
+        service.updateEmployee(target.id, input, outsider),
+      ).rejects.toThrow();
+      await expect(
+        service.updateEmployee(
+          target.id,
+          { ...input, branchId: branchB },
+          admin,
+        ),
+      ).rejects.toThrow();
+      const response = await request(app.getHttpServer())
+        .patch(`/api/v1/hr/employees/${target.id}`)
+        .set('Cookie', adminCookie)
+        .send(input)
+        .expect(200);
+      const corrected = response.body as HrEmployeeDto;
+      expect(corrected).toMatchObject({
+        unit: 'Synthetic corrected unit',
+        grade: 'مدیر',
+        managerId: employee.id,
+        position: 'Shared synthetic title',
+      });
+      expect(
+        await client.hrRecord.count({
+          where: { employeeId: target.id, tab: 'assignment' },
+        }),
+      ).toBe(before + 1);
+      const audit = await client.hrAuditEvent.findFirst({
+        where: { employeeId: target.id, action: 'employee.assignment.correct' },
+      });
+      expect(audit?.changes).toMatchObject({
+        before: { grade: 'G4' },
+        after: { grade: 'مدیر', unit: 'Synthetic corrected unit' },
+      });
+      await expect(
+        service.updateEmployee(target.id, input, admin),
+      ).rejects.toThrow();
+      const ownTitle = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'positions',
+          branchId: branchA,
+          values: ['', 'Second synthetic title', '', '', '', ''],
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      const changed = await service.updateEmployee(
+        target.id,
+        {
+          version: corrected.version,
+          position: 'Second synthetic title',
+          jobTitleId: ownTitle.id,
+        },
+        admin,
+      );
+      expect(changed.position).toBe('Second synthetic title');
+      expect(
+        await client.hrRecord.findFirst({
+          where: {
+            employeeId: target.id,
+            tab: 'assignment',
+            jobTitleId: ownTitle.id,
+          },
+        }),
+      ).not.toBeNull();
+      const titleRow = await client.hrRecord.findUniqueOrThrow({
+        where: { id: ownTitle.id },
+      });
+      await client.hrRecord.update({
+        where: { id: ownTitle.id },
+        data: { status: 'غیرفعال' },
+      });
+      await expect(
+        service.updateEmployee(
+          target.id,
+          {
+            version: changed.version,
+            position: 'Second synthetic title',
+            jobTitleId: ownTitle.id,
+          },
+          admin,
+        ),
+      ).rejects.toThrow();
+      await client.hrRecord.update({
+        where: { id: ownTitle.id },
+        data: { status: titleRow.status },
+      });
+    });
     it('persists Radan identity encrypted and never returns ciphertext or private audit values', async () => {
       const previousKey = process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
       process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 =
@@ -2515,7 +3059,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           key(),
           admin,
         );
-        expect(record.values).toEqual(values);
+        expect(record.values).toEqual([...values, '']);
         expect(
           (
             await client.hrEmployee.findUniqueOrThrow({
@@ -2916,6 +3460,847 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       } finally {
         vi.useRealTimers();
       }
+    });
+    it('serves complete scoped dashboard aggregates through authenticated HTTP without leaking another branch', async () => {
+      const first = await service.createEmployee(
+        employeeInput('Chart A', { unit: 'Chart unit' }),
+        key(),
+        admin,
+      );
+      const second = await service.createEmployee(
+        employeeInput('Chart B', { branchId: branchB, unit: 'Chart unit' }),
+        key(),
+        admin,
+      );
+      const today = dashboardPeriods(new Date()).today;
+      const fixtureIds: string[] = [];
+      try {
+        for (const e of [first, second]) {
+          const r = await client.hrRecord.create({
+            data: {
+              branchId: e.branchId,
+              employeeId: e.id,
+              section: 'time',
+              tab: 'attendance',
+              code: `CHART-${key()}`,
+              status: 'حاضر',
+              values: [e.name, today, '', '08:00', '5'],
+              effectiveAt: new Date(today),
+              data: { workedMinutes: 480, lateMinutes: 5, overtimeMinutes: 60 },
+            },
+          });
+          fixtureIds.push(r.id);
+        }
+        const result = await request(app.getHttpServer())
+          .get('/api/v1/hr/dashboard/charts?unit=Chart%20unit')
+          .set('Cookie', adminCookie)
+          .expect(200);
+        expect(result.headers['cache-control']).toContain('no-store');
+        expect(result.body.charts).toHaveLength(7);
+        expect(
+          result.body.charts
+            .find((c: { id: string }) => c.id === 'present')
+            .points.at(-1).value,
+        ).toBe(2);
+        const scoped = await service.dashboardCharts(
+          { unit: 'Chart unit' },
+          { ...admin, branchIds: [branchA] },
+        );
+        expect(
+          scoped.charts.find((c) => c.id === 'present')?.points.at(-1)?.value,
+        ).toBe(1);
+        expect(
+          scoped.charts
+            .find((c) => c.id === 'weeklyAttendance')
+            ?.points.map((p) => p.label),
+        ).toEqual(['Chart A']);
+        const selfResult = await request(app.getHttpServer())
+          .get('/api/v1/hr/dashboard/charts?unit=Chart%20unit')
+          .set('Cookie', selfCookie)
+          .expect(200);
+        expect(
+          selfResult.body.charts.find(
+            (c: { id: string }) => c.id === 'weeklyAttendance',
+          ).points,
+        ).toEqual([]);
+        await request(app.getHttpServer())
+          .get('/api/v1/hr/dashboard/charts')
+          .expect(401);
+        await request(app.getHttpServer())
+          .get('/api/v1/hr/dashboard/charts?organizationBranchId=bad')
+          .set('Cookie', adminCookie)
+          .expect(400);
+      } finally {
+        await client.hrRecord.updateMany({
+          where: { id: { in: fixtureIds } },
+          data: { deletedAt: new Date() },
+        });
+        await client.hrEmployee.updateMany({
+          where: { id: { in: [first.id, second.id] } },
+          data: { deletedAt: new Date() },
+        });
+      }
+    });
+    it('persists organization employee nodes and positions with CAS, hierarchy guards and safe node deletion', async () => {
+      const first = await service.createEmployee(
+        employeeInput('Org chart first'),
+        key(),
+        admin,
+      );
+      const second = await service.createEmployee(
+        employeeInput('Org chart second'),
+        key(),
+        admin,
+      );
+      const values = (name: string) =>
+        getHrResource('organization', 'units')!.columns.map((_, i) =>
+          i === 0 ? name : '',
+        );
+      const a = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'units',
+          branchId: branchA,
+          values: values('Org chart department A'),
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      const b = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'units',
+          branchId: branchA,
+          values: values('Org chart department B'),
+          status: 'فعال',
+        },
+        key(),
+        admin,
+      );
+      const body = {
+        section: 'organization',
+        tab: 'chartEmployees',
+        branchId: branchA,
+        employeeId: first.id,
+        parentId: a.id,
+        values: [first.name, ''],
+        status: 'فعال',
+      };
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/hr/records')
+        .set('Cookie', adminCookie)
+        .set('Idempotency-Key', key())
+        .send(body)
+        .expect(201);
+      const node = response.body as HrRecordDto;
+      const moved = await request(app.getHttpServer())
+        .patch(`/api/v1/hr/records/${node.id}`)
+        .set('Cookie', adminCookie)
+        .send({ version: node.version, data: { chartX: 120, chartY: -35 } })
+        .expect(200);
+      expect((await service.getRecord(node.id, admin)).data).toMatchObject({
+        chartX: 120,
+        chartY: -35,
+      });
+      await request(app.getHttpServer())
+        .patch(`/api/v1/hr/records/${node.id}`)
+        .set('Cookie', adminCookie)
+        .send({ version: node.version, data: { chartX: 10 } })
+        .expect(409);
+      await request(app.getHttpServer())
+        .patch(`/api/v1/hr/records/${node.id}`)
+        .set('Cookie', adminCookie)
+        .send({ version: moved.body.version, data: { chartY: 5001 } })
+        .expect(400);
+      await expect(
+        service.updateRecord(
+          node.id,
+          { version: moved.body.version, data: { chartX: 0 } },
+          outsider,
+        ),
+      ).rejects.toThrow();
+      await request(app.getHttpServer())
+        .post('/api/v1/hr/records')
+        .set('Cookie', selfCookie)
+        .set('Idempotency-Key', key())
+        .send({ ...body, employeeId: employee.id, values: [employee.name, ''] })
+        .expect(403);
+      const child = await service.createRecord(
+        {
+          ...body,
+          employeeId: second.id,
+          parentId: node.id,
+          values: [second.name, 'جانشین'],
+        },
+        key(),
+        admin,
+      );
+      await expect(
+        service.updateRecord(
+          node.id,
+          { version: moved.body.version, parentId: child.id },
+          admin,
+        ),
+      ).rejects.toThrow('چرخه');
+      await expect(
+        service.deleteRecord(node.id, moved.body.version, admin),
+      ).rejects.toThrow('وابسته');
+      await expect(
+        service.deleteRecord(a.id, a.version, admin),
+      ).rejects.toThrow('وابسته');
+      const childMoved = await service.updateRecord(
+        child.id,
+        {
+          version: child.version,
+          parentId: b.id,
+          values: [second.name, 'عنوان جدید'],
+        },
+        admin,
+      );
+      expect(childMoved.parentId).toBe(b.id);
+      await service.deleteRecord(node.id, moved.body.version, admin);
+      const person = await client.hrEmployee.findUniqueOrThrow({
+        where: { id: first.id },
+      });
+      expect(person.deletedAt).toBeNull();
+      expect(person.unit).toBe(first.unit);
+      expect(person.version).toBe(first.version);
+      const readded = await service.createRecord(body, key(), admin);
+      expect(readded.id).not.toBe(node.id);
+      const unitMoved = await service.updateRecord(
+        a.id,
+        { version: a.version, data: { chartX: -10, chartY: 50 } },
+        admin,
+      );
+      expect(unitMoved.data.chartY).toBe(50);
+      const audited = await client.hrAuditEvent.count({
+        where: { recordId: node.id, action: 'record.update' },
+      });
+      expect(audited).toBe(1);
+      await client.hrRecord.updateMany({
+        where: { id: { in: [a.id, b.id, node.id, child.id, readded.id] } },
+        data: { deletedAt: new Date() },
+      });
+      await client.hrEmployee.updateMany({
+        where: { id: { in: [first.id, second.id] } },
+        data: { deletedAt: new Date() },
+      });
+    });
+    it('rejects cross-company chart parents and duplicate employee nodes under concurrent requests', async () => {
+      const company = async (name: string) =>
+        service.createRecord(
+          {
+            section: 'organization',
+            tab: 'branches',
+            branchId: branchA,
+            values: getHrResource('organization', 'branches')!.columns.map(
+              (_, i) => (i === 0 ? name : ''),
+            ),
+            status: 'فعال',
+          },
+          key(),
+          admin,
+        );
+      const companyA = await company('Chart company A'),
+        companyB = await company('Chart company B');
+      const first = await service.createEmployee(
+        employeeInput('Company chart employee', {
+          organizationBranchId: companyA.id,
+        }),
+        key(),
+        admin,
+      );
+      const foreign = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'units',
+          branchId: branchA,
+          values: getHrResource('organization', 'units')!.columns.map((_, i) =>
+            i === 0 ? 'Foreign chart department' : '',
+          ),
+          status: 'فعال',
+          data: { organizationBranchId: companyB.id },
+        },
+        key(),
+        admin,
+      );
+      const body = {
+        section: 'organization',
+        tab: 'chartEmployees',
+        branchId: branchA,
+        employeeId: first.id,
+        values: [first.name, ''],
+        status: 'فعال',
+      };
+      await expect(
+        service.createRecord({ ...body, parentId: foreign.id }, key(), admin),
+      ).rejects.toThrow('شرکت');
+      await expect(
+        service.createRecord(
+          { ...body, data: { organizationBranchId: companyB.id } },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('شرکت');
+      const ownDepartment = await service.createRecord(
+        {
+          section: 'organization',
+          tab: 'units',
+          branchId: branchA,
+          values: getHrResource('organization', 'units')!.columns.map((_, i) =>
+            i === 0 ? 'Own chart department' : '',
+          ),
+          status: 'فعال',
+          data: { organizationBranchId: companyA.id },
+        },
+        key(),
+        admin,
+      );
+      const attached = { ...body, parentId: ownDepartment.id };
+      const results = await Promise.allSettled([
+        service.createRecord(attached, key(), admin),
+        service.createRecord(attached, key(), admin),
+      ]);
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      await expect(
+        service.updateRecord(
+          ownDepartment.id,
+          {
+            version: ownDepartment.version,
+            data: { organizationBranchId: companyB.id },
+          },
+          admin,
+        ),
+      ).rejects.toThrow('زیرمجموعه');
+      expect(
+        await client.hrRecord.count({
+          where: {
+            employeeId: first.id,
+            tab: 'chartEmployees',
+            deletedAt: null,
+          },
+        }),
+      ).toBe(1);
+      // A canonical personnel transfer leaves historical chart records intact; a new current-company node is allowed.
+      await client.hrEmployee.update({
+        where: { id: first.id },
+        data: { organizationBranchId: companyB.id },
+      });
+      const transferredNode = await service.createRecord(
+        { ...body, parentId: foreign.id },
+        key(),
+        admin,
+      );
+      expect(transferredNode.data.organizationBranchId).toBe(companyB.id);
+      await client.hrRecord.updateMany({
+        where: {
+          OR: [
+            {
+              id: {
+                in: [companyA.id, companyB.id, foreign.id, ownDepartment.id],
+              },
+            },
+            { employeeId: first.id, tab: 'chartEmployees' },
+          ],
+        },
+        data: { deletedAt: new Date() },
+      });
+      await client.hrEmployee.update({
+        where: { id: first.id },
+        data: { deletedAt: new Date() },
+      });
+    });
+    it('runs inline transfers atomically across branches and reports exact scoped balances through HTTP', async () => {
+      const first = await service.createEmployee(
+        employeeInput('Leave parity A'),
+        key(),
+        admin,
+      );
+      const second = await service.createEmployee(
+        employeeInput('Leave parity B', { branchId: branchB }),
+        key(),
+        admin,
+      );
+      const grant = {
+        employeeIds: [first.id, second.id],
+        year: 1405,
+        months: [1],
+        duration: '11:00',
+        type: 'استحقاقی',
+      };
+      await expect(
+        service.minuteLeave(
+          { ...grant, employeeIds: [first.id, first.id.toUpperCase()] },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('یکتا');
+      await service.minuteLeave(grant, key(), admin);
+      const draft = await client.hrRecord.create({
+        data: {
+          branchId: branchA,
+          employeeId: first.id,
+          section: 'time',
+          tab: 'minuteLedger',
+          code: `DRAFT-${key()}`,
+          values: [first.name, '1405', '1', 'استحقاقی', 'تخصیص', '9999', ''],
+          data: {},
+          status: 'پیش‌نویس',
+        },
+      });
+      const snapshot = await request(app.getHttpServer())
+        .get('/api/v1/hr/leave/report')
+        .set('Cookie', adminCookie)
+        .query({ year: 1405, employeeIds: [first.id, second.id].join(',') })
+        .expect(200);
+      expect(snapshot.headers['cache-control']).toBe('private, no-store');
+      expect(
+        snapshot.body.items.map(
+          (item: { balanceMinutes: number }) => item.balanceMinutes,
+        ),
+      ).toEqual([660, 660]);
+      expect(
+        snapshot.body.records.some(
+          (row: { id: string }) => row.id === draft.id,
+        ),
+      ).toBe(false);
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: first.id, year: 1405 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(660);
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/leave/report')
+        .set('Cookie', adminCookie)
+        .query({
+          year: 1405,
+          employeeIds: `${first.id},${first.id.toUpperCase()}`,
+        })
+        .expect(400);
+      const scoped = { ...admin, branchIds: [branchA] };
+      expect(
+        (await service.leavePersonnel(scoped)).items.some(
+          (item) => item.id === second.id,
+        ),
+      ).toBe(false);
+      await expect(
+        service.leaveReport({ year: 1405, employeeIds: second.id }, scoped),
+      ).rejects.toThrow();
+      await expect(
+        service.leaveReport(
+          { year: 1405, employeeIds: `${first.id},${first.id}` },
+          admin,
+        ),
+      ).rejects.toThrow();
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/leave/personnel')
+        .expect(401);
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/leave/report')
+        .set('Cookie', selfCookie)
+        .query({ year: 1405, employeeIds: first.id })
+        .expect(404);
+      const transfer = {
+        greaterThan: '10:00',
+        lessThan: '08:00',
+        greaterCarry: '08:00',
+        greaterBurn: '02:00',
+        greaterBuyback: '01:00',
+        lessCarry: '06:00',
+        lessBurn: '00:00',
+        lessBuyback: '00:00',
+      };
+      const command = {
+        employeeIds: [first.id, second.id],
+        year: 1405,
+        type: 'استحقاقی',
+        transfer,
+      };
+      const ruleCount = await client.hrRecord.count({
+        where: { tab: 'leaveTransferRules' },
+      });
+      await service.minuteLeave(
+        { ...grant, employeeIds: [second.id], duration: '01:00' },
+        key(),
+        admin,
+      );
+      await expect(service.minuteLeave(command, key(), admin)).rejects.toThrow(
+        'مجموع',
+      );
+      expect(
+        await client.hrRecord.count({ where: { tab: 'leaveTransferRules' } }),
+      ).toBe(ruleCount);
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: first.id, year: 1405 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(660);
+      const token = key();
+      const successful = { ...command, employeeIds: [first.id] };
+      await request(app.getHttpServer())
+        .post('/api/v1/hr/leave/minutes')
+        .set('Cookie', adminCookie)
+        .set('Idempotency-Key', token)
+        .send(successful)
+        .expect(201);
+      await request(app.getHttpServer())
+        .post('/api/v1/hr/leave/minutes')
+        .set('Cookie', adminCookie)
+        .set('Idempotency-Key', token)
+        .send(successful)
+        .expect(201);
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: first.id, year: 1405 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(0);
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: first.id, year: 1406 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(480);
+      expect(
+        await client.hrRecord.count({ where: { tab: 'leaveTransferRules' } }),
+      ).toBe(ruleCount + 1);
+      await expect(
+        service.minuteLeave(successful, key(), admin),
+      ).rejects.toThrow('صفر');
+      await expect(
+        service.minuteLeave(
+          {
+            ...command,
+            employeeIds: [second.id],
+            transfer: { ...transfer, lessThan: '11:00' },
+          },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('حد پایین');
+      await expect(
+        service.minuteLeave(
+          { ...command, employeeIds: [second.id], year: 1600 },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('سال مقصد');
+      await expect(service.minuteLeave(command, key(), self)).rejects.toThrow();
+      const lower = await service.createEmployee(
+        employeeInput('Leave lower branch'),
+        key(),
+        admin,
+      );
+      await service.minuteLeave(
+        { ...grant, employeeIds: [lower.id], duration: '06:00' },
+        key(),
+        admin,
+      );
+      await service.minuteLeave(
+        { ...command, employeeIds: [lower.id] },
+        key(),
+        admin,
+      );
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: lower.id, year: 1406 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(360);
+      const boundary = await service.createEmployee(
+        employeeInput('Leave boundary'),
+        key(),
+        admin,
+      );
+      await service.minuteLeave(
+        { ...grant, employeeIds: [boundary.id], duration: '08:00' },
+        key(),
+        admin,
+      );
+      await expect(
+        service.minuteLeave(
+          { ...command, employeeIds: [boundary.id] },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow('محدوده');
+      expect(
+        (
+          await service.minuteCardex(
+            { employeeId: boundary.id, year: 1405 },
+            admin,
+          )
+        ).balanceMinutes,
+      ).toBe(480);
+      await client.hrRecord.update({
+        where: { id: draft.id },
+        data: { deletedAt: new Date() },
+      });
+    });
+    it('reads complete scoped attendance report data including overlapping requests and undated references', async () => {
+      const batch = Array.from({ length: 2001 }, (_, index) => ({
+        id: key(),
+        personnelCode: `ZZREPORT-${index.toString().padStart(4, '0')}`,
+        branchId: branchA,
+        name: 'Synthetic report personnel',
+        kind: 'تمام‌وقت',
+        unit: 'عملیات',
+        position: 'کارشناس',
+        grade: 'G4',
+        startedAt: new Date('2024-01-01'),
+      }));
+      await client.hrEmployee.createMany({ data: batch });
+      const target = batch.at(-1)!;
+      const foreign = await service.createEmployee(
+        employeeInput('Report other branch', { branchId: branchB }),
+        key(),
+        admin,
+      );
+      const fixture = async (
+        section: string,
+        tab: string,
+        values: string[],
+        employeeId: string | null = target.id,
+        extra: Record<string, unknown> = {},
+      ) =>
+        client.hrRecord.create({
+          data: {
+            branchId: branchA,
+            employeeId,
+            section,
+            tab,
+            code: `REPORT-${key()}`,
+            values,
+            status: 'فعال',
+            data: {},
+            ...extra,
+          },
+        });
+      const group = await fixture(
+        'organization',
+        'groups',
+        ['Report group', ''],
+        null,
+      );
+      const membership = await fixture(
+        'organization',
+        'groupMembers',
+        ['Synthetic report personnel'],
+        target.id,
+        { parentId: group.id },
+      );
+      const attendance = await fixture(
+        'time',
+        'attendance',
+        [target.name, '2026-10-20', '', '8:00', '10', '0'],
+        target.id,
+        {
+          effectiveAt: new Date('2026-10-20'),
+          data: {
+            workedMinutes: 480,
+            lateMinutes: 10,
+            earlyMinutes: 0,
+            overtimeMinutes: 0,
+          },
+          status: 'حاضر',
+        },
+      );
+      const overlap = await fixture(
+        'time',
+        'remote',
+        [target.name, '2026-09-30', '2026-10-02', 'روزانه', '', ''],
+        target.id,
+        {
+          effectiveAt: new Date('2026-09-30'),
+          data: {
+            startsAt: '2026-09-30T00:00:00.000Z',
+            endsAt: '2026-10-02T23:59:00.000Z',
+          },
+        },
+      );
+      const missionValues = [
+        target.name,
+        'Synthetic destination',
+        '2026-09-30',
+        '2026-10-02',
+        'Synthetic mission',
+        '',
+      ];
+      const legacyMission = await fixture('time', 'mission', missionValues);
+      const mission = await fixture('expenses', 'mission', missionValues);
+      const futureMission = await fixture('time', 'mission', [
+        target.name,
+        'Synthetic destination',
+        '2027-01-01',
+        '2027-01-02',
+        '',
+        '',
+      ]);
+      const future = await fixture(
+        'time',
+        'attendance',
+        [target.name, '2027-01-01', '', '8:00', '0', '0'],
+        target.id,
+        { effectiveAt: new Date('2027-01-01') },
+      );
+      const result = await request(app.getHttpServer())
+        .get('/api/v1/hr/reports/attendance-data')
+        .set('Cookie', adminCookie)
+        .query({ from: '2026-10-01', to: '2026-10-31' })
+        .expect(200);
+      expect(result.headers['cache-control']).toBe('private, no-store');
+      expect(result.body.employees.length).toBeGreaterThan(2000);
+      expect(
+        result.body.employees.some(
+          (person: { id: string }) => person.id === target.id,
+        ),
+      ).toBe(true);
+      const ids = result.body.records.map((row: { id: string }) => row.id);
+      expect(ids).toContain(attendance.id);
+      expect(ids).toContain(overlap.id);
+      expect(ids).toContain(legacyMission.id);
+      expect(ids).toContain(mission.id);
+      expect(ids).not.toContain(futureMission.id);
+      expect(ids).not.toContain(future.id);
+      expect(
+        result.body.references.some(
+          (row: { id: string }) => row.id === group.id,
+        ),
+      ).toBe(true);
+      expect(
+        result.body.references.some(
+          (row: { id: string }) => row.id === membership.id,
+        ),
+      ).toBe(true);
+      const scoped = await service.attendanceReportData(
+        { from: '2026-10-01', to: '2026-10-31' },
+        { ...admin, branchIds: [branchA] },
+      );
+      expect(scoped.employees.some((person) => person.id === foreign.id)).toBe(
+        false,
+      );
+      expect(scoped.records.every((row) => row.branchId === branchA)).toBe(
+        true,
+      );
+      const selfResult = await request(app.getHttpServer())
+        .get('/api/v1/hr/reports/attendance-data')
+        .set('Cookie', selfCookie)
+        .query({ from: '2026-10-01', to: '2026-10-31' })
+        .expect(200);
+      expect(
+        selfResult.body.employees.some(
+          (person: { id: string }) => person.id === target.id,
+        ),
+      ).toBe(false);
+      expect(
+        selfResult.body.records.some(
+          (row: { id: string }) => row.id === attendance.id,
+        ),
+      ).toBe(false);
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/reports/attendance-data')
+        .expect(401);
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/reports/attendance-data')
+        .set('Cookie', adminCookie)
+        .query({ from: '2026-11-01', to: '2026-10-01' })
+        .expect(400);
+      await request(app.getHttpServer())
+        .get('/api/v1/hr/reports/attendance-data')
+        .set('Cookie', adminCookie)
+        .query({ to: 'wrong-date' })
+        .expect(400);
+      await client.hrRecord.updateMany({
+        where: {
+          id: {
+            in: [
+              group.id,
+              membership.id,
+              attendance.id,
+              overlap.id,
+              future.id,
+              legacyMission.id,
+              mission.id,
+              futureMission.id,
+            ],
+          },
+        },
+        data: { deletedAt: new Date() },
+      });
+      await client.hrEmployee.updateMany({
+        where: { id: { in: batch.map((person) => person.id) } },
+        data: { deletedAt: new Date() },
+      });
+    });
+    it('preserves appended working-hour and transfer fields when legacy clients edit older payload lengths', async () => {
+      const hours = await service.createRecord(
+        {
+          section: 'time',
+          tab: 'workingHours',
+          branchId: branchA,
+          status: 'فعال',
+          values: [
+            'Legacy editor',
+            '',
+            '08:00',
+            '16:00',
+            'همان روز',
+            '0',
+            '0',
+            '#000000',
+            'بله',
+          ],
+        },
+        key(),
+        admin,
+      );
+      const updatedHours = await service.updateRecord(
+        hours.id,
+        { version: hours.version, values: hours.values.slice(0, 8) },
+        admin,
+      );
+      expect(updatedHours.values[8]).toBe('بله');
+      const rule = await service.createRecord(
+        {
+          section: 'time',
+          tab: 'leaveTransferRules',
+          branchId: branchA,
+          status: 'فعال',
+          values: [
+            'Legacy rule',
+            '1405',
+            '10:00',
+            '08:00',
+            '02:00',
+            '01:00',
+            '06:00',
+            '00:00',
+            '00:00',
+            '08:00',
+          ],
+        },
+        key(),
+        admin,
+      );
+      const updatedRule = await service.updateRecord(
+        rule.id,
+        { version: rule.version, values: rule.values.slice(0, 9) },
+        admin,
+      );
+      expect(updatedRule.values[9]).toBe('08:00');
     });
   },
 );

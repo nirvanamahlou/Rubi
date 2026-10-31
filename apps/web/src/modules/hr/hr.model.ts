@@ -106,7 +106,7 @@ export const hrHubCards: readonly HrHubCard[] = [
   {
     id: 'organization',
     title: 'ساختار سازمانی',
-    description: 'شعبه، واحد، شغل، سمت، مدیر مستقیم و چارت تاریخی',
+    description: 'شعبه، واحد، عنوان شغلی، مدیر مستقیم و چارت تاریخی',
     icon: Building2,
     tone: 'cyan',
     pills: ['HR03', 'HR04', 'HR05'],
@@ -122,28 +122,9 @@ export const hrHubCards: readonly HrHubCard[] = [
     footer: '۷ زیرصفحه',
   },
   {
-    id: 'lifecycle',
-    title: 'چرخه همکاری',
-    description:
-      'ورود نیروی جدید، ارتقا، انتقال، جدایی، مصاحبه خروج و تسویه نهایی',
-    icon: UserRoundCheck,
-    tone: 'violet',
-    pills: ['Onboarding', 'انتقال', 'Offboarding'],
-    footer: '۶ زیرصفحه',
-  },
-  {
-    id: 'contracts',
-    title: 'قراردادها',
-    description: 'قرارداد کاری، الحاقیه، تمدید، خاتمه و هشدار پایان',
-    icon: FileText,
-    tone: 'orange',
-    pills: ['HR06', 'HR16', 'نسخه‌بندی'],
-    footer: '۴ زیرصفحه',
-  },
-  {
     id: 'time',
     title: 'کارکرد و زمان',
-    description: 'تردد، شیفت، مرخصی، مأموریت و اضافه‌کاری نسخه‌دار',
+    description: 'تردد، شیفت، مأموریت و اضافه‌کاری نسخه‌دار',
     icon: CalendarClock,
     tone: 'teal',
     pills: ['HR07', 'HR08', 'HR09', '+۱'],
@@ -212,7 +193,7 @@ export const hrHubCards: readonly HrHubCard[] = [
     description: 'گزارش‌های منابع انسانی، دسترسی محرمانه و Audit اختصاصی',
     icon: BarChart3,
     tone: 'slate',
-    pills: ['HR18', 'HR19', 'Export'],
+    pills: ['گزارش‌های حضور و غیاب', 'گزارش کارکنان', 'Audit اختصاصی'],
     footer: '۳ زیرصفحه',
   },
   {
@@ -259,7 +240,7 @@ export const sectionTabs: Readonly<
     { id: 'orgchart', label: 'چارت سازمانی', icon: Network },
     { id: 'branches', label: 'شعبه‌ها', icon: Building2 },
     { id: 'units', label: 'واحدها', icon: Building2 },
-    { id: 'positions', label: 'شغل و سمت', icon: WalletCards },
+    { id: 'positions', label: 'عنوان‌های شغلی', icon: WalletCards },
   ],
   recruitment: [
     { id: 'staffing', label: 'برنامه نیروی انسانی', icon: BarChart3 },
@@ -339,8 +320,8 @@ export const sectionTabs: Readonly<
   ],
   reports: [
     { id: 'dashboard', label: 'گزارش‌ها و شاخص‌ها', icon: BarChart3 },
+    { id: 'leaveBalance', label: 'گزارش مانده مرخصی', icon: CalendarClock },
     { id: 'audit', label: 'Audit اختصاصی', icon: History },
-    { id: 'access', label: 'دسترسی محرمانه', icon: ShieldCheck },
   ],
   payroll: [
     { id: 'overview', label: 'نمای کلی', icon: BarChart3 },
@@ -390,7 +371,7 @@ export const screenMeta: Readonly<
   organization: {
     title: 'ساختار سازمانی',
     description:
-      'شعبه، واحد، شغل، سمت، مدیر مستقیم و چارت تاریخی مبتنی بر تاریخ اثر',
+      'شعبه، واحد، عنوان شغلی، مدیر مستقیم و چارت تاریخی مبتنی بر تاریخ اثر',
   },
   recruitment: {
     title: 'جذب و استخدام',

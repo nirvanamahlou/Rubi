@@ -94,9 +94,12 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       const url = new URL(process.env.DATABASE_URL ?? '');
       if (
         !['localhost', '127.0.0.1'].includes(url.hostname) ||
-        !['/nora_call_center_package_one_test_1019', '/nora_ci'].includes(
-          url.pathname,
-        )
+        ![
+          '/nora_call_center_package_one_test_1019',
+          '/nora_ci',
+          '/nora_outbound_first_contact_1025',
+          '/nora_call_request_pending_1024',
+        ].includes(url.pathname)
       )
         throw Error('Disposable database only');
       db = createDatabaseClient(url.toString());
@@ -121,7 +124,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       const workflow = new CallCenterWorkflowService(
         database,
         crypto,
-        {} as never,
+        { canManageRequest: async () => false } as never,
         {} as never,
         {} as never,
       );
@@ -209,7 +212,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       const workflow = new CallCenterWorkflowService(
         database,
         crypto,
-        {} as never,
+        { canManageRequest: async () => false } as never,
         new CallCenterTasksService(database),
         {} as never,
       );
@@ -267,8 +270,32 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         title: 'Synthetic identity request',
         status: 'NEW',
         priority: 'NORMAL',
-        reason: '',
+        reason: 'Synthetic request reason',
       });
+      for (const status of ['IN_PROGRESS', 'NEW']) {
+        // Only the synthetic fixture is changed to represent pre-upgrade rows.
+        await db.customerAffairsTicket.update({
+          where: { id: ticketId },
+          data: { status },
+        });
+        const pending = await read.search(actor, branchId, {
+          ...new CallCenterSearchDto(),
+          requestStatus: 'IN_PROGRESS',
+        });
+        expect(pending.data.map((row) => row.id)).toEqual([contactId]);
+        expect(
+          (
+            await read.search(
+              { ...actor, branchIds: [branchId, otherBranch] },
+              otherBranch,
+              {
+                ...new CallCenterSearchDto(),
+                requestStatus: 'IN_PROGRESS',
+              },
+            )
+          ).meta.total,
+        ).toBe(0);
+      }
       const input = {
         commandId: randomUUID(),
         expectedVersion: 1,
@@ -505,7 +532,197 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       });
       expect(inbound.data.topFollowUps).toEqual([]);
     });
-    it('counts branch KPI calls with Tehran boundaries, null outcomes and deduplicated open follow-ups', async () => {
+    it('counts unique callback numbers and resolves only after a later real conversation', async () => {
+      const branch = await db.branch.create({
+        data: { code: randomUUID(), name: 'Synthetic callback test' },
+      });
+      const scoped = { ...actor, branchIds: [branch.id] };
+      const contact = await db.callCenterContact.create({
+        data: {
+          branchId: branch.id,
+          phoneFingerprint: crypto.fingerprint('2025550101'),
+          latestOccurredAt: new Date(),
+        },
+      });
+      const connection = await db.integrationTelephonyConnection.create({
+        data: {
+          branchId: branch.id,
+          createdByUserId: userId,
+          name: 'Synthetic fixture only',
+        },
+      });
+      async function add(
+        hour: number,
+        direction: string,
+        outcome: string | null,
+        technical?: { answered?: boolean; unanswered?: boolean; state: string },
+        phone = '2025550101',
+        origin = 'MANUAL',
+      ) {
+        const id = randomUUID();
+        const call = await db.callCenterCall.create({
+          data: {
+            id,
+            contactId: contact.id,
+            createdByUserId: userId,
+            direction,
+            outcome,
+            origin: technical ? 'TELEPHONY' : origin,
+            status: 'جدید',
+            occurredAt: new Date(Date.UTC(2026, 9, 20, hour)),
+            encryptedPayload: crypto.encrypt(
+              { ...value, phone },
+              `call:${id}:${contact.id}`,
+            ),
+            keyVersion: 1,
+            requestFingerprint: crypto.fingerprint(id),
+          },
+        });
+        if (technical) {
+          const sessionId = randomUUID();
+          await db.callCenterTelephonySession.create({
+            data: {
+              id: sessionId,
+              connectionId: connection.id,
+              rootFingerprint: crypto.fingerprint(id),
+              callId: id,
+              state: technical.state,
+              synthetic: false,
+              keyVersion: 1,
+              encryptedTechnical: crypto.encrypt(
+                technical,
+                `telephony:${sessionId}`,
+              ),
+            },
+          });
+        }
+        return call;
+      }
+      const count = async () => {
+        const expected = (await read.kpis(scoped, branch.id)).data
+          .needsFollowUp;
+        const list = await read.missedCallbacks(
+          scoped,
+          branch.id,
+          Object.assign(new CallCenterSearchDto(), {
+            query: 'ignored contact filter',
+          }),
+        );
+        expect(list.meta.total).toBe(expected);
+        expect(new Set(list.data.map((r) => r.call.contactId)).size).toBe(
+          expected,
+        );
+        if (expected) expect(list.data[0]!.call.phone).toBe('2025550101');
+        return expected;
+      };
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-10-20T20:00:00Z'));
+      try {
+        await add(1, 'INBOUND', 'NO_ANSWER', undefined, '');
+        expect(await count()).toBe(0); // Hidden/unknown caller cannot be called back.
+        await add(2, 'OUTBOUND', 'NO_ANSWER');
+        expect(await count()).toBe(0);
+        await add(3, 'INBOUND', 'NO_ANSWER');
+        await add(4, 'INBOUND', 'NO_ANSWER');
+        expect(await count()).toBe(1); // Repeated missed calls count once.
+        const firstPage = await read.missedCallbacks(
+          scoped,
+          branch.id,
+          new CallCenterSearchDto(),
+        );
+        expect(firstPage.data[0]!.call.occurredAt).toBe(
+          '2026-10-20T04:00:00.000Z',
+        );
+        await add(5, 'OUTBOUND', 'BUSY');
+        await expect(
+          read.missedCallbacks(
+            scoped,
+            branch.id,
+            Object.assign(new CallCenterSearchDto(), {
+              page: 2,
+              revision: firstPage.meta.revision,
+            }),
+          ),
+        ).rejects.toMatchObject({ status: 409 });
+        await expect(
+          read.missedCallbacks(scoped, otherBranch, new CallCenterSearchDto()),
+        ).rejects.toMatchObject({ status: 403 });
+        await add(6, 'OUTBOUND', 'ANSWERED', {
+          state: 'ENDED',
+          unanswered: true,
+        });
+        expect(await count()).toBe(1); // Business outcome cannot override provider evidence.
+        await add(7, 'OUTBOUND', null, { state: 'ENDED', answered: true });
+        expect(await count()).toBe(0); // Successful technical call needs no completed form.
+        await add(8, 'INBOUND', 'ANSWERED', {
+          state: 'ENDED',
+          unanswered: true,
+        });
+        expect(await count()).toBe(1); // A new miss reopens callback need.
+        await add(
+          9,
+          'INBOUND',
+          'ANSWERED',
+          undefined,
+          '2025550101',
+          'SYNTHETIC',
+        );
+        await add(22, 'INBOUND', 'ANSWERED');
+        expect(await count()).toBe(1); // Synthetic and future success cannot resolve it.
+        await add(10, 'INBOUND', null, {
+          state: 'ENDED',
+          unanswered: true,
+          answered: true,
+        });
+        expect(await count()).toBe(0); // Late answer wins over a missed ringing leg.
+        await add(11, 'INBOUND', 'NO_ANSWER', {
+          state: 'RINGING',
+          unanswered: true,
+        });
+        expect(await count()).toBe(0); // Still ringing is not a missed call.
+        const missed = await add(12, 'INBOUND', 'NO_ANSWER');
+        const retry = await calls.create(
+          {
+            id: randomUUID(),
+            ...value,
+            phone: '2025550101',
+            direction: 'OUTBOUND',
+            status: 'جدید',
+            outcome: 'NO_ANSWER',
+            occurredAt: '2026-10-20T13:00:00Z',
+          },
+          scoped,
+          branch.id,
+        );
+        expect(retry.data.contactId).toBe(contact.id);
+        expect(retry.data.id).not.toBe(missed.id);
+        expect(await count()).toBe(1);
+        await calls.create(
+          {
+            id: randomUUID(),
+            ...value,
+            phone: '2025550101',
+            direction: 'OUTBOUND',
+            status: 'جدید',
+            outcome: 'ANSWERED',
+            occurredAt: '2026-10-20T14:00:00Z',
+          },
+          scoped,
+          branch.id,
+        );
+        expect(await count()).toBe(0);
+        expect(
+          (
+            await db.callCenterCall.findUniqueOrThrow({
+              where: { id: missed.id },
+            })
+          ).outcome,
+        ).toBe('NO_ANSWER');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+    it('counts branch KPI calls with Tehran boundaries, null outcomes and unresolved missed callers', async () => {
       const kpiBranch = randomUUID(),
         emptyBranch = randomUUID(),
         kpiContact = randomUUID(),
@@ -636,7 +853,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           today: 2,
           week: 4,
           withoutOutcome: 1,
-          needsFollowUp: 2,
+          needsFollowUp: 1,
         });
         expect(result.meta).toMatchObject({
           branchId: kpiBranch,
@@ -656,7 +873,148 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         await expect(
           read.kpis({ ...scopedActor, permissions: [] }, kpiBranch),
         ).rejects.toMatchObject({ status: 403 });
-        expect(decrypt).not.toHaveBeenCalled();
+        expect(decrypt).toHaveBeenCalled();
+        for (const period of ['today', 'week'] as const) {
+          const first = await read.withoutOutcome(
+            scopedActor,
+            kpiBranch,
+            Object.assign(new CallCenterSearchDto(), {
+              pageSize: 1,
+              query: 'ignored',
+            }),
+            period,
+          );
+          expect(first.meta.total).toBe(result.data[period]);
+          expect(first.data).toHaveLength(1);
+          const second = await read.withoutOutcome(
+            scopedActor,
+            kpiBranch,
+            Object.assign(new CallCenterSearchDto(), {
+              page: 2,
+              pageSize: 1,
+              revision: first.meta.revision,
+            }),
+            period,
+          );
+          expect(second.data[0]!.call.id).not.toBe(first.data[0]!.call.id);
+          expect(
+            new Date(first.data[0]!.call.occurredAt).getTime(),
+          ).toBeGreaterThanOrEqual(
+            new Date(second.data[0]!.call.occurredAt).getTime(),
+          );
+          await expect(
+            read.withoutOutcome(
+              scopedActor,
+              kpiBranch,
+              Object.assign(new CallCenterSearchDto(), {
+                page: 2,
+                pageSize: 1,
+                revision: 'stale',
+              }),
+              period,
+            ),
+          ).rejects.toMatchObject({ status: 409 });
+          await expect(
+            read.withoutOutcome(
+              scopedActor,
+              otherBranch,
+              new CallCenterSearchDto(),
+              period,
+            ),
+          ).rejects.toMatchObject({ status: 403 });
+          expect(
+            (
+              await read.withoutOutcome(
+                scopedActor,
+                emptyBranch,
+                new CallCenterSearchDto(),
+                period,
+              )
+            ).meta.total,
+          ).toBe(0);
+        }
+        const drilldown = await read.withoutOutcome(
+          scopedActor,
+          kpiBranch,
+          Object.assign(new CallCenterSearchDto(), {
+            pageSize: 1,
+            query: 'ignored filter',
+          }),
+        );
+        expect(drilldown.meta.total).toBe(result.data.withoutOutcome);
+        expect(drilldown.data).toHaveLength(1);
+        expect(drilldown.data[0]!.call.outcome).toBeNull();
+        expect(drilldown.data[0]!.call.origin).not.toBe('SYNTHETIC');
+        const original = await db.callCenterCall.findUniqueOrThrow({
+          where: { id: drilldown.data[0]!.call.id },
+        });
+        const secondId = randomUUID();
+        await db.callCenterCall.create({
+          data: {
+            ...original,
+            id: secondId,
+            requestFingerprint: crypto.fingerprint(secondId),
+            encryptedPayload: crypto.encrypt(
+              value,
+              `call:${secondId}:${original.contactId}`,
+            ),
+          },
+        });
+        const firstPage = await read.withoutOutcome(
+          scopedActor,
+          kpiBranch,
+          Object.assign(new CallCenterSearchDto(), { pageSize: 1 }),
+        );
+        const secondPage = await read.withoutOutcome(
+          scopedActor,
+          kpiBranch,
+          Object.assign(new CallCenterSearchDto(), {
+            page: 2,
+            pageSize: 1,
+            revision: firstPage.meta.revision,
+          }),
+        );
+        expect(firstPage.meta.total).toBe(2);
+        expect(secondPage.data).toHaveLength(1);
+        expect(secondPage.data[0]!.call.id).not.toBe(
+          firstPage.data[0]!.call.id,
+        );
+        expect(secondPage.data[0]!.call.contactId).toBe(
+          firstPage.data[0]!.call.contactId,
+        );
+        await expect(
+          read.withoutOutcome(
+            scopedActor,
+            otherBranch,
+            new CallCenterSearchDto(),
+          ),
+        ).rejects.toMatchObject({ status: 403 });
+        await expect(
+          read.withoutOutcome(
+            scopedActor,
+            kpiBranch,
+            Object.assign(new CallCenterSearchDto(), {
+              page: 2,
+              revision: 'stale',
+            }),
+          ),
+        ).rejects.toMatchObject({ status: 409 });
+        await db.callCenterCall.updateMany({
+          where: { id: { in: [original.id, secondId] } },
+          data: { outcome: 'ANSWERED' },
+        });
+        expect(
+          (
+            await read.withoutOutcome(
+              scopedActor,
+              kpiBranch,
+              new CallCenterSearchDto(),
+            )
+          ).meta.total,
+        ).toBe(0);
+        expect(
+          (await read.kpis(scopedActor, kpiBranch)).data.withoutOutcome,
+        ).toBe(0);
       } finally {
         vi.useRealTimers();
         decrypt.mockRestore();

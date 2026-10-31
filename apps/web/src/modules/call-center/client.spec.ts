@@ -9,6 +9,15 @@ vi.mock('@/lib/environment', () => ({
   getPublicApiBaseUrl: () => 'http://localhost:4000/api/v1',
 }));
 describe('durable Call Center client', () => {
+  it('preserves explicit completion identity without converting it to a new call', async () => {
+    const call = { ...previewCalls()[0]!, completionToken: 'a'.repeat(64) };
+    transport.mockResolvedValue(new Response(JSON.stringify({ data: call })));
+    await callCenterApi.create('branch-1', call);
+    expect(JSON.parse(transport.mock.calls.at(-1)![1].body)).toMatchObject({
+      id: call.id,
+      completionToken: call.completionToken,
+    });
+  });
   beforeEach(() => {
     vi.clearAllMocks();
   });

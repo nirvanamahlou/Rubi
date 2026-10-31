@@ -1,3 +1,4 @@
+import type { CallAnswerRecipient } from '../hr/hr-call-answer-directory';
 import { callSearchMetadata } from './call-center-search';
 import {
   BadRequestException,
@@ -16,6 +17,8 @@ import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { CallCenterCrypto } from './call-center.crypto';
 import { CallCenterAccessService } from './call-center-access.service';
+import { HrCallAnswerDirectory } from '../hr/hr-call-answer-directory';
+import type { TelephonyTechnical } from './telephony-state';
 import type {
   CallCenterCallDto,
   CallCenterListDto,
@@ -32,14 +35,14 @@ export function normalizedCallPhone(value: string) {
   if (phone.startsWith('+98')) phone = '0' + phone.slice(3);
   if (/^98\d{10}$/.test(phone)) phone = '0' + phone.slice(2);
   if (/^9\d{9}$/.test(phone)) phone = '0' + phone;
-  if (!/^(?:0\d{10}|\+[1-9]\d{7,14})$/.test(phone))
+  if (!/^(?:\d{1,15}|\+[1-9]\d{1,14})$/.test(phone))
     throw new BadRequestException('شماره تماس معتبر نیست.');
   return phone;
 }
 type PrivateCall = Pick<
   CallCenterCallDto,
   'phone' | 'name' | 'subject' | 'source' | 'operator' | 'note'
->;
+> & { answerRecipient?: CallAnswerRecipient };
 type StoredCall = Prisma.CallCenterCallGetPayload<Record<string, never>>;
 type StoredNote = Prisma.CallCenterNoteGetPayload<Record<string, never>>;
 
@@ -53,7 +56,29 @@ export class CallCenterService {
       database,
       undefined as never,
     ),
+    @Inject(HrCallAnswerDirectory)
+    private readonly answerDirectory: HrCallAnswerDirectory = new HrCallAnswerDirectory(
+      database,
+    ),
   ) {}
+
+  async destinationOptions(
+    actor: AuthenticatedActor,
+    requested: string | undefined,
+  ) {
+    const branchId = this.branch(
+      actor,
+      requested,
+      'customer_affairs.call_center.calls.create',
+    );
+    await this.access.where(actor, branchId);
+    return {
+      data: await this.answerDirectory.options(
+        branchId,
+        process.env.ISSABEL_CONNECTION_ID,
+      ),
+    };
+  }
 
   private branch(
     actor: AuthenticatedActor,
@@ -84,6 +109,10 @@ export class CallCenterService {
       occurredAt: row.occurredAt.toISOString(),
       ticketId: row.ticketId,
       outcome: row.outcome,
+      needsCompletion: row.needsCompletion,
+      completionToken: this.crypto.fingerprint(
+        JSON.stringify([row.id, row.encryptedPayload, row.outcome, row.status]),
+      ),
       origin: row.origin,
       createdByUserId: row.createdByUserId,
       createdAt: row.createdAt.toISOString(),
@@ -100,13 +129,103 @@ export class CallCenterService {
       subject: call.subject,
       source: call.source,
       operator: call.operator,
+      ...(call.answerRecipient
+        ? { answerRecipient: call.answerRecipient }
+        : {}),
       direction: call.direction,
       status: call.status,
       outcome: call.outcome,
+      needsCompletion: call.needsCompletion,
+      completionToken: call.completionToken,
       origin: call.origin,
       occurredAt: call.occurredAt,
       ticketId: call.ticketId,
     };
+  }
+  /** Read-only repair of legacy outbound display; recorded identity snapshots win. */
+  async hydrateDestinations<
+    T extends {
+      id: string;
+      origin: string | null;
+      direction: string;
+      answerRecipient?: CallAnswerRecipient;
+    },
+  >(
+    branchId: string,
+    calls: T[],
+    tx?: Prisma.TransactionClient,
+  ): Promise<(T & { answerRecipient?: CallAnswerRecipient })[]> {
+    const missing = calls.filter(
+      (call) =>
+        call.origin === 'TELEPHONY' &&
+        call.direction === 'OUTBOUND' &&
+        (!call.answerRecipient ||
+          call.answerRecipient.label ===
+            `داخلی ${call.answerRecipient.extension}`),
+    );
+    if (!missing.length) return calls;
+    const sessions = await (
+      tx ?? this.database.client
+    ).callCenterTelephonySession.findMany({
+      where: {
+        call: { contact: { branchId } },
+        callId: { in: missing.map((call) => call.id) },
+      },
+    });
+    const results = new Map<string, CallAnswerRecipient>();
+    const labels = new Map<
+      string,
+      Awaited<ReturnType<HrCallAnswerDirectory['resolve']>>
+    >();
+    for (const call of missing) {
+      const matches = sessions.filter((session) => session.callId === call.id);
+      if (matches.length !== 1) continue;
+      const session = matches[0]!;
+      const technical = this.crypto.decrypt<TelephonyTechnical>(
+        session.encryptedTechnical,
+        session.keyVersion,
+        `telephony:${session.id}`,
+      );
+      if (technical.first.direction !== 'OUT') continue;
+      const extension =
+        call.answerRecipient?.extension ?? technical.first.extension;
+      if (!extension || !/^\d{1,16}$/.test(extension)) continue;
+      // Never derive a person from an editable operator label or a different call leg.
+      if (
+        extension !== technical.first.extension &&
+        extension !== technical.lastAnswer?.extension
+      )
+        continue;
+      const observedAt = technical.first.occurredAt;
+      const key = `${session.connectionId}:${extension}`;
+      let recipient = labels.get(key);
+      if (!recipient) {
+        recipient = await this.answerDirectory.resolve(
+          branchId,
+          extension,
+          observedAt,
+          tx,
+          session.connectionId,
+        );
+        labels.set(key, recipient);
+      }
+      if (recipient.label === `داخلی ${extension}`) continue;
+      results.set(call.id, {
+        ...recipient,
+        answeredAt:
+          call.answerRecipient?.answeredAt ??
+          (technical.lastAnswer?.extension === extension
+            ? technical.lastAnswer.at
+            : null),
+        observedAt,
+        labelSource: 'CURRENT_DIRECTORY',
+      });
+    }
+    return calls.map((call) =>
+      results.has(call.id)
+        ? { ...call, answerRecipient: results.get(call.id)! }
+        : call,
+    );
   }
   presentNote(row: StoredNote) {
     return {
@@ -164,6 +283,22 @@ export class CallCenterService {
       meta: { branchId, total, page, pageSize },
     };
   }
+  async getCall(id: string, actor: AuthenticatedActor, requested?: string) {
+    const branchId = this.branch(
+      actor,
+      requested,
+      'customer_affairs.call_center.read',
+    );
+    const row = await this.database.client.callCenterCall.findFirst({
+      where: { id, contact: await this.access.where(actor, branchId) },
+    });
+    if (!row) throw new NotFoundException();
+    return {
+      data: (
+        await this.hydrateDestinations(branchId, [this.presentCall(row)])
+      )[0]!,
+    };
+  }
   async create(
     input: CallCenterCallDto,
     actor: AuthenticatedActor,
@@ -202,6 +337,131 @@ export class CallCenterService {
       }),
     );
     const row = await this.database.client.$transaction(async (tx) => {
+      if (input.completionToken) {
+        if (
+          !actor.permissions.includes(
+            'customer_affairs.call_center.workflow.manage',
+          )
+        )
+          throw new ForbiddenException();
+        // Same lock order as the telephony form; preserve technical fields and origin.
+        await tx.$queryRaw`SELECT id FROM call_center_telephony_sessions WHERE "callId"=${input.id}::uuid FOR UPDATE`;
+        await tx.$queryRaw`SELECT id FROM customer_affairs_calls WHERE id=${input.id}::uuid FOR UPDATE`;
+        const existing = await tx.callCenterCall.findFirst({
+          where: {
+            id: input.id,
+            contact: { branchId },
+            origin: { not: 'SYNTHETIC' },
+          },
+          include: { telephonySession: true },
+        });
+        if (!existing) throw new NotFoundException();
+        if (this.access.scoped(actor))
+          await this.access.contact(
+            actor,
+            branchId,
+            existing.contactId,
+            'workflow',
+            tx,
+          );
+        const presented = this.presentCall(existing);
+        if (
+          payload.phone !== presented.phone ||
+          input.direction !== existing.direction ||
+          occurredAt.getTime() !== existing.occurredAt.getTime()
+        )
+          throw new BadRequestException('اطلاعات فنی تماس قابل تغییر نیست.');
+        const traceId = this.crypto.fingerprint(
+          JSON.stringify([input.completionToken, requestFingerprint]),
+        );
+        const replay = await tx.customerAffairsAuditEvent.findFirst({
+          where: {
+            entityId: input.id,
+            action: 'COMPLETE_CALL',
+            actorUserId: actor.userId,
+            traceId,
+          },
+        });
+        if (replay) return existing;
+        if (presented.completionToken !== input.completionToken)
+          throw new ConflictException(
+            'اطلاعات تماس تغییر کرده است؛ دوباره بررسی کنید.',
+          );
+        if (
+          existing.telephonySession?.claimUserId &&
+          existing.telephonySession.claimUserId !== actor.userId
+        )
+          throw new ConflictException(
+            'کارشناس دیگری مسئول تکمیل این تماس است.',
+          );
+        if (input.ticketId) {
+          if (this.access.scoped(actor))
+            await this.access.request(actor, branchId, input.ticketId, tx);
+          await tx.$queryRaw`SELECT id FROM customer_affairs_tickets WHERE id=${input.ticketId}::uuid FOR SHARE`;
+          const ticket = await tx.customerAffairsTicket.findFirst({
+            where: {
+              id: input.ticketId,
+              branchId,
+              callCenterContactId: existing.contactId,
+              category: 'CALL_CENTER_REQUEST',
+              status: { not: 'CLOSED' },
+            },
+          });
+          if (!ticket)
+            throw new BadRequestException(
+              'درخواست باز و متعلق به همین مخاطب را انتخاب کنید.',
+            );
+        }
+        if (presented.answerRecipient) {
+          payload.operator = presented.operator;
+          payload.answerRecipient = presented.answerRecipient;
+        }
+        const outcome = input.outcome ?? existing.outcome;
+        const metadata = callSearchMetadata(
+          this.crypto,
+          branchId,
+          payload,
+          outcome,
+        );
+        const saved = await tx.callCenterCall.update({
+          where: { id: input.id },
+          data: {
+            ...metadata,
+            outcome,
+            ticketId: input.ticketId ?? existing.ticketId,
+            encryptedPayload: this.crypto.encrypt(
+              payload,
+              `call:${input.id}:${existing.contactId}`,
+            ),
+            keyVersion: this.crypto.keyVersion,
+            status:
+              outcome === 'NO_ANSWER'
+                ? 'بدون پاسخ'
+                : existing.status === 'بدون پاسخ'
+                  ? 'جدید'
+                  : existing.status,
+          },
+        });
+        await tx.callCenterTelephonySession.updateMany({
+          where: { callId: input.id },
+          data: {
+            completed: !metadata.needsCompletion,
+            version: { increment: 1 },
+          },
+        });
+        await tx.customerAffairsAuditEvent.create({
+          data: {
+            branchId,
+            actorUserId: actor.userId,
+            entityType: 'CALL_CENTER_CALL',
+            entityId: input.id,
+            action: 'COMPLETE_CALL',
+            version: (existing.telephonySession?.version ?? 0) + 1,
+            traceId,
+          },
+        });
+        return saved;
+      }
       // Serialize the stable event ID, including conflicting retries from another phone/branch.
       await tx.$queryRaw(
         Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${'call-center:call:' + input.id},0))`,

@@ -44,6 +44,25 @@ export class AccountingController {
   snapshot(@Param('bookId') id: string, @Req() request: AuthenticatedRequest) {
     return this.accounting.snapshot(id, request.actor);
   }
+  @Get('books/:bookId/workflows')
+  @Header('Cache-Control', 'private, no-store')
+  workflows(@Param('bookId') id: string, @Req() request: AuthenticatedRequest) {
+    return this.accounting.workflows(id, request.actor);
+  }
+  @Get('books/:bookId/workflow-sources')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('finance.journal.create')
+  workflowSources(
+    @Param('bookId') id: string,
+    @Query() query: Record<string, string>,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.accounting.workflowSources(
+      id,
+      query.search ?? '',
+      request.actor,
+    );
+  }
   @Get('books/:bookId/journals')
   @Header('Cache-Control', 'private, no-store')
   journals(

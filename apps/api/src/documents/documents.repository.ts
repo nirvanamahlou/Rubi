@@ -592,6 +592,54 @@ export class DocumentsRepository {
     });
   }
 
+  async ensureMasterDataLogoReferences(actorUserId: string, branchId: string) {
+    return this.database.client.$transaction(async (transaction) => {
+      const [owner, branch] = await Promise.all([
+        transaction.user.findFirst({
+          where: {
+            id: actorUserId,
+            status: 'ACTIVE',
+            branches: { some: { branchId } },
+          },
+          select: { id: true },
+        }),
+        transaction.branch.findFirst({
+          where: { id: branchId, isActive: true },
+          select: { id: true },
+        }),
+      ]);
+      if (!owner || !branch) return false;
+      // Insert-only: do not reactivate or rewrite administrator policies.
+      await transaction.documentType.createMany({
+        skipDuplicates: true,
+        data: [
+          {
+            code: 'BRAND_ASSET_TEMPLATE',
+            name: 'دارایی برند و قالب',
+            domain: 'BRAND',
+            defaultConfidentiality: 'INTERNAL',
+            requiresExpiry: false,
+            maxFileSizeBytes: BigInt(25 * 1024 * 1024),
+            allowedMimeTypes: [
+              'application/pdf',
+              'image/png',
+              'image/jpeg',
+              'text/plain',
+              'text/csv',
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ],
+          },
+        ],
+      });
+      await transaction.documentCategory.createMany({
+        skipDuplicates: true,
+        data: [{ code: 'BRAND_ASSETS', name: 'دارایی‌های برند' }],
+      });
+      return true;
+    });
+  }
+
   async options(branchIds: readonly string[], domains: readonly string[]) {
     const [documentTypes, categories, owners, branches] = await Promise.all([
       this.database.client.documentType.findMany({
@@ -1029,6 +1077,7 @@ export class DocumentsRepository {
   }
 
   async createUploaded(input: {
+    skipAntivirusForMasterDataLogo?: boolean;
     documentId: string;
     versionId: string;
     storageObjectKey: string;
@@ -1114,15 +1163,17 @@ export class DocumentsRepository {
           },
         });
       }
-      await transaction.documentQuarantine.create({
-        data: {
-          versionId: input.versionId,
-          reasonCode: 'ANTIVIRUS_ADAPTER_UNAVAILABLE',
-        },
-      });
-      await transaction.documentProcessingJob.create({
-        data: { versionId: input.versionId, jobType: 'ANTIVIRUS_SCAN' },
-      });
+      if (!input.skipAntivirusForMasterDataLogo) {
+        await transaction.documentQuarantine.create({
+          data: {
+            versionId: input.versionId,
+            reasonCode: 'ANTIVIRUS_ADAPTER_UNAVAILABLE',
+          },
+        });
+        await transaction.documentProcessingJob.create({
+          data: { versionId: input.versionId, jobType: 'ANTIVIRUS_SCAN' },
+        });
+      }
       await transaction.document.update({
         where: { id: input.documentId },
         data: { currentVersionId: input.versionId, currentVersionNumber: 1 },
@@ -1135,7 +1186,9 @@ export class DocumentsRepository {
           actorBranchId: input.actorBranchId,
           action: 'documents.upload',
           outcome: AuditOutcome.SUCCESS,
-          reason: 'UPLOAD_ACCEPTED_TO_QUARANTINE',
+          reason: input.skipAntivirusForMasterDataLogo
+            ? 'MASTER_DATA_LOGO_ANTIVIRUS_EXEMPT'
+            : 'UPLOAD_ACCEPTED_TO_QUARANTINE',
           ipSummary: input.ipSummary,
           userAgentSummary: input.userAgentSummary,
         },

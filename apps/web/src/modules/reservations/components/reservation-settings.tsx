@@ -1,10 +1,13 @@
 'use client';
+import { HotelRoomQuotationEditor } from './hotel-room-quotation-editor';
+import { hotelFormScope } from '../model/hotel-form-scope';
+import { reservationHotelStays } from '@nora/contracts';
 import { MoneyInput } from '@/components/ui/money-input';
 import {
   ReservationCurrencySelect,
   useReservationCurrencies,
 } from './reservation-currencies';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   voucherTextKeys,
   voucherFlagKeys,
@@ -23,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/form-controls';
 import {
+  isAggregateReservationForm,
   type ReservationFormIntake,
   type ReservationFormReferences,
 } from '../model/reservation-form';
@@ -47,6 +51,10 @@ import {
   type ReservationEditReferenceResource,
 } from '../model/reservation-edit-references';
 import styles from './reservation-settings.module.css';
+import {
+  supplierPriceColumns,
+  normalizeSupplierFormPrices,
+} from '../model/supplier-form-prices';
 
 export type ReservationSettingsSection =
   'ALL' | 'PARTY' | 'FLIGHT' | 'HOTEL' | 'OTHER' | 'PASSENGERS';
@@ -210,43 +218,6 @@ export function ReservationSettingsForm({
   const [past, setPast] = useState<TravelWorkflowStateV1>();
   const [previewDirty, setPreviewDirty] = useState(false);
   const [showFiles, setShowFiles] = useState(false);
-  const priceSource = useRef(
-    draft.hotelPurchasePrices !== undefined ? draft.brokerId : undefined,
-  );
-  const [priceLoading, setPriceLoading] = useState(
-    Boolean(draft.brokerId && draft.hotelPurchasePrices === undefined),
-  );
-  const [priceError, setPriceError] = useState('');
-  useEffect(() => {
-    const brokerId = draft.brokerId;
-    if (!brokerId || priceSource.current === brokerId) return;
-    let live = true;
-    void travelRequest<{
-      data: NonNullable<VoucherSettingsV1['hotelPurchasePrices']>;
-    }>(
-      `reservations/hotel-savings/supplier-form/${intake.id}?brokerId=${encodeURIComponent(brokerId)}`,
-    )
-      .then((response) => {
-        if (!live) return;
-        priceSource.current = brokerId;
-        setDraft((previous) =>
-          previous.brokerId === brokerId
-            ? { ...previous, hotelPurchasePrices: response.data }
-            : previous,
-        );
-        setPreviewDirty(true);
-        setPriceLoading(false);
-        setPriceError('');
-      })
-      .catch(() => {
-        if (!live) return;
-        setPriceLoading(false);
-        setPriceError('دریافت نرخ خرید هتل انجام نشد؛ مبلغ را دستی وارد کنید.');
-      });
-    return () => {
-      live = false;
-    };
-  }, [draft.brokerId, intake.id]);
   const referenceKeys = referenceKeysBySection[section];
   const referenceResourceKey = [
     ...new Set(
@@ -334,8 +305,7 @@ export function ReservationSettingsForm({
     };
   }, [intake.id, intake.workflow.version]);
   async function save(sendToBroker = showDocument) {
-    if (busy || priceLoading || intake.workflow.supplierStatus === 'CANCELLED')
-      return;
+    if (busy || intake.workflow.supplierStatus === 'CANCELLED') return;
     if (activeDirectory.loading || activeDirectory.error) {
       setError(
         activeDirectory.error ||
@@ -379,6 +349,14 @@ export function ReservationSettingsForm({
     setMessage('');
     let savedWorkflow: TravelWorkflowStateV1 | undefined;
     try {
+      const supplierFormPrices = normalizeSupplierFormPrices(
+        draft.rooms?.length
+          ? draft.supplierFormPrices?.transferPp
+            ? { transferPp: draft.supplierFormPrices.transferPp }
+            : {}
+          : draft.supplierFormPrices,
+        currencyDirectory.currencies,
+      );
       let currentVersion = intake.workflow.version;
       if (sendToBroker && !intake.workflow.branding) {
         const branded = await travelRequest<{ data: TravelWorkflowStateV1 }>(
@@ -397,11 +375,13 @@ export function ReservationSettingsForm({
         `reservations/requests/${intake.id}/workflow`,
         {
           action: 'SUPPLIER_FORM_SETTINGS',
+          ...(intake.hotelStayKey ? { hotelStayKey: intake.hotelStayKey } : {}),
           applyToContractAndVoucher: false,
           expectedVersion: currentVersion,
           note: sectionLabels[section] + ' فقط در فرم رزواسیون',
           voucherSettings: {
             ...draft,
+            supplierFormPrices,
             text: {
               ...draft.text,
               arrivalAirline:
@@ -427,7 +407,7 @@ export function ReservationSettingsForm({
       );
       savedWorkflow = r.data;
       const result = sendToBroker
-        ? await sendSavedReservationForm(intake.id, r.data)
+        ? await sendSavedReservationForm(intake.id, r.data, intake.hotelStayKey)
         : r;
       onSaved(result.data);
       setMessage('نسخهٔ جدید با موفقیت ثبت شد.');
@@ -446,6 +426,7 @@ export function ReservationSettingsForm({
     onDirty();
   };
   const selected = draft.passengers.filter((p) => p.selected);
+  const aggregateForm = isAggregateReservationForm(intake);
   const primaryTextKeys = ['checkIn', 'checkOut', 'roomType'] as const;
   const textKeysBySection: Record<
     ReservationSettingsSection,
@@ -531,10 +512,6 @@ export function ReservationSettingsForm({
                   ...(referenceKey === 'broker' ? { brokerId: option.id } : {}),
                 };
                 if (referenceKey === 'broker' && draft.brokerId !== option.id) {
-                  priceSource.current = undefined;
-                  next.hotelPurchasePrices = [];
-                  setPriceLoading(true);
-                  setPriceError('');
                   delete next.leaderId;
                   next.text.leaderName = '';
                   next.text.leaderPhone = '';
@@ -594,9 +571,8 @@ export function ReservationSettingsForm({
       onClick={() => void save()}
       disabled={
         busy ||
-        priceLoading ||
         activeDirectory.loading ||
-        !selected.length ||
+        (!selected.length && !aggregateForm) ||
         (showDocument && !draft.brokerId)
       }
     >
@@ -609,14 +585,6 @@ export function ReservationSettingsForm({
   );
   return (
     <section className={styles.form}>
-      <header className={styles.formHeader}>
-        <span>ویرایش نسخهٔ رزواسیون</span>
-        <h3>{sectionLabels[section]}</h3>
-        <p>
-          اطلاعات همین بخش را اصلاح کنید. هر ذخیره یک نسخهٔ مستقل در سابقهٔ فرم
-          رزواسیون می‌سازد؛ ردهٔ کودک هتل در فرم ارسالی کارگزار چاپ می‌شود.
-        </p>
-      </header>
       {message && <p role="status">{message}</p>}
       {error && (
         <p role="alert" className="text-destructive">
@@ -625,110 +593,132 @@ export function ReservationSettingsForm({
       )}
 
       {(section === 'ALL' || section === 'HOTEL') && (
-        <div className={styles.sectionCard}>
-          <h4>مبلغ هتل در فرم رزواسیون</h4>
-          <p>
-            نرخ خرید کارگزار انتخاب‌شده برای کل اقامت؛ قابل ویرایش پیش از صدور.
-          </p>
-          {priceLoading && <p>در حال دریافت نرخ خرید…</p>}
-          {priceError && <p role="alert">{priceError}</p>}
+        <div className={`${styles.sectionCard} ${styles.amountCard}`}>
+          <h4>جدول قیمت فرم رزرواسیون</h4>
           {currencyDirectory.error && (
             <p role="alert">{currencyDirectory.error}</p>
           )}
-          {(draft.hotelPurchasePrices?.length
-            ? draft.hotelPurchasePrices
-            : [{ amount: '', currencyCode: '' }]
-          ).map((price, index) => (
-            <div className="grid grid-cols-2 gap-2" key={index}>
-              <label>
-                مبلغ
-                <MoneyInput
-                  aria-label={`مبلغ هتل ${index + 1}`}
-                  value={price.amount}
-                  disabled={busy || priceLoading}
-                  onValueChange={(amount) => {
-                    const prices = [
-                      ...(draft.hotelPurchasePrices?.length
-                        ? draft.hotelPurchasePrices
-                        : [{ amount: '', currencyCode: '' }]),
-                    ];
-                    prices[index] = { ...price, amount };
-                    update({ ...draft, hotelPurchasePrices: prices });
-                  }}
-                />
-              </label>
-              <label>
-                ارز
-                <ReservationCurrencySelect
-                  label={`ارز هتل ${index + 1}`}
-                  value={price.currencyCode}
-                  currencies={currencyDirectory.currencies}
-                  disabled={busy || priceLoading || currencyDirectory.loading}
-                  onChange={(currencyCode) => {
-                    const prices = [
-                      ...(draft.hotelPurchasePrices?.length
-                        ? draft.hotelPurchasePrices
-                        : [{ amount: '', currencyCode: '' }]),
-                    ];
-                    prices[index] = {
-                      ...price,
-                      currencyCode,
-                    };
-                    update({ ...draft, hotelPurchasePrices: prices });
-                  }}
-                />
-              </label>
-            </div>
-          ))}
+          {!!draft.rooms?.length && (
+            <HotelRoomQuotationEditor
+              draft={draft}
+              update={update}
+              currencies={currencyDirectory.currencies}
+              busy={busy || currencyDirectory.loading}
+              nights={
+                intake.snapshot.hotelSelection
+                  ? Math.round(
+                      (Date.parse(
+                        draft.text.checkOut ||
+                          intake.snapshot.hotelSelection.checkOutDate,
+                      ) -
+                        Date.parse(
+                          draft.text.checkIn ||
+                            intake.snapshot.hotelSelection.checkInDate,
+                        )) /
+                        86400000,
+                    )
+                  : 0
+              }
+            />
+          )}
+          <table className={draft.rooms?.length ? 'hidden' : 'w-full text-sm'}>
+            <thead>
+              <tr>
+                {supplierPriceColumns.map((column) => (
+                  <th key={column.key}>{column.label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                {supplierPriceColumns.map((column) => {
+                  const price = draft.supplierFormPrices?.[column.key] ?? {
+                    amount: '',
+                    currencyCode: '',
+                  };
+                  const change = (next: typeof price) =>
+                    update({
+                      ...draft,
+                      supplierFormPrices: {
+                        ...draft.supplierFormPrices,
+                        [column.key]: next,
+                      },
+                    });
+                  return (
+                    <td key={column.key} className="p-2 align-top">
+                      <div className="grid gap-2">
+                        <MoneyInput
+                          aria-label={`مبلغ ${column.label}`}
+                          value={price.amount}
+                          disabled={busy}
+                          onValueChange={(amount) =>
+                            change({ ...price, amount })
+                          }
+                        />
+                        {column.key !== 'ratio' && (
+                          <ReservationCurrencySelect
+                            label={`ارز ${column.label}`}
+                            value={price.currencyCode ?? ''}
+                            currencies={currencyDirectory.currencies}
+                            disabled={busy || currencyDirectory.loading}
+                            onChange={(currencyCode) =>
+                              change({ ...price, currencyCode })
+                            }
+                          />
+                        )}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            </tbody>
+          </table>
           <Button
             type="button"
             loading={busy}
             disabled={
               busy ||
-              priceLoading ||
               currencyDirectory.loading ||
               intake.workflow.supplierStatus === 'CANCELLED' ||
               activeDirectory.loading ||
-              !selected.length
+              (!selected.length && !aggregateForm)
             }
             onClick={() => void save(false)}
           >
-            ثبت مبلغ فرم
+            ذخیره
           </Button>
           <Button
             type="button"
             variant="outline"
-            disabled={busy || priceLoading}
-            onClick={() =>
-              update({
-                ...draft,
-                hotelPurchasePrices: [
-                  ...(draft.hotelPurchasePrices ?? []),
-                  { amount: '', currencyCode: '' },
-                ],
-              })
-            }
-          >
-            افزودن ارز
-          </Button>
-          <Button
-            variant="outline"
-            disabled={busy || priceLoading}
-            onClick={() => update({ ...draft, hotelPurchasePrices: [] })}
+            disabled={busy}
+            onClick={() => {
+              const cleared = { ...draft, supplierFormPrices: {} };
+              cleared.hotelRoomPrices = null;
+              update(cleared);
+            }}
           >
             پاک‌کردن مبلغ فرم
           </Button>
+          {section === 'ALL' && (
+            <fieldset
+              disabled={busy || intake.workflow.supplierStatus === 'CANCELLED'}
+            >
+              {textField('broker')}
+            </fieldset>
+          )}
         </div>
       )}
+
       <p
         className={`${styles.hotelSummary} ${
           section === 'ALL' || section === 'HOTEL' ? '' : 'hidden'
         }`}
       >
         تعداد اتاق:{' '}
-        {draft.numbers.singleRooms +
-          draft.numbers.doubleRooms +
-          draft.numbers.customRooms}{' '}
+        {draft.rooms?.length ??
+          draft.numbers.singleRooms +
+            draft.numbers.doubleRooms +
+            draft.numbers.customRooms}{' '}
         · تعداد شب:{' '}
         {draft.text.checkIn && draft.text.checkOut
           ? Math.max(
@@ -745,7 +735,7 @@ export function ReservationSettingsForm({
         disabled={busy || intake.workflow.supplierStatus === 'CANCELLED'}
         className="grid gap-4"
       >
-        {(section === 'ALL' || section === 'OTHER') && textField('broker')}
+        {section === 'OTHER' && textField('broker')}
         {showDocument && draft.brokerId && (
           <div className="grid gap-3">
             {
@@ -891,6 +881,16 @@ export function ReservationSettingsForm({
                   onClick={() =>
                     update({
                       ...draft,
+                      passengers: draft.passengers.map((person) => ({
+                        ...person,
+                        roomOrdinal:
+                          person.roomOrdinal === index + 1
+                            ? undefined
+                            : person.roomOrdinal &&
+                                person.roomOrdinal > index + 1
+                              ? person.roomOrdinal - 1
+                              : person.roomOrdinal,
+                      })),
                       rooms: draft
                         .rooms!.filter((_, i) => i !== index)
                         .map((r, i) => ({ ...r, ordinal: i + 1 })),
@@ -947,6 +947,12 @@ export function ReservationSettingsForm({
                   <th>انتخاب</th>
                   <th>مسافر</th>
                   <th>نوع اتاق</th>
+                  <th>اتاق</th>
+                  <th>بلیط رفت</th>
+                  <th>بلیط برگشت</th>
+                  <th>ترانسفر رفت</th>
+                  <th>ترانسفر برگشت</th>
+                  <th>هتل</th>
                   <th>رده بلیط</th>
                   <th>رده کودک هتل</th>
                   <th>جنسیت</th>
@@ -955,6 +961,19 @@ export function ReservationSettingsForm({
                 </tr>
               </thead>
               <tbody>
+                {aggregateForm && (
+                  <tr>
+                    <td colSpan={14}>
+                      طرف قرارداد:{' '}
+                      {draft.text.contractPartyName ||
+                        intake.contractPartyName ||
+                        '—'}
+                      <p>
+                        اطلاعات اسمی مسافران در این قرارداد قدیمی ثبت نشده است.
+                      </p>
+                    </td>
+                  </tr>
+                )}
                 {draft.passengers.map((p, i) => (
                   <tr key={p.id}>
                     <td>
@@ -994,6 +1013,73 @@ export function ReservationSettingsForm({
                         }
                       />
                     </td>
+                    <td>
+                      <ReservationSelect
+                        ariaLabel={`اتاق مسافر ${i + 1}`}
+                        value={p.roomOrdinal?.toString() ?? ''}
+                        options={[
+                          { value: emptySelectValue, label: 'انتخاب اتاق' },
+                          ...(draft.rooms ?? []).map((room) => ({
+                            value: String(room.ordinal),
+                            label: `${room.ordinal} - ${room.roomTypeNameSnapshot}`,
+                          })),
+                        ]}
+                        onValueChange={(value) =>
+                          update({
+                            ...draft,
+                            passengers: draft.passengers.map((person, index) =>
+                              index === i
+                                ? {
+                                    ...person,
+                                    roomOrdinal: value
+                                      ? Number(value)
+                                      : undefined,
+                                  }
+                                : person,
+                            ),
+                          })
+                        }
+                      />
+                    </td>
+                    {(
+                      [
+                        'outboundFlight',
+                        'returnFlight',
+                        'outboundTransfer',
+                        'returnTransfer',
+                        'hotel',
+                      ] as const
+                    ).map((key) => (
+                      <td key={key}>
+                        <input
+                          type="checkbox"
+                          aria-label={`${key} ${i + 1}`}
+                          checked={p.services?.[key] ?? false}
+                          onChange={(event) =>
+                            update({
+                              ...draft,
+                              passengers: draft.passengers.map(
+                                (person, index) =>
+                                  index === i
+                                    ? {
+                                        ...person,
+                                        services: {
+                                          outboundFlight: false,
+                                          returnFlight: false,
+                                          outboundTransfer: false,
+                                          returnTransfer: false,
+                                          hotel: false,
+                                          ...person.services,
+                                          [key]: event.target.checked,
+                                        },
+                                      }
+                                    : person,
+                              ),
+                            })
+                          }
+                        />
+                      </td>
+                    ))}
                     <td>
                       <ReservationSelect
                         ariaLabel={`رده سنی مسافر ${i + 1}`}
@@ -1058,7 +1144,33 @@ export function ReservationSettingsForm({
                         <span>—</span>
                       )}
                     </td>
-                    <td>{p.sex || '—'}</td>
+                    <td>
+                      <ReservationSelect
+                        ariaLabel={`جنسیت مسافر ${i + 1}`}
+                        value={p.sex || emptySelectValue}
+                        options={[
+                          { value: emptySelectValue, label: '—' },
+                          { value: 'MALE', label: 'Male' },
+                          { value: 'FEMALE', label: 'Female' },
+                        ]}
+                        onValueChange={(sex) =>
+                          update({
+                            ...draft,
+                            passengers: draft.passengers.map((v, j) =>
+                              j === i
+                                ? {
+                                    ...v,
+                                    sex:
+                                      sex === emptySelectValue
+                                        ? ''
+                                        : (sex as 'MALE' | 'FEMALE'),
+                                  }
+                                : v,
+                            ),
+                          })
+                        }
+                      />
+                    </td>
                     <td>{p.birthDate || '—'}</td>
                     <td>{p.documentNumber || '—'}</td>
                   </tr>
@@ -1129,7 +1241,15 @@ export function ReservationSettingsForm({
         <summary>سابقهٔ فرم رزواسیون (۱۰۰ نسخهٔ اخیر)</summary>
         <div className="grid gap-2">
           {history
-            .filter((item) => item.state.supplierFormSettings)
+            .filter((item) =>
+              intake.hotelStayKey
+                ? item.state.hotelSupplierForms?.[intake.hotelStayKey]
+                    ?.settings ||
+                  (intake.hotelStayKey ===
+                    intake.snapshot.hotelSelection?.serviceClientKey &&
+                    item.state.supplierFormSettings)
+                : item.state.supplierFormSettings,
+            )
             .map((h) => (
               <div
                 key={h.version}
@@ -1157,7 +1277,17 @@ export function ReservationSettingsForm({
           <Button variant="outline" onClick={() => setPast(undefined)}>
             بستن نسخهٔ قبلی
           </Button>
-          <TravelDocument intake={{ ...intake, workflow: past }} historical />
+          <TravelDocument
+            intake={
+              intake.hotelStayKey
+                ? hotelFormScope(
+                    { ...intake, workflow: past },
+                    intake.hotelStayKey,
+                  )
+                : { ...intake, workflow: past }
+            }
+            historical
+          />
         </div>
       )}
     </section>
@@ -1173,6 +1303,45 @@ export function ReservationSettings(props: {
   section?: ReservationSettingsSection;
   partyName?: string;
 }) {
+  const stays = reservationHotelStays(props.intake.snapshot);
+  const [selectedKey, setSelectedKey] = useState(stays[0]?.key ?? '');
+  const key = stays.some((stay) => stay.key === selectedKey)
+    ? selectedKey
+    : stays[0]?.key;
+
+  return (
+    <div className="grid gap-4">
+      {stays.length > 1 && (
+        <nav className="flex flex-wrap gap-2">
+          {stays.map((stay) => (
+            <Button
+              key={stay.key}
+              variant={stay.key === key ? 'primary' : 'outline'}
+              onClick={() => setSelectedKey(stay.key)}
+            >
+              اقامت {stay.ordinal} · {stay.hotel.hotelNameSnapshot}
+            </Button>
+          ))}
+        </nav>
+      )}
+      {stays.length ? (
+        stays.map((stay) => (
+          <div key={stay.key} hidden={stay.key !== key}>
+            <HotelReservationSettings
+              {...props}
+              intake={hotelFormScope(props.intake, stay.key)}
+            />
+          </div>
+        ))
+      ) : (
+        <HotelReservationSettings {...props} />
+      )}
+    </div>
+  );
+}
+function HotelReservationSettings(
+  props: Parameters<typeof ReservationSettings>[0],
+) {
   const refs = useReservationFormReferences(props.intake, true);
   return refs.ready ? (
     <ReservationSettingsForm {...props} refs={refs.references} />
@@ -1184,8 +1353,15 @@ export function ReservationSettings(props: {
 export async function sendSavedReservationForm(
   id: string,
   state: TravelWorkflowStateV1,
+  hotelStayKey?: string,
 ) {
-  if (!state.supplierFormSettings?.brokerId)
+  if (
+    !(
+      hotelStayKey
+        ? state.hotelSupplierForms?.[hotelStayKey]?.settings
+        : state.supplierFormSettings
+    )?.brokerId
+  )
     throw new Error(
       'پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.',
     );
@@ -1193,6 +1369,7 @@ export async function sendSavedReservationForm(
     `reservations/requests/${id}/workflow`,
     {
       action: 'REQUEST_SUPPLIER',
+      ...(hotelStayKey ? { hotelStayKey } : {}),
       expectedVersion: state.version,
       note: 'ثبت ارسال فرم رزرواسیون به کارگزار',
     },

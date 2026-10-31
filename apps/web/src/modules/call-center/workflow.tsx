@@ -1,9 +1,12 @@
 'use client';
+import { OwnerSelect } from './owner-select';
+import { RequestChoice } from './request-choice';
 import { RequestReferral } from './request-referral';
 import { RequestCustomer } from './request-customer';
 import { useDialogReturnFocus } from './use-dialog-focus';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -22,12 +25,18 @@ import {
 } from './workflow-client';
 import styles from './workflow.module.css';
 import { CallKpiCards } from './kpis';
+import { readApi } from './read-client';
+import { DossierRequestCard } from './dossier-request-card';
+import { ScrollContinuation } from './scroll-continuation';
 
-export const requestLabels: Record<string, string> = {
-  NEW: 'باز',
+export const requestStatusOptions: Record<string, string> = {
   IN_PROGRESS: 'منتظر اقدام کارشناس',
   WAITING_CUSTOMER: 'منتظر پاسخ مشتری',
   CLOSED: 'بسته‌شده',
+};
+export const requestLabels: Record<string, string> = {
+  NEW: requestStatusOptions.IN_PROGRESS!,
+  ...requestStatusOptions,
 };
 export const taskLabels: Record<string, string> = {
   OPEN: 'باز',
@@ -35,38 +44,6 @@ export const taskLabels: Record<string, string> = {
   CANCELLED: 'لغوشده',
 };
 const priorities = { NORMAL: 'عادی', HIGH: 'بالا', URGENT: 'فوری' };
-function OwnerSelect({
-  operators,
-  value,
-  disabled,
-  onChange,
-}: {
-  operators: Operator[];
-  value: string;
-  disabled?: boolean;
-  onChange?: (value: string) => void;
-}) {
-  return (
-    <NativeSearchSelect
-      aria-label="کارشناس مسئول"
-      name="ownerId"
-      value={value}
-      disabled={disabled}
-      onChange={(event) => onChange?.(event.target.value)}
-      optionLimit={100}
-    >
-      <option value="">بدون مسئول</option>
-      {value && !operators.some((user) => user.id === value) && (
-        <option value={value}>مسئول قبلی؛ برای ارجاع جدید انتخاب کنید</option>
-      )}
-      {operators.map((user) => (
-        <option key={user.id} value={user.id}>
-          {user.displayName}
-        </option>
-      ))}
-    </NativeSearchSelect>
-  );
-}
 export function WorkflowPanel({
   branchId,
   contactId,
@@ -75,7 +52,15 @@ export function WorkflowPanel({
   onChanged,
   calls = [],
   onLinked,
+  dossier = false,
+  newRequestOpen = false,
+  onRequestClose,
+  requestId,
 }: {
+  requestId?: string;
+  dossier?: boolean;
+  newRequestOpen?: boolean;
+  onRequestClose?: () => void;
   branchId: string;
   contactId: string;
   canManage: boolean;
@@ -86,17 +71,25 @@ export function WorkflowPanel({
 }) {
   const [requestPage, setRequestPage] = useState(1),
     [taskPage, setTaskPage] = useState(1);
-  const [pageMeta, setPageMeta] = useState({ total: 0, hasMoreTasks: false });
+  const [pageMeta, setPageMeta] = useState<{
+    total: number;
+    hasMoreTasks: boolean;
+    contactCallCount?: number;
+  }>({ total: 0, hasMoreTasks: false });
   const [requests, setRequests] = useState<RequestCase[]>([]);
+  const [contactCall, setContactCall] = useState<Call | null>(null);
   const [operators, setOperators] = useState<Operator[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
-  const [editor, setEditor] = useState<
+  const [localEditor, setEditor] = useState<
     | { kind: 'request'; item?: RequestCase }
     | { kind: 'task'; request: RequestCase; item?: FollowUp }
     | null
   >(null);
+  const editor =
+    localEditor ??
+    (newRequestOpen && canManage ? { kind: 'request' as const } : null);
   const [view, setView] = useState('ALL');
   useEffect(() => {
     const controller = new AbortController();
@@ -107,12 +100,26 @@ export function WorkflowPanel({
         controller.signal,
         requestPage,
         taskPage,
+        requestId,
       ),
       workflowApi.operators(branchId),
+      requestId
+        ? readApi.calls(branchId, contactId, undefined, controller.signal)
+        : Promise.resolve(null),
     ])
-      .then(([result, options]) => {
+      .then(([result, options, history]) => {
         if (!controller.signal.aborted) {
-          setRequests(result.data);
+          setRequests((previous) =>
+            dossier && requestPage > 1
+              ? [
+                  ...previous.filter(
+                    (item) => !result.data.some((next) => next.id === item.id),
+                  ),
+                  ...result.data,
+                ]
+              : result.data,
+          );
+          setContactCall(history?.data[0] ?? null);
           setPageMeta(
             result.meta ?? { total: result.data.length, hasMoreTasks: false },
           );
@@ -131,7 +138,15 @@ export function WorkflowPanel({
         }
       });
     return () => controller.abort();
-  }, [branchId, contactId, revision, requestPage, taskPage]);
+  }, [
+    branchId,
+    contactId,
+    revision,
+    requestPage,
+    taskPage,
+    requestId,
+    dossier,
+  ]);
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Tehran',
   }).format(new Date());
@@ -158,70 +173,106 @@ export function WorkflowPanel({
       aria-label="درخواست‌ها و اقدام‌های پیگیری"
     >
       <header>
-        <h3>درخواست‌ها و اقدام‌های پیگیری</h3>
-        <button
-          type="button"
-          disabled={!canManage}
-          onClick={() => setEditor({ kind: 'request' })}
-        >
-          درخواست جدید
-        </button>
+        <h3>{dossier ? 'درخواست‌ها' : 'درخواست‌ها و اقدام‌های پیگیری'}</h3>
+        {!dossier && !requestId && (
+          <button
+            type="button"
+            disabled={!canManage}
+            onClick={() => setEditor({ kind: 'request' })}
+          >
+            درخواست جدید
+          </button>
+        )}
       </header>
-      <p>تماس‌های یک شماره می‌توانند مربوط به درخواست‌های متفاوت باشند.</p>
-      <nav aria-label="صفحه‌بندی درخواست و اقدام">
-        <button
-          disabled={loading || requestPage === 1}
-          onClick={() => {
-            setLoading(true);
-            setRequestPage((v) => v - 1);
-            setTaskPage(1);
-          }}
+      {requestId && !loading && !error && contactCall && (
+        <article className={styles.card} aria-label="اطلاعات مخاطب">
+          <strong>{contactCall.name || 'نام ثبت نشده'}</strong>
+          <p>
+            شماره تماس: <bdi dir="ltr">{contactCall.phone || 'نامشخص'}</bdi>
+          </p>
+          <p>موضوع آخرین تماس: {contactCall.subject || 'ثبت نشده'}</p>
+          <p>
+            منبع: {contactCall.source} · واحد: {contactCall.operator}
+          </p>
+          <p>
+            آخرین تماس: {callDate(contactCall.occurredAt)} · نتیجه:{' '}
+            {contactCall.needsCompletion && !contactCall.outcome
+              ? 'نیازمند تکمیل'
+              : ((
+                  {
+                    ANSWERED: 'گفت‌وگو انجام شد',
+                    NO_ANSWER: 'بدون پاسخ',
+                    BUSY: 'اشغال',
+                    FAILED: 'ناموفق',
+                  } as Record<string, string>
+                )[contactCall.outcome ?? ''] ?? 'نامشخص')}
+          </p>
+          {pageMeta.contactCallCount !== undefined && (
+            <p>تعداد تماس: {faNumber(pageMeta.contactCallCount)}</p>
+          )}
+        </article>
+      )}
+      {!dossier && (
+        <p>تماس‌های یک شماره می‌توانند مربوط به درخواست‌های متفاوت باشند.</p>
+      )}
+      {!dossier && (
+        <nav aria-label="صفحه‌بندی درخواست و اقدام">
+          <button
+            disabled={loading || requestPage === 1}
+            onClick={() => {
+              setLoading(true);
+              setRequestPage((v) => v - 1);
+              setTaskPage(1);
+            }}
+          >
+            درخواست‌های قبلی
+          </button>
+          <span>
+            {requestPage} / {Math.max(1, Math.ceil(pageMeta.total / 10))}
+          </span>
+          <button
+            disabled={loading || requestPage * 10 >= pageMeta.total}
+            onClick={() => {
+              setLoading(true);
+              setRequestPage((v) => v + 1);
+              setTaskPage(1);
+            }}
+          >
+            درخواست‌های بعدی
+          </button>
+          <button
+            disabled={loading || taskPage === 1}
+            onClick={() => {
+              setLoading(true);
+              setTaskPage((v) => v - 1);
+            }}
+          >
+            اقدام‌های جدیدتر
+          </button>
+          <button
+            disabled={loading || !pageMeta.hasMoreTasks}
+            onClick={() => {
+              setLoading(true);
+              setTaskPage((v) => v + 1);
+            }}
+          >
+            اقدام‌های قدیمی‌تر
+          </button>
+        </nav>
+      )}
+      {!dossier && !requestId && (
+        <NativeSearchSelect
+          aria-label="نمای پیگیری‌های این مخاطب"
+          value={view}
+          onChange={(event) => setView(event.target.value)}
         >
-          درخواست‌های قبلی
-        </button>
-        <span>
-          {requestPage} / {Math.max(1, Math.ceil(pageMeta.total / 10))}
-        </span>
-        <button
-          disabled={loading || requestPage * 10 >= pageMeta.total}
-          onClick={() => {
-            setLoading(true);
-            setRequestPage((v) => v + 1);
-            setTaskPage(1);
-          }}
-        >
-          درخواست‌های بعدی
-        </button>
-        <button
-          disabled={loading || taskPage === 1}
-          onClick={() => {
-            setLoading(true);
-            setTaskPage((v) => v - 1);
-          }}
-        >
-          اقدام‌های جدیدتر
-        </button>
-        <button
-          disabled={loading || !pageMeta.hasMoreTasks}
-          onClick={() => {
-            setLoading(true);
-            setTaskPage((v) => v + 1);
-          }}
-        >
-          اقدام‌های قدیمی‌تر
-        </button>
-      </nav>
-      <NativeSearchSelect
-        aria-label="نمای پیگیری‌های این مخاطب"
-        value={view}
-        onChange={(event) => setView(event.target.value)}
-      >
-        <option value="ALL">همه درخواست‌های این مخاطب</option>
-        <option value="MINE">کارهای من</option>
-        <option value="TODAY">امروز</option>
-        <option value="OVERDUE">عقب‌افتاده</option>
-        <option value="UNASSIGNED">بدون مسئول</option>
-      </NativeSearchSelect>
+          <option value="ALL">همه درخواست‌های این مخاطب</option>
+          <option value="MINE">کارهای من</option>
+          <option value="TODAY">امروز</option>
+          <option value="OVERDUE">عقب‌افتاده</option>
+          <option value="UNASSIGNED">بدون مسئول</option>
+        </NativeSearchSelect>
+      )}
       {loading && <p role="status">در حال دریافت درخواست‌ها…</p>}
       {error && (
         <p role="alert">
@@ -241,152 +292,183 @@ export function WorkflowPanel({
       {!loading && !error && !visible.length && (
         <p>درخواستی در این نما وجود ندارد.</p>
       )}
-      {!loading && !error && requests.length > 0 && calls.length > 0 && (
-        <details>
-          <summary>اتصال تماس‌ها به درخواست</summary>
-          {calls.map((call) => (
-            <CallRequestLink
-              key={call.id + (call.ticketId ?? '')}
-              call={call}
-              requests={requests}
-              branchId={branchId}
-              disabled={!canManage}
-              onLinked={(id, ticket) => onLinked?.(id, ticket)}
-            />
-          ))}
-        </details>
-      )}
-      {!loading &&
+      {!dossier &&
+        !loading &&
         !error &&
-        visible.map((request) => (
-          <article key={request.id} className={styles.card}>
-            <strong>{request.title}</strong>
-            <RequestReferral
-              branch={branchId}
+        requests.length > 0 &&
+        calls.length > 0 && (
+          <details>
+            <summary>اتصال تماس‌ها به درخواست</summary>
+            {calls.map((call) => (
+              <CallRequestLink
+                key={call.id + (call.ticketId ?? '')}
+                call={call}
+                requests={requests}
+                branchId={branchId}
+                disabled={!canManage}
+                onLinked={(id, ticket) => onLinked?.(id, ticket)}
+              />
+            ))}
+          </details>
+        )}
+      {!error &&
+        visible.map((request) =>
+          dossier ? (
+            <DossierRequestCard
+              key={request.id}
               request={request}
-              operators={operators}
-              disabled={!canManage}
-              onChanged={() => onChanged?.()}
+              canManage={canManage}
+              onEdit={() => setEditor({ kind: 'request', item: request })}
             />
-            <RequestCustomer
-              key={request.id + ':' + request.version}
-              branch={branchId}
-              contact={contactId}
-              request={request}
-              onChanged={() => {
-                setLoading(true);
-                setRevision((v) => v + 1);
-              }}
-            />
-            <p>
-              {requestLabels[request.status]} ·{' '}
-              {request.ownerName ?? 'بدون مسئول'} ·{' '}
-              {priorities[request.priority as keyof typeof priorities]}
-            </p>
-            {request.reason && <p>{request.reason}</p>}
-            <button
-              type="button"
-              disabled={!canManage}
-              onClick={() => setEditor({ kind: 'request', item: request })}
-            >
-              ویرایش و ارجاع درخواست
-            </button>
-            <button
-              type="button"
-              disabled={!canManage || request.status === 'CLOSED'}
-              onClick={() => setEditor({ kind: 'task', request })}
-            >
-              اقدام بعدی
-            </button>
-            {request.followUps.map((task) => (
-              <div
-                key={task.id}
-                className={styles.task}
-                data-overdue={
-                  task.status === 'OPEN' && Date.parse(task.dueAt) < Date.now()
-                }
+          ) : (
+            <article key={request.id} className={styles.card}>
+              <strong>{request.title}</strong>
+              <RequestReferral
+                branch={branchId}
+                request={request}
+                operators={operators}
+                disabled={!canManage}
+                onChanged={() => onChanged?.()}
+              />
+              <RequestCustomer
+                key={request.id + ':' + request.version}
+                branch={branchId}
+                contact={contactId}
+                request={request}
+                onChanged={() => {
+                  setLoading(true);
+                  setRevision((v) => v + 1);
+                }}
+              />
+              <p>
+                {requestLabels[request.status]} ·{' '}
+                {request.ownerName ?? 'بدون مسئول'} ·{' '}
+                {priorities[request.priority as keyof typeof priorities]}
+              </p>
+              {request.reason && <p>{request.reason}</p>}
+              {request.result && <p>نتیجه رسیدگی: {request.result}</p>}
+              <button
+                type="button"
+                disabled={!canManage}
+                onClick={() => setEditor({ kind: 'request', item: request })}
               >
-                <strong>{task.action}</strong>
-                <p>
-                  {taskLabels[task.status]} ·{' '}
-                  {task.ownerName ??
-                    operators.find((user) => user.id === task.ownerId)
-                      ?.displayName ??
-                    'مسئول قبلی'}{' '}
-                  · {priorities[task.priority as keyof typeof priorities]}
-                </p>
-                <time dateTime={task.dueAt}>{callDate(task.dueAt)}</time>
-                {task.status === 'OPEN' &&
-                  Date.parse(task.dueAt) < Date.now() && (
-                    <span> · موعد گذشته</span>
-                  )}
-                {task.result && <p>{task.result}</p>}
-                <button
-                  type="button"
-                  disabled={
-                    !canManage ||
-                    task.status !== 'OPEN' ||
-                    request.status === 'CLOSED'
-                  }
-                  onClick={() =>
-                    setEditor({ kind: 'task', request, item: task })
+                تکمیل اطلاعات و تغییر وضعیت درخواست
+              </button>
+              <button
+                type="button"
+                disabled={!canManage || request.status === 'CLOSED'}
+                onClick={() => setEditor({ kind: 'task', request })}
+              >
+                اقدام بعدی
+              </button>
+              {request.followUps.map((task) => (
+                <div
+                  key={task.id}
+                  className={styles.task}
+                  data-overdue={
+                    task.status === 'OPEN' &&
+                    Date.parse(task.dueAt) < Date.now()
                   }
                 >
-                  ویرایش / ثبت نتیجه
-                </button>
-                <details>
-                  <summary>تاریخچه اقدام</summary>
-                  {task.history.map((entry) => (
-                    <p key={entry.version}>
-                      {callDate(entry.at)} · {taskLabels[entry.status]} · موعد{' '}
-                      {callDate(entry.dueAt)} ·{' '}
-                      {operators.find((user) => user.id === entry.ownerId)
-                        ?.displayName ?? entry.ownerId}
-                    </p>
-                  ))}
-                </details>
-              </div>
-            ))}
-            <details>
-              <summary>تاریخچه درخواست</summary>
-              {request.privateHistory?.map((entry) => (
-                <p key={entry.version}>
-                  {callDate(entry.at)} · {entry.title} ·{' '}
-                  {requestLabels[entry.status]} · {entry.reason}
-                </p>
+                  <strong>{task.action}</strong>
+                  <p>
+                    {taskLabels[task.status]} ·{' '}
+                    {task.ownerName ??
+                      operators.find((user) => user.id === task.ownerId)
+                        ?.displayName ??
+                      'مسئول قبلی'}{' '}
+                    · {priorities[task.priority as keyof typeof priorities]}
+                  </p>
+                  <time dateTime={task.dueAt}>{callDate(task.dueAt)}</time>
+                  {task.status === 'OPEN' &&
+                    Date.parse(task.dueAt) < Date.now() && (
+                      <span> · موعد گذشته</span>
+                    )}
+                  {task.result && <p>{task.result}</p>}
+                  <button
+                    type="button"
+                    disabled={
+                      !canManage ||
+                      task.status !== 'OPEN' ||
+                      request.status === 'CLOSED'
+                    }
+                    onClick={() =>
+                      setEditor({ kind: 'task', request, item: task })
+                    }
+                  >
+                    ویرایش / ثبت نتیجه
+                  </button>
+                  <details>
+                    <summary>تاریخچه اقدام</summary>
+                    {task.history.map((entry) => (
+                      <p key={entry.version}>
+                        {callDate(entry.at)} · {taskLabels[entry.status]} · موعد{' '}
+                        {callDate(entry.dueAt)} ·{' '}
+                        {operators.find((user) => user.id === entry.ownerId)
+                          ?.displayName ?? entry.ownerId}
+                      </p>
+                    ))}
+                  </details>
+                </div>
               ))}
-              {request.history.map((entry) => (
-                <p key={entry.id}>
-                  {callDate(entry.at)} · نسخه {entry.version} ·{' '}
-                  {entry.action === 'REQUEST_CREATED'
-                    ? 'ایجاد درخواست'
-                    : entry.action === 'REQUEST_UPDATED'
-                      ? 'تغییر درخواست'
-                      : entry.action === 'CUSTOMER_LINKED'
-                        ? 'اصلاح ارتباط مشتری'
-                        : entry.action === 'REFERRED'
-                          ? 'ارجاع درخواست'
-                          : 'ثبت اقدام پیگیری'}{' '}
-                  ·{' '}
-                  {operators.find((user) => user.id === entry.actorId)
-                    ?.displayName ?? entry.actorId}
-                </p>
-              ))}
-            </details>
-          </article>
-        ))}
+              <details>
+                <summary>تاریخچه درخواست</summary>
+                {request.privateHistory?.map((entry) => (
+                  <p key={entry.version}>
+                    {callDate(entry.at)} · {entry.title} ·{' '}
+                    {requestLabels[entry.status]} · {entry.reason}{' '}
+                    {entry.result && ` · ${entry.result}`}
+                  </p>
+                ))}
+                {request.history.map((entry) => (
+                  <p key={entry.id}>
+                    {callDate(entry.at)} · نسخه {entry.version} ·{' '}
+                    {entry.action === 'REQUEST_CREATED'
+                      ? 'ایجاد درخواست'
+                      : entry.action === 'REQUEST_UPDATED'
+                        ? 'تغییر درخواست'
+                        : entry.action === 'CUSTOMER_LINKED'
+                          ? 'اصلاح ارتباط مشتری'
+                          : entry.action === 'REFERRED'
+                            ? 'ارجاع درخواست'
+                            : 'ثبت اقدام پیگیری'}{' '}
+                    ·{' '}
+                    {operators.find((user) => user.id === entry.actorId)
+                      ?.displayName ?? entry.actorId}
+                  </p>
+                ))}
+              </details>
+            </article>
+          ),
+        )}
+      {dossier && (
+        <ScrollContinuation
+          enabled={!loading && !error && requestPage * 10 < pageMeta.total}
+          onMore={() => {
+            setLoading(true);
+            setRequestPage((value) => value + 1);
+          }}
+        />
+      )}
       {editor && (
         <WorkflowEditor
           key={editor.kind + (editor.item?.id ?? 'new')}
           editor={editor}
+          contactCall={contactCall ?? calls[0]}
           operators={operators}
           branchId={branchId}
           contactId={contactId}
-          onClose={() => setEditor(null)}
+          onClose={() => {
+            setEditor(null);
+            onRequestClose?.();
+          }}
           onSaved={() => {
+            window.dispatchEvent(new Event('call-center:workflow-changed'));
             setLoading(true);
+            if (dossier) setRequestPage(1);
             setRevision((value) => value + 1);
             setEditor(null);
+            onRequestClose?.();
             onChanged?.();
           }}
         />
@@ -466,8 +548,10 @@ function CallRequestLink({
 }
 
 export function WorkQueue({
+  onWithoutOutcome,
+  onMissedCallbacks,
+  onPeriod,
   branchId,
-  actorId,
   canManage,
   refreshKey = 0,
 }: {
@@ -475,6 +559,9 @@ export function WorkQueue({
   actorId: string;
   canManage: boolean;
   refreshKey?: number;
+  onWithoutOutcome?: () => void;
+  onPeriod?: ((period: 'today' | 'week') => void) | undefined;
+  onMissedCallbacks?: () => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const queueHeading = useRef<HTMLHeadingElement>(null);
@@ -488,9 +575,19 @@ export function WorkQueue({
   const [error, setError] = useState(''),
     [loading, setLoading] = useState(true),
     [selected, setSelected] = useState<{
+      requestId: string;
       contactId: string;
       branchId: string;
     } | null>(null);
+  useEffect(() => {
+    const refresh = () => {
+      setLoading(true);
+      setRevision((value) => value + 1);
+    };
+    window.addEventListener('call-center:workflow-changed', refresh);
+    return () =>
+      window.removeEventListener('call-center:workflow-changed', refresh);
+  }, []);
   useEffect(() => {
     const controller = new AbortController();
     workflowApi
@@ -516,6 +613,9 @@ export function WorkQueue({
   return (
     <>
       <CallKpiCards
+        onWithoutOutcome={onWithoutOutcome}
+        onMissedCallbacks={onMissedCallbacks}
+        onPeriod={onPeriod}
         branchId={branchId}
         revision={`${refreshKey}:${revision}`}
       />
@@ -528,18 +628,26 @@ export function WorkQueue({
             type="button"
             aria-expanded={!collapsed}
             aria-controls="cc-queue-body"
+            className={styles.queueAction}
             onClick={() => setCollapsed((value) => !value)}
           >
+            {collapsed ? (
+              <ChevronDown size={16} aria-hidden="true" />
+            ) : (
+              <ChevronUp size={16} aria-hidden="true" />
+            )}
             {collapsed ? 'نمایش صف' : 'جمع کردن صف'}
           </button>
           <button
             type="button"
+            className={styles.queueAction}
             onClick={() => (
               setLoading(true),
               setError(''),
               setRevision((value) => value + 1)
             )}
           >
+            <RotateCcw size={16} aria-hidden="true" />
             به‌روزرسانی
           </button>
         </header>
@@ -556,12 +664,9 @@ export function WorkQueue({
             {(
               [
                 ['ALL', 'همه درخواست‌ها'],
-                ['OPEN', 'باز'],
+                ['OPEN', 'درخواست‌های باز'],
+                ['CLOSED', 'درخواست‌های بسته‌شده'],
                 ['MINE', 'کارهای من'],
-                ['TODAY', 'امروز'],
-                ['OVERDUE', 'عقب‌افتاده'],
-                ['UNASSIGNED', 'بدون مسئول'],
-                ['NO_ACTION', 'بدون اقدام بعدی'],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -591,18 +696,14 @@ export function WorkQueue({
                 {data.meta.total.toLocaleString('fa-IR')} درخواست · تاریخ امروز
                 بر اساس تهران
               </p>
-              <p className={styles.hint}>
-                امروز و عقب‌افتاده ممکن است هم‌پوشان باشند. «بدون اقدام بعدی»:
-                درخواست بازِ بدون پیگیری باز؛ منتظر پاسخ مشتری مستثناست.
-              </p>
               {!data.data.length && <p>درخواستی در این صف نیست.</p>}
               <div className={styles.queueRows}>
                 <div className={styles.queueColumns} aria-hidden="true">
-                  <span>موضوع درخواست</span>
-                  <span>شعبه</span>
-                  <span>مسئول</span>
+                  <span>عنوان درخواست</span>
+                  <span>کارشناس مسئول</span>
                   <span>وضعیت</span>
-                  <span>موعد نزدیک‌ترین پیگیری</span>
+                  <span>اولویت</span>
+                  <span>زمان ثبت درخواست</span>
                 </div>
                 {data.data.map((item) => (
                   <button
@@ -612,56 +713,34 @@ export function WorkQueue({
                     onClick={(event) => {
                       queueTrigger.current = event.currentTarget;
                       setSelected({
+                        requestId: item.id,
                         contactId: item.contactId,
                         branchId: item.branchId,
                       });
                     }}
                   >
                     <strong>{item.title}</strong>
-                    <span>{item.branchName}</span>
                     <span>{item.ownerName ?? 'بدون مسئول'}</span>
                     <span className={styles.status} data-status={item.status}>
                       {requestLabels[item.status]}
                     </span>
                     <span
-                      data-overdue={
-                        !!item.dueAt &&
-                        Date.parse(item.dueAt) <
-                          Date.parse(data?.meta.asOf ?? '')
-                      }
+                      className={styles.priority}
+                      data-priority={item.priority}
                     >
-                      {item.dueAt ? (
-                        <>
-                          <time dateTime={item.dueAt}>
-                            {callDate(item.dueAt)}
-                          </time>
-                          {Date.parse(item.dueAt) <
-                            Date.parse(data?.meta.asOf ?? '') && (
-                            <small>
-                              {' '}
-                              ·{' '}
-                              {faNumber(
-                                Math.max(
-                                  1,
-                                  Math.floor(
-                                    (Date.parse(data?.meta.asOf ?? '') -
-                                      Date.parse(item.dueAt)) /
-                                      60000,
-                                  ),
-                                ),
-                              )}{' '}
-                              دقیقه تأخیر
-                            </small>
-                          )}
-                        </>
-                      ) : (
-                        'بدون پیگیری باز'
-                      )}
+                      {priorities[item.priority as keyof typeof priorities] ??
+                        'نامشخص'}
                     </span>
+                    <time dateTime={item.createdAt}>
+                      {item.createdAt ? callDate(item.createdAt) : 'نامشخص'}
+                    </time>
                   </button>
                 ))}
               </div>
-              <div>
+              <nav
+                className={styles.queuePagination}
+                aria-label="صفحه‌بندی صف رسیدگی و پیگیری"
+              >
                 <button
                   type="button"
                   disabled={page <= 1}
@@ -673,7 +752,15 @@ export function WorkQueue({
                 >
                   قبلی
                 </button>
-                <span>{page.toLocaleString('fa-IR')}</span>
+                <span aria-live="polite">
+                  {faNumber(page)} /{' '}
+                  {faNumber(
+                    Math.max(
+                      1,
+                      Math.ceil(data.meta.total / data.meta.pageSize),
+                    ),
+                  )}
+                </span>
                 <button
                   type="button"
                   disabled={page * data.meta.pageSize >= data.meta.total}
@@ -685,56 +772,137 @@ export function WorkQueue({
                 >
                   بعدی
                 </button>
-              </div>
+              </nav>
             </>
           )}
         </div>
         {selected && (
-          <Dialog
-            open
-            onOpenChange={(open) => {
-              if (!open) setSelected(null);
+          <QueueRequestEditor
+            key={selected.requestId}
+            selected={selected}
+            canManage={canManage}
+            onClose={() => setSelected(null)}
+            onReturnFocus={(event) => {
+              event.preventDefault();
+              queueTrigger.current?.focus();
             }}
-          >
-            <DialogContent
-              onCloseAutoFocus={(event) => {
-                event.preventDefault();
-                queueTrigger.current?.focus();
-              }}
-              dir="rtl"
-              className="max-h-[90dvh] max-w-2xl overflow-y-auto"
-            >
-              <DialogTitle>رسیدگی به درخواست‌های مخاطب</DialogTitle>
-              <DialogDescription>
-                درخواست و اقدام‌های مرتبط را بررسی کنید.
-              </DialogDescription>
-              <WorkflowPanel
-                key={selected.contactId}
-                branchId={selected.branchId}
-                actorId={actorId}
-                contactId={selected.contactId}
-                canManage={canManage}
-                onChanged={() => (
-                  setLoading(true),
-                  setError(''),
-                  setRevision((value) => value + 1)
-                )}
-              />
-            </DialogContent>
-          </Dialog>
+            onSaved={() => {
+              window.dispatchEvent(new Event('call-center:workflow-changed'));
+              setSelected(null);
+            }}
+          />
         )}
       </section>
     </>
   );
 }
-function WorkflowEditor({
+function QueueRequestEditor({
+  selected,
+  canManage,
+  onClose,
+  onReturnFocus,
+  onSaved,
+}: {
+  selected: { requestId: string; contactId: string; branchId: string };
+  canManage: boolean;
+  onClose: () => void;
+  onReturnFocus: (event: Event) => void;
+  onSaved: () => void;
+}) {
+  const [loaded, setLoaded] = useState<{
+    item: RequestCase;
+    contactCall: Call | undefined;
+  } | null>(null);
+  const [error, setError] = useState('');
+  const handingOff = useRef(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    Promise.all([
+      workflowApi.list(
+        selected.branchId,
+        selected.contactId,
+        controller.signal,
+        1,
+        1,
+        selected.requestId,
+      ),
+      readApi.calls(
+        selected.branchId,
+        selected.contactId,
+        undefined,
+        controller.signal,
+      ),
+    ])
+      .then(([requests, history]) => {
+        if (controller.signal.aborted) return;
+        const item = requests.data.find(
+          (request) => request.id === selected.requestId,
+        );
+        if (!item) throw new Error('دریافت درخواست‌ها انجام نشد.');
+        handingOff.current = true;
+        setLoaded({ item, contactCall: history.data[0] });
+      })
+      .catch((reason) => {
+        if (!controller.signal.aborted)
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : 'دریافت درخواست‌ها انجام نشد.',
+          );
+      });
+    return () => controller.abort();
+  }, [selected.branchId, selected.contactId, selected.requestId]);
+  if (loaded)
+    return (
+      <WorkflowEditor
+        editor={{ kind: 'request', item: loaded.item }}
+        contactCall={loaded.contactCall}
+        operators={[]}
+        branchId={selected.branchId}
+        contactId={selected.contactId}
+        readOnly={!canManage}
+        onReturnFocus={onReturnFocus}
+        onClose={onClose}
+        onSaved={onSaved}
+      />
+    );
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent
+        dir="rtl"
+        onCloseAutoFocus={(event) => {
+          if (handingOff.current) event.preventDefault();
+          else onReturnFocus(event);
+        }}
+      >
+        <DialogTitle>درخواست و مسئول رسیدگی</DialogTitle>
+        <DialogDescription>
+          {error || 'در حال دریافت درخواست‌ها…'}
+        </DialogDescription>
+        {error && <p role="alert">{error}</p>}
+      </DialogContent>
+    </Dialog>
+  );
+}
+export function WorkflowEditor({
   editor,
+  contactCall,
   operators,
   branchId,
   contactId,
   onClose,
   onSaved,
+  readOnly = false,
+  onReturnFocus,
 }: {
+  readOnly?: boolean;
+  onReturnFocus?: (event: Event) => void;
+  contactCall?: Call | undefined;
   editor:
     | { kind: 'request'; item?: RequestCase }
     | { kind: 'task'; request: RequestCase; item?: FollowUp };
@@ -745,12 +913,58 @@ function WorkflowEditor({
   onSaved: (data: RequestCase[]) => void;
 }) {
   const restoreFocus = useDialogReturnFocus();
+  const managementLocked =
+    editor.kind === 'request' &&
+    !!editor.item &&
+    editor.item.canEditManagement !== true;
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [dirty, setDirty] = useState(false);
   const [owner, setOwner] = useState(editor.item?.ownerId ?? '');
+  const [ownersRevision, setOwnersRevision] = useState(0);
+  const [ownersResult, setOwnersResult] = useState<{
+    key: string;
+    data: Operator[];
+    error: string;
+  } | null>(null);
+  const ownersKey = `${branchId}:${ownersRevision}`;
+  const ownersLoading =
+    editor.kind === 'request' &&
+    !managementLocked &&
+    ownersResult?.key !== ownersKey;
+  const requestOperators =
+    ownersResult?.key === ownersKey ? ownersResult.data : [];
+  const ownersError = ownersResult?.key === ownersKey ? ownersResult.error : '';
+  useEffect(() => {
+    if (editor.kind !== 'request' || managementLocked) return;
+    let active = true;
+    void workflowApi
+      .requestOperators(branchId)
+      .then(({ data }) => {
+        if (!active) return;
+        setOwnersResult({ key: ownersKey, data, error: '' });
+        setOwner(
+          (current) => current || (data.length === 1 ? data[0]!.id : ''),
+        );
+      })
+      .catch(() => {
+        if (active)
+          setOwnersResult({
+            key: ownersKey,
+            data: [],
+            error: 'دریافت فهرست کارشناسان ممکن نشد.',
+          });
+      });
+    return () => {
+      active = false;
+    };
+  }, [branchId, editor.kind, ownersKey, managementLocked]);
   const [status, setStatus] = useState(
-    editor.item?.status ?? (editor.kind === 'task' ? 'OPEN' : 'NEW'),
+    editor.kind === 'request'
+      ? editor.item?.status && editor.item.status !== 'NEW'
+        ? editor.item.status
+        : 'IN_PROGRESS'
+      : (editor.item?.status ?? 'OPEN'),
   );
   const [priority, setPriority] = useState(editor.item?.priority ?? 'NORMAL');
   const stableId = useRef(editor.item?.id ?? crypto.randomUUID());
@@ -765,7 +979,13 @@ function WorkflowEditor({
   useUnsavedGuard(dirty);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || readOnly) return;
+    if (
+      editor.kind === 'request' &&
+      !managementLocked &&
+      (ownersLoading || ownersError)
+    )
+      return;
     const data = new FormData(event.currentTarget);
     const value = (key: string) => String(data.get(key) ?? '').trim();
     const base = {
@@ -776,8 +996,22 @@ function WorkflowEditor({
       priority,
     };
     let payload: unknown;
+    if (editor.kind === 'request' && !value('reason')) {
+      setError('دلیل تغییر، بستن یا بازگشایی را وارد کنید.');
+      return;
+    }
+    if (editor.kind === 'request' && !editor.item && !owner) {
+      setError('کارشناس مسئول را انتخاب کنید.');
+      return;
+    }
     if (editor.kind === 'request')
-      payload = { ...base, title: value('title'), reason: value('reason') };
+      payload = {
+        ...base,
+        status: editor.item ? status : 'IN_PROGRESS',
+        title: value('title'),
+        reason: value('reason'),
+        ...(editor.item ? { result: value('result') } : {}),
+      };
     else {
       if (!owner) {
         setError('کارشناس مسئول را انتخاب کنید.');
@@ -830,7 +1064,17 @@ function WorkflowEditor({
       }}
     >
       <DialogContent
-        onCloseAutoFocus={restoreFocus}
+        onCloseAutoFocus={onReturnFocus ?? restoreFocus}
+        onEscapeKeyDown={(event) => {
+          // Radix observes Escape before the search input closes its own menu.
+          const target = event.target;
+          if (
+            target instanceof Element &&
+            target.matches('[role="combobox"][aria-expanded="true"]') &&
+            target.closest('[data-call-owner-select]')
+          )
+            event.preventDefault();
+        }}
         dir="rtl"
         className="max-h-[90dvh] overflow-y-auto"
       >
@@ -843,34 +1087,54 @@ function WorkflowEditor({
           تغییرات پس از تأیید سرور ذخیره می‌شوند؛ زمان فرم بر اساس منطقه زمانی
           دستگاه است.
         </DialogDescription>
+        {contactCall && (
+          <p className={styles.editorContact}>
+            مخاطب: {contactCall.name || 'نام ثبت نشده'} ·{' '}
+            <bdi dir="ltr">{contactCall.phone || 'شماره نامشخص'}</bdi> ·{' '}
+            {contactCall.subject}
+          </p>
+        )}
         <form
           className={styles.form}
           onSubmit={submit}
           onChange={() => setDirty(true)}
         >
-          <fieldset disabled={busy}>
+          <fieldset disabled={busy || readOnly}>
             {editor.kind === 'request' ? (
               <>
                 <label>
                   عنوان درخواست
                   <input
                     name="title"
+                    readOnly={managementLocked}
                     required
                     maxLength={160}
                     defaultValue={editor.item?.title}
                   />
                 </label>
                 <label>
-                  دلیل تغییر، بستن یا بازگشایی
+                  <span>
+                    دلیل تغییر، بستن یا بازگشایی{' '}
+                    <span aria-hidden="true">*</span>
+                  </span>
                   <textarea
                     name="reason"
                     maxLength={500}
-                    required={
-                      status === 'CLOSED' || editor.item?.status === 'CLOSED'
-                    }
+                    required
                     defaultValue={editor.item?.reason}
                   />
                 </label>
+                {editor.item && (
+                  <label>
+                    اطلاعات تکمیلی و نتیجه رسیدگی
+                    <textarea
+                      name="result"
+                      maxLength={1000}
+                      required={status === 'CLOSED'}
+                      defaultValue={editor.item.result}
+                    />
+                  </label>
+                )}
               </>
             ) : (
               <>
@@ -908,71 +1172,101 @@ function WorkflowEditor({
             )}
             <label>
               کارشناس مسئول
-              <OwnerSelect
-                operators={operators}
-                value={owner}
-                disabled={busy}
-                onChange={(value) => {
-                  setOwner(value);
-                  setDirty(true);
-                }}
-              />
+              {managementLocked ? (
+                <input
+                  aria-label="کارشناس مسئول"
+                  readOnly
+                  value={editor.item?.ownerName ?? 'بدون مسئول'}
+                />
+              ) : (
+                <OwnerSelect
+                  operators={
+                    editor.kind === 'request' ? requestOperators : operators
+                  }
+                  value={owner}
+                  disabled={
+                    busy || (editor.kind === 'request' && ownersLoading)
+                  }
+                  required={editor.kind === 'request'}
+                  onChange={(value) => {
+                    setOwner(value);
+                    setDirty(true);
+                  }}
+                />
+              )}
+              {editor.kind === 'request' && ownersLoading && (
+                <span role="status">در حال دریافت کارشناسان…</span>
+              )}
+              {editor.kind === 'request' && ownersError && (
+                <span role="alert">
+                  {ownersError}{' '}
+                  <button
+                    type="button"
+                    onClick={() => setOwnersRevision((value) => value + 1)}
+                  >
+                    تلاش مجدد
+                  </button>
+                </span>
+              )}
             </label>
-            <label>
-              وضعیت
-              <NativeSearchSelect
-                name="status"
-                value={status}
-                disabled={busy}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setStatus(value);
-                  setDirty(true);
-                }}
-              >
-                {Object.entries(
-                  editor.kind === 'request' ? requestLabels : taskLabels,
-                )
-                  .filter(
-                    ([key]) =>
-                      editor.item ||
-                      (editor.kind === 'request'
-                        ? key === 'NEW'
-                        : key === 'OPEN'),
-                  )
-                  .map(([key, title]) => (
-                    <option key={key} value={key}>
-                      {title}
-                    </option>
-                  ))}
-              </NativeSearchSelect>
-            </label>
+            {(editor.kind === 'task' || editor.item) && (
+              <label>
+                وضعیت
+                <RequestChoice
+                  label="وضعیت"
+                  name="status"
+                  value={status}
+                  disabled={busy || managementLocked}
+                  onValueChange={(value) => {
+                    setStatus(value);
+                    setDirty(true);
+                  }}
+                  options={Object.fromEntries(
+                    Object.entries(
+                      editor.kind === 'request'
+                        ? requestStatusOptions
+                        : taskLabels,
+                    ).filter(
+                      ([key]) =>
+                        editor.item ||
+                        (editor.kind === 'request'
+                          ? key === 'IN_PROGRESS'
+                          : key === 'OPEN'),
+                    ),
+                  )}
+                />
+              </label>
+            )}
             <label>
               اولویت
-              <NativeSearchSelect
+              <RequestChoice
+                label="اولویت"
                 value={priority}
-                disabled={busy}
-                onChange={(event) => {
-                  const value = event.target.value;
+                disabled={busy || managementLocked}
+                onValueChange={(value) => {
                   setPriority(value);
                   setDirty(true);
                 }}
-              >
-                {Object.entries(priorities).map(([key, title]) => (
-                  <option key={key} value={key}>
-                    {title}
-                  </option>
-                ))}
-              </NativeSearchSelect>
+                options={priorities}
+              />
             </label>
             {error && <p role="alert">{error}</p>}
-            <footer>
-              <button type="submit">{busy ? 'در حال ذخیره…' : 'ذخیره'}</button>
-              <button type="button" onClick={close}>
-                انصراف
-              </button>
-            </footer>
+            {!readOnly && (
+              <footer>
+                <button type="submit">
+                  {busy ? 'در حال ذخیره…' : 'ذخیره'}
+                </button>
+                <button type="button" onClick={close}>
+                  انصراف
+                </button>
+              </footer>
+            )}
           </fieldset>
+          {readOnly && (
+            <button type="button" onClick={close}>
+              بستن
+            </button>
+          )}
         </form>
       </DialogContent>
     </Dialog>

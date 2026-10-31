@@ -128,6 +128,13 @@ export class MasterDataLogoService {
       throw error;
     }
 
+    if (['INFECTED', 'QUARANTINED'].includes(uploaded.scanStatus)) {
+      attached = {
+        ...attached,
+        warning:
+          'فایل لوگو ذخیره شد، اما بررسی امنیتی آن موفق نبود و نمایش داده نمی‌شود؛ فایل سالم را دوباره بارگذاری کنید.',
+      };
+    }
     if (!previousLogo || previousLogo === uploaded.id) return attached;
     try {
       await this.documents.archiveMasterDataLogo(
@@ -139,7 +146,7 @@ export class MasterDataLogoService {
     } catch (error) {
       return {
         ...attached,
-        warning: `لوگوی جدید ثبت شد، اما بایگانی لوگوی قبلی نیازمند اقدام مجدد است: ${
+        warning: `${attached.warning ? `${attached.warning} ` : ''}لوگوی جدید ثبت شد، اما بایگانی لوگوی قبلی نیازمند اقدام مجدد است: ${
           error instanceof Error ? error.message : 'خطای نامشخص'
         }`,
       };

@@ -1,6 +1,16 @@
 'use client';
+import {
+  paymentReceiptsApi,
+  type PaymentReceiptEntry,
+} from '../api/payment-receipts';
+import { validatePaymentEvidenceFile } from '../model/payment-evidence';
+import { DocumentsApiError } from '@/modules/documents/api/client';
+
+import { canSelfServeSalesContract } from '@nora/contracts';
+import { useAccessActor } from '@/modules/iam/access-context';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { SalesThemedSelect } from './sales-themed-select';
+import { SearchCombobox } from '@/components/ui/search-combobox';
 import { PaymentDocuments } from './payment-documents';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type {
@@ -9,6 +19,7 @@ import type {
   SalesContractDetail,
   SalesPaymentInput,
   SalesPaymentMethod,
+  SalesPaymentAccountV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
@@ -37,6 +48,80 @@ const empty: SalesPaymentInput = {
   method: 'BANK_TRANSFER',
   dueAt: '',
 };
+export function ContractPaymentAccountSelect({
+  accounts,
+  currencyCode,
+  value,
+  onChange,
+}: {
+  accounts: readonly SalesPaymentAccountV1[];
+  currencyCode: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const eligible = accounts.filter(
+    (account) => account.currencyCode === currencyCode,
+  );
+  const selected = eligible.find((account) => account.id === value);
+  const accountLabel = (account: SalesPaymentAccountV1) => (
+    <span className="flex min-w-0 flex-col gap-1 whitespace-normal text-start">
+      <span className="font-medium">
+        {[account.bankName, account.title].filter(Boolean).join(' · ')}
+      </span>
+      {(
+        [
+          ['شماره حساب', account.accountNumber],
+          ['شماره کارت', account.cardNumber],
+          ['شماره شبا', account.iban],
+        ] as const
+      ).map(([label, number]) =>
+        number ? (
+          <span key={label} className="text-xs">
+            {label}:{' '}
+            <bdi dir="ltr" className="break-all font-mono">
+              {number}
+            </bdi>
+          </span>
+        ) : null,
+      )}
+      {!account.accountNumber &&
+      !account.cardNumber &&
+      !account.iban &&
+      account.maskedIdentifier ? (
+        <bdi dir="ltr">{account.maskedIdentifier}</bdi>
+      ) : null}
+    </span>
+  );
+  return (
+    <FormField label="حساب مقصد پرداخت" required>
+      <SearchCombobox
+        label="حساب مقصد پرداخت"
+        placeholder="انتخاب حساب مقصد"
+        required
+        value={value}
+        disabled={!eligible.length}
+        onValueChange={onChange}
+        options={[
+          { value: '', label: 'انتخاب حساب مقصد' },
+          ...eligible.map((account) => ({
+            value: account.id,
+            label: accountLabel(account),
+          })),
+        ]}
+      />
+      {selected ? (
+        <div className="mt-2 rounded-xl border border-input bg-surface p-3">
+          {accountLabel(selected)}
+        </div>
+      ) : null}
+      {!eligible.length ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          حساب فعالی برای ارز پرداخت در این شعبه موجود نیست.
+        </p>
+      ) : null}
+    </FormField>
+  );
+}
 export function ContractPaymentCurrencySelect({
   currencies,
   value,
@@ -172,8 +257,18 @@ export function ContractPayments({
   onSaved: () => void;
   onSearchContracts: (reference: string) => void;
 }) {
+  const actor = useAccessActor();
   const [contract, setContract] = useState<SalesContractDetail | null>(null);
+  const selfService = Boolean(
+    actor && contract && canSelfServeSalesContract(actor, contract),
+  );
   const [payment, setPayment] = useState(empty);
+  const [accounts, setAccounts] = useState<readonly SalesPaymentAccountV1[]>(
+    [],
+  );
+  const [accountsLoading, setAccountsLoading] = useState(true);
+  const [accountsError, setAccountsError] = useState('');
+  const [accountsRetry, setAccountsRetry] = useState(0);
   const [banks, setBanks] = useState<readonly MasterDataRecord[]>([]);
   const [currencies, setCurrencies] = useState<readonly MasterDataRecord[]>([]);
   const [currencyLoading, setCurrencyLoading] = useState(true);
@@ -185,7 +280,41 @@ export function ContractPayments({
   const [receiptPaymentId, setReceiptPaymentId] = useState('');
   const [adding, setAdding] = useState(false);
   const [savedPaymentId, setSavedPaymentId] = useState('');
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptUnknown, setReceiptUnknown] = useState(false);
+  const [receiptEntries, setReceiptEntries] = useState<PaymentReceiptEntry[]>(
+    [],
+  );
   const attempt = useRef({ fingerprint: '', key: '' });
+  useEffect(() => {
+    if (!adding) return;
+    let active = true;
+    void salesApi
+      .paymentAccounts(id)
+      .then((response) => {
+        if (active) setAccounts(response.data);
+      })
+      .catch(() => {
+        if (active)
+          setAccountsError(
+            'دریافت حساب‌های مقصد ناموفق بود؛ دوباره تلاش کنید.',
+          );
+      })
+      .finally(() => {
+        if (active) setAccountsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id, adding, accountsRetry]);
+  const validAccount =
+    !accountsLoading &&
+    !accountsError &&
+    accounts.some(
+      (account) =>
+        account.id === payment.destinationAccountId &&
+        account.currencyCode === payment.currencyCode,
+    );
   useEffect(() => {
     let active = true;
     void loadPaymentCurrencies()
@@ -220,6 +349,14 @@ export function ContractPayments({
     );
   useEffect(() => {
     let active = true;
+    void paymentReceiptsApi
+      .entries(id)
+      .then((r) => {
+        if (active) setReceiptEntries(r.data);
+      })
+      .catch(() => {
+        if (active) setError('دریافت مدارک ناموفق بود.');
+      });
     void salesApi
       .detail(id)
       .then((response) => {
@@ -255,6 +392,7 @@ export function ContractPayments({
     try {
       if (!validCurrency)
         throw new Error('ارز پرداخت را از فهرست ارزهای فعال انتخاب کنید.');
+      if (!validAccount) throw new Error('حساب مقصد پرداخت را انتخاب کنید.');
       validateSalesCurrencySelection(
         { priceComponents: [], payments: [payment] },
         currencies,
@@ -277,7 +415,36 @@ export function ContractPayments({
       const added = response.data.payments.find(
         (item) => !previousIds.has(item.id),
       );
-      if (added) setSavedPaymentId(added.id);
+      if (added) {
+        setSavedPaymentId(added.id);
+        if (receiptFile) {
+          let submitted = false;
+          try {
+            const options = await paymentReceiptsApi.options(id, added.id);
+            validatePaymentEvidenceFile(options.data, receiptFile);
+            const form = new FormData();
+            form.set('file', receiptFile);
+            submitted = true;
+            await paymentReceiptsApi.upload(id, added.id, form);
+            setReceiptFile(null);
+          } catch (reason) {
+            setError(
+              reason instanceof Error
+                ? reason.message
+                : 'عملیات مدرک ناموفق بود.',
+            );
+            setReceiptUnknown(
+              submitted &&
+                !(
+                  reason instanceof DocumentsApiError &&
+                  reason.status >= 400 &&
+                  reason.status < 500 &&
+                  reason.status !== 408
+                ),
+            );
+          }
+        }
+      }
       onSaved();
     } catch (reason) {
       setError(
@@ -378,6 +545,9 @@ export function ContractPayments({
             <p>
               شماره پیگیری: <bdi>{item.paymentReference || 'ثبت نشده'}</bdi>
             </p>
+            {item.destinationAccountTitle ? (
+              <p>حساب مقصد پرداخت: {item.destinationAccountTitle}</p>
+            ) : null}
             <p>
               سررسید: {new Date(item.dueAt).toLocaleDateString('fa-IR')}
               {item.check ? ` · تاریخ چک: ${item.check.dueDate}` : ''}
@@ -408,6 +578,20 @@ export function ContractPayments({
             ) : null}
           </div>
         ))}
+        {contract &&
+          receiptEntries
+            .filter(
+              (entry) => !contract.payments.some((p) => p.id === entry.id),
+            )
+            .map((entry) => (
+              <div key={entry.id} className="rounded-xl border p-3">
+                <p>
+                  شماره پیگیری:{' '}
+                  <bdi>{entry.paymentReference || 'ثبت نشده'}</bdi>
+                </p>
+                <PaymentDocuments contract={contract} paymentId={entry.id} />
+              </div>
+            ))}
         <p className="text-sm text-muted-foreground">
           افزودن ردیف پرداخت به‌تنهایی مانده را کم نمی‌کند؛ تأیید مالی لازم است.
         </p>
@@ -417,7 +601,11 @@ export function ContractPayments({
             if (busy) return;
             setAdding(open);
             if (open) {
+              setAccountsLoading(true);
+              setAccountsError('');
               setSavedPaymentId('');
+              setReceiptFile(null);
+              setReceiptUnknown(false);
               setPayment({
                 ...empty,
                 currencyCode: defaultSalesCurrency(currencies),
@@ -428,7 +616,10 @@ export function ContractPayments({
           }}
         >
           <DialogTrigger asChild>
-            <Button permission="sales.payments.create" disabled={!contract}>
+            <Button
+              {...(selfService ? {} : { permission: 'sales.payments.create' })}
+              disabled={!contract}
+            >
               افزودن پرداخت
             </Button>
           </DialogTrigger>
@@ -480,7 +671,11 @@ export function ContractPayments({
                       currencies={currencies}
                       value={payment.currencyCode}
                       onChange={(currencyCode) =>
-                        setPayment({ ...payment, currencyCode })
+                        setPayment({
+                          ...payment,
+                          currencyCode,
+                          destinationAccountId: null,
+                        })
                       }
                     />
                   )}
@@ -590,10 +785,70 @@ export function ContractPayments({
                     }
                   />
                 </FormField>
+                {accountsLoading ? (
+                  <p role="status">در حال دریافت حساب‌های مقصد…</p>
+                ) : accountsError ? (
+                  <div>
+                    <Alert tone="error" title={accountsError} />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setAccountsLoading(true);
+                        setAccountsError('');
+                        setAccountsRetry((value) => value + 1);
+                      }}
+                    >
+                      تلاش مجدد
+                    </Button>
+                  </div>
+                ) : (
+                  <ContractPaymentAccountSelect
+                    accounts={accounts}
+                    currencyCode={payment.currencyCode}
+                    value={payment.destinationAccountId ?? ''}
+                    onChange={(destinationAccountId) =>
+                      setPayment({ ...payment, destinationAccountId })
+                    }
+                  />
+                )}
+                <div className="md:col-span-2">
+                  <FormField label="انتخاب فایل مدرک پرداخت">
+                    <Input
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/png"
+                      aria-label="انتخاب فایل مدرک پرداخت"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        if (
+                          file &&
+                          (![
+                            'application/pdf',
+                            'image/jpeg',
+                            'image/png',
+                          ].includes(file.type) ||
+                            file.size <= 0 ||
+                            file.size > 25 * 1024 * 1024)
+                        ) {
+                          event.target.value = '';
+                          setReceiptFile(null);
+                          setError(
+                            'مدرک باید PDF، JPG یا PNG و در محدودهٔ حجم مجاز باشد.',
+                          );
+                        } else {
+                          setReceiptFile(file);
+                          setError('');
+                        }
+                      }}
+                    />
+                  </FormField>
+                </div>
               </fieldset>
               <div className="md:col-span-2">
-                {savedPaymentId && contract ? (
+                {savedPaymentId && contract && !busy ? (
                   <PaymentDocuments
+                    initialFile={receiptFile}
+                    initialUnknown={receiptUnknown}
                     key={savedPaymentId}
                     contract={contract}
                     paymentId={savedPaymentId}
@@ -601,19 +856,20 @@ export function ContractPayments({
                   />
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    پس از ثبت پرداخت، بارگذاری تصویر یا PDF رسید زیر شماره
-                    پیگیری فعال می‌شود.
+                    رسید همین پرداخت را پیوست کنید.
                   </p>
                 )}
               </div>
               {!savedPaymentId ? (
                 <Button
-                  permission="sales.payments.create"
+                  {...(selfService
+                    ? {}
+                    : { permission: 'sales.payments.create' })}
                   type="submit"
                   loading={busy}
-                  disabled={!contract || !validCurrency}
+                  disabled={!contract || !validCurrency || !validAccount}
                 >
-                  ثبت پرداخت و ادامه برای رسید
+                  ثبت پرداخت
                 </Button>
               ) : (
                 <Button

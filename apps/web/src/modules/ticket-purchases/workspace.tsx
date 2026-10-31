@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type {
   FinanceTicketCostCommandV1,
+  TicketPurchaseGroupCommandV1,
   TicketPurchaseInboxItemV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,15 @@ import {
   filterTicketPurchases,
   type PurchaseFilters,
 } from '@/modules/reservation-purchases/model';
-import { purchaseStages, purchaseSummary } from './model';
+import {
+  purchaseStages,
+  purchaseSummary,
+  separateTicketPurchases,
+  ticketPurchaseEditRow,
+  canEditTicketPurchase,
+  purchaseWeekdays,
+  type TicketPurchaseRow,
+} from './model';
 export function TicketPurchaseWorkspace({
   initialOfferId,
   filters,
@@ -48,9 +57,7 @@ export function TicketPurchaseWorkspace({
     [revision, setRevision] = useState(0),
     [search, setSearch] = useState(''),
     [stage, setStage] = useState('ALL');
-  const [selected, setSelected] = useState<TicketPurchaseInboxItemV1 | null>(
-      null,
-    ),
+  const [selected, setSelected] = useState<TicketPurchaseRow | null>(null),
     [seats, setSeats] = useState(''),
     [unit, setUnit] = useState(''),
     [pricingMode, setPricingMode] = useState<'TOTAL' | 'UNIT'>('TOTAL'),
@@ -66,7 +73,9 @@ export function TicketPurchaseWorkspace({
       ),
     [],
   );
-  const frozen = useRef<FinanceTicketCostCommandV1 | null>(null);
+  const frozen = useRef<
+    FinanceTicketCostCommandV1 | TicketPurchaseGroupCommandV1 | null
+  >(null);
   useEffect(() => {
     let live = true;
     ticketPurchaseApi
@@ -91,20 +100,27 @@ export function TicketPurchaseWorkspace({
       live = false;
     };
   }, [revision]);
-  const summary = useMemo(() => purchaseSummary(items), [items]);
-  const visible = (
-    filters ? filterTicketPurchases(items, filters) : items
+  const summary = useMemo(
+    () => purchaseSummary(separateTicketPurchases(items)),
+    [items],
+  );
+  const visible = separateTicketPurchases(
+    filters ? filterTicketPurchases(items, filters) : items,
   ).filter(
     (i) =>
       (!initialOfferId ||
-        i.request.offerId === initialOfferId ||
-        i.request.catalogProductReference === initialOfferId) &&
+        i.members.some(
+          (m) =>
+            m.request.offerId === initialOfferId ||
+            m.request.catalogProductReference === initialOfferId,
+        )) &&
       (stage === 'ALL' || i.stage === stage) &&
-      [
-        i.request.title,
-        i.request.supplierDisplaySnapshot,
-        i.request.serviceDate,
-      ]
+      i.members
+        .flatMap((m) => [
+          m.request.title,
+          m.request.supplierDisplaySnapshot,
+          m.flightGroup?.departureDate ?? m.request.serviceDate,
+        ])
         .join(' ')
         .toLowerCase()
         .includes(search.trim().toLowerCase()),
@@ -115,7 +131,8 @@ export function TicketPurchaseWorkspace({
         ? ticketPurchaseTotal('1', unit)
         : null
       : ticketPurchaseTotal(seats, unit);
-  function open(item: TicketPurchaseInboxItemV1) {
+  function open(item: TicketPurchaseRow) {
+    item = ticketPurchaseEditRow(items, item);
     frozen.current = null;
     setSelected(item);
     setFxRates({});
@@ -130,17 +147,39 @@ export function TicketPurchaseWorkspace({
     if (!selected || busy || !total) return;
     setBusy(true);
     setPriceError('');
-    frozen.current ??= {
-      version: 1,
-      operationId: crypto.randomUUID(),
-      expectedCostVersion: selected.cost?.version ?? 0,
-      seatCount: Number(seats),
-      ...(pricingMode === 'TOTAL' ? { totalCost: unit } : { unitCost: unit }),
-      currencyCode: currency,
-      ...(fxRates[currency] ? { purchaseRateToIrr: fxRates[currency] } : {}),
-    };
+    frozen.current ??=
+      selected.members.length > 1
+        ? {
+            version: 1,
+            operationId: crypto.randomUUID(),
+            members: selected.members.map((m) => ({
+              requestId: m.request.id,
+              expectedCostVersion: m.cost?.version ?? 0,
+            })),
+            seatCount: Number(seats),
+            totalCost: total,
+            currencyCode: currency,
+            ...(fxRates[currency]
+              ? { purchaseRateToIrr: fxRates[currency] }
+              : {}),
+          }
+        : {
+            version: 1,
+            operationId: crypto.randomUUID(),
+            expectedCostVersion: selected.members[0]?.cost?.version ?? 0,
+            seatCount: Number(seats),
+            ...(pricingMode === 'TOTAL'
+              ? { totalCost: unit }
+              : { unitCost: unit }),
+            currencyCode: currency,
+            ...(fxRates[currency]
+              ? { purchaseRateToIrr: fxRates[currency] }
+              : {}),
+          };
     try {
-      await ticketPurchaseApi.price(selected.request.id, frozen.current);
+      if ('members' in frozen.current)
+        await ticketPurchaseApi.priceGroup(frozen.current);
+      else await ticketPurchaseApi.price(selected.request.id, frozen.current);
       frozen.current = null;
       setSelected(null);
       setUncertain(false);
@@ -279,25 +318,49 @@ export function TicketPurchaseWorkspace({
                   >
                     <td className="p-3 font-semibold">{item.request.title}</td>
                     <td className="p-3">
-                      {item.capacityCost ? (
-                        <>
-                          <span>
-                            {item.capacityCost.status === 'FINAL_LOSS'
-                              ? 'زیان قطعی'
-                              : 'هزینه ظرفیت باقی‌مانده'}
-                          </span>
-                          <div>
-                            {formatSalesMoney(item.capacityCost.amount)}{' '}
-                            {currencySymbol(item.capacityCost.currencyCode)} ·{' '}
-                            {item.capacityCost.unsoldSeats} seats
-                          </div>
-                        </>
-                      ) : (
-                        '—'
-                      )}
+                      {item.capacityCosts.length
+                        ? item.capacityCosts.map((capacityCost) => (
+                            <div
+                              key={
+                                capacityCost.status + capacityCost.currencyCode
+                              }
+                            >
+                              <span>
+                                {capacityCost.status === 'FINAL_LOSS'
+                                  ? 'زیان قطعی'
+                                  : 'هزینه ظرفیت باقی‌مانده'}
+                              </span>
+                              <div>
+                                {formatSalesMoney(capacityCost.amount)}{' '}
+                                {currencySymbol(capacityCost.currencyCode)} ·{' '}
+                                {capacityCost.unsoldSeats} seats
+                              </div>
+                            </div>
+                          ))
+                        : '—'}
                     </td>
                     <td className="p-3">
-                      <bdi>{item.request.serviceDate ?? '—'}</bdi>
+                      {item.members.length > 1 ? (
+                        <details>
+                          <summary>
+                            {item.flightGroup
+                              ? purchaseWeekdays[item.flightGroup.weekday]
+                              : '—'}{' '}
+                            · {item.members.length} departures
+                            <br />
+                            <bdi>
+                              {item.dates[0]} — {item.dates.at(-1)}
+                            </bdi>
+                          </summary>
+                          {item.dates.map((d, i) => (
+                            <div key={i}>
+                              <bdi>{d}</bdi>
+                            </div>
+                          ))}
+                        </details>
+                      ) : (
+                        <bdi>{item.dates[0] ?? '—'}</bdi>
+                      )}
                     </td>
                     <td className="p-3">
                       {item.request.supplierDisplaySnapshot ?? '—'}
@@ -337,11 +400,16 @@ export function TicketPurchaseWorkspace({
                       </span>
                     </td>
                     <td className="p-3">
-                      {canPrice &&
-                      item.request.status === 'PENDING' &&
-                      !item.cost?.paymentCount ? (
+                      {canEditTicketPurchase(
+                        ticketPurchaseEditRow(items, item),
+                        canPrice,
+                      ) ? (
                         <Button size="sm" onClick={() => open(item)}>
-                          {item.cost ? 'ویرایش قیمت خرید' : 'ثبت قیمت خرید'}
+                          {item.cost?.purchaseGroup
+                            ? 'ویرایش خرید گروهی قبلی'
+                            : item.cost
+                              ? 'ویرایش قیمت خرید'
+                              : 'ثبت قیمت خرید'}
                         </Button>
                       ) : (
                         <span>
@@ -383,11 +451,28 @@ export function TicketPurchaseWorkspace({
         }}
       >
         <DialogContent className="max-w-lg">
-          <DialogTitle>ثبت قیمت خرید پرواز</DialogTitle>
+          <DialogTitle>
+            {selected?.cost ? 'ویرایش قیمت خرید' : 'ثبت قیمت خرید پرواز'}
+          </DialogTitle>
           <DialogDescription>
             {selected?.request.title} · تأمین‌کننده:{' '}
             {selected?.request.supplierDisplaySnapshot ?? '—'}
           </DialogDescription>
+          {selected && selected.members.length > 1 && (
+            <div className="mt-3 rounded-xl border p-3 text-sm">
+              <p>
+                این خرید قبلاً گروهی ثبت شده است؛ ویرایش، همهٔ تاریخ‌های
+                نمایش‌داده‌شده را تغییر می‌دهد.
+              </p>
+              <b>
+                {selected.flightGroup
+                  ? purchaseWeekdays[selected.flightGroup.weekday]
+                  : '—'}{' '}
+                · {selected.members.length} departures
+              </b>
+              <p dir="ltr">{selected.dates.join(' / ')}</p>
+            </div>
+          )}
           <form
             className="mt-4 space-y-4"
             onSubmit={(e) => {
@@ -417,6 +502,7 @@ export function TicketPurchaseWorkspace({
                 <span>تعداد صندلی خریداری‌شده</span>
                 <Input
                   type="number"
+                  readOnly={(selected?.members.length ?? 0) > 1}
                   min={1}
                   max={selected?.request.seatCount ?? 100000}
                   required

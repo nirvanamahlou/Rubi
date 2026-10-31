@@ -1,4 +1,7 @@
 import {
+  reservationHotelStays,
+  reservationHotelTransferKeys,
+  readLegacyServiceParties,
   moneyDecimal,
   moneyUnits,
   type SalesContractDetail,
@@ -14,6 +17,7 @@ type TicketCost = {
   childUnitCost: string;
   unitCost: string | null;
   supplyType?: string | null | undefined;
+  poolCost?: { seatCount: number; totalCost: string };
   seatCount?: number | null;
   invoiceAmount?: string | null;
 };
@@ -25,9 +29,52 @@ export function contractProfit(
 ): SalesContractProfitV1 {
   const costs: SalesContractProfitV1['costs'][number][] = [];
   const covered = new Set<string>();
-  const services = contract.servicesDetail.filter(
-    (s) => s.metadata?.insuranceAgeSurcharge !== true,
-  );
+  const services = [
+    ...contract.servicesDetail.filter(
+      (s) => s.metadata?.insuranceAgeSurcharge !== true,
+    ),
+  ];
+  if (
+    intake?.servicePurchases?.some((purchase) => purchase.roomPrices?.length)
+  ) {
+    for (const stay of reservationHotelStays(
+      intake.purchaseSnapshot ?? intake.snapshot,
+    )) {
+      if (!services.some((service) => service.clientKey === stay.key))
+        services.push({
+          clientKey: stay.key,
+          kind: 'HOTEL',
+          titleSnapshot: stay.hotel.hotelNameSnapshot,
+        } as (typeof services)[number]);
+      for (const key of reservationHotelTransferKeys(
+        intake.purchaseSnapshot ?? intake.snapshot,
+        stay.key,
+      ))
+        if (!services.some((service) => service.clientKey === key))
+          services.push({
+            clientKey: key,
+            kind: 'TRANSFER',
+            titleSnapshot: 'Transfer · ' + stay.hotel.hotelNameSnapshot,
+          } as (typeof services)[number]);
+    }
+  }
+  for (const purchase of intake?.servicePurchases ?? []) {
+    if (
+      !purchase.hotelStayKey ||
+      !['HOTEL', 'TRANSFER'].includes(purchase.serviceKind)
+    )
+      continue;
+    for (const key of purchase.coveredServiceClientKeys?.length
+      ? purchase.coveredServiceClientKeys
+      : [purchase.serviceClientKey]) {
+      if (!services.some((service) => service.clientKey === key))
+        services.push({
+          clientKey: key,
+          kind: purchase.serviceKind,
+          titleSnapshot: purchase.serviceTitle,
+        } as (typeof services)[number]);
+    }
+  }
   const title = (key: string) =>
     services.find((s) => s.clientKey === key)?.titleSnapshot ||
     (
@@ -93,6 +140,7 @@ export function contractProfit(
       });
     covered.add(hotel.serviceClientKey);
   }
+  const legacyParties = readLegacyServiceParties(contract.servicesDetail);
   const flightCoverage = new Map<string, boolean>();
   for (const selection of contract.ticketSelections) {
     if (covered.has(selection.serviceClientKey)) continue;
@@ -104,29 +152,39 @@ export function contractProfit(
     const assigned = contract.passengersDetail.filter((p) =>
       p.serviceClientKeys.includes(selection.serviceClientKey),
     );
-    if (!assigned.length) continue;
-    const soldSeats = assigned.filter((p) => p.ageCategory !== 'INF').length;
+    const legacyParty = legacyParties?.[selection.serviceClientKey];
+    if (!assigned.length && !legacyParty) continue;
+    const soldSeats = legacyParty
+      ? legacyParty.adults + legacyParty.children
+      : assigned.filter((p) => p.ageCategory !== 'INF').length;
+    const purchasedSeats = cost.poolCost?.seatCount ?? cost.seatCount;
+    const invoice = cost.poolCost?.totalCost ?? cost.invoiceAmount;
     const proportional =
-      cost.seatCount && cost.invoiceAmount
-        ? (moneyUnits(cost.invoiceAmount) * BigInt(soldSeats) +
-            BigInt(cost.seatCount) / 2n) /
-          BigInt(cost.seatCount)
+      purchasedSeats && invoice
+        ? (moneyUnits(invoice) * BigInt(soldSeats) +
+            BigInt(purchasedSeats) / 2n) /
+          BigInt(purchasedSeats)
         : null;
     const amount =
       proportional ??
-      assigned.reduce(
-        (sum, p) =>
-          sum +
-          (p.ageCategory === 'INF'
-            ? 0n
-            : moneyUnits(
-                cost.unitCost ??
-                  (p.ageCategory === 'CHD'
-                    ? cost.childUnitCost
-                    : cost.adultUnitCost),
-              )),
-        0n,
-      );
+      (legacyParty
+        ? BigInt(legacyParty.adults) *
+            moneyUnits(cost.unitCost ?? cost.adultUnitCost) +
+          BigInt(legacyParty.children) *
+            moneyUnits(cost.unitCost ?? cost.childUnitCost)
+        : assigned.reduce(
+            (sum, p) =>
+              sum +
+              (p.ageCategory === 'INF'
+                ? 0n
+                : moneyUnits(
+                    cost.unitCost ??
+                      (p.ageCategory === 'CHD'
+                        ? cost.childUnitCost
+                        : cost.adultUnitCost),
+                  )),
+            0n,
+          ));
     costs.push({
       serviceClientKeys: [selection.serviceClientKey],
       serviceTitles: [title(selection.serviceClientKey)],

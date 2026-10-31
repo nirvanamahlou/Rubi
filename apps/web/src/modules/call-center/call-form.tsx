@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, type FormEvent } from 'react';
-import { Check, PhoneIncoming } from 'lucide-react';
+import { Check, PhoneIncoming, Minus } from 'lucide-react';
 import { useDialogReturnFocus } from './use-dialog-focus';
 import { useUnsavedGuard } from './use-unsaved-guard';
 import { workflowApi, type RequestCase } from './workflow-client';
@@ -11,11 +11,12 @@ import {
   DialogTitle,
 } from '@/components/ui/overlays';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
+import { callCenterApi } from './client';
+import { LinkedRequestField } from './linked-request-field';
 import {
   callDate,
   validPhone,
   sources,
-  operators,
   type Call,
   type CallEvent,
 } from './model';
@@ -33,6 +34,8 @@ export function CallForm({
   onSave,
   onClose,
   busy,
+  onMinimize,
+  allowInternalNavigation = false,
 }: {
   branchId: string;
   event: CallEvent;
@@ -40,18 +43,94 @@ export function CallForm({
   onSave: (call: Call) => Promise<void>;
   onClose: () => void;
   busy: boolean;
+  onMinimize?: () => void;
+  allowInternalNavigation?: boolean;
 }) {
   const restoreFocus = useDialogReturnFocus();
+  const completing = Boolean(event.completionToken);
   const [error, setError] = useState('');
   const [dirty, setDirty] = useState(false);
-  const [requests, setRequests] = useState<RequestCase[]>([]);
+  const [direction, setDirection] = useState(event.direction);
+  const operatorLabel =
+    direction === 'OUTBOUND' ? 'تماس‌گرفته‌شده از داخلی' : 'وصل شده به';
+  const [requestState, setRequestState] = useState<{
+    contact: string;
+    rows: RequestCase[];
+  } | null>(null);
+  const requests =
+    requestState?.contact === `${branchId}:${previous?.contactId}`
+      ? requestState.rows
+      : [];
+  const [destinationState, setDestinationState] = useState<{
+    branch: string;
+    labels: string[];
+    error: string;
+  } | null>(null);
+  const destinationsLoading = destinationState?.branch !== branchId;
+  const destinations = destinationsLoading ? [] : destinationState.labels;
+  const destinationError = destinationsLoading ? '' : destinationState.error;
+  const [destinationRetry, setDestinationRetry] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    callCenterApi
+      .destinations(branchId, controller.signal)
+      .then((result) => {
+        if (!controller.signal.aborted)
+          setDestinationState({
+            branch: branchId,
+            labels: result.data.map((row) => row.label),
+            error: '',
+          });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setDestinationState({
+            branch: branchId,
+            labels: [],
+            error: 'دریافت فهرست کارکنان انجام نشد.',
+          });
+      });
+    return () => controller.abort();
+  }, [branchId, destinationRetry]);
   useEffect(() => {
     const controller = new AbortController();
     if (previous?.contactId)
       workflowApi
-        .list(branchId, previous.contactId, controller.signal)
-        .then((result) => {
-          if (!controller.signal.aborted) setRequests(result.data);
+        .list(
+          branchId,
+          previous.contactId,
+          controller.signal,
+          1,
+          1,
+          undefined,
+          true,
+        )
+        .then(async (result) => {
+          const rows = [...result.data];
+          for (
+            let page = 2;
+            rows.length < (result.meta?.total ?? rows.length);
+            page++
+          ) {
+            if (controller.signal.aborted) return;
+            if (page > 100) throw Error('REQUEST_OPTIONS_LIMIT');
+            const next = await workflowApi.list(
+              branchId,
+              previous.contactId!,
+              controller.signal,
+              page,
+              1,
+              undefined,
+              true,
+            );
+            if (!next.data.length) break;
+            rows.push(...next.data);
+          }
+          if (!controller.signal.aborted)
+            setRequestState({
+              contact: `${branchId}:${previous?.contactId}`,
+              rows: [...new Map(rows.map((row) => [row.id, row])).values()],
+            });
         })
         .catch(() => {
           if (!controller.signal.aborted)
@@ -59,7 +138,7 @@ export function CallForm({
         });
     return () => controller.abort();
   }, [branchId, previous?.contactId]);
-  useUnsavedGuard(dirty);
+  useUnsavedGuard(dirty, allowInternalNavigation);
   function close() {
     if (
       !busy &&
@@ -82,10 +161,14 @@ export function CallForm({
     }
     setError('');
     try {
+      const { ticketId: priorTicket, ...eventData } = event as Call;
+      void priorTicket;
       await onSave({
-        ...event,
+        ...eventData,
         phone: value('phone'),
-        direction: value('direction') as Call['direction'],
+        direction: completing
+          ? event.direction
+          : (value('direction') as Call['direction']),
         name: value('name'),
         subject: value('subject'),
         source: value('source'),
@@ -115,9 +198,25 @@ export function CallForm({
         dir="rtl"
         className={styles.callDialog}
       >
-        <DialogTitle className="flex items-center gap-2 pe-9">
+        {onMinimize && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onMinimize}
+            aria-label="کوچک‌کردن فرم تماس"
+            title="کوچک‌کردن فرم تماس"
+            className="absolute end-14 top-4 rounded-lg p-2 text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Minus size={16} aria-hidden="true" />
+          </button>
+        )}
+        <DialogTitle className="flex items-center gap-2 pe-20">
           <PhoneIncoming className="text-blue-500" />
-          {event.direction === 'INBOUND' ? 'ثبت تماس جدید' : 'ثبت تماس پیگیری'}
+          {completing
+            ? 'ویرایش اطلاعات تماس'
+            : event.direction === 'INBOUND'
+              ? 'ثبت تماس جدید'
+              : 'ثبت تماس پیگیری'}
         </DialogTitle>
         <DialogDescription>
           {callDate(event.occurredAt)} ·{' '}
@@ -142,7 +241,7 @@ export function CallForm({
                     type="tel"
                     placeholder="شماره مخفی یا نامعلوم: خالی بگذارید"
                     defaultValue={event.phone}
-                    readOnly={Boolean(event.phone)}
+                    readOnly={Boolean(event.phone) || completing}
                     maxLength={24}
                     autoComplete="off"
                   />
@@ -166,18 +265,40 @@ export function CallForm({
               <div className={styles.formGrid}>
                 <label>
                   نوع تماس
-                  <NativeSearchSelect
-                    onChange={() => setDirty(true)}
-                    aria-label="نوع تماس"
-                    className={styles.control}
-                    optionLimit={50}
-                    disabled={busy}
-                    name="direction"
-                    defaultValue={event.direction}
-                  >
-                    <option value="INBOUND">ورودی ـ تماس به شرکت</option>
-                    <option value="OUTBOUND">خروجی ـ تماس از شرکت</option>
-                  </NativeSearchSelect>
+                  {completing ? (
+                    <>
+                      <input
+                        aria-label="نوع تماس"
+                        readOnly
+                        value={
+                          event.direction === 'INBOUND'
+                            ? 'ورودی ـ تماس به شرکت'
+                            : 'خروجی ـ تماس از شرکت'
+                        }
+                      />
+                      <input
+                        type="hidden"
+                        name="direction"
+                        value={event.direction}
+                      />
+                    </>
+                  ) : (
+                    <NativeSearchSelect
+                      onChange={(e) => {
+                        setDirty(true);
+                        setDirection(e.target.value as CallEvent['direction']);
+                      }}
+                      aria-label="نوع تماس"
+                      className={styles.control}
+                      optionLimit={50}
+                      disabled={busy}
+                      name="direction"
+                      defaultValue={event.direction}
+                    >
+                      <option value="INBOUND">ورودی ـ تماس به شرکت</option>
+                      <option value="OUTBOUND">خروجی ـ تماس از شرکت</option>
+                    </NativeSearchSelect>
+                  )}
                 </label>
                 <label>
                   منبع آشنایی
@@ -188,7 +309,7 @@ export function CallForm({
                     optionLimit={50}
                     disabled={busy}
                     name="source"
-                    defaultValue="نامشخص"
+                    defaultValue={completing ? previous?.source : 'نامشخص'}
                   >
                     {sources.map((source) => (
                       <option key={source} value={source}>
@@ -198,22 +319,64 @@ export function CallForm({
                   </NativeSearchSelect>
                 </label>
                 <label>
-                  وصل شده به
-                  <NativeSearchSelect
-                    onChange={() => setDirty(true)}
-                    aria-label="وصل شده به"
-                    className={styles.control}
-                    optionLimit={50}
-                    disabled={busy}
-                    name="operator"
-                    defaultValue="نامشخص"
-                  >
-                    {operators.map((operator) => (
-                      <option key={operator} value={operator}>
-                        {operator}
-                      </option>
-                    ))}
-                  </NativeSearchSelect>
+                  {operatorLabel}
+                  {completing && previous?.answerRecipient ? (
+                    <>
+                      <input
+                        aria-label={operatorLabel}
+                        readOnly
+                        value={previous.answerRecipient.label}
+                      />
+                      <input
+                        type="hidden"
+                        name="operator"
+                        value={previous.operator}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <NativeSearchSelect
+                        onChange={() => setDirty(true)}
+                        aria-label={operatorLabel}
+                        className={styles.control}
+                        optionLimit={50}
+                        disabled={busy}
+                        aria-busy={destinationsLoading}
+                        name="operator"
+                        defaultValue={
+                          completing ? previous?.operator : 'نامشخص'
+                        }
+                      >
+                        {[
+                          ...new Set([
+                            'نامشخص',
+                            ...(completing && previous?.operator
+                              ? [previous.operator]
+                              : []),
+                            ...destinations,
+                          ]),
+                        ].map((operator) => (
+                          <option key={operator} value={operator}>
+                            {operator}
+                          </option>
+                        ))}
+                      </NativeSearchSelect>
+                      {destinationError && (
+                        <span role="status">
+                          {destinationError}{' '}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDestinationState(null);
+                              setDestinationRetry((value) => value + 1);
+                            }}
+                          >
+                            تلاش مجدد
+                          </button>
+                        </span>
+                      )}
+                    </>
+                  )}
                 </label>
                 <label>
                   نتیجه تماس (اختیاری)
@@ -223,7 +386,7 @@ export function CallForm({
                     aria-label="نتیجه تماس"
                     className={styles.control}
                     disabled={busy}
-                    defaultValue=""
+                    defaultValue={completing ? (previous?.outcome ?? '') : ''}
                   >
                     <option value="">نتیجه تماس را انتخاب کنید</option>
                     {Object.entries(outcomeLabels).map(([key, title]) => (
@@ -233,31 +396,18 @@ export function CallForm({
                     ))}
                   </NativeSearchSelect>
                 </label>
-                <label>
-                  درخواست مرتبط
-                  <NativeSearchSelect
-                    onChange={() => setDirty(true)}
-                    name="ticketId"
-                    aria-label="درخواست مرتبط"
-                    className={styles.control}
-                    disabled={busy}
-                    defaultValue=""
-                  >
-                    <option value="">بدون اتصال؛ پس از ثبت تعیین می‌کنم</option>
-                    {requests
-                      .filter((request) => request.status !== 'CLOSED')
-                      .map((request) => (
-                        <option key={request.id} value={request.id}>
-                          {request.title}
-                        </option>
-                      ))}
-                  </NativeSearchSelect>
-                </label>
+                <LinkedRequestField
+                  requests={requests}
+                  busy={busy}
+                  selected={completing ? (previous?.ticketId ?? '') : ''}
+                  onChange={() => setDirty(true)}
+                />
               </div>
               <label>
                 موضوع تماس *
                 <input
                   name="subject"
+                  defaultValue={completing ? previous?.subject : ''}
                   required
                   placeholder="موضوع همین تماس"
                   maxLength={200}
@@ -267,6 +417,7 @@ export function CallForm({
                 شرح تماس
                 <textarea
                   name="note"
+                  defaultValue={completing ? previous?.note : ''}
                   maxLength={2000}
                   placeholder="نیاز مسافر، نتیجه گفت‌وگو و اقدام بعدی..."
                 />
@@ -282,7 +433,7 @@ export function CallForm({
             )}
             <footer>
               <button className={styles.primary}>
-                <Check size={16} /> ثبت تماس
+                <Check size={16} /> {completing ? 'ذخیره تغییرات' : 'ثبت تماس'}
               </button>
               <button
                 type="button"

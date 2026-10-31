@@ -2,7 +2,31 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const renderer = vi.hoisted(() =>
   vi.fn().mockResolvedValue(Buffer.from('%PDF-1.4 synthetic')),
 );
-vi.mock('./reservation-pdf', () => ({ renderReservationPdf: renderer }));
+vi.mock('./reservation-pdf', () => ({
+  renderReservationPdf: renderer,
+  prepareReservationHtml: async (
+    output: ReservationFormIntake,
+    refs: Parameters<typeof reservationPdfHtml>[1],
+    logo: string,
+    css: string,
+    voucher: boolean,
+    origin: string,
+    _language: string,
+    url: string,
+  ) => reservationPdfHtml(output, refs, logo, css, voucher, origin, url),
+}));
+const publishing = vi.hoisted(() => ({ enabled: false, html: '' }));
+vi.mock('@/modules/travel-documents/server/public-document-store', () => ({
+  createPublicDocument: () =>
+    publishing.enabled
+      ? {
+          url: 'https://example.test/d/' + 'a'.repeat(32),
+          save: async (html: string) => {
+            publishing.html = html;
+          },
+        }
+      : undefined,
+}));
 vi.mock('@/lib/environment', () => ({
   getPublicApiBaseUrl: () => 'http://api.test/api/v1',
 }));
@@ -41,6 +65,8 @@ const request = () =>
   });
 beforeEach(() => {
   vi.clearAllMocks();
+  publishing.enabled = false;
+  publishing.html = '';
   vi.unstubAllGlobals();
 });
 describe('reservation PDF route', () => {
@@ -75,13 +101,18 @@ describe('reservation PDF route', () => {
       sent.hotelPurchasePrices,
     );
   });
-  it('prints exact proposed purchase prices in the English supplier header and never leaks them to vouchers', () => {
+  it('prints exact independent supplier prices in section06 with a four-field header and NOTICE07, without voucher leakage', () => {
     const settings = {
       ...intake.workflow.supplierFormSettings!,
       hotelPurchasePrices: [
         { amount: '9007199254740993.25', currencyCode: 'EUR' },
         { amount: '100.50', currencyCode: 'USD' },
       ],
+      supplierFormPrices: {
+        pp: { amount: '9007199254740993.25', currencyCode: 'EUR' },
+        ratio: { amount: '100.50', currencyCode: 'USD' },
+        transferPp: { amount: '0', currencyCode: 'JPY' },
+      },
     };
     const priced = {
       ...intake,
@@ -97,13 +128,15 @@ describe('reservation PDF route', () => {
       'data:image/png;base64,c2FmZQ==',
       '',
     );
-    expect(html).toContain('9,007,199,254,740,993.25 EUR · 100.50 USD');
-    expect(html.indexOf('PROPOSED PURCHASE PRICE')).toBeGreaterThan(
-      html.indexOf('<span>SUPPLIER</span>'),
-    );
-    expect(html.indexOf('PROPOSED PURCHASE PRICE')).toBeLessThan(
-      html.indexOf('<span>DATE OF ISSUE</span>'),
-    );
+    expect(html).not.toContain('PROPOSED PURCHASE PRICE');
+    expect(html).toContain('9,007,199,254,740,993.25 EUR');
+    expect(html).toContain('100.50</td>');
+    expect(html).not.toContain('100.50 USD');
+    expect(html).toContain('Hotel P.P');
+    expect(html).toContain('0 JPY');
+    expect(html).toContain('<b>06</b><strong>PRICES</strong>');
+    expect(html).toContain('<b>07</b><strong>NOTICE</strong>');
+    expect(html).toContain('Transfer P.P');
     expect(html).not.toContain('HOTEL TOTAL');
     const voucherHtml = reservationPdfHtml(
       priced,
@@ -275,6 +308,7 @@ it('downloads an issued voucher using saved voucher settings and a voucher filen
     true,
     'http://localhost',
     'fa',
+    undefined,
   );
 });
 it('renders voucher booking references and a separated summary without letterhead', () => {
@@ -301,7 +335,9 @@ it('renders voucher booking references and a separated summary without letterhea
   expect(html).toContain('<section class="bookingSection">');
   expect(html).toContain('ROOM TYPE');
   expect(html).toContain('TRANSFER');
-  expect(html).toContain('Board: BROKER BOARD');
+  expect(html).toContain('<th>BOARD</th>');
+  expect(html).toContain('>BROKER BOARD</td>');
+  expect(html).not.toContain('Board:');
   expect(html).toContain('SYNTHETIC VOUCHER NOTICE');
   expect(html).toContain('Reservation@niyayehseir.com');
   expect(html).not.toContain('Country:');
@@ -360,7 +396,7 @@ it('keeps six regular passengers on one supplier form page', () => {
   );
   expect(html.match(/<article class="page"/g)).toHaveLength(1);
   expect(html).toContain('06</td>');
-  expect(html).toContain('1 / 1');
+  expect(html).toContain('counter(pages)');
   expect(html).not.toContain('<th>LEG</th>');
   expect(html).not.toContain('<span>TOUR LEADER</span>');
 });
@@ -502,4 +538,136 @@ it('loads the new Jahan logo for the authorized reservation PDF instead of an ol
     ),
   ).toBe(false);
   expect(renderer.mock.calls[0]?.[2]).toBe('data:image/png;base64,c2FmZQ==');
+});
+
+it('publishes only the sent supplier form and keeps public voucher issuance guards', async () => {
+  publishing.enabled = true;
+  const value = {
+    ...intake,
+    workflow: {
+      ...intake.workflow,
+      supplierFormSettings: {
+        ...intake.workflow.supplierFormSettings!,
+        text: {
+          ...intake.workflow.supplierFormSettings!.text,
+          broker: 'UNSENT DRAFT',
+        },
+      },
+      sentSupplierFormSettings: {
+        ...intake.workflow.supplierFormSettings!,
+        text: {
+          ...intake.workflow.supplierFormSettings!.text,
+          broker: 'SAVED FORM',
+        },
+      },
+    },
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockImplementation(async () => Response.json({ data: value })),
+  );
+  const response = await GET(new Request(request().url + '?format=share'), {
+    params: Promise.resolve({ id }),
+  });
+  expect(response.status).toBe(200);
+  expect(publishing.html).toContain('SAVED FORM');
+  expect(publishing.html).toContain('https://example.test/d/' + 'a'.repeat(32));
+  expect(publishing.html).not.toContain('UNSENT DRAFT');
+  expect(renderer).not.toHaveBeenCalled();
+  publishing.html = '';
+  const voucher = await GET(
+    new Request(request().url + '?kind=voucher&format=share'),
+    { params: Promise.resolve({ id }) },
+  );
+  expect(voucher.status).toBe(409);
+  expect(publishing.html).toBe('');
+});
+
+it('publishes an issued voucher as its own voucher HTML without a browser PDF process', async () => {
+  publishing.enabled = true;
+  const value = {
+    ...intake,
+    workflow: {
+      ...intake.workflow,
+      voucherIssued: true,
+      voucherSettings: {
+        ...intake.workflow.supplierFormSettings!,
+        leaderId: id,
+      },
+    },
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockImplementation(async () => Response.json({ data: value })),
+  );
+  const result = await GET(
+    new Request(request().url + '?kind=voucher&format=share'),
+    { params: Promise.resolve({ id }) },
+  );
+  expect(result.status).toBe(200);
+  expect(publishing.html).toContain('HOTEL VOUCHER');
+  expect(publishing.html).toContain('https://example.test/d/' + 'a'.repeat(32));
+  expect(renderer).not.toHaveBeenCalled();
+});
+
+it('prints supplier service allocations from the contract and reserves a repeating footer', () => {
+  const value = structuredClone(intake);
+  value.snapshot.passengerIds = ['a', 'b'];
+  value.snapshot.passengerAssignments = [
+    {
+      customerId: 'a',
+      displayNameSnapshot: 'ALPHA / ONE',
+      ageCategory: 'ADT',
+      serviceClientKeys: ['flight-out', 'hotel', 'transfer-back'],
+    },
+    {
+      customerId: 'b',
+      displayNameSnapshot: 'BETA / TWO',
+      ageCategory: 'ADT',
+      serviceClientKeys: ['flight-back', 'insurance'],
+    },
+  ] as never;
+  value.snapshot.serviceSelections = [
+    {
+      clientKey: 'flight-out',
+      kind: 'FLIGHT',
+      metadata: { direction: 'OUTBOUND' },
+    },
+    {
+      clientKey: 'flight-back',
+      kind: 'FLIGHT',
+      metadata: { direction: 'RETURN' },
+    },
+    { clientKey: 'hotel', kind: 'HOTEL' },
+    {
+      clientKey: 'transfer-back',
+      kind: 'TRANSFER',
+      metadata: { direction: 'RETURN' },
+    },
+    { clientKey: 'insurance', kind: 'INSURANCE' },
+  ] as never;
+  value.snapshot.hotelSelection = {
+    serviceClientKey: 'hotel',
+    hotelId: 'hotel',
+    hotelNameSnapshot: 'SAMPLE HOTEL',
+    checkInDate: '2026-11-01',
+    checkOutDate: '2026-11-04',
+  } as never;
+  value.workflow.supplierFormSettings = defaultVoucherSettings(value, {});
+  value.workflow.supplierFormSettings.flags.withLetterhead = false;
+  const html = reservationPdfHtml(value, {}, '', '');
+  expect(html).toContain('<th>FLIGHT OUT</th>');
+  expect(html).toContain('<th>TRF IN</th>');
+  expect(html).toContain('<th>TRF OUT</th>');
+  expect(html).toContain('FLIGHT INFORMATION');
+  expect(html).toContain('class="roomsNights"');
+  expect(html).toContain('table hotelInformation');
+  expect(html).toContain(
+    'ALPHA / ONE</td><td dir="auto">Male</td><td dir="auto">ADL</td><td dir="auto">✓</td><td dir="auto">-</td><td dir="auto">01 NOV 2026',
+  );
+  expect(html).toContain('INSURANCE');
+  expect(html).toContain('position:fixed;height:26mm;display:block;bottom:0');
+  expect(html).toContain('margin:8.5mm');
+  expect(html.match(/<div data-reservation-contact/g)).toHaveLength(1);
+  expect(html).not.toMatch(/[\u0600-\u06ff]/);
 });

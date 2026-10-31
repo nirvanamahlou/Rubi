@@ -997,3 +997,12 @@
   top: 0;
   z-index: 1;
 }
+
+.badge[data-direction='INBOUND'] {
+  color: #065f46;
+  background: #d1fae5;
+}
+.badge[data-direction='OUTBOUND'] {
+  color: #1e40af;
+  background: #dbeafe;
+}

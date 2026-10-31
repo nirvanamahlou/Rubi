@@ -22,9 +22,13 @@ const { TelephonyWorker } = require('../apps/worker/dist/telephony-worker');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function main() {
   const u = new URL(process.env.DATABASE_URL);
-  u.pathname = '/nora_call_center_package_one_test_1019';
-  if (!['localhost', '127.0.0.1'].includes(u.hostname))
-    throw Error('Local only');
+  if (
+    !['localhost', '127.0.0.1'].includes(u.hostname) ||
+    !['/nora_ci', '/nora_call_center_package_one_test_1019'].includes(
+      u.pathname,
+    )
+  )
+    throw Error('Explicit disposable database required');
   const db = createDatabaseClient(u.toString());
   let worker, server;
   try {
@@ -80,9 +84,9 @@ async function main() {
         res.end('{}');
       }
     });
-    await new Promise((r) => server.listen(4331, '127.0.0.1', r));
+    await new Promise((r) => server.listen(0, '127.0.0.1', r));
     const settings = new ConfigService({
-      TELEPHONY_API_URL: 'http://127.0.0.1:4331/api/v1',
+      TELEPHONY_API_URL: `http://127.0.0.1:${server.address().port}/api/v1`,
       TELEPHONY_WORKER_SECRET: secret,
       REDIS_URL: process.env.REDIS_URL,
       WORKER_QUEUE_NAME: 'rubi-telephony-proof-' + randomUUID(),

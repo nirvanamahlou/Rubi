@@ -354,10 +354,217 @@
 }
 
 .jahanBrand {
-  background: white;
-  border-radius: 2mm;
-  padding: 1mm;
+  background: transparent;
+  padding: 0;
 }
 .jahanLogo {
+  filter: brightness(0) invert(1);
   max-height: 23mm;
+}
+
+/* Supplier forms paginate naturally; reserve a separate repeating print footer. */
+.supplierPage {
+  position: relative;
+  padding-bottom: 38mm;
+}
+.supplierFooter {
+  position: absolute;
+  bottom: 8.5mm;
+  left: 8.5mm;
+  right: 8.5mm;
+}
+.supplierPage .passengers th,
+.supplierPage .passengers td {
+  padding: 4px 3px;
+  font-size: 8px;
+}
+@page reservationSupplier {
+  size: A4;
+  margin: 8.5mm;
+  @bottom-right {
+    content: counter(page) ' / ' counter(pages);
+    font: 8pt Arial;
+  }
+}
+@media print {
+  .supplierDocument {
+    page: reservationSupplier;
+  }
+  .supplierPage {
+    break-after: auto;
+    width: auto;
+    padding: 0;
+    min-height: 0;
+  }
+  .supplierFooter {
+    position: fixed;
+    height: 26mm;
+    display: block;
+    bottom: 0;
+    z-index: 10;
+    background: white;
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding-top: 2mm;
+  }
+}
+
+.supplierDocument {
+  position: relative;
+}
+
+@media print {
+  .supplierFooter > [data-reservation-footer] {
+    position: absolute;
+    top: 2mm;
+    left: 0;
+    right: 0;
+  }
+}
+
+.pagination {
+  width: 100%;
+  border-collapse: collapse;
+}
+.pagination > tbody > tr > td {
+  padding: 0;
+}
+.pagination > tbody > tr {
+  break-inside: auto;
+}
+.pagination > tfoot {
+  display: table-footer-group;
+}
+.pagination > tfoot tr {
+  break-inside: avoid;
+}
+.pagination > tfoot td {
+  height: 30mm;
+  padding: 0;
+}
+@media screen {
+  .pagination > tfoot {
+    display: none;
+  }
+}
+
+@media print {
+  .supplierFooter [data-reservation-contact] {
+    position: absolute;
+    top: 4mm;
+    left: 0;
+    line-height: 1.3;
+  }
+  .supplierFooter [data-reservation-qr] {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+}
+
+@media print {
+  .supplierFooter [data-reservation-footer],
+  .supplierFooter [data-reservation-contact] {
+    display: block;
+  }
+}
+
+.voucherServices th,
+.voucherServices td {
+  padding: 4px 3px;
+  font-size: 8px;
+  line-height: 1.3;
+  text-align: center;
+  vertical-align: middle;
+}
+.voucherServices th:nth-child(2) {
+  width: auto;
+}
+.voucherServices .differentStay {
+  background: #d3dae2;
+  border: 1.5px solid #69798a;
+  font-weight: bold;
+}
+
+.voucherServices th {
+  font-size: 7px;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.page[data-voucher] .summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.6fr) max-content;
+}
+.page[data-voucher] .summary > div:last-child b {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+/* Voucher service columns add detail; compact spacing keeps the complete form inside A4. */
+.page[data-voucher] .header {
+  min-height: 18mm;
+}
+.page[data-voucher] .jahanLogo {
+  max-height: 17mm;
+}
+.page[data-voucher] .meta {
+  padding: 5px 0;
+  min-height: 0;
+}
+.page[data-voucher] .meta > div {
+  padding: 2px 7px;
+  gap: 4px;
+}
+.page[data-voucher] .bookingSection {
+  margin-top: 2mm;
+  margin-bottom: 1mm;
+}
+.page[data-voucher] .heading {
+  min-height: 20px;
+}
+.page[data-voucher] .bookingSection .heading {
+  padding: 2px 0;
+}
+.page[data-voucher] .table td,
+.page[data-voucher] .table th {
+  padding: 3px;
+}
+.page[data-voucher] .roomBreakdown {
+  margin-top: 8px;
+}
+.page[data-voucher] .notice {
+  min-height: 50px;
+  padding: 7px 10px 4px;
+}
+.page[data-voucher] .stamp {
+  padding: 8px;
+}
+.page[data-voucher] .footer {
+  padding-top: 9px;
+}
+
+.page[data-voucher] {
+  padding: 7mm;
+}
+
+.roomBreakdown th:nth-child(2),
+.roomBreakdown td:nth-child(2) {
+  width: 48%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.differentStay {
+  background: #d3dae2;
+  border: 1.5px solid #69798a;
+  font-weight: bold;
+}
+
+/* Supplier form emphasis without enlarging the booking-summary row. */
+.roomsNights b {
+  font-size: 9px;
+  overflow-wrap: normal;
+}
+.hotelInformation tbody td {
+  font-weight: 600;
 }

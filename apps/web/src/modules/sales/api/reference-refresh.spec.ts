@@ -61,3 +61,24 @@ it('discards cancelled in-flight pages instead of publishing stale data', async 
     list.mock.calls.filter(([resource]) => resource === 'countries'),
   ).toHaveLength(1);
 });
+
+it('does not treat repeated hotel rows as a complete catalogue before every unique hotel arrives', async () => {
+  const list = vi.fn(async (resource: string, q: { page: number }) => ({
+    data:
+      resource !== 'hotels'
+        ? []
+        : q.page === 1
+          ? [{ id: 'first' }, { id: 'first' }]
+          : [{ id: 'RAMADA RESORT & GOLF' }],
+    meta: { total: resource === 'hotels' ? 2 : 0 },
+  }));
+  const result = await loadSalesReferences({ list } as never);
+  expect(result.failed).toEqual([]);
+  expect(result.references.hotels?.map((h) => h.id)).toEqual([
+    'first',
+    'RAMADA RESORT & GOLF',
+  ]);
+  expect(
+    list.mock.calls.filter(([resource]) => resource === 'hotels'),
+  ).toHaveLength(2);
+});

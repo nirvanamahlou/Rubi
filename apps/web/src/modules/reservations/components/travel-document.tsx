@@ -1,15 +1,14 @@
 'use client';
+import { hotelFormScope } from '../model/hotel-form-scope';
+import { reservationHotelStays } from '@nora/contracts';
+import type { ReservationFormIntake } from '../model/reservation-form';
+import { usePublicDocumentLink } from '@/modules/travel-documents/public/use-public-document-link';
 import {
   ReservationFormSheet,
   useReservationFormReferences,
 } from './reservation-form-sheet';
 import { useEffect, useState } from 'react';
-import type {
-  ReservationIntakeV1,
-  TravelBrandingV1,
-  TravelWorkflowStateV1,
-  VoucherSettingsV1,
-} from '@nora/contracts';
+import type { TravelBrandingV1, VoucherSettingsV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { documentsApi } from '@/modules/documents/api/client';
 import { DocumentPreview } from './document-preview';
@@ -67,7 +66,7 @@ export function TravelDocument({
   dirty = false,
   downloadLabel,
 }: {
-  intake: ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
+  intake: ReservationFormIntake;
   voucher?: boolean;
   historical?: boolean;
   previewSettings?: VoucherSettingsV1 | undefined;
@@ -103,12 +102,27 @@ export function TravelDocument({
           workflow: { ...state, supplierFormSettings: previewSettings },
         }
       : intake;
+  const publicDocument = usePublicDocumentLink(
+    !historical && enabled && supplierReady && !dirty
+      ? '/reservations/requests/' +
+          encodeURIComponent(intake.id) +
+          '/pdf?' +
+          new URLSearchParams({
+            ...(voucher ? { kind: 'voucher' } : {}),
+            ...(!voucher && intake.hotelStayKey
+              ? { hotelStayKey: intake.hotelStayKey }
+              : {}),
+          })
+      : undefined,
+    JSON.stringify([state, intake.snapshot]),
+  );
   const sheet = (
     <ReservationFormSheet
       intake={previewIntake}
       logo={logo}
       references={formReferences.references}
       voucher={voucher}
+      publicDocumentUrl={publicDocument?.url}
     />
   );
   async function downloadPdf() {
@@ -118,7 +132,7 @@ export function TravelDocument({
     try {
       const send = () =>
         fetch(
-          `/reservations/requests/${encodeURIComponent(intake.id)}/pdf${voucher ? '?kind=voucher' : ''}`,
+          `/reservations/requests/${encodeURIComponent(intake.id)}/pdf?${new URLSearchParams({ ...(voucher ? { kind: 'voucher' } : {}), ...(!voucher && intake.hotelStayKey ? { hotelStayKey: intake.hotelStayKey } : {}) })}`,
           {
             credentials: 'include',
             cache: 'no-store',
@@ -141,7 +155,7 @@ export function TravelDocument({
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${voucher ? 'hotel-voucher' : 'reservation-form'}-${intake.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_')}.pdf`;
+      link.download = `${voucher ? 'hotel-voucher' : 'reservation-form'}-${intake.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_')}${!voucher && intake.hotelStayKey ? '-' + (intake.snapshot.hotelSelection?.hotelNameSnapshot ?? intake.hotelStayKey).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 60) : ''}.pdf`;
       document.body.append(link);
       link.click();
       link.remove();
@@ -172,7 +186,43 @@ export function TravelDocument({
           بررسی کنید.
         </p>
       )}
-      {enabled && supplierReady && <DocumentPreview>{sheet}</DocumentPreview>}
+      {enabled &&
+        supplierReady &&
+        (historical ||
+        dirty ||
+        publicDocument?.status === 'ready' ||
+        publicDocument?.status === 'disabled' ? (
+          <DocumentPreview>{sheet}</DocumentPreview>
+        ) : (
+          <p role="status">
+            {publicDocument?.status === 'failed'
+              ? 'آماده‌سازی بارکد انجام نشد؛ دوباره فرم را باز کنید.'
+              : 'در حال آماده‌سازی بارکد مدرک…'}
+          </p>
+        ))}
+    </div>
+  );
+}
+
+export function SupplierHotelDocuments(
+  props: Omit<Parameters<typeof TravelDocument>[0], 'voucher'>,
+) {
+  const stays = reservationHotelStays(props.intake.snapshot);
+  if (!stays.length) return <TravelDocument {...props} />;
+  return (
+    <div className="grid gap-4">
+      {stays.map((stay) => {
+        const intake = hotelFormScope(props.intake, stay.key);
+        if (intake.workflow.sentSupplierFormSettings)
+          intake.workflow.supplierFormSettings =
+            intake.workflow.sentSupplierFormSettings;
+        return (
+          <section key={stay.key} className="grid gap-2">
+            <h3>{stay.hotel.hotelNameSnapshot}</h3>
+            <TravelDocument {...props} intake={intake} />
+          </section>
+        );
+      })}
     </div>
   );
 }

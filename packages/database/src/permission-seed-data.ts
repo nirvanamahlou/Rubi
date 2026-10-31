@@ -65,6 +65,11 @@ export const PERMISSION_SEED_DATA = [
     'مشاهده تاریخچهٔ تخصیص و تغییر مسئول',
   ],
   [
+    'customer_affairs.call_center.recordings.read',
+    'customer_affairs',
+    'شنیدن ضبط تماس‌های مجاز کال سنتر',
+  ],
+  [
     'customer_affairs.call_center.workflow.manage',
     'customer_affairs',
     'مدیریت درخواست و پیگیری کال سنتر',

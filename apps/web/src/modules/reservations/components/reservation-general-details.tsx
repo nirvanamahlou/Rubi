@@ -28,13 +28,22 @@ const unavailable = 'در اطلاعات قرارداد ثبت نشده';
 export const RESERVATION_CUSTOMER_AUDIT_REASON = 'support-request';
 const text = (value: unknown) =>
   typeof value === 'string' && value.trim() ? value.trim() : unavailable;
-const dateTime = (value?: string) =>
+type ServiceCalendar = 'persian' | 'gregorian';
+const dateTime = (value?: string, calendar?: ServiceCalendar) =>
   value && Number.isFinite(Date.parse(value))
-    ? new Date(value).toLocaleString('fa-IR')
+    ? new Date(value).toLocaleString(
+        calendar === 'gregorian' ? 'en-GB' : 'fa-IR',
+        calendar ? { timeZone: 'Asia/Tehran' } : undefined,
+      )
     : unavailable;
-const date = (value?: string) =>
+const date = (value?: string, calendar: ServiceCalendar = 'persian') =>
   value && Number.isFinite(Date.parse(value))
-    ? new Date(value).toLocaleDateString('fa-IR')
+    ? new Date(value).toLocaleDateString(
+        calendar === 'gregorian' ? 'en-GB' : 'fa-IR',
+        {
+          timeZone: value.length === 10 ? 'UTC' : 'Asia/Tehran',
+        },
+      )
     : unavailable;
 
 type Group = { title: string; fields: readonly [string, ReactNode][] };
@@ -124,6 +133,26 @@ export function reservationGeneralDetailGroups(
   );
   const outbound = flights.find((item) => item.direction === 'OUTBOUND');
   const returning = flights.find((item) => item.direction === 'RETURN');
+  const serviceCalendar = (
+    clientKey: string | undefined,
+    fallback: ServiceCalendar,
+  ): ServiceCalendar => {
+    const recorded = snapshot.serviceSelections.find(
+      (service) => service.clientKey === clientKey,
+    )?.metadata?.dateCalendarSystem;
+    return recorded === 'gregorian' || recorded === 'persian'
+      ? recorded
+      : fallback;
+  };
+  const hotelCalendar = serviceCalendar(hotel?.serviceClientKey, 'gregorian');
+  const outboundCalendar = serviceCalendar(
+    outbound?.serviceClientKey,
+    'persian',
+  );
+  const returnCalendar = serviceCalendar(
+    returning?.serviceClientKey,
+    'persian',
+  );
   const metadata = snapshot.serviceSelections.map(
     (service) => service.metadata,
   );
@@ -210,8 +239,20 @@ export function reservationGeneralDetailGroups(
       fields: [
         ['کشور', text(countryName)],
         ['شهر / مقصد', form.destination],
-        ['تاریخ رفت', date(outbound?.departureAt ?? hotel?.checkInDate)],
-        ['تاریخ برگشت', date(returning?.departureAt ?? hotel?.checkOutDate)],
+        [
+          'تاریخ رفت',
+          date(
+            outbound?.departureAt ?? hotel?.checkInDate,
+            outbound ? outboundCalendar : hotelCalendar,
+          ),
+        ],
+        [
+          'تاریخ برگشت',
+          date(
+            returning?.departureAt ?? hotel?.checkOutDate,
+            returning ? returnCalendar : hotelCalendar,
+          ),
+        ],
         [
           'خدمات',
           snapshot.serviceSelections
@@ -245,8 +286,8 @@ export function reservationGeneralDetailGroups(
         ['درجه', form.stars],
         ['سرویس هتل', form.meal],
         ['نوع اتاق', form.roomType],
-        ['ورود هتل', form.checkIn],
-        ['خروج هتل', form.checkOut],
+        ['ورود هتل', date(hotel?.checkInDate, hotelCalendar)],
+        ['خروج هتل', date(hotel?.checkOutDate, hotelCalendar)],
         ['تعداد و ترکیب اتاق‌ها', roomSummary],
         ['تعداد مسافران', form.passengers.length.toLocaleString('fa-IR')],
         [
@@ -265,14 +306,14 @@ export function reservationGeneralDetailGroups(
             ? `${outbound.carrierNameSnapshot} · ${outbound.serviceNumberSnapshot}`
             : unavailable,
         ],
-        ['زمان رفت', dateTime(outbound?.departureAt)],
+        ['زمان رفت', dateTime(outbound?.departureAt, outboundCalendar)],
         [
           'پرواز برگشت',
           returning
             ? `${returning.carrierNameSnapshot} · ${returning.serviceNumberSnapshot}`
             : unavailable,
         ],
-        ['زمان برگشت', dateTime(returning?.departureAt)],
+        ['زمان برگشت', dateTime(returning?.departureAt, returnCalendar)],
         ['توضیح پرواز', text(meta('flightNotes'))],
       ],
     },

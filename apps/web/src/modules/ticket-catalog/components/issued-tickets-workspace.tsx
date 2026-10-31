@@ -31,7 +31,22 @@ import {
 } from '../api/issued-tickets';
 import { TicketDatePicker } from './ticket-date-picker';
 
+export const serviceLabels: Record<string, string> = {
+  all: 'همه خدمات',
+  FLIGHT: 'پرواز',
+  HOTEL: 'هتل',
+  TRANSFER: 'ترانسفر',
+  INSURANCE: 'بیمه',
+  VISA: 'ویزا',
+  TOUR: 'تور',
+  BUS: 'اتوبوس',
+  TRAIN: 'قطار',
+  CIP: 'CIP',
+  OTHER: 'سایر',
+};
+
 const statusLabels: Record<IssuedTicketStatus, string> = {
+  allocated: 'تخصیص‌یافته',
   issued: 'صادرشده',
   changed: 'تغییریافته',
   refunded: 'استردادشده',
@@ -43,7 +58,13 @@ export function IssuedTicketsWorkspace({
   loading = false,
   error = '',
   onDatesChange,
+  reportOptions,
 }: {
+  reportOptions?: {
+    origins: { id: string; name: string }[];
+    destinations: { id: string; name: string }[];
+    hotels: { id: string; name: string }[];
+  };
   tickets: readonly IssuedTicketReadModel[];
   loading?: boolean;
   error?: string;
@@ -56,13 +77,14 @@ export function IssuedTicketsWorkspace({
       .slice(0, 10),
     issuedTo: new Date(Date.now() + 12600000).toISOString().slice(0, 10),
   }));
+  const [applied, setApplied] = useState(query);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
   async function download(format: 'xlsx' | 'pdf') {
     setExportError('');
     setExporting(true);
     try {
-      await downloadIssuedTicketReport(query, format);
+      await downloadIssuedTicketReport(applied, format);
     } catch (reason) {
       setExportError(
         reason instanceof Error ? reason.message : 'خروجی انجام نشد.',
@@ -72,48 +94,57 @@ export function IssuedTicketsWorkspace({
     }
   }
   const result = useMemo(
-    () => queryIssuedTickets(tickets, query),
-    [tickets, query],
+    () => queryIssuedTickets(tickets, applied),
+    [tickets, applied],
   );
   const routeCounts = useMemo(
-    () => countIssuedTicketsByRoute(tickets),
-    [tickets],
+    () => countIssuedTicketsByRoute(result.matchedRows),
+    [result.matchedRows],
   );
   const filter = (patch: Partial<IssuedTicketQuery>) => {
     const next = { ...query, ...patch, page: 1 };
     setQuery(next);
-    if (
-      (patch.issuedFrom !== undefined || patch.issuedTo !== undefined) &&
-      next.issuedFrom &&
-      next.issuedTo &&
-      next.issuedFrom <= next.issuedTo
-    )
-      onDatesChange?.({
-        ...initialIssuedTicketQuery,
-        issuedFrom: next.issuedFrom,
-        issuedTo: next.issuedTo,
-      });
   };
+  function search() {
+    if (
+      !query.issuedFrom ||
+      !query.issuedTo ||
+      query.issuedFrom > query.issuedTo
+    ) {
+      setExportError(
+        'بازه تاریخ صدور را انتخاب کنید؛ تاریخ پایان نباید قبل از شروع باشد.',
+      );
+      return;
+    }
+    setExportError('');
+    setApplied({ ...query, page: 1 });
+    onDatesChange?.({ ...query, page: 1 });
+  }
   const options = useMemo(() => {
     const origins = new Map<string, string>();
     const destinations = new Map<string, string>();
     const airlines = new Map<string, string>();
     for (const ticket of tickets) {
-      origins.set(ticket.originCityId, ticket.origin);
-      destinations.set(ticket.destinationCityId, ticket.destination);
-      airlines.set(ticket.airlineId, ticket.airline);
+      if (ticket.originCityId) origins.set(ticket.originCityId, ticket.origin);
+      if (ticket.destinationCityId)
+        destinations.set(ticket.destinationCityId, ticket.destination);
+      if (ticket.airlineId) airlines.set(ticket.airlineId, ticket.airline);
     }
     return {
-      origins: [...origins],
-      destinations: [...destinations],
+      origins: reportOptions?.origins.map((r) => [r.id, r.name] as const) ?? [
+        ...origins,
+      ],
+      destinations: reportOptions?.destinations.map(
+        (r) => [r.id, r.name] as const,
+      ) ?? [...destinations],
       airlines: [...airlines],
     };
-  }, [tickets]);
+  }, [tickets, reportOptions]);
 
   return (
     <div className="space-y-5" dir="rtl">
       <PageHeader
-        title="بلیط‌های صادرشده مسافران"
+        title="گزارش خدمات مسافران"
         eyebrow="گزارش فقط‌خواندنی رزرواسیون"
         description="پیگیری بلیط صادرشده، قرارداد، مسافر، PNR و مسیر؛ عملیات صدور و استرداد همچنان در رزرواسیون انجام می‌شود."
       />
@@ -132,12 +163,10 @@ export function IssuedTicketsWorkspace({
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="p-5">
-          <p className="text-sm text-muted-foreground">
-            جمع قطعه‌های پرواز صادرشده
-          </p>
+          <p className="text-sm text-muted-foreground">تعداد خدمات در گزارش</p>
           <div className="mt-3 flex items-center justify-between">
             <strong className="text-2xl text-primary">
-              {tickets.length.toLocaleString('fa-IR')}
+              {result.total.toLocaleString('fa-IR')}
             </strong>
             <TicketCheck className="size-7 text-primary" aria-hidden />
           </div>
@@ -145,7 +174,7 @@ export function IssuedTicketsWorkspace({
         <Card className="p-5">
           <p className="text-sm text-muted-foreground">فعال و تغییریافته</p>
           <strong className="mt-3 block text-2xl text-emerald-700">
-            {tickets
+            {result.matchedRows
               .filter((ticket) => ['issued', 'changed'].includes(ticket.status))
               .length.toLocaleString('fa-IR')}
           </strong>
@@ -153,7 +182,7 @@ export function IssuedTicketsWorkspace({
         <Card className="p-5">
           <p className="text-sm text-muted-foreground">استرداد یا ابطال</p>
           <strong className="mt-3 block text-2xl text-rose-700">
-            {tickets
+            {result.matchedRows
               .filter((ticket) =>
                 ['refunded', 'voided'].includes(ticket.status),
               )
@@ -183,12 +212,68 @@ export function IssuedTicketsWorkspace({
           </div>
         </Card>
       ) : null}
-      <Card className="space-y-4 p-4">
+      <Card
+        className="space-y-4 p-4"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+            e.preventDefault();
+            search();
+          }
+        }}
+      >
         <div className="flex items-center gap-2">
           <Search className="size-5 text-primary" aria-hidden />
           <h2 className="font-bold">فیلتر بلیط‌های صادرشده</h2>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <FormField label="نوع خدمت" id="report-service">
+            <select
+              id="report-service"
+              className="h-11 w-full rounded-lg border bg-background px-3"
+              value={query.serviceKind}
+              onChange={(e) =>
+                filter({ serviceKind: e.target.value, hotelId: 'all' })
+              }
+            >
+              {Object.entries(serviceLabels).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </FormField>
+          <FormField label="هتل" id="report-hotel">
+            <select
+              id="report-hotel"
+              className="h-11 w-full rounded-lg border bg-background px-3"
+              value={query.hotelId}
+              onChange={(e) =>
+                filter({
+                  hotelId: e.target.value,
+                  serviceKind:
+                    e.target.value === 'all' ? query.serviceKind : 'HOTEL',
+                })
+              }
+            >
+              <option value="all">همه هتل‌ها</option>
+              {reportOptions?.hotels.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
+          <FormField label="مبنای تاریخ" id="report-date-basis">
+            <select
+              id="report-date-basis"
+              className="h-11 w-full rounded-lg border bg-background px-3"
+              value={query.dateBasis}
+              onChange={(e) => filter({ dateBasis: e.target.value })}
+            >
+              <option value="ISSUED">صدور / ثبت درخواست</option>
+              <option value="TRAVEL">حرکت / ورود هتل</option>
+            </select>
+          </FormField>
           <FormField label="جست‌وجوی کلی" id="issued-ticket-search">
             <Input
               id="issued-ticket-search"
@@ -298,24 +383,46 @@ export function IssuedTicketsWorkspace({
               </SelectContent>
             </Select>
           </FormField>
-          <FormField label="صدور از تاریخ" id="issued-from">
+          <FormField
+            label={
+              query.dateBasis === 'TRAVEL' ? 'سفر از تاریخ' : 'صدور از تاریخ'
+            }
+            id="issued-from"
+          >
             <TicketDatePicker
               id="issued-from"
               value={query.issuedFrom}
               onChange={(issuedFrom) => filter({ issuedFrom })}
             />
           </FormField>
-          <FormField label="صدور تا تاریخ" id="issued-to">
+          <FormField
+            label={
+              query.dateBasis === 'TRAVEL' ? 'سفر تا تاریخ' : 'صدور تا تاریخ'
+            }
+            id="issued-to"
+          >
             <TicketDatePicker
               id="issued-to"
               value={query.issuedTo}
               onChange={(issuedTo) => filter({ issuedTo })}
             />
           </FormField>
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
+            <Button disabled={loading} onClick={search}>
+              جست‌وجو
+            </Button>
             <Button
               variant="outline"
-              onClick={() => setQuery(initialIssuedTicketQuery)}
+              onClick={() => {
+                const next = {
+                  ...initialIssuedTicketQuery,
+                  issuedFrom: query.issuedFrom,
+                  issuedTo: query.issuedTo,
+                };
+                setQuery(next);
+                setApplied(next);
+                onDatesChange?.(next);
+              }}
             >
               پاک‌کردن همه فیلترها
             </Button>
@@ -368,19 +475,45 @@ export function IssuedTicketsWorkspace({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <strong>
-                    {ticket.origin} ← {ticket.destination}
+                    {ticket.origin && ticket.destination
+                      ? `${ticket.origin} ← ${ticket.destination}`
+                      : ticket.hotelName || ticket.serviceTitle}
                   </strong>
                   <p className="mt-1 text-sm text-muted-foreground">
                     قرارداد {ticket.contractNumber} •{' '}
                     {ticket.passengerDisplayName}
                   </p>
                 </div>
-                <Badge>{statusLabels[ticket.status]}</Badge>
+                <Badge>
+                  {ticket.reportStatus === 'ALLOCATED'
+                    ? 'تخصیص‌یافته'
+                    : statusLabels[ticket.status]}
+                </Badge>
               </div>
-              <p className="text-sm">
-                بلیط: {ticket.ticketNumber || 'ثبت نشده'} • PNR:{' '}
-                {ticket.pnr || 'ثبت نشده'} • {ticket.airline}
+              <p className="text-sm font-semibold">
+                {serviceLabels[ticket.serviceKind ?? 'FLIGHT']}{' '}
+                {ticket.direction === 'OUTBOUND'
+                  ? 'رفت'
+                  : ticket.direction === 'RETURN'
+                    ? 'برگشت'
+                    : ''}{' '}
+                · {ticket.hotelName || ticket.serviceTitle}
               </p>
+              {ticket.departureAt ? (
+                <p className="text-sm" dir="ltr">
+                  {new Intl.DateTimeFormat('en-GB', {
+                    timeZone: 'Asia/Tehran',
+                    dateStyle: 'medium',
+                  }).format(new Date(ticket.departureAt))}
+                  {ticket.checkOutDate ? ' → ' + ticket.checkOutDate : ''}
+                </p>
+              ) : null}
+              {!ticket.serviceKind || ticket.serviceKind === 'FLIGHT' ? (
+                <p className="text-sm">
+                  بلیط: {ticket.ticketNumber || 'ثبت نشده'} • PNR:{' '}
+                  {ticket.pnr || 'ثبت نشده'} • {ticket.airline}
+                </p>
+              ) : null}
             </Card>
           ))}
         </div>
@@ -390,7 +523,7 @@ export function IssuedTicketsWorkspace({
           <Button
             variant="outline"
             disabled={result.page <= 1}
-            onClick={() => setQuery({ ...query, page: result.page - 1 })}
+            onClick={() => setApplied({ ...applied, page: result.page - 1 })}
           >
             قبلی
           </Button>
@@ -401,7 +534,7 @@ export function IssuedTicketsWorkspace({
           <Button
             variant="outline"
             disabled={result.page >= result.pages}
-            onClick={() => setQuery({ ...query, page: result.page + 1 })}
+            onClick={() => setApplied({ ...applied, page: result.page + 1 })}
           >
             بعدی
           </Button>
@@ -413,6 +546,11 @@ export function IssuedTicketsWorkspace({
 
 export function ConnectedIssuedTicketsWorkspace() {
   const [tickets, setTickets] = useState<IssuedTicketReadModel[]>([]);
+  const [reportOptions, setReportOptions] = useState<{
+    origins: { id: string; name: string }[];
+    destinations: { id: string; name: string }[];
+    hotels: { id: string; name: string }[];
+  }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [range, setRange] = useState<IssuedTicketQuery>(() => ({
@@ -422,21 +560,17 @@ export function ConnectedIssuedTicketsWorkspace() {
       .slice(0, 10),
     issuedTo: new Date(Date.now() + 12600000).toISOString().slice(0, 10),
   }));
-  const onDatesChange = useCallback(
-    (q: IssuedTicketQuery) => {
-      if (range.issuedFrom === q.issuedFrom && range.issuedTo === q.issuedTo)
-        return;
-      setLoading(true);
-      setRange(q);
-    },
-    [range],
-  );
+  const onDatesChange = useCallback((q: IssuedTicketQuery) => {
+    setLoading(true);
+    setRange(q);
+  }, []);
   useEffect(() => {
     const controller = new AbortController();
     void loadReservationIssuedTickets(controller.signal, range)
       .then((data) => {
         if (controller.signal.aborted) return;
-        setTickets(data);
+        setTickets(data.data);
+        setReportOptions(data.options);
         setError('');
       })
       .catch((reason: unknown) => {
@@ -455,6 +589,7 @@ export function ConnectedIssuedTicketsWorkspace() {
   }, [range]);
   return (
     <IssuedTicketsWorkspace
+      {...(reportOptions ? { reportOptions } : {})}
       tickets={tickets}
       loading={loading}
       error={error}

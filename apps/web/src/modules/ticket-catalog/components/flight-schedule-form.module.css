@@ -34,7 +34,8 @@
 .route h3 {
   font-weight: 700;
 }
-.route > div {
+.route > div:not(.extraDestinations),
+.extraDestination > div {
   display: grid;
   grid-template-columns: 4rem minmax(0, 1fr);
   align-items: center;
@@ -213,4 +214,12 @@
   .options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+.extraDestinations,
+.extraDestination {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  gap: 0.5rem;
 }

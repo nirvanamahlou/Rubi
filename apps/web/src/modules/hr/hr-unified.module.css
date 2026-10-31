@@ -114,7 +114,7 @@
   border-radius: 14px;
   background: var(--muted);
 }
-.tabs button {
+.tabs :is(button, a) {
   border: 0;
   border-radius: 10px;
   padding: 10px 16px;
@@ -129,11 +129,11 @@
     color 0.15s,
     box-shadow 0.15s;
 }
-.tabs button:hover {
+.tabs :is(button, a):hover {
   color: var(--foreground);
   background: color-mix(in srgb, var(--surface) 65%, transparent);
 }
-.tabs button.activeTab {
+.tabs :is(button, a).activeTab {
   background: var(--surface);
   color: var(--primary);
   box-shadow: 0 1px 4px rgb(15 35 65 / 8%);
@@ -912,7 +912,7 @@ a.card:hover {
   background: var(--primary);
   border-radius: 99px;
 }
-.tabs button:focus-visible,
+.tabs :is(button, a):focus-visible,
 .navigation a:focus-visible,
 .sectionPicker select:focus-visible,
 .filters input:focus-visible,
@@ -997,7 +997,7 @@ a.card:hover {
     overflow-x: auto;
     scrollbar-width: thin;
   }
-  .tabs button {
+  .tabs :is(button, a) {
     flex-shrink: 0;
     padding: 10px 12px;
   }
@@ -1055,7 +1055,7 @@ a.card:hover {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tabs button,
+  .tabs :is(button, a),
   .metricCard,
   .card {
     transition: none;
@@ -1195,4 +1195,39 @@ a.card:hover {
   gap: 0.5rem;
   font-size: 0.75rem;
   color: var(--color-muted-foreground, #526784);
+}
+
+.reportChoices {
+  min-width: 200px;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--surface);
+}
+.reportChoices legend {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.reportChoices label,
+.filters .reportChoices label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 28px;
+}
+.reportChoices input[type='checkbox'],
+.filters input[type='checkbox'] {
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  min-height: 16px;
+  padding: 0;
+  accent-color: var(--primary);
+}
+.reportChoices summary {
+  cursor: pointer;
 }

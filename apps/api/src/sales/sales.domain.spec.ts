@@ -11,6 +11,7 @@ import {
 import {
   calculateSalesBalances,
   passengerAgeCategory,
+  contractPassengerAgeCategory,
   salesFingerprint,
   sumSalesDecimals,
   validateSalesContract,
@@ -76,6 +77,87 @@ const draft: SalesContractCreateRequest = {
     },
   ],
 };
+
+it('uses canonical passenger totals despite obsolete split-flight pricing metadata', () => {
+  const input = structuredClone(draft);
+  input.passengers[0]!.agreedPrices = [
+    { amount: '200.50', currencyCode: 'USD' },
+  ];
+  input.services[0]!.metadata = {
+    passengerPackagePricingVersion: 1,
+    passengerTotalPricesV1: JSON.stringify({
+      [input.passengers[0]!.customerId]: input.passengers[0]!.agreedPrices,
+    }),
+    automaticFlightRoomTotalV1: true,
+    passengerFlightPricesV1: '{}',
+    passengerHotelPricesV1: 'obsolete',
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.passengers[0]!.agreedPrices = [{ amount: '1', currencyCode: 'USD' }];
+  expect(() => validateSalesContract(input)).toThrow();
+});
+it('keeps composite hotel stays ordered with explicit independent dates and no duplicated price components', () => {
+  const input = structuredClone(draft);
+  input.services = [
+    { clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'Composite' },
+  ];
+  input.passengers[0]!.serviceClientKeys = ['hotel'];
+  input.ticketSelections = [];
+  input.hotelSelection = {
+    serviceClientKey: 'hotel',
+    hotelId: '10000000-0000-4000-8000-000000000010',
+    hotelNameSnapshot: 'First',
+    cityId: input.destinationId,
+    checkInDate: '2026-10-01',
+    checkOutDate: '2026-10-03',
+    roomCount: 1,
+    roomTypeId: '10000000-0000-4000-8000-000000000011',
+    occupancy: 1,
+    inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+    additionalStays: [
+      {
+        hotelId: '10000000-0000-4000-8000-000000000012',
+        hotelNameSnapshot: 'Second',
+        cityId: '10000000-0000-4000-8000-000000000013',
+        checkInDate: '2026-10-03',
+        checkOutDate: '2026-10-08',
+      },
+    ],
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  expect(input.priceComponents).toEqual(draft.priceComponents);
+  const stay = input.hotelSelection.additionalStays![0]!;
+  stay.rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: input.hotelSelection.roomTypeId,
+      roomTypeNameSnapshot: 'Single',
+      adults: 1,
+      childAges: [],
+      roomCategory: 'SINGLE',
+    },
+  ];
+  expect(() => validateSalesContract(input)).not.toThrow();
+  stay.rooms[0]!.roomCategory = 'FAMILY';
+  expect(() => validateSalesContract(input)).toThrow('اتاق');
+  stay.rooms[0]!.roomCategory = 'SINGLE';
+  stay.rooms[0]!.adults = 2;
+  expect(() => validateSalesContract(input)).toThrow('اتاق');
+  stay.rooms[0]!.adults = 1;
+  const validRooms = stay.rooms;
+  stay.rooms = null as never;
+  expect(() => validateSalesContract(input)).toThrow('اتاق');
+  stay.rooms = validRooms;
+  stay.checkInDate = '';
+  expect(() => validateSalesContract(input)).toThrow();
+  stay.checkInDate = '2026-10-02';
+  expect(() => validateSalesContract(input)).toThrow('overlap');
+  stay.checkInDate = '2026-10-03';
+  stay.hotelId = input.hotelSelection.hotelId;
+  expect(() => validateSalesContract(input)).toThrow('itinerary');
+  input.hotelSelection.additionalStays = [null as never];
+  expect(() => validateSalesContract(input)).toThrow('itinerary');
+});
 
 it('validates per-person discounts and commissions against the same-currency gross service price', () => {
   const input = structuredClone(draft),
@@ -249,6 +331,14 @@ describe('Sales contract domain', () => {
         },
       }),
     ).not.toThrow();
+    for (const landline of ['1', '021', '1234567', '+123']) {
+      expect(() =>
+        validateSalesContract({
+          ...draft,
+          buyerContact: { ...buyerContact, landline },
+        }),
+      ).not.toThrow();
+    }
     for (const landline of ['', '   ', '02112345678']) {
       expect(() =>
         validateSalesContract({
@@ -262,7 +352,7 @@ describe('Sales contract domain', () => {
       { landline: 'bad' },
       { postalCode: '123' },
       { name: ' ' },
-      { address: ' ' },
+      { address: 'a'.repeat(1001) },
     ])
       expect(() =>
         validateSalesContract({
@@ -270,6 +360,19 @@ describe('Sales contract domain', () => {
           buyerContact: { ...buyerContact, ...change },
         }),
       ).toThrow('طرف حساب');
+    for (const blank of ['', '   '])
+      expect(() =>
+        validateSalesContract({
+          ...draft,
+          buyerContact: {
+            ...buyerContact,
+            phone: blank,
+            address: blank,
+            postalCode: blank,
+            landline: blank,
+          },
+        }),
+      ).not.toThrow();
     expect(() =>
       validateSalesContract({
         ...draft,
@@ -797,7 +900,7 @@ describe('hotel room party integrity', () => {
           rooms: [{ ...hotel.rooms![0]!, adults: 2 }],
         },
       }),
-    ).toThrow();
+    ).not.toThrow();
     expect(() =>
       validateSalesContract({
         ...input,
@@ -1127,3 +1230,255 @@ it('accepts city tour and guide using existing OTHER services with explicit pass
   expect(() => validateSalesContract(input)).not.toThrow();
   expect(input).toEqual(before);
 });
+
+describe('legacy customer-only contract', () => {
+  const legacy = (): SalesContractCreateRequest => ({
+    ...draft,
+    tripType: 'ONE_WAY',
+    returnNotBefore: null,
+    services: [
+      {
+        clientKey: 'legacy-contract',
+        kind: 'OTHER',
+        titleSnapshot: 'Legacy contract',
+        metadata: { legacyContractV1: true },
+      },
+    ],
+    passengers: [],
+    ticketSelections: [],
+    hotelSelection: null,
+    priceComponents: [
+      {
+        type: 'BASE',
+        title: 'Agreed total',
+        amount: '100',
+        currencyCode: 'IRR',
+      },
+    ],
+    payments: [],
+  });
+  it('accepts an explicitly marked customer-only contract without fake passengers or tickets', () => {
+    expect(() => validateSalesContract(legacy(), true)).not.toThrow();
+  });
+  it('keeps normal passenger validation and forbids mixing legacy marker with operational passengers or flights', () => {
+    expect(() => validateSalesContract({ ...draft, passengers: [] })).toThrow();
+    expect(() =>
+      validateSalesContract({ ...legacy(), passengers: draft.passengers }),
+    ).toThrow();
+    expect(() =>
+      validateSalesContract({
+        ...legacy(),
+        services: [...legacy().services, ...draft.services],
+      }),
+    ).toThrow();
+    expect(() =>
+      validateSalesContract({ ...legacy(), priceComponents: [] }),
+    ).toThrow();
+  });
+});
+
+describe('aggregate legacy service contracts', () => {
+  const aggregate = (): SalesContractCreateRequest => ({
+    ...structuredClone(draft),
+    passengers: [],
+    services: draft.services.map((s) => ({
+      ...s,
+      metadata: {
+        legacyServicePartiesV2: JSON.stringify({
+          flight: { adults: 2, children: 1, infants: 1 },
+        }),
+      },
+    })),
+  });
+  it('accepts contract-total historical mixed currencies and deductions without per-service prices', () => {
+    const input = aggregate();
+    input.services[0]!.metadata = {
+      ...input.services[0]!.metadata,
+      contractPackagePricingVersion: 1,
+    };
+    input.priceComponents = [
+      {
+        type: 'BASE',
+        title: 'Contract total',
+        amount: '100000000',
+        currencyCode: 'IRR',
+      },
+      {
+        type: 'BASE',
+        title: 'Contract total',
+        amount: '915.125',
+        currencyCode: 'EUR',
+      },
+      {
+        type: 'DISCOUNT',
+        title: 'Contract discount',
+        amount: '15.125',
+        currencyCode: 'EUR',
+      },
+      {
+        type: 'DISCOUNT',
+        title: 'Contract commission',
+        amount: '10000000',
+        currencyCode: 'IRR',
+      },
+    ];
+    expect(() => validateSalesContract(input)).not.toThrow();
+    expect(input.ticketSelections).toHaveLength(2);
+    expect(input.passengers).toEqual([]);
+  });
+  it('accepts real outward and return ticket selections without invented passengers', () => {
+    expect(() => validateSalesContract(aggregate())).not.toThrow();
+  });
+  it('rejects missing/invalid counts and mixed personal identities', () => {
+    const input = aggregate();
+    expect(() =>
+      validateSalesContract({ ...input, passengers: draft.passengers }),
+    ).toThrow();
+    expect(() =>
+      validateSalesContract({ ...input, services: draft.services }),
+    ).toThrow();
+    input.services[0]!.metadata = {
+      legacyServicePartiesV2: JSON.stringify({
+        flight: { adults: 0, children: 0, infants: 0 },
+      }),
+    };
+    expect(() => validateSalesContract(input)).toThrow();
+  });
+  it('retains normal ticket time and route validation', () => {
+    const input = aggregate();
+    input.ticketSelections![0]!.destinationId = input.originId;
+    expect(() => validateSalesContract(input)).toThrow();
+  });
+});
+
+it('validates aggregate legacy hotel occupancy and room age counts without personal guest assignments', () => {
+  const input: SalesContractCreateRequest = {
+    ...structuredClone(draft),
+    tripType: 'ONE_WAY',
+    returnNotBefore: null,
+    passengers: [],
+    ticketSelections: [],
+    services: [
+      {
+        clientKey: 'hotel',
+        kind: 'HOTEL',
+        titleSnapshot: 'Hotel',
+        metadata: {
+          legacyServicePartiesV2: JSON.stringify({
+            hotel: { adults: 2, children: 1, infants: 1 },
+          }),
+        },
+      },
+    ],
+    hotelSelection: {
+      serviceClientKey: 'hotel',
+      hotelId: 'hotel',
+      hotelNameSnapshot: 'Hotel',
+      cityId: draft.destinationId,
+      checkInDate: '2026-10-01',
+      checkOutDate: '2026-10-03',
+      roomCount: 1,
+      roomTypeId: '10000000-0000-4000-8000-000000000005',
+      occupancy: 4,
+      inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: '10000000-0000-4000-8000-000000000005',
+          roomTypeNameSnapshot: 'Standard',
+          adults: 2,
+          childAges: [5, 1],
+        },
+      ],
+    },
+  };
+  expect(() => validateSalesContract(input)).not.toThrow();
+  expect(() =>
+    validateSalesContract({
+      ...input,
+      hotelSelection: { ...input.hotelSelection!, occupancy: 3 },
+    }),
+  ).toThrow();
+  expect(() =>
+    validateSalesContract({
+      ...input,
+      hotelSelection: {
+        ...input.hotelSelection!,
+        rooms: [
+          {
+            ...input.hotelSelection!.rooms![0]!,
+            adults: 1,
+            childAges: [5, 5, 1],
+          },
+        ],
+      },
+    }),
+  ).toThrow();
+});
+
+it('validates anonymous per-age row prices against canonical totals without inventing passenger allocations', () => {
+  const c: SalesContractCreateRequest = {
+    ...draft,
+    tripType: 'ONE_WAY',
+    passengers: [],
+    ticketSelections: [],
+    services: [
+      {
+        clientKey: 'other',
+        kind: 'OTHER',
+        titleSnapshot: 'Synthetic',
+        metadata: {
+          contractPackagePricingVersion: 1,
+          legacyServicePartiesV2: JSON.stringify({
+            other: { adults: 1, children: 1, infants: 0 },
+          }),
+          legacyRowPricesV1: JSON.stringify({
+            gross: {
+              'legacy-ADT-1': [{ currencyCode: 'USD', amount: '80' }],
+              'legacy-CHD-1': [{ currencyCode: 'USD', amount: '20' }],
+            },
+            deductions: {},
+          }),
+        },
+      },
+    ],
+    priceComponents: [
+      { type: 'BASE', title: 'Total', currencyCode: 'USD', amount: '100' },
+    ],
+  };
+  expect(() => validateSalesContract(c, false)).not.toThrow();
+  expect(() =>
+    validateSalesContract(
+      { ...c, priceComponents: [{ ...c.priceComponents[0]!, amount: '99' }] },
+      false,
+    ),
+  ).toThrow('مجموع قیمت نفرات');
+  expect(() =>
+    validateSalesContract({ ...c, passengers: draft.passengers }, false),
+  ).toThrow();
+});
+
+it.each(['ADT', 'CHD', 'INF'] as const)(
+  'accepts unknown DOB with booked category %s and rejects missing/invalid facts',
+  (ageCategory) => {
+    const input = structuredClone(draft);
+    input.passengers = input.passengers.map((p) => ({
+      ...p,
+      birthDate: '',
+      ageCategory,
+    }));
+    expect(() => validateSalesContract(input)).not.toThrow();
+    expect(
+      contractPassengerAgeCategory(input.passengers[0]!, input.departureDate),
+    ).toBe(ageCategory);
+    expect(() =>
+      contractPassengerAgeCategory({ birthDate: '' }, input.departureDate),
+    ).toThrow();
+    expect(() =>
+      contractPassengerAgeCategory(
+        { birthDate: 'invalid', ageCategory },
+        input.departureDate,
+      ),
+    ).toThrow();
+  },
+);

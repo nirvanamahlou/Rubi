@@ -7,6 +7,7 @@ import type {
   TourPackageInputV1,
   TourDepartureInputV1,
   TicketOfferV1,
+  TicketSaleRouteV1,
   TicketSaleCommissionUpdateV1,
   TicketOfferCreateV1,
   TicketRoundTripSalePriceUpdateV1,
@@ -147,6 +148,10 @@ export const toursApi = {
         headers: { 'idempotency-key': key },
         body: JSON.stringify(input),
       },
+    ),
+  charterRoutes: () =>
+    request<{ version: 1; data: TicketSaleRouteV1[] }>(
+      '/offers/charter-routes',
     ),
   managedOffers: async (includePast = false) => {
     const offers = new Map<string, TicketOfferV1>();

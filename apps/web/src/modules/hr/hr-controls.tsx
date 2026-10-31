@@ -159,6 +159,7 @@ export function HrTable({
   onEdit,
   onDelete,
   onAssess,
+  rowActions,
   empty = 'رکوردی مطابق این فیلترها وجود ندارد.',
   showPagination = true,
   busy = false,
@@ -171,6 +172,7 @@ export function HrTable({
   onEdit?: (index: number) => void;
   onDelete?: (index: number) => void;
   onAssess?: (index: number) => void;
+  rowActions?: (index: number) => ReactNode;
   empty?: string;
   showPagination?: boolean;
   busy?: boolean;
@@ -183,7 +185,7 @@ export function HrTable({
   const select = onSelectionChange ?? localSelection.onSelectionChange;
   const exportSelection = selectedHrDataset(data, selected);
   const hasActions =
-    (onOpen && showOpenButton) || onEdit || onDelete || onAssess;
+    (onOpen && showOpenButton) || onEdit || onDelete || onAssess || rowActions;
   const [page, setPage] = useState(0);
   const currentPage = Math.min(
     page,
@@ -285,6 +287,7 @@ export function HrTable({
                   {hasActions ? (
                     <td className={ui.operationCell}>
                       <div className={ui.rowActions}>
+                        {rowActions?.(index)}
                         {onAssess ? (
                           <Button
                             type="button"

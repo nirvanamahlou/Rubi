@@ -1,8 +1,11 @@
+import { contractRoomDefaults } from './contract-room-defaults';
+import { salesRoomCategoryLabel } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
 import type { voucherNumberKeys, voucherFlagKeys } from '@nora/contracts';
 import { voucherTextKeys, type VoucherSettingsV1 } from '@nora/contracts';
 import {
   reservationFormData,
+  isAggregateReservationForm,
   englishOutputName,
   reservationFormDate,
   reservationPassengerAgeLabel,
@@ -21,6 +24,7 @@ export function defaultVoucherSettings(
     voucherTextKeys.map((k) => [k, '']),
   ) as VoucherSettingsV1['text'];
   Object.assign(text, {
+    contractPartyName: intake.contractPartyName ?? '',
     city: d.destination === '-' ? '' : d.destination,
     hotel: d.hotel === '-' ? '' : d.hotel,
     stars: d.stars === '-' ? '' : d.stars,
@@ -46,11 +50,14 @@ export function defaultVoucherSettings(
       text[`${prefix}Time`] = f.time;
     }
   const defaults: VoucherSettingsV1 = {
+    hotelTransferCounts: { outbound: 0, returning: 0 },
     ...(h?.rooms?.length
       ? {
           rooms: h.rooms.map((room) => ({
             ordinal: room.ordinal,
-            roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+            roomTypeNameSnapshot:
+              d.roomBreakdown.find((r) => r.ordinal === room.ordinal)
+                ?.roomType || room.roomTypeNameSnapshot,
             adults: room.adults,
             childAges: [...room.childAges],
           })),
@@ -80,13 +87,30 @@ export function defaultVoucherSettings(
       id: p.id,
       selected: true,
       roomType: text.roomType,
+      services: {
+        outboundFlight: p.outboundFlight,
+        returnFlight: p.returnFlight,
+        outboundTransfer: p.outboundTransfer,
+        returnTransfer: p.returnTransfer,
+        hotel: Boolean(p.checkIn && p.checkIn !== '-'),
+      },
+      sex: p.sex === 'Female' ? 'FEMALE' : 'MALE',
       age: p.age.startsWith('CHD') ? 'CHD' : p.age === 'INF' ? 'INF' : 'ADL',
       hotelChildAgeBand: (p.hotelChildAgeBand ?? '') as
         'CHD_2_TO_6' | 'CHD_6_TO_12' | '',
     })),
   };
-  if (!saved) return defaults;
-  return {
+  if (!saved) return contractRoomDefaults(defaults);
+  return contractRoomDefaults({
+    ...(saved.hotelRoomPrices
+      ? { hotelRoomPrices: structuredClone(saved.hotelRoomPrices) }
+      : {}),
+    hotelTransferCounts: {
+      ...(saved.hotelTransferCounts ?? defaults.hotelTransferCounts!),
+    },
+    ...(saved.supplierFormPrices !== undefined
+      ? { supplierFormPrices: structuredClone(saved.supplierFormPrices) }
+      : {}),
     ...(saved.rooms !== undefined
       ? {
           rooms: saved.rooms.map((room) => ({
@@ -104,10 +128,23 @@ export function defaultVoucherSettings(
       : {}),
     ...(saved.brokerId ? { brokerId: saved.brokerId } : {}),
     ...(saved.leaderId ? { leaderId: saved.leaderId } : {}),
+    ...(saved.transferBrokerId
+      ? { transferBrokerId: saved.transferBrokerId }
+      : {}),
+    ...(saved.transferBrokerName !== undefined
+      ? { transferBrokerName: saved.transferBrokerName }
+      : {}),
+    ...(saved.transferDetailsOverride !== undefined
+      ? { transferDetailsOverride: saved.transferDetailsOverride }
+      : {}),
     text: {
       ...(Object.fromEntries(
         voucherTextKeys.map((key) => [key, saved.text?.[key] ?? text[key]]),
       ) as VoucherSettingsV1['text']),
+      hotel:
+        saved.text.hotel === h?.hotelNameSnapshot
+          ? text.hotel
+          : englishOutputName(saved.text.hotel || text.hotel, refs),
       contractPartyName:
         saved.text.contractPartyName ?? text.contractPartyName ?? '',
       leaderLanguage: saved.text.leaderLanguage || 'Persian',
@@ -127,13 +164,17 @@ export function defaultVoucherSettings(
     passengers: defaults.passengers.map((passenger) => ({
       ...passenger,
       ...saved.passengers?.find((item) => item.id === passenger.id),
+      sex:
+        saved.passengers?.find((item) => item.id === passenger.id)?.sex ||
+        passenger.sex ||
+        '',
       hotelChildAgeBand:
-        passenger.hotelChildAgeBand ||
         saved.passengers?.find((item) => item.id === passenger.id)
           ?.hotelChildAgeBand ||
+        passenger.hotelChildAgeBand ||
         '',
     })),
-  };
+  });
 }
 export type VoucherTextFieldKey =
   (typeof voucherTextKeys)[number] | 'contractPartyName';
@@ -204,18 +245,18 @@ export function voucherFormData(
         ...p,
         age: reservationPassengerAgeLabel(
           setting.age,
-          p.hotelChildAgeBand || setting.hotelChildAgeBand,
+          setting.hotelChildAgeBand || p.hotelChildAgeBand,
         ),
         hotelChildAgeBand:
           setting.age === 'CHD'
-            ? p.hotelChildAgeBand || setting.hotelChildAgeBand
+            ? setting.hotelChildAgeBand || p.hotelChildAgeBand
             : '',
         sex:
           setting.sex === 'MALE'
             ? 'Male'
             : setting.sex === 'FEMALE'
               ? 'Female'
-              : '-',
+              : p.sex,
       };
     });
   const roomSummary = v.rooms ? salesHotelRoomSummary(v.rooms) : undefined;
@@ -227,18 +268,29 @@ export function voucherFormData(
       ? {
           roomBreakdown: v.rooms.map((room) => ({
             ordinal: room.ordinal,
-            roomType: room.roomTypeNameSnapshot,
+            roomType: (() => {
+              const value = englishOutputName(room.roomTypeNameSnapshot, refs);
+              const original = intake.snapshot.hotelSelection?.rooms?.find(
+                (r) => r.ordinal === room.ordinal,
+              );
+              const label = original?.roomCategory
+                ? salesRoomCategoryLabel(original.roomCategory, original.adults)
+                : '';
+              return label && !value.endsWith(' · ' + label)
+                ? value + ' · ' + label
+                : value;
+            })(),
             adults: room.adults,
             childAges: [...room.childAges],
           })),
         }
       : {}),
     supplier: '0',
-    hotel: v.text.hotel || '-',
-    destination: v.text.city || '-',
+    hotel: englishOutputName(v.text.hotel || '-', refs),
+    destination: englishOutputName(v.text.city || '-', refs),
     stars: v.text.stars || '-',
-    meal: v.text.meal || '-',
-    roomType: v.text.roomType || '-',
+    meal: englishOutputName(v.text.meal || '-', refs),
+    roomType: englishOutputName(v.text.roomType || '-', refs),
     checkIn: voucherDate(v.text.checkIn),
     checkOut: voucherDate(v.text.checkOut),
     rooms:
@@ -277,19 +329,28 @@ export function voucherFormData(
       .filter(Boolean)
       .join(' / '),
     passengers,
-    adults: passengers.filter((p) => p.age === 'ADL').length,
-    children: passengers.filter((p) => p.age.startsWith('CHD')).length,
+    contractPartyName: v.text.contractPartyName || d.contractPartyName,
+    adults: isAggregateReservationForm(intake)
+      ? d.adults
+      : passengers.filter((p) => p.age === 'ADL').length,
+    children: isAggregateReservationForm(intake)
+      ? d.children
+      : passengers.filter((p) => p.age.startsWith('CHD')).length,
     children2To6: passengers.filter((p) => p.hotelChildAgeBand === 'CHD_2_TO_6')
       .length,
     children6To12: passengers.filter(
       (p) => p.hotelChildAgeBand === 'CHD_6_TO_12',
     ).length,
-    childrenUnclassified: passengers.filter(
-      (p) =>
-        p.age.startsWith('CHD') &&
-        !['CHD_2_TO_6', 'CHD_6_TO_12'].includes(p.hotelChildAgeBand ?? ''),
-    ).length,
-    infants: passengers.filter((p) => p.age === 'INF').length,
+    childrenUnclassified: isAggregateReservationForm(intake)
+      ? d.children
+      : passengers.filter(
+          (p) =>
+            p.age.startsWith('CHD') &&
+            !['CHD_2_TO_6', 'CHD_6_TO_12'].includes(p.hotelChildAgeBand ?? ''),
+        ).length,
+    infants: isAggregateReservationForm(intake)
+      ? d.infants
+      : passengers.filter((p) => p.age === 'INF').length,
     flights: (['arrival', 'departure'] as const).map((prefix) => ({
       leg: prefix === 'arrival' ? 'OUTBOUND' : 'RETURN',
       airline: englishOutputName(v.text[`${prefix}Airline`] || '-', refs),
@@ -317,10 +378,50 @@ export function supplierFormData(
         notes: [settings.text.stayNotes, settings.text.remarks]
           .filter(Boolean)
           .join('\n'),
+        passengers: voucherFormData(
+          {
+            ...intake,
+            workflow: { ...intake.workflow, voucherSettings: settings },
+          },
+          refs,
+        ).passengers.map((person) => {
+          const saved = settings.passengers.find((p) => p.id === person.id);
+          return {
+            ...person,
+            hotelChildAgeBand: person.hotelChildAgeBand,
+            ...(saved?.services
+              ? {
+                  outboundFlight: saved.services.outboundFlight,
+                  returnFlight: saved.services.returnFlight,
+                  outboundTransfer: saved.services.outboundTransfer,
+                  returnTransfer: saved.services.returnTransfer,
+                  checkIn: saved.services.hotel
+                    ? person.checkIn && person.checkIn !== '-'
+                      ? person.checkIn
+                      : voucherDate(settings.text.checkIn)
+                    : '-',
+                  checkOut: saved.services.hotel
+                    ? person.checkOut && person.checkOut !== '-'
+                      ? person.checkOut
+                      : voucherDate(settings.text.checkOut)
+                    : '-',
+                }
+              : {}),
+          };
+        }),
         supplier: englishOutputName(settings.text.broker?.trim() || '-', refs),
         leader: settings.text.leaderLanguage?.trim() || 'Persian',
       }
-    : { ...reservationFormData(intake, refs), leader: 'Persian' };
+    : {
+        ...reservationFormData(intake, refs),
+        passengers: reservationFormData(intake, refs).passengers.map(
+          (person) => ({
+            ...person,
+            hotelChildAgeBand: person.hotelChildAgeBand,
+          }),
+        ),
+        leader: 'Persian',
+      };
 }
 
 /** Stored ISO dates must use the same Gregorian display in previews and PDFs. */
@@ -328,4 +429,16 @@ function voucherDate(value?: string) {
   return value && /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(value)
     ? reservationFormDate(value)
     : value || '-';
+}
+
+/** Supplier quotation defaults must never inherit the voucher's different broker. */
+export function defaultSupplierFormSettings(
+  intake: ReservationFormIntake,
+  refs: ReservationFormReferences = {},
+) {
+  const source = { ...intake, workflow: { ...intake.workflow } };
+  delete source.workflow.voucherSettings;
+  if (source.workflow.supplierFormSettings)
+    source.workflow.voucherSettings = source.workflow.supplierFormSettings;
+  return defaultVoucherSettings(source, refs);
 }

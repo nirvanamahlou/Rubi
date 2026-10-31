@@ -335,7 +335,7 @@ describe('manual table workflow flags', () => {
   });
 });
 
-it('rejects sending without a selected broker and issuing without its leader', () => {
+it('requires the sent hotel supplier but allows voucher issuance without an optional leader', () => {
   const state = initialTravelWorkflow();
   expect(() =>
     transition(state, command(state, 'REQUEST_SUPPLIER'), []),
@@ -345,7 +345,7 @@ it('rejects sending without a selected broker and issuing without its leader', (
     supplierStatus: 'REQUESTED' as const,
     voucherSettings: { brokerId: 'b' } as never,
   };
-  expect(() =>
+  expect(
     transition(
       requested,
       command(requested, 'CONFIRM_SUPPLIER', {
@@ -354,7 +354,7 @@ it('rejects sending without a selected broker and issuing without its leader', (
       }),
       [],
     ),
-  ).toThrow('تورلیدر');
+  ).toMatchObject({ voucherIssued: true, supplierStatus: 'CONFIRMED' });
   const mismatch = {
     ...requested,
     sentSupplierFormSettings: { brokerId: 'a' } as never,

@@ -10,10 +10,12 @@ import {
   patchContractFlight,
   salesFlightSelection,
   salesFlightsValid,
+  salesSelectedFlightsReady,
   salesPayload,
   salesTravelDate,
   withSalesHotelDates,
   type SalesFormState,
+  type ContractFlightDraft,
 } from './sales-form';
 import { ContractFlightEditor } from '../components/contract-flight-editor';
 import { FlightTicketDocument } from '../components/flight-ticket-preview';
@@ -107,7 +109,7 @@ describe('Contract-only flight form and consumers', () => {
     expect(
       withSalesHotelDates(next, { ...next, hotelArrivesNextDay: true }).hotel
         .checkIn,
-    ).toBe('2026-10-02');
+    ).toBe('2026-10-01');
     expect(
       patchContractFlight(state, 'OUTBOUND', undefined).contractFlights,
     ).toEqual({});
@@ -211,4 +213,119 @@ it('keeps an entered manual fare while editing its flight details', () => {
       serviceNumber: 'EDITED',
     }).servicePricing,
   ).toBe(pricing);
+});
+
+it('restored floating selections are ready without transient catalog search state', () => {
+  expect(salesSelectedFlightsReady(state)).toBe(true);
+  expect(salesSelectedFlightsReady({ ...state, contractFlights: {} })).toBe(
+    false,
+  );
+  expect(
+    salesSelectedFlightsReady({
+      ...state,
+      contractFlights: { OUTBOUND: { ...draft, serviceNumber: '' } },
+    }),
+  ).toBe(false);
+  expect(salesSelectedFlightsReady({ ...state, tripType: 'ROUND_TRIP' })).toBe(
+    false,
+  );
+  expect(
+    salesSelectedFlightsReady({
+      ...state,
+      tripType: 'ROUND_TRIP',
+      contractFlights: {
+        OUTBOUND: draft,
+        RETURN: {
+          ...draft,
+          departureAt: '2026-10-02T10:30:00',
+          arrivalAt: '2026-10-02T13:30:00',
+        },
+      },
+    }),
+  ).toBe(true);
+});
+
+it('does not require an unused return when every confirmed passenger excludes that leg', () => {
+  expect(
+    salesSelectedFlightsReady({
+      ...state,
+      tripType: 'ROUND_TRIP',
+      passengers: [
+        {
+          customerId: 'synthetic',
+          displayName: 'Synthetic Person',
+          birthDate: '1990-01-01',
+        },
+      ],
+      passengerFlightDirections: { synthetic: ['OUTBOUND'] },
+    }),
+  ).toBe(true);
+});
+
+it('confirms overnight floating tickets through the button and builds a contract without inventory selection', () => {
+  const confirm = (date: string, value: typeof draft) => {
+    let result: ContractFlightDraft = value;
+    const editor = ContractFlightEditor({
+      value,
+      flightDate: date,
+      onChange: (next) => {
+        if (next) result = next;
+      },
+    });
+    const button = editor.props.children[3];
+    expect(button.props.type).toBe('button');
+    button.props.onClick();
+    return result;
+  };
+  const outbound = confirm('2027-09-01', {
+    ...draft,
+    departureAt: '2027-08-01T01:08',
+    arrivalAt: '2027-08-01T00:02',
+  });
+  const returning = confirm('2027-09-14', {
+    ...draft,
+    departureAt: '2027-08-01T00:30',
+    arrivalAt: '2027-08-01T08:09',
+  });
+  expect(outbound.arrivalAt).toBe('2027-09-02T00:02');
+  const confirmed = {
+    ...state,
+    tripType: 'ROUND_TRIP' as const,
+    contractFlights: { OUTBOUND: outbound, RETURN: returning },
+  };
+  expect(salesSelectedFlightsReady(confirmed)).toBe(true);
+  expect(salesFlightsValid(confirmed)).toBe(true);
+  const payload = salesPayload(confirmed);
+  expect(payload.ticketSelections).toEqual([]);
+  expect(salesContractOnlyFlights(payload.services)).toHaveLength(2);
+  expect(JSON.stringify(payload)).not.toContain('confirmation');
+});
+
+it('rejects a floating return after a company-inventory outbound', () => {
+  const outboundOffer = {
+    id: 'company',
+    originId,
+    destinationId,
+    departureAt: '2026-10-01T06:00:00Z',
+    arrivalAt: '2026-10-01T08:00:00Z',
+    carrierName: 'Air',
+    serviceNumber: '123',
+    cabinClassCode: 'ECONOMY',
+    availableCapacity: 10,
+    remainingCapacity: 10,
+  } as unknown as NonNullable<SalesFormState['outboundOffer']>;
+  const mixed: SalesFormState = {
+    ...state,
+    tripType: 'ROUND_TRIP',
+    outboundOffer,
+    contractFlights: {
+      RETURN: {
+        ...draft,
+        departureAt: '2026-10-02T10:30:00',
+        arrivalAt: '2026-10-02T13:30:00',
+      },
+    },
+  };
+  expect(salesFlightsValid(mixed)).toBe(false);
+  expect(salesSelectedFlightsReady(mixed)).toBe(false);
 });

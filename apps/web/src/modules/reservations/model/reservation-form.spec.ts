@@ -1,6 +1,13 @@
+import {
+  defaultVoucherSettings,
+  supplierFormData,
+  voucherFormData,
+} from './voucher-settings';
+import { reservationPdfHtml } from '../server/reservation-pdf-html';
 import { describe, expect, it } from 'vitest';
 import {
   reservationFormData,
+  isAggregateReservationForm,
   reservationRoomAppendices,
   reservationPassengerPages,
   type ReservationFormIntake,
@@ -41,6 +48,54 @@ const input = {
     branding: { name: 'Sample Agency' },
   },
 } as unknown as ReservationFormIntake;
+it('prepares and renders historical supplier forms with a buyer and aggregate guests, without fake passengers', () => {
+  const intake = structuredClone(input);
+  intake.contractPartyName = 'SYNTHETIC & BUYER';
+  intake.snapshot.passengerIds = [];
+  intake.snapshot.passengerAssignments = [];
+  intake.snapshot.serviceSelections = [
+    {
+      clientKey: 'hotel',
+      kind: 'HOTEL',
+      metadata: {
+        legacyServicePartiesV2: JSON.stringify({
+          hotel: { adults: 2, children: 1, infants: 0 },
+        }),
+      },
+    },
+  ] as never;
+  intake.snapshot.hotelSelection!.serviceClientKey = 'hotel';
+  expect(isAggregateReservationForm(intake)).toBe(true);
+  const settings = defaultVoucherSettings(intake, {});
+  expect(settings.passengers).toEqual([]);
+  expect(settings.text.contractPartyName).toBe('SYNTHETIC & BUYER');
+  intake.workflow.supplierFormSettings = settings;
+  const data = supplierFormData(intake, {});
+  expect(data.adults).toBe(2);
+  expect(data.childrenUnclassified).toBe(1);
+  expect(data.passengers).toEqual([]);
+  const html = reservationPdfHtml(
+    intake,
+    {},
+    'data:image/png;base64,AAAA',
+    '',
+    false,
+    'https://example.invalid',
+  );
+  expect(html).toContain('SYNTHETIC &amp; BUYER');
+  expect(html).toContain('CONTRACT PARTY');
+  intake.snapshot.serviceSelections = [
+    {
+      clientKey: 'legacy',
+      kind: 'OTHER',
+      metadata: { legacyContractV1: true },
+    },
+  ] as never;
+  expect(isAggregateReservationForm(intake)).toBe(true);
+  intake.snapshot.serviceSelections = [];
+  expect(isAggregateReservationForm(intake)).toBe(false);
+  expect(isAggregateReservationForm(input)).toBe(false);
+});
 describe('reservation reference form', () => {
   it('prefers the registered English hotel name and preserves snapshot fallback', () => {
     expect(reservationFormData(input).hotel).toBe('Sample Hotel');
@@ -192,4 +247,159 @@ it('preserves individual hotel dates and no stay for a flight-only passenger', (
     '02 OCT 2026',
   );
   expect(result.passengers.find((p) => p.id === 'b')?.checkIn).toBe('-');
+});
+
+it('carries registered genders to both supplier and voucher PDF output with legacy blank fallback', () => {
+  const value = structuredClone(input);
+  value.outputPassengers = [
+    {
+      customerId: 'a',
+      passportName: 'EXAMPLE / A',
+      hotelChildAgeBand: null,
+      gender: 'M',
+    },
+    {
+      customerId: 'b',
+      passportName: 'EXAMPLE / B',
+      hotelChildAgeBand: null,
+      gender: 'F',
+    },
+  ];
+  const settings = defaultVoucherSettings(value, {});
+  settings.flags.withLetterhead = false;
+  // Historical settings contain a blank sex; the authoritative identity supplies it.
+  settings.passengers.forEach((p) => {
+    p.sex = '';
+  });
+  value.workflow.supplierFormSettings = structuredClone(settings);
+  value.workflow.voucherSettings = structuredClone(settings);
+  for (const model of [supplierFormData(value), voucherFormData(value, {})]) {
+    expect(model.passengers.find((p) => p.id === 'a')?.sex).toBe('Male');
+    expect(model.passengers.find((p) => p.id === 'b')?.sex).toBe('Female');
+  }
+  for (const voucher of [false, true]) {
+    const html = reservationPdfHtml(value, {}, '', '', voucher);
+    expect(html).toContain('>Male</td>');
+    expect(html).toContain('>Female</td>');
+  }
+  const missing = structuredClone(value);
+  delete missing.outputPassengers;
+  expect(supplierFormData(missing).passengers.every((p) => p.sex === '-')).toBe(
+    true,
+  );
+  expect(
+    voucherFormData(missing, {}).passengers.every((p) => p.sex === '-'),
+  ).toBe(true);
+  value.workflow.voucherSettings.passengers.find((p) => p.id === 'b')!.sex =
+    'MALE';
+  expect(
+    voucherFormData(value, {}).passengers.find((p) => p.id === 'b')?.sex,
+  ).toBe('Male');
+  expect(reservationPdfHtml(value, {}, '', '', true)).not.toContain(
+    '>Female</td>',
+  );
+});
+
+it('uses the registered English primary hotel name when no separate English alias exists', () => {
+  const before = JSON.stringify(input);
+  expect(
+    reservationFormData(input, {
+      h: { name: 'REGISTERED HOTEL', attributes: {} } as never,
+    }).hotel,
+  ).toBe('REGISTERED HOTEL');
+  expect(JSON.stringify(input)).toBe(before);
+});
+
+it('omits generic OTHER while retaining actual named and typed passenger services', () => {
+  const value = structuredClone(input);
+  value.snapshot.serviceSelections = [
+    { clientKey: 'generic', kind: 'OTHER', titleSnapshot: 'OTHER' },
+    { clientKey: 'named', kind: 'OTHER', titleSnapshot: 'CITY TOUR' },
+    { clientKey: 'visa', kind: 'VISA', titleSnapshot: 'Visa' },
+  ];
+  value.snapshot.passengerAssignments =
+    value.snapshot.passengerAssignments!.map((p) => ({
+      ...p,
+      serviceClientKeys: ['generic', 'named', 'visa'],
+    }));
+  expect(reservationFormData(value).passengers[0]?.otherServices).toBe(
+    'CITY TOUR / VISA',
+  );
+  value.snapshot.serviceSelections = [value.snapshot.serviceSelections[0]!];
+  expect(reservationFormData(value).passengers[0]?.otherServices).toBe('-');
+});
+
+it('prints a manually completed missing gender only in the saved supplier form', () => {
+  const value = structuredClone(input);
+  value.workflow.supplierFormSettings = defaultVoucherSettings(value, {});
+  value.workflow.supplierFormSettings.flags.withLetterhead = false;
+  value.workflow.supplierFormSettings.passengers.find(
+    (p) => p.id === 'a',
+  )!.sex = 'FEMALE';
+  expect(
+    supplierFormData(value).passengers.find((p) => p.id === 'a')?.sex,
+  ).toBe('Female');
+  expect(reservationPdfHtml(value, {}, '', '')).toContain('>Female</td>');
+  expect(
+    voucherFormData(value, {}).passengers.find((p) => p.id === 'a')?.sex,
+  ).toBe('-');
+  expect(value.outputPassengers).toBeUndefined();
+});
+
+it('uses historical hotel age counts without adding fabricated people to the supplier form', () => {
+  const intake = structuredClone(input);
+  intake.snapshot.passengerIds = [];
+  intake.snapshot.passengerAssignments = [];
+  intake.snapshot.hotelSelection = {
+    ...intake.snapshot.hotelSelection!,
+    serviceClientKey: 'hotel',
+  };
+  intake.snapshot.serviceSelections = [
+    {
+      clientKey: 'hotel',
+      kind: 'HOTEL',
+      titleSnapshot: 'Hotel',
+      metadata: {
+        legacyServicePartiesV2: JSON.stringify({
+          hotel: { adults: 2, children: 1, infants: 1 },
+        }),
+      },
+    },
+  ];
+  const form = reservationFormData(intake);
+  expect(form).toMatchObject({ adults: 2, children: 1, infants: 1 });
+  expect(form.passengers).toEqual([]);
+});
+
+it('prints saved flight details when only one of two passengers has transfer', () => {
+  const intake = structuredClone(input);
+  intake.snapshot.serviceSelections = [
+    {
+      clientKey: 'transfer-out',
+      titleSnapshot: 'Transfer',
+      kind: 'TRANSFER',
+      metadata: { direction: 'OUTBOUND', passengerCount: 1 },
+    },
+  ] as typeof intake.snapshot.serviceSelections;
+  intake.snapshot.passengerAssignments![0]!.serviceClientKeys = [
+    'transfer-out',
+  ];
+  intake.snapshot.passengerAssignments![1]!.serviceClientKeys = [];
+  const settings = defaultVoucherSettings(intake, {});
+  Object.assign(settings.text, {
+    arrivalAirline: 'TEST AIR',
+    arrivalFlight: 'TEST123',
+    arrivalDate: '2026-10-01',
+    arrivalTime: '14:30',
+  });
+  intake.workflow.supplierFormSettings = settings;
+  const html = reservationPdfHtml(intake, {}, 'data:image/png;base64,AA==', '');
+  expect(html).toContain('FLIGHT INFORMATION');
+  for (const value of ['TEST AIR', 'TEST123', '14:30'])
+    expect(html).toContain(value);
+  expect(html).toContain('01 OCT 2026');
+  intake.snapshot.serviceSelections = [];
+  expect(
+    reservationPdfHtml(intake, {}, 'data:image/png;base64,AA==', ''),
+  ).not.toContain('FLIGHT INFORMATION');
 });

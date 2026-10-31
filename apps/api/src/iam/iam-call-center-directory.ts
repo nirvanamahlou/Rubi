@@ -1,4 +1,11 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
+import type { AuthenticatedActor } from '@nora/contracts';
+import { HrUserUnitDirectory } from '../hr/hr-user-unit-directory';
 import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { authenticatedPermissionCodes } from './authenticated-permissions';
@@ -9,7 +16,173 @@ import { canViewRoute, hasScopedCallCenterAccess } from '@nora/contracts';
 export class IamCallCenterDirectory {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(HrUserUnitDirectory)
+    private readonly personnel: HrUserUnitDirectory = new HrUserUnitDirectory(
+      database,
+    ),
   ) {}
+
+  /** Management fields follow the current assignee's unit, or creator for unassigned requests. */
+  async canManageRequest(
+    actor: AuthenticatedActor,
+    branchId: string,
+    responsibleUserId: string | null,
+    tx?: Prisma.TransactionClient,
+  ) {
+    if (
+      !actor.branchIds.includes(branchId) ||
+      !actor.permissions.includes(
+        'customer_affairs.call_center.workflow.manage',
+      )
+    )
+      return false;
+    const client = tx ?? this.database.client;
+    if (tx) {
+      await tx.$queryRaw`SELECT id FROM iam_users WHERE id IN (${actor.userId}::uuid, ${responsibleUserId ?? actor.userId}::uuid) ORDER BY id FOR SHARE`;
+      await tx.$queryRaw`SELECT user_id FROM iam_user_profiles WHERE user_id IN (${actor.userId}::uuid, ${responsibleUserId ?? actor.userId}::uuid) ORDER BY user_id FOR SHARE`;
+    }
+    const account = await client.user.findFirst({
+      where: {
+        id: actor.userId,
+        status: 'ACTIVE',
+        b2bOrganizationUser: null,
+        branches: { some: { branchId, branch: { isActive: true } } },
+      },
+      select: {
+        username: true,
+        profile: { select: { organizationUnitId: true } },
+      },
+    });
+    if (!account) return false;
+    if (
+      (process.env.CALL_CENTER_REQUEST_GLOBAL_USERNAMES ?? '')
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .includes(account.username)
+    )
+      return true;
+    if (
+      !actor.permissions.includes(
+        'customer_affairs.call_center.workflow.manage.team',
+      ) ||
+      !account.profile?.organizationUnitId ||
+      !responsibleUserId
+    )
+      return false;
+    if (
+      !(await this.personnel.callCenterUnit(
+        branchId,
+        account.profile.organizationUnitId,
+        tx,
+      ))
+    )
+      return false;
+    const target = await client.user.findFirst({
+      where: { id: responsibleUserId, branches: { some: { branchId } } },
+      select: { profile: { select: { organizationUnitId: true } } },
+    });
+    return (
+      target?.profile?.organizationUnitId === account.profile.organizationUnitId
+    );
+  }
+
+  /** Request execution ownership is independent of telephony recipient eligibility. */
+  async requestAssignees(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    if (
+      !actor.branchIds.includes(branchId) ||
+      !actor.permissions.includes(
+        'customer_affairs.call_center.workflow.manage',
+      ) ||
+      !actor.permissions.includes('customer_affairs.call_center.read') ||
+      !canViewRoute(actor.permissions, '/customer-affairs/call-center')
+    )
+      throw new ForbiddenException();
+    const client = tx ?? this.database.client;
+    const account = await client.user.findFirst({
+      where: {
+        id: actor.userId,
+        status: 'ACTIVE',
+        b2bOrganizationUser: null,
+        branches: { some: { branchId, branch: { isActive: true } } },
+      },
+      select: {
+        username: true,
+        profile: {
+          select: {
+            organizationUnitId: true,
+          },
+        },
+      },
+    });
+    if (!account) throw new ForbiddenException();
+    const global = new Set(
+      (process.env.CALL_CENTER_REQUEST_GLOBAL_USERNAMES ?? '')
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ).has(account.username);
+    const unitId = account.profile?.organizationUnitId;
+    const team =
+      actor.permissions.includes(
+        'customer_affairs.call_center.workflow.manage.team',
+      ) &&
+      unitId &&
+      (await this.personnel.callCenterUnit(branchId, unitId, tx))
+        ? unitId
+        : null;
+    const users = await client.user.findMany({
+      where: {
+        status: 'ACTIVE',
+        b2bOrganizationUser: null,
+        branches: { some: { branchId, branch: { isActive: true } } },
+        ...(!global
+          ? team
+            ? { profile: { organizationUnitId: team } }
+            : { id: actor.userId }
+          : {}),
+      },
+      select: { id: true, displayName: true },
+      orderBy: [{ displayName: 'asc' }, { id: 'asc' }],
+    });
+    const staff = await this.personnel.callCenterStaff(
+      branchId,
+      users.map((user) => user.id),
+      tx,
+    );
+    const names = new Map(staff.map((person) => [person.userId, person]));
+    return users.map((user) => ({
+      id: user.id,
+      displayName: names.get(user.id)?.name || user.displayName,
+      ...(global
+        ? { position: names.get(user.id)?.position || null, showPosition: true }
+        : {}),
+    }));
+  }
+
+  async resolveRequestAssignee(
+    tx: Prisma.TransactionClient,
+    actor: AuthenticatedActor,
+    branchId: string,
+    id: string,
+  ) {
+    // Serialize assignment with account activation and organization edits.
+    await tx.$queryRaw`SELECT id FROM iam_users WHERE id IN (${actor.userId}::uuid, ${id}::uuid) ORDER BY id FOR SHARE`;
+    await tx.$queryRaw`SELECT user_id FROM iam_user_profiles WHERE user_id IN (${actor.userId}::uuid, ${id}::uuid) ORDER BY user_id FOR SHARE`;
+    await tx.$queryRaw`SELECT "userId" FROM iam_user_branches WHERE "userId" IN (${actor.userId}::uuid, ${id}::uuid) AND "branchId"=${branchId}::uuid ORDER BY "userId" FOR SHARE`;
+    const user = (await this.requestAssignees(actor, branchId, tx)).find(
+      (item) => item.id === id,
+    );
+    if (!user)
+      throw new ForbiddenException(
+        'کارشناس انتخاب‌شده خارج از محدوده مجاز ارجاع درخواست است.',
+      );
+    return user;
+  }
   private async rows(branchId: string, tx?: Prisma.TransactionClient) {
     return (tx ?? this.database.client).user.findMany({
       where: {
@@ -99,5 +272,16 @@ export class IamCallCenterDirectory {
         'کارشناس فعال و مجاز این شعبه را انتخاب کنید.',
       );
     return user;
+  }
+  /** Explicit deployment configuration; never infer sales managers from request authors. */
+  async closureRecipients(tx: Prisma.TransactionClient, branchId: string) {
+    const ids = new Set(
+      (process.env.CALL_CENTER_CLOSURE_MANAGER_IDS ?? '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean),
+    );
+    if (!ids.size) return [];
+    return (await this.list(branchId, tx)).filter((user) => ids.has(user.id));
   }
 }

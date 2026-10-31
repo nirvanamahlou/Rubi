@@ -2,6 +2,8 @@ import { callCenterRequest } from './client';
 export interface Operator {
   id: string;
   displayName: string;
+  position?: string | null;
+  showPosition?: boolean;
 }
 export interface FollowUp {
   ownerName?: string;
@@ -23,12 +25,15 @@ export interface FollowUp {
   }[];
 }
 export interface RequestCase {
+  canEditManagement?: boolean;
+  result?: string;
   customerId?: string | null;
   privateHistory: {
     at: string;
     actorId: string;
     title: string;
     reason: string;
+    result?: string;
     status: string;
     ownerId: string | null;
     version: number;
@@ -53,6 +58,8 @@ export interface RequestCase {
   }[];
 }
 export const workflowApi = {
+  requestOperators: (branch: string) =>
+    callCenterRequest<{ data: Operator[] }>('/request-operators', branch),
   nextAction: (branch: string, contact: string, signal: AbortSignal) =>
     callCenterRequest<{
       data: {
@@ -76,6 +83,8 @@ export const workflowApi = {
         title: string;
         ownerName: string | null;
         status: string;
+        priority: string;
+        createdAt: string;
         dueAt?: string | null;
       }[];
       meta: {
@@ -100,12 +109,18 @@ export const workflowApi = {
     signal?: AbortSignal,
     page = 1,
     taskPage = 1,
+    requestId?: string,
+    openOnly = false,
   ) =>
     callCenterRequest<{
       data: RequestCase[];
-      meta?: { total: number; hasMoreTasks: boolean };
+      meta?: {
+        total: number;
+        hasMoreTasks: boolean;
+        contactCallCount?: number;
+      };
     }>(
-      `/contacts/${contact}/requests?page=${page}&taskPage=${taskPage}`,
+      `/contacts/${contact}/requests?page=${page}&taskPage=${taskPage}${requestId ? `&requestId=${requestId}` : ''}${openOnly ? '&openOnly=true' : ''}`,
       branch,
       signal ? { signal } : {},
     ),

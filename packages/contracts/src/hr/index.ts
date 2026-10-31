@@ -19,6 +19,8 @@ export const HR_PERMISSION_CODES = [
 ] as const;
 
 export interface HrEmployeeDto {
+  jobTitleId?: string | null;
+  extension?: string;
   id: string;
   personnelCode: string;
   branchId: string;
@@ -39,6 +41,7 @@ export interface HrEmployeeDto {
 }
 
 export interface HrRecordDto {
+  jobTitleId?: string | null;
   id: string;
   code: string;
   branchId: string;
@@ -60,6 +63,9 @@ export interface HrRecordDto {
 
 /** Typed command inputs; no provider receipts or binary content are accepted. */
 export interface HrWorkflowData {
+  /** Persistent diagram offsets in CSS pixels, independent of personnel assignments. */
+  chartX?: number;
+  chartY?: number;
   /** Server-managed contract lifecycle. Generic record commands reject these fields. */
   contractState?: 'SIGNED' | 'ACTIVE' | 'ENDED';
   signedDocumentId?: string;
@@ -109,6 +115,9 @@ export interface HrContractStateCommand {
 }
 
 export interface HrEmployeeCreate {
+  jobTitleId?: string;
+  /** Internal business phone extension; omit to preserve on edit, blank/null clears. */
+  extension?: string | null;
   /** Optional atomic private personnel profile, using the existing identity/phone schemas. */
   identityValues?: string[];
   contactValues?: string[][];
@@ -129,9 +138,11 @@ export interface HrEmployeeCreate {
   startedAtValue: string;
   status?: string;
 }
-export type HrEmployeeUpdate = Partial<
-  Omit<HrEmployeeCreate, 'identityValues' | 'contactValues'>
-> & { version: number };
+export type HrEmployeeUpdate = Partial<HrEmployeeCreate> & {
+  version: number;
+  /** Complete identity/contact snapshot required when editing private profile values. */
+  profileRecords?: { id: string; version: number }[];
+};
 export interface HrRecordCreate {
   /** Write-only device credentials; never returned by record reads. */
   privateData?: { networkPassword?: string };
@@ -148,7 +159,7 @@ export interface HrRecordCreate {
 export interface HrRecordUpdate {
   privateData?: { networkPassword?: string };
   version: number;
-  /** Only organization units may be reparented; server checks branch and cycles. */
+  /** Organization units and chart employee nodes support reparenting; server checks branch/company/cycles. */
   parentId?: string | null;
   values?: string[];
   status?: string;
@@ -164,7 +175,15 @@ export interface HrNotificationDto {
   createdAt: string;
   readAt: string | null;
 }
+/** Complete, bounded HR-owner read model; references are not date-filtered operational rows. */
+export interface HrAttendanceReportSnapshotDto {
+  employees: HrEmployeeDto[];
+  records: HrRecordDto[];
+  references: HrRecordDto[];
+}
 export interface HrBootstrapDto {
+  /** Shared non-sensitive catalogue; operational records retain branch authorization. */
+  jobTitles?: { id: string; name: string; status: string }[];
   employees: HrEmployeeDto[];
   records: HrRecordDto[];
   capabilities: {
@@ -186,4 +205,30 @@ export interface HrBootstrapDto {
   recordCount: number;
   recordsTruncated: boolean;
   workflowWarnings?: { recordId: string; message: string }[];
+}
+
+/** Private HR aggregates; units are explicit and never converted between days/hours. */
+export interface HrDashboardChartDto {
+  id:
+    | 'present'
+    | 'quarterLate'
+    | 'weeklyAttendance'
+    | 'overtime'
+    | 'departmentLate'
+    | 'leave'
+    | 'leaveBalance';
+  title: string;
+  description: string;
+  from: string;
+  to: string;
+  points: {
+    key: string;
+    label: string;
+    value: number;
+    unit: 'نفر' | 'دقیقه' | 'ساعت' | 'روز' | 'درخواست';
+  }[];
+}
+export interface HrDashboardChartsDto {
+  asOf: string;
+  charts: HrDashboardChartDto[];
 }

@@ -7,6 +7,41 @@ const actor = {
   branchIds: ['allowed'],
 } as never;
 describe('HR public directory for user units', () => {
+  it('validates request units and projects only linked staff job identity', async () => {
+    const findFirst = vi.fn().mockResolvedValue({ id: 'unit' });
+    const findMany = vi.fn().mockResolvedValue([]);
+    const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      hrRecord: { findFirst },
+      hrEmployee: { findMany },
+    };
+    const service = new HrUserUnitDirectory({ client: tx } as never);
+    expect(await service.callCenterUnit('allowed', 'unit', tx as never)).toBe(
+      true,
+    );
+    expect(findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'unit',
+        branchId: 'allowed',
+        section: 'organization',
+        tab: 'units',
+        status: 'فعال',
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    expect(tx.$queryRaw).toHaveBeenCalledOnce();
+    await service.callCenterStaff('allowed', ['user'], tx as never);
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        branchId: 'allowed',
+        userId: { in: ['user'] },
+        status: 'فعال',
+        deletedAt: null,
+      },
+      select: { userId: true, name: true, position: true },
+    });
+  });
   it('lists only scoped active organizational units and exposes no personnel data', async () => {
     const findMany = vi.fn(async () => [
       {

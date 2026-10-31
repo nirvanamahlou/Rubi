@@ -28,6 +28,8 @@ export function transitionTravelWorkflow(
   command: TravelWorkflowCommandV1,
   passengerIds: readonly string[],
   flightKeys: readonly string[] = [],
+  allowAggregateSupplierForm = false,
+  hotelKeys: readonly string[] = [],
 ): TravelWorkflowStateV1 {
   if (
     !command ||
@@ -47,6 +49,7 @@ export function transitionTravelWorkflow(
     throw new Error('این درخواست بسته شده است و قابل تغییر نیست.');
   if (
     current.voucherIssued &&
+    !command.hotelStayKey &&
     ![
       'NOTE',
       'VOUCHER_SETTINGS',
@@ -56,6 +59,84 @@ export function transitionTravelWorkflow(
     ].includes(command.action)
   )
     throw new Error('این درخواست بسته شده است و قابل تغییر نیست.');
+  if (command.hotelStayKey !== undefined) {
+    const key = command.hotelStayKey;
+    if (
+      !hotelKeys.includes(key) ||
+      !['SUPPLIER_FORM_SETTINGS', 'REQUEST_SUPPLIER'].includes(command.action)
+    )
+      throw Error('اقامت هتل انتخاب‌شده معتبر نیست.');
+    const entry = current.hotelSupplierForms?.[key];
+    const scoped = {
+      ...current,
+      supplierStatus: entry?.status ?? ('NEW' as const),
+      voucherIssued: false,
+      supplierFormSettings: entry?.settings,
+      sentSupplierFormSettings: entry?.sentSettings,
+      sentSupplierFormVersion: entry?.sentVersion,
+    } as TravelWorkflowStateV1;
+    if (!entry && key === hotelKeys[0]) {
+      if (current.supplierFormSettings)
+        scoped.supplierFormSettings = current.supplierFormSettings;
+      if (current.sentSupplierFormSettings)
+        scoped.sentSupplierFormSettings = current.sentSupplierFormSettings;
+      if (current.sentSupplierFormVersion !== undefined)
+        scoped.sentSupplierFormVersion = current.sentSupplierFormVersion;
+    }
+    if (!scoped.supplierFormSettings) delete scoped.supplierFormSettings;
+    if (!scoped.sentSupplierFormSettings)
+      delete scoped.sentSupplierFormSettings;
+    if (scoped.sentSupplierFormVersion === undefined)
+      delete scoped.sentSupplierFormVersion;
+    const { hotelStayKey: _key, ...action } = command;
+    void _key;
+    const result = transitionTravelWorkflow(
+      scoped,
+      action,
+      passengerIds,
+      flightKeys,
+      allowAggregateSupplierForm,
+    );
+    return {
+      ...current,
+      version: result.version,
+      ...(command.action === 'REQUEST_SUPPLIER' &&
+      current.supplierStatus === 'NEW'
+        ? { supplierStatus: 'REQUESTED' as const }
+        : {}),
+      ...(key === hotelKeys[0]
+        ? {
+            ...(result.supplierFormSettings
+              ? { supplierFormSettings: result.supplierFormSettings }
+              : {}),
+            ...(result.sentSupplierFormSettings
+              ? { sentSupplierFormSettings: result.sentSupplierFormSettings }
+              : {}),
+            ...(result.sentSupplierFormVersion !== undefined
+              ? { sentSupplierFormVersion: result.sentSupplierFormVersion }
+              : {}),
+          }
+        : {}),
+      hotelSupplierForms: {
+        ...current.hotelSupplierForms,
+        [key]: {
+          ...(result.supplierFormSettings
+            ? { settings: result.supplierFormSettings }
+            : {}),
+          ...(result.sentSupplierFormSettings
+            ? { sentSettings: result.sentSupplierFormSettings }
+            : {}),
+          ...(result.sentSupplierFormVersion !== undefined
+            ? { sentVersion: result.sentSupplierFormVersion }
+            : {}),
+          status:
+            result.supplierStatus === 'REQUESTED'
+              ? ('REQUESTED' as const)
+              : ('NEW' as const),
+        },
+      },
+    } as TravelWorkflowStateV1;
+  }
   const next = {
     ...current,
     version: current.version + 1,
@@ -118,7 +199,34 @@ export function transitionTravelWorkflow(
       next.supplierFormSettings = validateVoucherSettings(
         command.voucherSettings,
         passengerIds,
+        allowAggregateSupplierForm,
       );
+      if (
+        next.supplierFormSettings.supplierFormPrices === undefined &&
+        current.supplierFormSettings?.supplierFormPrices !== undefined
+      )
+        next.supplierFormSettings.supplierFormPrices = structuredClone(
+          current.supplierFormSettings.supplierFormPrices,
+        );
+      if (
+        command.voucherSettings?.hotelRoomPrices === undefined &&
+        current.supplierFormSettings?.hotelRoomPrices &&
+        current.supplierFormSettings.brokerId ===
+          next.supplierFormSettings.brokerId &&
+        JSON.stringify(current.supplierFormSettings.rooms) ===
+          JSON.stringify(next.supplierFormSettings.rooms)
+      )
+        next.supplierFormSettings.hotelRoomPrices = structuredClone(
+          current.supplierFormSettings.hotelRoomPrices,
+        );
+      if (hotelKeys[0] && current.hotelSupplierForms?.[hotelKeys[0]])
+        next.hotelSupplierForms = {
+          ...current.hotelSupplierForms,
+          [hotelKeys[0]]: {
+            ...current.hotelSupplierForms[hotelKeys[0]]!,
+            settings: next.supplierFormSettings,
+          },
+        };
       break;
     case 'VOUCHER_SETTINGS':
       if (current.supplierStatus === 'CANCELLED')
@@ -152,6 +260,21 @@ export function transitionTravelWorkflow(
           current.supplierFormSettings,
         );
       next.sentSupplierFormVersion = next.version;
+      if (
+        hotelKeys[0] &&
+        current.hotelSupplierForms?.[hotelKeys[0]] &&
+        next.supplierFormSettings
+      )
+        next.hotelSupplierForms = {
+          ...current.hotelSupplierForms,
+          [hotelKeys[0]]: {
+            ...current.hotelSupplierForms[hotelKeys[0]]!,
+            settings: next.supplierFormSettings,
+            sentSettings: structuredClone(next.supplierFormSettings),
+            sentVersion: next.version,
+            status: 'REQUESTED',
+          },
+        };
       break;
     case 'CONFIRM_SUPPLIER':
       if (current.supplierStatus !== 'REQUESTED')
@@ -171,10 +294,6 @@ export function transitionTravelWorkflow(
           current.sentSupplierFormSettings.brokerId
       )
         throw new Error('تورلیدر باید از کارگزار فرم صادرشده انتخاب شود.');
-      if (!current.voucherSettings?.leaderId)
-        throw new Error(
-          'پیش از صدور واچر، تورلیدر کارگزار را انتخاب و ذخیره کنید.',
-        );
       if (
         !current.insuranceIssued &&
         command.acknowledgeMissingInsurance !== true
@@ -219,10 +338,6 @@ export function transitionTravelWorkflow(
           current.sentSupplierFormSettings.brokerId
       )
         throw new Error('تورلیدر باید از کارگزار فرم صادرشده انتخاب شود.');
-      if (!current.voucherSettings?.leaderId)
-        throw new Error(
-          'پیش از صدور واچر، تورلیدر کارگزار را انتخاب و ذخیره کنید.',
-        );
       if (
         !current.insuranceIssued &&
         command.acknowledgeMissingInsurance !== true

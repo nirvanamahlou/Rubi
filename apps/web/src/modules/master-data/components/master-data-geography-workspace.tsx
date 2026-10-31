@@ -181,6 +181,7 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
       'لوگو',
       'نام فارسی',
       'نام انگلیسی',
+      'اختلاف ساعت (GMT)',
       'ترتیب',
       'وابستگی‌ها',
       'وضعیت',
@@ -263,6 +264,11 @@ function recordCells(
       <MasterDataLogoCell asCell={false} key="logo" record={record} />,
       record.name,
       attribute(record, 'englishName'),
+      <span dir="ltr" className="font-mono text-xs" key="gmtOffset">
+        {record.attributes.gmtOffset
+          ? `GMT${record.attributes.gmtOffset}`
+          : '—'}
+      </span>,
       attribute(record, 'displayOrder'),
       <span key="dependencies" title="وابستگی‌های مستقیم داخل اطلاعات پایه">
         {attribute(record, 'dependencyCount')} مورد ·{' '}

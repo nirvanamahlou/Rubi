@@ -6,6 +6,7 @@ import {
   assertTemplateIntervals,
   durationMinutes,
   transferSplit,
+  validateCompletionValues,
 } from './hr-radan-completion.domain';
 import { recordValues } from './hr.validation';
 import {
@@ -47,6 +48,52 @@ describe('observed Radan data boundaries', () => {
       buyback: 0,
     });
     expect(() => transferSplit(659, rule)).toThrow();
+  });
+  it('keeps independent transfer thresholds, strict boundaries and historical rules compatible', () => {
+    const rule = [
+      'قاعده',
+      '1405',
+      '10:00',
+      '08:00',
+      '02:00',
+      '01:00',
+      '06:00',
+      '00:00',
+      '00:00',
+      '08:00',
+    ];
+    expect(transferSplit(660, rule)).toEqual({
+      carry: 480,
+      burn: 120,
+      buyback: 60,
+    });
+    expect(transferSplit(360, rule)).toEqual({
+      carry: 360,
+      burn: 0,
+      buyback: 0,
+    });
+    for (const balance of [480, 540, 600])
+      expect(() => transferSplit(balance, rule)).toThrow('محدوده');
+    const schema = getHrResource('time', 'leaveTransferRules')!;
+    expect(recordValues(rule.slice(0, 9), schema)).toEqual([
+      ...rule.slice(0, 9),
+      '',
+    ]);
+    expect(() =>
+      validateCompletionValues(schema.key, schema.columns, [
+        ...rule.slice(0, 9),
+        '11:00',
+      ]),
+    ).toThrow('حد پایین');
+    expect(() => transferSplit(660, [...rule.slice(0, 9), '11:00'])).toThrow();
+    expect(() =>
+      recordValues([...rule.slice(0, 9), '-1:00'], schema),
+    ).toThrow();
+    expect(transferSplit(360, [...rule.slice(0, 9), ''])).toEqual({
+      carry: 360,
+      burn: 0,
+      buyback: 0,
+    });
   });
   it('encrypts private values, binds branch/employee/resource and strips ciphertext from DTO data', () => {
     vi.stubEnv(

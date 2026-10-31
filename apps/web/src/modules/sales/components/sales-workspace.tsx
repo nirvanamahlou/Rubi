@@ -1,4 +1,6 @@
 'use client';
+import { canSelfServeSalesContract } from '@nora/contracts';
+import { useAccessActor } from '@/modules/iam/access-context';
 import { currencySymbol } from '@/lib/currency-symbol';
 
 import {
@@ -42,7 +44,7 @@ import { ContractTableScroll } from './contract-table-scroll';
 import { SalesReceivablesCard } from './sales-receivables-card';
 import { PassengerCorrectionButton } from './passenger-correction';
 
-export const DEFAULT_CONTRACT_PAGE_SIZE = 20;
+export const DEFAULT_CONTRACT_PAGE_SIZE = 10;
 export const DATE_FILTERED_CONTRACT_PAGE_SIZE = 10_000;
 
 export function contractRowClassName(
@@ -50,7 +52,10 @@ export function contractRowClassName(
     SalesContractSummary,
     'customerDocumentDeliveryApproved' | 'reservationContractChanged'
   >,
+  selected = false,
 ) {
+  if (selected)
+    return 'group cursor-pointer border-t border-primary/30 bg-blue-100/80 transition-colors hover:bg-blue-100 dark:bg-blue-950/55 dark:hover:bg-blue-900/60';
   if (contract.customerDocumentDeliveryApproved)
     return 'group border-t border-emerald-300 bg-emerald-100/70 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/60';
   return contract.reservationContractChanged
@@ -104,6 +109,73 @@ export function ContractListNumber({
         <span dir="ltr">{contract.contractNumber}</span>
       </div>
     </td>
+  );
+}
+
+export function ContractListTravelDates({
+  contract,
+}: {
+  contract: SalesContractSummary;
+}) {
+  return (
+    <>
+      {(['outbound', 'returning'] as const).map((direction) => {
+        const value = contract.travelDates?.[direction];
+        return (
+          <td key={direction} className="px-4 py-3 whitespace-nowrap">
+            <bdi dir="ltr">
+              {value
+                ? new Date(`${value.date}T00:00:00Z`).toLocaleDateString(
+                    value.calendar === 'gregorian' ? 'en-GB' : 'fa-IR',
+                    { timeZone: 'UTC' },
+                  )
+                : '—'}
+            </bdi>
+          </td>
+        );
+      })}
+    </>
+  );
+}
+
+export function ContractListPassengers({
+  contract,
+}: {
+  contract: SalesContractSummary;
+}) {
+  const counts = contract.passengerComposition;
+  const composition = counts
+    ? [
+        [counts.adults, 'بزرگسال'],
+        [counts.children2To6, 'کودک ۲ تا ۶ سال'],
+        [counts.children6To12, 'کودک ۶ تا ۱۲ سال'],
+        [counts.infants, 'نوزاد'],
+        [counts.childrenUnknownAge, 'کودک (سن ثبت نشده)'],
+      ]
+        .filter(([count]) => Number(count) > 0)
+        .map(
+          ([count, label]) =>
+            `${Number(count).toLocaleString('fa-IR')} ${label}`,
+        )
+        .join('، ')
+    : '';
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 font-semibold text-foreground">
+        <UsersRound className="size-4 text-primary" />
+        <p>
+          {(
+            contract.passengerCount ?? contract.passengerNames.length
+          ).toLocaleString('fa-IR')}{' '}
+          مسافر
+        </p>
+      </div>
+      {composition ? (
+        <p className="mt-1 min-w-48 max-w-64 text-xs leading-5 text-muted-foreground">
+          {composition}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -179,6 +251,7 @@ export function paymentReferenceSearchQuery(
 
 export function SalesWorkspace() {
   const contractsSearchPanel = useRef<HTMLElement>(null);
+  const actor = useAccessActor();
   const [paymentContractId, setPaymentContractId] = useState<string | null>(
     null,
   );
@@ -186,6 +259,9 @@ export function SalesWorkspace() {
     null,
   );
   const [contracts, setContracts] = useState<SalesContractPage['data']>([]);
+  const [selectedContractId, setSelectedContractId] = useState<string | null>(
+    null,
+  );
   const [query, setQuery] = useState<SalesContractListQuery>({});
   const [total, setTotal] = useState(0);
   const requestVersion = useRef(0);
@@ -368,7 +444,7 @@ export function SalesWorkspace() {
         <p className="mt-3 text-xs text-muted-foreground">
           {dateFilterApplied
             ? 'همهٔ قراردادهای بازهٔ تاریخ ثبت انتخاب‌شده نمایش داده می‌شوند.'
-            : 'بدون فیلتر تاریخ، فقط ۲۰ قراردادِ آخر نمایش داده می‌شود.'}
+            : 'بدون فیلتر تاریخ، فقط ۱۰ قراردادِ آخر نمایش داده می‌شود.'}
         </p>
       </section>
       {!loading && !error && contracts.length === 0 ? (
@@ -409,7 +485,7 @@ export function SalesWorkspace() {
       {contracts.length && !loading ? (
         <Card className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-md shadow-primary/[0.035]">
           <ContractTableScroll>
-            <table className="w-full min-w-[88rem] text-sm">
+            <table className="w-full min-w-[104rem] text-sm">
               <caption className="sr-only">
                 فهرست قراردادهای فروش؛ عملیات هر قرارداد در ستون آخر قرار دارد.
               </caption>
@@ -422,6 +498,8 @@ export function SalesWorkspace() {
                     'شماره تلفن مشتری',
                     'مقصد',
                     'تاریخ بستن قرارداد',
+                    'تاریخ رفت',
+                    'تاریخ برگشت',
                     'مسافران و خدمات',
                     'وضعیت',
                     'تسویه',
@@ -442,8 +520,14 @@ export function SalesWorkspace() {
               <tbody>
                 {contracts.map((contract) => (
                   <tr
-                    className={contractRowClassName(contract)}
+                    className={contractRowClassName(
+                      contract,
+                      selectedContractId === contract.id,
+                    )}
                     key={contract.id}
+                    aria-selected={selectedContractId === contract.id}
+                    onClick={() => setSelectedContractId(contract.id)}
+                    onFocusCapture={() => setSelectedContractId(contract.id)}
                   >
                     <ContractListNumber contract={contract} />
                     <td className="px-4 py-3">
@@ -458,16 +542,9 @@ export function SalesWorkspace() {
                     </td>
                     <td className="px-4 py-3">{contract.sellerName ?? '—'}</td>
                     <ContractListContactRouteDate contract={contract} />
+                    <ContractListTravelDates contract={contract} />
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5 font-semibold text-foreground">
-                        <UsersRound className="size-4 text-primary" />
-                        <p>
-                          {contract.passengerNames.length.toLocaleString(
-                            'fa-IR',
-                          )}{' '}
-                          مسافر
-                        </p>
-                      </div>
+                      <ContractListPassengers contract={contract} />
                       <p className="mt-1 max-w-52 text-xs leading-5 text-muted-foreground">
                         {contract.services
                           .map(
@@ -533,11 +610,16 @@ export function SalesWorkspace() {
                       <div className="grid min-w-72 grid-cols-4 gap-1.5">
                         <PassengerCorrectionButton
                           contractId={contract.id}
+                          ownerUserId={contract.ownerUserId}
+                          branchId={contract.branchId}
                           status={contract.status}
                           onSaved={() => void load()}
                         />
                         <Button
-                          permission="sales.payments.read"
+                          {...(actor &&
+                          canSelfServeSalesContract(actor, contract)
+                            ? {}
+                            : { permission: 'sales.payments.read' })}
                           size="sm"
                           variant="outline"
                           className="h-8 min-w-0 bg-surface px-2 text-xs shadow-sm"
@@ -548,6 +630,8 @@ export function SalesWorkspace() {
                         </Button>
                         <ContractOutputButton
                           contractId={contract.id}
+                          ownerUserId={contract.ownerUserId}
+                          branchId={contract.branchId}
                           label="قرارداد"
                           className="h-8 min-w-0 px-2 text-xs shadow-sm"
                         />

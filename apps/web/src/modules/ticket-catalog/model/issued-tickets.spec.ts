@@ -86,3 +86,36 @@ describe('Issued ticket read-only report', () => {
     });
   });
 });
+
+it('uses travel day independently from issue day and filters hotel service and name', () => {
+  const hotel = {
+    ...tickets[0]!,
+    id: 'hotel',
+    serviceKind: 'HOTEL',
+    hotelId: 'h',
+    hotelName: 'Hotel Example',
+    status: 'allocated' as const,
+    departureAt: '2026-10-02T00:00:00Z',
+  };
+  expect(
+    queryIssuedTickets([hotel], {
+      ...initialIssuedTicketQuery,
+      serviceKind: 'HOTEL',
+      hotelId: 'h',
+      dateBasis: 'TRAVEL',
+      issuedFrom: '2026-10-02',
+      issuedTo: '2026-10-02',
+      search: 'Example',
+    }).total,
+  ).toBe(1);
+  expect(
+    queryIssuedTickets([hotel], {
+      ...initialIssuedTicketQuery,
+      serviceKind: 'HOTEL',
+      dateBasis: 'ISSUED',
+      issuedFrom: '2026-10-02',
+      issuedTo: '2026-10-02',
+    }).total,
+  ).toBe(0);
+  expect(countIssuedTicketsByRoute([hotel])).toEqual([]);
+});

@@ -289,7 +289,7 @@ function normalizeManufacturerModel(value: unknown): {
 }
 
 const allowedFields: Record<MasterDataResource, readonly string[]> = {
-  countries: ['iso2Code', 'name', 'englishName', 'displayOrder'],
+  countries: ['iso2Code', 'name', 'englishName', 'gmtOffset', 'displayOrder'],
   regions: ['code', 'name', 'englishName', 'countryId'],
   cities: ['code', 'name', 'englishName', 'countryId', 'regionId'],
   airports: [
@@ -710,7 +710,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   'room-types': ['name'],
   'meal-services': ['name', 'category'],
   facilities: ['name'],
-  'composite-hotels': ['name', 'cityId', 'memberHotelIds'],
+  'composite-hotels': ['name', 'memberHotelIds'],
   organizations: ['legalName', 'roleCodes'],
   suppliers: [],
   brokers: ['name'],
@@ -1305,6 +1305,32 @@ export class MasterDataService {
       actorBranchId: branchOf(actor, requestedBranch),
     });
     return { data: { id, phone, email, nationalId } };
+  }
+
+  async salesOrganizationPhones(
+    organizationId: string,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ) {
+    const branchId = branchOf(actor, requestedBranch);
+    const contacts =
+      await this.repository.salesOrganizationContacts(organizationId);
+    return Promise.all(
+      contacts.map(async (contact) => {
+        const phone = this.contactCrypto.decrypt('phone', {
+          encrypted: contact.phoneEncrypted,
+          encryptionIv: contact.phoneEncryptionIv,
+          encryptionAuthTag: contact.phoneEncryptionAuthTag,
+          encryptionKeyVersion: contact.phoneEncryptionKeyVersion,
+        });
+        await this.repository.recordSensitiveContactRead({
+          contactId: contact.id,
+          actorUserId: actor.userId,
+          actorBranchId: branchId,
+        });
+        return phone;
+      }),
+    );
   }
 
   async organizationSupplierSummary() {
@@ -1955,6 +1981,22 @@ export class MasterDataService {
       !Object.hasOwn(values, 'code')
     ) {
       data.code = await this.generateAutoCode(resource, values);
+    }
+    if (resource === 'countries' && Object.hasOwn(data, 'gmtOffset')) {
+      const raw = data.gmtOffset;
+      if (raw !== null && typeof raw !== 'string')
+        throw new BadRequestException('اختلاف ساعت با گرینویچ معتبر نیست.');
+      const offset = String(raw ?? '').trim();
+      if (
+        offset &&
+        !/^([+]((0[0-9]|1[0-3]):[0-5][0-9]|14:00)|-((0[0-9]|1[01]):[0-5][0-9]|12:00))$/.test(
+          offset,
+        )
+      )
+        throw new BadRequestException(
+          'اختلاف ساعت را مانند +03:30 و در بازهٔ -12:00 تا +14:00 وارد کنید.',
+        );
+      data.gmtOffset = offset === '-00:00' ? '+00:00' : offset || null;
     }
     if (resource === 'countries' && typeof data.iso2Code === 'string') {
       const iso2Code = data.iso2Code.trim().toUpperCase();
@@ -3088,6 +3130,8 @@ export class MasterDataService {
         );
         if (!memberIds.length)
           throw new BadRequestException('حداقل یک هتل عضو الزامی است.');
+        if (memberIds.length > 50)
+          throw new BadRequestException('Maximum 50 hotels per itinerary');
         const backupIds = Object.hasOwn(data, 'backupMemberIds')
           ? referenceIds(data.backupMemberIds, 'اعضای پشتیبان')
           : [];
@@ -3095,25 +3139,18 @@ export class MasterDataService {
           throw new BadRequestException(
             'هتل پشتیبان باید در فهرست اعضای ترکیب باشد.',
           );
-        const existing =
-          partial && entityId
-            ? await this.repository.find('composite-hotels', entityId)
-            : null;
-        const cityId = String(data.cityId ?? existing?.cityId ?? '');
         const hotels = await Promise.all(
           memberIds.map((id) => this.repository.find('hotels', id)),
         );
         if (
-          hotels.some(
-            (hotel) =>
-              !hotel?.isActive ||
-              !hotel.isSaleableReference ||
-              hotel.cityId !== cityId,
-          )
+          hotels.some((hotel) => !hotel?.isActive || !hotel.isSaleableReference)
         )
           throw new BadRequestException(
-            'هتل‌های عضو باید فعال، فروش‌پذیر و در شهر ترکیب باشند.',
+            'هتل‌های عضو باید فعال و فروش‌پذیر باشند.',
           );
+        // Legacy parent city is the first actual member's anchor, not a
+        // restriction on subsequent cities in the ordered itinerary.
+        data.cityId = hotels[0]!.cityId;
         delete data.memberHotelIds;
         delete data.backupMemberIds;
         data.members = partial

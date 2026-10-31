@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { writeFile } from 'node:fs/promises';
 import { printFixture } from '../model/contract-print.fixture';
 import { renderContractPdf, resolveContractPdfRuntime } from './contract-pdf';
 
@@ -34,9 +35,17 @@ describe('contract PDF runtime', () => {
   it.runIf(process.env.CONTRACT_PDF_RUNTIME_SMOKE === '1')(
     'renders actual PDF bytes with the installed local runtime',
     async () => {
-      const bytes = await renderContractPdf(printFixture, { names: {} });
+      const output = structuredClone(printFixture);
+      output.contract.servicesDetail[0]!.metadata = {
+        ...output.contract.servicesDetail[0]!.metadata,
+        contractNotice:
+          'این یادداشت توسط کارشناس فروش ثبت شده است.\nحضور مسافران سه ساعت پیش از پرواز در فرودگاه الزامی است.\nخدمات هتل مطابق توافق ثبت‌شده در قرارداد ارائه می‌شود.',
+      };
+      const bytes = await renderContractPdf(output, { names: {} });
       expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
       expect(bytes.length).toBeGreaterThan(10_000);
+      if (process.env.CONTRACT_PDF_QA_OUTPUT)
+        await writeFile(process.env.CONTRACT_PDF_QA_OUTPUT, bytes);
     },
     45_000,
   );

@@ -1,3 +1,4 @@
+import { MANUAL_ACCESS_VERSION } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -114,7 +115,82 @@ const row = {
   _count: { relationships: 0 },
 };
 
+describe('current identity for authorized contract output', () => {
+  it('returns current spelling and birthday without decrypting document numbers', async () => {
+    const repository = {
+      find: vi.fn().mockResolvedValue({
+        ...row,
+        kind: 'PERSON',
+        passportFirstName: 'CURRENT',
+        passportLastName: 'PASSENGER',
+        birthDate: new Date('1991-02-03T00:00:00Z'),
+      }),
+      auditSensitiveRead: vi.fn(),
+    } as unknown as CustomerRepository;
+    const { service, nationalIdProtector } = createService(repository);
+    const reader: AuthenticatedActor = {
+      ...actor,
+      permissions: ['sales.export'],
+    };
+    expect(
+      await service.salesOutputIdentity(row.id, reader, 'trace'),
+    ).toMatchObject({
+      passportName: 'CURRENT PASSENGER',
+      birthDate: '1991-02-03',
+    });
+    expect(repository.find).toHaveBeenCalledWith(row.id, reader.branchIds);
+    expect(repository.auditSensitiveRead).toHaveBeenCalledWith(
+      row.id,
+      reader.userId,
+      row.ownerBranchId,
+      'customer-verification',
+      'trace',
+    );
+    expect(nationalIdProtector.decrypt).not.toHaveBeenCalled();
+    await expect(
+      service.salesOutputIdentity(row.id, { ...reader, permissions: [] }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+});
+
 describe('CustomerService', () => {
+  it('uses actor-scoped receipt persistence for a contract creator without Customer permissions', async () => {
+    const repository = {
+      createSalesRegistration: vi.fn().mockResolvedValue(row),
+      create: vi.fn(),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    const creator = {
+      ...actor,
+      permissions: ['sales.contracts.create'],
+    } as AuthenticatedActor;
+    await service.createForSales(
+      { ...mutation, nationalId: null },
+      creator,
+      undefined,
+      'trace',
+      'receipt',
+    );
+    expect(repository.createSalesRegistration).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'PERSON' }),
+      actor.userId,
+      actor.branchIds[0],
+      'receipt',
+      expect.stringMatching(/^[a-f0-9]{64}$/),
+      'trace',
+    );
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(creator.permissions).toEqual(['sales.contracts.create']);
+    await expect(
+      service.createForSales(
+        mutation,
+        { ...creator, permissions: [] },
+        undefined,
+        undefined,
+        'receipt',
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
   it('enforces positive manual field grants on actual updates, even without legacy deny tokens', async () => {
     const repository = {
       find: vi.fn().mockResolvedValue(row),
@@ -418,6 +494,88 @@ describe('CustomerService', () => {
       isCustomer: true,
       isPassenger: false,
     });
+  });
+
+  it('creates a contract passenger without national ID but keeps directory creation strict', async () => {
+    const repository = {
+      create: vi.fn().mockResolvedValue(row),
+    } as unknown as CustomerRepository;
+    const { service, nationalIdProtector } = createService(repository);
+    const input = { ...mutation };
+    delete input.nationalId;
+    await service.createForSales(input, {
+      ...actor,
+      permissions: ['sales.contracts.create'],
+    });
+    expect(repository.create).toHaveBeenCalledOnce();
+    expect(vi.mocked(repository.create).mock.calls[0]?.[0]).not.toHaveProperty(
+      'nationalIdFingerprint',
+    );
+    expect(nationalIdProtector.protect).not.toHaveBeenCalled();
+    await expect(service.create(input, actor)).rejects.toMatchObject({
+      response: { code: 'CUSTOMER_NATIONAL_ID_REQUIRED' },
+    });
+    await expect(
+      service.createForSales(input, { ...actor, permissions: [] }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+  it('allows unknown birth dates in Sales while keeping ordinary Customer creation strict', async () => {
+    const repository = {
+      create: vi.fn().mockResolvedValue(row),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    const input = {
+      kind: 'person' as const,
+      firstName: 'Synthetic',
+      lastName: 'Passenger',
+      displayName: 'Synthetic Passenger',
+      roles: ['passenger' as const],
+    };
+    const salesActor: AuthenticatedActor = {
+      ...actor,
+      permissions: ['sales.contracts.create'],
+    };
+    await service.createForSalesCompletion(input, salesActor);
+    expect(vi.mocked(repository.create).mock.calls[0]?.[0]).toMatchObject({
+      isPassenger: true,
+      birthDate: null,
+    });
+    await service.createForSales(input, salesActor);
+    expect(vi.mocked(repository.create).mock.calls[1]?.[0]).toMatchObject({
+      birthDate: null,
+    });
+    await expect(
+      service.create({ ...input, nationalId: mutation.nationalId! }, actor),
+    ).rejects.toMatchObject({
+      response: { code: 'CUSTOMER_PASSENGER_BIRTH_DATE_REQUIRED' },
+    });
+    await expect(
+      service.createForSalesCompletion(input, { ...actor, permissions: [] }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+  it('still protects a supplied national ID and validates a supplied birth date', async () => {
+    const repository = {
+      create: vi.fn().mockResolvedValue(row),
+    } as unknown as CustomerRepository;
+    const { service, nationalIdProtector } = createService(repository);
+    const salesActor: AuthenticatedActor = {
+      ...actor,
+      permissions: ['sales.contracts.create'],
+    };
+    await service.createForSales(mutation, salesActor);
+    expect(nationalIdProtector.protect).toHaveBeenCalledWith(
+      mutation.nationalId,
+    );
+    const input = { ...mutation };
+    delete input.nationalId;
+    delete input.birthDate;
+    await service.createForSales(input, salesActor);
+    expect(vi.mocked(repository.create).mock.calls[1]?.[0]).toMatchObject({
+      birthDate: null,
+    });
+    await expect(
+      service.createForSales({ ...input, birthDate: 'invalid' }, salesActor),
+    ).rejects.toThrow('تاریخ تولد معتبر نیست');
   });
 
   it('rejects a person create without national ID', async () => {
@@ -862,4 +1020,105 @@ describe('CustomerService', () => {
     });
     expect(repository.auditSensitiveRead).not.toHaveBeenCalled();
   });
+});
+
+describe('Sales workflow agency creation permission', () => {
+  const salesActor: AuthenticatedActor = {
+    ...actor,
+    permissions: [
+      MANUAL_ACCESS_VERSION,
+      'sales.contracts.create',
+      'ui.screen.sales.new-contract',
+    ],
+  };
+  it('allows a contract creator without customer read/create permissions and returns only a summary', async () => {
+    const resolveSalesOrganization = vi.fn().mockResolvedValue({
+      ...row,
+      kind: 'ORGANIZATION',
+      organizationId: 'org',
+    });
+    const { service } = createService({ resolveSalesOrganization } as never);
+    const result = await service.resolveSalesOrganization(
+      { id: 'org', name: 'Agency' },
+      salesActor,
+    );
+    expect(result.data.kind).toBe('organization');
+    expect(result.data).not.toHaveProperty('contacts');
+    expect(resolveSalesOrganization).toHaveBeenCalledWith(
+      'org',
+      'Agency',
+      actor.branchIds[0],
+      actor.userId,
+      undefined,
+    );
+  });
+  it('denies read-only users, explicit screen denies, empty branches and unassigned branch requests before writing', async () => {
+    const resolveSalesOrganization = vi.fn();
+    const { service } = createService({ resolveSalesOrganization } as never);
+    const deniedActors: AuthenticatedActor[] = [
+      { ...salesActor, permissions: ['sales.contracts.read.own'] },
+      {
+        ...salesActor,
+        permissions: [...salesActor.permissions, 'ui.deny.sales.new-contract'],
+      },
+      { ...salesActor, branchIds: [] },
+    ];
+    for (const user of deniedActors) {
+      await expect(
+        service.resolveSalesOrganization({ id: 'org', name: 'Agency' }, user),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    }
+    await expect(
+      service.resolveSalesOrganization(
+        { id: 'org', name: 'Agency' },
+        salesActor,
+        'outside',
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(resolveSalesOrganization).not.toHaveBeenCalled();
+  });
+  it('keeps inactive dossier conflicts explicit', async () => {
+    const { service } = createService({
+      resolveSalesOrganization: vi.fn().mockResolvedValue(null),
+    } as never);
+    await expect(
+      service.resolveSalesOrganization(
+        { id: 'org', name: 'Agency' },
+        salesActor,
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+});
+
+it('derives bounded request-only customer entry capabilities for a contract-only actor', () => {
+  const { service } = createService({} as CustomerRepository);
+  const creator = {
+    ...actor,
+    permissions: [
+      MANUAL_ACCESS_VERSION,
+      'sales.contracts.create',
+      'ui.screen.sales.new-contract',
+      'ui.allow.sales.new-contract',
+      'ui.deny.field.customers.passportNumber',
+    ],
+  } as AuthenticatedActor;
+  const scoped = service.salesEntryActor(creator);
+  expect(scoped.userId).toBe(creator.userId);
+  expect(scoped.branchIds).toEqual(creator.branchIds);
+  expect(scoped.permissions).toContain('customers.create');
+  expect(scoped.permissions).toContain('customers.sensitive.read');
+  expect(scoped.permissions).not.toContain(
+    'ui.deny.field.customers.passportNumber',
+  );
+  expect(scoped.permissions).not.toContain('customers.merge');
+  expect(creator.permissions).not.toContain('customers.create');
+  expect(creator.permissions).toContain(
+    'ui.deny.field.customers.passportNumber',
+  );
+  expect(() =>
+    service.salesEntryActor({ ...creator, branchIds: [] }),
+  ).toThrow();
+  expect(() =>
+    service.salesEntryActor({ ...actor, permissions: [] }),
+  ).toThrow();
 });

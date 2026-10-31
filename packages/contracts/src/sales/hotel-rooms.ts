@@ -10,7 +10,7 @@ export function salesRoomCategories(
       : ['SINGLE']
     : adults === 2
       ? children
-        ? ['DOUBLE', 'DOUBLE_EXTRA']
+        ? ['DOUBLE', 'DOUBLE_EXTRA', 'FAMILY']
         : ['DOUBLE']
       : adults === 3
         ? ['TRIPLE', 'FAMILY', 'DOUBLE_EXTRA']

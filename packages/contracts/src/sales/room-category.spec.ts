@@ -36,7 +36,11 @@ it('offers occupancy categories and prints the selected category beside the unch
 it('defaults by adults without adding child beds and preserves valid manual overrides', () => {
   const room = { adults: 2, childAges: [5, 8] };
   expect(defaultSalesRoomCategory(room)).toBe('DOUBLE');
-  expect(salesRoomCategories(2, 2)).toEqual(['DOUBLE', 'DOUBLE_EXTRA']);
+  expect(salesRoomCategories(2, 2)).toEqual([
+    'DOUBLE',
+    'DOUBLE_EXTRA',
+    'FAMILY',
+  ]);
   expect(
     defaultSalesRoomCategory({ ...room, roomCategory: 'DOUBLE_EXTRA' }),
   ).toBe('DOUBLE_EXTRA');
@@ -67,4 +71,27 @@ it('does not count child beds for a double room, while respecting explicit extra
       { adults: 2, childAges: [5], roomCategory: 'DOUBLE_EXTRA' },
     ]).extraBedCount,
   ).toBe(1);
+});
+
+it('offers and validates Family for two adults with children without changing defaults or solo rules', () => {
+  for (const childAges of [[5], [5, 8], [0, 5, 14]]) {
+    const room = {
+      ordinal: 1,
+      roomTypeId: '11111111-1111-4111-8111-111111111111',
+      roomTypeNameSnapshot: 'Standard',
+      adults: 2,
+      childAges,
+      roomCategory: 'FAMILY' as const,
+    };
+    expect(salesRoomCategories(2, childAges.length)).toContain('FAMILY');
+    expect(validSalesHotelRooms([room], 1)).toBe(true);
+    expect(defaultSalesRoomCategory(room)).toBe('FAMILY');
+    expect(defaultSalesRoomCategory({ ...room, roomCategory: undefined })).toBe(
+      'DOUBLE',
+    );
+    expect(salesRoomDisplayName(room)).toBe('Standard · Family');
+    expect(validSalesHotelRooms([{ ...room, childAges: [] }], 1)).toBe(false);
+    expect(validSalesHotelRooms([{ ...room, adults: 1 }], 1)).toBe(false);
+    expect(validSalesHotelRooms([{ ...room, childAges: [15] }], 1)).toBe(false);
+  }
 });

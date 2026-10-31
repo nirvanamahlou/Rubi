@@ -177,6 +177,16 @@ export function validateMasterDataDraft(
         'ترتیب نمایش باید عدد صحیح بین صفر تا ۱۰۰٬۰۰۰ باشد.';
   }
 
+  if (resource === 'countries' && values.gmtOffset) {
+    if (
+      !/^([+]((0[0-9]|1[0-3]):[0-5][0-9]|14:00)|-((0[0-9]|1[01]):[0-5][0-9]|12:00))$/.test(
+        values.gmtOffset,
+      )
+    )
+      errors.gmtOffset =
+        'اختلاف ساعت را مانند +03:30 و در بازهٔ -12:00 تا +14:00 وارد کنید.';
+    if (values.gmtOffset === '-00:00') values.gmtOffset = '+00:00';
+  }
   if (resource === 'countries' && values.iso2Code) {
     values.iso2Code = values.iso2Code.toUpperCase();
     if (!/^[A-Z]{2}$/.test(values.iso2Code))

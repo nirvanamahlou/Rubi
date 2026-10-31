@@ -1,3 +1,7 @@
+import {
+  missedCallbackCount,
+  missedCallbackContacts,
+} from './call-center-callbacks';
 import { IamWorkbenchRequestDirectory } from '../iam/iam-workbench-request-directory';
 import {
   BadRequestException,
@@ -114,7 +118,7 @@ export class CallCenterReadService {
     }
     if (q.requestStatus)
       terms.push(
-        Prisma.sql`EXISTS(SELECT 1 FROM customer_affairs_tickets r WHERE r.call_center_contact_id=c.id AND r.branch_id=c.branch_id AND r.status=${q.requestStatus} AND r.category='CALL_CENTER_REQUEST')`,
+        Prisma.sql`EXISTS(SELECT 1 FROM customer_affairs_tickets r WHERE r.call_center_contact_id=c.id AND r.branch_id=c.branch_id AND ${q.requestStatus === 'IN_PROGRESS' || q.requestStatus === 'NEW' ? Prisma.sql`r.status IN ('NEW', 'IN_PROGRESS')` : Prisma.sql`r.status=${q.requestStatus}`} AND r.category='CALL_CENTER_REQUEST')`,
       );
     const now = new Date();
     if (q.followUp)
@@ -141,6 +145,15 @@ export class CallCenterReadService {
       _sum: { version: true },
     });
     const tasks = await callCenterTaskRevision(tx, branch);
+    const telephony = await tx.callCenterTelephonySession.aggregate({
+      where: { call: { contact: { branchId: branch } } },
+      _sum: { version: true },
+    });
+    const completions = await tx.customerAffairsAuditEvent.aggregate({
+      where: { branchId: branch, action: { in: ['COMPLETE_CALL', 'SAVE'] } },
+      _count: true,
+      _max: { occurredAt: true },
+    });
     const filters = Object.fromEntries(
       Object.entries(q).filter(([key]) => key !== 'page' && key !== 'revision'),
     );
@@ -149,6 +162,8 @@ export class CallCenterReadService {
         branch,
         filters,
         calls,
+        completions,
+        telephony,
         requests,
         tasks,
         teamUsers: teamUsers?.slice().sort(),
@@ -232,13 +247,16 @@ export class CallCenterReadService {
         const calls = await tx.callCenterCall.findMany({
           where: { id: { in: rows.map((r) => r.latestId) } },
         });
+        const summaries = await this.calls.hydrateDestinations(
+          branchId,
+          calls.map((call) => this.calls.presentSummary(call)),
+          tx,
+        );
         return {
           data: rows.map((row) => ({
             id: row.id,
             callCount: Number(row.callCount),
-            latest: this.calls.presentSummary(
-              calls.find((c) => c.id === row.latestId)!,
-            ),
+            latest: summaries.find((call) => call.id === row.latestId)!,
           })),
           meta: {
             branchId,
@@ -296,7 +314,10 @@ export class CallCenterReadService {
         take: q.pageSize + 1,
       });
       return {
-        data: rows.slice(0, q.pageSize).map((r) => this.calls.presentCall(r)),
+        data: await this.calls.hydrateDestinations(
+          branchId,
+          rows.slice(0, q.pageSize).map((r) => this.calls.presentCall(r)),
+        ),
         meta: {
           next: rows.length > q.pageSize ? rows[q.pageSize - 1]!.id : null,
         },
@@ -334,6 +355,7 @@ export class CallCenterReadService {
   async kpis(actor: AuthenticatedActor, branch: string | undefined) {
     const branchId = this.workflow.scope(actor, branch);
     const scope = await this.workflow.access.sql(actor, branchId, 'reports');
+    const contactScope = await this.identityScope(actor, branchId);
     const now = new Date(),
       day = tehranDay(now),
       week = tehranWeek(now);
@@ -342,18 +364,11 @@ export class CallCenterReadService {
         today: bigint;
         week: bigint;
         withoutOutcome: bigint;
-        needsFollowUp: bigint;
       }>
     >`SELECT
-      count(*) FILTER(WHERE a.occurred_at >= ${day} AND a.occurred_at <= ${now}) AS today,
-      count(*) FILTER(WHERE a.occurred_at >= ${week} AND a.occurred_at <= ${now}) AS week,
-      count(*) FILTER(WHERE a.outcome IS NULL) AS "withoutOutcome",
-      count(*) FILTER(WHERE EXISTS(
-        SELECT 1 FROM customer_affairs_tickets r
-        WHERE r.id=a.ticket_id AND r.branch_id=c.branch_id
-          AND r.category='CALL_CENTER_REQUEST' AND r.status <> 'CLOSED'
-          AND ${callCenterTaskFilter(branchId, 'OPEN', now, day)}
-      )) AS "needsFollowUp"
+      count(*) FILTER(WHERE a.occurred_at >= ${day} AND a.occurred_at <= ${now} AND (${contactScope})) AS today,
+      count(*) FILTER(WHERE a.occurred_at >= ${week} AND a.occurred_at <= ${now} AND (${contactScope})) AS week,
+      count(*) FILTER(WHERE a.outcome IS NULL AND (${contactScope})) AS "withoutOutcome"
       FROM customer_affairs_calls a
       JOIN customer_affairs_call_contacts c ON c.id=a.contact_id
       WHERE c.branch_id=${branchId}::uuid AND a.occurred_at <= ${now}
@@ -364,7 +379,21 @@ export class CallCenterReadService {
         today: Number(row.today),
         week: Number(row.week),
         withoutOutcome: Number(row.withoutOutcome),
-        needsFollowUp: Number(row.needsFollowUp),
+        needsFollowUp: await this.db.client.$transaction(
+          (tx) =>
+            missedCallbackCount(
+              tx,
+              this.crypto,
+              branchId,
+              scope,
+              contactScope,
+              now,
+            ),
+          {
+            isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+            timeout: 60000,
+          },
+        ),
       },
       meta: {
         branchId,
@@ -375,9 +404,177 @@ export class CallCenterReadService {
         scope:
           'selected branch; independent of list filters; excludes synthetic calls',
         basis:
-          'today/week=occurredAt through asOf; withoutOutcome=all history with null outcome; needsFollowUp=distinct calls linked to non-closed Call Center requests with OPEN follow-up',
+          'today/week=occurredAt through asOf; withoutOutcome=all history with null outcome; needsFollowUp=unique known callers with missed inbound calls and no later answered inbound/outbound conversation; provider technical facts precede manual outcomes; all history',
       },
     };
+  }
+  private async identityScope(
+    actor: AuthenticatedActor,
+    branchId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    try {
+      return await this.workflow.access.sql(actor, branchId, 'contacts', tx);
+    } catch (error) {
+      if (!(error instanceof ForbiddenException)) throw error;
+      return Prisma.sql`FALSE`;
+    }
+  }
+  async withoutOutcome(
+    actor: AuthenticatedActor,
+    branch: string | undefined,
+    input: CallCenterSearchDto,
+    period?: 'today' | 'week',
+  ) {
+    const branchId = this.workflow.scope(actor, branch);
+    // Only paging is accepted semantically: contact-list filters never affect this KPI.
+    const q = {
+      page: input.page,
+      pageSize: input.pageSize,
+      revision: input.revision,
+      outcome: period ? undefined : 'UNKNOWN',
+    } as CallCenterSearchDto;
+    return this.db.client.$transaction(
+      async (tx) => {
+        const reportScope = await this.workflow.access.sql(
+          actor,
+          branchId,
+          'reports',
+          tx,
+        );
+        const contactScope = await this.identityScope(actor, branchId, tx);
+        const now = new Date();
+        const from =
+          period === 'today'
+            ? tehranDay(now)
+            : period === 'week'
+              ? tehranWeek(now)
+              : null;
+        const revision = this.crypto.fingerprint(
+          JSON.stringify({
+            period: period ?? 'without-outcome',
+            from,
+            data: await this.revision(tx, branchId, q),
+          }),
+        );
+        if (q.page > 1 && q.revision !== revision)
+          throw new ConflictException(
+            'داده‌ها تغییر کرده‌اند؛ فهرست را تازه‌سازی کنید.',
+          );
+        const predicate = Prisma.sql`c.branch_id=${branchId}::uuid AND ${period ? Prisma.sql`a.occurred_at >= ${from}` : Prisma.sql`a.outcome IS NULL`}
+        AND a.occurred_at <= ${now} AND (a.origin IS NULL OR a.origin <> 'SYNTHETIC')
+        AND (${reportScope}) AND (${contactScope})`;
+        const count = await tx.$queryRaw<
+          Array<{ total: bigint }>
+        >`SELECT count(*) AS total
+        FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate}`;
+        const ids = await tx.$queryRaw<
+          Array<{ id: string; callCount: bigint }>
+        >`SELECT a.id,
+        (SELECT count(*) FROM customer_affairs_calls z WHERE z.contact_id=c.id) AS "callCount"
+        FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate}
+        ORDER BY a.occurred_at DESC,a.id ASC LIMIT ${q.pageSize} OFFSET ${(q.page - 1) * q.pageSize}`;
+        const rows = await tx.callCenterCall.findMany({
+          where: { id: { in: ids.map((r) => r.id) } },
+        });
+        return {
+          data: ids.map((r) => ({
+            call: this.calls.presentSummary(rows.find((c) => c.id === r.id)!),
+            callCount: Number(r.callCount),
+          })),
+          meta: {
+            total: Number(count[0]!.total),
+            page: q.page,
+            pageSize: q.pageSize,
+            revision,
+            asOf: now.toISOString(),
+          },
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        timeout: 15000,
+      },
+    );
+  }
+  async missedCallbacks(
+    actor: AuthenticatedActor,
+    branch: string | undefined,
+    input: CallCenterSearchDto,
+  ) {
+    const branchId = this.workflow.scope(actor, branch);
+    return this.db.client.$transaction(
+      async (tx) => {
+        const now = new Date();
+        const reportScope = await this.workflow.access.sql(
+          actor,
+          branchId,
+          'reports',
+          tx,
+        );
+        const contactScope = await this.identityScope(actor, branchId, tx);
+        const pending = await missedCallbackContacts(
+          tx,
+          this.crypto,
+          branchId,
+          reportScope,
+          contactScope,
+          now,
+        );
+        // Membership hash also invalidates paging after ownership/permission changes.
+        const revision = this.crypto.fingerprint(
+          JSON.stringify({
+            kind: 'missed-callbacks-v1',
+            pending,
+            pageSize: input.pageSize,
+            data: await this.revision(tx, branchId, {
+              page: 1,
+              pageSize: input.pageSize,
+            } as CallCenterSearchDto),
+          }),
+        );
+        if (input.page > 1 && input.revision !== revision)
+          throw new ConflictException(
+            'داده‌ها تغییر کرده‌اند؛ فهرست را تازه‌سازی کنید.',
+          );
+        const page = pending.slice(
+          (input.page - 1) * input.pageSize,
+          input.page * input.pageSize,
+        );
+        const calls = await tx.callCenterCall.findMany({
+          where: { id: { in: page.map((p) => p.callId) } },
+        });
+        const counts = await tx.callCenterCall.groupBy({
+          by: ['contactId'],
+          where: {
+            contactId: { in: page.map((p) => p.contactId) },
+            occurredAt: { lte: now },
+            OR: [{ origin: null }, { origin: { not: 'SYNTHETIC' } }],
+          },
+          _count: true,
+        });
+        return {
+          data: page.map((p) => ({
+            call: this.calls.presentSummary(
+              calls.find((c) => c.id === p.callId)!,
+            ),
+            callCount:
+              counts.find((c) => c.contactId === p.contactId)?._count ?? 0,
+          })),
+          meta: {
+            total: pending.length,
+            page: input.page,
+            pageSize: input.pageSize,
+            revision,
+            asOf: now.toISOString(),
+          },
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        timeout: 60000,
+      },
+    );
   }
   async report(
     actor: AuthenticatedActor,

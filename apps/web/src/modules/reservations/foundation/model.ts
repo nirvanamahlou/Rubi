@@ -80,7 +80,9 @@ export interface RequestView {
   destination?: string;
   hotelName?: string;
   hotelId?: string | undefined;
+  hotels?: readonly { hotelId?: string | undefined; name: string }[];
   serviceTitles?: readonly string[];
+  serviceItems?: readonly { kind: string; title: string }[];
   mealServiceId?: string | undefined;
   mealServiceName?: string | undefined;
   hotelNotes?: string | undefined;
@@ -93,6 +95,7 @@ export interface RequestView {
   singleRooms?: number | undefined;
   doubleRooms?: number | undefined;
   extraBeds?: number | undefined;
+  familyTripleRooms?: number | undefined;
   hotelRequested?: boolean | undefined;
   voucherReady?: boolean | undefined;
   hotelConfirmed?: boolean | undefined;
@@ -107,7 +110,8 @@ export interface Query {
   search: string;
   status: QueueStatus | 'ALL';
   service: string;
-  sort: 'deadline' | 'newest' | 'priority';
+  /** Old tokens remain accepted for callers; the queue always follows contract numbers. */
+  sort: 'contract' | 'oldest' | 'deadline' | 'newest' | 'priority';
   page: number;
   pageSize: number;
   dateBasis: 'createdAt' | 'receivedAt' | 'travelDate';
@@ -118,7 +122,7 @@ export const defaultQuery: Query = {
   search: '',
   status: 'ALL',
   service: 'ALL',
-  sort: 'deadline',
+  sort: 'contract',
   page: 1,
   pageSize: 10,
   dateBasis: 'createdAt',
@@ -175,7 +179,10 @@ function normalizeSearch(value: string) {
 }
 export function queryRows(rows: readonly RequestView[], query: Query) {
   const search = normalizeSearch(query.search);
-  const priority = { UNSPECIFIED: -1, NORMAL: 0, HIGH: 1, URGENT: 2 };
+  const contractOrder = new Intl.Collator('en', {
+    numeric: true,
+    sensitivity: 'base',
+  });
   const dateError = validateDateRange(query.fromDate, query.toDate);
   const filtered = rows.filter(
     (r) =>
@@ -199,14 +206,10 @@ export function queryRows(rows: readonly RequestView[], query: Query) {
       ].some((v) => normalizeSearch(v).includes(search)),
   );
   filtered.sort((a, b) => {
-    const order =
-      query.sort === 'priority'
-        ? priority[b.priority] - priority[a.priority]
-        : query.sort === 'newest'
-          ? Date.parse(b.receivedAt ?? b.createdAt) -
-            Date.parse(a.receivedAt ?? a.createdAt)
-          : (a.deadline ? Date.parse(a.deadline) : Number.MAX_SAFE_INTEGER) -
-            (b.deadline ? Date.parse(b.deadline) : Number.MAX_SAFE_INTEGER);
+    const order = contractOrder.compare(
+      normalizeSearch(a.contractNumber),
+      normalizeSearch(b.contractNumber),
+    );
     return order || a.id.localeCompare(b.id);
   });
   const pageSize = Number.isFinite(query.pageSize)

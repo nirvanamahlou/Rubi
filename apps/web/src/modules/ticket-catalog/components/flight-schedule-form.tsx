@@ -245,8 +245,12 @@ export function FlightScheduleForm({
     defaults.mode,
   );
   const [advanced, setAdvanced] = useState(false);
-  const [maxEdited, setMaxEdited] = useState(false);
+  const [maxEdited, setMaxEdited] = useState(editing);
+  const [minEdited, setMinEdited] = useState(editing);
   const [input, setInput] = useState<ProductInput>(defaults.input);
+  const [multipleDestinations, setMultipleDestinations] = useState(
+    Boolean(defaults.input.saleRoutes?.length),
+  );
   const [start, setStart] = useState(defaults.start),
     [end, setEnd] = useState(defaults.end);
   const [allowPastDate, setAllowPastDate] = useState(defaults.allowPastDate);
@@ -263,13 +267,47 @@ export function FlightScheduleForm({
   const submitting = useRef(false),
     batchId = useRef('');
   const segment = input.segments[0]!;
+  const saleField =
+    input.journeyRole === 'return' ? 'originId' : 'destinationId';
+  const saleSide = input.journeyRole === 'return' ? 'origin' : 'destination';
+  const saleRouteFor = (cityId: string) =>
+    input.journeyRole === 'return'
+      ? { originId: cityId, destinationId: segment.destinationCityId }
+      : { originId: segment.originCityId, destinationId: cityId };
   const ref = (kind: Reference['kind'], id: string) =>
     references.find((r) => r.kind === kind && r.id === id);
   const patchSegment = (patch: Partial<Segment>) =>
-    setInput((current) => ({
-      ...current,
-      segments: [{ ...current.segments[0]!, ...patch }],
-    }));
+    setInput((current) => {
+      const previous = current.segments[0]!;
+      const countryKey = `${saleSide}CountryId` as const;
+      const changedCountry =
+        patch[countryKey] !== undefined &&
+        patch[countryKey] !== previous[countryKey];
+      return {
+        ...current,
+        segments: [{ ...previous, ...patch }],
+        saleRoutes: current.saleRoutes
+          ?.map((route) => ({
+            ...route,
+            ...(changedCountry ? { [saleField]: '' } : {}),
+            ...(current.journeyRole === 'return'
+              ? {
+                  destinationId: patch.destinationCityId ?? route.destinationId,
+                }
+              : { originId: patch.originCityId ?? route.originId }),
+          }))
+          .filter(
+            (route) =>
+              !(
+                route.destinationId &&
+                route.originId &&
+                route.destinationId ===
+                  (patch.destinationCityId ?? previous.destinationCityId) &&
+                route.originId === (patch.originCityId ?? previous.originCityId)
+              ),
+          ),
+      };
+    });
   const picker = (
     id: string,
     label: string,
@@ -314,6 +352,20 @@ export function FlightScheduleForm({
     setSaving(true);
     setProblem('');
     try {
+      const routes = input.saleRoutes ?? [];
+      if (
+        routes.some(
+          (r) =>
+            !r.originId ||
+            !r.destinationId ||
+            r.originId === r.destinationId ||
+            (r.destinationId === segment.destinationCityId &&
+              r.originId === segment.originCityId),
+        ) ||
+        new Set(routes.map((r) => r.originId + ':' + r.destinationId)).size !==
+          routes.length
+      )
+        throw new Error('اطلاعات بلیت معتبر نیست.');
       const dates = scheduleDates(start, end, weekdays, mode === 'round-trip');
       if (!batchId.current) batchId.current = browserRandomUuid();
       const outbound = {
@@ -357,6 +409,7 @@ export function FlightScheduleForm({
         batchId.current,
         scheduleToUtc,
         !maxEdited,
+        !minEdited,
       )
         .map((definition) =>
           editing && (initials?.length ?? 0) <= 1
@@ -426,7 +479,6 @@ export function FlightScheduleForm({
             patchSegment({
               [`${side}CountryId`]: r?.id ?? '',
               [`${side}CityId`]: '',
-              [`${side}AirportId`]: '',
               [side === 'origin' ? 'departureZone' : 'arrivalZone']:
                 'Asia/Tehran',
             }),
@@ -440,11 +492,84 @@ export function FlightScheduleForm({
           (r) =>
             patchSegment({
               [`${side}CityId`]: r?.id ?? '',
-              [`${side}AirportId`]: '',
               [side === 'origin' ? 'departureZone' : 'arrivalZone']:
                 'Asia/Tehran',
             }),
           { countryId: segment[`${side}CountryId`] },
+        )}
+        {side === saleSide && (
+          <div className={styles.extraDestinations}>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={multipleDestinations}
+                onChange={(e) => {
+                  setMultipleDestinations(e.target.checked);
+                  if (!e.target.checked)
+                    setInput((c) => ({ ...c, saleRoutes: [] }));
+                }}
+              />
+              افزودن مقصد
+            </label>
+            {multipleDestinations && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  همه مقصدها از ظرفیت همین پرواز استفاده می‌کنند.
+                </p>
+                {(input.saleRoutes ?? []).map((saleRoute, index) => (
+                  <div key={index} className={styles.extraDestination}>
+                    {picker(
+                      'sale-destination-' + index,
+                      'شهر',
+                      'cities',
+                      'city',
+                      saleRoute[saleField],
+                      (r) =>
+                        setInput((c) => ({
+                          ...c,
+                          saleRoutes: c.saleRoutes?.map((v, i) =>
+                            i === index ? saleRouteFor(r?.id ?? '') : v,
+                          ),
+                        })),
+                      {
+                        countryId: segment[`${saleSide}CountryId`],
+                      },
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setInput((c) => ({
+                          ...c,
+                          saleRoutes: c.saleRoutes?.filter(
+                            (_, i) => i !== index,
+                          ),
+                        }));
+                      }}
+                    >
+                      حذف مقصد
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={
+                    !segment[`${saleSide}CountryId`] ||
+                    (input.saleRoutes?.length ?? 0) >= 20
+                  }
+                  onClick={() =>
+                    setInput((c) => ({
+                      ...c,
+                      saleRoutes: [...(c.saleRoutes ?? []), saleRouteFor('')],
+                    }))
+                  }
+                >
+                  افزودن مقصد فروش
+                </Button>
+              </>
+            )}
+          </div>
         )}
         {picker(
           `schedule-${side}-airport`,
@@ -458,7 +583,6 @@ export function FlightScheduleForm({
               [side === 'origin' ? 'departureZone' : 'arrivalZone']:
                 'Asia/Tehran',
             }),
-          { cityId: segment[`${side}CityId`] },
         )}
       </section>
     );
@@ -763,8 +887,9 @@ export function FlightScheduleForm({
                                 max={365}
                                 step={1}
                                 value={
-                                  field === 'returnMaxDays' &&
-                                  !maxEdited &&
+                                  !(field === 'returnMaxDays'
+                                    ? maxEdited
+                                    : minEdited) &&
                                   weekdays.length > 0 &&
                                   weekdays.every((w) =>
                                     Number.isFinite(w.stayDays),
@@ -779,6 +904,7 @@ export function FlightScheduleForm({
                                 onChange={(event) => {
                                   if (field === 'returnMaxDays')
                                     setMaxEdited(true);
+                                  else setMinEdited(true);
                                   setInput((c) => ({
                                     ...c,
                                     [field]:
@@ -800,7 +926,7 @@ export function FlightScheduleForm({
           </div>
           <p className={styles.help}>
             ساعت رفت و برگشت به وقت تهران است. Min و Max فاصلهٔ روزهای مجاز
-            برگشت در فروش هستند. Max پیش‌فرض برای هر رفت، یک روز بیشتر از فاصلهٔ
+            برگشت در فروش هستند. Min و Max پیش‌فرض برای هر رفت، برابر فاصلهٔ
             برگشت است و می‌توانید آن را تغییر دهید.
           </p>
           <div className={styles.options}>

@@ -159,6 +159,17 @@ describe('contract list route and buyer phone', () => {
       originName: 'Tehran',
       destinationName: 'Antalya',
       createdAt: '2026-10-03T08:00:00.000Z',
+      travelDates: {
+        outbound: { date: '2026-10-08', calendar: 'persian' },
+        returning: null,
+      },
+      passengerComposition: {
+        adults: 0,
+        children2To6: 0,
+        children6To12: 0,
+        infants: 0,
+        childrenUnknownAge: 0,
+      },
     });
     expect(result.data[0]).not.toHaveProperty('buyerContact');
     expect(resolvePhone).toHaveBeenCalledOnce();

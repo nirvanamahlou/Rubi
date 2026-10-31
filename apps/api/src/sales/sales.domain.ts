@@ -1,3 +1,11 @@
+import { legacyRowPriceTotals } from '@nora/contracts';
+import {
+  salesBookedAgeCategory,
+  salesHotelGuestAges,
+  type SalesPassengerInput,
+} from '@nora/contracts';
+import { readLegacyServiceParties } from '@nora/contracts';
+import { enforceSalesHotelCapacity } from '@nora/contracts';
 import { validatePassengerHotelStays } from '@nora/contracts';
 import {
   readPassengerTotalPrices,
@@ -18,7 +26,6 @@ import {
 import {
   moneyUnits,
   validSalesHotelRooms,
-  hotelAgeOn,
   validateInsuranceExtras,
 } from '@nora/contracts';
 import {
@@ -34,6 +41,7 @@ import {
 } from '@nora/contracts';
 
 import type {
+  SalesHotelRoomV1,
   SalesBalance,
   SalesContractCreateRequest,
   SalesPassengerAgeCategory,
@@ -156,6 +164,19 @@ export function passengerAgeCategory(
   return age < 2 ? 'INF' : age < 12 ? 'CHD' : 'ADT';
 }
 
+export function contractPassengerAgeCategory(
+  passenger: Pick<SalesPassengerInput, 'birthDate' | 'ageCategory'>,
+  travelDate: string,
+): SalesPassengerAgeCategory {
+  const category = salesBookedAgeCategory(passenger, travelDate);
+  if (!category)
+    throw new SalesDomainError(
+      'SALES_PASSENGER_BIRTH_DATE_INVALID',
+      'تاریخ تولد مسافر معتبر نیست.',
+    );
+  return category;
+}
+
 export function validateSalesContract(
   input: SalesContractCreateRequest,
   requireChequeTerms = false,
@@ -199,15 +220,15 @@ export function validateSalesContract(
       ) ||
       !buyer.name.trim() ||
       buyer.name.length > 200 ||
-      !/^\+?[0-9]{10,15}$/.test(buyer.phone.trim()) ||
-      !buyer.address.trim() ||
+      (buyer.phone.trim() !== '' &&
+        !/^\+?[0-9]{10,15}$/.test(buyer.phone.trim())) ||
       buyer.address.length > 1000 ||
       (buyer.postalCode.trim() !== '' &&
         !/^[0-9]{10}$/.test(buyer.postalCode.trim())) ||
       (buyer.landline !== undefined &&
         (typeof buyer.landline !== 'string' ||
           (buyer.landline.trim() !== '' &&
-            !/^\+?[0-9]{10,15}$/.test(buyer.landline.trim())))) ||
+            !/^\+?[0-9]+$/.test(buyer.landline.trim())))) ||
       (input.payerCustomerId && input.payerCustomerId !== input.customerId)
     )
       throw new SalesDomainError(
@@ -234,9 +255,36 @@ export function validateSalesContract(
       'RETURN_TICKET_INVALID',
       'تاریخ بازگشت نباید قبل از رفت باشد.',
     );
+  let legacyParties: ReturnType<typeof readLegacyServiceParties>;
+  try {
+    legacyParties = readLegacyServiceParties(input.services);
+    if (legacyParties && input.passengers.length)
+      throw Error('Invalid legacy service counts');
+  } catch {
+    throw new SalesDomainError(
+      'SALES_CONTRACT_INVALID',
+      'ساختار قرارداد قدیمی معتبر نیست.',
+    );
+  }
+  const legacyContract = input.services.some(
+    (s) => s.metadata?.legacyContractV1 === true,
+  );
+  if (
+    legacyContract &&
+    (input.services.length !== 1 ||
+      input.services[0]?.kind !== 'OTHER' ||
+      input.services[0]?.clientKey !== 'legacy-contract' ||
+      input.passengers.length ||
+      input.ticketSelections?.length ||
+      input.hotelSelection)
+  )
+    throw new SalesDomainError(
+      'SALES_CONTRACT_INVALID',
+      'ساختار قرارداد قدیمی معتبر نیست.',
+    );
   if (
     !input.services.length ||
-    !input.passengers.length ||
+    (!legacyContract && !legacyParties && !input.passengers.length) ||
     (!input.priceComponents.length &&
       !input.services.every(
         (service) =>
@@ -288,6 +336,10 @@ export function validateSalesContract(
     );
   }
   try {
+    const totalPrices = readPassengerTotalPrices(
+      input.services,
+      input.passengers,
+    );
     const deductions = readPassengerDeductions(
       input.services,
       input.passengers,
@@ -301,12 +353,14 @@ export function validateSalesContract(
     )
       throw Error('تخفیف و کمیسیون مسافران معتبر نیست.');
     validatePassengerTotalPricing(input.services, input.passengers);
-    readPassengerHotelPrices(input.services, input.passengers);
-    validatePassengerFlightPrices(
-      input.services,
-      input.passengers,
-      input.priceComponents,
-    );
+    if (!totalPrices) {
+      readPassengerHotelPrices(input.services, input.passengers);
+      validatePassengerFlightPrices(
+        input.services,
+        input.passengers,
+        input.priceComponents,
+      );
+    }
   } catch (error) {
     throw new SalesDomainError(
       'SALES_FLIGHT_PASSENGER_PRICE_INVALID',
@@ -314,6 +368,7 @@ export function validateSalesContract(
     );
   }
   if (
+    !readPassengerTotalPrices(input.services, input.passengers) &&
     input.services.some((s) => s.metadata?.automaticFlightRoomTotalV1 === true)
   ) {
     try {
@@ -397,7 +452,7 @@ export function validateSalesContract(
       );
     const age =
       categories[passenger.customerId] ??
-      passengerAgeCategory(passenger.birthDate, input.departureDate);
+      contractPassengerAgeCategory(passenger, input.departureDate);
     if (
       passenger.childAgeBand != null &&
       (age !== 'CHD' ||
@@ -442,6 +497,12 @@ export function validateSalesContract(
     );
   }
   for (const ticket of tickets) {
+    const legacyFlight = legacyParties?.[ticket.serviceClientKey];
+    if (legacyFlight && legacyFlight.adults + legacyFlight.children < 1)
+      throw new SalesDomainError(
+        'TICKET_NOT_AVAILABLE',
+        'ساختار قرارداد قدیمی معتبر نیست.',
+      );
     const service = input.services.find(
       (item) => item.clientKey === ticket.serviceClientKey,
     );
@@ -471,6 +532,16 @@ export function validateSalesContract(
   const outbound = tickets.find(({ direction }) => direction === 'OUTBOUND');
   const inbound = tickets.find(({ direction }) => direction === 'RETURN');
   if (
+    input.tripType === 'ROUND_TRIP' &&
+    outbound?.source === 'CATALOG' &&
+    inbound?.source === 'CONTRACT_ONLY'
+  )
+    throw new SalesDomainError(
+      'TICKET_NOT_AVAILABLE',
+      'برای بلیت رفت از سهمیه شرکت، بلیت برگشت نیز باید از سهمیه شرکت انتخاب شود.',
+    );
+
+  if (
     tickets.length > 2 ||
     new Set(tickets.map(({ direction }) => direction)).size !==
       tickets.length ||
@@ -498,7 +569,7 @@ export function validateSalesContract(
       const cats = selected.map(
         (p) =>
           categories[p.customerId] ??
-          passengerAgeCategory(p.birthDate, input.departureDate),
+          contractPassengerAgeCategory(p, input.departureDate),
       );
       const ageText = service.metadata.applicantChildAges;
       const ages =
@@ -507,13 +578,13 @@ export function validateSalesContract(
             ? ageText.split(',').map(Number)
             : []
           : null;
-      const actualAges = selected
-        .filter(
-          (p) =>
-            passengerAgeCategory(p.birthDate, input.departureDate) === 'CHD',
-        )
-        .map((p) => hotelAgeOn(p.birthDate, input.departureDate))
-        .sort((a, b) => (a ?? -1) - (b ?? -1));
+      const actualAges = salesHotelGuestAges(
+        selected.filter(
+          (p) => contractPassengerAgeCategory(p, input.departureDate) === 'CHD',
+        ),
+        input.departureDate,
+        ages ?? [],
+      )?.sort((a, b) => a - b);
       if (
         !c ||
         !Number.isInteger(c.adults) ||
@@ -521,13 +592,20 @@ export function validateSalesContract(
         c.adults < 0 ||
         c.children < 0 ||
         c.adults + c.children < 1 ||
-        selected.length !== c.adults + c.children ||
-        cats.filter((x) => x === 'ADT').length !== c.adults ||
-        cats.filter((x) => x === 'CHD').length !== c.children ||
+        (legacyParties
+          ? legacyParties[service.clientKey]!.adults !== c.adults ||
+            legacyParties[service.clientKey]!.children !== c.children
+          : selected.length !== c.adults + c.children ||
+            cats.filter((x) => x === 'ADT').length !== c.adults ||
+            cats.filter((x) => x === 'CHD').length !== c.children) ||
         !Array.isArray(ages) ||
         ages.length !== c.children ||
-        actualAges.length !== ages.length ||
-        actualAges.some((a, i) => a !== [...ages].sort((a, b) => a - b)[i]) ||
+        (!legacyParties &&
+          (!actualAges ||
+            actualAges.length !== ages.length ||
+            actualAges.some(
+              (a, i) => a !== [...ages].sort((a, b) => a - b)[i],
+            ))) ||
         ages.some(
           (a) => !Number.isInteger(a) || Number(a) < 2 || Number(a) >= 12,
         )
@@ -542,11 +620,14 @@ export function validateSalesContract(
       service.metadata?.passengerCount !== undefined
     ) {
       const count = service.metadata.passengerCount;
-      const max = input.passengers.filter(
-        (p) =>
-          (categories[p.customerId] ??
-            passengerAgeCategory(p.birthDate, input.departureDate)) !== 'INF',
-      ).length;
+      const legacyTransfer = legacyParties?.[service.clientKey];
+      const max = legacyTransfer
+        ? legacyTransfer.adults + legacyTransfer.children
+        : input.passengers.filter(
+            (p) =>
+              (categories[p.customerId] ??
+                contractPassengerAgeCategory(p, input.departureDate)) !== 'INF',
+          ).length;
       if (
         typeof count !== 'number' ||
         !Number.isInteger(count) ||
@@ -664,19 +745,21 @@ export function validateSalesContract(
       const guests = input.passengers.filter((p) =>
         p.serviceClientKeys.includes(hotel.serviceClientKey),
       );
-      const ages = guests.map((p) =>
-        hotelAgeOn(p.birthDate, hotel.checkInDate),
-      );
       const expected = hotel.rooms
         .flatMap((r) => [...Array(r.adults).fill(15), ...r.childAges])
         .sort((a, b) => a - b);
-      const actual = ages
-        .map((a) => (a !== null && a >= 15 ? 15 : a))
-        .sort((a, b) => (a ?? -1) - (b ?? -1));
+      const actual = salesHotelGuestAges(
+        guests,
+        hotel.checkInDate,
+        expected,
+      )?.sort((a, b) => a - b);
       if (
         hotel.roomTypeId !== hotel.rooms[0]?.roomTypeId ||
-        expected.length !== actual.length ||
-        expected.some((a, i) => a !== actual[i])
+        (enforceSalesHotelCapacity() &&
+          !legacyParties &&
+          (!actual ||
+            expected.length !== actual.length ||
+            expected.some((a, i) => a !== actual[i])))
       )
         throw new SalesDomainError(
           'SALES_HOTEL_INVALID',
@@ -685,7 +768,7 @@ export function validateSalesContract(
     }
     if (
       !serviceKeys.has(hotel.serviceClientKey) ||
-      hotel.cityId !== input.destinationId
+      (!hotel.additionalStays?.length && hotel.cityId !== input.destinationId)
     )
       throw new SalesDomainError(
         'SALES_HOTEL_INVALID',
@@ -717,14 +800,96 @@ export function validateSalesContract(
         'SALES_HOTEL_INVALID',
         'ترکیب اتاق یک‌تخته، دوتخته و تخت اضافه معتبر نیست.',
       );
-    const hotelGuestCount = input.passengers.filter((passenger) =>
-      passenger.serviceClientKeys.includes(hotel.serviceClientKey),
-    ).length;
+    const legacyHotel = legacyParties?.[hotel.serviceClientKey];
+    const hotelGuestCount = legacyHotel
+      ? legacyHotel.adults + legacyHotel.children + legacyHotel.infants
+      : input.passengers.filter((passenger) =>
+          passenger.serviceClientKeys.includes(hotel.serviceClientKey),
+        ).length;
+    if (legacyHotel && hotel.rooms) {
+      const adults = hotel.rooms.reduce((n, r) => n + r.adults, 0);
+      const ages = hotel.rooms.flatMap((r) => r.childAges);
+      if (
+        adults !== legacyHotel.adults ||
+        ages.filter((a) => a >= 2).length !== legacyHotel.children ||
+        ages.filter((a) => a < 2).length !== legacyHotel.infants
+      )
+        throw new SalesDomainError(
+          'SALES_HOTEL_INVALID',
+          'ساختار قرارداد قدیمی معتبر نیست.',
+        );
+    }
     if (hotelGuestCount < 1 || hotel.occupancy !== hotelGuestCount)
       throw new SalesDomainError(
         'SALES_HOTEL_INVALID',
         'تعداد اعضای انتخاب‌شده برای اقامت باید با تعداد مسافران هتل برابر باشد.',
       );
+    if (hotel.additionalStays !== undefined) {
+      if (
+        !Array.isArray(hotel.additionalStays) ||
+        hotel.additionalStays.length > 49 ||
+        (hotel.additionalStays.length > 0 &&
+          (!UUID.test(hotel.hotelId) || !UUID.test(hotel.cityId)))
+      )
+        throw new SalesDomainError(
+          'SALES_HOTEL_INVALID',
+          'Invalid hotel itinerary',
+        );
+      const ids = new Set([hotel.hotelId]);
+      let previousOut = validDate(hotel.checkOutDate, 'Hotel check-out');
+      for (const stay of hotel.additionalStays) {
+        if (
+          stay &&
+          stay.rooms !== undefined &&
+          (!Array.isArray(stay.rooms) ||
+            !validSalesHotelRooms(stay.rooms, stay.rooms.length) ||
+            stay.rooms.reduce(
+              (n: number, room: SalesHotelRoomV1) =>
+                n + room.adults + room.childAges.length,
+              0,
+            ) > hotel.occupancy ||
+            stay.rooms.some((room: SalesHotelRoomV1) =>
+              Object.keys(room).some(
+                (key) =>
+                  ![
+                    'ordinal',
+                    'roomTypeId',
+                    'roomTypeNameSnapshot',
+                    'adults',
+                    'childAges',
+                    'roomCategory',
+                  ].includes(key),
+              ),
+            ))
+        )
+          throw new SalesDomainError(
+            'SALES_HOTEL_INVALID',
+            'ترکیب اتاق‌ها معتبر نیست.',
+          );
+        if (
+          !stay ||
+          !UUID.test(stay.hotelId) ||
+          !UUID.test(stay.cityId) ||
+          ids.has(stay.hotelId) ||
+          typeof stay.hotelNameSnapshot !== 'string' ||
+          !stay.hotelNameSnapshot.trim() ||
+          stay.hotelNameSnapshot.length > 240
+        )
+          throw new SalesDomainError(
+            'SALES_HOTEL_INVALID',
+            'Invalid hotel itinerary',
+          );
+        const start = validDate(stay.checkInDate, 'Hotel check-in');
+        const end = validDate(stay.checkOutDate, 'Hotel check-out');
+        if (end <= start || start < previousOut)
+          throw new SalesDomainError(
+            'SALES_HOTEL_INVALID',
+            'Hotel itinerary dates overlap or are reversed',
+          );
+        previousOut = end;
+        ids.add(stay.hotelId);
+      }
+    }
   }
   try {
     validateSalesChequePayments(
@@ -738,6 +903,47 @@ export function validateSalesContract(
       !input.paymentTerms
     )
       throw new Error('برای پرداخت چکی، نوع فروش چکی را انتخاب کنید.');
+    const legacyTotals = legacyRowPriceTotals(input.services);
+    if (legacyTotals) {
+      const signature = (
+        rows: readonly {
+          currencyCode: string;
+          amount: string;
+          type?: string;
+        }[],
+      ) => {
+        const sums = new Map<string, bigint>();
+        for (const p of rows)
+          sums.set(
+            p.currencyCode,
+            (sums.get(p.currencyCode) ?? 0n) +
+              (p.type === 'DISCOUNT' ? -1n : 1n) * moneyUnits(p.amount),
+          );
+        return JSON.stringify(
+          [...sums]
+            .filter(([, n]) => n !== 0n)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([c, n]) => [c, n.toString()]),
+        );
+      };
+      if (
+        input.passengers.length ||
+        !input.services.every(
+          (s) => s.metadata?.contractPackagePricingVersion === 1,
+        ) ||
+        signature(
+          salesChequeComponents(
+            legacyTotals.map((p) => ({
+              ...p,
+              type: 'BASE' as const,
+              title: 'جمع قیمت کل مسافران',
+            })),
+            input.paymentTerms,
+          ),
+        ) !== signature(input.priceComponents)
+      )
+        throw Error('مجموع قیمت نفرات با مبلغ کل قرارداد مطابقت ندارد.');
+    }
     const derived = servicePriceComponents(
       input.services,
       input.hotelSelection,
@@ -785,6 +991,17 @@ export function validateSalesContract(
 }
 
 export function validateSalesPayment(payment: SalesPaymentInput): void {
+  if (
+    payment?.destinationAccountId != null &&
+    (typeof payment.destinationAccountId !== 'string' ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        payment.destinationAccountId,
+      ))
+  )
+    throw new SalesDomainError(
+      'SALES_PAYMENT_ACCOUNT_INVALID',
+      'حساب مقصد پرداخت معتبر نیست.',
+    );
   if (!payment || typeof payment.dueAt !== 'string')
     throw new SalesDomainError(
       'SALES_PAYMENT_INVALID',

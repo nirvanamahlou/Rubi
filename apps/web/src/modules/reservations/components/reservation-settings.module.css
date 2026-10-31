@@ -127,3 +127,27 @@
     min-width: 132px;
   }
 }
+
+.amountCard {
+  background: linear-gradient(140deg, var(--surface), var(--secondary));
+  border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border));
+  padding: 20px;
+  gap: 16px;
+  box-shadow: 0 3px 12px #143e6b08;
+}
+.amountCard h4 {
+  font-size: 16px;
+}
+@media (min-width: 768px) {
+  .amountCard {
+    grid-template-columns: 1fr 1fr;
+  }
+  .amountCard h4,
+  .amountCard > p,
+  .amountCard > div {
+    grid-column: 1 / -1;
+  }
+  .amountCard > button {
+    min-height: 40px;
+  }
+}

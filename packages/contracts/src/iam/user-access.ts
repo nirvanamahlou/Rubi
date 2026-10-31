@@ -2557,6 +2557,15 @@ export function canViewRoute(
     if (!hasGroupPermission(permissions, group.id)) return false;
   }
   const route = url.pathname === '/hr' ? '/human-resources' : url.pathname;
+  // HR's legacy employee links open the existing summary tab by default.
+  if (
+    route === '/human-resources' &&
+    query.section === 'employee' &&
+    query.employee &&
+    !query.workspace &&
+    !query.tab
+  )
+    query.tab = 'summary';
   const candidates = USER_ACCESS_SCREENS.filter(
     (s) =>
       s.group === group.id &&

@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest';
 import type { TicketOfferV1 } from '@nora/contracts';
 import {
+  pairedReturnOffer,
   eligibleReturn,
   exactFlightQuery,
   flightDay,
@@ -71,4 +72,37 @@ it('enforces reverse route, authorized branch, arrival and inclusive min/max day
       { ...returning, departureAt: '2099-10-01T22:00:00Z' },
     ),
   ).toBe(false);
+});
+
+it('prefers the explicitly priced return over other dates in the recurring load group', () => {
+  const out = {
+    ...offer,
+    loadGroupId: 'load',
+    roundTripSalePrices: [
+      {
+        returnOfferId: 'back',
+        revision: 1,
+        amount: '100',
+        currencyCode: 'IRR',
+      },
+    ],
+  };
+  const back = {
+    ...offer,
+    id: 'back',
+    loadGroupId: 'load',
+    originId: offer.destinationId,
+    destinationId: offer.originId,
+    departureAt: '2099-10-04T10:00:00Z',
+  };
+  expect(
+    pairedReturnOffer(
+      out,
+      [back, { ...back, id: 'other-day', departureAt: '2099-10-05T10:00:00Z' }],
+      2,
+    )?.id,
+  ).toBe('back');
+  expect(
+    pairedReturnOffer(out, [{ ...back, remainingCapacity: 0 }], 2),
+  ).toBeUndefined();
 });

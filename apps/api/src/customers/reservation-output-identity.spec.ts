@@ -35,6 +35,7 @@ it.each([
       customerId: 'person',
       passportName: 'EXAMPLE / ALI',
       hotelChildAgeBand: band,
+      gender: null,
     });
     expect(find).toHaveBeenCalledWith('person', ['branch']);
     expect(JSON.stringify(result)).not.toContain(birth);
@@ -72,5 +73,35 @@ it('does not fabricate incomplete passport identity or a band without a travel d
   );
   expect(
     await service.reservationOutputIdentity('p', undefined, actor),
-  ).toEqual({ customerId: 'p', passportName: null, hotelChildAgeBand: null });
+  ).toEqual({
+    customerId: 'p',
+    passportName: null,
+    hotelChildAgeBand: null,
+    gender: null,
+  });
 });
+
+it.each(['M', 'F', null, undefined, 'invalid'])(
+  'exposes registered gender %s without inferring from names',
+  async (gender) => {
+    const find = vi.fn().mockResolvedValue({
+      passportFirstName: 'EXAMPLE',
+      passportLastName: 'PERSON',
+      gender,
+    });
+    const service = new CustomerService(
+      { find } as never,
+      {} as never,
+      {} as never,
+    );
+    const result = await service.reservationOutputIdentity(
+      'p',
+      undefined,
+      actor,
+    );
+    expect(result.gender).toBe(
+      gender === 'M' || gender === 'F' ? gender : null,
+    );
+    expect(find).toHaveBeenCalledWith('p', ['branch']);
+  },
+);

@@ -42,6 +42,7 @@ it('persists confirmation and voucher together and notifies the sales owner in t
     {} as Dependencies[4],
   );
   vi.spyOn(service, 'detail').mockResolvedValue({
+    workflow: state,
     salesOwnerUserId: 'owner',
     contractId: 'contract',
     snapshot: { passengerIds: [], contractNumber: 'DEMO' },

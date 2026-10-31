@@ -1,7 +1,9 @@
 import {
   eligibleTicketReturn,
+  ticketOfferRoutes,
   ticketCalendarDate,
   type TicketOfferV1,
+  type TicketSaleRouteV1,
 } from '@nora/contracts';
 import type { Reference } from './catalog';
 
@@ -17,10 +19,11 @@ export const countryFlightLoadOffers = (
       (ref) =>
         ref.kind === 'city' && ref.id === cityId && ref.countryId === countryId,
     );
-  return offers.filter(
-    (offer) =>
-      matches(offer.originId, originCountry) &&
-      matches(offer.destinationId, country),
+  return offers.filter((offer) =>
+    ticketOfferRoutes(offer).some(
+      (r) =>
+        matches(r.originId, originCountry) && matches(r.destinationId, country),
+    ),
   );
 };
 
@@ -58,8 +61,11 @@ export function validFlightLoadDates(
     .filter(
       (offer) =>
         isCompanyLoadOffer(offer) &&
-        (!filter.origin || offer.originId === filter.origin) &&
-        (!filter.destination || offer.destinationId === filter.destination),
+        ticketOfferRoutes(offer).some(
+          (r) =>
+            (!filter.origin || r.originId === filter.origin) &&
+            (!filter.destination || r.destinationId === filter.destination),
+        ),
     )
     .map((offer) => ticketCalendarDate(offer.departureAt))
     .sort();
@@ -98,8 +104,11 @@ export function companyFlightLegs(
         isCompanyLoadOffer(offer) &&
         (!filter.from || date >= filter.from) &&
         (!filter.to || date <= filter.to) &&
-        (!filter.origin || offer.originId === filter.origin) &&
-        (!filter.destination || offer.destinationId === filter.destination) &&
+        ticketOfferRoutes(offer).some(
+          (r) =>
+            (!filter.origin || r.originId === filter.origin) &&
+            (!filter.destination || r.destinationId === filter.destination),
+        ) &&
         (!filter.carrier || offer.carrierName === filter.carrier) &&
         (!filter.cabin || offer.cabinClassCode === filter.cabin) &&
         (!filter.weekday || weekday === filter.weekday) &&
@@ -156,4 +165,37 @@ export function disjointFlightLoadLegs(
 ) {
   const returnIds = new Set(returns.map((offer) => offer.id));
   return outbounds.filter((offer) => !returnIds.has(offer.id));
+}
+
+/** Charter history is independent of date/status/search filters, including sale routes. */
+export function charterLoadCities(
+  offers: readonly TicketOfferV1[],
+  origin = '',
+  history: readonly TicketSaleRouteV1[] = [],
+) {
+  const routes = [
+    ...offers.filter(isCompanyLoadOffer).flatMap(ticketOfferRoutes),
+    ...history,
+  ];
+  return {
+    origins: [...new Set(routes.map((route) => route.originId))],
+    destinations: [
+      ...new Set(
+        routes
+          .filter((route) => !origin || route.originId === origin)
+          .map((route) => route.destinationId),
+      ),
+    ],
+  };
+}
+export function tehranLoadOrigin(references: readonly Reference[]) {
+  return (
+    references.find(
+      (ref) =>
+        ref.kind === 'city' &&
+        ref.active &&
+        (ref.code?.toUpperCase() === 'THR' ||
+          ['تهران', 'tehran'].includes(ref.name.trim().toLowerCase())),
+    )?.id ?? ''
+  );
 }

@@ -1,3 +1,4 @@
+import { canSelfServeSalesContract } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -61,10 +62,15 @@ export class PassengerCorrectionService {
     private readonly crypto: PassengerCorrectionCrypto,
   ) {}
   private canWrite(
-    row: { ownerUserId: string; assignedUserId: string | null },
+    row: {
+      ownerUserId: string;
+      assignedUserId: string | null;
+      branchId: string;
+    },
     actor: AuthenticatedActor,
   ) {
     return (
+      canSelfServeSalesContract(actor, row) ||
       actor.permissions.includes('sales.contracts.update.branch') ||
       (actor.permissions.includes('sales.contracts.update.own') &&
         row.ownerUserId === actor.userId)
@@ -77,6 +83,7 @@ export class PassengerCorrectionService {
     });
     if (!row) throw new NotFoundException('قرارداد یافت نشد.');
     const readable =
+      canSelfServeSalesContract(actor, row) ||
       actor.permissions.includes('reservations.read') ||
       actor.permissions.includes('sales.contracts.read.all') ||
       actor.permissions.includes('sales.contracts.read.branch') ||
@@ -100,7 +107,12 @@ export class PassengerCorrectionService {
       : null;
   }
   private async state(row: Contract, actor: AuthenticatedActor) {
-    if (!actor.permissions.includes('customers.sensitive.read'))
+    const readActor =
+      !actor.permissions.includes('customers.sensitive.read') &&
+      actor.permissions.includes('sales.contracts.create')
+        ? this.customers.salesEntryActor(actor)
+        : actor;
+    if (!readActor.permissions.includes('customers.sensitive.read'))
       throw new ForbiddenException(
         'مجوز مشاهده اطلاعات حساس مشتری وجود ندارد.',
       );
@@ -115,18 +127,18 @@ export class PassengerCorrectionService {
           return {
             ...previous,
             name: passenger.displayNameSnapshot,
-            birthDate: passenger.birthDate.toISOString().slice(0, 10),
+            birthDate: passenger.birthDate?.toISOString().slice(0, 10) ?? '',
           };
         const { data } = await this.customers.detail(
           passenger.customerId,
-          actor,
+          readActor,
           undefined,
           'customer-verification',
         );
         return {
           customerId: passenger.customerId,
           name: passenger.displayNameSnapshot,
-          birthDate: passenger.birthDate.toISOString().slice(0, 10),
+          birthDate: passenger.birthDate?.toISOString().slice(0, 10) ?? '',
           passportNumber: data.passportNumber ?? null,
           passportExpiryDate: data.passportExpiryDate ?? null,
         };
@@ -462,7 +474,7 @@ export class PassengerCorrectionService {
     const current = new Map(
       row.passengers.map((p) => [
         p.customerId,
-        p.birthDate.toISOString().slice(0, 10),
+        p.birthDate?.toISOString().slice(0, 10) ?? '',
       ]),
     );
     return new Map(

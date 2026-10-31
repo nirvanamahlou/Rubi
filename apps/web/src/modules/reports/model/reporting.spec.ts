@@ -14,7 +14,7 @@ describe('reporting catalog', () => {
       reportCatalog
         .filter((report) => report.availability === 'READY')
         .map((report) => report.code),
-    ).toHaveLength(12);
+    ).toHaveLength(13);
     expect(
       reportCatalog.find((report) => report.code === 'due_checks')
         ?.availability,
@@ -51,9 +51,10 @@ describe('reporting catalog', () => {
     const displayCodes = reportCatalog.map((report) => report.displayCode);
     expect(new Set(displayCodes).size).toBe(reportCatalog.length);
     expect(displayCodes).toEqual(
-      reportCatalog.map(
+      Array.from(
+        { length: 37 },
         (_, index) => `RPT-${String(index + 1).padStart(3, '0')}`,
-      ),
+      ).filter((code) => !['RPT-014', 'RPT-029'].includes(code)),
     );
   });
 
@@ -100,7 +101,6 @@ describe('reporting catalog', () => {
       'cancellations_refunds',
       'marketing_performance',
       'customer_service_sla',
-      'hr_performance',
       'tickets_manifest',
     ];
     expect(reportCatalog.map((report) => report.code)).toEqual(
@@ -111,7 +111,10 @@ describe('reporting catalog', () => {
         (report) =>
           (report.approvedView.startsWith('reporting_') ||
             report.approvedView.startsWith('reporting.') ||
-            report.approvedView === 'sales.reporting.organization.v2') &&
+            [
+              'sales.reporting.contract-currency.v1',
+              'sales.reporting.payment-events.v1',
+            ].includes(report.approvedView)) &&
           report.outputs.join(',') === 'XLSX,PDF,CSV,API',
       ),
     ).toBe(true);
@@ -119,7 +122,6 @@ describe('reporting catalog', () => {
 
   it('keeps feature-backed cards pending until their own producers publish a projection', () => {
     const featureBackedReports = [
-      'sales_contract_pipeline',
       'agency_contract_risk',
       'ticket_capacity',
       'supplier_payment_queue',
@@ -128,7 +130,6 @@ describe('reporting catalog', () => {
       'customer_satisfaction',
       'customer_consent_coverage',
       'document_compliance',
-      'hr_record_expiry',
       'workbench_due_actions',
       'hotel_rate_comparison',
       'future_travel_commitments',
@@ -204,4 +205,12 @@ describe('reporting catalog', () => {
       /\b(Scope|Provider|Posted|Refund|threshold|redacted|Manifest|Filter Snapshot|Artifact)\b/,
     );
   });
+});
+
+it('keeps HR-only reports out of the general catalog and its search', () => {
+  expect(
+    reportCatalog.some((report) => report.permission === 'reporting.hr.read'),
+  ).toBe(false);
+  expect(searchReports('منابع انسانی')).toEqual([]);
+  expect(filterReportCatalog({ category: 'منابع انسانی' })).toEqual([]);
 });

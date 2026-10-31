@@ -19,8 +19,8 @@ import type { HrFormTarget } from './hr-record-form';
 import { sourceForRecord } from './hr-record-source';
 import ui from './hr-unified.module.css';
 
-const HrReports = dynamic(() =>
-  import('./hr-reports').then((module) => module.HrReports),
+const HrReportsWorkspace = dynamic(() =>
+  import('./hr-reports-workspace').then((module) => module.HrReportsWorkspace),
 );
 const HrDashboard = dynamic(() =>
   import('./hr-dashboard').then((module) => module.HrDashboard),
@@ -77,6 +77,7 @@ export function HrLiveWorkspace({
       ? (workspaceAliases[workspaceId] ?? 'home')
       : normalizeSection(sectionId),
     workspaceId === 'leaves' ? 'leave' : tabId,
+    employeeId,
   );
   const { section } = location;
   const tab = location.tab;
@@ -152,6 +153,9 @@ export function HrLiveWorkspace({
         <Link href="/hr" aria-current={section === 'home' ? 'page' : undefined}>
           <LayoutGrid size={17} aria-hidden="true" /> همه بخش‌ها
         </Link>
+        {section === 'employee' ? (
+          <Link href="/hr?section=employees">کارکنان</Link>
+        ) : null}
         {section !== 'home' ? (
           <label className={ui.sectionPicker}>
             <NativeSearchSelect
@@ -217,7 +221,7 @@ export function HrLiveWorkspace({
       ) : null}
       {section === 'payroll' ? <HrPayrollPaymentTable data={data} /> : null}
       {section === 'reports' ? (
-        <HrReports store={store} />
+        <HrReportsWorkspace store={store} tab={tab} />
       ) : section === 'surveys' ? (
         <HrSurveys />
       ) : section === 'home' ? (
@@ -228,13 +232,15 @@ export function HrLiveWorkspace({
         <HrEmployees
           store={store}
           onProfile={(item) =>
-            router.push(`/hr?section=employee&employee=${item.id}`)
+            router.push(
+              `/hr?section=employee&employee=${encodeURIComponent(item.id)}&tab=${encodeURIComponent(tab || 'summary')}`,
+            )
           }
         />
       ) : section === 'employee' ? (
         employee ? (
           <HrEmployeeProfile
-            key={employee.id}
+            key={`${employee.id}:${tab ?? ''}`}
             employee={employee}
             initialTab={tab}
             store={store}

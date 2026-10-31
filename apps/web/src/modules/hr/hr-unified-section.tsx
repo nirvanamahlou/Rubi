@@ -32,12 +32,16 @@ import type { HrFormTarget } from './hr-record-form';
 const HrImport = dynamic(() =>
   import('./hr-import').then((module) => module.HrImport),
 );
+const HrPayrollWorksheet = dynamic(() =>
+  import('./hr-payroll-worksheet').then((module) => module.HrPayrollWorksheet),
+);
 import { ShiftCalendar } from './shift-calendar';
 import { useHrRowSelection } from './hr-row-selection';
 import { needsHrDetail } from './hr-form-model';
 import { reportCellText } from './hr-report-text';
 import ui from './hr-unified.module.css';
 import { HrRadanTools, HrBackupButton } from './hr-radan-tools';
+import { HrLeaveBalance } from './hr-leave-balance';
 import { parseSavedHrFilter } from './hr-filters';
 
 export { sourceForRecord } from './hr-record-source';
@@ -122,6 +126,11 @@ function AccessibleHrSection({
   const queryKey = JSON.stringify(requestQuery);
   const selection = useHrRowSelection(queryKey);
   useEffect(() => {
+    if (
+      group.id === 'leaveBalance' ||
+      (section === 'payroll' && group.id === 'settings')
+    )
+      return;
     let active = true;
     const timer = window.setTimeout(() => {
       setLoading(true);
@@ -154,7 +163,16 @@ function AccessibleHrSection({
       active = false;
       window.clearTimeout(timer);
     };
-  }, [queryKey, page, store.revision, remember, sourceSection, activeTab]);
+  }, [
+    queryKey,
+    page,
+    store.revision,
+    remember,
+    sourceSection,
+    activeTab,
+    group.id,
+    section,
+  ]);
   useEffect(() => {
     if (!calendar) return;
     let active = true;
@@ -220,6 +238,51 @@ function AccessibleHrSection({
       setBusy(false);
     }
   };
+  if (section === 'payroll' && group.id === 'settings')
+    return (
+      <div className={ui.spaced}>
+        {!embedded ? (
+          <>
+            <header className={ui.heading}>
+              <h1>{screenMeta[section].title}</h1>
+            </header>
+            {groups.length > 1 ? (
+              <HrTabs
+                items={groups}
+                value={group.id}
+                onChange={switchGroup}
+                label="بخش‌های حقوق و دستمزد"
+              />
+            ) : null}
+          </>
+        ) : null}
+        <HrPayrollWorksheet data={store.data!} />
+      </div>
+    );
+  if (group.id === 'leaveBalance')
+    return (
+      <div className={ui.spaced}>
+        {!embedded ? (
+          <header className={ui.heading}>
+            <h1>{screenMeta[section].title}</h1>
+          </header>
+        ) : null}
+        {!embedded ? (
+          <HrTabs
+            items={groups}
+            value={group.id}
+            onChange={switchGroup}
+            label={`بخش‌های ${screenMeta[section].title}`}
+          />
+        ) : null}
+        <HrLeaveBalance
+          store={store}
+          initialView={
+            source.tab === 'leaveTransferRules' ? 'generalTransfer' : 'grant'
+          }
+        />
+      </div>
+    );
   return (
     <div className={ui.spaced}>
       {!embedded ? (

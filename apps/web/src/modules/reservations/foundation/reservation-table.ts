@@ -1,4 +1,5 @@
 import type { RequestView } from './model';
+import type { ReservationTableFlagKey } from '@nora/contracts';
 import { reservationDay, serviceLabels } from './model';
 export const reservationColumns = [
   'شماره قرارداد',
@@ -9,6 +10,7 @@ export const reservationColumns = [
   'SGL',
   'DBL',
   'EXT',
+  'FAM/TPL',
   'تعداد اتاق',
   'اقدام هتل',
   'تأیید هتل',
@@ -48,6 +50,14 @@ export const reservationColumns = [
   'ابطال',
   'تاریخ ابطال',
 ] as const;
+export const tableFlagColumns: Partial<
+  Record<number, ReservationTableFlagKey>
+> = {
+  [reservationColumns.indexOf('اقدام ویزا')]: 'visaRequested',
+  [reservationColumns.indexOf('تأیید ویزا')]: 'visaConfirmed',
+  [reservationColumns.indexOf('اقدام پرواز')]: 'flightRequested',
+  [reservationColumns.indexOf('تأیید پرواز')]: 'flightConfirmed',
+};
 export function tableDate(value?: string | null) {
   if (!value || !Number.isFinite(Date.parse(value))) return '—';
   return new Intl.DateTimeFormat('en-GB', {
@@ -78,6 +88,7 @@ export function reservationCells(row: RequestView): string[] {
     number(row.singleRooms),
     number(row.doubleRooms),
     number(row.extraBeds),
+    number(row.familyTripleRooms),
     number(row.roomCount),
     tick(row.hotelRequested),
     tick(row.hotelConfirmed),

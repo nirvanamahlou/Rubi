@@ -1,16 +1,11 @@
 import { createHash } from 'node:crypto';
-import {
-  ConflictException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import type {
   AuthenticatedActor,
   SalesContractOutputV1,
 } from '@nora/contracts';
 import { CustomerService } from '../customers/customer.service';
-import { IamService } from '../iam/iam.service';
+import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { LegalEntitiesService } from '../legal-entities/legal-entities.service';
 import { SalesService } from './sales.service';
 import { SalesRepository } from './sales.repository';
@@ -23,21 +18,15 @@ export class SalesOutputService {
     @Inject(CustomerService) private readonly customers: CustomerService,
     @Inject(LegalEntitiesService)
     private readonly legalEntities: LegalEntitiesService,
-    @Inject(IamService) private readonly iam: IamService,
+    @Inject(IamFinanceDirectory)
+    private readonly identities: IamFinanceDirectory,
   ) {}
   async prepare(
     id: string,
     actor: AuthenticatedActor,
     traceId?: string,
   ): Promise<{ data: SalesContractOutputV1 }> {
-    if (
-      !actor.permissions.includes('sales.export') ||
-      !actor.permissions.includes('legal-entity.read')
-    )
-      throw new ForbiddenException(
-        'مجوز خروجی قرارداد و مشاهده شرکت فعال لازم است.',
-      );
-    // Reuse the existing own/assigned/branch/all contract-read policy.
+    // The authoritative row-read policy also authorizes this document's output.
     const { data: contract } = await this.sales.detail(id, actor);
     if (['DRAFT', 'PENDING_CONFIRMATION'].includes(contract.status))
       throw new ConflictException(
@@ -52,36 +41,45 @@ export class SalesOutputService {
       context.legalEntity.id,
       actor,
     );
+    // Derived only after Sales row authorization, and used only for this
+    // document's buyer/passenger projections (including read-all managers).
+    const documentActor: AuthenticatedActor = {
+      ...actor,
+      branchIds: [...new Set([...actor.branchIds, contract.branchId])],
+      permissions: [
+        ...new Set<AuthenticatedActor['permissions'][number]>([
+          ...actor.permissions,
+          'sales.export',
+        ]),
+      ],
+    };
     const { data: customer } = await this.customers.maskedDetail(
       contract.customerId,
-      actor,
+      documentActor,
     );
     const passengerNames = await Promise.all(
       (contract.passengersDetail ?? []).map(async (passenger) => {
-        const { data: person } = await this.customers.maskedDetail(
+        const person = await this.customers.salesOutputIdentity(
           passenger.customerId,
-          actor,
+          documentActor,
+          traceId,
         );
-        const latin =
-          person.passportFirstName?.trim() && person.passportLastName?.trim()
-            ? `${person.passportFirstName.trim()} ${person.passportLastName.trim()}`
-            : '';
         return {
           ...passenger,
-          displayNameSnapshot: latin || passenger.displayNameSnapshot,
+          displayNameSnapshot:
+            person.passportName ||
+            person.displayName ||
+            passenger.displayNameSnapshot,
+          birthDate: person.birthDate ?? passenger.birthDate,
         };
       }),
     );
-    const users = actor.permissions.includes('iam.users.read')
-      ? await this.iam.listUsers()
-      : [];
+    const owner = await this.identities.documentOwnerName(contract.ownerUserId);
     const output: SalesContractOutputV1 = {
       version: 1,
       generatedAt: new Date().toISOString(),
       contract: { ...contract, passengersDetail: passengerNames },
-      ownerName:
-        users.find((user) => user.id === contract.ownerUserId)?.displayName ??
-        null,
+      ownerName: owner?.displayName ?? null,
       customer: {
         kind: customer.kind,
         address:

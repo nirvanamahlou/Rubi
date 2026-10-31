@@ -54,6 +54,48 @@ it('lists independent active registered brokers without requiring an organizatio
   expect(list.mock.calls[0]![1]).not.toHaveProperty('organizationRole');
 });
 
+it('provides the registered English broker name to legacy hotel purchase choices without changing IDs or search', async () => {
+  const list = vi.fn().mockResolvedValue({
+    data: [
+      {
+        id: 'broker',
+        name: 'کارگزار نمونه',
+        attributes: { englishName: ' Sample Broker ' },
+      },
+    ],
+    meta: { total: 1 },
+  });
+  const directory = new MasterTravelDirectory({ list } as never);
+  expect(await directory.hotelRateChoices('brokers', 'نمونه', 1)).toEqual({
+    data: [{ id: 'broker', name: 'Sample Broker' }],
+    meta: { total: 1 },
+  });
+  expect(list).toHaveBeenCalledWith(
+    'brokers',
+    expect.objectContaining({ search: 'نمونه', status: 'active' }),
+  );
+});
+
+it('transcribes legacy broker choices with missing or Persian English fields, without changing source records', async () => {
+  const record = {
+    id: 'broker',
+    name: 'جی تی اس',
+    attributes: { englishName: 'جی تی اس' },
+  };
+  const list = vi
+    .fn()
+    .mockResolvedValue({ data: [record], meta: { total: 1 } });
+  expect(
+    await new MasterTravelDirectory({ list } as never).hotelRateChoices(
+      'brokers',
+      '',
+      1,
+    ),
+  ).toEqual({ data: [{ id: 'broker', name: 'GTS' }], meta: { total: 1 } });
+  expect(record.name).toBe('جی تی اس');
+  expect(record.attributes.englishName).toBe('جی تی اس');
+});
+
 it('validates an independent broker and never falls back for an inactive broker', async () => {
   const detail = vi.fn().mockResolvedValue({
     data: { id: 'broker', name: 'Registered', status: 'active' },

@@ -128,3 +128,22 @@ it('does not auto-select an unavailable, incompatible or unpublished standalone 
   };
   expect(pairedReturnOffer(priced, [back], 2, true)).toBe(back);
 });
+
+it('uses the explicit scheduled day within a shared load instead of another eligible day', () => {
+  const planned = { ...out, scheduledReturnDate: '2026-10-22' };
+  const other = {
+    ...back,
+    id: 'another-day',
+    departureAt: '2026-10-23T08:00:00Z',
+  };
+  expect(pairedReturnOffer(planned, [other, back], 1)).toBe(back);
+  expect(pairedReturnDate([planned], [other, back], 1)?.day).toBe('2026-10-22');
+  expect(pairedReturnOffer(planned, [other], 1)).toBeUndefined();
+  expect(
+    pairedReturnOffer(
+      planned,
+      [back, { ...back, id: 'same-day-other-flight' }],
+      1,
+    ),
+  ).toBeUndefined();
+});

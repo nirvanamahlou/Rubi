@@ -1,3 +1,4 @@
+import { SalesPeopleController } from './sales-people.controller';
 import { Module } from '@nestjs/common';
 
 import { AuthGuard } from '../iam/auth.guard';
@@ -12,7 +13,11 @@ import { CustomerSelectionController } from './customer-selection.controller';
 
 @Module({
   imports: [IamModule],
-  controllers: [CustomerSelectionController, CustomersController],
+  controllers: [
+    SalesPeopleController,
+    CustomerSelectionController,
+    CustomersController,
+  ],
   providers: [
     AuthGuard,
     PermissionGuard,

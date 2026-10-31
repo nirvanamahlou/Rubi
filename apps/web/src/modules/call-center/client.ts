@@ -58,6 +58,14 @@ export async function callCenterRequest<T>(
 }
 const request = callCenterRequest;
 export const callCenterApi = {
+  destinations: (branchId: string, signal: AbortSignal) =>
+    request<{ data: { label: string; extension: string }[] }>(
+      '/destination-options',
+      branchId,
+      { signal },
+    ),
+  get: (branchId: string, id: string) =>
+    request<{ data: Call }>(`/calls/${encodeURIComponent(id)}`, branchId),
   list: (branchId: string, page = 1, signal?: AbortSignal) =>
     request<CallCenterPage>(
       `?page=${page}&pageSize=50`,
@@ -69,6 +77,9 @@ export const callCenterApi = {
       method: 'POST',
       body: JSON.stringify({
         id: call.id,
+        ...(call.completionToken
+          ? { completionToken: call.completionToken }
+          : {}),
         ...(call.ticketId ? { ticketId: call.ticketId } : {}),
         ...(call.outcome ? { outcome: call.outcome } : {}),
         phone: call.phone,
