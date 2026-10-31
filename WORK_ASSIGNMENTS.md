@@ -10200,3 +10200,7 @@ PC-B; branch codex/pc-b-petty-plus-1031. Reserve petty-fund-card.tsx/spec and ow
 Reserve petty-fund-card.tsx/spec and own status notes. Card/plus must open dialog even on query failure/loading; retain save guard until successful data load, show retry inside modal, avoid stale values after retry. Existing source scopes released. No API/schema/permissions changes. User reports no opening after prior change; repair and local rollout within authorized scope.
 
 PETTY-OPEN-FIX-1031 extension: reserve only petty-fund controller GET response to explicitly serialize JSON null for unconfigured branches. Nest default null otherwise sends an empty body, failing the client's JSON parser. No service/schema or permission change.
+
+## REQUEST-DETAIL-SIMPLE-1031 — PC-B — RESERVED
+
+Reserve Procurement workspace request detail, draft form/API save consumer, targeted tests and own notes. Remove lifecycle/assignment controls except cancellation; remove owner/next-action/acceptance metadata. Enable edit through existing DraftForm for nonfinal requests under existing permissions; supply explicit user edit reason for post-publication audit. Existing money/approval/CAS guards stay authoritative. Preserve pending petty-dialog repair. No schema/migration/permission changes.

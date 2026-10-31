@@ -8076,3 +8076,7 @@ A separate accessible plus button beside the petty cash card opens its existing 
 ## 2026-10-31 — PETTY-OPEN-FIX-1031
 
 The fund GET explicitly serializes JSON null for unconfigured branches rather than relying on Nest's empty null response. Card/plus remain activatable during loading/error; dialog shows error/retry and save stays disabled until authoritative data loads. Retry populates the form with returned values/version. No migration/data/permission change. Browser automation initialization failed (os error3); targeted controller/card tests and builds validate the repair before local rollout.
+
+## 2026-10-31 — REQUEST-DETAIL-SIMPLE-1031
+
+Request detail keeps cancellation plus the shared-form edit entry, removing approval/publication/close/owner-assignment commands and owner, acceptance and next-action metadata. Nonfinal requests expose existing DraftForm with saved values under request.update. Post-send edit requires an explicit audit reason, sent via existing PATCH contract with expectedVersion/idempotency. Existing server financial and immutable petty charge guards remain unchanged; no permission/data/schema change.67 Procurement tests and scoped lint passed; final save-reason regression/build/local rollout pending.
