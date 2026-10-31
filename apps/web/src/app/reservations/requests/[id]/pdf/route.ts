@@ -1,3 +1,8 @@
+import {
+  supplierDocumentScope,
+  type SupplierDocumentKind,
+} from '@/modules/reservations/model/supplier-document-scope';
+import { reservationHotelStays } from '@nora/contracts';
 import { hotelFormScope } from '@/modules/reservations/model/hotel-form-scope';
 import { loadOutputReferences } from '@/modules/reservations/model/output-references';
 import { salesContractFlights } from '@nora/contracts';
@@ -31,6 +36,13 @@ export async function GET(
   const kind = new URL(request.url).searchParams.get('kind');
   if (kind && kind !== 'voucher') return fail('نوع سند معتبر نیست.', 400);
   const voucher = kind === 'voucher';
+  const formScope =
+    new URL(request.url).searchParams.get('formScope') ?? 'HOTEL';
+  if (
+    !['HOTEL', 'TRANSFER', 'OUTBOUND', 'RETURN'].includes(formScope) ||
+    (voucher && formScope !== 'HOTEL')
+  )
+    return fail('نوع سند معتبر نیست.', 400);
   const hotelStayKey = new URL(request.url).searchParams.get('hotelStayKey');
   if (voucher && hotelStayKey) return fail('نوع سند معتبر نیست.', 400);
   if (
@@ -68,6 +80,16 @@ export async function GET(
       intake.workflow.supplierFormSettings =
         intake.workflow.sentSupplierFormSettings;
     }
+    if (!voucher) {
+      try {
+        intake = supplierDocumentScope(
+          intake,
+          formScope as SupplierDocumentKind,
+        );
+      } catch {
+        return fail('نوع سند معتبر نیست.', 400);
+      }
+    }
     if (voucher && !intake.workflow.voucherIssued)
       return fail('واچر هنوز صادر نشده است.', 409);
     if (
@@ -92,7 +114,8 @@ export async function GET(
     let logo: string;
     if (
       voucher &&
-      intake.workflow.voucherSettings?.flags.withLetterhead === false
+      (branding.voucherWithoutLogo === true ||
+        intake.workflow.voucherSettings?.flags.withLetterhead === false)
     ) {
       logo = '';
     } else if (
@@ -138,16 +161,20 @@ export async function GET(
       },
       id,
     );
-    const hotel = intake.snapshot.hotelSelection;
+    const hotels = reservationHotelStays(intake.snapshot).map(
+      (stay) => stay.hotel,
+    );
     const keys = [
-      ['hotels', hotel?.hotelId],
-      [
-        'cities',
-        hotel?.cityId ?? intake.snapshot.ticketSelections?.[0]?.destinationId,
-      ],
-      ['room-types', hotel?.roomTypeId],
-      ...(hotel?.rooms ?? []).map((r) => ['room-types', r.roomTypeId]),
-      ['meal-services', hotel?.mealServiceId],
+      ...hotels.flatMap((hotel) => [
+        ['hotels', hotel.hotelId],
+        ['cities', hotel.cityId],
+        ['room-types', hotel.roomTypeId],
+        ...(hotel.rooms ?? []).map((r) => ['room-types', r.roomTypeId]),
+        ['meal-services', hotel.mealServiceId],
+      ]),
+      ...(!hotels.length
+        ? [['cities', intake.snapshot.ticketSelections?.[0]?.destinationId]]
+        : []),
     ];
     await Promise.all(
       keys.map(async ([resource, key]) => {

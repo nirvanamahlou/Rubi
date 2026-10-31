@@ -102,6 +102,15 @@ export function defaultVoucherSettings(
   };
   if (!saved) return contractRoomDefaults(defaults);
   return contractRoomDefaults({
+    ...(saved.hotelTransferSeparate !== undefined
+      ? { hotelTransferSeparate: saved.hotelTransferSeparate }
+      : {}),
+    ...(saved.hotelTransferSplit !== undefined
+      ? { hotelTransferSplit: saved.hotelTransferSplit }
+      : {}),
+    ...(saved.hotelTransferReturn
+      ? { hotelTransferReturn: { ...saved.hotelTransferReturn } }
+      : {}),
     ...(saved.hotelRoomPrices
       ? { hotelRoomPrices: structuredClone(saved.hotelRoomPrices) }
       : {}),
@@ -389,6 +398,10 @@ export function supplierFormData(
           return {
             ...person,
             hotelChildAgeBand: person.hotelChildAgeBand,
+            ...(intake.supplierDocumentKind &&
+            intake.supplierDocumentKind !== 'HOTEL'
+              ? { otherServices: '-' }
+              : {}),
             ...(saved?.services
               ? {
                   outboundFlight: saved.services.outboundFlight,
@@ -409,6 +422,22 @@ export function supplierFormData(
               : {}),
           };
         }),
+        ...(intake.supplierDocumentKind
+          ? {
+              transfer:
+                intake.supplierDocumentKind === 'HOTEL'
+                  ? '-'
+                  : (intake.supplierDocumentKind === 'RETURN'
+                      ? 'RETURN ONLY'
+                      : intake.supplierDocumentKind === 'OUTBOUND'
+                        ? 'OUTBOUND ONLY'
+                        : 'ROUND TRIP') +
+                    ' · ' +
+                    ((settings.hotelTransferCounts?.outbound ?? 0) +
+                      (settings.hotelTransferCounts?.returning ?? 0)) +
+                    ' PAX',
+            }
+          : {}),
         supplier: englishOutputName(settings.text.broker?.trim() || '-', refs),
         leader: settings.text.leaderLanguage?.trim() || 'Persian',
       }

@@ -101,7 +101,12 @@ export class BankAccountService {
     if (!Number.isSafeInteger(number) || number < 1 || number > 100000)
       throw new BadRequestException('صفحه حساب‌ها معتبر نیست.');
     const rows = await this.db.client.financeSettlementAccount.findMany({
-      where: { bankId, kind: 'BANK', branchId: { in: [...actor.branchIds] } },
+      where: {
+        bankId,
+        kind: 'BANK',
+        deletedAt: null,
+        branchId: { in: [...actor.branchIds] },
+      },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       take: 26,
       skip: (number - 1) * 25,
@@ -123,6 +128,7 @@ export class BankAccountService {
         id,
         bankId,
         kind: 'BANK',
+        deletedAt: null,
         branchId: { in: [...actor.branchIds] },
       },
     });
@@ -164,6 +170,65 @@ export class BankAccountService {
       await this.audit(tx, row, actor, 'REVEAL');
       return { ...this.projection(row), ...identifiers };
     });
+  }
+  async remove(
+    bankId: string,
+    id: string,
+    input: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, true);
+    bankId = bankUuid(bankId);
+    id = bankUuid(id);
+    const expectedVersion = bankVersion(
+      bankInput(input, ['expectedVersion']).expectedVersion,
+    );
+    return this.db.client.$transaction(
+      async (tx) => {
+        const current = await this.find(tx, bankId, id, actor);
+        if (current.version !== expectedVersion)
+          throw new ConflictException(
+            'حساب هم‌زمان تغییر کرده است؛ دوباره آن را باز کنید.',
+          );
+        const usage = await tx.financeSettlementAccount.findUniqueOrThrow({
+          where: { id },
+          include: { _count: true },
+        });
+        if (
+          Object.entries(usage._count).some(
+            ([key, count]) => key !== 'bankAccountAudits' && count > 0,
+          )
+        )
+          throw new ConflictException('حساب بانکی استفاده‌شده قابل حذف نیست.');
+        const result = await tx.financeSettlementAccount.updateMany({
+          where: {
+            id,
+            bankId,
+            branchId: current.branchId,
+            version: expectedVersion,
+            deletedAt: null,
+          },
+          data: {
+            isActive: false,
+            deletedAt: new Date(),
+            version: { increment: 1 },
+          },
+        });
+        if (result.count !== 1)
+          throw new ConflictException(
+            'حساب هم‌زمان تغییر کرده است؛ دوباره آن را باز کنید.',
+          );
+        await this.audit(
+          tx,
+          { ...current, isActive: false, version: current.version + 1 },
+          actor,
+          'DELETE',
+          this.projection(current),
+        );
+        return { id };
+      },
+      { isolationLevel: 'Serializable' },
+    );
   }
   private identifiers(
     input: Record<string, unknown>,

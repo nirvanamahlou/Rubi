@@ -506,6 +506,9 @@ export interface ReservationHotelPurchaseInputV1 {
 }
 
 export interface TravelBrandingV1 {
+  /** Independent document-level issuer logo preferences; old snapshots keep logos. */
+  ticketWithoutLogo?: boolean;
+  voucherWithoutLogo?: boolean;
   kind: 'OWN' | 'AGENCY';
   referenceId: string;
   name: string;
@@ -608,7 +611,12 @@ export interface TravelWorkflowCommandV1 {
   acknowledgeMissingInsurance?: boolean;
   roomOrder?: string[];
   ageOverrides?: Record<string, 'ADULT' | 'CHILD' | 'INFANT'>;
-  branding?: { kind: 'OWN' | 'AGENCY'; referenceId?: string };
+  branding?: {
+    kind: 'OWN' | 'AGENCY';
+    referenceId?: string;
+    ticketWithoutLogo?: boolean;
+    voucherWithoutLogo?: boolean;
+  };
 }
 export interface TravelDeliveryAuthorizationV1 {
   version: number;
@@ -668,6 +676,16 @@ export interface ReservationRoomPriceV1 {
   factor: string;
 }
 export interface VoucherSettingsV1 {
+  /** Supplier-form modes; omitted retains the historical combined quotation. */
+  hotelTransferSeparate?: boolean;
+  hotelTransferSplit?: boolean;
+  hotelTransferReturn?: {
+    amount: string;
+    currencyCode: string;
+    brokerId?: string;
+    brokerName?: string;
+  };
+
   hotelRoomPrices?: {
     currencyCode: string;
     rooms: ReservationRoomPriceV1[];

@@ -13,6 +13,7 @@ import {
   insuranceRequest,
   type InsuranceReference,
   type InsuranceSettingsResponse,
+  type InsuranceProviderCatalog,
 } from './client';
 import styles from './workspace.module.css';
 import { currencySymbol } from '@/lib/currency-symbol';
@@ -29,6 +30,9 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState('');
+  const [providerCatalog, setProviderCatalog] =
+    useState<InsuranceProviderCatalog | null>(null);
+  const [providerBusy, setProviderBusy] = useState(false);
   useEffect(() => {
     let active = true;
     Promise.all([
@@ -82,6 +86,22 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
       ),
     });
   }
+  async function receiveProviderCatalog() {
+    if (providerBusy) return;
+    setProviderBusy(true);
+    setError('');
+    try {
+      setProviderCatalog(
+        await insuranceRequest<InsuranceProviderCatalog>(
+          'provider/catalog?' + new URLSearchParams({ branchId }),
+        ),
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'اطلاعات بیمه دریافت نشد.');
+    } finally {
+      setProviderBusy(false);
+    }
+  }
   async function save() {
     if (!value) return;
     setBusy(true);
@@ -134,6 +154,28 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
               <Save size={16} />
               {busy ? 'در حال ذخیره…' : 'ثبت تنظیمات'}
             </Button>
+          </div>
+          <div className={styles.card}>
+            <strong>اتصال آزمایشی تراویس</strong>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={
+                !value.canManage ||
+                providerBusy ||
+                value.providerStatus !== 'SANDBOX_CONFIGURED'
+              }
+              onClick={() => void receiveProviderCatalog()}
+            >
+              {providerBusy ? 'در حال دریافت…' : 'دریافت اطلاعات بیمه‌گر'}
+            </Button>
+            {providerCatalog && (
+              <p role="status">
+                {providerCatalog.countries.length} کشور ·{' '}
+                {providerCatalog.plans.length} طرح ·{' '}
+                {providerCatalog.durations.length} مدت اقامت
+              </p>
+            )}
           </div>
           <div className={styles.settingsGrid}>
             <aside className={styles.card}>
@@ -239,6 +281,40 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
                       فعال
                     </label>
                   </div>
+                  {providerCatalog && (
+                    <label>
+                      انتخاب کشور از بیمه‌گر
+                      <NativeSearchSelect
+                        value={mapping.providerCountryCode}
+                        disabled={!editable}
+                        onChange={(e) => {
+                          const country = providerCatalog.countries.find(
+                            (c) => String(c.id) === e.target.value,
+                          );
+                          if (country)
+                            updateMapping({
+                              providerCountryCode: String(country.id),
+                              providerCountryName: country.title,
+                            });
+                        }}
+                      >
+                        <option value="">انتخاب کشور</option>
+                        {!providerCatalog.countries.some(
+                          (c) => String(c.id) === mapping.providerCountryCode,
+                        ) &&
+                          mapping.providerCountryCode && (
+                            <option value={mapping.providerCountryCode}>
+                              {mapping.providerCountryName}
+                            </option>
+                          )}
+                        {providerCatalog.countries.map((c) => (
+                          <option key={c.id} value={String(c.id)}>
+                            {c.title} ({c.standardCode || c.id})
+                          </option>
+                        ))}
+                      </NativeSearchSelect>
+                    </label>
+                  )}
                   <div className={styles.fields}>
                     <label>
                       کد کشور بیمه‌گر
@@ -314,6 +390,40 @@ export function InsuranceSettings({ branchId }: { branchId: string }) {
                   </div>
                   {plan && (
                     <>
+                      {providerCatalog && (
+                        <label>
+                          انتخاب طرح از بیمه‌گر
+                          <NativeSearchSelect
+                            value={plan.providerPlanCode}
+                            disabled={!editable}
+                            onChange={(e) => {
+                              const providerPlan = providerCatalog.plans.find(
+                                (p) => String(p.id) === e.target.value,
+                              );
+                              if (providerPlan)
+                                updatePlan({
+                                  providerPlanCode: String(providerPlan.id),
+                                  title: providerPlan.title,
+                                });
+                            }}
+                          >
+                            <option value="">انتخاب طرح</option>
+                            {!providerCatalog.plans.some(
+                              (p) => String(p.id) === plan.providerPlanCode,
+                            ) &&
+                              plan.providerPlanCode && (
+                                <option value={plan.providerPlanCode}>
+                                  {plan.title}
+                                </option>
+                              )}
+                            {providerCatalog.plans.map((p) => (
+                              <option key={p.id} value={String(p.id)}>
+                                {p.title}
+                              </option>
+                            ))}
+                          </NativeSearchSelect>
+                        </label>
+                      )}
                       <div className={styles.fields}>
                         <label>
                           طرح اطلاعات پایه

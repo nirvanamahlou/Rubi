@@ -21,7 +21,6 @@ describe('complete tour definition form', () => {
     );
     for (const label of [
       'خلاصه تور',
-      'معرفی و توضیحات کلی تور',
       'مدارک لازم تور',
       'شرایط اقساط',
       'قوانین استرداد تور',
@@ -39,6 +38,7 @@ describe('complete tour definition form', () => {
     for (const select of html.match(/<select[^>]*>/g) ?? [])
       expect(select).toContain('aria-hidden="true"');
     expect(html).not.toContain('type="date"');
+    expect(html).not.toContain('معرفی و توضیحات کلی تور');
     expect(html).not.toContain('قیمت پایه پکیج');
     expect(html).not.toContain('123.50');
   });

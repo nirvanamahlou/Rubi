@@ -469,6 +469,7 @@ function relations(resource: MasterDataResource): object | undefined {
   if (resource === 'bank-branches') return { bank: true, city: true };
   if (resource === 'hotels')
     return {
+      currency: true,
       city: { include: { country: true, region: true } },
       chain: true,
       organization: true,
@@ -913,6 +914,8 @@ export function toMasterDataRecord(
     attributes.countryName = String(hotelCountry?.name ?? '');
     attributes.regionName = String(hotelRegion?.name ?? '');
     attributes.chainName = String(chain?.name ?? '');
+    attributes.currencyCode = String(currency?.code ?? '');
+    attributes.currencyName = String(currency?.name ?? '');
     attributes.organizationName = String(organization?.displayName ?? '');
     attributes.facilityIds =
       facilityLinks
@@ -1239,7 +1242,16 @@ export class MasterDataRepository {
         : query.sortBy === 'code'
           ? codeFields[resource]
           : query.sortBy;
-    const orderBy = { [sortField]: query.sortDirection };
+    // Every reference resource except rate history has a persisted displayOrder.
+    // Apply it before pagination; sorting only the loaded page loses placement.
+    const orderBy =
+      query.sortBy === 'name' && resource !== 'exchange-rates'
+        ? [
+            { displayOrder: 'asc' },
+            { [sortField]: query.sortDirection },
+            { id: 'asc' },
+          ]
+        : { [sortField]: query.sortDirection };
     const args: Record<string, unknown> = {
       where,
       orderBy,

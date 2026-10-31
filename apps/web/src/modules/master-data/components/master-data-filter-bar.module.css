@@ -59,7 +59,9 @@
 
 @media (min-width: 1280px) {
   .filterBar {
-    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-template-columns: none;
   }
 
   .filterBar > div:not([role='group']) {

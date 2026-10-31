@@ -73,6 +73,72 @@ function setup(imagePatch = {}) {
   };
 }
 describe('tour details persistence boundary', () => {
+  it.each([
+    { originId: '', destinationId: '' },
+    { originId: id, destinationId: '' },
+    { originId: '', destinationId: other },
+  ])(
+    'blocks scheduling an incomplete route %j before reading offers',
+    async (route) => {
+      const findOffer = vi.fn();
+      const tx = {
+        tourPackage: {
+          updateMany: vi.fn(async () => ({ count: 1 })),
+          findFirst: vi.fn(async () => ({
+            id,
+            branchId: id,
+            version: 1,
+            createdAt: new Date(),
+            definition: { ...input, ...route },
+          })),
+        },
+        ticketPublishedOffer: { findFirst: findOffer },
+      };
+      const database = {
+        client: {
+          tourDeparture: { findUnique: vi.fn(async () => null) },
+          $transaction: async (run: (client: typeof tx) => Promise<unknown>) =>
+            run(tx),
+        },
+      } as unknown as DatabaseService;
+      const service = new TourPublicService(
+        database,
+        {} as MasterTravelDirectory,
+      );
+      await expect(
+        service.createDeparture(
+          {
+            packageId: id,
+            packageVersion: 1,
+            startsOn: '2099-10-01',
+            endsOn: '2099-10-08',
+            outboundOfferId: other,
+          },
+          actor,
+          id,
+          'draft-schedule',
+        ),
+      ).rejects.toThrow('شهر مبدأ و مقصد');
+      expect(findOffer).not.toHaveBeenCalled();
+    },
+  );
+  it('creates and reloads a title-only definition without requiring optional controls', async () => {
+    const { service } = setup();
+    const created = await service.createPackage(
+      { name: '  Minimal tour  ' },
+      actor,
+      id,
+      'minimal-create',
+    );
+    expect(created.data).toMatchObject({
+      name: 'Minimal tour',
+      originId: '',
+      destinationId: '',
+      hotelIds: [],
+      visa: false,
+    });
+    expect((await service.packages(actor)).data[0]).toEqual(created.data);
+  });
   it('writes extended definition unchanged and returns it on list/reload', async () => {
     const { service, upsert } = setup();
     const result = await service.createPackage(input, actor, id, 'test-create');

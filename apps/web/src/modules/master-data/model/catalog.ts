@@ -1150,13 +1150,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: 'Rail Company',
       },
       {
-        key: 'organizationId',
-        label: 'سازمان ریلی',
-        type: 'text',
-        placeholder: '',
-        required: true,
-      },
-      {
         key: 'countryId',
         label: 'کشور',
         type: 'text',
@@ -1244,13 +1237,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: 'Bus Company',
       },
       {
-        key: 'organizationId',
-        label: 'سازمان شرکت اتوبوس',
-        type: 'text',
-        placeholder: '',
-        required: true,
-      },
-      {
         key: 'countryId',
         label: 'کشور',
         type: 'text',
@@ -1327,6 +1313,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       'پروفایل مرجع هتل، موقعیت، زنجیره و کاتالوگ خدمات؛ قرارداد و موجودی خارج از Master Data است.',
     fields: [
       nameField,
+      { key: 'currencyId', label: 'ارز هتل', type: 'text', placeholder: '' },
       {
         key: 'englishName',
         label: 'نام انگلیسی',
