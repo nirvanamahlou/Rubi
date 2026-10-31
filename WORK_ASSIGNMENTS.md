@@ -1,6 +1,6 @@
 ## TRANSFER-FLIGHT-FORM-1031 — PC-A — IN_PROGRESS
 
-COMPUTER_ID=PC-A; branch codex/pc-a-transfer-flight-1031 from origin/develop7979c704a. User authorizes flight information whenever even one passenger has transfer, and develop merge. Reserve supplier reservation sheet/PDF flight table, focused output regressions and own status notes. Prior footer/sex/default tasks merged PR1056/1061/1203; no active overlapping writer. Preserve saved supplier flight overrides, passenger allocations and voucher. No contract/schema/migration/dependency/runtime changes. Final checks gate merge; GitHub CLI authentication invalid.
+COMPUTER_ID=PC-A; branch codex/pc-a-transfer-flight-1031 from origin/develop7979c704a. User authorizes flight information whenever even one passenger has transfer, and develop merge. Reserve supplier reservation sheet/PDF flight table, focused output regressions and own status notes. Prior footer/sex/default tasks merged PR1056/1061/1203; no active overlapping writer. Preserve saved supplier flight overrides, passenger allocations and voucher. No contract/schema/migration/dependency/runtime changes. Final checks gate merge; PR1207 targets develop; final-head hosted gates precede merge.
 
 ## RESERVATION-DEFAULTS-1029 — PC-A — IN_PROGRESS
 

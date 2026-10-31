@@ -376,6 +376,7 @@ it('prints saved flight details when only one of two passengers has transfer', (
   intake.snapshot.serviceSelections = [
     {
       clientKey: 'transfer-out',
+      titleSnapshot: 'Transfer',
       kind: 'TRANSFER',
       metadata: { direction: 'OUTBOUND', passengerCount: 1 },
     },
