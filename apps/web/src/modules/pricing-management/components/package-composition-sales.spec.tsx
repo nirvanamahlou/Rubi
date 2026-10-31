@@ -74,6 +74,36 @@ function render() {
     }),
   );
 }
+
+it('shows the registered hotel purchase when full flight purchase and profit are still unknown', () => {
+  const tree = nodes(
+    PackageCompositionSales({
+      rows: rows.map((row) => ({
+        ...row,
+        prices: row.prices.map((p) => ({
+          ...p,
+          currencyAmounts: p.currencyAmounts.map((c) => ({
+            ...c,
+            purchase: null,
+            profit: null,
+          })),
+        })),
+      })),
+      overrides: [],
+      onChange: vi.fn(),
+      selectedRoomKeys: [],
+      onSelect: vi.fn(),
+    }),
+  );
+  expect(
+    tree.some(
+      (n) =>
+        n.type === 'td' &&
+        Array.isArray(n.props.children) &&
+        n.props.children.includes('100'),
+    ),
+  ).toBe(true);
+});
 function click(text: string) {
   const node = render().find(
     (n) => n.props.children === text && typeof n.props.onClick === 'function',

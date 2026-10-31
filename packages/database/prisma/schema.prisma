@@ -5565,7 +5565,7 @@ model PackagePricingTourPublishedVersion {
   tourVersion                 Int
   sourceFingerprint           String                                 @db.VarChar(64)
   reason                      String                                 @db.VarChar(500)
-  outboundCostRevisionId      String                                 @db.Uuid
+  outboundCostRevisionId      String?                                @db.Uuid
   returnCostRevisionId        String?                                @db.Uuid
   adultFlightSale             Decimal                                @db.Decimal(24, 4)
   adultFlightSaleCurrencyCode String                                 @default("IRR") @db.VarChar(3)
@@ -5581,7 +5581,7 @@ model PackagePricingTourPublishedVersion {
   publishedByUserId           String                                 @db.Uuid
   publishedAt                 DateTime                               @default(now()) @db.Timestamptz(3)
   draft                       PackagePricingTourDraft                @relation(fields: [draftId], references: [id], onDelete: Restrict)
-  outboundCost                FinanceTicketPurchaseCostRevision      @relation("TourPricingOutboundCost", fields: [outboundCostRevisionId], references: [id], onDelete: Restrict)
+  outboundCost                FinanceTicketPurchaseCostRevision?     @relation("TourPricingOutboundCost", fields: [outboundCostRevisionId], references: [id], onDelete: Restrict)
   returnCost                  FinanceTicketPurchaseCostRevision?     @relation("TourPricingReturnCost", fields: [returnCostRevisionId], references: [id], onDelete: Restrict)
   publisher                   User                                   @relation("TourPricingPublisher", fields: [publishedByUserId], references: [id], onDelete: Restrict)
   roomPrices                  PackagePricingTourPublishedRoomPrice[]

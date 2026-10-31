@@ -272,10 +272,10 @@ export function SalesContractForm() {
     return syncHotelChildSelections(
       withRoomDrivenGuests({
         ...draftState,
-        passengerTotalPricing: draftState.serviceKinds.some(
-          (k) => k === 'FLIGHT' || k === 'HOTEL',
-        ),
-        automaticComponentPricing: true,
+        passengerTotalPricing:
+          !draftState.packageSaleAvailable &&
+          draftState.serviceKinds.some((k) => k === 'FLIGHT' || k === 'HOTEL'),
+        automaticComponentPricing: !draftState.packageSaleAvailable,
         priceEntryMode: 'CONTRACT_TOTAL',
         servicePricing: draftState.servicePricing ?? {},
         catalogSalePricing:
@@ -797,6 +797,7 @@ export function SalesContractForm() {
       if (
         !state.legacyContract &&
         payload.services.some((s) => s.kind === 'FLIGHT') &&
+        !state.packageSaleQuote &&
         !state.passengerTotalPricing &&
         state.passengerFlightPrices === undefined
       )
@@ -2583,7 +2584,7 @@ export function SalesContractForm() {
                   onChange={(contractPrices) => patchState({ contractPrices })}
                 />
               )}
-              {!state.legacyContract && (
+              {!state.legacyContract && !state.packageSaleAvailable && (
                 <PassengerServicePrices
                   state={state}
                   currencies={references.currencies}

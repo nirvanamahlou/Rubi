@@ -1,4 +1,7 @@
 {
+  "ظرفیت تور برای انتشار قیمت کافی نیست.": "Tour capacity is insufficient for price publication.",
+  "هزینهٔ خرید پرواز هنوز در محاسبهٔ سود لحاظ نشده است؛ ثبت قیمت فروش پکیج مجاز است.": "Flight purchase cost is not yet included in profit calculations; package sale prices may still be published.",
+  "تخفیف نمی‌تواند از قیمت پکیج بیشتر باشد.": "The discount cannot exceed the package price.",
   "ارز فعال یافت نشد.": "An active currency was not found.",
   "ارز هتل": "Hotel currency",
   "برای این اقامت، قیمت فرم رزرواسیون ذخیره نشده است.": "No reservation form price is saved for this stay.",

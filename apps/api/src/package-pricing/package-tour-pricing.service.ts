@@ -602,9 +602,9 @@ export class PackageTourPricingService {
         'ردیف قیمت خرید هتلِ پیش‌نویس دیگر در این بازه نیست.',
       );
 
-    if (grid.missingFlightOfferIds.length || grid.tour.remainingCapacity < 1)
+    if (grid.tour.remainingCapacity < 1)
       throw new UnprocessableEntityException(
-        'نرخ پرداخت‌شده همه پروازها و ظرفیت تور لازم است.',
+        'ظرفیت تور برای انتشار قیمت کافی نیست.',
       );
     const outbound = grid.flightPurchaseCosts.find(
       (cost) => cost.offerId === grid.tour.outboundOfferId,
@@ -614,10 +614,12 @@ export class PackageTourPricingService {
           (cost) => cost.offerId === grid.tour.returnOfferId,
         )
       : undefined;
-    if (!outbound || (grid.tour.returnOfferId && !returning))
-      throw new UnprocessableEntityException(
-        'قیمت خرید پرواز یا پرداخت آن کامل نشده است.',
-      );
+    const flightCosts =
+      !grid.missingFlightOfferIds.length &&
+      outbound &&
+      (!grid.tour.returnOfferId || returning)
+        ? [outbound, ...(returning ? [returning] : [])]
+        : undefined;
     const nights = grid.nights;
     const businessCabin =
       grid.tour.outbound.cabinClassCode === 'BUSINESS' ||
@@ -694,7 +696,7 @@ export class PackageTourPricingService {
                 currencyCode:
                   draft.commissionCurrencyCode ?? draft.currencyCode,
               },
-              flightCosts: [outbound, ...(returning ? [returning] : [])],
+              flightCosts,
             });
             const single =
               calculated.currencyAmounts.length === 1
@@ -784,10 +786,7 @@ export class PackageTourPricingService {
                             (field) => field.kind === 'custom',
                           )
                         : [],
-                      flightCosts: [
-                        outbound,
-                        ...(returning ? [returning] : []),
-                      ],
+                      flightCosts,
                     },
                   });
                 } catch (error) {
@@ -922,7 +921,7 @@ export class PackageTourPricingService {
           tourVersion: grid.tour.version,
           sourceFingerprint: fingerprint,
           reason: (input.reason ?? '').trim(),
-          outboundCostRevisionId: outbound.costRevisionId,
+          outboundCostRevisionId: outbound?.costRevisionId ?? null,
           returnCostRevisionId: returning?.costRevisionId ?? null,
           adultFlightSale: draft.adultFlightSale,
           adultFlightSaleCurrencyCode: draft.adultFlightSaleCurrencyCode,
