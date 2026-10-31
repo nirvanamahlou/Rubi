@@ -47,7 +47,7 @@ function fixture(roomCount = 2) {
       id: id!,
       name: name!,
       attributes: { englishName: name! },
-    } as (typeof refs)[string];
+    } as unknown as (typeof refs)[string];
   // Saved primary room settings must not be copied into the second hotel's room list.
   intake.workflow.voucherSettings!.rooms = [
     {
