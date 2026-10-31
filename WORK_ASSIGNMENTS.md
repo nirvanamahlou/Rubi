@@ -10316,6 +10316,14 @@ LIVE-PRESENCE-DEVELOP-1031 source freeze: latest develop integrated, exact26-scr
 
 PC-B; branch codex/pc-b-petty-plus-1031. Reserve petty-fund-card.tsx/spec and own status notes: explicit accessible plus button adjacent to existing fund card opens same bank/balance configuration modal, preserving populated fields/CAS/permissions and one fund per branch. Existing scopes released; no schema/API/dependency/permission change. User authorizes push/develop merge and local3100 rollout. Preserve other checkouts and prior runtime.
 
+## CALL-CENTER-LIVE-POPUPS-1031 — PC-C — IN_PROGRESS
+
+User explicitly authorizes global operational incoming/outgoing call popups in production. Reserve bounded TelephonyAttention listener direction option, AppShell mount option, focused tests and own docs; historical shell locks released. Preserve hidden technical widget, native offer/claim/branch authorization, existing form and provider capture. Build only these Web files over actual deployed358bf900; preserve current answered-access API overlay and Worker configuration. Enable provider notifications only after tested Web build. No schema/dependency or new grants.
+
+CALL-CENTER-LIVE-POPUPS-1031 scope extension: owner confirms both popup directions in Chrome and reports missing404 name in incoming Connected-to field. Reserve OperationalCallPopup technical-recipient refresh and focused regression only. Preserve unsaved business inputs, initial conflict baseline, stable form identity and provider-confirmed answer responsibility; do not infer an answered employee from the popup recipient.
+
+CALL-CENTER-LIVE-POPUPS-1031 archival/deployment update2026-10-31: owner explicitly approved archiving8a380e10/73e60ef1/c52e41b3 to F:/ERP-Backups/Rubi before server removal. Encrypted archive compared to originals and destination size/SHA256 verified; only exact unmounted releases and transfer staging removed, existing backups/data retained. New colleague Travis Web base preserved. Seven focused tests/lint/types/build pass; fresh encrypted backup and Web-only recipient refresh rollout succeed,15 assets verified, API/Worker/DB unchanged. Final Chrome recipient-label acceptance requested. See own task note.
+
 ## PETTY-OPEN-FIX-1031 — PC-B — RESERVED
 
 Reserve petty-fund-card.tsx/spec and own status notes. Card/plus must open dialog even on query failure/loading; retain save guard until successful data load, show retry inside modal, avoid stale values after retry. Existing source scopes released. No API/schema/permissions changes. User reports no opening after prior change; repair and local rollout within authorized scope.

@@ -8157,6 +8157,15 @@ Composite vouchers now render all itinerary hotels with independent hotel/date/r
 
 A separate accessible plus button beside the petty cash card opens its existing balance, bank, account, IBAN and card modal. Card activation uses the same shared handler and preserves fetched values/version; no nested buttons. Management permission, pending-load guard and one fund per branch remain unchanged. No API/schema/monetary behavior change. Tests/build/hosted gates precede authorized merge and local rollout.
 
+## CALL-CENTER-LIVE-POPUPS-1031 — production enabled 2026-10-31
+
+Owner-authorized operational inbound/outbound popups deployed over Web358bf900; current answered-access API preserved and native notifications enabled. Scoped lint,5 Web tests, typecheck and Web build pass. AMI/Worker readiness verified; both direction offers created for mapped404. Popup visibly opened on Dashboard; owner confirms Chrome display after same-user verification-browser lease was released. Incoming-only browser acceptance pending. No technical widget, new grants, schema or dependency changes. See docs/tasks/CALL-CENTER-LIVE-POPUPS-1031.md.
+
+CALL-CENTER-LIVE-POPUPS-1031 acceptance update: owner confirms both incoming and outgoing popups in Chrome. Follow-up answer-name refresh has2 regression tests plus lint/types/production build passing; deployment pending backup disk-space guard and explicit archival approval for three old unmounted releases. Existing popup release remains active. No claim that the answer-name follow-up is deployed.
+
+CALL-CENTER-LIVE-POPUPS-1031 update: approved old-release archive verified at F:/ERP-Backups/Rubi/Old-Releases-20261031; exact unmounted server directories removed after verification, existing backups/data preserved. Disk-space guard retained and fresh encrypted backup succeeds. Answer-recipient refresh rebuilt over actual Travis Web base and deployed Web-only;7 tests/lint/types/build pass,15 assets verified, API/Worker/DB unchanged. Browser confirmation of the updated name after answer remains pending.
+
+CALL-CENTER-LIVE-POPUPS-1031 FINAL ACCEPTANCE: owner confirms incoming404 title/name now displays correctly after the deployed refresh. Incoming/outgoing popups, Chrome lease handoff and answer-recipient refresh accepted. Source and deployment evidence retained in the task note; archive remains verified off-server.
 ## 2026-10-31 — PETTY-OPEN-FIX-1031
 
 The fund GET explicitly serializes JSON null for unconfigured branches rather than relying on Nest's empty null response. Card/plus remain activatable during loading/error; dialog shows error/retry and save stays disabled until authoritative data loads. Retry populates the form with returned values/version. No migration/data/permission change. Browser automation initialization failed (os error3); targeted controller/card tests and builds validate the repair before local rollout.
