@@ -104,18 +104,58 @@
   padding: 0;
   accent-color: var(--primary);
 }
-.hotelSelector table {
+.hotelSelector {
+  min-width: 0;
   width: 100%;
-  border-collapse: collapse;
+  grid-template-columns: minmax(0, 1fr);
 }
-.hotelSelector th,
-.hotelSelector td {
+.hotelSelector .field {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+.hotelSelector .hotelChoices {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+.hotelSelector .hotelChoices label {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  min-width: 0;
+  align-items: start;
+}
+.hotelSelector .hotelChoices span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.hotelSelector .hotelChoices input[type='checkbox'] {
+  margin: 0;
+}
+.hotelSelector .selectedHotels {
+  width: 100%;
+  min-width: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.hotelSelector table.selectedHotels th,
+.hotelSelector table.selectedHotels td {
+  min-width: 0;
   padding: 8px;
   text-align: start;
+  overflow-wrap: anywhere;
   border-bottom: 1px solid var(--border);
 }
-.hotelSelector th {
+.hotelSelector .selectedHotels th {
   background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+}
+.hotelSelector .selectedHotels button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .panel .coefficients {
   border: 1px solid var(--border);

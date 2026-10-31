@@ -84,10 +84,12 @@ function nodes(tree: ReactNode): ReactElement<Record<string, unknown>>[] {
   const node = tree as ReactElement<Record<string, unknown>>;
   return [node, ...nodes(node.props.children as ReactNode)];
 }
-function render() {
+function render(input = request) {
   h.index = 0;
   h.ref = 0;
-  return nodes(HotelStayPurchase({ request, stayKey: 'h', onSaved: h.saved }));
+  return nodes(
+    HotelStayPurchase({ request: input, stayKey: 'h', onSaved: h.saved }),
+  );
 }
 beforeEach(() => {
   h.states = [];
@@ -148,6 +150,83 @@ it('prefills the supplier proposal and makes no request until explicit purchase 
     request.workflow.supplierFormSettings!.hotelRoomPrices!.rooms[0]!
       .baseAmount,
   ).toBe('90');
+});
+
+it('fills contract transfer counts despite an old zero supplier draft and preserves subsequent manual edits', () => {
+  const input = structuredClone(request);
+  input.snapshot.passengerIds = ['a', 'b'];
+  input.snapshot.serviceSelections = [
+    ...input.snapshot.serviceSelections,
+    {
+      clientKey: 'out',
+      kind: 'TRANSFER',
+      titleSnapshot: 'Out',
+      metadata: { direction: 'OUTBOUND' },
+    },
+    {
+      clientKey: 'back',
+      kind: 'TRANSFER',
+      titleSnapshot: 'Return',
+      metadata: { direction: 'RETURN' },
+    },
+  ];
+  input.snapshot.passengerAssignments = [
+    { customerId: 'a', ageCategory: 'ADT', serviceClientKeys: ['out', 'back'] },
+    { customerId: 'b', ageCategory: 'CHD', serviceClientKeys: ['out'] },
+  ];
+  let editor = render(input).find(
+    (node) => node.type === HotelRoomQuotationEditor,
+  )!;
+  const draft = editor.props.draft as ReturnType<typeof defaultVoucherSettings>;
+  expect(draft.hotelTransferCounts).toEqual({ outbound: 2, returning: 1 });
+  expect(fetch).not.toHaveBeenCalled();
+  (editor.props.update as (next: typeof draft) => void)({
+    ...draft,
+    hotelTransferCounts: { outbound: 1, returning: 0 },
+  });
+  editor = render(input).find(
+    (node) => node.type === HotelRoomQuotationEditor,
+  )!;
+  expect((editor.props.draft as typeof draft).hotelTransferCounts).toEqual({
+    outbound: 1,
+    returning: 0,
+  });
+  expect(input.workflow.supplierFormSettings!.hotelTransferCounts).toEqual({
+    outbound: 0,
+    returning: 0,
+  });
+});
+
+it('preserves a previously registered explicit zero transfer quantity', () => {
+  const input = structuredClone(request);
+  input.snapshot.serviceSelections = [
+    ...input.snapshot.serviceSelections,
+    {
+      clientKey: 'out',
+      kind: 'TRANSFER',
+      titleSnapshot: 'Out',
+      metadata: { direction: 'OUTBOUND', passengerCount: 4 },
+    },
+  ];
+  input.servicePurchases = [
+    {
+      serviceClientKey: 'out',
+      serviceKind: 'TRANSFER',
+      supplierOrganizationId: 'broker',
+      supplierName: 'BROKER',
+      amount: '0',
+      currencyCode: 'EUR',
+      finance: { status: 'PENDING' },
+      hotelTransferCounts: { outbound: 0, returning: 0 },
+    },
+  ] as never;
+  const editor = render(input).find(
+    (node) => node.type === HotelRoomQuotationEditor,
+  )!;
+  expect(
+    (editor.props.draft as ReturnType<typeof defaultVoucherSettings>)
+      .hotelTransferCounts,
+  ).toEqual({ outbound: 0, returning: 0 });
 });
 
 it('routes canonical rooms to hotel purchases and keeps roomless historical purchase editing compatible', () => {

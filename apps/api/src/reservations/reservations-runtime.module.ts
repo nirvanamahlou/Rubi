@@ -1,3 +1,4 @@
+import { TravisSandboxService } from '../integrations/insurance/travis-sandbox.service';
 import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
 import { validateSupplierFormPrices } from './voucher-settings';
 import { SystemManagementModule } from '../system-management/system-management.module';
@@ -866,6 +867,7 @@ export class ReservationRequestsController {
     ReservationManifestBatchController,
   ],
   providers: [
+    TravisSandboxService,
     InsuranceSettingsService,
     ReservationInsuranceService,
     BrokerPurchaseHistory,

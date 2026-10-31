@@ -9,7 +9,7 @@ export interface InsuranceSettingsResponse {
   config: InsuranceConfigurationV1;
   version: number;
   canManage: boolean;
-  providerStatus: 'NOT_CONFIGURED';
+  providerStatus: 'NOT_CONFIGURED' | 'SANDBOX_CONFIGURED';
 }
 export interface InsuranceListResponse {
   data: InsurancePolicyRowV1[];
@@ -86,3 +86,10 @@ export const insuranceStatusLabels = {
   ISSUED: 'صادرشده',
   CANCELLED: 'باطل‌شده',
 } as const;
+
+export interface InsuranceProviderCatalog {
+  providerStatus: 'SANDBOX_CONNECTED';
+  countries: Array<{ id: number; title: string; standardCode: string }>;
+  durations: Array<{ days: number; title: string }>;
+  plans: Array<{ id: number; title: string; englishTitle: string }>;
+}

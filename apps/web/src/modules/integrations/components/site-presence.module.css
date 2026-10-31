@@ -1,0 +1,167 @@
+.panel {
+  min-width: 0;
+  padding: 1.25rem;
+  display: grid;
+  gap: 1.25rem;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.header h3 {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-weight: 750;
+  font-size: 1rem;
+}
+.header h3 svg {
+  width: 1.25rem;
+  color: var(--primary);
+}
+.header p,
+.summary > span,
+.note {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  margin-top: 0.35rem;
+}
+.actions {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+.summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.summary strong {
+  font-size: 1.75rem;
+  font-variant-numeric: tabular-nums;
+}
+.summary strong span {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.viewport {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--primary) 2%, var(--surface));
+}
+.map {
+  position: relative;
+  margin-inline: auto;
+}
+.edges {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  color: var(--muted-foreground);
+}
+.edges > path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  opacity: 0.55;
+}
+.node {
+  position: absolute;
+  width: 162px;
+  height: 84px;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  background: var(--surface);
+  text-align: center;
+  display: grid;
+  align-content: center;
+  gap: 0.3rem;
+}
+.node > span {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.node svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--primary);
+}
+.node strong {
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+}
+.occupied {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 7%, transparent);
+}
+.other {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+.other > span {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  font-size: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+.other strong {
+  font-size: 1rem;
+}
+.note {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0;
+}
+.note svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+.empty {
+  padding: 1rem;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+@media (max-width: 680px) {
+  .map {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: auto !important;
+    height: auto !important;
+    gap: 0.75rem;
+  }
+  .node {
+    position: static;
+    width: auto;
+    height: auto;
+    min-height: 84px;
+  }
+  .edges {
+    display: none;
+  }
+  .viewport {
+    padding: 0.75rem;
+  }
+  .header p {
+    font-size: 0.7rem;
+  }
+}
