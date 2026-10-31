@@ -12,6 +12,7 @@ import {
 import { salesHotelRoomSummary } from '@nora/contracts';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import {
+  BadRequestException,
   Inject,
   Injectable,
   Optional,
@@ -196,6 +197,7 @@ export class SalesRepository {
         dueAt: true,
         currencyCode: true,
         financeReceiptAccountId: true,
+        destinationAccountId: true,
         contract: { select: { branchId: true } },
       },
     });
@@ -1276,6 +1278,13 @@ export class SalesRepository {
           },
         });
         if (!payment) return 'not-found';
+        if (
+          payment.destinationAccountId &&
+          payment.destinationAccountId !== event.receiptAccountId
+        )
+          throw new BadRequestException(
+            'حساب مقصد ثبت‌شده در پرداخت قابل تغییر نیست.',
+          );
         if (payment.financeConfirmedByRef) {
           if (payment.financeReceiptAccountId !== event.receiptAccountId)
             throw new ConflictException(
