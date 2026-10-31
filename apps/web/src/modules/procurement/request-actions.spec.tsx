@@ -8,6 +8,7 @@ import { RequestDetail } from './workspace';
 
 const bootstrap: Bootstrap = {
   permissions: [
+    'procurement.request.update',
     'procurement.approve',
     'procurement.assign',
     'procurement.request.cancel',
@@ -48,14 +49,19 @@ function render(status: ProcurementRequestV1['status']) {
 describe('Request decision state and compact owner controls', () => {
   it('does not offer approval before a real approval workflow exists', () => {
     const html = render('SUBMITTED');
-    expect(html).toContain('ارسال برای تأیید');
+    expect(html).not.toContain('ارسال برای تأیید');
+    expect(html).toContain('ویرایش درخواست');
+    expect(html).toContain('لغو درخواست');
+    expect(html).not.toContain('بستن پرونده خرید');
+    expect(html).not.toContain('اقدام بعدی');
+    expect(html).not.toContain('تخصیص مسئول');
     expect(html).not.toContain('>رد درخواست<');
     expect(html).not.toContain('>تأیید<');
   });
   it('shows only approval and rejection decisions with no correction or redundant owner search', () => {
     const html = render('IN_REVIEW');
-    expect(html).toContain('>تأیید<');
-    expect(html).toContain('>رد درخواست<');
+    expect(html).not.toContain('>تأیید<');
+    expect(html).not.toContain('>رد درخواست<');
     expect(html).not.toContain('بازگشت برای اصلاح');
     expect(html).not.toContain('proc-owner-search');
   });

@@ -228,6 +228,10 @@ export function DraftForm({
   const resolvedRequesterLabel =
     requesters.data?.items.find((item) => item.id === requesterEmployeeId)
       ?.label ?? requesterLabel;
+  const [editReason, setEditReason] = useState('');
+  const requiresEditReason = Boolean(
+    request && !['DRAFT', 'CHANGES_REQUESTED'].includes(request.status),
+  );
   const [busy, setBusy] = useState(false);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const receiptUploadRef = useRef(false);
@@ -505,6 +509,12 @@ export function DraftForm({
   };
   async function save(mode: 'DRAFT' | 'PUBLISH' = 'DRAFT') {
     if (busyRef.current || receiptUploadRef.current) return;
+    if (requiresEditReason && !editReason.trim()) {
+      setErrorTitle('ذخیره انجام نشد');
+      setError('علت اصلاح پس از ارسال لازم است.');
+      focusControl('proc-edit-reason');
+      return;
+    }
     if (mode === 'PUBLISH') {
       const issue = validatePublishDraft(draft);
       if (issue) {
@@ -529,6 +539,7 @@ export function DraftForm({
       id: baseRequest?.id,
       version: baseRequest?.version,
       mode,
+      editReason,
     });
     try {
       let saved = await procurementApi.save(
@@ -538,6 +549,7 @@ export function DraftForm({
         requesterEmployeeId,
         mode === 'PUBLISH',
         canChooseOwner && !baseRequest ? ownerUserId || undefined : undefined,
+        editReason || undefined,
       );
       if (
         baseRequest &&
@@ -608,6 +620,19 @@ export function DraftForm({
         <h2 ref={heading} tabIndex={-1} className="sr-only">
           درخواست خرید
         </h2>
+        {requiresEditReason && (
+          <FormField
+            id="proc-edit-reason"
+            label="علت اصلاح پس از ارسال لازم است."
+            required
+          >
+            <Input
+              id="proc-edit-reason"
+              value={editReason}
+              onChange={(event) => setEditReason(event.target.value)}
+            />
+          </FormField>
+        )}
         {error && <Alert tone="error" title={errorTitle} description={error} />}
         {conflict && baseRequest && (
           <div className="space-y-4 rounded-xl border border-border p-4">

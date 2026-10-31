@@ -10278,6 +10278,18 @@ LIVE-PRESENCE-DEVELOP-1031 source freeze: latest develop integrated, exact26-scr
 
 PC-B; branch codex/pc-b-petty-plus-1031. Reserve petty-fund-card.tsx/spec and own status notes: explicit accessible plus button adjacent to existing fund card opens same bank/balance configuration modal, preserving populated fields/CAS/permissions and one fund per branch. Existing scopes released; no schema/API/dependency/permission change. User authorizes push/develop merge and local3100 rollout. Preserve other checkouts and prior runtime.
 
+## PETTY-OPEN-FIX-1031 — PC-B — RESERVED
+
+Reserve petty-fund-card.tsx/spec and own status notes. Card/plus must open dialog even on query failure/loading; retain save guard until successful data load, show retry inside modal, avoid stale values after retry. Existing source scopes released. No API/schema/permissions changes. User reports no opening after prior change; repair and local rollout within authorized scope.
+
+PETTY-OPEN-FIX-1031 extension: reserve only petty-fund controller GET response to explicitly serialize JSON null for unconfigured branches. Nest default null otherwise sends an empty body, failing the client's JSON parser. No service/schema or permission change.
+
+## REQUEST-DETAIL-SIMPLE-1031 — PC-B — RESERVED
+
+Reserve Procurement workspace request detail, draft form/API save consumer, targeted tests and own notes. Remove lifecycle/assignment controls except cancellation; remove owner/next-action/acceptance metadata. Enable edit through existing DraftForm for nonfinal requests under existing permissions; supply explicit user edit reason for post-publication audit. Existing money/approval/CAS guards stay authoritative. Preserve pending petty-dialog repair. No schema/migration/permission changes.
+
+REQUEST-DETAIL-SIMPLE-1031 verification:67 module checks plus11 focused action/PATCH-reason checks and scoped lint passed; Web production build passed. PR1233 published. Local3100 rollout not performed: port taken concurrently by Next dev from C:/Users/admin/.codex/worktrees/hr-payroll-finance-approval-1027/Rubi (parent28716/listener17088); existing runtime not stopped or overwritten. Source locks released; shared runtime handoff requires coordination. Final accepted-fund amount changes remain guarded by existing server policy. No schema or operational mutations.
+
 ## TRAVIS-SANDBOX-CONNECTION-1031 — PC-A — RESERVED
 
 COMPUTER_ID=PC-A; branch codex/pc-a-travis-sandbox-1031 from origin/developd4610994a. User supplies sandbox key and official Travis Swagger URL to connect Insurance. Reserve Integrations insurance new sandbox transport/tests and InsuranceSettings service/tests; bounded Reservations insurance controller/runtime provider registration; Web insurance client/settings and own translation keys/generated catalogs/docs. Add authenticated branch/settings-authorized read-only provider catalog/plan discovery, sandbox-only readiness; existing manual mappings persist through CAS. Official Swagger uses x-api-key over HTTPS; successful live read-only probes returned195 countries/21 durations. Key stored only in ignored local env, never Git/browser/logs. No policy create/confirm/cancel, production provider switch, customer-data export, migration/dependency change or live rollout. Existing issuance remains unconfigured until its transactional adapter milestone; do not claim issued coverage. Shared producer/consumer change additive on insurance settings/catalog response, ship together. No overlapping active bounded source writer found.
