@@ -234,17 +234,6 @@ export function MasterDataCurrencyForm({
                   </Select>
                 </MasterDataClearableField>
               </FormField>
-              <FormField
-                id="currency-base"
-                label="ارز پایه"
-                description="ارز پایه به‌ازای شرکت در ماژول مالی تعیین می‌شود؛ قرارداد آن هنوز متصل نیست."
-              >
-                <Input
-                  id="currency-base"
-                  readOnly
-                  value="نامشخص — در انتظار اتصال مالی"
-                />
-              </FormField>
             </div>
             {errors.form ? (
               <Alert

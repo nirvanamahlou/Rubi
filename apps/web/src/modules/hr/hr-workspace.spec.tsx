@@ -183,7 +183,9 @@ describe('Legacy HR preview and migration regression fixtures', () => {
     expect(html).toContain('name="lastName"');
     expect(html).toContain('id="hr-new-employee-started-at"');
     expect(html).toContain('value="HR-1001"');
-    expect(html).toContain('readOnly');
+    expect(
+      html.match(/<input[^>]*name="personnelCode"[^>]*>/)?.[0],
+    ).not.toMatch(/readonly/i);
   });
 
   it('prefills the employee form when editing an existing record', () => {
@@ -211,6 +213,9 @@ describe('Legacy HR preview and migration regression fixtures', () => {
     );
     expect(html).toContain('value="سارا"');
     expect(html).toContain('value="HR-1002"');
+    expect(
+      html.match(/<input[^>]*name="personnelCode"[^>]*>/)?.[0],
+    ).not.toMatch(/readonly/i);
     expect(html).toContain('ذخیره ویرایش');
   });
 

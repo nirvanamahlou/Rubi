@@ -3,7 +3,7 @@ import type * as ReactModule from 'react';
 import type { ReservationIntakeV1 } from '@nora/contracts';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { canonicalTestTree } from '@/i18n/test-tree';
-import { ReservationHotelPurchase } from './reservation-hotel-purchase';
+import { LegacyReservationHotelPurchase as ReservationHotelPurchase } from './reservation-hotel-purchase';
 vi.mock('@/modules/iam/access-context', () => ({
   useAccessPermissions: () => [],
 }));

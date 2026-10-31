@@ -207,6 +207,11 @@ export interface SalesPaymentAccountV1 {
   currencyCode: string;
   kind: string;
   maskedIdentifier: string | null;
+  /** Company payment instructions; available only to contract-authorized payers. */
+  bankName?: string | null;
+  accountNumber?: string | null;
+  cardNumber?: string | null;
+  iban?: string | null;
 }
 
 export interface SalesPaymentInput extends SalesMoney {
@@ -477,6 +482,8 @@ export interface SalesFinanceSubmissionV1 {
 }
 
 export interface SalesFinanceInboxPaymentV1 {
+  /** Existing Sales declaration; optional for historical payments. */
+  destinationAccountTitle?: string | null;
   destinationAccountId?: string | null;
   version: 1;
   paymentId: string;
@@ -561,6 +568,8 @@ export interface SalesContractPartyCorrectionV1 {
 /** Explicit correction of a previously confirmed Sales contract. */
 export interface SalesContractAmendmentV1 extends SalesContractUpdateRequest {
   passengerCategories: Readonly<Record<string, SalesPassengerAgeCategory>>;
+  /** Roster correction only: retain the exact recorded contract components. */
+  preserveContractPrices?: true;
 }
 
 export * from './passenger-flight-prices';

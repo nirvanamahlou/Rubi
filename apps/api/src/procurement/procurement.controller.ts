@@ -1,3 +1,4 @@
+import type { Response } from 'express';
 import {
   Body,
   Controller,
@@ -12,6 +13,7 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
@@ -58,6 +60,23 @@ export class ProcurementController {
     @Req() req: AuthenticatedRequest,
   ) {
     return procurementBoundary(() => this.service.orders(query, req.actor));
+  }
+  @Get('petty-fund')
+  @Header('Cache-Control', 'private, no-store')
+  pettyFund(
+    @Query('branchId') branchId: string,
+    @Req() req: AuthenticatedRequest,
+    @Res() response: Response,
+  ) {
+    return procurementBoundary(async () =>
+      response.json(await this.service.pettyFund(branchId, req.actor)),
+    );
+  }
+  @Post('petty-fund')
+  savePettyFund(@Body() body: unknown, @Req() req: AuthenticatedRequest) {
+    return procurementBoundary(() =>
+      this.service.savePettyFund(body, req.actor),
+    );
   }
   @Get('bootstrap')
   @Header('Cache-Control', 'private, no-store')

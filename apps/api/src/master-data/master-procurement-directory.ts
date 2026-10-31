@@ -19,6 +19,13 @@ export class MasterProcurementDirectory {
     if (!row) throw new BadRequestException('بانک انتخاب‌شده معتبر نیست.');
   }
   /** Approved operational reference only; never journal-posting authority. */
+  bankNames(ids: string[], transaction?: Prisma.TransactionClient) {
+    return (transaction ?? this.database.client).masterBank.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, name: true },
+    });
+  }
+  /** Approved operational reference only; never journal-posting authority. */
   async purchaseRateToIrr(
     currencyCode: string,
     at = new Date(),

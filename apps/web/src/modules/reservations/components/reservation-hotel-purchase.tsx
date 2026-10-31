@@ -1,4 +1,5 @@
 'use client';
+import { HotelStayPurchases } from './hotel-stay-purchase';
 import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';
 
@@ -251,7 +252,23 @@ export function latestTransferPurchase(
     ? purchase
     : undefined;
 }
-export function ReservationHotelPurchase({
+export function ReservationHotelPurchase(props: {
+  request: PurchaseRequest;
+  onSaved: () => void;
+}) {
+  const request = {
+    ...props.request,
+    snapshot: props.request.purchaseSnapshot ?? props.request.snapshot,
+  };
+  return request.snapshot.hotelSelection?.rooms?.length ||
+    request.snapshot.hotelSelection?.additionalStays?.length ||
+    request.workflow?.supplierFormSettings?.rooms?.length ? (
+    <HotelStayPurchases {...props} request={request} />
+  ) : (
+    <LegacyReservationHotelPurchase {...props} />
+  );
+}
+export function LegacyReservationHotelPurchase({
   request,
   onSaved,
 }: {

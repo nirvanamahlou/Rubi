@@ -1,3 +1,4 @@
+import { TravisSandboxService } from '../integrations/insurance/travis-sandbox.service';
 import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
 import { validateSupplierFormPrices } from './voucher-settings';
 import { SystemManagementModule } from '../system-management/system-management.module';
@@ -479,6 +480,39 @@ export class ReservationRequestsController {
   ) {
     if (
       input.action === 'SUPPLIER_FORM_SETTINGS' &&
+      input.voucherSettings?.hotelTransferReturn
+    ) {
+      await this.workflow.detail(id, req.actor.branchIds);
+      const quote = input.voucherSettings.hotelTransferReturn;
+      try {
+        validateSupplierFormPrices({ transferPp: quote });
+        if (
+          quote.brokerId !== undefined &&
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            quote.brokerId,
+          )
+        )
+          throw Error();
+      } catch {
+        throw new BadRequestException('جدول قیمت فرم رزرواسیون معتبر نیست.');
+      }
+      await this.directory!.currencyReference(quote.currencyCode);
+      if (quote.brokerId)
+        quote.brokerName = await this.directory!.voucherBrokerName(
+          quote.brokerId,
+        );
+    }
+    if (
+      input.action === 'SUPPLIER_FORM_SETTINGS' &&
+      input.voucherSettings?.hotelRoomPrices
+    ) {
+      await this.workflow.detail(id, req.actor.branchIds);
+      await this.directory!.currencyReference(
+        input.voucherSettings.hotelRoomPrices.currencyCode,
+      );
+    }
+    if (
+      input.action === 'SUPPLIER_FORM_SETTINGS' &&
       input.voucherSettings?.supplierFormPrices !== undefined
     ) {
       await this.workflow.detail(id, req.actor.branchIds);
@@ -833,6 +867,7 @@ export class ReservationRequestsController {
     ReservationManifestBatchController,
   ],
   providers: [
+    TravisSandboxService,
     InsuranceSettingsService,
     ReservationInsuranceService,
     BrokerPurchaseHistory,

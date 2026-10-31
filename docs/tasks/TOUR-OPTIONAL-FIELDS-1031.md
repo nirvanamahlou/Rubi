@@ -1,0 +1,7 @@
+# Tour definition optional fields — 2026-10-31
+
+Owner asks for minimal tour creation and removal of the general-description editor. Ticket Catalog keeps title and authorized branch required. Route, service switches, hotels and descriptive controls can be omitted during definition; normalized output retains existing string IDs (empty until selected), arrays and booleans for compatibility. Unknown fields and nonempty malformed values remain rejected. Hotel references require a destination, supplied city/hotel/insurance references still resolve through the public Master Data boundary, and scheduling requires a complete valid route with actual offers. No dummy reference IDs or invented capacities are persisted.
+
+Empty optional text controls are omitted and title/known text values are trimmed before strict validation. Existing description remains compatible and preserved on edit, but the editor is removed. The UI can clear optional choices and avoids searching ticket offers for incomplete routes. No schema, migration, dependency, IAM or deployment changes.
+
+Validation covers minimal create/reload, input immutability, optional blanks, route completion, inactive/invalid supplied references, scheduling guards, existing edit/history/idempotency rules and removed editor output. Database integration requires TRAVEL_TEST_DATABASE_URL; local unit checks do not claim that skipped integration ran. Full final-head hosted quality/test/build/PostgreSQL checks gate develop merge.

@@ -23,13 +23,15 @@ export function SupplierPriceTable({
           </tr>
         </thead>
         <tbody>
-          <tr>
-            {data.values.map((value, index) => (
-              <td key={index} dir="ltr">
-                {value}
-              </td>
-            ))}
-          </tr>
+          {data.rows.map((row, rowIndex) => (
+            <tr key={rowIndex}>
+              {row.map((value, index) => (
+                <td key={index} dir="ltr">
+                  {value}
+                </td>
+              ))}
+            </tr>
+          ))}
         </tbody>
       </table>
     </>

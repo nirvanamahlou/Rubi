@@ -1,4 +1,5 @@
 'use client';
+import { voucherHotelDocuments } from '../model/voucher-hotel-documents';
 import { SupplierPriceTable } from './supplier-price-table';
 import {
   voucherPassengerServices,
@@ -140,18 +141,49 @@ function Heading({
 const subscribeOrigin = () => () => {};
 const browserOrigin = () => window.location.origin;
 const serverOrigin = () => '';
-export function VoucherFormSheet({
+type VoucherSheetProps = {
+  intake: ReservationFormIntake;
+  logo: string;
+  references?: ReservationFormReferences;
+  voucher?: boolean;
+  publicDocumentUrl?: string | undefined;
+};
+export function VoucherFormSheet(props: VoucherSheetProps) {
+  const documents = props.voucher
+    ? voucherHotelDocuments(props.intake, props.references ?? {})
+    : [];
+  if (documents.length > 1)
+    return (
+      <>
+        {documents.map((document) => (
+          <VoucherHotelSheet
+            {...props}
+            key={document.intake.hotelStayKey}
+            intake={document.intake}
+            pageOffset={document.pageOffset}
+            totalPages={document.totalPages}
+          />
+        ))}
+      </>
+    );
+  return <VoucherHotelSheet {...props} />;
+}
+function VoucherHotelSheet({
   intake,
   logo,
   references = {},
   voucher = false,
   publicDocumentUrl,
+  pageOffset = 0,
+  totalPages,
 }: {
   intake: ReservationFormIntake;
   logo: string;
   references?: ReservationFormReferences;
   voucher?: boolean;
   publicDocumentUrl?: string | undefined;
+  pageOffset?: number;
+  totalPages?: number;
 }) {
   const data = voucher
     ? voucherFormData(intake, references)
@@ -177,7 +209,7 @@ export function VoucherFormSheet({
     !settings || settings.flags.hotel
       ? reservationRoomAppendices(data.roomBreakdown)
       : [];
-  const pageCount = pages.length + roomAppendices.length;
+  const pageCount = totalPages ?? pages.length + roomAppendices.length;
   return (
     <div className={styles.document} lang={voucher ? 'en' : undefined}>
       {pages.map((people, page) => {
@@ -565,7 +597,7 @@ export function VoucherFormSheet({
                 <span>{''}</span>
               </div>
               <b>
-                {page + 1} / {pageCount}
+                {pageOffset + page + 1} / {pageCount}
               </b>
             </footer>
           </article>
@@ -608,7 +640,7 @@ export function VoucherFormSheet({
           </table>
           <footer className={styles.footer}>
             <b>
-              {pages.length + index + 1} / {pageCount}
+              {pageOffset + pages.length + index + 1} / {pageCount}
             </b>
           </footer>
         </article>

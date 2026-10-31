@@ -14,6 +14,8 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { agencyClient } from '@/modules/organizations/api/agency-client';
 import type { MasterDataRecord } from '@nora/contracts';
+import { SupplierHotelDocuments } from './travel-document';
+import { reservationHotelStays } from '@nora/contracts';
 import { TravelDocument } from './travel-document';
 import { ReservationSettings } from './reservation-settings';
 import { ReservationTickets } from './reservation-tickets';
@@ -80,7 +82,7 @@ export function TravelWorkflowForm({
   const [leaderEditorOpen, setLeaderEditorOpen] = useState(false);
   const [intake, setIntake] = useState<WorkflowIntake>();
   const [, setDelivery] = useState<TravelDeliveryAuthorizationV1>();
-  const [brandKind, setBrandKind] = useState<'OWN' | 'AGENCY'>('OWN');
+  const [brandKind, setBrandKind] = useState<'OWN' | 'AGENCY' | 'NONE'>('OWN');
   const [agencyId, setAgencyId] = useState('');
   const [search, setSearch] = useState('');
   const [agencies, setAgencies] = useState<MasterDataRecord[]>([]);
@@ -110,6 +112,14 @@ export function TravelWorkflowForm({
       .then((result) => {
         if (!active) return;
         setIntake(result.data);
+        const branding = result.data.workflow.branding;
+        setBrandKind(
+          (action === 'بلیط' && branding?.ticketWithoutLogo === true) ||
+            (action === 'واچر' && branding?.voucherWithoutLogo === true)
+            ? 'NONE'
+            : (branding?.kind ?? 'OWN'),
+        );
+        setAgencyId(branding?.kind === 'AGENCY' ? branding.referenceId : '');
         setDelivery(result.delivery);
         setOrder(
           result.data.workflow.roomOrder.length
@@ -124,7 +134,7 @@ export function TravelWorkflowForm({
     return () => {
       active = false;
     };
-  }, [id, dataRevision, readOnly]);
+  }, [id, dataRevision, readOnly, action]);
   async function run(operation: TravelWorkflowCommandV1['action']) {
     if (!intake || busy || readOnly) return;
     const operationNote = workflowOperationNote(operation, note);
@@ -142,7 +152,21 @@ export function TravelWorkflowForm({
           action: operation,
           expectedVersion: intake.workflow.version,
           note: operationNote,
-          branding: { kind: brandKind, referenceId: agencyId },
+          branding: {
+            kind:
+              brandKind === 'NONE'
+                ? (intake.workflow.branding?.kind ?? 'OWN')
+                : brandKind,
+            referenceId:
+              brandKind === 'NONE'
+                ? (intake.workflow.branding?.referenceId ?? agencyId)
+                : agencyId,
+            ...(action === 'بلیط'
+              ? { ticketWithoutLogo: brandKind === 'NONE' }
+              : action === 'واچر'
+                ? { voucherWithoutLogo: brandKind === 'NONE' }
+                : {}),
+          },
           supplierReference: reference,
           insuranceReference: reference,
           acknowledgeMissingInsurance: acknowledge,
@@ -161,9 +185,13 @@ export function TravelWorkflowForm({
   }
   if (!intake) return <p role="status">{error || 'در حال دریافت اطلاعات…'}</p>;
   const state = intake.workflow;
+  const SupplierDocument =
+    reservationHotelStays(intake.snapshot).length > 1
+      ? SupplierHotelDocuments
+      : TravelDocument;
   if (readOnly)
     return (
-      <TravelDocument
+      <SupplierDocument
         historical
         intake={{
           ...intake,
@@ -181,6 +209,9 @@ export function TravelWorkflowForm({
     );
   const closed = state.voucherIssued || state.supplierStatus === 'CANCELLED';
   const issuedForm = Boolean(
+    Object.values(state.hotelSupplierForms ?? {}).some(
+      (entry) => entry.sentSettings,
+    ) ||
     state.sentSupplierFormSettings ||
     state.voucherIssued ||
     (Number.isSafeInteger(state.sentSupplierFormVersion) &&
@@ -196,7 +227,7 @@ export function TravelWorkflowForm({
         >
           اصلاح
         </Button>
-        <TravelDocument
+        <SupplierDocument
           downloadLabel="دانلود"
           intake={{
             ...intake,
@@ -236,6 +267,16 @@ export function TravelWorkflowForm({
             />{' '}
             خیر، آژانس دیگر
           </label>
+          {['بلیط', 'واچر'].includes(action) && (
+            <label>
+              <input
+                type="radio"
+                checked={brandKind === 'NONE'}
+                onChange={() => setBrandKind('NONE')}
+              />{' '}
+              بدون لوگو
+            </label>
+          )}
           {brandKind === 'AGENCY' && (
             <>
               <Input
@@ -280,7 +321,13 @@ export function TravelWorkflowForm({
           >
             ثبت سربرگ
           </Button>
-          <p>{state.branding?.name ?? 'سربرگ انتخاب نشده'}</p>
+          <p>
+            {(action === 'بلیط' &&
+              state.branding?.ticketWithoutLogo === true) ||
+            (action === 'واچر' && state.branding?.voucherWithoutLogo === true)
+              ? 'بدون لوگو'
+              : (state.branding?.name ?? 'سربرگ انتخاب نشده')}
+          </p>
         </section>
       )}
       {action === 'بلیط' &&
@@ -344,7 +391,7 @@ export function TravelWorkflowForm({
       )}
       {action === 'رزرواسیون' && (editingForm || !issuedForm) && (
         <ReservationSettings
-          key={`${id}:${state.version}`}
+          key={`${id}:${intake.contractVersion}`}
           intake={intake}
           onDirty={() => setSettingsDirty(true)}
           showDocument
@@ -357,7 +404,10 @@ export function TravelWorkflowForm({
                 : {}),
             });
             setSettingsDirty(false);
-            if (workflow.sentSupplierFormVersion === workflow.version)
+            if (
+              reservationHotelStays(intake.snapshot).length <= 1 &&
+              workflow.sentSupplierFormVersion === workflow.version
+            )
               setEditingForm(false);
           }}
         />

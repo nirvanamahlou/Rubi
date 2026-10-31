@@ -41,7 +41,8 @@ describe('MasterDataFilterActions', () => {
     expect(css).toContain('grid-template-columns: minmax(0, 1fr)');
     expect(css).toContain('repeat(2, minmax(0, 1fr))');
     expect(css).toContain('repeat(3, minmax(0, 1fr))');
-    expect(css).toContain('repeat(auto-fit, minmax(10.5rem, 1fr))');
+    expect(css).toContain('grid-auto-flow: column');
+    expect(css).toContain('grid-auto-columns: minmax(0, 1fr)');
     expect(css).toMatch(/\.filterBar > fieldset[\s\S]*grid-column: span 2/);
     expect(css).not.toMatch(/\.filterBar\s*\{[^}]*overflow\s*:/s);
     expect(css).not.toMatch(

@@ -104,7 +104,7 @@ export function reservationPdfHtml(
         ];
       });
       first += people.length;
-      return `<article class="page" dir="ltr" lang="en"><header class="${withLetterhead ? 'header' : 'plainHeader'}"><div><h1>${voucher ? 'HOTEL VOUCHER' : 'RESERVATION FORM'}</h1><p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p></div><div class="brand${intake.workflow.branding?.kind === 'OWN' && intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? ' jahanBrand' : ''}">${withLetterhead ? `<img class="${intake.workflow.branding?.kind === 'OWN' ? (intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? 'jahanLogo' : 'logo') : 'agencyLogo'}" src="${logo}" alt=""/>` : ''}</div></header>
+      return `<article class="page" dir="ltr" lang="en"><header class="${withLetterhead ? 'header' : 'plainHeader'}"><div><h1>${voucher ? 'HOTEL VOUCHER' : intake.supplierDocumentKind && intake.supplierDocumentKind !== 'HOTEL' ? 'TRANSFER FORM' : 'RESERVATION FORM'}</h1><p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p></div><div class="brand${intake.workflow.branding?.kind === 'OWN' && intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? ' jahanBrand' : ''}">${withLetterhead ? `<img class="${intake.workflow.branding?.kind === 'OWN' ? (intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? 'jahanLogo' : 'logo') : 'agencyLogo'}" src="${logo}" alt=""/>` : ''}</div></header>
     ${fields(
       [
         [voucher ? 'BOOKING NO.' : 'REQUEST NO.', data.request],
@@ -115,40 +115,28 @@ export function reservationPdfHtml(
       ],
       'meta',
     )}
-    <section class="bookingSection">${heading('01', 'BOOKING SUMMARY', 'Reservation details')}${fields(
-      [
-        ['ADULTS', data.adults],
-        ['CHILDREN 6-12', data.children6To12],
-        ['CHILDREN 2-6', data.children2To6],
-        ...(data.childrenUnclassified
-          ? [['CHILDREN (UNSPECIFIED)', data.childrenUnclassified]]
-          : []),
-        ['INFANTS', data.infants],
-        ['DESTINATION', data.destination],
-        ['ROOMS / NIGHTS', `${data.rooms} ROOMS / ${data.nights} NIGHTS`],
-      ],
-      'summary',
-    )}
-    </section>
-    ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
-      [
-        'HOTEL',
-        'CITY',
-        'STAR',
-        'SERVICE',
-        ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
-      ],
-      [
-        [
-          data.hotel,
-          data.destination,
-          data.stars,
-          data.meal,
-          ...(!data.roomBreakdown.length ? [data.roomType] : []),
-        ],
-      ],
-      'hotelInformation',
-    )}
+    ${
+      settings?.flags.hotel === false
+        ? ''
+        : `    ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
+            [
+              'HOTEL',
+              'CITY',
+              'STAR',
+              'SERVICE',
+              ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
+            ],
+            [
+              [
+                data.hotel,
+                data.destination,
+                data.stars,
+                data.meal,
+                ...(!data.roomBreakdown.length ? [data.roomType] : []),
+              ],
+            ],
+            'hotelInformation',
+          )}
     ${
       data.roomBreakdown.length
         ? table(
@@ -170,6 +158,23 @@ export function reservationPdfHtml(
         : ''
     }
     <table class="table"><tbody><tr><th>CHECK-IN</th><td>${escape(data.checkIn)}</td><th>CHECK-OUT</th><td>${escape(data.checkOut)}</td></tr></tbody></table>
+`
+    }
+    ${
+      intake.snapshot.serviceSelections.some((s) => s.kind === 'TRANSFER')
+        ? heading('03A', 'FLIGHT INFORMATION', 'Arrival & departure') +
+          table(
+            ['DIRECTION', 'AIRLINE', 'FLIGHT', 'DATE', 'TIME'],
+            data.flights.map((flight) => [
+              flight.leg,
+              flight.airline,
+              flight.number,
+              flight.date,
+              flight.time,
+            ]),
+          )
+        : ''
+    }
     ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table(['TRANSFER', 'TOUR LEADER', 'EXCURSION'], [[voucher ? data.transfer + ' · Board: ' + (settings?.text.transferBoard?.trim() || '-') : data.transfer, data.leader, data.excursion]])}
     ${heading('05', 'PASSENGERS', 'Passenger services')}${table(
       [
@@ -206,7 +211,7 @@ export function reservationPdfHtml(
       'passengers',
       people.map((p) => p.differentStay === true),
     )}
-    ${!voucher ? heading('06', 'PRICES', 'Supplier quotation') + table(supplierPriceTableData(intake).headers, [supplierPriceTableData(intake).values]) : ''}${heading(voucher ? '06' : '07', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
+    ${!voucher ? heading('06', 'PRICES', 'Supplier quotation') + table(supplierPriceTableData(intake).headers, supplierPriceTableData(intake).rows) : ''}${heading(voucher ? '06' : '07', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
     <footer class="footer"><div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin, intake.workflow.branding?.companyCode, data.brand, publicDocumentUrl)}</div><div><span></span></div>${voucher ? `<b>${index + 1} / ${pageCount}</b>` : ''}</footer></article>`;
     })
     .join('');

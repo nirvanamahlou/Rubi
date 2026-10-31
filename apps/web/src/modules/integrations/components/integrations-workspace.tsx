@@ -47,6 +47,7 @@ import { CatalogueEditor, type CatalogueEdit } from './catalogue-editor';
 import { BrandsDashboard } from './brands-dashboard';
 import { IntegrationNavigation } from './integration-navigation';
 import { ConnectionReadiness } from './connection-readiness';
+import { NiyayeshData } from './niyayesh-data';
 import { SiteRegistrationDialog } from './site-registration-dialog';
 import {
   authenticationLabels,
@@ -339,6 +340,7 @@ export function IntegrationWorkspaceBody({
           {edit ? null : system ? (
             <SystemDetail
               key={system.id}
+              branchId={branchId}
               system={system}
               data={data}
               allowedSections={allowedSections}
@@ -348,6 +350,9 @@ export function IntegrationWorkspaceBody({
             />
           ) : (
             <>
+              {section === 'connections' ? (
+                <NiyayeshData key={branchId} branchId={branchId} />
+              ) : null}
               {section === 'overview' ? (
                 <>
                   <div className="grid gap-4 sm:grid-cols-3">
@@ -813,6 +818,7 @@ function SystemList({
   );
 }
 function SystemDetail({
+  branchId,
   system,
   data,
   onBack,
@@ -820,6 +826,7 @@ function SystemDetail({
   onSetup,
   allowedSections,
 }: {
+  branchId: string;
   system: IntegrationSystemConfigV1;
   data: IntegrationRegistryV1;
   onBack: () => void;
@@ -827,7 +834,9 @@ function SystemDetail({
   onSetup: () => void;
   allowedSections: readonly IntegrationSection[];
 }) {
-  const [area, setArea] = useState('settings');
+  const [area, setArea] = useState(
+    allowedSections.includes('connections') ? 'data' : 'settings',
+  );
   return (
     <Card className="grid gap-5 p-5">
       <div className="flex flex-wrap items-center gap-3">
@@ -845,6 +854,7 @@ function SystemDetail({
       </div>
       <nav aria-label="مدیریت سامانه" className="flex flex-wrap gap-2">
         {[
+          ['data', 'آمار، اطلاعات و ورود فایل'],
           ['settings', 'مشخصات سامانه'],
           ['connection', 'اتصال'],
           ['sync', 'همگام‌سازی'],
@@ -855,7 +865,7 @@ function SystemDetail({
             ([id]) =>
               id === 'settings' ||
               allowedSections.includes(
-                (id === 'connection'
+                (id === 'connection' || id === 'data'
                   ? 'connections'
                   : id === 'history'
                     ? 'logs'
@@ -874,7 +884,9 @@ function SystemDetail({
             </Button>
           ))}
       </nav>
-      {area === 'settings' ? (
+      {area === 'data' ? (
+        <NiyayeshData branchId={branchId} expectedSystemId={system.id} />
+      ) : area === 'settings' ? (
         <>
           <div className="flex flex-wrap gap-2">
             <Badge>{domainLabels[system.businessDomain]}</Badge>

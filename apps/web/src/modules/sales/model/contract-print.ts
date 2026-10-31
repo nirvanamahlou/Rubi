@@ -288,25 +288,39 @@ export function contractPrintHtml(
     c.servicesDetail,
     c.passengersDetail,
   );
-  const flightPrices = totalPrices
-    ? undefined
-    : readPassengerFlightPrices(c.servicesDetail);
-  const hotelPrices = totalPrices
-    ? undefined
-    : readPassengerHotelPrices(c.servicesDetail, c.passengersDetail);
+  // Saved package totals/passenger sale prices supersede obsolete service splits.
+  // Historical whole-contract bookings may retain empty hotel/flight maps.
+  const contractPackagePricing =
+    c.servicesDetail.length > 0 &&
+    c.servicesDetail.every(
+      (s) => s.metadata?.contractPackagePricingVersion === 1,
+    );
+  const servicePriceFallback =
+    !totalPrices && !completePrices && !contractPackagePricing;
+  const flightPrices = servicePriceFallback
+    ? readPassengerFlightPrices(c.servicesDetail)
+    : undefined;
+  const hotelPrices = servicePriceFallback
+    ? readPassengerHotelPrices(c.servicesDetail, c.passengersDetail)
+    : undefined;
+  // Owner-approved display allocation for historical whole-contract totals.
+  // Explicit passenger prices always retain their saved allocation.
+  const firstPassengerTotals =
+    contractPackagePricing &&
+    !totalPrices &&
+    c.passengersDetail.every((p) => !p.agreedPrices?.length)
+      ? c.balances.map(({ currencyCode, amount }) => ({ currencyCode, amount }))
+      : null;
   const passengerAgeLabel = (p: (typeof c.passengersDetail)[number]) => {
     if (p.ageCategory !== 'CHD')
       return p.ageCategory === 'INF' ? 'نوزاد' : 'بزرگسال';
+    if (p.childAgeBand === 'AGE_2_6') return 'کودک (2-6)';
+    if (p.childAgeBand === 'AGE_6_12') return 'کودک (6-12)';
     const age = hotelAgeOn(
       p.birthDate,
       c.hotelSelection?.checkInDate || c.departureDate,
     );
-    if (age === null || age === undefined)
-      return p.childAgeBand === 'AGE_2_6'
-        ? 'کودک (2-6)'
-        : p.childAgeBand === 'AGE_6_12'
-          ? 'کودک (6-12)'
-          : 'کودک';
+    if (age === null || age === undefined) return 'کودک';
     return age < 6 ? 'کودک (2-6)' : age < 12 ? 'کودک (6-12)' : 'کودک (12-18)';
   };
   const passengerAgeHtml = (p: (typeof c.passengersDetail)[number]) =>
@@ -334,6 +348,10 @@ export function contractPrintHtml(
           : [
               ...(flightPrices?.[p.customerId] ?? []),
               ...(hotelPrices?.[p.customerId] ?? []),
+              ...(firstPassengerTotals?.map((price) => ({
+                ...price,
+                amount: i === 0 ? price.amount : '0',
+              })) ?? []),
             ]);
       const renderPrices = (foreign: boolean) =>
         prices
@@ -473,7 +491,7 @@ export function contractPrintHtml(
   header .subtitle:before,header .subtitle:after{content:"";height:1px;background:#38aeb1;flex:1;min-width:6mm}
   header .brand{width:54mm;flex-shrink:0;text-align:center;font-size:10.5pt}
   header img{display:block;max-width:52mm;max-height:17mm;margin:0 auto 1mm;object-fit:contain;filter:brightness(0) invert(1)}
-  header .brand small{color:white}header .jahan-brand{background:white;color:#102d54;border-radius:2mm;padding:1mm}header .jahan-brand small{color:#102d54}header .jahan-brand img{filter:none}
+  header .brand small{color:white}header .jahan-brand{background:transparent;color:white;padding:0}header .jahan-brand small{color:white}header .jahan-brand img{filter:brightness(0) invert(1)}
   .meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#eaf0f4;padding:2mm 0;margin-bottom:2mm}
   .meta>div{text-align:center;border-left:1px solid #aebccc;font-size:10pt}.meta>div:last-child{border-left:0}.meta strong{display:block;font-size:11pt;margin-top:.4mm}
   small{display:block;font-size:8pt;color:#59708b;font-weight:normal;margin-top:.5mm}
