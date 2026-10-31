@@ -668,7 +668,10 @@ export interface ReservationRoomPriceV1 {
   factor: string;
 }
 export interface VoucherSettingsV1 {
-  hotelRoomPrices?: { currencyCode: string; rooms: ReservationRoomPriceV1[] };
+  hotelRoomPrices?: {
+    currencyCode: string;
+    rooms: ReservationRoomPriceV1[];
+  } | null;
   hotelTransferCounts?: { outbound: number; returning: number };
   /** Immutable room composition for this output revision; legacy revisions omit it. */
   rooms?: {
