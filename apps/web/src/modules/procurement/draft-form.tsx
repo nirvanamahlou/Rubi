@@ -23,7 +23,7 @@ import {
 } from './api';
 import { emptyDraft, reconcileDraft } from './model';
 import { ProcurementSelect } from './procurement-select';
-import { ProcurementOwnerPicker } from './owner-picker';
+import { ProcurementDocumentPicker } from './document-picker';
 
 export const selectClass =
   'h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -229,6 +229,9 @@ export function DraftForm({
     requesters.data?.items.find((item) => item.id === requesterEmployeeId)
       ?.label ?? requesterLabel;
   const [busy, setBusy] = useState(false);
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
+  const receiptUploadRef = useRef(false);
+  const [attachmentSourceId] = useState(() => crypto.randomUUID());
   const [baseRequest, setBaseRequest] = useState(request);
   const [conflict, setConflict] = useState(false);
   const [latest, setLatest] = useState<ProcurementRequestV1 | null>(null);
@@ -501,7 +504,7 @@ export function DraftForm({
     );
   };
   async function save(mode: 'DRAFT' | 'PUBLISH' = 'DRAFT') {
-    if (busyRef.current) return;
+    if (busyRef.current || receiptUploadRef.current) return;
     if (mode === 'PUBLISH') {
       const issue = validatePublishDraft(draft);
       if (issue) {
@@ -680,7 +683,7 @@ export function DraftForm({
           </div>
         )}
         <fieldset
-          disabled={busy}
+          disabled={busy || uploadingReceipt}
           className="min-w-0 space-y-5 rounded-2xl border border-primary/15 bg-gradient-to-b from-primary/5 via-surface to-surface p-4 sm:p-5"
         >
           <legend className="mb-4 w-full border-b border-primary/15 pb-3 text-base font-bold text-foreground">
@@ -728,7 +731,7 @@ export function DraftForm({
               />
             </FormField>
           </div>
-          <div className="grid items-start gap-4 lg:grid-cols-2">
+          <div className="grid items-end gap-4 lg:grid-cols-2">
             <FormField id="proc-requester" label="درخواست‌کننده">
               {request ? (
                 <Input
@@ -794,7 +797,11 @@ export function DraftForm({
               )}
             </FormField>
             <div className="grid items-start gap-4 sm:grid-cols-2">
-              <FormField id="proc-unit" label="واحد سازمانی">
+              <FormField
+                id="proc-unit"
+                label="واحد سازمانی"
+                labelClassName="min-h-7 flex items-center"
+              >
                 <ProcurementSelect
                   id="proc-unit"
                   className={selectClass}
@@ -836,28 +843,6 @@ export function DraftForm({
               {savedChoice('category', 'دسته خرید', true)}
             </div>
           </div>
-          {canChooseOwner && (!request || canAssign) && (
-            <div className="rounded-xl border border-primary/10 bg-surface/70 p-4">
-              <ProcurementOwnerPicker
-                key={draft.branchId}
-                branchId={draft.branchId}
-                value={ownerUserId}
-                onChange={setOwnerUserId}
-                label="مسئول پیگیری"
-                compact
-                showHints={false}
-                {...(request?.ownerUserId &&
-                request.draft.branchId === draft.branchId
-                  ? {
-                      initialOption: {
-                        id: request.ownerUserId,
-                        label: `مسئول فعلی (${request.ownerUserId.slice(0, 8)})`,
-                      },
-                    }
-                  : {})}
-              />
-            </div>
-          )}
           <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <FormField id="proc-deliveryLocation" label="محل تحویل">
               <ProcurementSelect
@@ -919,7 +904,7 @@ export function DraftForm({
           </div>
         </fieldset>
         <fieldset
-          disabled={busy}
+          disabled={busy || uploadingReceipt}
           className="min-w-0 space-y-4 rounded-2xl border border-violet-200/70 bg-gradient-to-b from-violet-500/5 via-surface to-surface p-4 dark:border-violet-400/25 sm:p-6"
         >
           <legend className="mb-5 w-full border-b border-violet-200/70 pb-4 text-base font-bold text-foreground dark:border-violet-400/25">
@@ -1057,13 +1042,43 @@ export function DraftForm({
             افزودن کالا یا خدمت
           </Button>
         </fieldset>
+        <fieldset
+          disabled={busy || uploadingReceipt}
+          className="min-w-0 rounded-2xl border border-border p-4"
+        >
+          <legend className="px-2 text-sm font-semibold">
+            فیش و پیوست‌های درخواست
+          </legend>
+          <ProcurementDocumentPicker
+            key={draft.branchId}
+            branchId={draft.branchId}
+            value={draft.documents}
+            onChange={(documents) => update('documents', documents)}
+            available={
+              bootstrap.documents === 'AVAILABLE' && Boolean(draft.branchId)
+            }
+            invoiceUpload={{
+              requestId: baseRequest?.id ?? attachmentSourceId,
+              requestNumber: baseRequest?.number ?? 'درخواست جدید',
+              purpose: 'REQUEST',
+              sourceEntityType: baseRequest
+                ? 'ProcurementRequest'
+                : 'ProcurementDraft',
+            }}
+            onUploadingChange={(uploading) => {
+              receiptUploadRef.current = uploading;
+              setUploadingReceipt(uploading);
+            }}
+          />
+        </fieldset>
         <div className="flex flex-wrap gap-3 border-t border-border pt-5">
-          <Button type="submit" loading={busy}>
+          <Button type="submit" loading={busy} disabled={uploadingReceipt}>
             ذخیره پیش‌نویس
           </Button>
           <Button
             type="button"
             loading={busy}
+            disabled={uploadingReceipt}
             onClick={() => void save('PUBLISH')}
           >
             تأیید و انتشار
