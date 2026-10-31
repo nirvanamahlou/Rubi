@@ -10391,3 +10391,5 @@ Owner authorizes reviewing and merging all own PRs after full CI and final devel
 ## HR-HEADQUARTERS-CHOICE-1031 — PC-B — RESERVED
 
 PR1248 merged at f3632a7a9; HR-SHARED-BRANCHES-1031 source/schema lease released after eight successful hosted gates. Reserve only hr-live-data.ts, its directory-form regression and own closeout notes. Browser verification found virtual Headquarters reused the first native branch option value and was folded away by the selector. Give the virtual UI choice a distinct nonpersistent identifier; native branch ownership remains unchanged. No schema, contract, dependency or data mutation. Local integrated production build/API passed; localhost3100 is active and final option verification follows this correction.
+
+HR-HEADQUARTERS-CHOICE-1031 also reserves the existing organization-chart-live selector expectation: the UI-only common option now has hr-headquarters identity, while every native chart root and branch FK remains unchanged. Full hosted suite identified this stale expectation; source correction itself passed quality/build/migration gates.

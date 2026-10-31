@@ -181,7 +181,7 @@ describe('live organization chart nodes', () => {
     ).toEqual([
       ['company-a', 'b', 'company-a'],
       ['legacy', 'legacy', ''],
-      ['b', 'b', ''],
+      ['hr-headquarters', 'b', ''],
     ]);
     const target = chartNodeFormTarget(
       'EMPLOYEE',
