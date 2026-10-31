@@ -1,7 +1,3 @@
-## RESERVATION-HOTEL-NAMES-1031 — PC-A — VALIDATING
-
-Reservations queue retains the primary hotel and ordered additional stays from the existing Sales snapshot. The Hotel cell joins all names with " / "; English-name enrichment resolves every hotel independently and retains each saved snapshot on lookup failure. Primary hotel ID, meal/stars and operational actions remain unchanged. The same enriched label feeds existing search and Excel export. Focused regressions cover multi/single/empty hotels, partial reference failure, itinerary order, primary-ID preservation and search/export. No API/schema/migration/dependency, operational data or runtime/server change. Full final-head hosted quality/tests/build/database gates precede authorized develop merge; bounded source reservation releases on verified merge.
-
 ## 2026-10-31 — TRANSFER-FLIGHT-FORM-1031 — PC-A
 
 Supplier reservation preview and PDF include arrival/departure airline, flight number, date and time whenever the contract includes any transfer, including a single passenger among a mixed roster. Existing saved supplier flight fields and allocations remain authoritative; no invented flight facts.43 focused output/model regressions and scoped ESLint pass. Web typecheck passes; local Turbopack is blocked by out-of-root dependency junctions, alternate webpack compilation passed and final build is running. No schema/migration/dependency/data/runtime change. Push and PR1207 creation succeeded through the authorized elevated GitHub context; final-head CI gates the authorized develop merge. Source remains on codex/pc-a-transfer-flight-1031; no merge claimed.
@@ -8027,3 +8023,7 @@ Cancelled contracts are excluded before Sales dashboard metrics and currency sum
 ## SUPPLIER-RATIO-SAVE-1029 — PC-A
 
 Supplier form Ratio is a dimensionless decimal without a currency selector, currency directory lookup or PDF currency suffix. Historical ratio currencies remain readable and are removed when saving a new revision. Hotel P.P replaces P.P in input and both preview/PDF rendering. Explicit Save stores settings without sending/issuing; passenger ticket PDF downloads remain while the two browser print buttons are removed. No schema/migration/deployment. Focused validation and hosted gates precede authorized develop merge.
+
+## RESERVATION-HOTEL-NAMES-1031 — PC-A — VALIDATING
+
+Reservations queue retains the primary hotel and ordered additional stays from the existing Sales snapshot. The Hotel cell joins all names with " / "; English-name enrichment resolves every hotel independently and retains each saved snapshot on lookup failure. Primary hotel ID, meal/stars and operational actions remain unchanged. The same enriched label feeds existing search and Excel export. Focused regressions cover multi/single/empty hotels, partial reference failure, itinerary order, primary-ID preservation and search/export. No API/schema/migration/dependency, operational data or runtime/server change. Full final-head hosted quality/tests/build/database gates precede authorized develop merge; bounded source reservation releases on verified merge.
