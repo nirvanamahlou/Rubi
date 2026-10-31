@@ -746,7 +746,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <CallFormProvider>
             <AppShellContent>{children}</AppShellContent>
             <FloatingAssistant />
-            <TelephonyAttention outboundOnly />
+            <TelephonyAttention outboundOnly bothDirections />
           </CallFormProvider>
         </PageBreadcrumbProvider>
       </LegalEntityProvider>
