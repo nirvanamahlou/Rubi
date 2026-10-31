@@ -30,6 +30,7 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { toursApi } from '../api/tours';
 import { TicketDatePicker } from './ticket-date-picker';
+import { PackageTicketDatePicker } from './package-ticket-date-picker';
 import { TourDetailsForm } from './tour-details-form';
 import { TourOverview } from './tour-overview';
 
@@ -700,7 +701,10 @@ export function TourWorkspace({
                   )}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <FormField label="روز شروع">
-                      <TicketDatePicker
+                      <PackageTicketDatePicker
+                        originId={pack.originId ?? ''}
+                        destinationId={pack.destinationId ?? ''}
+                        branchId={pack.branchId}
                         value={dates.start}
                         onChange={(start) => {
                           const next = { ...dates, start };
@@ -715,7 +719,10 @@ export function TourWorkspace({
                       />
                     </FormField>
                     <FormField label="روز پایان">
-                      <TicketDatePicker
+                      <PackageTicketDatePicker
+                        originId={pack.destinationId ?? ''}
+                        destinationId={pack.originId ?? ''}
+                        branchId={pack.branchId}
                         value={dates.end}
                         onChange={(end) => {
                           const next = { ...dates, end };

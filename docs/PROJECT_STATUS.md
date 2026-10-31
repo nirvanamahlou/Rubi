@@ -8159,3 +8159,7 @@ Added fixed-origin HTTPS Travis/Noyan sandbox catalogue integration and private,
 
 ## HR-MANUAL-PERSONNEL-CODE-1031 / PC-B
 Employee create/edit personnel code is editable through existing validated form state and submission. Automatic suggestion retained; inaccurate automatic-only helper copy removed. Existing required/50-character/duplicate validation and API/FK identity preserved. No API/schema/dependency or server rollout. Targeted and final-head checks gate owner-authorized develop merge.
+
+## PACKAGE-TICKET-DAYS-1031 — PC-A
+
+Package departure calendars now mark active tickets for the selected route and branch with red day labels and dots. Visible-month requests use the existing paginated API and Tehran dates; stale route/month responses are ignored. Date selection remains unrestricted and existing departure ticket selection is unchanged. Eight focused Web checks and scoped ESLint pass; Web typecheck and formatting pass. Final production build runs in hosted CI; no merge authorized by this request. No API/schema/migration/dependency or server rollout.
