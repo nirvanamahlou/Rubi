@@ -10053,7 +10053,7 @@ COMPUTER_ID=PC-A; branch codex/pc-a-payment-destination-details-1029 from origin
 
 COMPUTER_ID=PC-A; branch codex/pc-a-ticket-no-logo-1031 from current origin/develop. User authorizes independent Without logo options in ticket and voucher branding and develop merge. Reserve TravelWorkflowForm/Service branding resolution and focused API/UI regressions; optional ticketWithoutLogo/voucherWithoutLogo input/output Contracts fields; explicit useTravelLogo suppression, ReservationTickets, authenticated ticket and voucher PDF routes, shared ticket renderer, bounded voucher logo conditional and relevant hook/PDF tests. Composite voucher wrapper/page logic is already published and remains intact. Producer Reservations preserves flags in existing immutable JSON; omitted document preferences survive changes to the other document. Legal issuer facts and logo references remain for normal output; airline marks, supplier forms, permissions, private sharing, issued-document and financial delivery guards remain. Normal OWN/AGENCY still requires valid configured logos.
 
-17 focused API and86 Web/renderer/private-route/control/translation checks pass. Added save/restore/independent preference, malformed input, permission/version, no-file-lookup and retained normal-logo rejection cases. Reserve only the Without logo English label and deterministic generated catalogs; no schema/migration/dependency/operational-data change. API and Web ship together. Scoped lint and all final-head hosted quality/typecheck/full-suite/build/PostgreSQL gates precede authorized merge. Source freezes on publication and reservations release on verified merge.
+17 focused API and86 Web/renderer/private-route/control/translation checks pass. Added save/restore/independent preference, malformed input, permission/version, no-file-lookup and retained normal-logo rejection cases. Reserve only the Web-only Without logo entry in apps/web/src/i18n/en-catalog.json; no API or standalone source introduces that label, so their existing develop catalogs are retained. no schema/migration/dependency/operational-data change. API and Web ship together. Scoped lint and all final-head hosted quality/typecheck/full-suite/build/PostgreSQL gates precede authorized merge. Source freezes on publication and reservations release on verified merge.
 
 ## HOTEL-SELECTOR-CONTAINMENT-1031 — PC-A — RESERVED
 
@@ -10283,6 +10283,18 @@ LIVE-PRESENCE-DEVELOP-1031 source freeze: latest develop integrated, exact26-scr
 ## PETTY-PLUS-1031 — PC-B — RESERVED
 
 PC-B; branch codex/pc-b-petty-plus-1031. Reserve petty-fund-card.tsx/spec and own status notes: explicit accessible plus button adjacent to existing fund card opens same bank/balance configuration modal, preserving populated fields/CAS/permissions and one fund per branch. Existing scopes released; no schema/API/dependency/permission change. User authorizes push/develop merge and local3100 rollout. Preserve other checkouts and prior runtime.
+
+## PETTY-OPEN-FIX-1031 — PC-B — RESERVED
+
+Reserve petty-fund-card.tsx/spec and own status notes. Card/plus must open dialog even on query failure/loading; retain save guard until successful data load, show retry inside modal, avoid stale values after retry. Existing source scopes released. No API/schema/permissions changes. User reports no opening after prior change; repair and local rollout within authorized scope.
+
+PETTY-OPEN-FIX-1031 extension: reserve only petty-fund controller GET response to explicitly serialize JSON null for unconfigured branches. Nest default null otherwise sends an empty body, failing the client's JSON parser. No service/schema or permission change.
+
+## REQUEST-DETAIL-SIMPLE-1031 — PC-B — RESERVED
+
+Reserve Procurement workspace request detail, draft form/API save consumer, targeted tests and own notes. Remove lifecycle/assignment controls except cancellation; remove owner/next-action/acceptance metadata. Enable edit through existing DraftForm for nonfinal requests under existing permissions; supply explicit user edit reason for post-publication audit. Existing money/approval/CAS guards stay authoritative. Preserve pending petty-dialog repair. No schema/migration/permission changes.
+
+REQUEST-DETAIL-SIMPLE-1031 verification:67 module checks plus11 focused action/PATCH-reason checks and scoped lint passed; Web production build passed. PR1233 published. Local3100 rollout not performed: port taken concurrently by Next dev from C:/Users/admin/.codex/worktrees/hr-payroll-finance-approval-1027/Rubi (parent28716/listener17088); existing runtime not stopped or overwritten. Source locks released; shared runtime handoff requires coordination. Final accepted-fund amount changes remain guarded by existing server policy. No schema or operational mutations.
 
 ## TRAVIS-SANDBOX-CONNECTION-1031 — PC-A — RESERVED
 
