@@ -1,3 +1,4 @@
+import { CallCenterActorGuard } from './call-center-actor.guard';
 import {
   Body,
   Controller,
@@ -23,7 +24,7 @@ import {
 } from './call-center-search.dto';
 import { CallCenterReadService } from './call-center-read.service';
 @Controller('customer-affairs/call-center')
-@UseGuards(AuthGuard, PermissionGuard)
+@UseGuards(AuthGuard, CallCenterActorGuard, PermissionGuard)
 @RequirePermissions('customer_affairs.call_center.read')
 export class CallCenterReadController {
   constructor(

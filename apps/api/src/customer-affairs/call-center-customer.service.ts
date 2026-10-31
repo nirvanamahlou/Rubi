@@ -12,6 +12,7 @@ import { CallCenterWorkflowService } from './call-center-workflow.service';
 import { CallCenterService } from './call-center.service';
 import { CallCenterCrypto } from './call-center.crypto';
 import type { CallCenterCustomerLinkDto } from './call-center-customer.dto';
+import { callCenterSourceActor } from '../iam/call-center-answer-policy';
 @Injectable()
 export class CallCenterCustomerService {
   constructor(
@@ -37,7 +38,11 @@ export class CallCenterCustomerService {
     if (!call) throw new NotFoundException();
     const phone = this.calls.presentCall(call).phone;
     if (!phone) return { data: [], meta: { hasMore: false } };
-    return this.customers.callCenterCandidates(phone, branchId, actor);
+    return this.customers.callCenterCandidates(
+      phone,
+      branchId,
+      callCenterSourceActor(actor),
+    );
   }
   async link(
     actor: AuthenticatedActor,
@@ -70,7 +75,7 @@ export class CallCenterCustomerService {
             tx,
             input.customerId,
             branchId,
-            actor,
+            callCenterSourceActor(actor),
           )
         : null;
       const fingerprint = this.crypto.fingerprint(
