@@ -711,3 +711,7 @@ Owner explicitly makes birth date optional during new-contract entry and authori
 # Reservation defaults — 2026-10-29
 
 The product owner now explicitly requests hotel check-in to default to outbound arrival day (including overnight flights), superseding the earlier departure-day default. Preserve manual check-in. Reservation child bands use the saved hotel check-in date, falling back to outbound arrival/departure if no hotel date exists; DOB stays in Customers. Bands remain [2,6) and [6,12). Missing form sex defaults Male without modifying canonical passenger identity or saved Female values. Automatic returns remain uniquely paired by the configured load/return date window; never guess another load.
+
+## HOTEL-ROOM-RESERVATION-1031 — 2026-10-31
+
+Owner confirms independent broker/form/quotation per hotel stay, room-level P.P × Ratio × stay nights with one room currency per hotel, and independent count-based transfers allowing zero. Quotation edits are not financial writes; purchases remain editable drafts until explicitly registered through existing Reservations purchase/Finance approval boundaries. Store bounded additive snapshots in existing workflow/purchase JSON, retaining source FK, history, CAS and idempotency. Per-hotel cost coverage preserves primary legacy keys and sums current costs per currency without duplicate legacy fallback. No Sales allocation/price rewrite, new payment approval, schema or dependency change. Details: [HOTEL-ROOM-RESERVATION-1031](tasks/HOTEL-ROOM-RESERVATION-1031.md).

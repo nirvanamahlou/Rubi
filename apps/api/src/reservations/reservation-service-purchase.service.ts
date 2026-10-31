@@ -18,10 +18,15 @@ import {
 } from '@nestjs/common';
 import {
   hotelNights,
+  hotelRoomQuotationTotal,
+  reservationHotelStays,
+  reservationHotelTransferKeys,
+  scopeReservationHotel,
   legacyPurchaseGuests,
   moneyDecimal,
   moneyUnits,
   reservationServicePurchaseTotal,
+  type TravelWorkflowStateV1,
   type AuthenticatedActor,
   type ReservationServicePurchaseInputV1,
   type ReservationPurchaseBatchInputV1,
@@ -71,6 +76,7 @@ export function purchasableReservationService(
 export function validateServicePurchase(
   input: ReservationServicePurchaseInputV1,
   allowZero = false,
+  allowZeroCount = false,
 ) {
   if (
     !input ||
@@ -98,6 +104,7 @@ export function validateServicePurchase(
           'coveredServiceClientKeys',
           'transferUnitAmount',
           'pricingCalculation',
+          'roomPrices',
           'purchaseRateToIrr',
         ].includes(key),
     ) ||
@@ -170,7 +177,8 @@ export function validateServicePurchase(
       ) ||
       (calculation.chargeablePassengerCount !== undefined &&
         (!Number.isSafeInteger(calculation.chargeablePassengerCount) ||
-          calculation.chargeablePassengerCount <= 0)) ||
+          calculation.chargeablePassengerCount < 0 ||
+          (!allowZeroCount && calculation.chargeablePassengerCount === 0))) ||
       input.passengerPrices !== undefined ||
       input.legacyGuestPrices !== undefined ||
       input.transferUnitAmount !== undefined
@@ -340,7 +348,15 @@ export class ReservationServicePurchaseService {
       input.purchases.length < 1 ||
       input.purchases.length > 100 ||
       Object.keys(input).some(
-        (field) => !['version', 'expectedVersion', 'purchases'].includes(field),
+        (field) =>
+          ![
+            'version',
+            'expectedVersion',
+            'purchases',
+            'hotelStayKey',
+            'hotelTransferCounts',
+            'supplierFormVersion',
+          ].includes(field),
       )
     )
       throw new BadRequestException('درخواست خرید قرارداد معتبر نیست.');
@@ -349,7 +365,130 @@ export class ReservationServicePurchaseService {
     });
     if (!intake || !actor.branchIds.includes(intake.branchId))
       throw new NotFoundException('درخواست رزرواسیون در دسترس نیست.');
-    const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
+    let snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
+    const formRevision =
+      input.hotelStayKey !== undefined
+        ? await this.database.client.reservationWorkflowRevision.findFirst({
+            where: { intakeId },
+            orderBy: { version: 'desc' },
+          })
+        : null;
+    const formState = formRevision?.state as unknown as
+      TravelWorkflowStateV1 | undefined;
+    if (formState?.outputSourceSnapshot)
+      snapshot = formState.outputSourceSnapshot;
+    const stay =
+      input.hotelStayKey !== undefined
+        ? reservationHotelStays(snapshot).find(
+            (stay) => stay.key === input.hotelStayKey,
+          )
+        : undefined;
+    if (input.hotelStayKey !== undefined && !stay)
+      throw new BadRequestException('اقامت هتل انتخاب‌شده معتبر نیست.');
+    if (stay) {
+      if (
+        !Number.isSafeInteger(input.supplierFormVersion) ||
+        input.supplierFormVersion! < 0
+      )
+        throw new BadRequestException(
+          'اطلاعات هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
+        );
+      const replay =
+        await this.database.client.reservationServicePurchase.findUnique({
+          where: {
+            actorUserId_idempotencyKey: {
+              actorUserId: actor.userId,
+              idempotencyKey: key + ':0',
+            },
+          },
+        });
+      if (replay) {
+        const fingerprint = createHash('sha256')
+          .update(JSON.stringify({ intakeId, ...input }))
+          .digest('hex');
+        if (replay.fingerprint !== fingerprint)
+          throw new ConflictException(
+            'کلید ثبت قبلاً برای اطلاعات دیگری استفاده شده است.',
+          );
+        return { version: 1 as const, data: { batchId: replay.batchId } };
+      }
+      const revision = formRevision;
+      if ((revision?.version ?? 0) !== input.supplierFormVersion)
+        throw new ConflictException(
+          'اطلاعات هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
+        );
+      const state = revision?.state as unknown as
+        import('@nora/contracts').TravelWorkflowStateV1 | undefined;
+      const settings =
+        state?.hotelSupplierForms?.[stay.key]?.settings ??
+        (stay.ordinal === 1 ? state?.supplierFormSettings : undefined);
+      if (settings) {
+        if (settings.rooms?.length)
+          stay.hotel = {
+            ...stay.hotel,
+            rooms: settings.rooms.map((room) => ({
+              ...room,
+              roomTypeId:
+                stay.hotel.rooms?.find(
+                  (original) => original.ordinal === room.ordinal,
+                )?.roomTypeId ?? stay.hotel.roomTypeId,
+            })),
+          };
+        stay.hotel = {
+          ...stay.hotel,
+          checkInDate: settings.text.checkIn || stay.hotel.checkInDate,
+          checkOutDate: settings.text.checkOut || stay.hotel.checkOutDate,
+        };
+      }
+    }
+    const scopedTransferKeys = stay
+      ? reservationHotelTransferKeys(snapshot, stay.key)
+      : [];
+    if (stay) {
+      snapshot = scopeReservationHotel(snapshot, stay.key);
+      snapshot = {
+        ...snapshot,
+        hotelSelection: {
+          ...stay.hotel,
+          serviceClientKey: stay.key,
+          additionalStays: [],
+        },
+      };
+      snapshot = {
+        ...snapshot,
+        serviceSelections: [
+          ...snapshot.serviceSelections.filter(
+            (service) => service.kind !== 'TRANSFER',
+          ),
+          ...scopedTransferKeys.map((clientKey) => ({
+            clientKey,
+            kind: 'TRANSFER' as const,
+            titleSnapshot: 'Transfer · ' + stay.hotel.hotelNameSnapshot,
+          })),
+        ],
+      };
+    }
+    if (stay) {
+      const counts = input.hotelTransferCounts;
+      const limit = (stay.hotel.rooms ?? []).reduce(
+        (sum, room) =>
+          sum + room.adults + room.childAges.filter((age) => age >= 2).length,
+        0,
+      );
+      if (
+        !counts ||
+        Object.keys(counts).some(
+          (key) => !['outbound', 'returning'].includes(key),
+        ) ||
+        [counts.outbound, counts.returning].some(
+          (count) => !Number.isSafeInteger(count) || count < 0 || count > limit,
+        )
+      )
+        throw new BadRequestException(
+          'قیمت یا تعداد نفرات ترانسفر یا فرمول هتل معتبر نیست.',
+        );
+    } else if (input.hotelTransferCounts !== undefined)
+      throw new BadRequestException('اطلاعات خرید خدمت معتبر نیست.');
     const hotelKey = snapshot.hotelSelection?.serviceClientKey;
     const transferKeys = snapshot.serviceSelections
       .filter((service) => service.kind === 'TRANSFER')
@@ -363,7 +502,7 @@ export class ReservationServicePurchaseService {
         version: 1 as const,
         expectedVersion: input.expectedVersion,
       };
-      validateServicePurchase(full, true);
+      validateServicePurchase(full, true, Boolean(stay));
       return full;
     });
     const covered = rows.flatMap((row) => row.coveredServiceClientKeys ?? []);
@@ -402,7 +541,54 @@ export class ReservationServicePurchaseService {
         ]);
         let amount: string;
         let passengerPrices: Prisma.InputJsonValue | undefined;
-        if (row.pricingCalculation) {
+        if (row.roomPrices !== undefined) {
+          if (
+            !stay ||
+            service.kind !== 'HOTEL' ||
+            row.pricingCalculation ||
+            row.passengerPrices ||
+            row.legacyGuestPrices ||
+            row.transferUnitAmount
+          )
+            throw new BadRequestException('اطلاعات خرید خدمت معتبر نیست.');
+          try {
+            const rooms = snapshot.hotelSelection?.rooms ?? [];
+            amount = hotelRoomQuotationTotal(
+              row.roomPrices,
+              hotelNights(stay.hotel.checkInDate, stay.hotel.checkOutDate),
+              rooms.map((room) => room.ordinal),
+            );
+            passengerPrices = {
+              roomPrices: row.roomPrices.map((room) => ({ ...room })),
+              hotelStayKey: stay.key,
+              roomPurchase: {
+                checkInDate: stay.hotel.checkInDate,
+                checkOutDate: stay.hotel.checkOutDate,
+                nights: hotelNights(
+                  stay.hotel.checkInDate,
+                  stay.hotel.checkOutDate,
+                ),
+                supplierFormVersion: input.supplierFormVersion!,
+                rooms: row.roomPrices.map((room) => ({
+                  ...room,
+                  roomTypeNameSnapshot: rooms.find(
+                    (saved) => saved.ordinal === room.roomOrdinal,
+                  )!.roomTypeNameSnapshot,
+                  totalAmount: reservationServicePurchaseTotal(
+                    room.baseAmount,
+                    room.factor,
+                    hotelNights(
+                      stay.hotel.checkInDate,
+                      stay.hotel.checkOutDate,
+                    ),
+                  ),
+                })),
+              },
+            };
+          } catch {
+            throw new BadRequestException('اطلاعات خرید خدمت معتبر نیست.');
+          }
+        } else if (row.pricingCalculation) {
           if (
             service.kind === 'HOTEL' &&
             (row.coveredServiceClientKeys?.length !== 1 ||
@@ -417,7 +603,17 @@ export class ReservationServicePurchaseService {
                 : undefined;
             if (
               count !== undefined &&
-              (!Number.isSafeInteger(count) || count <= 0)
+              (!Number.isSafeInteger(count) ||
+                count < 0 ||
+                (!stay && count === 0))
+            )
+              throw new Error();
+            if (
+              stay &&
+              service.kind === 'TRANSFER' &&
+              count !==
+                input.hotelTransferCounts!.outbound +
+                  input.hotelTransferCounts!.returning
             )
               throw new Error();
             const nights =
@@ -427,14 +623,37 @@ export class ReservationServicePurchaseService {
                     snapshot.hotelSelection?.checkOutDate ?? '',
                   )
                 : 1;
-            amount = reservationServicePurchaseTotal(
-              row.pricingCalculation.baseAmount,
-              count !== undefined
-                ? String(count)
-                : row.pricingCalculation.factor,
-              nights,
-            );
+            if (
+              stay &&
+              service.kind === 'TRANSFER' &&
+              (count ?? 0) >
+                (stay.hotel.rooms ?? []).reduce(
+                  (sum, room) =>
+                    sum +
+                    room.adults +
+                    room.childAges.filter((age) => age >= 2).length,
+                  0,
+                ) *
+                  2
+            )
+              throw new Error();
+            amount =
+              count === 0
+                ? '0'
+                : reservationServicePurchaseTotal(
+                    row.pricingCalculation.baseAmount,
+                    count !== undefined
+                      ? String(count)
+                      : row.pricingCalculation.factor,
+                    nights,
+                  );
             passengerPrices = {
+              ...(stay && service.kind === 'TRANSFER'
+                ? {
+                    hotelTransferCounts: input.hotelTransferCounts!,
+                    hotelStayKey: stay.key,
+                  }
+                : {}),
               calculation: {
                 ...row.pricingCalculation,
                 ...(count !== undefined
@@ -509,11 +728,13 @@ export class ReservationServicePurchaseService {
             totalAmount: moneyDecimal(unit),
           }));
         }
+        if (stay && service.kind === 'HOTEL' && !row.roomPrices)
+          throw new BadRequestException('اطلاعات خرید خدمت معتبر نیست.');
         if (moneyUnits(row.amount) !== moneyUnits(amount))
           throw new BadRequestException(
             'مبلغ کل خرید با محاسبهٔ خدمت یکسان نیست.',
           );
-        if (service.kind === 'HOTEL' && this.savings) {
+        if (service.kind === 'HOTEL' && this.savings && !stay) {
           const hotelSavings = await this.savings.quote(
             snapshot,
             intake.branchId,
@@ -557,6 +778,16 @@ export class ReservationServicePurchaseService {
         await tx.$queryRaw(
           Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${intakeId}, 0))`,
         );
+        if (stay) {
+          const revision = await tx.reservationWorkflowRevision.findFirst({
+            where: { intakeId },
+            orderBy: { version: 'desc' },
+          });
+          if ((revision?.version ?? 0) !== input.supplierFormVersion)
+            throw new ConflictException(
+              'اطلاعات هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
+            );
+        }
         const updated = await tx.reservationIntake.updateMany({
           where: {
             id: intakeId,
@@ -642,7 +873,8 @@ export class ReservationServicePurchaseService {
     if (
       input.coveredServiceClientKeys ||
       input.transferUnitAmount ||
-      input.pricingCalculation
+      input.pricingCalculation ||
+      input.roomPrices !== undefined
     )
       throw new BadRequestException(
         'خرید مشترک فقط از مسیر درخواست خرید قرارداد ثبت می‌شود.',

@@ -246,6 +246,8 @@ export interface ReservationTicketDocumentV1 {
   issuedAt: string;
 }
 export interface ReservationIntakeV1 {
+  /** Latest server-owned Sales execution snapshot captured by the supplier form. */
+  purchaseSnapshot?: SalesReservationRequestV1;
   ticketDocuments?: readonly ReservationTicketDocumentV1[];
   contractEditVersion?: number;
   purchaseVersion?: number;
@@ -324,6 +326,19 @@ export interface ReservationManifestTicketExportInputV1 {
 }
 
 export interface ReservationServicePurchaseV1 {
+  roomPurchase?: {
+    checkInDate: string;
+    checkOutDate: string;
+    nights: number;
+    supplierFormVersion: number;
+    rooms: (ReservationRoomPriceV1 & {
+      roomTypeNameSnapshot: string;
+      totalAmount: string;
+    })[];
+  };
+  hotelTransferCounts?: { outbound: number; returning: number };
+  roomPrices?: readonly ReservationRoomPriceV1[];
+  hotelStayKey?: string;
   legacyGuestPrices?: readonly ReservationLegacyGuestPurchasePriceV1[];
   hotelSavings?: HotelPurchaseSavingsV1;
   pricingCalculation?: ReservationServicePurchaseCalculationV1;
@@ -380,6 +395,7 @@ export interface ReservationLegacyGuestPurchasePriceV1 {
 }
 
 export interface ReservationServicePurchaseInputV1 {
+  roomPrices?: readonly ReservationRoomPriceV1[];
   legacyGuestPrices?: readonly { guestIndex: number; nightlyAmount: string }[];
   purchaseRateToIrr?: string;
   pricingCalculation?: {
@@ -402,6 +418,10 @@ export interface ReservationServicePurchaseInputV1 {
 }
 
 export interface ReservationPurchaseBatchInputV1 {
+  supplierFormVersion?: number;
+  hotelTransferCounts?: { outbound: number; returning: number };
+  /** Restricts this atomic purchase to one canonical hotel stay. */
+  hotelStayKey?: string;
   version: 1;
   expectedVersion: number;
   purchases: readonly Omit<
@@ -538,6 +558,15 @@ export interface TravelWorkflowStateV1 {
   branding: TravelBrandingV1 | null;
   roomOrder: string[];
   ageOverrides: Record<string, 'ADULT' | 'CHILD' | 'INFANT'>;
+  hotelSupplierForms?: Record<
+    string,
+    {
+      settings?: VoucherSettingsV1;
+      sentSettings?: VoucherSettingsV1;
+      sentVersion?: number;
+      status: 'NEW' | 'REQUESTED';
+    }
+  >;
   supplierFormSettings?: VoucherSettingsV1;
   sentSupplierFormSettings?: VoucherSettingsV1;
   sentSupplierFormVersion?: number;
@@ -551,6 +580,7 @@ export interface TravelWorkflowStateV1 {
   updatedByUserId: string | null;
 }
 export interface TravelWorkflowCommandV1 {
+  hotelStayKey?: string;
   expectedVersion: number;
   action:
     | 'TABLE_STATUS'
@@ -632,7 +662,14 @@ export const voucherFlagKeys = [
   'excursion',
   'specialRoom',
 ] as const;
+export interface ReservationRoomPriceV1 {
+  roomOrdinal: number;
+  baseAmount: string;
+  factor: string;
+}
 export interface VoucherSettingsV1 {
+  hotelRoomPrices?: { currencyCode: string; rooms: ReservationRoomPriceV1[] };
+  hotelTransferCounts?: { outbound: number; returning: number };
   /** Immutable room composition for this output revision; legacy revisions omit it. */
   rooms?: {
     ordinal: number;

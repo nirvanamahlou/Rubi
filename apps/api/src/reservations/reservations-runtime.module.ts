@@ -479,6 +479,15 @@ export class ReservationRequestsController {
   ) {
     if (
       input.action === 'SUPPLIER_FORM_SETTINGS' &&
+      input.voucherSettings?.hotelRoomPrices
+    ) {
+      await this.workflow.detail(id, req.actor.branchIds);
+      await this.directory!.currencyReference(
+        input.voucherSettings.hotelRoomPrices.currencyCode,
+      );
+    }
+    if (
+      input.action === 'SUPPLIER_FORM_SETTINGS' &&
       input.voucherSettings?.supplierFormPrices !== undefined
     ) {
       await this.workflow.detail(id, req.actor.branchIds);

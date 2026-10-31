@@ -2,6 +2,7 @@ import { refreshWorkflowExecution } from './workflow-current-execution';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
 import {
+  reservationHotelStays,
   salesContractFlights,
   readLegacyServiceParties,
   reservationFlightOutputKey,
@@ -253,6 +254,7 @@ export class TravelWorkflowService {
             ) ||
               readLegacyServiceParties(intake.snapshot.serviceSelections) !==
                 null),
+          reservationHotelStays(intake.snapshot).map((stay) => stay.key),
         );
       } catch (error) {
         throw new BadRequestException(

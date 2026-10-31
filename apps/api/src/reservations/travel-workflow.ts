@@ -29,6 +29,7 @@ export function transitionTravelWorkflow(
   passengerIds: readonly string[],
   flightKeys: readonly string[] = [],
   allowAggregateSupplierForm = false,
+  hotelKeys: readonly string[] = [],
 ): TravelWorkflowStateV1 {
   if (
     !command ||
@@ -48,6 +49,7 @@ export function transitionTravelWorkflow(
     throw new Error('این درخواست بسته شده است و قابل تغییر نیست.');
   if (
     current.voucherIssued &&
+    !command.hotelStayKey &&
     ![
       'NOTE',
       'VOUCHER_SETTINGS',
@@ -57,6 +59,62 @@ export function transitionTravelWorkflow(
     ].includes(command.action)
   )
     throw new Error('این درخواست بسته شده است و قابل تغییر نیست.');
+  if (command.hotelStayKey !== undefined) {
+    const key = command.hotelStayKey;
+    if (
+      !hotelKeys.includes(key) ||
+      !['SUPPLIER_FORM_SETTINGS', 'REQUEST_SUPPLIER'].includes(command.action)
+    )
+      throw Error('اقامت هتل انتخاب‌شده معتبر نیست.');
+    const entry = current.hotelSupplierForms?.[key];
+    const scoped = {
+      ...current,
+      supplierStatus: entry?.status ?? ('NEW' as const),
+      voucherIssued: false,
+      supplierFormSettings: entry?.settings,
+      sentSupplierFormSettings: entry?.sentSettings,
+    } as TravelWorkflowStateV1;
+    if (!entry && key === hotelKeys[0]) {
+      scoped.supplierFormSettings = current.supplierFormSettings;
+      scoped.sentSupplierFormSettings = current.sentSupplierFormSettings;
+    }
+    const { hotelStayKey: _key, ...action } = command;
+    void _key;
+    const result = transitionTravelWorkflow(
+      scoped,
+      action,
+      passengerIds,
+      flightKeys,
+      allowAggregateSupplierForm,
+    );
+    return {
+      ...current,
+      version: result.version,
+      ...(command.action === 'REQUEST_SUPPLIER' &&
+      current.supplierStatus === 'NEW'
+        ? { supplierStatus: 'REQUESTED' as const }
+        : {}),
+      ...(key === hotelKeys[0]
+        ? {
+            supplierFormSettings: result.supplierFormSettings,
+            sentSupplierFormSettings: result.sentSupplierFormSettings,
+            sentSupplierFormVersion: result.sentSupplierFormVersion,
+          }
+        : {}),
+      hotelSupplierForms: {
+        ...current.hotelSupplierForms,
+        [key]: {
+          settings: result.supplierFormSettings,
+          sentSettings: result.sentSupplierFormSettings,
+          sentVersion: result.sentSupplierFormVersion,
+          status:
+            result.supplierStatus === 'REQUESTED'
+              ? ('REQUESTED' as const)
+              : ('NEW' as const),
+        },
+      },
+    } as TravelWorkflowStateV1;
+  }
   const next = {
     ...current,
     version: current.version + 1,

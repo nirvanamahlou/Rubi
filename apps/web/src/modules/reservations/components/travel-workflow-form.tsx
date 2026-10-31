@@ -14,6 +14,8 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { agencyClient } from '@/modules/organizations/api/agency-client';
 import type { MasterDataRecord } from '@nora/contracts';
+import { SupplierHotelDocuments } from './travel-document';
+import { reservationHotelStays } from '@nora/contracts';
 import { TravelDocument } from './travel-document';
 import { ReservationSettings } from './reservation-settings';
 import { ReservationTickets } from './reservation-tickets';
@@ -163,7 +165,7 @@ export function TravelWorkflowForm({
   const state = intake.workflow;
   if (readOnly)
     return (
-      <TravelDocument
+      <SupplierHotelDocuments
         historical
         intake={{
           ...intake,
@@ -181,6 +183,9 @@ export function TravelWorkflowForm({
     );
   const closed = state.voucherIssued || state.supplierStatus === 'CANCELLED';
   const issuedForm = Boolean(
+    Object.values(state.hotelSupplierForms ?? {}).some(
+      (entry) => entry.sentSettings,
+    ) ||
     state.sentSupplierFormSettings ||
     state.voucherIssued ||
     (Number.isSafeInteger(state.sentSupplierFormVersion) &&
@@ -196,7 +201,7 @@ export function TravelWorkflowForm({
         >
           اصلاح
         </Button>
-        <TravelDocument
+        <SupplierHotelDocuments
           downloadLabel="دانلود"
           intake={{
             ...intake,
@@ -344,7 +349,7 @@ export function TravelWorkflowForm({
       )}
       {action === 'رزرواسیون' && (editingForm || !issuedForm) && (
         <ReservationSettings
-          key={`${id}:${state.version}`}
+          key={`${id}:${intake.contractVersion}`}
           intake={intake}
           onDirty={() => setSettingsDirty(true)}
           showDocument
@@ -357,7 +362,10 @@ export function TravelWorkflowForm({
                 : {}),
             });
             setSettingsDirty(false);
-            if (workflow.sentSupplierFormVersion === workflow.version)
+            if (
+              reservationHotelStays(intake.snapshot).length <= 1 &&
+              workflow.sentSupplierFormVersion === workflow.version
+            )
               setEditingForm(false);
           }}
         />
