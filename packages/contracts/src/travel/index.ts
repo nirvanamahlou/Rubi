@@ -644,11 +644,8 @@ export interface VoucherSettingsV1 {
   hotelPurchasePrices?: { amount: string; currencyCode: string }[];
   /** Supplier quotation display only, independent per column; never a payable or total. */
   supplierFormPrices?: Partial<
-    Record<
-      'pp' | 'ratio' | 'transferPp',
-      { amount: string; currencyCode: string }
-    >
-  >;
+    Record<'pp' | 'transferPp', { amount: string; currencyCode: string }>
+  > & { ratio?: { amount: string; currencyCode?: string } };
   /** Registered supplier and leader used for this immutable output revision. */
   brokerId?: string;
   leaderId?: string;

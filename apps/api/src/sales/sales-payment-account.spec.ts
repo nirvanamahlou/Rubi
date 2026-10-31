@@ -34,7 +34,7 @@ describe('Sales payment destination', () => {
     expect(await service.paymentAccounts('contract', actor)).toEqual({
       data: [],
     });
-    expect(repository.paymentAccounts).toHaveBeenCalledWith('branch');
+    expect(repository.paymentAccounts).toHaveBeenCalledWith('branch', 'owner');
     repository.findById.mockResolvedValue({
       branchId: 'other',
       ownerUserId: 'other',

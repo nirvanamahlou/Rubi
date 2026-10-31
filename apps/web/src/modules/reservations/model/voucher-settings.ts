@@ -92,7 +92,7 @@ export function defaultVoucherSettings(
         returnTransfer: p.returnTransfer,
         hotel: Boolean(p.checkIn && p.checkIn !== '-'),
       },
-      sex: p.sex === 'Male' ? 'MALE' : p.sex === 'Female' ? 'FEMALE' : '',
+      sex: p.sex === 'Female' ? 'FEMALE' : 'MALE',
       age: p.age.startsWith('CHD') ? 'CHD' : p.age === 'INF' ? 'INF' : 'ADL',
       hotelChildAgeBand: (p.hotelChildAgeBand ?? '') as
         'CHD_2_TO_6' | 'CHD_6_TO_12' | '',

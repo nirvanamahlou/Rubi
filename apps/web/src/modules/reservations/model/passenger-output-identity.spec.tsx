@@ -167,7 +167,7 @@ it.each(['voucherSettings', 'sentSupplierFormSettings'] as const)(
     const before = structuredClone(intake);
     const defaults = defaultVoucherSettings(intake, {});
     expect(defaults.passengers.find((p) => p.id === 'a')?.sex).toBe('MALE');
-    expect(defaults.passengers.find((p) => p.id === 'b')?.sex).toBe('');
+    expect(defaults.passengers.find((p) => p.id === 'b')?.sex).toBe('MALE');
     expect(intake).toEqual(before);
     saved.passengers.find((p) => p.id === 'a')!.sex = 'FEMALE';
     expect(

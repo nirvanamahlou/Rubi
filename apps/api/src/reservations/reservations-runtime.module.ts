@@ -491,7 +491,9 @@ export class ReservationRequestsController {
         throw new BadRequestException('جدول قیمت فرم رزرواسیون معتبر نیست.');
       }
       for (const currency of new Set(
-        Object.values(prices ?? {}).map((price) => price.currencyCode),
+        Object.entries(prices ?? {}).flatMap(([key, price]) =>
+          key !== 'ratio' && price.currencyCode ? [price.currencyCode] : [],
+        ),
       ))
         await this.directory!.currencyReference(currency);
     }

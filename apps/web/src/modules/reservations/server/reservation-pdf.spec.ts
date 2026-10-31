@@ -130,7 +130,9 @@ describe('reservation PDF route', () => {
     );
     expect(html).not.toContain('PROPOSED PURCHASE PRICE');
     expect(html).toContain('9,007,199,254,740,993.25 EUR');
-    expect(html).toContain('100.50 USD');
+    expect(html).toContain('100.50</td>');
+    expect(html).not.toContain('100.50 USD');
+    expect(html).toContain('Hotel P.P');
     expect(html).toContain('0 JPY');
     expect(html).toContain('<b>06</b><strong>PRICES</strong>');
     expect(html).toContain('<b>07</b><strong>NOTICE</strong>');
@@ -661,7 +663,7 @@ it('prints supplier service allocations from the contract and reserves a repeati
   expect(html).toContain('class="roomsNights"');
   expect(html).toContain('table hotelInformation');
   expect(html).toContain(
-    'ALPHA / ONE</td><td dir="auto">-</td><td dir="auto">ADL</td><td dir="auto">✓</td><td dir="auto">-</td><td dir="auto">01 NOV 2026',
+    'ALPHA / ONE</td><td dir="auto">Male</td><td dir="auto">ADL</td><td dir="auto">✓</td><td dir="auto">-</td><td dir="auto">01 NOV 2026',
   );
   expect(html).toContain('INSURANCE');
   expect(html).toContain('position:fixed;height:26mm;display:block;bottom:0');
