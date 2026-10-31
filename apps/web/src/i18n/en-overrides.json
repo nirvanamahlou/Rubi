@@ -1,4 +1,16 @@
 {
+  "انتخاب نوع اتاق": "Select room type",
+  "انتخاب هتل‌های بسته": "Select rate pack hotels",
+  "جست‌وجوی هتل‌های شهر": "Search city hotels",
+  "نوع اتاق پیش‌فرض": "Default room type",
+  "نوع اتاق ثبت نشده": "No room type registered",
+  "نوع اتاق‌های": "Room types for",
+  "هتل‌های انتخاب‌شده": "Selected hotels",
+  "هتلی با این جست‌وجو پیدا نشد.": "No hotels match this search.",
+
+  "تعداد کل مسافران انتخاب‌شده:": "Total selected passengers:",
+  "بدون فیلتر تاریخ، فقط ۱۰ قراردادِ آخر نمایش داده می‌شود.": "Without a date filter, only the 10 most recent contracts are shown.",
+
   "این قرارداد باطل شده است": "This contract has been cancelled",
   "دادهٔ تأییدشده برای نمایش موجود نیست؛ منبع، دسترسی و فیلترهای این نمودار باید بررسی شوند.": "Verified data is unavailable. Check this chart's source, access permissions and filters.",
   "بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ تراکنش دارد.": "Narrow the date range; the report exceeds 10,000 transactions.",
@@ -4693,5 +4705,15 @@
   "ثبت پرداخت": "Save payment",
   "قیمت هر شب هر مسافر باید صفر یا بیشتر باشد.": "Each passenger's nightly price must be zero or greater.",
   "مبلغ خرید باید صفر یا بیشتر باشد.": "The purchase amount must be zero or greater.",
-  "هزینه خرید باید صفر یا بیشتر با حداکثر چهار رقم اعشار باشد.": "The purchase cost must be zero or greater, with up to four decimal places."
+  "هزینه خرید باید صفر یا بیشتر با حداکثر چهار رقم اعشار باشد.": "The purchase cost must be zero or greater, with up to four decimal places.",
+  "ثبت موجودی": "Set balance",
+  "دریافت تنخواه ناموفق بود": "Could not load the petty cash fund",
+  "دریافت موجودی ناموفق بود": "Could not load the balance",
+  "دفتر مستقل تنخواه": "Independent petty cash register",
+  "شبا": "IBAN",
+  "فیش": "Receipt",
+  "فیش و پیوست‌های درخواست": "Request receipts and attachments",
+  "موجودی": "Balance",
+  "موجودی و حساب تنخواه": "Petty cash balance and bank account",
+  "نام بانک": "Bank name"
 }

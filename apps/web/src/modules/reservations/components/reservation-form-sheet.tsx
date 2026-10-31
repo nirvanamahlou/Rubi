@@ -418,6 +418,39 @@ export function ReservationFormSheet({
                   </table>
                 </>
               )}
+              {intake.snapshot.serviceSelections.some(
+                (s) => s.kind === 'TRANSFER',
+              ) && (
+                <>
+                  <Heading
+                    number="03A"
+                    title="FLIGHT INFORMATION"
+                    note="Arrival & departure"
+                  />
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        {['DIRECTION', 'AIRLINE', 'FLIGHT', 'DATE', 'TIME'].map(
+                          (label) => (
+                            <th key={label}>{label}</th>
+                          ),
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.flights.map((flight) => (
+                        <tr key={flight.leg}>
+                          <td>{flight.leg}</td>
+                          <td dir="auto">{flight.airline}</td>
+                          <td>{flight.number}</td>
+                          <td>{flight.date}</td>
+                          <td>{flight.time}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
               <Heading
                 number="04"
                 title="TOUR SERVICES"

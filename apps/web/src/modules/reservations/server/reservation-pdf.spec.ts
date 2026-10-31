@@ -659,7 +659,7 @@ it('prints supplier service allocations from the contract and reserves a repeati
   expect(html).toContain('<th>FLIGHT OUT</th>');
   expect(html).toContain('<th>TRF IN</th>');
   expect(html).toContain('<th>TRF OUT</th>');
-  expect(html).not.toContain('FLIGHT INFORMATION');
+  expect(html).toContain('FLIGHT INFORMATION');
   expect(html).toContain('class="roomsNights"');
   expect(html).toContain('table hotelInformation');
   expect(html).toContain(

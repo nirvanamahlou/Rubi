@@ -418,7 +418,7 @@ export class ReservationServicePurchaseService {
           'اطلاعات هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
         );
       const state = revision?.state as unknown as
-        import('@nora/contracts').TravelWorkflowStateV1 | undefined;
+        TravelWorkflowStateV1 | undefined;
       const settings =
         state?.hotelSupplierForms?.[stay.key]?.settings ??
         (stay.ordinal === 1 ? state?.supplierFormSettings : undefined);

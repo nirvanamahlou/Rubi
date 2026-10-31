@@ -1,3 +1,17 @@
+
+## STACKED-HOTEL-RATE-PACKS-1029 - PC-A - VALIDATING
+
+Hotel purchase rate packs now use searchable hotel checkboxes and a selected-hotel summary. All selected hotel panels stay visible in one vertical editor. First room only is selected for new hotel drafts; additional rooms require explicit selection and valid bases, while saved room choices and per-room coefficients survive reopening. Save remains one pack revision for all selected hotels and links its immutable saved batch/date range to existing Package Management manual/group sale adjustments. Purchase/sale boundaries, imported prices, branch/date checks and history are unchanged. Web130 focused rate/package tests and13 workflow/translation checks pass, scoped lint and Web typecheck pass after rebuilding local shared declarations. Web production build passed with66 routes; hosted final-head gates remain pending. No migration, operational data or runtime deployment.
+
+## 2026-10-31 — SALES-COUNT-TEN-1031 — PC-A
+
+Hotel/room-composition header now displays the canonical total selected passenger count, including adults, children and infants. It updates with the draft and does not sum duplicate service or room allocations. Sales defaults to ten latest contracts per page with matching pagination/hint; date-filtered expanded results, existing ordering and server authorization remain unchanged. Persian/English labels covered. Focused existing ServiceParties/list/translation regressions, lint, Web typecheck and production build validate the candidate; final-head full hosted gates precede authorized develop merge. No schema/migration/dependency, operational data or runtime deployment. Bounded source reservation freezes on publication and releases on verified merge.
+
+
+## 2026-10-31 — TRANSFER-FLIGHT-FORM-1031 — PC-A
+
+Supplier reservation preview and PDF include arrival/departure airline, flight number, date and time whenever the contract includes any transfer, including a single passenger among a mixed roster. Existing saved supplier flight fields and allocations remain authoritative; no invented flight facts.43 focused output/model regressions and scoped ESLint pass. Web typecheck passes; local Turbopack is blocked by out-of-root dependency junctions, alternate webpack compilation passed and final build is running. No schema/migration/dependency/data/runtime change. Push and PR1207 creation succeeded through the authorized elevated GitHub context; final-head CI gates the authorized develop merge. Source remains on codex/pc-a-transfer-flight-1031; no merge claimed.
+
 ## RESERVATION-DEFAULTS-1029 — PC-A — VALIDATING
 
 Cancelled selections now explicitly identify cancellation. Automatic return regressions prove the configured outbound load/day offset selects its unique return and preserves manual choices. Hotel default follows outbound arrival (manual dates preserved); scoped Customers identity projection evaluates child bands at saved hotel check-in without exposing DOB. Missing form sex defaults Male, known/saved Female remains intact. Contract services/pricing tables show child bands from DOB at hotel check-in, with booked-band fallback for missing DOB and departure fallback for ticket-only contracts. Web92 and API18 focused tests pass; lint/typechecks and exact-head hosted full tests/build/database gates precede authorized develop merge. No schema/migration/live-data or server rollout.
@@ -9,6 +23,10 @@ Shared room categories now additionally offer Family for two adults with at leas
 ## CONTRACT-ROUTE-ARROW-1029 — PC-A — VALIDATING
 
 Isolate customer contract preview/PDF flight routes as LTR with independently isolated airport labels and origin-to-destination arrows. Return rows retain their actual saved endpoints. Keep escaping, direction captions and all saved commercial/identity data unchanged. Focused output regressions and exact-head full hosted checks gate authorized develop merge. No schema/migration/dependency or server deployment.
+
+## CONTRACT-PARTY-SAVE-1029 — PC-A
+
+Counterparty correction keeps independent person/agency selections and contact drafts when switching kind, uses the existing Sales-scoped people directory, and opens inline customer lookup from the name field. Existing canonical person registration is available in the same editor; contact inputs are retained when its newly registered customer is selected. Changing the pending agency clears the old canonical identity. Missing selection now reports an explicit error instead of silently disabling submission. Postal code is optional in both the editor and Sales correction validator; supplied invalid postal codes still fail. Existing Finance authority for payer transfer, active allocation protection, branch/version/CAS/audit, encryption and receipt amounts remain unchanged. No migration/dependency/shared API shape or production deployment. Focused interaction and service regressions plus final-head quality/test/build/database gates precede the authorized develop merge.
 
 ## PASSENGER-SALE-NO-ROOM-PRICE-1029 — PC-A
 
@@ -8019,3 +8037,7 @@ Cancelled contracts are excluded before Sales dashboard metrics and currency sum
 ## SUPPLIER-RATIO-SAVE-1029 — PC-A
 
 Supplier form Ratio is a dimensionless decimal without a currency selector, currency directory lookup or PDF currency suffix. Historical ratio currencies remain readable and are removed when saving a new revision. Hotel P.P replaces P.P in input and both preview/PDF rendering. Explicit Save stores settings without sending/issuing; passenger ticket PDF downloads remain while the two browser print buttons are removed. No schema/migration/deployment. Focused validation and hosted gates precede authorized develop merge.
+
+## 2026-10-31 — PETTY-CASH-RECEIPT-1031 — PC-B
+
+Independent branch petty fund replaces the Orders workspace card; historical Orders records/API are preserved. Account/bank/IBAN/card and balance edit in a modal, with existing procurement.assign permission, fixed currency and CAS. Publication in a configured branch debits a positive same-currency amount atomically, once per request; insufficient/concurrent funds roll back. Drafts do not debit; movements survive request deletion, not treated as refunds. Finance remains disconnected per owner. Request form removes follow-up picker, aligns unit/category and uploads receipts to Documents with immutable version references, blocked submission during upload. Additive migration only; no live apply/rollout, operational data or permission changes. 57 isolated PostgreSQL tests and final ledger/purge/permission rerun passed;64 Procurement Web,3 card (including exact Decimal display) and3 translation checks passed. Scoped lint, API/Web typechecks and production builds passed. Exact-head hosted checks gate the authorized develop merge; no authenticated browser QA claimed.

@@ -370,3 +370,36 @@ it('uses historical hotel age counts without adding fabricated people to the sup
   expect(form).toMatchObject({ adults: 2, children: 1, infants: 1 });
   expect(form.passengers).toEqual([]);
 });
+
+it('prints saved flight details when only one of two passengers has transfer', () => {
+  const intake = structuredClone(input);
+  intake.snapshot.serviceSelections = [
+    {
+      clientKey: 'transfer-out',
+      titleSnapshot: 'Transfer',
+      kind: 'TRANSFER',
+      metadata: { direction: 'OUTBOUND', passengerCount: 1 },
+    },
+  ] as typeof intake.snapshot.serviceSelections;
+  intake.snapshot.passengerAssignments![0]!.serviceClientKeys = [
+    'transfer-out',
+  ];
+  intake.snapshot.passengerAssignments![1]!.serviceClientKeys = [];
+  const settings = defaultVoucherSettings(intake, {});
+  Object.assign(settings.text, {
+    arrivalAirline: 'TEST AIR',
+    arrivalFlight: 'TEST123',
+    arrivalDate: '2026-10-01',
+    arrivalTime: '14:30',
+  });
+  intake.workflow.supplierFormSettings = settings;
+  const html = reservationPdfHtml(intake, {}, 'data:image/png;base64,AA==', '');
+  expect(html).toContain('FLIGHT INFORMATION');
+  for (const value of ['TEST AIR', 'TEST123', '14:30'])
+    expect(html).toContain(value);
+  expect(html).toContain('01 OCT 2026');
+  intake.snapshot.serviceSelections = [];
+  expect(
+    reservationPdfHtml(intake, {}, 'data:image/png;base64,AA==', ''),
+  ).not.toContain('FLIGHT INFORMATION');
+});
