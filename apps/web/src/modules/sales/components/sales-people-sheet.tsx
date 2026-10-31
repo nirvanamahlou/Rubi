@@ -1,6 +1,6 @@
 'use client';
 import peopleStyles from './sales-people-sheet.module.css';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { transferDirectionColumns } from './transfer-direction-columns';
 import { guestStayColumns } from './guest-stay-columns';
 import { usesRoomDrivenGuests } from '../model/contract-guest-stays';
@@ -49,6 +49,7 @@ import {
 export function SalesPeopleSheet({
   state,
   refreshRevision = 0,
+  beforePassengers,
   draft: savedDraft,
   onDraftChange,
   onConfirmed,
@@ -64,6 +65,7 @@ export function SalesPeopleSheet({
     directions: NonNullable<SalesFormState['passengerFlightDirections']>,
   ) => void;
   refreshRevision?: number;
+  beforePassengers?: ReactNode;
   state: SalesFormState;
   draft: SalesPeopleDraft | null;
   onDraftChange: (draft: SalesPeopleDraft) => void;
@@ -501,132 +503,9 @@ export function SalesPeopleSheet({
     };
   });
   return (
-    <section
-      className={peopleStyles.workspace}
-      aria-label="ورود یکجای مشتری و مسافران"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-black">
-            {state.legacyContract
-              ? 'مشتری قرارداد قدیمی'
-              : 'مشتری و مسافران همراه'}
-          </h2>
-        </div>
-      </div>
-      {!state.legacyContract && (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-semibold">
-            {counts.total.toLocaleString('fa-IR')} ردیف مسافر ·{' '}
-            {counts.adults.toLocaleString('fa-IR')} بزرگسال،{' '}
-            {counts.children.toLocaleString('fa-IR')} کودک،{' '}
-            {counts.infants.toLocaleString('fa-IR')} نوزاد
-          </p>
-          {usesRoomDrivenGuests(state) && onGuestStateChange ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={busy}
-              onClick={() => {
-                const taken = new Set(
-                  (state.flightOnlyPassengers ?? []).map((p) => p.key),
-                );
-                let n = 0;
-                while (taken.has('flight-only-' + n)) n++;
-                onDraftChange(draft);
-                setConfirmed(false);
-                onGuestStateChange({
-                  flightOnlyPassengers: [
-                    ...(state.flightOnlyPassengers ?? []),
-                    { key: 'flight-only-' + n, age: 18 },
-                  ],
-                });
-              }}
-            >
-              افزودن مسافر (فقط پرواز)
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={busy || counts.adults === 0}
-              onClick={() => {
-                onDraftChange(draft);
-                setConfirmed(false);
-                onAddInfant();
-              }}
-            >
-              <Plus className="size-4" />
-              افزودن نوزاد
-            </Button>
-          )}
-        </div>
-      )}
-
-      {error ? (
-        <Alert tone="error" title="ثبت افراد کامل نشد" description={error} />
-      ) : null}
-      {showAcquaintance && methodsLoading ? (
-        <p role="status" className="text-xs text-muted-foreground">
-          در حال دریافت نحوه‌های آشنایی…
-        </p>
-      ) : showAcquaintance && (methodsError || !acquaintanceMethods.length) ? (
-        <div className="flex items-center gap-2 text-sm">
-          <p role={methodsError ? 'alert' : 'status'}>
-            {methodsError ||
-              'نحوه آشنایی فعالی ثبت نشده است؛ فهرست را در اطلاعات پایه تکمیل کنید.'}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setMethodsLoading(true);
-              setMethodsError('');
-              setMethodsRetry((n) => n + 1);
-            }}
-          >
-            دریافت دوباره نحوه آشنایی
-          </Button>
-        </div>
-      ) : null}
-      {clearKey ? (
-        <div
-          role="alert"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm"
-        >
-          <span>اطلاعات این ردیف پاک شود؟ پرونده ثبت‌شده حذف نمی‌شود.</span>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => setClearKey(null)}
-            >
-              انصراف
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                change(
-                  editPeopleRow(draft, clearKey, {
-                    values: emptyPeopleValues(),
-                  }),
-                );
-                setClearKey(null);
-              }}
-            >
-              تأیید پاک‌کردن
-            </Button>
-          </div>
-        </div>
-      ) : null}
+    <>
       <section
-        className={peopleStyles.buyer}
+        className={`${peopleStyles.buyer} mb-5`}
         aria-label="مشخصات مشتری طرف حساب"
       >
         <h3 className="font-bold sm:col-span-2">مشتری و طرف حساب قرارداد</h3>
@@ -866,167 +745,299 @@ export function SalesPeopleSheet({
           </FormField>
         </div>
       </section>
+      {beforePassengers}
+      <section
+        className={peopleStyles.workspace}
+        aria-label="ورود یکجای مشتری و مسافران"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-black">
+              {state.legacyContract
+                ? 'مشتری قرارداد قدیمی'
+                : 'مشتری و مسافران همراه'}
+            </h2>
+          </div>
+        </div>
+        {!state.legacyContract && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-semibold">
+              {counts.total.toLocaleString('fa-IR')} ردیف مسافر ·{' '}
+              {counts.adults.toLocaleString('fa-IR')} بزرگسال،{' '}
+              {counts.children.toLocaleString('fa-IR')} کودک،{' '}
+              {counts.infants.toLocaleString('fa-IR')} نوزاد
+            </p>
+            {usesRoomDrivenGuests(state) && onGuestStateChange ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => {
+                  const taken = new Set(
+                    (state.flightOnlyPassengers ?? []).map((p) => p.key),
+                  );
+                  let n = 0;
+                  while (taken.has('flight-only-' + n)) n++;
+                  onDraftChange(draft);
+                  setConfirmed(false);
+                  onGuestStateChange({
+                    flightOnlyPassengers: [
+                      ...(state.flightOnlyPassengers ?? []),
+                      { key: 'flight-only-' + n, age: 18 },
+                    ],
+                  });
+                }}
+              >
+                افزودن مسافر (فقط پرواز)
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={busy || counts.adults === 0}
+                onClick={() => {
+                  onDraftChange(draft);
+                  setConfirmed(false);
+                  onAddInfant();
+                }}
+              >
+                <Plus className="size-4" />
+                افزودن نوزاد
+              </Button>
+            )}
+          </div>
+        )}
 
-      {!state.legacyContract && (
-        <div className={peopleStyles.extras}>
-          {(
-            Object.entries(salesAdditionalServices) as [
-              keyof typeof salesAdditionalServices,
-              string,
-            ][]
-          ).map(([role, label]) => (
-            <label
-              key={role}
-              className="flex cursor-pointer items-center gap-2 text-sm font-semibold"
+        {error ? (
+          <Alert tone="error" title="ثبت افراد کامل نشد" description={error} />
+        ) : null}
+        {showAcquaintance && methodsLoading ? (
+          <p role="status" className="text-xs text-muted-foreground">
+            در حال دریافت نحوه‌های آشنایی…
+          </p>
+        ) : showAcquaintance &&
+          (methodsError || !acquaintanceMethods.length) ? (
+          <div className="flex items-center gap-2 text-sm">
+            <p role={methodsError ? 'alert' : 'status'}>
+              {methodsError ||
+                'نحوه آشنایی فعالی ثبت نشده است؛ فهرست را در اطلاعات پایه تکمیل کنید.'}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setMethodsLoading(true);
+                setMethodsError('');
+                setMethodsRetry((n) => n + 1);
+              }}
             >
+              دریافت دوباره نحوه آشنایی
+            </Button>
+          </div>
+        ) : null}
+        {clearKey ? (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm"
+          >
+            <span>اطلاعات این ردیف پاک شود؟ پرونده ثبت‌شده حذف نمی‌شود.</span>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setClearKey(null)}
+              >
+                انصراف
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  change(
+                    editPeopleRow(draft, clearKey, {
+                      values: emptyPeopleValues(),
+                    }),
+                  );
+                  setClearKey(null);
+                }}
+              >
+                تأیید پاک‌کردن
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {!state.legacyContract && (
+          <div className={peopleStyles.extras}>
+            {(
+              Object.entries(salesAdditionalServices) as [
+                keyof typeof salesAdditionalServices,
+                string,
+              ][]
+            ).map(([role, label]) => (
+              <label
+                key={role}
+                className="flex cursor-pointer items-center gap-2 text-sm font-semibold"
+              >
+                <input
+                  type="checkbox"
+                  className="size-4 accent-primary"
+                  checked={state.additionalServices?.includes(role) ?? false}
+                  disabled={busy || Boolean(state.tour)}
+                  onChange={() =>
+                    onGuestStateChange?.({
+                      additionalServices: state.additionalServices?.includes(
+                        role,
+                      )
+                        ? state.additionalServices.filter(
+                            (item) => item !== role,
+                          )
+                        : [...(state.additionalServices ?? []), role],
+                    })
+                  }
+                />
+                {label}
+              </label>
+            ))}
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
               <input
                 type="checkbox"
                 className="size-4 accent-primary"
-                checked={state.additionalServices?.includes(role) ?? false}
+                checked={state.serviceKinds.includes('VISA')}
                 disabled={busy || Boolean(state.tour)}
-                onChange={() =>
-                  onGuestStateChange?.({
-                    additionalServices: state.additionalServices?.includes(role)
-                      ? state.additionalServices.filter((item) => item !== role)
-                      : [...(state.additionalServices ?? []), role],
-                  })
-                }
+                onChange={onToggleVisa}
               />
-              {label}
+              ویزا
             </label>
-          ))}
-          <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
-            <input
-              type="checkbox"
-              className="size-4 accent-primary"
-              checked={state.serviceKinds.includes('VISA')}
-              disabled={busy || Boolean(state.tour)}
-              onChange={onToggleVisa}
-            />
-            ویزا
-          </label>
-        </div>
-      )}
+          </div>
+        )}
 
-      {!state.legacyContract && (
-        <CustomerEntrySheet
-          optionalFields={[
-            'nationalId',
-            'birthDate',
-            'passportNumber',
-            'passportExpiryDate',
-            ...(!passportIdentity ? (['gender'] as const) : []),
-          ]}
-          topScrollbar
-          extraColumns={[
-            ...(state.serviceKinds.includes('FLIGHT')
-              ? (['OUTBOUND', 'RETURN'] as const)
-                  .filter((d) => salesDirections(state, 'FLIGHT').includes(d))
-                  .map((direction) => ({
-                    key: direction,
-                    title: direction === 'OUTBOUND' ? 'بلیط رفت' : 'بلیط برگشت',
-                    render: (row: CustomerEntryRow) => {
-                      const key = row.key.replace('sales-entry-', '');
-                      const person = peopleRow(draft, key).person;
-                      const id = person?.id ?? key;
-                      const selected = salesPassengerFlightDirections(
-                        state,
-                        id,
-                      );
-                      return (
-                        <input
-                          type="checkbox"
-                          aria-label={
-                            (direction === 'OUTBOUND'
-                              ? 'بلیط رفت '
-                              : 'بلیط برگشت ') + row.label
-                          }
-                          disabled={busy}
-                          checked={selected.includes(direction)}
-                          onChange={() =>
-                            onFlightDirectionsChange?.({
-                              ...state.passengerFlightDirections,
-                              [id]: selected.includes(direction)
-                                ? selected.filter((d) => d !== direction)
-                                : [...selected, direction],
-                            })
-                          }
-                        />
-                      );
-                    },
-                  }))
-              : []),
-            ...(usesRoomDrivenGuests(state) && onGuestStateChange
-              ? guestStayColumns(
-                  state,
-                  onGuestStateChange,
-                  (key) => peopleRow(draft, key).person?.id ?? key,
-                  busy,
-                )
-              : []),
-            ...transferDirectionColumns(
-              state,
-              (patch) => onGuestStateChange?.(patch),
-              (key) => peopleRow(draft, key).person?.id ?? key,
-              busy,
-            ),
-          ]}
-          rows={rows.filter((row) => row.key !== 'sales-entry-primary')}
-          showPassportExpiry={passportIdentity}
-          visibleFields={visibleEntryFields}
-          columnOrder={
-            passportIdentity
-              ? [
-                  'passportFirstName',
-                  'passportLastName',
-                  'gender',
-                  'birthDate',
-                  'passportNumber',
-                  'passportExpiryDate',
-                  'nationalId',
-                ]
-              : ['firstName', 'lastName', 'gender', 'birthDate', 'nationalId']
-          }
-          columnLabels={
-            passportIdentity
-              ? {
-                  nationalId: 'کد ملی',
-                  passportFirstName: 'نام انگلیسی مطابق پاسپورت *',
-                  passportLastName: 'نام خانوادگی انگلیسی مطابق پاسپورت *',
-                  birthDate: 'تاریخ تولد',
-                  passportNumber: 'شماره پاسپورت',
-                  passportExpiryDate: 'انقضای پاسپورت',
-                }
-              : { nationalId: 'کد ملی', birthDate: 'تاریخ تولد' }
-          }
-          salesDatePolicy
-          calendarSwitchInBirthDateHeader
-          calendarMode={calendar}
-          onCalendarModeChange={setCalendar}
-          disabled={busy}
-        />
-      )}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button
-          type="button"
-          disabled={busy}
-          loading={busy}
-          onClick={() => void save()}
-        >
-          <Check className="size-4" />
-          {Object.values(draft.rows).some((row) => row.reviewRequired)
-            ? 'بررسی و ادامه ثبت افراد'
-            : 'ثبت و تأیید افراد'}
-        </Button>
-      </div>
-      {confirmed ? (
-        <p
-          role="status"
-          className="rounded-xl bg-emerald-500/10 p-3 text-sm text-emerald-700"
-        >
-          همه مسافران تأیید شدند؛ می‌توانید به مرحله بعد بروید.
-        </p>
-      ) : null}
-    </section>
+        {!state.legacyContract && (
+          <CustomerEntrySheet
+            optionalFields={[
+              'nationalId',
+              'birthDate',
+              'passportNumber',
+              'passportExpiryDate',
+              ...(!passportIdentity ? (['gender'] as const) : []),
+            ]}
+            topScrollbar
+            extraColumns={[
+              ...(state.serviceKinds.includes('FLIGHT')
+                ? (['OUTBOUND', 'RETURN'] as const)
+                    .filter((d) => salesDirections(state, 'FLIGHT').includes(d))
+                    .map((direction) => ({
+                      key: direction,
+                      title:
+                        direction === 'OUTBOUND' ? 'بلیط رفت' : 'بلیط برگشت',
+                      render: (row: CustomerEntryRow) => {
+                        const key = row.key.replace('sales-entry-', '');
+                        const person = peopleRow(draft, key).person;
+                        const id = person?.id ?? key;
+                        const selected = salesPassengerFlightDirections(
+                          state,
+                          id,
+                        );
+                        return (
+                          <input
+                            type="checkbox"
+                            aria-label={
+                              (direction === 'OUTBOUND'
+                                ? 'بلیط رفت '
+                                : 'بلیط برگشت ') + row.label
+                            }
+                            disabled={busy}
+                            checked={selected.includes(direction)}
+                            onChange={() =>
+                              onFlightDirectionsChange?.({
+                                ...state.passengerFlightDirections,
+                                [id]: selected.includes(direction)
+                                  ? selected.filter((d) => d !== direction)
+                                  : [...selected, direction],
+                              })
+                            }
+                          />
+                        );
+                      },
+                    }))
+                : []),
+              ...(usesRoomDrivenGuests(state) && onGuestStateChange
+                ? guestStayColumns(
+                    state,
+                    onGuestStateChange,
+                    (key) => peopleRow(draft, key).person?.id ?? key,
+                    busy,
+                  )
+                : []),
+              ...transferDirectionColumns(
+                state,
+                (patch) => onGuestStateChange?.(patch),
+                (key) => peopleRow(draft, key).person?.id ?? key,
+                busy,
+              ),
+            ]}
+            rows={rows.filter((row) => row.key !== 'sales-entry-primary')}
+            showPassportExpiry={passportIdentity}
+            visibleFields={visibleEntryFields}
+            columnOrder={
+              passportIdentity
+                ? [
+                    'passportFirstName',
+                    'passportLastName',
+                    'gender',
+                    'birthDate',
+                    'passportNumber',
+                    'passportExpiryDate',
+                    'nationalId',
+                  ]
+                : ['firstName', 'lastName', 'gender', 'birthDate', 'nationalId']
+            }
+            columnLabels={
+              passportIdentity
+                ? {
+                    nationalId: 'کد ملی',
+                    passportFirstName: 'نام انگلیسی مطابق پاسپورت *',
+                    passportLastName: 'نام خانوادگی انگلیسی مطابق پاسپورت *',
+                    birthDate: 'تاریخ تولد',
+                    passportNumber: 'شماره پاسپورت',
+                    passportExpiryDate: 'انقضای پاسپورت',
+                  }
+                : { nationalId: 'کد ملی', birthDate: 'تاریخ تولد' }
+            }
+            salesDatePolicy
+            calendarSwitchInBirthDateHeader
+            calendarMode={calendar}
+            onCalendarModeChange={setCalendar}
+            disabled={busy}
+          />
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Button
+            type="button"
+            disabled={busy}
+            loading={busy}
+            onClick={() => void save()}
+          >
+            <Check className="size-4" />
+            {Object.values(draft.rows).some((row) => row.reviewRequired)
+              ? 'بررسی و ادامه ثبت افراد'
+              : 'ثبت و تأیید افراد'}
+          </Button>
+        </div>
+        {confirmed ? (
+          <p
+            role="status"
+            className="rounded-xl bg-emerald-500/10 p-3 text-sm text-emerald-700"
+          >
+            همه مسافران تأیید شدند؛ می‌توانید به مرحله بعد بروید.
+          </p>
+        ) : null}
+      </section>
+    </>
   );
 }
