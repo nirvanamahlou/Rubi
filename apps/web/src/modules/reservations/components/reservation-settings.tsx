@@ -53,7 +53,7 @@ import {
 import styles from './reservation-settings.module.css';
 import {
   supplierPriceColumns,
-  normalizeSupplierFormPrices,
+  normalizeSupplierDraftPrices,
 } from '../model/supplier-form-prices';
 
 export type ReservationSettingsSection =
@@ -349,12 +349,8 @@ export function ReservationSettingsForm({
     setMessage('');
     let savedWorkflow: TravelWorkflowStateV1 | undefined;
     try {
-      const supplierFormPrices = normalizeSupplierFormPrices(
-        draft.rooms?.length
-          ? draft.supplierFormPrices?.transferPp
-            ? { transferPp: draft.supplierFormPrices.transferPp }
-            : {}
-          : draft.supplierFormPrices,
+      const supplierFormPrices = normalizeSupplierDraftPrices(
+        draft,
         currencyDirectory.currencies,
       );
       let currentVersion = intake.workflow.version;
