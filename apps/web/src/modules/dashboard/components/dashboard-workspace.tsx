@@ -121,6 +121,7 @@ import { dashboardChartArtwork, dashboardKpiArtwork } from '../model/artwork';
 import { dashboardUnavailableReason } from '../model/availability';
 import { dashboardNumericAxis } from '../model/numeric-axis';
 import { DashboardArtworkIcon } from './dashboard-artwork-icon';
+import { DashboardStackedSeriesChart } from './dashboard-stacked-series-chart';
 
 const rangeOptions: readonly [DashboardRange, string][] = [
   ['today', 'امروز'],
@@ -138,15 +139,6 @@ const trendCalendarOptions: readonly [TrendCalendarSystem, string][] = [
   ['persian', 'تاریخ شمسی'],
   ['gregorian', 'تاریخ میلادی'],
 ];
-
-const executiveSalesTitles: Record<DashboardRange, string> = {
-  today: 'فروش امروز',
-  week: 'فروش این هفته',
-  month: 'فروش این ماه',
-  quarter: 'فروش این فصل',
-  year: 'فروش امسال',
-  custom: 'فروش بازه انتخابی',
-};
 
 const dimensionFilters: readonly {
   key: DashboardFilterKey;
@@ -2148,6 +2140,14 @@ function DashboardChart({
   unit: string | undefined;
   values: readonly number[];
 }) {
+  if (kind === 'stacked-bar' && series?.length)
+    return (
+      <DashboardStackedSeriesChart
+        labels={labels}
+        series={series}
+        title={title}
+      />
+    );
   const resolvedKind = dashboardVisualKindForData(kind, values);
   const total = values.reduce((sum, value) => sum + value, 0);
   const accessibleSummary = values
@@ -2986,9 +2986,12 @@ function ProjectionSlot({
       ) ?? data)
     : data;
   const displayUnit = displayData?.unit ?? data?.unit;
-  const resolvedKind = displayData?.values.length
-    ? dashboardVisualKindForData(kind, displayData.values)
-    : kind;
+  const resolvedKind =
+    kind === 'stacked-bar' && displayData?.series?.length
+      ? kind
+      : displayData?.values.length
+        ? dashboardVisualKindForData(kind, displayData.values)
+        : kind;
   const isEmployeeComparison =
     visualId.startsWith('employee-') &&
     (resolvedKind === 'bar' || resolvedKind === 'stacked-bar');
@@ -3742,13 +3745,9 @@ export function DashboardWorkspace() {
     /\.png$/,
     '-dark.png',
   );
-  const activePageKpis = dashboardKpis
-    .filter((kpi) => activePage.kpiIds.includes(kpi.id))
-    .map((kpi) =>
-      activePage.id === 'executive-overview' && kpi.id === 'collected'
-        ? { ...kpi, title: executiveSalesTitles[filters.range] }
-        : kpi,
-    );
+  const activePageKpis = dashboardKpis.filter((kpi) =>
+    activePage.kpiIds.includes(kpi.id),
+  );
   const query = useQuery({
     queryKey: ['dashboard-public-projection-v1', filters, selection],
     queryFn: ({ signal }) =>

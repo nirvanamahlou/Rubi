@@ -863,14 +863,10 @@ describe('dashboard permission and data states', () => {
     expect(source).not.toContain('آخرین Refresh');
     expect(source).toContain('دادهٔ تأییدشده برای نمایش موجود نیست');
     expect(source).not.toContain('KPI و تحلیل‌های عملیاتی');
-    for (const title of [
-      'فروش امروز',
-      'فروش این هفته',
-      'فروش این ماه',
-      'فروش این فصل',
-      'فروش بازه انتخابی',
-    ])
-      expect(source).toContain(title);
+    expect(source).not.toContain('executiveSalesTitles');
+    expect(dashboardKpis.find((kpi) => kpi.id === 'collected')?.title).toBe(
+      'وصول',
+    );
     expect(source).toContain('items-baseline');
     expect(source).toContain('dashboard-sidebar-filters-title');
     expect(source).toContain('ActivePageIcon');

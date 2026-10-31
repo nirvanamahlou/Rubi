@@ -58,6 +58,12 @@ evaluated at its own endpoint. A zero/missing denominator is unavailable, not 0%
   rendering silently dropped categories after12 and the compact combo after8.
   Signed zero-aware scales retain true zero width. Overflow/negative combo datasets
   use the existing scrollable comparison, retaining every category and exact labels.
+- Authenticated production Demo UI inspection found a misleading executive card:
+  collected was relabelled as period sales, so zero confirmed receipts appeared to
+  contradict nonzero net sales. Keep the canonical collected title. Inspection also
+  confirmed the customer-retention combo only plotted its first values array;
+  render all named series as actual signed stacks with legends and every bucket.
+  No moving-average substitute or eight-bucket truncation for multiple series.
 - Candidate modules evaluated in memory against production inside a repeatable-read
   read-only transaction independently reconcile11 SQL checks, including mean sale
   value and the corrected unconverted-lead/purchase definitions. This probe writes
