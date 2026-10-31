@@ -320,3 +320,28 @@ it('allows a subsequent gender correction after successful save', async () => {
   expect(writes()).toHaveLength(2);
   expect(h.amend).not.toHaveBeenCalled();
 });
+
+it('removes the selected passenger row without requiring prices and prevents removing the final passenger', async () => {
+  h.request.mockResolvedValueOnce({
+    data: [person('p1'), person('p2')],
+    canEdit: true,
+    canEditIdentity: true,
+  });
+  // The parent fixture already contains both passengers, so the removed identity is
+  // filtered before any pending identity save and is never deleted from Customer.
+  await ready();
+  const remove = rows().filter((p) => p.children === 'حذف مسافر');
+  expect(remove).toHaveLength(2);
+  (remove[1]!.onClick as () => void)();
+  expect(rows().filter((p) => p.children === 'حذف مسافر')).toHaveLength(1);
+  expect(rows().find((p) => p.children === 'حذف مسافر')?.disabled).toBe(true);
+  saveMain();
+  await vi.waitFor(() => expect(h.amend).toHaveBeenCalledOnce());
+  const sent = h.amend.mock.calls[0]![1];
+  expect(
+    sent.passengers.map((p: { customerId: string }) => p.customerId),
+  ).toEqual(['p1']);
+  expect(sent.priceComponents).toEqual(contract.priceComponents);
+  expect(sent.preserveContractPrices).toBe(true);
+  expect(writes()).toHaveLength(0);
+});

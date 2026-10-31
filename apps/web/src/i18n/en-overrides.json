@@ -4691,5 +4691,9 @@
   "ثبت پرداخت": "Save payment",
   "قیمت هر شب هر مسافر باید صفر یا بیشتر باشد.": "Each passenger's nightly price must be zero or greater.",
   "مبلغ خرید باید صفر یا بیشتر باشد.": "The purchase amount must be zero or greater.",
-  "هزینه خرید باید صفر یا بیشتر با حداکثر چهار رقم اعشار باشد.": "The purchase cost must be zero or greater, with up to four decimal places."
+  "هزینه خرید باید صفر یا بیشتر با حداکثر چهار رقم اعشار باشد.": "The purchase cost must be zero or greater, with up to four decimal places.",
+  "تعداد مسافران قرارداد": "Contract passenger count",
+  "حذف ردیف جدید": "Remove new row",
+  "برای حذف، دکمهٔ همان مسافر در جدول را بزنید. حداقل یک مسافر باقی می‌ماند؛ مبلغ کل قرارداد تغییر نمی‌کند.": "Use the passenger’s button in the table to remove them. At least one passenger must remain; the contract total stays unchanged.",
+  "اصلاح تعداد مسافران نباید مبلغ ثبت‌شده قرارداد را تغییر دهد.": "Changing the passenger count must preserve the recorded contract amount."
 }

@@ -561,6 +561,8 @@ export interface SalesContractPartyCorrectionV1 {
 /** Explicit correction of a previously confirmed Sales contract. */
 export interface SalesContractAmendmentV1 extends SalesContractUpdateRequest {
   passengerCategories: Readonly<Record<string, SalesPassengerAgeCategory>>;
+  /** Roster correction only: retain the exact recorded contract components. */
+  preserveContractPrices?: true;
 }
 
 export * from './passenger-flight-prices';

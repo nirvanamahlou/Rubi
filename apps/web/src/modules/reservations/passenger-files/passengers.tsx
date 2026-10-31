@@ -43,18 +43,23 @@ export function ReservationPassengers({
   readOnly = false,
   ageEditor,
   serviceEditor,
+  rowActions,
   saveRef,
   onDirty,
   customerIds,
+  pendingRows = [],
 }: {
   id: string;
   readOnly?: boolean;
   ageEditor?: (customerId: string) => ReactNode;
   serviceEditor?: (customerId: string) => ReactNode;
+  rowActions?: (customerId: string) => ReactNode;
   saveRef?: Ref<ReservationPassengerEditor>;
   onDirty?: () => void;
   /** Unsaved contract-membership edits can hide removed links without deleting identities. */
   customerIds?: readonly string[];
+  /** Customer-registered additions awaiting the contract amendment; identity is read-only. */
+  pendingRows?: readonly PassengerName[];
 }) {
   const [rows, setRows] = useState<PassengerName[]>([]);
   const [dirty, setDirty] = useState<string[]>([]);
@@ -184,9 +189,10 @@ export function ReservationPassengers({
   }));
 
   if (loading) return <p>در حال دریافت اطلاعات مسافران…</p>;
-  const displayedRows = rows.filter(
-    (row) => !customerIds || customerIds.includes(row.id),
-  );
+  const displayedRows = [
+    ...rows,
+    ...pendingRows.filter((p) => !rows.some((row) => row.id === p.id)),
+  ].filter((row) => !customerIds || customerIds.includes(row.id));
 
   if (readOnly)
     return (
@@ -289,8 +295,10 @@ export function ReservationPassengers({
           </thead>
           <tbody>
             {displayedRows.map((row, index) => {
-              const disabled = !canEdit || Boolean(busy);
-              const identityDisabled = !canEditIdentity || Boolean(busy);
+              const pending = !rows.some((p) => p.id === row.id);
+              const disabled = pending || !canEdit || Boolean(busy);
+              const identityDisabled =
+                pending || !canEditIdentity || Boolean(busy);
               return (
                 <tr key={row.id}>
                   <td>
@@ -457,6 +465,7 @@ export function ReservationPassengers({
                             : 'ذخیره نام'}
                       </Button>
                     </form>
+                    {rowActions?.(row.id)}
                   </td>
                   {serviceEditor && <td>{serviceEditor(row.id)}</td>}
                 </tr>
