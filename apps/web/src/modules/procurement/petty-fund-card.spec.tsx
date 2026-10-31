@@ -10,7 +10,7 @@ const bootstrap: Bootstrap = {
   policy: 'POLICY_NOT_CONFIGURED',
   defaultBranchId: 'branch-1',
   currencies: [],
-  masterData: 'CONNECTED',
+  finance: 'NOT_CONNECTED',
   documents: 'AVAILABLE',
   travel: 'NOT_CONNECTED',
 };
