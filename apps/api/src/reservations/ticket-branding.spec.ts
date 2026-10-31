@@ -53,6 +53,7 @@ function setup() {
   };
   const command: TravelWorkflowCommandV1 = {
     action: 'BRANDING',
+    note: 'انتخاب سربرگ خروجی',
     expectedVersion: 0,
     branding: { kind: 'OWN', ticketWithoutLogo: true },
   };
