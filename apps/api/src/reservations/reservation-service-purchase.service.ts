@@ -20,7 +20,8 @@ import {
   hotelNights,
   hotelRoomQuotationTotal,
   reservationHotelStays,
-  reservationHotelTransferKeys,
+  reservationHotelTransferLegKeys,
+  reservationHotelTransferCounts,
   scopeReservationHotel,
   legacyPurchaseGuests,
   moneyDecimal,
@@ -442,7 +443,7 @@ export class ReservationServicePurchaseService {
       }
     }
     const scopedTransferKeys = stay
-      ? reservationHotelTransferKeys(snapshot, stay.key)
+      ? reservationHotelTransferLegKeys(snapshot, stay.key)
       : [];
     if (stay) {
       snapshot = scopeReservationHotel(snapshot, stay.key);
@@ -499,8 +500,19 @@ export class ReservationServicePurchaseService {
     const rows = (
       input.purchases as ReservationPurchaseBatchInputV1['purchases']
     ).map((purchase) => {
+      const legacyCombined =
+        !!stay &&
+        scopedTransferKeys.length === 2 &&
+        scopedTransferKeys[0]!.startsWith('hotel-transfer:') &&
+        purchase.serviceClientKey === scopedTransferKeys[0] &&
+        purchase.coveredServiceClientKeys?.length === 1 &&
+        input.purchases.filter((row) => row.serviceClientKey !== stay.key)
+          .length === 1;
       const full = {
         ...purchase,
+        ...(legacyCombined
+          ? { coveredServiceClientKeys: scopedTransferKeys }
+          : {}),
         version: 1 as const,
         expectedVersion: input.expectedVersion,
       };
@@ -614,8 +626,14 @@ export class ReservationServicePurchaseService {
               stay &&
               service.kind === 'TRANSFER' &&
               count !==
-                input.hotelTransferCounts!.outbound +
-                  input.hotelTransferCounts!.returning
+                Object.values(
+                  reservationHotelTransferCounts(
+                    snapshot,
+                    stay.key,
+                    row.coveredServiceClientKeys ?? [],
+                    input.hotelTransferCounts!,
+                  ),
+                ).reduce((sum, count) => sum + count, 0)
             )
               throw new Error();
             const nights =
@@ -652,7 +670,12 @@ export class ReservationServicePurchaseService {
             passengerPrices = {
               ...(stay && service.kind === 'TRANSFER'
                 ? {
-                    hotelTransferCounts: input.hotelTransferCounts!,
+                    hotelTransferCounts: reservationHotelTransferCounts(
+                      snapshot,
+                      stay.key,
+                      row.coveredServiceClientKeys ?? [],
+                      input.hotelTransferCounts!,
+                    ),
                     hotelStayKey: stay.key,
                   }
                 : {}),

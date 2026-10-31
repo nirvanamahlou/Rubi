@@ -471,7 +471,9 @@ export class MasterTravelDirectory {
     hotelIds: readonly string[];
     insuranceId?: string;
   }) {
-    for (const cityId of [input.originId, input.destinationId]) {
+    for (const cityId of [input.originId, input.destinationId].filter(
+      Boolean,
+    )) {
       const { data } = await this.master.detail('cities', cityId);
       if (data.status !== 'active')
         throw new BadRequestException('شهر تور غیرفعال است.');

@@ -1,3 +1,7 @@
+import {
+  supplierDocumentScope,
+  type SupplierDocumentKind,
+} from '@/modules/reservations/model/supplier-document-scope';
 import { reservationHotelStays } from '@nora/contracts';
 import { hotelFormScope } from '@/modules/reservations/model/hotel-form-scope';
 import { loadOutputReferences } from '@/modules/reservations/model/output-references';
@@ -32,6 +36,13 @@ export async function GET(
   const kind = new URL(request.url).searchParams.get('kind');
   if (kind && kind !== 'voucher') return fail('نوع سند معتبر نیست.', 400);
   const voucher = kind === 'voucher';
+  const formScope =
+    new URL(request.url).searchParams.get('formScope') ?? 'HOTEL';
+  if (
+    !['HOTEL', 'TRANSFER', 'OUTBOUND', 'RETURN'].includes(formScope) ||
+    (voucher && formScope !== 'HOTEL')
+  )
+    return fail('نوع سند معتبر نیست.', 400);
   const hotelStayKey = new URL(request.url).searchParams.get('hotelStayKey');
   if (voucher && hotelStayKey) return fail('نوع سند معتبر نیست.', 400);
   if (
@@ -68,6 +79,16 @@ export async function GET(
     if (!voucher && intake.workflow.sentSupplierFormSettings) {
       intake.workflow.supplierFormSettings =
         intake.workflow.sentSupplierFormSettings;
+    }
+    if (!voucher) {
+      try {
+        intake = supplierDocumentScope(
+          intake,
+          formScope as SupplierDocumentKind,
+        );
+      } catch {
+        return fail('نوع سند معتبر نیست.', 400);
+      }
     }
     if (voucher && !intake.workflow.voucherIssued)
       return fail('واچر هنوز صادر نشده است.', 409);

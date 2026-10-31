@@ -143,3 +143,35 @@ export function reservationHotelTransferKeys(
     ? original
     : ['hotel-transfer:' + stay.ordinal + ':' + stay.hotel.hotelId];
 }
+
+/** Add a return member without changing the historical aggregate identity API. */
+export function reservationHotelTransferLegKeys(
+  snapshot: SalesReservationRequestV1,
+  key: string,
+) {
+  const keys = reservationHotelTransferKeys(snapshot, key);
+  return keys.length === 1 && keys[0]!.startsWith('hotel-transfer:')
+    ? [keys[0]!, keys[0]! + ':return']
+    : keys;
+}
+
+/** Attribute only the covered legs; a single historical key represents both legs. */
+export function reservationHotelTransferCounts(
+  snapshot: SalesReservationRequestV1,
+  stayKey: string,
+  covered: readonly string[],
+  counts: { outbound: number; returning: number },
+) {
+  const keys = reservationHotelTransferLegKeys(snapshot, stayKey);
+  if (keys.length === 1) return { ...counts };
+  const returning = (key: string) =>
+    snapshot.serviceSelections.find((s) => s.clientKey === key)?.metadata
+      ?.direction === 'RETURN' || /(?:^|[-_:])(?:return|back|in)$/.test(key);
+  const returnKey = keys.find(returning) ?? keys[1]!;
+  return {
+    outbound: covered.some((key) => key !== returnKey && keys.includes(key))
+      ? counts.outbound
+      : 0,
+    returning: covered.includes(returnKey) ? counts.returning : 0,
+  };
+}
