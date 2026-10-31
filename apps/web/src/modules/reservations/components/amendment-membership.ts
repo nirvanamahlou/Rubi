@@ -4,6 +4,7 @@ import {
   type SalesPassengerInput,
   type SalesPassengerAgeCategory,
   type SalesMoney,
+  type PassengerDeductions,
 } from '@nora/contracts';
 import {
   amendmentPassengerGross,
@@ -26,13 +27,18 @@ export function changeAmendmentMembership(
     | {
         add: SalesPassengerInput;
         category: SalesPassengerAgeCategory;
-        prices: SalesMoney[];
+        prices?: SalesMoney[];
       }
     | { remove: string },
+  preservePrices = false,
 ): SalesContractAmendmentV1 {
-  assertAmendmentMembershipPricing(draft);
-  const gross = amendmentPassengerGross(draft);
-  const deductions = amendmentPricingDeductions(draft);
+  if (!preservePrices) assertAmendmentMembershipPricing(draft);
+  const gross: Record<string, SalesMoney[]> = preservePrices
+    ? {}
+    : amendmentPassengerGross(draft);
+  const deductions: PassengerDeductions = preservePrices
+    ? {}
+    : amendmentPricingDeductions(draft);
   const categories = { ...draft.passengerCategories };
   let passengers = [...draft.passengers];
   if ('add' in change) {
@@ -42,7 +48,7 @@ export function changeAmendmentMembership(
       throw Error('حداقل یک خدمت برای مسافر انتخاب کنید.');
     passengers.push(change.add);
     categories[change.add.customerId] = change.category;
-    gross[change.add.customerId] = change.prices;
+    gross[change.add.customerId] = change.prices ?? [];
   } else {
     passengers = passengers.filter((p) => p.customerId !== change.remove);
     if (!passengers.length)
@@ -56,6 +62,18 @@ export function changeAmendmentMembership(
   const next = {
     ...draft,
     passengers,
+    ...(draft.hotelSelection
+      ? {
+          hotelSelection: {
+            ...draft.hotelSelection,
+            occupancy: passengers.filter((p) =>
+              p.serviceClientKeys.includes(
+                draft.hotelSelection!.serviceClientKey,
+              ),
+            ).length,
+          },
+        }
+      : {}),
     passengerCategories: categories,
     services: draft.services
       .filter(
@@ -92,5 +110,42 @@ export function changeAmendmentMembership(
         return { ...s, metadata };
       }),
   };
-  return applyAmendmentPassengerPrices(next, gross, deductions);
+  if (!preservePrices)
+    return applyAmendmentPassengerPrices(next, gross, deductions);
+  // The old per-person allocation no longer describes this roster. Retain the
+  // recorded contract total without assigning a removed person's share to anyone.
+  const priceKeys = new Set([
+    'passengerTotalPricesV1',
+    'passengerDeductionsV1',
+    'legacyRowPricesV1',
+    'passengerPackagePricingVersion',
+    'automaticFlightRoomTotalV1',
+    'passengerFlightPricesV1',
+    'passengerHotelPricesV1',
+  ]);
+  return {
+    ...next,
+    preserveContractPrices: true,
+    passengers: next.passengers.map((p) => {
+      const copy = { ...p };
+      delete copy.agreedPrices;
+      return copy;
+    }),
+    services: next.services.map((service) => {
+      const { pricing, ...s } = service;
+      return {
+        ...s,
+        ...(s.metadata?.insuranceAgeSurcharge === true ? { pricing } : {}),
+        metadata: {
+          ...Object.fromEntries(
+            Object.entries(s.metadata ?? {}).filter(
+              ([key]) => !priceKeys.has(key),
+            ),
+          ),
+          contractPackagePricingVersion: 1,
+        },
+      };
+    }),
+    priceComponents: draft.priceComponents,
+  };
 }

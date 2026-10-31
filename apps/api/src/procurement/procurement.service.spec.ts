@@ -3046,5 +3046,141 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         }),
       ).toEqual(receipt);
     });
+
+    it('debits the independent petty ledger atomically on publication, prevents overspend and records no draft expense', async () => {
+      const fund = await service.savePettyFund(
+        {
+          branchId: branch,
+          balance: '150',
+          currencyCode: 'IRR',
+          version: 0,
+          bankName: 'Synthetic Bank',
+        },
+        maker,
+      );
+      expect(fund.balance).toBe('150');
+      const draft = await create(
+        fixture({ estimatedAmount: '100', currencyCode: 'IRR', documents }),
+      );
+      expect((await service.pettyFund(branch, maker))?.balance).toBe('150');
+      const key = randomUUID();
+      const input = {
+        draft: fixture({
+          estimatedAmount: '100',
+          currencyCode: 'IRR',
+          documents,
+        }),
+        publish: true,
+      };
+      const first = await procurementBoundary(() =>
+        service.create(input, key, maker),
+      );
+      const replay = await procurementBoundary(() =>
+        service.create(input, key, maker),
+      );
+      expect(replay.id).toBe(first.id);
+      expect((await service.pettyFund(branch, maker))?.balance).toBe('50');
+      const before = await database.client.procurementRequest.count({
+        where: { branchId: branch },
+      });
+      await expect(
+        service.create(
+          {
+            ...input,
+            draft: fixture({
+              estimatedAmount: '100',
+              currencyCode: 'IRR',
+              documents,
+            }),
+          },
+          randomUUID(),
+          maker,
+        ),
+      ).rejects.toThrow('موجودی کافی نیست');
+      expect(
+        await database.client.procurementRequest.count({
+          where: { branchId: branch },
+        }),
+      ).toBe(before);
+      expect((await service.pettyFund(branch, maker))?.balance).toBe('50');
+      await expect(
+        service.savePettyFund(
+          {
+            branchId: branch,
+            balance: '500',
+            currencyCode: 'IRR',
+            version: fund.version,
+          },
+          maker,
+        ),
+      ).rejects.toThrow('موجودی تغییر کرده');
+      await expect(service.pettyFund(otherBranch, maker)).rejects.toThrow();
+      expect((await service.detail(draft.id, maker)).draft.documents).toEqual(
+        documents,
+      );
+      const current = (await service.pettyFund(branch, maker))!;
+      await service.savePettyFund(
+        { ...current, branchId: branch, balance: '150' },
+        maker,
+      );
+      const races = await Promise.allSettled([
+        service.create(
+          {
+            ...input,
+            draft: fixture({
+              estimatedAmount: '100',
+              currencyCode: 'IRR',
+              documents,
+            }),
+          },
+          randomUUID(),
+          maker,
+        ),
+        service.create(
+          {
+            ...input,
+            draft: fixture({
+              estimatedAmount: '100',
+              currencyCode: 'IRR',
+              documents,
+            }),
+          },
+          randomUUID(),
+          maker,
+        ),
+      ]);
+      expect(races.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect((await service.pettyFund(branch, maker))?.balance).toBe('50');
+      const movement =
+        await database.client.procurementPettyEntry.findFirstOrThrow({
+          where: { requestKey: first.id },
+        });
+      await expect(
+        database.client.procurementPettyEntry.update({
+          where: { id: movement.id },
+          data: { amount: '-1' },
+        }),
+      ).rejects.toThrow('immutable');
+      await service.remove(first.id, { expectedVersion: first.version }, maker);
+      expect((await service.pettyFund(branch, maker))?.balance).toBe('50');
+      expect(
+        (
+          await database.client.procurementPettyEntry.findUniqueOrThrow({
+            where: { id: movement.id },
+          })
+        ).requestId,
+      ).toBeNull();
+      await expect(
+        service.savePettyFund(
+          { branchId: branch, balance: '999', currencyCode: 'IRR', version: 3 },
+          {
+            ...maker,
+            permissions: maker.permissions.filter(
+              (p) => p !== 'procurement.assign',
+            ),
+          },
+        ),
+      ).rejects.toThrow('مجوز مدیریت تنخواه');
+    });
   },
 );

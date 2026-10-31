@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import type { RequestView } from './model';
 import { hotelMealLabel, queueMealName } from './queue-meal';
+import { queueHotelName, queueHotels } from './queue-hotels';
 export function useQueueNames(
   rows: readonly RequestView[],
   refreshRevision = 0,
@@ -12,7 +13,9 @@ export function useQueueNames(
       ...new Set(
         rows
           .flatMap((row) => [
-            row.hotelId ? `hotels:${row.hotelId}` : '',
+            ...queueHotels(row).map((hotel) =>
+              hotel.hotelId ? `hotels:${hotel.hotelId}` : '',
+            ),
             row.destinationId ? `cities:${row.destinationId}` : '',
             row.mealServiceId ? `meal-services:${row.mealServiceId}` : '',
           ])
@@ -76,9 +79,7 @@ export function useQueueNames(
       ...row,
       mealServiceName: queueMealName(row, names),
       hotelStars: row.hotelStars || names[`hotel-stars:${row.hotelId}`],
-      ...(names[`hotels:${row.hotelId}`]
-        ? { hotelName: names[`hotels:${row.hotelId}`]! }
-        : {}),
+      hotelName: queueHotelName(row, names),
       ...(names[`cities:${row.destinationId}`]
         ? { destination: names[`cities:${row.destinationId}`]! }
         : {}),

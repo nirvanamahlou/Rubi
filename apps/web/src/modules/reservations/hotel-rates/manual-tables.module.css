@@ -81,14 +81,41 @@
   gap: 8px;
   max-width: 620px;
 }
-.hotelTabs {
+.hotelChoices {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 12px;
+  max-height: 240px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
 }
-.hotelTabs button[aria-pressed='true'] {
-  background: var(--primary);
-  color: var(--primary-foreground);
+.hotelChoices label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+}
+.hotelChoices input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  padding: 0;
+  accent-color: var(--primary);
+}
+.hotelSelector table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.hotelSelector th,
+.hotelSelector td {
+  padding: 8px;
+  text-align: start;
+  border-bottom: 1px solid var(--border);
+}
+.hotelSelector th {
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
 }
 .panel .coefficients {
   border: 1px solid var(--border);

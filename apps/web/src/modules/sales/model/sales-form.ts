@@ -269,6 +269,7 @@ export interface SalesFormState {
     displayName: string;
     birthDate: string;
     ageCategory?: SalesPassengerAgeCategory;
+    childAgeBand?: 'AGE_2_6' | 'AGE_6_12';
   }>;
   priceComponents: SalesPriceComponentInput[];
   payments: SalesPaymentInput[];
@@ -2109,6 +2110,7 @@ export function salesPayload(
           }
         : {}),
       birthDate: item.birthDate,
+      ...(item.childAgeBand ? { childAgeBand: item.childAgeBand } : {}),
       ...(!item.birthDate && item.ageCategory
         ? { ageCategory: item.ageCategory }
         : {}),
