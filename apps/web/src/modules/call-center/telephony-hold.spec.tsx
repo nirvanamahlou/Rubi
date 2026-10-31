@@ -12,6 +12,20 @@ vi.mock('@/modules/iam/access-context', () => ({
   }),
 }));
 afterEach(() => vi.unstubAllEnvs());
+it('opts both directions into operational popups without the technical widget', () => {
+  vi.stubEnv('NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED', 'false');
+  expect(
+    renderToStaticMarkup(<TelephonyAttention outboundOnly bothDirections />),
+  ).toBe('');
+  vi.stubEnv('NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED', 'true');
+  const html = renderToStaticMarkup(
+    <TelephonyAttention outboundOnly bothDirections />,
+  );
+  expect(html).toContain('صف تماس تلفنی');
+  expect(html).not.toContain('تماس‌ها (');
+  expect(html).not.toContain('تلاش مجدد');
+  expect(html).not.toContain('ایزابل متصل نشده');
+});
 it('explicit rollout hold renders no attention UI even for a fully authorized operator', () => {
   vi.stubEnv('NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED', 'false');
   expect(renderToStaticMarkup(<TelephonyAttention />)).toBe('');

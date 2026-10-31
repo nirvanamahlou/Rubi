@@ -8072,3 +8072,7 @@ Removed the Jahan-specific white logo card from contract and shared reservation/
 ## 2026-10-31 — PETTY-PLUS-1031 — PC-B
 
 A separate accessible plus button beside the petty cash card opens its existing balance, bank, account, IBAN and card modal. Card activation uses the same shared handler and preserves fetched values/version; no nested buttons. Management permission, pending-load guard and one fund per branch remain unchanged. No API/schema/monetary behavior change. Tests/build/hosted gates precede authorized merge and local rollout.
+
+## CALL-CENTER-LIVE-POPUPS-1031 — production enabled 2026-10-31
+
+Owner-authorized operational inbound/outbound popups deployed over Web358bf900; current answered-access API preserved and native notifications enabled. Scoped lint,5 Web tests, typecheck and Web build pass. AMI/Worker readiness verified; both direction offers created for mapped404. Popup visibly opened on Dashboard; owner confirms Chrome display after same-user verification-browser lease was released. Incoming-only browser acceptance pending. No technical widget, new grants, schema or dependency changes. See docs/tasks/CALL-CENTER-LIVE-POPUPS-1031.md.

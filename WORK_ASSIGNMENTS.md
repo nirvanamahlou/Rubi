@@ -10194,3 +10194,6 @@ JAHAN-TRANSPARENT-DOCUMENTS-1031 implemented:83 focused branding/contract/previe
 ## PETTY-PLUS-1031 — PC-B — RESERVED
 
 PC-B; branch codex/pc-b-petty-plus-1031. Reserve petty-fund-card.tsx/spec and own status notes: explicit accessible plus button adjacent to existing fund card opens same bank/balance configuration modal, preserving populated fields/CAS/permissions and one fund per branch. Existing scopes released; no schema/API/dependency/permission change. User authorizes push/develop merge and local3100 rollout. Preserve other checkouts and prior runtime.
+
+## CALL-CENTER-LIVE-POPUPS-1031 — PC-C — IN_PROGRESS
+User explicitly authorizes global operational incoming/outgoing call popups in production. Reserve bounded TelephonyAttention listener direction option, AppShell mount option, focused tests and own docs; historical shell locks released. Preserve hidden technical widget, native offer/claim/branch authorization, existing form and provider capture. Build only these Web files over actual deployed358bf900; preserve current answered-access API overlay and Worker configuration. Enable provider notifications only after tested Web build. No schema/dependency or new grants.
