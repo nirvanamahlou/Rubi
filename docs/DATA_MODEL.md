@@ -1,3 +1,7 @@
+## Hotel reference currency — 2026-10-31
+
+MasterHotel.currencyId optionally references MasterCurrency.id with a restrictive FK and index. This is native hotel reference metadata, separate from dated hotel purchase/sale currencies and rates. Old hotels/imports remain NULL; no currency is inferred or backfilled. Apply migration20261031170000_hotel_reference_currency before the matching API/Web release. New selections must reference an active currency; omission preserves an existing value and explicit clearing stores NULL.
+
 ## Reference UI cleanup — 2026-10-31
 
 MasterRailCompany.organizationId is optional; existing unique organization links and the real foreign key remain. FinanceSettlementAccount.deletedAt marks audited removal of an unused company bank account. Removal sets isActive=false, increments the version, retains the row/audits, rejects every financial reference and excludes the record from company-bank account lists and detail/edit reads. Apply migration20261031160000_optional_rail_company_organization before the matching API/Web release. Reverting the nullable rail association requires explicit review of newly unlinked companies; do not invent organizations or delete records to force rollback.

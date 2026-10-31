@@ -1211,6 +1211,7 @@ model MasterRailTerminal {
 }
 
 model MasterCurrency {
+  hotels                               MasterHotel[]
   procurementRequestCurrencycodeRows   ProcurementRequest[]        @relation("ProcurementRequestCurrencycode")
   procurementQuotationCurrencycodeRows ProcurementQuotation[]      @relation("ProcurementQuotationCurrencycode")
   procurementOrderCurrencycodeRows     ProcurementOrder[]          @relation("ProcurementOrderCurrencycode")
@@ -2208,6 +2209,8 @@ model MasterBusTypeFacility {
 }
 
 model MasterHotel {
+  currencyId           String?                      @db.Uuid
+  currency             MasterCurrency?              @relation(fields: [currencyId], references: [id], onDelete: Restrict)
   salesHotelStays      SalesContractHotelStay[]
   groupRates           ReservationHotelGroupRate[]
   id                   String                       @id @default(uuid()) @db.Uuid
@@ -2260,6 +2263,7 @@ model MasterHotel {
 
   @@index([cityId, isActive, name])
   @@index([chainId, isActive, name])
+  @@index([currencyId])
   @@index([isSaleableReference, isActive, name])
   @@index([mealServiceId])
   @@index([defaultRoomTypeId])
