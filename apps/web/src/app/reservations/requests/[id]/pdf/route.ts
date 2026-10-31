@@ -114,7 +114,8 @@ export async function GET(
     let logo: string;
     if (
       voucher &&
-      intake.workflow.voucherSettings?.flags.withLetterhead === false
+      (branding.voucherWithoutLogo === true ||
+        intake.workflow.voucherSettings?.flags.withLetterhead === false)
     ) {
       logo = '';
     } else if (

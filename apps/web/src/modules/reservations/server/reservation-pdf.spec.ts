@@ -683,3 +683,43 @@ it.each(['?formScope=FOREIGN', '?kind=voucher&formScope=RETURN'])(
     expect(fetch).not.toHaveBeenCalled();
   },
 );
+
+it('publishes logo-free vouchers without fetching issuer logo and preserves normal supplier output and issuance guards', async () => {
+  publishing.enabled = true;
+  const value = structuredClone(intake);
+  value.workflow.branding = {
+    ...value.workflow.branding!,
+    voucherWithoutLogo: true,
+    logoFileId: 'unavailable-logo',
+  };
+  value.workflow.voucherIssued = true;
+  value.workflow.voucherSettings = {
+    ...value.workflow.supplierFormSettings!,
+    leaderId: id,
+  };
+  const fetcher = vi.fn(async (url: string) => {
+    if (url.includes('/documents/'))
+      throw Error('Voucher issuer logo must not be fetched');
+    return Response.json({ data: value });
+  });
+  vi.stubGlobal('fetch', fetcher);
+  const response = await GET(
+    new Request(request().url + '?kind=voucher&format=share'),
+    { params: Promise.resolve({ id }) },
+  );
+  expect(response.status).toBe(200);
+  expect(publishing.html).toContain('HOTEL VOUCHER');
+  expect(publishing.html).toContain('<header class="header">');
+  expect(publishing.html).not.toMatch(
+    /<img[^>]*class="(?:logo|jahanLogo|agencyLogo)"/,
+  );
+  expect(() => reservationPdfHtml(value, {}, '', '', false)).toThrow(
+    'PDF_LOGO_INVALID',
+  );
+  value.workflow.voucherIssued = false;
+  const denied = await GET(
+    new Request(request().url + '?kind=voucher&format=share'),
+    { params: Promise.resolve({ id }) },
+  );
+  expect(denied.status).toBe(409);
+});
