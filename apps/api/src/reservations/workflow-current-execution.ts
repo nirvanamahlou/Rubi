@@ -1,4 +1,6 @@
 import {
+  reservationHotelStays,
+  scopeReservationHotel,
   salesContractFlights,
   reservationFlightOutputKey,
   salesHotelRoomSummary,
@@ -119,6 +121,8 @@ export function refreshWorkflowExecution(
       ),
     };
     if (hotelChanged) {
+      delete next.hotelRoomPrices;
+      delete next.hotelTransferCounts;
       next.text.hotel = hotel?.hotelNameSnapshot ?? '';
       if (oldHotel?.mealServiceId !== hotel?.mealServiceId) next.text.meal = '';
       if (oldHotel?.cityId !== hotel?.cityId) next.text.city = '';
@@ -251,8 +255,44 @@ export function refreshWorkflowExecution(
     });
     return next;
   };
+  const hotelSupplierForms: NonNullable<
+    TravelWorkflowStateV1['hotelSupplierForms']
+  > = {};
+  if (workflow.hotelSupplierForms) {
+    const priorKeys = reservationHotelStays(before).map((stay) => stay.key);
+    for (const stay of reservationHotelStays(current)) {
+      const entry = workflow.hotelSupplierForms[stay.key];
+      if (!entry || !priorKeys.includes(stay.key)) continue;
+      const child = {
+        ...workflow,
+        outputSourceSnapshot: scopeReservationHotel(before, stay.key),
+      };
+      delete child.hotelSupplierForms;
+      delete child.supplierFormSettings;
+      delete child.sentSupplierFormSettings;
+      delete child.voucherSettings;
+      if (entry.settings) child.supplierFormSettings = entry.settings;
+      if (entry.sentSettings)
+        child.sentSupplierFormSettings = entry.sentSettings;
+      const updated = refreshWorkflowExecution(
+        child,
+        scopeReservationHotel(before, stay.key),
+        scopeReservationHotel(current, stay.key),
+      );
+      hotelSupplierForms[stay.key] = {
+        ...entry,
+        ...(updated.supplierFormSettings
+          ? { settings: updated.supplierFormSettings }
+          : {}),
+        ...(updated.sentSupplierFormSettings
+          ? { sentSettings: updated.sentSupplierFormSettings }
+          : {}),
+      };
+    }
+  }
   return {
     ...workflow,
+    ...(workflow.hotelSupplierForms ? { hotelSupplierForms } : {}),
     outputSourceSnapshot: structuredClone(current),
     ...Object.fromEntries(
       (

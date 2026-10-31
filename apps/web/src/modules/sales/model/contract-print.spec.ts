@@ -476,7 +476,12 @@ it('uses the Jahan Bastan issuer throughout the contract without Niyayesh contac
   output.company.latinName = 'JAHAN BASTAN';
   const html = contractPrintHtml(output, printReferences);
   expect(html).toContain('ارسال درخواست به آژانس جهان باستان');
-  expect(html).toContain('jahan-brand');
+  expect(html).toContain('header .jahan-brand{background:transparent');
+  expect(html).toContain(
+    'header .jahan-brand img{filter:brightness(0) invert(1)}',
+  );
+  expect(html).toContain('<strong>جهان باستان</strong>');
+  expect(html).not.toContain('header .jahan-brand{background:white');
   expect(html).not.toContain('نیایش');
   expect(html).not.toContain('Nystkt.ir');
   expect(html).not.toContain('niyayeshseir.com');
@@ -697,3 +702,69 @@ it('does not allocate a room share to a child whose birth date is absent', () =>
   expect(html).not.toContain('61.7283');
   expect(html).not.toContain('61.7284');
 });
+
+it('prints a whole-contract-priced historical booking with empty obsolete flight and hotel price maps', () => {
+  const output = structuredClone(printFixture);
+  output.contract.passengersDetail = output.contract.passengersDetail
+    .slice(0, 1)
+    .map((p) => {
+      delete p.agreedPrices;
+      return { ...p, birthDate: '' };
+    });
+  for (const service of output.contract.servicesDetail)
+    service.metadata = {
+      ...service.metadata,
+      contractPackagePricingVersion: 1,
+    };
+  const flight = output.contract.servicesDetail.find(
+    (s) => s.kind === 'FLIGHT',
+  )!;
+  const hotel = output.contract.servicesDetail.find((s) => s.kind === 'HOTEL')!;
+  flight.metadata = { ...flight.metadata, passengerFlightPricesV1: '{}' };
+  hotel.metadata = { ...hotel.metadata, passengerHotelPricesV1: '{}' };
+  const before = structuredClone(output);
+  expect(() => contractPrintHtml(output, printReferences)).not.toThrow();
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('123,456,789.25');
+  expect(html).toContain('HOTEL INFORMATION');
+  expect(html).toContain('class="passenger-name"');
+  expect(output).toEqual(before);
+});
+
+it('uses complete saved passenger sale prices without validating superseded hotel splits', () => {
+  const output = structuredClone(printFixture);
+  output.contract.passengersDetail = output.contract.passengersDetail.map(
+    (p) => ({
+      ...p,
+      agreedPrices: [{ amount: '123.45', currencyCode: 'USD' }],
+    }),
+  );
+  const hotel = output.contract.servicesDetail.find((s) => s.kind === 'HOTEL')!;
+  hotel.metadata = { ...hotel.metadata, passengerHotelPricesV1: '{}' };
+  const before = structuredClone(output);
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('123.45');
+  expect(html).toContain('246.9');
+  expect(output).toEqual(before);
+});
+it.each([undefined, 2])(
+  'retains strict legacy service-price parsing for unrecognized package pricing %s',
+  (version) => {
+    const output = structuredClone(printFixture);
+    for (const p of output.contract.passengersDetail) delete p.agreedPrices;
+    for (const service of output.contract.servicesDetail)
+      service.metadata = {
+        ...service.metadata,
+        ...(version === undefined
+          ? {}
+          : { contractPackagePricingVersion: version }),
+      };
+    const hotel = output.contract.servicesDetail.find(
+      (s) => s.kind === 'HOTEL',
+    )!;
+    hotel.metadata = { ...hotel.metadata, passengerHotelPricesV1: '{}' };
+    expect(() => contractPrintHtml(output, printReferences)).toThrow(
+      'قیمت هتل هر مسافر',
+    );
+  },
+);
