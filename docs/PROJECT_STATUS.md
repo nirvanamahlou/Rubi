@@ -8150,3 +8150,6 @@ Added fixed-origin HTTPS Travis/Noyan sandbox catalogue integration and private,
 
 ## HR-MANUAL-PERSONNEL-CODE-1031 / PC-B
 Employee create/edit personnel code is editable through existing validated form state and submission. Automatic suggestion retained; inaccurate automatic-only helper copy removed. Existing required/50-character/duplicate validation and API/FK identity preserved. No API/schema/dependency or server rollout. Targeted and final-head checks gate owner-authorized develop merge.
+
+## HR-SHARED-BRANCHES-1031 / PC-B
+Candidate: canonical deduplicated HR company options and Headquarters; explicit common nonpersonal reference definitions materialized/synchronized per authorized native branch under restrictive HrRecord sharedSource self-FK. Single-branch readers retain local applicability; common edits/delete require all affected branch scopes and preserve dependency checks. Employee correction supports authorized destination branch/company, destination unit/manager/user validation, encrypted identity/contact rebind and immutable operational history plus assignment audit. Employee form submits manually entered personnel codes on create/edit. Additive migration only; focused and full PostgreSQL/type/UI checks and final-head hosted gates precede develop merge/local3100 activation.

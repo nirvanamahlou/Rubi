@@ -1,3 +1,4 @@
+import { isHrSharedResource, hrBranchKey } from '@nora/contracts';
 import { buildDashboardCharts, dashboardPeriods } from './hr-dashboard.domain';
 import { configuredAttendance } from './hr-attendance-settings';
 import { readPayslipWorkbook } from './hr-payslip-import';
@@ -254,6 +255,113 @@ export class HrService {
       throw new NotFoundException('کارمند در محدوده دسترسی پیدا نشد.');
     return result;
   }
+  private async syncSharedReference(
+    tx: Tx,
+    row: RecordRow,
+    actor: AuthenticatedActor,
+  ) {
+    const metadata = row.data as HrWorkflowData;
+    if (!metadata.allBranches && !row.sharedSourceId) return;
+    if (
+      !isHrSharedResource(row.section, row.tab) ||
+      row.employeeId ||
+      privateHrResource(`${row.section}.${row.tab}`)
+    )
+      throw new BadRequestException('دامنه شعبه معتبر نیست.');
+    const sourceId = row.sharedSourceId ?? row.id;
+    if (row.parentId) {
+      const parent = await tx.hrRecord.findUniqueOrThrow({
+        where: { id: row.parentId },
+      });
+      if (
+        (parent.data as HrWorkflowData).allBranches ||
+        parent.sharedSourceId
+      ) {
+        const parentRoot = parent.sharedSourceId ?? parent.id;
+        const parentMembers = await tx.hrRecord.findMany({
+          where: {
+            OR: [{ id: parentRoot }, { sharedSourceId: parentRoot }],
+            deletedAt: null,
+          },
+        });
+        if (parentMembers.some((m) => !actor.branchIds.includes(m.branchId)))
+          throw new ForbiddenException(
+            'ویرایش اطلاعات مشترک نیازمند دسترسی همه شعبه‌ها است.',
+          );
+      }
+    }
+    const members = await tx.hrRecord.findMany({
+      where: {
+        OR: [{ id: sourceId }, { sharedSourceId: sourceId }],
+        deletedAt: null,
+      },
+    });
+    if (members.some((m) => !actor.branchIds.includes(m.branchId)))
+      throw new ForbiddenException(
+        'ویرایش اطلاعات مشترک نیازمند دسترسی همه شعبه‌ها است.',
+      );
+    if (!metadata.allBranches)
+      throw new ConflictException('دامنه اطلاعات مشترک تغییرپذیر نیست.');
+    const branches = new Set([
+      ...actor.branchIds,
+      ...members.map((m) => m.branchId),
+    ]);
+    for (const branchId of branches) {
+      if (branchId === row.branchId) continue;
+      let parentId: string | null = null;
+      if (row.parentId) {
+        const parent = await tx.hrRecord.findUniqueOrThrow({
+          where: { id: row.parentId },
+        });
+        const parentRoot = parent.sharedSourceId ?? parent.id;
+        const local = await tx.hrRecord.findFirst({
+          where: {
+            branchId,
+            deletedAt: null,
+            OR: [{ id: parentRoot }, { sharedSourceId: parentRoot }],
+          },
+        });
+        if (!local)
+          throw new BadRequestException(
+            'والد اطلاعات مشترک باید برای همه شعبه‌ها تعریف شده باشد.',
+          );
+        parentId = local.id;
+      }
+      const existing = members.find((m) => m.branchId === branchId);
+      const content = {
+        values: json(row.values),
+        searchText: row.searchText,
+        data: json(row.data),
+        status: row.status,
+        parentId,
+        effectiveAt: row.effectiveAt,
+        expiresAt: row.expiresAt,
+      };
+      const copy = existing
+        ? await tx.hrRecord.update({
+            where: { id: existing.id },
+            data: { ...content, version: { increment: 1 } },
+          })
+        : await tx.hrRecord.create({
+            data: {
+              ...content,
+              branchId,
+              sharedSourceId: sourceId,
+              section: row.section,
+              tab: row.tab,
+              code: `HRS-${randomUUID()}`,
+            },
+          });
+      await this.audit(
+        tx,
+        actor,
+        { branchId, recordId: copy.id },
+        'reference.shared.sync',
+        { sourceId },
+        copy.version,
+      );
+    }
+  }
   private async record(tx: Tx, id: string, actor: AuthenticatedActor) {
     const result = await tx.hrRecord.findFirst({
       where: { AND: [this.recordScope(actor), { id: validate.uuid(id) }] },
@@ -371,6 +479,10 @@ export class HrService {
         values[3] = labels.managers.get(managerId) ?? 'مدیر پیشین';
       }
     }
+    if ((row.data as HrWorkflowData).allBranches)
+      schema.columns.forEach((label, index) => {
+        if (['شعبه', 'شرکت'].includes(label)) values[index] = 'دفتر مرکزی';
+      });
     return {
       id: row.id,
       code: row.code,
@@ -1054,13 +1166,41 @@ export class HrService {
         status: 'فعال',
       },
     });
+    const companyRecords = employee.organizationBranchId
+      ? await tx.hrRecord.findMany({
+          where: {
+            branchId: employee.branchId,
+            section: 'organization',
+            tab: 'branches',
+            deletedAt: null,
+            status: 'فعال',
+          },
+        })
+      : [];
+    const company = companyRecords.find(
+      (r) => r.id === employee.organizationBranchId,
+    );
+    const aliases = new Set(
+      companyRecords
+        .filter(
+          (r) =>
+            company &&
+            hrBranchKey((r.values as string[])[0] ?? '') ===
+              hrBranchKey((company.values as string[])[0] ?? ''),
+        )
+        .map((r) => r.id),
+    );
     if (
       !rows.some(
         (row) =>
           (row.values as string[])[0] === unit &&
-          (!(row.data as HrWorkflowData).organizationBranchId ||
+          (!employee.organizationBranchId ||
+            !(row.data as HrWorkflowData).organizationBranchId ||
             (row.data as HrWorkflowData).organizationBranchId ===
-              employee.organizationBranchId),
+              employee.organizationBranchId ||
+            aliases.has(
+              (row.data as HrWorkflowData).organizationBranchId ?? '',
+            )),
       )
     )
       throw new BadRequestException('واحد فعال همان شرکت را انتخاب کنید.');
@@ -1556,21 +1696,60 @@ export class HrService {
       ? await this.documentReference(
           input.photoDocumentId,
           actor,
-          (await this.employee(this.database.client, id, actor)).branchId,
+          input.branchId === undefined
+            ? (await this.employee(this.database.client, id, actor)).branchId
+            : this.branch(actor, input.branchId),
         )
       : undefined;
     const row = await this.transaction(async (tx) => {
       const existing = await this.employee(tx, id, actor);
       if (existing.version !== expected)
         throw new ConflictException('نسخه کارمند تغییر کرده است.');
-      for (const key of ['branchId', 'startedAtValue'])
+      for (const key of ['startedAtValue'])
         if (input[key] !== undefined)
           throw new BadRequestException(
             'تغییر انتصاب باید از گردش ارتقا یا انتقال با تاریخ اثر ثبت شود.',
           );
+      const targetBranchId =
+        input.branchId === undefined
+          ? existing.branchId
+          : this.branch(actor, input.branchId);
+      const movingBranch = targetBranchId !== existing.branchId;
+      if (movingBranch) this.require(actor, 'hr.sensitive');
+      if (
+        movingBranch &&
+        (await tx.hrEmployee.count({
+          where: { managerId: id, status: 'فعال', deletedAt: null },
+        }))
+      )
+        throw new ConflictException(
+          'ابتدا مدیر کارکنان زیرمجموعه را تعیین کنید.',
+        );
+      const targetCompanyId =
+        input.organizationBranchId === undefined
+          ? movingBranch
+            ? null
+            : existing.organizationBranchId
+          : input.organizationBranchId === null
+            ? null
+            : await this.organizationBranch(
+                tx,
+                input.organizationBranchId,
+                targetBranchId,
+                actor,
+              );
+      const destination = {
+        ...existing,
+        branchId: targetBranchId,
+        organizationBranchId: targetCompanyId,
+      };
       const jobTitle = await this.employeeJobTitle(tx, input, existing);
       const data: Prisma.HrEmployeeUncheckedUpdateManyInput = {
         version: { increment: 1 },
+        ...(movingBranch ? { branchId: targetBranchId, managerId: null } : {}),
+        ...(input.organizationBranchId !== undefined || movingBranch
+          ? { organizationBranchId: targetCompanyId }
+          : {}),
       };
       for (const key of ['name', 'kind', 'personnelCode'] as const)
         if (input[key] !== undefined)
@@ -1580,8 +1759,16 @@ export class HrService {
             key === 'personnelCode' ? 50 : key === 'kind' ? 80 : 160,
           );
       if (jobTitle) data.jobTitleId = jobTitle.id;
-      if (input.unit !== undefined && input.unit !== existing.unit)
-        data.unit = await this.validateEmployeeUnit(tx, input.unit, existing);
+      if (
+        (input.unit !== undefined && input.unit !== existing.unit) ||
+        movingBranch ||
+        targetCompanyId !== existing.organizationBranchId
+      )
+        data.unit = await this.validateEmployeeUnit(
+          tx,
+          input.unit ?? existing.unit,
+          destination,
+        );
       if (input.position !== undefined)
         data.position = validate.text(input.position, 'عنوان شغلی');
       if (input.grade !== undefined)
@@ -1590,7 +1777,7 @@ export class HrService {
         data.managerId = await this.manager(
           tx,
           input.managerId,
-          existing.branchId,
+          targetBranchId,
           actor,
           id,
         );
@@ -1601,25 +1788,12 @@ export class HrService {
           'پایان همکاری باید از پرونده خروج ثبت شود.',
         );
       if (input.groupId !== undefined)
-        await this.setEmployeeGroup(tx, existing, input.groupId, actor);
+        await this.setEmployeeGroup(tx, destination, input.groupId, actor);
       if (input.userId !== undefined)
-        data.userId = await this.userReference(input.userId, existing.branchId);
+        data.userId = await this.userReference(input.userId, targetBranchId);
+      else if (movingBranch && existing.userId)
+        await this.userReference(existing.userId, targetBranchId);
       if (photo !== undefined) data.photoDocumentId = photo;
-      if (input.organizationBranchId !== undefined) {
-        if (
-          existing.organizationBranchId &&
-          existing.organizationBranchId !== input.organizationBranchId
-        )
-          throw new BadRequestException(
-            'تغییر شرکت کارمند باید با انتقال و تاریخ اثر انجام شود.',
-          );
-        data.organizationBranchId = await this.organizationBranch(
-          tx,
-          input.organizationBranchId,
-          existing.branchId,
-          actor,
-        );
-      }
       const changed = await tx.hrEmployee.updateMany({
         where: { id, version: expected, deletedAt: null },
         data,
@@ -1628,7 +1802,14 @@ export class HrService {
         throw new ConflictException('نسخه کارمند تغییر کرده است.');
       const assignmentChanged =
         input.jobTitleId !== undefined ||
-        ['unit', 'position', 'grade', 'managerId'].some(
+        [
+          'branchId',
+          'organizationBranchId',
+          'unit',
+          'position',
+          'grade',
+          'managerId',
+        ].some(
           (key) =>
             input[key] !== undefined &&
             input[key] !== existing[key as keyof Employee],
@@ -1640,11 +1821,14 @@ export class HrService {
         const effectiveAt = new Date();
         const assignment = await tx.hrRecord.create({
           data: {
-            branchId: existing.branchId,
+            branchId: current.branchId,
             employeeId: id,
             jobTitleId: current.jobTitleId,
             section: 'employee',
             tab: 'assignment',
+            data: current.organizationBranchId
+              ? { organizationBranchId: current.organizationBranchId }
+              : {},
             code: `HR-ASG-${randomUUID()}`,
             values: [
               current.branchId,
@@ -1662,19 +1846,23 @@ export class HrService {
           tx,
           actor,
           {
-            branchId: existing.branchId,
+            branchId: current.branchId,
             employeeId: id,
             recordId: assignment.id,
           },
           'employee.assignment.correct',
           {
             before: {
+              branchId: existing.branchId,
+              organizationBranchId: existing.organizationBranchId,
               unit: existing.unit,
               position: existing.position,
               grade: existing.grade,
               managerId: existing.managerId,
             },
             after: {
+              branchId: current.branchId,
+              organizationBranchId: current.organizationBranchId,
               unit: current.unit,
               position: current.position,
               grade: current.grade,
@@ -1725,6 +1913,52 @@ export class HrService {
         );
       } else if (typeof data.name === 'string')
         await this.syncIdentityNames(tx, existing, data.name, nameParts, actor);
+      if (movingBranch) {
+        const currentProfile = await tx.hrRecord.findMany({
+          where: {
+            employeeId: id,
+            branchId: existing.branchId,
+            OR: [
+              {
+                section: 'employee',
+                tab: { in: ['identity', 'phones', 'internalContact'] },
+              },
+              { section: 'payrollWorksheets', tab: 'configuration' },
+            ],
+            deletedAt: null,
+          },
+        });
+        for (const record of currentProfile) {
+          const payConfiguration = record.section === 'payrollWorksheets';
+          const key = payConfiguration
+            ? 'payroll-worksheet:v1'
+            : `employee.${record.tab}`;
+          const contextId = payConfiguration ? record.id : id;
+          const privateData =
+            payConfiguration || privateHrResource(key)
+              ? {
+                  ...publicHrData(record.data),
+                  ...protectHrValues(
+                    revealHrValues(
+                      record.data,
+                      `${existing.branchId}:${contextId}:${key}`,
+                    ),
+                    `${targetBranchId}:${contextId}:${key}`,
+                  ),
+                }
+              : record.data;
+          await tx.hrRecord.update({
+            where: { id: record.id },
+            data: {
+              branchId: targetBranchId,
+              data: json(privateData),
+              version: { increment: 1 },
+            },
+          });
+        }
+        if (input.groupId === undefined)
+          await this.setEmployeeGroup(tx, destination, null, actor);
+      }
       await this.audit(
         tx,
         actor,
@@ -2172,6 +2406,11 @@ export class HrService {
           throw new BadRequestException(
             'کارمند متعلق به شعبه انتخاب‌شده نیست.',
           );
+        if (data.allBranches) {
+          if (!isHrSharedResource(schema.section, schema.tab) || employee)
+            throw new BadRequestException('دامنه شعبه معتبر نیست.');
+          delete data.organizationBranchId;
+        }
         if (data.organizationBranchId)
           await this.organizationBranch(
             tx,
@@ -2314,6 +2553,7 @@ export class HrService {
             effectiveAt: this.effective(schema, values, input.effectiveAt),
           },
         });
+        await this.syncSharedReference(tx, row, actor);
         if (data.approvalRoute?.length)
           await this.syncRadanReviewers(tx, row, data);
         if (
@@ -2390,6 +2630,13 @@ export class HrService {
       : undefined;
     return this.transaction(async (tx) => {
       const row = await this.record(tx, id, actor);
+      if (row.sharedSourceId || (row.data as HrWorkflowData).allBranches) {
+        const sourceId = row.sharedSourceId ?? row.id;
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${sourceId + ':shared-reference'},0))::text`;
+        const fresh = await this.record(tx, id, actor);
+        if (fresh.version !== row.version)
+          throw new ConflictException('نسخه رکورد تغییر کرده است.');
+      }
       if (row.version !== expected)
         throw new ConflictException('رکورد توسط کاربر دیگری تغییر کرده است.');
       if (
@@ -2561,6 +2808,16 @@ export class HrService {
       if (schema.key === 'finance.batch' && validate.APPROVED.has(state))
         throw new ConflictException('دریافت Finance هنوز در دسترس نیست.');
       const data = { ...(row.data as HrWorkflowData), ...providedData };
+      if (data.allBranches) {
+        if (!isHrSharedResource(schema.section, schema.tab) || employee)
+          throw new BadRequestException('دامنه شعبه معتبر نیست.');
+        delete data.organizationBranchId;
+      }
+      if (
+        (row.sharedSourceId || (row.data as HrWorkflowData).allBranches) &&
+        !data.allBranches
+      )
+        throw new ConflictException('دامنه اطلاعات مشترک تغییرپذیر نیست.');
       if (approvalAction && data.approvalRoute?.length) {
         if (!/انتظار|بررسی/.test(row.status))
           throw new ConflictException(
@@ -2765,6 +3022,7 @@ export class HrService {
       if (changed.count !== 1)
         throw new ConflictException('نسخه رکورد تغییر کرده است.');
       const updated = await tx.hrRecord.findUniqueOrThrow({ where: { id } });
+      await this.syncSharedReference(tx, updated, actor);
       if (
         data.approvalRoute?.length &&
         (input.status !== undefined || input.values !== undefined)
@@ -2975,6 +3233,60 @@ export class HrService {
     const v = validate.version(Number(expected));
     return this.transaction(async (tx) => {
       const row = await this.record(tx, id, actor);
+      if (row.sharedSourceId || (row.data as HrWorkflowData).allBranches) {
+        const sourceId = row.sharedSourceId ?? row.id;
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${sourceId + ':shared-reference'},0))::text`;
+        const current = await this.record(tx, id, actor);
+        if (current.version !== v)
+          throw new ConflictException('نسخه رکورد تغییر کرده است.');
+        this.writeResource(
+          validate.resource(row.section, row.tab),
+          actor,
+          null,
+        );
+        const members = await tx.hrRecord.findMany({
+          where: {
+            OR: [{ id: sourceId }, { sharedSourceId: sourceId }],
+            deletedAt: null,
+          },
+        });
+        if (members.some((m) => !actor.branchIds.includes(m.branchId)))
+          throw new ForbiddenException(
+            'ویرایش اطلاعات مشترک نیازمند دسترسی همه شعبه‌ها است.',
+          );
+        for (const member of members) {
+          if (
+            (await tx.hrRecord.count({
+              where: { parentId: member.id, deletedAt: null },
+            })) ||
+            (await tx.hrEmployee.count({
+              where: {
+                deletedAt: null,
+                OR: [
+                  { organizationBranchId: member.id },
+                  { jobTitleId: member.id },
+                ],
+              },
+            })) ||
+            (await this.companyDependants(tx, member.id))
+          )
+            throw new ConflictException('پرونده دارای رکورد وابسته فعال است.');
+        }
+        await tx.hrRecord.updateMany({
+          where: { id: { in: members.map((m) => m.id) }, deletedAt: null },
+          data: { deletedAt: new Date(), version: { increment: 1 } },
+        });
+        for (const member of members)
+          await this.audit(
+            tx,
+            actor,
+            { branchId: member.branchId, recordId: member.id },
+            'reference.shared.delete',
+            { sourceId },
+            member.version + 1,
+          );
+        return { id, deleted: true };
+      }
       if (
         await tx.hrEmployee.count({
           where: { organizationBranchId: row.id, deletedAt: null },

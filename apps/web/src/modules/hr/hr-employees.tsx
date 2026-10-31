@@ -1,4 +1,5 @@
 'use client';
+import { hrBranchKey } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useMemo, useRef, useState } from 'react';
@@ -137,14 +138,26 @@ export function employeeFormValue(
     status: employee.status as NewEmployeeFormValue['status'],
   };
 }
-export function employeeOrganizationOptions(data: HrBootstrapDto) {
+export function employeeOrganizationOptions(
+  data: HrBootstrapDto,
+  ownerBranchId?: string,
+) {
   return hrCompanies(data).map((company) => {
+    const local = data.records.find(
+      (r) =>
+        r.section === 'organization' &&
+        r.tab === 'branches' &&
+        r.branchId === ownerBranchId &&
+        !r.deletedAt &&
+        r.status === 'فعال' &&
+        hrBranchKey(r.values[0] ?? '') === hrBranchKey(company.name),
+    );
     const options = hrReferenceOptions(
       data,
       'employee',
       'create',
-      company.branchId,
-      company.organizationBranchId,
+      local?.branchId ?? company.branchId,
+      local?.id ?? company.organizationBranchId,
     );
     return {
       branch: company.name,
@@ -187,9 +200,32 @@ export function HrEmployeeEditor({
   const external = useHrFormReferences(employee?.id);
   const profile = useHrEmployeeRecords(employee?.id, store.revision);
   const companies = hrCompanies(references.data);
-  const preferredCompany = companies.find(
-    (company) => company.id === preferredCompanyId,
+  const preferredBase = companies.find((company) =>
+    company.aliases.includes(preferredCompanyId ?? ''),
   );
+  const preferredRecord = references.data.records.find(
+    (r) =>
+      r.id === preferredCompanyId &&
+      r.section === 'organization' &&
+      r.tab === 'branches',
+  );
+  const preferredBranch = store.data!.branches.find(
+    (b) => b.id === preferredCompanyId,
+  );
+  const preferredCompany = preferredBase
+    ? {
+        ...preferredBase,
+        ...(preferredRecord
+          ? {
+              branchId: preferredRecord.branchId,
+              organizationBranchId: preferredRecord.id,
+            }
+          : preferredBranch
+            ? { branchId: preferredBranch.id, organizationBranchId: '' }
+            : {}),
+      }
+    : undefined;
+
   return (
     <>
       <NewEmployeeDialog
@@ -232,7 +268,7 @@ export function HrEmployeeEditor({
         userOptions={external.data?.users.map((u) => ({
           ...u,
           branches: companies
-            .filter((c) => u.branchIds.includes(c.branchId))
+            .filter((c) => c.branchIds.some((id) => u.branchIds.includes(id)))
             .map((c) => c.name),
         }))}
         userOptionsError={external.error}
@@ -263,23 +299,42 @@ export function HrEmployeeEditor({
               }
             : undefined
         }
-        branchOptions={
-          employee?.organizationBranchId
-            ? [employee.companyName]
-            : [
-                ...(preferredCompany ? [preferredCompany.name] : []),
-                ...companies
-                  .filter((company) => company.id !== preferredCompanyId)
-                  .map((company) => company.name),
-              ]
-        }
-        organizationOptions={employeeOrganizationOptions(references.data)}
+        branchOptions={[
+          ...(preferredCompany ? [preferredCompany.name] : []),
+          ...companies
+            .filter((c) => c.id !== preferredCompany?.id)
+            .map((c) => c.name),
+        ]}
+        organizationOptions={employeeOrganizationOptions(
+          references.data,
+          employee?.branchId ?? preferredCompany?.branchId,
+        )}
         managerOptions={store
           .data!.employees.filter((item) => item.id !== employee?.id)
           .map((item) => item.name)}
         onClose={onClose}
         onSubmit={async (value) => {
-          const branch = companies.find((item) => item.name === value.branch);
+          const chosenCompany = companies.find(
+            (item) => hrBranchKey(item.name) === hrBranchKey(value.branch),
+          );
+          const localCompany = references.data.records.find(
+            (r) =>
+              r.section === 'organization' &&
+              r.tab === 'branches' &&
+              r.branchId ===
+                (employee?.branchId ?? preferredCompany?.branchId) &&
+              !r.deletedAt &&
+              r.status === 'فعال' &&
+              hrBranchKey(r.values[0] ?? '') === hrBranchKey(value.branch),
+          );
+          const branch =
+            localCompany && chosenCompany
+              ? {
+                  ...chosenCompany,
+                  branchId: localCompany.branchId,
+                  organizationBranchId: localCompany.id,
+                }
+              : chosenCompany;
           if (!branch) throw new Error('شرکت یا شعبه مجاز را انتخاب کنید.');
           const managers = store.data!.employees.filter(
             (item) => item.name === value.manager && item.id !== employee?.id,
@@ -314,6 +369,7 @@ export function HrEmployeeEditor({
             }
           }
           const input = {
+            personnelCode: value.personnelCode.trim(),
             extension: value.extension?.trim() ?? '',
             ...(value.identityValues
               ? {
@@ -353,6 +409,17 @@ export function HrEmployeeEditor({
           const saved = employee
             ? await hrApi.employees.update(employee.id, {
                 extension: input.extension,
+                personnelCode: value.personnelCode.trim(),
+                ...(value.branch !==
+                (employee.companyName ||
+                  store.data!.branches.find((b) => b.id === employee.branchId)
+                    ?.name ||
+                  '')
+                  ? {
+                      branchId: input.branchId,
+                      organizationBranchId: input.organizationBranchId ?? null,
+                    }
+                  : {}),
                 ...(value.identityValues
                   ? {
                       identityValues: value.identityValues,
@@ -366,7 +433,14 @@ export function HrEmployeeEditor({
                 lastName: input.lastName,
                 name: input.name,
                 kind: input.kind,
-                ...(input.unit !== employee.unit ? { unit: input.unit } : {}),
+                ...(input.unit !== employee.unit ||
+                value.branch !==
+                  (employee.companyName ||
+                    store.data!.branches.find((b) => b.id === employee.branchId)
+                      ?.name ||
+                    '')
+                  ? { unit: input.unit }
+                  : {}),
                 ...(input.position !== employee.position
                   ? {
                       position: input.position,
@@ -469,6 +543,10 @@ export function HrEmployees({
     undefined,
   );
   const [removing, setRemoving] = useState<HrEmployeeDto | null>(null);
+  const selectedCompany = useMemo(
+    () => hrCompanies(store.data!).find((c) => c.id === branch),
+    [store.data, branch],
+  );
   const filtered = useMemo(
     () =>
       store
@@ -477,7 +555,10 @@ export function HrEmployees({
             item.status !== 'پایان همکاری' &&
             (!groupId || members.includes(item.id)) &&
             (!branch ||
-              (item.organizationBranchId || item.branchId) === branch) &&
+              selectedCompany?.isHeadquarters ||
+              selectedCompany?.aliases.includes(
+                item.organizationBranchId || item.branchId,
+              )) &&
             (!unit || item.unit === unit) &&
             (!status || hrStatusText(item.status) === status) &&
             (!query ||
@@ -494,7 +575,18 @@ export function HrEmployees({
             { numeric: true },
           ),
         ),
-    [store.data, branch, unit, status, query, range, sort, groupId, members],
+    [
+      store.data,
+      branch,
+      selectedCompany,
+      unit,
+      status,
+      query,
+      range,
+      sort,
+      groupId,
+      members,
+    ],
   );
   const dataset = employeeDataset(filtered, store.data!.branches);
   const selection = useHrRowSelection(
@@ -617,7 +709,10 @@ export function HrEmployees({
                     .data!.employees.filter(
                       (item) =>
                         !branch ||
-                        (item.organizationBranchId || item.branchId) === branch,
+                        selectedCompany?.isHeadquarters ||
+                        selectedCompany?.aliases.includes(
+                          item.organizationBranchId || item.branchId,
+                        ),
                     )
                     .map((item) => item.unit),
                 ),

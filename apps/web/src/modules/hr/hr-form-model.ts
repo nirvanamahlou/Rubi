@@ -1,3 +1,4 @@
+import { hrBranchKey } from '@nora/contracts';
 import {
   HR_RADAN_COMPLETION_COLUMNS,
   HR_RADAN_COMPLETION_OPTIONS,
@@ -84,6 +85,19 @@ export function hrReferenceOptions(
   branchId: string,
   organizationBranchId?: string,
 ): Record<string, readonly string[]> {
+  const org = data.records.find((r) => r.id === organizationBranchId);
+  const companyIds = new Set(
+    data.records
+      .filter(
+        (r) =>
+          r.section === 'organization' &&
+          r.tab === 'branches' &&
+          r.branchId === branchId &&
+          org &&
+          hrBranchKey(r.values[0] ?? '') === hrBranchKey(org.values[0] ?? ''),
+      )
+      .map((r) => r.id),
+  );
   const eligible = data.records.filter(
     (r) =>
       !r.deletedAt &&
@@ -91,7 +105,8 @@ export function hrReferenceOptions(
       r.status !== 'غیرفعال' &&
       (!organizationBranchId ||
         !r.data.organizationBranchId ||
-        r.data.organizationBranchId === organizationBranchId),
+        r.data.organizationBranchId === organizationBranchId ||
+        companyIds.has(r.data.organizationBranchId)),
   );
   const titles = (s: string, t: string, label?: string) =>
     Array.from(

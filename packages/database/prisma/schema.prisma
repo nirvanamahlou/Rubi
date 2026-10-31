@@ -3649,6 +3649,9 @@ model HrEmployee {
 }
 
 model HrRecord {
+  sharedSourceId            String?                       @map("shared_source_id") @db.Uuid
+  sharedSource              HrRecord?                     @relation("HrSharedSource", fields: [sharedSourceId], references: [id], onDelete: Restrict)
+  sharedCopies              HrRecord[]                    @relation("HrSharedSource")
   financialWorkflows        AccountingWorkflow[]          @relation("WorkflowNetPayroll")
   grossFinancialWorkflows   AccountingWorkflow[]          @relation("WorkflowGrossPayroll")
   jobTitleId                String?                       @map("job_title_id") @db.Uuid
@@ -3688,6 +3691,7 @@ model HrRecord {
   leaveEntries              HrLeaveEntry[]
   notifications             HrNotification[]
 
+  @@unique([sharedSourceId, branchId])
   @@unique([id, branchId])
   @@index([branchId, section, tab, deletedAt, createdAt])
   @@index([employeeId, section, tab])

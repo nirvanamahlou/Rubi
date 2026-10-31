@@ -90,6 +90,7 @@ export function resource(section: unknown, tab: unknown): HrResourceDefinition {
 export function workflowData(value: unknown): HrWorkflowData {
   if (value === undefined) return {};
   const data = object(value, [
+    'allBranches',
     'chartX',
     'chartY',
     'managerId',
@@ -103,6 +104,8 @@ export function workflowData(value: unknown): HrWorkflowData {
     'currency',
     'reason',
   ]);
+  if (data.allBranches !== undefined && typeof data.allBranches !== 'boolean')
+    throw new BadRequestException('دامنه شعبه معتبر نیست.');
   for (const key of [
     'managerId',
     'targetBranchId',

@@ -1,5 +1,5 @@
 import { dashboardPeriods } from './hr-dashboard.domain';
-import { revealHrValues } from './hr-private-values';
+import { revealHrValues, protectHrValues } from './hr-private-values';
 import { getHrResource } from '@nora/contracts';
 import { zipSync, strToU8, unzipSync } from 'fflate';
 import 'reflect-metadata';
@@ -67,7 +67,7 @@ function sql(database: string, input: string) {
     [
       'exec',
       '-i',
-      'nora-postgres-1',
+      process.env.NORA_HR_TEST_CONTAINER ?? 'nora-postgres-1',
       'psql',
       '-U',
       'nora_local',
@@ -940,7 +940,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
       );
       expect(restored.parentId).toBe(parent.id);
     });
-    it('links employee companies separately from IAM scope and keeps company moves effective-dated', async () => {
+    it('links employee companies separately from IAM scope and validates direct correction destinations', async () => {
       const first = await service.createRecord(
         {
           section: 'organization',
@@ -998,7 +998,7 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
           { version: person.version, organizationBranchId: second.id },
           admin,
         ),
-      ).rejects.toThrow('انتقال');
+      ).rejects.toThrow('واحد فعال همان شرکت');
       await service.createRecord(
         {
           section: 'lifecycle',
@@ -4301,6 +4301,348 @@ describe.skipIf(process.env.NORA_RUN_HR_POSTGRES_TESTS !== '1')(
         admin,
       );
       expect(updatedRule.values[9]).toBe('08:00');
+    });
+
+    it('materializes and synchronizes shared branch definitions with real source FKs and rejects partial-scope writes', async () => {
+      const probe = await service.createEmployee(
+        employeeInput('Shared privacy probe'),
+        key(),
+        admin,
+      );
+      const shared = await service.createRecord(
+        {
+          branchId: branchA,
+          section: 'organization',
+          tab: 'groups',
+          values: ['گروه مشترک آزمون', ''],
+          status: 'فعال',
+          data: { allBranches: true },
+        },
+        key(),
+        admin,
+      );
+      const copies = await client.hrRecord.findMany({
+        where: {
+          OR: [{ id: shared.id }, { sharedSourceId: shared.id }],
+          deletedAt: null,
+        },
+      });
+      expect(copies).toHaveLength(2);
+      const copy = copies.find((r) => r.branchId === branchB)!;
+      expect(copy.sharedSourceId).toBe(shared.id);
+      expect(
+        (await service.bootstrap(outsider)).records.some(
+          (r) => r.id === copy.id,
+        ),
+      ).toBe(true);
+      await expect(
+        service.updateRecord(
+          copy.id,
+          { version: copy.version, values: ['نام غیرمجاز', ''] },
+          outsider,
+        ),
+      ).rejects.toThrow();
+      const changed = await service.updateRecord(
+        shared.id,
+        {
+          version: shared.version,
+          values: ['گروه مشترک اصلاح‌شده', ''],
+          data: { allBranches: true },
+        },
+        admin,
+      );
+      expect(
+        (await client.hrRecord.findUniqueOrThrow({ where: { id: copy.id } }))
+          .values,
+      ).toEqual(changed.values);
+      await expect(
+        service.updateRecord(
+          copy.id,
+          { version: copy.version, values: ['نسخه قدیمی', ''] },
+          admin,
+        ),
+      ).rejects.toThrow();
+      const copyCurrent = await client.hrRecord.findUniqueOrThrow({
+        where: { id: copy.id },
+      });
+      const editedCopy = await service.updateRecord(
+        copy.id,
+        {
+          version: copyCurrent.version,
+          values: ['ویرایش مشترک از شعبه دوم', ''],
+        },
+        admin,
+      );
+      expect(
+        (await client.hrRecord.findUniqueOrThrow({ where: { id: shared.id } }))
+          .values,
+      ).toEqual(editedCopy.values);
+      await service.deleteRecord(shared.id, editedCopy.version, admin);
+      expect(
+        await client.hrRecord.count({
+          where: {
+            OR: [{ id: shared.id }, { sharedSourceId: shared.id }],
+            deletedAt: null,
+          },
+        }),
+      ).toBe(0);
+      await expect(
+        service.createRecord(
+          {
+            branchId: branchA,
+            section: 'time',
+            tab: 'checkins',
+            employeeId: probe.id,
+            values: [
+              probe.name,
+              '2026-10-01',
+              '08:00',
+              'ورود',
+              'دستی',
+              branchA,
+            ],
+            data: { allBranches: true },
+          },
+          key(),
+          admin,
+        ),
+      ).rejects.toThrow();
+    });
+    it('resolves shared unit parent references to the matching native branch', async () => {
+      const parent = await service.createRecord(
+        {
+          branchId: branchA,
+          section: 'organization',
+          tab: 'units',
+          values: ['والد مشترک', 'واحد', branchA, '—', '—', '2026-01-01'],
+          status: 'فعال',
+          data: { allBranches: true },
+        },
+        key(),
+        admin,
+      );
+      const child = await service.createRecord(
+        {
+          branchId: branchA,
+          section: 'organization',
+          tab: 'units',
+          parentId: parent.id,
+          values: ['فرزند مشترک', 'واحد', branchA, '—', '—', '2026-01-01'],
+          status: 'فعال',
+          data: { allBranches: true },
+        },
+        key(),
+        admin,
+      );
+      const copy = await client.hrRecord.findFirstOrThrow({
+        where: { sharedSourceId: child.id, branchId: branchB },
+        include: { parent: true },
+      });
+      expect(copy.parent?.branchId).toBe(branchB);
+      expect(copy.parent?.sharedSourceId).toBe(parent.id);
+      await expect(
+        service.deleteRecord(parent.id, parent.version, admin),
+      ).rejects.toThrow();
+      await service.deleteRecord(child.id, child.version, admin);
+      await service.deleteRecord(parent.id, parent.version, admin);
+    });
+    it('edits employee assignment across authorized branches and preserves protected identity and historic records', async () => {
+      const previousKey = process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
+      process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 = Buffer.alloc(
+        32,
+        7,
+      ).toString('base64');
+      try {
+        const unit = await service.createRecord(
+          {
+            branchId: branchB,
+            section: 'organization',
+            tab: 'units',
+            values: [
+              'واحد مقصد',
+              'واحد',
+              'Synthetic B',
+              '—',
+              '—',
+              '2026-01-01',
+            ],
+            status: 'فعال',
+          },
+          key(),
+          admin,
+        );
+        const target = await service.createEmployee(
+          employeeInput('Shared Branch Worker', {
+            personnelCode: '000321',
+            firstName: 'Shared',
+            lastName: 'Branch Worker',
+            identityValues: [
+              'Shared',
+              'Branch Worker',
+              '',
+              '',
+              '',
+              '1990-01-02',
+              'مرد',
+              'مجرد',
+              '',
+              '',
+              '',
+              'ایرانی',
+              'نامشخص',
+              'Synthetic moved private address',
+            ],
+            contactValues: [['موبایل', '09123456789']],
+          }),
+          key(),
+          admin,
+        );
+        const payId = randomUUID();
+        await client.hrRecord.create({
+          data: {
+            id: payId,
+            code: `PAYCFG-${target.id}`,
+            branchId: branchA,
+            employeeId: target.id,
+            section: 'payrollWorksheets',
+            tab: 'configuration',
+            values: [],
+            data: protectHrValues(
+              [
+                JSON.stringify({
+                  daily: '1234500',
+                  seniority: '200',
+                  children: '2',
+                }),
+              ],
+              `${branchA}:${payId}:payroll-worksheet:v1`,
+            ),
+          },
+        });
+        const historic = await service.createRecord(
+          {
+            branchId: branchA,
+            section: 'time',
+            tab: 'checkins',
+            employeeId: target.id,
+            values: [
+              target.name,
+              '2026-10-01',
+              '08:00',
+              'ورود',
+              'دستی',
+              branchA,
+            ],
+          },
+          key(),
+          admin,
+        );
+        await expect(
+          service.updateEmployee(
+            target.id,
+            {
+              version: target.version,
+              branchId: branchB,
+              unit: unit.values[0],
+            },
+            reader,
+          ),
+        ).rejects.toThrow();
+        await expect(
+          service.updateEmployee(
+            target.id,
+            {
+              version: target.version,
+              branchId: branchB,
+              unit: unit.values[0],
+            },
+            {
+              ...admin,
+              permissions: admin.permissions.filter(
+                (p) => p !== 'hr.sensitive',
+              ),
+            },
+          ),
+        ).rejects.toThrow();
+        const changed = await service.updateEmployee(
+          target.id,
+          {
+            version: target.version,
+            branchId: branchB,
+            organizationBranchId: null,
+            unit: unit.values[0],
+            personnelCode: '000654',
+          },
+          admin,
+        );
+        const identityRow = await client.hrRecord.findFirstOrThrow({
+          where: {
+            employeeId: target.id,
+            section: 'employee',
+            tab: 'identity',
+            deletedAt: null,
+          },
+        });
+        expect(identityRow.branchId).toBe(branchB);
+        expect(
+          revealHrValues(
+            identityRow.data,
+            `${branchB}:${target.id}:employee.identity`,
+          )[13],
+        ).toBe('Synthetic moved private address');
+        const payMoved = await client.hrRecord.findUniqueOrThrow({
+          where: { id: payId },
+        });
+        expect(payMoved.branchId).toBe(branchB);
+        expect(
+          JSON.parse(
+            revealHrValues(
+              payMoved.data,
+              `${branchB}:${payId}:payroll-worksheet:v1`,
+            )[0]!,
+          ).daily,
+        ).toBe('1234500');
+        const history = await client.hrAuditEvent.findFirstOrThrow({
+          where: {
+            employeeId: target.id,
+            action: 'employee.assignment.correct',
+          },
+        });
+        expect(history.branchId).toBe(branchB);
+        expect(history.changes).toMatchObject({
+          before: { branchId: branchA },
+          after: { branchId: branchB },
+        });
+        expect(changed.branchId).toBe(branchB);
+        expect(changed.personnelCode).toBe('000654');
+        expect(changed.unit).toBe(unit.values[0]);
+        expect(
+          (
+            await client.hrRecord.findUniqueOrThrow({
+              where: { id: historic.id },
+            })
+          ).branchId,
+        ).toBe(branchA);
+        expect(
+          await client.hrAuditEvent.count({
+            where: {
+              employeeId: target.id,
+              action: 'employee.assignment.correct',
+            },
+          }),
+        ).toBeGreaterThan(0);
+        await expect(
+          service.updateEmployee(
+            target.id,
+            { version: target.version, branchId: branchA },
+            admin,
+          ),
+        ).rejects.toThrow();
+      } finally {
+        if (previousKey === undefined)
+          delete process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64;
+        else process.env.HR_PRIVATE_ENCRYPTION_KEY_BASE64 = previousKey;
+      }
     });
   },
 );

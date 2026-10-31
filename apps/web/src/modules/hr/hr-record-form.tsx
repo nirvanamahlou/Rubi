@@ -1,4 +1,5 @@
 'use client';
+import { isHrSharedResource } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -154,6 +155,9 @@ function HrRecordFormFields({
   );
   const [companyId, setCompanyId] = useState(
     () =>
+      (target.record?.data.allBranches || target.parent?.data.allBranches
+        ? companies.find((c) => c.isHeadquarters)?.id
+        : undefined) ??
       (missionExpense
         ? (target.record?.data.organizationBranchId ??
           target.parent?.data.organizationBranchId)
@@ -173,7 +177,7 @@ function HrRecordFormFields({
       companies[0]?.id ??
       '',
   );
-  const company = companies.find((item) => item.id === companyId);
+  const company = companies.find((item) => item.aliases.includes(companyId));
   const [branchId, setBranchId] = useState(
     target.record?.branchId ??
       target.parent?.branchId ??
@@ -260,9 +264,12 @@ function HrRecordFormFields({
   const employee = data.employees.find((item) => item.id === employeeId);
   const employees = data.employees.filter(
     (item) =>
-      item.branchId === branchId &&
+      (company?.isHeadquarters ||
+        company?.branchIds.includes(item.branchId) ||
+        item.branchId === branchId) &&
       (!company?.organizationBranchId ||
         item.organizationBranchId === company.organizationBranchId ||
+        company.aliases.includes(item.organizationBranchId ?? '') ||
         item.id === employeeId ||
         (isChartEmployee && !item.organizationBranchId)) &&
       (!isChartEmployee ||
@@ -286,9 +293,13 @@ function HrRecordFormFields({
         (item) =>
           item.branchId === branchId &&
           item.id !== target.record?.id &&
+          (!company?.isHeadquarters ||
+            !isHrSharedResource(target.source.section, target.source.tab) ||
+            item.data.allBranches) &&
           (!company?.organizationBranchId ||
             !item.data.organizationBranchId ||
-            item.data.organizationBranchId === company.organizationBranchId) &&
+            item.data.organizationBranchId === company.organizationBranchId ||
+            company.aliases.includes(item.data.organizationBranchId ?? '')) &&
           (isChartEmployee ||
             !definition.employeeRequired ||
             !employeeId ||
@@ -310,7 +321,8 @@ function HrRecordFormFields({
         item.tab === 'units' &&
         item.branchId === branchId &&
         (!company?.organizationBranchId ||
-          item.data.organizationBranchId === company.organizationBranchId),
+          item.data.organizationBranchId === company.organizationBranchId ||
+          company.aliases.includes(item.data.organizationBranchId ?? '')),
     )
     .map((item) => item.values[0]!)
     .filter(Boolean);
@@ -523,7 +535,7 @@ function HrRecordFormFields({
                   target.parent ||
                   (target.record && !isUnit),
                 )}
-                value={companyId || branchId}
+                value={company?.id || branchId}
                 onChange={(event) => {
                   const selectedCompany = companies.find(
                     (item) => item.id === event.target.value,
@@ -554,6 +566,16 @@ function HrRecordFormFields({
                 )}
                 onChange={(event) => {
                   setEmployeeId(event.target.value);
+                  const chosen = data.employees.find(
+                    (e) => e.id === event.target.value,
+                  );
+                  if (chosen) {
+                    setBranchId(chosen.branchId);
+                    if (!company?.isHeadquarters)
+                      setCompanyId(
+                        chosen.organizationBranchId || chosen.branchId,
+                      );
+                  }
                   if (missionExpense) setParentId('');
                 }}
               >
@@ -883,7 +905,22 @@ function HrRecordFormFields({
                 }
                 return '';
               };
+              const actualOrganizationId = employee
+                ? employee.organizationBranchId
+                : (parent?.data.organizationBranchId ??
+                  (company?.aliases.includes(companyId) &&
+                  data.records.some(
+                    (r) =>
+                      r.id === companyId &&
+                      r.section === 'organization' &&
+                      r.tab === 'branches',
+                  )
+                    ? companyId
+                    : company?.organizationBranchId));
               const extra: HrWorkflowData = {
+                ...(isHrSharedResource(target.source.section, target.source.tab)
+                  ? { allBranches: Boolean(company?.isHeadquarters) }
+                  : {}),
                 ...Object.fromEntries(
                   Object.entries(target.record?.data ?? {}).filter(([field]) =>
                     [
@@ -900,10 +937,11 @@ function HrRecordFormFields({
                     ].includes(field),
                   ),
                 ),
-                ...(!isJobTitle && company?.organizationBranchId
-                  ? { organizationBranchId: company.organizationBranchId }
+                ...(!isJobTitle && actualOrganizationId
+                  ? { organizationBranchId: actualOrganizationId }
                   : {}),
               };
+              if (extra.allBranches) delete extra.organizationBranchId;
               if (
                 target.source.section === 'time' &&
                 target.source.tab === 'checkins'
