@@ -6999,5 +6999,8 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "برای انتخاب هتل، شهر مقصد تور را مشخص کنید.": "Select the tour destination city before assigning hotels.",
+  "پیش از ثبت نوبت، شهر مبدأ و مقصد تور را تکمیل کنید.": "Complete the tour origin and destination cities before scheduling a departure.",
+  "شهر مبدأ و مقصد باید متفاوت باشند.": "The origin and destination cities must be different."
 }

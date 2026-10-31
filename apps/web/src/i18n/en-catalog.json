@@ -7,7 +7,6 @@
   "کارگزار، ارز، تاریخ اقامت و حداقل یک قیمت خرید مسافر را تکمیل کنید.": "Select the hotel supplier and currency, check the stay dates, and enter a purchase price for at least one passenger.",
   "قیمت‌های خالی در جمع خرید محاسبه نمی‌شوند؛ مبلغ هر مسافر در تعداد شب قرارداد ضرب می‌شود.": "Blank prices are excluded. Each passenger nightly price is multiplied by the contractual stay nights.",
   "حداقل یک قیمت شبانه برای مسافران همین هتل وارد کنید؛ مسافر تکراری مجاز نیست.": "Enter a nightly price for at least one passenger assigned to this hotel. Duplicate passengers are not allowed.",
-
   "اتاق مسافر": "Passenger room",
   "انتخاب اتاق": "Select room",
   "نرخ تومان باید مثبت، حداکثر ۱۴ رقم صحیح و ۱۰ رقم اعشار باشد.": "The toman rate must be positive, with at most 14 integer digits and 10 decimal places.",
@@ -17486,5 +17485,8 @@
   "هتل تکراری در ترکیب وجود دارد.": "The itinerary contains a duplicate hotel.",
   "هتل‌های عضو باید فعال و فروش‌پذیر باشند.": "Member hotels must be active and saleable.",
   "هر هتل را فقط یک بار انتخاب کنید.": "Select each hotel only once.",
-  "پس از ثبت، اطلاعات تکمیلی و قراردادها را از پروندهٔ ۳۶۰ مدیریت کنید. این مرحله فقط اطلاعات اولیه را ذخیره می‌کند.": "After registration, manage additional information and contracts in the 360 dossier. This step saves initial information only."
+  "پس از ثبت، اطلاعات تکمیلی و قراردادها را از پروندهٔ ۳۶۰ مدیریت کنید. این مرحله فقط اطلاعات اولیه را ذخیره می‌کند.": "After registration, manage additional information and contracts in the 360 dossier. This step saves initial information only.",
+  "برای انتخاب هتل، شهر مقصد تور را مشخص کنید.": "Select the tour destination city before assigning hotels.",
+  "پیش از ثبت نوبت، شهر مبدأ و مقصد تور را تکمیل کنید.": "Complete the tour origin and destination cities before scheduling a departure.",
+  "شهر مبدأ و مقصد باید متفاوت باشند.": "The origin and destination cities must be different."
 }
