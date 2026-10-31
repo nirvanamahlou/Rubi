@@ -1,6 +1,6 @@
-## HOTEL-SELECTOR-CONTAINMENT-1031 — PC-A — VALIDATING
+## BUYER-BEFORE-ROUTE-1031 — PC-A — READY_FOR_CI
 
-Selecting a hotel inserted a summary table that inherited the workspace-wide1120px table minimum and180px cell minimums, expanding the picker grid beyond its destination column. The picker now uses a shrinkable single-column choice list, wrapped names with fixed checkboxes and a bounded fixed-layout selected summary with scoped minimum-width resets. Search, selection, removal and room pricing are unchanged. 23 focused interactions and scoped ESLint pass. Actual selector/CSS browser fixtures reproduce1120px selection expansion before the fix and zero positive horizontal overflow after it, including long unbroken names. Final-head hosted quality/type/build/full-suite/PostgreSQL gates validate publication. No API/schema/migration/dependency or operational-data change; user authorizes develop merge. Source reservation freezes on publication and releases on merge.
+COMPUTER_ID=PC-A; branch codex/pc-a-buyer-before-route-1031 from origin/develop. User authorizes moving the buyer/counterparty box before route selection and develop merge. Reserve only SalesPeopleSheet and SalesContractForm layout composition and existing flight-search harness slot forwarding plus own status notes. Keep one people controller and unchanged buyer/passenger callbacks; route and service selection remains between buyer and passenger table. Preserve validation, registration, permissions and saved data. No schema/migration/dependency/API/runtime/deployment changes. 118 focused Web checks pass; scoped lint/type checks and final-head quality/full tests/build/database gates precede merge.
 
 ## 2026-10-31 — CONTRACT-PDF-PREVIEW-1031 — PC-A
 
@@ -35,6 +35,10 @@ Cancelled selections now explicitly identify cancellation. Automatic return regr
 ## RESERVATION-HOTEL-NAMES-1031 — PC-A — VALIDATING
 
 Reservations queue retains the primary hotel and ordered additional stays from the existing Sales snapshot. The Hotel cell joins all names with " / "; English-name enrichment resolves every hotel independently and retains each saved snapshot on lookup failure. Primary hotel ID, meal/stars and operational actions remain unchanged. The same enriched label feeds existing search and Excel export. Focused regressions cover multi/single/empty hotels, partial reference failure, itinerary order, primary-ID preservation and search/export. No API/schema/migration/dependency, operational data or runtime/server change. Full final-head hosted quality/tests/build/database gates precede authorized develop merge; bounded source reservation releases on verified merge.
+
+## HOTEL-TRANSFER-COUNTS-1031 — PC-A — VALIDATING
+
+New hotel-purchase drafts read outbound and return transfer quantities from canonical contract allocations, counting each eligible adult/child once per direction. Legacy booked service counts remain usable before passenger registration completes; secondary stays do not inherit unrelated primary airport transfers. Previously registered purchase counts, including explicit zero, and subsequent manual draft edits remain authoritative. Old zero supplier-form defaults no longer suppress initial contract counts. No API/schema/migration/dependency, automatic purchase submission, operational data or runtime change. Focused regressions and final-head hosted quality/tests/build/database gates precede authorized develop merge; source scope releases on verified merge.
 
 ## FAMILY-ROOM-CHILD-1029 — PC-A — VALIDATING
 
@@ -7871,6 +7875,10 @@ Reservation queues use fixed ascending natural contract-number order before pagi
 ## PAYMENT-DESTINATION-DETAILS-1029 — PC-A — MERGED / ROLLOUT_PENDING
 
 COMPUTER_ID=PC-A; branch codex/pc-a-payment-destination-details-1029 from origin/develop. Owner requests complete named destination accounts in the Sales payment picker, develop merge and Avina server update. Reserve Finance sales-receipt public projection/service/module, bounded MasterProcurementDirectory bank-name projection, Sales repository/service/module wiring, additive SalesPaymentAccountV1 fields, payment picker and select wrapping plus focused regressions and own notes. Producer Finance publishes company payment instructions only after existing contract/payment authorization; retain active branch/currency controls and audit identifier reveals. No broad Finance permission grant, customer bank disclosure, approval/accounting mutation, schema/migration/dependency change. API-first additive DTO compatibility; Web falls back to legacy masked values. Final-head full CI gates authorized merge. Operational rollout requires SSH access, backup checkpoint, migration inventory and verified health; preserve business data and configuration.
+
+## HOTEL-SELECTOR-CONTAINMENT-1031 — PC-A — VALIDATING
+
+Selecting a hotel inserted a summary table that inherited the workspace-wide1120px table minimum and180px cell minimums, expanding the picker grid beyond its destination column. The picker now uses a shrinkable single-column choice list, wrapped names with fixed checkboxes and a bounded fixed-layout selected summary with scoped minimum-width resets. Search, selection, removal and room pricing are unchanged. 23 focused interactions and scoped ESLint pass. Actual selector/CSS browser fixtures reproduce1120px selection expansion before the fix and zero positive horizontal overflow after it, including long unbroken names. Browser layout checks at500,842 and1440px pass for initial/selected/multiple long-name/removed states with fixed18px checkboxes. Final-head hosted quality/type/build/full-suite/PostgreSQL gates validate publication. No API/schema/migration/dependency or operational-data change; user authorizes develop merge. Source reservation freezes on publication and releases on merge.
 
 ## HOTEL-ROOM-RESERVATION-1031 — PC-A — READY_FOR_CI
 
