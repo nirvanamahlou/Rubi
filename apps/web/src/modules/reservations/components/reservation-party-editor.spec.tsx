@@ -205,3 +205,28 @@ it('shows request failures and does not report an unsuccessful save as successfu
     nodes(render()).some((n) => n.props.children === 'Synthetic conflict'),
   ).toBe(true);
 });
+it('saves an agency-to-person change after inline selection without losing the typed contact', async () => {
+  h.states = [];
+  h.refs = [];
+  h.effect = false;
+  h.detail.mockResolvedValue({ data: agency });
+  render();
+  await flush();
+  radio('person');
+  field('نام مشتری', 'Typed Customer');
+  field('شماره مشتری', '09120000000');
+  field('آدرس مشتری', 'Entered Address');
+  const search = nodes(render()).find((n) => n.type === SalesPersonSearch)!;
+  (search.props.onSelect as (p: CustomerSummary) => void)({
+    ...person,
+    id: 'selected-person',
+  });
+  await submit();
+  expect(h.save).toHaveBeenCalledWith(
+    'contract',
+    expect.objectContaining({
+      customerId: 'selected-person',
+      buyerContact: { ...contact, address: 'Entered Address' },
+    }),
+  );
+});
