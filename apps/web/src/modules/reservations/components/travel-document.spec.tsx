@@ -27,7 +27,7 @@ import type {
   ReservationIntakeV1,
   TravelWorkflowStateV1,
 } from '@nora/contracts';
-import { TravelDocument } from './travel-document';
+import { TravelDocument, useTravelLogo } from './travel-document';
 import { ReservationSettingsForm } from './reservation-settings';
 const intake = {
   snapshot: {
@@ -284,5 +284,26 @@ it('preserves offline legacy preview only when hosting is explicitly disabled', 
   qrState.current = { status: 'disabled', url: '', html: '' };
   expect(renderToStaticMarkup(<TravelDocument intake={intake} />)).toContain(
     'data-document-preview',
+  );
+});
+
+it('suppresses ticket logo lookup without changing normal voucher/supplier logo resolution', () => {
+  function Probe({ ticket }: { ticket: boolean }) {
+    const value = useTravelLogo(
+      {
+        ...intake.workflow.branding!,
+        companyCode: 'JAHAN_BASTAN',
+        ticketWithoutLogo: true,
+        logoFileId: 'unavailable',
+      },
+      ticket,
+    );
+    return <div data-logo={value.logo} data-error={value.error} />;
+  }
+  const ticket = renderToStaticMarkup(<Probe ticket />);
+  expect(ticket).toContain('data-logo=""');
+  expect(ticket).toContain('data-error=""');
+  expect(renderToStaticMarkup(<Probe ticket={false} />)).toContain(
+    '/brand/jahan-bastan-transparent.png',
   );
 });

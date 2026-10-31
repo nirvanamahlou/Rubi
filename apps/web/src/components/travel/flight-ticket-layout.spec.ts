@@ -140,3 +140,22 @@ it('uses Latin digits for every displayed value including Persian/Arabic legacy 
   expect(html).toContain('vazirmatn-latin-wght-normal.woff2');
   expect(original).toEqual(before);
 });
+
+it('allows explicitly logo-free ticket documents, keeps airline marks, and retains strict logo validation otherwise', () => {
+  const airlineLogo = 'data:image/png;base64,c2FmZQ==';
+  const html = ticketDocumentHtml(
+    [data],
+    cities,
+    { name: 'Issuer', logoDataUrl: '', withoutLogo: true },
+    { 'ایران ایرتور': { name: 'Iran Airtour', logoDataUrl: airlineLogo } },
+  );
+  expect(html).not.toContain('class="agency-logo"');
+  expect(html).toContain('class="airline-logo"');
+  expect(html).toContain('Synthetic Passenger');
+  expect(() =>
+    ticketDocumentHtml([data], cities, { name: 'Issuer', logoDataUrl: '' }),
+  ).toThrow('TICKET_LOGO_INVALID');
+  expect(
+    ticketPageHtml(data, cities, { ...brand, withoutLogo: true }),
+  ).not.toContain('class="agency-logo"');
+});

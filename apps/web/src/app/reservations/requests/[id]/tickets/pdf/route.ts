@@ -259,7 +259,9 @@ export async function GET(
     );
 
     let logoDataUrl: string;
-    if (
+    if (branding.ticketWithoutLogo === true) {
+      logoDataUrl = '';
+    } else if (
       branding.logoFileId &&
       !(branding.kind === 'OWN' && branding.companyCode === 'JAHAN_BASTAN')
     ) {
@@ -310,6 +312,7 @@ export async function GET(
           {
             name: branding.name,
             logoDataUrl,
+            withoutLogo: branding.ticketWithoutLogo === true,
             companyCode: branding.companyCode ?? '',
           },
           airlineLogos,
@@ -337,6 +340,7 @@ export async function GET(
       {
         name: branding.name,
         logoDataUrl,
+        withoutLogo: branding.ticketWithoutLogo === true,
         companyCode: branding.companyCode ?? '',
       },
       airlineLogos,
