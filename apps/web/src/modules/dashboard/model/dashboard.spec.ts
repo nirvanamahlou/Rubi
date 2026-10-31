@@ -1,7 +1,7 @@
 import { assistantViewForDashboardPage } from '@/modules/assistant/dashboard-location';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { dashboardProjectionClient } from './projection-client';
 import {
@@ -561,7 +561,9 @@ describe('dashboard URL filters', () => {
 });
 
 describe('dashboard permission and data states', () => {
+  afterEach(() => vi.unstubAllEnvs());
   it('keeps a blocked state when the API base URL is unavailable', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '');
     await expect(
       dashboardProjectionClient.load({
         filters: defaultDashboardFilters,
