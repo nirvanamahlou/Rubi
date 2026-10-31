@@ -1,4 +1,7 @@
 {
+  "حساب مقصد ثبت‌شده در پرداخت قابل تغییر نیست.": "The destination account declared in the payment cannot be changed.",
+  "حساب ثبت‌شده در پرداخت": "Account declared in the payment",
+  "حساب مقصد قبلاً در پرداخت ثبت شده است.": "The destination account was already declared in the payment.",
   "تعداد کل مسافران انتخاب‌شده:": "Total selected passengers:",
   "بدون فیلتر تاریخ، فقط ۱۰ قراردادِ آخر نمایش داده می‌شود.": "Without a date filter, only the 10 most recent contracts are shown.",
   "این قرارداد باطل شده است": "This contract has been cancelled",

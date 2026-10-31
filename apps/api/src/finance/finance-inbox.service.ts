@@ -297,6 +297,7 @@ export class FinanceInboxService {
       })),
       ...salesItems.map((item): FinanceInboxItemV1 => ({
         destinationAccountId: item.destinationAccountId ?? null,
+        destinationAccountTitle: item.destinationAccountTitle ?? null,
         version: 1,
         id: `sales:${item.paymentId}`,
         source: 'SALES',
@@ -874,10 +875,20 @@ export class FinanceInboxService {
     );
     if (!receipt)
       throw new NotFoundException('درخواست دریافت در شعب مجاز یافت نشد.');
+    if (
+      input.action === 'APPROVE' &&
+      receipt.destinationAccountId &&
+      input.accountId &&
+      input.accountId !== receipt.destinationAccountId
+    )
+      throw new BadRequestException(
+        'حساب مقصد ثبت‌شده در پرداخت قابل تغییر نیست.',
+      );
+    const receiptAccountId = receipt.destinationAccountId ?? input.accountId;
     if (receipt.status === 'FINANCE_CONFIRMED') {
       if (
         input.action !== 'APPROVE' ||
-        receipt.financeReceiptAccountId !== input.accountId
+        receipt.financeReceiptAccountId !== receiptAccountId
       )
         throw new ConflictException(
           'دریافت قبلاً تأیید شده است؛ اصلاح از مسیر استرداد انجام می‌شود.',
@@ -915,12 +926,12 @@ export class FinanceInboxService {
       throw new ConflictException('دریافت در وضعیت بررسی مالی نیست.');
     const payment = { ...receipt, branchId: receipt.contract.branchId };
     if (input.action === 'APPROVE') {
-      if (!input.accountId)
+      if (!receiptAccountId)
         throw new BadRequestException('حساب مقصد دریافت را انتخاب کنید.');
       const account =
         await this.database.client.financeSettlementAccount.findFirst({
           where: {
-            id: input.accountId,
+            id: receiptAccountId,
             branchId: payment.branchId,
             currencyCode: payment.currencyCode,
             isActive: true,
