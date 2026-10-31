@@ -202,11 +202,7 @@ export function PackageCompositionSales({
                       </td>
                       <td>{packageRoomTitle(price.roomCode)}</td>
                       <td>
-                        {price.currencyAmounts.map((p) => (
-                          <div key={p.currencyCode}>
-                            {p.purchase ?? '—'} {currencySymbol(p.currencyCode)}
-                          </div>
-                        ))}
+                        {price.hotelPurchase} {currencySymbol(price.currencyCode)}
                       </td>
                       <td className="p-2">
                         {price.currencyAmounts.map((p) => {

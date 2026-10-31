@@ -1,11 +1,15 @@
 'use client';
 
-import type { PackageTourPriceFieldV1 } from '@nora/contracts';
+import { tourPriceFields, type PackageTourPriceFieldV1 } from '@nora/contracts';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import { MoneyInput } from '@/components/ui/money-input';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
+const roles = [
+  ...tourPriceFields().map(({ kind, title }) => ({ kind, title })),
+  { kind: 'custom' as const, title: 'مبلغ هر پکیج اتاق' },
+];
 
 export function TourPriceFields({
   value,
@@ -55,16 +59,23 @@ export function TourPriceFields({
           >
             <label className="col-span-full grid gap-2 text-sm font-bold">
               نام فیلد
-              <Input
-                aria-label={`نام فیلد قیمت ${index + 1}`}
-                maxLength={120}
+              <NativeSearchSelect
+                aria-label={`نوع فیلد قیمت ${index + 1}`}
                 disabled={disabled}
-                value={field.title}
-                onChange={(event) =>
-                  update(field.id, { title: event.target.value })
-                }
-              />
+                value={field.kind}
+                onChange={(event) => {
+                  const role = roles.find(role => role.kind === event.target.value);
+                  if (!role || (role.kind !== 'custom' && value.some(row => row.id !== field.id && row.kind === role.kind))) return;
+                  update(field.id, { kind: role.kind, title: role.title, mode: role.kind === 'commission' ? field.mode : 'fixed' });
+                }}
+              >
+                {roles.map(role => <option key={role.kind} value={role.kind} disabled={role.kind !== 'custom' && value.some(row => row.id !== field.id && row.kind === role.kind)}>{role.title}</option>)}
+              </NativeSearchSelect>
             </label>
+            {field.kind === 'custom' && <label className="col-span-full grid gap-2 text-sm">
+              نام فیلد
+              <Input aria-label={`نام فیلد قیمت ${index + 1}`} maxLength={120} disabled={disabled} value={field.title} onChange={event => update(field.id, { title: event.target.value })} />
+            </label>}
             <label className="grid gap-2 text-sm font-bold">
               {field.mode === 'percent' ? 'درصد' : 'مبلغ'}
               <MoneyInput

@@ -891,8 +891,8 @@ export function TourPricingWorkspace() {
                       {currencySymbol(cost.currencyCode ?? '')}
                     </p>
                   ) : (
-                    <p className="mt-2 text-xs text-destructive">
-                      قیمت خرید و پرداخت این پرواز هنوز در مالی کامل نشده است.
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      هزینهٔ خرید پرواز هنوز در محاسبهٔ سود لحاظ نشده است؛ ثبت قیمت فروش پکیج مجاز است.
                     </p>
                   )}
                 </div>
@@ -926,7 +926,6 @@ export function TourPricingWorkspace() {
               !draft ||
               !isOptionalOperationReason(publishReason) ||
               draft.lastEditorUserId === session?.user.id ||
-              !!grid?.missingFlightOfferIds.length ||
               invalidSale ||
               !selectedHotelRateIds.length ||
               !grid?.tour.remainingCapacity
