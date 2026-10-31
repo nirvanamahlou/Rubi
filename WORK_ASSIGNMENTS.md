@@ -10346,6 +10346,12 @@ TRAVIS-SANDBOX-CONNECTION-1031 follow-up: owner explicitly selected Avina server
 
 TRAVIS-SANDBOX-CONNECTION-1031 verification:32 targeted API and3 English coverage tests passed; Contracts/Database regeneration/build, API/Web typechecks and scoped API/Web lint passed. Actual service sandbox call returned195/21/5 with no credential in projection. Server target hashes match original connector files; read-only rollout will preserve independent currently running base images. Final-head CI gates precede activation.
 
+## CALL-CENTER-RECORDING-DOWNLOAD-1031 — PC-C — IN_PROGRESS
+
+User explicitly requests production call-audio downloads. Reserve bounded recording ingestion/transfer scripts, recording readiness integration and focused tests, existing UI data wiring only if necessary, and own status/docs. Preserve approved form/UI, native call/answer/branch scopes,90-day retention and real WAV integrity; use VPN/SSH read-only source access, no PBX routing changes or guessed call correlation. Verify actual CDR/CEL and finalization before importing; no schema/dependency lock acquired. Current deployed API/Web overlays must be preserved, and deployment lock awaited. Permission changes require owning IAM boundary and explicit existing authority, never raw cross-module writes.
+
+CALL-CENTER-RECORDING-DOWNLOAD-1031 — implementation/production ACCEPTED; source READY_FOR_REVIEW. Existing real-call API/Web/Worker images and UI preserved. Dedicated source/upload credentials remain root-private; PBX files/CDR are read-only. Nine initial roots imported, native audio checksum and own/unit/global/denial checks passed, owner downloaded/played WAV. Recording-read added through existing native administrator and owning IAM service for15 pre-scoped mapped/global accounts; no wider call grants. Ninety-day expiry remains native, minute timer enabled,7 safety checks pass. Source reservation freezes on publication; no schema/dependency locks. See own task note.
+
 ## HR-MANUAL-PERSONNEL-CODE-1031 — PC-B — RESERVED
 
 COMPUTER_ID=PC-B; codex/pc-b-hr-manual-personnel-code-1031 from origin/develop1c8c45291. Owner authorizes manually editable employee personnel code in create/edit and push/develop merge. Reserve only new-employee-dialog.tsx, existing hr-workspace form assertions and own status notes. Existing automatic suggestion, required/length/duplicate validation and API/FK identity remain unchanged. No schema/API/dependency or active local runtime replacement. No overlapping active form writer found. Final-head hosted checks precede authorized merge.
