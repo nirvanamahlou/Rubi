@@ -137,16 +137,14 @@ it('scopes a private bootstrap directory to the exact PBX connection and branch'
 });
 
 it('offers every extension registered for one employee', async () => {
-  const findMany = vi
-    .fn()
-    .mockResolvedValue([
-      {
-        name: 'Synthetic',
-        unit: 'Sales',
-        position: 'Expert',
-        records: [{ values: ['0012', '0045'] }],
-      },
-    ]);
+  const findMany = vi.fn().mockResolvedValue([
+    {
+      name: 'Synthetic',
+      unit: 'Sales',
+      position: 'Expert',
+      records: [{ values: ['0012', '0045'] }],
+    },
+  ]);
   const directory = new HrCallAnswerDirectory({
     client: { hrEmployee: { findMany } },
   } as unknown as DatabaseService);
