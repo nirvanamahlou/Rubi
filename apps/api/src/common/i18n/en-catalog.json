@@ -7065,5 +7065,16 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "آزمون ارتباط ناموفق بود؛ آدرس، اعتبار کلید و دسترسی سرور را بررسی کنید.": "The connection test failed. Check the address, key validity and server access.",
+  "این حساب برای این اتصال مجاز نیست.": "This account is not authorized for this connection.",
+  "بسته اتصال یا فهرست کاربران معتبر نیست.": "The connection bundle or authorized user list is invalid.",
+  "پاسخ ورود معتبر نیست.": "The sign-in response is invalid.",
+  "تنظیمات تغییر کرده است؛ دوباره بارگذاری کنید.": "The settings changed. Reload and try again.",
+  "تنظیمات در حال تغییر است؛ دوباره تلاش کنید.": "The settings are being updated. Try again.",
+  "خواندن تنظیمات رمز‌شده اتصال ممکن نیست.": "The encrypted connection settings could not be read.",
+  "کلید اتصال منقضی شده است.": "The connection key has expired.",
+  "مسیر امن و کلید نگهداری اتصال روی سرور تنظیم نشده است.": "The secure connection storage directory and key are not configured on the server.",
+  "ورود مدیریت به مجوز تنظیمات اتصال نیاز دارد.": "Admin sign-in requires permission to manage connection settings.",
+  "هویت اتصال تطبیق ندارد.": "The connection identity does not match."
 }

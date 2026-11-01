@@ -54,3 +54,10 @@ for this delivery only. Site application code remains exclusively in Ghestiroo.
 The unshared Nora commit was replayed onto origin/develop@60273a159, preserving
 current Niyayesh, telephony and other modules. Reserve bounded reconciliation,
 this task documentation and validation fixes for publication. No deployment.
+
+CI publication follow-up: the full English UI completeness gate found 43 missing
+labels introduced by this connector. Reserve the Integrations English dictionary
+and the 11 matching entries in the shared API error dictionary solely for those
+new Integrations messages. No other module label or runtime behavior changes.
+All quality, production-build and PostgreSQL CI gates passed on the first run;
+full tests are repeated after completing these translations.
