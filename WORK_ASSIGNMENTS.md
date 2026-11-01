@@ -10492,3 +10492,9 @@ COMPUTER_ID=PC-C. Owner requests existing call subject below expanded history su
 
 
 CALL-HISTORY-SUBJECT-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.17 focused existing tests, lint, full Web typecheck/build and Web-only activation verification pass. Actual subject shown at requested location; API/Worker/data service IDs, Web env/mounts and SMS preserved. No schema/grant/dependency change; source reservation releases on push.
+
+## CALL-HISTORY-SPACING-1101 — PC-C — RESERVED
+Owner authorizes expanded history spacing, separate recipient label/value and removal of duplicate registration timestamp. Reserve workspace.tsx and own notes only; preserve subject and current runtime overlays. No API/schema/grants.
+
+
+CALL-HISTORY-SPACING-1101 — COMPLETE. Web-only deployed;17 tests, lint/typecheck/build pass. Source scope released on push.

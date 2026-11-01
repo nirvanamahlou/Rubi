@@ -1107,19 +1107,29 @@ function History({
               </p>
               <details>
                 <summary>شرح تماس و اطلاعات ثبت</summary>
-                <p>موضوع تماس: {c.subject?.trim() || 'ثبت نشده'}</p>
-                <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-                  {c.note || 'بدون شرح'}
-                </p>
-                <p>
-                  {c.direction === 'OUTBOUND'
-                    ? 'تماس‌گرفته‌شده از داخلی'
-                    : 'وصل شده به'}
-                  : {c.answerRecipient?.label || c.operator || 'نامشخص'}
-                </p>
-                <p>
-                  زمان ثبت: {c.createdAt ? callDate(c.createdAt) : 'نامشخص'}
-                </p>
+                <div
+                  style={{
+                    display: 'grid',
+                    gap: 14,
+                    paddingBlock: 12,
+                    lineHeight: 1.9,
+                  }}
+                >
+                  <p>موضوع تماس: {c.subject?.trim() || 'ثبت نشده'}</p>
+                  <p
+                    style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+                  >
+                    {c.note || 'بدون شرح'}
+                  </p>
+                  <p>
+                    {c.direction === 'OUTBOUND'
+                      ? 'تماس‌گرفته‌شده از داخلی'
+                      : 'وصل شده به'}
+                    <span style={{ display: 'block', marginTop: 6 }}>
+                      {c.answerRecipient?.label || c.operator || 'نامشخص'}
+                    </span>
+                  </p>
+                </div>
                 <RecordingDownload
                   callId={c.id}
                   branchId={branch}
