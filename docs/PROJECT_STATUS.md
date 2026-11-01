@@ -410,6 +410,10 @@ Aircraft default list/export no longer applies a hidden active-only status behin
 ## COUNTRY-GMT-1021 — PC-B — 2026-10-21
 
 Optional manual GMT offset in country create/edit/view and table; signed HH:MM validates -12:00..+14:00, blank clears and omitted PATCH preserves. Additive nullable checked column leaves legacy rows unknown without backfill; no IANA/DST/travel-time behavior change.75 API and37 Web tests pass; scoped lint and actual PostgreSQL185-migration chain/SQL proof pass. Type/build and exact-head hosted checks gate owner-authorized push/develop merge. No operational migration, deployment or data change; owner explicitly excludes server rollout. Details: tasks/COUNTRY-GMT-1021.md.
+## GHESTIROO-CONNECTOR-1101 — PC-D — READY_LOCAL
+
+Both sides prepared with owner scope restricting Nora application behavior to Integrations. Scoped connection form, encrypted branch/user-bound credentials, real capability test, bounded website data reads and one-use admin SSO. No Nora migration/business-module writes, no server deployment. Handoff: apps/api/src/integrations/GHESTIROO_SETUP.md and docs/tasks/GHESTIROO-CONNECTOR-1101.md. Dedicated launch-route header exception preserves other pages; unit and real synthetic browser tests cover it.
+
 ## 2026-10-21 — INTEGRATIONS ACCESS PUBLICATION — PC-D
 
 PR1028 merged into PC-D-Integration at f6cd1cd0 after10 successful exact-head hosted checks and manual security/compatibility review without blockers. The develop promotion branch codex/pc-d-integrations-access-develop-1021 includes develop@93c7a2ea and preserves both peer and Integrations tests. Application delta remains scoped to Integrations access; no new schema/dependency/workflow change relative to develop, user grants, runtime rollout or deployment. Implementation/source locks are released; final merge follows the develop PR checks.
@@ -8278,4 +8282,3 @@ Added Other to shared acquaintance sources used by contact filters and call popu
 ## HOTEL-PURCHASE-PRICE-1101
 
 PC-A: Hotel composition purchase column now uses hotelPurchase and its currency, independently of unavailable flight purchase totals. Package purchase/profit calculation and Finance completion gates are unchanged. Focused regression covers missing flight purchase; no migration or operational data change.
-
