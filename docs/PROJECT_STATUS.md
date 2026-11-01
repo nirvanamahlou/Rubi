@@ -8264,3 +8264,7 @@ All five contact specification filters now match the same authorized latest-call
 ## CALL-CENTER-QUEUE-FILTERS-1101 — deployed 2026-11-01
 
 Request registrar/current-team/status controls moved from contact filters into request queue and applied server-side before counts/paging; contact follow-up selector removed. Existing branch/own/unit permissions and selected queue tabs remain intersected. Three focused checks, isolated API/Web lint/typechecks/builds and native read-only queue acceptance pass. Current production409a overlays, unchanged Worker image and recording/PBX configuration preserved after backed-up activation. No schema/grant mutation. See docs/tasks/CALL-CENTER-QUEUE-FILTERS-1101.md.
+
+## CALL-CENTER-SOURCE-OTHER-1101 — 2026-11-01
+Added Other to shared acquaintance sources used by contact filters and call popup.23 focused tests, Web lint/typecheck/build and translation sync pass. Web-only release active; API/Worker/database unchanged. Source PR review pending; no schema/grant/dependency change.
+
