@@ -10510,3 +10510,9 @@ Owner requests three queue dropdown menus matching shared source selector. Reser
 
 
 QUEUE-OPTION-STYLE-1101 — COMPLETE. Shared menu options excluded from workflow action-button decoration using zero-specificity :where exclusion to preserve other buttons. Existing queue tests, full Web typecheck/build pass; runtime-relative Web-only rollout preserves toolbar and other services.
+
+## POPUP-ONLY-CALLS-1101 — PC-C — RESERVED
+Owner requests removal of manual-call entry and evidence-based callback triage. Reserve workspace.tsx for manual entry removal and bounded callback domain analysis/tests later. Sales-manager account selection requested before access policy expansion; do not infer all unit managers or global grants. Preserve operational popup completion, existing contacts and approved UI overlays.
+
+
+POPUP-ONLY-CALLS-1101 — PHASE1_DEPLOYED / CALLBACK_PENDING. UI manual entry removed;17 tests/typecheck/build pass. Rebased onto concurrent HR release; other service IDs preserved. Native mahsa/atena accounts resolved read-only; backend manual-create restriction and callback routing/assignment/history policy still need implementation and tests. No new grants or callback behavior active.

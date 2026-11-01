@@ -18,7 +18,6 @@ import {
 } from 'react';
 import {
   Headset,
-  Plus,
   RotateCcw,
   Search,
   Eye,
@@ -285,16 +284,6 @@ function Content({
     revision.current = undefined;
     setRefresh((v) => v + 1);
   }
-  function open(phone = '', direction: CallEvent['direction'] = 'INBOUND') {
-    setCompletionPrevious(null);
-    setDraft({
-      id: crypto.randomUUID(),
-      phone,
-      direction,
-      occurredAt: new Date().toISOString(),
-      recordings: [],
-    });
-  }
   async function complete(id: string) {
     if (busy) return;
     setBusy(true);
@@ -375,14 +364,6 @@ function Content({
           </h1>
           <p>مدیریت تماس‌ها، درخواست‌ها و پیگیری‌های مشتری</p>
         </div>
-        <button
-          className={styles.primary}
-          data-cc-focus-anchor
-          disabled={!canCreate}
-          onClick={() => open()}
-        >
-          <Plus size={18} /> ثبت تماس جدید
-        </button>
       </header>
       <WorkQueue
         onWithoutOutcome={() => setWithoutOutcomeOpen(true)}
