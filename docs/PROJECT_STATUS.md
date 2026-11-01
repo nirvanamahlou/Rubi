@@ -8271,3 +8271,7 @@ Request registrar/current-team/status controls moved from contact filters into r
 
 ## CALL-CENTER-SOURCE-OTHER-1101 — 2026-11-01
 Added Other to shared acquaintance sources used by contact filters and call popup.23 focused tests, Web lint/typecheck/build and translation sync pass. Web-only release active; API/Worker/database unchanged. Source PR review pending; no schema/grant/dependency change.
+
+## GHESTIROO-CONNECTOR-1101 — PC-D — READY_LOCAL
+
+Both sides prepared with owner scope restricting Nora application behavior to Integrations. Scoped connection form, encrypted branch/user-bound credentials, real capability test, bounded website data reads and one-use admin SSO. No Nora migration/business-module writes, no server deployment. Handoff: apps/api/src/integrations/GHESTIROO_SETUP.md and docs/tasks/GHESTIROO-CONNECTOR-1101.md. Dedicated launch-route header exception preserves other pages; unit and real synthetic browser tests cover it.

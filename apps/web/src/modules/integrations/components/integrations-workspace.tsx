@@ -48,6 +48,7 @@ import { BrandsDashboard } from './brands-dashboard';
 import { IntegrationNavigation } from './integration-navigation';
 import { ConnectionReadiness } from './connection-readiness';
 import { NiyayeshData } from './niyayesh-data';
+import { GhestirooConnection } from './ghestiroo-connection';
 import { SiteRegistrationDialog } from './site-registration-dialog';
 import {
   authenticationLabels,
@@ -588,6 +589,11 @@ export function IntegrationWorkspaceBody({
               ) : null}
               {section === 'connections' ? (
                 <>
+                  <GhestirooConnection
+                    key={branchId}
+                    branchId={branchId}
+                    userId={actor.userId}
+                  />
                   <ConnectionReadiness />
                   <h2 className="text-lg font-bold">مسیرهای تخصصی موجود</h2>
                   <div className="grid gap-4 md:grid-cols-2">

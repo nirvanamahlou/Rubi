@@ -10473,3 +10473,7 @@ CALL-CENTER-QUEUE-FILTERS-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Three foc
 
 COMPUTER_ID=PC-C. Owner authorizes adding Other to the shared Call Center acquaintance-source list used by contact filters and call popup. Reserve model.ts and bounded release/docs only. No schema, permissions, dependency or API change. Existing source scopes published.
 CALL-CENTER-SOURCE-OTHER-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Shared source list adds Other to contact filter and popup form.23 existing focused tests, scoped lint, Web typecheck/build and translation sync pass. Web-only backed-up Compose/image rollback activation verified; API/Worker/data services unchanged. Source reservation releases on push; no schema/grant/dependency change. Receipt /opt/rubi/CALL-SOURCE-OTHER-RELEASE-1101.json.
+
+## GHESTIROO-CONNECTOR-1101 — PC-D — READY_LOCAL / RELEASED
+
+Explicit owner scope: both sides; Nora source changes only Integrations. Reservation and protocol: docs/tasks/GHESTIROO-CONNECTOR-1101.md. No other module/schema/dependency/runtime changes. Separate task branch from PC-D-Integration; no hosted CI/merge authorization.

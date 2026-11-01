@@ -17,6 +17,8 @@ import { NiyayeshController } from './niyayesh.controller';
 import { NiyayeshService } from './niyayesh.service';
 import { NiyayeshSsoService } from './niyayesh-sso.service';
 import { NiyayeshSsoController } from './niyayesh-sso.controller';
+import { GhestirooService } from './ghestiroo.service';
+import { GhestirooController } from './ghestiroo.controller';
 import { IssabelService } from './issabel/issabel.service';
 import { IssabelRecoveryService } from './issabel/recovery.service';
 import { IssabelRecordingsService } from './issabel/recordings.service';
@@ -41,6 +43,7 @@ import {
   controllers: [
     TelephonyRelayController,
     TelephonyRecordingReadController,
+    GhestirooController,
     IssabelController,
     IssabelRecordingController,
     TelephonyIntegrationController,
@@ -52,6 +55,7 @@ import {
   ],
   providers: [
     TelephonyRelayGuard,
+    GhestirooService,
     IssabelService,
     IssabelRecoveryService,
     IssabelRecordingsService,
