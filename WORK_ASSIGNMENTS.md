@@ -10444,6 +10444,7 @@ CALL-PHONE-LABEL-1031 — COMPLETE: single label cleanup, scoped lint passed; pr
 
 Owner authorizes all completed Call Center source PRs, CI repair/normal merge after every required check succeeds, and final develop production deployment. Reserve merge conflict resolution and own rollout documentation/scripts. Preserve peer work, deployed overlays, recording credential/retention, existing data, rollback and shared deployment lock; no guessed recipient or destructive migration. Draft peer work is reviewed separately and not presumed complete.
 
+<<<<<<< HEAD
 ## CALL-CENTER-CONTACT-FILTERS-1101 — PC-C — RESERVED
 Owner authorizes five contact-column filters and two labels. Reserve read-service/search projection helper/tests, workspace/client tests and own translations/docs. Match authorized latest displayed projection before counts/page; preserve current release and peer changes. No schema, grants or dependency change. Prior Call Center source scopes published.
 
@@ -10452,3 +10453,10 @@ CALL-CENTER-CONTACT-FILTERS-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.25 targe
 ## CALL-CENTER-FINAL-1101 — PC-C — IN_PROGRESS
 Owner explicitly authorizes live-only popup delivery, integration of remaining Call Center branches with latest develop, PR/merge after all CI/CD passes and final develop deployment. Reserve telephony snapshot/listener/live eligibility tests and bounded integration conflicts, own translations/central docs/deployment preparation. Preserve live peer overlays, recording and permissions. No destructive migration or dependency changes.
 
+=======
+## CALL-CENTER-QUEUE-FILTERS-1101 — PC-C — RESERVED
+COMPUTER_ID=PC-C. Owner explicitly authorizes removing contact follow-up filter and moving three registrar/team/status controls to request queue. Reserve workspace/workflow/client/styles, workflow DTO/controller/service, bounded public IAM registrant lookup, focused tests and own docs. No active overlapping source reservation found; prior call-center sources published. Filters intersect authorized queue scope before count/paging; creator means request creator and team means current creator unit. No schema/dependency changes. Preserve deployed peer overlays and popup/audio functionality.
+CALL-CENTER-QUEUE-FILTERS-1101 localization: reserve one own English hint override and generated API/legacy catalog entries; preserve peer translations.
+
+CALL-CENTER-QUEUE-FILTERS-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Three focused API/client/layout checks, isolated full API/Web typechecks/builds and scoped lint pass. Native authorized production queue verifies registrar/team-empty and status filtering; filtered counts/page queries share permission predicates. Follow-up selector removed, three queue controls moved, contacts independent. Current409a source changes preserved by three-way integration; backup/deploy lock and AMI/Worker/recording health passed. No schema/grant/business-test-data writes. Source reservations freeze on push; own task note records receipts and local dependency-link limitations.
+>>>>>>> codex/pc-c-call-center-queue-filters-1101

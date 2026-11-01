@@ -8246,6 +8246,12 @@ Whole General Ledger parity is still in progress: legal standard-coding forms,
 report semantics and detailed bulk-picker/filter behavior remain. See
 `docs/tasks/GENERAL-LEDGER-PARITY-1031.md`; do not equate this repair with completion.
 
+<<<<<<< HEAD
 ## CALL-CENTER-CONTACT-FILTERS-1101 — deployed 2026-11-01
 
 All five contact specification filters now match the same authorized latest-call projection shown in contact rows, including hydrated recipient labels and unknown source/outcome values, before total/page selection. Destination and direction labels updated as requested.25 focused checks, isolated API/Web lint/typechecks/builds and23 native real-data cases over24 contacts pass. Queue filter release, actual-answer scopes, unchanged Worker and recording policy preserved after backup/locked activation. No schema/grant/business-test-data write. See docs/tasks/CALL-CENTER-CONTACT-FILTERS-1101.md.
+=======
+## CALL-CENTER-QUEUE-FILTERS-1101 — deployed 2026-11-01
+
+Request registrar/current-team/status controls moved from contact filters into request queue and applied server-side before counts/paging; contact follow-up selector removed. Existing branch/own/unit permissions and selected queue tabs remain intersected. Three focused checks, isolated API/Web lint/typechecks/builds and native read-only queue acceptance pass. Current production409a overlays, unchanged Worker image and recording/PBX configuration preserved after backed-up activation. No schema/grant mutation. See docs/tasks/CALL-CENTER-QUEUE-FILTERS-1101.md.
+>>>>>>> codex/pc-c-call-center-queue-filters-1101

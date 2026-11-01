@@ -183,7 +183,7 @@
 }
 .filterGroups {
   display: grid;
-  grid-template-columns: 1fr 1.35fr 1fr;
+  grid-template-columns: 1fr 1.35fr;
   gap: 16px;
   margin-top: 20px;
 }

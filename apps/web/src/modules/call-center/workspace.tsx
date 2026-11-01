@@ -54,7 +54,6 @@ import {
   WorkQueue,
   WorkflowPanel,
   requestLabels,
-  requestStatusOptions,
   taskLabels,
 } from './workflow';
 import { HostedCallForm } from './call-form-host';
@@ -500,44 +499,13 @@ function Content({
                 ]}
               />
             </fieldset>
-            <fieldset>
-              <legend>مسئولیت و پیگیری</legend>{' '}
-              <Select
-                label="تیم فعلی ثبت‌کننده"
-                value={filters.teamId}
-                onChange={(v) => change('teamId', v)}
-                options={teams.map((t) => [t.id, t.name])}
-              />
-              <Select
-                label="کارشناس ثبت‌کننده"
-                value={filters.agentId}
-                onChange={(v) => change('agentId', v)}
-                options={agents.map((a) => [a.id, a.displayName])}
-              />
-              <Select
-                label="وضعیت درخواست"
-                value={filters.requestStatus}
-                onChange={(v) => change('requestStatus', v)}
-                options={Object.entries(requestStatusOptions)}
-              />
-              <Select
-                label="پیگیری مخاطب"
-                value={filters.followUp}
-                onChange={(v) => change('followUp', v)}
-                options={[
-                  ...Object.entries(taskLabels),
-                  ['TODAY', 'موعد امروز'],
-                  ['OVERDUE', 'عقب‌افتاده'],
-                ]}
-              />
-            </fieldset>
           </div>
         </div>
         <p className={styles.formHint}>
           جست‌وجو روی کل داده مجاز است؛ کلمه کامل نام و موضوع، یا شماره کامل.
           فیلترهای تماس روی{' '}
           {filters.scope === 'ANY' ? 'یک تماس در کل تاریخچه' : 'آخرین تماس'} و
-          فیلتر درخواست و پیگیری روی مخاطب اعمال می‌شوند. شماره مشترک به معنی یک
+          این فیلترها روی فهرست مخاطبان اعمال می‌شوند. شماره مشترک به معنی یک
           شخص نیست.
         </p>
         <div className={styles.personTags} aria-label="فیلترهای اعمال‌شده">
