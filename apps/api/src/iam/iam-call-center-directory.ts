@@ -285,6 +285,17 @@ export class IamCallCenterDirectory {
       })
       .map(({ id, displayName }) => ({ id, displayName }));
   }
+  /** Public IAM projection of request registrants in authorized branches. */
+  async registrants(branchIds: readonly string[], teamId: string) {
+    const users = await this.database.client.user.findMany({
+      where: {
+        branches: { some: { branchId: { in: [...branchIds] } } },
+        profile: { organizationUnitId: teamId },
+      },
+      select: { id: true },
+    });
+    return users.map((user) => user.id);
+  }
   async eligibleMapping(
     branchId: string,
     userId: string,

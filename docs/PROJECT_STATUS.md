@@ -8245,3 +8245,7 @@ verified. Source remains read-only; no migration or accounting data overwrite.
 Whole General Ledger parity is still in progress: legal standard-coding forms,
 report semantics and detailed bulk-picker/filter behavior remain. See
 `docs/tasks/GENERAL-LEDGER-PARITY-1031.md`; do not equate this repair with completion.
+
+## CALL-CENTER-QUEUE-FILTERS-1101 — deployed 2026-11-01
+
+Request registrar/current-team/status controls moved from contact filters into request queue and applied server-side before counts/paging; contact follow-up selector removed. Existing branch/own/unit permissions and selected queue tabs remain intersected. Three focused checks, isolated API/Web lint/typechecks/builds and native read-only queue acceptance pass. Current production409a overlays, unchanged Worker image and recording/PBX configuration preserved after backed-up activation. No schema/grant mutation. See docs/tasks/CALL-CENTER-QUEUE-FILTERS-1101.md.

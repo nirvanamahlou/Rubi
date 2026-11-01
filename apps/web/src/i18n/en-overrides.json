@@ -4793,5 +4793,6 @@
   "دامنه اطلاعات مشترک تغییرپذیر نیست.": "The scope of a shared definition cannot be changed.",
   "دامنه شعبه معتبر نیست.": "Invalid branch scope.",
   "والد اطلاعات مشترک باید برای همه شعبه‌ها تعریف شده باشد.": "The parent of a shared definition must be available in every branch.",
-  "ویرایش اطلاعات مشترک نیازمند دسترسی همه شعبه‌ها است.": "Editing a shared definition requires access to every affected branch."
+  "ویرایش اطلاعات مشترک نیازمند دسترسی همه شعبه‌ها است.": "Editing a shared definition requires access to every affected branch.",
+  "و این فیلترها روی فهرست مخاطبان اعمال می‌شوند. شماره مشترک به معنی یک شخص نیست.": "These filters apply to the contact list. A shared number does not identify a single person."
 }
