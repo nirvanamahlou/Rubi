@@ -1,3 +1,5 @@
+HR-MULTIPLE-EXTENSIONS-1101 follow-up reserves only three English catalogue entries in Web/API/offline generator for the new add/remove and limit labels. No other catalogue content is changed.
+
 ## HR-MULTIPLE-EXTENSIONS-1101 — PC-B — IN_PROGRESS
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-multiple-extensions-1101 from develop60273a159. Reserve employee extension form/editor/summary/list, HR service and HR-owned call directory, additive optional HR extension-list contract and focused tests. Producer stores all extensions in existing internalContact JSON values; extension remains compatible primary value for consumers. No migration/dependency. Owner requests add button and push/develop merge; prior HR task merged1262.
