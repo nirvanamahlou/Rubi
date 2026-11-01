@@ -1,4 +1,8 @@
-## DASHBOARDS-OPERATIONAL-1031 — PC-C — VALIDATING
+## DASHBOARDS-OPERATIONAL-1031 — PC-C — DEPLOYED_BOUNDED_SCOPE
+
+PR1251 source8982acf3e merged externally to develop de00baa4c; all eight source and four merge checks passed before publication. Backed-up Dashboard-only API/Web overlay is deployed and verified; isolated encrypted backup restore passed, existing Call Center overlays/environment/mounts and Worker image are preserved, and no migration or business-data write occurred. Actual deployed modules pass eleven independent read-only SQL reconciliations. Authenticated production Demo UI confirms corrected collections title, real currency-separated sales, missing-cost/accounting explanations and all customer chart series.53 API and44 Web tests passed (one existing skip). Remaining owner-public source coverage and manual role/branch acceptance are explicitly tracked in docs/tasks/DASHBOARDS-OPERATIONAL-1031.md; this is not full catalogue completion.
+
+The following paragraph records the pre-release validation stage:
 
 Owner-confirmed unconverted new-lead semantics now use canonical customer/accepted-handoff references through the Sales-owned paid-purchase public boundary. Paid, confirmed history remains customer-conversion evidence after later cancellation; no revenue/refund/history rows change. Added equal-period lead growth with unavailable zero/missing denominator, Tehran weekday net-sales breakdown, honest missing-accounting/cost explanations and signed/nontruncating chart scales. Read-only actual-module inventory covers84 KPI and91 visual IDs; most still need owner-public producers and must not be described as finalized. Independent candidate SQL reconciliation passes11 checks without exposing amounts or identities.53 targeted API tests and initial39 Web tests pass; final lint/types/build/CI and backed-up production overlay publication remain in progress. Preserve every active Call Center overlay; no IAM/schema/migration/dependency or operational data write. See docs/tasks/DASHBOARDS-OPERATIONAL-1031.md.
 
@@ -8203,6 +8207,9 @@ Five open Amin-tech11 PRs integrated, retaining their actual heads and complete 
 ## HR-HEADQUARTERS-CHOICE-1031 / PC-B
 
 Merged PR1248 (206 Web/46 isolated PostgreSQL checks; eight hosted gates). Integrated local production Web/API built, additive local migrations applied after backup and runtime activated on3100/4192. Final browser verification identified virtual Headquarters option-value collision with an existing native branch; use a distinct UI-only value and preserve native branch FK ownership. Targeted regression and final hosted gates precede follow-up merge.
+
+## DASHBOARD-CURRENCY-1101 — PC-C — VALIDATING
+KPI currency parser now accepts the native API amount-plus-ISO format and preserves symbol-prefix presentation. Symbol remains physically left of amount in existing LTR isolated row. Seven focused regressions and Web typecheck pass; production deployment pending. No API/schema/data change.
 
 ## CALL-CENTER-ALL-USER-POPUPS-1031 — deployed 2026-10-31
 
