@@ -64,6 +64,7 @@ const employeeExtensionProjection = {
 const employeeKeys = [
   'jobTitleId',
   'extension',
+  'extensions',
   'identityValues',
   'contactValues',
   'firstName',
@@ -381,6 +382,7 @@ export class HrService {
       id: row.id,
       personnelCode: row.personnelCode,
       jobTitleId: row.jobTitleId,
+      extensions: (row.records?.[0]?.values as string[] | undefined) ?? [],
       extension: String(
         (row.records?.[0]?.values as string[] | undefined)?.[0] ?? '',
       ),
@@ -1043,11 +1045,24 @@ export class HrService {
     actor: AuthenticatedActor,
   ) {
     if (value === undefined) return;
-    const extension = validate.digits(
-      validate.text(value, 'شماره داخلی', 20, true),
-    );
-    if (extension && !/^\d{1,20}$/.test(extension))
-      throw new BadRequestException('شماره داخلی باید فقط شامل رقم باشد.');
+    if (Array.isArray(value) && value.length > 20)
+      throw new BadRequestException('حداکثر ۲۰ شماره داخلی مجاز است.');
+    const extensions = [
+      ...new Set(
+        (Array.isArray(value) ? value : [value])
+          .map((item: unknown) => {
+            const extension = validate.digits(
+              validate.text(item, 'شماره داخلی', 20, true),
+            );
+            if (extension && !/^\d{1,20}$/.test(extension))
+              throw new BadRequestException(
+                'شماره داخلی باید فقط شامل رقم باشد.',
+              );
+            return extension;
+          })
+          .filter(Boolean),
+      ),
+    ];
     const row = await tx.hrRecord.findFirst({
       where: {
         employeeId: employee.id,
@@ -1058,18 +1073,18 @@ export class HrService {
       },
     });
     if (
-      (row?.values as string[] | undefined)?.[0] === extension ||
-      (!row && !extension)
+      JSON.stringify(row?.values ?? []) === JSON.stringify(extensions) ||
+      (!row && !extensions.length)
     )
       return;
     const saved = row
       ? await tx.hrRecord.update({
           where: { id: row.id },
           data: {
-            values: [extension],
-            searchText: extension,
+            values: extensions,
+            searchText: extensions.join(' '),
             version: { increment: 1 },
-            ...(extension ? {} : { deletedAt: new Date() }),
+            ...(extensions.length ? {} : { deletedAt: new Date() }),
           },
         })
       : await tx.hrRecord.create({
@@ -1079,8 +1094,8 @@ export class HrService {
             section: 'employee',
             tab: 'internalContact',
             code: `HR-EXT-${randomUUID()}`,
-            values: [extension],
-            searchText: extension,
+            values: extensions,
+            searchText: extensions.join(' '),
             status: 'فعال',
           },
         });
@@ -1093,7 +1108,7 @@ export class HrService {
         recordId: saved.id,
       },
       'employee.extension',
-      { before: row?.values ?? [], after: extension ? [extension] : [] },
+      { before: row?.values ?? [], after: extensions },
       saved.version,
     );
   }
@@ -1241,7 +1256,12 @@ export class HrService {
         status: input.status ? validate.status(input.status, false) : 'فعال',
       },
     });
-    await this.setEmployeeExtension(tx, row, input.extension, actor);
+    await this.setEmployeeExtension(
+      tx,
+      row,
+      input.extensions ?? input.extension,
+      actor,
+    );
     if (input.groupId !== undefined)
       await this.setEmployeeGroup(tx, row, input.groupId, actor);
     const assignment = await tx.hrRecord.create({
@@ -1872,7 +1892,12 @@ export class HrService {
           expected + 1,
         );
       }
-      await this.setEmployeeExtension(tx, existing, input.extension, actor);
+      await this.setEmployeeExtension(
+        tx,
+        existing,
+        input.extensions ?? input.extension,
+        actor,
+      );
       if (privateProfile) {
         const records = await tx.hrRecord.findMany({
           where: {

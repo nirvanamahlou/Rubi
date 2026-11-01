@@ -57,7 +57,7 @@ export function employeeDataset(
     rows: employees.map((item) => [
       item.personnelCode,
       item.name,
-      item.extension || '—',
+      item.extensions?.join('، ') || item.extension || '—',
       item.kind,
       `${item.companyName || branches.find((branch) => branch.id === item.branchId)?.name || ''} / ${item.unit}`,
       item.position,
@@ -118,6 +118,9 @@ export function employeeFormValue(
       : {}),
     userId: employee.userId ?? '',
     extension: employee.extension ?? '',
+    extensions: employee.extensions?.length
+      ? employee.extensions
+      : [employee.extension ?? ''],
     firstName: parts?.[0] ?? firstName ?? '',
     lastName: parts?.[1] ?? last.join(' '),
     personnelCode: employee.personnelCode,
@@ -371,6 +374,9 @@ export function HrEmployeeEditor({
           const input = {
             personnelCode: value.personnelCode.trim(),
             extension: value.extension?.trim() ?? '',
+            extensions: (value.extensions ?? [value.extension ?? ''])
+              .map((item) => item.trim())
+              .filter(Boolean),
             ...(value.identityValues
               ? {
                   identityValues: value.identityValues,
@@ -409,6 +415,7 @@ export function HrEmployeeEditor({
           const saved = employee
             ? await hrApi.employees.update(employee.id, {
                 extension: input.extension,
+                extensions: input.extensions,
                 personnelCode: value.personnelCode.trim(),
                 ...(value.branch !==
                 (employee.companyName ||
