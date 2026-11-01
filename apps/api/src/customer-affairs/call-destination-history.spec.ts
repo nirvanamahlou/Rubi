@@ -13,7 +13,9 @@ const recipient = {
   answeredAt: at,
 };
 function setup(
-  technical = { first: { direction: 'OUT', extension: '105', occurredAt: at } },
+  technical: unknown = {
+    first: { direction: 'OUT', extension: '105', occurredAt: at },
+  },
 ) {
   const findMany = vi.fn().mockResolvedValue([
     {
@@ -58,15 +60,76 @@ describe('legacy outbound destination display', () => {
     });
     expect(resolve).toHaveBeenCalledWith('branch', '105', at, undefined, 'pbx');
   });
-  it('preserves recorded historical identity and ignores manual/inbound records', async () => {
+  it('preserves recorded historical identity and ignores manual records', async () => {
     const { service, findMany } = setup();
     const rows = [
       { ...call, answerRecipient: recipient },
       { ...call, id: 'manual', origin: 'MANUAL' },
-      { ...call, id: 'inbound', direction: 'INBOUND' },
     ];
     expect(await service.hydrateDestinations('branch', rows)).toEqual(rows);
     expect(findMany).not.toHaveBeenCalled();
+  });
+  it('displays a single trusted inbound ring destination without creating an answer', async () => {
+    const ringAt = '2026-10-25T10:00:12Z';
+    const { service, resolve } = setup({
+      first: { direction: 'IN', extension: null, occurredAt: at },
+      destinations: [{ extension: '369', queue: null, at: ringAt }],
+    });
+    resolve.mockResolvedValue({ ...recipient, extension: '369' });
+    const inbound = { ...call, direction: 'INBOUND' };
+    expect(
+      (await service.hydrateDestinations('branch', [inbound]))[0]
+        ?.answerRecipient,
+    ).toMatchObject({ extension: '369', answeredAt: null, observedAt: ringAt });
+    expect(resolve).toHaveBeenCalledWith(
+      'branch',
+      '369',
+      ringAt,
+      undefined,
+      'pbx',
+    );
+    expect(inbound).not.toHaveProperty('answerRecipient');
+  });
+  it.each([
+    { destinations: [] },
+    { destinations: [{ extension: null, at }] },
+    {
+      destinations: [
+        { extension: '105', at },
+        { extension: '106', at },
+      ],
+    },
+  ])(
+    'does not guess an inbound destination from a queue or multiple agents: %j',
+    async ({ destinations }) => {
+      const { service, resolve } = setup({
+        first: { direction: 'IN', extension: null, occurredAt: at },
+        destinations,
+      });
+      const inbound = { ...call, direction: 'INBOUND', operator: 'داخلی 105' };
+      expect(await service.hydrateDestinations('branch', [inbound])).toEqual([
+        inbound,
+      ]);
+      expect(resolve).not.toHaveBeenCalled();
+    },
+  );
+  it('prefers the actual answer over earlier ringing agents', async () => {
+    const { service, resolve } = setup({
+      first: { direction: 'IN', extension: null, occurredAt: at },
+      destinations: [
+        { extension: '106', at },
+        { extension: '105', at },
+      ],
+      lastAnswer: { extension: '105', at },
+    });
+    expect(
+      (
+        await service.hydrateDestinations('branch', [
+          { ...call, direction: 'INBOUND' },
+        ])
+      )[0]?.answerRecipient,
+    ).toMatchObject({ extension: '105', answeredAt: at });
+    expect(resolve).toHaveBeenCalledWith('branch', '105', at, undefined, 'pbx');
   });
   it('does not use an editable operator field when provider extension is unknown', async () => {
     const { service, resolve } = setup({
