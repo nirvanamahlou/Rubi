@@ -21,6 +21,7 @@ export const HR_PERMISSION_CODES = [
 export interface HrEmployeeDto {
   jobTitleId?: string | null;
   extension?: string;
+  extensions?: string[];
   id: string;
   personnelCode: string;
   branchId: string;
@@ -120,6 +121,7 @@ export interface HrEmployeeCreate {
   jobTitleId?: string;
   /** Internal business phone extension; omit to preserve on edit, blank/null clears. */
   extension?: string | null;
+  extensions?: string[];
   /** Optional atomic private personnel profile, using the existing identity/phone schemas. */
   identityValues?: string[];
   contactValues?: string[][];
