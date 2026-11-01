@@ -8287,3 +8287,5 @@ PC-A: Hotel composition purchase column now uses hotelPurchase and its currency,
 ## HR-RADAN-LIVE-1101 — PC-B
 
 HR-owned read-only attendance adapter, exact native-branch/personnel-code mapping, neutral-punch pairing with open-day safeguards, configured schedule metrics and own Workbench deficit implemented. Live local API imports72 matched punches and derives43 daily rows; repeat sync preserves115 total rows with0 new imports. One unmatched code retained as unresolved; no identity guessed. Source/closed-period/correction and scoped access checks retained. Production application unchanged; local3100 production Web is active with authenticated HTTP200 HR/time/employee/performance routes.42 API and9 Web focused checks and both production builds pass. See tasks/HR-RADAN-LIVE-1101.md.
+
+HR-RADAN-LIVE-1101 schedule update: automatic device reads now use Tehran full-hour slots, with additional15-minute slots09:00–10:00 and17:00–18:00. Startup and failure cannot trigger extra off-slot reads; explicit manual sync remains available.16 targeted schedule/lifecycle/access checks pass; local activation and exact-head hosted gates precede the requested develop merge.

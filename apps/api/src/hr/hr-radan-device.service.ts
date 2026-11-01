@@ -1,3 +1,4 @@
+import { nextRadanSyncAt } from './hr-radan-sync-schedule';
 import {
   ConflictException,
   ForbiddenException,
@@ -26,7 +27,9 @@ import {
 
 @Injectable()
 export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
-  private timer?: ReturnType<typeof setInterval>;
+  private timer?: ReturnType<typeof setTimeout>;
+  private stopped = true;
+  private nextSyncAt: string | null = null;
   private running = false;
   private readonly logger = new Logger(HrRadanDeviceService.name);
   private latest: Record<string, unknown> = { state: 'idle' };
@@ -36,14 +39,27 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
   ) {}
   onModuleInit() {
     if (process.env.HR_RADAN_ENABLED !== 'true') return;
-    this.timer = setInterval(() => void this.tick(), 120000);
-    this.timer.unref();
-    void this.tick();
+    this.stopped = false;
+    this.schedule();
   }
   onModuleDestroy() {
-    if (this.timer) clearInterval(this.timer);
+    this.stopped = true;
+    this.nextSyncAt = null;
+    if (this.timer) clearTimeout(this.timer);
+  }
+  private schedule() {
+    if (this.stopped) return;
+    const now = new Date();
+    const next = nextRadanSyncAt(now);
+    this.nextSyncAt = next.toISOString();
+    this.timer = setTimeout(() => {
+      this.nextSyncAt = null;
+      void this.tick().finally(() => this.schedule());
+    }, next.getTime() - now.getTime());
+    this.timer.unref();
   }
   private async tick() {
+    if (this.running) return;
     try {
       const actor = await this.iam.authenticateSessionReferenceV1(
         process.env.HR_RADAN_ACTOR_ID ?? '',
@@ -60,7 +76,11 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
   }
   status(actor: AuthenticatedActor) {
     this.authorize(actor);
-    return this.latest;
+    return {
+      ...this.latest,
+      nextSyncAt: this.nextSyncAt,
+      timeZone: 'Asia/Tehran',
+    };
   }
   private authorize(actor: AuthenticatedActor) {
     const branchId = process.env.HR_RADAN_BRANCH_ID;
