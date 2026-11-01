@@ -66,7 +66,7 @@ export class CallCenterWorkflowController {
     @Query() query: CallCenterQueueDto,
     @Headers('x-branch-id') branch?: string,
   ) {
-    return this.service.queue(req.actor, branch, query.view, query.page);
+    return this.service.queue(req.actor, branch, query.view, query.page, query);
   }
   @Get('operators')
   @Header('Cache-Control', 'private, no-store')

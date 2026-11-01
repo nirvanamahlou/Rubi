@@ -54,7 +54,6 @@ import {
   WorkQueue,
   WorkflowPanel,
   requestLabels,
-  requestStatusOptions,
   taskLabels,
 } from './workflow';
 import { HostedCallForm } from './call-form-host';
@@ -228,6 +227,7 @@ function Content({
         .catch((e) => {
           if (!controller.signal.aborted) {
             setLoading(false);
+            setResult(null);
             setError(reasonText(e));
             if (
               e instanceof CallCenterHttpError &&
@@ -334,7 +334,7 @@ function Content({
     direction: 'جهت تماس',
     outcome: 'نتیجه تماس',
     source: 'منبع',
-    unit: 'واحد',
+    unit: 'وصل شده به',
     teamId: 'تیم',
     agentId: 'کارشناس',
     requestStatus: 'وضعیت درخواست',
@@ -484,7 +484,7 @@ function Content({
                 options={sources.map((v) => [v, v])}
               />
               <Select
-                label="واحد ثبت‌شده تماس"
+                label="وصل شده به"
                 value={filters.unit}
                 onChange={(v) => change('unit', v)}
                 options={['نامشخص', ...destinations].map((v) => [v, v])}
@@ -499,44 +499,13 @@ function Content({
                 ]}
               />
             </fieldset>
-            <fieldset>
-              <legend>مسئولیت و پیگیری</legend>{' '}
-              <Select
-                label="تیم فعلی ثبت‌کننده"
-                value={filters.teamId}
-                onChange={(v) => change('teamId', v)}
-                options={teams.map((t) => [t.id, t.name])}
-              />
-              <Select
-                label="کارشناس ثبت‌کننده"
-                value={filters.agentId}
-                onChange={(v) => change('agentId', v)}
-                options={agents.map((a) => [a.id, a.displayName])}
-              />
-              <Select
-                label="وضعیت درخواست"
-                value={filters.requestStatus}
-                onChange={(v) => change('requestStatus', v)}
-                options={Object.entries(requestStatusOptions)}
-              />
-              <Select
-                label="پیگیری مخاطب"
-                value={filters.followUp}
-                onChange={(v) => change('followUp', v)}
-                options={[
-                  ...Object.entries(taskLabels),
-                  ['TODAY', 'موعد امروز'],
-                  ['OVERDUE', 'عقب‌افتاده'],
-                ]}
-              />
-            </fieldset>
           </div>
         </div>
         <p className={styles.formHint}>
           جست‌وجو روی کل داده مجاز است؛ کلمه کامل نام و موضوع، یا شماره کامل.
           فیلترهای تماس روی{' '}
           {filters.scope === 'ANY' ? 'یک تماس در کل تاریخچه' : 'آخرین تماس'} و
-          فیلتر درخواست و پیگیری روی مخاطب اعمال می‌شوند. شماره مشترک به معنی یک
+          این فیلترها روی فهرست مخاطبان اعمال می‌شوند. شماره مشترک به معنی یک
           شخص نیست.
         </p>
         <div className={styles.personTags} aria-label="فیلترهای اعمال‌شده">
@@ -593,7 +562,7 @@ function Content({
                       'نام مخاطب',
                       'شماره تماس',
                       'موضوع آخرین تماس',
-                      'نوع آخرین تماس',
+                      'جهت تماس',
                       'منبع آشنایی',
                       'وصل شده به',
                       'آخرین تماس',
@@ -663,7 +632,7 @@ function Content({
                       >
                         {row.latest.subject}
                       </td>
-                      <td data-label="نوع آخرین تماس">
+                      <td data-label="جهت تماس">
                         <span
                           className={styles.badge}
                           data-direction={row.latest.direction}

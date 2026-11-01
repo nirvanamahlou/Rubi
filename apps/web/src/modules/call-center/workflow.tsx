@@ -563,6 +563,38 @@ export function WorkQueue({
   onPeriod?: ((period: 'today' | 'week') => void) | undefined;
   onMissedCallbacks?: () => void;
 }) {
+  const [queueFilters, setQueueFilters] = useState({
+    teamId: '',
+    agentId: '',
+    requestStatus: '',
+  });
+  const [queueTeams, setQueueTeams] = useState<{ id: string; name: string }[]>(
+    [],
+  );
+  const [queueAgents, setQueueAgents] = useState<Operator[]>([]);
+  useEffect(() => {
+    let active = true;
+    workflowApi
+      .operators(branchId)
+      .then((result) => {
+        if (active) setQueueAgents(result.data);
+      })
+      .catch(() => {});
+    readApi
+      .teams(branchId)
+      .then((result) => {
+        if (active) setQueueTeams(result.units);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [branchId]);
+  const changeQueueFilter = (key: keyof typeof queueFilters, value: string) => {
+    setQueueFilters((current) => ({ ...current, [key]: value }));
+    setPage(1);
+    setLoading(true);
+  };
   const [collapsed, setCollapsed] = useState(false);
   const queueHeading = useRef<HTMLHeadingElement>(null);
   const queueTrigger = useRef<HTMLButtonElement | null>(null);
@@ -591,7 +623,7 @@ export function WorkQueue({
   useEffect(() => {
     const controller = new AbortController();
     workflowApi
-      .queue(branchId, view, page, controller.signal)
+      .queue(branchId, view, page, controller.signal, queueFilters)
       .then((result) => {
         if (!controller.signal.aborted) {
           setData(result);
@@ -609,7 +641,7 @@ export function WorkQueue({
         }
       });
     return () => controller.abort();
-  }, [branchId, view, page, revision]);
+  }, [branchId, view, page, revision, queueFilters]);
   return (
     <>
       <CallKpiCards
@@ -656,6 +688,69 @@ export function WorkQueue({
           {data?.meta.asOf ? ` · به‌روز در ${callDate(data.meta.asOf)}` : ''}
         </p>
         <div id="cc-queue-body" hidden={collapsed}>
+          <div className={styles.queueFilters}>
+            <label>
+              تیم فعلی ثبت‌کننده
+              <NativeSearchSelect
+                aria-label="تیم فعلی ثبت‌کننده"
+                value={queueFilters.teamId}
+                onChange={(event) =>
+                  changeQueueFilter('teamId', event.target.value)
+                }
+              >
+                <option value="">همه موارد</option>
+                {queueTeams.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </NativeSearchSelect>
+            </label>
+            <label>
+              کارشناس ثبت‌کننده
+              <NativeSearchSelect
+                aria-label="کارشناس ثبت‌کننده"
+                value={queueFilters.agentId}
+                onChange={(event) =>
+                  changeQueueFilter('agentId', event.target.value)
+                }
+              >
+                <option value="">همه موارد</option>
+                {queueAgents.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.displayName}
+                  </option>
+                ))}
+              </NativeSearchSelect>
+            </label>
+            <label>
+              وضعیت درخواست
+              <NativeSearchSelect
+                aria-label="وضعیت درخواست"
+                value={queueFilters.requestStatus}
+                onChange={(event) =>
+                  changeQueueFilter('requestStatus', event.target.value)
+                }
+              >
+                <option value="">همه موارد</option>
+                {Object.entries(requestStatusOptions).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </NativeSearchSelect>
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setQueueFilters({ teamId: '', agentId: '', requestStatus: '' });
+                setPage(1);
+                setLoading(true);
+              }}
+            >
+              پاک کردن فیلترها
+            </button>
+          </div>
           <div
             className={styles.queueViews}
             role="group"

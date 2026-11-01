@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { livePopupEligible } from './live-popup-eligibility';
 import { Phone, RotateCcw } from 'lucide-react';
 import { useAccessActor } from '@/modules/iam/access-context';
 import {
@@ -34,6 +35,7 @@ export interface AttentionCall {
     note: string;
   };
   technical: {
+    offeredAt?: string;
     caller: { kind: string; value: string | null };
     callerName?: string | null;
     destination: { kind: string; value: string | null };
@@ -47,7 +49,7 @@ export interface AttentionCall {
 interface Snapshot {
   incoming?: AttentionCall[];
   data: AttentionCall[];
-  meta: { total: number; page: number };
+  meta: { total: number; page: number; receivedAt?: string };
 }
 const states: Record<string, string> = {
   RINGING: 'در حال زنگ',
@@ -127,6 +129,7 @@ function Attention({
   const currentRef = useRef<AttentionCall | null>(null),
     button = useRef<HTMLButtonElement>(null),
     seen = useRef(shownCallSession(actorId, () => window.sessionStorage));
+  const liveSince = useRef<string | null>(null);
   useUnsavedGuard(dirty);
   useEffect(() => {
     return watchTelephonyWakeup(() => {
@@ -171,6 +174,8 @@ function Attention({
           },
         );
         if (disposed) return;
+        if (!liveSince.current)
+          liveSince.current = data.meta.receivedAt ?? new Date().toISOString();
         setLeader(lease.leader);
         const attention = (data.incoming ?? data.data).filter(
           (row) =>
@@ -200,7 +205,10 @@ function Attention({
           !document.querySelector('[role="dialog"]')
         ) {
           const incoming = attention.find(
-            (r) => !r.deferred && !seen.current.has(r.id),
+            (r) =>
+              !r.deferred &&
+              !seen.current.has(r.id) &&
+              livePopupEligible(r, liveSince.current!),
           );
           if (incoming) {
             seen.current.add(incoming.id);

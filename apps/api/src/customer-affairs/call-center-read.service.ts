@@ -1,3 +1,4 @@
+import { matchesContactColumns } from './contact-column-filters';
 import {
   missedCallbackCount,
   missedCallbackContacts,
@@ -240,11 +241,77 @@ export class CallCenterReadService {
             'داده‌ها تغییر کرده‌اند؛ فهرست را تازه‌سازی کنید.',
           );
         const latest = Prisma.sql`SELECT x.id FROM customer_affairs_calls x WHERE x.contact_id=c.id ORDER BY x.occurred_at DESC,x.id ASC LIMIT 1`;
-        const predicate = Prisma.sql`(${this.conditions(branchId, q, teamUsers)}) AND (${scope})`;
+        const columnFilters = !!(
+          q.direction ||
+          q.outcome ||
+          q.source ||
+          q.unit ||
+          q.incomplete
+        );
+        const sqlFilters = { ...q };
+        if (columnFilters) {
+          delete sqlFilters.direction;
+          delete sqlFilters.outcome;
+          delete sqlFilters.source;
+          delete sqlFilters.unit;
+          delete sqlFilters.incomplete;
+        }
+        const predicate = Prisma.sql`(${this.conditions(branchId, sqlFilters, teamUsers)}) AND (${scope})`;
         const matching =
           q.scope === 'ANY'
             ? Prisma.sql`EXISTS(SELECT 1 FROM customer_affairs_calls a WHERE a.contact_id=c.id AND ${predicate})`
             : Prisma.sql`EXISTS(SELECT 1 FROM customer_affairs_calls a WHERE a.id=(${latest}) AND ${predicate})`;
+        if (columnFilters) {
+          type Row = { id: string; latestId: string; callCount: bigint };
+          const selected: {
+            id: string;
+            callCount: number;
+            latest: ReturnType<CallCenterService['presentSummary']>;
+          }[] = [];
+          let total = 0;
+          for (let offset = 0; ; offset += 200) {
+            const rows = await tx.$queryRaw<Row[]>`
+              SELECT c.id,(${latest}) AS "latestId",(SELECT count(*) FROM customer_affairs_calls z WHERE z.contact_id=c.id) AS "callCount"
+              FROM customer_affairs_call_contacts c WHERE c.branch_id=${branchId}::uuid AND ${matching}
+              ORDER BY c.latest_occurred_at DESC,c.id ASC LIMIT 200 OFFSET ${offset}`;
+            const calls = await tx.callCenterCall.findMany({
+              where: { id: { in: rows.map((row) => row.latestId) } },
+            });
+            const summaries = await this.calls.hydrateDestinations(
+              branchId,
+              calls.map((call) => this.calls.presentSummary(call)),
+              tx,
+            );
+            const indexed = new Map(summaries.map((call) => [call.id, call]));
+            for (const row of rows) {
+              const call = indexed.get(row.latestId);
+              if (!call || !matchesContactColumns(call, q)) continue;
+              if (
+                total >= (q.page - 1) * q.pageSize &&
+                selected.length < q.pageSize
+              )
+                selected.push({
+                  id: row.id,
+                  callCount: Number(row.callCount),
+                  latest: call,
+                });
+              total++;
+            }
+            if (rows.length < 200) break;
+          }
+          return {
+            data: selected,
+            meta: {
+              branchId,
+              total,
+              page: q.page,
+              pageSize: q.pageSize,
+              revision,
+              scope: q.scope,
+              asOf: new Date().toISOString(),
+            },
+          };
+        }
         const count = await tx.$queryRaw<
           Array<{ total: bigint }>
         >`SELECT count(*) AS total FROM customer_affairs_call_contacts c WHERE c.branch_id=${branchId}::uuid AND ${matching}`;
