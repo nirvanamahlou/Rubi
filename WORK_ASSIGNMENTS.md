@@ -10405,4 +10405,5 @@ PR1248 merged at f3632a7a9; HR-SHARED-BRANCHES-1031 source/schema lease released
 HR-HEADQUARTERS-CHOICE-1031 also reserves the existing organization-chart-live selector expectation: the UI-only common option now has hr-headquarters identity, while every native chart root and branch FK remains unchanged. Full hosted suite identified this stale expectation; source correction itself passed quality/build/migration gates.
 
 ## DASHBOARD-CURRENCY-1101 — PC-C — IN_PROGRESS
+
 COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-currency-1101. Reserve Dashboard currency parsing leaf, KPI consumer and focused tests. Fix canonical amount ISO suffix handling; no API/schema/dependency or unrelated UI changes.
