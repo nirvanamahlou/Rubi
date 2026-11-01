@@ -3,6 +3,7 @@ import { ExecutiveWorkspace } from '@/modules/assistant/executive-workspace';
 import { assistantViewForDashboardPage } from '@/modules/assistant/dashboard-location';
 import { useRouteAccess } from '@/modules/iam/access-context';
 import { currencySymbol, currencySymbols } from '@/lib/currency-symbol';
+import { currencyMetricParts } from '../model/currency-metric';
 
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -1045,16 +1046,6 @@ const currencyNames: Readonly<Record<string, string>> = {
   IRR: 'ریال ایران',
   IRI: 'ریال ایران',
 };
-
-function currencyMetricParts(value: string) {
-  const symbol = [...new Set(Object.values(currencySymbols))]
-    .sort((left, right) => right.length - left.length)
-    .find((candidate) => value.startsWith(candidate));
-  return {
-    amount: symbol ? value.slice(symbol.length) : value,
-    symbol: symbol ?? '',
-  };
-}
 
 function compactCurrencyAmount(amount: string) {
   const latinDigits = amount

@@ -8207,3 +8207,6 @@ Five open Amin-tech11 PRs integrated, retaining their actual heads and complete 
 ## HR-HEADQUARTERS-CHOICE-1031 / PC-B
 
 Merged PR1248 (206 Web/46 isolated PostgreSQL checks; eight hosted gates). Integrated local production Web/API built, additive local migrations applied after backup and runtime activated on3100/4192. Final browser verification identified virtual Headquarters option-value collision with an existing native branch; use a distinct UI-only value and preserve native branch FK ownership. Targeted regression and final hosted gates precede follow-up merge.
+
+## DASHBOARD-CURRENCY-1101 — PC-C — VALIDATING
+KPI currency parser now accepts the native API amount-plus-ISO format and preserves symbol-prefix presentation. Symbol remains physically left of amount in existing LTR isolated row. Seven focused regressions and Web typecheck pass; production deployment pending. No API/schema/data change.
