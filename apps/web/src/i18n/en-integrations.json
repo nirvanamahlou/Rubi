@@ -1,5 +1,9 @@
 {
   "اعتبار فایل": "File validity",
+  "تلاش دوباره برای خواندن اتصال": "Retry loading the connection",
+  "دسترسی تنظیم اتصال ندارید": "You cannot configure this connection",
+  "این حساب فقط امکان مشاهده اتصال را دارد. برای ثبت بسته، حساب باید مجوز مدیریت تنظیمات یکپارچه‌سازی در همین شعبه را داشته باشد.": "This account can only view the connection. Saving a bundle requires permission to manage integration settings in this branch.",
+  "می‌توانید بسته را اینجا وارد کنید؛ ذخیره پس از آماده‌شدن نگهداری امن سرور فعال می‌شود. پیش از ذخیره، اطلاعات فقط در همین صفحه باقی می‌مانند.": "You can enter the bundle here. Saving becomes available once secure server storage is ready. Until saved, the data remains only on this page.",
   ". کاربران باید مجوز مشاهده اتصال و دسترسی همین شعبه را نیز داشته باشند.": ". Users must also have permission to view this connection and access this branch.",
   "آزمون اتصال": "Test connection",
   "آزمون ارتباط ناموفق بود؛ آدرس، اعتبار کلید و دسترسی سرور را بررسی کنید.": "The connection test failed. Check the address, key validity and server access.",
