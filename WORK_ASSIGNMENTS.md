@@ -10443,3 +10443,8 @@ CALL-PHONE-LABEL-1031 — COMPLETE: single label cleanup, scoped lint passed; pr
 ## CALL-CENTER-DEPLOY-FINAL-1031 — PC-C — ACTIVE
 
 Owner authorizes all completed Call Center source PRs, CI repair/normal merge after every required check succeeds, and final develop production deployment. Reserve merge conflict resolution and own rollout documentation/scripts. Preserve peer work, deployed overlays, recording credential/retention, existing data, rollback and shared deployment lock; no guessed recipient or destructive migration. Draft peer work is reviewed separately and not presumed complete.
+
+## CALL-CENTER-CONTACT-FILTERS-1101 — PC-C — RESERVED
+Owner authorizes five contact-column filters and two labels. Reserve read-service/search projection helper/tests, workspace/client tests and own translations/docs. Match authorized latest displayed projection before counts/page; preserve current release and peer changes. No schema, grants or dependency change. Prior Call Center source scopes published.
+
+CALL-CENTER-CONTACT-FILTERS-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.25 targeted checks, isolated API/Web lint/typechecks/builds pass. Native acceptance compares all five fields, combinations and total/page counts against24 real visible contact projections across23 cases. Recipient/source legacy-token mismatch fixed through authorized latest-call projection matching before totals/paging; stale-result errors cleared. Two labels renamed. Current queue-filter release and unchanged Worker/AMI/recordings retained after backed-up, locked activation. No schema/grant mutation. Read-time batch scan keeps existing15-second guard; own task note records evidence and inherited catalog sync drift handled by PR1255. Source locks freeze on push.

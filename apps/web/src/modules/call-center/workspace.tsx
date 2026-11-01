@@ -228,6 +228,7 @@ function Content({
         .catch((e) => {
           if (!controller.signal.aborted) {
             setLoading(false);
+            setResult(null);
             setError(reasonText(e));
             if (
               e instanceof CallCenterHttpError &&
@@ -334,7 +335,7 @@ function Content({
     direction: 'جهت تماس',
     outcome: 'نتیجه تماس',
     source: 'منبع',
-    unit: 'واحد',
+    unit: 'وصل شده به',
     teamId: 'تیم',
     agentId: 'کارشناس',
     requestStatus: 'وضعیت درخواست',
@@ -484,7 +485,7 @@ function Content({
                 options={sources.map((v) => [v, v])}
               />
               <Select
-                label="واحد ثبت‌شده تماس"
+                label="وصل شده به"
                 value={filters.unit}
                 onChange={(v) => change('unit', v)}
                 options={['نامشخص', ...destinations].map((v) => [v, v])}
@@ -593,7 +594,7 @@ function Content({
                       'نام مخاطب',
                       'شماره تماس',
                       'موضوع آخرین تماس',
-                      'نوع آخرین تماس',
+                      'جهت تماس',
                       'منبع آشنایی',
                       'وصل شده به',
                       'آخرین تماس',
@@ -663,7 +664,7 @@ function Content({
                       >
                         {row.latest.subject}
                       </td>
-                      <td data-label="نوع آخرین تماس">
+                      <td data-label="جهت تماس">
                         <span
                           className={styles.badge}
                           data-direction={row.latest.direction}
