@@ -10464,3 +10464,10 @@ COMPUTER_ID=PC-C. Owner explicitly authorizes removing contact follow-up filter 
 CALL-CENTER-QUEUE-FILTERS-1101 localization: reserve one own English hint override and generated API/legacy catalog entries; preserve peer translations.
 
 CALL-CENTER-QUEUE-FILTERS-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Three focused API/client/layout checks, isolated full API/Web typechecks/builds and scoped lint pass. Native authorized production queue verifies registrar/team-empty and status filtering; filtered counts/page queries share permission predicates. Follow-up selector removed, three queue controls moved, contacts independent. Current409a source changes preserved by three-way integration; backup/deploy lock and AMI/Worker/recording health passed. No schema/grant/business-test-data writes. Source reservations freeze on push; own task note records receipts and local dependency-link limitations.
+
+## CALL-CENTER-QUEUE-TOOLBAR-1101 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; branch codex/pc-c-call-center-queue-toolbar-1101 from develop379830423. Owner explicitly authorizes queue filter styling and placement left of existing view tabs. Reserve workflow.tsx/workflow.module.css and own release/status notes. Reuse approved contact field/clear styling, compact reset and responsive wrap; preserve queue API, authorization, popup behavior and all runtime overlays including Other source. No schema/dependency/API changes. Published prior scopes released; no overlapping local writer.
+
+
+CALL-CENTER-QUEUE-TOOLBAR-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Scoped Web lint, two existing queue regressions, full Web typecheck/build pass. Browser confirms desktop placement and status/reset behavior; narrow layout checked. Web-only locked activation preserves env/mounts and all other service IDs. No migration, permission, contract or dependency changes. Source scope releases on push.
