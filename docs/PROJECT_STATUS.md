@@ -1,3 +1,7 @@
+## HR-MULTIPLE-EXTENSIONS-1101 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-hr-multiple-extensions-1101 from develop60273a159. Reserve employee extension form/editor/summary/list, HR service and HR-owned call directory, additive optional HR extension-list contract and focused tests. Producer stores all extensions in existing internalContact JSON values; extension remains compatible primary value for consumers. No migration/dependency. Owner requests add button and push/develop merge; prior HR task merged1262.
+
 ## HR-ATTENDANCE-COLUMNS-1101 — PC-B — 2026-11-01
 
 Employee dossier attendance shows date, explicit arrival/departure, late and early departure only, shared by CSV/PDF. Neutral punches remain unclassified. Hidden selection/actions apply only to this view. Six focused tests and scoped lint pass; exact-head hosted checks and affected build gate authorized develop merge. No schema/migration/dependency, operational data or deployment changes.

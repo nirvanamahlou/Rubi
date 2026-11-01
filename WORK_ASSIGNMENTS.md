@@ -1,3 +1,7 @@
+## HR-MULTIPLE-EXTENSIONS-1101 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-hr-multiple-extensions-1101 from develop60273a159. Reserve employee extension form/editor/summary/list, HR service and HR-owned call directory, additive optional HR extension-list contract and focused tests. Producer stores all extensions in existing internalContact JSON values; extension remains compatible primary value for consumers. No migration/dependency. Owner requests add button and push/develop merge; prior HR task merged1262.
+
 ## HR-ATTENDANCE-COLUMNS-1101 — PC-B — IN_PROGRESS
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-attendance-columns-1101 from origin/develop ef9202bf9. Owner requests employee attendance table date/in/out/late/early only and push/develop merge. Reserve hr-employee-profile.tsx, new employee-attendance-dataset.ts, bounded HrTable showSelection option and focused test. Preserve global attendance columns, saved records, access and forms; no migration/dependency/API change. HR is PC-B owned; prior HR scopes are published.
@@ -10473,7 +10477,7 @@ CALL-CENTER-QUEUE-FILTERS-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Three foc
 
 COMPUTER_ID=PC-C. Owner authorizes adding Other to the shared Call Center acquaintance-source list used by contact filters and call popup. Reserve model.ts and bounded release/docs only. No schema, permissions, dependency or API change. Existing source scopes published.
 CALL-CENTER-SOURCE-OTHER-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Shared source list adds Other to contact filter and popup form.23 existing focused tests, scoped lint, Web typecheck/build and translation sync pass. Web-only backed-up Compose/image rollback activation verified; API/Worker/data services unchanged. Source reservation releases on push; no schema/grant/dependency change. Receipt /opt/rubi/CALL-SOURCE-OTHER-RELEASE-1101.json.
+
 ## HOTEL-PURCHASE-PRICE-1101 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-purchase-price-1101 from origin/develop60273a159. Reserve package-composition-sales.tsx and focused regression plus own status entries. Show recorded hotel purchase independently of missing flight costs, preserving package totals and Finance gates. No schema, migration, dependency or operational data change. User explicitly authorizes push and develop merge after tests.
-
