@@ -682,6 +682,7 @@ export class CallCenterTelephonyService {
     };
   }
   async snapshot(actor: AuthenticatedActor, page = 1) {
+    const snapshotAt = new Date().toISOString();
     if (!Number.isInteger(page) || page < 1 || page > 10000)
       throw new BadRequestException();
     const where = { ...this.scope(actor), completed: false };
@@ -700,6 +701,7 @@ export class CallCenterTelephonyService {
       this.db.client.callCenterTelephonySession.findMany({
         where: {
           ...where,
+          state: { in: ['RINGING', 'ANSWERED'] },
           offers: {
             some: { userId: actor.userId, active: true, deferred: false },
           },
@@ -729,6 +731,7 @@ export class CallCenterTelephonyService {
         deferred: row.offers[0]?.deferred ?? false,
         call: this.calls.presentCall(row.call),
         technical: {
+          offeredAt: row.offers[0]?.createdAt.toISOString(),
           caller: t.first.caller,
           callerName:
             t.first.direction === 'IN' ? (t.first.callerName ?? null) : null,
@@ -748,7 +751,7 @@ export class CallCenterTelephonyService {
         total,
         page,
         pageSize: 25,
-        receivedAt: new Date().toISOString(),
+        receivedAt: snapshotAt,
         delivery: 'AUTHENTICATED_POLLING',
         provider: 'NOT_CONNECTED',
       },
