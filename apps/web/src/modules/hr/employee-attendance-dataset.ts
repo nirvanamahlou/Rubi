@@ -30,10 +30,49 @@ export function employeeAttendanceDataset(records: readonly HrRecordDto[]) {
       const departures = times('خروج');
       return [
         hrDisplayDate(date),
-        arrivals[0] ?? '—',
-        departures.at(-1) ?? '—',
+        record.data.firstIn !== undefined
+          ? attendanceClock(record.data.firstIn)
+          : (arrivals[0] ?? '—'),
+        record.data.lastOut !== undefined
+          ? attendanceClock(record.data.lastOut)
+          : (departures.at(-1) ?? '—'),
         record.values[4] ?? '—',
         record.values[5] ?? '—',
+      ];
+    }),
+  };
+}
+
+function attendanceClock(value: string | null) {
+  if (!value || !Number.isFinite(Date.parse(value))) return '—';
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Tehran',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(value));
+}
+export function recentAttendanceDataset(
+  records: readonly HrRecordDto[],
+  employees: readonly { id: string; personnelCode: string; name: string }[],
+) {
+  const data = employeeAttendanceDataset(records);
+  const rows = records.filter(
+    (r) => r.section === 'time' && r.tab === 'attendance' && !r.deletedAt,
+  );
+  return {
+    ...data,
+    columns: ['کد پرسنلی', 'کارمند', ...data.columns, 'اضافه‌کاری'],
+    rows: data.rows.map((row, index) => {
+      const record = rows[index]!;
+      const employee = employees.find((e) => e.id === record.employeeId);
+      return [
+        employee?.personnelCode ?? '—',
+        employee?.name ?? record.values[0] ?? '—',
+        ...row,
+        record.data.overtimeMinutes == null
+          ? '—'
+          : String(record.data.overtimeMinutes),
       ];
     }),
   };

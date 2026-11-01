@@ -88,6 +88,13 @@ export interface HrWorkflowData {
   shiftEndDayOffset?: number;
   attendanceBeforeHours?: number;
   attendanceAfterHours?: number;
+  /** Trusted provider provenance and calculated UTC boundaries; generic commands reject these. */
+  attendanceSource?: string;
+  sourceRecordId?: string;
+  sourceEntryType?: string;
+  firstIn?: string | null;
+  lastOut?: string | null;
+  deficitMinutes?: number | null;
   workedMinutes?: number;
   lateMinutes?: number | null;
   earlyMinutes?: number | null;
