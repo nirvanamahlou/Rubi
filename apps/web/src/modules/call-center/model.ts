@@ -5,6 +5,7 @@ export const sources = [
   'سایت',
   'تلگرام',
   'معرفی دوستان',
+  'SMS',
   'سایر',
 ] as const;
 export const operators = [

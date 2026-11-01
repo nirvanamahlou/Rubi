@@ -10485,3 +10485,10 @@ CALL-CENTER-SOURCE-OTHER-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Shared sou
 ## HOTEL-PURCHASE-PRICE-1101 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-purchase-price-1101 from origin/develop60273a159. Reserve package-composition-sales.tsx and focused regression plus own status entries. Show recorded hotel purchase independently of missing flight costs, preserving package totals and Finance gates. No schema, migration, dependency or operational data change. User explicitly authorizes push and develop merge after tests.
+
+## CALL-SOURCE-SMS-1101 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. Owner authorizes SMS in popup/contact filter shared acquaintance sources. Reserve model.ts and own notes only. Web-only rollout preserves latest develop runtime overlays; no API/schema/dependency/grant change. Prior source scopes published and released.
+
+
+CALL-SOURCE-SMS-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.15 focused tests, lint, full Web typecheck/build pass. Shared SMS value available in both source dropdowns. Web-only locked activation preserves env/mounts and API/Worker/data service IDs; rollback Compose/image retained. No schema/grant/dependency changes. Source reservation releases on push.

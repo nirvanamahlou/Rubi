@@ -8282,3 +8282,7 @@ Added Other to shared acquaintance sources used by contact filters and call popu
 ## HOTEL-PURCHASE-PRICE-1101
 
 PC-A: Hotel composition purchase column now uses hotelPurchase and its currency, independently of unavailable flight purchase totals. Package purchase/profit calculation and Finance completion gates are unchanged. Focused regression covers missing flight purchase; no migration or operational data change.
+
+## CALL-SOURCE-SMS-1101 — 2026-11-01
+
+SMS added to shared acquaintance sources for call popup and contact filter.15 existing model/form tests, scoped lint and Web typecheck/build pass. Web-only production activation verified; API/Worker/data services and existing approved source overlays preserved. No schema/grant/dependency change. See tasks/CALL-SOURCE-SMS-1101.md.
