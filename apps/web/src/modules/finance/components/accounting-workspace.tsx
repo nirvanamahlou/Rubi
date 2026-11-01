@@ -657,15 +657,33 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
       : section.includes('closing')
         ? 'CLOSING'
         : 'AUTOMATIC';
-    content = (
-      <AccountingTemplateEditor
-        book={snapshot}
-        run={run}
-        busy={busy}
-        kind={templateKind}
-        readOnly={section.includes('/lists/')}
-      />
+    const legacyTemplate = snapshot.templates.find(
+      (template) =>
+        template.id === urlParams.get('legacyTemplateId') &&
+        template.kind === templateKind &&
+        !template.attributes?.sourceForm,
     );
+    content =
+      templateKind === 'CLOSING' && !legacyTemplate ? (
+        <AccountingDocumentTemplate
+          key={bookId + section}
+          book={snapshot}
+          run={run}
+          busy={busy}
+          kind="CLOSING"
+          listOnly={section.includes('/lists/')}
+        />
+      ) : (
+        <AccountingTemplateEditor
+          key={legacyTemplate?.id ?? section}
+          book={snapshot}
+          run={run}
+          busy={busy}
+          kind={templateKind}
+          {...(legacyTemplate ? { initialTemplate: legacyTemplate } : {})}
+          readOnly={section.includes('/lists/')}
+        />
+      );
   } else if (
     snapshot &&
     accountingParityByRoute.get(section)?.implementation === 'move-drafts'

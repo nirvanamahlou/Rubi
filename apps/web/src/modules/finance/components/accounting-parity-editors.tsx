@@ -229,12 +229,14 @@ export function AccountingTemplateEditor({
   busy,
   kind,
   readOnly = false,
+  initialTemplate,
 }: {
   book: AccountingSnapshotV1;
   run: Run;
   busy: boolean;
   kind: AccountingTemplateV1['kind'];
   readOnly?: boolean;
+  initialTemplate?: AccountingTemplateV1;
 }) {
   const router = useRouter();
   const fresh = () => {
@@ -242,14 +244,31 @@ export function AccountingTemplateEditor({
     setDraft({ active: true });
     setLines([]);
   };
-  const rows = book.templates.filter((template) => template.kind === kind);
-  const [selected, setSelected] = useState<AccountingTemplateV1 | null>(null);
-  const [draft, setDraft] = useState<Record<string, string | boolean>>({
-    active: true,
-  });
+  const rows = book.templates.filter(
+    (template) =>
+      template.kind === kind &&
+      (kind !== 'CLOSING' || !template.attributes?.sourceForm),
+  );
+  const [selected, setSelected] = useState<AccountingTemplateV1 | null>(
+    initialTemplate ?? null,
+  );
+  const [draft, setDraft] = useState<Record<string, string | boolean>>(
+    initialTemplate
+      ? {
+          code: initialTemplate.code,
+          title: initialTemplate.title,
+          titleEn: initialTemplate.titleEn ?? '',
+          description: initialTemplate.description ?? '',
+          descriptionEn: initialTemplate.descriptionEn ?? '',
+          active: initialTemplate.active,
+          voucherTypeId: initialTemplate.voucherTypeId ?? '',
+          retainedAccountId: initialTemplate.retainedAccountId ?? '',
+        }
+      : { active: true },
+  );
   const [lines, setLines] = useState<
     Omit<AccountingTemplateLineV1, 'id' | 'position'>[]
-  >([]);
+  >(initialTemplate?.lines ?? []);
   const open = (template: AccountingTemplateV1) => {
     setSelected(template);
     setDraft({

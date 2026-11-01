@@ -1,3 +1,6 @@
+## ACCOUNTING-NO-BOOK-PICKER-1031
+
+Removed manual create/select-ledger prompts from both no-book chart form locations. Existing automatic resolution and write guards preserved; no data or runtime changes. Updated empty-chart regression. Static diff check passes; runtime tests/build pending because this checkout has no node_modules.
 ## DASHBOARDS-OPERATIONAL-1031 — PC-C — DEPLOYED_BOUNDED_SCOPE
 
 PR1251 source8982acf3e merged externally to develop de00baa4c; all eight source and four merge checks passed before publication. Backed-up Dashboard-only API/Web overlay is deployed and verified; isolated encrypted backup restore passed, existing Call Center overlays/environment/mounts and Worker image are preserved, and no migration or business-data write occurred. Actual deployed modules pass eleven independent read-only SQL reconciliations. Authenticated production Demo UI confirms corrected collections title, real currency-separated sales, missing-cost/accounting explanations and all customer chart series.53 API and44 Web tests passed (one existing skip). Remaining owner-public source coverage and manual role/branch acceptance are explicitly tracked in docs/tasks/DASHBOARDS-OPERATIONAL-1031.md; this is not full catalogue completion.
@@ -8203,6 +8206,10 @@ Fixed useRef-only popup presentation memory with actor-isolated tab-session rece
 
 ## CALL-CENTER-FINAL-MERGE-1031 — PC-C
 Five open Amin-tech11 PRs integrated, retaining their actual heads and complete history. Quality failures in1239/1241 were WORK_ASSIGNMENTS formatting only and repaired. Final combined CI gates before authorized develop merge. Local runtime preparation isolated on C drive; no production deployment.
+## GENERAL-LEDGER-PARITY-1031 — PC-B — IN_PROGRESS
+
+Fresh read-only Rahkaran audit found generic closing/year-end form mismatches and previously missed legal-report flyout forms. Owner explicitly requested inaccessible closing/nature-adjustment stages stay empty: observed introductions/navigation are now rendered on localhost3100 with no inferred financial inputs or issue actions. Closing page no longer takes its title from a source precondition error.7 targeted tests and scoped ESLint pass; integrated stage typecheck reports unrelated stale HR/shared-contract declarations. No source-system data writes, database changes, push or merge. Full audit/implementation remains incomplete; see [audit status](tasks/GENERAL-LEDGER-PARITY-1031.md).
+
 
 ## HR-HEADQUARTERS-CHOICE-1031 / PC-B
 
@@ -8225,3 +8232,16 @@ Existing CallForm now requires an explicit outcome, and authenticated business-s
 ## CALL-PHONE-LABEL-1031 — PC-C
 
 CallForm phone label now reads only شماره تماس. Removed optional suffix only; validation, automatic Issabel capture and required outcome behavior unchanged. Scoped lint passed. Local activation remains pending the previously requested stop of old services.
+
+
+## General Ledger parity follow-up — 2026-11-01 (PC-B)
+
+PR1253 adds the observed closing-template header and per-counterpart closable
+rows, preserves legacy templates, scopes numbering to visible versioned rows,
+and leaves source-blocked year-end issue stages unimplemented by owner request.
+Local Web3100/API4192 are synchronized through an isolated API runtime that
+preserves existing HR output. API health and authenticated closing-form rendering
+verified. Source remains read-only; no migration or accounting data overwrite.
+Whole General Ledger parity is still in progress: legal standard-coding forms,
+report semantics and detailed bulk-picker/filter behavior remain. See
+`docs/tasks/GENERAL-LEDGER-PARITY-1031.md`; do not equate this repair with completion.

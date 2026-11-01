@@ -1,3 +1,11 @@
+## GENERAL-LEDGER-PARITY-1031 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-general-ledger-parity-1031. Owner requests a fresh read-only Rahkaran General Ledger crawl, comparison against localhost3100, evidence-based corrections and push/develop merge after validation. Reserve Accounting-only form/rendering/validation/tests and own audit notes; preserve other Finance writers, existing data and the native 3100 runtime integration. Prior no-book-picker changes below belong to this chat and remain included. No dependency or migration lock requested. Never write source-system records; inaccessible source stages stay explicitly unverified rather than being invented. No whole-module parity claim until every form and operation is verified.
+
+## ACCOUNTING-NO-BOOK-PICKER-1031 — PC-B — IN_PROGRESS
+
+Owner requests removing manual ledger selection from chart. Reserve only accounting-chart-editor.tsx, empty-chart regression and own status notes. Preserve automatic existing book resolution, disabled persistence without a book, permissions and data. No schema, migration, dependency or runtime change.
+
 ## CONTRACT-FIRST-PASSENGER-PRICE-1031 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-contract-first-passenger-price-1031 from origin/develop. Owner explicitly chooses assigning the full recorded IRR/foreign total to the first passenger and zero to remaining passengers when a whole-contract booking has no saved passenger prices. Reserve only Sales contract-print.ts and focused print/share-route tests plus own status notes. Read-only production diagnosis confirmed a completed historical roster with aggregate components, empty old maps and no passenger prices. Use exact saved balance amounts per currency only for explicitly whole-contract-priced records with no personal-price source; preserve existing complete/partial per-person pricing, service details, authorization, financial balances and immutable history. No schema/migration/dependency or operational data mutation. 77 synthetic print/output/PDF/share-route tests and scoped lint pass; final-head types/full tests/build/PostgreSQL gates precede integration. User requests correction across matching contracts.
