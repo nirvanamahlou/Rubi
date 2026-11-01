@@ -83,7 +83,29 @@ export class CallCenterAccessService {
           ? {
               calls: {
                 some: {
-                  answerResponsibilities: { some: { userId: { in: users } } },
+                  OR: [
+                    {
+                      answerResponsibilities: {
+                        some: { userId: { in: users } },
+                      },
+                    },
+                    // For OUTBOUND only, ingestion validates the originating
+                    // extension before recording a positive mapping snapshot.
+                    // Manual transfers have version 0; inbound offers prove no answer.
+                    {
+                      origin: 'TELEPHONY',
+                      direction: 'OUTBOUND',
+                      telephonySession: {
+                        synthetic: false,
+                        offers: {
+                          some: {
+                            userId: { in: users },
+                            mappingVersion: { gt: 0 },
+                          },
+                        },
+                      },
+                    },
+                  ],
                 },
               },
             }
@@ -119,9 +141,15 @@ export class CallCenterAccessService {
       return users === null
         ? Prisma.sql`TRUE`
         : users.length
-          ? Prisma.sql`EXISTS(SELECT 1 FROM call_center_answer_responsibilities ar
+          ? Prisma.sql`(EXISTS(SELECT 1 FROM call_center_answer_responsibilities ar
           JOIN customer_affairs_calls answered ON answered.id=ar."callId"
-          WHERE answered.contact_id=c.id AND ar."userId" IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))}))`
+          WHERE answered.contact_id=c.id AND ar."userId" IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))}))
+          OR EXISTS(SELECT 1 FROM customer_affairs_calls outbound
+          JOIN call_center_telephony_sessions s ON s."callId"=outbound.id
+          JOIN call_center_telephony_offers o ON o."sessionId"=s.id
+          WHERE outbound.contact_id=c.id AND outbound.origin='TELEPHONY'
+          AND outbound.direction='OUTBOUND' AND s.synthetic=false AND o."mappingVersion">0
+          AND o."userId" IN (${Prisma.join(users.map((id) => Prisma.sql`${id}::uuid`))})))`
           : Prisma.sql`FALSE`;
     if (purpose === 'reports' && users !== null)
       return users.length
