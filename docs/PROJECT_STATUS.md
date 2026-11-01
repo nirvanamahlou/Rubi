@@ -410,6 +410,10 @@ Aircraft default list/export no longer applies a hidden active-only status behin
 ## COUNTRY-GMT-1021 — PC-B — 2026-10-21
 
 Optional manual GMT offset in country create/edit/view and table; signed HH:MM validates -12:00..+14:00, blank clears and omitted PATCH preserves. Additive nullable checked column leaves legacy rows unknown without backfill; no IANA/DST/travel-time behavior change.75 API and37 Web tests pass; scoped lint and actual PostgreSQL185-migration chain/SQL proof pass. Type/build and exact-head hosted checks gate owner-authorized push/develop merge. No operational migration, deployment or data change; owner explicitly excludes server rollout. Details: tasks/COUNTRY-GMT-1021.md.
+## GHESTIROO-LIVE-SETUP-1101 — PC-D — IN_PROGRESS
+
+Live authenticated UI confirms the global Ghestiroo form is disabled because secure API storage is unconfigured; site admin input works. Per-site connection routing correction and editable draft/retry/permission explanations are in preparation. Existing web accounts are retained; Nora host access is pending. No password reset or production data mutation. See docs/tasks/GHESTIROO-LIVE-SETUP-1101.md.
+
 ## GHESTIROO-CONNECTOR-1101 — PC-D — READY_LOCAL
 
 Both sides prepared with owner scope restricting Nora application behavior to Integrations. Scoped connection form, encrypted branch/user-bound credentials, real capability test, bounded website data reads and one-use admin SSO. No Nora migration/business-module writes, no server deployment. Handoff: apps/api/src/integrations/GHESTIROO_SETUP.md and docs/tasks/GHESTIROO-CONNECTOR-1101.md. Dedicated launch-route header exception preserves other pages; unit and real synthetic browser tests cover it.
