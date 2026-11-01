@@ -10396,7 +10396,9 @@ CALL-POPUP-REFRESH-1031 source frozen for review;8 targeted checks/scoped lint/f
 
 Owner authorizes reviewing and merging all own PRs after full CI and final develop localhost3000. Integration branch fromd78aa76fc preserves original heads of PR1206/1222/1228/1239/1241. Reserve integration conflicts and own coordination only; source/docs merges preserve both sides. No live server/PBX/data change. Final exact-head CI including database gate is mandatory before merge; local runtime uses isolated checkout and backup before additive local migrations.
 
-## DASHBOARDS-OPERATIONAL-1031 — PC-C — IN_PROGRESS
+## DASHBOARDS-OPERATIONAL-1031 — PC-C — COMPLETED_BOUNDED_RELEASE
+
+Closeout: PR1251 source8982acf3e merged externally to develop de00baa4c. All twelve source/merge checks passed before backed-up production overlay activation. Post-publication actual-module SQL reconciliation passes eleven checks and authenticated Demo UI is verified. Own source lease is released; remaining owner-public producers and role/branch manual acceptance are future work, not certified complete. No migration, IAM or business-data change.
 
 COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-operational-1031 from develop f3632a7a9. Owner requests continuation of Dashboard production finalization with the new erp-server SSH connection. Reserve Dashboard Web/model/tests, Reporting native Dashboard aggregation/tests only and own domain/status notes. Read-only runtime/source/SQL reconciliation first; no business data, IAM grants, dependency, shared contract or schema changes. Preserve every independently deployed Call Center/API/Web/Worker overlay and runtime environment. Never run obsolete1029 deployment plans against the newer production release. Dashboard-only verified overlay publication remains within the owner's prior backed-up deployment authorization; exact-head CI precedes develop integration. Any source lacking its owner-approved public measurement remains explicitly unavailable, never inferred from unrelated records.
 
@@ -10409,6 +10411,10 @@ Owner clarification during this task: new leads exclude people who have already 
 PR1248 merged at f3632a7a9; HR-SHARED-BRANCHES-1031 source/schema lease released after eight successful hosted gates. Reserve only hr-live-data.ts, its directory-form regression and own closeout notes. Browser verification found virtual Headquarters reused the first native branch option value and was folded away by the selector. Give the virtual UI choice a distinct nonpersistent identifier; native branch ownership remains unchanged. No schema, contract, dependency or data mutation. Local integrated production build/API passed; localhost3100 is active and final option verification follows this correction.
 
 HR-HEADQUARTERS-CHOICE-1031 also reserves the existing organization-chart-live selector expectation: the UI-only common option now has hr-headquarters identity, while every native chart root and branch FK remains unchanged. Full hosted suite identified this stale expectation; source correction itself passed quality/build/migration gates.
+
+## DASHBOARD-CURRENCY-1101 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-currency-1101. Reserve Dashboard currency parsing leaf, KPI consumer and focused tests. Fix canonical amount ISO suffix handling; no API/schema/dependency or unrelated UI changes.
 
 ## CALL-CENTER-ALL-USER-POPUPS-1031 — PC-C — IN_PROGRESS
 

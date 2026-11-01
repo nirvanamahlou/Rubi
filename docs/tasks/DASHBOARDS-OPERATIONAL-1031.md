@@ -5,6 +5,29 @@ This task is not certification that every catalogue widget has an operational pr
 
 ## Current evidence
 
+### Production closeout, 2026-10-31
+
+- PR1251 source8982acf3ea807c0669a00d7715688dc118ea6ff7 was merged by an
+  external actor into develop de00baa4cb985857875036091ab29983ca34d1ce.
+  All eight source checks and four merge checks succeeded before activation.
+  This agent did not merge its own PR. The external merge preceded completion
+  of all checks; publication waited for every check to pass.
+- API/Web now run rubi-production:dashboard-1031-8982acf3ea80. The verified
+  Dashboard-only overlay preserves existing Call Center changes, environments,
+  mounts and Worker image. No migrations or business-data writes were performed.
+- Fresh encrypted off-server backup was verified on the approved local destination
+  and its isolated restore drill passed before publication. Rollback metadata and
+  a verified deployment receipt are retained outside Git on the server.
+- Post-publication actual deployed modules independently reconcile all eleven
+  SQL aggregate checks in a read-only snapshot. Authenticated Demo production UI
+  confirms real sales by currency, the corrected collection title, honest missing
+  accounting/cost explanations and both labelled customer chart series.
+- Validation:53 focused API tests;44 Web tests passed with one existing skip;
+  scoped lint/types/build, isolated image tests and health/assets checks passed.
+- This closes the bounded release, not all84 KPIs/91 visuals/28 pages. The source
+  matrix below records the pre-release baseline and candidate scope; CANDIDATE
+  implementations described above are now deployed. Remaining work is listed below.
+
 - Verified SSH alias erp-server, host94.184.46.9, account codex-dev UID1002.
   Actual sudo policy now permits NOPASSWD ALL despite the supplied old description.
   No credential, key or production record is stored here.
