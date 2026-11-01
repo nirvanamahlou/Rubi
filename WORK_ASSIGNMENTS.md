@@ -10485,3 +10485,10 @@ CALL-CENTER-SOURCE-OTHER-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Shared sou
 ## HOTEL-PURCHASE-PRICE-1101 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-purchase-price-1101 from origin/develop60273a159. Reserve package-composition-sales.tsx and focused regression plus own status entries. Show recorded hotel purchase independently of missing flight costs, preserving package totals and Finance gates. No schema, migration, dependency or operational data change. User explicitly authorizes push and develop merge after tests.
+
+## ERP-FINAL-RELEASE-1101 — PC-C — RESERVED
+
+Owner authorizes latest develop publication for all ERP modules. Pin d0845c8fd; four hosted gates pass. Reserve bounded release tooling/docs only; preserve live approved queue toolbar, outbound visibility, worker namespace guard, encrypted configuration/documents, PBX/grants. No new schema/dependency changes; reconcile migrations before deployment. Archive unused prior task context outside server and verify SHA before removal; never remove mounted/runtime/rollback data.
+
+
+ERP-FINAL-RELEASE-1101 — COMPLETE. Develop d0845c8fd plus5 declared approved runtime overlays deployed after verified encrypted backup.83 scoped API/Web tests and34 isolated PostgreSQL tests pass;1 external contract skip. Canary, source hashes, runtime health/assets, Worker namespace/auth, AMI and recording timers verified;17-account85-branch acceptance passes. No migration/grants/PBX changes. Old unused task/archive cleanup externally SHA-verified. Release reservation ends on publication.

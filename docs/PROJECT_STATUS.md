@@ -8282,3 +8282,7 @@ Added Other to shared acquaintance sources used by contact filters and call popu
 ## HOTEL-PURCHASE-PRICE-1101
 
 PC-A: Hotel composition purchase column now uses hotelPurchase and its currency, independently of unavailable flight purchase totals. Package purchase/profit calculation and Finance completion gates are unchanged. Focused regression covers missing flight purchase; no migration or operational data change.
+
+## ERP-FINAL-RELEASE-1101 — published 2026-11-01
+
+Latest develop d0845c8fd published across API/Web/Worker with5 approved Call Center/translation runtime overlays preserved. All4 hosted gates pass;48 API/35 Web scoped tests and34 isolated PostgreSQL access checks pass; external connector contract skipped without configuration. Verified encrypted backup, canary/source hashes, health/static assets, authenticated Worker/current API namespace, AMI and recording/guard timers. Native17-account/85-branch read-only acceptance passes. No migrations or unrelated service/env/data change. See tasks/ERP-FINAL-RELEASE-1101.md.
