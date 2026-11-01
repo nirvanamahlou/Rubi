@@ -111,3 +111,15 @@ the existing native 3100 integration stage, not the obsolete Docker application.
 - Remaining work is not limited to source restrictions: legal coding forms,
   report semantics and detailed selection/filter parity are still outstanding.
   Do not report whole-General-Ledger completion.
+
+### Local integration verification
+
+On 2026-11-01 the API4192 runtime was copied to an isolated build directory,
+retaining all existing HR modules. Comparing the two accounting source modules
+against the prior API source showed only this task's changes. Only those two
+modules were rebuilt in the copy; the original executable tree remains intact.
+The existing Web3100 stage received the matching accounting components.
+API `/api/v1/health` returns ok and Web `/login` returns HTTP200. The authenticated
+browser renders the observed closing-template headers, both grids, and disables
+closable-row addition until a counterpart is chosen. No operational test records
+were created. Screenshot is stored outside Git with the source evidence.

@@ -8225,3 +8225,16 @@ Existing CallForm now requires an explicit outcome, and authenticated business-s
 ## CALL-PHONE-LABEL-1031 — PC-C
 
 CallForm phone label now reads only شماره تماس. Removed optional suffix only; validation, automatic Issabel capture and required outcome behavior unchanged. Scoped lint passed. Local activation remains pending the previously requested stop of old services.
+
+
+## General Ledger parity follow-up — 2026-11-01 (PC-B)
+
+PR1253 adds the observed closing-template header and per-counterpart closable
+rows, preserves legacy templates, scopes numbering to visible versioned rows,
+and leaves source-blocked year-end issue stages unimplemented by owner request.
+Local Web3100/API4192 are synchronized through an isolated API runtime that
+preserves existing HR output. API health and authenticated closing-form rendering
+verified. Source remains read-only; no migration or accounting data overwrite.
+Whole General Ledger parity is still in progress: legal standard-coding forms,
+report semantics and detailed bulk-picker/filter behavior remain. See
+`docs/tasks/GENERAL-LEDGER-PARITY-1031.md`; do not equate this repair with completion.
