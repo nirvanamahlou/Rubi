@@ -10476,3 +10476,10 @@ COMPUTER_ID=PC-C. Owner authorizes each employee seeing their outbound calls, in
 
 
 CALL-CENTER-OWN-OUTBOUND-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.34 isolated PostgreSQL regressions, scoped lint, full API typecheck/build pass. Production API-only release and native14-account/70-branch ORM/SQL acceptance verified; Web/Worker/data services unchanged. Prior actual-answer policy now explicitly includes owner-authorized validated OUTBOUND originating offers; inbound/manual/synthetic restrictions remain. No schema/dependency/grants changed. Scoped source reservation releases on push.
+
+## CALL-POPUP-NETWORK-1101 — PC-C — RESERVED
+
+Owner requests recovery of all incoming/outgoing popups. Reserve bounded worker-network guard script/test and own documentation. Runtime root cause: Worker network_mode container references removed API container after API-only rollout; worker DNS EAI_AGAIN stops durable outbox dispatch. Recreate only worker under deployment lock, preserving image/env and all other services. Guard future API replacements using same lock and exact namespace validation. No business-data, schema, grants, PBX or Web changes.
+
+
+CALL-POPUP-NETWORK-1101 — COMPLETE. Worker rebound to current API namespace; same image/env, other service IDs preserved. Internal transport200/zero backlog and user real popup confirmation. Three guard tests and systemd verification pass; periodic guard active under existing deploy lock. Source scope releases on push.

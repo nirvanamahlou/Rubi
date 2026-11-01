@@ -8271,3 +8271,7 @@ Added Other to shared acquaintance sources used by contact filters and call popu
 ## CALL-CENTER-OWN-OUTBOUND-1101 — 2026-11-01
 
 Own/team/global contact access now includes validated real outgoing-origin snapshots alongside actual-answer evidence. Unanswered outgoing calls remain visible to their originating employee; manual transfer, inbound ring and synthetic offers grant no new access.34 isolated PostgreSQL tests, API lint/typecheck/build and native read-only14-account/70-branch acceptance pass. API-only release active, all Web/Worker/data services preserved; no schema/grant/business-data rewrite. See tasks/CALL-CENTER-OWN-OUTBOUND-1101.md.
+
+## CALL-POPUP-NETWORK-1101 — recovered 2026-11-01
+
+Stale Worker network namespace after API-only deployment caused EAI_AGAIN and blocked telephony dispatch. Recreated Worker with same image/environment under deployment lock; authenticated pending endpoint200, zero backlog, user confirmed popup. Root-owned periodic namespace guard active;3 tests and systemd verification pass. No Web/API/data/PBX/grant change. See tasks/CALL-POPUP-NETWORK-1101.md.
