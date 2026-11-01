@@ -8282,3 +8282,7 @@ Added Other to shared acquaintance sources used by contact filters and call popu
 ## HOTEL-PURCHASE-PRICE-1101
 
 PC-A: Hotel composition purchase column now uses hotelPurchase and its currency, independently of unavailable flight purchase totals. Package purchase/profit calculation and Finance completion gates are unchanged. Focused regression covers missing flight purchase; no migration or operational data change.
+
+## CALL-HISTORY-SUBJECT-1101 — 2026-11-01
+
+Per-call subject now displayed below expanded history summary and above note; blank subject explicitly unrecorded.17 existing tests, Web lint/typecheck/build pass. Web-only release active with prior runtime overlays and all other services preserved. See tasks/CALL-HISTORY-SUBJECT-1101.md.

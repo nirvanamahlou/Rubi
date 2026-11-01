@@ -1107,6 +1107,7 @@ function History({
               </p>
               <details>
                 <summary>شرح تماس و اطلاعات ثبت</summary>
+                <p>موضوع تماس: {c.subject?.trim() || 'ثبت نشده'}</p>
                 <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                   {c.note || 'بدون شرح'}
                 </p>

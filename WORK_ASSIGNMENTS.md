@@ -10485,3 +10485,10 @@ CALL-CENTER-SOURCE-OTHER-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Shared sou
 ## HOTEL-PURCHASE-PRICE-1101 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-purchase-price-1101 from origin/develop60273a159. Reserve package-composition-sales.tsx and focused regression plus own status entries. Show recorded hotel purchase independently of missing flight costs, preserving package totals and Finance gates. No schema, migration, dependency or operational data change. User explicitly authorizes push and develop merge after tests.
+
+## CALL-HISTORY-SUBJECT-1101 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. Owner requests existing call subject below expanded history summary and above note. Reserve workspace.tsx and own notes only. Display actual per-call subject with explicit unrecorded fallback; preserve all unrelated UI/runtime overlays and SMS option. No API/schema/dependency/grant change; prior scopes published and released.
+
+
+CALL-HISTORY-SUBJECT-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW.17 focused existing tests, lint, full Web typecheck/build and Web-only activation verification pass. Actual subject shown at requested location; API/Worker/data service IDs, Web env/mounts and SMS preserved. No schema/grant/dependency change; source reservation releases on push.
