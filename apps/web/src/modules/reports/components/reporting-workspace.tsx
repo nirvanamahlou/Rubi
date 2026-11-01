@@ -1,5 +1,6 @@
 'use client';
 import { currencySymbol } from '@/lib/currency-symbol';
+import resultTableStyles from './report-result-table.module.css';
 
 import {
   AlertTriangle,
@@ -1371,7 +1372,7 @@ export function ReportResultPanel({
                     ) : null}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className={resultTableStyles.dataCells}>
                   {result.rows.map((row) => (
                     <tr className="border-t" key={row.grainId}>
                       <td
