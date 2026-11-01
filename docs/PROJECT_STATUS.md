@@ -8208,10 +8208,9 @@ Five open Amin-tech11 PRs integrated, retaining their actual heads and complete 
 
 Merged PR1248 (206 Web/46 isolated PostgreSQL checks; eight hosted gates). Integrated local production Web/API built, additive local migrations applied after backup and runtime activated on3100/4192. Final browser verification identified virtual Headquarters option-value collision with an existing native branch; use a distinct UI-only value and preserve native branch FK ownership. Targeted regression and final hosted gates precede follow-up merge.
 
-<<<<<<< HEAD
 ## DASHBOARD-CURRENCY-1101 — PC-C — VALIDATING
 KPI currency parser now accepts the native API amount-plus-ISO format and preserves symbol-prefix presentation. Symbol remains physically left of amount in existing LTR isolated row. Seven focused regressions and Web typecheck pass; production deployment pending. No API/schema/data change.
-=======
+
 ## CALL-CENTER-ALL-USER-POPUPS-1031 — deployed 2026-10-31
 
 Incoming destination hydration now uses a unique provider-observed destination or actual answer without changing business outcomes/responsibilities. Operational polling resumes after visible focus/online/session recovery and refreshed IAM authorization. All13 uniquely linked active employee accounts pass native own-offer/route/mapping readiness; no grants changed. API/Web scoped lint/typechecks/builds and28 API/6 Web checks passed; broader4 HTTP-fixture failures reproduce on the original production image. Deployment preserves current5b overlays, unchanged Worker image, recording timer/90-day policy and data services; native exact old missed-call label and foreign-offer denial verified. User browser acceptance deferred. See docs/tasks/CALL-CENTER-ALL-USER-POPUPS-1031.md.
@@ -8226,4 +8225,3 @@ Existing CallForm now requires an explicit outcome, and authenticated business-s
 ## CALL-PHONE-LABEL-1031 — PC-C
 
 CallForm phone label now reads only شماره تماس. Removed optional suffix only; validation, automatic Issabel capture and required outcome behavior unchanged. Scoped lint passed. Local activation remains pending the previously requested stop of old services.
->>>>>>> origin/develop
