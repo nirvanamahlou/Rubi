@@ -244,7 +244,11 @@ export function AccountingTemplateEditor({
     setDraft({ active: true });
     setLines([]);
   };
-  const rows = book.templates.filter((template) => template.kind === kind);
+  const rows = book.templates.filter(
+    (template) =>
+      template.kind === kind &&
+      (kind !== 'CLOSING' || !template.attributes?.sourceForm),
+  );
   const [selected, setSelected] = useState<AccountingTemplateV1 | null>(
     initialTemplate ?? null,
   );
