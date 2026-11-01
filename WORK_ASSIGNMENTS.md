@@ -10429,3 +10429,9 @@ CALL-PHONE-LABEL-1031 — COMPLETE: single label cleanup, scoped lint passed; pr
 ## CALL-CENTER-DEPLOY-FINAL-1031 — PC-C — ACTIVE
 
 Owner authorizes all completed Call Center source PRs, CI repair/normal merge after every required check succeeds, and final develop production deployment. Reserve merge conflict resolution and own rollout documentation/scripts. Preserve peer work, deployed overlays, recording credential/retention, existing data, rollback and shared deployment lock; no guessed recipient or destructive migration. Draft peer work is reviewed separately and not presumed complete.
+
+## DEPLOY-DEVELOP-1101 — PC-C — ACTIVE
+
+COMPUTER_ID=PC-C. Owner explicitly requests production publication of final develop409a6fa64. Reserve own rollout evidence and reviewed deployment scripts only. All PR source merged; no application source ownership changes. Pin exact revision, verify final CI, compare existing source overlays, hold shared deployment lock, build/canary before encrypted backup and additive migration activation, retain old images/configuration for rollback. Never seed/reset production or print credentials.
+
+DEPLOY-DEVELOP-1101 — COMPLETE: final develop409a6fa64 activated after green exact-merge CI, API/Worker/Web builds,44 targeted tests/canary and verified encrypted backups. Reviewed additive migrations only; preserved environment/mounts/live source overlays and Nora services. API/assets/Worker-auth/AMI/recording timer and in-memory outcome/label checks passed. No seed/reset/business data rewrite. Own evidence: docs/tasks/DEPLOY-DEVELOP-1101.md. Source reservation released on publication.
