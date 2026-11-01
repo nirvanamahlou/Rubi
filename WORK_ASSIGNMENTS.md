@@ -1,3 +1,7 @@
+## HR-ATTENDANCE-COLUMNS-1101 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-hr-attendance-columns-1101 from origin/develop ef9202bf9. Owner requests employee attendance table date/in/out/late/early only and push/develop merge. Reserve hr-employee-profile.tsx, new employee-attendance-dataset.ts, bounded HrTable showSelection option and focused test. Preserve global attendance columns, saved records, access and forms; no migration/dependency/API change. HR is PC-B owned; prior HR scopes are published.
+
 ## REPORT-NAZANIN-FONT-1101 — PC-C — RESERVED
 
 Branch codex/pc-c-report-nazanin-font-1101 from develop2843a3165. Reserve Reports workspace result-body font CSS/module integration and direct tests, ReportingExportService XLSX font styles/test and own docs. User authorizes push, PR/develop merge only after all final-head CI passes. No deployment, schema, migration, dependency or font-binary redistribution. Preserve peer scopes, XLSX title16, values/types/layout, centering and RTL. Installed B Nazanin is required on viewing clients; no unlicensed font copying.

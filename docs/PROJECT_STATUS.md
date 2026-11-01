@@ -1,3 +1,7 @@
+## HR-ATTENDANCE-COLUMNS-1101 — PC-B — 2026-11-01
+
+Employee dossier attendance shows date, explicit arrival/departure, late and early departure only, shared by CSV/PDF. Neutral punches remain unclassified. Hidden selection/actions apply only to this view. Six focused tests and scoped lint pass; exact-head hosted checks and affected build gate authorized develop merge. No schema/migration/dependency, operational data or deployment changes.
+
 ## REPORT-NAZANIN-FONT-1101 — PC-C
 
 Reports result table data cells use an isolated installed B Nazanin font face,
