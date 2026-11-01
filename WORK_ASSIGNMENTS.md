@@ -426,9 +426,9 @@ Reserve only GMT input LTR styling in generic live form plus new English labels/
 
 COMPUTER_ID=PC-B; branch codex/pc-b-country-gmt-1021 from develop397ad411. Owner requests optional manual country GMT offset in create/edit and table; explicitly authorizes push/develop merge but NO server deployment. Reserve country catalogue/validation/table and focused tests, bounded MasterDataService country preparation and tests, MasterCountry nullable gmtOffset varchar6 and one additive checked migration, related data/status notes. Sole Migration Owner PC-B for this single nullable reference column; prior181 migrations are merged/released, PC-A field-roundtrip source reservation is explicitly released and its unchanged logic preserved. No dependency/IAM grant/operational migration/data changes. Producer Master Data and Web consumer add optional gmtOffset; omitted values remain unchanged on PATCH and legacy rows remain null. Manual fixed offset is descriptive, never used as IANA/DST or operational travel-time authority. Source locks release on publication.
 
-## GHESTIROO-CONNECTOR-1101 — PC-D — READY_LOCAL / RELEASED
+## GHESTIROO-CONNECTOR-1101 — PC-D — READY_FOR_CI / SOURCE_FROZEN
 
-Explicit owner scope: both sides; Nora source changes only Integrations. Reservation and protocol: docs/tasks/GHESTIROO-CONNECTOR-1101.md. No other module/schema/dependency/runtime changes. Separate task branch from PC-D-Integration; no hosted CI/merge authorization.
+Explicit owner scope: both sides; Nora source changes only Integrations. Reservation and protocol: docs/tasks/GHESTIROO-CONNECTOR-1101.md. Owner now explicitly authorizes push, hosted CI, PR to develop and merge after green checks. Site code remains only in Ghestiroo. No other module/schema/dependency/runtime changes or server deployment.
 
 ## INTEGRATIONS-USER-PERMISSIONS-1021 — PC-D — COMPLETE / SOURCE_FROZEN
 
@@ -10477,6 +10477,7 @@ CALL-CENTER-QUEUE-FILTERS-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Three foc
 
 COMPUTER_ID=PC-C. Owner authorizes adding Other to the shared Call Center acquaintance-source list used by contact filters and call popup. Reserve model.ts and bounded release/docs only. No schema, permissions, dependency or API change. Existing source scopes published.
 CALL-CENTER-SOURCE-OTHER-1101 — DEPLOYED / SOURCE_READY_FOR_REVIEW. Shared source list adds Other to contact filter and popup form.23 existing focused tests, scoped lint, Web typecheck/build and translation sync pass. Web-only backed-up Compose/image rollback activation verified; API/Worker/data services unchanged. Source reservation releases on push; no schema/grant/dependency change. Receipt /opt/rubi/CALL-SOURCE-OTHER-RELEASE-1101.json.
+
 ## HOTEL-PURCHASE-PRICE-1101 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-purchase-price-1101 from origin/develop60273a159. Reserve package-composition-sales.tsx and focused regression plus own status entries. Show recorded hotel purchase independently of missing flight costs, preserving package totals and Finance gates. No schema, migration, dependency or operational data change. User explicitly authorizes push and develop merge after tests.
