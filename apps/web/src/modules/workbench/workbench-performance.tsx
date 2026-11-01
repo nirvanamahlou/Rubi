@@ -68,6 +68,12 @@ export function WorkbenchPerformance() {
       active = false;
     };
   }, [days, version]);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') setVersion((v) => v + 1);
+    }, 60000);
+    return () => window.clearInterval(timer);
+  }, []);
   function reload(value = days) {
     setData(null);
     setError('');
@@ -422,8 +428,8 @@ export function PerformanceExtraCards({
       />
       <Metric
         label="کسری کار"
-        value="—"
-        hint="کسری کار تأییدشده به عملکرد متصل نشده است"
+        value={duration(month?.deficitMinutes)}
+        hint={attendanceHint}
         icon={<TimerOff />}
         tone="border-amber-500/20 bg-amber-500/10"
       />

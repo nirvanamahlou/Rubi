@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import type { HrRecordDto } from '@nora/contracts';
-import { employeeAttendanceDataset } from './employee-attendance-dataset';
+import {
+  employeeAttendanceDataset,
+  recentAttendanceDataset,
+} from './employee-attendance-dataset';
 const record = (
   tab: string,
   values: string[],
@@ -57,4 +60,28 @@ describe('employee attendance table', () => {
     ]);
     expect(data.rows[0]?.slice(1, 3)).toEqual(['—', '—']);
   });
+});
+
+it('uses calculated server times for device punches and keeps the eight time-section columns', () => {
+  const day = record('attendance', ['worker', '2026-11-01', '', '', '5', '0']);
+  day.data = {
+    firstIn: '2026-11-01T05:50:00.000Z',
+    lastOut: '2026-11-01T14:00:00.000Z',
+    overtimeMinutes: 30,
+  };
+  const data = recentAttendanceDataset(
+    [day],
+    [{ id: 'employee-1', name: 'worker', personnelCode: '0012' }],
+  );
+  expect(data.columns).toEqual([
+    'کد پرسنلی',
+    'کارمند',
+    'تاریخ',
+    'ورود',
+    'خروج',
+    'تأخیر',
+    'خروج زودهنگام',
+    'اضافه‌کاری',
+  ]);
+  expect(data.rows[0]!.slice(3)).toEqual(['09:20', '17:30', '5', '0', '30']);
 });

@@ -8282,3 +8282,8 @@ Added Other to shared acquaintance sources used by contact filters and call popu
 ## HOTEL-PURCHASE-PRICE-1101
 
 PC-A: Hotel composition purchase column now uses hotelPurchase and its currency, independently of unavailable flight purchase totals. Package purchase/profit calculation and Finance completion gates are unchanged. Focused regression covers missing flight purchase; no migration or operational data change.
+
+
+## HR-RADAN-LIVE-1101 — PC-B
+
+HR-owned read-only attendance adapter, exact native-branch/personnel-code mapping, neutral-punch pairing with open-day safeguards, configured schedule metrics and own Workbench deficit implemented. Live local API imports72 matched punches and derives43 daily rows; repeat sync preserves115 total rows with0 new imports. One unmatched code retained as unresolved; no identity guessed. Source/closed-period/correction and scoped access checks retained. Production application unchanged; local3100 production Web is active with authenticated HTTP200 HR/time/employee/performance routes.42 API and9 Web focused checks and both production builds pass. See tasks/HR-RADAN-LIVE-1101.md.

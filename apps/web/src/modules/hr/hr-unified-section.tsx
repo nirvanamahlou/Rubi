@@ -18,6 +18,7 @@ import {
 import { hrApi, hrRequest } from './hr-api';
 import { allHrRecords, type HrStore } from './hr-store';
 import { recordsDataset, hrCompanies } from './hr-live-data';
+import { recentAttendanceDataset } from './employee-attendance-dataset';
 import {
   HrButton,
   HrLoading,
@@ -190,7 +191,11 @@ function AccessibleHrSection({
   }, [calendar, queryKey, store.revision]);
   const matchingSource = loadedSource === `${sourceSection}.${activeTab}`;
   const currentItems = matchingSource ? items : [];
-  const dataset = recordsDataset(source.section, source.tab, currentItems);
+  const attendanceView =
+    source.section === 'time' && source.tab === 'attendance';
+  const dataset = attendanceView
+    ? recentAttendanceDataset(currentItems, store.data!.employees)
+    : recordsDataset(source.section, source.tab, currentItems);
   const writable = Boolean(
     definition &&
     !definition.readOnly &&
@@ -213,7 +218,9 @@ function AccessibleHrSection({
         selection.selectedIds.has(record.id),
       );
       if (!all.length) throw new Error('رکوردی برای خروجی انتخاب نشده است.');
-      const data = recordsDataset(source.section, source.tab, all);
+      const data = attendanceView
+        ? recentAttendanceDataset(all, store.data!.employees)
+        : recordsDataset(source.section, source.tab, all);
       if (pdf) {
         const { downloadSectionPdf } = await import('./section-report-pdf');
         await downloadSectionPdf(source.label, [
@@ -633,6 +640,28 @@ function AccessibleHrSection({
               محاسبه و بستن کارکرد
             </summary>
             <div className={ui.actions}>
+              <HrButton
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  setError('');
+                  try {
+                    await hrRequest('/attendance/device/sync', {
+                      method: 'POST',
+                    });
+                    await store.mutated();
+                    setNotice('ترددهای دستگاه دریافت شد.');
+                  } catch (e) {
+                    setError(
+                      e instanceof Error ? e.message : 'دریافت تردد انجام نشد.',
+                    );
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                دریافت تردد دستگاه
+              </HrButton>
               <HrButton
                 disabled={busy}
                 onClick={async () => {

@@ -1,3 +1,4 @@
+import { resolveDeviceDirections } from './hr-device-attendance.domain';
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import {
   getHrResource,
@@ -8,7 +9,12 @@ import {
 import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { HrService } from './hr.service';
-import { APPROVED, digits, localClockParts } from './hr.validation';
+import {
+  APPROVED,
+  digits,
+  localClockParts,
+  localClockToUtc,
+} from './hr.validation';
 
 /** Public HR projection; broad HR permissions never widen the subject beyond self. */
 @Injectable()
@@ -219,14 +225,17 @@ export class HrSelfPerformanceService {
     const selected = correction
       ? punches.filter((row) => row.parentId === correction.parentId)
       : punches;
+    const resolved = resolveDeviceDirections(
+      selected.flatMap((row) => {
+        const v = row.values as string[];
+        if (!/^\d{2}:\d{2}$/.test(digits(v[2] ?? ''))) return [];
+        return [{ kind: v[3]!, at: localClockToUtc(today, digits(v[2]!)) }];
+      }),
+    );
     const times = (kind: string) =>
-      selected
-        .map((row) => row.values as string[])
-        .filter(
-          (values) =>
-            values[3] === kind && /^\d{2}:\d{2}$/.test(digits(values[2] ?? '')),
-        )
-        .map((values) => digits(values[2]!))
+      resolved
+        .filter((e) => e.kind === kind)
+        .map((e) => localClockParts(e.at).time)
         .sort();
     return {
       monthlyAttendance: {
@@ -237,6 +246,7 @@ export class HrSelfPerformanceService {
         }).format(new Date()),
         lateMinutes: total('lateMinutes'),
         overtimeMinutes: total('overtimeMinutes'),
+        deficitMinutes: total('deficitMinutes'),
       },
       approvedLeaveCount,
       todayAttendance: {
