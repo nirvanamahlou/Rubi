@@ -1,0 +1,12 @@
+@font-face {
+  font-family: ReportNazanin;
+  src: local('B Nazanin'), local('B-Nazanin'), local('BNazanin');
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+/* Scope to data cells; override existing monospace utility without changing UI. */
+.dataCells td {
+  font-family: ReportNazanin, 'B Nazanin', 'B-Nazanin', BNazanin, serif;
+}

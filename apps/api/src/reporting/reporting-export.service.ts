@@ -253,7 +253,8 @@ function xlsx(result: TravelReportResultV1, reportName: string) {
           '</cellXfs>',
           '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs>',
         )
-        .replace('<cellXfs count="5">', '<cellXfs count="6">'),
+        .replace('<cellXfs count="5">', '<cellXfs count="6">')
+        .replaceAll('<name val="Arial"/>', '<name val="B Nazanin"/>'),
     ),
     'xl/worksheets/sheet1.xml': strToU8(
       `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView rightToLeft="1" showGridLines="0" workbookViewId="0"><pane ySplit="7" topLeftCell="A8" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${columnWidths}</cols><sheetData>${sheetRows}</sheetData><mergeCells count="2"><mergeCell ref="A1:${excelColumn(columnCount - 1)}1"/><mergeCell ref="A2:B2"/></mergeCells><tableParts count="1"><tablePart r:id="rId1"/></tableParts></worksheet>`,
