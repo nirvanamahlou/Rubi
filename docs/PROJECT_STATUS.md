@@ -8290,3 +8290,5 @@ Per-call subject now displayed below expanded history summary and above note; bl
 CALL-HISTORY-SPACING-1101: expanded history sections spaced14px; recipient caption/value separate lines; duplicate createdAt removed.17 existing tests, lint/typecheck/build pass; Web-only release verified with other services unchanged.
 
 CALL-HISTORY-LABELS-1101: removed subject from expanded details, retained timeline heading and spacing; colon added to both recipient captions.17 existing tests, lint/typecheck/build and Web-only release verification pass.
+
+QUEUE-OPTION-STYLE-1101: queue dropdown options now retain shared combobox styling matching acquaintance-source selector; removed inherited action-button borders/margins without changing specificity or filtering. Queue tests and Web typecheck/build passed; Web-only activation verified.

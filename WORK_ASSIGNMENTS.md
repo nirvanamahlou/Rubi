@@ -10504,3 +10504,9 @@ Owner authorizes removal of subject from expanded history and colon after recipi
 
 
 CALL-HISTORY-LABELS-1101 — COMPLETE.17 tests, lint/typecheck/build pass; Web-only rollout verified, other services unchanged. Reservation released on push.
+
+## QUEUE-OPTION-STYLE-1101 — PC-C — RESERVED
+Owner requests three queue dropdown menus matching shared source selector. Reserve workflow.module.css generic button selector only. Exclude role=option from action-button decoration; preserve shared combobox styles and live toolbar overlay via runtime-relative patch. No behavioral/API/schema change.
+
+
+QUEUE-OPTION-STYLE-1101 — COMPLETE. Shared menu options excluded from workflow action-button decoration using zero-specificity :where exclusion to preserve other buttons. Existing queue tests, full Web typecheck/build pass; runtime-relative Web-only rollout preserves toolbar and other services.
