@@ -87,3 +87,27 @@ Working branch: `codex/pc-b-general-ledger-parity-1031`.
 Local raw UI evidence is in `outputs/ledger-parity-1031` of the task workspace,
 outside the repository. Do not publish raw financial records in Git. Runtime uses
 the existing native 3100 integration stage, not the obsolete Docker application.
+
+## Follow-up — 2026-11-01
+
+- Re-read the closing template live, including add-row and account selection.
+  Source explicitly rejects selecting closable accounts until a counterpart is
+  selected. Closable rows therefore belong to their selected counterpart; they
+  are not a global independent set. Captures remain outside Git.
+- Added the observed closing-template editor with required code/title, active,
+  second-language title, default descriptions, counterpart percentages and
+  closable inclusion/exclusion with allowed detail levels 4–6. Existing template
+  tables store the new source marker and position assignments; no migration or
+  rewriting of old templates. Legacy templates remain accessible through their
+  original editor. Source-specific bulk selection dialogs still need parity work.
+- Added backend validation and focused persistence tests for the new form;
+  existing legacy and document-template formats cannot be silently converted.
+- Rechecked final-journal source precondition: no posted journals in current
+  period. Final/opening now show only observed date/auxiliary-number fields and
+  opening's reverse-nature checkbox. Issue remains disabled because the source
+  continuation could not be observed, as permitted by the user's exception.
+- Previous hosted test failure was English UI coverage (nine missing labels),
+  not a passing full suite. Added actual translations; local coverage passes.
+- Remaining work is not limited to source restrictions: legal coding forms,
+  report semantics and detailed selection/filter parity are still outstanding.
+  Do not report whole-General-Ledger completion.

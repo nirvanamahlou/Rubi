@@ -5,8 +5,8 @@ import { journalFilter } from './accounting.document-filters';
 /** Source rows belong to the selected destination/offset, never to all heads. */
 export function validateTemplateAssignments(input: unknown[], kind: string) {
   const rows = input.map(v.object);
-  const parentRole = kind === 'AUTOMATIC' ? 'TARGET' : 'OFFSET';
-  const childRole = kind === 'AUTOMATIC' ? 'SOURCE' : 'BASIS';
+  const parentRole = kind === 'REVALUATION' ? 'OFFSET' : 'TARGET';
+  const childRole = kind === 'REVALUATION' ? 'BASIS' : 'SOURCE';
   const parents = rows
     .map((row, index) => ({ row, index }))
     .filter(({ row }) => row.role === parentRole);
@@ -27,7 +27,7 @@ export function validateTemplateAssignments(input: unknown[], kind: string) {
     if (row.role === parentRole) {
       if (row.parentPosition !== undefined && row.parentPosition !== null)
         v.invalid('حساب مقصد نمی‌تواند مبدا حساب دیگری باشد.');
-      if (kind === 'AUTOMATIC' && Number(row.percentage) < 1)
+      if (kind !== 'REVALUATION' && Number(row.percentage) < 1)
         v.invalid('درصد مقصد باید بین یک و صد باشد.');
       continue;
     }
