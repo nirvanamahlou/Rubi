@@ -10404,12 +10404,9 @@ PR1248 merged at f3632a7a9; HR-SHARED-BRANCHES-1031 source/schema lease released
 
 HR-HEADQUARTERS-CHOICE-1031 also reserves the existing organization-chart-live selector expectation: the UI-only common option now has hr-headquarters identity, while every native chart root and branch FK remains unchanged. Full hosted suite identified this stale expectation; source correction itself passed quality/build/migration gates.
 
-<<<<<<< HEAD
-
 ## DASHBOARD-CURRENCY-1101 — PC-C — IN_PROGRESS
 
 COMPUTER_ID=PC-C; branch codex/pc-c-dashboard-currency-1101. Reserve Dashboard currency parsing leaf, KPI consumer and focused tests. Fix canonical amount ISO suffix handling; no API/schema/dependency or unrelated UI changes.
-=======
 
 ## CALL-CENTER-ALL-USER-POPUPS-1031 — PC-C — IN_PROGRESS
 
@@ -10438,5 +10435,3 @@ CALL-PHONE-LABEL-1031 — COMPLETE: single label cleanup, scoped lint passed; pr
 ## CALL-CENTER-DEPLOY-FINAL-1031 — PC-C — ACTIVE
 
 Owner authorizes all completed Call Center source PRs, CI repair/normal merge after every required check succeeds, and final develop production deployment. Reserve merge conflict resolution and own rollout documentation/scripts. Preserve peer work, deployed overlays, recording credential/retention, existing data, rollback and shared deployment lock; no guessed recipient or destructive migration. Draft peer work is reviewed separately and not presumed complete.
-
-> > > > > > > origin/develop
