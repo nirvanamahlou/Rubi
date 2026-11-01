@@ -44,3 +44,13 @@ migration or deployment is part of this task. Deployment handoff is in
 `apps/api/src/integrations/GHESTIROO_SETUP.md` and Ghestiroo
 `docs/nora-connector.md`. Site migration is additive; Nora needs a private
 persistent credential directory and 32-byte encryption master key at runtime.
+
+## Publication authorization — 2026-11-01
+
+The owner explicitly authorizes pushing the Nora connector to nirvanamahlou/Rubi,
+waiting for green CI, opening a PR to develop and merging after green PR checks.
+This task-specific instruction supersedes the earlier PC-D-Integration destination
+for this delivery only. Site application code remains exclusively in Ghestiroo.
+The unshared Nora commit was replayed onto origin/develop@60273a159, preserving
+current Niyayesh, telephony and other modules. Reserve bounded reconciliation,
+this task documentation and validation fixes for publication. No deployment.
