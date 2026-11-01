@@ -10498,3 +10498,9 @@ Owner authorizes expanded history spacing, separate recipient label/value and re
 
 
 CALL-HISTORY-SPACING-1101 — COMPLETE. Web-only deployed;17 tests, lint/typecheck/build pass. Source scope released on push.
+
+## CALL-HISTORY-LABELS-1101 — PC-C — RESERVED
+Owner authorizes removal of subject from expanded history and colon after recipient captions. Reserve workspace.tsx/own notes only; retain spacing and heading, no API/schema/grant changes.
+
+
+CALL-HISTORY-LABELS-1101 — COMPLETE.17 tests, lint/typecheck/build pass; Web-only rollout verified, other services unchanged. Reservation released on push.

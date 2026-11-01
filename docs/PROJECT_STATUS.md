@@ -8288,3 +8288,5 @@ PC-A: Hotel composition purchase column now uses hotelPurchase and its currency,
 Per-call subject now displayed below expanded history summary and above note; blank subject explicitly unrecorded.17 existing tests, Web lint/typecheck/build pass. Web-only release active with prior runtime overlays and all other services preserved. See tasks/CALL-HISTORY-SUBJECT-1101.md.
 
 CALL-HISTORY-SPACING-1101: expanded history sections spaced14px; recipient caption/value separate lines; duplicate createdAt removed.17 existing tests, lint/typecheck/build pass; Web-only release verified with other services unchanged.
+
+CALL-HISTORY-LABELS-1101: removed subject from expanded details, retained timeline heading and spacing; colon added to both recipient captions.17 existing tests, lint/typecheck/build and Web-only release verification pass.

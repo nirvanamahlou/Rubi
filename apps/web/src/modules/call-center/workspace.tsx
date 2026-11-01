@@ -1115,7 +1115,6 @@ function History({
                     lineHeight: 1.9,
                   }}
                 >
-                  <p>موضوع تماس: {c.subject?.trim() || 'ثبت نشده'}</p>
                   <p
                     style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
                   >
@@ -1123,8 +1122,8 @@ function History({
                   </p>
                   <p>
                     {c.direction === 'OUTBOUND'
-                      ? 'تماس‌گرفته‌شده از داخلی'
-                      : 'وصل شده به'}
+                      ? 'تماس‌گرفته‌شده از داخلی:'
+                      : 'وصل شده به:'}
                     <span style={{ display: 'block', marginTop: 6 }}>
                       {c.answerRecipient?.label || c.operator || 'نامشخص'}
                     </span>
