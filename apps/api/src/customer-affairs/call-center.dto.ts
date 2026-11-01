@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsIn,
+  IsDefined,
   IsInt,
   IsISO8601,
   Matches,
@@ -24,7 +25,7 @@ export const CALL_CENTER_STATUSES = [
 export class CallCenterCallDto {
   @IsOptional() @IsString() @Matches(/^[a-f0-9]{64}$/) completionToken?: string;
   @IsOptional() @IsUUID() ticketId?: string;
-  @IsOptional()
+  @IsDefined({ message: 'نتیجه تماس را انتخاب کنید.' })
   @IsIn(['ANSWERED', 'NO_ANSWER', 'BUSY', 'FAILED'])
   outcome?: string;
   @IsUUID('4') id!: string;

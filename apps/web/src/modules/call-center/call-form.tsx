@@ -159,6 +159,10 @@ export function CallForm({
       setError('موضوع تماس را وارد کنید.');
       return;
     }
+    if (!Object.hasOwn(outcomeLabels, value('outcome'))) {
+      setError('نتیجه تماس را انتخاب کنید.');
+      return;
+    }
     setError('');
     try {
       const { ticketId: priorTicket, ...eventData } = event as Call;
@@ -234,7 +238,7 @@ export function CallForm({
               <h3>اطلاعات مخاطب</h3>
               <div className={styles.formGrid}>
                 <label>
-                  شماره تماس (اختیاری)
+                  شماره تماس
                   <input
                     name="phone"
                     dir="ltr"
@@ -379,11 +383,12 @@ export function CallForm({
                   )}
                 </label>
                 <label>
-                  نتیجه تماس (اختیاری)
+                  نتیجه تماس *
                   <NativeSearchSelect
                     onChange={() => setDirty(true)}
                     name="outcome"
                     aria-label="نتیجه تماس"
+                    required
                     className={styles.control}
                     disabled={busy}
                     defaultValue={completing ? (previous?.outcome ?? '') : ''}
