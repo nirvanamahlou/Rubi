@@ -1,3 +1,14 @@
+## REPORT-NAZANIN-FONT-1101 — PC-C
+
+Reports result table data cells use an isolated installed B Nazanin font face,
+overriding existing monospace data utilities without restyling headers or charts.
+All four XLSX fonts (data, metadata, headings and16pt title) are B Nazanin; typed
+values, styles/indices, centering, gridline setting and layout remain unchanged.
+No font binary redistributed: viewing devices need B Nazanin installed; Excel
+may substitute if absent. Existing exports remain immutable; generate a new file.
+Focused font/style regressions added; full final-head CI required before merge.
+No deployment, schema, migration or data changes.
+
 ## ACCOUNTING-NO-BOOK-PICKER-1031
 
 Removed manual create/select-ledger prompts from both no-book chart form locations. Existing automatic resolution and write guards preserved; no data or runtime changes. Updated empty-chart regression. Static diff check passes; runtime tests/build pending because this checkout has no node_modules.

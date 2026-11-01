@@ -75,6 +75,11 @@ describe('ReportingExportService storage boundary', () => {
     expect(styles).toContain('formatCode="#,##0.##########"');
     expect(styles).toContain('horizontal="center" vertical="center"');
     expect(styles).toContain('<sz val="16"/>');
+    const fonts = styles.match(/<fonts[^>]*>(.*?)<\/fonts>/)?.[1] ?? '';
+    expect(
+      [...fonts.matchAll(/<name val="([^"]+)"\/>/g)].map((match) => match[1]),
+    ).toEqual(Array(4).fill('B Nazanin'));
+    expect(styles).not.toContain('<name val="Arial"/>');
     expect(sheet).toContain('showGridLines="0"');
     expect(sheet).toContain('<mergeCell ref="A1:C1"/>');
     expect(sheet).toContain('<mergeCell ref="A2:B2"/>');

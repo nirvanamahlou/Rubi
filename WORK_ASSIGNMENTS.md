@@ -1,3 +1,7 @@
+## REPORT-NAZANIN-FONT-1101 — PC-C — RESERVED
+
+Branch codex/pc-c-report-nazanin-font-1101 from develop2843a3165. Reserve Reports workspace result-body font CSS/module integration and direct tests, ReportingExportService XLSX font styles/test and own docs. User authorizes push, PR/develop merge only after all final-head CI passes. No deployment, schema, migration, dependency or font-binary redistribution. Preserve peer scopes, XLSX title16, values/types/layout, centering and RTL. Installed B Nazanin is required on viewing clients; no unlicensed font copying.
+
 ## GENERAL-LEDGER-PARITY-1031 — PC-B — IN_PROGRESS
 
 COMPUTER_ID=PC-B; branch codex/pc-b-general-ledger-parity-1031. Owner requests a fresh read-only Rahkaran General Ledger crawl, comparison against localhost3100, evidence-based corrections and push/develop merge after validation. Reserve Accounting-only form/rendering/validation/tests and own audit notes; preserve other Finance writers, existing data and the native 3100 runtime integration. Prior no-book-picker changes below belong to this chat and remain included. No dependency or migration lock requested. Never write source-system records; inaccessible source stages stay explicitly unverified rather than being invented. No whole-module parity claim until every form and operation is verified.
