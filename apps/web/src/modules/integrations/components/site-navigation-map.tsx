@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import {
   Home,
   Plane,
@@ -47,6 +47,23 @@ export const presenceIcons: Record<string, typeof Home> = {
 
 export function SiteNavigationMap({ data }: { data: SitePresenceV1 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const connectionsRef = useRef<HTMLElement>(null);
+  const returnFocus = useRef<HTMLButtonElement>(null);
+  const headingId = useId();
+  useEffect(() => {
+    if (!selectedId) return;
+    connectionsRef.current?.focus({ preventScroll: true });
+    connectionsRef.current?.scrollIntoView({
+      block: 'nearest',
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'instant'
+        : 'smooth',
+    });
+  }, [selectedId]);
+  function closeConnections() {
+    setSelectedId(null);
+    returnFocus.current?.focus();
+  }
   const home = data.nodes.find((node) => node.id === 'home')!;
   const selected = data.nodes.find((node) => node.id === selectedId);
   const related = selected ? presenceNeighbours(data, selected.id) : null;
@@ -61,7 +78,10 @@ export function SiteNavigationMap({ data }: { data: SitePresenceV1 }) {
         key={node.id}
         className={`${styles.siteNode} ${root ? styles.siteHome : ''} ${node.count ? styles.occupied : ''} ${selected?.id === node.id ? styles.siteSelected : ''}`}
         aria-pressed={selected?.id === node.id}
-        onClick={() => setSelectedId(selected?.id === node.id ? null : node.id)}
+        onClick={(event) => {
+          returnFocus.current = event.currentTarget;
+          setSelectedId(selected?.id === node.id ? null : node.id);
+        }}
       >
         <span className={styles.siteNodeTitle}>
           <Icon aria-hidden="true" />
@@ -96,13 +116,19 @@ export function SiteNavigationMap({ data }: { data: SitePresenceV1 }) {
         ))}
       </div>
       {selected && related ? (
-        <section className={styles.siteConnections} aria-live="polite">
+        <section
+          className={styles.siteConnections}
+          aria-live="polite"
+          aria-labelledby={headingId}
+          ref={connectionsRef}
+          tabIndex={-1}
+        >
           <div className={styles.siteConnectionsHeading}>
-            <h4>ارتباط‌های {selected.title}</h4>
+            <h4 id={headingId}>ارتباط‌های {selected.title}</h4>
             <button
               type="button"
               aria-label="بستن ارتباط‌های بخش"
-              onClick={() => setSelectedId(null)}
+              onClick={closeConnections}
             >
               <X aria-hidden="true" />
             </button>
