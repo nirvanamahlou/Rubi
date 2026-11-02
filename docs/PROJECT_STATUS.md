@@ -2,6 +2,15 @@
 
 COMPUTER_ID=PC-A; branch codex/pc-a-issued-ticket-report-1102 from latest origin/develop. Owner requests all reservation contract flights visible in passenger service report and develop merge. Reserve Reservations service-report.ts, reservation-ticket-documents.ts report composition and focused tests only; own status notes. Include latest assigned flights without inventing document issuance, retain actual saved numbers across intake revisions, exclude removed assignments and duplicate historical segments. Existing report filters/exports and branch/permission guards remain; legacy actual-issued endpoint stays actual-document-only. No shared API shape, schema, migration, dependency, runtime or operational writes. 32 focused API/Web report, numbering/filter/export regressions pass (two existing optional skips); scoped API ESLint passes. API types/build and final-head full hosted gates precede authorized merge. Source reservation freezes on publication and releases on verified merge.
 
+## GHESTIROO-WORKSPACE-1102 — PC-D
+
+Ghestiroo Integrations now uses the authenticated Nora actor, native site
+catalogue/Excel services with preview and confirmed apply, per-person site SSO
+and a site-selectable live presence schematic. Existing section/branch IAM and
+manager-only connection settings remain authoritative. No Nora schema,
+dependency or other-module implementation changes. Scope and release gates:
+[GHESTIROO-WORKSPACE-1102](tasks/GHESTIROO-WORKSPACE-1102.md).
+
 ## AMEND-NO-HOTEL-PRICE-1102 — PC-A
 
 Nonprice reservation contract amendments use the existing preserveContractPrices protocol: retain exact recorded components/currencies, drop obsolete passenger/service allocation pricing, preserve identity/service fields and let the server enforce matching saved totals with version/branch guards. Hotel check-in/out are controlled Gregorian English dates with unchanged ISO values.21 focused regressions pass; lint/types and final-head hosted tests/build/database gates precede authorized develop merge. No API/schema/migration/dependency or runtime/data deployment.

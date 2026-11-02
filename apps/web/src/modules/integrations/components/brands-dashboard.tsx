@@ -61,6 +61,7 @@ import {
   type SiteReportResult,
 } from '../report-model';
 import { SitePresence } from './site-presence';
+import { isGhestirooSystem } from '../system-connector';
 import { SiteTrend, SiteVisits, SiteActivity } from './site-report';
 
 const palettes = ['sand', 'blue', 'violet', 'teal'] as const;
@@ -557,6 +558,11 @@ export function BrandsDashboard({
           branchId={data.branchId}
           siteId={activeId}
           siteName={activeSite?.name ?? 'سایت'}
+          connector={
+            activeSite && isGhestirooSystem(activeSite, data)
+              ? 'ghestiroo'
+              : 'niyayesh'
+          }
         />
       ) : null}
       <SiteVisits
