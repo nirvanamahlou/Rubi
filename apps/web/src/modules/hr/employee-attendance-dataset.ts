@@ -9,7 +9,7 @@ export function employeeAttendanceDataset(records: readonly HrRecordDto[]) {
   const base = recordsDataset('time', 'attendance', attendance);
   return {
     ...base,
-    columns: ['تاریخ', 'ورود', 'خروج', 'تأخیر', 'خروج زودهنگام'],
+    columns: ['تاریخ', 'روز هفته', 'ورود', 'خروج', 'تأخیر', 'خروج زودهنگام'],
     rows: attendance.map((record) => {
       const date = record.values[1] ?? '';
       const punches = records.filter(
@@ -30,6 +30,12 @@ export function employeeAttendanceDataset(records: readonly HrRecordDto[]) {
       const departures = times('خروج');
       return [
         hrDisplayDate(date),
+        /^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(Date.parse(date))
+          ? new Intl.DateTimeFormat('fa-IR', {
+              timeZone: 'Asia/Tehran',
+              weekday: 'long',
+            }).format(new Date(`${date}T12:00:00Z`))
+          : '—',
         record.data.firstIn !== undefined
           ? attendanceClock(record.data.firstIn)
           : (arrivals[0] ?? '—'),

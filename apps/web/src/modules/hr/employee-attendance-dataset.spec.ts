@@ -45,20 +45,22 @@ describe('employee attendance table', () => {
     ]);
     expect(data.columns).toEqual([
       'تاریخ',
+      'روز هفته',
       'ورود',
       'خروج',
       'تأخیر',
       'خروج زودهنگام',
     ]);
-    expect(data.rows[0]?.slice(1)).toEqual(['09:05', '16:50', '5', '10']);
+    expect(data.rows[0]?.slice(2)).toEqual(['09:05', '16:50', '5', '10']);
     expect(data.recordIds).toEqual([day.id]);
+    expect(data.rows[0]?.[1]).toBe('یکشنبه');
   });
   it('does not guess arrival or departure from an indeterminate punch', () => {
     const data = employeeAttendanceDataset([
       record('attendance', ['worker', '2026-11-01', '', '', '0', '0']),
       record('checkins', ['worker', '2026-11-01', '09:00', 'اعلام حضور']),
     ]);
-    expect(data.rows[0]?.slice(1, 3)).toEqual(['—', '—']);
+    expect(data.rows[0]?.slice(2, 4)).toEqual(['—', '—']);
   });
 });
 
@@ -77,11 +79,12 @@ it('uses calculated server times for device punches and keeps the eight time-sec
     'کد پرسنلی',
     'کارمند',
     'تاریخ',
+    'روز هفته',
     'ورود',
     'خروج',
     'تأخیر',
     'خروج زودهنگام',
     'اضافه‌کاری',
   ]);
-  expect(data.rows[0]!.slice(3)).toEqual(['09:20', '17:30', '5', '0', '30']);
+  expect(data.rows[0]!.slice(4)).toEqual(['09:20', '17:30', '5', '0', '30']);
 });

@@ -574,10 +574,6 @@ export class PackageTourPricingService {
     if (!draft) throw new NotFoundException('پیش‌نویس تور یافت نشد.');
     if (draft.version !== input.expectedDraftVersion)
       throw new ConflictException('نسخه پیش‌نویس قیمت تغییر کرده است.');
-    if (draft.updatedByUserId === actor.userId)
-      throw new ForbiddenException(
-        'تأییدکننده انتشار باید غیر از آخرین ویرایشگر قیمت باشد.',
-      );
     const grid = await this.pricing.tourCostGrid(draft.tourDepartureId, actor);
     const batch = packageTourSelectionBatch(
       grid,
