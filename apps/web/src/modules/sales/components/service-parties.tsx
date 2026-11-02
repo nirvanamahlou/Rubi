@@ -27,7 +27,11 @@ import { ContractHotelPicker } from './contract-hotel-picker';
 import { Input } from '@/components/ui/form-controls';
 import type { MasterDataRecord, HotelRoomRateV1 } from '@nora/contracts';
 import type { SalesFormState } from '../model/sales-form';
-import { salesPassengerCounts, salesTravelDate } from '../model/sales-form';
+import {
+  salesFloatingFlight,
+  salesPassengerCounts,
+  salesTravelDate,
+} from '../model/sales-form';
 export function ServiceParties({
   state: sourceState,
   patch,
@@ -58,6 +62,7 @@ export function ServiceParties({
   const limited =
     state.serviceKinds.includes('FLIGHT') && !usesRoomDrivenGuests(state);
   const party = salesPassengerCounts(state);
+  const floatingFlight = salesFloatingFlight(state);
   const partyError = salesRoomPartyError(state);
   const used = roomPartyUsage(rooms, state.hotelChildAssignments);
   const maxRooms = limited
@@ -291,6 +296,26 @@ export function ServiceParties({
               تعداد کل مسافران انتخاب‌شده: {party.total.toLocaleString('fa-IR')}
             </p>
           </div>
+          {(!state.serviceKinds.includes('FLIGHT') || floatingFlight) && (
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={
+                  floatingFlight || Boolean(state.hotel.floatingPurchase)
+                }
+                disabled={floatingFlight}
+                onChange={(event) =>
+                  patch({
+                    hotel: {
+                      ...state.hotel,
+                      floatingPurchase: event.target.checked,
+                    },
+                  })
+                }
+              />
+              هتل شناوری
+            </label>
+          )}
           {!state.tour && (
             <label className="flex items-center gap-2">
               <input

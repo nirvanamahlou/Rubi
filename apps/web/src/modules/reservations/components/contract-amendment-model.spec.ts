@@ -1,4 +1,7 @@
-import { contractFlightMetadata } from '@nora/contracts';
+import {
+  isFloatingSalesContract,
+  contractFlightMetadata,
+} from '@nora/contracts';
 import { applyManualAmendmentFlights } from './contract-amendment-model';
 import { describe, it, expect } from 'vitest';
 import type {
@@ -267,4 +270,19 @@ it('does not repair actual reversed flights or rewrite dates without an applied 
   });
   expect(next.departureDate).toBe('2026-07-03');
   expect(next.returnNotBefore).toBe('2026-07-02');
+});
+
+it('refreshes purchase ownership when a floating catalog flight is replaced', () => {
+  const draft = amendmentFromContract(contract);
+  draft.services = draft.services.map((service) => ({
+    ...service,
+    metadata: { ...service.metadata, purchaseSupplyType: 'FLOATING' },
+  }));
+  expect(isFloatingSalesContract(draft.services)).toBe(true);
+  const replaced = replaceAmendmentFlight(draft, 'OUTBOUND', {
+    ...offer,
+    supplyType: 'COMPANY',
+  });
+  expect(isFloatingSalesContract(replaced.services)).toBe(false);
+  expect(replaced.services[0]?.metadata?.purchaseSupplyType).toBe('COMPANY');
 });

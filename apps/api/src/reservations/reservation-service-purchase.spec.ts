@@ -1122,3 +1122,43 @@ it('accepts a nonempty hotel guest subset but rejects duplicate and foreign gues
     ]),
   ).toThrow();
 });
+
+it('does not allow Reservations to record a Sales-owned floating hotel-only purchase', async () => {
+  const transaction = vi.fn();
+  const service = new ReservationServicePurchaseService(
+    {
+      client: {
+        reservationIntake: {
+          findUnique: vi.fn().mockResolvedValue({
+            contractId: 'contract',
+            branchId: 'branch',
+            snapshot: {
+              serviceSelections: [
+                {
+                  clientKey: 'hotel-1',
+                  kind: 'HOTEL',
+                  metadata: { purchaseSupplyType: 'FLOATING' },
+                },
+              ],
+            },
+          }),
+        },
+        $transaction: transaction,
+      },
+    } as never,
+    {} as never,
+  );
+  await expect(
+    service.record(
+      '11111111-1111-4111-8111-111111111112',
+      valid,
+      {
+        userId: 'reservation',
+        branchIds: ['branch'],
+        permissions: ['reservations.read', 'reservations.hotel_purchase.write'],
+      } as never,
+      'hotel-owner',
+    ),
+  ).rejects.toThrow('مجوز ثبت خرید خدمات وجود ندارد.');
+  expect(transaction).not.toHaveBeenCalled();
+});
