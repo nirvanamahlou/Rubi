@@ -1,4 +1,5 @@
 'use client';
+import { usePurchaseCompletion } from './use-purchase-completion';
 import { ReservationDeliveryPermit } from '../components/reservation-delivery-permit';
 import { ReservationHotelCosts } from '../components/reservation-hotel-costs';
 import { ReservationPurchaseDialog } from '../components/reservation-hotel-purchase';
@@ -66,7 +67,15 @@ export function ContractActionContent({
     );
   if (action === 'سودآوری رزرواسیون هتل' && request.contractId)
     return <ReservationHotelCosts key={request.id} id={request.id} />;
-  if (action === 'خرید') return <ReservationPurchaseDialog id={request.id} />;
+  if (action === 'خرید')
+    return (
+      <ReservationPurchaseDialog
+        id={request.id}
+        onSaved={() =>
+          window.dispatchEvent(new Event('reservation-workflow-changed'))
+        }
+      />
+    );
   if (action === 'فرم رزواسیون')
     return <TravelWorkflowForm id={request.id} action="رزرواسیون" />;
   if (action === 'مشاهده')
@@ -162,6 +171,10 @@ export function ContractActionPanel({
 }: {
   request?: RequestView | undefined;
 }) {
+  const purchasesComplete = usePurchaseCompletion(
+    request?.id,
+    request?.workflowVersion,
+  );
   return (
     <aside className={styles.panel} aria-label="عملیات قرارداد انتخاب‌شده">
       <div className={styles.selection} aria-live="polite">
@@ -226,7 +239,23 @@ export function ContractActionPanel({
                           !request ||
                           (action === 'واچر' && !request.voucherReady)
                         }
-                        className={`${styles.action} ${action === 'توضیحات' && request?.hasNotes ? styles.hasNotes : ''}`}
+                        className={[
+                          styles.action,
+                          action === 'توضیحات' && request?.hasNotes
+                            ? styles.hasNotes
+                            : '',
+                          action === 'خرید' &&
+                          purchasesComplete &&
+                          request?.status !== 'CANCELLED'
+                            ? styles.purchaseComplete
+                            : '',
+                        ].join(' ')}
+                        data-purchases-complete={
+                          action === 'خرید'
+                            ? purchasesComplete &&
+                              request?.status !== 'CANCELLED'
+                            : undefined
+                        }
                         aria-label={
                           action === 'توضیحات' && request?.hasNotes
                             ? 'توضیحات؛ این قرارداد یادداشت دارد'

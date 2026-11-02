@@ -166,28 +166,34 @@ describe('reservations workspace access and states', () => {
     expect(source).toContain('<ContractCorrectionDeepLink />');
     expect(source).not.toContain('ContractCorrectionHistoryButton');
   });
-  it('marks corrected contracts only with a red caption below the contract number', () => {
-    const html = renderToStaticMarkup(
-      <ReservationOperationsWorkspace
-        state="SUCCESS"
-        rows={[{ ...row(), correctedAt: now }]}
-        access={access}
-        now={now}
-        initialSection="inbox"
-      />,
-    );
-    expect(html).toContain('data-corrected="true"');
-    expect(html).toContain('اصلاح‌شده');
-    const css = readFileSync(
-      new URL('./workspace.module.css', import.meta.url),
-      'utf8',
-    );
-    expect(html).toMatch(
-      /TEST-test-request<small class="[^"]*correctedLabel[^"]*">اصلاح‌شده<\/small>/,
-    );
-    expect(css).not.toContain("tr[data-corrected='true']");
-    expect(css).toMatch(/\.correctedLabel\s*\{[^}]*color: #dc2626/);
-  });
+  it.each([
+    { correctedAt: now },
+    { amendedAt: now, salesCorrectionPending: false },
+  ])(
+    'marks operational or pending sales corrections below the contract number: %j',
+    (correction) => {
+      const html = renderToStaticMarkup(
+        <ReservationOperationsWorkspace
+          state="SUCCESS"
+          rows={[{ ...row(), ...correction }]}
+          access={access}
+          now={now}
+          initialSection="inbox"
+        />,
+      );
+      expect(html).toContain('data-corrected="true"');
+      expect(html).toContain('اصلاح‌شده');
+      const css = readFileSync(
+        new URL('./workspace.module.css', import.meta.url),
+        'utf8',
+      );
+      expect(html).toMatch(
+        /TEST-test-request<small class="[^"]*correctedLabel[^"]*">اصلاح‌شده<\/small>/,
+      );
+      expect(css).not.toContain("tr[data-corrected='true']");
+      expect(css).toMatch(/\.correctedLabel\s*\{[^}]*color: #dc2626/);
+    },
+  );
   it.each([
     'LOADING',
     'EMPTY',
