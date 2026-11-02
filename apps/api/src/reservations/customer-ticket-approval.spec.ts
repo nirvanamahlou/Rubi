@@ -95,11 +95,26 @@ function fixture(paid = '100', kind = 'FLIGHT') {
   const service = new ReservationServicePurchaseService(
     database as never,
     directory as never,
+    undefined,
+    undefined,
+    undefined,
+    {
+      agencyPurchaseReference: vi
+        .fn()
+        .mockResolvedValue({
+          id: input.supplierOrganizationId,
+          source: 'ORGANIZATION',
+          name: 'Synthetic agency',
+        }),
+    } as never,
   );
   const actor = {
     userId: 'operator',
     branchIds: ['branch'],
-    permissions: ['reservations.read', 'reservations.hotel_purchase.write'],
+    permissions:
+      kind === 'FLIGHT'
+        ? ['sales.contracts.create']
+        : ['reservations.read', 'reservations.hotel_purchase.write'],
   } as never;
   return {
     tx,
@@ -107,7 +122,13 @@ function fixture(paid = '100', kind = 'FLIGHT') {
     previous,
     database,
     run: (body = input) =>
-      service.record(intakeId, body, actor, 'purchase-key'),
+      service.record(
+        intakeId,
+        body,
+        actor,
+        'purchase-key',
+        kind === 'FLIGHT' ? 'contract' : undefined,
+      ),
   };
 }
 describe('customer flight purchase authorization', () => {
