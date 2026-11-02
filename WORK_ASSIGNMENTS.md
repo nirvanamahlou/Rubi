@@ -10539,3 +10539,9 @@ SHARED-HOTEL-SUPPLIER-FORM-1102:33 API and59 Web focused checks, scoped lint and
 ## CALL-HISTORY-TITLE-1102 — PC-C — IN_PROGRESS
 
 Owner requests current grade/unit labels for historical calls. Reserve CallCenterService destination read enrichment and focused history tests. Read-only labels from HR public directory on provider-proven extensions; preserve recorded times, scope and original encrypted snapshots. No migration or ownership/data rewrite.
+
+## AMEND-COMPOSITE-HOTEL-STAYS-1102 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; codex/pc-a-amend-composite-hotel-stays-1102 from latest origin/develop. Owner authorizes editing every additional hotel stay and independent check-in/out in Reservations, tests and develop merge. Prior overlapping AMEND-NO-HOTEL-PRICE scope verified MERGED PR1274. Reserve new module-local additional-stay editor/model/tests and bounded insertion in reservation-sales-amendment.tsx plus own docs. Existing Sales amendment validation/repository remain producer and unchanged; preserve primary selection, ordered other stays, exact recorded prices and service ownership. No API/schema/migration/dependency, live data or operational rollout. Final-head hosted gates precede authorized merge.
+
+AMEND-COMPOSITE-HOTEL-STAYS-1102:19 focused Web and82 existing Sales API checks pass; scoped ESLint, translation sync and Web types pass. Both Hotel and Correction entry points render additional dates/rooms; direct callback tests prove isolated updates, hotel-city replacement, no primary pricing/type inheritance and legacy/single-stay compatibility. Source freezes on publication and reservations release on verified develop merge. Exact-head hosted full gates remain required; no operational rollout.

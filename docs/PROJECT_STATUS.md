@@ -8321,3 +8321,6 @@ Optional common supplier stacks hotel editors and retains independent per-stay q
 
 ## CALL-HISTORY-TITLE-1102 — PC-C
 Historical TELEPHONY read enrichment now refreshes named snapshots as well as missing/generic labels via current HR grade/unit directory. Requires the original branch-scoped provider session and matching observed extension; keeps historical display if mapping is absent/ambiguous/conflicting, ignores manual operator text, preserves original payload and answeredAt.14 focused regressions and lint pass; API typecheck and production build pass. No data rewrite or migration; publication pending.
+## AMEND-COMPOSITE-HOTEL-STAYS-1102 — PC-A
+
+Reservations Hotel and general Correction editors now expose every ordered additional stay with independent hotel, room composition and Gregorian check-in/out. Updates replace only the selected additional stay, preserve primary selection/prices and other stays, and reuse the existing Sales amendment payload, validation and transactional persistence. Legacy empty-room stays never inherit primary room type or prices; single-hotel contracts render unchanged. Focused editor/model and existing API persistence/validation regressions plus final-head hosted quality/tests/build/database gates precede owner-authorized develop merge. No API/schema/migration/dependency or operational deployment.
