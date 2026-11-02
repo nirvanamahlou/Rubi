@@ -262,3 +262,54 @@ it('clears stale derived presence on the old date without creating absence for u
   expect(f.records.get('daily')?.status).toBe('حاضر');
   expect(f.tx.hrRecord.create).not.toHaveBeenCalled();
 });
+
+it('persists a sortable work date and repairs missing legacy dates even when metrics are unchanged', async () => {
+  const f = fixture();
+  const source = [
+    {
+      id: 'hours',
+      tab: 'workingHours',
+      status: 'فعال',
+      values: ['day', '', '09:15', '17:00', 'همان روز', '0', '0'],
+      data: {},
+    },
+    ...['09:20', '17:40'].map((time, i) => ({
+      id: `punch-${i}`,
+      tab: 'checkins',
+      employeeId: 'employee',
+      parentId: null,
+      values: ['Synthetic', '2026-11-01', time, 'اعلام حضور'],
+      data: { attendanceSource: 'synthetic' },
+      createdAt: new Date(),
+    })),
+  ];
+  f.tx.hrRecord.findMany.mockImplementation(async (...args: unknown[]) => {
+    const q = args[0] as { where: { OR?: unknown; tab?: string } };
+    if (q.where.OR) return source as never;
+    return q.where.tab === 'attendance' && f.records.has('daily')
+      ? ([f.records.get('daily')] as never)
+      : [];
+  });
+  const run = (key: string) =>
+    f.hr.processAttendance(
+      { branchId: branch, date: '2026-11-01' },
+      key,
+      actor,
+      true,
+    );
+  await run('create-date-key');
+  const created = f.tx.hrRecord.create.mock.calls.at(-1)![0].data;
+  expect(created.effectiveAt).toBeInstanceOf(Date);
+  const expectedDate = created.effectiveAt;
+  f.records.set('daily', {
+    ...created,
+    id: 'daily',
+    effectiveAt: null,
+    version: 1,
+  });
+  await run('repair-date-key');
+  expect(f.tx.hrRecord.update).toHaveBeenCalledTimes(1);
+  expect(f.records.get('daily')?.effectiveAt).toEqual(expectedDate);
+  await run('repeat-date-key');
+  expect(f.tx.hrRecord.update).toHaveBeenCalledTimes(1);
+});

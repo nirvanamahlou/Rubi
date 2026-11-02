@@ -864,7 +864,11 @@ export class HrService {
         : input.sortBy === 'personnelCode'
           ? [{ employee: { personnelCode: 'asc' } }, { id: 'asc' }]
           : input.section === 'time' && input.tab === 'attendance'
-            ? [{ effectiveAt: 'desc' }, { createdAt: 'desc' }, { id: 'asc' }]
+            ? [
+                { effectiveAt: { sort: 'desc', nulls: 'last' } },
+                { createdAt: 'desc' },
+                { id: 'asc' },
+              ]
             : [{ createdAt: 'desc' }, { id: 'asc' }];
     const where = { AND: [this.recordScope(actor), filters] };
     const [rows, total] = await Promise.all([
@@ -4496,6 +4500,8 @@ export class HrService {
           if (
             existing &&
             existing.status === status &&
+            existing.effectiveAt?.getTime() ===
+              validate.isoDate(date).getTime() &&
             isDeepStrictEqual(existing.values, values) &&
             isDeepStrictEqual(existing.data, calculatedData)
           )
@@ -4519,6 +4525,7 @@ export class HrService {
                   section: 'time',
                   tab: 'attendance',
                   code: `HR-ATT-${randomUUID().slice(0, 12)}`,
+                  effectiveAt: validate.isoDate(date),
                   values,
                   status,
                   data: calculatedData,
