@@ -1,3 +1,7 @@
+## Employee identification code — 2026-11-02
+
+HrEmployee.identificationCode maps to hr_employees.identification_code (unique varchar7). Database migration20261102170000_employee_identification_codes assigns2000001+ by created_at,id, including inactive/deleted identities. A database sequence and insert/update trigger allocate codes, reject explicit assignment and prevent changes; deleted values are not reused. Optional output DTO remains backward compatible; DB CHECK requires a valid assigned value. No personnel_code, primary key, payroll, device or contract linkage changes. Codes identify records within their environment, not across independent databases.
+
 ## Customer identification code — 2026-11-02
 
 Customer.customerCode is a unique seven-digit database-generated identifier starting4000001. Migration20261102140000_customer_codes backfills all existing customers by createdAt then id, including inactive records. A sequence allocates future codes atomically; a trigger rejects user-supplied inserts and changes. The nullable Prisma/output shape is backward compatible; the database CHECK requires assigned valid values. Existing IDs and contract references remain unchanged. Codes are local to each database and are not cross-environment identity keys.

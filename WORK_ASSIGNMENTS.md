@@ -6,6 +6,10 @@ FINANCE-INBOX-PURCHASES-1102 validated:126 API and24 Web/client/i18n checks pass
 
 FINANCE-INBOX-PURCHASES-1102 owner follow-up explicitly authorizes paying foreign purchases from IRR accounts using the payment-day FX rate. Reopen only own payment-source helper/UI controls and three purchase-payment event producers/tests. Preserve foreign debt/payment amounts and persisted rialEquivalent; emit the cash event in its actual account currency through the unchanged public Accounting sink. No Accounting writer/mapping/schema change. Reserve a bounded actual-withdrawal preview and related labels/tests. Same-currency and supplier paths, immutable prior events, CAS/idempotency and exact Decimal rounding remain unchanged. New final-head gates are required before merge.
 
+## EMPLOYEE-IDENTIFICATION-CODES-1102 — PC-B — IMPLEMENTED / VALIDATING
+
+User authorizes readonly employee identification code beside personnel code, chronological existing-data backfill and automatic new allocation using workbook2000001+, local Rubi activation and develop merge. Reserve HrEmployee additive schema/migration (sole migration scope), HR public projection/optional DTO, employee profile/editor layout and tests. Preserve personnelCode, employee IDs, payroll/device/contract links and all peer changes. No production deployment.
+
 ## CUSTOMER-CODES-1102 — PC-B — IMPLEMENTED / LOCAL VERIFIED
 
 User explicitly extends coding to Customer records and readonly field below national ID. Reserve Customer.customerCode additive schema/migration (sole current migration scope), Customer public projection/optional output contract, customer dossier UI and focused tests. Customer owner boundary preserved through own API; no edits to sales/contract identities or inputs. Back up/rehearse local backfill; no production deployment.
@@ -10607,3 +10611,7 @@ ROUNDTRIP-TRANSFER-DISPLAY-1102:16 UI and10 API purchase checks pass; scoped ESL
 COMPUTER_ID=PC-A; codex/pc-a-amend-flight-date-sync-1102 from origin/develop. Owner authorizes fixing false return-before-outbound rejection when replacing floating flights with company charter, tests and develop merge. Reserve contract-amendment-model date reconciliation and focused regressions plus own notes. Explicit flight replacements/edited manual legs derive contract date bounds from the actual catalog/manual flight instants in Tehran. Preserve unchanged amendments, other service facts, amounts, capacity validation and strict true reverse chronology rejection. Prior model reservations are merged/released; no active overlapping target owner found. No API/schema/migration/dependency or operational deployment. Final exact-head hosted gates precede authorized merge.
 
 AMEND-FLIGHT-DATE-SYNC-1102: four new stale-bound cases reproduced before correction;18 focused Web and93 existing API tests pass, scoped ESLint and Web types pass. Covers outbound/return conversion, manual return crossing UTC midnight, no-op stability and preservation of actual reversed dates for strict server rejection. Source freezes on push and reservations release upon verified develop merge. Final exact-head hosted gates required; no operational deployment.
+
+## WORKBENCH-ATTENDANCE-SUMMARY-1102 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-workbench-attendance-summary-1102 from develop659090fe1. Reserve HR self-performance projection, Workbench performance consumer/card UI and focused tests. HR producer accepts an optional selected-day window; existing callers retain monthly behavior. Preserve own-user/branch scoping and Radan ingestion. User authorizes local3100 activation and push/develop merge after gates. No schema/dependency or production change.

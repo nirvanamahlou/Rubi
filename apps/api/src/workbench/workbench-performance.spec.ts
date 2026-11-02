@@ -57,6 +57,15 @@ function contract(
   };
 }
 describe('self performance aggregation', () => {
+  it.each(['30', '90', '365'])(
+    'forwards the selected %s-day window to HR',
+    async (days) => {
+      const f = fixture();
+      await f.service.get(actor, days);
+      expect(f.hr.get).toHaveBeenCalledWith(actor, Number(days));
+    },
+  );
+
   it('reads related customer activity only with permission and retains only own in-branch actions', async () => {
     const f = fixture();
     f.sales.list.mockResolvedValue({ data: [contract('one', '1')] });

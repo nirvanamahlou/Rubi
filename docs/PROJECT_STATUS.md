@@ -6,6 +6,10 @@ FINANCE-INBOX-PURCHASES-1102 validated:126 API and24 Web/client/i18n checks pass
 
 FINANCE-INBOX-PURCHASES-1102 owner follow-up explicitly authorizes paying foreign purchases from IRR accounts using the payment-day FX rate. Reopen only own payment-source helper/UI controls and three purchase-payment event producers/tests. Preserve foreign debt/payment amounts and persisted rialEquivalent; emit the cash event in its actual account currency through the unchanged public Accounting sink. No Accounting writer/mapping/schema change. Reserve a bounded actual-withdrawal preview and related labels/tests. Same-currency and supplier paths, immutable prior events, CAS/idempotency and exact Decimal rounding remain unchanged. New final-head gates are required before merge.
 
+## EMPLOYEE-IDENTIFICATION-CODES-1102 — PC-B
+
+Employee identification codes2000001+ added beside unchanged personnel codes; chronological additive backfill and immutable automatic allocation. Local18 employees backfilled with all prior columns preserved. Responsive two-column profile and readonly create/edit field. See docs/tasks/EMPLOYEE-IDENTIFICATION-CODES-1102.md for deployment and verification.
+
 ## CUSTOMER-CODES-1102 — PC-B — LOCAL VERIFIED
 
 Customer codes4000001+ allocated by creation date/id, readonly below national ID. Three existing local records backfilled without changing prior columns; automatic immutable codes for new customers. API/web builds, 53 API tests, 44 web tests and isolated SQL checks passed. No production rollout. See docs/tasks/CUSTOMER-CODES-1102.md.
@@ -8387,3 +8391,7 @@ Hotel transfer preview now multiplies the entered combined round-trip fare by th
 ## AMEND-FLIGHT-DATE-SYNC-1102 — PC-A
 
 Explicit catalog flight replacement or applied manual flight edits now reconcile contract departureDate/returnNotBefore from the actual selected flight instants in Tehran. This removes stale return-date bounds that falsely rejected a valid floating-to-charter replacement. Unedited drafts retain their existing dates and object identity; true reversed flight dates remain reversed for existing server validation to reject. Buyer, amounts, services, capacity and receipts remain unchanged. Four regressions failed before the fix;18 focused Web and93 API domain/capacity/amendment checks pass, with lint/types and final-head hosted gates preceding owner-authorized develop merge. No API/schema/migration/dependency or server deployment.
+
+## WORKBENCH-ATTENDANCE-SUMMARY-1102 — PC-B
+
+Selected30/90/365-day filter now reaches HR own attendance aggregation using Tehran calendar dates. Completed measurements remain summed when another day is incomplete; unknown-only totals remain null. Daily Radan-backed own punches and identity/branch guards preserved. Metric explanatory captions removed. 25 focused API and3 Web checks,scoped lint,types and API/Web production builds pass. Local3100 and4192 healthy; native30/90-day requests succeed. Existing active local account has no employee link; none inferred. Final-head CI precedes develop merge; no migration or production deployment.
