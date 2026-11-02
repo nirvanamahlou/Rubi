@@ -10523,3 +10523,7 @@ HR-RADAN-LIVE-1101 — LOCAL_ACTIVE / SOURCE_READY_FOR_REVIEW. Native API health
 HR-RADAN-LIVE-1101 schedule follow-up — PC-B RESERVED. Owner authorizes Tehran clock-aligned15-minute pulls09:00–10:00 /17:00–18:00 and hourly pulls otherwise, plus push/develop merge. Reserve connector schedule helper/service/tests and own task/status notes. No immediate startup/off-slot retry; manual sync remains explicit. Existing source reservation resumed; no migration/dependency/permission/UI change.
 
 HR-RADAN-LIVE-1101 schedule follow-up — VALIDATED. Tehran quarter-hour slots09:00–10:00 and17:00–18:00, full-hour slots otherwise. No immediate startup request or rapid retry; next future slot follows completion/failure, shutdown prevents reschedule. Sixteen targeted schedule/service checks and scoped lint gate local API update, production compilation and final-head CI before the owner-authorized merge.
+
+## CALL-RECIPIENT-TITLE-1102 — PC-C — IN_PROGRESS
+
+Owner explicitly authorizes bounded edit of PC-B-reserved HR call directory: use grade plus unit for connected-to label. Reserve hr-call-answer-directory.ts/spec only; preserve multiple extensions/shared destinations, branch scope and all unrelated HR work. No schema/data/runtime change.
