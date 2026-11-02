@@ -99,13 +99,11 @@ function fixture(paid = '100', kind = 'FLIGHT') {
     undefined,
     undefined,
     {
-      agencyPurchaseReference: vi
-        .fn()
-        .mockResolvedValue({
-          id: input.supplierOrganizationId,
-          source: 'ORGANIZATION',
-          name: 'Synthetic agency',
-        }),
+      agencyPurchaseReference: vi.fn().mockResolvedValue({
+        id: input.supplierOrganizationId,
+        source: 'ORGANIZATION',
+        name: 'Synthetic agency',
+      }),
     } as never,
   );
   const actor = {
