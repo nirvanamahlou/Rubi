@@ -80,6 +80,9 @@ export function FlightTicketDocument({
             serviceNumber: flight.serviceNumberSnapshot,
             cabinClassCode: flight.cabinClassCode,
             contractOnly: flight.source === 'CONTRACT_ONLY',
+            ...(flight.destinationAirport
+              ? { destinationAirport: flight.destinationAirport }
+              : {}),
           },
         ]
       : [];

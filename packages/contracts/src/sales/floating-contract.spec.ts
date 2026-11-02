@@ -19,3 +19,22 @@ it('tags only saved floating flight facts, including contract-only flights', () 
   ).toBe(false);
   expect(isFloatingSalesContract([])).toBe(false);
 });
+
+it('recognizes explicitly floating hotel-only contracts without classifying unrelated service metadata', () => {
+  expect(
+    isFloatingSalesContract([
+      { kind: 'HOTEL', metadata: { purchaseSupplyType: 'FLOATING' } },
+    ]),
+  ).toBe(true);
+  for (const kind of ['TRANSFER', 'VISA'])
+    expect(
+      isFloatingSalesContract([
+        { kind, metadata: { purchaseSupplyType: 'FLOATING' } },
+      ]),
+    ).toBe(false);
+  expect(
+    isFloatingSalesContract([
+      { kind: 'HOTEL', metadata: { purchaseSupplyType: 'COMPANY' } },
+    ]),
+  ).toBe(false);
+});
