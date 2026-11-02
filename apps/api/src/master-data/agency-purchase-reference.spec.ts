@@ -2,12 +2,10 @@ import { expect, it, vi } from 'vitest';
 import { MasterSalesDirectory } from './master-sales-directory';
 it('filters purchase choices by AGENCY role before pagination and exposes only id/name', async () => {
   const master = {
-    list: vi
-      .fn()
-      .mockResolvedValue({
-        data: [{ id: 'a', name: 'Agency', attributes: { phone: 'private' } }],
-        meta: { total: 1 },
-      }),
+    list: vi.fn().mockResolvedValue({
+      data: [{ id: 'a', name: 'Agency', attributes: { phone: 'private' } }],
+      meta: { total: 1 },
+    }),
   };
   const service = new MasterSalesDirectory(master as never, {} as never);
   expect(await service.agencyPurchaseOptions('name', 2)).toEqual({
@@ -46,16 +44,14 @@ it('rejects inactive agencies and broker-only organizations before any purchase 
   }
   const service = new MasterSalesDirectory(
     {
-      detail: vi
-        .fn()
-        .mockResolvedValue({
-          data: {
-            id: 'a',
-            name: 'Agency',
-            status: 'active',
-            attributes: { roleCodes: 'AGENCY,CUSTOMER' },
-          },
-        }),
+      detail: vi.fn().mockResolvedValue({
+        data: {
+          id: 'a',
+          name: 'Agency',
+          status: 'active',
+          attributes: { roleCodes: 'AGENCY,CUSTOMER' },
+        },
+      }),
     } as never,
     {} as never,
   );

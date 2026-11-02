@@ -258,6 +258,7 @@ export function latestTransferPurchase(
 }
 export function ReservationHotelPurchase(props: {
   request: PurchaseRequest;
+  purchaseRoot?: string | undefined;
   onSaved: () => void;
 }) {
   if (
@@ -283,6 +284,7 @@ export function LegacyReservationHotelPurchase({
   onSaved,
 }: {
   request: PurchaseRequest;
+  purchaseRoot?: string | undefined;
   onSaved: () => void;
 }) {
   const canReadProfit =

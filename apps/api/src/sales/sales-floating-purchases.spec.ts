@@ -12,16 +12,14 @@ const actor = {
 } as never;
 function setup() {
   const sales = {
-    detail: vi
-      .fn()
-      .mockResolvedValue({
-        data: {
-          id: 'contract',
-          ownerUserId: 'seller',
-          branchId: 'branch',
-          status: 'SENT_TO_RESERVATIONS',
-        },
-      }),
+    detail: vi.fn().mockResolvedValue({
+      data: {
+        id: 'contract',
+        ownerUserId: 'seller',
+        branchId: 'branch',
+        status: 'SENT_TO_RESERVATIONS',
+      },
+    }),
   };
   const current = {
     id: 'intake',
@@ -41,12 +39,10 @@ function setup() {
     recordBatch: vi.fn().mockResolvedValue({ data: { id: 'batch' } }),
   };
   const agencies = {
-    agencyPurchaseOptions: vi
-      .fn()
-      .mockResolvedValue({
-        data: [{ id: 'agency', name: 'Agency' }],
-        meta: { total: 1 },
-      }),
+    agencyPurchaseOptions: vi.fn().mockResolvedValue({
+      data: [{ id: 'agency', name: 'Agency' }],
+      meta: { total: 1 },
+    }),
   };
   const service = new SalesFloatingPurchases(
     sales as never,
