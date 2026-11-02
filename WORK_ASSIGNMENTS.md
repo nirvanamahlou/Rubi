@@ -10642,7 +10642,6 @@ Reserve HR dashboard domain/service bounded query, dashboard cards/charts and te
 
 Reserve Radan ingestion date normalization, HR attendance calculation/import reconciliation and self-performance, employee attendance weekday projection/tests. User explicitly authorizes source dates+1day,09:15–17 standard schedule with Thursday14:00 end and overtime after17:30, local activation and push/develop merge. Preserve source IDs, closed periods, approved corrections and peer runtime edits. No migration/dependency.
 
-
 ## HR-ATTENDANCE-NEWEST-1102 — PC-B — IN_PROGRESS
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-attendance-newest-1102 from develop110bf092a. Reserve employee-attendance-dataset and tests, bounded attendance sort label in hr-unified-section and own notes. User follow-up requires newest business date first and investigation of missing10Aban. Preserve server pagination/explicit list sorts and aligned export identities; no API/schema/data writes. Prior date-schedule scope released by merged PR1299. Local3100 activation follows targeted checks.
