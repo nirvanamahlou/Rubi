@@ -161,7 +161,11 @@ export async function GET(
       },
       id,
     );
-    const hotels = reservationHotelStays(intake.snapshot).map(
+    const referenceSnapshot =
+      intake.workflow.supplierFormSettings?.sharedHotelBroker === true
+        ? (intake.supplierHotelSourceSnapshot ?? intake.snapshot)
+        : intake.snapshot;
+    const hotels = reservationHotelStays(referenceSnapshot).map(
       (stay) => stay.hotel,
     );
     const keys = [
