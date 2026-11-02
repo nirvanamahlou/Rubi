@@ -30,6 +30,12 @@ export function MasterDataProfileIdentity({
         </div>
         {record ? (
           <div className="flex flex-wrap items-center gap-2">
+            {record.attributes.accountingCode ? (
+              <span className="text-sm">
+                کد تفصیلی حسابداری:{' '}
+                <b dir="ltr">{String(record.attributes.accountingCode)}</b>
+              </span>
+            ) : null}
             {record.code ? (
               <Badge className="font-mono" dir="ltr">
                 {record.code}

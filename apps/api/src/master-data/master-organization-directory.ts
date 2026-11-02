@@ -305,6 +305,7 @@ export class MasterOrganizationDirectory {
       select: {
         id: true,
         code: true,
+        accountingCode: true,
         legalName: true,
         displayName: true,
         personType: true,

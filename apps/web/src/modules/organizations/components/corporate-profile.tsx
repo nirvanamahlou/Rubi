@@ -560,6 +560,10 @@ export function CorporateProfile({
                     ],
                     ['کد سازمان', organization.code],
                     [
+                      'کد تفصیلی حسابداری',
+                      organization.attributes.accountingCode || '—',
+                    ],
+                    [
                       'آخرین تغییر',
                       new Date(organization.updatedAt).toLocaleDateString(
                         'fa-IR',

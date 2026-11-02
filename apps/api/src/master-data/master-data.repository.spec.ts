@@ -33,6 +33,17 @@ it('projects the persisted hotel currency id and canonical reference name/code',
 });
 
 describe('MasterDataRepository code allocation', () => {
+  it.each(['organizations', 'suppliers', 'brokers'] as const)(
+    'exposes the separate persisted accounting code for %s',
+    (resource) => {
+      const record = toMasterDataRecord(resource, {
+        ...baseRow,
+        accountingCode: '3000001',
+      });
+      expect(record.code).toBe('ORG_LOCK');
+      expect(record.attributes.accountingCode).toBe('3000001');
+    },
+  );
   it.each(['suppliers', 'brokers'] as const)(
     'reads saved canonical contact masks and address for %s without exposing ciphertext',
     (resource) => {

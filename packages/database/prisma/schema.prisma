@@ -1360,6 +1360,7 @@ model MasterPaymentMethod {
 }
 
 model MasterOrganization {
+  accountingCode String? @unique @db.VarChar(7)
   partnerFinanceRequests      FinanceOperationalRequest[]
   marketingPromotions         MarketingAsset[]             @relation("MarketingPromotionAgency")
   b2bOrganizationUsers        B2bOrganizationUser[]
@@ -1694,6 +1695,7 @@ model B2bAuditEvent {
 }
 
 model MasterSupplier {
+  accountingCode String? @unique @db.VarChar(7)
   payingOperationalPayments          FinanceOperationalRevision[]
   payingTicketPayments               FinanceTicketPurchasePaymentRevision[]
   payingInvoicePayments              FinanceProcurementInvoiceRevision[]
@@ -2564,6 +2566,7 @@ model MasterHotelImportSession {
 }
 
 model MasterBroker {
+  accountingCode String? @unique @db.VarChar(7)
   hotelGroupRates                  ReservationHotelGroupRate[]
   reservationServicePurchases      ReservationServicePurchase[]
   id                               String                       @id @default(uuid()) @db.Uuid
@@ -4714,6 +4717,7 @@ enum FinanceSupplierPaymentStatus {
 }
 
 model FinanceSettlementAccount {
+  accountingCode String? @unique @db.VarChar(7)
   deletedAt                  DateTime?                              @db.Timestamptz(3)
   salesDestinationPayments   SalesContractPaymentEntry[]            @relation("SalesPaymentDestinationAccount")
   workflowRefunds            AccountingWorkflow[]
