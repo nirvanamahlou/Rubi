@@ -1,3 +1,7 @@
+## MASTER-ENTRY-ACCESS-1027 — PC-B — COMPLETE
+
+Owner-authorized production repair completed for the two named Master Data entry users: native create/update was already granted, but2/7 newer field allow-controls were missing. After protected before-snapshots and21 role fingerprints, the existing IAM revision/transaction/audit service added only those fields within already-authorized resources. Actual field/resource guards now pass across46 resources for each user; native grants/screens/titles and19 unrelated roles are unchanged. No application deployment, guard bypass, account reset or business-record test writes. Details and recovery: [MASTER-ENTRY-ACCESS-1027](tasks/MASTER-ENTRY-ACCESS-1027.md).
+
 ## UNIFIED-CONTRACT-HOTEL-PICKER-1026 — PC-A — READY_FOR_CI
 
 ## PURCHASE-BEFORE-RESERVATION-SEND-1027 — PC-A
