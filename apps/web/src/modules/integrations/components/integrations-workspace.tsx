@@ -121,6 +121,10 @@ export function IntegrationWorkspaceBody({
   const loadSequence = useRef(0);
 
   const authorizedBranchIds = actor.branchIds.join(',');
+  const canReadAdapters = canViewIntegrationSection(
+    actor.permissions,
+    'connections',
+  );
   useEffect(() => {
     let active = true;
     void integrationsApi
@@ -151,7 +155,7 @@ export function IntegrationWorkspaceBody({
       try {
         const [registry, adapters] = await Promise.all([
           integrationsApi.read(branchId, signal, section),
-          canViewIntegrationSection(actor.permissions, 'connections')
+          canReadAdapters
             ? integrationsApi.adapters(signal)
             : Promise.resolve([]),
         ]);
@@ -166,7 +170,7 @@ export function IntegrationWorkspaceBody({
           setLoading(false);
       }
     },
-    [branchId, section, actor.permissions],
+    [branchId, section, canReadAdapters],
   );
   useEffect(() => {
     const controller = new AbortController();

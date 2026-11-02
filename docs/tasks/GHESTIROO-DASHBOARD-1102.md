@@ -59,3 +59,10 @@ reserved scope, existing translations, environment/mounts and other services.
 No Nora migration, dependency or operational data write was required. Source
 PR144/145 are merged develop; Nora PR1318 merges only after all eight hosted
 checks succeed on its final head. No main merge is part of this work item.
+
+Live focus/periodic IAM refresh exposed a further consumer issue: unchanged
+permission arrays had new object identities, recreating the registry loader and
+closing open drills when reports reloaded. The Integrations loader now depends
+on the effective adapter-read permission value. Actual user/branch/permission
+changes still remount the workspace through its existing authorization key;
+every backend operation continues to authorize independently. No IAM edits.
