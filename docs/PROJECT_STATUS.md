@@ -8361,3 +8361,7 @@ Hotel transfer preview now multiplies the entered combined round-trip fare by th
 ## AMEND-FLIGHT-DATE-SYNC-1102 — PC-A
 
 Explicit catalog flight replacement or applied manual flight edits now reconcile contract departureDate/returnNotBefore from the actual selected flight instants in Tehran. This removes stale return-date bounds that falsely rejected a valid floating-to-charter replacement. Unedited drafts retain their existing dates and object identity; true reversed flight dates remain reversed for existing server validation to reject. Buyer, amounts, services, capacity and receipts remain unchanged. Four regressions failed before the fix;18 focused Web and93 API domain/capacity/amendment checks pass, with lint/types and final-head hosted gates preceding owner-authorized develop merge. No API/schema/migration/dependency or server deployment.
+
+## STAFF-CDR-BACKFILL-1102 — 2026-11-02
+
+PC-C completed owner-authorized historical employee call recovery from 1405/08/09.144 finalized external sessions verified;26 missing calls recovered,118 preserved.82 native contact-list/access checks across14 active accounts pass; zero duplicate roots or new historical popup offers. Inactive113/202 remain disabled. Operator-only source and evidence note: docs/tasks/STAFF-CDR-BACKFILL-1102.md. No application release, schema or grant change.
