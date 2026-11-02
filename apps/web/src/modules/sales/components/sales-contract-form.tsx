@@ -238,36 +238,6 @@ function freshSalesDraft(): SalesFormState {
 }
 export function SalesContractForm() {
   const router = useRouter();
-  const pendingPurchases = useRef<Record<string, StagedPurchase>>({});
-  const purchaseAttempts = useRef<
-    Record<string, { key: string; purchase: StagedPurchase }>
-  >({});
-  const purchaseFingerprint = useRef('');
-  const [purchaseError, setPurchaseError] = useState('');
-  const [purchaseBusy, setPurchaseBusy] = useState(false);
-  const [purchaseCount, setPurchaseCount] = useState(0);
-  async function flushPurchases(id: string) {
-    setPurchaseBusy(true);
-    setPurchaseError('');
-    try {
-      await submitStagedPurchases(
-        pendingPurchases.current,
-        purchaseAttempts.current,
-        async () => (await salesApi.purchaseContext(id)).data,
-        async (purchase, key) => {
-          await salesApi.recordInitialPurchase(id, purchase, key);
-        },
-        browserRandomUuid,
-      );
-    } catch (error) {
-      setPurchaseError(
-        error instanceof Error ? error.message : 'ثبت خرید انجام نشد.',
-      );
-    } finally {
-      setPurchaseBusy(false);
-      setPurchaseCount(Object.keys(pendingPurchases.current).length);
-    }
-  }
   const actor = useAccessActor();
   const [draftScope, setDraftScope] = useState(() =>
     contractDraftScope(null, actor),
@@ -931,6 +901,36 @@ export function SalesContractForm() {
     if (step === 1) return !finalStepError;
     return true;
   })();
+  const pendingPurchases = useRef<Record<string, StagedPurchase>>({});
+  const purchaseAttempts = useRef<
+    Record<string, { key: string; purchase: StagedPurchase }>
+  >({});
+  const purchaseFingerprint = useRef('');
+  const [purchaseError, setPurchaseError] = useState('');
+  const [purchaseBusy, setPurchaseBusy] = useState(false);
+  const [purchaseCount, setPurchaseCount] = useState(0);
+  async function flushPurchases(id: string) {
+    setPurchaseBusy(true);
+    setPurchaseError('');
+    try {
+      await submitStagedPurchases(
+        pendingPurchases.current,
+        purchaseAttempts.current,
+        async () => (await salesApi.purchaseContext(id)).data,
+        async (purchase, key) => {
+          await salesApi.recordInitialPurchase(id, purchase, key);
+        },
+        browserRandomUuid,
+      );
+    } catch (error) {
+      setPurchaseError(
+        error instanceof Error ? error.message : 'ثبت خرید انجام نشد.',
+      );
+    } finally {
+      setPurchaseBusy(false);
+      setPurchaseCount(Object.keys(pendingPurchases.current).length);
+    }
+  }
   const submit = async () => {
     if (step !== salesSteps.length - 1 || busy) return;
     setBusy(true);
