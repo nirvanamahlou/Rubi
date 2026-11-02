@@ -500,3 +500,43 @@ it('round-trip checkbox uses one population input and disables split pricing', (
     1,
   );
 });
+
+it.each([
+  { roundTrip: true, split: false, outbound: 2, returning: 2, expected: '40' },
+  { roundTrip: false, split: false, outbound: 2, returning: 2, expected: '80' },
+  { roundTrip: false, split: false, outbound: 2, returning: 0, expected: '40' },
+  { roundTrip: false, split: true, outbound: 2, returning: 2, expected: '40' },
+  { roundTrip: true, split: false, outbound: 0, returning: 0, expected: '0' },
+])(
+  'displays the same chargeable transfer population as purchase registration: $roundTrip/$split/$outbound/$returning',
+  ({ roundTrip, split, outbound, returning, expected }) => {
+    const draft = defaultVoucherSettings(request, {});
+    draft.hotelTransferRoundTrip = roundTrip;
+    draft.hotelTransferSplit = split;
+    draft.hotelTransferCounts = { outbound, returning };
+    draft.supplierFormPrices = {
+      transferPp: { amount: '20', currencyCode: 'IRR' },
+    };
+    const tree = nodes(
+      HotelRoomQuotationEditor({
+        draft,
+        requestId: 'test',
+        update: vi.fn(),
+        currencies: [],
+        busy: false,
+        nights: 6,
+      }),
+    );
+    const summary = tree.find(
+      (node) =>
+        node.type === 'p' &&
+        JSON.stringify(node.props.children).includes(
+          split ? 'جمع ترانسفر رفت:' : 'جمع ترانسفر:',
+        ),
+    )!;
+    const amount = nodes(summary.props.children as ReactNode).find(
+      (node) => node.type === 'bdi',
+    )!.props.children as ReactNode[];
+    expect(amount[0]).toBe(expected);
+  },
+);
