@@ -8324,3 +8324,6 @@ Historical TELEPHONY read enrichment now refreshes named snapshots as well as mi
 ## AMEND-COMPOSITE-HOTEL-STAYS-1102 — PC-A
 
 Reservations Hotel and general Correction editors now expose every ordered additional stay with independent hotel, room composition and Gregorian check-in/out. Updates replace only the selected additional stay, preserve primary selection/prices and other stays, and reuse the existing Sales amendment payload, validation and transactional persistence. Legacy empty-room stays never inherit primary room type or prices; single-hotel contracts render unchanged. Focused editor/model and existing API persistence/validation regressions plus final-head hosted quality/tests/build/database gates precede owner-authorized develop merge. No API/schema/migration/dependency or operational deployment.
+
+## CALL-HISTORY-TITLE-1102 — PRODUCTION_VERIFIED
+PR1280 merged87cc38f1f after8 successful final-head checks. Historical label display overlay published preserving all live source/runtime overlays; encrypted backup validated, no migration/business-data mutation. Read-only sample89 historical calls:75 current-directory labels,65 display changes, original payloads preserved. Unproven/unmapped destinations retain safe previous labels. API/site/Worker health verified.
