@@ -18,6 +18,7 @@ import { createHash } from 'node:crypto';
 
 import {
   changedDeniedFields,
+  normalizeAirlineCode,
   hasAccessControl,
   isMasterTransportFormResource,
 } from '@nora/contracts';
@@ -2045,7 +2046,7 @@ export class MasterDataService {
       resource !== 'bank-branches' &&
       resource !== 'payment-methods' &&
       resource !== 'meal-services';
-    // IATA is the public business identifier of an airline and is never generated.
+    // Airline business identifiers are entered explicitly, never generated.
     const generatesInternalCode = usesGeneratedCode && resource !== 'airlines';
     if (generatesInternalCode) {
       if (partial && Object.hasOwn(values, 'code'))
@@ -2097,6 +2098,8 @@ export class MasterDataService {
           .split(/[/|،,]+/)
           .map((part) => part.trim())
           .filter(Boolean);
+        if (parts.length > 2)
+          throw new BadRequestException('مقادیر فرم معتبر نیستند.');
         data.code = parts[0] ?? '';
         data.icaoCode = parts[1] ?? null;
         delete data.airlineCodes;
@@ -2108,14 +2111,23 @@ export class MasterDataService {
         ['icaoCode', 3, 'ICAO'],
       ] as const) {
         if (data[field] === undefined || data[field] === null) continue;
-        const code = String(data[field]).trim().toUpperCase();
+        const code = String(data[field])
+          .trim()
+          .toUpperCase()
+          .replace(/\s+/g, ' ');
         if (field === 'icaoCode' && !code) {
           data[field] = null;
           continue;
         }
-        if (!new RegExp(`^[A-Z0-9]{${length}}$`).test(code))
+        if (
+          field === 'code'
+            ? !normalizeAirlineCode(code)
+            : !new RegExp(`^[A-Z0-9]{${length}}$`).test(code)
+        )
           throw new BadRequestException(
-            `کد ${label} باید ${length} حرف یا عدد بزرگ باشد.`,
+            field === 'code'
+              ? 'کد ایرلاین باید IATA، ICAO یا Callsign باشد؛ قالب IATA / ICAO نیز پذیرفته می‌شود.'
+              : `کد ${label} باید ${length} حرف یا عدد بزرگ باشد.`,
           );
         if (
           await this.repository.fieldExists('airlines', field, code, entityId)
@@ -2124,7 +2136,7 @@ export class MasterDataService {
             code: 'MASTER_DATA_DUPLICATE_CODE',
             message: `کد ${label} قبلاً ثبت شده است.`,
           });
-        data[field] = code;
+        data[field] = field === 'code' ? normalizeAirlineCode(code)! : code;
       }
     }
     if (resource === 'regions' && !partial && data.type === undefined)

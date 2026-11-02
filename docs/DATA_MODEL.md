@@ -1,3 +1,7 @@
+## Airline reference identifiers — 2026-11-02
+
+MasterAirline.code is a unique VARCHAR64 primary reference identifier accepting IATA, ICAO or a textual callsign; the optional secondary icaoCode retains its CHAR3 shape. Existing IDs/FKs and IATA / ICAO input stay compatible. Migration20261102190000 widens the code with no backfill/deletion; deploy it before the matching API/Web, retain the wider type on rollback. No operational migration is applied by the source task.
+
 ## Employee identification code — 2026-11-02
 
 HrEmployee.identificationCode maps to hr_employees.identification_code (unique varchar7). Database migration20261102170000_employee_identification_codes assigns2000001+ by created_at,id, including inactive/deleted identities. A database sequence and insert/update trigger allocate codes, reject explicit assignment and prevent changes; deleted values are not reused. Optional output DTO remains backward compatible; DB CHECK requires a valid assigned value. No personnel_code, primary key, payroll, device or contract linkage changes. Codes identify records within their environment, not across independent databases.

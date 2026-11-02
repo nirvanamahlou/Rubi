@@ -1,4 +1,6 @@
 {
+  "مقادیر فرم معتبر نیستند.": "Form values are not valid.",
+  "کد ایرلاین باید IATA، ICAO یا Callsign باشد؛ قالب IATA / ICAO نیز پذیرفته می‌شود.": "Enter an IATA, ICAO or callsign; IATA / ICAO is also accepted.",
   "کد تفصیلی حسابداری": "Accounting detail code",
   "کد تفصیلی حسابداری:": "Accounting detail code:",
   "— تاریخ:": "— Date:",

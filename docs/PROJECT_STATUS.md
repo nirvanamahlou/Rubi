@@ -1,3 +1,7 @@
+## AIRLINE-THREE-CODES-1102 — PC-B — READY_FOR_CI
+
+Primary airline code accepts IATA, ICAO or Callsign with shared bounded normalization; legacy IATA / ICAO remains supported. One non-destructive widening migration preserves unique codes and references.167 focused tests plus real PostgreSQL18 widening/duplicate/FK proof pass; final types/lint/i18n and full hosted gates precede owner-authorized push/develop merge. Original dirty checkout is untouched; no production deployment. Details: tasks/AIRLINE-THREE-CODES-1102.md.
+
 ## RETURN-FLIGHT-CALENDAR-1102 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-return-flight-calendar-1102 from develop70487d637. Owner authorizes fixing false return-date rejection during floating-to-charter flight amendments and develop merge. Reserve Sales sales.domain.ts/sales.domain.spec.ts and own status notes only. Reuse published ticketCalendarDate (Asia/Tehran) for contractual calendar-date bounds, retain UTC instant ordering and reversed-route validation. Synthetic regressions only; do not store operational contract/passenger data. No shared contract/schema/migration/dependency/runtime changes or live contract mutation. Earlier same-owner source scopes are merged/released; no active overlapping Sales validator writer found.
