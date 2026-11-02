@@ -1059,6 +1059,12 @@ export function SalesContractForm() {
             <h3 className="font-bold">بلیط رفت</h3>
             <ContractFlightEditor
               flightDate={flightRange.from}
+              destinationCityId={state.destinationId}
+              destinationCountryId={String(
+                references.cities.find(
+                  (city) => city.id === state.destinationId,
+                )?.attributes.countryId || '',
+              )}
               international={salesInternationalTravel(state)}
               airlines={references.airlines}
               value={state.contractFlights?.OUTBOUND}
@@ -1168,6 +1174,11 @@ export function SalesContractForm() {
             {!salesReturnRequiresInventory(state) && (
               <ContractFlightEditor
                 flightDate={selectedReturnDay}
+                destinationCityId={state.originId}
+                destinationCountryId={String(
+                  references.cities.find((city) => city.id === state.originId)
+                    ?.attributes.countryId || '',
+                )}
                 international={salesInternationalTravel(state)}
                 airlines={references.airlines}
                 value={state.contractFlights?.RETURN}
