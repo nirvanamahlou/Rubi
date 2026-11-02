@@ -43,6 +43,7 @@ import {
 import { callCenterApi, CallCenterHttpError, type CallNote } from './client';
 import {
   readApi,
+  CONTACT_PAGE_SIZE,
   emptySearch,
   type SearchFilters,
   type SearchPage,
@@ -365,7 +366,12 @@ function Content({
               NO: 'تکمیل‌شده',
             } as Record<string, string>
           )[value] ?? value);
-  const pageCount = Math.max(1, Math.ceil((result?.meta.total ?? 0) / 20));
+  const pageCount = Math.max(
+    1,
+    Math.ceil(
+      (result?.meta.total ?? 0) / (result?.meta.pageSize ?? CONTACT_PAGE_SIZE),
+    ),
+  );
   return (
     <section dir="rtl" className={styles.workspace}>
       <header className={styles.header}>

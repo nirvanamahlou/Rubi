@@ -10685,3 +10685,11 @@ HR-ATTENDANCE-NEWEST-1102 scope extension: native API evidence shows daily rows 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-employee-contract-dates-1102 from develop70487d637. User authorizes removal of inline employee creation from employee-specific HR record forms, employee list start/end-contract/end-employment dates, push/develop merge and local3100. Reserve only HrRecordForm employee-create trigger, HrEmployees dataset/list bounded integration, new HR-owned date projection and tests; preserve identification-code/editor peer work. Existing complete, scope-authorized useHrReferenceData loader supplies contracts.active and lifecycle.separation beyond truncated bootstrap; no API/schema/dependency/migration changes. Preserve cancelled/deleted history and employee identities; no operational records created.
 
 HR-EMPLOYEE-CONTRACT-DATES-1102 reserves only three new English override keys for the requested column labels; other translation/catalog writers remain untouched.
+
+## CALL-CENTER-TEN-CONTACTS-1102 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; latest origin/develop. Owner requests10 contact rows per page, implementation only and NO SERVER DEPLOYMENT. Reserve only readApi.search page size and existing transport regression expectation plus own docs. Existing contact table derives page count from server totalPages. Preserve filters, revision/cancellation and separate KPI/history/queue paging. No API/schema/dependency/UI layout/runtime change. Prior Call Center scopes are published and frozen.
+
+CALL-CENTER-TEN-CONTACTS-1102 scope correction: existing page count divides total by hardcoded20. Reserve the single contact-table page-count expression in workspace.tsx and shared contact-page constant so Next/Previous reach every10-row page; no other workspace code or layout changes.
+
+CALL-CENTER-TEN-CONTACTS-1102 — SOURCE_READY / DO NOT DEPLOY: eight transport regressions, scoped lint/format, full Web typecheck and production build pass. Contact search requests10 and page count uses server page size; separate20-row KPI/history requests unchanged. No server commands, runtime or data changes. Source reservations freeze on publication.
