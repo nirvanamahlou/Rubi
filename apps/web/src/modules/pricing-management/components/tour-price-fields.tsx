@@ -1,6 +1,6 @@
 'use client';
 
-import type { PackageTourPriceFieldV1 } from '@nora/contracts';
+import { tourPriceFields, type PackageTourPriceFieldV1 } from '@nora/contracts';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
@@ -21,6 +21,7 @@ export function TourPriceFields({
       value.map((field) => (field.id === id ? { ...field, ...patch } : field)),
     );
   }
+  const types = tourPriceFields();
   return (
     <div className="grid gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -55,15 +56,52 @@ export function TourPriceFields({
           >
             <label className="col-span-full grid gap-2 text-sm font-bold">
               نام فیلد
-              <Input
-                aria-label={`نام فیلد قیمت ${index + 1}`}
-                maxLength={120}
+              <NativeSearchSelect
+                aria-label={`نوع فیلد قیمت ${index + 1}`}
                 disabled={disabled}
-                value={field.title}
-                onChange={(event) =>
-                  update(field.id, { title: event.target.value })
-                }
-              />
+                value={field.kind}
+                onChange={(event) => {
+                  const kind = event.target
+                    .value as PackageTourPriceFieldV1['kind'];
+                  const template = types.find((row) => row.kind === kind);
+                  if (
+                    kind !== 'custom' &&
+                    value.some(
+                      (row) => row.id !== field.id && row.kind === kind,
+                    )
+                  )
+                    return;
+                  update(field.id, {
+                    kind,
+                    title: template?.title ?? field.title,
+                    mode: kind === 'commission' ? 'percent' : 'fixed',
+                  });
+                }}
+              >
+                {types.map((type) => (
+                  <option
+                    key={type.kind}
+                    value={type.kind}
+                    disabled={value.some(
+                      (row) => row.id !== field.id && row.kind === type.kind,
+                    )}
+                  >
+                    {type.title}
+                  </option>
+                ))}
+                <option value="custom">سایر خدمات</option>
+              </NativeSearchSelect>
+              {field.kind === 'custom' && (
+                <Input
+                  aria-label={`نام فیلد قیمت ${index + 1}`}
+                  maxLength={120}
+                  disabled={disabled}
+                  value={field.title}
+                  onChange={(event) =>
+                    update(field.id, { title: event.target.value })
+                  }
+                />
+              )}
             </label>
             <label className="grid gap-2 text-sm font-bold">
               {field.mode === 'percent' ? 'درصد' : 'مبلغ'}

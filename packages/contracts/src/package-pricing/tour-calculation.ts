@@ -17,6 +17,8 @@ export interface TourRoomCalculationInput {
     mode: 'percent' | 'fixed';
     value: string;
   };
+  infants?: number;
+  infantFlight?: { amount: string; currencyCode: string } | undefined;
   adults: number;
   children: number;
   adultFlight: { amount: string; currencyCode: string };
@@ -69,6 +71,9 @@ export function calculateTourRoom(input: TourRoomCalculationInput) {
     !Number.isSafeInteger(input.adults) ||
     input.adults < 1 ||
     input.adults > 20 ||
+    !Number.isSafeInteger(input.infants ?? 0) ||
+    (input.infants ?? 0) < 0 ||
+    (input.infants ?? 0) > 20 ||
     !Number.isSafeInteger(input.children) ||
     input.children < 0 ||
     input.children > 20
@@ -126,6 +131,10 @@ export function calculateTourRoom(input: TourRoomCalculationInput) {
   for (const [money, count] of [
     [input.adultFlight, input.adults],
     [input.childFlight, input.children],
+    [
+      input.infantFlight ?? { amount: '0', currencyCode: input.hotelCurrency },
+      input.infants ?? 0,
+    ],
     [input.businessUplift, input.businessCabin ? input.adults : 0],
   ] as const) {
     const value =
@@ -161,11 +170,15 @@ export function calculateTourRoom(input: TourRoomCalculationInput) {
       return {
         currencyCode,
         sale: formatted(bucket.sale, p),
-        purchase: input.flightCosts ? formatted(bucket.purchase, p) : null,
+        purchase:
+          input.flightCosts && !(input.infants ?? 0)
+            ? formatted(bucket.purchase, p)
+            : null,
         commission: formatted(commission, p),
-        profit: input.flightCosts
-          ? formatted(bucket.sale - bucket.purchase - commission, p)
-          : null,
+        profit:
+          input.flightCosts && !(input.infants ?? 0)
+            ? formatted(bucket.sale - bucket.purchase - commission, p)
+            : null,
       };
     });
   return {

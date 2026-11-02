@@ -92,6 +92,7 @@ import {
   validateSalesChequePayments,
 } from '@nora/contracts';
 import { SalesChequeCalculator } from './sales-cheque-calculator';
+import { AgencyCommission } from './agency-commission';
 import { ContractTotalPrices } from './contract-total-prices';
 import { ContractServiceSummary } from './contract-service-summary';
 import { SalesDatePicker } from './sales-date-picker';
@@ -2591,6 +2592,12 @@ export function SalesContractForm() {
                   onChange={patchState}
                 />
               )}
+              <AgencyCommission
+                state={state}
+                onChange={(agencyCommission) =>
+                  patchState({ agencyCommission })
+                }
+              />
               <InsuranceExtraSummary state={state} />
               <SalesChequeCalculator
                 state={pricedState}

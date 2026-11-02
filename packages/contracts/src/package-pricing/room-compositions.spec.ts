@@ -150,3 +150,38 @@ it('keeps exact rows from every matching period and retains legacy single-batch 
   ]);
   expect(packageTourSelectionBatch(grid, 'a', false)).toBe(a);
 });
+
+it('splits hotel bands crossing age two and charges infant and child fares independently', () => {
+  const infantRow = {
+    ...row,
+    roomRates: [
+      {
+        ...row.roomRates[0]!,
+        occupancyRates: [
+          { ...rate, childAges: [{ min: 0, maxExclusive: 15 }] },
+        ],
+      },
+    ],
+  };
+  const rows = buildHotelPackageCompositions({
+    ...input,
+    row: infantRow,
+    calculation: {
+      ...input.calculation,
+      infantFlight: { amount: '3', currencyCode: 'EUR' },
+    },
+  });
+  expect(rows).toHaveLength(2);
+  const infant = rows.find(
+    (r) => packageRoomIdentity(r.roomCode)!.childAges[0]!.maxExclusive === 2,
+  )!;
+  const child = rows.find(
+    (r) => packageRoomIdentity(r.roomCode)!.childAges[0]!.min === 2,
+  )!;
+  expect(
+    infant.currencyAmounts.find((p) => p.currencyCode === 'EUR')!.sale,
+  ).toBe('263.00');
+  expect(
+    child.currencyAmounts.find((p) => p.currencyCode === 'EUR')!.sale,
+  ).toBe('270.00');
+});

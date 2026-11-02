@@ -186,7 +186,11 @@ export class PackageTourPricingService {
           .filter((p) => p.type === 'DISCOUNT')
           .reduce((n, p) => n.add(p.amount), new Prisma.Decimal(0));
         const reference = baseline.get(code) ?? new Prisma.Decimal(0);
-        if (base.lt(reference) || (discount.gt(0) && !base.eq(reference)))
+        if (
+          !base.eq(reference) ||
+          discount.gt(base) ||
+          parts.some((part) => part.type !== 'BASE' && part.type !== 'DISCOUNT')
+        )
           throw new BadRequestException('قیمت فروش معتبر نیست.');
       }
     }
@@ -432,7 +436,8 @@ export class PackageTourPricingService {
         priceFields ??
         (Array.isArray(existing?.priceFields)
           ? validateTourPriceFields(existing.priceFields).map((field) => {
-              if (field.kind === 'custom') return field;
+              if (field.kind === 'custom' || field.kind === 'infantFlight')
+                return field;
               const legacy = tourPriceFields({
                 ...input,
                 priceFields: undefined,
@@ -658,6 +663,11 @@ export class PackageTourPricingService {
           const adjustment = byRow.get(row.id);
           try {
             const calculated = calculateTourRoom({
+              infantFlight: Array.isArray(draft.priceFields)
+                ? validateTourPriceFields(draft.priceFields).find(
+                    (field) => field.kind === 'infantFlight',
+                  )
+                : undefined,
               extraSaleFields: Array.isArray(draft.priceFields)
                 ? validateTourPriceFields(draft.priceFields).filter(
                     (field) => field.kind === 'custom',
@@ -781,6 +791,11 @@ export class PackageTourPricingService {
                         currencyCode:
                           draft.commissionCurrencyCode ?? draft.currencyCode,
                       },
+                      infantFlight: Array.isArray(draft.priceFields)
+                        ? validateTourPriceFields(draft.priceFields).find(
+                            (field) => field.kind === 'infantFlight',
+                          )
+                        : undefined,
                       extraSaleFields: Array.isArray(draft.priceFields)
                         ? validateTourPriceFields(draft.priceFields).filter(
                             (field) => field.kind === 'custom',

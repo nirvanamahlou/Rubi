@@ -104,7 +104,27 @@ export function buildHotelPackageCompositions(
         childAges: [...rate.childAges],
         board: rate.board,
       };
-      identities.set(packageRoomCode(identity), identity);
+      let variants = [identity];
+      if (input.calculation.infantFlight) {
+        let bands: (typeof identity.childAges)[] = [[]];
+        for (const band of identity.childAges) {
+          const options =
+            band.min < 2 && band.maxExclusive > 2
+              ? [
+                  { min: band.min, maxExclusive: 2 },
+                  { min: 2, maxExclusive: band.maxExclusive },
+                ]
+              : [band];
+          if (bands.length * options.length > 4096)
+            throw Error('Too many age combinations');
+          bands = bands.flatMap((prefix) =>
+            options.map((option) => [...prefix, option]),
+          );
+        }
+        variants = bands.map((childAges) => ({ ...identity, childAges }));
+      }
+      for (const variant of variants)
+        identities.set(packageRoomCode(variant), variant);
     }
     return [...identities].flatMap(([roomCode, identity]) => {
       const quote = (ages: number[]) =>
@@ -147,7 +167,12 @@ export function buildHotelPackageCompositions(
         nights: 1,
         hotelCurrency: currency,
         adults: identity.adults,
-        children: identity.childAges.length,
+        children: identity.childAges.filter(
+          (band) => !input.calculation.infantFlight || band.min >= 2,
+        ).length,
+        infants: input.calculation.infantFlight
+          ? identity.childAges.filter((band) => band.maxExclusive <= 2).length
+          : 0,
       });
       return [
         {
