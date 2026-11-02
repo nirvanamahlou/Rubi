@@ -60,6 +60,47 @@ async function request<T>(
 
 const branchQuery = (branchId: string) =>
   `?branchId=${encodeURIComponent(branchId)}`;
+export interface GhestirooStatus {
+  configured: boolean;
+  storageReady: boolean;
+  canManage: boolean;
+  version: number;
+  origin?: string;
+  connectionId?: string;
+  expiresAt?: string;
+  scopes?: string[];
+  allowedUserIds?: string[];
+}
+export const ghestirooApi = {
+  status: (branch: string, signal?: AbortSignal) =>
+    request<GhestirooStatus>(`/ghestiroo/connection${branchQuery(branch)}`, {
+      ...(signal ? { signal } : {}),
+    }),
+  save: (
+    branch: string,
+    bundle: string,
+    allowedUserIds: string[],
+    expectedVersion: number,
+  ) =>
+    request<GhestirooStatus>(`/ghestiroo/connection${branchQuery(branch)}`, {
+      method: 'POST',
+      body: JSON.stringify({ bundle, allowedUserIds, expectedVersion }),
+    }),
+  test: (branch: string) =>
+    request<{ scopes: string[]; checkedAt: string }>(
+      `/ghestiroo/test${branchQuery(branch)}`,
+      { method: 'POST' },
+    ),
+  resources: (branch: string, resource: string, after = '') =>
+    request<{ items: Record<string, unknown>[]; nextCursor: string | null }>(
+      `/ghestiroo/resources/${resource}${branchQuery(branch)}${after ? `&after=${encodeURIComponent(after)}` : ''}`,
+    ),
+  grant: (branch: string) =>
+    request<{ action: string; token: string; expiresIn: number }>(
+      `/ghestiroo/admin-grants${branchQuery(branch)}`,
+      { method: 'POST' },
+    ),
+};
 export const integrationsApi = {
   sitePresence: (branchId: string, systemId: string, signal: AbortSignal) =>
     request<SitePresenceV1>(

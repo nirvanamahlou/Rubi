@@ -15,6 +15,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
 import { timingSafeEqual } from 'node:crypto';
 import type { Request } from 'express';
 import { AuthGuard } from '../iam/auth.guard';
@@ -29,6 +37,11 @@ import {
   TelephonySyntheticDto,
 } from '../customer-affairs/telephony.dto';
 import { TelephonyIntegrationService } from './telephony.service';
+export class AnswerAccessReprojectDto {
+  @IsOptional() @IsUUID() after?: string;
+  @IsOptional() @IsInt() @Min(1) @Max(200) limit?: number;
+  @IsOptional() @IsBoolean() apply?: boolean;
+}
 @Controller('integrations/telephony')
 @UseGuards(AuthGuard, PermissionGuard)
 @RequirePermissions('customer_affairs.call_center.read')
@@ -58,6 +71,14 @@ export class TelephonyIntegrationController {
     @Body() input: TelephonyConnectionDto,
   ) {
     return this.service.configure(req.actor, input);
+  }
+  @Post('answer-access/reproject')
+  @Header('Cache-Control', 'private, no-store')
+  reprojectAnswers(
+    @Req() req: AuthenticatedRequest,
+    @Body() input: AnswerAccessReprojectDto,
+  ) {
+    return this.service.reprojectAnsweredAccess(req.actor, input);
   }
   @Post('mappings')
   mapping(

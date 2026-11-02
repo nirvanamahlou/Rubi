@@ -32,3 +32,16 @@ describe('personal performance extra cards', () => {
     expect(html.match(/>—</g)).toHaveLength(4);
   });
 });
+
+it('renders measured own work deficit', () => {
+  const hr = {
+    monthlyAttendance: {
+      period: 'آبان',
+      lateMinutes: 5,
+      overtimeMinutes: 30,
+      deficitMinutes: 75,
+    },
+  } as WorkbenchHrPerformanceV1;
+  const html = renderToStaticMarkup(<PerformanceExtraCards hr={hr} />);
+  expect(html).toContain('۱ ساعت و ۱۵ دقیقه');
+});

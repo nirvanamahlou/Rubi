@@ -51,6 +51,23 @@ const rows: PackageSaleRow[] = ['a', 'b'].map((id) => ({
     },
   ],
 }));
+it('shows hotel purchase even when flight purchase is unavailable', () => {
+  const price = rows[0]!.prices[0]!;
+  const previous = price.currencyAmounts[0]!.purchase;
+  price.currencyAmounts[0]!.purchase = null;
+  try {
+    const cells = render().filter((node) => node.type === 'td');
+    expect(
+      cells.some(
+        (node) =>
+          Array.isArray(node.props.children) &&
+          node.props.children.includes(price.hotelPurchase),
+      ),
+    ).toBe(true);
+  } finally {
+    price.currencyAmounts[0]!.purchase = previous;
+  }
+});
 function nodes(tree: ReactNode): ReactElement<Record<string, unknown>>[] {
   tree = canonicalTestTree(tree);
   if (Array.isArray(tree)) return tree.flatMap(nodes);

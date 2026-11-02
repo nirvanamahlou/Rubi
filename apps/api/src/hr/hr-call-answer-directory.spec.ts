@@ -135,3 +135,20 @@ it('scopes a private bootstrap directory to the exact PBX connection and branch'
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it('offers every extension registered for one employee', async () => {
+  const findMany = vi.fn().mockResolvedValue([
+    {
+      name: 'Synthetic',
+      unit: 'Sales',
+      position: 'Expert',
+      records: [{ values: ['0012', '0045'] }],
+    },
+  ]);
+  const directory = new HrCallAnswerDirectory({
+    client: { hrEmployee: { findMany } },
+  } as unknown as DatabaseService);
+  expect(
+    (await directory.options('branch-a')).map((item) => item.extension),
+  ).toEqual(['0012', '0045']);
+});

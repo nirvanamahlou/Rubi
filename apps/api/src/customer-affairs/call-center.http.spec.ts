@@ -35,6 +35,7 @@ describe('Call Center authenticated HTTP boundary', () => {
     source: 'گوگل',
     operator: 'واحد ویزا',
     status: 'جدید',
+    outcome: 'ANSWERED',
     note: '',
   };
   beforeEach(async () => {
@@ -112,6 +113,9 @@ describe('Call Center authenticated HTTP boundary', () => {
       { status: 'INVALID' },
       { recordings: [{ url: 'https://untrusted.example/a' }] },
       { outcome: 'UNKNOWN' },
+      { outcome: undefined },
+      { outcome: null },
+      { outcome: '' },
       { note: 'x'.repeat(2001) },
     ]) {
       await request(app.getHttpServer())

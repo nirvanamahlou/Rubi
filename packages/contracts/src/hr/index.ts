@@ -21,6 +21,7 @@ export const HR_PERMISSION_CODES = [
 export interface HrEmployeeDto {
   jobTitleId?: string | null;
   extension?: string;
+  extensions?: string[];
   id: string;
   personnelCode: string;
   branchId: string;
@@ -63,6 +64,8 @@ export interface HrRecordDto {
 
 /** Typed command inputs; no provider receipts or binary content are accepted. */
 export interface HrWorkflowData {
+  /** Shared reference applicability; membership is captured and enforced by the server. */
+  allBranches?: boolean;
   /** Persistent diagram offsets in CSS pixels, independent of personnel assignments. */
   chartX?: number;
   chartY?: number;
@@ -85,6 +88,13 @@ export interface HrWorkflowData {
   shiftEndDayOffset?: number;
   attendanceBeforeHours?: number;
   attendanceAfterHours?: number;
+  /** Trusted provider provenance and calculated UTC boundaries; generic commands reject these. */
+  attendanceSource?: string;
+  sourceRecordId?: string;
+  sourceEntryType?: string;
+  firstIn?: string | null;
+  lastOut?: string | null;
+  deficitMinutes?: number | null;
   workedMinutes?: number;
   lateMinutes?: number | null;
   earlyMinutes?: number | null;
@@ -118,6 +128,7 @@ export interface HrEmployeeCreate {
   jobTitleId?: string;
   /** Internal business phone extension; omit to preserve on edit, blank/null clears. */
   extension?: string | null;
+  extensions?: string[];
   /** Optional atomic private personnel profile, using the existing identity/phone schemas. */
   identityValues?: string[];
   contactValues?: string[][];
@@ -138,7 +149,12 @@ export interface HrEmployeeCreate {
   startedAtValue: string;
   status?: string;
 }
-export type HrEmployeeUpdate = Partial<HrEmployeeCreate> & {
+export type HrEmployeeUpdate = Omit<
+  Partial<HrEmployeeCreate>,
+  'organizationBranchId'
+> & {
+  /** Null selects the owning branch without a company-specific assignment. */
+  organizationBranchId?: string | null;
   version: number;
   /** Complete identity/contact snapshot required when editing private profile values. */
   profileRecords?: { id: string; version: number }[];

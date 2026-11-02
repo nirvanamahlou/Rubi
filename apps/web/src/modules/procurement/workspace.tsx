@@ -37,11 +37,7 @@ import { PurchaseOrdersSection } from './orders-section';
 import { DocumentLinks, recordData } from './record-details';
 import { ProcurementExportPanel } from './export-panel';
 import { formatProcurementDate } from './presentation';
-import {
-  filterSampleRequests,
-  sampleRequests,
-  type ProcurementListRow,
-} from './sample-requests';
+import type { ProcurementListRow } from './sample-requests';
 import { ProcurementSelect } from './procurement-select';
 import { ProcurementRecordActions } from './record-actions';
 import { MasterDataDateRangeFilter } from '@/modules/master-data/components/master-data-date-range-filter';
@@ -286,22 +282,6 @@ function WorkspaceState({
     enabled: group === 0,
     retry: false,
   });
-  const baselineList = useQuery({
-    queryKey: ['procurement', 'requests', 1, '', '', queryQueue, '', ''],
-    queryFn: () =>
-      procurementApi.list(
-        new URLSearchParams({
-          page: '1',
-          search: '',
-          status: '',
-          queue: queryQueue,
-          createdFrom: '',
-          createdTo: '',
-        }),
-      ),
-    enabled: group === 0,
-    retry: false,
-  });
   const detail = useQuery({
     queryKey: ['procurement', 'request', selectedId],
     queryFn: () => procurementApi.get(selectedId!),
@@ -340,20 +320,7 @@ function WorkspaceState({
     closeRequest,
   ]);
   usePageBreadcrumbs('/purchases', breadcrumbs);
-  const showSamples =
-    group === 0 &&
-    page === 1 &&
-    list.isSuccess &&
-    baselineList.isSuccess &&
-    baselineList.data.items.length === 0;
-  const rows: ProcurementListRow[] = showSamples
-    ? filterSampleRequests(sampleRequests, {
-        search: querySearch,
-        status,
-        createdFrom,
-        createdTo,
-      })
-    : (list.data?.items ?? []);
+  const rows: ProcurementListRow[] = list.data?.items ?? [];
   function saved(request: ProcurementRequestV1 & { deleted?: boolean }) {
     if (request.deleted) {
       closeRequest();
@@ -721,7 +688,7 @@ function WorkspaceState({
                 درخواستی پیدا نشد.
               </p>
             )}
-            {!showSamples && list.data && (
+            {list.data && (
               <Pager
                 page={page}
                 hasMore={list.data.hasMore}

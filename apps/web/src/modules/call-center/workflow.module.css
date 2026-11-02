@@ -411,3 +411,17 @@
   background: #ffe4e8;
   color: #b42338;
 }
+
+.queueFilters {
+  display: flex;
+  gap: 1rem;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-block: 1rem;
+}
+.queueFilters label {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 12rem;
+  flex: 1;
+}

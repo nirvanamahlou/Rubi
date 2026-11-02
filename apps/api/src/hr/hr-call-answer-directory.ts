@@ -122,17 +122,18 @@ export class HrCallAnswerDirectory {
     });
     let rows = employees.flatMap((employee) =>
       employee.records.flatMap((record) => {
-        const value = (record.values as string[] | null)?.[0];
-        return typeof value === 'string' && /^[0-9]{1,16}$/.test(value)
-          ? [
-              {
-                name: employee.name,
-                unit: employee.unit,
-                position: employee.position,
-                extension: value,
-              },
-            ]
-          : [];
+        return ((record.values as string[] | null) ?? []).flatMap((value) =>
+          typeof value === 'string' && /^[0-9]{1,16}$/.test(value)
+            ? [
+                {
+                  name: employee.name,
+                  unit: employee.unit,
+                  position: employee.position,
+                  extension: value,
+                },
+              ]
+            : [],
+        );
       }),
     );
     if (
@@ -171,7 +172,7 @@ export class HrCallAnswerDirectory {
             section: 'employee',
             tab: 'internalContact',
             deletedAt: null,
-            values: { path: ['0'], equals: extension },
+            values: { array_contains: [extension] },
           },
         },
       },

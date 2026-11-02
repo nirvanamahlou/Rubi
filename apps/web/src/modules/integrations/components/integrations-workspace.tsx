@@ -48,6 +48,8 @@ import { BrandsDashboard } from './brands-dashboard';
 import { IntegrationNavigation } from './integration-navigation';
 import { ConnectionReadiness } from './connection-readiness';
 import { NiyayeshData } from './niyayesh-data';
+import { GhestirooConnection } from './ghestiroo-connection';
+import { isGhestirooSystem } from '../system-connector';
 import { SiteRegistrationDialog } from './site-registration-dialog';
 import {
   authenticationLabels,
@@ -341,6 +343,7 @@ export function IntegrationWorkspaceBody({
             <SystemDetail
               key={system.id}
               branchId={branchId}
+              userId={actor.userId}
               system={system}
               data={data}
               allowedSections={allowedSections}
@@ -588,6 +591,11 @@ export function IntegrationWorkspaceBody({
               ) : null}
               {section === 'connections' ? (
                 <>
+                  <GhestirooConnection
+                    key={branchId}
+                    branchId={branchId}
+                    userId={actor.userId}
+                  />
                   <ConnectionReadiness />
                   <h2 className="text-lg font-bold">مسیرهای تخصصی موجود</h2>
                   <div className="grid gap-4 md:grid-cols-2">
@@ -817,8 +825,9 @@ function SystemList({
     />
   );
 }
-function SystemDetail({
+export function SystemDetail({
   branchId,
+  userId,
   system,
   data,
   onBack,
@@ -827,6 +836,7 @@ function SystemDetail({
   allowedSections,
 }: {
   branchId: string;
+  userId: string;
   system: IntegrationSystemConfigV1;
   data: IntegrationRegistryV1;
   onBack: () => void;
@@ -834,8 +844,13 @@ function SystemDetail({
   onSetup: () => void;
   allowedSections: readonly IntegrationSection[];
 }) {
+  const ghestiroo = isGhestirooSystem(system, data);
   const [area, setArea] = useState(
-    allowedSections.includes('connections') ? 'data' : 'settings',
+    allowedSections.includes('connections')
+      ? ghestiroo
+        ? 'connection'
+        : 'data'
+      : 'settings',
   );
   return (
     <Card className="grid gap-5 p-5">
@@ -884,7 +899,13 @@ function SystemDetail({
             </Button>
           ))}
       </nav>
-      {area === 'data' ? (
+      {ghestiroo && ['connection', 'data', 'health'].includes(area) ? (
+        <GhestirooConnection
+          key={`${branchId}:${system.id}`}
+          branchId={branchId}
+          userId={userId}
+        />
+      ) : area === 'data' ? (
         <NiyayeshData branchId={branchId} expectedSystemId={system.id} />
       ) : area === 'settings' ? (
         <>

@@ -13,6 +13,11 @@ import {
 import { Type } from 'class-transformer';
 
 export class CallCenterQueueDto {
+  @IsOptional() @IsUUID() teamId?: string;
+  @IsOptional() @IsUUID() agentId?: string;
+  @IsOptional()
+  @IsIn(['NEW', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'CLOSED'])
+  requestStatus?: string;
   @IsOptional()
   @IsIn([
     'ALL',

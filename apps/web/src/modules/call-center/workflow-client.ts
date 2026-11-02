@@ -73,7 +73,17 @@ export const workflowApi = {
         overdue?: boolean;
       } | null;
     }>(`/contacts/${contact}/next-action`, branch, { signal }),
-  queue: (branch: string, view: string, page: number, signal?: AbortSignal) =>
+  queue: (
+    branch: string,
+    view: string,
+    page: number,
+    signal?: AbortSignal,
+    filters: { teamId: string; agentId: string; requestStatus: string } = {
+      teamId: '',
+      agentId: '',
+      requestStatus: '',
+    },
+  ) =>
     callCenterRequest<{
       data: {
         id: string;
@@ -94,7 +104,11 @@ export const workflowApi = {
         counts?: Record<string, number>;
         asOf?: string;
       };
-    }>(`/queue?view=${view}&page=${page}`, branch, signal ? { signal } : {}),
+    }>(
+      `/queue?${new URLSearchParams({ view, page: String(page), ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v)) })}`,
+      branch,
+      signal ? { signal } : {},
+    ),
   link: (branch: string, callId: string, input: unknown) =>
     callCenterRequest<{ data: { id: string; ticketId: string } }>(
       `/calls/${callId}/request`,

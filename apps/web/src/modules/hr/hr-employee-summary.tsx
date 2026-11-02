@@ -25,7 +25,10 @@ export function employeeSummaryFields(
   const fields: [string, string][] = [
     ['کد پرسنلی', employee.personnelCode],
     ['نام و نام خانوادگی', employee.name],
-    ['شماره داخلی', employee.extension ?? ''],
+    [
+      'شماره داخلی',
+      employee.extensions?.join('، ') || employee.extension || '',
+    ],
     ['نوع همکاری', employee.kind],
     ['شرکت', employee.companyName],
     ['واحد', employee.unit],

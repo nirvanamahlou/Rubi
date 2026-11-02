@@ -2,6 +2,7 @@ import { expect, it } from 'vitest';
 import { defaultVoucherSettings } from './voucher-settings';
 import {
   normalizeSupplierFormPrices,
+  normalizeSupplierDraftPrices,
   supplierPriceTableData,
   supplierTransferCounts,
 } from './supplier-form-prices';
@@ -129,4 +130,33 @@ it('saves a dimensionless ratio without requiring a currency and removes legacy 
       [],
     ),
   ).toEqual({ ratio: { amount: '2' } });
+});
+
+it('keeps existing P.P and Ratio when automatic room defaults exist without a replacement quotation', () => {
+  const draft = defaultVoucherSettings(fixture(), {});
+  draft.rooms = [
+    { ordinal: 1, roomTypeNameSnapshot: 'DBL', adults: 2, childAges: [] },
+  ];
+  draft.supplierFormPrices = {
+    pp: { amount: '120', currencyCode: 'EUR' },
+    ratio: { amount: '2.5' },
+    transferPp: { amount: '0', currencyCode: 'EUR' },
+  };
+  expect(normalizeSupplierDraftPrices(draft, [{ code: 'EUR' }])).toEqual(
+    draft.supplierFormPrices,
+  );
+  draft.hotelRoomPrices = null;
+  expect(normalizeSupplierDraftPrices(draft, [{ code: 'EUR' }])).toEqual(
+    draft.supplierFormPrices,
+  );
+  draft.hotelRoomPrices = {
+    currencyCode: 'EUR',
+    rooms: [{ roomOrdinal: 1, baseAmount: '150', factor: '2' }],
+  };
+  expect(normalizeSupplierDraftPrices(draft, [{ code: 'EUR' }])).toEqual({
+    transferPp: draft.supplierFormPrices.transferPp,
+  });
+  draft.hotelRoomPrices = null;
+  draft.supplierFormPrices = {};
+  expect(normalizeSupplierDraftPrices(draft, [{ code: 'EUR' }])).toEqual({});
 });

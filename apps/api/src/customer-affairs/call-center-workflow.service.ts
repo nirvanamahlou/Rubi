@@ -301,6 +301,7 @@ export class CallCenterWorkflowService
     branch: string | undefined,
     view: string,
     page: number,
+    filters: { teamId?: string; agentId?: string; requestStatus?: string } = {},
   ) {
     this.scope(actor, undefined);
     const branchIds = [...new Set(actor.branchIds)];
@@ -312,6 +313,24 @@ export class CallCenterWorkflowService
           })),
         )
       : null;
+    const registrants = filters.teamId
+      ? await this.directory.registrants(branchIds, filters.teamId)
+      : null;
+    const filterPredicates: Prisma.CustomerAffairsTicketWhereInput[] = [
+      ...(registrants ? [{ createdByUserId: { in: registrants } }] : []),
+      ...(filters.agentId ? [{ createdByUserId: filters.agentId }] : []),
+      ...(filters.requestStatus
+        ? [
+            {
+              status:
+                filters.requestStatus === 'NEW' ||
+                filters.requestStatus === 'IN_PROGRESS'
+                  ? { in: ['NEW', 'IN_PROGRESS'] }
+                  : filters.requestStatus,
+            },
+          ]
+        : []),
+    ];
     const parts = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Asia/Tehran',
       year: 'numeric',
@@ -330,7 +349,10 @@ export class CallCenterWorkflowService
       branchId: { in: branchIds },
       category: CATEGORY,
       callCenterContactId: { not: null },
-      ...(scopedBranches ? { AND: [{ OR: scopedBranches }] } : {}),
+      AND: [
+        ...filterPredicates,
+        ...(scopedBranches ? [{ OR: scopedBranches }] : []),
+      ],
       ...(value === 'CLOSED'
         ? { status: 'CLOSED' }
         : value !== 'ALL'
@@ -692,11 +714,15 @@ export class CallCenterWorkflowService
         const changed =
           saved.title !== input.title.trim() ||
           (current.executionOwnerUserId ?? null) !== (input.ownerId ?? null) ||
-          (current.status === 'NEW' ? 'IN_PROGRESS' : current.status) !==
-            input.status ||
           current.priority !== input.priority;
         if (
-          changed &&
+          (changed ||
+            ((current.status === 'NEW' ? 'IN_PROGRESS' : current.status) !==
+              input.status &&
+              (current.status === 'CLOSED' ||
+                !['IN_PROGRESS', 'WAITING_CUSTOMER'].includes(
+                  input.status,
+                )))) &&
           !(await this.directory.canManageRequest(
             actor,
             branchId,

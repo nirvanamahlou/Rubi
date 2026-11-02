@@ -16,6 +16,42 @@ export class HrUserUnitDirectory {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
+  /** Authoritative account links for a physical extension; never use display labels/bootstrap files.
+   * Historical reads require records unchanged since the answer; uncertain history grants nobody.
+   */
+  async callCenterAnswerAccounts(
+    branchId: string,
+    extension: string,
+    at: Date,
+    tx: Prisma.TransactionClient,
+  ) {
+    const employees = await tx.hrEmployee.findMany({
+      where: {
+        branchId,
+        status: 'فعال',
+        deletedAt: null,
+        userId: { not: null },
+        createdAt: { lte: at },
+        updatedAt: { lte: at },
+        records: {
+          some: {
+            branchId,
+            section: 'employee',
+            tab: 'internalContact',
+            deletedAt: null,
+            createdAt: { lte: at },
+            updatedAt: { lte: at },
+            values: { path: ['0'], equals: extension },
+          },
+        },
+      },
+      select: { userId: true },
+    });
+    return [
+      ...new Set(employees.flatMap((row) => (row.userId ? [row.userId] : []))),
+    ];
+  }
+
   async callCenterUnit(
     branchId: string,
     id: string,

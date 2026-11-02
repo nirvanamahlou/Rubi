@@ -11,6 +11,7 @@ import type {
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { HrWorkbenchRequestUnits } from '../hr/hr-workbench-request-units';
+import { IamCallCenterDirectory } from './iam-call-center-directory';
 
 /** Public IAM account directory; this never exposes grants, contact data or personnel records. */
 @Injectable()
@@ -19,6 +20,10 @@ export class IamWorkbenchRequestDirectory {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(HrWorkbenchRequestUnits)
     private readonly units: HrWorkbenchRequestUnits,
+    @Inject(IamCallCenterDirectory)
+    private readonly callAccounts: IamCallCenterDirectory = new IamCallCenterDirectory(
+      database,
+    ),
   ) {}
 
   /** Authoritative current team: own active HR unit, intersected with this branch. */
@@ -67,6 +72,7 @@ export class IamWorkbenchRequestDirectory {
     tx?: Prisma.TransactionClient,
   ) {
     if (!actor.branchIds.includes(branchId)) throw new ForbiddenException();
+    if (await this.callAccounts.globalCallCenter(actor, tx)) return;
     if (tx) {
       await tx.$queryRaw`SELECT id FROM iam_users WHERE id=${actor.userId}::uuid FOR SHARE`;
       await tx.$queryRaw`SELECT "userId" FROM iam_user_branches WHERE "userId"=${actor.userId}::uuid AND "branchId"=${branchId}::uuid FOR SHARE`;
@@ -97,15 +103,20 @@ export class IamWorkbenchRequestDirectory {
     actor: AuthenticatedActor,
     branchId: string,
     tx?: Prisma.TransactionClient,
+    callCenter = false,
   ): Promise<WorkbenchRequestOptionsV1> {
     if (!actor.branchIds.includes(branchId)) throw new ForbiddenException();
     const client = tx ?? this.database.client;
+    const approvedGlobal =
+      callCenter && (await this.callAccounts.globalCallCenter(actor, tx));
     const operator = await client.user.findFirst({
       where: {
         id: actor.userId,
         status: 'ACTIVE',
         b2bOrganizationUser: null,
-        branches: { some: { branchId, branch: { isActive: true } } },
+        ...(!approvedGlobal
+          ? { branches: { some: { branchId, branch: { isActive: true } } } }
+          : {}),
       },
       select: { id: true },
     });

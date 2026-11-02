@@ -49,7 +49,11 @@ describe('HR self performance public projection', () => {
               {
                 status: 'حاضر',
                 values: ['User', '2026-10-15'],
-                data: { lateMinutes: 0, overtimeMinutes: 90 },
+                data: {
+                  lateMinutes: 0,
+                  overtimeMinutes: 90,
+                  deficitMinutes: 0,
+                },
               },
               {
                 status: 'حاضر',
@@ -59,7 +63,11 @@ describe('HR self performance public projection', () => {
               {
                 status: 'حاضر',
                 values: ['User', '2026-10-14'],
-                data: { lateMinutes: 15, overtimeMinutes: 0 },
+                data: {
+                  lateMinutes: 15,
+                  overtimeMinutes: 0,
+                  deficitMinutes: 25,
+                },
               },
             ]
           : [],
@@ -68,6 +76,7 @@ describe('HR self performance public projection', () => {
       expect(result.monthlyAttendance).toMatchObject({
         lateMinutes: 15,
         overtimeMinutes: 90,
+        deficitMinutes: 25,
       });
       const query = f.client.hrRecord.findMany.mock.calls.find(
         ([q]) => q.where.tab === 'attendance',

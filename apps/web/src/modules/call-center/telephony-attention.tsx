@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { livePopupEligible } from './live-popup-eligibility';
 import { Phone, RotateCcw } from 'lucide-react';
 import { useAccessActor } from '@/modules/iam/access-context';
 import {
@@ -15,6 +16,8 @@ import { useUnsavedGuard } from './use-unsaved-guard';
 import styles from './telephony.module.css';
 import { telephonyDraftName } from './telephony-draft';
 import { OperationalCallPopup } from './operational-call-popup';
+import { shownCallSession } from './shown-call-session';
+import { watchTelephonyWakeup } from './telephony-wakeup';
 export interface AttentionCall {
   id: string;
   callId: string;
@@ -32,6 +35,7 @@ export interface AttentionCall {
     note: string;
   };
   technical: {
+    offeredAt?: string;
     caller: { kind: string; value: string | null };
     callerName?: string | null;
     destination: { kind: string; value: string | null };
@@ -45,7 +49,7 @@ export interface AttentionCall {
 interface Snapshot {
   incoming?: AttentionCall[];
   data: AttentionCall[];
-  meta: { total: number; page: number };
+  meta: { total: number; page: number; receivedAt?: string };
 }
 const states: Record<string, string> = {
   RINGING: 'در حال زنگ',
@@ -55,15 +59,19 @@ const states: Record<string, string> = {
 };
 export function TelephonyAttention({
   outboundOnly = false,
+  bothDirections = false,
 }: {
   outboundOnly?: boolean;
+  bothDirections?: boolean;
 }) {
   const actor = useAccessActor();
   // Explicit local rollout hold: no automatic attention UI before owner activation.
   if (
-    outboundOnly
-      ? process.env.NEXT_PUBLIC_CALL_CENTER_OUTBOUND_POPUPS_ENABLED !== 'true'
-      : process.env.NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED === 'false'
+    bothDirections
+      ? process.env.NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED !== 'true'
+      : outboundOnly
+        ? process.env.NEXT_PUBLIC_CALL_CENTER_OUTBOUND_POPUPS_ENABLED !== 'true'
+        : process.env.NEXT_PUBLIC_CALL_CENTER_POPUPS_ENABLED === 'false'
   )
     return null;
   const allowed =
@@ -75,16 +83,25 @@ export function TelephonyAttention({
     <Attention
       key={actor.userId + actor.branchIds.join(',')}
       branch={actor.branchIds[0] ?? ''}
+      actorId={actor.userId}
+      authorizationKey={actor.permissions.slice().sort().join(',')}
       outboundOnly={outboundOnly}
+      bothDirections={bothDirections}
     />
   );
 }
 function Attention({
   branch,
+  actorId,
   outboundOnly,
+  bothDirections,
+  authorizationKey,
 }: {
   branch: string;
+  actorId: string;
   outboundOnly: boolean;
+  bothDirections: boolean;
+  authorizationKey: string;
 }) {
   const [rows, setRows] = useState<AttentionCall[]>([]),
     [total, setTotal] = useState(0),
@@ -93,8 +110,13 @@ function Attention({
     [open, setOpen] = useState(false),
     [leader, setLeader] = useState(false),
     [status, setStatus] = useState('در حال اتصال'),
-    [blocked, setBlocked] = useState(false),
+    [blockedAuthorization, setBlockedAuthorization] = useState<string | null>(
+      null,
+    ),
     [error, setError] = useState('');
+  const [wakeVersion, setWakeVersion] = useState(0);
+  // A denial expires when refreshed IAM permissions change. Keep the form mounted.
+  const blocked = blockedAuthorization === authorizationKey;
   const [history, setHistory] = useState<
     { id: string; subject: string; occurredAt: string }[]
   >([]);
@@ -106,8 +128,15 @@ function Attention({
   const [tab] = useState(() => crypto.randomUUID());
   const currentRef = useRef<AttentionCall | null>(null),
     button = useRef<HTMLButtonElement>(null),
-    seen = useRef(new Set<string>());
+    seen = useRef(shownCallSession(actorId, () => window.sessionStorage));
+  const liveSince = useRef<string | null>(null);
   useUnsavedGuard(dirty);
+  useEffect(() => {
+    return watchTelephonyWakeup(() => {
+      setBlockedAuthorization(null);
+      setWakeVersion((version) => version + 1);
+    });
+  }, []);
   useEffect(() => {
     currentRef.current = current;
   }, [current]);
@@ -134,19 +163,24 @@ function Attention({
           {
             method: 'POST',
             body: JSON.stringify({ tabId: tab, release: !visible }),
-            signal: abort.signal,
+            signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10000)]),
           },
         );
         const data = await callCenterRequest<Snapshot>(
           `/telephony?page=${page}`,
           branch,
-          { signal: abort.signal },
+          {
+            signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10000)]),
+          },
         );
         if (disposed) return;
+        if (!liveSince.current)
+          liveSince.current = data.meta.receivedAt ?? new Date().toISOString();
         setLeader(lease.leader);
         const attention = (data.incoming ?? data.data).filter(
           (row) =>
             !outboundOnly ||
+            bothDirections ||
             (!row.synthetic && row.call.direction === 'OUTBOUND'),
         );
         const visibleRows = [
@@ -171,7 +205,10 @@ function Attention({
           !document.querySelector('[role="dialog"]')
         ) {
           const incoming = attention.find(
-            (r) => !r.deferred && !seen.current.has(r.id),
+            (r) =>
+              !r.deferred &&
+              !seen.current.has(r.id) &&
+              livePopupEligible(r, liveSince.current!),
           );
           if (incoming) {
             seen.current.add(incoming.id);
@@ -183,14 +220,14 @@ function Attention({
             });
             setDirty(false);
             setOpen(true);
-            if (outboundOnly)
+            if (outboundOnly && incoming.call.direction === 'OUTBOUND')
               window.dispatchEvent(new Event('call-center:outbound-received'));
           }
         }
       } catch (e) {
         if (disposed) return;
         if (e instanceof CallCenterHttpError && [401, 403].includes(e.status)) {
-          setBlocked(true);
+          setBlockedAuthorization(authorizationKey);
           setRows([]);
           setCurrent(null);
           setDraft({ name: '', subject: '', note: '' });
@@ -211,7 +248,16 @@ function Attention({
       abort.abort();
       clearTimeout(timer);
     };
-  }, [branch, page, blocked, tab, outboundOnly]);
+  }, [
+    branch,
+    page,
+    blocked,
+    tab,
+    outboundOnly,
+    bothDirections,
+    wakeVersion,
+    authorizationKey,
+  ]);
   const currentId = current?.id,
     currentBranch = current?.branchId;
   useEffect(() => {
@@ -310,7 +356,7 @@ function Attention({
           </button>
           <small role="status">{status}</small>
           {blocked && (
-            <button onClick={() => setBlocked(false)} type="button">
+            <button onClick={() => setBlockedAuthorization(null)} type="button">
               <RotateCcw size={14} /> تلاش مجدد
             </button>
           )}

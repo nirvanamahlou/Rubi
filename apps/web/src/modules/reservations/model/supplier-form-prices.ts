@@ -224,3 +224,18 @@ export function normalizeSupplierFormPrices(
     }),
   );
 }
+
+/** Room defaults alone must not erase an existing legacy quotation. */
+export function normalizeSupplierDraftPrices(
+  draft: Pick<VoucherSettingsV1, 'hotelRoomPrices' | 'supplierFormPrices'>,
+  currencies: Parameters<typeof normalizeSupplierFormPrices>[1],
+) {
+  return normalizeSupplierFormPrices(
+    draft.hotelRoomPrices
+      ? draft.supplierFormPrices?.transferPp
+        ? { transferPp: draft.supplierFormPrices.transferPp }
+        : {}
+      : draft.supplierFormPrices,
+    currencies,
+  );
+}

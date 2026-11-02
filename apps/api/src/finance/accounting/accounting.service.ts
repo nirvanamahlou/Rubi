@@ -3826,13 +3826,15 @@ export class AccountingService {
       });
       if (existing) this.version(existing.version, expected);
       const kind = v.text(p.kind, 16, true);
-      const sourceForm = p.sourceForm === 'rahkaran-documents-v1';
-      if (sourceForm && kind === 'CLOSING') v.invalid('فرم الگو معتبر نیست.');
+      const closingSource = p.sourceForm === 'rahkaran-closing-v1';
+      const sourceForm =
+        closingSource || p.sourceForm === 'rahkaran-documents-v1';
+      if (sourceForm && closingSource !== (kind === 'CLOSING'))
+        v.invalid('فرم الگو معتبر نیست.');
       if (
         existing &&
-        sourceForm !==
-          (v.attributes(existing.attributes).sourceForm ===
-            'rahkaran-documents-v1')
+        (sourceForm ? p.sourceForm : undefined) !==
+          v.attributes(existing.attributes).sourceForm
       )
         v.rule('فرم این الگو با قالب ذخیره‌شده یکسان نیست.');
       if (!['AUTOMATIC', 'REVALUATION', 'CLOSING'].includes(kind))
@@ -3880,6 +3882,7 @@ export class AccountingService {
             !lossAccountId ||
             retainedAccountId)) ||
         (kind === 'CLOSING' &&
+          !closingSource &&
           (!voucherTypeId ||
             !retainedAccountId ||
             gainAccountId ||
@@ -3920,7 +3923,7 @@ export class AccountingService {
         if (
           sourceForm &&
           !(
-            kind === 'AUTOMATIC' ? ['SOURCE', 'TARGET'] : ['OFFSET', 'BASIS']
+            kind !== 'REVALUATION' ? ['SOURCE', 'TARGET'] : ['OFFSET', 'BASIS']
           ).includes(role!)
         )
           v.invalid('نقش ردیف الگو معتبر نیست.');
@@ -4041,7 +4044,9 @@ export class AccountingService {
           ? {
               attributes: json({
                 ...v.attributes(existing?.attributes ?? {}),
-                sourceForm: 'rahkaran-documents-v1',
+                sourceForm: closingSource
+                  ? 'rahkaran-closing-v1'
+                  : 'rahkaran-documents-v1',
                 sourceAssignments: JSON.stringify(sourceAssignments),
                 ...(p.notes !== undefined
                   ? {

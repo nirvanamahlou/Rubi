@@ -25,6 +25,25 @@ vi.mock('@/components/ui/native-search-select', () => ({
   },
 }));
 describe('existing call form completion', () => {
+  it.each(['INBOUND', 'OUTBOUND'] as const)(
+    'requires an explicit outcome for a %s popup',
+    (direction) => {
+      const html = renderToStaticMarkup(
+        <CallForm
+          branchId="test"
+          event={{ ...previewCalls()[0]!, direction }}
+          previous={undefined}
+          onSave={async () => {}}
+          onClose={() => {}}
+          busy={false}
+        />,
+      );
+      expect(html).toContain('نتیجه تماس *');
+      expect(html).not.toContain('نتیجه تماس (اختیاری)');
+      expect(html).toMatch(/<select[^>]*name="outcome"[^>]*required=""/);
+      expect(html).toContain('value=""');
+    },
+  );
   it.each([
     ['INBOUND', 'ورودی ـ تماس به شرکت'],
     ['OUTBOUND', 'خروجی ـ تماس از شرکت'],

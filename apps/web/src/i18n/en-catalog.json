@@ -17489,5 +17489,14 @@
   "پس از ثبت، اطلاعات تکمیلی و قراردادها را از پروندهٔ ۳۶۰ مدیریت کنید. این مرحله فقط اطلاعات اولیه را ذخیره می‌کند.": "After registration, manage additional information and contracts in the 360 dossier. This step saves initial information only.",
   "برای انتخاب هتل، شهر مقصد تور را مشخص کنید.": "Select the tour destination city before assigning hotels.",
   "پیش از ثبت نوبت، شهر مبدأ و مقصد تور را تکمیل کنید.": "Complete the tour origin and destination cities before scheduling a departure.",
-  "شهر مبدأ و مقصد باید متفاوت باشند.": "The origin and destination cities must be different."
+  "شهر مبدأ و مقصد باید متفاوت باشند.": "The origin and destination cities must be different.",
+  "+ افزودن": "+ Add",
+  "حداکثر ۲۰ شماره داخلی مجاز است.": "A maximum of 20 extension numbers is allowed.",
+  "حذف شماره داخلی": "Remove extension number",
+  "ترددهای دستگاه دریافت شد.": "Device attendance received.",
+  "دریافت تردد انجام نشد.": "Could not retrieve device attendance.",
+  "دریافت تردد دستگاه": "Retrieve device attendance",
+  "Attendance connector is not configured": "Attendance connector is not configured",
+  "Attendance synchronization is already running": "Attendance synchronization is already running",
+  "Attendance provider request failed": "Attendance provider request failed"
 }

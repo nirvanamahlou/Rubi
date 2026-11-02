@@ -51,7 +51,11 @@ export function useHrStore() {
         void refresh().catch(() => undefined);
     };
     window.addEventListener('focus', handler);
-    return () => window.removeEventListener('focus', handler);
+    const timer = window.setInterval(handler, 60000);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', handler);
+    };
   }, [refresh]);
   const remember = useCallback((records: readonly HrRecordDto[]) => {
     setData((current) => {

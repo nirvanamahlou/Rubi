@@ -106,6 +106,7 @@ export interface WorkbenchHrPerformanceV1 {
     period: string;
     lateMinutes: number | null;
     overtimeMinutes: number | null;
+    deficitMinutes?: number | null;
   };
   approvedLeaveCount?: number;
   todayAttendance?: {

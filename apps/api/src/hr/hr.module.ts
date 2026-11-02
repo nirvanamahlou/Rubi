@@ -1,3 +1,4 @@
+import { HrRadanDeviceService } from './hr-radan-device.service';
 import { Module } from '@nestjs/common';
 import { HrDirectoryModule } from './hr-directory.module';
 
@@ -23,6 +24,7 @@ import { HrPayrollWorksheetService } from './hr-payroll-worksheet.service';
   providers: [
     AuthGuard,
     HrService,
+    HrRadanDeviceService,
     HrPayrollWorksheetService,
     HrPayrollFinancePublicService,
     HrConnectionsService,

@@ -18,6 +18,7 @@ import { DatabaseService } from '../database/database.service';
 import { CallCenterCrypto } from './call-center.crypto';
 import { CallCenterAccessService } from './call-center-access.service';
 import { HrCallAnswerDirectory } from '../hr/hr-call-answer-directory';
+import { answeredCallAccess } from '../iam/call-center-answer-policy';
 import type { TelephonyTechnical } from './telephony-state';
 import type {
   CallCenterCallDto,
@@ -142,7 +143,7 @@ export class CallCenterService {
       ticketId: call.ticketId,
     };
   }
-  /** Read-only repair of legacy outbound display; recorded identity snapshots win. */
+  /** Read-only destination display; recorded identity snapshots always win. */
   async hydrateDestinations<
     T extends {
       id: string;
@@ -158,7 +159,7 @@ export class CallCenterService {
     const missing = calls.filter(
       (call) =>
         call.origin === 'TELEPHONY' &&
-        call.direction === 'OUTBOUND' &&
+        ['OUTBOUND', 'INBOUND'].includes(call.direction) &&
         (!call.answerRecipient ||
           call.answerRecipient.label ===
             `داخلی ${call.answerRecipient.extension}`),
@@ -186,17 +187,36 @@ export class CallCenterService {
         session.keyVersion,
         `telephony:${session.id}`,
       );
-      if (technical.first.direction !== 'OUT') continue;
-      const extension =
-        call.answerRecipient?.extension ?? technical.first.extension;
+      if (
+        (technical.first.direction === 'OUT' ? 'OUTBOUND' : 'INBOUND') !==
+        call.direction
+      )
+        continue;
+      // A ring destination is not proof of an answer. Multiple ringing agents
+      // remain ambiguous; only a provider-confirmed answer can choose one.
+      const destinations = (technical.destinations ?? []).filter(
+        (destination) => destination.extension,
+      );
+      const unique = new Set(destinations.map((d) => d.extension));
+      const inboundDestination =
+        technical.lastAnswer ??
+        (unique.size === 1 ? destinations[0] : undefined);
+      const observed =
+        technical.first.direction === 'OUT'
+          ? {
+              extension: technical.first.extension,
+              at: technical.first.occurredAt,
+            }
+          : inboundDestination;
+      const extension = call.answerRecipient?.extension ?? observed?.extension;
       if (!extension || !/^\d{1,16}$/.test(extension)) continue;
       // Never derive a person from an editable operator label or a different call leg.
       if (
-        extension !== technical.first.extension &&
+        extension !== observed?.extension &&
         extension !== technical.lastAnswer?.extension
       )
         continue;
-      const observedAt = technical.first.occurredAt;
+      const observedAt = observed?.at ?? technical.first.occurredAt;
       const key = `${session.connectionId}:${extension}`;
       let recipient = labels.get(key);
       if (!recipient) {
@@ -479,7 +499,11 @@ export class CallCenterService {
           throw new ConflictException(
             'شناسه تماس قبلاً برای اطلاعات دیگری استفاده شده است.',
           );
-        if (this.access.scoped(actor))
+        // Exact creator/branch/payload replay above is a write receipt, not dossier access.
+        if (
+          this.access.scoped(actor) &&
+          !(answeredCallAccess() && prior.origin === 'MANUAL')
+        )
           await this.access.contact(
             actor,
             branchId,
@@ -506,7 +530,7 @@ export class CallCenterService {
         },
         update: {},
       });
-      if (this.access.scoped(actor))
+      if (this.access.scoped(actor) && (priorContact || !answeredCallAccess()))
         await this.access.contact(actor, branchId, contact.id, 'contacts', tx);
       if (!priorContact && this.access.scoped(actor))
         await tx.customerAffairsAuditEvent.create({

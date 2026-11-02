@@ -87,6 +87,172 @@ const filters = {
 };
 
 describe('native dashboard independent source composition', () => {
+  it('derives unconverted lead growth from comparable authorized periods and withholds a zero or missing baseline', async () => {
+    const count = (n: number): DashboardSourceResult => ({
+      source: 'leads',
+      state: 'ready',
+      metrics: {
+        'new-leads': {
+          kind: 'count',
+          aggregation: 'unconverted leads',
+          observations: Array.from({ length: n }, () => ({
+            at: new Date('2026-10-15'),
+            value: '1',
+          })),
+        },
+      },
+    });
+    for (const [priorCount, expected] of [
+      [2, '۵۰'],
+      [0, null],
+    ] as const) {
+      const { native, leadReader } = setup(absent(), absent(), count(3));
+      leadReader.read
+        .mockResolvedValueOnce(count(3))
+        .mockResolvedValueOnce(count(priorCount));
+      const result = await native.load(
+        { kpiIds: 'lead-growth-rate' },
+        actor,
+        filters,
+        new Date('2026-11-01'),
+      );
+      expect(result.metrics['new-leads']).toBeUndefined();
+      if (expected)
+        expect(result.metrics['lead-growth-rate']).toMatchObject({
+          value: expected,
+          unit: 'درصد',
+        });
+      else
+        expect(result.unavailableMetrics?.['lead-growth-rate']).toBe(
+          'ZERO_DENOMINATOR',
+        );
+    }
+    const { native, leadReader } = setup();
+    leadReader.read
+      .mockResolvedValueOnce(count(3))
+      .mockResolvedValueOnce(absent());
+    expect(
+      (
+        await native.load(
+          { kpiIds: 'lead-growth-rate' },
+          actor,
+          filters,
+          new Date('2026-11-01'),
+        )
+      ).metrics,
+    ).toEqual({});
+  });
+  it('reconciles weekday sales in Tehran across the UTC boundary, without mixing currencies', async () => {
+    const source: DashboardSourceResult = {
+      source: 'sales',
+      state: 'ready',
+      metrics: {
+        'net-sales': {
+          kind: 'money',
+          aggregation: 'confirmed contract currency',
+          observations: [
+            {
+              at: new Date('2026-10-01T20:29:59Z'),
+              value: '10',
+              currencyCode: 'USD',
+            },
+            {
+              at: new Date('2026-10-01T20:30:00Z'),
+              value: '20',
+              currencyCode: 'USD',
+            },
+            {
+              at: new Date('2026-10-08T20:30:00Z'),
+              value: '-5',
+              currencyCode: 'USD',
+            },
+            {
+              at: new Date('2026-10-01T20:30:00Z'),
+              value: '7',
+              currencyCode: 'EUR',
+            },
+          ],
+        },
+      },
+    };
+    const result = await setup(source).native.load(
+      { kpiIds: 'net-sales', visualIds: 'sales-weekday-pattern' },
+      actor,
+      filters,
+      new Date('2026-11-01'),
+    );
+    const chart = result.visuals['sales-weekday-pattern']!;
+    const usd = chart.currencySeries!.find((x) => x.currencyCode === 'USD')!;
+    expect(usd.labels).toHaveLength(7);
+    expect(usd.values[usd.labels.indexOf('پنجشنبه')]).toBe(10);
+    expect(usd.values[usd.labels.indexOf('جمعه')]).toBe(15);
+    expect(usd.values.reduce((a, b) => a + b, 0)).toBe(25);
+    expect(result.metrics['net-sales']?.value).toContain('۲۵ USD');
+    expect(
+      chart
+        .currencySeries!.find((x) => x.currencyCode === 'EUR')!
+        .values.reduce((a, b) => a + b, 0),
+    ).toBe(7);
+    expect(chart.notice).toContain('تعداد فروش روی این محور نیست');
+  });
+  it('does not invent accounting balances from sales and distinguishes absent accounting from missing matched cost', async () => {
+    const result = await setup().native.load(
+      { kpiIds: 'account-balance,receivables,net-profit,gross-profit' },
+      actor,
+      filters,
+      new Date('2026-11-01'),
+    );
+    expect(result.metrics).toEqual({});
+    for (const id of ['account-balance', 'receivables', 'net-profit'])
+      expect(result.unavailableMetrics?.[id]).toBe(
+        'POSTED_ACCOUNTING_SOURCE_REQUIRED',
+      );
+    expect(result.unavailableMetrics?.['gross-profit']).toBe(
+      'APPROVED_MATCHED_COST_REQUIRED',
+    );
+  });
+  it('withholds a weekday chart when its actual Sales source is forbidden or exceeds numeric range', async () => {
+    const denied = await setup(absent()).native.load(
+      { kpiIds: '', visualIds: 'sales-weekday-pattern' },
+      actor,
+      filters,
+      new Date('2026-11-01'),
+    );
+    expect(denied.visuals).toEqual({});
+    expect(denied.unavailableVisuals?.['sales-weekday-pattern']).toBe(
+      'SOURCE_OR_SCOPE_UNAVAILABLE',
+    );
+    const source: DashboardSourceResult = {
+      source: 'sales',
+      state: 'ready',
+      metrics: {
+        'net-sales': {
+          kind: 'money',
+          aggregation: 'exact',
+          observations: [
+            {
+              at: new Date('2026-10-15'),
+              currencyCode: 'IRR',
+              value: '9007199254740992',
+            },
+          ],
+        },
+      },
+    };
+    const large = await setup(source).native.load(
+      { kpiIds: 'net-sales', visualIds: 'sales-weekday-pattern' },
+      actor,
+      filters,
+      new Date('2026-11-01'),
+    );
+    expect(large.visuals).toEqual({});
+    expect(large.unavailableVisuals?.['sales-weekday-pattern']).toBe(
+      'CHART_NUMERIC_RANGE',
+    );
+    expect(large.metrics['net-sales']?.value).toContain(
+      '۹٬۰۰۷٬۱۹۹٬۲۵۴٬۷۴۰٬۹۹۲',
+    );
+  });
   it('recomputes average sale from contract amounts per currency and keeps empty denominators unavailable', async () => {
     const at = new Date('2026-10-15');
     const source: DashboardSourceResult = {
@@ -624,9 +790,12 @@ describe('producer-owned native dashboard readers', () => {
   });
   it('treats real empty lead source as zero without inventing leads from contracts', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
-    const result = await new LeadDashboardSource({
-      client: { customerAffairsLead: { findMany } },
-    } as never).read(query);
+    const result = await new LeadDashboardSource(
+      {
+        client: { customerAffairsLead: { findMany } },
+      } as never,
+      { convertedLeadReferencesV1: vi.fn() } as never,
+    ).read(query);
     expect(result.state).toBe('ready');
     expect(result.metrics['new-leads']?.observations).toEqual([]);
   });

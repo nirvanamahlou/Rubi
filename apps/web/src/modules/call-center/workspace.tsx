@@ -37,7 +37,6 @@ import {
   callDate,
   faNumber,
   sources,
-  operators,
   type Call,
   type CallEvent,
 } from './model';
@@ -55,7 +54,6 @@ import {
   WorkQueue,
   WorkflowPanel,
   requestLabels,
-  requestStatusOptions,
   taskLabels,
 } from './workflow';
 import { HostedCallForm } from './call-form-host';
@@ -89,6 +87,7 @@ function Select({
       <NativeSearchSelect
         className={styles.control}
         aria-label={label}
+        optionLimit={Math.max(50, options.length + 1)}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -104,58 +103,16 @@ function Select({
 }
 export function CallCenterWorkspace() {
   const actor = useAccessActor();
-  const [chosen, setChosen] = useState('');
-  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
-  useEffect(() => {
-    let active = true;
-    if (actor?.branchIds[0])
-      readApi
-        .branches(actor.branchIds[0])
-        .then((r) => {
-          if (active) setBranches(r.data);
-        })
-        .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [actor]);
-  const [hasDraft, setHasDraft] = useState(false);
   if (!actor) return <p role="status">در حال دریافت دسترسی کال سنتر…</p>;
   if (!actor.permissions.includes('customer_affairs.call_center.read'))
     return <p role="alert">دسترسی مشاهده کال سنتر ندارید.</p>;
-  const branch = actor.branchIds.includes(chosen) ? chosen : actor.branchIds[0];
+  const branch = actor.branchIds[0];
   if (!branch) return <p role="alert">شعبه مجازی در دسترس نیست.</p>;
   return (
     <>
       <Content
         key={`${actor.userId}:${branch}:${actor.permissions.join(',')}`}
         branch={branch}
-        branchControl={
-          <label>
-            شعبه مجاز
-            <NativeSearchSelect
-              aria-label="شعبه مجاز کال سنتر"
-              value={branch}
-              onChange={(e) => {
-                if (
-                  !hasDraft ||
-                  window.confirm(
-                    'یادداشت ذخیره‌نشده با تغییر شعبه کنار گذاشته شود؟',
-                  )
-                )
-                  setChosen(e.target.value);
-              }}
-            >
-              {actor.branchIds.map((id, index) => (
-                <option key={id} value={id}>
-                  {branches.find((b) => b.id === id)?.name ??
-                    'شعبه ' + faNumber(index + 1)}
-                </option>
-              ))}
-            </NativeSearchSelect>
-          </label>
-        }
-        onDirty={setHasDraft}
         actorId={actor.userId}
         permissions={actor.permissions}
       />
@@ -163,18 +120,28 @@ export function CallCenterWorkspace() {
   );
 }
 function Content({
-  onDirty,
-  branchControl,
   branch,
   actorId,
   permissions,
 }: {
   branch: string;
-  branchControl: ReactNode;
   actorId: string;
   permissions: readonly string[];
-  onDirty: (value: boolean) => void;
 }) {
+  const [destinations, setDestinations] = useState<string[]>([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    callCenterApi
+      .destinations(branch, controller.signal)
+      .then((result) => {
+        if (!controller.signal.aborted)
+          setDestinations([...new Set(result.data.map((row) => row.label))]);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setDestinations([]);
+      });
+    return () => controller.abort();
+  }, [branch]);
   const [advanced, setAdvanced] = useState(false);
   const [completionPrevious, setCompletionPrevious] = useState<Call | null>(
     null,
@@ -193,10 +160,6 @@ function Content({
     [message, setMessage] = useState('');
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   useUnsavedGuard(Object.values(noteDrafts).some((v) => !!v.trim()));
-  useEffect(
-    () => onDirty(Object.values(noteDrafts).some((v) => !!v.trim())),
-    [noteDrafts, onDirty],
-  );
   const [newRequestOpen, setNewRequestOpen] = useState(false);
   const [withoutOutcomeOpen, setWithoutOutcomeOpen] = useState(false);
   const [periodOpen, setPeriodOpen] = useState<'today' | 'week' | null>(null);
@@ -264,6 +227,7 @@ function Content({
         .catch((e) => {
           if (!controller.signal.aborted) {
             setLoading(false);
+            setResult(null);
             setError(reasonText(e));
             if (
               e instanceof CallCenterHttpError &&
@@ -370,7 +334,7 @@ function Content({
     direction: 'جهت تماس',
     outcome: 'نتیجه تماس',
     source: 'منبع',
-    unit: 'واحد',
+    unit: 'وصل شده به',
     teamId: 'تیم',
     agentId: 'کارشناس',
     requestStatus: 'وضعیت درخواست',
@@ -447,16 +411,6 @@ function Content({
               />
             </label>
           </div>
-          {branchControl}
-          <Select
-            label="دامنه تماس"
-            value={filters.scope}
-            onChange={(v) => change('scope', v || 'LATEST')}
-            options={[
-              ['LATEST', 'آخرین تماس'],
-              ['ANY', 'همه تاریخچه'],
-            ]}
-          />
           <button
             className={styles.clear}
             aria-expanded={advanced}
@@ -530,20 +484,10 @@ function Content({
                 options={sources.map((v) => [v, v])}
               />
               <Select
-                label="واحد ثبت‌شده تماس"
+                label="وصل شده به"
                 value={filters.unit}
                 onChange={(v) => change('unit', v)}
-                options={operators.map((v) => [v, v])}
-              />
-              <Select
-                label="روش ثبت"
-                value={filters.origin}
-                onChange={(v) => change('origin', v)}
-                options={[
-                  ['MANUAL', 'دستی'],
-                  ['TELEPHONY', 'تلفنی'],
-                  ['UNKNOWN', 'نامشخص'],
-                ]}
+                options={['نامشخص', ...destinations].map((v) => [v, v])}
               />
               <Select
                 label="تکمیل اطلاعات"
@@ -555,44 +499,13 @@ function Content({
                 ]}
               />
             </fieldset>
-            <fieldset>
-              <legend>مسئولیت و پیگیری</legend>{' '}
-              <Select
-                label="تیم فعلی ثبت‌کننده"
-                value={filters.teamId}
-                onChange={(v) => change('teamId', v)}
-                options={teams.map((t) => [t.id, t.name])}
-              />
-              <Select
-                label="کارشناس ثبت‌کننده"
-                value={filters.agentId}
-                onChange={(v) => change('agentId', v)}
-                options={agents.map((a) => [a.id, a.displayName])}
-              />
-              <Select
-                label="وضعیت درخواست"
-                value={filters.requestStatus}
-                onChange={(v) => change('requestStatus', v)}
-                options={Object.entries(requestStatusOptions)}
-              />
-              <Select
-                label="پیگیری مخاطب"
-                value={filters.followUp}
-                onChange={(v) => change('followUp', v)}
-                options={[
-                  ...Object.entries(taskLabels),
-                  ['TODAY', 'موعد امروز'],
-                  ['OVERDUE', 'عقب‌افتاده'],
-                ]}
-              />
-            </fieldset>
           </div>
         </div>
         <p className={styles.formHint}>
           جست‌وجو روی کل داده مجاز است؛ کلمه کامل نام و موضوع، یا شماره کامل.
           فیلترهای تماس روی{' '}
           {filters.scope === 'ANY' ? 'یک تماس در کل تاریخچه' : 'آخرین تماس'} و
-          فیلتر درخواست و پیگیری روی مخاطب اعمال می‌شوند. شماره مشترک به معنی یک
+          این فیلترها روی فهرست مخاطبان اعمال می‌شوند. شماره مشترک به معنی یک
           شخص نیست.
         </p>
         <div className={styles.personTags} aria-label="فیلترهای اعمال‌شده">
@@ -649,7 +562,7 @@ function Content({
                       'نام مخاطب',
                       'شماره تماس',
                       'موضوع آخرین تماس',
-                      'نوع آخرین تماس',
+                      'جهت تماس',
                       'منبع آشنایی',
                       'وصل شده به',
                       'آخرین تماس',
@@ -719,7 +632,7 @@ function Content({
                       >
                         {row.latest.subject}
                       </td>
-                      <td data-label="نوع آخرین تماس">
+                      <td data-label="جهت تماس">
                         <span
                           className={styles.badge}
                           data-direction={row.latest.direction}

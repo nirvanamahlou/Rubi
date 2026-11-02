@@ -118,3 +118,73 @@ it('saves/sends independent immutable hotel forms while preserving other supplie
     ),
   ).toThrow();
 });
+
+it('retains exact room and transfer quotations through save, send and a later draft edit', () => {
+  let state = initialTravelWorkflow();
+  const draft = settings('11111111-1111-4111-8111-111111111111');
+  draft.supplierFormPrices = {
+    transferPp: { amount: '0', currencyCode: 'EUR' },
+  };
+  draft.hotelTransferCounts = { outbound: 2, returning: 0 };
+  const keys = ['h'];
+  state = transitionTravelWorkflow(
+    state,
+    {
+      action: 'SUPPLIER_FORM_SETTINGS',
+      expectedVersion: state.version,
+      note: '',
+      hotelStayKey: 'h',
+      voucherSettings: draft,
+    },
+    ['p'],
+    [],
+    false,
+    keys,
+  );
+  state = transitionTravelWorkflow(
+    state,
+    {
+      action: 'REQUEST_SUPPLIER',
+      expectedVersion: state.version,
+      note: '',
+      hotelStayKey: 'h',
+    },
+    ['p'],
+    [],
+    false,
+    keys,
+  );
+  expect(state.hotelSupplierForms!.h!.settings!.hotelRoomPrices).toEqual(
+    draft.hotelRoomPrices,
+  );
+  expect(state.hotelSupplierForms!.h!.sentSettings!.hotelRoomPrices).toEqual(
+    draft.hotelRoomPrices,
+  );
+  expect(state.hotelSupplierForms!.h!.sentSettings!.supplierFormPrices).toEqual(
+    draft.supplierFormPrices,
+  );
+  const changed = structuredClone(draft);
+  changed.hotelRoomPrices!.rooms[0]!.baseAmount = '150';
+  state = transitionTravelWorkflow(
+    state,
+    {
+      action: 'SUPPLIER_FORM_SETTINGS',
+      expectedVersion: state.version,
+      note: '',
+      hotelStayKey: 'h',
+      voucherSettings: changed,
+    },
+    ['p'],
+    [],
+    false,
+    keys,
+  );
+  expect(
+    state.hotelSupplierForms!.h!.settings!.hotelRoomPrices!.rooms[0]!
+      .baseAmount,
+  ).toBe('150');
+  expect(
+    state.hotelSupplierForms!.h!.sentSettings!.hotelRoomPrices!.rooms[0]!
+      .baseAmount,
+  ).toBe('120');
+});

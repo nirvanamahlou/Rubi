@@ -63,6 +63,17 @@ const serviceVisualIds = new Set([
   'service-type',
   'service-sales-portfolio',
 ]);
+const breakdownVisualIds = new Set([
+  ...serviceVisualIds,
+  'sales-weekday-pattern',
+]);
+const postedAccountingMetricIds = new Set([
+  'account-balance',
+  'receivables',
+  'overdue-balance',
+  'net-profit',
+  'operating-expenses',
+]);
 function exactText(value: Prisma.Decimal) {
   const [integer, fraction] = value
     .toFixed(4)
@@ -203,9 +214,10 @@ export class ReportingNativeDashboard {
       .filter(Boolean);
     const visualIds = (input.visualIds ?? '').split(',').filter(Boolean);
     const calculated = new Set(requested);
+    if (calculated.has('lead-growth-rate')) calculated.add('new-leads');
     for (const id of visualIds)
       for (const metric of trendVisuals[id] ?? []) calculated.add(metric);
-    if (visualIds.some((id) => serviceVisualIds.has(id)))
+    if (visualIds.some((id) => breakdownVisualIds.has(id)))
       calculated.add('net-sales');
     const starts =
       duration > 0
@@ -251,7 +263,9 @@ export class ReportingNativeDashboard {
         unavailableMetrics[id] =
           id === 'gross-profit'
             ? 'APPROVED_MATCHED_COST_REQUIRED'
-            : 'SOURCE_OR_SCOPE_UNAVAILABLE';
+            : postedAccountingMetricIds.has(id)
+              ? 'POSTED_ACCOUNTING_SOURCE_REQUIRED'
+              : 'SOURCE_OR_SCOPE_UNAVAILABLE';
         continue;
       }
       const old = prior[id];
@@ -378,11 +392,34 @@ export class ReportingNativeDashboard {
           : {}),
       };
     }
+    if (calculated.has('lead-growth-rate')) {
+      const current = available['new-leads'],
+        before = prior['new-leads'];
+      if (current && before) {
+        const denominator = sum(before.observations);
+        if (denominator.isZero())
+          unavailableMetrics['lead-growth-rate'] = 'ZERO_DENOMINATOR';
+        else {
+          const growth = sum(current.observations)
+            .minus(denominator)
+            .div(denominator)
+            .mul(100);
+          metrics['lead-growth-rate'] = {
+            value: exactText(growth.toDecimalPlaces(1)),
+            unit: 'درصد',
+            metricId: 'lead-growth-rate',
+            detail:
+              'تغییر تعداد لیدهای بدون خرید موفق نسبت به دورهٔ قبل هم‌طول؛ وضعیت تبدیل در پایان هر دوره سنجیده می‌شود.',
+          };
+          delete unavailableMetrics['lead-growth-rate'];
+        }
+      }
+    }
     const visuals: Record<string, DashboardProjectionV1['visuals'][string]> =
       {};
     const unavailableVisuals: Record<string, string> = {};
     for (const id of visualIds) {
-      if (serviceVisualIds.has(id)) {
+      if (breakdownVisualIds.has(id)) {
         const source = available['net-sales'];
         if (!source) {
           unavailableVisuals[id] = 'SOURCE_OR_SCOPE_UNAVAILABLE';
@@ -395,21 +432,39 @@ export class ReportingNativeDashboard {
               .filter((code): code is string => Boolean(code)),
           ),
         ].sort();
+        const weekdays = [
+          'شنبه',
+          'یکشنبه',
+          'دوشنبه',
+          'سه‌شنبه',
+          'چهارشنبه',
+          'پنجشنبه',
+          'جمعه',
+        ];
+        const weekday = new Intl.DateTimeFormat('fa-IR', {
+          timeZone: 'Asia/Tehran',
+          weekday: 'long',
+        });
+        const category = (row: DashboardObservation) =>
+          id === 'sales-weekday-pattern'
+            ? weekday.format(row.at)
+            : (row.dimensions?.service ?? 'خدمت ثبت نشده');
         const currencySeries = codes.map((currencyCode) => {
           const rows = source.observations.filter(
             (row) => row.currencyCode === currencyCode,
           );
-          const labels = [
-            ...new Set(
-              rows.map((row) => row.dimensions?.service ?? 'خدمت ثبت نشده'),
-            ),
-          ].sort();
+          const labels =
+            id === 'sales-weekday-pattern'
+              ? weekdays
+              : [
+                  ...new Set(
+                    rows.map(
+                      (row) => row.dimensions?.service ?? 'خدمت ثبت نشده',
+                    ),
+                  ),
+                ].sort();
           const totals = labels.map((label) =>
-            sum(
-              rows.filter(
-                (row) => (row.dimensions?.service ?? 'خدمت ثبت نشده') === label,
-              ),
-            ),
+            sum(rows.filter((row) => category(row) === label)),
           );
           return {
             currencyCode,
@@ -436,7 +491,9 @@ export class ReportingNativeDashboard {
           ),
           unit: 'فروش خالص',
           notice:
-            'قرارداد چندخدمتیِ فاقد تفکیک مبلغ، یک بار در خدمات ترکیبی محاسبه می‌شود.',
+            id === 'sales-weekday-pattern'
+              ? 'مبلغ فروش خالص به تفکیک روز هفته در زمان تهران؛ روزهای بازهٔ انتخابی با هم جمع می‌شوند و تعداد فروش روی این محور نیست.'
+              : 'قرارداد چندخدمتیِ فاقد تفکیک مبلغ، یک بار در خدمات ترکیبی محاسبه می‌شود.',
         };
         continue;
       }

@@ -1,3 +1,4 @@
+import { CallCenterActorGuard } from './call-center-actor.guard';
 import {
   Body,
   Controller,
@@ -28,7 +29,7 @@ import {
   CallCenterLinkDto,
 } from './call-center-workflow.dto';
 
-@UseGuards(AuthGuard, PermissionGuard)
+@UseGuards(AuthGuard, CallCenterActorGuard, PermissionGuard)
 @Controller('customer-affairs/call-center')
 export class CallCenterWorkflowController {
   constructor(
@@ -65,7 +66,7 @@ export class CallCenterWorkflowController {
     @Query() query: CallCenterQueueDto,
     @Headers('x-branch-id') branch?: string,
   ) {
-    return this.service.queue(req.actor, branch, query.view, query.page);
+    return this.service.queue(req.actor, branch, query.view, query.page, query);
   }
   @Get('operators')
   @Header('Cache-Control', 'private, no-store')
