@@ -1,3 +1,7 @@
+## EMPLOYEE-IDENTIFICATION-CODES-1102 — PC-B — IMPLEMENTED / VALIDATING
+
+User authorizes readonly employee identification code beside personnel code, chronological existing-data backfill and automatic new allocation using workbook2000001+, local Rubi activation and develop merge. Reserve HrEmployee additive schema/migration (sole migration scope), HR public projection/optional DTO, employee profile/editor layout and tests. Preserve personnelCode, employee IDs, payroll/device/contract links and all peer changes. No production deployment.
+
 ## CUSTOMER-CODES-1102 — PC-B — IMPLEMENTED / LOCAL VERIFIED
 
 User explicitly extends coding to Customer records and readonly field below national ID. Reserve Customer.customerCode additive schema/migration (sole current migration scope), Customer public projection/optional output contract, customer dossier UI and focused tests. Customer owner boundary preserved through own API; no edits to sales/contract identities or inputs. Back up/rehearse local backfill; no production deployment.

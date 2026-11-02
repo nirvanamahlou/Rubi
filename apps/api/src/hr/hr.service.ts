@@ -387,6 +387,7 @@ export class HrService {
     return {
       id: row.id,
       personnelCode: row.personnelCode,
+      identificationCode: row.identificationCode ?? null,
       jobTitleId: row.jobTitleId,
       extensions: (row.records?.[0]?.values as string[] | undefined) ?? [],
       extension: String(

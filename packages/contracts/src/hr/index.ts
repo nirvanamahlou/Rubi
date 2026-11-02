@@ -19,6 +19,7 @@ export const HR_PERMISSION_CODES = [
 ] as const;
 
 export interface HrEmployeeDto {
+  identificationCode?: string | null;
   jobTitleId?: string | null;
   extension?: string;
   extensions?: string[];

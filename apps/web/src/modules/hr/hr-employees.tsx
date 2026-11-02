@@ -124,6 +124,7 @@ export function employeeFormValue(
     firstName: parts?.[0] ?? firstName ?? '',
     lastName: parts?.[1] ?? last.join(' '),
     personnelCode: employee.personnelCode,
+    identificationCode: employee.identificationCode ?? '',
     employmentType: employee.kind,
     branch:
       employee.companyName ||

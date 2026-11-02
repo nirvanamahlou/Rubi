@@ -12,6 +12,7 @@ import type { HrStore } from './hr-store';
 const employee: HrEmployeeDto = {
   id: 'employee-1',
   personnelCode: 'HR-1001',
+  identificationCode: '2000001',
   name: 'Synthetic Worker',
   branchId: 'branch-1',
   userId: null,
@@ -120,6 +121,7 @@ describe('unified employee form and complete details', () => {
         'کد ملی',
         'نام پدر',
         'شماره شناسنامه',
+        'کد شناسایی',
         'شماره داخلی',
         'عکس پرسنلی',
         'حساب کاربری سامانه',
@@ -140,6 +142,10 @@ describe('unified employee form and complete details', () => {
       true,
       'Synthetic account',
     );
+    expect(fields.slice(0, 2)).toEqual([
+      ['کد پرسنلی', 'HR-1001'],
+      ['کد شناسایی', '2000001'],
+    ]);
     for (const label of getHrResource('employee', 'identity')!.columns)
       expect(fields.some(([key]) => key === label)).toBe(true);
     const html = renderToStaticMarkup(
