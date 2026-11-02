@@ -1,4 +1,7 @@
 {
+  "ظرفیت تور برای انتشار قیمت کافی نیست.": "Tour capacity is insufficient for price publication.",
+  "هزینهٔ خرید پرواز هنوز در محاسبهٔ سود لحاظ نشده است؛ ثبت قیمت فروش پکیج مجاز است.": "Flight purchase cost is not yet included in profit calculations; package sale prices may still be published.",
+  "تخفیف نمی‌تواند از قیمت پکیج بیشتر باشد.": "The discount cannot exceed the package price.",
   "تغییر تعداد لیدهای بدون خرید موفق نسبت به دورهٔ قبل هم‌طول؛ وضعیت تبدیل در پایان هر دوره سنجیده می‌شود.": "Change in leads without a successful purchase versus the preceding equal-length period; conversion is evaluated at each period end.",
   "ثبت‌نام بدون خرید، پرداخت تأییدنشده و مشتری تکراری خارج‌اند؛ لغو یا استرداد بعدی سابقهٔ خرید موفق را حذف نمی‌کند.": "Registration without purchase, unconfirmed payments and duplicate customers are excluded; later cancellations or refunds do not erase successful purchase history.",
   "مشتری بدون خرید موفق قبلی یا بدون خرید موفق در بازه خارج است؛ لغو بعدی سابقهٔ خرید را حذف نمی‌کند.": "Customers without a previous successful purchase or a successful purchase in the selected period are excluded; later cancellation does not erase purchase history.",
