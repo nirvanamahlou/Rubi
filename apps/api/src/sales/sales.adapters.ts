@@ -50,7 +50,10 @@ export interface SalesTicketAvailabilityPort {
     createdAllocationIds: readonly string[];
   }>;
   release(allocationIds: readonly string[]): Promise<void>;
-  releaseContract(contractId: string): Promise<void>;
+  releaseContract(
+    contractId: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void>;
 }
 
 @Injectable()
@@ -110,8 +113,8 @@ export class SalesTicketsPublicAdapter implements SalesTicketAvailabilityPort {
   release(allocationIds: readonly string[]) {
     return this.catalog.release(allocationIds);
   }
-  releaseContract(contractId: string) {
-    return this.catalog.releaseContract(contractId);
+  releaseContract(contractId: string, tx?: Prisma.TransactionClient) {
+    return this.catalog.releaseContract(contractId, tx);
   }
 }
 

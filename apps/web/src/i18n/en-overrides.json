@@ -4799,5 +4799,20 @@
   "و این فیلترها روی فهرست مخاطبان اعمال می‌شوند. شماره مشترک به معنی یک شخص نیست.": "These filters apply to the contact list. A shared number does not identify a single person.",
   "کارگزار مشترک برای همه هتل‌ها": "Use one supplier for all hotels",
   "قیمت هر هتل را جدا ذخیره کنید؛ سپس از هتل اول یک فرم مشترک صادر کنید.": "Save each hotel quotation, then issue one combined form from the first hotel.",
-  "ابتدا فرم همه هتل‌ها را با کارگزار مشترک ذخیره کنید.": "First save every hotel form with the same supplier."
+  "ابتدا فرم همه هتل‌ها را با کارگزار مشترک ذخیره کنید.": "First save every hotel form with the same supplier.",
+  "تعداد قراردادها بیش از حد مجاز گزارش است.": "The contract count exceeds the report limit.",
+  "تعداد مسافر:": "Passengers:",
+  "جمع قراردادهای پرواز": "Flight contract totals",
+  "دانلود قرارداد": "Download contract",
+  "فقط قراردادهای لغوشده": "Cancelled contracts only",
+  "قراردادهای پرواز": "Flight contracts",
+  "قراردادهای پرواز —": "Flight contracts —",
+  "قراردادی برای این بلیت و تاریخ وجود ندارد.": "No contracts match this ticket and date.",
+  "کودک ۲ تا ۶": "Children aged 2–6",
+  "کودک ۲ تا ۶:": "Children aged 2–6:",
+  "کودک ۶ تا ۱۲": "Children aged 6–12",
+  "کودک ۶ تا ۱۲:": "Children aged 6–12:",
+  "کودک با سن نامشخص": "Children with unknown age",
+  "کودک با سن نامشخص:": "Children with unknown age:",
+  "مجوز خروجی قراردادها وجود ندارد.": "You do not have permission to export contracts."
 }
