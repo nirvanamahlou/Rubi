@@ -23,6 +23,7 @@ import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { expectedTicketSale } from './sales-ticket-quote';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import { MasterDataService } from '../master-data/master-data.service';
+import { assertFloatingFlightAirports } from './floating-flight-airports';
 import { randomUUID } from 'node:crypto';
 import Joi from 'joi';
 import { buildSalesXlsx, SALES_EXPORT_LIMIT } from './sales.xlsx';
@@ -1216,6 +1217,7 @@ export class SalesService {
     // Preserve recorded legacy idempotent replays; enforce terms for new cheque sales.
     domainCall(() => validateSalesContract(input, true));
     const branchId = branch(actor, requestedBranch);
+    await assertFloatingFlightAirports(input.services, this.references);
     let validatedPublishedHotelId: string | undefined;
     if (
       this.packageQuotes &&
@@ -1409,6 +1411,11 @@ export class SalesService {
     if (input.paymentTerms)
       input = { ...input, payments: row.payments.map(paymentInput) };
     domainCall(() => validateSalesContract(input, false, categories));
+    await assertFloatingFlightAirports(
+      input.services,
+      this.references,
+      presentSalesContract(row, undefined, this.buyerCrypto).servicesDetail,
+    );
     let validatedPublishedHotelId: string | undefined;
     if (input.services.some((s) => s.metadata?.packagePublishedSale)) {
       if (!this.packageQuotes)

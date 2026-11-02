@@ -110,6 +110,7 @@ export function replaceAmendmentFlight(
           'flightCarrierName',
           'flightNumber',
           'flightCabinClass',
+          'flightDestinationAirportV1',
         ].includes(key),
     ),
   );
@@ -163,6 +164,9 @@ export function manualAmendmentFlights(
         arrivalAt: local(f.arrivalAt),
         carrierName: f.carrierNameSnapshot,
         serviceNumber: f.serviceNumberSnapshot,
+        ...(f.destinationAirport
+          ? { destinationAirport: f.destinationAirport }
+          : {}),
         cabinClassCode:
           f.cabinClassCode as ContractFlightDraft['cabinClassCode'],
       },
@@ -203,7 +207,11 @@ export function applyManualAmendmentFlights(
               ...s,
               titleSnapshot: f.carrierName + ' ' + f.serviceNumber,
               metadata: {
-                ...s.metadata,
+                ...Object.fromEntries(
+                  Object.entries(s.metadata ?? {}).filter(
+                    ([key]) => key !== 'flightDestinationAirportV1',
+                  ),
+                ),
                 ...contractFlightMetadata({
                   version: 1,
                   direction,
@@ -216,6 +224,9 @@ export function applyManualAmendmentFlights(
                   carrierNameSnapshot: f.carrierName,
                   serviceNumberSnapshot: f.serviceNumber,
                   cabinClassCode: f.cabinClassCode,
+                  ...(f.destinationAirport
+                    ? { destinationAirport: f.destinationAirport }
+                    : {}),
                 }),
               },
             }
