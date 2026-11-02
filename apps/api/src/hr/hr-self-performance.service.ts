@@ -51,7 +51,10 @@ export class HrSelfPerformanceService {
     }));
   }
 
-  async get(actor: AuthenticatedActor): Promise<WorkbenchHrPerformanceV1> {
+  async get(
+    actor: AuthenticatedActor,
+    windowDays?: number,
+  ): Promise<WorkbenchHrPerformanceV1> {
     if (
       !actor.permissions.some((p) =>
         ['hr.self', 'hr.read', 'hr.manage', 'hr.team'].includes(p),
@@ -107,7 +110,15 @@ export class HrSelfPerformanceService {
       currentMonth
     )
       monthStart = new Date(monthStart.getTime() - 86400000);
-    const fromDate = monthStart.toISOString().slice(0, 10);
+    const fromDate =
+      windowDays === undefined
+        ? monthStart.toISOString().slice(0, 10)
+        : new Date(
+            new Date(`${today}T12:00:00Z`).getTime() -
+              (windowDays - 1) * 86400000,
+          )
+            .toISOString()
+            .slice(0, 10);
     const monthlyRows = await this.database.client.hrRecord.findMany({
       where: {
         ...scope,
@@ -136,15 +147,16 @@ export class HrSelfPerformanceService {
         );
     }
     const total = (key: string) => {
-      const values = [...days.values()].map((day) => day[key]);
-      return values.length &&
-        values.every(
-          (value) =>
+      const values = [...days.values()]
+        .map((day) => day[key])
+        .filter(
+          (value): value is number =>
             typeof value === 'number' &&
             Number.isSafeInteger(value) &&
             value >= 0,
-        )
-        ? (values as number[]).reduce((sum, value) => sum + value, 0)
+        );
+      return values.length
+        ? values.reduce((sum, value) => sum + value, 0)
         : null;
     };
     const [leaves, shifts, payslips, balances, approvedLeaveCount, punches] =
@@ -239,11 +251,14 @@ export class HrSelfPerformanceService {
         .sort();
     return {
       monthlyAttendance: {
-        period: new Intl.DateTimeFormat('fa-IR', {
-          timeZone: 'Asia/Tehran',
-          month: 'long',
-          year: 'numeric',
-        }).format(new Date()),
+        period:
+          windowDays === undefined
+            ? new Intl.DateTimeFormat('fa-IR', {
+                timeZone: 'Asia/Tehran',
+                month: 'long',
+                year: 'numeric',
+              }).format(new Date())
+            : `${fromDate} — ${today}`,
         lateMinutes: total('lateMinutes'),
         overtimeMinutes: total('overtimeMinutes'),
         deficitMinutes: total('deficitMinutes'),
