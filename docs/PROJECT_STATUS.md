@@ -1,3 +1,7 @@
+## AMEND-NO-HOTEL-PRICE-1102 — PC-A
+
+Nonprice reservation contract amendments use the existing preserveContractPrices protocol: retain exact recorded components/currencies, drop obsolete passenger/service allocation pricing, preserve identity/service fields and let the server enforce matching saved totals with version/branch guards. Hotel check-in/out are controlled Gregorian English dates with unchanged ISO values.21 focused regressions pass; lint/types and final-head hosted tests/build/database gates precede authorized develop merge. No API/schema/migration/dependency or runtime/data deployment.
+
 ## HR-MULTIPLE-EXTENSIONS-1101 — PC-B — IN_PROGRESS
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-multiple-extensions-1101 from develop60273a159. Reserve employee extension form/editor/summary/list, HR service and HR-owned call directory, additive optional HR extension-list contract and focused tests. Producer stores all extensions in existing internalContact JSON values; extension remains compatible primary value for consumers. No migration/dependency. Owner requests add button and push/develop merge; prior HR task merged1262.

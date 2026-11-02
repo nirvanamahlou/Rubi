@@ -1,3 +1,7 @@
+## AMEND-NO-HOTEL-PRICE-1102 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-amend-no-hotel-price-1102 from develop061f265a8. User authorizes nonprice correction without hotel/passenger price reentry, preserving all recorded currency totals, Gregorian hotel dates and develop merge. Reserve Reservations amendment-membership preserving helper, correction submit/date controls and focused tests; own status notes. Reuse existing server preserveContractPrices CAS/exact-component/branch validation; no API/schema/migration/dependency/data/runtime changes. Other active scopes inspected, no overlap. All final-head gates precede merge.
+
 ## HR-MULTIPLE-EXTENSIONS-1101 — PC-B — IN_PROGRESS
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-multiple-extensions-1101 from develop60273a159. Reserve employee extension form/editor/summary/list, HR service and HR-owned call directory, additive optional HR extension-list contract and focused tests. Producer stores all extensions in existing internalContact JSON values; extension remains compatible primary value for consumers. No migration/dependency. Owner requests add button and push/develop merge; prior HR task merged1262.
