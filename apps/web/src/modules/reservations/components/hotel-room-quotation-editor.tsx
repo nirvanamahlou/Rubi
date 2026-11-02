@@ -59,24 +59,15 @@ export function HotelRoomQuotationEditor({
   }
   let transferTotal = '—';
   try {
-    if (transfer.amount && transfer.currencyCode)
+    if (transfer.amount && transfer.currencyCode) {
+      const count = draft.hotelTransferSplit
+        ? counts.outbound
+        : hotelTransferChargeableCount(counts, draft.hotelTransferRoundTrip);
       transferTotal =
-        (draft.hotelTransferSplit
-          ? counts.outbound
-          : hotelTransferChargeableCount(
-              counts,
-              draft.hotelTransferRoundTrip,
-            )) === 0
+        count === 0
           ? '0'
-          : reservationServicePurchaseTotal(
-              transfer.amount,
-              String(
-                draft.hotelTransferSplit
-                  ? counts.outbound
-                  : counts.outbound + counts.returning,
-              ),
-              1,
-            );
+          : reservationServicePurchaseTotal(transfer.amount, String(count), 1);
+    }
   } catch {
     /* Incomplete draft. */
   }

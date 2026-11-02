@@ -38,3 +38,10 @@ without catalogue writes. Nora runtime source inventory preserves1020 API and
 1815 Web source files outside this scope; environment/mounts and Worker retained.
 The full hosted suite caught one missing whole-paragraph English translation;
 4306 Web tests passed, and the translation coverage correction is included.
+
+Final live concurrency verification exposed a producer event-loop stall when
+multiple workbook/presence requests contended for the connection row lock.
+Producer body/form parsing stays asynchronous; blocking ORM/native workbook work
+runs in request worker threads. A real single-Uvicorn-loop regression exercises
+parallel template/schema/list/presence/heartbeat requests.23 producer tests pass.
+Nora's consumer contract/source is unchanged by this producer correction.

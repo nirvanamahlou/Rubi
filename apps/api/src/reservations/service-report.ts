@@ -3,7 +3,7 @@ import {
   salesContractFlights,
   type SalesReservationRequestV1,
 } from '@nora/contracts';
-import { type IssuedTicketRow } from './issued-ticket-report';
+import { issuedRows, type IssuedTicketRow } from './issued-ticket-report';
 
 export interface ServiceReportRow extends Omit<IssuedTicketRow, 'status'> {
   status: 'issued' | 'voided' | 'allocated';
@@ -118,6 +118,43 @@ export function flightServiceRows(rows: IssuedTicketRow[]): ServiceReportRow[] {
     checkOutDate: '',
     reportStatus: r.status === 'voided' ? 'CANCELLED' : 'ISSUED',
   }));
+}
+/** Current assignments are visible even before a persistent ticket number exists. */
+export function reservationFlightRows(
+  intakeId: string,
+  snapshot: SalesReservationRequestV1,
+  documents: Array<Parameters<typeof issuedRows>[0]>,
+  cancelled: boolean,
+): ServiceReportRow[] {
+  return (snapshot.passengerAssignments ?? [])
+    .filter((p) => snapshot.passengerIds.includes(p.customerId))
+    .flatMap((p) => {
+      // Documents are supplied newest intake first. Reuse issuance evidence across
+      // contract revisions, but always project the current assigned itinerary.
+      const saved = documents.find((d) => d.customerId === p.customerId);
+      const rows = flightServiceRows(
+        issuedRows(
+          saved ?? {
+            id: intakeId + ':' + p.customerId,
+            customerId: p.customerId,
+            number: '',
+            source: '',
+            issuedAt: new Date(snapshot.createdAt),
+          },
+          snapshot,
+          cancelled,
+        ),
+      );
+      return saved
+        ? rows
+        : rows.map((r) => ({
+            ...r,
+            status: cancelled ? ('voided' as const) : ('allocated' as const),
+            reportStatus: cancelled
+              ? ('CANCELLED' as const)
+              : ('ALLOCATED' as const),
+          }));
+    });
 }
 export function filterServiceRows(
   rows: ServiceReportRow[],
