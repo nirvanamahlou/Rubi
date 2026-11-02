@@ -332,12 +332,13 @@ export function GhestirooWorkspace({ branchId }: { branchId: string }) {
       clearTimeout(t);
     };
   }, [branchId, kind]);
-  async function download(action: string) {
+  async function download(action: string, advanced = false) {
     await perform(async () => {
       const data = await ghestirooApi.workspace(branchId, {
         action,
         kind,
         combined,
+        ...(advanced ? { format: 'advanced' } : {}),
       });
       const blob = new Blob(
         [Uint8Array.from(atob(String(data.content)), (c) => c.charCodeAt(0))],
@@ -490,6 +491,24 @@ export function GhestirooWorkspace({ branchId }: { branchId: string }) {
               >
                 قالب تاریخ و قیمت تور
               </Button>
+            ) : null}
+            {kind === 'hotels' ? (
+              <>
+                <Button
+                  disabled={busy}
+                  variant="outline"
+                  onClick={() => void download('template', true)}
+                >
+                  قالب پیشرفته اتاق‌ها و نرخ هتل
+                </Button>
+                <Button
+                  disabled={busy}
+                  variant="outline"
+                  onClick={() => void download('export', true)}
+                >
+                  خروجی پیشرفته اتاق‌ها و نرخ هتل
+                </Button>
+              </>
             ) : null}
           </div>
           {kind === 'tours' ? (
