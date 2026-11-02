@@ -8318,3 +8318,7 @@ Owner approves the bounded PC-B HR directory reservation exception. Connected-to
 ## SHARED-HOTEL-SUPPLIER-FORM-1102 — PC-A
 
 Optional common supplier stacks hotel editors and retains independent per-stay quotations. One primary issuance validates all saved suppliers and freezes every stay in one workflow revision; no partial send. One supplier preview/PDF includes all hotel/room/date/price tables, while separate transfer outputs remain intact. Sent quotations are preserved after later draft edits. Focused Web/API tests, scoped lint/types and synthetic multi-page PDF verification precede exact-head CI and owner-authorized develop merge. No migration/dependency or operational rollout. See docs/tasks/SHARED-HOTEL-SUPPLIER-FORM-1102.md.
+
+## AMEND-COMPOSITE-HOTEL-STAYS-1102 — PC-A
+
+Reservations Hotel and general Correction editors now expose every ordered additional stay with independent hotel, room composition and Gregorian check-in/out. Updates replace only the selected additional stay, preserve primary selection/prices and other stays, and reuse the existing Sales amendment payload, validation and transactional persistence. Legacy empty-room stays never inherit primary room type or prices; single-hotel contracts render unchanged. Focused editor/model and existing API persistence/validation regressions plus final-head hosted quality/tests/build/database gates precede owner-authorized develop merge. No API/schema/migration/dependency or operational deployment.
