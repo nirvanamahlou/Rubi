@@ -2661,6 +2661,7 @@ export function SalesContractForm() {
               )}
               {purchaseInput && (
                 <NewContractPurchases
+                  key={purchaseDraftFingerprint(purchaseInput)}
                   input={purchaseInput}
                   onStage={(id, purchase) => {
                     const fingerprint = purchaseDraftFingerprint(
