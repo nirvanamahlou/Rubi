@@ -4,6 +4,8 @@ import {
   Inject,
   Injectable,
   ServiceUnavailableException,
+  type OnModuleInit,
+  type OnModuleDestroy,
 } from '@nestjs/common';
 import {
   canViewIntegrationSection,
@@ -12,10 +14,18 @@ import {
 import { IntegrationRegistryService } from './integration-registry.service';
 import { GhestirooStore, type GhestirooConfig } from './ghestiroo.store';
 import { ghestirooOrigin, ghestirooRequest } from './ghestiroo.client';
+import { GhestirooRenewal } from './ghestiroo.renewal';
 
 @Injectable()
-export class GhestirooService {
+export class GhestirooService implements OnModuleInit, OnModuleDestroy {
   readonly store = new GhestirooStore();
+  readonly renewal = new GhestirooRenewal(this.store);
+  onModuleInit() {
+    this.renewal.start();
+  }
+  onModuleDestroy() {
+    this.renewal.stop();
+  }
   constructor(
     @Inject(IntegrationRegistryService)
     private readonly registry: IntegrationRegistryService,
@@ -47,6 +57,16 @@ export class GhestirooService {
             connectionId: config.connectionId,
             expiresAt: config.expiresAt,
             scopes: config.scopes,
+            autoRenewal: true,
+            lastRenewedAt: config.lastRenewedAt,
+            renewalState:
+              Date.parse(config.expiresAt) <= Date.now()
+                ? 'expired'
+                : config.renewalRetryAt
+                  ? 'retrying'
+                  : config.pendingRenewal
+                    ? 'pending'
+                    : 'active',
             allowedUserIds: this.registry.canManage(actor)
               ? config.allowedUserIds
               : undefined,
@@ -143,7 +163,17 @@ export class GhestirooService {
       );
     if (!canViewIntegrationSection(actor.permissions, 'connections'))
       throw new ForbiddenException();
-    const config = await this.store.read(branch);
+    let config = await this.store.read(branch);
+    if (
+      !config ||
+      !config.allowedUserIds.includes(actor.userId) ||
+      (operation !== 'capabilities' &&
+        !config.scopes.includes(
+          operation === 'admin-grants' ? 'admin' : operation,
+        ))
+    )
+      throw new ForbiddenException('این حساب برای این اتصال مجاز نیست.');
+    config = await this.renewal.ensure(branch);
     if (
       !config ||
       !config.allowedUserIds.includes(actor.userId) ||
@@ -158,10 +188,32 @@ export class GhestirooService {
     let data: Record<string, unknown>;
     try {
       data = await ghestirooRequest(config, operation, after);
-    } catch {
-      throw new ServiceUnavailableException(
-        'آزمون ارتباط ناموفق بود؛ آدرس، اعتبار کلید و دسترسی سرور را بررسی کنید.',
-      );
+    } catch (e) {
+      const updated =
+        e instanceof Error && e.message === 'UPSTREAM_401'
+          ? await this.renewal.ensure(branch, true)
+          : null;
+      if (
+        updated &&
+        updated.allowedUserIds.includes(actor.userId) &&
+        updated.apiKey !== config.apiKey &&
+        (operation === 'capabilities' ||
+          updated.scopes.includes(
+            operation === 'admin-grants' ? 'admin' : operation,
+          ))
+      ) {
+        config = updated;
+        try {
+          data = await ghestirooRequest(updated, operation, after);
+        } catch {
+          throw new ServiceUnavailableException(
+            'آزمون ارتباط ناموفق بود؛ آدرس، اعتبار کلید و دسترسی سرور را بررسی کنید.',
+          );
+        }
+      } else
+        throw new ServiceUnavailableException(
+          'آزمون ارتباط ناموفق بود؛ آدرس، اعتبار کلید و دسترسی سرور را بررسی کنید.',
+        );
     }
     if (operation === 'admin-grants') {
       if (

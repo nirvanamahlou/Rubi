@@ -430,9 +430,13 @@ Reserve only GMT input LTR styling in generic live form plus new English labels/
 
 COMPUTER_ID=PC-B; branch codex/pc-b-country-gmt-1021 from develop397ad411. Owner requests optional manual country GMT offset in create/edit and table; explicitly authorizes push/develop merge but NO server deployment. Reserve country catalogue/validation/table and focused tests, bounded MasterDataService country preparation and tests, MasterCountry nullable gmtOffset varchar6 and one additive checked migration, related data/status notes. Sole Migration Owner PC-B for this single nullable reference column; prior181 migrations are merged/released, PC-A field-roundtrip source reservation is explicitly released and its unchanged logic preserved. No dependency/IAM grant/operational migration/data changes. Producer Master Data and Web consumer add optional gmtOffset; omitted values remain unchanged on PATCH and legacy rows remain null. Manual fixed offset is descriptive, never used as IANA/DST or operational travel-time authority. Source locks release on publication.
 
-## GHESTIROO-LIVE-SETUP-1101 — PC-D — IN_PROGRESS
+## GHESTIROO-AUTO-RENEW-1102 — PC-D — DEPLOYED / SOURCE_RELEASED
 
-Reserve only Integrations form and system-detail connector routing, focused tests, bounded Integrations translations and own status records. Owner requests live end-to-end repair for avinaofficial.ir and Ghestiroo; existing accounts/roles and other modules remain unchanged. Plan/evidence: docs/tasks/GHESTIROO-LIVE-SETUP-1101.md. Nora host access is pending; no password reset, production database or infrastructure mutation performed.
+Owner-authorized secure automatic renewal is live. Ghestiroo PR131 producer stays in its own repository; Nora PR1273 contains only Integrations backend/UI/types/translations, focused tests and own notes. Startup renewed the existing connection without a new bundle; retired-key401, new-key success, all four resource reads, SSO and Worker/AMI health verified. Other1010 API/1816 Web source files preserved. No central-file/dependency/migration/IAM changes. Final documentation closeout CI is the merge gate; source reservations released. Evidence: docs/tasks/GHESTIROO-AUTO-RENEW-1102.md.
+
+## GHESTIROO-LIVE-SETUP-1101 — PC-D — COMPLETE / RELEASED
+
+Bounded Integrations form/routing and translations merged through PR1270 after eight green checks. Secure server storage and the actual current-image Web overlay deployed; all four read resources and real SSO passed. Ghestiroo SSO fix stays in its own repository (PR130). Existing accounts, roles, other-module source and runtime configuration preserved. No migration/import/password reset. Source locks released; evidence: docs/tasks/GHESTIROO-LIVE-SETUP-1101.md.
 
 ## GHESTIROO-CONNECTOR-1101 — PC-D — READY_FOR_CI / SOURCE_FROZEN
 

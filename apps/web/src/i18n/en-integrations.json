@@ -1,5 +1,9 @@
 {
   "اعتبار فایل": "File validity",
+  "اعتبار اتصال گذشته است؛ بازیابی خودکار بررسی می‌شود. اگر اتصال لغو شده یا مدت طولانی قطع بوده است، بسته تازه لازم است.": "The connection has expired. Automatic recovery is being checked. A new bundle is required if the connection was revoked or offline for an extended period.",
+  "تمدید امن موقتاً انجام نشد؛ تلاش خودکار دوباره انجام می‌شود.": "Secure renewal is temporarily unavailable. It will be retried automatically.",
+  "تمدید خودکار و امن فعال است؛ نیازی به ساخت دوره‌ای بسته جدید نیست.": "Secure automatic renewal is enabled. You do not need to generate replacement bundles periodically.",
+  "آخرین تمدید:": "Last renewal:",
   "تلاش دوباره برای خواندن اتصال": "Retry loading the connection",
   "دسترسی تنظیم اتصال ندارید": "You cannot configure this connection",
   "این حساب فقط امکان مشاهده اتصال را دارد. برای ثبت بسته، حساب باید مجوز مدیریت تنظیمات یکپارچه‌سازی در همین شعبه را داشته باشد.": "This account can only view the connection. Saving a bundle requires permission to manage integration settings in this branch.",

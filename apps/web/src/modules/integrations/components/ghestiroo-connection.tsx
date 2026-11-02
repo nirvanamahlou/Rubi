@@ -183,6 +183,22 @@ export function GhestirooConnection({
           ) : (
             <p>هنوز اتصالی ثبت نشده است.</p>
           )}
+          {status.autoRenewal ? (
+            <p role="status" className="text-sm text-muted-foreground">
+              {status.renewalState === 'expired'
+                ? 'اعتبار اتصال گذشته است؛ بازیابی خودکار بررسی می‌شود. اگر اتصال لغو شده یا مدت طولانی قطع بوده است، بسته تازه لازم است.'
+                : status.renewalState === 'retrying'
+                  ? 'تمدید امن موقتاً انجام نشد؛ تلاش خودکار دوباره انجام می‌شود.'
+                  : 'تمدید خودکار و امن فعال است؛ نیازی به ساخت دوره‌ای بسته جدید نیست.'}
+              {status.lastRenewedAt ? (
+                <>
+                  {' '}
+                  {'آخرین تمدید: '}
+                  {new Date(status.lastRenewedAt).toLocaleDateString('fa-IR')}
+                </>
+              ) : null}
+            </p>
+          ) : null}
           <GhestirooSetupForm
             status={status}
             busy={busy}

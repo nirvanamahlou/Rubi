@@ -21,12 +21,41 @@ Do not put the key in `NEXT_PUBLIC_*`, repository, UI, logs or shared settings.
 The module intentionally refuses configuration until these values exist.
 
 AES-256-GCM encrypts each branch file, using branch ID as authenticated additional
-data. Writes use exclusive file creation, version checks and atomic rename. Run
-one API deployment against this store, or use a filesystem with shared atomic
-create/rename semantics. After a process crash a `.lock` may remain: verify no
-writer is active before removing that branch's stale lock. Never delete config
-files to resolve a conflict; reload and retry. Losing the master key requires
-revoking site credentials and generating fresh bundles.
+data. The first version retains the existing `<branch>.json` name. Subsequent
+complete versions are published as `<branch>.v<N>.json` through atomic exclusive
+hard links after the encrypted temporary file is synced. Readers choose the
+highest committed version; competing writers cannot replace it. No persistent
+writer lock can survive a crash and stall renewal. The filesystem must support
+atomic hard links (the production persistent Linux bind mount does). Incomplete
+temporary files and legacy `.lock` files are ignored. Keep all committed versions
+in backups; never delete the newest one or restore an older key to fix a conflict.
+Losing the master key requires revoking site credentials and generating bundles.
+
+## Automatic renewal
+
+Deploy Ghestiroo's `/renew` producer first, then this version of Nora Integrations.
+Existing unexpired bundles enroll automatically without reissue. The API module
+runs one sweep at startup and hourly thereafter, even without browser activity.
+It rotates once at enrollment and within14 days of expiry; each new key lasts90
+days. Per-operation checks also renew due keys and recover interrupted rotations.
+Transient failures back off for one hour while still-valid credentials remain
+usable. A 401 can trigger one bounded candidate recovery/retry.
+
+Nora generates a random384-bit candidate and durably encrypts it before sending
+it. The site locks/rechecks its existing connection, stores only the candidate's
+hash and immediately rejects the previous key. Lost replies and restarts retry
+the same encrypted candidate; authenticating with that candidate only acknowledges
+the original rotation and does not extend expiry again. No permanent refresh key,
+scope expansion, browser credential persistence or IAM change is introduced.
+Revocation, staff deactivation, existing branch/user checks and HTTPS/DNS pinning
+remain authoritative. If all valid credentials expire during a prolonged outage,
+or the owner revokes the connection, renewal fails closed and reconnection is
+required. This is recovery of an authorized connection, not reauthorization.
+
+Do not roll back to an old store reader after rotation or restore only the legacy
+file: it contains a retired credential. Preserve the highest complete version and
+any pending candidate. Rollback/recovery must retain this version-aware store and
+renewal reader; encrypted history supports investigation but never revives a key.
 
 In Ghestiroo deploy the additive migration and visit `/admin/nora`. Enter the
 **browser origin of Nora Web**, not the API origin. Copy the one-time bundle into

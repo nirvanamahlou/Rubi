@@ -15,18 +15,49 @@ Ghestiroo data tab into the Niyayesh component. Fix the route, keep draft inputs
 editable while persistence is unavailable, explain read-only permission and
 provide an explicit failed-load retry without weakening backend checks.
 
-Production Nora SSH authentication from this device is unavailable: the existing
-key was rejected for codex-dev@94.184.46.9. Web authentication does not grant host
-configuration access. Await the owner's existing approved connection information
-while completing independently testable source changes. Do not claim successful
-real connection or store credentials in Git. Do not reset account passwords.
-
 Source implementation is complete within the reserved Integrations boundary.
 Validation: scoped ESLint passed; all 42 Integrations tests passed; all three
 translation coverage tests passed on an isolated rerun after the first timed out;
-Web typecheck passed after rebuilding the existing contracts package. The initial
-production build was interrupted during local resource contention; production
-build and required CI remain publication gates. No production changes performed.
-The owner is arranging VNC enrollment of this device's already active public SSH
-key for the existing codex-dev account. Private keys and connection bundles remain
-outside Git. Live acceptance and server configuration remain pending host access.
+Web typecheck passed after rebuilding the existing contracts package. Both push
+and PR CI completed successfully, including production build, full quality and
+test suites and PostgreSQL gate. Nora PR1270 merged into develop061f265a83;
+source552924dd15d40c9cc795003eefccef07bf0b606b.
+
+## Production acceptance completed, 2026-11-01
+
+The existing approved local SSH alias rubi-server provided working host access.
+No SSH account, authorized key, IAM grant or login password was changed by this
+task. Secure API storage is configured in a private persistent bind mount with
+a separately persisted random encryption key; encrypted recovery copies and
+rollback metadata are outside Git. Existing API/Worker images and environment
+were preserved; both were recreated to preserve their shared network namespace.
+Authenticated Worker requests, AMI connection and the recording timer passed.
+
+The Integrations Web overlay was built on the actual then-current production
+image, preserving all 1814 other Web source files, environment, mounts and old
+static assets. API/Worker and other containers were unchanged during Web rollout.
+Receipts are in /opt/rubi/ghestiroo-live-setup-1101 on the server. No schema,
+business-record import or other-module source changes were performed.
+
+Through the owner's existing authenticated accounts, one connection bundle was
+issued for https://avinaofficial.ir and encrypted in the selected Nora branch,
+allowing only the owner's current Nora account. Capabilities and all four read
+resources passed in the real UI. The system card now opens its own connection
+form; its fields are editable and the stored connection survives page/release
+reloads. The final UI explicitly confirms all five permitted scopes.
+
+Live SSO exposed a browser-only cross-site Strict-cookie redirect problem. The
+separate Ghestiroo PR130 fixes it with a token-free no-store landing document and
+same-origin external script navigation, retaining Strict/HttpOnly/Secure cookies,
+origin checks, one-use grants and revocation semantics. Sourcea77a46d13233 was
+merged into that repository's developa1280c7e063b and deployed as a bounded admin
+image overlay; all other site containers, environment and mounts were preserved.
+Eight local connector tests passed (one PostgreSQL-only test skipped). Although
+the commit requested skip-ci, that repository's pull_request_target workflow
+started automatically; it was cancelled after discovery, with some jobs already
+completed. No CI workflow policy was changed.
+
+Final real-browser SSO reached https://ghestiroo.ir/admin with the dashboard title;
+server logs independently show redemption200 and protected dashboard GET200.
+The issued connection expires on 2027-01-30. Keys, bundles, customer records and
+private deployment metadata are not committed. Source locks are released.

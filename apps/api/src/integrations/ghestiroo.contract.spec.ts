@@ -41,9 +41,32 @@ describe.skipIf(process.env.GHESTIROO_SYNTHETIC_CONTRACT !== '1')(
           redirect: 'manual',
         });
       const first = await redeem();
-      expect(first.status).toBe(303);
-      expect(first.headers.get('location')).toBe('/admin');
+      expect(first.status).toBe(200);
+      expect(await first.text()).toContain('/admin/static/nora-sso.js');
       expect((await redeem()).headers.get('location')).toBe('/admin/login');
+      const candidate = 'n'.repeat(64);
+      const renewed = await ghestirooRequest(config, 'renew', '', candidate);
+      expect(renewed).toMatchObject({
+        renewal: 'rotate.v1',
+        connectionId: config.connectionId,
+        noraOrigin: config.noraOrigin,
+      });
+      await expect(ghestirooRequest(config, 'capabilities')).rejects.toThrow(
+        'UPSTREAM_401',
+      );
+      const replacement = { ...config, apiKey: candidate };
+      const acknowledged = await ghestirooRequest(
+        replacement,
+        'renew',
+        '',
+        candidate,
+      );
+      expect(Date.parse(String(acknowledged.expiresAt))).toBe(
+        Date.parse(String(renewed.expiresAt)),
+      );
+      expect(
+        (await ghestirooRequest(replacement, 'capabilities')).connectionId,
+      ).toBe(config.connectionId);
     });
   },
 );
