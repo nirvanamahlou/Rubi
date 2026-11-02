@@ -6,7 +6,10 @@ import {
 import { PurchaseFxService } from './purchase-fx/purchase-fx.service';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { randomUUID } from 'node:crypto';
-import { paymentSource } from './payments/payment-source';
+import {
+  paymentSource,
+  purchasePaymentCashMoney,
+} from './payments/payment-source';
 import { MasterProcurementDirectory } from '../master-data/master-procurement-directory';
 import {
   BadRequestException,
@@ -1316,8 +1319,12 @@ export class FinanceInboxService {
           branchId: source.branchId,
           actorId: actor.userId,
           occurredAt: transferAt,
-          amount: paidAmount.toString(),
-          currency: source.currencyCode,
+          ...purchasePaymentCashMoney(
+            account,
+            source.currencyCode,
+            paidAmount.toString(),
+            row.rialEquivalent?.toString(),
+          ),
           settlementAccountId: account?.id ?? null,
           partyId: `${source.supplier.id}:${payingSupplierId ?? ''}`,
           reference: row.paymentReference,

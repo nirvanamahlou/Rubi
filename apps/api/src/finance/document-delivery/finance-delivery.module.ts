@@ -6,7 +6,10 @@ import {
 } from '../accounting/financial-event.public';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { hotelPurchaseSavingsEvidence } from '@nora/contracts';
-import { paymentSource } from '../payments/payment-source';
+import {
+  paymentSource,
+  purchasePaymentCashMoney,
+} from '../payments/payment-source';
 import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
 import { MasterDataModule } from '../../master-data/master-data.module';
 import { NotificationsModule } from '../../notifications/notifications.module';
@@ -393,8 +396,12 @@ export class FinanceDeliveryService {
           branchId: purchase.intake.branchId,
           actorId: actorUserId,
           occurredAt: transferAt,
-          amount: paidAmount.toString(),
-          currency: purchase.currencyCode,
+          ...purchasePaymentCashMoney(
+            account,
+            purchase.currencyCode,
+            paidAmount.toString(),
+            row.rialEquivalent?.toString(),
+          ),
           settlementAccountId: account?.id ?? null,
           partyId: `${purchase.supplierBrokerId ?? purchase.supplierOrganizationId ?? purchaseId}:${payingSupplierId ?? ''}`,
           reference: row.paymentReference,

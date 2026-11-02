@@ -56,7 +56,8 @@ import type {
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
-import { MoneyInput } from '@/components/ui/money-input';
+import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
+import { purchasePaymentActualIrr } from '../purchase-fx/payment-preview';
 import {
   Input,
   Select,
@@ -285,6 +286,15 @@ export function FinanceInboxLiveWorkspace() {
     : actionItem?.amount?.currencyCode;
   const supplierPayment =
     actionKind === 'PAYMENT' && paymentSourceKind === 'SUPPLIER';
+  const paymentAccount = supplierPayment
+    ? undefined
+    : accounts.find((account) => account.id === accountId);
+  const actualRialWithdrawal =
+    paymentAccount?.currencyCode === 'IRR' &&
+    paymentCurrency &&
+    paymentCurrency !== 'IRR'
+      ? purchasePaymentActualIrr(paidAmount, exchangeRate)
+      : null;
 
   useEffect(() => {
     if (!supplierPayment) return;
@@ -459,9 +469,10 @@ export function FinanceInboxLiveWorkspace() {
     const eligibleAccounts = accounts.filter(
       (account) =>
         account.branchId === item.branchReference &&
-        account.currencyCode ===
-          (item.amount?.currencyCode ??
-            (item.ticketPurchase ? 'IRR' : undefined)),
+        (account.currencyCode === 'IRR' ||
+          account.currencyCode ===
+            (item.amount?.currencyCode ??
+              (item.ticketPurchase ? 'IRR' : undefined))),
     );
     setActionItem(item);
     setActionKind('PAYMENT');
@@ -1841,7 +1852,8 @@ export function FinanceInboxLiveWorkspace() {
                                 (account) =>
                                   account.branchId ===
                                     actionItem?.branchReference &&
-                                  account.currencyCode === paymentCurrency,
+                                  (account.currencyCode === paymentCurrency ||
+                                    account.currencyCode === 'IRR'),
                               )
                               .map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
@@ -1943,6 +1955,12 @@ export function FinanceInboxLiveWorkspace() {
                       )?.rateToIrr ?? null
                     }
                   />
+                  {actualRialWithdrawal !== null && (
+                    <p className="rounded-lg border bg-primary/5 p-3 text-sm">
+                      برداشت از حساب ریالی:{' '}
+                      <b>{formatSalesMoney(actualRialWithdrawal)} ریال</b>
+                    </p>
+                  )}
                   <label className="grid gap-2">
                     <span>تاریخ و ساعت پرداخت</span>
                     <DatePicker

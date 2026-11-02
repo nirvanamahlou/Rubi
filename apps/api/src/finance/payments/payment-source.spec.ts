@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Prisma } from '@nora/database';
 import type { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
-import { paymentSource } from './payment-source';
+import { paymentSource, purchasePaymentCashMoney } from './payment-source';
 const supplierId = '50000000-0000-4000-8000-000000000001';
 
 function setup() {
@@ -42,7 +42,8 @@ describe('Finance payment source', () => {
         where: {
           id: 'account',
           branchId: 'branch',
-          currencyCode: currency,
+          currencyCode:
+            currency === 'IRR' ? currency : { in: [currency, 'IRR'] },
           isActive: true,
         },
       });
@@ -208,5 +209,58 @@ describe('Finance payment source', () => {
         'branch',
       ),
     ).rejects.toThrow('inactive');
+  });
+});
+
+describe('actual purchase-payment cash currency', () => {
+  it('records the persisted actual IRR withdrawal while leaving the foreign debt amount unchanged', () => {
+    expect(
+      purchasePaymentCashMoney(
+        { currencyCode: 'IRR' },
+        'EUR',
+        '40',
+        '32000000',
+      ),
+    ).toEqual({ amount: '32000000', currency: 'IRR' });
+    expect(
+      purchasePaymentCashMoney(
+        { currencyCode: 'EUR' },
+        'EUR',
+        '40',
+        '32000000',
+      ),
+    ).toEqual({ amount: '40', currency: 'EUR' });
+    expect(purchasePaymentCashMoney(null, 'EUR', '40', '32000000')).toEqual({
+      amount: '40',
+      currency: 'EUR',
+    });
+  });
+  it('uses exact Decimal rounding to the persisted four-place precision', () => {
+    expect(
+      purchasePaymentCashMoney(
+        { currencyCode: 'IRR' },
+        'USD',
+        '1',
+        '9007199254740993.12505',
+      ).amount,
+    ).toBe('9007199254740993.1251');
+  });
+  it.each([undefined, null, '0', '-1', 'NaN', 'invalid'])(
+    'rejects an absent or invalid actual rial amount %s',
+    (amount) => {
+      expect(() =>
+        purchasePaymentCashMoney({ currencyCode: 'IRR' }, 'EUR', '40', amount),
+      ).toThrow();
+    },
+  );
+  it('does not invent a conversion to another foreign account currency', () => {
+    expect(() =>
+      purchasePaymentCashMoney(
+        { currencyCode: 'USD' },
+        'EUR',
+        '40',
+        '32000000',
+      ),
+    ).toThrow();
   });
 });

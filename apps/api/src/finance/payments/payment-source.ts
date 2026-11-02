@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import type { Prisma } from '@nora/database';
+import { Prisma } from '@nora/database';
 import type { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
 
 export async function paymentSource(
@@ -37,9 +37,47 @@ export async function paymentSource(
   if (!input.accountId || input.payingSupplierId)
     throw new BadRequestException('حساب فعال هم‌ارز برای پرداخت معتبر نیست.');
   const account = await tx.financeSettlementAccount.findFirst({
-    where: { id: input.accountId, branchId, currencyCode, isActive: true },
+    where: {
+      id: input.accountId,
+      branchId,
+      currencyCode:
+        policy === 'ACCOUNT_OR_SUPPLIER' && currencyCode !== 'IRR'
+          ? { in: [currencyCode, 'IRR'] }
+          : currencyCode,
+      isActive: true,
+    },
   });
   if (!account)
     throw new BadRequestException('حساب فعال هم‌ارز برای پرداخت معتبر نیست.');
   return { account, payingSupplierId: null, payingSupplierName: null };
+}
+
+/** The original foreign payment settles the supplier debt. The cash event must
+ * match the real bank-account currency using the persisted actual equivalent. */
+export function purchasePaymentCashMoney(
+  account: { currencyCode: string } | null,
+  currencyCode: string,
+  paidAmount: string,
+  rialEquivalent?: string | null,
+) {
+  if (!account || account.currencyCode === currencyCode)
+    return { amount: paidAmount, currency: currencyCode };
+  if (
+    account.currencyCode !== 'IRR' ||
+    currencyCode === 'IRR' ||
+    !rialEquivalent
+  )
+    throw new BadRequestException('اطلاعات پرداخت معتبر نیست.');
+  let amount: Prisma.Decimal;
+  try {
+    amount = new Prisma.Decimal(rialEquivalent).toDecimalPlaces(
+      4,
+      Prisma.Decimal.ROUND_HALF_UP,
+    );
+  } catch {
+    throw new BadRequestException('اطلاعات پرداخت معتبر نیست.');
+  }
+  if (!amount.isFinite() || amount.lte(0))
+    throw new BadRequestException('اطلاعات پرداخت معتبر نیست.');
+  return { amount: amount.toString(), currency: 'IRR' };
 }

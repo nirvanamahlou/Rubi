@@ -9,7 +9,10 @@ import { PurchaseFxService } from '../purchase-fx/purchase-fx.service';
 import { TicketPublicService } from '../../ticket-catalog/ticket-public.service';
 import { moneyUnits, moneyDecimal } from '@nora/contracts';
 import { createHash, randomUUID } from 'node:crypto';
-import { paymentSource } from '../payments/payment-source';
+import {
+  paymentSource,
+  purchasePaymentCashMoney,
+} from '../payments/payment-source';
 import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
 import {
   BadRequestException,
@@ -585,8 +588,12 @@ export class FinanceTicketCostService {
         branchId: request.branchId,
         actorId: actor.userId,
         occurredAt: transferAt,
-        amount: amount.toString(),
-        currency: cost.currencyCode,
+        ...purchasePaymentCashMoney(
+          account,
+          cost.currencyCode,
+          amount.toString(),
+          row.rialEquivalent?.toString(),
+        ),
         settlementAccountId: account?.id ?? null,
         partyId: `${requestId}:${payingSupplierId ?? ''}`,
         reference: row.paymentReference,
