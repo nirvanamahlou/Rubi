@@ -206,7 +206,10 @@ export class LegalEntitiesService {
 
   async selectable(actor: AuthenticatedActor) {
     const rows = await this.database.client.legalEntity.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        code: { in: [...LEGAL_ENTITY_CODES] },
+      },
       orderBy: { code: 'desc' },
     });
     return {

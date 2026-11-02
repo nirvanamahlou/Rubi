@@ -1,3 +1,12 @@
+## 2026-09-26 — ACTIVE-COMPANY-DROPDOWN-0926 — PC-B — READY_FOR_REVIEW / VERIFIED
+
+- درخواست مالک: انتخاب‌گر «شرکت فعال» در Header دوباره عملیاتی شود و دقیقاً چهار شرکت عمومی قرارداد در dropdown نمایش داده شوند.
+- شاخه مستقل `codex/pc-b-active-company-dropdown-0926` از `codex/pc-b-customer-affairs-qa-fixes-0923@c1b8751`؛ `COMPUTER_ID=PC-B`.
+- محدوده رزرو: query انتخاب‌گر Legal Entities، تست هدفمند، ابزار آماده‌سازی محلی تأییدشده برای دو شرکت مفقود، Backup دیتابیس محلی و ثبت وضعیت همین واحد. بدون Schema/Migration، Dependency/Lockfile، Permission، حذف رکورد legacy یا تغییر شرکت‌های موجود.
+- علت قطعی: رکورد فعال legacy با کد خارج از قرارداد `LEGAL-LOCAL-1405` پاسخ selectable را متوقف می‌کرد و دیتابیس محلی دو کد `JAHAN_ACADEMIA` و `GHESATI_RO` را نداشت.
+- نتیجه: query انتخاب‌گر فقط چهار کد عمومی `legal-entities.v3` را می‌خواند؛ بنابراین رکورد legacy حفظ می‌شود اما دیگر پاسخ dropdown را خراب نمی‌کند. Backup خصوصی `legal-entities-before-20260926-171207.dump` پیش از تغییر ساخته شد و ابزار guarded/idempotent موجود دو شرکت مفقود و Snapshot اولیه آن‌ها را ایجاد کرد. Post-check هر چهار شرکت را active گزارش می‌کند.
+- اعتبارسنجی: تست رگرسیون selectable، lint محدود، typecheck و build تولیدی API، build قرارداد و Database، check قبل/بعد ابزار محلی و سلامت API4000 موفق‌اند. Web3100 بدون rebuild باقی ماند و با API جدید چهار گزینه canonical دریافت می‌کند. قفل‌های این واحد آزادند.
+
 ## 2026-09-23 — HEADER-DATE-RTL-0923 — PC-B — READY_FOR_REVIEW
 
 - درخواست مالک: ترتیب و راست‌چینی تاریخ فارسی سربرگ اصلاح شود تا سال، ماه، روز و علائم در نمایش RTL جابه‌جا نشوند.

@@ -1,3 +1,13 @@
+## 2026-09-26 — ACTIVE-COMPANY-DROPDOWN-0926 — READY_FOR_REVIEW / VERIFIED
+
+انتخاب‌گر شرکت فعال دوباره عملیاتی شد. علت، وجود رکورد فعال legacy خارج از قرارداد
+چهارشرکتی و نبود دو شرکت canonical در دیتابیس محلی بود. API اکنون selectable را فقط
+به چهار کد عمومی `legal-entities.v3` محدود می‌کند؛ رکورد legacy حذف یا ویرایش نشد.
+پس از Backup کامل PostgreSQL، ابزار guarded موجود «قسطی رو» و «جهان آکادمیا» را
+به‌صورت اتمیک و تکرارپذیر همراه Snapshot اولیه ایجاد کرد. Post-check دقیقاً چهار شرکت
+canonical فعال را تأیید می‌کند. تست هدفمند، lint، typecheck و build API، build قرارداد
+و Database و سلامت API4000 موفق‌اند؛ Web3100 از همان build تأییدشده استفاده می‌کند.
+
 ## 2026-09-23 — CUSTOMER-AFFAIRS-QA-FIXES-0923 — READY_FOR_REVIEW
 
 مجوز گزارش و داشبورد امور مشتریان برای نقش‌های دارای دسترسی کامل یا جزئی اصلاح
