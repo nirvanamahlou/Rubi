@@ -5,6 +5,8 @@ import {
 import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
 import { DocumentsModule } from '../documents/documents.module';
 import { SalesReceiptAccountsModule } from '../finance/payments/sales-receipt-accounts.public';
+import { FlightLoadService } from './flight-load.service';
+import { FlightLoadController } from './flight-load.controller';
 import {
   SalesPaymentReceiptsController,
   SalesPaymentReceiptsService,
@@ -56,6 +58,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
   ],
   controllers: [
     SalesFloatingPurchasesController,
+    FlightLoadController,
     SalesPaymentReceiptsController,
     SalesController,
     SalesAssistantController,
@@ -64,6 +67,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
   ],
   providers: [
     SalesFloatingPurchases,
+    FlightLoadService,
     SalesPaymentReceiptsService,
     AuthGuard,
     SalesRepository,

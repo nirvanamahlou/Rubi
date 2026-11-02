@@ -592,6 +592,7 @@ export function IntegrationWorkspaceBody({
               {section === 'connections' ? (
                 <>
                   <GhestirooConnection
+                    registry={data}
                     key={branchId}
                     branchId={branchId}
                     userId={actor.userId}
@@ -901,6 +902,7 @@ export function SystemDetail({
       </nav>
       {ghestiroo && ['connection', 'data', 'health'].includes(area) ? (
         <GhestirooConnection
+          registry={data}
           key={`${branchId}:${system.id}`}
           branchId={branchId}
           userId={userId}

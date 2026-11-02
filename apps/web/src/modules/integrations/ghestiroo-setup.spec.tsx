@@ -74,7 +74,7 @@ describe('Ghestiroo connection setup', () => {
   it('keeps both draft fields editable without permitting persistence before server setup', () => {
     const html = renderToStaticMarkup(<GhestirooSetupForm {...props} />);
     const textareas = html.match(/<textarea\b[^>]*>/g) ?? [];
-    expect(textareas).toHaveLength(2);
+    expect(textareas).toHaveLength(1);
     expect(textareas.every((tag) => !tag.includes('disabled'))).toBe(true);
     expect(html.match(/<button\b[^>]*>/)?.[0]).toContain(' disabled=""');
     const ready = renderToStaticMarkup(

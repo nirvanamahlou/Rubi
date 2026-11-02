@@ -23,6 +23,50 @@ import {
 } from '../api/client';
 import { presenceLayout, validatePresence } from '../presence-model';
 import styles from './site-presence.module.css';
+import type { IntegrationRegistryV1 } from '@nora/contracts';
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+import { isGhestirooSystem } from '../system-connector';
+
+export function SitePresenceSelector({
+  branchId,
+  registry,
+}: {
+  branchId: string;
+  registry: IntegrationRegistryV1;
+}) {
+  const [chosen, setChosen] = useState(
+    registry.systems.find((s) => isGhestirooSystem(s, registry))?.id ??
+      registry.systems[0]?.id ??
+      '',
+  );
+  const site = registry.systems.find((s) => s.id === chosen);
+  if (!site) return null;
+  return (
+    <section className="grid gap-3">
+      <label className="grid gap-2 text-sm font-semibold">
+        سایت نمایش‌داده‌شده در شماتیک
+        <NativeSearchSelect
+          aria-label="انتخاب سایت برای حضور زنده"
+          value={chosen}
+          onChange={(e) => setChosen(e.target.value)}
+        >
+          {registry.systems.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </NativeSearchSelect>
+      </label>
+      <SitePresence
+        key={`${branchId}:${site.id}`}
+        branchId={branchId}
+        siteId={site.id}
+        siteName={site.name}
+        connector={isGhestirooSystem(site, registry) ? 'ghestiroo' : 'niyayesh'}
+      />
+    </section>
+  );
+}
 const icons: Record<string, typeof Home> = {
   home: Home,
   plane: Plane,
@@ -39,10 +83,12 @@ export function SitePresence({
   branchId,
   siteId,
   siteName,
+  connector = 'niyayesh',
 }: {
   branchId: string;
   siteId: string;
   siteName: string;
+  connector?: 'niyayesh' | 'ghestiroo';
 }) {
   const [snapshot, setSnapshot] = useState<SitePresenceV1 | null>(null);
   const [state, setState] = useState<
@@ -63,7 +109,12 @@ export function SitePresence({
       const timeout = setTimeout(() => control.abort(), 12000);
       try {
         const result = validatePresence(
-          await integrationsApi.sitePresence(branchId, siteId, control.signal),
+          await integrationsApi.sitePresence(
+            branchId,
+            siteId,
+            control.signal,
+            connector,
+          ),
           siteId,
         );
         if (!disposed) {
@@ -104,7 +155,7 @@ export function SitePresence({
       clearInterval(interval);
       document.removeEventListener('visibilitychange', visible);
     };
-  }, [branchId, siteId, revision]);
+  }, [branchId, siteId, revision, connector]);
   const data =
     snapshot?.registrySystemId === siteId && state === 'active'
       ? snapshot

@@ -1,3 +1,24 @@
+## TICKET-LOAD-CONTRACTS-1102 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-ticket-load-contracts-1102 from develop87cc38f1f. User authorizes dated ticket-load drilldown, exact-offer contract list, actual leg passenger composition, XLSX and develop merge after checks. Reserve new Sales-owned flight-load read service/controller/workbook/tests, SalesModule registration, additive shared flight-load DTO/root export, Ticket Catalog load date link/new report component/client/styles/tests and own status notes. Producer Sales reads its own contract/selection/allocation tables; consumer Ticket Catalog Web uses this read-only endpoint. Ticket Catalog validates exact offer/branch and enriches current flight facts through existing public services; no cross-module table queries. Existing Sales own/branch/all access preserved, no grants/PII roster export. Legacy aggregate service parties remain leg-specific; cancelled/draft rows excluded from active totals. No schema/migration/dependency/runtime changes. Prior same-owner load scopes already published; other active reservations do not overlap.
+
+TICKET-LOAD-CONTRACTS-1102 scope extension: owner clarified cancellation must restore exactly the allocated seats to remaining load, preserving total capacity and cancelled history. Reserve bounded Sales transition/cancel orchestration and adapter plus Ticket Catalog public releaseContract optional transaction parameter and focused cancellation tests. Producer Ticket Catalog and consumer Sales ship backwards-compatible optional transaction support together; release and cancellation commit atomically. Reserve own English override/API/legacy generated catalogue entries. No schema/dependency or historical data rewrite.
+
+TICKET-LOAD-CONTRACTS-1102 validated:26 focused API checks (including atomic cancellation/failure/conflict and exact seat restoration),15 Web/API-client/i18n checks, additional current-flight/list-summary regressions, scoped lint, Contracts/API typechecks and production API/Web builds pass. Windows Web verification uses webpack for external dependency junctions. No migration/dependency/operational deployment. Source reservations freeze on push; exact-head hosted gates and review precede the user-authorized develop merge. Details: docs/tasks/TICKET-LOAD-CONTRACTS-1102.md.
+
+## RESERVATION-FLIGHT-REPORT-1102 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-issued-ticket-report-1102 from latest origin/develop. Owner requests all reservation contract flights visible in passenger service report and develop merge. Reserve Reservations service-report.ts, reservation-ticket-documents.ts report composition and focused tests only; own status notes. Include latest assigned flights without inventing document issuance, retain actual saved numbers across intake revisions, exclude removed assignments and duplicate historical segments. Existing report filters/exports and branch/permission guards remain; legacy actual-issued endpoint stays actual-document-only. No shared API shape, schema, migration, dependency, runtime or operational writes. 32 focused API/Web report, numbering/filter/export regressions pass (two existing optional skips); scoped API ESLint passes. API types/build and final-head full hosted gates precede authorized merge. Source reservation freezes on publication and releases on verified merge.
+
+## GHESTIROO-WORKSPACE-1102 — PC-D
+
+Ghestiroo Integrations now uses the authenticated Nora actor, native site
+catalogue/Excel services with preview and confirmed apply, per-person site SSO
+and a site-selectable live presence schematic. Existing section/branch IAM and
+manager-only connection settings remain authoritative. No Nora schema,
+dependency or other-module implementation changes. Scope and release gates:
+[GHESTIROO-WORKSPACE-1102](tasks/GHESTIROO-WORKSPACE-1102.md).
+
 ## AMEND-NO-HOTEL-PRICE-1102 — PC-A
 
 Nonprice reservation contract amendments use the existing preserveContractPrices protocol: retain exact recorded components/currencies, drop obsolete passenger/service allocation pricing, preserve identity/service fields and let the server enforce matching saved totals with version/branch guards. Hotel check-in/out are controlled Gregorian English dates with unchanged ISO values.21 focused regressions pass; lint/types and final-head hosted tests/build/database gates precede authorized develop merge. No API/schema/migration/dependency or runtime/data deployment.
@@ -8332,3 +8353,7 @@ Reservations Hotel and general Correction editors now expose every ordered addit
 ## ROUNDTRIP-TRANSFER-DISPLAY-1102 — PC-A
 
 Hotel transfer preview now multiplies the entered combined round-trip fare by the chargeable passenger population once, using the same shared helper as purchase registration. Example20 x2 displays40 rather than80. Per-leg and split modes, zero counts, hotel nights/rooms and exact arithmetic remain unchanged. Existing persisted purchase/API calculations were already correct and are untouched.16 focused UI regressions pass; scoped lint/types and existing API purchase checks precede final-head hosted gates and owner-authorized develop merge. No schema/migration/dependency/history mutation or operational rollout.
+
+## AMEND-FLIGHT-DATE-SYNC-1102 — PC-A
+
+Explicit catalog flight replacement or applied manual flight edits now reconcile contract departureDate/returnNotBefore from the actual selected flight instants in Tehran. This removes stale return-date bounds that falsely rejected a valid floating-to-charter replacement. Unedited drafts retain their existing dates and object identity; true reversed flight dates remain reversed for existing server validation to reject. Buyer, amounts, services, capacity and receipts remain unchanged. Four regressions failed before the fix;18 focused Web and93 API domain/capacity/amendment checks pass, with lint/types and final-head hosted gates preceding owner-authorized develop merge. No API/schema/migration/dependency or server deployment.

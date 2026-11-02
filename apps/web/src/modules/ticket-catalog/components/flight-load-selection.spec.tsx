@@ -4,6 +4,7 @@ import type * as ReactModule from 'react';
 import type { TicketOfferV1 } from '@nora/contracts';
 import { canonicalTestTree } from '@/i18n/test-tree';
 import { FlightLoadGrid } from './flight-load-grid';
+import { FlightLoadContracts } from './flight-load-contracts';
 import styles from './flight-load-grid.module.css';
 import { searchOptions } from '@/components/ui/search-combobox';
 
@@ -93,6 +94,28 @@ function select(id: string) {
 }
 const tables = () =>
   render().filter((n) => n.props.className === styles.scroller);
+it('opens contracts for the clicked dated offer and clears the report when filters change', () => {
+  route();
+  click('جست‌وجو');
+  const date = render().find(
+    (n) =>
+      n.type === 'button' &&
+      String(n.props['aria-label']).includes('قراردادهای پرواز out-a '),
+  );
+  expect(date).toBeDefined();
+  const stopPropagation = vi.fn();
+  (date!.props.onClick as (event: unknown) => void)({ stopPropagation });
+  expect(stopPropagation).toHaveBeenCalledOnce();
+  expect(
+    render().find((n) => n.type === FlightLoadContracts)?.props.offer,
+  ).toMatchObject({ id: 'out-a' });
+  const field = render().find(
+    (n) =>
+      n.props.id === 'load-number' && typeof n.props.onChange === 'function',
+  )!;
+  (field.props.onChange as (e: unknown) => void)({ target: { value: 'new' } });
+  expect(render().some((n) => n.type === FlightLoadContracts)).toBe(false);
+});
 function route() {
   for (const [id, value] of [
     ['load-origin', 'a'],

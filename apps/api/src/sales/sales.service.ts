@@ -2012,13 +2012,17 @@ export class SalesService {
       'CANCELLED',
       (reason ?? '').trim(),
       this.context(actor, row.branchId, traceId),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      (tx) => this.tickets.releaseContract(id, tx),
     );
     if (!changed)
       throw new ConflictException({
         code: 'CONCURRENT_MODIFICATION',
         message: 'قرارداد هم‌زمان تغییر کرده یا قابل لغو نیست.',
       });
-    await this.tickets.releaseContract(id);
     return this.detail(id, actor);
   }
 

@@ -75,6 +75,19 @@ export interface GhestirooStatus {
   renewalState?: 'active' | 'pending' | 'retrying' | 'expired';
 }
 export const ghestirooApi = {
+  workspace: (
+    branch: string,
+    payload: Record<string, unknown>,
+    file?: File,
+  ) => {
+    const form = new FormData();
+    form.append('payload', JSON.stringify(payload));
+    if (file) form.append('file', file);
+    return request<Record<string, unknown>>(
+      `/ghestiroo/workspace${branchQuery(branch)}`,
+      { method: 'POST', body: form, headers: { 'X-Nora-Workspace': '1' } },
+    );
+  },
   status: (branch: string, signal?: AbortSignal) =>
     request<GhestirooStatus>(`/ghestiroo/connection${branchQuery(branch)}`, {
       ...(signal ? { signal } : {}),
@@ -105,9 +118,14 @@ export const ghestirooApi = {
     ),
 };
 export const integrationsApi = {
-  sitePresence: (branchId: string, systemId: string, signal: AbortSignal) =>
+  sitePresence: (
+    branchId: string,
+    systemId: string,
+    signal: AbortSignal,
+    connector = 'niyayesh',
+  ) =>
     request<SitePresenceV1>(
-      `/niyayesh/presence${branchQuery(branchId)}&systemId=${encodeURIComponent(systemId)}`,
+      `/${connector === 'ghestiroo' ? 'ghestiroo' : 'niyayesh'}/presence${branchQuery(branchId)}&systemId=${encodeURIComponent(systemId)}`,
       { signal },
     ),
   niyayeshReport: (

@@ -2661,10 +2661,12 @@ export class TicketPublicService {
       data: { status: 'RELEASED', releasedAt: new Date() },
     });
   }
-  async releaseContract(contractId: string) {
-    await this.database.client.ticketOfferCapacityAllocation.updateMany({
-      where: { contractId, status: 'ACTIVE' },
-      data: { status: 'RELEASED', releasedAt: new Date() },
-    });
+  async releaseContract(contractId: string, tx?: Prisma.TransactionClient) {
+    await (tx ?? this.database.client).ticketOfferCapacityAllocation.updateMany(
+      {
+        where: { contractId, status: 'ACTIVE' },
+        data: { status: 'RELEASED', releasedAt: new Date() },
+      },
+    );
   }
 }

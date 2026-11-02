@@ -1,6 +1,6 @@
 import {
   allocatedServiceRows,
-  flightServiceRows,
+  reservationFlightRows,
   filterServiceRows,
 } from './service-report';
 import {
@@ -158,6 +158,15 @@ export class ReservationTicketDocumentsService {
       throw new BadRequestException(
         'بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ بلیط دارد.',
       );
+    const documentsByContract = new Map<
+      string,
+      (typeof intakes)[number]['ticketDocuments']
+    >();
+    for (const intake of intakes) {
+      const documents = documentsByContract.get(intake.contractId) ?? [];
+      documents.push(...intake.ticketDocuments);
+      documentsByContract.set(intake.contractId, documents);
+    }
     const seenContracts = new Set<string>();
     const rows = intakes.flatMap((i) => {
       const snapshot = i.snapshot as unknown as SalesReservationRequestV1;
@@ -169,9 +178,14 @@ export class ReservationTicketDocumentsService {
       const latest = !seenContracts.has(i.contractId);
       seenContracts.add(i.contractId);
       return [
-        ...flightServiceRows(
-          i.ticketDocuments.flatMap((d) => issuedRows(d, snapshot, cancelled)),
-        ),
+        ...(latest
+          ? reservationFlightRows(
+              i.id,
+              snapshot,
+              documentsByContract.get(i.contractId) ?? [],
+              cancelled,
+            )
+          : []),
         ...(latest ? allocatedServiceRows(i.id, snapshot, cancelled) : []),
       ];
     });
