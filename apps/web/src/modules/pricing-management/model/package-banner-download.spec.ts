@@ -47,6 +47,30 @@ it('downloads actual PNG pixels and releases the temporary object URL', async ()
     allowTaint: false,
     onclone: expect.any(Function),
   });
+  const setProperty = vi.fn();
+  const style = { setProperty };
+  const root = { style, querySelectorAll: () => [] };
+  const clone = {
+    documentElement: { style: { backgroundColor: 'oklch(1 0 0)' } },
+    body: { style: { backgroundColor: 'oklch(1 0 0)' } },
+    querySelector: () => root,
+    defaultView: {
+      getComputedStyle: () => ({ getPropertyValue: () => 'oklch(1 0 0)' }),
+    },
+    createElement: () => ({
+      getContext: () => ({
+        clearRect: vi.fn(),
+        fillRect: vi.fn(),
+        getImageData: () => ({ data: [255, 255, 255, 255] }),
+      }),
+    }),
+  };
+  (capture.mock.calls[0]?.[1].onclone as (doc: Document) => void)(
+    clone as unknown as Document,
+  );
+  expect(clone.body.style.backgroundColor).toBe('transparent');
+  expect(clone.documentElement.style.backgroundColor).toBe('transparent');
+  expect(setProperty).toHaveBeenCalledWith('color', 'rgba(255,255,255,1)');
   expect(link.download).toBe('package-1-v2.png');
   expect(click).toHaveBeenCalledOnce();
   expect(remove).toHaveBeenCalledOnce();

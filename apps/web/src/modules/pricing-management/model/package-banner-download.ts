@@ -72,6 +72,9 @@ export function bannerExportDimensions(
 function compatibleClone(doc: Document) {
   const root = doc.querySelector<HTMLElement>('[data-package-banner-preview]');
   if (!root) throw new Error('Banner preview missing');
+  // html2canvas also inspects the document background outside the selected node.
+  doc.documentElement.style.backgroundColor = 'transparent';
+  doc.body.style.backgroundColor = 'transparent';
   const context = doc
     .createElement('canvas')
     .getContext('2d', { willReadFrequently: true });
