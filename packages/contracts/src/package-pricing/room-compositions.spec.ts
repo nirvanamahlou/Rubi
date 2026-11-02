@@ -151,7 +151,7 @@ it('keeps exact rows from every matching period and retains legacy single-batch 
   expect(packageTourSelectionBatch(grid, 'a', false)).toBe(a);
 });
 
-it('splits hotel bands crossing age two and charges infant and child fares independently', () => {
+it('splits hotel bands at flight age boundaries and charges infant and child fares independently', () => {
   const infantRow = {
     ...row,
     roomRates: [
@@ -171,7 +171,7 @@ it('splits hotel bands crossing age two and charges infant and child fares indep
       infantFlight: { amount: '3', currencyCode: 'EUR' },
     },
   });
-  expect(rows).toHaveLength(2);
+  expect(rows).toHaveLength(3);
   const infant = rows.find(
     (r) => packageRoomIdentity(r.roomCode)!.childAges[0]!.maxExclusive === 2,
   )!;
@@ -184,4 +184,10 @@ it('splits hotel bands crossing age two and charges infant and child fares indep
   expect(
     child.currencyAmounts.find((p) => p.currencyCode === 'EUR')!.sale,
   ).toBe('270.00');
+  const adult = rows.find(
+    (r) => packageRoomIdentity(r.roomCode)!.childAges[0]!.min === 12,
+  )!;
+  expect(
+    adult.currencyAmounts.find((p) => p.currencyCode === 'EUR')!.sale,
+  ).toBe('280.00');
 });
