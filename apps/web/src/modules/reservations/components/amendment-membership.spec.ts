@@ -6,7 +6,10 @@ import {
   validatePassengerHotelStays,
   type SalesContractAmendmentV1,
 } from '@nora/contracts';
-import { changeAmendmentMembership } from './amendment-membership';
+import {
+  changeAmendmentMembership,
+  preserveAmendmentContractPrices,
+} from './amendment-membership';
 const draft = (): SalesContractAmendmentV1 => ({
   version: 7,
   reason: '',
@@ -248,4 +251,35 @@ it('round trips a child addition/removal without changing survivor prices, bands
     })),
   );
   expect(removed.services[1]!.metadata!.passengerCount).toBe(2);
+});
+
+it('preserves exact recorded currency totals for a nonprice correction without requiring obsolete hotel prices', () => {
+  const source = draft();
+  source.services[0]!.metadata = {
+    ...source.services[0]!.metadata,
+    passengerHotelPricesV1: '{}',
+    automaticFlightRoomTotalV1: true,
+  };
+  source.priceComponents = [
+    ...source.priceComponents,
+    {
+      type: 'BASE',
+      title: 'Recorded rials',
+      currencyCode: 'IRR',
+      amount: '123456789',
+    },
+  ];
+  const before = structuredClone(source);
+  const next = preserveAmendmentContractPrices(source);
+  expect(next.priceComponents).toEqual(before.priceComponents);
+  expect(next.preserveContractPrices).toBe(true);
+  expect(next.passengers.every((p) => p.agreedPrices === undefined)).toBe(true);
+  expect(next.services[0]!.metadata).not.toHaveProperty(
+    'passengerHotelPricesV1',
+  );
+  expect(next.services[0]!.metadata).not.toHaveProperty(
+    'automaticFlightRoomTotalV1',
+  );
+  expect(next.services[0]!.metadata!.contractPackagePricingVersion).toBe(1);
+  expect(source).toEqual(before);
 });
