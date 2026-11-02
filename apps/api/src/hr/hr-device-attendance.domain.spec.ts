@@ -3,6 +3,7 @@ import {
   attendanceScheduleMetrics as metrics,
   resolveDeviceDirections as resolve,
   deviceRecordId,
+  workingHoursEnd,
 } from './hr-device-attendance.domain';
 import { localClockToUtc as at } from './hr.validation';
 const date = '2026-11-01';
@@ -94,5 +95,42 @@ describe('device attendance interpretation', () => {
     expect(deviceRecordId('source-a', '1')).toMatch(
       /^[a-f0-9]{8}-[a-f0-9]{4}-5[a-f0-9]{3}-a[a-f0-9]{3}-[a-f0-9]{12}$/,
     );
+  });
+});
+
+it('applies the Thursday office end and the independent17:30 overtime boundary', () => {
+  expect(workingHoursEnd('2026-11-05', '09:15', '17:00')).toBe('14:00');
+  expect(workingHoursEnd('2026-11-04', '09:15', '17:00')).toBe('17:00');
+  expect(
+    metrics(
+      resolve([event('09:20'), event('17:45')]),
+      start,
+      end,
+      0,
+      at(date, '17:30'),
+    ),
+  ).toMatchObject({ lateMinutes: 5, deficitMinutes: 5, overtimeMinutes: 15 });
+  expect(
+    metrics(
+      resolve([event('09:15'), event('17:20')]),
+      start,
+      end,
+      0,
+      at(date, '17:30'),
+    ).overtimeMinutes,
+  ).toBe(0);
+  expect(
+    metrics(
+      resolve([event('09:20'), event('13:50')]),
+      start,
+      at(date, '14:00'),
+      0,
+      at(date, '17:30'),
+    ),
+  ).toMatchObject({
+    lateMinutes: 5,
+    earlyMinutes: 10,
+    deficitMinutes: 15,
+    overtimeMinutes: 0,
   });
 });
