@@ -9907,7 +9907,7 @@
   "شناسه یا نسخه تورلیدر معتبر نیست.": "Tourleader ID or version is not valid.",
   "شناسه یکتای درخواست الزامی است.": "A unique request ID is required.",
   "شناسه، نسخه یا وضعیت بلیت معتبر نیست.": "The ticket ID, version or status is not valid.",
-  "شناوری": "buoyancy",
+  "شناوری": "Floating",
   "شناوری ورود": "Entry buoyancy",
   "شنبه": "Saturday",
   "شنگن / سراسر جهان": "Schengen / Worldwide",
@@ -17503,5 +17503,15 @@
   "Transfer P.P رفت‌وبرگشت": "Round-trip transfer P.P",
   "تعداد نفرات ترانسفر رفت‌وبرگشت": "Round-trip transfer passengers",
   "قیمت فروش پرواز نوزاد": "Infant flight sale price",
-  "نوع فیلد قیمت": "Price field type"
+  "نوع فیلد قیمت": "Price field type",
+  "خرید قرارداد شناوری": "Floating contract purchases",
+  "خرید شناوری از بخش پرداخت فروش ثبت می‌شود.": "Record floating purchases from Sales payments.",
+  "آژانس خرید هتل": "Hotel purchase agency",
+  "آژانس هتل": "Hotel agency",
+  "آژانس بلیط": "Ticket agency",
+  "آژانس ترانسفر": "Transfer agency",
+  "آژانس ترانسفر رفت": "Outbound transfer agency",
+  "آژانس ترانسفر برگشت": "Return transfer agency",
+  "ترانسفر از آژانس دیگر": "Transfer from another agency",
+  "آژانس رفت و برگشت جدا": "Different outbound and return agencies"
 }
