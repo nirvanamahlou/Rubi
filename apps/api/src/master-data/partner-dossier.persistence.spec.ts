@@ -34,6 +34,25 @@ const protectedContact = {
 };
 describe('partner identity persistence', () => {
   it.each(['suppliers', 'brokers'] as const)(
+    'carries the existing %s accounting identity into a new dossier',
+    async (resource) => {
+      const { tx, client } = harness();
+      await persistPartnerDossier(
+        client,
+        resource,
+        { name: 'Synthetic', accountingCode: '3000001' },
+        {},
+        'actor',
+        'branch',
+      );
+      expect(tx.masterOrganization.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ accountingCode: '3000001' }),
+        }),
+      );
+    },
+  );
+  it.each(['suppliers', 'brokers'] as const)(
     'preserves canonical contacts and address on unrelated %s edits',
     async (resource) => {
       const { tx, client } = harness();

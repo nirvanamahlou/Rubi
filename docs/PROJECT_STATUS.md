@@ -1,3 +1,14 @@
+## CUSTOMER-CODES-1102 — PC-B — LOCAL VERIFIED
+
+Customer codes4000001+ allocated by creation date/id, readonly below national ID. Three existing local records backfilled without changing prior columns; automatic immutable codes for new customers. API/web builds, 53 API tests, 44 web tests and isolated SQL checks passed. No production rollout. See docs/tasks/CUSTOMER-CODES-1102.md.
+
+## ORGANIZATION-CODE-DISPLAY-1102 — PC-B
+
+Company numbers now replace legacy organization codes in visible profiles/lists/selectors/forms and Excel output; separate accounting-code label removed for companies. Historical codes, IDs and contract writes preserved. Numeric search and backward-compatible Excel matching covered. Local3100 updated; details in docs/tasks/PARTNER-ACCOUNTING-CODES-1102.md.
+## PARTNER-ACCOUNTING-CODES-1102 — PC-B — LOCAL VERIFIED
+
+Readonly chronological company/bank accounting codes implemented and activated on Rubi3100. Existing data preserved; shared company identities keep the same code across roles. See docs/tasks/PARTNER-ACCOUNTING-CODES-1102.md for tests, migration and deployment. No production rollout.
+
 ## ONE-ADULT-CHILD-DOUBLE-1102 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-one-adult-child-double-1102 from latest origin/develop. Owner authorizes Double choice for one adult plus one or more children and develop merge. Reserve only shared Sales hotel-rooms.ts category policy and room-category.spec.ts plus own status notes. Existing helper drives Sales primary/additional rooms, Reservations amendments and API validation; producer/consumer ship together with no shape change. Preserve Single default, existing manual categories, actual room-type capacity and age/party guards. No schema/migration/dependency/runtime or data changes. Prior Family task source released on merge; no active overlapping helper writer. 27 focused category/Web primary-room/additional-stay/amendment regressions, scoped lint, Contracts typecheck/build pass; all final-head hosted gates precede merge. Source freezes on publication and releases on verified merge.

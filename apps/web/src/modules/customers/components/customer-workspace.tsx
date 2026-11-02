@@ -1242,7 +1242,9 @@ export function CustomerDrawer({
               ? `ویرایش پرونده ${customerRoleLabel(draft.roles)}`
               : `پرونده ۳۶۰ درجه ${customerRoleLabel(draft.roles)}`}
         </DialogTitle>
-        <DialogDescription>
+        <DialogDescription
+          className={mode === 'create' ? undefined : 'sr-only'}
+        >
           {mode === 'create'
             ? 'هر نفر یک ردیف؛ اطلاعات را در جدول وارد کنید و در پایان ثبت همه را بزنید. تلفن، ایمیل و پاسپورت اختیاری‌اند.'
             : `اطلاعات کامل این ${customerRoleLabel(draft.roles)} را مشاهده و مدیریت کنید.`}
@@ -1388,7 +1390,7 @@ export function CustomerDrawer({
                     description={
                       customer?.maskedNationalId
                         ? `ثبت‌شده: ${customer.maskedNationalId} — فقط برای تغییر دوباره وارد کنید`
-                        : 'برای تکمیل پرونده وارد کنید'
+                        : ''
                     }
                     id="customer-national-id"
                     label="کد ملی"
@@ -1506,6 +1508,17 @@ export function CustomerDrawer({
                       ))}
                     </SelectContent>
                   </Select>
+                </FormField>
+              ) : null}
+              {draft.kind === 'person' && mode !== 'create' ? (
+                <FormField id="customer-code" label="کد مشتری">
+                  <Input
+                    id="customer-code"
+                    dir="ltr"
+                    readOnly
+                    value={customer?.customerCode ?? ''}
+                    placeholder="تخصیص خودکار پس از ثبت"
+                  />
                 </FormField>
               ) : null}
               {!customerOnlyEntry && (
@@ -2067,7 +2080,7 @@ export function CustomerDrawer({
               >
                 {mode === 'create'
                   ? newCompanions.length
-                    ? 'ثبت مشتری و مسافران همراه'
+                    ? 'ثبت همه'
                     : 'ثبت مشتری'
                   : 'ذخیره با کنترل نسخه'}
               </Button>
@@ -2101,13 +2114,6 @@ export function CustomerDrawer({
               <TabsTrigger value="audit">Audit</TabsTrigger>
             </TabsList>
             <TabsContent className="space-y-3" value="overview">
-              {customer.kind === 'person' && !customer.maskedNationalId ? (
-                <Alert
-                  title="نیازمند تکمیل اطلاعات"
-                  tone="warning"
-                  description="شناسه این پرونده قدیمی ثبت نشده است؛ ویرایش اطلاعات نامرتبط مجاز است. شناسه صوری وارد نکنید."
-                />
-              ) : null}
               <Card className="grid gap-3 p-4 sm:grid-cols-2">
                 <div>
                   <p className="text-xs text-muted-foreground">وضعیت</p>
@@ -2140,6 +2146,10 @@ export function CustomerDrawer({
                         : 'ماسک‌شده'}
                     </Badge>
                   ) : null}
+                  <p className="mt-3 text-xs text-muted-foreground">کد مشتری</p>
+                  <p dir="ltr" className="text-right font-mono">
+                    {customer.customerCode ?? '—'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">شماره پاسپورت</p>
@@ -2170,9 +2180,6 @@ export function CustomerDrawer({
                     آخرین تاریخ خرید مشتری
                   </p>
                   <p className="mt-1 font-semibold">—</p>
-                  <p className="text-xs text-muted-foreground">
-                    در انتظار قرارداد عمومی Customer Purchase Summary از Sales
-                  </p>
                 </div>
               </Card>
               {customer.maskedNationalId && !revealedDetail?.nationalId ? (
@@ -2195,11 +2202,6 @@ export function CustomerDrawer({
                   </Button>
                 </Card>
               ) : null}
-              <Alert
-                description="نام لاتین، جنسیت و یادداشت در Schema و customers.v2 موجود نیستند و برای CUSTOMER-002B مسدود ثبت شده‌اند."
-                title="قابلیط‌های نیازمند قرارداد"
-                tone="warning"
-              />
             </TabsContent>
             <TabsContent className="space-y-4" value="dossier">
               {customer ? <CustomerDocumentsPanel customer={customer} /> : null}
@@ -2231,14 +2233,6 @@ export function CustomerDrawer({
               </Card>
 
               <Card className="flex flex-wrap items-center justify-between gap-4 p-4">
-                <div>
-                  <p className="font-bold">Timeline کامل فعالیت‌ها</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    اکنون {activities.length.toLocaleString('fa-IR')} فعالیت
-                    واقعی از بخش مشتریان در دسترس است؛ رویدادهای سایر بخش‌ها پس
-                    از اتصال امن به همین Timeline افزوده می‌شوند.
-                  </p>
-                </div>
                 <Button
                   onClick={() => {
                     sensitiveRequestId.current += 1;
@@ -2294,11 +2288,7 @@ export function CustomerDrawer({
                   ) : null}
                 </Alert>
               ) : null}
-              <p className="text-sm text-muted-foreground">
-                پس از نمایش، دکمه تماس فعال می‌شود. شماره‌ها پس از یک دقیقه یا
-                خروج از صفحه دوباره پنهان می‌شوند و مشاهده با دلیل درخواست
-                پشتیبانی در Audit ثبت می‌شود.
-              </p>
+
               {revealedDetail ? (
                 <Button
                   onClick={() => {
@@ -2487,11 +2477,6 @@ export function CustomerDrawer({
                   </Button>
                 </Card>
               ) : null}
-              <Alert
-                description="Schema فعلی فقط برچسب غیرحساس و City FK را نگه می‌دارد؛ متن کامل نشانی و Masking برای CUSTOMER-002B مسدود است."
-                title="حفاظت نشانی"
-                tone="warning"
-              />
             </TabsContent>
             <TabsContent className="space-y-3" value="consents">
               {customer.consents.map((item) => (
@@ -2635,11 +2620,6 @@ export function CustomerDrawer({
               ) : null}
             </TabsContent>
             <TabsContent className="space-y-3" value="duplicates">
-              <Alert
-                description="تشخیص فقط Candidate می‌سازد؛ Auto-merge و اجرای Merge تا بسته‌شدن DEC-OPEN-011 مسدود است."
-                title="بررسی دستی"
-                tone="warning"
-              />
               <Button
                 disabled={busy}
                 onClick={() => void detectDuplicates()}
@@ -2783,11 +2763,6 @@ export function CustomerDrawer({
                   </Card>
                 ))
               )}
-              <Alert
-                description="رویدادهای Lead/Ticket، Sales و Reservations فقط پس از ارائه قرارداد عمومی مالک همان ماژول قابل اضافه‌شدن‌اند؛ هیچ query مستقیم یا داده ساختگی استفاده نشده است."
-                title="مرز Timeline بین‌ماژولی"
-                tone="warning"
-              />
             </TabsContent>
             <TabsContent className="space-y-3" value="audit">
               {auditState === 'loading' ? (
@@ -3413,9 +3388,6 @@ export function CustomerWorkspace() {
                 ? metrics.totalCustomers.toLocaleString('fa-IR')
                 : 'در دسترس نیست'}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            نقش مشتری، مطابق همه فیلترهای فعال
-          </p>
         </Card>
         <Card className="border-cyan-300/60 bg-gradient-to-br from-cyan-500/20 via-cyan-100/60 to-surface p-4 dark:via-cyan-950/40">
           <div className="flex items-center justify-between">
@@ -3430,9 +3402,6 @@ export function CustomerWorkspace() {
               : requestState === 'ready'
                 ? metrics.totalPassengers.toLocaleString('fa-IR')
                 : 'در دسترس نیست'}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            شخصی و سازمانی مطابق فیلترها
           </p>
         </Card>
         <Card className="border-emerald-300/60 bg-gradient-to-br from-emerald-500/20 via-emerald-100/60 to-surface p-4 dark:via-emerald-950/40">
@@ -3449,9 +3418,6 @@ export function CustomerWorkspace() {
                 ? metrics.newCustomersLastThreeMonths.toLocaleString('fa-IR')
                 : 'در دسترس نیست'}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            بازه سه‌ماهه UTC و فیلترهای فعال
-          </p>
         </Card>
         <Card className="border-amber-300/60 bg-gradient-to-br from-amber-500/20 via-amber-100/60 to-surface p-4 dark:via-amber-950/40">
           <div className="flex items-center justify-between">
@@ -3465,19 +3431,9 @@ export function CustomerWorkspace() {
               ? '—'
               : `${metrics.returningCustomerRate.toLocaleString('fa-IR')}٪`}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            در انتظار قرارداد عمومی خرید از Sales
-          </p>
         </Card>
       </section>
       <Card className="flex flex-col gap-4 border-primary/25 bg-primary/[0.04] p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-lg font-bold">ثبت مشتری و مسافران همراه</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            اطلاعات مشتری، شماره تماس و همراهان را در یک جریان مرحله‌ای وارد
-            کنید.
-          </p>
-        </div>
         <div className="flex flex-wrap gap-2">
           <Button
             disabled={records.length === 0 || exporting}
@@ -3822,10 +3778,6 @@ export function CustomerWorkspace() {
                         <p className="text-xs text-muted-foreground">
                           بازکردن پرونده ۳۶۰ {customerRoleLabel(record.roles)}
                         </p>
-                        {record.kind === 'person' &&
-                        !record.maskedNationalId ? (
-                          <Badge>نیازمند تکمیل اطلاعات</Badge>
-                        ) : null}
                       </div>
                     </button>
                   </td>

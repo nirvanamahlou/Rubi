@@ -1,4 +1,5 @@
 'use client';
+import { masterDataDisplayCode } from '@/lib/master-data-display-code';
 
 import { useRef, useState } from 'react';
 import type { IamPermissionCode } from '@nora/contracts';
@@ -74,8 +75,9 @@ export function OrganizationDeleteDialog({
       >
         <DialogTitle>حذف دائمی {label}</DialogTitle>
         <DialogDescription>
-          {label} «{target.record.name}» با کد <bdi>{target.record.code}</bdi>{' '}
-          برای همیشه حذف می‌شود و قابل بازگردانی نیست.
+          {label} «{target.record.name}» با کد{' '}
+          <bdi>{masterDataDisplayCode(target.record)}</bdi> برای همیشه حذف
+          می‌شود و قابل بازگردانی نیست.
           {target.resource === 'organizations'
             ? ' هویت سازمان و تمام نقش‌های آن حذف می‌شوند. رکورد دارای وابستگی قابل حذف نیست.'
             : ' سازمان و سایر مخاطبان آن باقی می‌مانند.'}

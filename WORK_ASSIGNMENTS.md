@@ -1,3 +1,15 @@
+## CUSTOMER-CODES-1102 — PC-B — IMPLEMENTED / LOCAL VERIFIED
+
+User explicitly extends coding to Customer records and readonly field below national ID. Reserve Customer.customerCode additive schema/migration (sole current migration scope), Customer public projection/optional output contract, customer dossier UI and focused tests. Customer owner boundary preserved through own API; no edits to sales/contract identities or inputs. Back up/rehearse local backfill; no production deployment.
+
+## ORGANIZATION-CODE-DISPLAY-1102 — PC-B — IMPLEMENTED / LOCAL VERIFIED
+
+Extend branch1285 for numeric company code display in profiles/lists/selectors/wizard and search/sort/export. Preserve legacy code and IDs in all write payloads; no migration. User requests this display replacement and localhost3100 activation.
+
+## PARTNER-ACCOUNTING-CODES-1102 — PC-B — IMPLEMENTED / LOCAL VERIFIED
+
+User authorizes persisted chronological company codes (shared agencies/suppliers/brokers, 3000001+) and bank-account codes (5000001+), existing-data backfill and localhost3100 activation. Branch codex/pc-b-partner-accounting-codes-1102 from develop87cc38f1f. Reserve sole additive schema/migration scope for accountingCode on MasterOrganization/MasterSupplier/MasterBroker/FinanceSettlementAccount, owner API projections, B2B public reference/profile, readonly profile displays and targeted tests. Prior schema scopes are published; current hotel-access task edits only editable-field catalog, excluded here. Preserve existing business codes, permissions, identifiers, financial records and peer work. Optional additive output contracts; no editable field or new input permission. Source workbook defines prefixes; no operational data in Git. Back up local DB before apply; no production rollout.
+
 ## ONE-ADULT-CHILD-DOUBLE-1102 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-one-adult-child-double-1102 from latest origin/develop. Owner authorizes Double choice for one adult plus one or more children and develop merge. Reserve only shared Sales hotel-rooms.ts category policy and room-category.spec.ts plus own status notes. Existing helper drives Sales primary/additional rooms, Reservations amendments and API validation; producer/consumer ship together with no shape change. Preserve Single default, existing manual categories, actual room-type capacity and age/party guards. No schema/migration/dependency/runtime or data changes. Prior Family task source released on merge; no active overlapping helper writer. 27 focused category/Web primary-room/additional-stay/amendment regressions, scoped lint, Contracts typecheck/build pass; all final-head hosted gates precede merge. Source freezes on publication and releases on verified merge.
