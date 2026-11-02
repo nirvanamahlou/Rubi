@@ -165,7 +165,9 @@ export class GhestirooService implements OnModuleInit, OnModuleDestroy {
         ? 'admin'
         : ['workspace', 'presence'].includes(operation)
           ? 'catalog'
-          : operation;
+          : operation === 'dashboard'
+            ? undefined
+            : operation;
     const options = {
       actor: { subject: actor.userId, branch, name },
       ...(payload === undefined ? {} : { payload }),
@@ -175,13 +177,13 @@ export class GhestirooService implements OnModuleInit, OnModuleDestroy {
     let config = await this.store.read(branch);
     if (
       !config ||
-      (operation !== 'capabilities' && !config.scopes.includes(scope))
+      (operation !== 'capabilities' && scope && !config.scopes.includes(scope))
     )
       throw new ForbiddenException('این حساب برای این اتصال مجاز نیست.');
     config = await this.renewal.ensure(branch);
     if (
       !config ||
-      (operation !== 'capabilities' && !config.scopes.includes(scope))
+      (operation !== 'capabilities' && scope && !config.scopes.includes(scope))
     )
       throw new ForbiddenException('این حساب برای این اتصال مجاز نیست.');
     if (Date.parse(config.expiresAt) <= Date.now())
@@ -203,7 +205,9 @@ export class GhestirooService implements OnModuleInit, OnModuleDestroy {
       if (
         updated &&
         updated.apiKey !== config.apiKey &&
-        (operation === 'capabilities' || updated.scopes.includes(scope))
+        (operation === 'capabilities' ||
+          !scope ||
+          updated.scopes.includes(scope))
       ) {
         config = updated;
         try {
@@ -255,6 +259,17 @@ export class GhestirooService implements OnModuleInit, OnModuleDestroy {
     return data;
   }
   async presence(actor: AuthenticatedActor, branch: string, systemId: string) {
+    await this.registeredSite(actor, branch, systemId);
+    return {
+      ...(await this.run(actor, branch, 'presence')),
+      registrySystemId: systemId,
+    };
+  }
+  private async registeredSite(
+    actor: AuthenticatedActor,
+    branch: string,
+    systemId: string,
+  ) {
     const registry = await this.registry.read(actor, branch, 'brands');
     const system = registry.systems.find((s) => s.id === systemId);
     const brand = registry.brands.find((b) => b.id === system?.brandId);
@@ -267,9 +282,53 @@ export class GhestirooService implements OnModuleInit, OnModuleDestroy {
         ))
     )
       throw new ForbiddenException();
-    return {
-      ...(await this.run(actor, branch, 'presence')),
-      registrySystemId: systemId,
-    };
+  }
+  async dashboard(
+    actor: AuthenticatedActor,
+    branch: string,
+    systemId: string,
+    body: unknown,
+  ) {
+    await this.registeredSite(actor, branch, systemId);
+    if (!body || typeof body !== 'object' || Array.isArray(body))
+      throw new BadRequestException();
+    const data = body as Record<string, unknown>;
+    if (
+      Object.keys(data).some(
+        (key) => !['from', 'to', 'metric', 'after', 'queue'].includes(key),
+      ) ||
+      !['from', 'to'].every(
+        (key) =>
+          typeof data[key] === 'string' &&
+          /^\d{4}-\d{2}-\d{2}$/.test(data[key] as string),
+      ) ||
+      (data.metric !== undefined &&
+        !['sales', 'orders', 'users', 'pending'].includes(
+          String(data.metric),
+        )) ||
+      (data.queue !== undefined &&
+        (data.metric !== 'pending' ||
+          !['requests', 'payments', 'activation', 'issuance'].includes(
+            String(data.queue),
+          ))) ||
+      (data.after !== undefined &&
+        (typeof data.after !== 'string' ||
+          (data.after !== '' &&
+            !/^(?:[a-f0-9]{32}|[a-f0-9-]{36})$/.test(data.after))))
+    )
+      throw new BadRequestException();
+    const result = await this.run(actor, branch, 'dashboard', '', data);
+    if (
+      result.from !== data.from ||
+      result.to !== data.to ||
+      result.schemaVersion !== 1 ||
+      (data.metric
+        ? result.metric !== data.metric || !Array.isArray(result.items)
+        : !result.metrics || !result.visits || !Array.isArray(result.activity))
+    )
+      throw new ServiceUnavailableException(
+        'پاسخ گزارش با سایت یا بازه انتخاب‌شده مطابقت ندارد.',
+      );
+    return { ...result, registrySystemId: systemId };
   }
 }

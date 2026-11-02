@@ -94,6 +94,16 @@ export class GhestirooController {
     );
     return result;
   }
+  @Post('dashboard')
+  @Header('Cache-Control', 'private, no-store')
+  dashboard(
+    @Req() r: AuthenticatedRequest,
+    @Query('branchId') branch: string,
+    @Query('systemId') system: string,
+    @Body() body: unknown,
+  ) {
+    return this.service.dashboard(r.actor, branch, system, body);
+  }
   @Get('connection')
   @Header('Cache-Control', 'private, no-store')
   status(@Req() r: AuthenticatedRequest, @Query('branchId') branch: string) {

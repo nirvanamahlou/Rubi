@@ -103,6 +103,7 @@ export function SiteVisits({
         ? 'گزارش دریافت نشد'
         : 'گزارش این سایت هنوز متصل نیست';
   const days = report?.visits.daily ?? [];
+  const visitsAvailable = report && report.visits.available !== false;
   const max = Math.max(1, ...days.map((day) => day.views));
   return (
     <Card className={styles.visits}>
@@ -128,7 +129,9 @@ export function SiteVisits({
               بازدیدکننده یکتا <small>(مرورگر)</small>
             </span>
             <strong>
-              {report ? reportCount(report.visits.uniqueBrowsers) : '—'}
+              {visitsAvailable
+                ? reportCount(report.visits.uniqueBrowsers)
+                : '—'}
             </strong>
           </div>
         </div>
@@ -139,14 +142,25 @@ export function SiteVisits({
           <div>
             <span>بازدید صفحه</span>
             <strong>
-              {report ? reportCount(report.visits.pageViews) : '—'}
+              {visitsAvailable ? reportCount(report.visits.pageViews) : '—'}
             </strong>
           </div>
         </div>
       </div>
-      {!report ? (
+      {report?.visits.coverageFrom ? (
+        <p className={styles.empty}>
+          ثبت بازدید از{' '}
+          {new Date(report.visits.coverageFrom).toLocaleString('fa-IR', {
+            timeZone: 'Asia/Tehran',
+          })}{' '}
+          آغاز شده است؛ پیش از آن سابقه‌ای ثبت نشده است.
+        </p>
+      ) : null}
+      {!visitsAvailable ? (
         <p role="status" className={styles.empty}>
-          {empty}
+          {report
+            ? 'ثبت بازدید این سایت هنوز فعال نشده است یا مجوز آن را ندارید.'
+            : empty}
         </p>
       ) : days.length ? (
         <details className={styles.daily}>
@@ -220,7 +234,12 @@ export function SiteActivity({
   return (
     <ul className={styles.activities} aria-label={`فعالیت‌های ${siteName}`}>
       {report.activity.map((row) => (
-        <li key={`${row.resource}:${row.version}`}>
+        <li
+          key={
+            row.id ??
+            `${row.resource}:${row.externalId}:${row.version}:${row.occurredAt}`
+          }
+        >
           <span className={styles.activityIcon}>
             <ArrowUpRight aria-hidden="true" />
           </span>
