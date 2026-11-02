@@ -52,4 +52,6 @@ export { brokerEnglishDisplayName } from './broker-display-name';
 export * from './hr-payroll-worksheet';
 
 export * from './travel/hotel-stays';
+
+export { isFloatingSalesContract } from './sales/floating-contract';
 export * from './sales/flight-load';

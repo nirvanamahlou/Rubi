@@ -884,6 +884,7 @@ export class ReservationRequestsController {
     ReservationManifestService,
   ],
   exports: [
+    ReservationServicePurchaseService,
     ReservationsPublicService,
     TravelWorkflowService,
     FinanceDeliveryModule,

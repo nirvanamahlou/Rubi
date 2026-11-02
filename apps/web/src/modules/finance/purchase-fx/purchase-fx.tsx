@@ -9,21 +9,32 @@ import { MoneyInput, formatSalesMoney } from '@/components/ui/money-input';
 import { Button } from '@/components/ui/button';
 import type { FinancePurchaseFxV1 } from '@nora/contracts';
 
-async function fxRequest(path: string, body?: unknown) {
+async function fxRequest(path: string, body?: unknown, purchaseRoot?: string) {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('ارتباط با سامانه برقرار نیست.');
   const send = () =>
-    localizedFetch(base + '/finance/' + path, {
-      method: body ? 'POST' : 'GET',
-      credentials: 'include',
-      cache: 'no-store',
-      ...(body
-        ? {
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          }
-        : {}),
-    });
+    localizedFetch(
+      base +
+        (purchaseRoot
+          ? '/' +
+            purchaseRoot +
+            '/fx?currency=' +
+            encodeURIComponent(
+              new URLSearchParams(path.split('?')[1]).get('currency') ?? '',
+            )
+          : '/finance/' + path),
+      {
+        method: body ? 'POST' : 'GET',
+        credentials: 'include',
+        cache: 'no-store',
+        ...(body
+          ? {
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            }
+          : {}),
+      },
+    );
   let response = await send();
   if (response.status === 401 && (await refreshAuthenticatedSession(base)))
     response = await send();
@@ -34,10 +45,12 @@ async function fxRequest(path: string, body?: unknown) {
 }
 export function PurchaseFxRate({
   currencyCode,
+  purchaseRoot,
   value,
   onChange,
 }: {
   currencyCode: string;
+  purchaseRoot?: string | undefined;
   value: string;
   onChange: (currency: string, value: string, suggested?: boolean) => void;
 }) {
@@ -47,6 +60,8 @@ export function PurchaseFxRate({
     let active = true;
     void fxRequest(
       'purchase-fx-quote?currency=' + encodeURIComponent(currencyCode),
+      undefined,
+      purchaseRoot,
     )
       .then((data) => {
         if (active && data) onChange(currencyCode, data.rateToIrr, true);
@@ -60,7 +75,7 @@ export function PurchaseFxRate({
     return () => {
       active = false;
     };
-  }, [currencyCode, value, onChange]);
+  }, [currencyCode, value, onChange, purchaseRoot]);
   if (!currencyCode || currencyCode === 'IRR') return null;
   return (
     <label className="grid gap-1 text-xs">
