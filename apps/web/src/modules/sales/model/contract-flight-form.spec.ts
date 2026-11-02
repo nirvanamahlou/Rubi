@@ -1,3 +1,4 @@
+import { isFloatingSalesContract } from '@nora/contracts';
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
@@ -385,4 +386,9 @@ it('rejects a floating return after a company-inventory outbound', () => {
   };
   expect(salesFlightsValid(mixed)).toBe(false);
   expect(salesSelectedFlightsReady(mixed)).toBe(false);
+});
+
+it('automatically makes the paired hotel floating when the flight is contract-only', () => {
+  const payload = salesPayload({ ...state, serviceKinds: ['FLIGHT', 'HOTEL'] });
+  expect(isFloatingSalesContract(payload.services)).toBe(true);
 });
