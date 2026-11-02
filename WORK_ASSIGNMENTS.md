@@ -10655,3 +10655,9 @@ Reserve Radan ingestion date normalization, HR attendance calculation/import rec
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-attendance-newest-1102 from develop110bf092a. Reserve employee-attendance-dataset and tests, bounded attendance sort label in hr-unified-section and own notes. User follow-up requires newest business date first and investigation of missing10Aban. Preserve server pagination/explicit list sorts and aligned export identities; no API/schema/data writes. Prior date-schedule scope released by merged PR1299. Local3100 activation follows targeted checks.
 
 HR-ATTENDANCE-NEWEST-1102 scope extension: native API evidence shows daily rows with NULL effectiveAt sort ahead of dated rows. Reserve bounded HrService attendance create/idempotency/list ordering and device-import regression; previous same-owner source scope released by PR1299. Repair through existing authorized sync, no direct database update or schema change.
+
+## HR-EMPLOYEE-CONTRACT-DATES-1102 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-hr-employee-contract-dates-1102 from develop70487d637. User authorizes removal of inline employee creation from employee-specific HR record forms, employee list start/end-contract/end-employment dates, push/develop merge and local3100. Reserve only HrRecordForm employee-create trigger, HrEmployees dataset/list bounded integration, new HR-owned date projection and tests; preserve identification-code/editor peer work. Existing complete, scope-authorized useHrReferenceData loader supplies contracts.active and lifecycle.separation beyond truncated bootstrap; no API/schema/dependency/migration changes. Preserve cancelled/deleted history and employee identities; no operational records created.
+
+HR-EMPLOYEE-CONTRACT-DATES-1102 reserves only three new English override keys for the requested column labels; other translation/catalog writers remain untouched.
