@@ -1,6 +1,7 @@
 'use client';
 import {
   hotelRoomQuotationTotal,
+  hotelTransferChargeableCount,
   reservationServicePurchaseTotal,
   type VoucherSettingsV1,
 } from '@nora/contracts';
@@ -62,7 +63,10 @@ export function HotelRoomQuotationEditor({
       transferTotal =
         (draft.hotelTransferSplit
           ? counts.outbound
-          : counts.outbound + counts.returning) === 0
+          : hotelTransferChargeableCount(
+              counts,
+              draft.hotelTransferRoundTrip,
+            )) === 0
           ? '0'
           : reservationServicePurchaseTotal(
               transfer.amount,
@@ -180,6 +184,30 @@ export function HotelRoomQuotationEditor({
           <input
             type="checkbox"
             disabled={busy}
+            checked={draft.hotelTransferRoundTrip ?? false}
+            onChange={(event) =>
+              update({
+                ...draft,
+                hotelTransferRoundTrip: event.target.checked,
+                ...(event.target.checked
+                  ? {
+                      hotelTransferSplit: false,
+                      hotelTransferReturn: undefined,
+                      hotelTransferCounts: {
+                        outbound: counts.outbound,
+                        returning: counts.outbound,
+                      },
+                    }
+                  : {}),
+              })
+            }
+          />
+          قیمت رفت‌وبرگشت برای هر نفر
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            disabled={busy}
             checked={draft.hotelTransferSeparate ?? false}
             onChange={(event) =>
               update({
@@ -194,7 +222,9 @@ export function HotelRoomQuotationEditor({
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
-            disabled={busy || !canSplitTransfers}
+            disabled={
+              busy || !canSplitTransfers || draft.hotelTransferRoundTrip
+            }
             checked={draft.hotelTransferSplit ?? false}
             onChange={(event) =>
               update({
@@ -245,7 +275,11 @@ export function HotelRoomQuotationEditor({
         )}
 
         <MoneyInput
-          aria-label="Transfer P.P"
+          aria-label={
+            draft.hotelTransferRoundTrip
+              ? 'Transfer P.P رفت‌وبرگشت'
+              : 'Transfer P.P'
+          }
           value={transfer.amount}
           disabled={busy}
           onValueChange={(amount) =>
@@ -273,9 +307,16 @@ export function HotelRoomQuotationEditor({
             })
           }
         />
-        {(['outbound', 'returning'] as const).map((key) => (
+        {(draft.hotelTransferRoundTrip
+          ? (['outbound'] as const)
+          : (['outbound', 'returning'] as const)
+        ).map((key) => (
           <label key={key}>
-            {key === 'outbound' ? 'تعداد ترانسفر رفت' : 'تعداد ترانسفر برگشت'}
+            {draft.hotelTransferRoundTrip
+              ? 'تعداد نفرات ترانسفر رفت‌وبرگشت'
+              : key === 'outbound'
+                ? 'تعداد ترانسفر رفت'
+                : 'تعداد ترانسفر برگشت'}
             <Input
               type="number"
               min="0"
@@ -289,6 +330,9 @@ export function HotelRoomQuotationEditor({
                   hotelTransferCounts: {
                     ...counts,
                     [key]: Number(event.target.value),
+                    ...(draft.hotelTransferRoundTrip
+                      ? { returning: Number(event.target.value) }
+                      : {}),
                   },
                 })
               }

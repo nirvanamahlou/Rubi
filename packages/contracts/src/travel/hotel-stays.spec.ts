@@ -97,3 +97,17 @@ it('prices each room by P.P × dimensionless ratio × its own stay nights, round
   ])
     expect(() => hotelRoomQuotationTotal(rows, 3, [1])).toThrow();
 });
+
+it('charges a combined round-trip fare once per passenger and rejects unequal leg counts', async () => {
+  const { hotelTransferChargeableCount } = await import('./hotel-stays');
+  expect(
+    hotelTransferChargeableCount({ outbound: 2, returning: 2 }, true),
+  ).toBe(2);
+  expect(hotelTransferChargeableCount({ outbound: 2, returning: 2 })).toBe(4);
+  expect(
+    hotelTransferChargeableCount({ outbound: 0, returning: 0 }, true),
+  ).toBe(0);
+  expect(() =>
+    hotelTransferChargeableCount({ outbound: 2, returning: 1 }, true),
+  ).toThrow();
+});

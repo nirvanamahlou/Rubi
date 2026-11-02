@@ -353,3 +353,74 @@ it('atomically prices independent outbound and return brokers by their own count
   ).rejects.toThrow();
   expect(invalid.create).not.toHaveBeenCalled();
 });
+
+it.each(['0', '20'])(
+  'charges a round-trip rate %s once for each passenger and persists its basis',
+  async (rate) => {
+    const { service, create } = setup();
+    const keys = reservationHotelTransferLegKeys(snapshot as never, key);
+    const body = {
+      ...input,
+      hotelTransferRoundTrip: true,
+      hotelTransferCounts: { outbound: 2, returning: 2 },
+      purchases: [
+        input.purchases[0]!,
+        {
+          ...input.purchases[1]!,
+          coveredServiceClientKeys: keys,
+          amount: rate === '0' ? '0' : '40',
+          pricingCalculation: {
+            baseAmount: rate,
+            factor: '2',
+            chargeablePassengerCount: 2,
+          },
+        },
+      ],
+    };
+    await service.recordBatch(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      body,
+      actor,
+      'round-trip-' + rate,
+    );
+    expect(create.mock.calls[1]![0].data).toMatchObject({
+      amount: rate === '0' ? '0' : '40',
+      passengerPrices: {
+        hotelTransferRoundTrip: true,
+        hotelTransferCounts: { outbound: 2, returning: 2 },
+        calculation: { chargeablePassengerCount: 2, nights: 1 },
+      },
+    });
+  },
+);
+
+it('rejects double-counted round-trip amounts without writing any purchase', async () => {
+  const { service, create } = setup();
+  const keys = reservationHotelTransferLegKeys(snapshot as never, key);
+  await expect(
+    service.recordBatch(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      {
+        ...input,
+        hotelTransferRoundTrip: true,
+        hotelTransferCounts: { outbound: 2, returning: 2 },
+        purchases: [
+          input.purchases[0]!,
+          {
+            ...input.purchases[1]!,
+            coveredServiceClientKeys: keys,
+            amount: '80',
+            pricingCalculation: {
+              baseAmount: '20',
+              factor: '4',
+              chargeablePassengerCount: 4,
+            },
+          },
+        ],
+      },
+      actor,
+      'invalid-double-round-trip',
+    ),
+  ).rejects.toThrow();
+  expect(create).not.toHaveBeenCalled();
+});

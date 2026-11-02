@@ -160,3 +160,26 @@ it('keeps existing P.P and Ratio when automatic room defaults exist without a re
   draft.supplierFormPrices = {};
   expect(normalizeSupplierDraftPrices(draft, [{ code: 'EUR' }])).toEqual({});
 });
+
+it('prints a combined transfer quote once per person and restores its saved basis', () => {
+  const intake = fixture();
+  const draft = defaultVoucherSettings(intake, {});
+  draft.hotelTransferRoundTrip = true;
+  draft.hotelTransferCounts = { outbound: 2, returning: 2 };
+  draft.supplierFormPrices = {
+    transferPp: { amount: '20', currencyCode: 'EUR' },
+  };
+  intake.workflow.supplierFormSettings = draft;
+  intake.supplierDocumentKind = 'TRANSFER';
+  expect(supplierPriceTableData(intake).values).toEqual([
+    '20 EUR',
+    '2',
+    '40 EUR',
+  ]);
+  expect(
+    defaultVoucherSettings(
+      { ...intake, workflow: { ...intake.workflow, voucherSettings: draft } },
+      {},
+    ).hotelTransferRoundTrip,
+  ).toBe(true);
+});

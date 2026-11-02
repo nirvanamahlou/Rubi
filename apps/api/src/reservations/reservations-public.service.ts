@@ -149,6 +149,12 @@ function present(
         typeof purchase.passengerPrices === 'object' &&
         'hotelTransferCounts' in purchase.passengerPrices
           ? {
+              hotelTransferRoundTrip:
+                (
+                  purchase.passengerPrices as {
+                    hotelTransferRoundTrip?: boolean;
+                  }
+                ).hotelTransferRoundTrip ?? false,
               hotelTransferCounts: purchase.passengerPrices
                 .hotelTransferCounts as unknown as {
                 outbound: number;
