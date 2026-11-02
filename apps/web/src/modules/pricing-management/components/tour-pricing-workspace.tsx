@@ -1,4 +1,8 @@
 'use client';
+import {
+  tourDraftChanged,
+  tourPublicationBlockers,
+} from '../model/tour-publication';
 import { isOptionalOperationReason } from '@nora/contracts';
 
 import { currencySymbol } from '@/lib/currency-symbol';
@@ -463,46 +467,29 @@ export function TourPricingWorkspace() {
       publicationId: publication.id,
     });
   })();
-  const unsaved =
-    !draft ||
-    JSON.stringify(selectedRoomKeys) !==
-      JSON.stringify(draft.selectedRoomKeys ?? []) ||
-    JSON.stringify(roomSaleOverrides) !==
-      JSON.stringify(draft.roomSaleOverrides ?? []) ||
-    JSON.stringify([...selectedHotelRateIds].sort()) !==
-      JSON.stringify([...(draft.selectedHotelRateIds ?? [])].sort()) ||
-    JSON.stringify(priceFields) !== JSON.stringify(tourPriceFields(draft)) ||
-    Number(familyAdults) !== draft.familyAdults ||
-    Number(familyChildren) !== draft.familyChildren ||
-    adultFlight !== draft.adultFlightSale ||
-    adultFlightCurrency !== draft.adultFlightSaleCurrencyCode ||
-    childFlight !== draft.childFlightSale ||
-    childFlightCurrency !== draft.childFlightSaleCurrencyCode ||
-    businessIncrease !== draft.businessUplift ||
-    businessCurrency !== draft.businessUpliftCurrencyCode ||
-    commissionMode !== (draft.commissionMode ?? 'percent') ||
-    commission !==
-      (commissionMode === 'fixed'
-        ? (draft.commissionAmount ?? '0')
-        : draft.commissionPercent) ||
-    (commissionMode === 'fixed' &&
-      commissionCurrency !==
-        (draft.commissionCurrencyCode ?? draft.currencyCode)) ||
-    JSON.stringify(
-      Object.entries(adjustments).sort(([a], [b]) => a.localeCompare(b)),
-    ) !==
-      JSON.stringify(
-        draft.adjustments
-          .map((item) => [
-            item.hotelRateId,
-            {
-              direction: item.direction,
-              mode: item.mode,
-              value: item.value,
-            },
-          ])
-          .sort(([a], [b]) => String(a).localeCompare(String(b))),
-      );
+  const unsaved = tourDraftChanged(draft, {
+    selectedRoomKeys,
+    roomSaleOverrides,
+    selectedHotelRateIds,
+    priceFields,
+    familyAdults: Number(familyAdults),
+    familyChildren: Number(familyChildren),
+    adjustments: Object.entries(adjustments).map(([hotelRateId, value]) => ({
+      hotelRateId,
+      ...value,
+    })),
+  });
+  const publicationState = tourPublicationBlockers({
+    canAccess:
+      session?.user.permissions.includes('package_pricing.read') === true,
+    saving,
+    hasDraft: !!draft,
+    unsaved,
+    invalidSale,
+    hasHotels: selectedHotelRateIds.length > 0,
+    capacity: grid?.tour.remainingCapacity ?? 0,
+    validReason: isOptionalOperationReason(publishReason),
+  });
 
   async function saveDraft() {
     if (!session || !grid || !batch || saving || invalidSale) return;
@@ -588,13 +575,7 @@ export function TourPricingWorkspace() {
   }
 
   async function publishDraft() {
-    if (
-      !session ||
-      !draft ||
-      saving ||
-      !isOptionalOperationReason(publishReason)
-    )
-      return;
+    if (!session || !draft || publicationState.disabled) return;
     setSaving(true);
     setCostError('');
     try {
@@ -924,16 +905,7 @@ export function TourPricingWorkspace() {
                 : 'ذخیره پیش‌نویس این بازه'}
           </Button>
           <Button
-            disabled={
-              saving ||
-              unsaved ||
-              !draft ||
-              !isOptionalOperationReason(publishReason) ||
-              draft.lastEditorUserId === session?.user.id ||
-              invalidSale ||
-              !selectedHotelRateIds.length ||
-              !grid?.tour.remainingCapacity
-            }
+            disabled={publicationState.disabled}
             onClick={() => void publishDraft()}
             type="button"
             variant="outline"
@@ -941,11 +913,12 @@ export function TourPricingWorkspace() {
             انتشار نسخهٔ قیمت پکیج
           </Button>
         </div>
-        {draft && session && draft.lastEditorUserId === session.user.id ? (
-          <p className="text-xs text-muted-foreground">
-            این پیش‌نویس را شما ویرایش کرده‌اید؛ تأییدکنندهٔ دیگری با مجوز
-            انتشار باید نسخهٔ قیمت را منتشر کند.
-          </p>
+        {publicationState.reasons.length > 0 && draft ? (
+          <ul className="text-xs text-muted-foreground" aria-live="polite">
+            {publicationState.reasons.map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
         ) : null}
         {draft ? (
           <label className="grid max-w-2xl gap-2 text-sm font-bold">
@@ -962,9 +935,9 @@ export function TourPricingWorkspace() {
         <Card className="grid gap-4 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-black">قیمت‌های منتشرشدهٔ همین بازه</h2>
-            {publication?.selectedHotelRateIds ? null : bannerHref &&
-              session?.user.permissions.includes('package_pricing.read') &&
-              session.user.permissions.includes('package_pricing.render') ? (
+            {bannerHref &&
+            session?.user.permissions.includes('package_pricing.read') &&
+            session.user.permissions.includes('package_pricing.render') ? (
               <Link
                 className="inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
                 href={bannerHref}
