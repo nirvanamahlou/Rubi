@@ -10524,6 +10524,12 @@ HR-RADAN-LIVE-1101 schedule follow-up — PC-B RESERVED. Owner authorizes Tehran
 
 HR-RADAN-LIVE-1101 schedule follow-up — VALIDATED. Tehran quarter-hour slots09:00–10:00 and17:00–18:00, full-hour slots otherwise. No immediate startup request or rapid retry; next future slot follows completion/failure, shutdown prevents reschedule. Sixteen targeted schedule/service checks and scoped lint gate local API update, production compilation and final-head CI before the owner-authorized merge.
 
+## CALL-RECIPIENT-TITLE-1102 — PC-C — IN_PROGRESS
+
+Owner explicitly authorizes bounded edit of PC-B-reserved HR call directory: use grade plus unit for connected-to label. Reserve hr-call-answer-directory.ts/spec only; preserve multiple extensions/shared destinations, branch scope and all unrelated HR work. No schema/data/runtime change.
+
+CALL-RECIPIENT-TITLE-1102 — SOURCE_READY:16 focused regressions, API typecheck/build and focused lint pass; PR1278. Scope frozen on publication. Historical stored snapshots and production runtime unchanged.
+
 ## SHARED-HOTEL-SUPPLIER-FORM-1102 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; codex/pc-a-shared-hotel-supplier-form-1102 from develop061f265a8. Owner authorizes optional common supplier for multiple hotel stays, independent hotel price tables, one saved supplier output, tests and develop merge. Reserve bounded ReservationSettings, supplier document grouping/model/preview/PDF/route, workflow transition and voucher validator, additive optional VoucherSettings field and focused regressions. Producer Reservations workflow and Web consumers remain compatible when omitted. Preserve per-stay purchase ownership, sent revisions, broker authorization, currencies and snapshots. No schema/migration/dependency or server deployment. Existing composite voucher source is preserved; only supplier-form rendering changes.
