@@ -8477,3 +8477,7 @@ HR-ATTENDANCE-NEWEST-1102 local acceptance: existing runtime built and restarted
 ## HR-EMPLOYEE-CONTRACT-DATES-1102 — PC-B
 
 Employee-related record forms no longer offer inline employee creation; employee selection and native Employees creation remain. Employee table renames start to employment start and adds adjacent contract end / employment end columns. Projection selects the latest noncancelled/nondeleted contract by start date and separation last working day, never exit-interview date, preserving blank open-ended contracts and export identities. Existing complete scoped reference loader avoids bootstrap truncation. Ended employees remain list/filter-visible.21 focused Web/catalog tests and scoped lint pass; local3100 columns verified. No schema/API/dependency or operational record changes. Final-head hosted gates precede authorized develop merge.
+
+## CALL-CENTER-SOURCE-SHARE-1102 — PC-C — SOURCE ONLY
+
+Correct source share from call count to unique contact count, latest matching source within report/access/window. Chart renamed to referral source share with contact-based percentages and center. No server publication or data rewrite. See docs/tasks/CALL-CENTER-SOURCE-SHARE-1102.md.

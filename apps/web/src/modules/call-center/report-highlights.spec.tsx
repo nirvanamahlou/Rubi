@@ -37,7 +37,8 @@ describe('Call Center report highlights', () => {
       <ReportHighlights
         data={{
           ...data,
-          calls: 10,
+          calls: 28,
+          contacts: 10,
           sources: [
             { label: 'سایت', count: 3 },
             { label: 'سایت', count: 2 },
@@ -62,4 +63,23 @@ describe('Call Center report highlights', () => {
     expect(html).not.toContain('30%');
     expect(html).toContain('۷');
   });
+});
+
+it('uses contact-based source share for repeated calls', () => {
+  const html = renderToStaticMarkup(
+    <ReportHighlights
+      data={{
+        ...data,
+        calls: 28,
+        contacts: 1,
+        sources: [{ label: 'معرفی دوستان', count: 1 }],
+      }}
+      agents={[]}
+    />,
+  );
+  expect(html).toContain('سهم منابع آشنایی');
+  expect(html).toContain('کل مخاطبان');
+  expect(html).toContain('100%');
+  expect(html).toContain('۱۰۰٪');
+  expect(html).not.toContain('۲۸');
 });

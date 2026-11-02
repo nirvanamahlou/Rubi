@@ -30,11 +30,11 @@ export function ReportHighlights({
   let position = 0;
   const segments = sources.map((source, index) => {
     const start = position;
-    position += data.calls ? (source.count / data.calls) * 100 : 0;
+    position += data.contacts ? (source.count / data.contacts) * 100 : 0;
     return `${colors[index % colors.length]} ${start}% ${position}%`;
   });
   const gradient =
-    data.calls && sources.length
+    data.contacts && sources.length
       ? `conic-gradient(${segments.join(',')}, #e8edf4 ${position}% 100%)`
       : '#e8edf4';
   const ids = Array.from(
@@ -139,7 +139,7 @@ export function ReportHighlights({
       </article>
       <article className={styles.reportCard}>
         <h3>
-          <BarChart3 size={19} /> منابع تماس‌ها
+          <BarChart3 size={19} /> سهم منابع آشنایی
         </h3>
         <div className={styles.sourceChart}>
           <div className={styles.sourceLegend}>
@@ -151,14 +151,14 @@ export function ReportHighlights({
                 <span className={styles.legendBar}>
                   <i
                     style={{
-                      width: `${data.calls ? (source.count / data.calls) * 100 : 0}%`,
+                      width: `${data.contacts ? (source.count / data.contacts) * 100 : 0}%`,
                       background: colors[index % colors.length],
                     }}
                   />
                 </span>
                 <small>
-                  {data.calls
-                    ? `${faNumber(Math.round((source.count / data.calls) * 100))}٪`
+                  {data.contacts
+                    ? `${faNumber(Math.round((source.count / data.contacts) * 100))}٪`
                     : '—'}
                 </small>
               </div>
@@ -168,11 +168,11 @@ export function ReportHighlights({
             className={styles.sourceDonut}
             style={{ background: gradient }}
             role="img"
-            aria-label={`توزیع منابع ${faNumber(data.calls)} تماس؛ مقادیر در راهنمای رنگی درج شده‌اند`}
+            aria-label={`توزیع منابع ${faNumber(data.contacts)} مخاطب؛ مقادیر در راهنمای رنگی درج شده‌اند`}
           >
             <div>
-              <small>کل تماس‌ها</small>
-              <strong>{faNumber(data.calls)}</strong>
+              <small>کل مخاطبان</small>
+              <strong>{faNumber(data.contacts)}</strong>
             </div>
           </div>
         </div>

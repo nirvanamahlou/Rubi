@@ -4824,5 +4824,8 @@
   "برداشت از حساب ریالی:": "Withdrawal from IRR account:",
   "خدمات قرارداد تغییر کرده‌اند؛ خریدها را دوباره بررسی کنید.": "Contract services have changed; review the purchases again.",
   "خریدهای آماده ثبت:": "Prepared purchases:",
-  "پاک‌کردن خریدهای آماده ثبت": "Clear prepared purchases"
+  "پاک‌کردن خریدهای آماده ثبت": "Clear prepared purchases",
+  "سهم منابع آشنایی": "Referral source share",
+  "کل مخاطبان": "Total contacts",
+  "مخاطب؛ مقادیر در راهنمای رنگی درج شده‌اند": "contacts; values are shown in the color legend"
 }
