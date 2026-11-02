@@ -3778,10 +3778,6 @@ export function CustomerWorkspace() {
                         <p className="text-xs text-muted-foreground">
                           بازکردن پرونده ۳۶۰ {customerRoleLabel(record.roles)}
                         </p>
-                        {record.kind === 'person' &&
-                        !record.maskedNationalId ? (
-                          <Badge>نیازمند تکمیل اطلاعات</Badge>
-                        ) : null}
                       </div>
                     </button>
                   </td>
