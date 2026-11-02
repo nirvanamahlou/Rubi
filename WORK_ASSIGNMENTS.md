@@ -1,4 +1,3 @@
-
 ## PACKAGE-CURRENCY-SELECT-1102 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-package-currency-select-1102 from develop98e6679d3. Owner authorizes replacing free-text package price currencies with existing active Master Data currencies and develop merge after checks. Reserve only Pricing Web tour-price-fields, tour-pricing-workspace and focused tests plus own status notes. Reuse existing public listActiveCurrencyReferences('sales') with complete pagination; no Master Data writer, API/contract/schema/migration/dependency change. Preserve saved currency values, amounts, commission modes, immutable publications and peer work. Previous same-owner package pricing source scope is merged/released. No deployment.
