@@ -8405,3 +8405,5 @@ Dashboard uses current Tehran/Persian season through today, descending30-day att
 ## CALL-CENTER-BRANCH-CONTEXT-1102 — PC-C
 
 Wrong first-login branch explains missing personal contacts for shared201 accounts. Authoritative HR-scoped branch bootstrap implemented;11 API and23 Web checks, API/Web types/builds and native16-employee-plus-Demo access checks pass. Production release pending runtime layering correction and shared deployment lock. See docs/tasks/CALL-CENTER-BRANCH-CONTEXT-1102.md.
+
+CALL-CENTER-BRANCH-CONTEXT-1102 — DEPLOYED: authoritative HR branch fixes both201 personal lists. Post-release17 employees plus Demo/119 contact checks pass, including21 outgoing calls/13 contacts for each target. Verified encrypted backup and preserved peer source/configuration, database/Redis, Worker API authentication/AMI and recording timer. No migrations/grants/call-data rewrites. PR1308; receipt /opt/rubi/CALL-CENTER-BRANCH-CONTEXT-1102.json.

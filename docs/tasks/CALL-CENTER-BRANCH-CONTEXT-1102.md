@@ -20,4 +20,9 @@ Two existing missing English labels were synchronized into the API and legacy ca
 -23 Web/client/model/i18n tests passed.
 -Scoped ESLint, API/Web TypeScript and production API/Web builds passed.
 -Candidate native read-only verification:16 employee accounts plus Demo,119 scoped contact checks. Both shared201 accounts selected their HR branch and returned all21 target calls in contact histories.
--Deployment remains pending: final Web execution smoke detected excessive layers in the inherited production image. Live services have not been changed. A concurrent peer develop deployment holds the shared lock; integrate against its final runtime before releasing.
+-Production release completed under the shared lock against the still-current API and Web images, preserving peer overlays. The separate peer develop build had finished but had not activated. Base assertions guard concurrent changes.
+-The inherited Web image had312 layers. A normal two-layer overlay built successfully but could not mount at runtime. Packaged the same compiled Next artifacts in a single release layer; the313-layer image executes. Canary login/static checks and byte hashes for all1669 generated artifacts passed. No Docker configuration or unrelated image was changed.
+-Final candidate and post-deployment native checks covered17 employee accounts plus Demo and119 contact checks; both201 accounts returned all21 outgoing calls across13 contacts and their complete targeted histories.
+-Encrypted195MiB PostgreSQL backup validated before release. API/Worker/Web recreated together; database/Redis container IDs, runtime environment hashes and mounts preserved. Public login/health, authenticated Worker endpoint, AMI connection and recording timer confirmed. No migrations, permission grants or historical rewrites.
+-Sanitized server receipt: `/opt/rubi/CALL-CENTER-BRANCH-CONTEXT-1102.json`. Production API/Web image tags: `rubi-production:branch-context-1102-api` and `rubi-production:branch-context-1102-web`. Deployment record appended; source PR1308 targets develop.
+
