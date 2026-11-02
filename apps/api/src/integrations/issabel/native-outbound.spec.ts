@@ -32,6 +32,44 @@ function setup() {
   return { receive };
 }
 describe('native outbound phone calls', () => {
+  it.each(['193', '118', '110', '1234', '12345', '123456'])(
+    'captures external service number %s through the configured trunk',
+    async (number) => {
+      const { receive } = setup();
+      const first = await receive({ dialstring: `trunk-test/${number}` });
+      expect(first).toMatchObject({
+        direction: 'OUT',
+        extension: '101',
+        destination: { kind: 'KNOWN', value: number },
+      });
+      expect(
+        await receive({
+          event: 'DialEnd',
+          dialstatus: 'ANSWER',
+          dialstring: '',
+        }),
+      ).toMatchObject({ kind: 'ANSWERED', destination: first?.destination });
+      expect(await receive({ event: 'Hangup', dialstring: '' })).toMatchObject({
+        kind: 'ENDED',
+        terminalForCall: true,
+        destination: first?.destination,
+      });
+      expect(
+        await setup().receive({
+          dialstring: `102/${number}`,
+          destchannel: 'SIP/102-00000002',
+        }),
+      ).toBeNull();
+    },
+  );
+  it.each(['19', '*193', '193#', '1/193', '1234567890123456'])(
+    'rejects malformed or unsupported external dial string %s',
+    async (number) => {
+      expect(
+        await setup().receive({ dialstring: `trunk-test/${number}` }),
+      ).toBeNull();
+    },
+  );
   it('uses the initiating extension and dialed number; preserves identity through answer and hangup', async () => {
     const { receive } = setup();
     const first = await receive();

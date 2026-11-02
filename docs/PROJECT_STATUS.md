@@ -8316,3 +8316,7 @@ HR-RADAN-LIVE-1101 schedule update: automatic device reads now use Tehran full-h
 ## SHARED-HOTEL-SUPPLIER-FORM-1102 — PC-A
 
 Optional common supplier stacks hotel editors and retains independent per-stay quotations. One primary issuance validates all saved suppliers and freezes every stay in one workflow revision; no partial send. One supplier preview/PDF includes all hotel/room/date/price tables, while separate transfer outputs remain intact. Sent quotations are preserved after later draft edits. Focused Web/API tests, scoped lint/types and synthetic multi-page PDF verification precede exact-head CI and owner-authorized develop merge. No migration/dependency or operational rollout. See docs/tasks/SHARED-HOTEL-SUPPLIER-FORM-1102.md.
+
+## SHORT-SERVICE-CALLS-1102 — 2026-11-02
+
+Fixed native outbound capture rejecting short service destinations before anchor persistence. External3–15 digit numbers now accepted with existing source/trunk/root proof; internal calls remain excluded. Four actual reported-day193 calls recovered through private historical port, visible to the initiating employee; repeated recovery produces0 duplicates and0 old popups. Recovery uses unchanged pre-call provider mapping plus unique current HR agreement if temporal HR is invalidated by later edits. API lint/typecheck/build, focused checks and49 isolated PostgreSQL checks pass. Backed-up API/Worker rollout preserves current peer integrations and Web. See tasks/SHORT-SERVICE-CALLS-1102.md.

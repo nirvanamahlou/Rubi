@@ -18,6 +18,7 @@ import { answeredCallAccess } from '../iam/call-center-answer-policy';
 import { CallCenterTelephonyService } from '../customer-affairs/call-center-telephony.service';
 import { IntegrationRegistryService } from './integration-registry.service';
 import { validateTelephonyEvent } from './telephony.validation';
+import { recoveredOutboundAccounts } from './issabel/recovered-outbound-recipient';
 import {
   recordNativeAnswer,
   selectPreviousAgent,
@@ -475,18 +476,29 @@ export class TelephonyIntegrationService {
             tx,
           )
         : false;
+      let answerUsers: string[] = [];
+      if (realProvider && event.kind === 'ANSWERED' && event.extension) {
+        answerUsers = await this.directory.answeredAccounts(
+          c.branchId,
+          event.extension,
+          event.occurredAt,
+          tx,
+        );
+        if (recovery && !answerUsers.length)
+          answerUsers = await recoveredOutboundAccounts(
+            event,
+            c.branchId,
+            tx,
+            this.directory,
+          );
+      }
       const envelope: Envelope = {
         event,
         ...(realProvider && event.kind === 'ANSWERED' && event.extension
           ? {
               answerRecipients: {
                 version: 1 as const,
-                userIds: await this.directory.answeredAccounts(
-                  c.branchId,
-                  event.extension,
-                  event.occurredAt,
-                  tx,
-                ),
+                userIds: answerUsers,
               },
             }
           : {}),
