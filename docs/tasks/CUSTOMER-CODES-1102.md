@@ -15,3 +15,5 @@ User requests the workbook customer pattern below national ID and backfill of ex
 ## Server deployment
 
 Not deployed to production. Back up the server database, review pending migrations and apply this additive migration before deploying/regenerating the matching Prisma client, contracts and API. Use the normal Prisma migration workflow; never reset or copy local customer rows. The server assigns codes to its own existing records chronologically. Existing relations are retained. Sequence gaps after rolled-back inserts are intentional; deleted codes are not reused.
+
+Layout follow-up: customer code, acquaintance method and role share the same three-column desktop row; national ID remains in the preceding row. Scoped web ESLint passed and local3100 source updated.

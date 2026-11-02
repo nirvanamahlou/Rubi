@@ -1384,51 +1384,40 @@ export function CustomerDrawer({
                       value={draft.lastName ?? ''}
                     />
                   </FormField>
-                  <div className="space-y-4">
-                    <FormField
-                      description={
-                        customer?.maskedNationalId
-                          ? `ثبت‌شده: ${customer.maskedNationalId} — فقط برای تغییر دوباره وارد کنید`
-                          : 'برای تکمیل پرونده وارد کنید'
-                      }
+                  <FormField
+                    description={
+                      customer?.maskedNationalId
+                        ? `ثبت‌شده: ${customer.maskedNationalId} — فقط برای تغییر دوباره وارد کنید`
+                        : 'برای تکمیل پرونده وارد کنید'
+                    }
+                    id="customer-national-id"
+                    label="کد ملی"
+                    required={false}
+                  >
+                    <Input
+                      autoComplete="off"
+                      disabled={readonly}
+                      dir="ltr"
                       id="customer-national-id"
-                      label="کد ملی"
+                      inputMode="numeric"
+                      maxLength={10}
+                      minLength={10}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          nationalId: event.target.value,
+                        }))
+                      }
+                      pattern="[0-9۰-۹٠-٩]{10}"
+                      placeholder={customer?.maskedNationalId ?? '0123456789'}
                       required={false}
-                    >
-                      <Input
-                        autoComplete="off"
-                        disabled={readonly}
-                        dir="ltr"
-                        id="customer-national-id"
-                        inputMode="numeric"
-                        maxLength={10}
-                        minLength={10}
-                        onChange={(event) =>
-                          setDraft((current) => ({
-                            ...current,
-                            nationalId: event.target.value,
-                          }))
-                        }
-                        pattern="[0-9۰-۹٠-٩]{10}"
-                        placeholder={customer?.maskedNationalId ?? '0123456789'}
-                        required={false}
-                        value={
-                          readonly
-                            ? (customer?.maskedNationalId ?? 'ثبت نشده')
-                            : (draft.nationalId ?? '')
-                        }
-                      />
-                    </FormField>
-                    <FormField id="customer-code" label="کد مشتری">
-                      <Input
-                        id="customer-code"
-                        dir="ltr"
-                        readOnly
-                        value={customer?.customerCode ?? ''}
-                        placeholder="تخصیص خودکار پس از ثبت"
-                      />
-                    </FormField>
-                  </div>
+                      value={
+                        readonly
+                          ? (customer?.maskedNationalId ?? 'ثبت نشده')
+                          : (draft.nationalId ?? '')
+                      }
+                    />
+                  </FormField>
                   <CustomerDateField
                     disabled={readonly}
                     id="customer-birth-date"
@@ -1517,6 +1506,17 @@ export function CustomerDrawer({
                       ))}
                     </SelectContent>
                   </Select>
+                </FormField>
+              ) : null}
+              {draft.kind === 'person' && mode !== 'create' ? (
+                <FormField id="customer-code" label="کد مشتری">
+                  <Input
+                    id="customer-code"
+                    dir="ltr"
+                    readOnly
+                    value={customer?.customerCode ?? ''}
+                    placeholder="تخصیص خودکار پس از ثبت"
+                  />
                 </FormField>
               ) : null}
               {!customerOnlyEntry && (
