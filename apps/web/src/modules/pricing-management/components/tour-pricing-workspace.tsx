@@ -57,6 +57,7 @@ import {
   validateTourPriceFields,
 } from '@nora/contracts';
 import { TourWorkspace } from '@/modules/ticket-catalog/components/tour-workspace';
+import { listActiveCurrencyReferences } from '@/modules/ticket-catalog/api/references';
 import { SourcePackageGenerator } from './source-package-generator';
 import { packageGeneratorData } from '../model/package-generator-data';
 import { packageBannerHref } from '../model/package-banner';
@@ -146,6 +147,29 @@ export function TourPricingWorkspace() {
   const [loadingCosts, setLoadingCosts] = useState(false);
   const [error, setError] = useState('');
   const [costError, setCostError] = useState('');
+  const [currencies, setCurrencies] = useState<
+    readonly { code?: string; name: string }[]
+  >([]);
+  const [currenciesLoading, setCurrenciesLoading] = useState(true);
+  const [currencyError, setCurrencyError] = useState('');
+  const loadCurrencies = useCallback(async () => {
+    setCurrenciesLoading(true);
+    setCurrencyError('');
+    try {
+      setCurrencies(await listActiveCurrencyReferences('sales'));
+    } catch (cause) {
+      setCurrencyError(
+        cause instanceof Error ? cause.message : 'دریافت ارزها ناموفق بود.',
+      );
+    } finally {
+      setCurrenciesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = globalThis.setTimeout(() => void loadCurrencies(), 0);
+    return () => globalThis.clearTimeout(timer);
+  }, [loadCurrencies]);
 
   const loadTours = useCallback(async () => {
     setLoadingTours(true);
@@ -907,8 +931,23 @@ export function TourPricingWorkspace() {
         <TourPriceFields
           value={priceFields}
           onChange={setPriceFields}
+          currencies={currencies}
+          currenciesLoading={currenciesLoading}
           disabled={saving}
         />
+        {currencyError ? (
+          <div className="grid gap-2">
+            <Alert title={currencyError} />
+            <Button
+              type="button"
+              variant="outline"
+              disabled={currenciesLoading}
+              onClick={() => void loadCurrencies()}
+            >
+              دریافت دوباره
+            </Button>
+          </div>
+        ) : null}
         {invalidFields ? <Alert title="ردیف‌های قیمت معتبر نیستند." /> : null}
         <div className="flex flex-wrap gap-2">
           <Button
