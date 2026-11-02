@@ -4,6 +4,7 @@ import {
   moneyUnits,
   moneyDecimal,
   hotelNights,
+  hotelTransferChargeableCount,
   hotelRoomQuotationTotal,
   reservationHotelStays,
   reservationHotelTransferLegKeys,
@@ -124,7 +125,10 @@ export function HotelStayPurchase({
   );
   const [draft, setDraft] = useState<VoucherSettingsV1>(() => ({
     ...quote,
-    hotelTransferCounts: contractHotelTransferCounts(request.snapshot, stayKey),
+    hotelTransferCounts:
+      quote.hotelTransferRoundTrip && quote.hotelTransferCounts
+        ? { ...quote.hotelTransferCounts }
+        : contractHotelTransferCounts(request.snapshot, stayKey),
     ...(transfer
       ? {
           transferBrokerId: transfer.supplierOrganizationId,
@@ -135,6 +139,7 @@ export function HotelStayPurchase({
             transfer.supplierOrganizationId !==
               purchase?.supplierOrganizationId,
           hotelTransferSplit: Boolean(returnPurchase),
+          hotelTransferRoundTrip: transfer.hotelTransferRoundTrip ?? false,
         }
       : {}),
     ...(returnPurchase?.pricingCalculation
@@ -263,9 +268,10 @@ export function HotelStayPurchase({
         )
       )
         throw Error('کارگزار، ارز و قیمت همه اتاق‌ها را تکمیل کنید.');
-      const count =
-        (draft.hotelTransferCounts?.outbound ?? 0) +
-        (draft.hotelTransferCounts?.returning ?? 0);
+      const count = hotelTransferChargeableCount(
+        draft.hotelTransferCounts ?? { outbound: 0, returning: 0 },
+        draft.hotelTransferRoundTrip,
+      );
       const trf = draft.supplierFormPrices?.transferPp;
       if (
         !trf ||
@@ -307,7 +313,10 @@ export function HotelStayPurchase({
           keys,
           draft.hotelTransferCounts ?? { outbound: 0, returning: 0 },
         );
-        const passengers = counts.outbound + counts.returning;
+        const passengers = hotelTransferChargeableCount(
+          counts,
+          draft.hotelTransferRoundTrip,
+        );
         if (
           !supplier ||
           !price ||
@@ -344,6 +353,7 @@ export function HotelStayPurchase({
         expectedVersion: request.purchaseVersion ?? 0,
         hotelStayKey: stayKey,
         supplierFormVersion,
+        hotelTransferRoundTrip: draft.hotelTransferRoundTrip ?? false,
         hotelTransferCounts: draft.hotelTransferCounts ?? {
           outbound: 0,
           returning: 0,
