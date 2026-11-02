@@ -28,6 +28,7 @@ export function validatePresence(value: SitePresenceV1, siteId: string) {
     for (const group of value.groups) {
       if (
         !/^[a-z0-9-]{1,40}$/.test(group.id) ||
+        group.id === 'home' ||
         groupIds.has(group.id) ||
         typeof group.title !== 'string' ||
         !group.title.trim() ||

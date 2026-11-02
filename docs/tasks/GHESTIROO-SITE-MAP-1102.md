@@ -25,3 +25,10 @@ return navigation are explicit. Cards reveal incoming/outgoing relationships on
 selection. Other producers retain their original renderer. Tests cover the real
 page-file inventory, train/bus separation, grouped detail pages, Home links,
 legacy count conservation, metadata validation and original-map compatibility.
+
+The versioned anonymous heartbeat conservatively maps ambiguous cached old
+tracker buckets to Other until that browser loads the new tracker, rather than
+counting an old bus visit as train. No count is dropped.29 route/manifest tests,
+ten Python workspace/presence tests and eight Nora map/translation checks pass;
+Web types and scoped lint pass. Native site route inventory is also checked
+against the actual production source during its build. No persistent migration.
