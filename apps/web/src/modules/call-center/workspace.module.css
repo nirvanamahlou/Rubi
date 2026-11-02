@@ -125,12 +125,19 @@
 .filters {
   display: grid;
   grid-template-columns:
-    minmax(220px, 2fr) minmax(150px, 1fr) minmax(140px, 1fr)
+    minmax(220px, 1.6fr) minmax(320px, 2fr)
     auto auto;
   align-items: end;
   gap: 12px;
 }
+.dateFilters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  min-width: 0;
+}
 .filters > label,
+.dateFilters > label,
 .filterSelect,
 .searchField,
 .filterGroups label {
@@ -183,11 +190,12 @@
 }
 .filterGroups {
   display: grid;
-  grid-template-columns: 1fr 1.35fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   margin-top: 20px;
 }
 .filterGroups fieldset {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   display: grid;
   align-content: start;
   gap: 14px;
@@ -196,9 +204,7 @@
   padding: 16px;
   min-width: 0;
 }
-.filterGroups fieldset:nth-child(2) {
-  grid-template-columns: 1fr 1fr;
-}
+
 .filterGroups legend {
   color: var(--cc-blue);
   font-weight: 700;
@@ -627,15 +633,9 @@
 }
 @media (max-width: 1200px) {
   .filters {
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
-  .filterGroups {
-    grid-template-columns: 1fr 1fr;
-  }
-  .filterGroups > :last-child {
-    grid-column: 1 / -1;
-    grid-template-columns: 1fr 1fr;
-  }
+
   .content {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -648,7 +648,8 @@
 @media (max-width: 700px) {
   .filters,
   .filterGroups,
-  .filterGroups fieldset:nth-child(2),
+  .dateFilters,
+  .filterGroups fieldset,
   .filterGroups > :last-child,
   .reports,
   .formGrid {
