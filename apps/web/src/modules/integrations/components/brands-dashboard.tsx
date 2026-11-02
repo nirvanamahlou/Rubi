@@ -186,6 +186,15 @@ export function BrandsDashboard({
   function siteReport(id: string) {
     return scopedSiteReport(results[id], id, range.from, range.to);
   }
+  function connectionLabel(id: string, connectedLabel = 'متصل') {
+    if (siteReport(id)) return connectedLabel;
+    if (loading) return 'دریافت گزارش…';
+    return results[id]?.state === 'forbidden'
+      ? 'بدون دسترسی'
+      : results[id]?.state === 'error'
+        ? 'خطای اتصال'
+        : 'آماده اتصال';
+  }
 
   const [loading, setLoading] = useState(false);
   const [revision, setRevision] = useState(0);
@@ -477,9 +486,7 @@ export function BrandsDashboard({
                   </div>
                   <span className={styles.ready}>
                     <span />
-                    {siteReport(system.id)
-                      ? 'متصل به منبع گزارش'
-                      : 'آماده اتصال'}
+                    {connectionLabel(system.id, 'متصل به منبع گزارش')}
                   </span>
                 </div>
                 <div className={styles.miniMetrics}>
@@ -681,10 +688,12 @@ export function BrandsDashboard({
               }
               onClick={() => onSection('connections')}
             >
-              {loading
-                ? '…'
+              {loading || !rangeValid
+                ? '—'
                 : systems
-                    .filter((system) => !siteReport(system.id))
+                    .filter(
+                      (system) => results[system.id]?.state === 'unconfigured',
+                    )
                     .length.toLocaleString('fa-IR')}
               <ChevronLeft className="size-4" />
             </Button>
@@ -844,7 +853,7 @@ export function BrandsDashboard({
                     <td>{value(system, 'sales')}</td>
                     <td>
                       <span className={styles.ready}>
-                        {siteReport(system.id) ? 'گزارش متصل' : 'آماده اتصال'}
+                        {connectionLabel(system.id, 'گزارش متصل')}
                       </span>
                     </td>
                   </tr>
@@ -944,11 +953,7 @@ export function BrandsDashboard({
                           <td>
                             {metricState(system, metric) === 'نامرتبط'
                               ? 'نامرتبط'
-                              : siteReport(system.id)
-                                ? 'متصل'
-                                : results[system.id]?.state === 'forbidden'
-                                  ? 'بدون دسترسی'
-                                  : 'آماده اتصال'}
+                              : connectionLabel(system.id)}
                           </td>
                         </tr>
                       ))}
