@@ -898,8 +898,14 @@ export function BrandsDashboard({
                 </DialogTitle>
               </div>
               <DialogDescription>
-                مقایسه سایت‌ها در بازهٔ انتخابی؛ جزئیات رکوردها برای{' '}
-                {activeSite?.name} نمایش داده می‌شود.
+                {selectedQueue ? (
+                  'وضعیت فعلی'
+                ) : (
+                  <>
+                    مقایسه سایت‌ها در بازهٔ انتخابی؛ جزئیات رکوردها برای{' '}
+                    {activeSite?.name} نمایش داده می‌شود.
+                  </>
+                )}
               </DialogDescription>
               <div className={styles.rangeBadge}>
                 <CalendarDays className="size-4" />

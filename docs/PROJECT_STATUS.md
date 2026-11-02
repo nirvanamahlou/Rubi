@@ -8481,7 +8481,7 @@ HR-ATTENDANCE-NEWEST-1102 local acceptance: existing runtime built and restarted
 ## HR-EMPLOYEE-CONTRACT-DATES-1102 — PC-B
 
 Employee-related record forms no longer offer inline employee creation; employee selection and native Employees creation remain. Employee table renames start to employment start and adds adjacent contract end / employment end columns. Projection selects the latest noncancelled/nondeleted contract by start date and separation last working day, never exit-interview date, preserving blank open-ended contracts and export identities. Existing complete scoped reference loader avoids bootstrap truncation. Ended employees remain list/filter-visible.21 focused Web/catalog tests and scoped lint pass; local3100 columns verified. No schema/API/dependency or operational record changes. Final-head hosted gates precede authorized develop merge.
-## GHESTIROO-DASHBOARD-1102 — PC-D — IMPLEMENTED / VALIDATING
+## GHESTIROO-DASHBOARD-1102 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 First-page Ghestiroo metrics, detail pagination, Tehran date periods, independent
 site dispatch, current source queues, visit coverage, trends and audit activity
@@ -8490,4 +8490,6 @@ dashboard and no longer claims every site lacks credentials. Source grants,
 branch/person isolation, exact IRT amounts and historical-data limits remain
 explicit. Native operations stay in Ghestiroo; no Nora business records copied.
 No Nora schema/migration/dependency changes. Source-only anonymous visit migration
-and validation/deployment gates: [GHESTIROO-DASHBOARD-1102](tasks/GHESTIROO-DASHBOARD-1102.md).
+and validation evidence: [GHESTIROO-DASHBOARD-1102](tasks/GHESTIROO-DASHBOARD-1102.md).
+Both bounded production overlays are active and source SQL reconciles all KPI,
+daily, detail and visit results. Final Nora exact-head gates precede PR1318 merge.

@@ -30,8 +30,8 @@ Audit detail/credentials/PII are excluded. Source-only anonymous visit migration
 retains400 days and declares capture start; old cached heartbeat clients remain
 supported. Missing activation dates are disclosed rather than inferred.
 
-Local checks:52 Web/integration/English checks,10 API connector/dashboard checks,
-29 Python checks and29 route/manifest checks pass. Two source environment tests
+Local checks:52 Web/integration/English checks,11 API connector/dashboard checks,
+29 Python checks and31 route/manifest/crypto checks pass. Two source environment tests
 and one opt-in API contract check skipped. Scoped lint and API/Web types pass;
 stale Contracts/Prisma generated files were rebuilt without schema edits. Hosted
 quality initially caught formatting in two task-owned blocks; corrected before
@@ -39,5 +39,23 @@ final publication. Producer PR144 is merged into develop; its existing
 pull_request_target workflow ignored the skip marker and ran automatically.
 The LAN HTTP regression exposed a navigation-ID issue, fixed by producer PR145
 with31 route/crypto checks. The follow-up target workflow was observed and
-cancelled under the owner's instruction. Runtime migration rehearsal, live SQL
-reconciliation, consumer CI/PR and bounded rollout remain release gates.
+cancelled under the owner's instruction, after some automatic unit steps had run.
+
+Encrypted production backup was restored into an isolated disposable database;
+the source analytics migration and independent SQL reconciliation passed before
+production activation. Live repeatable-read SQL independently reconciles all four
+KPI totals, exact IRT amounts, daily totals, eight fully paginated KPI/queue lists
+and anonymous visits, with no production business writes. Initial live counts:
+three website accounts, one purchase case, zero activated sales, one activation
+queue case,35 tours and370 hotels. One browser visiting two real pages produced
+two navigation events; heartbeat retries did not inflate them. Visit coverage
+starts2026-11-02T14:05:45.302799Z; no historical visits are invented.
+
+Owner-session UI checks cover Brands and Overview, selected-site isolation,
+today/30-day periods, automatic user/order/pending drills, measured-zero sales
+and current queues. A misleading period description in the current-queue dialog
+was corrected. API and Web source overlays preserve1040/1841 files outside the
+reserved scope, existing translations, environment/mounts and other services.
+No Nora migration, dependency or operational data write was required. Source
+PR144/145 are merged develop; Nora PR1318 merges only after all eight hosted
+checks succeed on its final head. No main merge is part of this work item.

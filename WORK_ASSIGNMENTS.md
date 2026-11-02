@@ -10698,6 +10698,8 @@ COMPUTER_ID=PC-B; branch codex/pc-b-hr-employee-contract-dates-1102 from develop
 
 HR-EMPLOYEE-CONTRACT-DATES-1102 reserves only three new English override keys for the requested column labels; other translation/catalog writers remain untouched.
 
-## GHESTIROO-DASHBOARD-1102 — PC-D — READY_FOR_CI
+## GHESTIROO-DASHBOARD-1102 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 COMPUTER_ID=PC-D; branch codex/pc-d-ghestiroo-dashboard-1102 from develop5be385893. Owner requests full first-page Ghestiroo reporting, real metrics/details/trends/visits/activity/comparison/readiness and live validation. Reserve Integrations Ghestiroo producer-consumer report contract, bounded shared dashboard dispatcher/helpers and IntegrationsWorkspace overview reuse, own translations/tests/docs only. Site implementation stays in ehsandni/Ghestiroo. No Nora schema, migration, dependency, IAM or other-module changes. Prior same-owner source scopes are merged/released; active peers do not overlap these files. Preserve Niyayesh behavior, branch/person access and currency-separated source facts. Detailed scope: docs/tasks/GHESTIROO-DASHBOARD-1102.md. All final-head Nora gates precede authorized develop merge; no-CI-test preference remains Ghestiroo-only.
+
+Source PR144/145 merged develop; Nora PR1318 pending final exact-head gates and owner-authorized merge. Live readonly reconciliation covers four KPI totals/daily series, eight complete KPI/queue detail lists and anonymous visits. Owner-session Brands/Overview, source isolation, today/30-day periods and detail/empty states verified. Production overlays preserve1040 API/1841 Web files outside scope, environment/mounts and unrelated services. Source scope freezes on final push and reservations release on verified develop merge.
