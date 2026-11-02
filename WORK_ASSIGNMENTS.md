@@ -10516,3 +10516,8 @@ Owner requests removal of manual-call entry and evidence-based callback triage. 
 
 
 POPUP-ONLY-CALLS-1101 — PHASE1_DEPLOYED / CALLBACK_PENDING. UI manual entry removed;17 tests/typecheck/build pass. Rebased onto concurrent HR release; other service IDs preserved. Native mahsa/atena accounts resolved read-only; backend manual-create restriction and callback routing/assignment/history policy still need implementation and tests. No new grants or callback behavior active.
+
+## MISSED-CALL-TRIAGE-1102 — PC-C — RESERVED
+PC-C; owner authorizes completion: explicit mahsa/atena callback manager identities, unique ring recipient own visibility, multiple/no destination manager triage, request assignment access and removal after successful callback/closed resolution; historical labels only from provider evidence. Reserve Call Center access/callback/service/workflow helpers/tests, owning IAM callback authorization leaf if needed, own operational rollout/docs. No schema/dependency/grant broadening; preserve current runtime own-outbound and HR overlays. No competing active owner found. Native identities must be verified before explicit deployment configuration; no guessed employee or successful-answer backfill.
+
+MISSED-CALL-TRIAGE-1102 — IMPLEMENTED / DEPLOYED. Explicit mahsa/atena triage, same-employee ring scope, assigned-request access, human-answer callback resolution, evidence-only historical projection and backend popup-only creation.35 isolated PostgreSQL regressions, API lint/typecheck/build and native14-account/70-branch authorization audit pass. No migration/dependency/general IAM grant change. See docs/tasks/MISSED-CALL-TRIAGE-1102.md. Reservation released on source push.

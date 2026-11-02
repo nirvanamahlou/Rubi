@@ -1,3 +1,7 @@
+import { CallCenterTasksService } from '../tasks/call-center-tasks.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { missedCallbackContacts } from './call-center-callbacks';
+import { Prisma } from '@nora/database';
 import 'reflect-metadata';
 import { createHash, randomUUID } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
@@ -266,6 +270,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         ISSABEL_ENABLED: 'true',
         ISSABEL_CONNECTION_ID: connectionId,
         ISSABEL_EVENT_MODE: 'NATIVE_QUEUE_CAPTURE',
+        ISSABEL_OUTBOUND_NOTIFICATIONS_ENABLED: 'true',
         TELEPHONY_EVENTS_PER_MINUTE: '6000',
       });
       events = new TelephonyIntegrationService(
@@ -369,6 +374,86 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       vi.unstubAllEnvs();
     });
 
+    it('shows unanswered outbound calls to the validated originating account in ORM and SQL lists', async () => {
+      await db.integrationTelephonyMapping.create({
+        data: { connectionId, extension: '404', userId: expert },
+      });
+      const event = {
+        ...makeEvent('404', 'RINGING'),
+        direction: 'OUT' as const,
+        destination: { kind: 'KNOWN' as const, value: '+12025559001' },
+      };
+      const row = await emit(event);
+      await emit({
+        ...event,
+        externalEventId: randomUUID(),
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'NO_ANSWER',
+      });
+      expect(await visible(expert, row.contactId)).toBe(true);
+      expect(await visible(peer, row.contactId)).toBe(false);
+      expect(await visible(manager, row.contactId)).toBe(true);
+      expect(await visible(other, row.contactId)).toBe(false);
+      for (const id of [ceo, demo]) {
+        const scoped = await directory.callCenterActor(actor(id));
+        expect(
+          await db.callCenterContact.findFirst({
+            where: {
+              id: row.contactId,
+              ...(await access.where(scoped, branchId)),
+            },
+          }),
+        ).not.toBeNull();
+      }
+      const result = await read.search(actor(expert), branchId, {
+        query: '+12025559001',
+        page: 1,
+        pageSize: 50,
+      } as never);
+      expect(result.meta.total).toBe(1);
+      const denied = await read.search(actor(peer), branchId, {
+        query: '+12025559001',
+        page: 1,
+        pageSize: 50,
+      } as never);
+      expect(denied.meta.total).toBe(0);
+      expect(
+        await db.callCenterAnswerResponsibility.count({
+          where: { callId: row.callId },
+        }),
+      ).toBe(0);
+      // Popup completion/transfer must not erase originating-account access.
+      await db.callCenterTelephonyOffer.updateMany({
+        where: { sessionId: row.session.id },
+        data: { active: false, deferred: true },
+      });
+      expect(await visible(expert, row.contactId)).toBe(true);
+      await db.callCenterTelephonyOffer.create({
+        data: { sessionId: row.session.id, userId: peer, mappingVersion: 0 },
+      });
+      expect(await visible(peer, row.contactId)).toBe(false);
+    });
+    it('does not infer an outbound originator from a shared extension or synthetic offer', async () => {
+      await db.integrationTelephonyMapping.create({
+        data: { connectionId, extension: '105', userId: expert },
+      });
+      const row = await emit({
+        ...makeEvent('105', 'RINGING'),
+        direction: 'OUT',
+        destination: { kind: 'KNOWN', value: '+12025559002' },
+      });
+      expect(await visible(expert, row.contactId)).toBe(false);
+      expect(await visible(peer, row.contactId)).toBe(false);
+      await db.callCenterTelephonySession.update({
+        where: { id: row.session.id },
+        data: { synthetic: true },
+      });
+      await db.callCenterTelephonyOffer.create({
+        data: { sessionId: row.session.id, userId: expert, mappingVersion: 1 },
+      });
+      expect(await visible(expert, row.contactId)).toBe(false);
+    });
     it('grants only the actual answering account; creator, ring, offer, manual owner and claim grant nothing', async () => {
       const ring = makeEvent('404', 'RINGING');
       const before = await emit(ring);
@@ -739,6 +824,12 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       });
       const kpis = await read.kpis(actor(expert), branchId);
       expect(kpis.data.today).toBe(allowed);
+      const incomplete = await db.callCenterCall.count({
+        where: {
+          contact: await access.where(actor(expert), branchId),
+          outcome: null,
+        },
+      });
       for (const period of [undefined, 'today', 'week'] as const) {
         const result = await read.withoutOutcome(
           actor(expert),
@@ -746,7 +837,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           { page: 1, pageSize: 100 } as never,
           period,
         );
-        expect(result.meta.total).toBe(allowed);
+        expect(result.meta.total).toBe(period ? allowed : incomplete);
         for (const entry of result.data)
           expect(await visible(expert, entry.call.contactId)).toBe(true);
       }
@@ -958,6 +1049,221 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       ).rejects.toThrow('local legacy');
       vi.stubEnv('NODE_ENV', 'test');
       vi.stubEnv('CALL_CENTER_ACCESS_POLICY', 'ANSWERED');
+    });
+    it('routes retained missed calls, grants only the assigned employee and clears resolved callbacks without fabricating answers', async () => {
+      vi.stubEnv('CALL_CENTER_CALLBACK_MANAGER_IDS', manager + ',' + peer);
+      const database = { client: db } as never;
+      const policy = new CallCenterAccessService(
+        database,
+        new IamWorkbenchRequestDirectory(
+          database,
+          new HrWorkbenchRequestUnits(database),
+        ),
+        directory,
+        crypto,
+      );
+      const canSee = async (user: string, id: string) =>
+        !!(await db.callCenterContact.findFirst({
+          where: { id, ...(await policy.where(actor(user), branchId)) },
+        }));
+      const unique = makeEvent('404', 'RINGING');
+      const single = await emit(unique);
+      await emit({
+        ...unique,
+        externalEventId: randomUUID(),
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'NO_ANSWER',
+      });
+      expect(await canSee(expert, single.contactId)).toBe(true);
+      expect(await canSee(peer, single.contactId)).toBe(false);
+      const aliases = makeEvent('404', 'RINGING');
+      const alias = await emit(aliases);
+      await emit({
+        ...aliases,
+        externalEventId: randomUUID(),
+        extension: '115',
+        legId: '115',
+      });
+      await emit({
+        ...aliases,
+        externalEventId: randomUUID(),
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'NO_ANSWER',
+      });
+      expect(await canSee(expert, alias.contactId)).toBe(true);
+      expect(await canSee(peer, alias.contactId)).toBe(false);
+      const ivr = { ...makeEvent('404', 'RINGING'), extension: null };
+      const record = await emit(ivr);
+      await emit({
+        ...ivr,
+        externalEventId: randomUUID(),
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'COMPLETED',
+      });
+      expect(await canSee(peer, record.contactId)).toBe(true);
+      expect(await canSee(manager, record.contactId)).toBe(true);
+      expect(await canSee(expert, record.contactId)).toBe(false);
+      expect(await canSee(other, record.contactId)).toBe(false);
+      const wf = new CallCenterWorkflowService(
+        database,
+        crypto,
+        directory,
+        new CallCenterTasksService(database),
+        new NotificationsService({} as never),
+        policy,
+      );
+      const input = {
+        id: randomUUID(),
+        commandId: randomUUID(),
+        expectedVersion: 0,
+        title: 'Synthetic callback',
+        reason: 'Assign callback',
+        ownerId: expert,
+        priority: 'NORMAL',
+        status: 'IN_PROGRESS',
+      };
+      await wf.saveRequest(actor(peer), branchId, record.contactId, input);
+      expect(await canSee(expert, record.contactId)).toBe(true);
+      expect(
+        await db.customerAffairsTicket.count({
+          where: {
+            id: input.id,
+            ...(await policy.requestWhere(actor(expert), branchId)),
+          },
+        }),
+      ).toBe(1);
+      expect(
+        await db.customerAffairsTicket.count({
+          where: {
+            id: input.id,
+            ...(await policy.requestWhere(actor(other), branchId)),
+          },
+        }),
+      ).toBe(0);
+      const pending = () =>
+        db.$transaction((tx) =>
+          missedCallbackContacts(
+            tx,
+            crypto,
+            branchId,
+            Prisma.sql`TRUE`,
+            Prisma.sql`TRUE`,
+            new Date(),
+          ),
+        );
+      expect(
+        (await pending()).some((c) => c.contactId === record.contactId),
+      ).toBe(true);
+      await expect(
+        wf.saveRequest(actor(expert), branchId, record.contactId, {
+          ...input,
+          commandId: randomUUID(),
+          expectedVersion: 1,
+          title: 'Forbidden title change',
+        }),
+      ).rejects.toThrow();
+      await wf.saveRequest(actor(peer), branchId, record.contactId, {
+        ...input,
+        commandId: randomUUID(),
+        expectedVersion: 1,
+        status: 'CLOSED',
+        reason: 'Completed follow up',
+        result: 'Callback resolved',
+      });
+      expect(
+        (await pending()).some((c) => c.contactId === record.contactId),
+      ).toBe(false);
+      expect(
+        await db.callCenterAnswerResponsibility.count({
+          where: { callId: record.callId },
+        }),
+      ).toBe(0);
+      await wf.saveRequest(actor(peer), branchId, record.contactId, {
+        ...input,
+        commandId: randomUUID(),
+        expectedVersion: 2,
+        status: 'IN_PROGRESS',
+        reason: 'Reopen for callback',
+      });
+      expect(
+        (await pending()).some((c) => c.contactId === record.contactId),
+      ).toBe(true);
+      const follow = {
+        id: randomUUID(),
+        commandId: randomUUID(),
+        expectedVersion: 0,
+        ownerId: expert,
+        dueAt: new Date(Date.now() + 60000).toISOString(),
+        action: 'Callback',
+        priority: 'NORMAL',
+        status: 'COMPLETED',
+        result: 'Follow up completed',
+      };
+      await wf.followUp(actor(expert), branchId, input.id, {
+        ...follow,
+        status: 'OPEN',
+        result: '',
+      });
+      expect(
+        (await pending()).some((c) => c.contactId === record.contactId),
+      ).toBe(true);
+      await wf.followUp(actor(expert), branchId, input.id, {
+        ...follow,
+        commandId: randomUUID(),
+        expectedVersion: 1,
+      });
+      expect(
+        (await pending()).some((c) => c.contactId === record.contactId),
+      ).toBe(false);
+      const multiple = makeEvent('404', 'RINGING');
+      const multi = await emit(multiple);
+      await emit({
+        ...multiple,
+        externalEventId: randomUUID(),
+        extension: '501',
+        legId: '501',
+        kind: 'RINGING',
+      });
+      await emit({
+        ...multiple,
+        externalEventId: randomUUID(),
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'NO_ANSWER',
+      });
+      expect(await canSee(manager, multi.contactId)).toBe(true);
+      expect(await canSee(expert, multi.contactId)).toBe(false);
+      const unmapped = makeEvent('999', 'RINGING');
+      const unmappedRow = await emit(unmapped);
+      await emit({
+        ...unmapped,
+        externalEventId: randomUUID(),
+        kind: 'ENDED',
+        terminalForCall: true,
+        endReason: 'NO_ANSWER',
+      });
+      const projected = await new CallCenterService(
+        database,
+        crypto,
+        policy,
+        new HrCallAnswerDirectory(database),
+      ).getCall(unmappedRow.callId, actor(peer), branchId);
+      expect(projected.data.operator).toContain('داخلی 999');
+      expect(projected.data.operator).not.toBe('نامشخص');
+      const reply = {
+        ...makeEvent('404', 'ANSWERED'),
+        direction: 'OUT' as const,
+        destination: { kind: 'KNOWN' as const, value: unique.caller.value },
+      };
+      // Reuse exact caller identity as destination for a later successful callback.
+      await emit(reply);
+      expect(
+        (await pending()).some((c) => c.contactId === single.contactId),
+      ).toBe(false);
+      vi.stubEnv('CALL_CENTER_CALLBACK_MANAGER_IDS', '');
     });
   },
 );

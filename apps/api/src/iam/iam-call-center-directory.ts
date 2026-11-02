@@ -1,3 +1,4 @@
+import { callbackManagers } from './call-center-answer-policy';
 import {
   BadRequestException,
   ForbiddenException,
@@ -188,6 +189,7 @@ export class IamCallCenterDirectory {
     });
     if (!account) throw new ForbiddenException();
     const global =
+      callbackManagers().includes(actor.userId) ||
       approvedGlobal ||
       (!answeredCallAccess() &&
         new Set(

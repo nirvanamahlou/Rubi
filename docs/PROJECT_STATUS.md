@@ -8292,3 +8292,7 @@ CALL-HISTORY-SPACING-1101: expanded history sections spaced14px; recipient capti
 CALL-HISTORY-LABELS-1101: removed subject from expanded details, retained timeline heading and spacing; colon added to both recipient captions.17 existing tests, lint/typecheck/build and Web-only release verification pass.
 
 QUEUE-OPTION-STYLE-1101: queue dropdown options now retain shared combobox styling matching acquaintance-source selector; removed inherited action-button borders/margins without changing specificity or filtering. Queue tests and Web typecheck/build passed; Web-only activation verified.
+
+## MISSED-CALL-TRIAGE-1102 — 2026-11-02
+
+Missed inbound calls now use proven ring evidence: one employee owns own callback visibility; multiple/unlinked/no destinations go to the two owner-named sales managers for request assignment. Assigned staff see related contacts/requests; later successful employee conversation or recorded resolution removes pending callback. Historic labels derive from retained evidence without rewriting answer ownership. Backend popup-only creation enabled.35 isolated PostgreSQL checks and native ORM/SQL branch parity pass; backed-up API/Worker activation preserves concurrent team releases and Web. See tasks/MISSED-CALL-TRIAGE-1102.md.
