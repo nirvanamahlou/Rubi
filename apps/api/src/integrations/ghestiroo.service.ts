@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   ServiceUnavailableException,
+  ConflictException,
   type OnModuleInit,
   type OnModuleDestroy,
 } from '@nestjs/common';
@@ -155,39 +156,45 @@ export class GhestirooService implements OnModuleInit, OnModuleDestroy {
     branch: string,
     operation: string,
     after = '',
+    payload?: unknown,
+    name = '',
   ) {
     await this.authorize(actor, branch);
-    if (operation === 'admin-grants' && !this.registry.canManage(actor))
-      throw new ForbiddenException(
-        'ورود مدیریت به مجوز تنظیمات اتصال نیاز دارد.',
-      );
+    const scope =
+      operation === 'admin-grants'
+        ? 'admin'
+        : ['workspace', 'presence'].includes(operation)
+          ? 'catalog'
+          : operation;
+    const options = {
+      actor: { subject: actor.userId, branch, name },
+      ...(payload === undefined ? {} : { payload }),
+    };
     if (!canViewIntegrationSection(actor.permissions, 'connections'))
       throw new ForbiddenException();
     let config = await this.store.read(branch);
     if (
       !config ||
-      !config.allowedUserIds.includes(actor.userId) ||
-      (operation !== 'capabilities' &&
-        !config.scopes.includes(
-          operation === 'admin-grants' ? 'admin' : operation,
-        ))
+      (operation !== 'capabilities' && !config.scopes.includes(scope))
     )
       throw new ForbiddenException('این حساب برای این اتصال مجاز نیست.');
     config = await this.renewal.ensure(branch);
     if (
       !config ||
-      !config.allowedUserIds.includes(actor.userId) ||
-      (operation !== 'capabilities' &&
-        !config.scopes.includes(
-          operation === 'admin-grants' ? 'admin' : operation,
-        ))
+      (operation !== 'capabilities' && !config.scopes.includes(scope))
     )
       throw new ForbiddenException('این حساب برای این اتصال مجاز نیست.');
     if (Date.parse(config.expiresAt) <= Date.now())
       throw new ServiceUnavailableException('کلید اتصال منقضی شده است.');
     let data: Record<string, unknown>;
     try {
-      data = await ghestirooRequest(config, operation, after);
+      data = await ghestirooRequest(
+        config,
+        operation,
+        after,
+        undefined,
+        options,
+      );
     } catch (e) {
       const updated =
         e instanceof Error && e.message === 'UPSTREAM_401'
@@ -195,21 +202,33 @@ export class GhestirooService implements OnModuleInit, OnModuleDestroy {
           : null;
       if (
         updated &&
-        updated.allowedUserIds.includes(actor.userId) &&
         updated.apiKey !== config.apiKey &&
-        (operation === 'capabilities' ||
-          updated.scopes.includes(
-            operation === 'admin-grants' ? 'admin' : operation,
-          ))
+        (operation === 'capabilities' || updated.scopes.includes(scope))
       ) {
         config = updated;
         try {
-          data = await ghestirooRequest(updated, operation, after);
+          data = await ghestirooRequest(
+            updated,
+            operation,
+            after,
+            undefined,
+            options,
+          );
         } catch {
           throw new ServiceUnavailableException(
             'آزمون ارتباط ناموفق بود؛ آدرس، اعتبار کلید و دسترسی سرور را بررسی کنید.',
           );
         }
+      } else if (
+        e instanceof Error &&
+        /^UPSTREAM_(409|422|400|403)$/.test(e.message)
+      ) {
+        const message =
+          (e as { detail?: string }).detail ??
+          'اطلاعات یا نسخه معتبر نیست؛ قالب فایل و پیش‌نمایش را بررسی و دوباره دریافت کنید.';
+        if (e.message === 'UPSTREAM_409') throw new ConflictException(message);
+        if (e.message === 'UPSTREAM_403') throw new ForbiddenException();
+        throw new BadRequestException(message);
       } else
         throw new ServiceUnavailableException(
           'آزمون ارتباط ناموفق بود؛ آدرس، اعتبار کلید و دسترسی سرور را بررسی کنید.',
@@ -234,5 +253,23 @@ export class GhestirooService implements OnModuleInit, OnModuleDestroy {
     )
       throw new ServiceUnavailableException('هویت اتصال تطبیق ندارد.');
     return data;
+  }
+  async presence(actor: AuthenticatedActor, branch: string, systemId: string) {
+    const registry = await this.registry.read(actor, branch, 'brands');
+    const system = registry.systems.find((s) => s.id === systemId);
+    const brand = registry.brands.find((b) => b.id === system?.brandId);
+    if (
+      !system ||
+      (system.code !== 'ghesti-roo-primary' &&
+        brand?.code !== 'ghesti-roo' &&
+        !['https://ghestiroo.ir', 'https://ghestiroo.ir/'].includes(
+          system.setup?.websiteUrl ?? '',
+        ))
+    )
+      throw new ForbiddenException();
+    return {
+      ...(await this.run(actor, branch, 'presence')),
+      registrySystemId: systemId,
+    };
   }
 }

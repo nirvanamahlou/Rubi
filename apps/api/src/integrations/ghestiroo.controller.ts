@@ -10,7 +10,10 @@ import {
   Query,
   Req,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '../iam/auth.guard';
 import { PermissionGuard } from '../iam/permission.guard';
 import type { AuthenticatedRequest } from '../iam/iam.types';
@@ -24,6 +27,73 @@ export class GhestirooController {
     @Inject(GhestirooService) private readonly service: GhestirooService,
     @Inject(IamService) private readonly iam: IamService,
   ) {}
+  @Get('presence')
+  @Header('Cache-Control', 'private, no-store')
+  presence(
+    @Req() r: AuthenticatedRequest,
+    @Query('branchId') branch: string,
+    @Query('systemId') system: string,
+  ) {
+    return this.service.presence(r.actor, branch, system);
+  }
+  @Post('workspace')
+  @Header('Cache-Control', 'private, no-store')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 4 * 1024 * 1024,
+        files: 1,
+        fields: 1,
+        fieldSize: 8 * 1024 * 1024,
+      },
+    }),
+  )
+  async workspace(
+    @Req() r: AuthenticatedRequest,
+    @Query('branchId') branch: string,
+    @Body() body: { payload?: string },
+    @UploadedFile() file?: { buffer: Buffer; originalname: string },
+  ) {
+    if (
+      r.headers['x-nora-workspace'] !== '1' ||
+      typeof body.payload !== 'string'
+    )
+      throw new BadRequestException();
+    let payload: Record<string, unknown>;
+    try {
+      payload = JSON.parse(body.payload) as Record<string, unknown>;
+      if (!payload || typeof payload !== 'object' || Array.isArray(payload))
+        throw Error();
+    } catch {
+      throw new BadRequestException();
+    }
+    if (file) {
+      if (payload.action !== 'preview') throw new BadRequestException();
+      payload = {
+        ...payload,
+        filename: file.originalname,
+        content: file.buffer.toString('base64'),
+      };
+    }
+    const [person] = await this.iam.describeMessagingParticipants([
+      r.actor.userId,
+    ]);
+    const result = await this.service.run(
+      r.actor,
+      branch,
+      'workspace',
+      '',
+      payload,
+      person?.displayName ?? '',
+    );
+    await this.iam.recordSelfActivity(
+      r.actor,
+      'integrations.ghestiroo.workspace',
+      'external_catalogue',
+      `${branch}:${String(payload.action)}:${String(payload.kind ?? '')}`,
+    );
+    return result;
+  }
   @Get('connection')
   @Header('Cache-Control', 'private, no-store')
   status(@Req() r: AuthenticatedRequest, @Query('branchId') branch: string) {
@@ -73,7 +143,17 @@ export class GhestirooController {
     @Req() r: AuthenticatedRequest,
     @Query('branchId') branch: string,
   ) {
-    const result = await this.service.run(r.actor, branch, 'admin-grants');
+    const [person] = await this.iam.describeMessagingParticipants([
+      r.actor.userId,
+    ]);
+    const result = await this.service.run(
+      r.actor,
+      branch,
+      'admin-grants',
+      '',
+      undefined,
+      person?.displayName ?? '',
+    );
     await this.iam.recordSelfActivity(
       r.actor,
       'integrations.ghestiroo.admin-grant',
