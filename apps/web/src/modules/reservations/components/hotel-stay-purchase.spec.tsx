@@ -438,3 +438,65 @@ it.each(['missing', 'network'])(
     expect(fetch).not.toHaveBeenCalled();
   },
 );
+
+it('registers one combined round-trip price without doubling the passenger count', async () => {
+  let tree = render();
+  const editor = tree.find((n) => n.type === HotelRoomQuotationEditor)!;
+  const draft = editor.props.draft as ReturnType<typeof defaultVoucherSettings>;
+  (editor.props.update as (next: typeof draft) => void)({
+    ...draft,
+    hotelTransferRoundTrip: true,
+    hotelTransferSplit: false,
+    hotelTransferCounts: { outbound: 2, returning: 2 },
+    supplierFormPrices: { transferPp: { amount: '20', currencyCode: 'IRR' } },
+  });
+  tree = render();
+  await (
+    tree.find(
+      (n) =>
+        n.type === Button && n.props.children === 'ثبت خرید این هتل و ترانسفر',
+    )!.props.onClick as () => Promise<void>
+  )();
+  await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+  const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]![1]!.body));
+  expect(body).toMatchObject({
+    hotelTransferRoundTrip: true,
+    hotelTransferCounts: { outbound: 2, returning: 2 },
+  });
+  expect(body.purchases[1]).toMatchObject({
+    amount: '40',
+    pricingCalculation: { chargeablePassengerCount: 2 },
+  });
+});
+it('round-trip checkbox uses one population input and disables split pricing', () => {
+  const draft = defaultVoucherSettings(request, {});
+  draft.hotelTransferCounts = { outbound: 2, returning: 1 };
+  draft.hotelTransferSplit = true;
+  const update = vi.fn();
+  const renderEditor = () =>
+    nodes(
+      HotelRoomQuotationEditor({
+        draft,
+        requestId: 'test',
+        update,
+        currencies: [],
+        busy: false,
+        nights: 3,
+      }),
+    );
+  const checkbox = renderEditor().find(
+    (n) => n.type === 'input' && n.props.type === 'checkbox',
+  )!;
+  (checkbox.props.onChange as (event: unknown) => void)({
+    target: { checked: true },
+  });
+  Object.assign(draft, update.mock.calls[0]![0]);
+  expect(draft).toMatchObject({
+    hotelTransferRoundTrip: true,
+    hotelTransferSplit: false,
+    hotelTransferCounts: { outbound: 2, returning: 2 },
+  });
+  expect(renderEditor().filter((n) => n.props.type === 'number')).toHaveLength(
+    1,
+  );
+});

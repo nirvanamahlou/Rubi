@@ -1,4 +1,5 @@
 'use client';
+import { preserveAmendmentContractPrices } from './amendment-membership';
 import type { PassengerName } from '../passenger-files/client';
 import { AmendmentPassengerPriceTable } from './amendment-passenger-price-table';
 import { AmendmentPassengerMembership } from './amendment-passenger-membership';
@@ -213,7 +214,9 @@ export function ReservationSalesAmendment({
         }
       }
       const corrected = applyManualAmendmentFlights(
-        section === 'PRICES' ? prepareAmendmentPersonPrices(draft) : draft,
+        section === 'PRICES'
+          ? prepareAmendmentPersonPrices(draft)
+          : preserveAmendmentContractPrices(draft),
         Object.fromEntries(
           Object.entries(manualFlights).filter(([key]) =>
             manualDirty.includes(key as SalesTicketDirection),
@@ -424,9 +427,7 @@ export function ReservationSalesAmendment({
               <label>
                 ورود
                 <SalesDatePicker
-                  defaultCalendarSystem={
-                    international ? 'gregorian' : 'persian'
-                  }
+                  calendarSystem="gregorian"
                   value={hotel.checkInDate.slice(0, 10)}
                   onChange={(checkInDate) => changeHotel({ checkInDate })}
                 />
@@ -434,9 +435,7 @@ export function ReservationSalesAmendment({
               <label>
                 خروج
                 <SalesDatePicker
-                  defaultCalendarSystem={
-                    international ? 'gregorian' : 'persian'
-                  }
+                  calendarSystem="gregorian"
                   value={hotel.checkOutDate.slice(0, 10)}
                   onChange={(checkOutDate) => changeHotel({ checkOutDate })}
                 />

@@ -70,6 +70,9 @@ export interface GhestirooStatus {
   expiresAt?: string;
   scopes?: string[];
   allowedUserIds?: string[];
+  autoRenewal?: boolean;
+  lastRenewedAt?: string;
+  renewalState?: 'active' | 'pending' | 'retrying' | 'expired';
 }
 export const ghestirooApi = {
   status: (branch: string, signal?: AbortSignal) =>

@@ -40,17 +40,22 @@ export function validateVoucherSettings(
   if (!value || typeof value !== 'object') return fail();
   const v = value as VoucherSettingsV1;
   if (
-    v.sharedHotelBroker !== undefined &&
-    typeof v.sharedHotelBroker !== 'boolean'
-  )
-    throw Error('تنظیمات فرم معتبر نیست.');
-  if (
-    [v.hotelTransferSeparate, v.hotelTransferSplit].some(
-      (flag) => flag !== undefined && typeof flag !== 'boolean',
-    )
+    [
+      v.sharedHotelBroker,
+      v.hotelTransferSeparate,
+      v.hotelTransferSplit,
+      v.hotelTransferRoundTrip,
+    ].some((flag) => flag !== undefined && typeof flag !== 'boolean')
   )
     return fail();
   if (v.hotelTransferSplit && !v.hotelTransferSeparate) return fail();
+  if (
+    v.hotelTransferRoundTrip &&
+    (v.hotelTransferSplit ||
+      !v.hotelTransferCounts ||
+      v.hotelTransferCounts.outbound !== v.hotelTransferCounts.returning)
+  )
+    return fail();
   if (
     v.hotelTransferReturn &&
     (typeof v.hotelTransferReturn !== 'object' ||
@@ -281,6 +286,9 @@ export function validateVoucherSettings(
       : {}),
     ...(v.hotelTransferSeparate !== undefined
       ? { hotelTransferSeparate: v.hotelTransferSeparate }
+      : {}),
+    ...(v.hotelTransferRoundTrip !== undefined
+      ? { hotelTransferRoundTrip: v.hotelTransferRoundTrip }
       : {}),
     ...(v.hotelTransferSplit !== undefined
       ? { hotelTransferSplit: v.hotelTransferSplit }

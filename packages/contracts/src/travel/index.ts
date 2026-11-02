@@ -336,6 +336,8 @@ export interface ReservationServicePurchaseV1 {
       totalAmount: string;
     })[];
   };
+  /** True: the unit fare covers both legs for one passenger. Omitted keeps per-leg pricing. */
+  hotelTransferRoundTrip?: boolean;
   hotelTransferCounts?: { outbound: number; returning: number };
   roomPrices?: readonly ReservationRoomPriceV1[];
   hotelStayKey?: string;
@@ -419,6 +421,8 @@ export interface ReservationServicePurchaseInputV1 {
 
 export interface ReservationPurchaseBatchInputV1 {
   supplierFormVersion?: number;
+  /** True: the unit fare covers both legs for one passenger. Omitted keeps per-leg pricing. */
+  hotelTransferRoundTrip?: boolean;
   hotelTransferCounts?: { outbound: number; returning: number };
   /** Restricts this atomic purchase to one canonical hotel stay. */
   hotelStayKey?: string;
@@ -692,6 +696,8 @@ export interface VoucherSettingsV1 {
     currencyCode: string;
     rooms: ReservationRoomPriceV1[];
   } | null;
+  /** True: the unit fare covers both legs for one passenger. Omitted keeps per-leg pricing. */
+  hotelTransferRoundTrip?: boolean;
   hotelTransferCounts?: { outbound: number; returning: number };
   /** Immutable room composition for this output revision; legacy revisions omit it. */
   rooms?: {

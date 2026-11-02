@@ -176,7 +176,7 @@ export function PackageCompositionSales({
                 <tr>
                   <th>انتخاب</th>
                   <th>ترکیب اتاق</th>
-                  <th>قیمت خرید</th>
+                  <th>قیمت خرید هتل</th>
                   <th>قیمت فروش</th>
                 </tr>
               </thead>

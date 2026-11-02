@@ -47,6 +47,7 @@ export async function ghestirooRequest(
   config: GhestirooConfig,
   operation: string,
   after = '',
+  nextApiKey?: string,
 ): Promise<Record<string, unknown>> {
   if (
     ![
@@ -56,8 +57,10 @@ export async function ghestirooRequest(
       'requests',
       'cases',
       'admin-grants',
+      'renew',
     ].includes(operation) ||
-    (after && !/^[a-f0-9]{32}$/.test(after))
+    (after && !/^[a-f0-9]{32}$/.test(after)) ||
+    (operation === 'renew' && !/^[A-Za-z0-9_-]{64}$/.test(nextApiKey ?? ''))
   )
     throw Error('INVALID_OPERATION');
   const { url, local } = ghestirooOrigin(config.origin);
@@ -68,7 +71,9 @@ export async function ghestirooRequest(
       addresses.some((a) => a.family !== 4 || blocked.check(a.address, 'ipv4')))
   )
     throw Error('UNSAFE_DESTINATION');
-  const path = `/admin/integration/nora/v1/${['capabilities', 'admin-grants'].includes(operation) ? operation : `resources/${operation}`}${after ? `?after=${after}` : ''}`;
+  const path = `/admin/integration/nora/v1/${['capabilities', 'admin-grants', 'renew'].includes(operation) ? operation : `resources/${operation}`}${after ? `?after=${after}` : ''}`;
+  const body =
+    operation === 'renew' ? JSON.stringify({ nextApiKey }) : undefined;
   return new Promise((resolve, reject) => {
     const req = (local ? httpRequest : httpsRequest)(
       {
@@ -76,13 +81,19 @@ export async function ghestirooRequest(
         family: addresses[0]!.family,
         servername: url.hostname,
         port: url.port || (local ? 80 : 443),
-        method: operation === 'admin-grants' ? 'POST' : 'GET',
+        method: ['admin-grants', 'renew'].includes(operation) ? 'POST' : 'GET',
         path,
         headers: {
           Host: url.host,
           accept: 'application/json',
           authorization: `Bearer ${config.apiKey}`,
           'x-nora-connection': config.connectionId,
+          ...(body
+            ? {
+                'content-type': 'application/json',
+                'content-length': Buffer.byteLength(body),
+              }
+            : {}),
         },
         timeout: 10000,
       },
@@ -119,6 +130,6 @@ export async function ghestirooRequest(
     req.on('close', () => clearTimeout(deadline));
     req.on('timeout', () => req.destroy(Error('TIMEOUT')));
     req.on('error', () => reject(Error('CONNECTION_FAILED')));
-    req.end();
+    req.end(body);
   });
 }

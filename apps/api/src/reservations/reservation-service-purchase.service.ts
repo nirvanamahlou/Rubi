@@ -18,6 +18,7 @@ import {
 } from '@nestjs/common';
 import {
   hotelNights,
+  hotelTransferChargeableCount,
   hotelRoomQuotationTotal,
   reservationHotelStays,
   reservationHotelTransferLegKeys,
@@ -356,6 +357,7 @@ export class ReservationServicePurchaseService {
             'purchases',
             'hotelStayKey',
             'hotelTransferCounts',
+            'hotelTransferRoundTrip',
             'supplierFormVersion',
           ].includes(field),
       )
@@ -469,6 +471,13 @@ export class ReservationServicePurchaseService {
         ],
       };
     }
+    if (
+      input.hotelTransferRoundTrip !== undefined &&
+      typeof input.hotelTransferRoundTrip !== 'boolean'
+    )
+      throw new BadRequestException('اطلاعات خرید خدمت معتبر نیست.');
+    if (input.hotelTransferRoundTrip && (!stay || input.purchases.length !== 2))
+      throw new BadRequestException('اطلاعات خرید خدمت معتبر نیست.');
     if (stay) {
       const counts = input.hotelTransferCounts;
       const limit = (stay.hotel.rooms ?? []).reduce(
@@ -478,6 +487,8 @@ export class ReservationServicePurchaseService {
       );
       if (
         !counts ||
+        (input.hotelTransferRoundTrip &&
+          counts.outbound !== counts.returning) ||
         Object.keys(counts).some(
           (key) => !['outbound', 'returning'].includes(key),
         ) ||
@@ -626,14 +637,15 @@ export class ReservationServicePurchaseService {
               stay &&
               service.kind === 'TRANSFER' &&
               count !==
-                Object.values(
+                hotelTransferChargeableCount(
                   reservationHotelTransferCounts(
                     snapshot,
                     stay.key,
                     row.coveredServiceClientKeys ?? [],
                     input.hotelTransferCounts!,
                   ),
-                ).reduce((sum, count) => sum + count, 0)
+                  input.hotelTransferRoundTrip,
+                )
             )
               throw new Error();
             const nights =
@@ -670,6 +682,8 @@ export class ReservationServicePurchaseService {
             passengerPrices = {
               ...(stay && service.kind === 'TRANSFER'
                 ? {
+                    hotelTransferRoundTrip:
+                      input.hotelTransferRoundTrip ?? false,
                     hotelTransferCounts: reservationHotelTransferCounts(
                       snapshot,
                       stay.key,

@@ -112,6 +112,12 @@ export function changeAmendmentMembership(
   };
   if (!preservePrices)
     return applyAmendmentPassengerPrices(next, gross, deductions);
+  return preserveAmendmentContractPrices(next);
+}
+
+export function preserveAmendmentContractPrices(
+  next: SalesContractAmendmentV1,
+): SalesContractAmendmentV1 {
   // The old per-person allocation no longer describes this roster. Retain the
   // recorded contract total without assigning a removed person's share to anyone.
   const priceKeys = new Set([
@@ -125,7 +131,9 @@ export function changeAmendmentMembership(
   ]);
   return {
     ...next,
-    preserveContractPrices: true,
+    ...(next.passengers.length
+      ? { preserveContractPrices: true as const }
+      : {}),
     passengers: next.passengers.map((p) => {
       const copy = { ...p };
       delete copy.agreedPrices;
@@ -146,6 +154,6 @@ export function changeAmendmentMembership(
         },
       };
     }),
-    priceComponents: draft.priceComponents,
+    priceComponents: next.priceComponents,
   };
 }

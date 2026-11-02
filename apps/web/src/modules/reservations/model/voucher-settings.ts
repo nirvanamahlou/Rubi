@@ -1,5 +1,8 @@
 import { contractRoomDefaults } from './contract-room-defaults';
-import { salesRoomCategoryLabel } from '@nora/contracts';
+import {
+  hotelTransferChargeableCount,
+  salesRoomCategoryLabel,
+} from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
 import type { voucherNumberKeys, voucherFlagKeys } from '@nora/contracts';
 import { voucherTextKeys, type VoucherSettingsV1 } from '@nora/contracts';
@@ -107,6 +110,9 @@ export function defaultVoucherSettings(
       : {}),
     ...(saved.hotelTransferSeparate !== undefined
       ? { hotelTransferSeparate: saved.hotelTransferSeparate }
+      : {}),
+    ...(saved.hotelTransferRoundTrip !== undefined
+      ? { hotelTransferRoundTrip: saved.hotelTransferRoundTrip }
       : {}),
     ...(saved.hotelTransferSplit !== undefined
       ? { hotelTransferSplit: saved.hotelTransferSplit }
@@ -436,8 +442,13 @@ export function supplierFormData(
                         ? 'OUTBOUND ONLY'
                         : 'ROUND TRIP') +
                     ' · ' +
-                    ((settings.hotelTransferCounts?.outbound ?? 0) +
-                      (settings.hotelTransferCounts?.returning ?? 0)) +
+                    hotelTransferChargeableCount(
+                      settings.hotelTransferCounts ?? {
+                        outbound: 0,
+                        returning: 0,
+                      },
+                      settings.hotelTransferRoundTrip,
+                    ) +
                     ' PAX',
             }
           : {}),

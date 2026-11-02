@@ -113,4 +113,6 @@ it('keeps saved room types and categories visible in the hotel editor before mas
   expect(html).toContain('Saved Deluxe');
   expect(html).toContain('Double');
   expect(html).toContain('دسته‌بندی اتاق');
+  expect(html).toContain('Jan');
+  expect(html).not.toContain('دی ۱۴۰۵');
 });
