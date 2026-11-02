@@ -29,6 +29,8 @@ export function supplierDocumentScope(
   }
   const original = {
     ...intake,
+    supplierFormUseSent:
+      !preview && source === intake.workflow.sentSupplierFormSettings,
     workflow: { ...intake.workflow, supplierFormSettings: source },
   };
   if (!supplierDocumentKinds(source).includes(kind))
