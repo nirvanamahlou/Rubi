@@ -1390,7 +1390,7 @@ export function CustomerDrawer({
                     description={
                       customer?.maskedNationalId
                         ? `ثبت‌شده: ${customer.maskedNationalId} — فقط برای تغییر دوباره وارد کنید`
-                        : undefined
+                        : ''
                     }
                     id="customer-national-id"
                     label="کد ملی"
