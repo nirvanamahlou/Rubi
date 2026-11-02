@@ -38,6 +38,32 @@ function fixture() {
   };
 }
 describe('HR self performance public projection', () => {
+  it.each([30, 90, 365])(
+    'uses the selected %i calendar-day window including today',
+    async (days) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-11-02T21:10:00Z'));
+      try {
+        const f = fixture();
+        await f.service.get(actor, days);
+        const query = f.client.hrRecord.findMany.mock.calls.find(
+          ([q]) => q.where.tab === 'attendance',
+        )![0];
+        const start = new Date(
+          Date.parse('2026-11-03T12:00:00Z') - (days - 1) * 86400000,
+        )
+          .toISOString()
+          .slice(0, 10);
+        expect(query.where.AND).toEqual([
+          { values: { path: ['1'], gte: start } },
+          { values: { path: ['1'], lte: '2026-11-03' } },
+        ]);
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
+
   it('sums reviewed own attendance in the current Persian month without duplicate days', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-15T12:00:00Z'));
@@ -92,6 +118,38 @@ describe('HR self performance public projection', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+  it('keeps completed-day totals when another day has incomplete measurements', async () => {
+    const f = fixture();
+    f.client.hrRecord.findMany.mockImplementation(async (query) =>
+      query.where.tab === 'attendance'
+        ? [
+            {
+              status: 'حاضر',
+              values: ['User', '2026-11-02'],
+              data: {
+                lateMinutes: 5,
+                deficitMinutes: null,
+                overtimeMinutes: null,
+              },
+            },
+            {
+              status: 'حاضر',
+              values: ['User', '2026-11-01'],
+              data: {
+                lateMinutes: 10,
+                deficitMinutes: 20,
+                overtimeMinutes: 45,
+              },
+            },
+          ]
+        : [],
+    );
+    expect((await f.service.get(actor, 30)).monthlyAttendance).toMatchObject({
+      lateMinutes: 15,
+      deficitMinutes: 20,
+      overtimeMinutes: 45,
+    });
   });
   it('distinguishes missing attendance measurements from a real zero', async () => {
     const f = fixture();

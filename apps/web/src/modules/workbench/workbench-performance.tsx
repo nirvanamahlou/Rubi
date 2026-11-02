@@ -96,14 +96,11 @@ export function WorkbenchPerformance() {
             </span>
             <div>
               <h2 className="text-2xl font-black">عملکرد من</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                حضور امروز، برنامه کاری و دستاوردهای شما
-              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <WorkbenchSelect
-              label="بازه آمار فروش و مشتریان"
+              label="بازه زمانی"
               value={days}
               onValueChange={reload}
               options={[
@@ -236,9 +233,6 @@ export function WorkbenchPerformance() {
                   ترددی برای امروز ثبت نشده است.
                 </p>
               )}
-              <p className="text-xs text-muted-foreground">
-                ترددهای روز تقویمی امروز، با اعمال اصلاحات تأییدشده منابع انسانی
-              </p>
             </Card>
             <Card className="space-y-4 p-6">
               <h3 className="flex items-center gap-2 text-lg font-bold">
@@ -287,9 +281,6 @@ export function WorkbenchPerformance() {
                   {linked ? 'هنوز برنامه شیفتی ثبت نشده است.' : hrHint}
                 </div>
               )}
-              <p className="text-xs text-muted-foreground">
-                ۱۰ برنامه اخیر ثبت‌شده در منابع انسانی
-              </p>
             </Card>
           </div>
           {!!hr?.leaveBalances.length && (
@@ -696,7 +687,6 @@ function MonthlySales({
 function Metric({
   label,
   value,
-  hint,
   icon,
   tone,
 }: {
@@ -720,7 +710,6 @@ function Metric({
       <strong className="my-4 block break-words text-3xl font-black tabular-nums">
         {value}
       </strong>
-      <p className="text-xs leading-6 text-muted-foreground">{hint}</p>
     </div>
   );
 }
