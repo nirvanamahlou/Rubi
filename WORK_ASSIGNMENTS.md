@@ -10528,8 +10528,24 @@ HR-RADAN-LIVE-1101 schedule follow-up — PC-B RESERVED. Owner authorizes Tehran
 
 HR-RADAN-LIVE-1101 schedule follow-up — VALIDATED. Tehran quarter-hour slots09:00–10:00 and17:00–18:00, full-hour slots otherwise. No immediate startup request or rapid retry; next future slot follows completion/failure, shutdown prevents reschedule. Sixteen targeted schedule/service checks and scoped lint gate local API update, production compilation and final-head CI before the owner-authorized merge.
 
+## CALL-RECIPIENT-TITLE-1102 — PC-C — IN_PROGRESS
+
+Owner explicitly authorizes bounded edit of PC-B-reserved HR call directory: use grade plus unit for connected-to label. Reserve hr-call-answer-directory.ts/spec only; preserve multiple extensions/shared destinations, branch scope and all unrelated HR work. No schema/data/runtime change.
+
+CALL-RECIPIENT-TITLE-1102 — SOURCE_READY:16 focused regressions, API typecheck/build and focused lint pass; PR1278. Scope frozen on publication. Historical stored snapshots and production runtime unchanged.
+
 ## SHARED-HOTEL-SUPPLIER-FORM-1102 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; codex/pc-a-shared-hotel-supplier-form-1102 from develop061f265a8. Owner authorizes optional common supplier for multiple hotel stays, independent hotel price tables, one saved supplier output, tests and develop merge. Reserve bounded ReservationSettings, supplier document grouping/model/preview/PDF/route, workflow transition and voucher validator, additive optional VoucherSettings field and focused regressions. Producer Reservations workflow and Web consumers remain compatible when omitted. Preserve per-stay purchase ownership, sent revisions, broker authorization, currencies and snapshots. No schema/migration/dependency or server deployment. Existing composite voucher source is preserved; only supplier-form rendering changes.
 
 SHARED-HOTEL-SUPPLIER-FORM-1102:33 API and59 Web focused checks, scoped lint and Web/API types pass after refreshing generated declarations. Synthetic two/three-page Chrome PDFs visually verified, including independent hotel prices, repeated footer and complete notice block. Integrated latest develop and retained new round-trip transfer validation alongside the optional shared supplier flag. Source freezes on publication; reservations release upon verified merge. Final exact-head hosted gates precede owner-authorized merge; no operational deployment.
+
+## CALL-HISTORY-TITLE-1102 — PC-C — IN_PROGRESS
+
+Owner requests current grade/unit labels for historical calls. Reserve CallCenterService destination read enrichment and focused history tests. Read-only labels from HR public directory on provider-proven extensions; preserve recorded times, scope and original encrypted snapshots. No migration or ownership/data rewrite.
+
+## AMEND-COMPOSITE-HOTEL-STAYS-1102 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; codex/pc-a-amend-composite-hotel-stays-1102 from latest origin/develop. Owner authorizes editing every additional hotel stay and independent check-in/out in Reservations, tests and develop merge. Prior overlapping AMEND-NO-HOTEL-PRICE scope verified MERGED PR1274. Reserve new module-local additional-stay editor/model/tests and bounded insertion in reservation-sales-amendment.tsx plus own docs. Existing Sales amendment validation/repository remain producer and unchanged; preserve primary selection, ordered other stays, exact recorded prices and service ownership. No API/schema/migration/dependency, live data or operational rollout. Final-head hosted gates precede authorized merge.
+
+AMEND-COMPOSITE-HOTEL-STAYS-1102:19 focused Web and82 existing Sales API checks pass; scoped ESLint, translation sync and Web types pass. Both Hotel and Correction entry points render additional dates/rooms; direct callback tests prove isolated updates, hotel-city replacement, no primary pricing/type inheritance and legacy/single-stay compatibility. Source freezes on publication and reservations release on verified develop merge. Exact-head hosted full gates remain required; no operational rollout.
