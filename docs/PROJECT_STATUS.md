@@ -8341,3 +8341,7 @@ Reservations Hotel and general Correction editors now expose every ordered addit
 ## ROUNDTRIP-TRANSFER-DISPLAY-1102 — PC-A
 
 Hotel transfer preview now multiplies the entered combined round-trip fare by the chargeable passenger population once, using the same shared helper as purchase registration. Example20 x2 displays40 rather than80. Per-leg and split modes, zero counts, hotel nights/rooms and exact arithmetic remain unchanged. Existing persisted purchase/API calculations were already correct and are untouched.16 focused UI regressions pass; scoped lint/types and existing API purchase checks precede final-head hosted gates and owner-authorized develop merge. No schema/migration/dependency/history mutation or operational rollout.
+
+## AMEND-FLIGHT-DATE-SYNC-1102 — PC-A
+
+Explicit catalog flight replacement or applied manual flight edits now reconcile contract departureDate/returnNotBefore from the actual selected flight instants in Tehran. This removes stale return-date bounds that falsely rejected a valid floating-to-charter replacement. Unedited drafts retain their existing dates and object identity; true reversed flight dates remain reversed for existing server validation to reject. Buyer, amounts, services, capacity and receipts remain unchanged. Four regressions failed before the fix;18 focused Web and93 API domain/capacity/amendment checks pass, with lint/types and final-head hosted gates preceding owner-authorized develop merge. No API/schema/migration/dependency or server deployment.
