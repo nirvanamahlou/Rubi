@@ -111,16 +111,14 @@ it('normalizes the raw provider date once and reconciles both affected days', as
           ]) as never,
   );
   const hr = {
-    importDevicePunches: vi
-      .fn()
-      .mockResolvedValue({
-        imported: 1,
-        unchanged: 0,
-        unmatched: 0,
-        closed: 0,
-        dates: ['2026-11-01', '2026-11-02'],
-        reconcile: [{ date: '2026-11-01', employeeId: 'e' }],
-      }),
+    importDevicePunches: vi.fn().mockResolvedValue({
+      imported: 1,
+      unchanged: 0,
+      unmatched: 0,
+      closed: 0,
+      dates: ['2026-11-01', '2026-11-02'],
+      reconcile: [{ date: '2026-11-01', employeeId: 'e' }],
+    }),
     processAttendance: vi.fn().mockResolvedValue({}),
   };
   const service = new HrRadanDeviceService(hr as never, {} as never);
