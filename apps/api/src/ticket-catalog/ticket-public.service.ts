@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { restoreContractCapacity } from './restore-contract-capacity';
 import { canSelectForWorkflow } from '../common/workflow-selection.policy';
 import { assertUniqueTicketIdentity } from './ticket-offer-identity';
 import {
@@ -2660,6 +2661,14 @@ export class TicketPublicService {
       where: { id: { in: [...allocationIds] }, status: 'ACTIVE' },
       data: { status: 'RELEASED', releasedAt: new Date() },
     });
+  }
+  restoreContract(
+    tx: Prisma.TransactionClient,
+    contractId: string,
+    branchId: string,
+    selections: readonly SalesTicketSelectionInput[],
+  ) {
+    return restoreContractCapacity(tx, contractId, branchId, selections);
   }
   async releaseContract(contractId: string, tx?: Prisma.TransactionClient) {
     await (tx ?? this.database.client).ticketOfferCapacityAllocation.updateMany(
