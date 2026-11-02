@@ -28,3 +28,13 @@ and real PostgreSQL producer tests. Hosted exact-head quality, test, build and
 database gates are required before the separately authorized develop merge.
 Production overlays must preserve current source outside these Integrations
 files, all mounts/env, Worker image and existing Call Center/HR behavior.
+
+Producer published independently as Ghestiroo PR132, develop merge69e14955;
+automatic CI run41409041941 cancelled with no test/check/build step started.
+Producer migration20261102_nora_workspace rehearsed on PostgreSQL and applied
+after an encrypted host-only backup. Live schemas and native workbook templates
+for all seven kinds, personal identity and actual browser presence verified
+without catalogue writes. Nora runtime source inventory preserves1020 API and
+1815 Web source files outside this scope; environment/mounts and Worker retained.
+The full hosted suite caught one missing whole-paragraph English translation;
+4306 Web tests passed, and the translation coverage correction is included.
