@@ -36,7 +36,7 @@ export function useReservationFormReferences(
     failed: boolean;
   }>();
   const referenceSnapshot =
-    intake.workflow.supplierFormSettings?.sharedHotelBroker === true
+    intake.workflow?.supplierFormSettings?.sharedHotelBroker === true
       ? (intake.supplierHotelSourceSnapshot ?? intake.snapshot)
       : intake.snapshot;
   const hotels = reservationHotelStays(referenceSnapshot).map(
