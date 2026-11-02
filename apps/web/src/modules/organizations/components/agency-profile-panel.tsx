@@ -127,10 +127,6 @@ export function AgencyProfilePanel({
           ) : details ? (
             <div className="summary-list">
               <div className="summary-row">
-                <span>کد تفصیلی حسابداری</span>
-                <b dir="ltr">{details.accountingCode ?? '—'}</b>
-              </div>
-              <div className="summary-row">
                 <span>وضعیت همکاری</span>
                 <b>
                   {profile ? statusLabels[profile.status] : 'پروفایل ثبت نشده'}

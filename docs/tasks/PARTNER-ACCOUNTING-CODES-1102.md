@@ -24,3 +24,9 @@ PC-B; branch codex/pc-b-partner-accounting-codes-1102. Implemented and activated
 ## Deployment
 
 Back up the target, review pending migrations, apply the additive migration and regenerate/build database, contracts and API before restart. Never reset the database or copy the local data dump merely to assign codes. Each environment backfills its own identities; independently allocated codes across databases must not be assumed to identify the same company.
+
+## Organization-code presentation follow-up
+
+User requested that the seven-digit company number appear as the organization code, without a separate accounting-detail field. Company profiles, lists, partner views, shared selectors, delete descriptions and readonly edit/registration summaries now use the numeric display code. Bank display remains unchanged. Search and code sorting use accountingCode; company Excel exports show it. Excel reimport recognizes both the displayed and historical codes. Legacy code and IDs stay in write payloads, so existing relationships and contract identities are unchanged. No further migration or data rewrite.
+
+Validation: 80 web tests (including legacy edit-payload preservation and numeric/legacy import lookup), 26 API tests (including search and XLSX), web typecheck and scoped lint passed. Browser on localhost3100 confirms only "کد سازمان 3000160" in the organization profile, and numeric codes in the list. API and web production builds passed. Updated API modules activated on port4192; web3100 serves the revised display.

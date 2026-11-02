@@ -520,3 +520,36 @@ describe('MasterDataRepository protected organization contacts', () => {
     expect(snapshot).not.toHaveProperty('emailEncrypted');
   });
 });
+
+it.each(['organizations', 'suppliers', 'brokers'] as const)(
+  'searches numeric organization codes for %s',
+  async (resource) => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const count = vi.fn().mockResolvedValue(0);
+    const names = {
+      organizations: 'masterOrganization',
+      suppliers: 'masterSupplier',
+      brokers: 'masterBroker',
+    };
+    const repository = new MasterDataRepository({
+      client: { [names[resource]]: { findMany, count } },
+    } as unknown as DatabaseService);
+    await repository.list(resource, {
+      search: '3000001',
+      status: 'all',
+      sortBy: 'code',
+      sortDirection: 'asc',
+      page: 1,
+      pageSize: 20,
+    });
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            { accountingCode: { contains: '3000001', mode: 'insensitive' } },
+          ]),
+        }),
+      }),
+    );
+  },
+);

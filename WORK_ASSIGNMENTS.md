@@ -1,3 +1,7 @@
+## ORGANIZATION-CODE-DISPLAY-1102 — PC-B — IMPLEMENTED / LOCAL VERIFIED
+
+Extend branch1285 for numeric company code display in profiles/lists/selectors/wizard and search/sort/export. Preserve legacy code and IDs in all write payloads; no migration. User requests this display replacement and localhost3100 activation.
+
 ## PARTNER-ACCOUNTING-CODES-1102 — PC-B — IMPLEMENTED / LOCAL VERIFIED
 
 User authorizes persisted chronological company codes (shared agencies/suppliers/brokers, 3000001+) and bank-account codes (5000001+), existing-data backfill and localhost3100 activation. Branch codex/pc-b-partner-accounting-codes-1102 from develop87cc38f1f. Reserve sole additive schema/migration scope for accountingCode on MasterOrganization/MasterSupplier/MasterBroker/FinanceSettlementAccount, owner API projections, B2B public reference/profile, readonly profile displays and targeted tests. Prior schema scopes are published; current hotel-access task edits only editable-field catalog, excluded here. Preserve existing business codes, permissions, identifiers, financial records and peer work. Optional additive output contracts; no editable field or new input permission. Source workbook defines prefixes; no operational data in Git. Back up local DB before apply; no production rollout.

@@ -4,7 +4,7 @@ import type { MasterDataRecord } from '@nora/contracts';
 import { MasterDataProfileIdentity } from './master-data-profile-details';
 
 describe('partner accounting identity', () => {
-  it('shows the stored code separately without making it editable', () => {
+  it('shows the numeric organization code instead of the legacy code', () => {
     const record = {
       id: 'partner',
       code: 'ORG-EXISTING',
@@ -19,9 +19,9 @@ describe('partner accounting identity', () => {
         title="Synthetic"
       />,
     );
-    expect(html).toContain('کد تفصیلی حسابداری');
+    expect(html).not.toContain('کد تفصیلی حسابداری');
     expect(html).toContain('3000001');
-    expect(html).toContain('ORG-EXISTING');
+    expect(html).not.toContain('ORG-EXISTING');
     expect(html).not.toContain('<input');
   });
 });

@@ -1,4 +1,5 @@
 'use client';
+import { masterDataDisplayCode } from '@/lib/master-data-display-code';
 
 import type { MasterDataRecord, B2bCooperationRole } from '@nora/contracts';
 import {
@@ -558,11 +559,7 @@ export function CorporateProfile({
                       'نقش فعال',
                       cooperationLabel(organization.attributes.roleCodes),
                     ],
-                    ['کد سازمان', organization.code],
-                    [
-                      'کد تفصیلی حسابداری',
-                      organization.attributes.accountingCode || '—',
-                    ],
+                    ['کد سازمان', masterDataDisplayCode(organization)],
                     [
                       'آخرین تغییر',
                       new Date(organization.updatedAt).toLocaleDateString(

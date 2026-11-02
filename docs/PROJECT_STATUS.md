@@ -1,3 +1,6 @@
+## ORGANIZATION-CODE-DISPLAY-1102 — PC-B
+
+Company numbers now replace legacy organization codes in visible profiles/lists/selectors/forms and Excel output; separate accounting-code label removed for companies. Historical codes, IDs and contract writes preserved. Numeric search and backward-compatible Excel matching covered. Local3100 updated; details in docs/tasks/PARTNER-ACCOUNTING-CODES-1102.md.
 ## PARTNER-ACCOUNTING-CODES-1102 — PC-B — LOCAL VERIFIED
 
 Readonly chronological company/bank accounting codes implemented and activated on Rubi3100. Existing data preserved; shared company identities keep the same code across roles. See docs/tasks/PARTNER-ACCOUNTING-CODES-1102.md for tests, migration and deployment. No production rollout.
