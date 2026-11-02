@@ -100,7 +100,7 @@ export function WorkbenchPerformance() {
           </div>
           <div className="flex items-center gap-2">
             <WorkbenchSelect
-              label="بازه عملکرد"
+              label="بازه زمانی"
               value={days}
               onValueChange={reload}
               options={[
