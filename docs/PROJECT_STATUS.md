@@ -1,3 +1,7 @@
+## EMPLOYEE-IDENTIFICATION-CODES-1102 — PC-B
+
+Employee identification codes2000001+ added beside unchanged personnel codes; chronological additive backfill and immutable automatic allocation. Local18 employees backfilled with all prior columns preserved. Responsive two-column profile and readonly create/edit field. See docs/tasks/EMPLOYEE-IDENTIFICATION-CODES-1102.md for deployment and verification.
+
 ## CUSTOMER-CODES-1102 — PC-B — LOCAL VERIFIED
 
 Customer codes4000001+ allocated by creation date/id, readonly below national ID. Three existing local records backfilled without changing prior columns; automatic immutable codes for new customers. API/web builds, 53 API tests, 44 web tests and isolated SQL checks passed. No production rollout. See docs/tasks/CUSTOMER-CODES-1102.md.

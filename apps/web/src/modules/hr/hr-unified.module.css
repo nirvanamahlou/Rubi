@@ -1231,3 +1231,24 @@ a.card:hover {
 .reportChoices summary {
   cursor: pointer;
 }
+
+.employeeProperties {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.employeeProperties > div {
+  padding: 16px 20px;
+}
+.employeeProperties > div:nth-child(odd) {
+  border-inline-end: 1px solid var(--border);
+}
+@media (max-width: 640px) {
+  .employeeProperties {
+    grid-template-columns: 1fr;
+  }
+  .employeeProperties > div:nth-child(odd) {
+    border-inline-end: 0;
+  }
+}

@@ -3616,6 +3616,7 @@ model DocumentProcessingJob {
 
 // HR-005: additive HR boundary; immutable event/ledger rows, soft-deleted aggregates.
 model HrEmployee {
+  identificationCode     String?                     @unique @map("identification_code") @db.VarChar(7)
   jobTitleId             String?                     @map("job_title_id") @db.Uuid
   jobTitle               HrRecord?                   @relation("HrEmployeeJobTitle", fields: [jobTitleId], references: [id], onDelete: Restrict)
   financePayrollRequests FinanceOperationalRequest[]
