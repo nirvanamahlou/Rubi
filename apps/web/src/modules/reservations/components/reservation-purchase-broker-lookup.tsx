@@ -1,4 +1,5 @@
-'use client';
+import { purchaseApiRoot } from './purchase-api-root';
+('use client');
 
 import { useEffect, useState } from 'react';
 import { brokerEnglishDisplayName } from '@nora/contracts';
@@ -19,14 +20,17 @@ export function purchaseBrokerOption(broker: Broker): SearchOption {
   };
 }
 
-export async function loadPurchaseBrokers(requestId: string) {
+export async function loadPurchaseBrokers(
+  requestId: string,
+  purchaseRoot?: string,
+) {
   const brokers: SearchOption[] = [];
   for (let page = 1; ; page += 1) {
     const result = await travelRequest<{
       data: Broker[];
       meta: { total: number };
     }>(
-      `reservations/requests/${encodeURIComponent(requestId)}/voucher-brokers?page=${page}`,
+      `${purchaseApiRoot(requestId, purchaseRoot)}/voucher-brokers?page=${page}`,
     );
     brokers.push(...result.data.map(purchaseBrokerOption));
     if (!result.data.length || brokers.length >= result.meta.total)
@@ -46,11 +50,13 @@ export function selectedPurchaseBrokerLabel(
 
 export function ReservationPurchaseBrokerLookup({
   requestId,
+  purchaseRoot,
   label,
   value,
   onChange,
 }: {
   requestId: string;
+  purchaseRoot?: string | undefined;
   label: string;
   value: Option | null;
   onChange: (value: Option | null) => void;
@@ -62,7 +68,7 @@ export function ReservationPurchaseBrokerLookup({
   }>();
   useEffect(() => {
     let live = true;
-    void loadPurchaseBrokers(requestId).then(
+    void loadPurchaseBrokers(requestId, purchaseRoot).then(
       (options) => {
         if (live) setDirectory({ requestId, options });
       },
@@ -78,14 +84,14 @@ export function ReservationPurchaseBrokerLookup({
     return () => {
       live = false;
     };
-  }, [requestId]);
+  }, [requestId, purchaseRoot]);
   const options =
     directory && directory.requestId === requestId ? directory.options : [];
   const error =
     directory?.requestId === requestId ? directory?.error : undefined;
   return (
     <SearchCombobox
-      label={label}
+      label={purchaseRoot ? label.replace(/کارگزار/g, 'آژانس') : label}
       value={value?.id ?? ''}
       selectedLabel={selectedPurchaseBrokerLabel(options, value)}
       options={options}

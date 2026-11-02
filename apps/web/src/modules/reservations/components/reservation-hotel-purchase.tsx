@@ -1,4 +1,7 @@
-'use client';
+import { purchaseApiRoot } from './purchase-api-root';
+import { PurchaseCurrencyLookup } from './purchase-currency-lookup';
+import { isFloatingSalesContract } from '@nora/contracts';
+('use client');
 import { HotelStayPurchases } from './hotel-stay-purchase';
 import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';
@@ -187,6 +190,7 @@ export function SupplierFormPurchaseContext({
   request,
 }: {
   request: PurchaseRequest;
+  purchaseRoot?: string | undefined;
 }) {
   const settings = request.workflow?.sentSupplierFormSettings;
   if (!settings) return null;
@@ -256,6 +260,11 @@ export function ReservationHotelPurchase(props: {
   request: PurchaseRequest;
   onSaved: () => void;
 }) {
+  if (
+    !props.purchaseRoot &&
+    isFloatingSalesContract(props.request.snapshot.serviceSelections)
+  )
+    return <p>خرید شناوری از بخش پرداخت فروش ثبت می‌شود.</p>;
   const request = {
     ...props.request,
     snapshot: props.request.purchaseSnapshot ?? props.request.snapshot,
@@ -270,6 +279,7 @@ export function ReservationHotelPurchase(props: {
 }
 export function LegacyReservationHotelPurchase({
   request,
+  purchaseRoot,
   onSaved,
 }: {
   request: PurchaseRequest;
@@ -503,7 +513,7 @@ export function LegacyReservationHotelPurchase({
         attempt.current = { payload, key: crypto.randomUUID() };
       const send = () =>
         fetch(
-          `${base}/reservations/requests/${encodeURIComponent(request.id)}/purchase-batches`,
+          `${base}/${purchaseApiRoot(request.id, purchaseRoot)}/purchase-batches`,
           {
             method: 'POST',
             credentials: 'include',
@@ -551,7 +561,7 @@ export function LegacyReservationHotelPurchase({
         </p>
       </div>
       {request.snapshot.serviceSelections
-        .filter((service) => service.kind === 'INSURANCE')
+        .filter((service) => !purchaseRoot && service.kind === 'INSURANCE')
         .map((service) => (
           <ReservationInsurancePurchase
             key={service.clientKey}
@@ -569,21 +579,32 @@ export function LegacyReservationHotelPurchase({
               hotel.titleSnapshot}
           </h4>
           <div className="grid gap-3 sm:grid-cols-2">
-            <FormField label="کارگزار هتل">
+            <FormField label={purchaseRoot ? 'آژانس هتل' : 'کارگزار هتل'}>
               <ReservationPurchaseBrokerLookup
+                purchaseRoot={purchaseRoot}
                 requestId={request.id}
-                label="کارگزار هتل"
+                label={purchaseRoot ? 'آژانس هتل' : 'کارگزار هتل'}
                 value={hotelSupplier}
                 onChange={setHotelSupplier}
               />
             </FormField>
             <FormField label="ارز خرید هتل">
-              <Lookup
-                kind="currencies"
-                label="ارز خرید هتل"
-                value={hotelCurrency}
-                onChange={setHotelCurrency}
-              />
+              {purchaseRoot ? (
+                <PurchaseCurrencyLookup
+                  requestId={request.id}
+                  purchaseRoot={purchaseRoot}
+                  label="ارز خرید هتل"
+                  value={hotelCurrency}
+                  onChange={setHotelCurrency}
+                />
+              ) : (
+                <Lookup
+                  kind="currencies"
+                  label="ارز خرید هتل"
+                  value={hotelCurrency}
+                  onChange={setHotelCurrency}
+                />
+              )}
             </FormField>
           </div>
           <p className="text-sm">
@@ -716,8 +737,11 @@ export function LegacyReservationHotelPurchase({
                 </p>
               )}
               <div className="grid gap-3 sm:grid-cols-2">
-                <FormField label="کارگزار ترانسفر">
+                <FormField
+                  label={purchaseRoot ? 'آژانس ترانسفر' : 'کارگزار ترانسفر'}
+                >
                   <ReservationPurchaseBrokerLookup
+                    purchaseRoot={purchaseRoot}
                     requestId={request.id}
                     label={title + ' · کارگزار ترانسفر'}
                     value={
@@ -779,6 +803,7 @@ export function LegacyReservationHotelPurchase({
           ))}
           {[...totals.keys()].map((code) => (
             <PurchaseFxRate
+              purchaseRoot={purchaseRoot}
               key={code}
               currencyCode={code}
               value={fxRates[code] ?? ''}
@@ -824,23 +849,28 @@ export function LegacyReservationHotelPurchase({
 export function ReservationPurchaseDialog({
   id,
   category = 'ALL',
+  salesContractId,
   serviceClientKey,
   readOnly = false,
   onSaved,
 }: {
   id: string;
+  salesContractId?: string | undefined;
   category?: 'ALL' | 'HOTEL' | 'FLIGHT' | 'TRANSFER' | 'INSURANCE';
   serviceClientKey?: string | undefined;
   readOnly?: boolean;
   onSaved?: (() => void) | undefined;
 }) {
+  const purchaseRoot = salesContractId
+    ? 'sales/contracts/' + encodeURIComponent(salesContractId) + '/purchases'
+    : undefined;
   const [request, setRequest] = useState<PurchaseRequest>();
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
   useEffect(() => {
     let live = true;
     void travelRequest<{ data: PurchaseRequest }>(
-      `reservations/requests/${id}/purchase-context`,
+      `${purchaseApiRoot(id, purchaseRoot)}/purchase-context`,
     )
       .then((response) => {
         if (live) setRequest(response.data);
@@ -851,14 +881,22 @@ export function ReservationPurchaseDialog({
     return () => {
       live = false;
     };
-  }, [id, refresh]);
+  }, [id, refresh, purchaseRoot]);
   if (error) return <p role="alert">{error}</p>;
+  if (
+    request &&
+    !salesContractId &&
+    category !== 'INSURANCE' &&
+    isFloatingSalesContract(request.snapshot.serviceSelections)
+  )
+    return <p>خرید شناوری از بخش پرداخت فروش ثبت می‌شود.</p>;
   return request ? (
     <>
       {readOnly ? (
         <p>مجوز ثبت یا اصلاح خرید خدمات وجود ندارد.</p>
       ) : category === 'FLIGHT' ? (
         <ReservationFloatingFlightPurchase
+          purchaseRoot={purchaseRoot}
           request={request}
           serviceClientKey={serviceClientKey}
           onSaved={() => {
@@ -880,6 +918,7 @@ export function ReservationPurchaseDialog({
         <>
           <ReservationHotelPurchase
             key={request.purchaseVersion}
+            purchaseRoot={purchaseRoot}
             request={request}
             onSaved={() => {
               setRefresh((value) => value + 1);
@@ -896,6 +935,7 @@ export function ReservationPurchaseDialog({
             .map((service) => (
               <ReservationFloatingFlightPurchase
                 key={service.clientKey + ':' + request.purchaseVersion}
+                purchaseRoot={purchaseRoot}
                 request={request}
                 serviceClientKey={service.clientKey}
                 onSaved={() => {

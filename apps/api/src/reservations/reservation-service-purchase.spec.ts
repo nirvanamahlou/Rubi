@@ -903,6 +903,16 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
   const service = new ReservationServicePurchaseService(
     db as never,
     directory as never,
+    undefined,
+    undefined,
+    undefined,
+    {
+      agencyPurchaseReference: vi.fn().mockResolvedValue({
+        id: valid.supplierOrganizationId,
+        source: 'ORGANIZATION',
+        name: 'Agency',
+      }),
+    } as never,
   );
   const actor = {
     userId: 'actor',
@@ -914,7 +924,27 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
       'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       { ...valid, serviceClientKey: 'floating' },
       actor,
+      'reservation-denied',
+    ),
+  ).rejects.toThrow();
+  expect(create).not.toHaveBeenCalled();
+  await expect(
+    service.record(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      { ...valid, serviceClientKey: 'floating' },
+      actor,
+      'wrong-contract',
+      'other',
+    ),
+  ).rejects.toThrow();
+  expect(create).not.toHaveBeenCalled();
+  await expect(
+    service.record(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      { ...valid, serviceClientKey: 'floating' },
+      actor,
       'floating-cost-key',
+      'contract',
     ),
   ).resolves.toMatchObject({ data: { id: 'floating-cost' } });
   expect(audit).toHaveBeenCalledWith(
@@ -935,7 +965,8 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
         serviceKind: 'FLIGHT',
         amount: '1250000',
         currencyCode: 'IRR',
-        supplierBrokerId: valid.supplierOrganizationId,
+        supplierOrganizationId: valid.supplierOrganizationId,
+        supplierBrokerId: null,
       }),
     }),
   );

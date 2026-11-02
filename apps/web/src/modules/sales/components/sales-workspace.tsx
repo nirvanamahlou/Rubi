@@ -90,7 +90,7 @@ export function ContractListNumber({
 }: {
   contract: Pick<
     SalesContractSummary,
-    'contractNumber' | 'reservationContractChanged'
+    'contractNumber' | 'reservationContractChanged' | 'isFloating'
   >;
 }) {
   return (
@@ -107,6 +107,11 @@ export function ContractListNumber({
       <div className="inline-flex items-center gap-2 rounded-lg border border-primary/15 bg-primary/[0.055] px-2.5 py-1.5 text-primary shadow-sm">
         <FileText className="size-3.5" />
         <span dir="ltr">{contract.contractNumber}</span>
+        {contract.isFloating && (
+          <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-900">
+            شناوری
+          </span>
+        )}
       </div>
     </td>
   );

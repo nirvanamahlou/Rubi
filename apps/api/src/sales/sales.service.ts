@@ -1,3 +1,4 @@
+import { isFloatingSalesContract } from '@nora/contracts';
 import { contractPassengerAgeCategory } from './sales.domain';
 import {
   readLegacyServiceParties,
@@ -207,6 +208,7 @@ export function presentSalesContract(
   paymentCreatorNames: ReadonlyMap<string, string> = new Map(),
   buyerCrypto?: SalesBuyerContactCrypto,
 ): SalesContractDetail {
+  const isFloating = isFloatingSalesContract(row.services);
   const priceComponents = row.priceComponents.map((item) => ({
     type: item.type,
     title: item.title,
@@ -276,6 +278,7 @@ export function presentSalesContract(
     tripType: row.tripType,
     payerCustomerId: row.payerCustomerId,
     servicesDetail,
+    isFloating,
     passengersDetail: row.passengers.map((passenger) => ({
       id: passenger.id,
       customerId: passenger.customerId,
@@ -442,6 +445,7 @@ export function presentSalesContract(
 function summary(detail: SalesContractDetail): SalesContractSummary {
   return {
     ...salesListTravelSummary(detail),
+    isFloating: detail.isFloating === true,
     id: detail.id,
     contractNumber: detail.contractNumber,
     customerId: detail.customerId,

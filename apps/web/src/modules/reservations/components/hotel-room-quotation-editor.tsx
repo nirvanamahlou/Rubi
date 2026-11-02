@@ -12,6 +12,7 @@ import { ReservationCurrencySelect } from './reservation-currencies';
 export function HotelRoomQuotationEditor({
   draft,
   requestId,
+  purchaseRoot,
   update,
   currencies,
   busy,
@@ -20,6 +21,7 @@ export function HotelRoomQuotationEditor({
 }: {
   draft: VoucherSettingsV1;
   requestId: string;
+  purchaseRoot?: string | undefined;
   update: (value: VoucherSettingsV1) => void;
   currencies: readonly { code: string; name: string }[];
   busy: boolean;
@@ -207,7 +209,7 @@ export function HotelRoomQuotationEditor({
               })
             }
           />
-          ترانسفر از کارگزار دیگر
+          {purchaseRoot ? 'ترانسفر از آژانس دیگر' : 'ترانسفر از کارگزار دیگر'}
         </label>
         <label className="flex items-center gap-2">
           <input
@@ -232,15 +234,20 @@ export function HotelRoomQuotationEditor({
               })
             }
           />
-          کارگزار رفت و برگشت جدا
+          {purchaseRoot ? 'آژانس رفت و برگشت جدا' : 'کارگزار رفت و برگشت جدا'}
         </label>
         {(draft.hotelTransferSeparate ?? false) && (
           <ReservationPurchaseBrokerLookup
+            purchaseRoot={purchaseRoot}
             requestId={requestId}
             label={
-              draft.hotelTransferSplit
-                ? 'کارگزار ترانسفر رفت'
-                : 'کارگزار ترانسفر'
+              purchaseRoot
+                ? draft.hotelTransferSplit
+                  ? 'آژانس ترانسفر رفت'
+                  : 'آژانس ترانسفر'
+                : draft.hotelTransferSplit
+                  ? 'کارگزار ترانسفر رفت'
+                  : 'کارگزار ترانسفر'
             }
             value={
               draft.transferBrokerId
@@ -340,8 +347,11 @@ export function HotelRoomQuotationEditor({
               </bdi>
             </p>
             <ReservationPurchaseBrokerLookup
+              purchaseRoot={purchaseRoot}
               requestId={requestId}
-              label="کارگزار ترانسفر برگشت"
+              label={
+                purchaseRoot ? 'آژانس ترانسفر برگشت' : 'کارگزار ترانسفر برگشت'
+              }
               value={
                 draft.hotelTransferReturn?.brokerId
                   ? {
