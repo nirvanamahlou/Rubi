@@ -40,6 +40,11 @@ export function validateVoucherSettings(
   if (!value || typeof value !== 'object') return fail();
   const v = value as VoucherSettingsV1;
   if (
+    v.sharedHotelBroker !== undefined &&
+    typeof v.sharedHotelBroker !== 'boolean'
+  )
+    throw Error('تنظیمات فرم معتبر نیست.');
+  if (
     [v.hotelTransferSeparate, v.hotelTransferSplit].some(
       (flag) => flag !== undefined && typeof flag !== 'boolean',
     )
@@ -271,6 +276,9 @@ export function validateVoucherSettings(
       return fail();
   }
   return {
+    ...(v.sharedHotelBroker !== undefined
+      ? { sharedHotelBroker: v.sharedHotelBroker }
+      : {}),
     ...(v.hotelTransferSeparate !== undefined
       ? { hotelTransferSeparate: v.hotelTransferSeparate }
       : {}),

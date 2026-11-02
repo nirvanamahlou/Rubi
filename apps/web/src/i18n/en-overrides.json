@@ -2799,7 +2799,6 @@
   "دریافت نرخ خرید هتل انجام نشد؛ مبلغ را دستی وارد کنید.": "Could not load the hotel purchase rate; enter the amount manually.",
   "پاک‌کردن مبلغ فرم": "Clear form amount",
   "افزودن ارز": "Add currency",
-  "ارز هتل": "Hotel currency",
   "مبلغ هتل": "Hotel amount",
   "آماده مشاهده": "Ready to view",
   "ارسال به پکیج‌های روز": "Send to daily packages",
@@ -4794,5 +4793,8 @@
   "دامنه شعبه معتبر نیست.": "Invalid branch scope.",
   "والد اطلاعات مشترک باید برای همه شعبه‌ها تعریف شده باشد.": "The parent of a shared definition must be available in every branch.",
   "ویرایش اطلاعات مشترک نیازمند دسترسی همه شعبه‌ها است.": "Editing a shared definition requires access to every affected branch.",
-  "و این فیلترها روی فهرست مخاطبان اعمال می‌شوند. شماره مشترک به معنی یک شخص نیست.": "These filters apply to the contact list. A shared number does not identify a single person."
+  "و این فیلترها روی فهرست مخاطبان اعمال می‌شوند. شماره مشترک به معنی یک شخص نیست.": "These filters apply to the contact list. A shared number does not identify a single person.",
+  "کارگزار مشترک برای همه هتل‌ها": "Use one supplier for all hotels",
+  "قیمت هر هتل را جدا ذخیره کنید؛ سپس از هتل اول یک فرم مشترک صادر کنید.": "Save each hotel quotation, then issue one combined form from the first hotel.",
+  "ابتدا فرم همه هتل‌ها را با کارگزار مشترک ذخیره کنید.": "First save every hotel form with the same supplier."
 }

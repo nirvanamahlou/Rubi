@@ -1,3 +1,4 @@
+import { sharedHotelSupplierScopes } from '../model/shared-hotel-supplier-form';
 import { supplierPriceTableData } from '../model/supplier-form-prices';
 import { voucherPdfHtml } from './voucher-pdf-html';
 import { reservationFormFooterHtml } from '../model/reservation-form-footer';
@@ -118,25 +119,30 @@ export function reservationPdfHtml(
     ${
       settings?.flags.hotel === false
         ? ''
-        : `    ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
-            [
-              'HOTEL',
-              'CITY',
-              'STAR',
-              'SERVICE',
-              ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
-            ],
-            [
-              [
-                data.hotel,
-                data.destination,
-                data.stars,
-                data.meal,
-                ...(!data.roomBreakdown.length ? [data.roomType] : []),
-              ],
-            ],
-            'hotelInformation',
-          )}
+        : (voucher ? [intake] : sharedHotelSupplierScopes(intake))
+            .map((hotelIntake) => {
+              const data = voucher
+                ? voucherFormData(hotelIntake, refs)
+                : supplierFormData(hotelIntake, refs);
+              return `    ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
+                [
+                  'HOTEL',
+                  'CITY',
+                  'STAR',
+                  'SERVICE',
+                  ...(!data.roomBreakdown.length ? ['ROOM TYPE'] : []),
+                ],
+                [
+                  [
+                    data.hotel,
+                    data.destination,
+                    data.stars,
+                    data.meal,
+                    ...(!data.roomBreakdown.length ? [data.roomType] : []),
+                  ],
+                ],
+                'hotelInformation',
+              )}
     ${
       data.roomBreakdown.length
         ? table(
@@ -158,7 +164,9 @@ export function reservationPdfHtml(
         : ''
     }
     <table class="table"><tbody><tr><th>CHECK-IN</th><td>${escape(data.checkIn)}</td><th>CHECK-OUT</th><td>${escape(data.checkOut)}</td></tr></tbody></table>
-`
+${!voucher && sharedHotelSupplierScopes(intake).length > 1 ? heading('03P', 'PRICES', data.hotel) + table(supplierPriceTableData(hotelIntake).headers, supplierPriceTableData(hotelIntake).rows) : ''}`;
+            })
+            .join('')
     }
     ${
       intake.snapshot.serviceSelections.some((s) => s.kind === 'TRANSFER')
@@ -211,7 +219,7 @@ export function reservationPdfHtml(
       'passengers',
       people.map((p) => p.differentStay === true),
     )}
-    ${!voucher ? heading('06', 'PRICES', 'Supplier quotation') + table(supplierPriceTableData(intake).headers, supplierPriceTableData(intake).rows) : ''}${heading(voucher ? '06' : '07', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
+    ${!voucher && sharedHotelSupplierScopes(intake).length < 2 ? heading('06', 'PRICES', 'Supplier quotation') + table(supplierPriceTableData(intake).headers, supplierPriceTableData(intake).rows) : ''}${!voucher && sharedHotelSupplierScopes(intake).length > 1 ? '<section style="break-inside:avoid">' : ''}${heading(voucher ? '06' : '07', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}${!voucher && sharedHotelSupplierScopes(intake).length > 1 ? '</section>' : ''}
     <footer class="footer"><div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin, intake.workflow.branding?.companyCode, data.brand, publicDocumentUrl)}</div><div><span></span></div>${voucher ? `<b>${index + 1} / ${pageCount}</b>` : ''}</footer></article>`;
     })
     .join('');

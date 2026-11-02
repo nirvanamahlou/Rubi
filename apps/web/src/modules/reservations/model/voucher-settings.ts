@@ -102,6 +102,9 @@ export function defaultVoucherSettings(
   };
   if (!saved) return contractRoomDefaults(defaults);
   return contractRoomDefaults({
+    ...(saved.sharedHotelBroker !== undefined
+      ? { sharedHotelBroker: saved.sharedHotelBroker }
+      : {}),
     ...(saved.hotelTransferSeparate !== undefined
       ? { hotelTransferSeparate: saved.hotelTransferSeparate }
       : {}),
