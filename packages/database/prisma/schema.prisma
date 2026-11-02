@@ -2986,6 +2986,7 @@ enum CustomerDuplicateReviewStatus {
 }
 
 model Customer {
+  customerCode String? @unique @db.VarChar(7)
   insurancePolicies          ReservationInsurancePolicy[]
   marketingPromotions        MarketingAsset[]             @relation("MarketingPromotionCustomer")
   reservationTicketDocuments ReservationTicketDocument[]

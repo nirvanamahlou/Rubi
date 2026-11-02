@@ -1,3 +1,7 @@
+## CUSTOMER-CODES-1102 — PC-B — IMPLEMENTED / LOCAL VERIFIED
+
+User explicitly extends coding to Customer records and readonly field below national ID. Reserve Customer.customerCode additive schema/migration (sole current migration scope), Customer public projection/optional output contract, customer dossier UI and focused tests. Customer owner boundary preserved through own API; no edits to sales/contract identities or inputs. Back up/rehearse local backfill; no production deployment.
+
 ## ORGANIZATION-CODE-DISPLAY-1102 — PC-B — IMPLEMENTED / LOCAL VERIFIED
 
 Extend branch1285 for numeric company code display in profiles/lists/selectors/wizard and search/sort/export. Preserve legacy code and IDs in all write payloads; no migration. User requests this display replacement and localhost3100 activation.

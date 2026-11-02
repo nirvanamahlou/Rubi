@@ -1,3 +1,7 @@
+## Customer identification code — 2026-11-02
+
+Customer.customerCode is a unique seven-digit database-generated identifier starting4000001. Migration20261102140000_customer_codes backfills all existing customers by createdAt then id, including inactive records. A sequence allocates future codes atomically; a trigger rejects user-supplied inserts and changes. The nullable Prisma/output shape is backward compatible; the database CHECK requires assigned valid values. Existing IDs and contract references remain unchanged. Codes are local to each database and are not cross-environment identity keys.
+
 ## Package publication before flight settlement — 2026-10-31
 
 PackagePricingTourPublishedVersion.outboundCostRevisionId becomes nullable, retaining the existing restrictive FinanceTicketPurchaseCostRevision FK and all historical values. Migration20261031180000_package_publication_optional_flight_cost only drops NOT NULL. A new publication without full paid flight costs stores unknown package purchase/profit as NULL, while hotel purchase and sale prices remain real and independently available. No artificial cost revision or zero-cost assumption is introduced. Apply the migration before the matching API; reverting NOT NULL requires explicit handling of new NULL publications and must never invent costs/delete history. Sales-only published-price projection remains cost-free; optional/nullable operational cost evidence is not a release or payment authorization.

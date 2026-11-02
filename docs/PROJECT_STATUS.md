@@ -1,3 +1,7 @@
+## CUSTOMER-CODES-1102 — PC-B — LOCAL VERIFIED
+
+Customer codes4000001+ allocated by creation date/id, readonly below national ID. Three existing local records backfilled without changing prior columns; automatic immutable codes for new customers. API/web builds, 53 API tests, 44 web tests and isolated SQL checks passed. No production rollout. See docs/tasks/CUSTOMER-CODES-1102.md.
+
 ## ORGANIZATION-CODE-DISPLAY-1102 — PC-B
 
 Company numbers now replace legacy organization codes in visible profiles/lists/selectors/forms and Excel output; separate accounting-code label removed for companies. Historical codes, IDs and contract writes preserved. Numeric search and backward-compatible Excel matching covered. Local3100 updated; details in docs/tasks/PARTNER-ACCOUNTING-CODES-1102.md.
