@@ -662,5 +662,6 @@
   "حجم هر تصویر باید حداکثر ۴ مگابایت باشد.": "Each image must be no larger than 4 MB.",
   "خواندن تصویر انجام نشد.": "Could not read the image.",
   "ردیف؛ حداکثر ۵۰ ردیف در پیش‌نمایش نمایش داده می‌شود.": "rows; preview displays up to 50 rows.",
-  "نوع اتاق سطر": "Room type for row"
+  "نوع اتاق سطر": "Room type for row",
+  "مسئول عملیات، کاربر واردشدهٔ نوراست؛ دسترسی سایت برای کاربران مجاز این بخش به‌صورت پیش‌فرض کامل است.": "The signed-in Nora user is responsible for operations; authorized users of this section receive full site access by default."
 }
