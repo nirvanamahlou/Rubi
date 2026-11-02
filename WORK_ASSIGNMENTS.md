@@ -10607,3 +10607,5 @@ AMEND-FLIGHT-DATE-SYNC-1102: four new stale-bound cases reproduced before correc
 ## CALL-FILTER-LAYOUT-1102 — PC-C — IN_PROGRESS
 
 Owner explicitly authorizes moving Tehran date range between contact search and advanced toggle and laying contact-detail filters in one desktop row. Reserve Call Center workspace.tsx and scoped CSS plus own notes. Preserve date semantics, filters, handlers and all other approved UI; no API/data/schema/dependency/runtime changes.
+
+CALL-FILTER-LAYOUT-1102 — SOURCE_READY: scoped lint, Web typecheck and production build passed with equivalent candidate copies in dependency-equipped checkout. PR1297; source scope frozen on publication. No server deployment or data/filter semantics change.
