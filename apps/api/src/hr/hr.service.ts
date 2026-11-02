@@ -570,14 +570,17 @@ export class HrService {
                     {
                       section: 'time',
                       tab: 'attendance',
-                      OR: [
+                      AND: [
                         {
-                          effectiveAt: {
-                            gte: validate.isoDate(periods.quarterFrom),
-                            lte: validate.isoDate(periods.today),
+                          values: {
+                            path: ['1'],
+                            gte: [
+                              periods.quarterFrom,
+                              periods.daily,
+                            ].sort()[0]!,
                           },
                         },
-                        { effectiveAt: null },
+                        { values: { path: ['1'], lte: periods.today } },
                       ],
                     },
                     {
