@@ -2,7 +2,6 @@
 import { purchaseApiRoot } from './purchase-api-root';
 import { PurchaseCurrencyLookup } from './purchase-currency-lookup';
 import { isFloatingSalesContract } from '@nora/contracts';
-('use client');
 import { HotelStayPurchases } from './hotel-stay-purchase';
 import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';

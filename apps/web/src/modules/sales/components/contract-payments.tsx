@@ -1,6 +1,5 @@
 'use client';
 import { ReservationPurchaseDialog } from '@/modules/reservations/components/reservation-hotel-purchase';
-('use client');
 import {
   paymentReceiptsApi,
   type PaymentReceiptEntry,

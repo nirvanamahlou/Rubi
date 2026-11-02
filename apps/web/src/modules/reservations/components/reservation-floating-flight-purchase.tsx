@@ -1,7 +1,6 @@
 'use client';
 import { purchaseApiRoot } from './purchase-api-root';
 import { PurchaseCurrencyLookup } from './purchase-currency-lookup';
-('use client');
 import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';
 import { useCallback, useRef, useState } from 'react';

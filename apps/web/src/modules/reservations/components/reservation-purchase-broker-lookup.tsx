@@ -1,6 +1,5 @@
 'use client';
 import { purchaseApiRoot } from './purchase-api-root';
-('use client');
 
 import { useEffect, useState } from 'react';
 import { brokerEnglishDisplayName } from '@nora/contracts';

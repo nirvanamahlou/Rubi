@@ -1,6 +1,5 @@
 'use client';
 import { purchaseApiRoot } from './purchase-api-root';
-('use client');
 import { useEffect, useState } from 'react';
 import { travelRequest } from './travel-workflow-form';
 import { SearchCombobox } from '@/components/ui/search-combobox';
