@@ -10607,3 +10607,7 @@ AMEND-FLIGHT-DATE-SYNC-1102: four new stale-bound cases reproduced before correc
 ## WORKBENCH-ATTENDANCE-SUMMARY-1102 — PC-B — IN_PROGRESS
 
 COMPUTER_ID=PC-B; branch codex/pc-b-workbench-attendance-summary-1102 from develop659090fe1. Reserve HR self-performance projection, Workbench performance consumer/card UI and focused tests. HR producer accepts an optional selected-day window; existing callers retain monthly behavior. Preserve own-user/branch scoping and Radan ingestion. User authorizes local3100 activation and push/develop merge after gates. No schema/dependency or production change.
+
+## HR-DASHBOARD-LIVE-1102 — PC-B — IN_PROGRESS
+
+Reserve HR dashboard domain/service bounded query, dashboard cards/charts and tests. User requests actual API data,current Persian season,newest-first30-day attendance and push/develop merge. Preserve HR scope and Radan source dates; no migration/dependencies or deployment.

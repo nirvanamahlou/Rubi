@@ -8387,3 +8387,7 @@ Explicit catalog flight replacement or applied manual flight edits now reconcile
 ## WORKBENCH-ATTENDANCE-SUMMARY-1102 — PC-B
 
 Selected30/90/365-day filter now reaches HR own attendance aggregation using Tehran calendar dates. Completed measurements remain summed when another day is incomplete; unknown-only totals remain null. Daily Radan-backed own punches and identity/branch guards preserved. Metric explanatory captions removed. 25 focused API and3 Web checks,scoped lint,types and API/Web production builds pass. Local3100 and4192 healthy; native30/90-day requests succeed. Existing active local account has no employee link; none inferred. Final-head CI precedes develop merge; no migration or production deployment.
+
+## HR-DASHBOARD-LIVE-1102 — PC-B
+
+Dashboard uses current Tehran/Persian season through today, descending30-day attendance and real daily attendance overtime in cards. A valid first entry counts presence before checkout; latest per-employee/day prevents duplicates. Business-date query preserves rolling30 days across season boundaries. Today refreshes with native store polling; leave card counts unique staff across supported approved leave sources. No schema/dependency or source date rewrite. Focused and final-head checks precede user-authorized develop merge.
