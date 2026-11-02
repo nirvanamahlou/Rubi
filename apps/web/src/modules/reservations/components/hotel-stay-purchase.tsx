@@ -79,6 +79,7 @@ export function HotelStayPurchases({
   );
 }
 export function HotelStayPurchase({
+  onStage,
   request,
   purchaseRoot,
   stayKey,
@@ -86,6 +87,7 @@ export function HotelStayPurchase({
 }: {
   request: Request;
   purchaseRoot?: string | undefined;
+  onStage?: (body: ReservationPurchaseBatchInputV1) => void;
   stayKey: string;
   onSaved: () => void;
 }) {
@@ -289,10 +291,11 @@ export function HotelStayPurchase({
       );
       const trf = draft.supplierFormPrices?.transferPp;
       if (
-        !trf ||
-        !currencies.currencies.some((c) => c.code === trf.currencyCode) ||
-        !Number.isSafeInteger(count) ||
-        count < 0
+        transferKeys.length > 0 &&
+        (!trf ||
+          !currencies.currencies.some((c) => c.code === trf.currencyCode) ||
+          !Number.isSafeInteger(count) ||
+          count < 0)
       )
         throw Error(
           'قیمت، ارز و تعداد ترانسفر همین هتل را تکمیل کنید؛ صفر مجاز است.',
@@ -304,7 +307,8 @@ export function HotelStayPurchase({
       );
 
       // A blank rate must never become an invented zero even when count is zero.
-      reservationServicePurchaseTotal(trf.amount, '1', 1);
+      if (transferKeys.length && trf)
+        reservationServicePurchaseTotal(trf.amount, '1', 1);
       if (draft.hotelTransferSplit && !returnKey)
         throw Error(
           'خدمات خرید باید دقیقاً با هتل و ترانسفرهای قرارداد منطبق باشند.',
@@ -315,52 +319,54 @@ export function HotelStayPurchase({
       const groups = draft.hotelTransferSplit
         ? [[outboundKey], [returnKey!]]
         : [transferKeys];
-      const transferRows = groups.map((keys, index) => {
-        const price = index === 1 ? draft.hotelTransferReturn : trf;
-        const supplier = separate
-          ? index === 1
-            ? draft.hotelTransferReturn?.brokerId
-            : draft.transferBrokerId
-          : broker.id;
-        const counts = reservationHotelTransferCounts(
-          request.snapshot,
-          stayKey,
-          keys,
-          draft.hotelTransferCounts ?? { outbound: 0, returning: 0 },
-        );
-        const passengers = hotelTransferChargeableCount(
-          counts,
-          draft.hotelTransferRoundTrip,
-        );
-        if (
-          !supplier ||
-          !price ||
-          !currencies.currencies.some((c) => c.code === price.currencyCode)
-        )
-          throw Error('کارگزار، ارز و قیمت ترانسفر را تکمیل کنید.');
-        reservationServicePurchaseTotal(price.amount, '1', 1);
-        return {
-          serviceClientKey: keys[0]!,
-          coveredServiceClientKeys: keys,
-          supplierOrganizationId: supplier,
-          currencyCode: price.currencyCode,
-          amount: passengers
-            ? reservationServicePurchaseTotal(
-                price.amount,
-                String(passengers),
-                1,
-              )
-            : '0',
-          pricingCalculation: {
-            baseAmount: price.amount,
-            factor: passengers ? String(passengers) : '1',
-            chargeablePassengerCount: passengers,
-          },
-          ...(rates[price.currencyCode]
-            ? { purchaseRateToIrr: rates[price.currencyCode] }
-            : {}),
-        };
-      });
+      const transferRows = groups
+        .filter((keys) => keys.length)
+        .map((keys, index) => {
+          const price = index === 1 ? draft.hotelTransferReturn : trf;
+          const supplier = separate
+            ? index === 1
+              ? draft.hotelTransferReturn?.brokerId
+              : draft.transferBrokerId
+            : broker.id;
+          const counts = reservationHotelTransferCounts(
+            request.snapshot,
+            stayKey,
+            keys,
+            draft.hotelTransferCounts ?? { outbound: 0, returning: 0 },
+          );
+          const passengers = hotelTransferChargeableCount(
+            counts,
+            draft.hotelTransferRoundTrip,
+          );
+          if (
+            !supplier ||
+            !price ||
+            !currencies.currencies.some((c) => c.code === price.currencyCode)
+          )
+            throw Error('کارگزار، ارز و قیمت ترانسفر را تکمیل کنید.');
+          reservationServicePurchaseTotal(price.amount, '1', 1);
+          return {
+            serviceClientKey: keys[0]!,
+            coveredServiceClientKeys: keys,
+            supplierOrganizationId: supplier,
+            currencyCode: price.currencyCode,
+            amount: passengers
+              ? reservationServicePurchaseTotal(
+                  price.amount,
+                  String(passengers),
+                  1,
+                )
+              : '0',
+            pricingCalculation: {
+              baseAmount: price.amount,
+              factor: passengers ? String(passengers) : '1',
+              chargeablePassengerCount: passengers,
+            },
+            ...(rates[price.currencyCode]
+              ? { purchaseRateToIrr: rates[price.currencyCode] }
+              : {}),
+          };
+        });
       const fx = (code: string) =>
         rates[code] ? { purchaseRateToIrr: rates[code] } : {};
       const body: ReservationPurchaseBatchInputV1 = {
@@ -386,6 +392,12 @@ export function HotelStayPurchase({
           ...transferRows,
         ],
       };
+      if (onStage) {
+        onStage(body);
+        setMessage('خرید هتل و ترانسفر آن ثبت شد.');
+        onSaved();
+        return;
+      }
       const payload = JSON.stringify(body),
         base = getPublicApiBaseUrl();
       if (!base) throw Error('نشانی سرور تنظیم نشده است.');
@@ -438,7 +450,7 @@ export function HotelStayPurchase({
       </p>
       <Button
         variant="outline"
-        disabled={busy}
+        disabled={!!onStage || busy}
         onClick={() => void loadSavedQuote()}
       >
         بارگذاری قیمت پیشنهادی فرم

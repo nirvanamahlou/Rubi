@@ -1,4 +1,10 @@
 'use client';
+import { NewContractPurchases } from './new-contract-purchases';
+import {
+  purchaseDraftFingerprint,
+  submitStagedPurchases,
+  type StagedPurchase,
+} from '../model/new-contract-purchases';
 import { ContractHotelPicker } from './contract-hotel-picker';
 import serviceStyles from './contract-service-cards.module.css';
 import { withAutomaticReturn } from '../model/automatic-return';
@@ -232,6 +238,36 @@ function freshSalesDraft(): SalesFormState {
 }
 export function SalesContractForm() {
   const router = useRouter();
+  const pendingPurchases = useRef<Record<string, StagedPurchase>>({});
+  const purchaseAttempts = useRef<
+    Record<string, { key: string; purchase: StagedPurchase }>
+  >({});
+  const purchaseFingerprint = useRef('');
+  const [purchaseError, setPurchaseError] = useState('');
+  const [purchaseBusy, setPurchaseBusy] = useState(false);
+  const [purchaseCount, setPurchaseCount] = useState(0);
+  async function flushPurchases(id: string) {
+    setPurchaseBusy(true);
+    setPurchaseError('');
+    try {
+      await submitStagedPurchases(
+        pendingPurchases.current,
+        purchaseAttempts.current,
+        async () => (await salesApi.purchaseContext(id)).data,
+        async (purchase, key) => {
+          await salesApi.recordInitialPurchase(id, purchase, key);
+        },
+        browserRandomUuid,
+      );
+    } catch (error) {
+      setPurchaseError(
+        error instanceof Error ? error.message : 'ثبت خرید انجام نشد.',
+      );
+    } finally {
+      setPurchaseBusy(false);
+      setPurchaseCount(Object.keys(pendingPurchases.current).length);
+    }
+  }
   const actor = useAccessActor();
   const [draftScope, setDraftScope] = useState(() =>
     contractDraftScope(null, actor),
@@ -910,6 +946,13 @@ export function SalesContractForm() {
           : payload.priceComponents,
         state.priceEntryMode === 'PASSENGER_TOTAL',
       );
+      if (
+        Object.keys(pendingPurchases.current).length &&
+        purchaseFingerprint.current !== purchaseDraftFingerprint(payload)
+      )
+        throw Error(
+          'خدمات قرارداد تغییر کرده‌اند؛ خریدها را دوباره بررسی کنید.',
+        );
       const fingerprint = JSON.stringify(payload);
       validateSalesChequePayments(
         payload.priceComponents,
@@ -932,6 +975,7 @@ export function SalesContractForm() {
       setSavedNumber(response.data.contractNumber);
       setSavedId(response.data.id);
       setSavedContract(response.data);
+      await flushPurchases(response.data.id);
       if (options) {
         let ids: string[];
         try {
@@ -1228,6 +1272,14 @@ export function SalesContractForm() {
       ) : null}
     </section>
   );
+  let purchaseInput: ReturnType<typeof salesPayload> | undefined;
+  if (step === 1) {
+    try {
+      purchaseInput = salesPayload(pricedState);
+    } catch {
+      /* Price fields may still be incomplete. */
+    }
+  }
   if (savedNumber)
     return (
       <Card className="mx-auto max-w-2xl p-8 text-center">
@@ -1243,6 +1295,21 @@ export function SalesContractForm() {
         <Button className="mt-6" onClick={() => router.push('/sales')}>
           بازگشت به فروش
         </Button>
+        {purchaseError && (
+          <Alert
+            tone="warning"
+            title="ثبت خرید انجام نشد."
+            description={purchaseError}
+          />
+        )}
+        {purchaseCount > 0 && (
+          <Button
+            disabled={purchaseBusy}
+            onClick={() => void flushPurchases(savedId)}
+          >
+            ثبت خرید
+          </Button>
+        )}
         {receiptError && (
           <Alert
             tone="warning"
@@ -2591,6 +2658,41 @@ export function SalesContractForm() {
                   currencies={references.currencies}
                   onChange={patchState}
                 />
+              )}
+              {purchaseInput && (
+                <NewContractPurchases
+                  input={purchaseInput}
+                  onStage={(id, purchase) => {
+                    const fingerprint = purchaseDraftFingerprint(
+                      purchaseInput!,
+                    );
+                    if (purchaseFingerprint.current !== fingerprint) {
+                      pendingPurchases.current = {};
+                      purchaseAttempts.current = {};
+                    }
+                    purchaseFingerprint.current = fingerprint;
+                    pendingPurchases.current[id] = purchase;
+                    setPurchaseCount(
+                      Object.keys(pendingPurchases.current).length,
+                    );
+                  }}
+                />
+              )}
+              {purchaseCount > 0 && (
+                <p role="status">خریدهای آماده ثبت: {purchaseCount}</p>
+              )}
+              {purchaseCount > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    pendingPurchases.current = {};
+                    purchaseAttempts.current = {};
+                    setPurchaseCount(0);
+                  }}
+                >
+                  پاک‌کردن خریدهای آماده ثبت
+                </Button>
               )}
               <AgencyCommission
                 state={state}

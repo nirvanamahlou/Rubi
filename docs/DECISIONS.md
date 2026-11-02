@@ -735,3 +735,8 @@ Owner explicitly requests replacing the Orders entry point with an independent p
 ## TRAVIS-SANDBOX-CONNECTION-1031 — partial resolution of DEC-OPEN-014
 
 Owner supplied the official sandbox Swagger and requested activation on Avina. Verified HTTPS origin sandboxapi.travis.ir and server-only x-api-key authentication. Catalogue reads return an envelope with code200/data array; country, duration and generic plan retrieval validated. Keep policy issue/confirm/cancel/refund and SLA open: this release only connects sandbox catalogue discovery and does not send real passenger data, claim issuance or alter credit. Credentials remain in private API environment only.
+
+
+## NEW-CONTRACT-PURCHASES-1102 — cost recording before customer settlement
+
+Owner explicitly authorizes removing customer full-settlement prerequisite from floating flight cost recording so it can be staged in new-contract pricing and submitted after confirmation. This supersedes the earlier record-time full-settlement policy only. A recorded purchase remains a Finance payable, never a supplier payment, customer receipt or document release. Cancellation, branch/ownership, supply-type, supplier/currency validation, CAS and idempotency remain. Existing Finance payment controls are unchanged. UI staged inputs are not Sales components or contract/PDF metadata; failed post-create purchases are visibly retryable without recreating the contract. No migration or data rewrite.
