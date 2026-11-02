@@ -101,7 +101,7 @@ function render(
       stayKey: 'h',
       onSaved: h.saved,
       purchaseRoot,
-      onStage,
+      ...(onStage ? { onStage } : {}),
     }),
   );
 }
