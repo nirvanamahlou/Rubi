@@ -8318,3 +8318,6 @@ Owner approves the bounded PC-B HR directory reservation exception. Connected-to
 ## SHARED-HOTEL-SUPPLIER-FORM-1102 — PC-A
 
 Optional common supplier stacks hotel editors and retains independent per-stay quotations. One primary issuance validates all saved suppliers and freezes every stay in one workflow revision; no partial send. One supplier preview/PDF includes all hotel/room/date/price tables, while separate transfer outputs remain intact. Sent quotations are preserved after later draft edits. Focused Web/API tests, scoped lint/types and synthetic multi-page PDF verification precede exact-head CI and owner-authorized develop merge. No migration/dependency or operational rollout. See docs/tasks/SHARED-HOTEL-SUPPLIER-FORM-1102.md.
+
+## CALL-HISTORY-TITLE-1102 — PC-C
+Historical TELEPHONY read enrichment now refreshes named snapshots as well as missing/generic labels via current HR grade/unit directory. Requires the original branch-scoped provider session and matching observed extension; keeps historical display if mapping is absent/ambiguous/conflicting, ignores manual operator text, preserves original payload and answeredAt.14 focused regressions and lint pass; API typecheck and production build pass. No data rewrite or migration; publication pending.
