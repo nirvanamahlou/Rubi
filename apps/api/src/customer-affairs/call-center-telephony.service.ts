@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { callContactPrefill } from './call-contact-prefill';
+import { HR_OFFER_VERSION, hrCallRoutingEnabled } from '../iam/hr-call-routing';
 import { HrCallAnswerDirectory } from '../hr/hr-call-answer-directory';
 import { answeredCallAccess } from '../iam/call-center-answer-policy';
 import {
@@ -64,6 +65,7 @@ export class CallCenterTelephonyService {
       synthetic: boolean;
       receivedAt: Date;
       answerEvidence?: { inboxId: string; userIds: string[] };
+      hrRecipients?: { extension: string; userIds: string[] };
       recipient: {
         userId: string;
         version: number;
@@ -400,6 +402,29 @@ export class CallCenterTelephonyService {
           mappingVersion: context.recipient.version,
         },
       });
+    if (
+      context.hrRecipients &&
+      context.hrRecipients.extension === event.extension &&
+      technical.state !== 'ENDED' &&
+      ['RINGING', 'ANSWERED', 'TRANSFERRED'].includes(event.kind)
+    ) {
+      const current =
+        (await this.directory.employeeCallRoutes(context.branchId, tx)).find(
+          (r) => r.extension === context.hrRecipients!.extension,
+        )?.userIds ?? [];
+      for (const userId of context.hrRecipients.userIds.filter((id) =>
+        current.includes(id),
+      ))
+        await tx.callCenterTelephonyOffer.upsert({
+          where: { sessionId_userId: { sessionId: row.id, userId } },
+          create: {
+            sessionId: row.id,
+            userId,
+            mappingVersion: HR_OFFER_VERSION,
+          },
+          update: {},
+        });
+    }
     return row.id;
   }
 
@@ -682,6 +707,7 @@ export class CallCenterTelephonyService {
     };
   }
   async snapshot(actor: AuthenticatedActor, page = 1) {
+    await this.pruneHrOffers(actor);
     const snapshotAt = new Date().toISOString();
     if (!Number.isInteger(page) || page < 1 || page > 10000)
       throw new BadRequestException();
@@ -758,6 +784,7 @@ export class CallCenterTelephonyService {
     };
   }
   async read(actor: AuthenticatedActor, id: string) {
+    await this.pruneHrOffers(actor);
     const row = await this.db.client.callCenterTelephonySession.findFirst({
       where: { id, ...this.scope(actor) },
       include: { call: { include: { contact: true } } },
@@ -834,6 +861,7 @@ export class CallCenterTelephonyService {
     },
   ) {
     this.authorize(actor, true);
+    await this.pruneHrOffers(actor);
     return this.db.client.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM call_center_telephony_sessions WHERE id=${id}::uuid FOR UPDATE`;
       const row = await tx.callCenterTelephonySession.findFirst({
@@ -1007,5 +1035,61 @@ export class CallCenterTelephonyService {
       });
       return { ok: true };
     });
+  }
+
+  /** Revoke only live automatic routing; historical answer facts remain intact. */
+  private async pruneHrOffers(actor: AuthenticatedActor) {
+    if (!hrCallRoutingEnabled()) return;
+    const rows = await this.db.client.callCenterTelephonyOffer.findMany({
+      where: {
+        userId: actor.userId,
+        active: true,
+        mappingVersion: { gt: 0 },
+        session: { completed: false },
+      },
+      include: {
+        session: {
+          include: {
+            call: { select: { contact: { select: { branchId: true } } } },
+          },
+        },
+      },
+    });
+    const routes = new Map<string, string[]>();
+    for (const offer of rows) {
+      const branch = offer.session.call.contact.branchId;
+      if (!routes.has(branch))
+        routes.set(
+          branch,
+          (await this.directory.employeeCallRoutes(branch))
+            .filter((r) => r.userIds.includes(actor.userId))
+            .map((r) => r.extension),
+        );
+      const t = this.crypto.decrypt<TelephonyTechnical>(
+        offer.session.encryptedTechnical,
+        offer.session.keyVersion,
+        `telephony:${offer.sessionId}`,
+      );
+      const observed = [
+        t.first.extension,
+        t.lastAnswer?.extension,
+        ...(t.destinations ?? []).map((d) => d.extension),
+      ];
+      if (observed.some((e) => e && routes.get(branch)!.includes(e))) continue;
+      await this.db.client.$transaction(async (tx) => {
+        await tx.callCenterTelephonyOffer.updateMany({
+          where: { id: offer.id, active: true },
+          data: { active: false },
+        });
+        await tx.callCenterTelephonySession.updateMany({
+          where: {
+            id: offer.sessionId,
+            claimUserId: actor.userId,
+            completed: false,
+          },
+          data: { claimUserId: null, version: { increment: 1 } },
+        });
+      });
+    }
   }
 }

@@ -8320,3 +8320,7 @@ Optional common supplier stacks hotel editors and retains independent per-stay q
 ## SHORT-SERVICE-CALLS-1102 — 2026-11-02
 
 Fixed native outbound capture rejecting short service destinations before anchor persistence. External3–15 digit numbers now accepted with existing source/trunk/root proof; internal calls remain excluded. Four actual reported-day193 calls recovered through private historical port, visible to the initiating employee; repeated recovery produces0 duplicates and0 old popups. Recovery uses unchanged pre-call provider mapping plus unique current HR agreement if temporal HR is invalidated by later edits. API lint/typecheck/build, focused checks and49 isolated PostgreSQL checks pass. Backed-up API/Worker rollout preserves current peer integrations and Web. See tasks/SHORT-SERVICE-CALLS-1102.md.
+
+## HR-CALL-ROUTING-1102 — 2026-11-02
+
+Authoritative active HR employee/user links and all internal aliases now drive live Call Center routing automatically. Shared extensions offer all linked eligible accounts; edits/unlink/delete invalidate stale pending offers, preserving prior answered history. IAM derives own-only capabilities for valid linked staff without stored roles/grants or other-module access.62 isolated PostgreSQL checks and API lint/typecheck/build pass. Native acceptance:16 accounts/18 extensions,1 shared extension,3 alias accounts,4 formerly unmapped accounts,14 valid sessions and AMI healthy. Backed-up API/Worker release preserves current peer overlays and Web. See tasks/HR-CALL-ROUTING-1102.md.

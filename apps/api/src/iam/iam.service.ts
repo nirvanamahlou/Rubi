@@ -1,4 +1,5 @@
 import { isOptionalOperationReason } from '@nora/contracts';
+import { hrCallPermissions } from './hr-call-routing';
 import { HrUserUnitDirectory } from '../hr/hr-user-unit-directory';
 import type { Prisma } from '@nora/database';
 import { userDetailsRevision } from './user-details';
@@ -496,7 +497,12 @@ export class IamService implements IamStepUpPort {
     return {
       userId: session.userId,
       sessionId: session.id,
-      permissions: this.permissionCodes(session.user),
+      permissions: await hrCallPermissions(
+        this.database,
+        session.userId,
+        session.user.branches.map(({ branchId }) => branchId),
+        this.permissionCodes(session.user),
+      ),
       branchIds: session.user.branches.map(({ branchId }) => branchId),
     };
   }
