@@ -203,11 +203,11 @@ export const readApi = {
     }),
   kpis: (branch: string, signal: AbortSignal) =>
     callCenterRequest<CallKpis>('/kpis', branch, { signal }),
-  branches: (branch: string) =>
-    callCenterRequest<{ data: { id: string; name: string }[] }>(
-      '/branches',
-      branch,
-    ),
+  branches: (branch: string, signal?: AbortSignal) =>
+    callCenterRequest<{
+      data: { id: string; name: string }[];
+      meta?: { defaultBranchId: string | null };
+    }>('/branches', branch, signal ? { signal } : {}),
   teams: (branch: string) =>
     callCenterRequest<{ units: { id: string; name: string }[] }>(
       '/teams',

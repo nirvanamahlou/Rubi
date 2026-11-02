@@ -10625,3 +10625,12 @@ COMPUTER_ID=PC-B; branch codex/pc-b-workbench-attendance-summary-1102 from devel
 ## HR-DASHBOARD-LIVE-1102 — PC-B — IN_PROGRESS
 
 Reserve HR dashboard domain/service bounded query, dashboard cards/charts and tests. User requests actual API data,current Persian season,newest-first30-day attendance and push/develop merge. Preserve HR scope and Radan source dates; no migration/dependencies or deployment.
+
+## CALL-CENTER-BRANCH-CONTEXT-1102 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. Owner requests correcting missing personal recent-call display for shared201 and auditing all employees. Actual authenticated actors for both targets default to Jahan Academy while Issabel data belongs to Central Office. Reserve narrow HR current employee branch port, IAM directory delegate, Call Center branches preferred metadata/read consumer, Web branch bootstrap/read-client and focused tests/own notes. Producer HR -> IAM -> Call Center read; additive optional meta.defaultBranchId preserves existing clients and grants. No branch UUID hardcodes, schema, dependencies, IAM grants, PBX or call-data rewrites. Existing targets have no active overlapping local edits; preserve production peer overlays under shared deploy lock. Approved UI layout is unchanged.
+
+
+CALL-CENTER-BRANCH-CONTEXT-1102 validation extension: reserve exactly two existing Call Center English label/error entries in en-overrides and synchronized API/standalone catalogues. Production baseline coverage exposed pre-existing missing colon label and native-only registration message. Preserve all peer catalogue entries and test gates; no new Persian UI or shared-contract change.
+
+CALL-CENTER-BRANCH-CONTEXT-1102 — SOURCE_READY:11 API and23 Web checks, scoped lint, API/Web types/builds and native17-account/119-contact access verification pass. Production unchanged pending image execution smoke correction and peer deployment completion. Source scope freezes on publication.

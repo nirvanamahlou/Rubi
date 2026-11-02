@@ -8401,3 +8401,7 @@ Selected30/90/365-day filter now reaches HR own attendance aggregation using Teh
 ## HR-DASHBOARD-LIVE-1102 — PC-B
 
 Dashboard uses current Tehran/Persian season through today, descending30-day attendance and real daily attendance overtime in cards. A valid first entry counts presence before checkout; latest per-employee/day prevents duplicates. Business-date query preserves rolling30 days across season boundaries. Today refreshes with native store polling; leave card counts unique staff across supported approved leave sources. No schema/dependency or source date rewrite. Focused and final-head checks precede user-authorized develop merge.
+
+## CALL-CENTER-BRANCH-CONTEXT-1102 — PC-C
+
+Wrong first-login branch explains missing personal contacts for shared201 accounts. Authoritative HR-scoped branch bootstrap implemented;11 API and23 Web checks, API/Web types/builds and native16-employee-plus-Demo access checks pass. Production release pending runtime layering correction and shared deployment lock. See docs/tasks/CALL-CENTER-BRANCH-CONTEXT-1102.md.

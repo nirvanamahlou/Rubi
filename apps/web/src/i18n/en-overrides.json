@@ -4818,5 +4818,7 @@
   "مجوز خروجی قراردادها وجود ندارد.": "You do not have permission to export contracts.",
   "فیلتر نوع درخواست": "Request type filter",
   "منبع پرداخت": "Payment source",
-  "برداشت از حساب ریالی:": "Withdrawal from IRR account:"
+  "برداشت از حساب ریالی:": "Withdrawal from IRR account:",
+  "تماس‌گرفته‌شده از داخلی:": "Called from extension:",
+  "ثبت تماس فقط از تماس واقعی ایزابل امکان‌پذیر است.": "A call can only be registered from an actual Issabel call."
 }
