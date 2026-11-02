@@ -680,6 +680,8 @@ export interface ReservationRoomPriceV1 {
   factor: string;
 }
 export interface VoucherSettingsV1 {
+  /** Supplier output only: primary stay groups all hotels under one registered broker. */
+  sharedHotelBroker?: boolean;
   /** Supplier-form modes; omitted retains the historical combined quotation. */
   hotelTransferSeparate?: boolean;
   hotelTransferSplit?: boolean;

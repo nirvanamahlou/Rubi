@@ -41,6 +41,7 @@ export function validateVoucherSettings(
   const v = value as VoucherSettingsV1;
   if (
     [
+      v.sharedHotelBroker,
       v.hotelTransferSeparate,
       v.hotelTransferSplit,
       v.hotelTransferRoundTrip,
@@ -280,6 +281,9 @@ export function validateVoucherSettings(
       return fail();
   }
   return {
+    ...(v.sharedHotelBroker !== undefined
+      ? { sharedHotelBroker: v.sharedHotelBroker }
+      : {}),
     ...(v.hotelTransferSeparate !== undefined
       ? { hotelTransferSeparate: v.hotelTransferSeparate }
       : {}),
