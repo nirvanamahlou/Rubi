@@ -1,3 +1,10 @@
+## RETURN-FLIGHT-CALENDAR-1102 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-return-flight-calendar-1102 from develop70487d637. Owner authorizes fixing false return-date rejection during floating-to-charter flight amendments and develop merge. Reserve Sales sales.domain.ts/sales.domain.spec.ts and own status notes only. Reuse published ticketCalendarDate (Asia/Tehran) for contractual calendar-date bounds, retain UTC instant ordering and reversed-route validation. Synthetic regressions only; do not store operational contract/passenger data. No shared contract/schema/migration/dependency/runtime changes or live contract mutation. Earlier same-owner source scopes are merged/released; no active overlapping Sales validator writer found.
+
+Reproduced the false UTC-midnight rejection before fixing it.107 focused domain/amendment/floating-flight regressions pass, including Tehran midnight, equivalent offset timestamps, preceding millisecond, actual flight ordering, reverse route and no input mutation. Contract day bound now uses existing ticketCalendarDate; instant chronology stays UTC. API lint/types/build and all final-head hosted gates precede the authorized develop merge. No migration, operational data write or deployment. Bounded source freezes on publication and releases on verified merge.
+
+
 
 ## PACKAGE-CURRENCY-SELECT-1102 — PC-A — READY_FOR_CI
 
