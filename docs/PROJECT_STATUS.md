@@ -8477,3 +8477,7 @@ HR-ATTENDANCE-NEWEST-1102 local acceptance: existing runtime built and restarted
 ## HR-EMPLOYEE-CONTRACT-DATES-1102 — PC-B
 
 Employee-related record forms no longer offer inline employee creation; employee selection and native Employees creation remain. Employee table renames start to employment start and adds adjacent contract end / employment end columns. Projection selects the latest noncancelled/nondeleted contract by start date and separation last working day, never exit-interview date, preserving blank open-ended contracts and export identities. Existing complete scoped reference loader avoids bootstrap truncation. Ended employees remain list/filter-visible.21 focused Web/catalog tests and scoped lint pass; local3100 columns verified. No schema/API/dependency or operational record changes. Final-head hosted gates precede authorized develop merge.
+
+## CALL-CENTER-AGENCY-SOURCE-1102 — PC-C — SOURCE ONLY
+
+Agency added to shared Call Center source options, used by all call popups and matching source filter. Existing English translation reused;18 model/form/i18n regressions and Web types pass. No API/schema/dependency or server change. See docs/tasks/CALL-CENTER-AGENCY-SOURCE-1102.md.

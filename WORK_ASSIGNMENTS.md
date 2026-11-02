@@ -10693,3 +10693,9 @@ HR-ATTENDANCE-NEWEST-1102 scope extension: native API evidence shows daily rows 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-employee-contract-dates-1102 from develop70487d637. User authorizes removal of inline employee creation from employee-specific HR record forms, employee list start/end-contract/end-employment dates, push/develop merge and local3100. Reserve only HrRecordForm employee-create trigger, HrEmployees dataset/list bounded integration, new HR-owned date projection and tests; preserve identification-code/editor peer work. Existing complete, scope-authorized useHrReferenceData loader supplies contracts.active and lifecycle.separation beyond truncated bootstrap; no API/schema/dependency/migration changes. Preserve cancelled/deleted history and employee identities; no operational records created.
 
 HR-EMPLOYEE-CONTRACT-DATES-1102 reserves only three new English override keys for the requested column labels; other translation/catalog writers remain untouched.
+
+## CALL-CENTER-AGENCY-SOURCE-1102 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C; latest origin/develop. Owner requests Agency option in contact-source dropdown of all Call Center popups. Reserve only shared Call Center model sources list and own docs; source-only, no production deployment as in preceding requests. Shared popup/filter consumers keep matching values; existing Agency English translation reused. No schema/API/dependency/permissions/layout change. Preserve live/unmerged SMS option on eventual integration; prior independent drafts not imported. No overlapping active model reservation found.
+
+CALL-CENTER-AGENCY-SOURCE-1102 — SOURCE_READY / DO NOT DEPLOY:18 existing model/form/i18n checks, scoped lint/format, full Web TypeScript and production build pass. Shared source option Agency reuses existing translation; no API/schema/runtime/data changes. Scope freezes on publication.
