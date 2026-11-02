@@ -115,12 +115,10 @@ export function buildHotelPackageCompositions(
             ),
             band.maxExclusive,
           ];
-          const options = boundaries
-            .slice(0, -1)
-            .map((min, index) => ({
-              min,
-              maxExclusive: boundaries[index + 1]!,
-            }));
+          const options = boundaries.slice(0, -1).map((min, index) => ({
+            min,
+            maxExclusive: boundaries[index + 1]!,
+          }));
           if (bands.length * options.length > 4096)
             throw Error('Too many age combinations');
           bands = bands.flatMap((prefix) =>
