@@ -104,6 +104,7 @@ it('uses completed canonical passenger names instead of an empty or stale histor
     createdAt: input.receivedAt,
     contractVersion: 2,
     correctedAt: input.receivedAt,
+    amendedAt: '2026-11-02T10:00:00Z',
     cancelledAt: null,
     departureDate: '2027-01-01',
     returnDate: null,
@@ -132,6 +133,7 @@ it('uses completed canonical passenger names instead of an empty or stale histor
     }).passengerNames,
   ).toEqual(['FIRST TRAVELER', 'SECOND TRAVELER']);
   expect(decode({ ...summary, passengerNames: [] }).passengerNames).toEqual([]);
+  expect(decode(summary).amendedAt).toBe('2026-11-02T10:00:00Z');
   expect(decode(summary).passengerNames).toEqual(['Old snapshot name']);
   expect(decode().passengerNames).toEqual(['Old snapshot name']);
 });
