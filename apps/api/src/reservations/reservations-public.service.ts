@@ -349,6 +349,42 @@ export class ReservationsPublicService {
     return { id: row.id, requestId: row.requestId, status: row.status };
   }
 
+  private async withPurchaseHistory(
+    row: Prisma.ReservationIntakeGetPayload<{ include: typeof intakeInclude }>,
+  ) {
+    // Intake snapshots remain immutable. Reuse original purchase IDs/payment
+    // evidence, newest contract version first; never manufacture another payable.
+    const history = await this.database.client.reservationIntake.findMany({
+      where: {
+        contractId: row.contractId,
+        branchId: row.branchId,
+        contractVersion: { lt: row.contractVersion },
+        OR: [
+          { servicePurchases: { some: {} } },
+          { hotelPurchases: { some: {} } },
+        ],
+      },
+      include: intakeInclude,
+      orderBy: [
+        { contractVersion: 'desc' },
+        { receivedAt: 'desc' },
+        { id: 'asc' },
+      ],
+    });
+    const hotelPurchases = new Map<
+      string,
+      (typeof row.hotelPurchases)[number]
+    >();
+    for (const purchase of [row, ...history].flatMap((i) => i.hotelPurchases)) {
+      if (!hotelPurchases.has(purchase.currencyCode))
+        hotelPurchases.set(purchase.currencyCode, purchase);
+    }
+    return {
+      ...row,
+      hotelPurchases: [...hotelPurchases.values()],
+      servicePurchases: [row, ...history].flatMap((i) => i.servicePurchases),
+    };
+  }
   /** Public branch-scoped latest execution costs for the owning Sales contract. */
   async contractPurchaseContext(contractId: string, branchId: string) {
     const row = await this.database.client.reservationIntake.findFirst({
@@ -360,7 +396,7 @@ export class ReservationsPublicService {
         { id: 'asc' },
       ],
     });
-    return row ? present(row) : null;
+    return row ? present(await this.withPurchaseHistory(row)) : null;
   }
 
   async purchaseContext(id: string, branchIds: readonly string[]) {
@@ -369,7 +405,7 @@ export class ReservationsPublicService {
       include: intakeInclude,
     });
     if (!row) throw new NotFoundException('درخواست در دسترس نیست.');
-    const result = present(row);
+    const result = present(await this.withPurchaseHistory(row));
     if (this.tickets?.currentSelections)
       result.snapshot = {
         ...result.snapshot,
