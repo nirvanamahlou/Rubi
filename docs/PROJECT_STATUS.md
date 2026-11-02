@@ -8417,3 +8417,10 @@ Dashboard uses current Tehran/Persian season through today, descending30-day att
 ## HR-RADAN-DATE-SCHEDULE-1102 — PC-B
 
 Owner explicitly requests Radan input dates+1 calendar day. Stable source IDs move existing punches and retain old-day reconciliation across retries; both old/new open days recalculate, preserving approved corrections and closed periods. Standard09:15–17 working-hours schedule uses14:00 end on Thursday; overtime starts no earlier than17:30, while other explicit schedules retain their configured boundaries. Workbench includes measured lateness on open days; unknown deficit/overtime stays null. Employee/global attendance tables add Tehran weekday after date.52 focused API and12 Web/translation tests,lint,types and API build pass. Local DB backup verified before native sync; no migration or production rollout. Final-head gates precede requested develop merge.
+
+
+## HR-ATTENDANCE-NEWEST-1102 — PC-B
+
+Follow-up diagnosis: generated daily attendance CREATE omitted effectiveAt while UPDATE populated it; PostgreSQL DESC put NULL dates before dated rows, pushing10Aban down despite its presence. Creation now stores the work date, unchanged processing repairs missing dates through normal audit, and list DESC places unknown dates last. Employee dossier projection sorts canonical work dates descending with row/export identities intact; paginated server sort retained.11 focused API and8 Web/catalog checks pass. Local native resync and final hosted gates verify release; no schema or source-system change.
+
+HR-ATTENDANCE-NEWEST-1102 local acceptance: existing runtime built and restarted on4192 with peer edits preserved; native resync returned0 imported/91 unchanged. Authenticated first page now contains11 rows for11Aban followed by9 rows for10Aban (remaining row onpage2), confirmed descending dates. All10 existing10Aban daily rows retained. No source or identity changes.
