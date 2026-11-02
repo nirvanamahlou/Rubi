@@ -238,6 +238,15 @@ export function CallForm({
               <h3>اطلاعات مخاطب</h3>
               <div className={styles.formGrid}>
                 <label>
+                  نام مخاطب (اختیاری)
+                  <input
+                    name="name"
+                    placeholder="اختیاری؛ مخاطب ناشناس"
+                    defaultValue={previous?.name}
+                    maxLength={100}
+                  />
+                </label>
+                <label>
                   شماره تماس
                   <input
                     name="phone"
@@ -250,15 +259,6 @@ export function CallForm({
                     autoComplete="off"
                   />
                 </label>
-                <label>
-                  نام مخاطب (اختیاری)
-                  <input
-                    name="name"
-                    placeholder="اختیاری؛ مخاطب ناشناس"
-                    defaultValue={previous?.name}
-                    maxLength={100}
-                  />
-                </label>
               </div>
               <p className={styles.formHint}>
                 برای تماس با شماره مخفی یا نامعلوم، شماره را خالی بگذارید.
@@ -267,6 +267,24 @@ export function CallForm({
             <section className={styles.formSection}>
               <h3>مشخصات تماس</h3>
               <div className={styles.formGrid}>
+                <label>
+                  منبع آشنایی
+                  <NativeSearchSelect
+                    onChange={() => setDirty(true)}
+                    aria-label="منبع آشنایی"
+                    className={styles.control}
+                    optionLimit={50}
+                    disabled={busy}
+                    name="source"
+                    defaultValue={completing ? previous?.source : 'نامشخص'}
+                  >
+                    {sources.map((source) => (
+                      <option key={source} value={source}>
+                        {source}
+                      </option>
+                    ))}
+                  </NativeSearchSelect>
+                </label>
                 <label>
                   نوع تماس
                   {completing ? (
@@ -305,19 +323,20 @@ export function CallForm({
                   )}
                 </label>
                 <label>
-                  منبع آشنایی
+                  نتیجه تماس *
                   <NativeSearchSelect
                     onChange={() => setDirty(true)}
-                    aria-label="منبع آشنایی"
+                    name="outcome"
+                    aria-label="نتیجه تماس"
+                    required
                     className={styles.control}
-                    optionLimit={50}
                     disabled={busy}
-                    name="source"
-                    defaultValue={completing ? previous?.source : 'نامشخص'}
+                    defaultValue={completing ? (previous?.outcome ?? '') : ''}
                   >
-                    {sources.map((source) => (
-                      <option key={source} value={source}>
-                        {source}
+                    <option value="">نتیجه تماس را انتخاب کنید</option>
+                    {Object.entries(outcomeLabels).map(([key, title]) => (
+                      <option key={key} value={key}>
+                        {title}
                       </option>
                     ))}
                   </NativeSearchSelect>
@@ -381,25 +400,6 @@ export function CallForm({
                       )}
                     </>
                   )}
-                </label>
-                <label>
-                  نتیجه تماس *
-                  <NativeSearchSelect
-                    onChange={() => setDirty(true)}
-                    name="outcome"
-                    aria-label="نتیجه تماس"
-                    required
-                    className={styles.control}
-                    disabled={busy}
-                    defaultValue={completing ? (previous?.outcome ?? '') : ''}
-                  >
-                    <option value="">نتیجه تماس را انتخاب کنید</option>
-                    {Object.entries(outcomeLabels).map(([key, title]) => (
-                      <option key={key} value={key}>
-                        {title}
-                      </option>
-                    ))}
-                  </NativeSearchSelect>
                 </label>
                 <LinkedRequestField
                   requests={requests}
