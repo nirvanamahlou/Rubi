@@ -1,4 +1,8 @@
 {
+  "W5 یا IRM یا MAHAN AIR": "W5, IRM or MAHAN AIR",
+  "کد IATA، ICAO یا Callsign را وارد کنید؛ قالب IATA / ICAO هم مجاز است.": "Enter an IATA, ICAO or callsign; IATA / ICAO is also accepted.",
+
+  "کد ایرلاین باید IATA، ICAO یا Callsign باشد؛ قالب IATA / ICAO نیز پذیرفته می‌شود.": "Enter an IATA, ICAO or callsign; IATA / ICAO is also accepted.",
   "بدون لوگو": "Without logo",
   "شماره تلفن ثابت و همراه باید متفاوت باشند.": "Landline and mobile phone numbers must be different.",
   "تلفن همراه": "Mobile phone",

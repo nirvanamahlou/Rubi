@@ -1942,7 +1942,7 @@ model MasterAirline {
   isUnderReview       Boolean                  @default(false)
   id                  String                   @id @default(uuid()) @db.Uuid
   organizationId      String?                  @unique @db.Uuid
-  code                String                   @unique @db.Char(2)
+  code                String                   @unique @db.VarChar(64)
   icaoCode            String?                  @unique @db.Char(3)
   name                String                   @db.VarChar(160)
   englishName         String?                  @db.VarChar(160)
