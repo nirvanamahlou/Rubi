@@ -1,5 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import {
+  waitForPurchaseContext,
   purchaseDraftContext,
   purchaseDraftFingerprint,
   submitStagedPurchases,
@@ -103,4 +104,24 @@ it('retries a lost response with identical body and key without recreating succe
   );
   expect(post.mock.calls[2]).toEqual(sent);
   expect(context).toHaveBeenCalledTimes(2);
+});
+
+it('waits for durable intake delivery only on temporary missing context and bounds failures', async () => {
+  const missing = Object.assign(Error('queued'), { status: 404 });
+  const wait = vi.fn().mockResolvedValue(undefined);
+  const load = vi
+    .fn()
+    .mockRejectedValueOnce(missing)
+    .mockResolvedValue({ purchaseVersion: 0 });
+  expect(await waitForPurchaseContext(load, wait)).toEqual({
+    purchaseVersion: 0,
+  });
+  expect(wait).toHaveBeenCalledTimes(1);
+  const denied = Object.assign(Error('denied'), { status: 403 });
+  await expect(
+    waitForPurchaseContext(vi.fn().mockRejectedValue(denied), wait),
+  ).rejects.toBe(denied);
+  const absent = vi.fn().mockRejectedValue(missing);
+  await expect(waitForPurchaseContext(absent, wait)).rejects.toBe(missing);
+  expect(absent).toHaveBeenCalledTimes(21);
 });

@@ -1,4 +1,5 @@
 'use client';
+import { waitForPurchaseContext } from '../model/new-contract-purchases';
 import type { ReservationIntakeV1 } from '@nora/contracts';
 import type { StagedPurchase } from '../model/new-contract-purchases';
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
@@ -120,8 +121,10 @@ function queryString(query: SalesContractListQuery): string {
 
 export const salesApi = {
   purchaseContext: (id: string) =>
-    request<{ data: ReservationIntakeV1 }>(
-      `/contracts/${encodeURIComponent(id)}/purchases/purchase-context`,
+    waitForPurchaseContext(() =>
+      request<{ data: ReservationIntakeV1 }>(
+        `/contracts/${encodeURIComponent(id)}/purchases/purchase-context`,
+      ),
     ),
   recordInitialPurchase: (id: string, purchase: StagedPurchase, key: string) =>
     request<unknown>(

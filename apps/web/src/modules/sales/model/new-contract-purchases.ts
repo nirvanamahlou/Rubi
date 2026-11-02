@@ -85,3 +85,26 @@ export async function submitStagedPurchases(
     delete attempts[id];
   }
 }
+
+/** Confirmation commits the durable outbox before its Reservations intake appears. */
+export async function waitForPurchaseContext<T>(
+  load: () => Promise<T>,
+  wait: () => Promise<void> = () =>
+    new Promise((resolve) => setTimeout(resolve, 1000)),
+): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await load();
+    } catch (error) {
+      if (
+        attempt >= 20 ||
+        !error ||
+        typeof error !== 'object' ||
+        !('status' in error) ||
+        error.status !== 404
+      )
+        throw error;
+      await wait();
+    }
+  }
+}
