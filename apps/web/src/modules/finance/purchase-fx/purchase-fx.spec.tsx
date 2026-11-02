@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { PurchaseFxSummary } from './purchase-fx';
+import { PurchaseFxSummary, PurchaseFxCaptures } from './purchase-fx';
 const entry = {
   referenceId: 'purchase',
   currencyCode: 'EUR',
@@ -15,6 +15,24 @@ const entry = {
   realizedGainLoss: '-10000000',
 };
 describe('purchase FX display', () => {
+  it('asks for one rate per currency and leaves already recorded rates alone', () => {
+    const pending = { ...entry, rateToIrr: null };
+    const html = renderToStaticMarkup(
+      <PurchaseFxCaptures
+        entries={[
+          { ...pending, referenceId: 'hotel' },
+          { ...pending, referenceId: 'transfer' },
+          { ...pending, referenceId: 'other-currency', currencyCode: 'USD' },
+          { ...entry, referenceId: 'recorded', currencyCode: 'TRY' },
+        ]}
+        onSaved={() => {}}
+      />,
+    );
+    expect(html.match(/نرخ روز ثبت خرید/g)).toHaveLength(2);
+    expect(html).toContain('EUR');
+    expect(html).toContain('USD');
+    expect(html).not.toContain('TRY');
+  });
   it('shows baseline, real payment and a red loss without treating unspent foreign balance as profit', () => {
     const html = renderToStaticMarkup(<PurchaseFxSummary entries={[entry]} />);
     expect(html).toContain('274,500,000');

@@ -7,6 +7,7 @@ it('keeps contract search and compact filters without removed controls', () => {
   expect(html).toContain('جست‌وجوی قرارداد، طرف‌حساب، شرح یا شماره درخواست');
   expect(html).toContain('فیلتر واحد ارسال‌کننده');
   expect(html).toContain('فیلتر وضعیت درخواست');
+  expect(html).toContain('فیلتر نوع درخواست');
   expect(html).toContain('از تاریخ ثبت درخواست');
   expect(html).toContain('تا تاریخ ثبت درخواست');
   for (const removed of [

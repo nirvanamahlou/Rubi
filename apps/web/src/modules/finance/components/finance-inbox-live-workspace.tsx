@@ -6,7 +6,7 @@ import {
 } from '../model/receipt-account';
 import {
   PurchaseFxSummary,
-  PurchaseFxCapture,
+  PurchaseFxCaptures,
   PurchaseFxPaymentPreview,
 } from '../purchase-fx/purchase-fx';
 import { currencySymbol } from '@/lib/currency-symbol';
@@ -162,6 +162,9 @@ export function FinanceInboxLiveWorkspace() {
   } | null>(null);
   const [search, setSearch] = useState('');
   const [source, setSource] = useState<FinanceInboxSource | 'ALL'>('ALL');
+  const [category, setCategory] = useState<'ALL' | 'PURCHASE' | 'RECEIPT'>(
+    'ALL',
+  );
   const [status, setStatus] = useState<
     'ALL' | 'OPEN' | 'CLOSED' | FinanceRequestStatus
   >('OPEN');
@@ -218,6 +221,9 @@ export function FinanceInboxLiveWorkspace() {
   const [issueDocumentDelivery, setIssueDocumentDelivery] = useState(false);
   const [accountId, setAccountId] = useState('');
   const [payingSupplierId, setPayingSupplierId] = useState('');
+  const [paymentSourceKind, setPaymentSourceKind] = useState<
+    'ACCOUNT' | 'SUPPLIER'
+  >('ACCOUNT');
   const [supplierSearch, setSupplierSearch] = useState('');
   const [supplierPage, setSupplierPage] = useState(1);
   const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>(
@@ -242,6 +248,7 @@ export function FinanceInboxLiveWorkspace() {
     () => ({
       search,
       source: source === 'ALL' ? undefined : source,
+      category: category === 'ALL' ? undefined : category,
       status: status === 'ALL' ? undefined : status,
       fromDate,
       toDate,
@@ -256,6 +263,7 @@ export function FinanceInboxLiveWorkspace() {
     [
       search,
       source,
+      category,
       status,
       fromDate,
       toDate,
@@ -275,13 +283,11 @@ export function FinanceInboxLiveWorkspace() {
   const paymentCurrency = actionItem?.ticketPurchase
     ? actionItem.amount?.currencyCode
     : actionItem?.amount?.currencyCode;
-  const foreignPayment =
-    actionKind === 'PAYMENT' &&
-    Boolean(paymentCurrency) &&
-    paymentCurrency !== 'IRR';
+  const supplierPayment =
+    actionKind === 'PAYMENT' && paymentSourceKind === 'SUPPLIER';
 
   useEffect(() => {
-    if (!foreignPayment) return;
+    if (!supplierPayment) return;
     let active = true;
     const timer = setTimeout(() => {
       setSupplierBusy(true);
@@ -311,7 +317,7 @@ export function FinanceInboxLiveWorkspace() {
       active = false;
       clearTimeout(timer);
     };
-  }, [foreignPayment, supplierSearch, supplierPage]);
+  }, [supplierPayment, supplierSearch, supplierPage]);
 
   useEffect(() => {
     let active = true;
@@ -459,11 +465,8 @@ export function FinanceInboxLiveWorkspace() {
     );
     setActionItem(item);
     setActionKind('PAYMENT');
-    setAccountId(
-      item.amount?.currencyCode === 'IRR'
-        ? (eligibleAccounts[0]?.id ?? '')
-        : '',
-    );
+    setAccountId(eligibleAccounts[0]?.id ?? '');
+    setPaymentSourceKind(eligibleAccounts.length ? 'ACCOUNT' : 'SUPPLIER');
     setPayingSupplierId('');
     setSupplierSearch('');
     setSupplierPage(1);
@@ -557,8 +560,8 @@ export function FinanceInboxLiveWorkspace() {
           operationId: crypto.randomUUID(),
           expectedPaymentVersion: actionItem.ticketPurchase.paymentCount,
           costRevisionId: prepared.sourceContextReference,
-          accountId: foreignPayment ? null : accountId,
-          payingSupplierId: foreignPayment ? payingSupplierId : null,
+          accountId: supplierPayment ? null : accountId,
+          payingSupplierId: supplierPayment ? payingSupplierId : null,
           paymentMethodId,
           paidAmount,
           exchangeRateToIrr: exchangeRate,
@@ -611,8 +614,8 @@ export function FinanceInboxLiveWorkspace() {
             version: 1,
             expectedVersion: actionItem.financeVersion ?? 0,
             expectedSourceVersion: actionItem.sourceVersion,
-            accountId: foreignPayment ? null : accountId,
-            payingSupplierId: foreignPayment ? payingSupplierId : null,
+            accountId: supplierPayment ? null : accountId,
+            payingSupplierId: supplierPayment ? payingSupplierId : null,
             paymentMethodId,
             paidAmount,
             exchangeRateToIrr: exchangeRate,
@@ -640,8 +643,8 @@ export function FinanceInboxLiveWorkspace() {
           {
             expectedVersion: actionItem.sourceVersion,
             status: 'PAID',
-            accountId: foreignPayment ? null : accountId,
-            payingSupplierId: foreignPayment ? payingSupplierId : null,
+            accountId: supplierPayment ? null : accountId,
+            payingSupplierId: supplierPayment ? payingSupplierId : null,
             paymentMethodId,
             paidAmount,
             exchangeRateToIrr: exchangeRate,
@@ -793,6 +796,7 @@ export function FinanceInboxLiveWorkspace() {
               className="bg-white text-slate-900 hover:bg-blue-50"
               onClick={() => {
                 setStatus('OPEN');
+                setCategory('ALL');
                 setSource('ALL');
               }}
               size="sm"
@@ -948,6 +952,7 @@ export function FinanceInboxLiveWorkspace() {
                   onClick={() => {
                     setSource('SALES');
                     setStatus('OPEN');
+                    setCategory('ALL');
                   }}
                   size="sm"
                 >
@@ -958,6 +963,7 @@ export function FinanceInboxLiveWorkspace() {
                   onClick={() => {
                     setSource('RESERVATIONS');
                     setStatus('OPEN');
+                    setCategory('ALL');
                   }}
                   size="sm"
                   variant="outline"
@@ -1044,6 +1050,25 @@ export function FinanceInboxLiveWorkspace() {
             </div>
           </div>
           <label className="grid gap-1 text-xs text-muted-foreground">
+            فیلتر نوع درخواست
+            <Select
+              value={category}
+              onValueChange={(value) => {
+                setCategory(value as typeof category);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger aria-label="فیلتر نوع درخواست">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">همه درخواست‌ها</SelectItem>
+                <SelectItem value="PURCHASE">خرید</SelectItem>
+                <SelectItem value="RECEIPT">تأیید دریافت</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
             فیلتر واحد ارسال‌کننده
             <Select
               onValueChange={(value) => setSource(value as typeof source)}
@@ -1096,6 +1121,7 @@ export function FinanceInboxLiveWorkspace() {
               setSearch('');
               setSource('ALL');
               setStatus('OPEN');
+              setCategory('ALL');
               setFromDate('');
               setToDate('');
               setCurrencyCode('');
@@ -1181,6 +1207,7 @@ export function FinanceInboxLiveWorkspace() {
             setSortDirection(value.sortDirection ?? 'desc');
             setSearch(value.search ?? '');
             setSource(value.source ?? 'ALL');
+            setCategory(value.category ?? 'ALL');
             setStatus(value.status ?? 'ALL');
             setCurrencyCode(value.currencyCode ?? '');
             setMinAmount(value.minAmount ?? '');
@@ -1316,14 +1343,12 @@ export function FinanceInboxLiveWorkspace() {
                 <DialogTitle className="pe-10">فرم درخواست مالی</DialogTitle>
                 <DialogDescription>{selected.title}</DialogDescription>
                 <PurchaseFxSummary entries={selected.purchaseFx} />
-                {canPay &&
-                  selected.purchaseFx?.map((entry) => (
-                    <PurchaseFxCapture
-                      key={entry.referenceId}
-                      entry={entry}
-                      onSaved={() => setRevision((v) => v + 1)}
-                    />
-                  ))}
+                {canPay && (
+                  <PurchaseFxCaptures
+                    entries={selected.purchaseFx}
+                    onSaved={() => setRevision((v) => v + 1)}
+                  />
+                )}
                 <Card
                   id="finance-request-details"
                   className="scroll-mt-24 overflow-hidden p-0"
@@ -1730,7 +1755,24 @@ export function FinanceInboxLiveWorkspace() {
               {actionKind === 'PAYMENT' ? (
                 <>
                   <label className="grid gap-2">
-                    {foreignPayment ? (
+                    منبع پرداخت
+                    <NativeSearchSelect
+                      aria-label="منبع پرداخت"
+                      value={paymentSourceKind}
+                      onChange={(event) => {
+                        setPaymentSourceKind(
+                          event.target.value as 'ACCOUNT' | 'SUPPLIER',
+                        );
+                        setAccountId('');
+                        setPayingSupplierId('');
+                      }}
+                    >
+                      <option value="ACCOUNT">حساب پرداخت‌کننده</option>
+                      <option value="SUPPLIER">تأمین‌کننده پرداخت‌کننده</option>
+                    </NativeSearchSelect>
+                  </label>
+                  <label className="grid gap-2">
+                    {supplierPayment ? (
                       <>
                         <span>تأمین‌کننده پرداخت‌کننده</span>
                         <Input
@@ -2045,7 +2087,7 @@ export function FinanceInboxLiveWorkspace() {
                     actionItem?.source === 'SALES' &&
                     !accountId) ||
                   (actionKind === 'PAYMENT' &&
-                    (!(foreignPayment ? payingSupplierId : accountId) ||
+                    (!(supplierPayment ? payingSupplierId : accountId) ||
                       !paymentMethodId ||
                       !paidAmount))
                 }

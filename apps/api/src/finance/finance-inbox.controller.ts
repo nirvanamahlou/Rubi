@@ -60,11 +60,16 @@ export class FinanceInboxController {
   @RequirePermissions('finance.read', 'finance.payment.create')
   async purchaseFxCapture(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() input: { rateToIrr: string },
+    @Body() input: { rateToIrr: string; referenceIds?: string[] },
     @Req() req: AuthenticatedRequest,
   ) {
     return {
-      data: await this.inbox.capturePurchaseFx(id, input?.rateToIrr, req.actor),
+      data: await this.inbox.capturePurchaseFx(
+        id,
+        input?.rateToIrr,
+        req.actor,
+        input?.referenceIds,
+      ),
     };
   }
 

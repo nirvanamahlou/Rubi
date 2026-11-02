@@ -509,6 +509,7 @@ export class FinanceTicketCostService {
           input,
           cost.currencyCode,
           request.branchId,
+          'ACCOUNT_OR_SUPPLIER',
         );
       const method = await tx.masterPaymentMethod.findFirst({
         where: {

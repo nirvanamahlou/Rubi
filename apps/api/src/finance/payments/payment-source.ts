@@ -8,9 +8,15 @@ export async function paymentSource(
   input: { accountId?: string | null; payingSupplierId?: string | null },
   currencyCode: string,
   branchId: string,
-  policy: 'SUPPLIER_FOR_FOREIGN' | 'ACCOUNT_ONLY' = 'SUPPLIER_FOR_FOREIGN',
+  policy:
+    | 'SUPPLIER_FOR_FOREIGN'
+    | 'ACCOUNT_ONLY'
+    | 'ACCOUNT_OR_SUPPLIER' = 'SUPPLIER_FOR_FOREIGN',
 ) {
-  if (currencyCode !== 'IRR' && policy !== 'ACCOUNT_ONLY') {
+  if (
+    (policy === 'ACCOUNT_OR_SUPPLIER' && input.payingSupplierId) ||
+    (currencyCode !== 'IRR' && policy === 'SUPPLIER_FOR_FOREIGN')
+  ) {
     if (!input.payingSupplierId || input.accountId || !directory)
       throw new BadRequestException(
         'برای پرداخت ارزی تأمین‌کننده پرداخت‌کننده را انتخاب کنید.',

@@ -21,6 +21,71 @@ function setup() {
   };
 }
 describe('Finance payment source', () => {
+  it.each(['USD', 'EUR', 'IRR'])(
+    'allows an account OR a supplier under the explicit purchase-payment policy for %s',
+    async (currency) => {
+      const { tx, directory, findFirst, supplier } = setup();
+      await expect(
+        paymentSource(
+          tx,
+          directory,
+          { accountId: 'account' },
+          currency,
+          'branch',
+          'ACCOUNT_OR_SUPPLIER',
+        ),
+      ).resolves.toMatchObject({
+        account: { id: 'account' },
+        payingSupplierId: null,
+      });
+      expect(findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 'account',
+          branchId: 'branch',
+          currencyCode: currency,
+          isActive: true,
+        },
+      });
+      await expect(
+        paymentSource(
+          tx,
+          directory,
+          { payingSupplierId: supplierId },
+          currency,
+          'branch',
+          'ACCOUNT_OR_SUPPLIER',
+        ),
+      ).resolves.toMatchObject({ account: null, payingSupplierId: 'supplier' });
+      expect(supplier).toHaveBeenCalledWith(supplierId, tx);
+    },
+  );
+  it('keeps XOR and active same-currency branch-account validation for purchase payments', async () => {
+    const { tx, directory, findFirst } = setup();
+    await expect(
+      paymentSource(
+        tx,
+        directory,
+        { accountId: 'account', payingSupplierId: supplierId },
+        'EUR',
+        'branch',
+        'ACCOUNT_OR_SUPPLIER',
+      ),
+    ).rejects.toThrow();
+    await expect(
+      paymentSource(tx, directory, {}, 'EUR', 'branch', 'ACCOUNT_OR_SUPPLIER'),
+    ).rejects.toThrow();
+    findFirst.mockResolvedValueOnce(null as never);
+    await expect(
+      paymentSource(
+        tx,
+        directory,
+        { accountId: 'foreign-branch-or-currency' },
+        'EUR',
+        'branch',
+        'ACCOUNT_OR_SUPPLIER',
+      ),
+    ).rejects.toThrow();
+  });
   it.each(['USD', 'EUR', 'TRY', 'AED', 'IRR'])(
     'uses an active same-currency branch account for account-only %s operations',
     async (currencyCode) => {

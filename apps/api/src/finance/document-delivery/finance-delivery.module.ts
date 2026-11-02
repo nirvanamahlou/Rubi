@@ -285,6 +285,7 @@ export class FinanceDeliveryService {
           command,
           purchase.currencyCode,
           purchase.intake.branchId,
+          'ACCOUNT_OR_SUPPLIER',
         );
         account = source.account;
         payingSupplierId = source.payingSupplierId;
