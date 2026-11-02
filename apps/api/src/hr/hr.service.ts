@@ -4345,6 +4345,44 @@ export class HrService {
             !reconcileEmptyEmployeeIds.includes(employee.id)
           )
             continue;
+          if (
+            deviceOnly &&
+            !selected.length &&
+            reconcileEmptyEmployeeIds.includes(employee.id)
+          ) {
+            const stale = await tx.hrRecord.findMany({
+              where: {
+                branchId,
+                employeeId: employee.id,
+                section: 'time',
+                tab: 'attendance',
+                deletedAt: null,
+                values: { path: ['1'], equals: date },
+              },
+              take: 1000,
+            });
+            for (const row of stale) {
+              const data = (row.data ?? {}) as Record<string, unknown>;
+              if (
+                !Object.hasOwn(data, 'firstIn') ||
+                !Object.hasOwn(data, 'workedMinutes')
+              )
+                continue;
+              await tx.hrRecord.update({
+                where: { id: row.id },
+                data: { deletedAt: new Date(), version: { increment: 1 } },
+              });
+              await this.audit(
+                tx,
+                actor,
+                { branchId, employeeId: employee.id, recordId: row.id },
+                'attendance.reconcile',
+                { reason: 'source-date-corrected', date },
+                row.version + 1,
+              );
+            }
+            continue;
+          }
           const metrics =
             shiftStart && shiftEnd
               ? attendanceScheduleMetrics(

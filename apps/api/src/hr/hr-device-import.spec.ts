@@ -258,9 +258,7 @@ it('clears stale derived presence on the old date without creating absence for u
     true,
     ['employee'],
   );
-  expect(f.records.get('daily')).toMatchObject({
-    data: { firstIn: null, lastOut: null, workedMinutes: 0 },
-    status: 'غایب',
-  });
+  expect(f.records.get('daily')?.deletedAt).toBeInstanceOf(Date);
+  expect(f.records.get('daily')?.status).toBe('حاضر');
   expect(f.tx.hrRecord.create).not.toHaveBeenCalled();
 });
