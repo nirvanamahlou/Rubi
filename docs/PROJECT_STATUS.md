@@ -8389,3 +8389,6 @@ Owner-requested layout: Tehran date range is always visible between contact sear
 ## WORKBENCH-ATTENDANCE-SUMMARY-1102 — PC-B
 
 Selected30/90/365-day filter now reaches HR own attendance aggregation using Tehran calendar dates. Completed measurements remain summed when another day is incomplete; unknown-only totals remain null. Daily Radan-backed own punches and identity/branch guards preserved. Metric explanatory captions removed. 25 focused API and3 Web checks,scoped lint,types and API/Web production builds pass. Local3100 and4192 healthy; native30/90-day requests succeed. Existing active local account has no employee link; none inferred. Final-head CI precedes develop merge; no migration or production deployment.
+
+## CALL-FILTER-LAYOUT-1102 — PRODUCTION_VERIFIED
+PR1297 mergedab68a0958 after eight successful checks; Web-only rollout complete. Backup/canary/health/assets/auth guard pass; API/Worker/configuration preserved. Browser verifies moved dates, desktop five-control row and mobile stacking. No migration/business-data change. Screenshot and rollout receipt remain private.
