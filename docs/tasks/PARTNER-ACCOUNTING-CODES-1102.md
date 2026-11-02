@@ -12,7 +12,7 @@ PC-B; branch codex/pc-b-partner-accounting-codes-1102. Implemented and activated
 
 ## Validation
 
-- API build/typecheck passed with 6GB Node heap (initial default heap exhausted memory). Web typecheck, database/contracts builds and scoped API/web/contracts ESLint passed.
+- API build/typecheck passed with 6GB Node heap (initial default heap exhausted memory). Web production build/typecheck, database/contracts builds and scoped API/web/contracts ESLint passed.
 - API: 65 tests in five focused suites. Web display: three tests. English coverage: three tests.
 - SQL fixture/assertions passed: ordering, shared roles, promotion, immutability, separate bank sequence and non-reuse.
 - Full local database backup restored to isolated rehearsal DB before migration. Hashes of every existing column in all four tables matched before/after both rehearsal and local application.
