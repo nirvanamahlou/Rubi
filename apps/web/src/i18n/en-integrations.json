@@ -1,4 +1,13 @@
 {
+  "دسته‌بندی نقشه سایت معتبر نیست.": "The site map grouping is invalid.",
+  "نقشه دسته‌بندی‌شده سایت": "Grouped site map",
+  "برای دیدن ارتباط بخش‌ها، کارت موردنظر را انتخاب کنید.": "Select a card to see its connected sections.",
+  "از خانه": "From Home",
+  "ارتباط‌های": "Connections for",
+  "بستن ارتباط‌های بخش": "Close section connections",
+  "ورود از": "Arrive from",
+  "ادامه به": "Continue to",
+  "این بخش مسیر اختصاصی در نقشه ندارد.": "This section has no dedicated map connection.",
   "اعتبار فایل": "File validity",
   "سایت نمایش‌داده‌شده در شماتیک": "Site shown in the live map",
   "انتخاب سایت برای حضور زنده": "Select a site for live presence",

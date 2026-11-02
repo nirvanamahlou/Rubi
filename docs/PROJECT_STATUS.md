@@ -29,6 +29,15 @@ TICKET-LOAD-CONTRACTS-1102 validated:26 focused API checks (including atomic can
 
 COMPUTER_ID=PC-A; branch codex/pc-a-issued-ticket-report-1102 from latest origin/develop. Owner requests all reservation contract flights visible in passenger service report and develop merge. Reserve Reservations service-report.ts, reservation-ticket-documents.ts report composition and focused tests only; own status notes. Include latest assigned flights without inventing document issuance, retain actual saved numbers across intake revisions, exclude removed assignments and duplicate historical segments. Existing report filters/exports and branch/permission guards remain; legacy actual-issued endpoint stays actual-document-only. No shared API shape, schema, migration, dependency, runtime or operational writes. 32 focused API/Web report, numbering/filter/export regressions pass (two existing optional skips); scoped API ESLint passes. API types/build and final-head full hosted gates precede authorized merge. Source reservation freezes on publication and releases on verified merge.
 
+## GHESTIROO-SITE-MAP-1102 — PC-D
+
+Corrected source-owned page taxonomy and grouped live schematic: separate train,
+bus, visa and destinations, actual Home navigation and booking relationships,
+moderate-detail page families, optional connection drilldown. Tracker and API use
+one Ghestiroo manifest; Nora only consumes additive metadata in Integrations.
+No migration, dependency, IAM or unrelated module changes. Release/compatibility
+gates: [GHESTIROO-SITE-MAP-1102](tasks/GHESTIROO-SITE-MAP-1102.md).
+
 ## GHESTIROO-WORKSPACE-1102 — PC-D
 
 Ghestiroo Integrations now uses the authenticated Nora actor, native site

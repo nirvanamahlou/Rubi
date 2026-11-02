@@ -380,6 +380,8 @@ export type SiteReport = {
 
 export type SitePresenceV1 = {
   schemaVersion: 1;
+  mapKind?: 'SITE_NAVIGATION';
+  groups?: { id: string; title: string }[];
   state: 'ACTIVE' | 'NOT_CONFIGURED';
   registrySystemId: string;
   environment: string;
@@ -391,9 +393,10 @@ export type SitePresenceV1 = {
     id: string;
     title: string;
     kind: string;
+    group?: string;
     column: number | null;
     row: number | null;
     count: number | null;
   }[];
-  edges: { from: string; to: string }[];
+  edges: { from: string; to: string; kind?: 'navigation' | 'booking' }[];
 };
