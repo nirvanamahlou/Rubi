@@ -99,7 +99,7 @@ it('prices each room by P.P × dimensionless ratio × its own stay nights, round
 });
 
 it('charges a combined round-trip fare once per passenger and rejects unequal leg counts', async () => {
-  const { hotelTransferChargeableCount } = await import('./hotel-stays');
+  const { hotelTransferChargeableCount } = await import('./hotel-stays.js');
   expect(
     hotelTransferChargeableCount({ outbound: 2, returning: 2 }, true),
   ).toBe(2);

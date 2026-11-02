@@ -185,22 +185,21 @@ export function HotelRoomQuotationEditor({
             type="checkbox"
             disabled={busy}
             checked={draft.hotelTransferRoundTrip ?? false}
-            onChange={(event) =>
-              update({
+            onChange={(event) => {
+              const next = {
                 ...draft,
                 hotelTransferRoundTrip: event.target.checked,
-                ...(event.target.checked
-                  ? {
-                      hotelTransferSplit: false,
-                      hotelTransferReturn: undefined,
-                      hotelTransferCounts: {
-                        outbound: counts.outbound,
-                        returning: counts.outbound,
-                      },
-                    }
-                  : {}),
-              })
-            }
+              };
+              if (event.target.checked) {
+                next.hotelTransferSplit = false;
+                delete next.hotelTransferReturn;
+                next.hotelTransferCounts = {
+                  outbound: counts.outbound,
+                  returning: counts.outbound,
+                };
+              }
+              update(next);
+            }}
           />
           قیمت رفت‌وبرگشت برای هر نفر
         </label>
