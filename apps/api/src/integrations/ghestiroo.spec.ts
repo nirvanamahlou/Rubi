@@ -24,13 +24,14 @@ const bundle = {
   noraOrigin: 'https://nora.example',
   connectionId: 'b'.repeat(32),
   apiKey: 's'.repeat(64),
-  expiresAt: new Date(Date.now() + 86400000).toISOString(),
+  expiresAt: new Date(Date.now() + 90 * 86400000).toISOString(),
   scopes: ['catalog', 'admin'],
 };
 const config: GhestirooConfig = {
   ...bundle,
   allowedUserIds: [actor.userId],
   version: 0,
+  lastRenewedAt: new Date().toISOString(),
 };
 let directory: string;
 beforeEach(async () => {
@@ -103,6 +104,15 @@ describe('Nora module boundary', () => {
     );
     expect(result.configured).toBe(true);
     expect(JSON.stringify(result)).not.toContain(bundle.apiKey);
+    await api.store.write(
+      branch,
+      { ...config, pendingRenewal: { apiKey: 'n'.repeat(64) } },
+      result.version,
+    );
+    const publicStatus = JSON.stringify(await api.status(actor, branch));
+    expect(publicStatus).not.toContain('n'.repeat(64));
+    expect(publicStatus).not.toContain('pendingRenewal');
+    expect(publicStatus).not.toContain('apiKey');
     await expect(
       api.save(
         actor,
