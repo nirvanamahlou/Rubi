@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import type { DatabaseService } from '../database/database.service';
 import type { PackagePricingService } from './package-pricing.service';
@@ -35,7 +35,7 @@ describe('PackageTourPricingService', () => {
       version: 1,
       tourDepartureId: 'tour-1',
       batchId: 'batch-1',
-      updatedByUserId: 'another-editor',
+      updatedByUserId: 'sales-user',
       currencyCode: 'EUR',
       adultFlightSale: new Prisma.Decimal('10000000'),
       adultFlightSaleCurrencyCode: 'IRR',
@@ -152,6 +152,7 @@ describe('PackageTourPricingService', () => {
       { version: 1, expectedDraftVersion: 1, reason: 'review' },
       actor,
     );
+    expect(create.mock.calls[0]?.[0].data.publishedByUserId).toBe('sales-user');
     const double = result.roomPrices.find((row) => row.roomCode === 'double')!;
     expect(result.roomPrices).toHaveLength(1);
     expect(double.hotelPurchase).toBe('600');
@@ -183,7 +184,7 @@ describe('PackageTourPricingService', () => {
     expect(result.familyChildren).toBe(1);
     expect(result.priceFields).toEqual(priceFields);
   });
-  it('never permits publishing by the last draft editor', async () => {
+  it('validates the current source for the last draft editor too', async () => {
     const database = {
       client: {
         packagePricingTourDraft: {
@@ -197,7 +198,9 @@ describe('PackageTourPricingService', () => {
       },
     } as unknown as DatabaseService;
     const pricing = {
-      tourCostGrid: vi.fn(),
+      tourCostGrid: vi
+        .fn()
+        .mockRejectedValue(new BadRequestException('invalid current source')),
     } as unknown as PackagePricingService;
     const service = new PackageTourPricingService(database, pricing);
     await expect(
@@ -210,8 +213,8 @@ describe('PackageTourPricingService', () => {
         },
         actor,
       ),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-    expect(pricing.tourCostGrid).not.toHaveBeenCalled();
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(pricing.tourCostGrid).toHaveBeenCalled();
   });
 
   it('rejects edits to a hotel rate outside the selected purchase batch', async () => {

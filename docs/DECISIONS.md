@@ -735,3 +735,7 @@ Owner explicitly requests replacing the Orders entry point with an independent p
 ## TRAVIS-SANDBOX-CONNECTION-1031 — partial resolution of DEC-OPEN-014
 
 Owner supplied the official sandbox Swagger and requested activation on Avina. Verified HTTPS origin sandboxapi.travis.ir and server-only x-api-key authentication. Catalogue reads return an envelope with code200/data array; country, duration and generic plan retrieval validated. Keep policy issue/confirm/cancel/refund and SLA open: this release only connects sandbox catalogue discovery and does not send real passenger data, claim issuance or alter credit. Credentials remain in private API environment only.
+
+## PACKAGE-PUBLISH-BANNER-1102 — 2026-11-02
+
+Owner explicitly requests every user with access to Package Pricing management can publish, including the last editor. This supersedes the older PACKAGE-PRICING-001 maker/checker rule only for tour-draft publication: package_pricing.read gates the action, branch scope/CAS/current-source/capacity validation and publisher audit remain. No global role grants or other approval flow changes. Banner download is a browser-local rendering of published sale-only view data using existing bundled vendor libraries; it creates no Documents record or external publication. The historical deferred Documents adapter does not prohibit this explicitly requested local output.
