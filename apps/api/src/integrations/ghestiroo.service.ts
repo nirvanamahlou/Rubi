@@ -288,6 +288,7 @@ export class GhestirooService implements OnModuleInit, OnModuleDestroy {
     branch: string,
     systemId: string,
     body: unknown,
+    name = '',
   ) {
     await this.registeredSite(actor, branch, systemId);
     if (!body || typeof body !== 'object' || Array.isArray(body))
@@ -317,7 +318,7 @@ export class GhestirooService implements OnModuleInit, OnModuleDestroy {
             !/^(?:[a-f0-9]{32}|[a-f0-9-]{36})$/.test(data.after))))
     )
       throw new BadRequestException();
-    const result = await this.run(actor, branch, 'dashboard', '', data);
+    const result = await this.run(actor, branch, 'dashboard', '', data, name);
     if (
       result.from !== data.from ||
       result.to !== data.to ||

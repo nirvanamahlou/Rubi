@@ -6,6 +6,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { ForbiddenException } from '@nestjs/common';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { GhestirooService } from './ghestiroo.service';
+import { GhestirooController } from './ghestiroo.controller';
 import * as transport from './ghestiroo.client';
 const branch = randomUUID(),
   site = randomUUID();
@@ -41,6 +42,34 @@ function service() {
   return new GhestirooService(registry as never);
 }
 describe('Ghestiroo dashboard boundary', () => {
+  it('takes the human display name from IAM rather than caller headers', async () => {
+    const dashboard = vi.fn(async () => ({}));
+    const iam = {
+      describeMessagingParticipants: vi.fn(async () => [
+        { displayName: 'Nora person' },
+      ]),
+    };
+    const controller = new GhestirooController(
+      { dashboard } as never,
+      iam as never,
+    );
+    await controller.dashboard(
+      { actor, headers: { 'x-nora-name': 'forged' } } as never,
+      branch,
+      site,
+      body,
+    );
+    expect(iam.describeMessagingParticipants).toHaveBeenCalledWith([
+      actor.userId,
+    ]);
+    expect(dashboard).toHaveBeenCalledWith(
+      actor,
+      branch,
+      site,
+      body,
+      'Nora person',
+    );
+  });
   it('rejects another site, branch and malformed fields before transport', async () => {
     const api = service(),
       run = vi.spyOn(api, 'run');
