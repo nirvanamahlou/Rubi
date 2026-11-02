@@ -132,7 +132,12 @@ describe('company bank account owner commands', () => {
           : null;
       }),
       create: vi.fn().mockImplementation(async ({ data }) => {
-        const row = { version: 1, createdAt: new Date(), ...data };
+        const row = {
+          version: 1,
+          createdAt: new Date(),
+          accountingCode: '5000001',
+          ...data,
+        };
         rows.set(data.id, row);
         return row;
       }),
@@ -171,6 +176,7 @@ describe('company bank account owner commands', () => {
   it('creates multiple accounts with masked ordinary output and secret-free audit, and replays once', async () => {
     const first = input();
     const row = await service.save(bankId, null, first, actor);
+    expect(row.accountingCode).toBe('5000001');
     expect(row.accountNumber).toBe('••••2345');
     expect(JSON.stringify(row)).not.toContain(first.cardNumber);
     expect(JSON.stringify(audit.mock.calls)).not.toContain(first.iban);

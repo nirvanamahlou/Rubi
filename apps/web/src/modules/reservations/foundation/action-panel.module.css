@@ -256,3 +256,12 @@
     grid-column: auto;
   }
 }
+
+.action.purchaseComplete {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #166534;
+}
+.action.purchaseComplete:hover {
+  background: #bbf7d0;
+}

@@ -4,6 +4,17 @@ COMPUTER_ID=PC-A; branch codex/pc-a-finance-inbox-purchases-1102 from develop822
 
 FINANCE-INBOX-PURCHASES-1102 validated:111 API and19 Web/client/i18n checks pass, including account/supplier XOR, active currency/branch accounts, complete purchase-bearing intake reads, old-adapter pagination, grouped immutable FX capture and category filtering. Scoped lint, Contracts build, API/Web types and production API/Web builds pass (Windows Web uses webpack for dependency junctions). Optional v1 category/referenceIds ship with their consumers; old wire and unrelated payment policies remain compatible. Own two English labels and generated catalogues only; peer Accounting/partner scopes preserved. No migration/dependency, production payment/data rewrite or deployment. Source reservations freeze on push; exact-head hosted gates precede authorized develop merge. See docs/tasks/FINANCE-INBOX-PURCHASES-1102.md.
 
+## CUSTOMER-CODES-1102 — PC-B — LOCAL VERIFIED
+
+Customer codes4000001+ allocated by creation date/id, readonly below national ID. Three existing local records backfilled without changing prior columns; automatic immutable codes for new customers. API/web builds, 53 API tests, 44 web tests and isolated SQL checks passed. No production rollout. See docs/tasks/CUSTOMER-CODES-1102.md.
+
+## ORGANIZATION-CODE-DISPLAY-1102 — PC-B
+
+Company numbers now replace legacy organization codes in visible profiles/lists/selectors/forms and Excel output; separate accounting-code label removed for companies. Historical codes, IDs and contract writes preserved. Numeric search and backward-compatible Excel matching covered. Local3100 updated; details in docs/tasks/PARTNER-ACCOUNTING-CODES-1102.md.
+## PARTNER-ACCOUNTING-CODES-1102 — PC-B — LOCAL VERIFIED
+
+Readonly chronological company/bank accounting codes implemented and activated on Rubi3100. Existing data preserved; shared company identities keep the same code across roles. See docs/tasks/PARTNER-ACCOUNTING-CODES-1102.md for tests, migration and deployment. No production rollout.
+
 ## ONE-ADULT-CHILD-DOUBLE-1102 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-one-adult-child-double-1102 from latest origin/develop. Owner authorizes Double choice for one adult plus one or more children and develop merge. Reserve only shared Sales hotel-rooms.ts category policy and room-category.spec.ts plus own status notes. Existing helper drives Sales primary/additional rooms, Reservations amendments and API validation; producer/consumer ship together with no shape change. Preserve Single default, existing manual categories, actual room-type capacity and age/party guards. No schema/migration/dependency/runtime or data changes. Prior Family task source released on merge; no active overlapping helper writer. 27 focused category/Web primary-room/additional-stay/amendment regressions, scoped lint, Contracts typecheck/build pass; all final-head hosted gates precede merge. Source freezes on publication and releases on verified merge.
@@ -8009,6 +8020,13 @@ Reservation queues use fixed ascending natural contract-number order before pagi
 ## PAYMENT-DESTINATION-DETAILS-1029 — PC-A — MERGED / ROLLOUT_PENDING
 
 COMPUTER_ID=PC-A; branch codex/pc-a-payment-destination-details-1029 from origin/develop. Owner requests complete named destination accounts in the Sales payment picker, develop merge and Avina server update. Reserve Finance sales-receipt public projection/service/module, bounded MasterProcurementDirectory bank-name projection, Sales repository/service/module wiring, additive SalesPaymentAccountV1 fields, payment picker and select wrapping plus focused regressions and own notes. Producer Finance publishes company payment instructions only after existing contract/payment authorization; retain active branch/currency controls and audit identifier reveals. No broad Finance permission grant, customer bank disclosure, approval/accounting mutation, schema/migration/dependency change. API-first additive DTO compatibility; Web falls back to legacy masked values. Final-head full CI gates authorized merge. Operational rollout requires SSH access, backup checkpoint, migration inventory and verified health; preserve business data and configuration.
+
+
+## RESERVATION-STATUS-BADGES-1102 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-status-badges-1102 from origin/develop. User authorizes purchase-completion green action and operational amendment correction badge, with develop merge after checks. Reserve Reservations read projection/query, action panel/list mapping/styles and focused tests; Sales reservation summary producer and additive Travel summary DTO if required. Public read-only completion uses branch-scoped registered purchase facts, never financial approval or empty/unknown coverage. Sales correction acknowledgement remains distinct from operational amendment history. No migration/dependency/procurement writer changes or deployment. Same-owner earlier scopes published, no overlapping active file lock identified.
+
+Implemented branch-scoped read-only purchase-completion endpoint; current execution hotel stays, transfer leg coverage, insurance and floating/manual flights require registered rows, quotes/empty/unknown do not count. Company/API inventory flights are not per-contract purchase rows. Frontend refreshes after save, focus and polling with stale-response isolation. Additive Sales-produced amendedAt includes successful operational, canonical contract and party amendments; existing passenger correction acknowledgement retained. Local12 API checks,73 Web checks, scoped lint, Contracts/API typechecks pass using isolated current-schema Prisma output. Web final typecheck and production build/full financial regression gates run before merge; no runtime deployment.
 
 ## FLOATING-SALES-PURCHASES-1102 — PC-A — VALIDATING
 

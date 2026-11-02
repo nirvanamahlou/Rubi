@@ -1,4 +1,6 @@
 {
+  "کد تفصیلی حسابداری": "Accounting detail code",
+  "کد تفصیلی حسابداری:": "Accounting detail code:",
   "— تاریخ:": "— Date:",
   "· تعداد رکوردها:": "· Record count:",
   "آخرین بررسی کننده": "Last reviewer",
@@ -256,6 +258,7 @@
   "عدم شمول": "Exclude",
   "مراحل بعدی در راهکاران قابل مشاهده نیست": "The subsequent stages cannot be viewed in Rahkaran",
   "صدور سند معکوس تعدیل ماهیت": "Issuance of reverse document of nature adjustment",
+  "ثبت همه": "Save all",
   "ظرفیت تور برای انتشار قیمت کافی نیست.": "Tour capacity is insufficient for price publication.",
   "هزینهٔ خرید پرواز هنوز در محاسبهٔ سود لحاظ نشده است؛ ثبت قیمت فروش پکیج مجاز است.": "Flight purchase cost is not yet included in profit calculations; package sale prices may still be published.",
   "تخفیف نمی‌تواند از قیمت پکیج بیشتر باشد.": "The discount cannot exceed the package price.",

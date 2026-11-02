@@ -139,7 +139,10 @@ export function LiveReservationQueue() {
       }
     }
     const resume = () => {
-      if (document.visibilityState === 'visible') void update();
+      if (document.visibilityState === 'visible') {
+        if (running) queuedRefresh = true;
+        else void update();
+      }
     };
     const priceChanged = (event: StorageEvent) => {
       if (event.key === 'rubi-contract-price-updated') resume();
