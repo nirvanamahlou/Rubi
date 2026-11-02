@@ -35,6 +35,9 @@ Local checks:52 Web/integration/English checks,10 API connector/dashboard checks
 and one opt-in API contract check skipped. Scoped lint and API/Web types pass;
 stale Contracts/Prisma generated files were rebuilt without schema edits. Hosted
 quality initially caught formatting in two task-owned blocks; corrected before
-final publication. Producer PR144 is merged into develop with automatic CI
-skipped under the owner's instruction. Runtime migration rehearsal, live SQL
+final publication. Producer PR144 is merged into develop; its existing
+pull_request_target workflow ignored the skip marker and ran automatically.
+The LAN HTTP regression exposed a navigation-ID issue, fixed by producer PR145
+with31 route/crypto checks. The follow-up target workflow was observed and
+cancelled under the owner's instruction. Runtime migration rehearsal, live SQL
 reconciliation, consumer CI/PR and bounded rollout remain release gates.

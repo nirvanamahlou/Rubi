@@ -124,3 +124,25 @@ it('permits draft agency choices only to authorized new-contract creators, witho
     h.service.draftReference('unknown', '1', '', actor),
   ).rejects.toThrow();
 });
+
+it('routes a floating hotel-only contract to the same Sales owner purchase flow', async () => {
+  const h = setup();
+  h.current.snapshot.serviceSelections = [
+    { kind: 'HOTEL', metadata: { purchaseSupplyType: 'FLOATING' } },
+  ] as unknown as typeof h.current.snapshot.serviceSelections;
+  await h.service.batch('contract', {} as never, actor, 'hotel-key');
+  expect(h.purchases.recordBatch).toHaveBeenCalledWith(
+    'intake',
+    {},
+    actor,
+    'hotel-key',
+    'contract',
+  );
+  h.current.snapshot.serviceSelections = [
+    { kind: 'HOTEL', metadata: {} },
+  ] as unknown as typeof h.current.snapshot.serviceSelections;
+  await expect(
+    h.service.batch('contract', {} as never, actor, 'regular'),
+  ).rejects.toThrow();
+  expect(h.purchases.recordBatch).toHaveBeenCalledTimes(1);
+});

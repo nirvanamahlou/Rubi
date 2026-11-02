@@ -8,6 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  isFloatingSalesContract,
   moneyUnits,
   type AuthenticatedActor,
   type ReservationHotelPurchaseInputV1,
@@ -68,6 +69,8 @@ export class ReservationHotelPurchaseService {
     if (!intake || !actor.branchIds.includes(intake.branchId))
       throw new NotFoundException('درخواست رزرواسیون در دسترس نیست.');
     const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
+    if (isFloatingSalesContract(snapshot.serviceSelections))
+      throw new ForbiddenException('مجوز ثبت هزینه خرید هتل وجود ندارد.');
     if (!snapshot.hotelSelection)
       throw new BadRequestException('این درخواست، اقامت هتل ندارد.');
     const pricing = snapshot.serviceSelections.find(

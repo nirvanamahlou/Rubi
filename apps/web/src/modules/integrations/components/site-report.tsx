@@ -70,6 +70,7 @@ export function SiteTrend({
                   <td>
                     {new Date(row.date + 'T12:00:00Z').toLocaleDateString(
                       'fa-IR',
+                      { timeZone: 'Asia/Tehran' },
                     )}
                   </td>
                   <td>{reportCount(row.value)}</td>
