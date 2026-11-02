@@ -10611,3 +10611,7 @@ COMPUTER_ID=PC-B; branch codex/pc-b-workbench-attendance-summary-1102 from devel
 ## HR-DASHBOARD-LIVE-1102 — PC-B — IN_PROGRESS
 
 Reserve HR dashboard domain/service bounded query, dashboard cards/charts and tests. User requests actual API data,current Persian season,newest-first30-day attendance and push/develop merge. Preserve HR scope and Radan source dates; no migration/dependencies or deployment.
+
+## HR-RADAN-DATE-SCHEDULE-1102 — PC-B — IN_PROGRESS
+
+Reserve Radan ingestion date normalization, HR attendance calculation/import reconciliation and self-performance, employee attendance weekday projection/tests. User explicitly authorizes source dates+1day,09:15–17 standard schedule with Thursday14:00 end and overtime after17:30, local activation and push/develop merge. Preserve source IDs, closed periods, approved corrections and peer runtime edits. No migration/dependency.

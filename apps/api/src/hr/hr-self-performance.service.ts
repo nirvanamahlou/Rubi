@@ -141,7 +141,14 @@ export class HrSelfPerformanceService {
       if (day && !days.has(day))
         days.set(
           day,
-          row.status === 'حاضر'
+          row.status === 'حاضر' ||
+            (typeof (row.data as Record<string, unknown> | null)?.firstIn ===
+              'string' &&
+              Number.isFinite(
+                Date.parse(
+                  String((row.data as Record<string, unknown>).firstIn),
+                ),
+              ))
             ? ((row.data ?? {}) as Record<string, unknown>)
             : {},
         );

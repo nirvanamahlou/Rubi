@@ -125,9 +125,10 @@ describe('HR self performance public projection', () => {
       query.where.tab === 'attendance'
         ? [
             {
-              status: 'حاضر',
+              status: 'نیازمند بررسی',
               values: ['User', '2026-11-02'],
               data: {
+                firstIn: '2026-11-02T05:50:00Z',
                 lateMinutes: 5,
                 deficitMinutes: null,
                 overtimeMinutes: null,
