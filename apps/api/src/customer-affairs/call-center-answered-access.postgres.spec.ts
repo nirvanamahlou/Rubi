@@ -140,6 +140,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         throw Error('Disposable nora_ci only');
       vi.stubEnv('CALL_CENTER_ACCESS_POLICY', 'ANSWERED');
       vi.stubEnv('CALL_CENTER_GLOBAL_USER_IDS', `${ceo},${demo}`);
+      vi.stubEnv('CALL_CENTER_RECORDING_DOWNLOAD_USER_ID', ceo);
       db = createDatabaseClient(url.toString());
       const database = { client: db } as never;
       await db.branch.createMany({
@@ -185,7 +186,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         await db.user.create({
           data: {
             id,
-            username: id,
+            username: id === ceo ? 'danial' : id,
             displayName: 'Synthetic operator',
             passwordHash: 'not-a-login',
             status: 'ACTIVE',
@@ -613,7 +614,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       });
       expect(
         await domain.authorizeRecording(
-          actor(expert),
+          await directory.callCenterActor(actor(ceo)),
           connectionId,
           own.session.rootFingerprint,
           ref,
@@ -627,11 +628,11 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           ref,
         ),
       ).rejects.toThrow();
-      expect(await provider.forCall(actor(expert), own.callId)).toEqual({
-        data: [],
-      });
+      await expect(
+        provider.forCall(actor(expert), own.callId),
+      ).rejects.toMatchObject({ status: 403 });
     });
-    it('serves actual encrypted recording bytes only to answering accounts, their manager and configured global accounts', async () => {
+    it('serves actual encrypted recording bytes only to the pinned active executive, never answering accounts, managers or demo', async () => {
       const event = makeEvent('105'),
         row = await emit(event),
         id = randomUUID();
@@ -672,7 +673,7 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         },
       });
       await events.process(receipt.id);
-      for (const userId of [expert, peer, manager, ceo, demo]) {
+      for (const userId of [ceo]) {
         const scoped = await directory.callCenterActor(actor(userId));
         expect(
           (await media.read(scoped, id, undefined, row.callId)).audio.equals(
@@ -681,7 +682,15 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         ).toBe(true);
         expect((await media.read(scoped, id)).audio.equals(audio)).toBe(true);
       }
-      for (const userId of [other, noUnit]) {
+      for (const userId of [
+        expert,
+        peer,
+        manager,
+        demo,
+        admin,
+        other,
+        noUnit,
+      ]) {
         await expect(
           media.read(actor(userId), id, undefined, row.callId),
         ).rejects.toThrow();

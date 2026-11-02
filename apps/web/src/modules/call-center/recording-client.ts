@@ -70,3 +70,24 @@ export async function recordingBlob(
   if (blob.size < 44 || blob.size > 20971520) throw new RecordingError(502);
   return blob;
 }
+
+export async function recordingAccess(
+  branch: string,
+  signal: AbortSignal,
+): Promise<boolean> {
+  const base = getPublicApiBaseUrl();
+  if (!base) return false;
+  const response = await localizedFetch(
+    base + '/customer-affairs/call-center/recording-access',
+    {
+      credentials: 'include',
+      cache: 'no-store',
+      redirect: 'error',
+      signal,
+      headers: { 'x-branch-id': branch },
+    },
+  );
+  if (!response.ok) return false;
+  const body = (await response.json()) as { data?: { allowed?: boolean } };
+  return body.data?.allowed === true;
+}

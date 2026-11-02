@@ -40,7 +40,46 @@ export class IamCallCenterDirectory {
     }));
   }
 
+  /** Single pinned executive account; global/demo/role grants cannot authorize audio. */
+  async canDownloadCallRecordings(
+    actor: AuthenticatedActor,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const id = process.env.CALL_CENTER_RECORDING_DOWNLOAD_USER_ID?.trim();
+    if (
+      !id ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        id,
+      ) ||
+      actor.userId !== id
+    )
+      return false;
+    return !!(await (tx ?? this.database.client).user.findFirst({
+      where: {
+        id,
+        username: 'danial',
+        status: 'ACTIVE',
+        b2bOrganizationUser: null,
+      },
+      select: { id: true },
+    }));
+  }
+
   async callCenterActor(actor: AuthenticatedActor) {
+    const audio = 'customer_affairs.call_center.recordings.read' as const;
+    const permitted = await this.canDownloadCallRecordings(actor);
+    const permissions: AuthenticatedActor['permissions'][number][] =
+      actor.permissions.filter((code) => code !== audio);
+    if (
+      permitted &&
+      actor.permissions.includes('customer_affairs.call_center.read')
+    )
+      permissions.push(audio);
+    if (
+      permissions.length !== actor.permissions.length ||
+      permissions.some((code, index) => code !== actor.permissions[index])
+    )
+      actor = callCenterScopedActor(actor, { ...actor, permissions });
     if (!(await this.globalCallCenter(actor))) return actor;
     const branches = await this.database.client.branch.findMany({
       where: { isActive: true },
@@ -53,7 +92,7 @@ export class IamCallCenterDirectory {
         ...new Set([
           ...actor.permissions,
           ...CALL_CENTER_SALES_MANAGER,
-          'customer_affairs.call_center.recordings.read' as const,
+          ...(permitted ? [audio] : []),
         ]),
       ],
     });

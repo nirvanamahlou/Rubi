@@ -577,6 +577,13 @@ export class CallCenterTelephonyService {
     });
     return { data: calls.map((c) => this.calls.presentSummary(c)) };
   }
+  async authorizeRecordingDownload(
+    actor: AuthenticatedActor,
+    tx?: Prisma.TransactionClient,
+  ) {
+    if (!(await this.directory.canDownloadCallRecordings(actor, tx)))
+      throw new ForbiddenException();
+  }
   /** Public media authorization: Integrations never queries Customer Affairs tables. */
   async callRecordingContext(
     actor: AuthenticatedActor,
@@ -589,6 +596,7 @@ export class CallCenterTelephonyService {
       )
     )
       throw new ForbiddenException();
+    await this.authorizeRecordingDownload(actor, tx);
     const call = await tx.callCenterCall.findFirst({
       where: {
         id: callId,
@@ -631,6 +639,7 @@ export class CallCenterTelephonyService {
     tx: Prisma.TransactionClient = this.db.client,
   ) {
     this.authorize(actor);
+    await this.authorizeRecordingDownload(actor, tx);
     if (
       !actor.permissions.includes(
         'customer_affairs.call_center.recordings.read',

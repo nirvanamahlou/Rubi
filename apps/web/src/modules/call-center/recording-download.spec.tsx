@@ -1,14 +1,17 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { DisplayLocaleContext } from '@/i18n/locale-context';
-import { RecordingDownload } from './recording-download';
+import {
+  RecordingDownload,
+  RecordingDownloadAction,
+} from './recording-download';
 describe('localized recording download action', () => {
   it.each(['fa', 'en'] as const)(
     'places icon after text in logical %s order',
     (language) => {
       const html = renderToStaticMarkup(
         <DisplayLocaleContext.Provider value={language}>
-          <RecordingDownload callId="call" branchId="branch" allowed />
+          <RecordingDownloadAction callId="call" branchId="branch" allowed />
         </DisplayLocaleContext.Provider>,
       );
       expect(html).toContain(`dir="${language === 'fa' ? 'rtl' : 'ltr'}"`);
@@ -21,10 +24,22 @@ describe('localized recording download action', () => {
   );
   it('explains unavailable permission without exposing a file URL', () => {
     const html = renderToStaticMarkup(
-      <RecordingDownload callId="call" branchId="branch" allowed={false} />,
+      <RecordingDownloadAction
+        callId="call"
+        branchId="branch"
+        allowed={false}
+      />,
     );
     expect(html).toContain('disabled=""');
     expect(html).toContain('مجوز');
     expect(html).not.toContain('href=');
   });
+});
+
+it('hides controls before server capability is resolved even with a legacy audio grant', () => {
+  expect(
+    renderToStaticMarkup(
+      <RecordingDownload callId="call" branchId="branch" allowed />,
+    ),
+  ).toBe('');
 });

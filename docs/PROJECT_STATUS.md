@@ -8462,3 +8462,7 @@ HR-ATTENDANCE-NEWEST-1102 local acceptance: existing runtime built and restarted
 ## HR-EMPLOYEE-CONTRACT-DATES-1102 — PC-B
 
 Employee-related record forms no longer offer inline employee creation; employee selection and native Employees creation remain. Employee table renames start to employment start and adds adjacent contract end / employment end columns. Projection selects the latest noncancelled/nondeleted contract by start date and separation last working day, never exit-interview date, preserving blank open-ended contracts and export identities. Existing complete scoped reference loader avoids bootstrap truncation. Ended employees remain list/filter-visible.21 focused Web/catalog tests and scoped lint pass; local3100 columns verified. No schema/API/dependency or operational record changes. Final-head hosted gates precede authorized develop merge.
+
+## CALL-CENTER-AUDIO-CEO-ONLY-1102 — PC-C — SOURCE ONLY
+
+Owner restricts audio to Danial Altafi. Single immutable IAM-ID plus active internal account validation, server-side list/full/Range checks and fail-closed UI capability implemented. Demo/admin/manager/employee legacy grants cannot bypass. No server deployment/configuration or grant mutation authorized or performed. Details and future activation prerequisites: docs/tasks/CALL-CENTER-AUDIO-CEO-ONLY-1102.md.
