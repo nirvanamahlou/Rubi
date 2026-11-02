@@ -12,7 +12,7 @@ it('keeps every price-field delete icon readable without a solid red background'
   const buttons = [
     ...html.matchAll(/<button\b[^>]*aria-label="حذف فیلد[^>]*>/g),
   ];
-  expect(buttons).toHaveLength(4);
+  expect(buttons).toHaveLength(5);
   for (const [button] of buttons) {
     expect(button).toContain('bg-transparent');
     expect(button).toContain('text-destructive');
@@ -20,7 +20,7 @@ it('keeps every price-field delete icon readable without a solid red background'
     expect(button).not.toMatch(/(?:\s|")bg-destructive(?:\s|")/);
     expect(button).not.toContain('text-white');
   }
-  expect(html.match(/lucide-trash-2/g)).toHaveLength(4);
+  expect(html.match(/lucide-trash-2/g)).toHaveLength(5);
 });
 
 function props(node: ReactNode): Record<string, unknown>[] {
@@ -37,24 +37,24 @@ it('adds a typed price with independent currency, edits a default label and remo
     props(canonicalTestTree(TourPriceFields({ value, onChange })));
   const add = render().find((node) => node.onClick && !node['aria-label'])!;
   (add.onClick as () => void)();
-  expect(value).toHaveLength(5);
-  const customId = value[4]!.id;
+  expect(value).toHaveLength(6);
+  const customId = value[5]!.id;
   const title = render().find(
-    (node) => node['aria-label'] === 'نام فیلد قیمت 5',
+    (node) => node['aria-label'] === 'نام فیلد قیمت 6',
   )!;
   (title.onChange as (event: unknown) => void)({ target: { value: 'Visa' } });
   const currency = render().find((node) => node['aria-label'] === 'ارز Visa')!;
   (currency.onChange as (event: unknown) => void)({ target: { value: 'gbp' } });
   const money = render().find((node) => node['aria-label'] === 'مبلغ Visa')!;
   (money.onValueChange as (amount: string) => void)('15.50');
-  const defaultTitle = render().find(
-    (node) => node['aria-label'] === 'نام فیلد قیمت 1',
+  expect(
+    render().some((node) => node['aria-label'] === 'نام فیلد قیمت 1'),
+  ).toBe(false);
+  const select = render().find(
+    (node) => node['aria-label'] === 'نوع فیلد قیمت 1',
   )!;
-  (defaultTitle.onChange as (event: unknown) => void)({
-    target: { value: 'Adult fare' },
-  });
-  expect(value[0]).toMatchObject({ kind: 'adultFlight', title: 'Adult fare' });
-  for (let i = 0; i < 4; i++) {
+  expect(select.value).toBe('adultFlight');
+  for (let i = 0; i < 5; i++) {
     const remove = render().find((node) =>
       String(node['aria-label']).startsWith('حذف فیلد'),
     )!;

@@ -17501,5 +17501,7 @@
   "Attendance provider request failed": "Attendance provider request failed",
   "قیمت رفت‌وبرگشت برای هر نفر": "Round-trip fare per person",
   "Transfer P.P رفت‌وبرگشت": "Round-trip transfer P.P",
-  "تعداد نفرات ترانسفر رفت‌وبرگشت": "Round-trip transfer passengers"
+  "تعداد نفرات ترانسفر رفت‌وبرگشت": "Round-trip transfer passengers",
+  "قیمت فروش پرواز نوزاد": "Infant flight sale price",
+  "نوع فیلد قیمت": "Price field type"
 }

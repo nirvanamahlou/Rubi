@@ -356,6 +356,9 @@ export function TourPricingWorkspace() {
         checkOut: grid.tour.endsOn,
         currencyCode: batch.currencyCode,
         calculation: {
+          infantFlight: priceFields.find(
+            (field) => field.kind === 'infantFlight',
+          ),
           extraSaleFields: priceFields.filter(
             (field) => field.kind === 'custom',
           ),
