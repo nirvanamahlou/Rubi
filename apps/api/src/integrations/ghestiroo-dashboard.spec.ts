@@ -79,16 +79,14 @@ describe('Ghestiroo dashboard boundary', () => {
     };
     await api.store.write(branch, config, 0);
     vi.spyOn(api.renewal, 'ensure').mockResolvedValue(config);
-    const request = vi
-      .spyOn(transport, 'ghestirooRequest')
-      .mockResolvedValue({
-        contract: config.contract,
-        schemaVersion: 1,
-        ...body,
-        metrics: { orders: { value: 0, state: 'AVAILABLE' } },
-        visits: { pageViews: 0 },
-        activity: [],
-      });
+    const request = vi.spyOn(transport, 'ghestirooRequest').mockResolvedValue({
+      contract: config.contract,
+      schemaVersion: 1,
+      ...body,
+      metrics: { orders: { value: 0, state: 'AVAILABLE' } },
+      visits: { pageViews: 0 },
+      activity: [],
+    });
     const result = await api.dashboard(actor, branch, site, body);
     expect(result.registrySystemId).toBe(site);
     expect(request.mock.calls[0]?.[1]).toBe('dashboard');

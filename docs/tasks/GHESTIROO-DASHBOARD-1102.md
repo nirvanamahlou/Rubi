@@ -21,3 +21,20 @@ authorization tests and live readonly reconciliation. Nora final-head CI precede
 develop merge; Ghestiroo publication follows existing no-CI-test preference.
 Deploy bounded overlays with backups/common lock, preserve concurrent runtime
 source, env/mounts and unrelated services. No production business-data test writes.
+
+Implemented all first-page report widgets and both Brands/Overview entry points.
+Source KPI predicates and drills share one definition; four operational queues
+are explicitly current-state rather than period flows. Actual website accounts,
+purchase cases, activation amounts, receipts and requests remain distinct.
+Audit detail/credentials/PII are excluded. Source-only anonymous visit migration
+retains400 days and declares capture start; old cached heartbeat clients remain
+supported. Missing activation dates are disclosed rather than inferred.
+
+Local checks:52 Web/integration/English checks,10 API connector/dashboard checks,
+29 Python checks and29 route/manifest checks pass. Two source environment tests
+and one opt-in API contract check skipped. Scoped lint and API/Web types pass;
+stale Contracts/Prisma generated files were rebuilt without schema edits. Hosted
+quality initially caught formatting in two task-owned blocks; corrected before
+final publication. Producer PR144 is merged into develop with automatic CI
+skipped under the owner's instruction. Runtime migration rehearsal, live SQL
+reconciliation, consumer CI/PR and bounded rollout remain release gates.
