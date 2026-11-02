@@ -32,6 +32,42 @@ const row = {
 };
 
 describe('MasterDataService', () => {
+  it.each(['W5', 'IRM', ' mahan   air '])(
+    'persists airline identifier %s',
+    async (airlineCodes) => {
+      const repository = {
+        codeExists: vi.fn().mockResolvedValue(false),
+        fieldExists: vi.fn().mockResolvedValue(false),
+        create: vi
+          .fn()
+          .mockImplementation(async (_resource, data) => ({ ...row, ...data })),
+      } as unknown as MasterDataRepository;
+      await new MasterDataService(repository).create(
+        'airlines',
+        { airlineCodes, name: 'Synthetic airline' },
+        actor,
+      );
+      expect(repository.create).toHaveBeenCalledWith(
+        'airlines',
+        expect.objectContaining({
+          code: airlineCodes.trim().toUpperCase().replace(/\s+/g, ' '),
+        }),
+        actor.userId,
+        actor.branchIds[0],
+      );
+    },
+  );
+  it('rejects extra code segments instead of silently discarding them', async () => {
+    const repository = { create: vi.fn() } as unknown as MasterDataRepository;
+    await expect(
+      new MasterDataService(repository).create(
+        'airlines',
+        { airlineCodes: 'W5 / IRM / EXTRA', name: 'Synthetic airline' },
+        actor,
+      ),
+    ).rejects.toThrow();
+    expect(repository.create).not.toHaveBeenCalled();
+  });
   it.each([undefined, '', '55555555-5555-4555-8555-555555555555'])(
     'persists optional hotel currency %s',
     async (currencyId) => {

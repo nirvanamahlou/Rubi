@@ -192,6 +192,8 @@ export function ReservationOperationsWorkspace({
   const effectiveQuery = reservationWindowQuery(query, now);
   const result = queryRows(visibleRows, effectiveQuery);
   const metrics = dashboard(result.filteredRows, now);
+  if (selectedId === null && result.filteredRows[0])
+    setSelectedId(result.filteredRows[0].id);
   const selected =
     result.filteredRows.find((r) => r.id === selectedId) ??
     result.filteredRows[0];
@@ -903,7 +905,11 @@ export function ReservationOperationsWorkspace({
         </div>
         {section === 'inbox' && (
           <ContractActionPanel
-            key={selected?.id ?? 'unselected'}
+            key={JSON.stringify([
+              effectiveState === 'SUCCESS',
+              [...access.branchIds].sort(),
+              [...access.permissions].sort(),
+            ])}
             request={selected}
           />
         )}
