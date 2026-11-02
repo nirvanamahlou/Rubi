@@ -1,5 +1,7 @@
 'use client';
-import { BarChart3, Trophy, Users } from 'lucide-react';
+import { ExpertActivity } from './expert-activity';
+import type { SearchFilters } from './read-client';
+import { BarChart3, Users } from 'lucide-react';
 import type { Report } from './read-client';
 import type { Operator } from './workflow-client';
 import { faNumber } from './model';
@@ -14,10 +16,15 @@ const colors = [
 ];
 export function ReportHighlights({
   data,
-  agents,
+  branch,
+  filters,
+  meta,
 }: {
   data: Report['data'];
-  agents: Operator[];
+  agents?: Operator[];
+  branch?: string | undefined;
+  filters?: SearchFilters | undefined;
+  meta?: Report['meta'] | undefined;
 }) {
   const sources = Array.from(
     data.sources.reduce(
@@ -37,105 +44,19 @@ export function ReportHighlights({
     data.calls && sources.length
       ? `conic-gradient(${segments.join(',')}, #e8edf4 ${position}% 100%)`
       : '#e8edf4';
-  const ids = Array.from(
-    new Set([
-      ...data.registrations.map((a) => a.actorId),
-      ...data.tasks.activity.map((a) => a.actorId),
-    ]),
-  );
-  const activity = ids
-    .map((id) => ({
-      id,
-      registered: data.registrations
-        .filter((a) => a.actorId === id)
-        .reduce((n, a) => n + a.count, 0),
-      completed: data.tasks.activity
-        .filter((a) => a.actorId === id && a.role === 'COMPLETED_BY')
-        .reduce((n, a) => n + a.count, 0),
-      open: data.tasks.activity
-        .filter((a) => a.actorId === id && a.role === 'CURRENT_OWNER')
-        .reduce((n, a) => n + a.count, 0),
-    }))
-    .sort(
-      (a, b) =>
-        b.completed - a.completed ||
-        b.registered - a.registered ||
-        (a.id ?? '').localeCompare(b.id ?? ''),
-    );
   return (
     <div className={styles.highlights}>
-      <article className={styles.reportCard}>
+      <article className={`${styles.reportCard} ${styles.expertCard}`}>
         <h3>
-          <Trophy size={19} /> بیشترین تماس خروجی
+          <Users size={19} />
+          عملکرد تماس و وضعیت پیگیری کارشناسان
         </h3>
-        <p className={styles.formHint}>
-          پنج مخاطب با بیشترین تماس خروجی در بازه و فیلتر گزارش
-        </p>
-        {data.topFollowUps === undefined ? (
-          <p>اطلاعات رتبه‌بندی در دسترس نیست.</p>
-        ) : data.topFollowUps.length === 0 ? (
-          <p>تماس خروجی منطبق با فیلتر ثبت نشده است.</p>
-        ) : (
-          <table className={`${styles.table} ${styles.centeredTable}`}>
-            <thead>
-              <tr>
-                <th>رتبه</th>
-                <th>نام مخاطب</th>
-                <th>تعداد تماس خروجی</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.topFollowUps.map((row, index) => (
-                <tr key={row.contactId}>
-                  <td>{faNumber(index + 1)}</td>
-                  <td>{row.name}</td>
-                  <td>
-                    <span className={styles.rankingCount}>
-                      {faNumber(row.count)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </article>
-      <article className={styles.reportCard}>
-        <h3>
-          <Users size={19} /> فعالیت کارشناسان
-        </h3>
-        <p className={styles.formHint}>
-          ثبت و انجام در بازه؛ مسئولیت باز در وضعیت فعلی شعبه
-        </p>
-        {!activity.length ? (
-          <p>فعالیتی برای نمایش ثبت نشده است.</p>
-        ) : (
-          <div className={styles.operatorScroll}>
-            <table className={`${styles.table} ${styles.centeredTable}`}>
-              <thead>
-                <tr>
-                  <th>اپراتور</th>
-                  <th>ثبت تماس</th>
-                  <th>انجام پیگیری</th>
-                  <th>مسئول باز</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activity.map((row, index) => (
-                  <tr key={row.id ?? index}>
-                    <td title={row.id ?? undefined}>
-                      {agents.find((a) => a.id === row.id)?.displayName ??
-                        (row.id ? 'کارشناس خارج از فهرست' : 'نامشخص')}
-                    </td>
-                    <td>{faNumber(row.registered)}</td>
-                    <td>{faNumber(row.completed)}</td>
-                    <td>{faNumber(row.open)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <ExpertActivity
+          data={data}
+          branch={branch}
+          filters={filters}
+          meta={meta}
+        />
       </article>
       <article className={styles.reportCard}>
         <h3>

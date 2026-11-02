@@ -1,3 +1,11 @@
+import { callPerformanceStaff } from '../hr/hr-call-performance-directory';
+import { callCenterExpertTasks } from '../tasks/call-center-read';
+import {
+  expertPerformance,
+  type ExpertCallFact,
+  type ExpertMetric,
+} from './expert-performance';
+import type { TelephonyTechnical } from './telephony-state';
 import { matchesContactColumns } from './contact-column-filters';
 import {
   missedCallbackCount,
@@ -779,6 +787,101 @@ export class CallCenterReadService {
           tehranDay(now),
           users,
         );
+        const expertIds = await tx.$queryRaw<
+          { id: string }[]
+        >`SELECT a.id FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate} AND a.origin='TELEPHONY' ORDER BY a.occurred_at,a.id LIMIT 10001`;
+        if (expertIds.length > 10000)
+          throw new BadRequestException(
+            'برای گزارش کارشناسان بازه کوتاه‌تری انتخاب کنید؛ حداکثر ۱۰۰۰۰ تماس.',
+          );
+        const expertCalls = await tx.callCenterCall.findMany({
+          where: { id: { in: expertIds.map((r) => r.id) } },
+          include: { answerResponsibilities: { select: { userId: true } } },
+          orderBy: [{ occurredAt: 'asc' }, { id: 'asc' }],
+        });
+        const sessions = await tx.callCenterTelephonySession.findMany({
+          where: {
+            callId: { in: expertIds.map((r) => r.id) },
+            synthetic: false,
+          },
+          include: { offers: { select: { userId: true } } },
+        });
+        const sessionByCall = new Map(sessions.map((s) => [s.callId, s]));
+        const facts: ExpertCallFact[] = expertCalls.map((call) => {
+          const session = sessionByCall.get(call.id);
+          const technical = session
+            ? this.crypto.decrypt<TelephonyTechnical>(
+                session.encryptedTechnical,
+                session.keyVersion,
+                `telephony:${session.id}`,
+              )
+            : null;
+          const valid =
+            technical &&
+            (technical.first.direction === 'OUT' ? 'OUTBOUND' : 'INBOUND') ===
+              call.direction;
+          const connected =
+            call.answerResponsibilities.length > 0 ||
+            !!(valid && technical.answered);
+          const ids =
+            call.direction === 'INBOUND'
+              ? call.answerResponsibilities.map((a) => a.userId)
+              : valid
+                ? (session?.offers.map((o) => o.userId) ?? [])
+                : [];
+          const payload = this.calls.presentSummary(call);
+          return {
+            id: call.id,
+            contactId: call.contactId,
+            knownPhone: !!payload.phone,
+            at: call.occurredAt.toISOString(),
+            direction: call.direction,
+            connected,
+            complete: !call.needsCompletion && !!call.outcome,
+            actors: [...new Set(ids)],
+            extension:
+              valid && call.direction === 'OUTBOUND'
+                ? (technical.first.extension ?? undefined)
+                : undefined,
+          };
+        });
+        const expert = expertPerformance(
+          await callPerformanceStaff(tx, branchId, users),
+          facts,
+          await callCenterExpertTasks(tx, branchId, users),
+          now.toISOString(),
+          users,
+        );
+        let activityDetail:
+          | {
+              actorId: string;
+              metric: string;
+              rows: unknown[];
+              total: number;
+              page: number;
+              pageSize: number;
+            }
+          | undefined;
+        if (q.activityActorId || q.activityMetric) {
+          if (!q.activityActorId || !q.activityMetric)
+            throw new BadRequestException('کارشناس و ستون را انتخاب کنید.');
+          const detail = expert.details.get(q.activityActorId)?.[
+            q.activityMetric as ExpertMetric
+          ];
+          if (!detail)
+            throw new ForbiddenException('کارشناس در محدوده گزارش نیست.');
+          const sorted = [...detail].sort((a, b) =>
+            (a.at ?? '9999').localeCompare(b.at ?? '9999'),
+          );
+          activityDetail = {
+            actorId: q.activityActorId,
+            metric: q.activityMetric,
+            rows: sorted.slice((q.page - 1) * q.pageSize, q.page * q.pageSize),
+            total: sorted.length,
+            page: q.page,
+            pageSize: q.pageSize,
+          };
+        }
         const labels = [
           'نامشخص',
           'اینستاگرام',
@@ -789,6 +892,11 @@ export class CallCenterReadService {
         ];
         return {
           data: {
+            expertActivity: {
+              rows: expert.rows,
+              unattributed: expert.unattributed,
+            },
+            ...(activityDetail ? { activityDetail } : {}),
             calls: groups.reduce((n, g) => n + Number(g.count), 0),
             contacts: Number(totals[0]!.contacts),
             incomplete: Number(totals[0]!.incomplete),

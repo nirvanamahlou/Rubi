@@ -64,6 +64,43 @@ export interface CallKpis {
     weekFrom: string;
   };
 }
+export type ExpertMetric =
+  | 'inboundAnswered'
+  | 'outboundAttempts'
+  | 'outboundConnected'
+  | 'uniqueContacts'
+  | 'open'
+  | 'overdue'
+  | 'completion';
+export interface ExpertRow {
+  id: string;
+  name: string;
+  extensions: string[];
+  inboundAnswered: number;
+  outboundAttempts: number;
+  outboundConnected: number;
+  uniqueContacts: number;
+  open: number;
+  overdue: number;
+  total: number;
+  incomplete: number;
+  completionRate: number | null;
+  shared: boolean;
+}
+export interface ActivityDetail {
+  actorId: string;
+  metric: string;
+  rows: {
+    at: string | null;
+    kind: string;
+    result: string;
+    extension?: string;
+    shared?: boolean;
+  }[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
 export interface Report {
   data: {
     calls: number;
@@ -78,6 +115,8 @@ export interface Report {
     }[];
     sources: { label: string; count: number }[];
     registrations: { actorId: string; count: number }[];
+    expertActivity?: { rows: ExpertRow[]; unattributed: number };
+    activityDetail?: ActivityDetail;
     topFollowUps?: { contactId: string; name: string; count: number }[];
     requests: { status: string; count: number }[];
     tasks: {
@@ -227,6 +266,29 @@ export const readApi = {
         page,
         pageSize: 20,
         ...(revision ? { revision } : {}),
+      }),
+      signal,
+    }),
+  expertDetail: (
+    branch: string,
+    filters: SearchFilters,
+    from: string,
+    to: string,
+    actorId: string,
+    metric: ExpertMetric,
+    page: number,
+    signal: AbortSignal,
+  ) =>
+    callCenterRequest<Report>('/report', branch, {
+      method: 'POST',
+      body: JSON.stringify({
+        ...searchBody(filters),
+        from,
+        to,
+        activityActorId: actorId,
+        activityMetric: metric,
+        page,
+        pageSize: 20,
       }),
       signal,
     }),

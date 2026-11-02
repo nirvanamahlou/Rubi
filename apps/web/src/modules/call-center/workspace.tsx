@@ -715,7 +715,13 @@ function Content({
               </button>
             </nav>
           </section>
-          <ReportPanel report={report} error={reportError} agents={agents} />
+          <ReportPanel
+            report={report}
+            error={reportError}
+            agents={agents}
+            branch={branch}
+            filters={filters}
+          />
         </div>
         {selected && (
           <DossierFrame onClose={() => setSelected(null)}>
@@ -876,11 +882,15 @@ function DossierFrame({
   );
 }
 function ReportPanel({
+  branch,
+  filters,
   report,
   error,
   agents,
 }: {
   agents: Operator[];
+  branch: string;
+  filters: SearchFilters;
   report: Report | null;
   error: string;
 }) {
@@ -926,7 +936,14 @@ function ReportPanel({
           پوشش شاخص اطلاعات ناقص است؛ آمار تکمیل اطلاعات قطعی نیست.
         </p>
       )}
-      <ReportHighlights data={r} agents={agents} />
+      <ReportHighlights
+        key={meta.asOf}
+        data={r}
+        agents={agents}
+        branch={branch}
+        filters={filters}
+        meta={meta}
+      />
 
       <p>
         مخاطب یکتا = گروه شماره در شعبه؛ هر تماس با شماره نامعلوم جداست. زمان
