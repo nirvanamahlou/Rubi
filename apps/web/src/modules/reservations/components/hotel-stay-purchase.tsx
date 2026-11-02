@@ -1,3 +1,4 @@
+'use client';
 import { purchaseApiRoot } from './purchase-api-root';
 ('use client');
 import { useCallback, useRef, useState } from 'react';

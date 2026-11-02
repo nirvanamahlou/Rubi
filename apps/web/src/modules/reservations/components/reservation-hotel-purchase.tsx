@@ -1,3 +1,4 @@
+'use client';
 import { purchaseApiRoot } from './purchase-api-root';
 import { PurchaseCurrencyLookup } from './purchase-currency-lookup';
 import { isFloatingSalesContract } from '@nora/contracts';
