@@ -25,12 +25,14 @@ export function LiveReservationQueue() {
   const [refreshError, setRefreshError] = useState('');
   const [refreshRevision, setRefreshRevision] = useState(0);
   const [view, setView] = useState<{
+    identity: string;
     state: ViewState;
     rows: RequestView[];
     access: ViewAccess;
     newCount: number;
     now: string;
   }>({
+    identity: '',
     state: 'LOADING',
     rows: [],
     access: emptyAccess,
@@ -93,6 +95,7 @@ export function LiveReservationQueue() {
         }
         const count = tracker.observe(rows);
         setView((current) => ({
+          identity: nextIdentity,
           state: 'SUCCESS',
           rows,
           access: accessFromSession(session!),
@@ -118,6 +121,7 @@ export function LiveReservationQueue() {
           return {
             ...current,
             rows: [],
+            identity: '',
             state,
             newCount: 0,
             access: session ? accessFromSession(session) : emptyAccess,
@@ -173,6 +177,7 @@ export function LiveReservationQueue() {
   return (
     <>
       <ReservationOperationsWorkspace
+        key={view.identity}
         onRefresh={() => {
           setRefreshRevision((value) => value + 1);
           refreshRequest.current?.();
