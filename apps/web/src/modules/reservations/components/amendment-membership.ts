@@ -131,7 +131,9 @@ export function preserveAmendmentContractPrices(
   ]);
   return {
     ...next,
-    preserveContractPrices: next.passengers.length > 0,
+    ...(next.passengers.length
+      ? { preserveContractPrices: true as const }
+      : {}),
     passengers: next.passengers.map((p) => {
       const copy = { ...p };
       delete copy.agreedPrices;
