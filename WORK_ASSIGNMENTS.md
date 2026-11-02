@@ -10527,3 +10527,5 @@ HR-RADAN-LIVE-1101 schedule follow-up — VALIDATED. Tehran quarter-hour slots09
 ## CALL-RECIPIENT-TITLE-1102 — PC-C — IN_PROGRESS
 
 Owner explicitly authorizes bounded edit of PC-B-reserved HR call directory: use grade plus unit for connected-to label. Reserve hr-call-answer-directory.ts/spec only; preserve multiple extensions/shared destinations, branch scope and all unrelated HR work. No schema/data/runtime change.
+
+CALL-RECIPIENT-TITLE-1102 — SOURCE_READY:16 focused regressions, API typecheck/build and focused lint pass; PR1278. Scope frozen on publication. Historical stored snapshots and production runtime unchanged.
