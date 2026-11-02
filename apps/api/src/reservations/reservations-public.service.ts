@@ -589,6 +589,25 @@ export class ReservationsPublicService {
     );
   }
 
+  /** Finance owns payment decisions; purchase evidence must not disappear with
+   * a newer operational intake or the first page of the Reservations workspace. */
+  async listForFinance(branchIds: readonly string[]) {
+    const rows = await this.database.client.reservationIntake.findMany({
+      where: {
+        branchId: { in: [...branchIds] },
+        servicePurchases: { some: {} },
+      },
+      include: intakeInclude,
+      orderBy: [{ receivedAt: 'desc' }, { id: 'asc' }],
+      take: 10001,
+    });
+    if (rows.length > 10000)
+      throw new ConflictException(
+        'تعداد خریدها نیازمند گزارش صفحه‌بندی‌شده است؛ مانده ناقص نمایش داده نمی‌شود.',
+      );
+    return rows.map(present);
+  }
+
   async list(
     branchIds: readonly string[],
     options: {
