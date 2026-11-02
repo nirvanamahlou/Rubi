@@ -1,3 +1,4 @@
+
 ## PACKAGE-CURRENCY-SELECT-1102 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-package-currency-select-1102 from develop98e6679d3. Owner authorizes replacing free-text package price currencies with existing active Master Data currencies and develop merge after checks. Reserve only Pricing Web tour-price-fields, tour-pricing-workspace and focused tests plus own status notes. Reuse existing public listActiveCurrencyReferences('sales') with complete pagination; no Master Data writer, API/contract/schema/migration/dependency change. Preserve saved currency values, amounts, commission modes, immutable publications and peer work. Previous same-owner package pricing source scope is merged/released. No deployment.
@@ -26,6 +27,10 @@ Company numbers now replace legacy organization codes in visible profiles/lists/
 ## PARTNER-ACCOUNTING-CODES-1102 — PC-B — LOCAL VERIFIED
 
 Readonly chronological company/bank accounting codes implemented and activated on Rubi3100. Existing data preserved; shared company identities keep the same code across roles. See docs/tasks/PARTNER-ACCOUNTING-CODES-1102.md for tests, migration and deployment. No production rollout.
+
+## NEW-CONTRACT-PURCHASES-1102 — PC-A — IN_PROGRESS
+
+PC-A branch codex/pc-a-new-contract-purchases-1102 from latest develop. Reserve Sales contract form/new staged-purchase component/model/tests, bounded draft purchase reference controller/service/module registration; Reservations floating-flight and per-hotel editors additive staging callbacks and tests, own status/English notes. Reuse existing Finance-bound purchase endpoints after contract confirmation with idempotent retry; staged costs are UI-only and never enter Sales price components, metadata or customer PDF. No migration/dependency. Preserve branch, supplier/currency, CAS and actual payment controls. Owner explicitly removes the customer-settlement prerequisite from cost recording only; retain cancellation/audit facts and all actual Finance payment guards. 31 API and27 Web staged-purchase/room/flight/retry/authorization checks plus scoped lint and Web types pass; regenerated stale local Contracts/Prisma declarations before API types/build. All final-head full quality/test/build/PostgreSQL gates before authorized develop merge; source freezes/releases on publication/verified merge.
 
 ## ONE-ADULT-CHILD-DOUBLE-1102 — PC-A — IN_PROGRESS
 

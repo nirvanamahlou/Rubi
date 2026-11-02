@@ -17,6 +17,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import {
+  canViewRoute,
   hasSalesContractSelfService,
   canSelfServeSalesContract,
   isFloatingSalesContract,
@@ -49,6 +50,28 @@ export class SalesFloatingPurchases {
     @Inject(MasterSalesDirectory)
     private readonly agencies: MasterSalesDirectory,
   ) {}
+  async draftReference(
+    resource: string,
+    page: string,
+    search: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !actor.permissions.includes('sales.contracts.create') ||
+      !canViewRoute(actor.permissions, '/sales/contracts/new') ||
+      !actor.branchIds.length
+    )
+      throw new ForbiddenException();
+    const n = Number(page);
+    if (!Number.isSafeInteger(n) || n < 1 || n > 10000 || search.length > 200)
+      throw new BadRequestException();
+    if (resource === 'voucher-brokers')
+      return this.agencies.agencyPurchaseOptions(search, n);
+    if (resource === 'voucher-currencies')
+      return this.directory.voucherCurrencies(n);
+    if (resource === 'fx') return { data: await this.fx.quote(search) };
+    throw new NotFoundException();
+  }
   async context(id: string, actor: AuthenticatedActor, write = false) {
     if (!hasSalesContractSelfService(actor.permissions))
       throw new ForbiddenException();
@@ -183,5 +206,30 @@ export class SalesFloatingPurchasesController {
     @Headers('idempotency-key') key?: string,
   ) {
     return this.service.batch(id, input, req.actor, key);
+  }
+}
+
+@UseGuards(AuthGuard)
+@Controller('sales/purchase-draft')
+export class SalesPurchaseDraftController {
+  constructor(
+    @Inject(SalesFloatingPurchases)
+    private readonly service: SalesFloatingPurchases,
+  ) {}
+  @Header('Cache-Control', 'private, no-store')
+  @Get(':resource')
+  reference(
+    @Param('resource') resource: string,
+    @Query('page') page = '1',
+    @Query('search') search = '',
+    @Query('currency') currency = '',
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.draftReference(
+      resource,
+      page,
+      resource === 'fx' ? currency : search,
+      req.actor,
+    );
   }
 }

@@ -874,7 +874,7 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
                   id: 'receipt',
                   amount: '1250000',
                   currencyCode: 'IRR',
-                  status: 'FINANCE_CONFIRMED',
+                  status: 'SUBMITTED',
                   refunds: [],
                   allocations: [],
                 },
@@ -952,7 +952,7 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
       data: expect.objectContaining({
         action: 'reservations.ticket_purchase.authorized',
         metadata: expect.objectContaining({
-          policy: 'CUSTOMER_FLIGHT_FULL_SETTLEMENT_V1',
+          policy: 'COST_RECORD_BEFORE_SETTLEMENT_V1',
           contractId: 'contract',
           contractVersion: 1,
         }),

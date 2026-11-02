@@ -106,3 +106,21 @@ it('rejects a nonfloating, other-contract or out-of-branch context before writin
     expect(h.purchases.recordBatch).not.toHaveBeenCalled();
   }
 });
+
+it('permits draft agency choices only to authorized new-contract creators, without reading any contract', async () => {
+  const h = setup();
+  await expect(
+    h.service.draftReference('voucher-brokers', '1', 'agency', {
+      ...(actor as object),
+      permissions: [],
+      branchIds: ['branch'],
+    } as never),
+  ).rejects.toThrow();
+  expect(h.agencies.agencyPurchaseOptions).not.toHaveBeenCalled();
+  await h.service.draftReference('voucher-brokers', '1', 'agency', actor);
+  expect(h.agencies.agencyPurchaseOptions).toHaveBeenCalledWith('agency', 1);
+  expect(h.sales.detail).not.toHaveBeenCalled();
+  await expect(
+    h.service.draftReference('unknown', '1', '', actor),
+  ).rejects.toThrow();
+});

@@ -1,10 +1,7 @@
+import { reservedCustomerRefunds } from '../finance/operations/receipt-refund-reservations.public';
+import { customerPurchaseSettlement } from '../sales/customer-purchase-settlement.public';
 import { MasterSalesDirectory } from '../master-data/master-sales-directory';
 import { isFloatingSalesContract } from '@nora/contracts';
-import { reservedCustomerRefunds } from '../finance/operations/receipt-refund-reservations.public';
-import {
-  customerPurchaseSettlement,
-  assertCustomerPurchaseCoverage,
-} from '../sales/customer-purchase-settlement.public';
 import { PurchaseFxService } from '../finance/purchase-fx/purchase-fx.service';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { Optional } from '@nestjs/common';
@@ -1081,6 +1078,10 @@ export class ReservationServicePurchaseService {
                 actor.branchIds,
               )
             : null;
+        if (settlement?.cancelled)
+          throw new ConflictException(
+            'خرید بلیط برای قرارداد ابطال‌شده مجاز نیست.',
+          );
         const refundHolds = settlement
           ? await reservedCustomerRefunds(
               tx,
@@ -1088,7 +1089,6 @@ export class ReservationServicePurchaseService {
               settlement.branchId,
             )
           : new Map<string, string>();
-        if (settlement) assertCustomerPurchaseCoverage(settlement, refundHolds);
         await tx.$queryRaw(
           Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${intakeId}, 0))`,
         );
@@ -1155,7 +1155,7 @@ export class ReservationServicePurchaseService {
               entityId: row.id,
               outcome: 'SUCCESS',
               metadata: {
-                policy: 'CUSTOMER_FLIGHT_FULL_SETTLEMENT_V1',
+                policy: 'COST_RECORD_BEFORE_SETTLEMENT_V1',
                 contractId: settlement.contractId,
                 contractVersion: settlement.version,
                 branchId: settlement.branchId,

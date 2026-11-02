@@ -1,3 +1,4 @@
+import type { ReservationPurchaseBatchInputV1 } from '@nora/contracts';
 import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
 import { beforeEach, expect, it, vi } from 'vitest';
 import type * as ReactModule from 'react';
@@ -87,7 +88,11 @@ function nodes(tree: ReactNode): ReactElement<Record<string, unknown>>[] {
   const node = tree as ReactElement<Record<string, unknown>>;
   return [node, ...nodes(node.props.children as ReactNode)];
 }
-function render(input = request, purchaseRoot?: string) {
+function render(
+  input = request,
+  purchaseRoot?: string,
+  onStage?: (body: ReservationPurchaseBatchInputV1) => void,
+) {
   h.index = 0;
   h.ref = 0;
   return nodes(
@@ -96,6 +101,7 @@ function render(input = request, purchaseRoot?: string) {
       stayKey: 'h',
       onSaved: h.saved,
       purchaseRoot,
+      ...(onStage ? { onStage } : {}),
     }),
   );
 }
@@ -571,5 +577,24 @@ it('uses identical room purchase arithmetic from Sales payments with contract-sc
   expect(JSON.parse(String(options!.body)).purchases[0]).toMatchObject({
     amount: '540',
     supplierOrganizationId: 'agency',
+  });
+});
+
+it('stages the exact calculated hotel batch without posting a purchase before contract creation', async () => {
+  const staged = vi.fn();
+  const tree = render(request, undefined, staged);
+  const save = tree.find(
+    (node) =>
+      node.type === Button &&
+      node.props.children === 'ثبت خرید این هتل و ترانسفر',
+  )!;
+  (save.props.onClick as () => void)();
+  await vi.waitFor(() => expect(staged).toHaveBeenCalledTimes(1));
+  expect(fetch).not.toHaveBeenCalled();
+  expect(staged.mock.calls[0]![0]).toMatchObject({
+    hotelStayKey: 'h',
+    purchases: expect.arrayContaining([
+      expect.objectContaining({ amount: '540', currencyCode: 'EUR' }),
+    ]),
   });
 });

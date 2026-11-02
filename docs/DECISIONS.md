@@ -2,6 +2,10 @@
 
 Owner explicitly moves purchase entry for floating Sales contracts into the contract payment dialog, using the same room/night/flight/transfer calculation and native active AGENCY suppliers rather than brokers. This is a bounded exception to Reservation-only purchase initiation in TRAVEL_WORKFLOW_ARCHITECTURE: Sales authorizes the exact owned/otherwise permitted contract and delegates persistence through the Reservations public purchase engine. No public Reservations grants are added; the original Reservations write route rejects floating hotel/transfer/flight purchases. Insurance and ordinary nonfloating purchases remain under existing rules. Cost versions, idempotency, supplier organization FK, customer-settlement prerequisites, Procurement/Finance ownership and approval are unchanged. Buying a service is not a customer receipt or a financial confirmation. No operational data rewrite or migration.
 
+## NEW-CONTRACT-PURCHASES-1102 — cost recording before customer settlement
+
+Owner explicitly authorizes removing customer full-settlement prerequisite from floating flight cost recording so it can be staged in new-contract pricing and submitted after confirmation. This supersedes the earlier record-time full-settlement policy only. A recorded purchase remains a Finance payable, never a supplier payment, customer receipt or document release. Cancellation, branch/ownership, supply-type, supplier/currency validation, CAS and idempotency remain. Existing Finance payment controls are unchanged. UI staged inputs are not Sales components or contract/PDF metadata; failed post-create purchases are visibly retryable without recreating the contract. No migration or data rewrite.
+
 ## PACKAGE-PRICING-RULES-1031 — 2026-10-31
 
 Owner explicitly supersedes ADR-PACKAGE-FLIGHT-FINANCE-COST-0915 only for defining/publishing sale-price packages before flight purchase/payment completion. Keep current tour capacity, immutable source/version/currency validation, permissions and different-editor publication. Missing Finance-paid cost remains NULL with unknown total purchase/profit, never a fabricated zero or synthetic cost revision. The registered hotel purchase is displayed independently. Nullable publication outbound-cost FK is required for genuinely absent costs; retain existing historical links and restrictive FK. Finance entry/payment/release and actual contract profit authority are unchanged. Owner follow-up confirms only the discount is manually entered in New Contract. Existing management adult/child tariffs feed immutable published compositions. Selecting the same hotel, room, dates, adult count and child-age bands automatically selects the sale total; published-package contracts bypass manual passenger-price mode and permit only same-currency discount editing. A changed selection resets that discount; incompatible composition cannot be submitted as a published package. No operational migration/deployment is authorized.
@@ -735,6 +739,8 @@ Owner explicitly requests replacing the Orders entry point with an independent p
 ## TRAVIS-SANDBOX-CONNECTION-1031 — partial resolution of DEC-OPEN-014
 
 Owner supplied the official sandbox Swagger and requested activation on Avina. Verified HTTPS origin sandboxapi.travis.ir and server-only x-api-key authentication. Catalogue reads return an envelope with code200/data array; country, duration and generic plan retrieval validated. Keep policy issue/confirm/cancel/refund and SLA open: this release only connects sandbox catalogue discovery and does not send real passenger data, claim issuance or alter credit. Credentials remain in private API environment only.
+
+
 
 ## PACKAGE-PUBLISH-BANNER-1102 — 2026-11-02
 
