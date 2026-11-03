@@ -1,4 +1,5 @@
 'use client';
+import { PurchaseDestination } from '@/modules/ticket-purchases/purchase-destination';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { PurchaseFilterControls } from './filters';
 import { useDisplayLanguage } from '@/i18n/locale-context';
@@ -22,7 +23,7 @@ import type {
   SalesServiceInput,
   TicketPurchaseInboxItemV1,
 } from '@nora/contracts';
-import { canViewRoute } from '@nora/contracts';
+import { canViewRoute, salesContractFlights } from '@nora/contracts';
 import Link from '@/components/access-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
@@ -51,7 +52,7 @@ import {
 } from './model';
 import { loadPurchaseInbox, type PurchaseInbox } from './api';
 
-const icons = [Layers3, Building2, Plane, Bus, ShieldCheck];
+const icons = [Layers3, Building2, Plane, Plane, Bus, ShieldCheck];
 const tones = [
   'border-blue-300 bg-blue-50 text-blue-800 dark:bg-blue-950/35 dark:text-blue-200',
   'border-violet-300 bg-violet-50 text-violet-800 dark:bg-violet-950/35 dark:text-violet-200',
@@ -227,7 +228,11 @@ function PurchaseHub() {
       })
     : (result?.data.flatMap((request) =>
         contractPurchaseServices(request)
-          .filter((service) => kind === 'ALL' || service.kind === kind)
+          .filter(
+            (service) =>
+              kind === 'ALL' ||
+              service.kind === (kind === 'FLOATING' ? 'FLIGHT' : kind),
+          )
           .map((service) => ({ request, service, row: undefined })),
       ) ?? []);
   const formatDate = (value: string | null | undefined) =>
@@ -333,7 +338,7 @@ function PurchaseHub() {
               type="button"
               aria-pressed={kind === value}
               onClick={() => navigate(value)}
-              className={`flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border p-4 font-bold shadow-sm transition hover:shadow-md ${tones[index]} ${kind === value ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
+              className={`flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border p-4 font-bold shadow-sm transition hover:shadow-md ${tones[index % tones.length]} ${kind === value ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
             >
               <Icon className="size-7" />
               {label}
@@ -341,7 +346,7 @@ function PurchaseHub() {
           );
         })}
       </nav>
-      {canRead && (
+      {canRead && kind !== 'FLIGHT' && (
         <Card className="overflow-hidden p-0">
           <form
             className="flex flex-wrap gap-3 border-b p-4"
@@ -397,6 +402,7 @@ function PurchaseHub() {
                     {[
                       'شماره قرارداد',
                       'خدمت قرارداد',
+                      'مقصد',
                       'وضعیت خرید',
                       dateLabel,
                       'کارگزار و مبلغ خرید',
@@ -445,13 +451,26 @@ function PurchaseHub() {
                         </td>
                         <td className="p-4">
                           <Badge>
-                            {
-                              purchaseCategories.find(
-                                ([key]) => key === service.kind,
-                              )?.[1]
-                            }
+                            {service.kind === 'FLIGHT'
+                              ? 'بلیط شناور'
+                              : purchaseCategories.find(
+                                  ([key]) => key === service.kind,
+                                )?.[1]}
                           </Badge>
                           <p className="mt-2">{service.titleSnapshot}</p>
+                        </td>
+                        <td className="p-4">
+                          <PurchaseDestination
+                            id={
+                              salesContractFlights(
+                                request.snapshot.serviceSelections,
+                                request.snapshot.ticketSelections ?? [],
+                              ).find(
+                                (t) => t.serviceClientKey === service.clientKey,
+                              )?.destinationId ??
+                              request.snapshot.hotelSelection?.cityId
+                            }
+                          />
                         </td>
                         <td className="p-4">
                           <Badge
@@ -595,7 +614,9 @@ function PurchaseHub() {
           {selection && (
             <ReservationPurchaseDialog
               id={selection.id}
-              category={selection.kind}
+              category={
+                selection.kind === 'FLOATING' ? 'FLIGHT' : selection.kind
+              }
               serviceClientKey={selection.serviceClientKey}
               readOnly={!result?.meta.canRecord}
               onSaved={() => {

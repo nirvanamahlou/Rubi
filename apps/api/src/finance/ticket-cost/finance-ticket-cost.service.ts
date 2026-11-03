@@ -86,10 +86,21 @@ export class FinanceTicketCostService {
       );
     if (input?.version !== 1 || !/^[A-Z]{3}$/.test(input.currencyCode ?? ''))
       throw new BadRequestException('جزئیات قیمت خرید معتبر نیست.');
-    const request = await this.procurement.forFinance(
+    const savedRequest = await this.procurement.forFinance(
       requestId,
       actor.branchIds,
     );
+    const offers = savedRequest.offerId
+      ? await this.tickets?.purchaseCapacityInventory?.(
+          actor.branchIds,
+          undefined,
+          [savedRequest.offerId],
+        )
+      : undefined;
+    const currentOffer = offers?.find((o) => o.id === savedRequest.offerId);
+    const request = currentOffer
+      ? { ...savedRequest, seatCount: currentOffer.totalCapacity }
+      : savedRequest;
     if (
       input.operationId !== undefined &&
       (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -351,7 +362,19 @@ export class FinanceTicketCostService {
                 }
               : null;
           return {
-            request,
+            request:
+              !state && offer
+                ? { ...request, seatCount: offer.totalCapacity }
+                : request,
+            ...(offer
+              ? {
+                  currentCapacity: {
+                    total: offer.totalCapacity,
+                    allocated: offer.allocatedCapacity,
+                    destinationId: offer.destinationId,
+                  },
+                }
+              : {}),
             ...(grouping ? { flightGroup: grouping } : {}),
             capacityCost,
             cost: state

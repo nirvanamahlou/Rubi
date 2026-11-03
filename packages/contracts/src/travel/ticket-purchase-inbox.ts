@@ -1,6 +1,7 @@
 import type { TicketCatalogPurchaseV1 } from './index';
 export interface TicketPurchaseInboxItemV1 {
   request: TicketCatalogPurchaseV1;
+  currentCapacity?: { total: number; allocated: number; destinationId: string };
   /** Trusted company-capacity identity; absent for legacy/unclassified requests. */
   flightGroup?: {
     key: string;

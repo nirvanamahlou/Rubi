@@ -159,9 +159,10 @@ it('offers the existing supplier directory only to users with purchase access', 
 });
 it('renders themed categories alongside both recorded and missing contract services', () => {
   const html = render('fa');
-  expect(html.match(/aria-pressed=/g)).toHaveLength(5);
+  expect(html.match(/aria-pressed=/g)).toHaveLength(6);
   expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
   expect(html).toContain('همه خدمات');
+  expect(html).toContain('مقصد');
   expect(html).toContain('خرید ثبت‌شده');
   expect(html).toContain('خرید ثبت نشده');
   expect(html).toContain('DEMO-42');
@@ -258,4 +259,15 @@ it('renders a combined transfer purchase once with its canonical amount', () => 
   expect(records.data[0]!.snapshot.serviceSelections[1]!.titleSnapshot).toBe(
     'Return',
   );
+});
+
+it('separates contract floating purchases from the company flight category', () => {
+  state.query = 'kind=FLIGHT';
+  const company = render('fa');
+  expect(company).not.toContain('DEMO-42');
+  state.index = 0;
+  state.query = 'kind=FLOATING';
+  const floating = render('fa');
+  expect(floating).toContain('بلیط شناور');
+  expect(floating).toContain('aria-pressed="true"');
 });

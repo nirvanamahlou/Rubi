@@ -1,3 +1,7 @@
+## JAHAN-CONTRACT-HEADER-1103 — PC-A — READY
+
+Jahan Bastan contract header omits redundant issuer captions, expands the transparent logo to19mm and adds02172075000 in the footer. Other issuers and contract facts unchanged. Focused print regression and scoped lint run before owner-authorized develop merge. No deployment or data changes.
+
 ## PURCHASE-COMPLETION-1103 — PC-A — READY_FOR_CI
 
 PC-A; codex/pc-a-purchase-completion-1103 from current develop. Owner authorizes removing purchase-entry FX baseline controls and fixing purchased contracts remaining in the buying queue, then develop merge. Reserve reservation-purchase-selection SQL and its existing isolated PostgreSQL regression, Finance PurchaseFxRate entry adapter and focused rendering regression, own docs only. Read-only diagnosis found three reservation revisions for the reported contract, with all four hotel/transfer purchases on the latest revision. Select current contract intake before queue filters and reuse latest matching service purchases from same-contract, same-branch earlier intake revisions; preserve every historical intake/payment and independent Finance FX capture. No migration/dependency/production writes/deployment.
@@ -16,6 +20,13 @@ COMPUTER_ID=PC-A; branch codex/pc-a-floating-flight-airport-1102 from developaae
 
 Owner clarified that airports from the destination country must also be selectable. The complete public directory is country-scoped; default prefers the first airport of the destination city, otherwise the first airport in existing persisted priority order. Optional destination airport ID/city/country/IATA/name snapshot round trips through Sales/Reservations and ticket/contract output; new choices validate against existing public airport/city references. Unchanged legacy/historical selections stay readable, and switching back to charter clears floating airport metadata.113 focused API checks and63 Web/reference/PDF/i18n checks pass; focused restoration regression, lint/types/API-Web production builds and all final-head hosted gates precede the owner-authorized merge. No schema/migration/dependency or live operational update. Source freezes on push and releases after verified merge.
 
+
+## PURCHASE-INBOX-CURRENT-LOAD-1103 — PC-A — READY_FOR_CI
+
+PC-A branch codex/pc-a-purchase-inbox-current-load-1103 from develop7d74d786b. Owner authorizes cleanup then separate floating purchases, current load quantities, destination and active reference-currency selection; develop merge after checks. Nine clean merged inactive worktrees without environment files/shared dependencies removed,74 generated cache/build directories cleared with absolute-path/process checks; user data and active worktrees preserved. Purchase company tab excludes contract floating table; dedicated FLOATING tab reuses existing FLIGHT read API. Additive optional currentCapacity uses Catalog public projection; unpriced requests use current total while recorded purchase/payment quantities remain immutable. Cost recording validates current capacity through the public boundary. Web adds destination/current total/sold columns, native procurement reference choices, refresh on focus/30s without remounting an editor. No schema/dependency/runtime/operational writes. Scoped tests, lint/types and affected builds plus all exact-head hosted gates precede authorized merge. Source freezes on push and releases on verified merge.
+
+Bounded producer/consumer compatibility: Procurement selection directory gains readonly cities only, with native purchase authority and unchanged no-source-grant behavior tested in the controller matrix. Reserve only that existing resource whitelist and authorization regression; no Master Data mutation or schema change.
+Integration-only reservation continuity test mock now exposes the upstream usePurchaseRegistration export introduced by latest develop; runtime and existing continuity assertions unchanged. Reserve that one mock line to resolve full-suite integration failure.
 
 ## AIRLINE-THREE-CODES-1102 — PC-B — READY_FOR_CI
 
