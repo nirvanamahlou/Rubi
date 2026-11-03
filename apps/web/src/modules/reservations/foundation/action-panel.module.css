@@ -257,11 +257,11 @@
   }
 }
 
-.action.purchaseComplete {
+.action.purchaseRegistered {
   background: #dcfce7;
   border-color: #16a34a;
   color: #166534;
 }
-.action.purchaseComplete:hover {
+.action.purchaseRegistered:hover {
   background: #bbf7d0;
 }
