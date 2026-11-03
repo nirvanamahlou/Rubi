@@ -1,3 +1,7 @@
+## THREE-PANELS-RELEASE-1103 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; branch codex/pc-c-three-panels-release-1103 from develop6dbafb7fe. Owner authorizes production publication of approved Call Center, Dashboard and Reports changes. Reserve bounded CallForm source/outcome option visibility and regression, own release docs/script, candidate verification and locked backup/build/canary/activation. Candidate overlays only these modules and required public reporting ports/translations on actual current live source; preserve other source, IAM grants, data, mounts and peer changes. No schema/dependency changes or unrelated develop migration. Refresh current runtime snapshot after lock acquisition; fail on concurrent changes. Existing call-center/reporting/dashboard source reservations are merged/frozen.
+
 ## CALL-CENTER-FINAL-INTEGRATION-1103 — PC-C — IN_PROGRESS / NO DEPLOY
 
 COMPUTER_ID=PC-C; branch codex/pc-c-call-center-final-integration-1103 from developc134779bf. Owner authorizes audit/push/develop PR/merge after every final-head CI gate. Reserve integration of source-share chart and completion-edit buttons, missing bounded offline-readiness/Worker/VPN/network-guard source artifacts and synthetic tests, own docs and exact conflict resolution preserving peer sections. Existing older interface/domain/audio/recovery patches are superseded by later merged implementations and must not regress them. No schema/dependency/grants, execution of deployment scripts or operational rollout. Freeze source on push; reservation releases on verified merge.
