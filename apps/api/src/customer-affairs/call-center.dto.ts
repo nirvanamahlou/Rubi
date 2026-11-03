@@ -26,7 +26,7 @@ export class CallCenterCallDto {
   @IsOptional() @IsString() @Matches(/^[a-f0-9]{64}$/) completionToken?: string;
   @IsOptional() @IsUUID() ticketId?: string;
   @IsDefined({ message: 'نتیجه تماس را انتخاب کنید.' })
-  @IsIn(['ANSWERED', 'NO_ANSWER', 'BUSY', 'FAILED'])
+  @IsIn(['ANSWERED', 'NO_ANSWER', 'BUSY', 'FAILED', 'WRONG_NUMBER'])
   outcome?: string;
   @IsUUID('4') id!: string;
   @IsString() @Length(0, 24) phone!: string;

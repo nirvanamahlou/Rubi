@@ -205,6 +205,7 @@ export function WorkflowPanel({
                     NO_ANSWER: 'بدون پاسخ',
                     BUSY: 'اشغال',
                     FAILED: 'ناموفق',
+                    WRONG_NUMBER: 'اشتباه گرفته شده',
                   } as Record<string, string>
                 )[contactCall.outcome ?? ''] ?? 'نامشخص')}
           </p>

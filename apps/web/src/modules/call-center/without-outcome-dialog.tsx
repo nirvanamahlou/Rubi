@@ -6,7 +6,8 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/overlays';
-import { readApi } from './read-client';
+import { readApi, type ContactSummary } from './read-client';
+import { KpiCallActions, type KpiCallMode } from './kpi-call-actions';
 import { callDate, faNumber } from './model';
 import { useDialogReturnFocus } from './use-dialog-focus';
 import styles from './without-outcome-dialog.module.css';
@@ -19,14 +20,16 @@ export function WithoutOutcomeDialog({
   canComplete,
   onClose,
   onComplete,
+  onRequest,
 }: {
-  mode?: 'without-outcome' | 'missed-callbacks' | 'today' | 'week';
+  mode?: KpiCallMode;
   branch: string;
   revision: number;
   hidden: boolean;
   canComplete: boolean;
   onClose: () => void;
   onComplete: (id: string) => Promise<void>;
+  onRequest?: ((contact: ContactSummary) => void) | undefined;
 }) {
   const callbacks = mode === 'missed-callbacks';
   const period = mode === 'today' || mode === 'week';
@@ -178,6 +181,7 @@ export function WithoutOutcomeDialog({
                                 NO_ANSWER: 'بدون پاسخ',
                                 BUSY: 'مشغول',
                                 FAILED: 'ناموفق',
+                                WRONG_NUMBER: 'اشتباه گرفته شده',
                               } as Record<string, string>
                             )[call.outcome ?? ''] ?? 'نتیجه ثبت‌نشده')
                           : callbacks
@@ -186,15 +190,14 @@ export function WithoutOutcomeDialog({
                       </span>
                     </td>
                     <td>
-                      <div className={styles.actions}>
-                        <button
-                          type="button"
-                          disabled={!canComplete}
-                          onClick={() => void onComplete(call.id)}
-                        >
-                          ویرایش اطلاعات تماس
-                        </button>
-                      </div>
+                      <KpiCallActions
+                        mode={mode}
+                        call={call}
+                        callCount={callCount}
+                        canComplete={canComplete}
+                        onComplete={onComplete}
+                        onRequest={onRequest}
+                      />
                     </td>
                   </tr>
                 ))}

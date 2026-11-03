@@ -1,5 +1,9 @@
 ## WORKBENCH-FIXES-1103 — PC-B — READY_FOR_CI
 
+## MISSED-CALL-REQUEST-ACTION-1103 — PC-C — SOURCE_READY / DO NOT DEPLOY
+
+Owner explicitly authorizes a Register Request action in the missed-callback KPI dialog for managers, reusing the dossier New Request form and its existing permission/branch/contact guards. Reserve bounded Call Center dialog/workspace wiring, focused regression and own docs. Base develop9144eb57e. No API/schema/dependency/grant changes and no production deployment. Push/develop PR and merge after every final-head CI gate are authorized. Existing published UI scopes remain frozen outside this addition.
+
 Owner authorizes calendar repair, immediate daily-package viewing, device-backed own attendance for all users, conversation removal/group leave and group management, request inbox removal, push and develop merge. Isolated branch codex/pc-b-workbench-fixes-1103. Reserve Workbench/Messaging API and Web, bounded Documents daily-package delivery and Customer Affairs workbench queries/endpoints, HR own projection and focused tests; own translation entries. Additive endpoints ship with consumers; existing contracts remain compatible. No schema/migration/dependency or operational identity changes.
 
 Validated 94 API/database and 130 Web/i18n tests, full API/Web types, scoped lint and both production builds. Source changes require final-head hosted gates before authorized develop merge. No runtime rollout or operational account reassignment. Details: docs/tasks/WORKBENCH-FIXES-1103.md.
@@ -10936,3 +10940,13 @@ COMPUTER_ID=PC-A; codex/pc-a-party-contract-receipts-fifo-1103 from develop9144e
 PARTY-CONTRACT-RECEIPTS-FIFO-1103 reserves one additive test path in the existing PostgreSQL financial-events CI step; new test uses only guarded ephemeral nora_ci fixtures and never operational databases. No existing test or gate removed.
 
 PARTY-CONTRACT-RECEIPTS-FIFO-1103 reserves only its newly introduced English override keys and derived API catalogue synchronization; preserve all peer translations.
+
+## CALL-WRONG-NUMBER-1103 — PC-C — ACTIVE
+
+Reserve Call Center outcome label consumers, save/search DTO allowlists and focused validation tests. Add backward-compatible WRONG_NUMBER string with Persian label at existing business-save boundaries; provider outcomes stay unchanged. Existing database String supports it; no schema/dependency/IAM/data/deployment changes. Producer API and Web consumer ship together. Base c3281585b.
+
+CALL-WRONG-NUMBER-1103 reserves the single English override key for the new outcome; CI identified missing translation. User authorizes CI repair and develop merge after every check passes. Preserve all other catalogue entries.
+
+## WORKBENCH-REQUEST-ISOLATION-1103 — PC-B
+
+COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests internal Workbench requests stay out of Customer Affairs. Scope: customer-affairs repository list/export/dashboard/report filters and regression tests; preserve personal inbox and shared request storage. No migration, dependency, API contract or deployment changes. Validation passed: 28 targeted tests including disposable PostgreSQL/HTTP isolation, API typecheck/build, scoped ESLint and Prettier. Push and develop merge authorized after hosted checks; source frozen on publication and scope released on merge.
