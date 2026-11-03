@@ -496,6 +496,14 @@
 .sourceLayout .formSurface :global(table) {
   border-radius: 0;
 }
+.sourceLayout
+  .formSurface
+  :global(input:not([type='checkbox']):not([type='radio'])),
+.sourceLayout .formSurface :global(select),
+.sourceLayout .formSurface :global(button[role='combobox']) {
+  height: 1.5rem;
+  padding-block: 0;
+}
 .sourceLayout .formSurface :global([role='tab']) {
   min-height: 1.75rem;
   padding-inline: 0.5rem;

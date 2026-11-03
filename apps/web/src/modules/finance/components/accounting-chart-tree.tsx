@@ -194,9 +194,7 @@ export function AccountingChartTree({
           </button>
         </div>
         {expanded.includes('root') && (
-          <ul className="space-y-1">
-            {roots.map((account) => renderAccount(account))}
-          </ul>
+          <ul>{roots.map((account) => renderAccount(account))}</ul>
         )}
       </div>
       <div className={styles.results}>
