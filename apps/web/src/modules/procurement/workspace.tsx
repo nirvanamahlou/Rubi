@@ -611,6 +611,7 @@ function WorkspaceState({
             <PettyFundCard
               bootstrap={bootstrap}
               onBranchChange={setRegistrationBranch}
+              selectedBranchId={registrationBranch}
             />
           </div>
           <Card className="overflow-hidden border-blue-300/70 dark:border-blue-400/25">

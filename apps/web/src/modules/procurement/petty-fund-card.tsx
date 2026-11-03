@@ -42,14 +42,17 @@ export function pettyBalanceLabel(value: string) {
 export function PettyFundCard({
   bootstrap,
   onBranchChange,
+  selectedBranchId,
 }: {
   bootstrap: Bootstrap;
   onBranchChange?: (branchId: string) => void;
+  selectedBranchId?: string;
 }) {
   const client = useQueryClient();
-  const [branchId, setBranch] = useState(
+  const [localBranchId, setBranch] = useState(
     bootstrap.defaultBranchId ?? bootstrap.branches[0]?.id ?? '',
   );
+  const branchId = selectedBranchId ?? localBranchId;
   const [open, setOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
