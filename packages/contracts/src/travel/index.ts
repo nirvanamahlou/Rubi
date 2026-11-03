@@ -533,6 +533,8 @@ export interface ReservationTableSummaryV1 {
   contractPartyName?: string;
   createdAt: string;
   contractVersion: number;
+  /** Successful operational/contract/party amendment, independent of Sales acknowledgement. */
+  amendedAt?: string | null | undefined;
   correctedAt: string | null;
   cancelledAt: string | null;
   departureDate: string;

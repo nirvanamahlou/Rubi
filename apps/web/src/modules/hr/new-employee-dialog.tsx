@@ -49,6 +49,7 @@ export interface NewEmployeeFormValue {
   userId?: string;
   firstName: string;
   lastName: string;
+  identificationCode?: string;
   personnelCode: string;
   employmentType: string;
   branch: string;
@@ -576,6 +577,23 @@ export function NewEmployeeForm({
               value={value.personnelCode}
             />
             <FieldError errors={errors} field="personnelCode" />
+          </label>
+          <label
+            className={styles.fieldLabel}
+            htmlFor="hr-employee-identification-code"
+            style={
+              personnelMode && step !== 1 ? { display: 'none' } : undefined
+            }
+          >
+            <span>کد شناسایی</span>
+            <input
+              className={styles.control}
+              id="hr-employee-identification-code"
+              dir="ltr"
+              readOnly
+              value={value.identificationCode ?? ''}
+              placeholder="تخصیص خودکار پس از ثبت"
+            />
           </label>
           <label
             className={styles.fieldLabel}

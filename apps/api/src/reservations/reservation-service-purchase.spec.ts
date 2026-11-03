@@ -874,7 +874,7 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
                   id: 'receipt',
                   amount: '1250000',
                   currencyCode: 'IRR',
-                  status: 'FINANCE_CONFIRMED',
+                  status: 'SUBMITTED',
                   refunds: [],
                   allocations: [],
                 },
@@ -952,7 +952,7 @@ it('records floating actual cost through the same authorized, scoped CAS and ide
       data: expect.objectContaining({
         action: 'reservations.ticket_purchase.authorized',
         metadata: expect.objectContaining({
-          policy: 'CUSTOMER_FLIGHT_FULL_SETTLEMENT_V1',
+          policy: 'COST_RECORD_BEFORE_SETTLEMENT_V1',
           contractId: 'contract',
           contractVersion: 1,
         }),
@@ -1121,4 +1121,44 @@ it('accepts a nonempty hotel guest subset but rejects duplicate and foreign gues
       { ...price, customerId: 'not-hotel' },
     ]),
   ).toThrow();
+});
+
+it('does not allow Reservations to record a Sales-owned floating hotel-only purchase', async () => {
+  const transaction = vi.fn();
+  const service = new ReservationServicePurchaseService(
+    {
+      client: {
+        reservationIntake: {
+          findUnique: vi.fn().mockResolvedValue({
+            contractId: 'contract',
+            branchId: 'branch',
+            snapshot: {
+              serviceSelections: [
+                {
+                  clientKey: 'hotel-1',
+                  kind: 'HOTEL',
+                  metadata: { purchaseSupplyType: 'FLOATING' },
+                },
+              ],
+            },
+          }),
+        },
+        $transaction: transaction,
+      },
+    } as never,
+    {} as never,
+  );
+  await expect(
+    service.record(
+      '11111111-1111-4111-8111-111111111112',
+      valid,
+      {
+        userId: 'reservation',
+        branchIds: ['branch'],
+        permissions: ['reservations.read', 'reservations.hotel_purchase.write'],
+      } as never,
+      'hotel-owner',
+    ),
+  ).rejects.toThrow('مجوز ثبت خرید خدمات وجود ندارد.');
+  expect(transaction).not.toHaveBeenCalled();
 });

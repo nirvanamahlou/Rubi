@@ -47,7 +47,7 @@ export async function listReferences(
   page: number,
   signal?: AbortSignal,
   filters: ReferenceFilters = {},
-  workflow: 'ticket-catalog' | 'sales' = 'ticket-catalog',
+  workflow: 'ticket-catalog' | 'sales' | 'reservations' = 'ticket-catalog',
 ): Promise<MasterDataListResponse> {
   const base = getPublicApiBaseUrl();
   if (!base)

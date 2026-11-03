@@ -1,3 +1,15 @@
+## Airline reference identifiers — 2026-11-02
+
+MasterAirline.code is a unique VARCHAR64 primary reference identifier accepting IATA, ICAO or a textual callsign; the optional secondary icaoCode retains its CHAR3 shape. Existing IDs/FKs and IATA / ICAO input stay compatible. Migration20261102190000 widens the code with no backfill/deletion; deploy it before the matching API/Web, retain the wider type on rollback. No operational migration is applied by the source task.
+
+## Employee identification code — 2026-11-02
+
+HrEmployee.identificationCode maps to hr_employees.identification_code (unique varchar7). Database migration20261102170000_employee_identification_codes assigns2000001+ by created_at,id, including inactive/deleted identities. A database sequence and insert/update trigger allocate codes, reject explicit assignment and prevent changes; deleted values are not reused. Optional output DTO remains backward compatible; DB CHECK requires a valid assigned value. No personnel_code, primary key, payroll, device or contract linkage changes. Codes identify records within their environment, not across independent databases.
+
+## Customer identification code — 2026-11-02
+
+Customer.customerCode is a unique seven-digit database-generated identifier starting4000001. Migration20261102140000_customer_codes backfills all existing customers by createdAt then id, including inactive records. A sequence allocates future codes atomically; a trigger rejects user-supplied inserts and changes. The nullable Prisma/output shape is backward compatible; the database CHECK requires assigned valid values. Existing IDs and contract references remain unchanged. Codes are local to each database and are not cross-environment identity keys.
+
 ## Package publication before flight settlement — 2026-10-31
 
 PackagePricingTourPublishedVersion.outboundCostRevisionId becomes nullable, retaining the existing restrictive FinanceTicketPurchaseCostRevision FK and all historical values. Migration20261031180000_package_publication_optional_flight_cost only drops NOT NULL. A new publication without full paid flight costs stores unknown package purchase/profit as NULL, while hotel purchase and sale prices remain real and independently available. No artificial cost revision or zero-cost assumption is introduced. Apply the migration before the matching API; reverting NOT NULL requires explicit handling of new NULL publications and must never invent costs/delete history. Sales-only published-price projection remains cost-free; optional/nullable operational cost evidence is not a release or payment authorization.
@@ -1017,3 +1029,7 @@ ProcurementPettyFund holds branch-unique balance Decimal(24,4), fixed currency, 
 
 ## Shared HR reference registrations — HR-SHARED-BRANCHES-1031
 HrRecord.sharedSourceId is a nullable restrictive self-FK. A common source has one materialized copy per authorized native branch; unique(source,branch) and non-self checks enforce identity. Common registrations are limited to explicit nonpersonal reference resources. Branch authorization remains unchanged and is required for every member on shared mutations. Updates and delete are transactional under source advisory locking and optimistic versions; parent references resolve to the corresponding native-branch copy. Personnel/financial/approval records are not replicated. Assignment correction retains historic operational ownership and re-encrypts current personnel identity/contact under the authorized destination branch.
+
+### Partner accounting identification (2026-11-02)
+
+Readonly accountingCode uses shared company sequence 3000001+ for organizations/suppliers/brokers and separate BANK account sequence 5000001+. Linked roles share one identity; promotion preserves its code. Backfill sorts earliest creation time, then stable ID/kind. Database triggers prevent recoding and sequences never cycle. Nonbank accounts remain null. This is separate from business code and ledger mappings. Migration: 20261102120000_partner_accounting_codes.

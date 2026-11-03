@@ -130,22 +130,23 @@ function fixture(paid = '100', kind = 'FLIGHT') {
   };
 }
 describe('customer flight purchase authorization', () => {
-  it('rejects a shortage even when the cached contract label says settled, before any purchase write', async () => {
+  it('records a cost obligation before customer settlement without making a payment', async () => {
     const f = fixture('99.9999');
-    await expect(f.run()).rejects.toThrow('تسویه کامل');
-    expect(f.tx.reservationIntake.updateMany).not.toHaveBeenCalled();
-    expect(f.tx.reservationServicePurchase.create).not.toHaveBeenCalled();
-    expect(f.tx.auditEvent.create).not.toHaveBeenCalled();
+    await expect(f.run()).resolves.toMatchObject({ data: { id: 'purchase' } });
   });
-  it('does not count scheduled money or funds already refunded', async () => {
+  it('records obligations independently of scheduled receipts and refunded amounts', async () => {
     const scheduled = fixture('1000');
     scheduled.contract.payments[0]!.status = 'SCHEDULED';
-    await expect(scheduled.run()).rejects.toThrow('تسویه کامل');
+    await expect(scheduled.run()).resolves.toMatchObject({
+      data: { id: 'purchase' },
+    });
     const refunded = fixture();
     refunded.contract.payments[0]!.refunds = [{ amount: '0.0001' }];
-    await expect(refunded.run()).rejects.toThrow('تسویه کامل');
+    await expect(refunded.run()).resolves.toMatchObject({
+      data: { id: 'purchase' },
+    });
   });
-  it('holds pending refunds while allowing an excess receipt to cover both the purchase and refund', async () => {
+  it('retains pending refund audit facts without blocking cost recording', async () => {
     const blocked = fixture();
     const hold = {
       refundReceiptId: 'receipt',
@@ -154,7 +155,9 @@ describe('customer flight purchase authorization', () => {
       revisions: [{ cumulativePaid: '0' }],
     };
     blocked.tx.financeOperationalRequest.findMany.mockResolvedValue([hold]);
-    await expect(blocked.run()).rejects.toThrow('تسویه کامل');
+    await expect(blocked.run()).resolves.toMatchObject({
+      data: { id: 'purchase' },
+    });
     const allowed = fixture('125');
     allowed.tx.financeOperationalRequest.findMany.mockResolvedValue([hold]);
     await expect(allowed.run()).resolves.toMatchObject({

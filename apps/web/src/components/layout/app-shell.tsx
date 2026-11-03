@@ -676,7 +676,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
                   <Menu aria-hidden="true" className="size-5" />
                 </Button>
               </DrawerTrigger>
-              <DrawerContent>
+              <DrawerContent className="start-0 end-auto border-e border-s-0">
                 <DialogTitle className="sr-only">
                   {messages.shell.openNavigation}
                 </DialogTitle>

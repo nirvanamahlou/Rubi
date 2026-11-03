@@ -1,19 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import {
-  Activity,
-  ArrowLeft,
-  RefreshCw,
-  UsersRound,
-  Home,
-  Plane,
-  Hotel,
-  ShoppingCart,
-  Wallet,
-  FileText,
-  LogIn,
-  MapPin,
-} from 'lucide-react';
+import { Activity, ArrowLeft, RefreshCw, FileText } from 'lucide-react';
 import { Card, Badge, Alert } from '@/components/ui/surfaces';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +13,10 @@ import styles from './site-presence.module.css';
 import type { IntegrationRegistryV1 } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { isGhestirooSystem } from '../system-connector';
+import {
+  SiteNavigationMap,
+  presenceIcons as icons,
+} from './site-navigation-map';
 
 export function SitePresenceSelector({
   branchId,
@@ -67,18 +58,6 @@ export function SitePresenceSelector({
     </section>
   );
 }
-const icons: Record<string, typeof Home> = {
-  home: Home,
-  plane: Plane,
-  tour: MapPin,
-  hotel: Hotel,
-  cart: ShoppingCart,
-  wallet: Wallet,
-  orders: FileText,
-  receipt: FileText,
-  login: LogIn,
-  users: UsersRound,
-};
 export function SitePresence({
   branchId,
   siteId,
@@ -210,85 +189,91 @@ export function SitePresence({
               به‌روزرسانی {time}
             </span>
           </div>
-          <div
-            className={styles.viewport}
-            tabIndex={0}
-            aria-label="نقشه حضور در بخش‌های سایت"
-          >
-            <div className={styles.map} style={{ width, height }}>
-              <svg
-                className={styles.edges}
-                width={width}
-                height={height}
-                aria-hidden="true"
+          {data.mapKind === 'SITE_NAVIGATION' ? (
+            <SiteNavigationMap data={data} />
+          ) : (
+            <>
+              <div
+                className={styles.viewport}
+                tabIndex={0}
+                aria-label="نقشه حضور در بخش‌های سایت"
               >
-                <defs>
-                  <marker
-                    id={`arrow-${siteId}`}
-                    viewBox="0 0 10 10"
-                    refX="9"
-                    refY="5"
-                    markerWidth="5"
-                    markerHeight="5"
-                    orient="auto-start-reverse"
+                <div className={styles.map} style={{ width, height }}>
+                  <svg
+                    className={styles.edges}
+                    width={width}
+                    height={height}
+                    aria-hidden="true"
                   >
-                    <path d="M0 0 L10 5 L0 10 z" fill="currentColor" />
-                  </marker>
-                </defs>
-                {data.edges.map((edge) => {
-                  const a = data.nodes.find((n) => n.id === edge.from),
-                    b = data.nodes.find((n) => n.id === edge.to);
-                  if (!a || !b || a.column === null || b.column === null)
-                    return null;
-                  const x1 = width - a.column * 184 - 162,
-                    y1 = a.row! * 104 + 42,
-                    x2 = width - b.column * 184,
-                    y2 = b.row! * 104 + 42,
-                    mid = (x1 + x2) / 2;
-                  return (
-                    <path
-                      key={edge.from + edge.to}
-                      d={`M${x1} ${y1} C${mid} ${y1} ${mid} ${y2} ${x2} ${y2}`}
-                      markerEnd={`url(#arrow-${siteId})`}
-                    />
-                  );
-                })}
-              </svg>
-              {data.nodes
-                .filter((n) => n.column !== null)
-                .map((node) => {
-                  const Icon = Object.hasOwn(icons, node.kind)
-                    ? icons[node.kind]!
-                    : FileText;
-                  return (
-                    <div
-                      key={node.id}
-                      className={`${styles.node} ${node.count ? styles.occupied : ''}`}
-                      style={{
-                        insetInlineStart: node.column! * 184,
-                        top: node.row! * 104,
-                      }}
-                    >
-                      <span>
-                        <Icon aria-hidden="true" />
-                        {node.title}
-                      </span>
+                    <defs>
+                      <marker
+                        id={`arrow-${siteId}`}
+                        viewBox="0 0 10 10"
+                        refX="9"
+                        refY="5"
+                        markerWidth="5"
+                        markerHeight="5"
+                        orient="auto-start-reverse"
+                      >
+                        <path d="M0 0 L10 5 L0 10 z" fill="currentColor" />
+                      </marker>
+                    </defs>
+                    {data.edges.map((edge) => {
+                      const a = data.nodes.find((n) => n.id === edge.from),
+                        b = data.nodes.find((n) => n.id === edge.to);
+                      if (!a || !b || a.column === null || b.column === null)
+                        return null;
+                      const x1 = width - a.column * 184 - 162,
+                        y1 = a.row! * 104 + 42,
+                        x2 = width - b.column * 184,
+                        y2 = b.row! * 104 + 42,
+                        mid = (x1 + x2) / 2;
+                      return (
+                        <path
+                          key={edge.from + edge.to}
+                          d={`M${x1} ${y1} C${mid} ${y1} ${mid} ${y2} ${x2} ${y2}`}
+                          markerEnd={`url(#arrow-${siteId})`}
+                        />
+                      );
+                    })}
+                  </svg>
+                  {data.nodes
+                    .filter((n) => n.column !== null)
+                    .map((node) => {
+                      const Icon = Object.hasOwn(icons, node.kind)
+                        ? icons[node.kind]!
+                        : FileText;
+                      return (
+                        <div
+                          key={node.id}
+                          className={`${styles.node} ${node.count ? styles.occupied : ''}`}
+                          style={{
+                            insetInlineStart: node.column! * 184,
+                            top: node.row! * 104,
+                          }}
+                        >
+                          <span>
+                            <Icon aria-hidden="true" />
+                            {node.title}
+                          </span>
+                          <strong>{node.count?.toLocaleString('fa-IR')}</strong>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+              <div className={styles.other}>
+                {data.nodes
+                  .filter((n) => n.column === null)
+                  .map((node) => (
+                    <span key={node.id}>
+                      {node.title}
                       <strong>{node.count?.toLocaleString('fa-IR')}</strong>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-          <div className={styles.other}>
-            {data.nodes
-              .filter((n) => n.column === null)
-              .map((node) => (
-                <span key={node.id}>
-                  {node.title}
-                  <strong>{node.count?.toLocaleString('fa-IR')}</strong>
-                </span>
-              ))}
-          </div>
+                    </span>
+                  ))}
+              </div>
+            </>
+          )}
           <p className={styles.note}>
             <ArrowLeft aria-hidden="true" />
             مسیرهای سایت؛ اعداد، حضور فعلی‌اند و به معنی خرید موفق نیستند.

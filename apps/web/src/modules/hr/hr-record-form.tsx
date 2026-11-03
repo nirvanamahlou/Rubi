@@ -588,11 +588,6 @@ function HrRecordFormFields({
               </NativeSearchSelect>
             </label>
           ) : null}
-          {allowInlineCreate && definition.employeeRequired ? (
-            <button type="button" onClick={() => openReference('employee')}>
-              افزودن کارمند
-            </button>
-          ) : null}
           {definition.parentResources.length ? (
             <label className={ui.field}>
               <RequiredFieldLabel required={!definition.parentOptional}>
@@ -755,10 +750,10 @@ function HrRecordFormFields({
                     skipCreateReferenceLabels:
                       target.source.section === 'organization' &&
                       target.source.tab === 'positions'
-                        ? ['عنوان سمت', 'عنوان شغل']
-                        : [],
+                        ? ['کارمند', 'عنوان سمت', 'عنوان شغل']
+                        : ['کارمند'],
                     onCreateReference: (label: string) => {
-                      if (label === 'کارمند') openReference('employee', label);
+                      if (label === 'کارمند') return;
                       else if (/شعبه|شرکت/.test(label))
                         openReference('branches', label);
                       else if (/واحد/.test(label))

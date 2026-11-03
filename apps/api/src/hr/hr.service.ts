@@ -1,6 +1,7 @@
 import { isDeepStrictEqual } from 'node:util';
 import {
   attendanceScheduleMetrics,
+  workingHoursEnd,
   resolveDeviceDirections,
   deviceRecordId,
 } from './hr-device-attendance.domain';
@@ -387,6 +388,7 @@ export class HrService {
     return {
       id: row.id,
       personnelCode: row.personnelCode,
+      identificationCode: row.identificationCode ?? null,
       jobTitleId: row.jobTitleId,
       extensions: (row.records?.[0]?.values as string[] | undefined) ?? [],
       extension: String(
@@ -569,14 +571,17 @@ export class HrService {
                     {
                       section: 'time',
                       tab: 'attendance',
-                      OR: [
+                      AND: [
                         {
-                          effectiveAt: {
-                            gte: validate.isoDate(periods.quarterFrom),
-                            lte: validate.isoDate(periods.today),
+                          values: {
+                            path: ['1'],
+                            gte: [
+                              periods.quarterFrom,
+                              periods.daily,
+                            ].sort()[0]!,
                           },
                         },
-                        { effectiveAt: null },
+                        { values: { path: ['1'], lte: periods.today } },
                       ],
                     },
                     {
@@ -859,7 +864,11 @@ export class HrService {
         : input.sortBy === 'personnelCode'
           ? [{ employee: { personnelCode: 'asc' } }, { id: 'asc' }]
           : input.section === 'time' && input.tab === 'attendance'
-            ? [{ effectiveAt: 'desc' }, { createdAt: 'desc' }, { id: 'asc' }]
+            ? [
+                { effectiveAt: { sort: 'desc', nulls: 'last' } },
+                { createdAt: 'desc' },
+                { id: 'asc' },
+              ]
             : [{ createdAt: 'desc' }, { id: 'asc' }];
     const where = { AND: [this.recordScope(actor), filters] };
     const [rows, total] = await Promise.all([
@@ -4122,7 +4131,7 @@ export class HrService {
         const v = reference.values as string[];
         shift = {
           ...reference,
-          values: [v[0]!, v[2]!, v[3]!, '0'],
+          values: [v[0]!, v[2]!, workingHoursEnd(date, v[2]!, v[3]!), '0'],
           data: json({
             shiftEndDayOffset: Math.max(
               0,
@@ -4135,7 +4144,12 @@ export class HrService {
         };
       }
     }
-    const shiftValues = shift?.values as string[] | undefined;
+    const shiftValues = shift ? [...(shift.values as string[])] : undefined;
+    if (
+      shiftValues &&
+      ((shift?.data as HrWorkflowData)?.shiftEndDayOffset ?? 0) === 0
+    )
+      shiftValues[2] = workingHoursEnd(date, shiftValues[1]!, shiftValues[2]!);
     const nextDate = new Date(validate.isoDate(date).getTime() + 86400000)
       .toISOString()
       .slice(0, 10);
@@ -4234,6 +4248,7 @@ export class HrService {
     key: unknown,
     actor: AuthenticatedActor,
     deviceOnly = false,
+    reconcileEmptyEmployeeIds: string[] = [],
   ) {
     this.require(actor, 'hr.manage');
     const input = validate.object(body, ['branchId', 'date']);
@@ -4242,7 +4257,12 @@ export class HrService {
     return this.command(
       actor,
       key,
-      { operation: 'attendance.process', input, deviceOnly },
+      {
+        operation: 'attendance.process',
+        input,
+        deviceOnly,
+        reconcileEmptyEmployeeIds,
+      },
       async (tx) => {
         await this.assertOpenPeriod(tx, branchId, date);
         const employees = await tx.hrEmployee.findMany({
@@ -4323,7 +4343,50 @@ export class HrService {
             result,
             selected,
           } = this.attendanceView(source, employee.id, date);
-          if (deviceOnly && !selected.length) continue;
+          if (
+            deviceOnly &&
+            !selected.length &&
+            !reconcileEmptyEmployeeIds.includes(employee.id)
+          )
+            continue;
+          if (
+            deviceOnly &&
+            !selected.length &&
+            reconcileEmptyEmployeeIds.includes(employee.id)
+          ) {
+            const stale = await tx.hrRecord.findMany({
+              where: {
+                branchId,
+                employeeId: employee.id,
+                section: 'time',
+                tab: 'attendance',
+                deletedAt: null,
+                values: { path: ['1'], equals: date },
+              },
+              take: 1000,
+            });
+            for (const row of stale) {
+              const data = (row.data ?? {}) as Record<string, unknown>;
+              if (
+                !Object.hasOwn(data, 'firstIn') ||
+                !Object.hasOwn(data, 'workedMinutes')
+              )
+                continue;
+              await tx.hrRecord.update({
+                where: { id: row.id },
+                data: { deletedAt: new Date(), version: { increment: 1 } },
+              });
+              await this.audit(
+                tx,
+                actor,
+                { branchId, employeeId: employee.id, recordId: row.id },
+                'attendance.reconcile',
+                { reason: 'source-date-corrected', date },
+                row.version + 1,
+              );
+            }
+            continue;
+          }
           const metrics =
             shiftStart && shiftEnd
               ? attendanceScheduleMetrics(
@@ -4331,6 +4394,7 @@ export class HrService {
                   shiftStart,
                   shiftEnd,
                   Number(validate.digits(shiftValues?.[3] ?? '0')) || 0,
+                  validate.localClockToUtc(date, '17:30'),
                 )
               : null;
           const late =
@@ -4370,9 +4434,13 @@ export class HrService {
               ),
             });
             result.worked = projected.worked;
-            overtime = deviceOnly
-              ? (metrics?.overtimeMinutes ?? null)
-              : projected.overtime;
+            overtime =
+              deviceOnly ||
+              selected.some((row) =>
+                Boolean((row.data as HrWorkflowData).attendanceSource),
+              )
+                ? (metrics?.overtimeMinutes ?? null)
+                : projected.overtime;
             calculationMetrics = projected.metrics;
           }
           if (result.exceptions.length) exceptions++;
@@ -4432,6 +4500,8 @@ export class HrService {
           if (
             existing &&
             existing.status === status &&
+            existing.effectiveAt?.getTime() ===
+              validate.isoDate(date).getTime() &&
             isDeepStrictEqual(existing.values, values) &&
             isDeepStrictEqual(existing.data, calculatedData)
           )
@@ -4455,6 +4525,7 @@ export class HrService {
                   section: 'time',
                   tab: 'attendance',
                   code: `HR-ATT-${randomUUID().slice(0, 12)}`,
+                  effectiveAt: validate.isoDate(date),
                   values,
                   status,
                   data: calculatedData,
@@ -4514,6 +4585,7 @@ export class HrService {
         if (byCode.size !== employees.length)
           throw new ConflictException('مرجع مرتبط معتبر نیست.');
         const dates = new Set<string>();
+        const reconcile: { date: string; employeeId: string }[] = [];
         let imported = 0,
           unchanged = 0,
           unmatched = 0,
@@ -4566,6 +4638,7 @@ export class HrService {
               throw error;
             }
             dates.add(oldDate);
+            reconcile.push({ date: oldDate, employeeId: employee.id });
           }
           if (!punch.accepted) {
             if (existing) {
@@ -4589,7 +4662,42 @@ export class HrService {
             'Radan API',
             '',
           ];
+          const previousDates = new Set<string>(
+            Array.isArray(
+              (existing?.data as Record<string, unknown> | undefined)
+                ?.attendancePreviousDates,
+            )
+              ? (
+                  (existing!.data as Record<string, unknown>)
+                    .attendancePreviousDates as unknown[]
+                ).filter(
+                  (d): d is string =>
+                    typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d),
+                )
+              : [],
+          );
+          if (oldDate && oldDate !== punch.date) previousDates.add(oldDate);
+          for (const previous of previousDates) {
+            if (
+              previous === punch.date ||
+              reconcile.some(
+                (r) => r.date === previous && r.employeeId === employee.id,
+              )
+            )
+              continue;
+            try {
+              await this.assertOpenPeriod(tx, branchId, previous);
+            } catch (error) {
+              if (error instanceof ConflictException) continue;
+              throw error;
+            }
+            dates.add(previous);
+            reconcile.push({ date: previous, employeeId: employee.id });
+          }
           const data = {
+            ...(previousDates.size
+              ? { attendancePreviousDates: [...previousDates].sort() }
+              : {}),
             attendanceSource: input.source,
             sourceRecordId: punch.id,
             sourceEntryType: punch.kind,
@@ -4651,6 +4759,7 @@ export class HrService {
           unmatched,
           closed,
           dates: [...dates].sort(),
+          reconcile,
         };
       },
     );

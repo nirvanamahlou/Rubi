@@ -254,6 +254,7 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
               <tr>
                 {[
                   'عنوان حساب',
+                  'کد تفصیلی حسابداری',
                   'شعبه شرکت',
                   'ارز',
                   'شماره حساب',
@@ -272,6 +273,9 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
               {rows.map((row) => (
                 <tr key={row.id} className="border-t border-border">
                   <td className="p-3 text-center">{row.title}</td>
+                  <td className="p-3 text-center font-mono" dir="ltr">
+                    {row.accountingCode ?? '—'}
+                  </td>
                   <td className="p-3 text-center">
                     {options?.branches.find((x) => x.id === row.branchId)
                       ?.name ?? '—'}
@@ -415,6 +419,19 @@ export function CompanyBankAccounts({ bankId }: { bankId: string }) {
                 void save();
               }}
             >
+              {editor.record ? (
+                <FormField
+                  id="company-bank-accounting-code"
+                  label="کد تفصیلی حسابداری"
+                >
+                  <Input
+                    id="company-bank-accounting-code"
+                    readOnly
+                    dir="ltr"
+                    value={editor.record.accountingCode ?? ''}
+                  />
+                </FormField>
+              ) : null}
               <FormField id="company-bank-title" label="عنوان حساب" required>
                 <Input
                   id="company-bank-title"

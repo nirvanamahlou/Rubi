@@ -94,6 +94,25 @@ export class GhestirooController {
     );
     return result;
   }
+  @Post('dashboard')
+  @Header('Cache-Control', 'private, no-store')
+  async dashboard(
+    @Req() r: AuthenticatedRequest,
+    @Query('branchId') branch: string,
+    @Query('systemId') system: string,
+    @Body() body: unknown,
+  ) {
+    const [person] = await this.iam.describeMessagingParticipants([
+      r.actor.userId,
+    ]);
+    return this.service.dashboard(
+      r.actor,
+      branch,
+      system,
+      body,
+      person?.displayName ?? '',
+    );
+  }
   @Get('connection')
   @Header('Cache-Control', 'private, no-store')
   status(@Req() r: AuthenticatedRequest, @Query('branchId') branch: string) {

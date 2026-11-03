@@ -106,3 +106,43 @@ it('rejects a nonfloating, other-contract or out-of-branch context before writin
     expect(h.purchases.recordBatch).not.toHaveBeenCalled();
   }
 });
+
+it('permits draft agency choices only to authorized new-contract creators, without reading any contract', async () => {
+  const h = setup();
+  await expect(
+    h.service.draftReference('voucher-brokers', '1', 'agency', {
+      ...(actor as object),
+      permissions: [],
+      branchIds: ['branch'],
+    } as never),
+  ).rejects.toThrow();
+  expect(h.agencies.agencyPurchaseOptions).not.toHaveBeenCalled();
+  await h.service.draftReference('voucher-brokers', '1', 'agency', actor);
+  expect(h.agencies.agencyPurchaseOptions).toHaveBeenCalledWith('agency', 1);
+  expect(h.sales.detail).not.toHaveBeenCalled();
+  await expect(
+    h.service.draftReference('unknown', '1', '', actor),
+  ).rejects.toThrow();
+});
+
+it('routes a floating hotel-only contract to the same Sales owner purchase flow', async () => {
+  const h = setup();
+  h.current.snapshot.serviceSelections = [
+    { kind: 'HOTEL', metadata: { purchaseSupplyType: 'FLOATING' } },
+  ] as unknown as typeof h.current.snapshot.serviceSelections;
+  await h.service.batch('contract', {} as never, actor, 'hotel-key');
+  expect(h.purchases.recordBatch).toHaveBeenCalledWith(
+    'intake',
+    {},
+    actor,
+    'hotel-key',
+    'contract',
+  );
+  h.current.snapshot.serviceSelections = [
+    { kind: 'HOTEL', metadata: {} },
+  ] as unknown as typeof h.current.snapshot.serviceSelections;
+  await expect(
+    h.service.batch('contract', {} as never, actor, 'regular'),
+  ).rejects.toThrow();
+  expect(h.purchases.recordBatch).toHaveBeenCalledTimes(1);
+});

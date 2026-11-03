@@ -131,9 +131,11 @@ export function PurchaseFxSummary({
 export function PurchaseFxCapture({
   entry,
   onSaved,
+  referenceIds,
 }: {
   entry: FinancePurchaseFxV1;
   onSaved: () => void;
+  referenceIds?: readonly string[];
 }) {
   const [rate, setRate] = useState(''),
     [busy, setBusy] = useState(false),
@@ -154,7 +156,10 @@ export function PurchaseFxCapture({
           try {
             await fxRequest(
               'purchase-fx/' + encodeURIComponent(entry.referenceId),
-              { rateToIrr: rate },
+              {
+                rateToIrr: rate,
+                ...(referenceIds?.length ? { referenceIds } : {}),
+              },
             );
             onSaved();
           } catch (cause) {
@@ -170,6 +175,34 @@ export function PurchaseFxCapture({
       </Button>
       {error && <p role="alert">{error}</p>}
     </div>
+  );
+}
+
+export function PurchaseFxCaptures({
+  entries,
+  onSaved,
+}: {
+  entries?: readonly FinancePurchaseFxV1[] | undefined;
+  onSaved: () => void;
+}) {
+  const groups = new Map<string, FinancePurchaseFxV1[]>();
+  for (const entry of entries ?? [])
+    if (!entry.rateToIrr)
+      groups.set(entry.currencyCode, [
+        ...(groups.get(entry.currencyCode) ?? []),
+        entry,
+      ]);
+  return (
+    <>
+      {[...groups].map(([currency, rows]) => (
+        <PurchaseFxCapture
+          key={currency}
+          entry={rows[0]!}
+          referenceIds={rows.slice(1).map((row) => row.referenceId)}
+          onSaved={onSaved}
+        />
+      ))}
+    </>
   );
 }
 

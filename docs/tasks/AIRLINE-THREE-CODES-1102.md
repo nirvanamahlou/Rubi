@@ -1,0 +1,9 @@
+# Airline identifiers — 2026-11-02
+
+Owner authorizes an isolated worktree, the connected nirvanamahlou GitHub account, push and develop merge after all checks. Branch codex/pc-b-airline-three-codes-1102 starts from develop9ce345000. Original dirty checkout and its unrelated customer/accounting/HR schema changes are untouched.
+
+The airline code input accepts an IATA, ICAO or textual callsign such as W5, IRM or MAHAN AIR. Existing IATA / ICAO composite input remains supported with its secondary ICAO field. This change does not require entering all identifier types together and does not infer a missing IATA. Callsigns are explicit primary reference identifiers; no operational flight is rewritten.
+
+The shared normalizer uppercases and collapses whitespace, permits bounded alphanumeric identifiers or textual words/hyphens, and rejects punctuation/overlong input. API and Web use the same rule. Existing duplicate, field-access, branch, actor and version guards remain. More than two composite segments now fail instead of silently discarding trailing input. The migration widens only master_airlines.code from CHAR2 to VARCHAR64 with a bounded lock timeout; indexes, uniqueness and references are retained. Apply it before deploying the new API/Web. Keep the widened type on rollback; do not truncate newer identifiers to restore the old type.
+
+Local evidence:12 shared normalizer tests,102 API and53 Web form/catalog regressions pass. A disposable PostgreSQL18 fixture applies the actual migration to an existing identifier with a referencing FK, proves preservation, stores ICAO/callsign values, and rejects duplicates and65-character values. No operational database or real airline data was changed. Final types/lint/i18n and hosted full quality/tests/build/PostgreSQL gates remain required before merge. No production deployment requested.
