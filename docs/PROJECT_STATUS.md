@@ -8643,6 +8643,46 @@ Correct source share from call count to unique contact count, latest matching so
 
 Removed the three annotated registered-data report summary cards and unused icons. Other Call Center cards, report highlights and underlying data remain. No server deployment. See docs/tasks/CALL-CENTER-REMOVE-REPORT-KPIS-1102.md.
 
+## SITE-CONNECTIONS-LAYOUT-1103 — PC-D — LIVE_VALIDATED / FINAL_CI
+
+Connections now has one top selector for the four listed websites and one shared
+selected-site layout: API disclosure closed by default, independent pinned live
+presence chart and native service/Excel area. System-detail entries reuse the
+same panel. Existing native operations remain; selecting another site unmounts
+old state. Strict native binding prevents the primary Niyayesh connection from
+being shown as another site's service data. Remove the standalone generic guide
+and duplicate unscoped connection cards. No API/IAM/schema/dependency/producer or
+operational-data changes.66 Integrations checks pass; full types, build, live UI
+acceptance and exact-head hosted gates precede owner-authorized develop merge.
+All69 related checks, full Web types/build and owner-session UI acceptance pass.
+All4 selectors, initially closed/editable API, collapse draft preservation,
+separate service/presence panels, site-change reset, blank Excel template download
+and matching system-detail entry verified. Desktop/narrow views have no horizontal
+overflow or browser errors. Web-only activation preserves1868 outside-scope files,
+other services/env/mounts; temporary memory removed. All8 hosted gates passed on
+b9f71b8c9; the final documentation head must pass the same8 gates before PR1351
+develop merge. Only Ghestiroo currently has a live connection; the other three
+sites show their own unconfigured state. Runtime7 files and12 English keys remain
+byte-equivalent. Details: tasks/SITE-CONNECTIONS-LAYOUT-1103.md.
+
+## INTEGRATION-DASHBOARD-LAYOUT-1103 — PC-D — LIVE_VALIDATED / FINAL_CI
+
+All11 owner comments are active in Integrations: aggregate period KPIs with exact
+currency-separated amounts and source coverage, four compact visit cards,
+independent trend selection and a tracking launcher/dialog with site switch,
+refresh and close. Removed the selected-site heading/captions, definition block,
+readiness/queues, ERP flow, activity and duplicate comparison from Brands and the
+redundant Overview summary. Native management and per-source detail paging remain.
+61 related tests, scoped lint/formatting, local types and full server Web build
+pass. Live owner-session acceptance verifies today/30-day values, unchanged KPI
+totals when selecting another trend site, source-detail switching, modal refresh,
+close/unmount and four visit cards in one desktop row without horizontal overflow.
+Bounded activation preserves1847 other Web source files, current Dashboard
+overlay, API/Worker and other containers, environment and mounts. Temporary build
+memory was removed; no permanent server, schema or business-data changes.
+Final-head CI precedes PR1344 develop merge. Evidence and limits:
+[INTEGRATION-DASHBOARD-LAYOUT-1103](tasks/INTEGRATION-DASHBOARD-LAYOUT-1103.md).
+
 ## GHESTIROO-DASHBOARD-1102 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 First-page Ghestiroo metrics, detail pagination, Tehran date periods, independent
@@ -8683,6 +8723,12 @@ Valid active manual access snapshots now retain authenticated legal-entity read/
 ## AGENCY-CONTRACT-NOTE-1103 — PC-B
 
 Owner requests removal of the credit-limit/financial-balance guidance sentence from agency agreements. Reserve only agreement-workflow-panel.tsx and own notes; remove the visible paragraph without changing limits, permissions or financial behavior. No active overlapping source lock found. No API/schema/dependency or deployment change. Standing push/develop merge authorization applies; scoped validation and final hosted gates required.
+
+## REPORTS-READINESS-1103 — PC-C — SOURCE ONLY / DO NOT DEPLOY
+
+Read-only production schema/count audit and candidate verification cover every catalogue identifier. Eleven additional report codes now use owning-module native projections instead of sample-table assumptions; total16 Backend codes execute and generate complete-column XLSX,15 remain in the general Web catalogue under the existing HR exclusion. Current registered-purchase sums independently reconcile by currency. Unsupported legacy sources are honestly pending; all21 remaining reports and the partial-scope requirements are listed in docs/tasks/REPORTING-READINESS-1103.md. Preserve source permissions, branch/own boundaries, cancelled-sale exclusion, Decimal, five-row preview, chosen sort, B Nazanin export and latest Dashboard/Call Center work. No schema, dependency, IAM or business-data writes and no application deployment. Final exact-head hosted gates control the owner-authorized develop merge.
+
+
 
 ## CORRESPONDENCE-INBOX-1103 — PC-B — ACTIVE
 
@@ -8748,3 +8794,9 @@ PR1335 and its merge checks passed; first source-backed Dashboard release is hea
 ## PARTY-CONTRACT-RECEIPTS-FIFO-1103 — PC-A — VALIDATING
 
 Finance inbox party account panel adds canonical customer/agency debt totals and one deposit split oldest-first across contracts, including partial settlement. Sales owns scoped balances/persistence; Finance authorizes actual-account receipt confirmation and existing accounting events. Preview revision, serializable transaction, operation replay, immutable receipts/audit and currency-separated four-decimal amounts protect the flow. Refund corrections use the existing financial path.18 focused API tests and12 Web checks pass; final types/lint/build and dedicated PostgreSQL CI regression precede owner-authorized merge. No migration, dependency, data or deployment changes. See tasks/PARTY-CONTRACT-RECEIPTS-FIFO-1103.md.
+
+## REPORTS-CURRENCY-FRESHNESS-1103 — PC-C — IN_PROGRESS
+
+Source-only correction of RPT001 multi-currency duplicate presentation and composed current cancellation eligibility. Live read-only audit found3 latest Reservations CANCELLED workflows whose canonical Sales rows remain SENT_TO_RESERVATIONS; this is a missing domain-state composition, not a backend result cache. Counts become distinct per branch/owner with exact separate currency amounts in one display column; browser refreshes current previews on interval/focus and never silently retains failed old output. No production records, schema, dependencies or server release changes. See REPORTING.md and DECISIONS.md; test/build/CI pending.
+
+REPORTS-CURRENCY-FRESHNESS-1103 READY_FOR_REVIEW: API37 and Web34 focused checks, scoped lint, both TypeScript checks and API/Web production builds pass. Live read-only candidate matches independent SQL for344 active contracts/1125 passengers and each separate currency; three latest Reservations cancellations are excluded. Organization table/export has one branch/owner row with precise combined currency text, chart currencies remain separate. Visible preview refresh interval15s plus focus/visibility/manual actions; failed reads clear old output. No deployment, migration, financial/history rewrite or actual business row export. Rule persisted in REPORTING.md/DECISIONS.md.

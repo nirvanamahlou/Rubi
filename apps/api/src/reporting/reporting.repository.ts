@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Prisma } from '@nora/database';
+import { Prisma, type DatabaseClient } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
 import type { ReportQueryV1 } from './reporting.contracts';
@@ -9,6 +9,10 @@ import {
 } from './reporting-native-sales';
 import type { SalesReportingActor } from '../sales/sales-reporting.public';
 import { nativePaymentReport } from './reporting-native-payments';
+import {
+  nativeOperationalReport,
+  OPERATIONAL_REPORTS,
+} from './reporting-native-operational';
 
 export interface ReportingFactRow {
   id: string;
@@ -78,26 +82,39 @@ export class ReportingRepository {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
-  nativeResult(
+  async nativeResult(
     code: string,
     query: ReportQueryV1,
     actor: SalesReportingActor,
     includeAllRows = false,
   ) {
-    if (code === 'payments_refunds')
-      return nativePaymentReport(
-        this.database.client,
-        query,
-        actor,
-        includeAllRows,
-      );
-    if (!NATIVE_SALES_REPORTS.has(code)) return undefined;
-    return nativeSalesReport(
-      this.database.client,
-      code,
-      query,
-      actor,
-      includeAllRows,
+    if (
+      !Object.hasOwn(OPERATIONAL_REPORTS, code) &&
+      code !== 'payments_refunds' &&
+      !NATIVE_SALES_REPORTS.has(code)
+    )
+      return undefined;
+    return this.database.client.$transaction(
+      async (tx) => {
+        await tx.$executeRawUnsafe('SET TRANSACTION READ ONLY');
+        const client = tx as unknown as DatabaseClient;
+        if (Object.hasOwn(OPERATIONAL_REPORTS, code))
+          return nativeOperationalReport(
+            client,
+            code,
+            query,
+            actor,
+            includeAllRows,
+          );
+        if (code === 'payments_refunds')
+          return nativePaymentReport(client, query, actor, includeAllRows);
+        if (!NATIVE_SALES_REPORTS.has(code)) return undefined;
+        return nativeSalesReport(client, code, query, actor, includeAllRows);
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        timeout: 20000,
+      },
     );
   }
 

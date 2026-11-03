@@ -114,3 +114,11 @@ Endpoint عمومی برای خواندن، ایجاد یا تغییر زمان�
   شعبه دریافت‌کننده دوباره سمت سرور enforce می‌شود و grant اشتراک Scope داده را گسترش
   نمی‌دهد.
 - شمارنده و صفحه «اشتراک‌گذاری‌شده با من» فقط grantهای صریح کاربر جاری را نمایش می‌دهد.
+
+## Current report data and multi-currency presentation — 2026-11-03
+
+Per owner request, live report previews must query current domain state rather than reuse an execution result. Every new preview/export uses a consistent read-only database snapshot; filter snapshots store choices, not frozen business rows. While an open preview is visible it refreshes every15 seconds and on window focus/visibility return. Manual execution, paging and sorting also query the source. Background refresh does not add execution-history records; errors clear the old result. Completed downloads remain historical documents and are regenerated through a new export request.
+
+Sales reporting composes latest Reservations cancellation/reopen with Sales status through an owning-domain public leaf. Only latest intake/workflow matters. Cancelled contracts are excluded from active sales and operational eligibility; pipeline/cancellation reports preserve separate cancelled rows and exclude their amounts from confirmed-sales headlines. Financial receipts/refunds are historical events and are not deleted or reclassified.
+
+RPT001 version4 uses one branch/owner row, distinct contract IDs and passenger counts once per contract. A combined text column shows each currency amount independently (IRR ریال, EUR €, USD $). Underlying amountsByCurrency remain exact Decimal strings for charts/exports; no FX conversion or mixed-currency sum. Amount sorting compares currency vectors in fixed IRR,EUR,USD,then alphabetic order, comparing only the same currency at each step. A currency filter limits the eligible contracts and displayed currencies. Chart series remain currency-separated. Counts/columns/sort/paging match preview/export. Approved sale price is not money collected from the customer.

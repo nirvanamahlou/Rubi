@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { REPORTING_CATALOG_V1 } from './reporting.catalog';
 
 describe('REPORTING_CATALOG_V1', () => {
-  it('publishes the approved travel demo suite and keeps unreleased producers closed', () => {
-    expect(REPORTING_CATALOG_V1).toHaveLength(21);
+  it('publishes native sources and keeps demo-only or unreleased producers closed', () => {
+    expect(REPORTING_CATALOG_V1).toHaveLength(37);
     expect(new Set(REPORTING_CATALOG_V1.map((item) => item.code)).size).toBe(
       REPORTING_CATALOG_V1.length,
     );
@@ -13,7 +13,7 @@ describe('REPORTING_CATALOG_V1', () => {
         expect.objectContaining({
           code: 'sales_by_organization',
           approvedView: 'sales.reporting.contract-currency.v1',
-          version: 3,
+          version: 4,
         }),
         expect.objectContaining({
           code: 'sales_by_service_route',
@@ -21,7 +21,7 @@ describe('REPORTING_CATALOG_V1', () => {
         }),
         expect.objectContaining({
           code: 'lead_to_order_conversion',
-          approvedView: 'reporting.travel.facts.v1',
+          producerStatus: 'PENDING_CONNECTION',
         }),
         expect.objectContaining({
           code: 'due_checks',
@@ -41,6 +41,16 @@ describe('REPORTING_CATALOG_V1', () => {
         (item) => item.producerStatus === 'PENDING_CONNECTION',
       ).every((item) => item.approvedView.startsWith('reporting_')),
     ).toBe(true);
+    expect(
+      REPORTING_CATALOG_V1.filter((item) => item.producerStatus === 'READY'),
+    ).toHaveLength(16);
+    expect(
+      REPORTING_CATALOG_V1.some(
+        (item) =>
+          item.producerStatus === 'READY' &&
+          item.approvedView === 'reporting.travel.facts.v1',
+      ),
+    ).toBe(false);
   });
 
   it('keeps money-bearing joins at contract/service/payment/journal grain', () => {

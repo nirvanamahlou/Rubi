@@ -760,3 +760,7 @@ Owner requests standalone hotel floating purchase and confirms floating ticket p
 ## AMEND-FLOATING-FLIGHT-1103
 
 The owner authorizes converting either existing catalog flight direction to floating during contract amendment. Amendment validation may retain the opposite catalog leg; ordinary new-contract pairing policy remains unchanged. Existing route/chronology/authorization/inventory amendment transaction remain mandatory.
+
+## REPORTS-CURRENCY-FRESHNESS-1103
+
+Sales reporting must compose the latest Reservations intake/workflow cancellation through a minimal public producer, restricted to already authorized Sales contract IDs. A reservation cancellation is not an executed financial refund and does not rewrite canonical Sales/history/payment rows. For active sales/operational eligibility it excludes that contract until the latest workflow reopens it; pipeline/cancellation reports retain it separately as effectively cancelled. Prior workflow versions never override the latest intake. Monetary values stay approved contract prices, not receipts. Organization report row grain becomes branch+owner; counts deduplicate contract IDs, monetary measures retain their original currencies without FX or mixed-currency addition. Live preview reads a fresh consistent database snapshot per request, refreshes while visible and when returning to the tab; previously generated documents remain immutable.
