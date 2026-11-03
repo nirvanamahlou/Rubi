@@ -10773,6 +10773,16 @@ COMPUTER_ID=PC-B; branch codex/pc-b-workbench-attendance-summary-1102 from devel
 
 Reserve HR dashboard domain/service bounded query, dashboard cards/charts and tests. User requests actual API data,current Persian season,newest-first30-day attendance and push/develop merge. Preserve HR scope and Radan source dates; no migration/dependencies or deployment.
 
+## CALL-CENTER-BRANCH-CONTEXT-1102 — PC-C — RESERVED
+
+COMPUTER_ID=PC-C. Owner requests correcting missing personal recent-call display for shared201 and auditing all employees. Actual authenticated actors for both targets default to Jahan Academy while Issabel data belongs to Central Office. Reserve narrow HR current employee branch port, IAM directory delegate, Call Center branches preferred metadata/read consumer, Web branch bootstrap/read-client and focused tests/own notes. Producer HR -> IAM -> Call Center read; additive optional meta.defaultBranchId preserves existing clients and grants. No branch UUID hardcodes, schema, dependencies, IAM grants, PBX or call-data rewrites. Existing targets have no active overlapping local edits; preserve production peer overlays under shared deploy lock. Approved UI layout is unchanged.
+
+CALL-CENTER-BRANCH-CONTEXT-1102 validation extension: reserve exactly two existing Call Center English label/error entries in en-overrides and synchronized API/standalone catalogues. Production baseline coverage exposed pre-existing missing colon label and native-only registration message. Preserve all peer catalogue entries and test gates; no new Persian UI or shared-contract change.
+
+CALL-CENTER-BRANCH-CONTEXT-1102 — SOURCE_READY:11 API and23 Web checks, scoped lint, API/Web types/builds and native17-account/119-contact access verification pass. Production unchanged pending image execution smoke correction and peer deployment completion. Source scope freezes on publication.
+
+CALL-CENTER-BRANCH-CONTEXT-1102 — DEPLOYED / PR1308: post-release17 employee accounts plus Demo,119 contact checks and both201 histories complete. Preserved live peer overlays, runtime environment and mounts, DB/Redis identity; encrypted backup verified, Worker auth/AMI/recording healthy. One-layer packaging of1669 byte-verified compiled Web artifacts avoids inherited overlay mount limit; no Docker configuration changes. Reservation released; exact-head CI remains separate from native operational validation.
+
 ## HR-RADAN-DATE-SCHEDULE-1102 — PC-B — IN_PROGRESS
 
 Reserve Radan ingestion date normalization, HR attendance calculation/import reconciliation and self-performance, employee attendance weekday projection/tests. User explicitly authorizes source dates+1day,09:15–17 standard schedule with Thursday14:00 end and overtime after17:30, local activation and push/develop merge. Preserve source IDs, closed periods, approved corrections and peer runtime edits. No migration/dependency.
@@ -10830,3 +10840,7 @@ Owner explicitly authorizes restarting CI, repairing the 17 open Amin-tech11 dev
 ## AMIN-OPEN-PR-REPAIR-1103 / PR1296 — PC-C
 
 Owner-authorized integration with develop7d74d786b and CI failure repair. Preserve published feature behavior and peer source. No deployment, schema or dependency changes. Final-head hosted gates required before merge.
+
+## AMIN-OPEN-PR-REPAIR-1103 / PR1308 — PC-C
+
+Integrate current develop and preserve both translated labels and peer catalog additions. No runtime deployment. All final-head gates required.

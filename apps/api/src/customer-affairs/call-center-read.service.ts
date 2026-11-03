@@ -184,7 +184,38 @@ export class CallCenterReadService {
   }
   async branches(actor: AuthenticatedActor) {
     this.workflow.scope(actor, undefined);
-    return { data: await this.directory.callCenterBranches(actor) };
+    const data = await this.directory.callCenterBranches(actor);
+    const employeeBranches =
+      await this.directory.callCenterEmployeeBranches(actor);
+    const ownBranches = data.filter((branch) =>
+      employeeBranches.includes(branch.id),
+    );
+    const candidates = ownBranches.length ? ownBranches : data;
+    let defaultBranchId: string | null = candidates[0]?.id ?? null;
+    if (candidates.length > 1) {
+      const recent = await Promise.all(
+        candidates.map(async (branch) => {
+          try {
+            const scope = await this.calls.access.where(actor, branch.id);
+            const call = await this.db.client.callCenterCall.findFirst({
+              where: { contact: scope },
+              orderBy: [{ occurredAt: 'desc' }, { id: 'asc' }],
+              select: { occurredAt: true },
+            });
+            return {
+              id: branch.id,
+              at: call?.occurredAt.getTime() ?? -Infinity,
+            };
+          } catch (error) {
+            if (!(error instanceof ForbiddenException)) throw error;
+            return { id: branch.id, at: -Infinity };
+          }
+        }),
+      );
+      recent.sort((a, b) => b.at - a.at);
+      defaultBranchId = recent[0]?.id ?? defaultBranchId;
+    }
+    return { data, meta: { defaultBranchId } };
   }
   async teams(actor: AuthenticatedActor, branch: string | undefined) {
     const branchId = this.workflow.scope(actor, branch);

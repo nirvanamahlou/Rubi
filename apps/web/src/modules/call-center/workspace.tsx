@@ -1,5 +1,6 @@
 'use client';
 import { ScrollContinuation } from './scroll-continuation';
+import { CallCenterBranchContext } from './branch-context';
 import { RecordingDownload } from './recording-download';
 import {
   Dialog,
@@ -109,12 +110,16 @@ export function CallCenterWorkspace() {
   if (!branch) return <p role="alert">شعبه مجازی در دسترس نیست.</p>;
   return (
     <>
-      <Content
-        key={`${actor.userId}:${branch}:${actor.permissions.join(',')}`}
-        branch={branch}
-        actorId={actor.userId}
-        permissions={actor.permissions}
-      />
+      <CallCenterBranchContext actor={actor}>
+        {(resolvedBranch) => (
+          <Content
+            key={`${actor.userId}:${resolvedBranch}:${actor.permissions.join(',')}`}
+            branch={resolvedBranch}
+            actorId={actor.userId}
+            permissions={actor.permissions}
+          />
+        )}
+      </CallCenterBranchContext>
     </>
   );
 }

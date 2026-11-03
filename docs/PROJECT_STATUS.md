@@ -8516,6 +8516,12 @@ Selected30/90/365-day filter now reaches HR own attendance aggregation using Teh
 
 Dashboard uses current Tehran/Persian season through today, descending30-day attendance and real daily attendance overtime in cards. A valid first entry counts presence before checkout; latest per-employee/day prevents duplicates. Business-date query preserves rolling30 days across season boundaries. Today refreshes with native store polling; leave card counts unique staff across supported approved leave sources. No schema/dependency or source date rewrite. Focused and final-head checks precede user-authorized develop merge.
 
+## CALL-CENTER-BRANCH-CONTEXT-1102 — PC-C
+
+Wrong first-login branch explains missing personal contacts for shared201 accounts. Authoritative HR-scoped branch bootstrap implemented;11 API and23 Web checks, API/Web types/builds and native16-employee-plus-Demo access checks pass. Production release pending runtime layering correction and shared deployment lock. See docs/tasks/CALL-CENTER-BRANCH-CONTEXT-1102.md.
+
+CALL-CENTER-BRANCH-CONTEXT-1102 — DEPLOYED: authoritative HR branch fixes both201 personal lists. Post-release17 employees plus Demo/119 contact checks pass, including21 outgoing calls/13 contacts for each target. Verified encrypted backup and preserved peer source/configuration, database/Redis, Worker API authentication/AMI and recording timer. No migrations/grants/call-data rewrites. PR1308; receipt /opt/rubi/CALL-CENTER-BRANCH-CONTEXT-1102.json.
+
 ## HR-RADAN-DATE-SCHEDULE-1102 — PC-B
 
 Owner explicitly requests Radan input dates+1 calendar day. Stable source IDs move existing punches and retain old-day reconciliation across retries; both old/new open days recalculate, preserving approved corrections and closed periods. Standard09:15–17 working-hours schedule uses14:00 end on Thursday; overtime starts no earlier than17:30, while other explicit schedules retain their configured boundaries. Workbench includes measured lateness on open days; unknown deficit/overtime stays null. Employee/global attendance tables add Tehran weekday after date.52 focused API and12 Web/translation tests,lint,types and API build pass. Local DB backup verified before native sync; no migration or production rollout. Final-head gates precede requested develop merge.
