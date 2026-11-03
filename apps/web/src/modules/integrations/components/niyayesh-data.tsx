@@ -13,6 +13,7 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { integrationsApi } from '../api/client';
 import { NiyayeshEditor } from './niyayesh-editor';
 import { NiyayeshWorkbooks } from './niyayesh-workbooks';
+import { matchesNativeSite } from '../site-connections-model';
 
 const labels: Record<string, string> = {
   valid: 'اعتبار فایل',
@@ -108,15 +109,18 @@ export function ExternalFields({
 export function NiyayeshData({
   branchId,
   expectedSystemId,
+  servicesOnly = false,
 }: {
   branchId: string;
   expectedSystemId?: string;
+  servicesOnly?: boolean;
 }) {
+  const Container = servicesOnly ? 'section' : Card;
   const [dashboard, setDashboard] = useState<Awaited<
     ReturnType<typeof integrationsApi.niyayeshDashboard>
   > | null>(null);
   const [metric, setMetric] = useState('');
-  const [view, setView] = useState('data');
+  const [view, setView] = useState(servicesOnly ? 'editor' : 'data');
   const [status, setStatus] = useState<Awaited<
     ReturnType<typeof integrationsApi.niyayeshStatus>
   > | null>(null);
@@ -139,20 +143,19 @@ export function NiyayeshData({
       setError('');
       setPage(null);
       try {
-        const access = await integrationsApi.ssoAccess(
-          branchId,
-          controller.signal,
-        );
-        if (controller.signal.aborted) return;
-        setSsoEnabled(access.enabled);
         const state = await integrationsApi.niyayeshStatus(
           branchId,
           controller.signal,
         );
         if (controller.signal.aborted) return;
         setStatus(state);
-        if (expectedSystemId && state.registrySystemId !== expectedSystemId)
-          return;
+        if (!matchesNativeSite(state, expectedSystemId)) return;
+        const access = await integrationsApi.ssoAccess(
+          branchId,
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        setSsoEnabled(access.enabled);
         if (state.state === 'CONNECTED') {
           const totals = await integrationsApi.niyayeshDashboard(
             branchId,
@@ -183,7 +186,7 @@ export function NiyayeshData({
   if (
     expectedSystemId &&
     status &&
-    status.registrySystemId !== expectedSystemId
+    !matchesNativeSite(status, expectedSystemId)
   )
     return (
       <EmptyState
@@ -192,9 +195,11 @@ export function NiyayeshData({
       />
     );
   return (
-    <Card className="p-5 space-y-4">
+    <Container className={servicesOnly ? 'space-y-4' : 'p-5 space-y-4'}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-bold">داده‌های نیایش سیر</h2>
+        {!servicesOnly ? (
+          <h2 className="text-lg font-bold">داده‌های نیایش سیر</h2>
+        ) : null}
         <Button
           variant="outline"
           disabled={busy}
@@ -203,10 +208,12 @@ export function NiyayeshData({
           بررسی و دریافت تازه
         </Button>
       </div>
-      <p className="text-sm text-muted-foreground">
-        اطلاعات مستقیم از API نیایش با مجوز شخصی شما دریافت می‌شود. این نما
-        داده‌ای را در مشتریان، فروش یا مالی نورا ثبت نمی‌کند.
-      </p>
+      {!servicesOnly ? (
+        <p className="text-sm text-muted-foreground">
+          اطلاعات مستقیم از API نیایش با مجوز شخصی شما دریافت می‌شود. این نما
+          داده‌ای را در مشتریان، فروش یا مالی نورا ثبت نمی‌کند.
+        </p>
+      ) : null}
       {ssoEnabled ? (
         <Button
           disabled={busy}
@@ -221,64 +228,72 @@ export function NiyayeshData({
         >
           ورود با حساب نورا به پنل نیایش
         </Button>
-      ) : (
+      ) : !servicesOnly ? (
         <p className="text-sm text-muted-foreground">
           ورود شخصی نیازمند مجوز «ورود شخصی به پنل نیایش» در مدیریت کاربران است.
         </p>
-      )}
+      ) : null}
       {error ? (
         <Alert tone="error" title="دریافت داده کامل نشد" description={error} />
       ) : null}
       {busy ? <Skeleton className="h-24" /> : null}
       {status?.state === 'NOT_CONFIGURED' ? (
         <EmptyState
-          title="اتصال نیایش تنظیم نشده است"
+          title={
+            servicesOnly
+              ? 'این سایت هنوز متصل نشده است'
+              : 'اتصال نیایش تنظیم نشده است'
+          }
           description="تنظیم امن سرور و نگاشت حساب شخصی لازم است."
         />
       ) : null}
       {status?.state === 'CONNECTED' ? (
         <>
-          <div className="flex flex-wrap gap-3">
-            <Badge>اتصال API تأیید شد</Badge>
-            <Badge>
-              {status.environment === 'LOCAL'
-                ? 'محیط محلی — اطلاعات سایت عملیاتی نیست'
-                : status.environment}
-            </Badge>
-            <span className="text-xs">
-              بررسی: {new Date(status.checkedAt!).toLocaleString('fa-IR')}
-            </span>
-          </div>
+          {!servicesOnly ? (
+            <div className="flex flex-wrap gap-3">
+              <Badge>اتصال API تأیید شد</Badge>
+              <Badge>
+                {status.environment === 'LOCAL'
+                  ? 'محیط محلی — اطلاعات سایت عملیاتی نیست'
+                  : status.environment}
+              </Badge>
+              <span className="text-xs">
+                بررسی: {new Date(status.checkedAt!).toLocaleString('fa-IR')}
+              </span>
+            </div>
+          ) : null}
           {dashboard ? (
             <>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {dashboard.metrics.map((m) => (
-                  <button
-                    key={m.key}
-                    className="rounded-xl border border-border bg-surface p-4 text-start disabled:opacity-60"
-                    disabled={busy || m.value === null}
-                    onClick={() => {
-                      setView('data');
-                      setResource(m.resource);
-                      setMetric(m.key);
-                      setAfter(0);
-                      setHistory([]);
-                    }}
-                  >
-                    <span className="block text-sm font-semibold">
-                      {m.title}
-                    </span>
-                    <strong className="my-2 block text-2xl">
-                      {m.value === null
-                        ? 'بدون مجوز'
-                        : m.value.toLocaleString('fa-IR')}
-                    </strong>
-                    <span className="text-xs text-muted-foreground">
-                      {m.definition}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              {!servicesOnly ? (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {dashboard.metrics.map((m) => (
+                    <button
+                      key={m.key}
+                      className="rounded-xl border border-border bg-surface p-4 text-start disabled:opacity-60"
+                      disabled={busy || m.value === null}
+                      onClick={() => {
+                        setView('data');
+                        setResource(m.resource);
+                        setMetric(m.key);
+                        setAfter(0);
+                        setHistory([]);
+                      }}
+                    >
+                      <span className="block text-sm font-semibold">
+                        {m.title}
+                      </span>
+                      <strong className="my-2 block text-2xl">
+                        {m.value === null
+                          ? 'بدون مجوز'
+                          : m.value.toLocaleString('fa-IR')}
+                      </strong>
+                      <span className="text-xs text-muted-foreground">
+                        {m.definition}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               <nav
                 className="flex flex-wrap gap-2"
                 aria-label="اطلاعات و عملیات سایت"
@@ -428,6 +443,6 @@ export function NiyayeshData({
           </div>
         </>
       ) : null}
-    </Card>
+    </Container>
   );
 }

@@ -8643,6 +8643,28 @@ Correct source share from call count to unique contact count, latest matching so
 
 Removed the three annotated registered-data report summary cards and unused icons. Other Call Center cards, report highlights and underlying data remain. No server deployment. See docs/tasks/CALL-CENTER-REMOVE-REPORT-KPIS-1102.md.
 
+## SITE-CONNECTIONS-LAYOUT-1103 — PC-D — LIVE_VALIDATED / FINAL_CI
+
+Connections now has one top selector for the four listed websites and one shared
+selected-site layout: API disclosure closed by default, independent pinned live
+presence chart and native service/Excel area. System-detail entries reuse the
+same panel. Existing native operations remain; selecting another site unmounts
+old state. Strict native binding prevents the primary Niyayesh connection from
+being shown as another site's service data. Remove the standalone generic guide
+and duplicate unscoped connection cards. No API/IAM/schema/dependency/producer or
+operational-data changes.66 Integrations checks pass; full types, build, live UI
+acceptance and exact-head hosted gates precede owner-authorized develop merge.
+All69 related checks, full Web types/build and owner-session UI acceptance pass.
+All4 selectors, initially closed/editable API, collapse draft preservation,
+separate service/presence panels, site-change reset, blank Excel template download
+and matching system-detail entry verified. Desktop/narrow views have no horizontal
+overflow or browser errors. Web-only activation preserves1868 outside-scope files,
+other services/env/mounts; temporary memory removed. All8 hosted gates passed on
+b9f71b8c9; the final documentation head must pass the same8 gates before PR1351
+develop merge. Only Ghestiroo currently has a live connection; the other three
+sites show their own unconfigured state. Runtime7 files and12 English keys remain
+byte-equivalent. Details: tasks/SITE-CONNECTIONS-LAYOUT-1103.md.
+
 ## INTEGRATION-DASHBOARD-LAYOUT-1103 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 All11 owner comments are active in Integrations: aggregate period KPIs with exact

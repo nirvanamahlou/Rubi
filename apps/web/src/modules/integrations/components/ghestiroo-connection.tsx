@@ -4,9 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, Card } from '@/components/ui/surfaces';
 import { ghestirooApi, type GhestirooStatus } from '../api/client';
-import { GhestirooWorkspace } from './ghestiroo-workspace';
-import { SitePresenceSelector } from './site-presence';
-import type { IntegrationRegistryV1 } from '@nora/contracts';
+
+export type GhestirooConnectionState = {
+  status: GhestirooStatus | null;
+  loading: boolean;
+  error: string;
+};
 
 const labels: Record<string, string> = {
   catalog: 'کاتالوگ',
@@ -80,11 +83,11 @@ function displayValue(field: string, value: unknown) {
 export function GhestirooConnection({
   branchId,
   userId,
-  registry,
+  onStateChange,
 }: {
   branchId: string;
   userId: string;
-  registry?: IntegrationRegistryV1;
+  onStateChange?: (state: GhestirooConnectionState) => void;
 }) {
   const [status, setStatus] = useState<GhestirooStatus | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
@@ -96,6 +99,9 @@ export function GhestirooConnection({
   const [resource, setResource] = useState('');
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
+  useEffect(() => {
+    onStateChange?.({ status, loading: loadingStatus, error });
+  }, [status, loadingStatus, error, onStateChange]);
   const loadStatus = useCallback(
     async (signal?: AbortSignal) => {
       try {
@@ -351,14 +357,6 @@ export function GhestirooConnection({
             </Button>
           ) : null}
         </div>
-      ) : null}
-      {status?.configured && status.scopes?.includes('catalog') ? (
-        <>
-          {registry ? (
-            <SitePresenceSelector branchId={branchId} registry={registry} />
-          ) : null}
-          <GhestirooWorkspace key={branchId} branchId={branchId} />
-        </>
       ) : null}
     </Card>
   );
