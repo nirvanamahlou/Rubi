@@ -1,5 +1,9 @@
 ## WORKBENCH-FIXES-1103 — PC-B — READY_FOR_CI
 
+## MISSED-CALL-REQUEST-ACTION-1103 — PC-C — SOURCE_READY / DO NOT DEPLOY
+
+Owner explicitly authorizes a Register Request action in the missed-callback KPI dialog for managers, reusing the dossier New Request form and its existing permission/branch/contact guards. Reserve bounded Call Center dialog/workspace wiring, focused regression and own docs. Base develop9144eb57e. No API/schema/dependency/grant changes and no production deployment. Push/develop PR and merge after every final-head CI gate are authorized. Existing published UI scopes remain frozen outside this addition.
+
 Owner authorizes calendar repair, immediate daily-package viewing, device-backed own attendance for all users, conversation removal/group leave and group management, request inbox removal, push and develop merge. Isolated branch codex/pc-b-workbench-fixes-1103. Reserve Workbench/Messaging API and Web, bounded Documents daily-package delivery and Customer Affairs workbench queries/endpoints, HR own projection and focused tests; own translation entries. Additive endpoints ship with consumers; existing contracts remain compatible. No schema/migration/dependency or operational identity changes.
 
 Validated 94 API/database and 130 Web/i18n tests, full API/Web types, scoped lint and both production builds. Source changes require final-head hosted gates before authorized develop merge. No runtime rollout or operational account reassignment. Details: docs/tasks/WORKBENCH-FIXES-1103.md.
