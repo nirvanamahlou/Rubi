@@ -62,9 +62,9 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
       manager = randomUUID(),
       other = randomUUID(),
       noUnit = randomUUID(),
-      ceo = randomUUID(),
       demo = randomUUID(),
       admin = randomUUID();
+    let ceo = randomUUID();
     const past = new Date('2026-01-01T00:00:00Z');
     let connectionId: string;
     let phoneCounter = 1000;
@@ -142,10 +142,17 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
         !['127.0.0.1', 'localhost'].includes(url.hostname)
       )
         throw Error('Disposable nora_ci only');
+      db = createDatabaseClient(url.toString());
+      // The full migration gate seeds this reserved username before this suite.
+      // Reuse its identity without changing any seeded roles or credentials.
+      const seededCeo = await db.user.findUnique({
+        where: { username: 'danial' },
+        select: { id: true },
+      });
+      if (seededCeo) ceo = seededCeo.id;
       vi.stubEnv('CALL_CENTER_ACCESS_POLICY', 'ANSWERED');
       vi.stubEnv('CALL_CENTER_GLOBAL_USER_IDS', `${ceo},${demo}`);
       vi.stubEnv('CALL_CENTER_RECORDING_DOWNLOAD_USER_ID', ceo);
-      db = createDatabaseClient(url.toString());
       const database = { client: db } as never;
       await db.branch.createMany({
         data: [branchId, foreignBranch].map((id) => ({
@@ -187,25 +194,26 @@ describe.skipIf(process.env.NORA_RUN_CALL_CENTER_POSTGRES_TESTS !== '1')(
           branchIds: global ? [] : [branchId],
           permissions: global ? [] : permissions,
         } as AuthenticatedActor);
-        await db.user.create({
-          data: {
-            id,
-            username: id === ceo ? 'danial' : id,
-            displayName: 'Synthetic operator',
-            passwordHash: 'not-a-login',
-            status: 'ACTIVE',
-            ...(global ? {} : { branches: { create: { branchId } } }),
-            ...([ceo, demo, noUnit].includes(id)
-              ? {}
-              : {
-                  profile: {
-                    create: {
-                      organizationUnitId: id === other ? otherUnit : unitId,
+        if (!(id === ceo && seededCeo))
+          await db.user.create({
+            data: {
+              id,
+              username: id === ceo ? 'danial' : id,
+              displayName: 'Synthetic operator',
+              passwordHash: 'not-a-login',
+              status: 'ACTIVE',
+              ...(global ? {} : { branches: { create: { branchId } } }),
+              ...([ceo, demo, noUnit].includes(id)
+                ? {}
+                : {
+                    profile: {
+                      create: {
+                        organizationUnitId: id === other ? otherUnit : unitId,
+                      },
                     },
-                  },
-                }),
-          },
-        });
+                  }),
+            },
+          });
         const role = await db.role.create({
           data: {
             code: id,
