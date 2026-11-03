@@ -8616,6 +8616,9 @@ and validation evidence: [GHESTIROO-DASHBOARD-1102](tasks/GHESTIROO-DASHBOARD-11
 Both bounded production overlays are active and source SQL reconciles all KPI,
 daily, detail and visit results. Final Nora exact-head gates precede PR1318 merge.
 
+CALL-WRONG-NUMBER-1103: Add WRONG_NUMBER business outcome to shared call popup, history/workflow labels and API save/search allowlists. Existing string storage; no migration or deployment. Eight form regressions pass; full release checks pending.
+
+CALL-WRONG-NUMBER-1103 CI repair: missing English outcome translation fixed; all 11 local form/translation checks pass. PR1329 base corrected to develop; final-head hosted checks required before authorized merge.
 ## WORKBENCH-REQUEST-ISOLATION-1103 — PC-B
 
 COMPUTER_ID=PC-B; codex/pc-b-workbench-request-isolation-1103. Owner requests internal Workbench requests stay out of Customer Affairs. Scope: customer-affairs repository list/export/dashboard/report filters and regression tests; preserve personal inbox and shared request storage. No migration, dependency, API contract or deployment changes. Validation passed: 28 targeted tests including disposable PostgreSQL/HTTP isolation, API typecheck/build, scoped ESLint and Prettier. Push and develop merge authorized after hosted checks; source frozen on publication and scope released on merge.

@@ -181,6 +181,7 @@ export function WithoutOutcomeDialog({
                                 NO_ANSWER: 'بدون پاسخ',
                                 BUSY: 'مشغول',
                                 FAILED: 'ناموفق',
+                                WRONG_NUMBER: 'اشتباه گرفته شده',
                               } as Record<string, string>
                             )[call.outcome ?? ''] ?? 'نتیجه ثبت‌نشده')
                           : callbacks
