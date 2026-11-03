@@ -1,6 +1,7 @@
 import type { AccountingBookV1, AccountingSnapshotV1 } from '@nora/contracts';
 
-export type AccountingListKind = 'fiscal-years' | 'ledgers' | 'voucher-types';
+export type AccountingListKind =
+  'fiscal-years' | 'ledgers' | 'voucher-types' | 'coding-standards';
 export type FilterMode = 'all' | 'any' | 'not-all' | 'none';
 export type FilterOperator =
   | 'contains'
@@ -58,11 +59,20 @@ export const accountingLists: {
   },
   { kind: 'ledgers', title: 'فهرست دفتر کل', allTitle: 'همه دفترهای کل' },
   { kind: 'voucher-types', title: 'فهرست نوع سند', allTitle: 'همه انواع سند' },
+  {
+    kind: 'coding-standards',
+    title: 'فهرست کدینگ استاندارد',
+    allTitle: 'همه کدینگ استاندارد',
+  },
 ];
 export const listRoute = (kind: AccountingListKind) =>
-  `/finance/accounting/general-ledger/base-information/lists/${kind}`;
+  kind === 'coding-standards'
+    ? '/finance/accounting/general-ledger/reports/legal-reports/lists/standards'
+    : `/finance/accounting/general-ledger/base-information/lists/${kind}`;
 export const definitionRoute = (kind: AccountingListKind) =>
-  `/finance/accounting/general-ledger/base-information/${kind}`;
+  kind === 'coding-standards'
+    ? '/finance/accounting/general-ledger/reports/legal-reports/standards'
+    : `/finance/accounting/general-ledger/base-information/${kind}`;
 export const normalizeFilterText = (text: string) =>
   text
     .normalize('NFKC')
@@ -75,6 +85,14 @@ export const normalizeFilterText = (text: string) =>
     .toLocaleLowerCase();
 
 export function listFields(kind: AccountingListKind): ListField[] {
+  if (kind === 'coding-standards')
+    return [
+      { key: 'title', label: 'عنوان کدینگ استاندارد', type: 'text' },
+      { key: 'titleEn', label: 'عنوان لاتین کدینگ استاندارد', type: 'text' },
+      { key: 'protocolTitle', label: 'عنوان پروتکل', type: 'text' },
+      { key: 'protocolVersion', label: 'نسخه پروتکل', type: 'text' },
+      { key: 'isSystem', label: 'استاندارد پیش فرض', type: 'boolean' },
+    ];
   const common: ListField[] = [
     { key: 'title', label: 'عنوان', type: 'text' },
     { key: 'titleEn', label: 'عنوان به زبان دوم', type: 'text' },
@@ -137,6 +155,13 @@ export function listRecords(
       titleEn: row.titleEn ?? '',
       description: row.description ?? '',
       active: String(row.active),
+      ...('attributes' in row && kind === 'coding-standards'
+        ? {
+            protocolTitle: String(row.attributes.protocolTitle ?? ''),
+            protocolVersion: String(row.attributes.protocolVersion ?? ''),
+            isSystem: String(row.attributes.isSystem === true),
+          }
+        : {}),
       ...('attributes' in row && kind === 'voucher-types'
         ? {
             isDefault: String(

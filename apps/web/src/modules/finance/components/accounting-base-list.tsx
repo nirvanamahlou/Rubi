@@ -575,40 +575,54 @@ export function AccountingBaseList({
   const fields = listFields(kind);
   const records = listRecords(kind, snapshot, books);
   const columns =
-    kind === 'ledgers'
-      ? [
-          { key: 'code', label: 'کد', type: 'text' },
-          { key: 'title', label: 'عنوان', type: 'text' },
-          { key: 'isMain', label: 'دفتر کل اصلی', type: 'boolean' },
-          {
-            key: 'allowsPosting',
-            label: 'امکان صدور سند حسابداری در دفتر کل',
-            type: 'boolean',
-          },
-          { key: 'active', label: 'وضعیت', type: 'boolean' },
-        ]
-      : kind === 'voucher-types'
+    kind === 'coding-standards'
+      ? fields
+      : kind === 'ledgers'
         ? [
+            { key: 'code', label: 'کد', type: 'text' },
             { key: 'title', label: 'عنوان', type: 'text' },
-            { key: 'isDefault', label: 'پیش‌فرض', type: 'boolean' },
+            { key: 'isMain', label: 'دفتر کل اصلی', type: 'boolean' },
+            {
+              key: 'allowsPosting',
+              label: 'امکان صدور سند حسابداری در دفتر کل',
+              type: 'boolean',
+            },
+            { key: 'active', label: 'وضعیت', type: 'boolean' },
           ]
-        : kind === 'fiscal-years'
-          ? [{ key: 'title', label: 'عنوان', type: 'text' }]
-          : fields
-              .filter((field) =>
-                ['code', 'title', 'titleEn', 'description', 'active'].includes(
-                  field.key,
-                ),
-              )
-              .sort(
-                (a, b) =>
-                  ['code', 'title', 'titleEn', 'description', 'active'].indexOf(
-                    a.key,
-                  ) -
-                  ['code', 'title', 'titleEn', 'description', 'active'].indexOf(
-                    b.key,
-                  ),
-              );
+        : kind === 'voucher-types'
+          ? [
+              { key: 'title', label: 'عنوان', type: 'text' },
+              { key: 'isDefault', label: 'پیش‌فرض', type: 'boolean' },
+            ]
+          : kind === 'fiscal-years'
+            ? [{ key: 'title', label: 'عنوان', type: 'text' }]
+            : fields
+                .filter((field) =>
+                  [
+                    'code',
+                    'title',
+                    'titleEn',
+                    'description',
+                    'active',
+                  ].includes(field.key),
+                )
+                .sort(
+                  (a, b) =>
+                    [
+                      'code',
+                      'title',
+                      'titleEn',
+                      'description',
+                      'active',
+                    ].indexOf(a.key) -
+                    [
+                      'code',
+                      'title',
+                      'titleEn',
+                      'description',
+                      'active',
+                    ].indexOf(b.key),
+                );
   const filtered = filterRecords(
     records,
     {
@@ -962,7 +976,11 @@ export function AccountingBaseList({
       dir="rtl"
       aria-label={definition.title}
       data-accounting-list
-      data-fiscal-year-list={kind === 'fiscal-years' ? 'true' : undefined}
+      data-source-grid-list={
+        kind === 'fiscal-years' || kind === 'coding-standards'
+          ? 'true'
+          : undefined
+      }
       className={`overflow-hidden border bg-surface ${compactList ? 'flex min-h-[70vh] flex-col rounded-sm [&_table]:text-xs [&_th]:border-e [&_th]:px-1 [&_th]:py-1 [&_td]:border-e [&_td]:px-2 [&_td]:py-1 [&_thead]:bg-sky-100/60 [&_thead_input]:h-7 [&_thead_select]:h-7 [&_thead_div]:rounded-sm' : 'rounded-2xl shadow-sm'}`}
     >
       <Button
@@ -1057,7 +1075,7 @@ export function AccountingBaseList({
           }
         >
           <option value="all">{definition.allTitle}</option>
-          {kind !== 'fiscal-years' && (
+          {kind !== 'fiscal-years' && kind !== 'coding-standards' && (
             <>
               <option key="true" value="true">
                 فقط فعال‌ها
@@ -1361,7 +1379,7 @@ export function AccountingBaseList({
                   if (!selectionMode) setSelected([record.id]);
                 }}
                 onDoubleClick={
-                  kind === 'fiscal-years'
+                  kind === 'fiscal-years' || kind === 'coding-standards'
                     ? () =>
                         router.push(
                           `${definitionRoute(kind)}?bookId=${snapshot.book.id}&recordId=${record.id}`,

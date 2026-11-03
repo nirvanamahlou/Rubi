@@ -15,6 +15,13 @@ const operators = [
 ];
 const common = ['title', 'titleEn', 'description', 'code', 'active'];
 const fields: Record<string, string[]> = {
+  'coding-standards': [
+    'title',
+    'titleEn',
+    'protocolTitle',
+    'protocolVersion',
+    'isSystem',
+  ],
   'fiscal-years': [
     ...common,
     'allocation.title',

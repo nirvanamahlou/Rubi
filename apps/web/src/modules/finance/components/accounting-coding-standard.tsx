@@ -87,27 +87,31 @@ const initial = (row: AccountingConfigurationV1 | null) => ({
   extraFields: parseRows<Extra>(row?.attributes.extraFields),
 });
 
-/** The two source grids are editable metadata. No synthetic standard codes are
- * inserted: the observed source code tree is empty in the available standards. */
+/** The two source grids are editable metadata. Source standard code catalogues
+ * are separate reference data; this form never fabricates them. */
 export function AccountingCodingStandard({
   book,
   busy,
   run,
   refresh,
+  initialRecord,
 }: {
   book: AccountingSnapshotV1;
   busy: boolean;
   run: PersistedEditorRun;
   refresh: () => Promise<void>;
+  initialRecord?: AccountingConfigurationV1 | undefined;
 }) {
   const records = book.configurations.filter(
     (row) => row.kind === 'coding-standards',
   );
   const [selected, setSelected] = useState<AccountingConfigurationV1 | null>(
-    null,
+    initialRecord ?? null,
   );
-  const [draft, setDraft] = useState(() => initial(null));
-  const [notes, setNotes] = useState(() => parseSetupNotes(undefined));
+  const [draft, setDraft] = useState(() => initial(initialRecord ?? null));
+  const [notes, setNotes] = useState(() =>
+    parseSetupNotes(initialRecord?.attributes.notes),
+  );
   const [tab, setTab] = useState('main');
   const [subtab, setSubtab] = useState('entities');
   const [opening, setOpening] = useState(false);

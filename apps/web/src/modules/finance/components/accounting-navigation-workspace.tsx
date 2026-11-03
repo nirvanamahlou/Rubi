@@ -412,8 +412,10 @@ function AccountingSecondaryNavigation({
                           !item.href.includes('/lists/') &&
                           !item.href.includes('/legal-reports/'),
                       );
-                      const listItems = section.items.filter((item) =>
-                        item.href.includes('/lists/'),
+                      const listItems = section.items.filter(
+                        (item) =>
+                          item.href.includes('/lists/') &&
+                          !item.href.includes('/legal-reports/'),
                       );
                       const listClosed = closedLists.includes(sectionId);
                       const legalItems = section.items.filter((item) =>
@@ -495,7 +497,32 @@ function AccountingSecondaryNavigation({
                                   </button>
                                   {!legalClosed && (
                                     <div className="space-y-1 border-s ps-2">
-                                      {legalItems.map(renderItem)}
+                                      {legalItems
+                                        .filter(
+                                          (item) =>
+                                            !item.href.includes('/lists/'),
+                                        )
+                                        .map(renderItem)}
+                                      {legalItems.some((item) =>
+                                        item.href.includes('/lists/'),
+                                      ) && (
+                                        <details
+                                          open={pathname.includes(
+                                            '/legal-reports/lists/',
+                                          )}
+                                        >
+                                          <summary className="cursor-pointer px-3 py-1 text-xs">
+                                            فهرست ها
+                                          </summary>
+                                          <div className="border-s ps-2">
+                                            {legalItems
+                                              .filter((item) =>
+                                                item.href.includes('/lists/'),
+                                              )
+                                              .map(renderItem)}
+                                          </div>
+                                        </details>
+                                      )}
                                     </div>
                                   )}
                                 </div>

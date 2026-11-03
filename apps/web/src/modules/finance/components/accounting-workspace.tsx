@@ -441,8 +441,13 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   )
     content = (
       <AccountingCodingStandard
-        key={bookId}
+        key={`${bookId}:${urlParams.get('recordId') ?? ''}`}
         book={snapshot}
+        initialRecord={snapshot.configurations.find(
+          (row) =>
+            row.kind === 'coding-standards' &&
+            row.id === urlParams.get('recordId'),
+        )}
         run={run}
         busy={busy}
         refresh={refresh}
@@ -726,11 +731,14 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     );
   } else if (
     snapshot &&
-    ['fiscal-years', 'ledgers', 'voucher-types'].some(
-      (kind) => section === `general-ledger/base-information/lists/${kind}`,
-    )
+    (section === 'general-ledger/reports/legal-reports/lists/standards' ||
+      ['fiscal-years', 'ledgers', 'voucher-types'].some(
+        (kind) => section === `general-ledger/base-information/lists/${kind}`,
+      ))
   ) {
-    const kind = section.split('/').at(-1) as AccountingListKind;
+    const kind: AccountingListKind = section.endsWith('/lists/standards')
+      ? 'coding-standards'
+      : (section.split('/').at(-1) as AccountingListKind);
     content = (
       <AccountingBaseList
         key={`${bookId}:${kind}`}

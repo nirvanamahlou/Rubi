@@ -79,6 +79,7 @@ const implementationByRoute: Readonly<
   Record<string, AccountingParityImplementation>
 > = {
   'general-ledger/reports/legal-reports/standards': 'coding-standard',
+  'general-ledger/reports/legal-reports/lists/standards': 'configuration-list',
   'general-ledger/base-information/fiscal-years': 'configuration',
   'general-ledger/base-information/ledgers': 'ledger',
   'general-ledger/base-information/voucher-types': 'configuration',
@@ -282,6 +283,36 @@ const menuOnlyCaptures: readonly AccountingParityCapture[] = [
 
 const explicitGaps: readonly AccountingParityCapture[] = [
   {
+    route: 'general-ledger/reports/legal-reports/lists/standards',
+    title: 'کدینگ استاندارد',
+    sourcePath:
+      'مالی / دفتر کل / گزارش ها / گزارش های قانونی / فهرست ها / معرفی کدینگ استاندارد',
+    sourcePage:
+      'List.aspx?ComponentName=SystemGroup.Financial.CodingStandardManagement&EntityName=CodingStandard',
+    evidenceStatus: 'observed-layout',
+    fields: [],
+    columns: [
+      'عنوان کدینگ استاندارد',
+      'عنوان لاتین کدینگ استاندارد',
+      'عنوان پروتکل',
+      'نسخه پروتکل',
+      'استاندارد پیش فرض',
+    ],
+    actions: [
+      'جدید',
+      'ویرایش',
+      'حذف',
+      'بارگذاری مجدد',
+      'فیلتر',
+      'انتخاب چند رکورد',
+      'محاسبه تعداد رکوردها',
+      'چاپ',
+      'ارسال به Excel',
+    ],
+    blocker: '',
+    stage: 'فهرست کدینگ استاندارد',
+  },
+  {
     route: 'general-ledger/reports/legal-reports/standards',
     title: 'معرفی کدینگ استاندارد',
     sourcePath:
@@ -314,7 +345,7 @@ const explicitGaps: readonly AccountingParityCapture[] = [
       'جستجو',
     ],
     blocker:
-      'درخت کدهای استاندارد در استانداردهای سنا و سناما در منبع خالی است؛ ویرایش کد و نگاشت از این فرم هنوز مشاهده نشده است.',
+      'درخت در فرم معرفی خالی دیده شد؛ کدهای استاندارد در فرم نگاشت قابل مشاهده‌اند. ویرایش کد از فرم معرفی هنوز مشاهده نشده است.',
     stage: 'اطلاعات اصلی و فیلدهای تکمیلی',
   },
   {

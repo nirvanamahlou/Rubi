@@ -603,49 +603,49 @@
 }
 
 /* Fiscal-year list: one source column and horizontal, recursively nested filters. */
-.sourceLayout :global([data-fiscal-year-list] [data-list-heading] h2),
-.sourceLayout :global([data-fiscal-year-list] [data-list-result-count]),
-.sourceLayout :global([data-fiscal-year-list] [data-filter-empty]),
-.sourceLayout :global([data-fiscal-year-list] [data-filter-extra-actions]),
+.sourceLayout :global([data-source-grid-list] [data-list-heading] h2),
+.sourceLayout :global([data-source-grid-list] [data-list-result-count]),
+.sourceLayout :global([data-source-grid-list] [data-filter-empty]),
+.sourceLayout :global([data-source-grid-list] [data-filter-extra-actions]),
 .sourceLayout
-  :global([data-fiscal-year-list] [data-filter-group-heading] > span) {
+  :global([data-source-grid-list] [data-filter-group-heading] > span) {
   display: none;
 }
-.sourceLayout :global([data-fiscal-year-list] [data-list-heading]) {
+.sourceLayout :global([data-source-grid-list] [data-list-heading]) {
   order: 3;
   padding: 0.25rem;
   justify-content: flex-end;
 }
-.sourceLayout :global([data-fiscal-year-list] > [data-accounting-filter-bar]) {
+.sourceLayout :global([data-source-grid-list] > [data-accounting-filter-bar]) {
   order: -3;
 }
-.sourceLayout :global([data-fiscal-year-list] > button[aria-expanded]) {
+.sourceLayout :global([data-source-grid-list] > button[aria-expanded]) {
   order: -2;
 }
 .sourceLayout
-  :global([data-fiscal-year-list] > [data-accounting-filter-panel]) {
+  :global([data-source-grid-list] > [data-accounting-filter-panel]) {
   order: -1;
 }
 .sourceLayout
-  :global([data-fiscal-year-list] > div:not([data-accounting-filter-bar])),
-.sourceLayout :global([data-fiscal-year-list] > footer),
-.sourceLayout :global([data-fiscal-year-list] > p) {
+  :global([data-source-grid-list] > div:not([data-accounting-filter-bar])),
+.sourceLayout :global([data-source-grid-list] > footer),
+.sourceLayout :global([data-source-grid-list] > p) {
   order: 4;
 }
-.sourceLayout :global([data-fiscal-year-list] [data-accounting-filter-panel]) {
+.sourceLayout :global([data-source-grid-list] [data-accounting-filter-panel]) {
   padding: 0.25rem;
   overflow-x: auto;
 }
 .sourceLayout
   :global(
-    [data-fiscal-year-list]
+    [data-source-grid-list]
       [data-accounting-filter-panel]
       > div:first-child
       > div:first-child
   ) {
   display: none;
 }
-.sourceLayout :global([data-fiscal-year-list] [data-filter-group]) {
+.sourceLayout :global([data-source-grid-list] [data-filter-group]) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -657,11 +657,11 @@
   border-radius: 0;
   background: transparent;
 }
-.sourceLayout :global([data-fiscal-year-list] [data-filter-group-heading]) {
+.sourceLayout :global([data-source-grid-list] [data-filter-group-heading]) {
   flex-wrap: nowrap;
 }
 .sourceLayout
-  :global([data-fiscal-year-list] [data-filter-group-heading] select) {
+  :global([data-source-grid-list] [data-filter-group-heading] select) {
   width: 8rem;
   height: 1.5rem;
   font-size: 0.6875rem;
@@ -669,7 +669,7 @@
 }
 .sourceLayout
   :global(
-    [data-fiscal-year-list] [data-filter-group-heading] select:last-child
+    [data-source-grid-list] [data-filter-group-heading] select:last-child
   ) {
   appearance: none;
   width: 1.5rem;
@@ -680,25 +680,25 @@
   font-size: 1rem;
   cursor: pointer;
 }
-.sourceLayout :global([data-fiscal-year-list] [data-filter-branches]) {
+.sourceLayout :global([data-source-grid-list] [data-filter-branches]) {
   border-inline-start: 2px solid #a1a1aa;
   padding-inline-start: 0.5rem;
   min-height: 2.5rem;
 }
-.sourceLayout :global([data-fiscal-year-list] [data-filter-branches] > div) {
+.sourceLayout :global([data-source-grid-list] [data-filter-branches] > div) {
   align-items: center;
   margin-block: 0.25rem;
 }
-.sourceLayout :global([data-fiscal-year-list] footer) {
+.sourceLayout :global([data-source-grid-list] footer) {
   padding: 0.25rem;
   font-size: 0.6875rem;
 }
-.sourceLayout :global([data-fiscal-year-list] button) {
+.sourceLayout :global([data-source-grid-list] button) {
   min-height: 1.5rem;
 }
-.sourceLayout :global([data-fiscal-year-list] [role='toolbar'] button),
+.sourceLayout :global([data-source-grid-list] [role='toolbar'] button),
 .sourceLayout
-  :global([data-fiscal-year-list] [data-accounting-filter-panel] button) {
+  :global([data-source-grid-list] [data-accounting-filter-panel] button) {
   height: 1.5rem;
   width: 1.5rem;
   min-width: 1.5rem;
@@ -706,6 +706,6 @@
   border-radius: 0.2rem;
 }
 .sourceLayout
-  :global([data-fiscal-year-list] [data-accounting-filter-panel] > div) {
+  :global([data-source-grid-list] [data-accounting-filter-panel] > div) {
   margin-block: 0.25rem;
 }
