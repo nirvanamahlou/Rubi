@@ -201,7 +201,7 @@ it('rejects repeated multi-day long shifts while accepting a single start-day sn
       data,
       'hours',
     ),
-  ).resolves.toHaveLength(9);
+  ).resolves.toHaveLength(schema.columns.length);
   expect(data.attendanceBeforeHours).toBe(0);
   expect(data.shiftEndDayOffset).toBe(2);
   expect(

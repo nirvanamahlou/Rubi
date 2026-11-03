@@ -206,6 +206,13 @@ export class HrRadanDeviceService implements OnModuleInit, OnModuleDestroy {
           moved.set(item.date, ids);
         }
       }
+      // Also process days without punches so weekly absences and rest days are visible.
+      for (
+        let day = Date.parse(from);
+        day <= Date.parse(today);
+        day += 86400000
+      )
+        dates.add(new Date(day).toISOString().slice(0, 10));
       for (const date of [...dates].sort())
         await this.hr.processAttendance(
           { branchId, date },

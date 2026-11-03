@@ -345,6 +345,7 @@ export const HR_RESOURCE_COLUMNS = {
     'کارمند',
     'از تاریخ',
     'تا تاریخ',
+    'روز هفته',
   ],
   'time.shiftRequests': [
     'کارمند',

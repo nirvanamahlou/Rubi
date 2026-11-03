@@ -225,7 +225,7 @@ it('moves a source ID once and requests recalculation of its old employee/day', 
   });
 });
 
-it('clears stale derived presence on the old date without creating absence for unrelated employees', async () => {
+it('reconciles removed source punches to a non-working day when no shift is assigned', async () => {
   const f = fixture();
   f.records.set('daily', {
     id: 'daily',
@@ -258,8 +258,13 @@ it('clears stale derived presence on the old date without creating absence for u
     true,
     ['employee'],
   );
-  expect(f.records.get('daily')?.deletedAt).toBeInstanceOf(Date);
-  expect(f.records.get('daily')?.status).toBe('حاضر');
+  expect(f.records.get('daily')?.deletedAt).toBeUndefined();
+  expect(f.records.get('daily')?.status).toBe('عدم روزکاری');
+  expect(f.records.get('daily')?.data).toMatchObject({
+    firstIn: null,
+    lastOut: null,
+    workedMinutes: 0,
+  });
   expect(f.tx.hrRecord.create).not.toHaveBeenCalled();
 });
 

@@ -17564,5 +17564,19 @@
   "ابتدا حساب تنخواه این شعبه را تنظیم کنید.": "Configure the petty cash account for this branch first.",
   "ثبت تنخواه": "Petty cash registration",
   "ثبت ناموفق بود": "Registration failed",
-  "ثبت‌ها": "Registrations"
+  "ثبت‌ها": "Registrations",
+  "بازه شیفت با دوره کارکرد بسته‌شده هم‌پوشانی دارد.": "The shift overlaps a closed attendance period.",
+  "بازه شیفت حداکثر یک سال است.": "A shift validity range cannot exceed one year.",
+  "برنامه هفتگی کارکنان": "Weekly employee schedule",
+  "بین ۱ تا ۱۰۰ کارمند انتخاب کنید.": "Select between 1 and 100 employees.",
+  "ثبت شیفت": "Create shift",
+  "جستجوی کارکنان": "Search employees",
+  "حداقل یک کارمند انتخاب کنید.": "Select at least one employee.",
+  "روز هفته الزامی است.": "Weekday is required.",
+  "روز هفته معتبر انتخاب کنید.": "Select a valid weekday.",
+  "ساعت شروع و پایان معتبر انتخاب کنید.": "Select valid start and end times.",
+  "شیفت هفتگی به الگوی تقویم وابسته نیست.": "Weekly shifts cannot reference a calendar template.",
+  "کارمند فعال همان شعبه انتخاب کنید.": "Select an active employee from the same branch.",
+  "ویرایش شیفت": "Edit shift",
+  "کارمند در روز انتخابی شیفت فعال دارد.": "The employee already has an active shift on the selected day."
 }

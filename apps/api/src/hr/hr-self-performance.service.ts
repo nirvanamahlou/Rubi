@@ -191,7 +191,7 @@ export class HrSelfPerformanceService {
               take: 10,
             })
           : Promise.resolve([]),
-        canReadHr
+        canReadHr || allowOwnAttendance
           ? this.database.client.hrRecord.findMany({
               where: {
                 ...scope,

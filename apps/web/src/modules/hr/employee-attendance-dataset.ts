@@ -21,7 +21,15 @@ export function employeeAttendanceDataset(
   const base = recordsDataset('time', 'attendance', attendance);
   return {
     ...base,
-    columns: ['تاریخ', 'روز هفته', 'ورود', 'خروج', 'تأخیر', 'خروج زودهنگام'],
+    columns: [
+      'تاریخ',
+      'روز هفته',
+      'ورود',
+      'خروج',
+      'تأخیر',
+      'خروج زودهنگام',
+      'وضعیت',
+    ],
     rows: attendance.map((record) => {
       const date = record.values[1] ?? '';
       const punches = records.filter(
@@ -56,6 +64,7 @@ export function employeeAttendanceDataset(
           : (departures.at(-1) ?? '—'),
         record.values[4] ?? '—',
         record.values[5] ?? '—',
+        record.status,
       ];
     }),
   };
