@@ -221,6 +221,7 @@ export interface SalesFormState {
   };
   hotelChildAssignments?: Record<string, (string | null)[]> | undefined;
   hotel: {
+    floatingPurchase?: boolean;
     multiHotel?: boolean;
     cityId?: string;
     additionalStays?: Array<{
@@ -286,6 +287,7 @@ export interface SalesFormState {
 }
 
 export interface ContractFlightDraft {
+  destinationAirport?: SalesFlightSnapshotV1['destinationAirport'] | undefined;
   confirmation?: 'saved' | 'invalid' | undefined;
   departureAt: string;
   arrivalAt: string;
@@ -543,6 +545,9 @@ export function salesFlightSelection(
             carrierNameSnapshot: manual.carrierName.trim(),
             serviceNumberSnapshot: manual.serviceNumber.trim(),
             cabinClassCode: manual.cabinClassCode,
+            ...(manual.destinationAirport
+              ? { destinationAirport: manual.destinationAirport }
+              : {}),
           }),
         },
       ])[0];
@@ -701,6 +706,18 @@ export const emptySalesForm: SalesFormState = {
   paymentTerms: { version: 1, mode: 'CASH', plans: [] },
   pricingNotes: '',
 };
+
+export function salesFloatingFlight(state: SalesFormState) {
+  return (
+    state.serviceKinds.includes('FLIGHT') &&
+    salesDirections(state, 'FLIGHT').some(
+      (direction) =>
+        Boolean(state.contractFlights?.[direction]) ||
+        (direction === 'OUTBOUND' ? state.outboundOffer : state.returnOffer)
+          ?.supplyType === 'FLOATING',
+    )
+  );
+}
 
 export function salesPassengerCounts(state: SalesFormState) {
   const composition = state.passengerComposition ?? {
@@ -1657,6 +1674,16 @@ export function salesPayload(
                 : {}),
               ...(kind === 'FLIGHT'
                 ? {
+                    ...((direction === 'OUTBOUND'
+                      ? state.outboundOffer
+                      : state.returnOffer
+                    )?.supplyType
+                      ? {
+                          purchaseSupplyType: (direction === 'OUTBOUND'
+                            ? state.outboundOffer
+                            : state.returnOffer)!.supplyType!,
+                        }
+                      : {}),
                     businessOutput: state.businessOutput === true,
                     dateCalendarSystem: salesFlightCalendarSystem(
                       state,
@@ -1750,6 +1777,16 @@ export function salesPayload(
       services.splice(i, 1);
   }
   const hotelPriceService = services.find((s) => s.kind === 'HOTEL');
+  if (
+    hotelPriceService &&
+    !state.serviceKinds.includes('FLIGHT') &&
+    state.hotel.floatingPurchase
+  )
+    hotelPriceService.metadata = {
+      ...hotelPriceService.metadata,
+      purchaseSupplyType: 'FLOATING',
+    };
+
   if (hotelPriceService && usesRoomDrivenGuests(state)) {
     const stays = Object.fromEntries(
       salesHotelGuestIds(state).map((id) => {

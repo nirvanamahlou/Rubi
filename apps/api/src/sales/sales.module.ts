@@ -1,6 +1,7 @@
 import {
   SalesFloatingPurchases,
   SalesFloatingPurchasesController,
+  SalesPurchaseDraftController,
 } from './sales-floating-purchases';
 import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
 import { DocumentsModule } from '../documents/documents.module';
@@ -57,6 +58,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
     ReservationsRuntimeModule,
   ],
   controllers: [
+    SalesPurchaseDraftController,
     SalesFloatingPurchasesController,
     FlightLoadController,
     SalesPaymentReceiptsController,

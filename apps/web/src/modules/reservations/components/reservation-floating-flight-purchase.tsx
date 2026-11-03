@@ -1,4 +1,5 @@
 'use client';
+import type { ReservationServicePurchaseInputV1 } from '@nora/contracts';
 import { purchaseApiRoot } from './purchase-api-root';
 import { PurchaseCurrencyLookup } from './purchase-currency-lookup';
 import { ReservationPurchaseBrokerLookup } from './reservation-purchase-broker-lookup';
@@ -13,11 +14,13 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 
 export function ReservationFloatingFlightPurchase({
+  onStage,
   request,
   purchaseRoot,
   onSaved,
   serviceClientKey,
 }: {
+  onStage?: (body: ReservationServicePurchaseInputV1) => void;
   request: ReservationIntakeV1;
   purchaseRoot?: string | undefined;
   onSaved: () => void;
@@ -73,6 +76,11 @@ export function ReservationFloatingFlightPurchase({
           ? { purchaseRateToIrr: fxRates[currency.id] }
           : {}),
       });
+      if (onStage) {
+        onStage(JSON.parse(payload));
+        onSaved();
+        return;
+      }
       if (attempt.current?.payload !== payload)
         attempt.current = { payload, key: crypto.randomUUID() };
       const send = () =>

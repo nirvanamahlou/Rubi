@@ -1,4 +1,5 @@
 export const MASTER_DATA_CONTRACT_VERSION = 14 as const;
+export { normalizeAirlineCode } from './airline-code';
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 export { MASTER_DATA_EDITABLE_FIELDS } from './editable-fields';
 export type { MasterDataEditableField } from './editable-fields';

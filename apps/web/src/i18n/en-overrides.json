@@ -1,4 +1,7 @@
 {
+  "تاریخ شروع به کار": "Employment start date",
+  "تاریخ پایان قرارداد": "Contract end date",
+  "تاریخ پایان همکاری": "Employment end date",
   "ثبت همه": "Save all",
   "ظرفیت تور برای انتشار قیمت کافی نیست.": "Tour capacity is insufficient for price publication.",
   "هزینهٔ خرید پرواز هنوز در محاسبهٔ سود لحاظ نشده است؛ ثبت قیمت فروش پکیج مجاز است.": "Flight purchase cost is not yet included in profit calculations; package sale prices may still be published.",
@@ -4819,6 +4822,9 @@
   "فیلتر نوع درخواست": "Request type filter",
   "منبع پرداخت": "Payment source",
   "برداشت از حساب ریالی:": "Withdrawal from IRR account:",
+  "خدمات قرارداد تغییر کرده‌اند؛ خریدها را دوباره بررسی کنید.": "Contract services have changed; review the purchases again.",
+  "خریدهای آماده ثبت:": "Prepared purchases:",
+  "پاک‌کردن خریدهای آماده ثبت": "Clear prepared purchases",
   "تماس‌گرفته‌شده از داخلی:": "Called from extension:",
   "ثبت تماس فقط از تماس واقعی ایزابل امکان‌پذیر است.": "A call can only be registered from an actual Issabel call."
 }

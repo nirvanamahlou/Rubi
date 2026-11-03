@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { isMasterTransportFormResource } from '@nora/contracts';
+import {
+  isMasterTransportFormResource,
+  normalizeAirlineCode,
+} from '@nora/contracts';
 
 import { getMasterDataDefinition, type MasterDataResourceKey } from './catalog';
 import { getMasterDataFormFields } from './form-fields';
@@ -89,11 +92,19 @@ export function validateMasterDataDraft(
       errors[field.key] = `${field.label} معتبر نیست.`;
   }
   if (resource === 'airlines') {
-    const codes = (values.airlineCodes ?? '').toUpperCase().split(/\s*\/\s*/);
+    const codes = (values.airlineCodes ?? '')
+      .toUpperCase()
+      .split(/[/|،,]/)
+      .map((part) => part.trim());
+    if (codes[0]) codes[0] = normalizeAirlineCode(codes[0]) ?? codes[0];
     values.airlineCodes = codes.filter(Boolean).join(' / ');
-    if (!/^[A-Z0-9]{2}(?:\s*\/\s*[A-Z0-9]{3})?$/.test(values.airlineCodes))
+    if (
+      codes.length > 2 ||
+      !normalizeAirlineCode(codes[0] ?? '') ||
+      (codes.length === 2 && !/^[A-Z0-9]{3}$/.test(codes[1] ?? ''))
+    )
       errors.airlineCodes =
-        'کد ایرلاین را به‌شکل IATA یا IATA / ICAO وارد کنید.';
+        'کد ایرلاین باید IATA، ICAO یا Callsign باشد؛ قالب IATA / ICAO نیز پذیرفته می‌شود.';
   }
   if (resource === 'baggage-rules') {
     if (

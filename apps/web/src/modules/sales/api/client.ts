@@ -1,4 +1,7 @@
 'use client';
+import { waitForPurchaseContext } from '../model/new-contract-purchases';
+import type { ReservationIntakeV1 } from '@nora/contracts';
+import type { StagedPurchase } from '../model/new-contract-purchases';
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { localizedFetch } from '@/i18n/localized-fetch';
 
@@ -117,6 +120,21 @@ function queryString(query: SalesContractListQuery): string {
 }
 
 export const salesApi = {
+  purchaseContext: (id: string) =>
+    waitForPurchaseContext(() =>
+      request<{ data: ReservationIntakeV1 }>(
+        `/contracts/${encodeURIComponent(id)}/purchases/purchase-context`,
+      ),
+    ),
+  recordInitialPurchase: (id: string, purchase: StagedPurchase, key: string) =>
+    request<unknown>(
+      `/contracts/${encodeURIComponent(id)}/purchases/${purchase.path}`,
+      {
+        method: 'POST',
+        headers: { 'Idempotency-Key': key },
+        body: JSON.stringify(purchase.body),
+      },
+    ),
   agencyBuyerContact: (organizationId: string) =>
     request<{ data: SalesBuyerContactV1 }>(
       `/agency-customers/${encodeURIComponent(organizationId)}/contact`,

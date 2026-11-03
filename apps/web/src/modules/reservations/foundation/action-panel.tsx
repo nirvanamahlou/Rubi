@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { usePurchaseCompletion } from './use-purchase-completion';
 import { ReservationDeliveryPermit } from '../components/reservation-delivery-permit';
 import { ReservationHotelCosts } from '../components/reservation-hotel-costs';
@@ -171,6 +172,8 @@ export function ContractActionPanel({
 }: {
   request?: RequestView | undefined;
 }) {
+  const [openedRequest, setOpenedRequest] = useState<RequestView>();
+  const dialogRequest = openedRequest ?? request;
   const purchasesComplete = usePurchaseCompletion(
     request?.id,
     request?.workflowVersion,
@@ -231,7 +234,12 @@ export function ContractActionPanel({
                     </button>
                   )
                 ) : (
-                  <Dialog key={action}>
+                  <Dialog
+                    key={action}
+                    onOpenChange={(open) =>
+                      setOpenedRequest(open ? request : undefined)
+                    }
+                  >
                     <DialogTrigger asChild>
                       <button
                         type="button"
@@ -265,21 +273,22 @@ export function ContractActionPanel({
                         {action}
                       </button>
                     </DialogTrigger>
-                    {request && (
+                    {dialogRequest && (
                       <DialogContent
                         dir="rtl"
                         className={`max-h-[92dvh] overflow-y-auto ${['مشاهده', 'دریافت‌ها', 'ویرایش', 'فرم رزواسیون'].includes(action) ? 'sm:max-w-6xl' : 'sm:max-w-3xl'}`}
                       >
                         <DialogTitle className="pe-10">{action}</DialogTitle>
                         <DialogDescription>
-                          قرارداد {request.contractNumber} ·{' '}
-                          {request.customerName !== '—'
-                            ? request.customerName
-                            : (request.passengerNames[0] ?? request.branchName)}
+                          قرارداد {dialogRequest.contractNumber} ·{' '}
+                          {dialogRequest.customerName !== '—'
+                            ? dialogRequest.customerName
+                            : (dialogRequest.passengerNames[0] ??
+                              dialogRequest.branchName)}
                         </DialogDescription>
                         <ContractActionContent
                           action={action}
-                          request={request}
+                          request={dialogRequest}
                         />
                       </DialogContent>
                     )}

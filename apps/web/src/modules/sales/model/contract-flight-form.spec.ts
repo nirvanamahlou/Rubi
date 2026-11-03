@@ -1,3 +1,4 @@
+import { isFloatingSalesContract } from '@nora/contracts';
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
@@ -22,6 +23,12 @@ import { FlightTicketDocument } from '../components/flight-ticket-preview';
 import { contractPrintHtml } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 import { reservationTickets } from '../../reservations/model/reservation-tickets';
+import {
+  manualAmendmentFlights,
+  applyManualAmendmentFlights,
+  amendmentFromContract,
+  replaceAmendmentFlight,
+} from '../../reservations/components/contract-amendment-model';
 const originId = '10000000-0000-4000-8000-000000000002',
   destinationId = '10000000-0000-4000-8000-000000000003';
 const draft = {
@@ -130,7 +137,31 @@ describe('Contract-only flight form and consumers', () => {
   });
   it('renders saved manual flights in contract PDF and reservation tickets without fake offers', () => {
     const output = structuredClone(printFixture);
-    const flight = salesFlightSelection(state, 'OUTBOUND')!;
+    const destinationAirport = {
+      id: '10000000-0000-4000-8000-000000000005',
+      cityId: destinationId,
+      countryId: '10000000-0000-4000-8000-000000000009',
+      code: 'AYT',
+      name: 'Antalya Airport',
+    };
+    const selectedState = {
+      ...state,
+      contractFlights: { OUTBOUND: { ...draft, destinationAirport } },
+    };
+    const flight = salesFlightSelection(selectedState, 'OUTBOUND')!;
+    expect(
+      salesContractOnlyFlights(salesPayload(selectedState).services)[0]
+        ?.destinationAirport,
+    ).toEqual(destinationAirport);
+    expect(
+      renderToStaticMarkup(
+        createElement(FlightTicketDocument, {
+          state: selectedState,
+          cities: [],
+          passengerName: 'Synthetic',
+        }),
+      ),
+    ).toContain('airport-code">AYT');
     output.contract.ticketSelections = [];
     output.contract.servicesDetail = [
       {
@@ -142,6 +173,32 @@ describe('Contract-only flight form and consumers', () => {
       },
     ];
     expect(contractPrintHtml(output, printReferences)).toContain('FLOAT123');
+    expect(contractPrintHtml(output, printReferences)).toContain(
+      'Antalya Airport (AYT)',
+    );
+    const saved = { ...output.contract, originId, destinationId };
+    const manual = manualAmendmentFlights(saved);
+    expect(manual.OUTBOUND?.destinationAirport).toEqual(destinationAirport);
+    const amended = applyManualAmendmentFlights(
+      amendmentFromContract(saved),
+      manual,
+    );
+    expect(
+      salesContractOnlyFlights(amended.services)[0]?.destinationAirport,
+    ).toEqual(destinationAirport);
+    const replaced = replaceAmendmentFlight(amended, 'OUTBOUND', {
+      id: 'real-offer',
+      originId,
+      destinationId,
+      departureAt: flight.departureAt,
+      arrivalAt: flight.arrivalAt,
+      carrierName: 'Synthetic',
+      serviceNumber: '123',
+      cabinClassCode: 'ECONOMY',
+    } as never);
+    expect(replaced.services[0]?.metadata).not.toHaveProperty(
+      'flightDestinationAirportV1',
+    );
     expect(contractPrintHtml(output, printReferences)).toContain(
       'شناور، نیازمند تأیید رزرو',
     );
@@ -170,6 +227,7 @@ describe('Contract-only flight form and consumers', () => {
     expect(tickets[0]?.offers[0]).toMatchObject({
       serviceNumber: 'FLOAT123',
       contractOnly: true,
+      destinationAirport,
     });
   });
 });
@@ -328,4 +386,9 @@ it('rejects a floating return after a company-inventory outbound', () => {
   };
   expect(salesFlightsValid(mixed)).toBe(false);
   expect(salesSelectedFlightsReady(mixed)).toBe(false);
+});
+
+it('automatically makes the paired hotel floating when the flight is contract-only', () => {
+  const payload = salesPayload({ ...state, serviceKinds: ['FLIGHT', 'HOTEL'] });
+  expect(isFloatingSalesContract(payload.services)).toBe(true);
 });
