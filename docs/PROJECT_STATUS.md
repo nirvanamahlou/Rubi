@@ -8557,6 +8557,10 @@ Agency added to shared Call Center source options, used by all call popups and m
 
 Correct source share from call count to unique contact count, latest matching source within report/access/window. Chart renamed to referral source share with contact-based percentages and center. No server publication or data rewrite. See docs/tasks/CALL-CENTER-SOURCE-SHARE-1102.md.
 
+## CALL-CENTER-REMOVE-REPORT-KPIS-1102 — PC-C — SOURCE ONLY
+
+Removed the three annotated registered-data report summary cards and unused icons. Other Call Center cards, report highlights and underlying data remain. No server deployment. See docs/tasks/CALL-CENTER-REMOVE-REPORT-KPIS-1102.md.
+
 ## GHESTIROO-DASHBOARD-1102 — PC-D — LIVE_VALIDATED / FINAL_CI
 
 First-page Ghestiroo metrics, detail pagination, Tehran date periods, independent

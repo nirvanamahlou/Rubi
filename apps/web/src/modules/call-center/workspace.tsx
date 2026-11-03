@@ -26,8 +26,6 @@ import {
   SlidersHorizontal,
   Users,
   BarChart3,
-  Phone,
-  FileText,
   PhoneIncoming,
   PhoneOutgoing,
 } from 'lucide-react';
@@ -902,27 +900,6 @@ function ReportPanel({
         {callDate(meta.from)} تا {callDate(meta.to)} · تهران · زمان تماس، پایان
         بازه غیرشامل
       </p>
-      <div className={styles.stats}>
-        {[
-          ['تماس ثبت‌شده', r.calls],
-          ['مخاطب تلفنی یکتا', r.contacts],
-          ['نیازمند تکمیل', r.incomplete],
-        ].map(([label, value]) => (
-          <article className={styles.stat} key={label}>
-            <span className={styles.statIcon}>
-              {label === 'تماس ثبت‌شده' ? (
-                <Phone />
-              ) : label === 'مخاطب تلفنی یکتا' ? (
-                <Users />
-              ) : (
-                <FileText />
-              )}
-            </span>
-            <span>{label}</span>
-            <strong>{faNumber(Number(value))}</strong>
-          </article>
-        ))}
-      </div>
       {r.unindexed > 0 && (
         <p role="alert">
           پوشش شاخص اطلاعات ناقص است؛ آمار تکمیل اطلاعات قطعی نیست.
