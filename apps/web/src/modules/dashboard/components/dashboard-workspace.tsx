@@ -123,6 +123,10 @@ import { dashboardUnavailableReason } from '../model/availability';
 import { dashboardNumericAxis } from '../model/numeric-axis';
 import { DashboardArtworkIcon } from './dashboard-artwork-icon';
 import { DashboardStackedSeriesChart } from './dashboard-stacked-series-chart';
+import {
+  DashboardSeriesDataTable,
+  dashboardSeriesSummary,
+} from './dashboard-series-data-table';
 
 const rangeOptions: readonly [DashboardRange, string][] = [
   ['today', 'امروز'],
@@ -1760,6 +1764,7 @@ function VisualDataSummary({
   trend,
   unit,
   values,
+  series,
 }: {
   labels: readonly string[];
   title: string;
@@ -1771,6 +1776,7 @@ function VisualDataSummary({
       }
     | undefined;
   values: readonly number[];
+  series?: DashboardVisualSnapshot['series'];
 }) {
   const temporalLabel = trend ? trendTemporalLabels[trend.grain] : null;
   const firstColumnLabel = trend
@@ -1796,41 +1802,18 @@ function VisualDataSummary({
             <strong className="text-foreground">{temporalLabel}</strong>
           </p>
         ) : null}
-        <table className="w-full min-w-72 text-xs">
-          <caption className="sr-only">داده‌های نمودار {title}</caption>
-          <thead className="bg-muted/60 text-foreground">
-            <tr>
-              <th className="px-3 py-2 text-start" scope="col">
-                {firstColumnLabel}
-              </th>
-              <th className="px-3 py-2 text-end" scope="col">
-                مقدار
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {values.map((value, index) => (
-              <tr
-                className="border-t border-border/70"
-                key={`${labels[index]}-${index}`}
-              >
-                <th className="px-3 py-2 text-start font-medium" scope="row">
-                  {trend
-                    ? trendDateLabel(
-                        labels[index] ?? '',
-                        trend.calendarSystem,
-                        trend.grain,
-                        true,
-                      )
-                    : (labels[index] ?? `دسته ${index + 1}`)}
-                </th>
-                <td className="px-3 py-2 text-end font-bold tabular-nums">
-                  {formatVisualNumber(value, unit)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DashboardSeriesDataTable
+          title={title}
+          firstColumnLabel={firstColumnLabel}
+          labels={labels.map((label) =>
+            trend
+              ? trendDateLabel(label, trend.calendarSystem, trend.grain, true)
+              : label,
+          )}
+          values={values}
+          series={series}
+          formatValue={(value) => formatVisualNumber(value, unit)}
+        />
       </div>
     </details>
   );
@@ -2141,12 +2124,12 @@ function DashboardChart({
     );
   const resolvedKind = dashboardVisualKindForData(kind, values);
   const total = values.reduce((sum, value) => sum + value, 0);
-  const accessibleSummary = values
-    .map(
-      (value, index) =>
-        `${labels[index] ?? `دسته ${index + 1}`}: ${formatVisualNumber(value, unit)}`,
-    )
-    .join('، ');
+  const accessibleSummary = dashboardSeriesSummary(
+    labels,
+    values,
+    series,
+    (value) => formatVisualNumber(value, unit),
+  );
 
   if (resolvedKind === 'line') {
     const chartLeft = 100;
@@ -3180,6 +3163,7 @@ function ProjectionSlot({
                   }
                   unit={displayUnit}
                   values={displayData.values}
+                  series={displayData.series}
                 />
               )}
             </>
