@@ -51,17 +51,21 @@ export function ExpertActivity({
       metric: ExpertMetric;
     } | null>(null),
     [page, setPage] = useState(1),
-    [detail, setDetail] = useState<ActivityDetail | null>(null),
-    [error, setError] = useState(''),
-    [loading, setLoading] = useState(false);
+    [result, setResult] = useState<{
+      key: string;
+      detail: ActivityDetail | null;
+      error: string;
+    } | null>(null);
+  const requestKey = JSON.stringify([selected, branch, filters, meta, page]);
+  const current = result?.key === requestKey ? result : null;
+  const detail = current?.detail ?? null;
+  const error = current?.error ?? '';
+  const loading = !!selected && !current;
   const generation = useRef(0);
   useEffect(() => {
     if (!selected || !branch || !filters || !meta) return;
     const abort = new AbortController(),
       g = ++generation.current;
-    setLoading(true);
-    setError('');
-    setDetail(null);
     readApi
       .expertDetail(
         branch,
@@ -76,18 +80,23 @@ export function ExpertActivity({
       .then((r) => {
         if (g === generation.current && !abort.signal.aborted) {
           if (!r.data.activityDetail) throw Error('جزئیات در دسترس نیست.');
-          setDetail(r.data.activityDetail);
+          setResult({
+            key: requestKey,
+            detail: r.data.activityDetail,
+            error: '',
+          });
         }
       })
       .catch(() => {
-        if (!abort.signal.aborted)
-          setError('دریافت جزئیات ممکن نشد؛ دوباره تلاش کنید.');
-      })
-      .finally(() => {
-        if (!abort.signal.aborted) setLoading(false);
+        if (g === generation.current && !abort.signal.aborted)
+          setResult({
+            key: requestKey,
+            detail: null,
+            error: 'دریافت جزئیات ممکن نشد؛ دوباره تلاش کنید.',
+          });
       });
     return () => abort.abort();
-  }, [selected, branch, filters, meta, page]);
+  }, [selected, branch, filters, meta, page, requestKey]);
   const report = data.expertActivity;
   return (
     <>
@@ -136,6 +145,7 @@ export function ExpertActivity({
                           disabled={!count || !branch || !filters || !meta}
                           aria-label={`${label}؛ ${row.name}`}
                           onClick={() => {
+                            setResult(null);
                             setPage(1);
                             setSelected({ id: row.id, name: row.name, metric });
                           }}
@@ -186,7 +196,10 @@ export function ExpertActivity({
                 {error}
                 <button
                   type="button"
-                  onClick={() => setSelected({ ...selected })}
+                  onClick={() => {
+                    setResult(null);
+                    setSelected({ ...selected });
+                  }}
                 >
                   تلاش مجدد
                 </button>
