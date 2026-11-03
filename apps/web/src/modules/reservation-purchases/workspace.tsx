@@ -45,6 +45,7 @@ import {
   purchaseDateFields,
   purchaseCategories,
   purchaseCategory,
+  purchaseServiceLabel,
   contractPurchaseServices,
   servicePurchase,
   flightPurchase,
@@ -451,11 +452,7 @@ function PurchaseHub() {
                         </td>
                         <td className="p-4">
                           <Badge>
-                            {service.kind === 'FLIGHT'
-                              ? 'بلیط شناور'
-                              : purchaseCategories.find(
-                                  ([key]) => key === service.kind,
-                                )?.[1]}
+                            {purchaseServiceLabel(request, service)}
                           </Badge>
                           <p className="mt-2">{service.titleSnapshot}</p>
                         </td>

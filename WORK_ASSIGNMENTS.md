@@ -214,6 +214,11 @@ COMPUTER_ID=PC-A; branch codex/pc-a-pricing-template-fields-1103 from develop0ee
 
 COMPUTER_ID=PC-A; branch codex/pc-a-payment-account-labels-1103 from develop1ed66a85c. Owner requests readable paying-account choices in Finance purchase payments and develop merge. Reserve only finance-inbox-live-workspace.tsx paying-account label plus own status notes. Existing Finance listSettlementAccounts already provides title, bankName and maskedIdentifier; reuse receiptAccountLabel so options/search/selection include all three and currency. No API/schema/migration/dependency, bank-account producer, Accounting, permission/payment policy, transaction or deployment change. Prior related purchase-payment scope is merged/released; no active overlapping target writer found.
 
+## FLOATING-HOTEL-LABEL-1103 — PC-A — READY_FOR_CI
+
+Owner authorizes floating hotel label correction in the existing PC-A purchase-hub consumer and develop merge after checks. Branch codex/pc-a-floating-hotel-purchase-label-1103 from develop60e18a750. Reserve reservation-purchases model/workspace and focused tests, own translation entry/generated catalogues and own status sections. No schema, dependency, producer API or Procurement core changes. Separately owner requests removal of exactly two named production contracts including dependencies after server-only backup, and four exact ticket purchase entries; operational identifiers and sensitive backups stay outside Git. Preserve paid/accounting history and unrelated records; inspect dependencies before mutation.
+Validation:22 focused model/workspace/i18n checks pass, including rendered floating-hotel label and preservation of ordinary hotel/transfer labels. Scoped lint and full Web typecheck pass. Final production build/hosted gates precede authorized merge; source freezes on push and releases on successful merge. Production cleanup completed after verified server-only encrypted backup: two exact contracts and approved dependent rows removed, four unpriced ticket purchase requests cancelled to remove them from active inboxes. Linked tour/offers and unrelated data preserved; login/health remain HTTP200. No source deployment or migration.
+
 ## FAMILY-ROOM-CHILD-1029 — PC-A — IN_PROGRESS
 
 CI follow-up: reserve the existing ServiceParties category-option assertion only, adding Family to the expected choices and verifying its onValueChange persists Family with no fabricated extra bed. Full suite identified exactly this stale expectation (4121 other Web tests pass); preserve all other assertions and gates.
@@ -10956,6 +10961,10 @@ PARTY-CONTRACT-RECEIPTS-FIFO-1103 integration reserves only the existing finance
 ## MARKETING-CLEANUP-LEADS-1103 — PC-B — CANDIDATE
 
 Owner requests Marketing process removal, aligned filters, empty dashboard, scoped content uploads, durable campaign/audience deletion, entry sources and named/date-stamped leads; push/develop merge authorized. Reserve Marketing Web/API/contracts/tests, bounded Customer Affairs intake fields/service/DTO, additive English catalog entries and own notes. Sole schema/migration owner PC-B for nullable campaign deletedAt, intake first/last name and entry date, and SOURCE/AUDIENCE asset kind constraint extension. Prior migration reservations merged/released; no competing active source lock found. Producer API and consumer Web ship compatible optional fields together; preserve encrypted contact ownership, branch permissions, audit and optimistic concurrency. No dependency or operational deployment changes. Validation: 91 Marketing API tests including 8 disposable PostgreSQL proofs; 118 Marketing Web tests and 3 translation coverage tests pass. Additive migration and seed rehearsed on disposable PostgreSQL. Local API/Web typechecks, production builds and scoped lint passed. Final audience-field preservation has 30 API/PostgreSQL and 38 Web regression passes; complete final-head hosted checks gate merge. Locks release on verified merge.
+
+## COMPANY-BASELINE-1103 — PC-A — IN_PROGRESS
+
+Reserve apps/api/src/iam/authenticated-permissions.ts and focused spec; valid active manual access snapshots must retain the existing authenticated legal-entity read/switch baseline. Disabled, malformed and multiple snapshots remain fail-closed. No aggregate/manage/branding/document grants, schema, migration or dependency changes. No overlapping active source reservation found. Branch codex/pc-a-company-baseline-1103 from origin/develop. Own status documentation reserved.
 
 ## AGENCY-CONTRACT-NOTE-1103 — PC-B
 
