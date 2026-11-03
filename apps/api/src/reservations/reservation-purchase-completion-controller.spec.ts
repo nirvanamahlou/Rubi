@@ -21,7 +21,7 @@ it('returns only completion and scopes the source to the authenticated branches'
     actor: { permissions: ['reservations.read'], branchIds: ['branch'] },
   } as never;
   expect(await controller.purchaseCompletion('intake', request)).toEqual({
-    data: { complete: true },
+    data: { complete: true, registered: true },
   });
   expect(purchaseContext).toHaveBeenCalledWith('intake', ['branch']);
   await expect(
@@ -34,4 +34,30 @@ it('returns only completion and scopes the source to the authenticated branches'
   await expect(
     controller.purchaseCompletion('foreign-intake', request),
   ).rejects.toBeInstanceOf(NotFoundException);
+});
+it('reports registration separately when a purchase exists before a form is issued', async () => {
+  const purchaseContext = vi.fn().mockResolvedValue({
+    snapshot: {
+      serviceSelections: [
+        { clientKey: 'hotel', kind: 'HOTEL' },
+        { clientKey: 'insurance', kind: 'INSURANCE' },
+      ],
+    },
+    workflow: null,
+    servicePurchases: [{ serviceClientKey: 'hotel', amount: '0' }],
+  });
+  const controller = new ReservationRequestsController(
+    { purchaseContext } as never,
+    undefined as never,
+    undefined as never,
+    undefined as never,
+    undefined as never,
+    undefined as never,
+    undefined as never,
+  );
+  expect(
+    await controller.purchaseCompletion('intake', {
+      actor: { permissions: ['reservations.read'], branchIds: ['branch'] },
+    } as never),
+  ).toEqual({ data: { complete: false, registered: true } });
 });

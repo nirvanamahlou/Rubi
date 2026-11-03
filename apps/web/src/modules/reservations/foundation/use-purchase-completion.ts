@@ -2,11 +2,12 @@
 import { useEffect, useState } from 'react';
 import { travelRequest } from '../components/travel-workflow-form';
 
-export function usePurchaseCompletion(id?: string, revision?: number) {
+function usePurchaseStatus(id?: string, revision?: number) {
   const [result, setResult] = useState<{
     id: string;
     revision: number | undefined;
     complete: boolean;
+    registered: boolean;
   }>();
   useEffect(() => {
     if (!id) return;
@@ -14,7 +15,7 @@ export function usePurchaseCompletion(id?: string, revision?: number) {
     let sequence = 0;
     const refresh = () => {
       const call = ++sequence;
-      void travelRequest<{ data: { complete: boolean } }>(
+      void travelRequest<{ data: { complete: boolean; registered?: boolean } }>(
         'reservations/requests/' +
           encodeURIComponent(id) +
           '/purchase-completion',
@@ -25,11 +26,12 @@ export function usePurchaseCompletion(id?: string, revision?: number) {
               id,
               revision,
               complete: response.data.complete === true,
+              registered: response.data.registered === true,
             });
         })
         .catch(() => {
           if (live && call === sequence)
-            setResult({ id, revision, complete: false });
+            setResult({ id, revision, complete: false, registered: false });
         });
     };
     refresh();
@@ -43,9 +45,15 @@ export function usePurchaseCompletion(id?: string, revision?: number) {
       window.removeEventListener('focus', refresh);
     };
   }, [id, revision]);
-  return (
-    result?.id === id &&
-    result?.revision === revision &&
-    result?.complete === true
-  );
+  return result?.id === id && result?.revision === revision
+    ? result
+    : undefined;
+}
+
+export function usePurchaseCompletion(id?: string, revision?: number) {
+  return usePurchaseStatus(id, revision)?.complete === true;
+}
+
+export function usePurchaseRegistration(id?: string, revision?: number) {
+  return usePurchaseStatus(id, revision)?.registered === true;
 }

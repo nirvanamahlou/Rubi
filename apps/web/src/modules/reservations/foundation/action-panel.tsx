@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { usePurchaseCompletion } from './use-purchase-completion';
+import { usePurchaseRegistration } from './use-purchase-completion';
 import { ReservationDeliveryPermit } from '../components/reservation-delivery-permit';
 import { ReservationHotelCosts } from '../components/reservation-hotel-costs';
 import { ReservationPurchaseDialog } from '../components/reservation-hotel-purchase';
@@ -174,7 +174,7 @@ export function ContractActionPanel({
 }) {
   const [openedRequest, setOpenedRequest] = useState<RequestView>();
   const dialogRequest = openedRequest ?? request;
-  const purchasesComplete = usePurchaseCompletion(
+  const purchaseRegistered = usePurchaseRegistration(
     request?.id,
     request?.workflowVersion,
   );
@@ -253,14 +253,14 @@ export function ContractActionPanel({
                             ? styles.hasNotes
                             : '',
                           action === 'خرید' &&
-                          purchasesComplete &&
+                          purchaseRegistered &&
                           request?.status !== 'CANCELLED'
-                            ? styles.purchaseComplete
+                            ? styles.purchaseRegistered
                             : '',
                         ].join(' ')}
-                        data-purchases-complete={
+                        data-purchase-registered={
                           action === 'خرید'
-                            ? purchasesComplete &&
+                            ? purchaseRegistered &&
                               request?.status !== 'CANCELLED'
                             : undefined
                         }

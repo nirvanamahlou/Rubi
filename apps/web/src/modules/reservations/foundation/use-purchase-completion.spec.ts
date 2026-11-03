@@ -18,12 +18,34 @@ vi.mock('react', () => ({
 vi.mock('../components/travel-workflow-form', () => ({
   travelRequest: harness.request,
 }));
-import { usePurchaseCompletion } from './use-purchase-completion';
+import {
+  usePurchaseCompletion,
+  usePurchaseRegistration,
+} from './use-purchase-completion';
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
   harness.state = undefined;
   harness.request.mockReset();
+});
+it('uses persisted registration independently of full coverage and form status', async () => {
+  const target = new EventTarget();
+  vi.stubGlobal('window', target);
+  harness.request.mockResolvedValueOnce({
+    data: { complete: false, registered: true },
+  });
+  expect(usePurchaseRegistration('no-form', 1)).toBe(false);
+  const cleanup = harness.effect?.();
+  await Promise.resolve();
+  expect(usePurchaseRegistration('no-form', 1)).toBe(true);
+  expect(usePurchaseCompletion('no-form', 1)).toBe(false);
+  expect(usePurchaseRegistration('different', 1)).toBe(false);
+  expect(usePurchaseRegistration('no-form', 2)).toBe(false);
+  harness.request.mockResolvedValueOnce({ data: { complete: true } });
+  target.dispatchEvent(new Event('reservation-workflow-changed'));
+  await Promise.resolve();
+  expect(usePurchaseRegistration('no-form', 1)).toBe(false);
+  cleanup?.();
 });
 it('refreshes on save, rejects stale responses and never carries green to another contract or revision', async () => {
   vi.useFakeTimers();
