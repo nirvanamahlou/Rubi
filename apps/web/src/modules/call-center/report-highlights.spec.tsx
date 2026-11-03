@@ -59,8 +59,8 @@ describe('Call Center report highlights', () => {
     );
     expect(html).not.toContain('مخاطب نمونه');
     expect(html).toContain('عملکرد تماس و وضعیت پیگیری کارشناسان');
-    expect(html).toContain('50%');
-    expect(html).not.toContain('30%');
+    expect(html).toContain('50 50');
+    expect(html).not.toContain('30 70');
     expect(html).not.toContain('بیشترین تماس خروجی');
   });
 });
@@ -118,7 +118,7 @@ it('uses contact-based source share for repeated calls', () => {
   );
   expect(html).toContain('سهم منابع آشنایی');
   expect(html).toContain('کل مخاطبان');
-  expect(html).toContain('100%');
+  expect(html).toContain('100 0');
   expect(html).toContain('۱۰۰٪');
   expect(html).not.toContain('۲۸');
 });
