@@ -8290,6 +8290,9 @@ model ProcurementPettyFund {
 }
 
 model ProcurementPettyEntry {
+  costCenter        String?              @db.VarChar(160)
+  fee               Decimal?             @db.Decimal(24, 4)
+  description       String?              @db.VarChar(2000)
   title             String?              @db.VarChar(240)
   occurredAt        DateTime?            @db.Timestamptz(3)
   receiptDocumentId String?              @db.Uuid

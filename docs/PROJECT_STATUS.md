@@ -8751,6 +8751,13 @@ GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local 
 
 
 
+
+## PETTY-FORMS-1103 — PC-B — IN_PROGRESS
+
+Owner requests registration cost center/fee/description, recharge receipt and purchase-form redesign/copy removal; push/develop merge authorized. Reserve Procurement API/Web/contracts/tests, own translations and notes. PC-B reserves sole additive schema/migration ownership for immutable ledger metadata after active-scope check; no dependency lock. User confirms entered amount includes fee: debit exactly the entered amount; fee is a nonnegative component no greater than amount, default zero, included in replay equality. Cost center is an optional bounded text snapshot, description optional bounded text; preserve exact Decimal, version/idempotency, branch/custodian controls and Documents public receipt authorization. Dirty concurrent Accounting source edits and generated Next environment remain outside scope. No operational database/test data changes.
+
+PETTY-FORMS-1103 implementation: optional cost-center text, inclusive commission and description persist on immutable registration rows; only entered total is debited, fee bounded by total and metadata included in retry equality. Recharge receipts use branch-scoped Documents validation and positive adjustment ledger references. Home now shows filtered registrations with shared fund branch; purchase requests retain their own section. Requested guidance removed and forms regrouped. Seven disposable PostgreSQL scenarios pass, including inclusive debit/replay and positive recharge receipt/rollback; existing Procurement unit cases pass. Final Web/type/lint and hosted gates remain before merge. No operational DB change yet; peer Accounting edits excluded.
+
 ## HR-SHIFT-ENTRY-1103 — PC-B — IN_PROGRESS
 
 Owner reports the new shift form is not visible on local HR time page. Reserve HR navigation/unified section, focused navigation regression and own translations/notes. Set weekly employee assignments as the default shift-definition source; retain legacy templates and calendars as explicit secondary choices. No API/schema/dependency change. Prior push/develop merge authorization applies to completing this correction.
