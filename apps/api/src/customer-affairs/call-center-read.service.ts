@@ -780,7 +780,12 @@ export class CallCenterReadService {
         >`SELECT count(DISTINCT a.contact_id) AS contacts,count(*) FILTER(WHERE a.needs_completion) AS incomplete,count(*) FILTER(WHERE a.search_version=0) AS unindexed FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate}`;
         const sources = await tx.$queryRaw<
           Array<{ token: string | null; count: bigint }>
-        >`SELECT a.source_token AS token,count(*) AS count FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate} GROUP BY a.source_token`;
+        >`SELECT chosen.token,count(*) AS count FROM (
+SELECT DISTINCT ON (a.contact_id) a.contact_id,a.source_token AS token
+FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id
+WHERE ${predicate}
+ORDER BY a.contact_id,a.occurred_at DESC,a.id ASC
+) chosen GROUP BY chosen.token`;
         const registrations = await tx.$queryRaw<
           Array<{ actorId: string; count: bigint }>
         >`SELECT a.created_by_user_id AS "actorId",count(*) AS count FROM customer_affairs_calls a JOIN customer_affairs_call_contacts c ON c.id=a.contact_id WHERE ${predicate} AND (a.origin IS NULL OR a.origin = 'MANUAL') GROUP BY a.created_by_user_id`;
@@ -933,6 +938,9 @@ export class CallCenterReadService {
           'سایت',
           'تلگرام',
           'معرفی دوستان',
+          'SMS',
+          'آژانس',
+          'سایر',
         ];
         return {
           data: {
@@ -985,6 +993,8 @@ export class CallCenterReadService {
             asOf: now.toISOString(),
             timezone: 'Asia/Tehran',
             callBasis: 'occurredAt',
+            sourceBasis:
+              'unique branch phone-group; latest matching call source within authorized report filters and time range; occurredAt DESC/id ASC',
             requestBasis: 'createdAt; current status',
             taskBasis:
               'open=current branch backlog; completed=completedAt; denominator=completed only',

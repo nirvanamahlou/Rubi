@@ -102,3 +102,22 @@ it('shows the operational columns and real completion denominator without outbou
   expect(html).not.toContain('بیشترین تماس خروجی');
   expect(html).toContain('بدون انتساب معتبر');
 });
+
+it('uses contact-based source share for repeated calls', () => {
+  const html = renderToStaticMarkup(
+    <ReportHighlights
+      data={{
+        ...data,
+        calls: 28,
+        contacts: 1,
+        sources: [{ label: 'معرفی دوستان', count: 1 }],
+      }}
+      agents={[]}
+    />,
+  );
+  expect(html).toContain('سهم منابع آشنایی');
+  expect(html).toContain('کل مخاطبان');
+  expect(html).toContain('100%');
+  expect(html).toContain('۱۰۰٪');
+  expect(html).not.toContain('۲۸');
+});
