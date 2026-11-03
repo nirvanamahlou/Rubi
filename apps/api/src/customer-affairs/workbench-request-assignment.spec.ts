@@ -314,6 +314,9 @@ describe('Workbench request assignment and delivery', () => {
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
+          timeline: {
+            none: { type: 'WORKBENCH_REMOVED', actorUserId: recipientId },
+          },
           OR: [
             { createdByUserId: recipientId },
             { executionOwnerUserId: recipientId },

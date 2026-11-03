@@ -135,6 +135,17 @@ describe.skipIf(!enabled)(
         {} as never,
       );
       const iam = {
+        async validateMessagingRecipients(
+          actor: AuthenticatedActor,
+          ids: string[],
+        ) {
+          if (
+            !ids.every((id) => actors.has(id)) ||
+            !actor.branchIds.includes(branchId)
+          )
+            throw new Error('Invalid recipients');
+          return { branchId, contacts: [] };
+        },
         describeMessagingParticipants(ids: string[]) {
           return client.user.findMany({
             where: { id: { in: ids } },
@@ -330,5 +341,70 @@ describe.skipIf(!enabled)(
       },
       30000,
     );
+    it('persists group edits, restricts editors, transfers ownership and revokes access after leaving', async () => {
+      const http = app.getHttpServer();
+      await request(http)
+        .patch(`/messaging/conversations/${groupId}`)
+        .set('x-test-actor', recipientId)
+        .send({ title: 'Denied title', memberIds: [] })
+        .expect(403);
+      await request(http)
+        .patch(`/messaging/conversations/${groupId}`)
+        .set('x-test-actor', senderId)
+        .send({ title: 'Renamed group', memberIds: [outsiderId] })
+        .expect(200);
+      expect(
+        await client.messagingMember.count({
+          where: { conversationId: groupId },
+        }),
+      ).toBe(3);
+      await request(http)
+        .delete(`/messaging/conversations/${groupId}`)
+        .set('x-test-actor', senderId)
+        .expect(200);
+      await request(http)
+        .get(`/messaging/conversations/${groupId}/messages`)
+        .set('x-test-actor', senderId)
+        .expect(403);
+      expect(
+        await client.messagingMember.count({
+          where: { conversationId: groupId, role: 'OWNER' },
+        }),
+      ).toBe(1);
+    });
+    it('removes a direct chat only for one user and restores it on a new incoming message', async () => {
+      const http = app.getHttpServer();
+      await request(http)
+        .delete(`/messaging/conversations/${conversationId}`)
+        .set('x-test-actor', recipientId)
+        .expect(200);
+      expect(
+        await client.messagingMember.count({
+          where: { conversationId, userId: senderId },
+        }),
+      ).toBe(1);
+      const inbox = await request(http)
+        .get('/messaging/conversations')
+        .set('x-test-actor', recipientId)
+        .expect(200);
+      expect(
+        inbox.body.data.some(
+          (row: { id: string }) => row.id === conversationId,
+        ),
+      ).toBe(false);
+      await request(http)
+        .post(`/messaging/conversations/${conversationId}/messages`)
+        .set('x-test-actor', senderId)
+        .send({
+          body: 'New message',
+          clientRequestId: `message:${randomUUID()}`,
+        })
+        .expect(201);
+      expect(
+        await client.messagingMember.count({
+          where: { conversationId, userId: recipientId },
+        }),
+      ).toBe(1);
+    });
   },
 );

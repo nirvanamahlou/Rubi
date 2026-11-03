@@ -46,6 +46,8 @@ describe('MessagingService', () => {
       conversation: vi.fn().mockResolvedValue(conversation),
       createDirect: vi.fn().mockResolvedValue(conversation),
       createGroup: vi.fn(),
+      updateGroup: vi.fn(),
+      removeMembership: vi.fn(),
       messages: vi.fn(),
       createMessage: vi.fn(),
       replyTarget: vi.fn(),
@@ -78,6 +80,62 @@ describe('MessagingService', () => {
       iam as unknown as IamService,
       documents as never,
     );
+  });
+
+  it('removes only the authenticated membership in its allowed branches', async () => {
+    await service.remove(conversationId, actor);
+    expect(repository.removeMembership).toHaveBeenCalledWith(
+      conversationId,
+      actor.userId,
+      actor.branchIds,
+    );
+  });
+  it('rejects group editing by ordinary members and rejects direct conversation editing', async () => {
+    const input = { title: 'Updated group', memberIds: [] };
+    await expect(
+      service.updateGroup(conversationId, input, actor),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    repository.conversation!.mockResolvedValue({
+      ...conversation,
+      type: 'GROUP',
+      members: [{ userId: actor.userId, role: 'MEMBER' }],
+    });
+    await expect(
+      service.updateGroup(conversationId, input, actor),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.updateGroup).not.toHaveBeenCalled();
+  });
+  it('validates new group members against the existing group branch, not any other shared branch', async () => {
+    const group = { ...conversation, type: 'GROUP', title: 'Updated group' };
+    repository.conversation!.mockResolvedValue(group);
+    repository.updateGroup!.mockResolvedValue(group);
+    const added = '77777777-7777-4777-8777-777777777777';
+    await service.updateGroup(
+      conversationId,
+      { title: 'Updated group', memberIds: [recipientId, added] },
+      { ...actor, branchIds: [...actor.branchIds, 'other'] },
+    );
+    expect(iam.validateMessagingRecipients).toHaveBeenCalledWith(
+      { ...actor, branchIds: [conversation.branchId] },
+      [added],
+    );
+    expect(repository.updateGroup).toHaveBeenCalledWith(
+      conversationId,
+      actor.userId,
+      [...actor.branchIds, 'other'],
+      'Updated group',
+      [added],
+    );
+  });
+  it('preserves the direct recipient name after they remove their membership', async () => {
+    repository.listConversations!.mockResolvedValue([
+      {
+        ...conversation,
+        directPairKey: `${conversation.branchId}:${actor.userId}:${recipientId}`,
+        members: [conversation.members[0]],
+      },
+    ]);
+    expect((await service.conversations(actor)).data[0]?.title).toBe('گیرنده');
   });
 
   it('creates a branch-scoped direct conversation with a canonical pair key', async () => {

@@ -1,6 +1,7 @@
 import { requestDisplayLanguage } from '../common/i18n/language';
 import {
   Body,
+  Delete,
   Controller,
   Get,
   Header,
@@ -493,6 +494,14 @@ export class CustomerAffairsController {
   ) {
     return this.service.workbenchRequestOptions(req.actor, branchId);
   }
+  @Delete('workbench/requests/:id')
+  removeWorkbenchRequest(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.removeWorkbenchRequest(id, req.actor);
+  }
+
   @Get('workbench/requests')
   @Header('Cache-Control', 'private, no-store')
   workbenchRequests(@Req() req: AuthenticatedRequest) {

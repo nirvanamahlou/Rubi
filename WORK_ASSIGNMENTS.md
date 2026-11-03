@@ -1,3 +1,9 @@
+## WORKBENCH-FIXES-1103 — PC-B — READY_FOR_CI
+
+Owner authorizes calendar repair, immediate daily-package viewing, device-backed own attendance for all users, conversation removal/group leave and group management, request inbox removal, push and develop merge. Isolated branch codex/pc-b-workbench-fixes-1103. Reserve Workbench/Messaging API and Web, bounded Documents daily-package delivery and Customer Affairs workbench queries/endpoints, HR own projection and focused tests; own translation entries. Additive endpoints ship with consumers; existing contracts remain compatible. No schema/migration/dependency or operational identity changes.
+
+Validated 94 API/database and 130 Web/i18n tests, full API/Web types, scoped lint and both production builds. Source changes require final-head hosted gates before authorized develop merge. No runtime rollout or operational account reassignment. Details: docs/tasks/WORKBENCH-FIXES-1103.md.
+
 ## PURCHASE-COMPLETION-1103 — PC-A — READY_FOR_CI
 
 PC-A; codex/pc-a-purchase-completion-1103 from current develop. Owner authorizes removing purchase-entry FX baseline controls and fixing purchased contracts remaining in the buying queue, then develop merge. Reserve reservation-purchase-selection SQL and its existing isolated PostgreSQL regression, Finance PurchaseFxRate entry adapter and focused rendering regression, own docs only. Read-only diagnosis found three reservation revisions for the reported contract, with all four hotel/transfer purchases on the latest revision. Select current contract intake before queue filters and reuse latest matching service purchases from same-contract, same-branch earlier intake revisions; preserve every historical intake/payment and independent Finance FX capture. No migration/dependency/production writes/deployment.
