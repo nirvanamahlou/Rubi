@@ -1830,7 +1830,7 @@ export function DocumentsWorkspace() {
               value={visibleExpired}
             />
           </section>
-          <div className="grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,.95fr)]">
             <Card className={cn('p-5', sectionSurface)}>
               <div className="flex items-center justify-between gap-3">
                 <h2 className="flex items-center gap-2 text-lg font-black">
@@ -2073,7 +2073,7 @@ export function DocumentsWorkspace() {
           </Button>
         </Alert>
       ) : null}
-      <div className="grid gap-4 xl:grid-cols-[15.5rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[15.5rem_minmax(0,1fr)]">
         <Card className="h-fit overflow-hidden border-sky-200/80 bg-gradient-to-b from-sky-50 via-blue-50/85 to-indigo-100/65 p-3 shadow-sm dark:border-sky-400/20 dark:from-sky-950/55 dark:via-blue-950/40 dark:to-indigo-950/35 xl:sticky xl:top-20">
           <div className="mb-3 flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-xs font-black text-sky-900 shadow-sm dark:bg-white/5 dark:text-sky-100">
             <Sparkles aria-hidden="true" className="size-4 text-sky-600" />
