@@ -10989,6 +10989,7 @@ GHESTIROO-DOCUMENT-LOGO-1103 READY_FOR_CI: PR #1338, branch pushed. Final local 
 ## LEDGER-SOURCE-PARITY-1103 — PC-B — ACTIVE
 
 Branch codex/pc-b-ledger-source-parity-1103 from 41dd9b8d3. Owner requests fresh read-only Rahkaran GL comparison and exact observed fields/workflow, removing artificial form selection. Reserve accounting Web components/tests and bounded accounting reference import diagnostics, own task evidence and status notes. No migration/dependency/IAM or production data mutation. Preserve other local edits. Source account hierarchy must remain real, company/branch scoped; no invented records or bypass of authorization.
+
 ## PETTY-REGISTRATIONS-1103 — PC-B — ACTIVE
 
 Owner requests four-field direct petty-cash registration with receipt upload, a registrations card/list and durable purchase-request deletion; explicitly confirms debiting the balance. Named returning request is a hardcoded sample in empty production lists. Reserve Procurement API/Web/contracts/tests and removal of request sample fallback; own English keys and notes. Sole migration owner PC-B for optional immutable manual-registration metadata and receipt FKs on ProcurementPettyEntry. Prior migration reservation released by PR1337; no competing active migration/source writer found. API and Web ship together, old ledger entries remain compatible; atomic balance decrement, exact Decimal, retry idempotency, branch/custodian permissions and Documents public boundary required. No dependency or operational deployment changes.
